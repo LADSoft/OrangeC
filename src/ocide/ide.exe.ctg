@@ -1,0 +1,423 @@
+<CC386TARGET>
+    <VERSION ID="5"/>
+    <TARGET NAME="ide.exe" TITLE="ide.exe">
+        <BUILD TYPE="1" FLAGS="852033" LIBTYPE="0"/>
+        <DEFINEFLAGS VALUE="0"/>
+        <PATHS INCLUDE="" OUTPUT=""/>
+        <PREBUILD LABEL="">
+            
+        </PREBUILD>
+        <POSTBUILD LABEL="">
+            
+        </POSTBUILD>
+        <OPTS>
+            <COMPILER>
+                
+            </COMPILER>
+            <ASSEMBLER>
+                
+            </ASSEMBLER>
+            <LINKER>
+                
+            </LINKER>
+            <LIBRARIAN>
+                
+            </LIBRARIAN>
+        </OPTS>
+        <CMDLINE>
+            *.c
+        </CMDLINE>
+        <SOURCES>
+            <FILE NAME="alloc.c" TITLE="alloc.c"/>
+            <FILE NAME="asmwnd.c" TITLE="asmwnd.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="operands.h" TITLE="operands.h"/>
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+            </FILE>
+            <FILE NAME="browse.c" TITLE="browse.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="ccide.C" TITLE="ccide.C">
+                <DEPENDENCY NAME="helpid.h" TITLE="helpid.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="wargs.h" TITLE="wargs.h"/>
+                <DEPENDENCY NAME="splash.h" TITLE="splash.h"/>
+                <DEPENDENCY NAME="..\version.h" TITLE="version.h"/>
+            </FILE>
+            <FILE NAME="codecomp.c" TITLE="codecomp.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="parser.h" TITLE="parser.h"/>
+                <DEPENDENCY NAME="c_types.h" TITLE="c_types.h"/>
+                <DEPENDENCY NAME="codecomp.h" TITLE="codecomp.h"/>
+            </FILE>
+            <FILE NAME="databreak.c" TITLE="databreak.c">
+                <DEPENDENCY NAME="helpid.h" TITLE="helpid.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="dbgmain.c" TITLE="dbgmain.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="dialog.c" TITLE="dialog.c"/>
+            <FILE NAME="DOCKMGR.C" TITLE="DOCKMGR.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="DUMPWND.C" TITLE="DUMPWND.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="operands.h" TITLE="operands.h"/>
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+            </FILE>
+            <FILE NAME="EDITOR.C" TITLE="EDITOR.C">
+                <DEPENDENCY NAME="helpid.h" TITLE="helpid.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="codecomp.h" TITLE="codecomp.h"/>
+                <DEPENDENCY NAME="regexp.h" TITLE="regexp.h"/>
+            </FILE>
+            <FILE NAME="effect.c" TITLE="effect.c"/>
+            <FILE NAME="error.c" TITLE="error.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="eval.c" TITLE="eval.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="cvinfo.h" TITLE="cvinfo.h"/>
+            </FILE>
+            <FILE NAME="FIF.C" TITLE="FIF.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="filedlg.c" TITLE="filedlg.c">
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="HBREAK.C" TITLE="HBREAK.C">
+                <DEPENDENCY NAME="helpid.h" TITLE="helpid.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="help.c" TITLE="help.c">
+                <DEPENDENCY NAME="htmlhelp.h" TITLE="htmlhelp.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="HISTCOMB.C" TITLE="HISTCOMB.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="instance.c" TITLE="instance.c">
+                <DEPENDENCY NAME="helpid.h" TITLE="helpid.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="lsblank.c" TITLE="lsblank.c">
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+            </FILE>
+            <FILE NAME="lscont.c" TITLE="lscont.c">
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="lsctrl.c" TITLE="lsctrl.c">
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+            </FILE>
+            <FILE NAME="lsframe.c" TITLE="lsframe.c">
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+            </FILE>
+            <FILE NAME="lsgrip.c" TITLE="lsgrip.c">
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+            </FILE>
+            <FILE NAME="lstab.c" TITLE="lstab.c">
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+            </FILE>
+            <FILE NAME="lstool.c" TITLE="lstool.c">
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+            </FILE>
+            <FILE NAME="LSTREE.C" TITLE="LSTREE.C">
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+            </FILE>
+            <FILE NAME="lstt.c" TITLE="lstt.c">
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="make.c" TITLE="make.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="MAKEGEN.C" TITLE="MAKEGEN.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="menu.c" TITLE="menu.c"/>
+            <FILE NAME="MRU.C" TITLE="MRU.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="OPCODES.C" TITLE="OPCODES.C">
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+            </FILE>
+            <FILE NAME="OPERANDS.C" TITLE="OPERANDS.C">
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+                <DEPENDENCY NAME="operands.h" TITLE="operands.h"/>
+            </FILE>
+            <FILE NAME="PEFILE.C" TITLE="PEFILE.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="pefile.h" TITLE="pefile.h"/>
+            </FILE>
+            <FILE NAME="POPUP.C" TITLE="POPUP.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="print.c" TITLE="print.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="PROFILE.C" TITLE="PROFILE.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="progress.c" TITLE="progress.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="project.c" TITLE="project.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="props.c" TITLE="props.c"/>
+            <FILE NAME="regexp.c" TITLE="regexp.c"/>
+            <FILE NAME="regwnd.c" TITLE="regwnd.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="operands.h" TITLE="operands.h"/>
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+            </FILE>
+            <FILE NAME="SIMOPS.C" TITLE="SIMOPS.C">
+                <DEPENDENCY NAME="operands.h" TITLE="operands.h"/>
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="slprefs.c" TITLE="slprefs.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="xml.h" TITLE="xml.h"/>
+            </FILE>
+            <FILE NAME="slproj.c" TITLE="slproj.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="xml.h" TITLE="xml.h"/>
+            </FILE>
+            <FILE NAME="slrule.c" TITLE="slrule.c"/>
+            <FILE NAME="slwa.c" TITLE="slwa.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="xml.h" TITLE="xml.h"/>
+            </FILE>
+            <FILE NAME="Splash.c" TITLE="Splash.c"/>
+            <FILE NAME="SRCHPATH.C" TITLE="SRCHPATH.C"/>
+            <FILE NAME="stackwnd.c" TITLE="stackwnd.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="operands.h" TITLE="operands.h"/>
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+                <DEPENDENCY NAME="cvinfo.h" TITLE="cvinfo.h"/>
+            </FILE>
+            <FILE NAME="stdprop.c" TITLE="stdprop.c">
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="helpid.h" TITLE="helpid.h"/>
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="SYMTAB.C" TITLE="SYMTAB.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="cvinfo.h" TITLE="cvinfo.h"/>
+                <DEPENDENCY NAME="cvexefmt.h" TITLE="cvexefmt.h"/>
+            </FILE>
+            <FILE NAME="TABWND.C" TITLE="TABWND.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="TAGS.C" TITLE="TAGS.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+            </FILE>
+            <FILE NAME="thredwnd.c" TITLE="thredwnd.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="operands.h" TITLE="operands.h"/>
+                <DEPENDENCY NAME="opcodes.h" TITLE="opcodes.h"/>
+                <DEPENDENCY NAME="utype.h" TITLE="utype.h"/>
+                <DEPENDENCY NAME="cvinfo.h" TITLE="cvinfo.h"/>
+            </FILE>
+            <FILE NAME="toolbar.c" TITLE="toolbar.c"/>
+            <FILE NAME="UZ.C" TITLE="UZ.C"/>
+            <FILE NAME="version.c" TITLE="version.c"/>
+            <FILE NAME="wargs.c" TITLE="wargs.c"/>
+            <FILE NAME="watchwnd.c" TITLE="watchwnd.c">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="cvinfo.h" TITLE="cvinfo.h"/>
+            </FILE>
+            <FILE NAME="..\CLIBS\win32\wildargsw.c" TITLE="wildargsw.c"/>
+            <FILE NAME="window.c" TITLE="window.c"/>
+            <FILE NAME="XEDIT.C" TITLE="XEDIT.C">
+                <DEPENDENCY NAME="header.h" TITLE="header.h"/>
+                <DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+                <DEPENDENCY NAME="lsctrl.h" TITLE="lsctrl.h"/>
+                <DEPENDENCY NAME="progress.h" TITLE="progress.h"/>
+                <DEPENDENCY NAME="ccide.p" TITLE="ccide.p"/>
+                <DEPENDENCY NAME="c_types.h" TITLE="c_types.h"/>
+                <DEPENDENCY NAME="codecomp.h" TITLE="codecomp.h"/>
+                <DEPENDENCY NAME="c_kw.h" TITLE="c_kw.h"/>
+                <DEPENDENCY NAME="asm_kw.h" TITLE="asm_kw.h"/>
+            </FILE>
+            <FILE NAME="xml.c" TITLE="xml.c">
+                <DEPENDENCY NAME="xml.h" TITLE="xml.h"/>
+            </FILE>
+        </SOURCES>
+        <RESOURCES>
+            <FILE NAME="ccide.rc" TITLE="ccide.rc"/>
+        </RESOURCES>
+        <OTHER>
+            <FILE NAME="..\parsedll\parser.lib" TITLE="parser.lib"/>
+        </OTHER>
+    </TARGET>
+</CC386TARGET>

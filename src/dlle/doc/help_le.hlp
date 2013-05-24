@@ -1,0 +1,769 @@
+|============================================================================
+~LE_Header
+                  İ`LINEAR-EXECUTABLE File Header Layout`
+                  ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+   An virtual device drivers or some other applications for Microsoft
+ Windows or IBM OS/2 operating system which uses 32-bits segments
+ for 80386+ contains a combination of code and data or combination of
+ code,data, and resources. The `LINEAR-EXECUTABLE` file such as a ^NE_Header {NEW-STYLE}
+ EXE file also contains two headers: an ^Tp236 {MS-DOS header} and a `LINEAR` EXE header.
+  The ^Tp236 {MS-DOS (old-style) executable-file header} contains four distinct parts:
+ a collection of header information,a reserved section, a pointer to a
+ `LINEAR` exe header, and a stub program. The following illustrations shows
+ the MS-DOS executable-file header:
+
+                                    `Beginning of file`
+
+                              ÉÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+   Offset:             00h    º          MS-DOS Header Info        º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                       20h    º              Reserved              º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                       3Ch    º           LE header offset         º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                       40h    º                                    º
+                              º          MS-DOS stub program       º
+                              º                                    º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+       Beginning of `LE` header º                                    º
+                              º      .                             º
+                              º      .                             º
+                              º      .                             º
+                              º                                    º
+
+     If word value at offset 18h is 40h or greater, the dword value at 3Ch
+ is an offset to a `LE` header
+
+     MS-DOS uses stub program to display a message if Windows or OS/2 has
+ not been loaded when the user attempts to run a program.
+
+     The `LINEAR` executable-file header contains information that the
+ loader requires for segmented executable files. This information includes
+ the linker version number, data specified by linker, data specified by
+ resource compiler, tables of segment data, tables of resource data, and
+ so on. The following illustrations shows the LE file header:
+
+                              º                                    º
+                              º   .                                º
+                              º   .                                º
+                              º   .                                º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º                                    º
+         End of MS-DOS header º         MS-DOS stub program        º
+                              º                                    º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+     Beginning of `LE` header   º         ^LE_Info_Block {Information block}          º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º           ^LE_Object_Table {Object table}             º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º       ^LE_Object_Page_Map {Object page map table}        º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º    Object iterate data map table   º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º          Resource table            º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º       ^LE_Resident_Name_Table {Resident-names table}         º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º           ^LE_Entry_Table {Entry  table}             º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º      Module directives table       º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º          ^LE_Fixup_Page_Table {Fixup page table}          º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º         ^LE_Fixup_Record_Table {Fixup record table}         º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º     ^LE_Imported_Module_Name_Table {Imported modules name table}    º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º   ^LE_Imported_Proc_Name_Table {Imported procedures name table}   º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º       Per-page checksum table      º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+    Code and data segments    º                                    º
+                              º    Code or Data Segment 1          º
+                              º                                    º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º                                    º
+                              º    Code or Data Segment 2          º
+                              º                                    º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º                                    º
+                              º      .                             º
+                              º      .                             º
+                              º      .                             º
+                              º                                    º
+                              º                                    º
+                              º                                    º
+                              º    Code or Data Segment n          º
+                              º                                    º
+                              ÇÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¶
+                              º                                    º
+                              º        ^LE_Nonresident_Table {Non-resident table}          º
+                              º                                    º
+                              ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+
+                               `End of file`
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also :           MS-DOS old-style ^Tp236 {EXE File Header}
+|============================================================================
+~LE_Info_Block
+
+                     İ`LE Header Information Block Layout`
+                     ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     The `information block` in the ^LE_Header {LE} header contains the linker
+ version number, length of various tables that further describe the executable
+ file, the offsets from the beginning of the header to the beginnig of these
+ tables, the heap and stack sizes, and so on. The following list summarizes
+ the contents of the header `information block` ( the locations are relative
+ to the beginning of the block):
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄÄÄÄÄ¿
+ +0      2  ³4Ch 45H³ Specifies the signature word 'LE'
+            ÃÄÄÄÅÄÄÄÙ
+ +2      1  ³   ³     Byte order:(00h = little-endian, nonzero = big-endian)
+            ÃÄÄÄ´
+ +3      1  ³   ³     Word order:(00h = little-endian, nonzero = big-endian)
+            ÃÄÄÄÅÄÄÄÂÄÄÄÂÄÄÄ¿
+ +4      4  ³Exe format lev ³ Executable format level
+            ÃÄÄÄÅÄÄÄÅÄÄÄÁÄÄÄÙ
+ +8      2  ³CPU typ³ CPU type:
+            ÀÄÄÄÁÄÄÄÙ   01h - Intel 80286 or upwardly compatible
+                        02h - Intel 80386 or upwardly compatible
+                        03h - Intel 80486 or upwardly compatible
+                        04h - Intel 80586 or upwardly compatible
+                        20h - Intel i860 (N10) or compatible
+                        21h - Intel "N11" or compatible
+                        40h - MIPS Mark I ( R2000, R3000) or compatible
+                        41h - MIPS Mark II ( R6000 ) or compatible
+                        42h - MIPS Mark III ( R4000 ) or compatible
+            ÚÄÄÄÄÄÄÄ¿
+ +0Ah    2  ³OS Type³ Target operating system:
+            ÀÄÄÄÁÄÄÄÙ   01h - OS/2
+                        02h - Windows
+                        03h - DOS 4.x
+                        04h - Windows 386
+            ÚÄÄÄÂÄÄÄÂÄÄÄÂÄÄÄ¿
+ +0Ch    4  ³Module version ³ Module version.
+            ÃÄÄÄÅÄÄÄÅÄÄÄÂÄÄÄ´
+ +10h    4  ³Module Type Flg³ Module type ^LE_Info_Block_Flags {flags}
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +14h    4  ³ Memory Pages  ³ Number of memory pages
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +18h    4  ³Init CS object ³ Initial object CS number
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +1Ch    4  ³ Init Offset   ³ Initial EIP
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +20h    4  ³Init SS object ³ Initial object SS number
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +24h    4  ³ Init ESP Offs ³ Initial ESP
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +28h    4  ³Mem Page size  ³ Memory page size
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +2Ch    4  ³ Last page Byts³ Bytes on last page
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +30h    4  ³ Fixup size    ³ Fixup section size
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +34h    4  ³ Fixup checksum³ Fixup section checksum
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +38h    4  ³Loader sect siz³ Loader section size
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +3Ch    4  ³Loader checksum³ Loader section checksum
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +40h    4  ³Object table of³ Offset of ^LE_Object_Table {object table}
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +44h    4  ³Obj table entr ³ ^LE_Object_Table {Object table} entries
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +48h    4  ³Obj page map   ³ Object page map offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +4Ch    4  ³Obj iter dat mp³ Object iterate data map offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +50h    4  ³Resource offset³ Resource table offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +54h    4  ³Resource entr  ³ Resource  table entries
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +58h    4  ³Resident name  ³ ^LE_Resident_Name_Table {Resident names table} offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +5Ch    4  ³Entry table ofs³ ^LE_Entry_Table {Entry table offset}
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +60h    4  ³Module direct  ³ Module directives table offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +64h    4  ³Module dir entr³ Module directives entries
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +68h    4  ³Fixup page tabl³ ^LE_Fixup_Page_Table {Fixup page table} offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +6Ch    4  ³Fixup rec table³ ^LE_Fixup_Record_Table {Fixup record table} offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +70h    4  ³Imported module³ ^LE_Imported_Module_Name_Table {Imported modules name table} offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +74h    4  ³Imported mod cn³ Imported modules count
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +78h    4  ³Imported proc  ³ ^LE_Imported_Proc_Name_Table {Imported procedure name table} offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +7Ch    4  ³Per-page checks³ Per-page checksum table offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +80h    4  ³Data pages offs³ Data pages offset from top of file
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +84h    4  ³Preload page cn³ Preload page count
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +88h    4  ³Non-resid table³ ^LE_Nonresident_Table {Non-resident names table} offset from top of file
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +8Ch    4  ³Non-resid size ³ Non-resident names table length
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +90h    4  ³Non-res checksm³ Non-resident names table checksum
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +94h    4  ³Auto data obj  ³ Automatic data object
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +98h    4  ³Debug info offs³ Debug information offset
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +9Ch    4  ³Debug inf size ³ Debug information length
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +A0h    4  ³Preload pg numb³ Preload instance pages number
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +A4h    4  ³Demand pg numb ³ Demand instance pages number
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +A8h    4  ³Extra head aloc³ Extra heap allocation
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
+ +ACh    4  ³  Unknown  ³   ³  ???
+            ÀÄÄÄÁÄÄÄÁÄÄÄÁÄÄÄÙ
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : ^NE_Info_Block {NE Header Information Block Layout}
+|============================================================================
+~LE_Info_Block_Flags
+
+                 İ`LE Header Information Block Flags Layout`
+                 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+
+ 3 3 2 2  2 2 2 2     2 2 2 2  1 1 1 1
+ 1 0 9 8  7 6 5 4     3 2 1 0  9 8 7 6
+ ş ş ş ş  ş ş ş ş     ş ş ş ş  ş ş ş ş
+ ÀÄÁÄÁÄÁÄÄÁÄÁÄÁÄÁÄÄÄÄÄÁÄÁÄÁÄÁÄÄÁÄÁÄÁÄÁÄÄÄ Reserved
+
+ 1 1 1 1  1 1
+ 5 4 3 2  1 0 9 8     7 6 5 4  3 2 1 0
+ ş ş ş ş  ş ş ş ş     ş ş ş ş  ş ş ş ş
+ ³   ³      ³ ³ ³         ³ ³    ³
+ ³   ³      ÀÄÅÄÙ         ³ ³    ÀÄÄÄÄÄ2ÄInitialization ( Only for DLL ):
+ ³   ³        ³           ³ ³              0: Global
+ ³   ³        ³           ³ ³              1: Per-Process
+ ³   ³        ³           ³ ³
+ ³   ³        ³           ³ ÀÄÄÄÄÄÄÄÄÄÄ4Ä1:No internal fixup in exe image
+ ³   ³        ³           ÀÄÄÄÄÄÄÄÄÄÄÄÄ5Ä1:No external fixup in exe image
+ ³   ³        ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ8,9,10Ä  0 - Unknown
+ ³   ³                                      1 - Incompatible with PM windowing
+ ³   ³                                      2 -   Compatible with PM windowing
+ ³   ³                                      3 - Uses PM windowing API
+ ³   ³
+ ³   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ13Ä1: Module not loadable
+ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ15Ä1: Module is DLL rather then program
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : ^NE_Info_Block_Flags {NE Header Information Block Flags Layout}
+|============================================================================
+~LE_Object_Table
+
+                     İ`LE Header Object Table Layout`
+                     ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+   The object table contains information that describes each segment in an
+ executable file. This information includes segment length, segment type,
+ and segment-relocation data. The following list summarizes the values found
+ in in the segment table ( the locations are relative to the beginning of
+ each entry):
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄÂÄÄÄÂÄÄÄÂÄÄÄ¿
++0h      4  ³ Virt segm size³ Virtual segment size in bytes
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
++4h      4  ³Reloc base addr³ Relocation base address
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
++8h      4  ³ ^LE_Object_Flags {Object flags}  ³ Object flags
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
++Ch      4  ³ Page map index³ Page map index
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
++10h     4  ³ Page map entr ³ Page map entries
+            ÃÄÄÄÅÄÄÄÅÄÄÄÅÄÄÄ´
++14h     4  ³    Unknown    ³ ???
+            ÀÄÄÄÁÄÄÄÁÄÄÄÁÄÄÄÙ
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also :
+|============================================================================
+~LE_Object_Flags
+
+                     İ`LE Header Object Flags Layout`
+                     ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+
+ 3 3 2 2  2 2 2 2     2 2 2 2  1 1 1 1
+ 1 0 9 8  7 6 5 4     3 2 1 0  9 8 7 6
+ ş ş ş ş  ş ş ş ş     ş ş ş ş  ş ş ş ş
+ ÀÄÁÄÁÄÁÄÄÁÄÁÄÁÄÁÄÄÄÄÄÁÄÁÄÁÄÁÄÄÁÄÁÄÁÄÁÄÄÄ Reserved
+
+ 1 1 1 1  1 1
+ 5 4 3 2  1 0 9 8     7 6 5 4  3 2 1 0
+ ş ş ş ş  ş ş ş ş     ş ş ş ş  ş ş ş ş
+ ³ ³ ³ ³    ³ ÀÂÙ     ³ ³ ³ ³  ³ ³ ³ ÀÄ0Ä 1: Readable
+ ³ ³ ³ ³    ³  ³      ³ ³ ³ ³  ³ ³ ÀÄÄÄ1Ä 1: Writable
+ ³ ³ ³ ³    ³  ³      ³ ³ ³ ³  ³ ÀÄÄÄÄÄ2Ä 1: Executable
+ ³ ³ ³ ³    ³  ³      ³ ³ ³ ³  ÀÄÄÄÄÄÄÄ3Ä 1: Resource
+ ³ ³ ³ ³    ³  ³      ³ ³ ³ ÀÄÄÄÄÄÄÄÄÄÄ4Ä 1: Discardable
+ ³ ³ ³ ³    ³  ³      ³ ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄ5Ä 1: Shared
+ ³ ³ ³ ³    ³  ³      ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄ6Ä 1: Preloaded
+ ³ ³ ³ ³    ³  ³      ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ7Ä 1: Invalid
+ ³ ³ ³ ³    ³  ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ8,9ÄÄ Type: 00 - Normal
+ ³ ³ ³ ³    ³                                    01 - Zero-filled
+ ³ ³ ³ ³    ³                                    10 - Resident
+ ³ ³ ³ ³    ³                                    11 - Resident/contiguous
+ ³ ³ ³ ³    ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ10Ä "RESIDENT/LONG_LOCABLE"
+ ³ ³ ³ ³
+ ³ ³ ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ12Ä "16:16_ALIAS"
+ ³ ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ13Ä 1: "BIG" (USE32)
+ ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ14Ä 1: Conforming
+ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ15Ä "Object_i/o_privilage_level"
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also :
+|============================================================================
+~LE_Resident_Name_Table
+
+                     İ`LE Header Resident-Name Table Layout`
+                     ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     The `resident-name` table contains strings that identify exported functions
+ in the exe file. As the name implies, these strings are resident in system
+ memory and never discarded. The `resident-name` strings are case-sensitive and
+ are not null-terminated. The following list summarizes the values found
+ in in the `resident-name` table ( the locations are relative to the beginning
+ of each entry):
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄ¿
++0h      1  ³Siz³     Specifies the length of a string.If there are no more
+            ÀÄÄÄÙ       strings in the table, this value is zero.
+            ÚÄÄ ÄÄÄÄ ÄÄÄÄ ÄÄÄÄÄ ÄÄÄ ÄÄ¿
++1h      N  ³  String                 ³ Specifies the `resident-name` text.
+            ÃÄÄÄÂÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
++N+01h   2  ³Index  ³ Specifies an ordinal number, that identifies the string.
+            ÀÄÄÄÁÄÄÄÙ This number is an index into the ^LE_Entry_Table {entry table}.
+
+     The first string in the resident-name table is the module name.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : LE Header ^LE_Info_Block {Information Block} Layout
+|============================================================================
+~LE_Entry_Table
+
+                      İ`LE Header Entry-Table Layout`
+                      ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     The `entry table` contains bundles of entry points from exe file ( the
+ linker generates each bundle). The numbering system for these ordinal values
+ is 1-based -- that is, the ordinal value corresponding to the first entry
+ point is 1.
+
+     The linker generates the densest possible bundles under the restriction
+ that it cannot reorder the entry points. This restriction is necessary
+ because other exe files may refer to entry points within a given bundle by
+their ordinar values.
+
+     The `entry-table` data is organized by bundle, each of which begins with
+ a 2-byte header. The first byte of the header specifies the number of entries
+ in the bungle ( a value of 00h designates the end of the table). The second
+ byte specifies flags. The third and forth byte specified object number.
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+            ÚÄÄÄ¿
++0h      1  ³Siz³     Number of entries in this bungle
+            ÃÄÄÄ´
++1h      1  ³Ind³     Bungle flags :
+            ÀÄÄÄÙ     7 6 5 4   3 2 1 0
+                      ş ş ş ş   ş ş ş ş
+                                    ³ À0Ä 1:Valid entry,   0:Zero entry
+                                    ÀÄÄ1Ä 1:32-bits entry, 0:16-bits entry
+            ÚÄÄÄÂÄÄÄ¿
++2h      2  ³Index  ³ Object index
+            ÀÄÄÄÁÄÄÄÙ
+            ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
++4h 3 or 5  ³  Entry 1          ³
+            ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
++?? 3 or 5  ³  Entry 2          ³
+            ÃÄÄÄ ÄÄ ÄÄÄ ÄÄÄÄÄÄÄÄ´
++?? 3 or 5  ³  Entry N          ³
+            ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+     Each entry consists of 3 or 5 bytes and has the following
+ form:
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄ¿
++0h      1  ³Flg³ Specifies a byte value.This value can be a combination of
+            ÀÄÄÄÙ  the following bits:
+                   7 6 5 4  3 2 1 0
+                   ş ş ş ş  ş ş ş ş
+                   ÀÄÁÄÁÄÅÄÄÙ   ³ ÀÄ 1: Entry is exported
+                         ³      ÀÄÄÄ 1: The segment uses a global (shared)
+                         ³               data segment.
+                         ³
+                         ÀÄÄÄÄÄÄÄÄÄÄ If Code segment these bits specify the
+                                         number of words that compose the
+                                         stack.At the time of the ring
+                                         transitions, these words must be
+                                         copied from one ring to the other.
+            ÚÄÄÄÂÄÄÄ¿
++1   2 or 4 ³Offset ³ Specifies the segment offset. ( Word or Dword depending
+            ÀÄÄÄÁÄÄÄÙ on bit 1 bungle flags
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : LE Header ^LE_Info_Block {Information Block} Layout
+|============================================================================
+~LE_Fixup_Record_Table
+
+                   İ`LE Header Fixup Record  Table Layout`
+                   ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     Code and data segments follow the LE header. Some of code segments may
+ contain calls to function in other segments and may,therefore, require
+ relocation data to resolve those references.This relocation data is stored
+ in a fixup record table.A relocation item is a collection of bytes
+ specifying the following information:
+
+ ş Address type ( Segment only,offset only,segment and offset)
+
+ ş Relocation type (internal reference, imported ordinal, imported name)
+
+ ş Segment number or ordinal identifier ( for internal references)
+
+ ş Reference-table index or function ordinal number ( for imported ordinal)
+
+ ş Reference-table index or name-table offset ( for imported names )
+
+
+   Each relocation item consist of:
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄ¿
++0h     1   ³ATp³  Specify relocation addres type:
+            ÀÄÄÄÙ
+                   7 6 5 4   3 2 1 0
+                   ş ş ş ş   ş ş ş ş
+                       ³ ³   ÀÄÄÂÄÄÙ
+                       ³ ³      ÀÄÄÄÄÄ Reloc Address Type:
+                       ³ ³               0 - Low byte at the specified offset
+                       ³ ³               2 - 16-bits selector
+                       ³ ³               3 - 32-bits far pointer
+                       ³ ³               5 - 16-bits Offset
+                       ³ ³               6 - 48-bits far pointer
+                       ³ ³               7 - 32-bits Offset
+                       ³ ³               8 - 32-bits Offset Relatively EIP
+                       ³ ³
+                       ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄ 1: Fixup to 16:16 alias 
+                       ³
+                       ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄ 0: Not List  e
+                                        1: List of source offset follows 
+                                           fixup record
+
+            ÚÄÄÄ¿
++1h     1   ³Rtp³  Specify relocation type:
+            ÀÄÄÄÙ
+                   7 6 5 4   3 2 1 0
+                   ş ş ş ş   ş ş ş ş
+                   ³ ³ ³ ³     ³ ÀÂÙ
+                   ³ ³ ³ ³     ³  ÀÄÄÄ Relocation Type:
+                   ³ ³ ³ ³     ³         00 - Internal reference
+                   ³ ³ ³ ³     ³         01 - Imported ordinal
+                   ³ ³ ³ ³     ³         10 - Imported Name
+                   ³ ³ ³ ³     ³         11 - OSFIXUP ???
+                   ³ ³ ³ ³     ³
+                   ³ ³ ³ ³     ÀÄÄÄÄÄÄ 1: Additive FIXUP
+                   ³ ³ ³ ³
+                   ³ ³ ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄ 1: Target Offset is 32-bits
+                   ³ ³ ³                0: Target Offset is 16-bits
+                   ³ ³ ³
+                   ³ ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄ 0 - 16-Bits Additive Flags
+                   ³ ³                  1 - 32-Bits Additive Flags
+                   ³ ³
+                   ³ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ 1 - 16-bit Object/Module ordinal
+                   ³                    0 -  8-bit Object/Module ordinal
+                   ³
+                   ³
+                   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ 1 -  8-bit Import Ordinal       
+                                        0 -  Bit 4 Toggles Between 16 and 
+                                             32 ordinal
+
+
+
+
+
+
+ÉÍ If Bit 5 of relocation addres type equal 0 ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                                                                             º
+º            ÚÄÄÄÂÄÄÄ¿                                                        º
+º+2h      2  ³RelOffs³Specify the offset of the relocation item whithin       º
+º            ÀÄÄÄÁÄÄÄÙ current page ( See ^LE_Fixup_Page_Table {fixup page table} )                  º
+º                                                                             º
+º---For internal reference ------                                             º
+º            ÚÄÄÄ¿                                                            º
+º+4h      1  ³Ind³    Specify Target segment number.                          º
+º            ÀÄÄÄÙ                                                            º
+º                                                                             º
+º---For imported ordinal------------------------                              º
+º            ÚÄÄÄ¿                                                            º
+º+4h      1  ³Ind³ Imported module-name index.See ^LE_Imported_Module_Name_Table {imported modules name table} º
+º            ÃÄÄÄÅ Ä ¿                                                        º
+º+5h   1 or 2³Ordinal³ Ordinal value Depending on Bit 7 of Relocation type    º
+º            ÀÄÄÄÁÄÄÄÙ                                                        º
+º            Ú ÄÄÂ ÄÄÂÄ ÄÂÄ Ä¿                                                º
+º+6(7)  2 (4)³ Abs Add Value ³ This field present if Bit 2 of Relocation      º
+º            À ÄÄÁÄ ÄÁÄ ÄÁÄ ÄÙ  Type Set to 1. Its size 2 or 4 bytes dependingº
+º                               on Bit 4 of Relocation Type.                  º
+º            Ú Ä Â Ä ¿                                                        º
+º+n        2 ³Extra  ³ Present if bit 4 Relocation Type Set to 1              º
+º            ÀÄ ÄÁ ÄÄÙ                                                        º
+º                                                                             º
+º---For imported name---------------------------                              º
+º                                                                             º
+º            ÚÄÄÄ¿                                                            º
+º+4h      1  ³Ind³ Imported module-name index.See ^LE_Imported_Module_Name_Table {imported modules name table} º
+º            ÃÄÄÄÅÄÄÄ¿                                                        º
+º+6h      2  ³Offset ³ Offset of name in ^LE_Imported_Proc_Name_Table {imported procedure names} table.      º
+º            ÀÄÄÄÁÄÄÄÙ                                                        º
+º            Ú ÄÄÂ ÄÄÂÄ ÄÂÄ Ä¿                                                º
+º+8     2 (4)³ Abs Add Value ³ This field present if Bit 2 of Relocation      º
+º            À ÄÄÁÄ ÄÁÄ ÄÁÄ ÄÙ  Type Set to 1. Its size 2 or 4 bytes dependingº
+º                               on Bit 4 of Relocation Type.                  º
+º                                                                             º
+º            Ú Ä Â Ä ¿                                                        º
+º+n        2 ³Extra  ³ Present if bit 4 Relocation Type Set to 1              º
+º            ÀÄ ÄÁ ÄÄÙ                                                        º
+º                                                                             º
+ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+ÉÍ If Bit 5 of relocation addres type equal 1 ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+º                                                                             º
+º            ÚÄÄÄ¿                                                            º
+º+2h      1  ³Cnt³  Offset Counter                                            º
+º            ÀÄÄÄÙ                                                            º
+º                                                                             º
+º---For internal reference ------                                             º
+º            ÚÄÄÄ¿                                                            º
+º+4h      1  ³Ind³    Specify Target segment number.                          º
+º            ÀÄÄÄÙ                                                            º
+º            ÚÄÄÄÂÄÄÄ¿                                                        º
+º+5h    2*N  ³RelOffs³Specify the offset of the relocation item whithin       º
+º            ÃÄÄÄÅÄÄÄ´ current page ( See ^LE_Fixup_Page_Table {fixup page table} )                  º
+º            ³   ³   ³                                                        º
+º            ÃÄÄÄÅÄÄÄ´                                                        º
+º               ...                                                           º
+º            ÃÄÄÄÅÄÄÄ´                                                        º
+º            ³   N   ³                                                        º
+º            ÀÄÄÄÁÄÄÄÙ                                                        º
+º                                                                             º
+º---For imported ordinal------------------------                              º
+º            ÚÄÄÄ¿                                                            º
+º+4h      1  ³Ind³ Imported module-name index.See ^LE_Imported_Module_Name_Table {imported modules name table} º
+º            ÃÄÄÄÅ Ä ¿                                                        º
+º+5h   1 or 2³Ordinal³ Ordinal value Depending on Bit 7 of Relocation type    º
+º            ÀÄÄÄÁÄÄÄÙ                                                        º
+º            Ú ÄÄÂ ÄÄÂÄ ÄÂÄ Ä¿                                                º
+º+6(7)  2 (4)³ Abs Add Value ³ This field present if Bit 2 of Relocation      º
+º            À ÄÄÁÄ ÄÁÄ ÄÁÄ ÄÙ  Type Set to 1. Its size 2 or 4 bytes dependingº
+º                               on Bit 4 of Relocation Type.                  º
+º            Ú Ä Â Ä ¿                                                        º
+º+n        2 ³Extra  ³ Present if bit 4 Relocation Type Set to 1              º
+º            ÀÄ ÄÁ ÄÄÙ                                                        º
+º            ÚÄÄÄÂÄÄÄ¿                                                        º
+º+n+2   2*N  ³RelOffs³Specify the offset of the relocation item whithin       º
+º            ÃÄÄÄÅÄÄÄ´ current page ( See ^LE_Fixup_Page_Table {fixup page table} )                  º
+º            ³   ³   ³                                                        º
+º            ÃÄÄÄÅÄÄÄ´                                                        º
+º               ...                                                           º
+º            ÃÄÄÄÅÄÄÄ´                                                        º
+º            ³   N   ³                                                        º
+º            ÀÄÄÄÁÄÄÄÙ                                                        º
+º                                                                             º
+º---For imported name---------------------------                              º
+º                                                                             º
+º            ÚÄÄÄ¿                                                            º
+º+4h      1  ³Ind³ Imported module-name index.See ^LE_Imported_Module_Name_Table {imported modules name table} º
+º            ÃÄÄÄÅÄÄÄ¿                                                        º
+º+6h      2  ³Offset ³ Offset of name in ^LE_Imported_Proc_Name_Table {imported procedure names} table.      º
+º            ÀÄÄÄÁÄÄÄÙ                                                        º
+º            Ú ÄÄÂ ÄÄÂÄ ÄÂÄ Ä¿                                                º
+º+8     2 (4)³ Abs Add Value ³ This field present if Bit 2 of Relocation      º
+º            À ÄÄÁÄ ÄÁÄ ÄÁÄ ÄÙ  Type Set to 1. Its size 2 or 4 bytes dependingº
+º                               on Bit 4 of Relocation Type.                  º
+º                                                                             º
+º            Ú Ä Â Ä ¿                                                        º
+º+n        2 ³Extra  ³ Present if bit 4 Relocation Type Set to 1              º
+º            ÀÄ ÄÁ ÄÄÙ                                                        º
+º            ÚÄÄÄÂÄÄÄ¿                                                        º
+º+n+2   2*N  ³RelOffs³Specify the offset of the relocation item whithin       º
+º            ÃÄÄÄÅÄÄÄ´ current page ( See ^LE_Fixup_Page_Table {fixup page table} )                  º
+º            ³   ³   ³                                                        º
+º            ÃÄÄÄÅÄÄÄ´                                                        º
+º               ...                                                           º
+º            ÃÄÄÄÅÄÄÄ´                                                        º
+º            ³   N   ³                                                        º
+º            ÀÄÄÄÁÄÄÄÙ                                                        º
+º                                                                             º
+ÈÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+See also : LE Header ^LE_Info_Block {Information Block} Layout
+|============================================================================
+~LE_Fixup_Page_Table
+
+                   İ`LE Header Fixup Page  Table Layout`
+                   ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+      In the LE header ^LE_Fixup_Record_Table {fixup records table}  are array of fixup records and
+ offset into fixup records are relative to the current page. Fixup page table
+ serves to identify fixup records into code and data segments offset.
+      Fixup page table is array of dwords. Number of dwords is number of
+ pages plus 1.Each dword contains offset into ^LE_Fixup_Record_Table {Fixup Record Table}
+ of first fixup in the current page. Last dword contains size of
+ fixup record table in bytes.I.e. substraction contains dword+1 with current
+ dword is fixup table size for current page.
+    For example: Number of page is 4.
+       ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+    1  ³         0          ³  Offset of fixup for 1 page
+       ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+    2  ³         5          ³  Offset of fixup for 2 page
+       ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+    3  ³         5          ³  Offset of fixup for 3 page
+       ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+    4  ³        0Ch         ³  Offset of fixup for 4 page
+       ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+    5  ³        13h         ³  Size of fixup record table.
+       ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+  First page have fixup records at offset 0, its size is 5-0 = 5 bytes.
+  Second page hasn't fixup,because its size is 5-5=0 bytes.
+  Third page have fixup records at offset 5, its size is 0C-5 = 7 bytes.
+  Forth page have fixup records at offset 0Ch, its size is 13h-0Ch = 7 bytes.
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : LE Header ^LE_Info_Block {Information Block} Layout
+|============================================================================
+~LE_Imported_Module_Name_Table
+
+                 İ`LE Header Imported-modules Name Table Layout`
+                 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     The `imported-modules name` table contains the names of modules that
+ the exe file imports. Each entry contains two parts: a single byte that
+ specifies the length of the string and the string itself. The strings in
+ this table are not null-terminated.
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄ¿
++0h      1  ³Siz³     Specifies the length of a string
+            ÃÄÄÄÁÄÄÄ ÄÄÄÄ ÄÄÄÄÄ ÄÄÄ ÄÄ¿
++1h      N  ³  String                 ³ Specifies the string text.
+            ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+  The first byte in `imported-modules name` table is zero. First name begins
+ from offset +1.
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : NE Header ^NE_Info_Block {Information Block} Layout
+|============================================================================
+~LE_Imported_Proc_Name_Table
+
+              İ`LE Header Imported-procedures Name Table Layout`
+              ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     The `imported-procedures name` table contains the names of procedures that
+ the exe file imports. Each entry contains two parts: a single byte that
+ specifies the length of the string and the string itself. The strings in
+ this table are not null-terminated.
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄ¿
++0h      1  ³Siz³     Specifies the length of a string
+            ÃÄÄÄÁÄÄÄ ÄÄÄÄ ÄÄÄÄÄ ÄÄÄ ÄÄ¿
++1h      N  ³  String                 ³ Specifies the string text.
+            ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+
+
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : NE Header ^NE_Info_Block {Information Block} Layout
+|============================================================================
+~LE_Nonresident_Table
+
+                    İ`LE Header Nonresident-Name Table Layout`
+                    ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     The `nonresident-name` table contains strings that identify exported
+ functions in the exe file. As the name implies, these strings are not always
+ resident in system memory and discardable. The `nonresident-name` strings are
+ case-sensitive and are not null-terminated. The following list summarizes the
+ values found in in the `nonresident-name` table ( the locations are relative
+ to the beginning of each entry):
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄ¿
++0h      1  ³Siz³     Specifies the length of a string.If there are no more
+            ÀÄÄÄÙ       strings in the table, this value is zero.
+            ÚÄÄ ÄÄÄÄ ÄÄÄÄ ÄÄÄÄÄ ÄÄÄ ÄÄ¿
++1h      N  ³  String                 ³ Specifies the `nonresident-name` text.
+            ÃÄÄÄÂÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
++N+01h   2  ³Index  ³ Specifies an ordinal number, that identifies the string.
+            ÀÄÄÄÁÄÄÄÙ This number is an index into the ^LE_Entry_Table {entry table}.
+
+     The first name that appearsin the `nonresident-name` table is the module
+ description string ( which was specified in the module-definition file).
+
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : LE Header ^LE_Info_Block {Information Block} Layout
+|============================================================================
+~LE_Object_Page_Map
+
+                    İ`LE Header Object Page Map Table`
+                    ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+
+     The `object page map` table contains location of each page into
+ exe file.This table consists of Dwords. Each dword correspond to one
+ page in exe file. Number of page is set in  LE Header ^LE_Info_Block {Information Block}
+ at offset +14h.
+
+Offset Size Contents
+ßßßßßß ßßßß ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+            ÚÄÄÄÂÄÄÄ¿
++0h      2  ³HighPag³ High page Number
+            ÃÄÄÄÂÄÄÄÙ
++2       1  ³Low³     Low page Number
+            ÃÄÄÄ´
++4       1  ³FLG³      Page FLAGS:
+            ÀÄÄÄÙ   7 6 5 4  3 2 1 0
+                    ş ş ş ş  ş ş ş ş
+                    ÀÂÙ          ÀÂÙ
+                     ³            ÀÄÄÄÄÄ 11 - Last page in file
+                     ³
+                     ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Page Type: 00 - Legal
+                                                     01 - Iterated
+                                                     10 - Invalid
+                                                     11 - Zero filled
+  To compute page offset into file necessary:
+  (HighPageNumber+LowPageNumber-1)*PageSize+FirstPageOffset
+
+ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ
+See also : LE Header ^LE_Info_Block {Information Block} Layout
+|============================================================================
+

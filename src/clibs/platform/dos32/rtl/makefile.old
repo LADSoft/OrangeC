@@ -1,0 +1,300 @@
+#Software License Agreement (BSD License)
+#
+#Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+#All rights reserved.
+#
+#Redistribution and use of this software in source and binary forms, with or without modification, are
+#permitted provided that the following conditions are met:
+#
+#* Redistributions of source code must retain the above
+#  copyright notice, this list of conditions and the
+#  following disclaimer.
+#
+#* Redistributions in binary form must reproduce the above
+#  copyright notice, this list of conditions and the
+#  following disclaimer in the documentation and/or other
+#  materials provided with the distribution.
+#
+#* Neither the name of LADSoft nor the names of its
+#  contributors may be used to endorse or promote products
+#  derived from this software without specific prior
+#  written permission of LADSoft.
+#
+#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+#WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+#PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+#ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+#TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+#ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+i386 = 1
+C_DEPENDENCIES = \
+aliasadr.$(OBJ_TAG) \
+argset.$(OBJ_TAG) \
+bdos.$(OBJ_TAG) \
+bioscom.$(OBJ_TAG) \
+biosdisk.$(OBJ_TAG) \
+bioseqp.$(OBJ_TAG) \
+bioskey.$(OBJ_TAG) \
+biosmem.$(OBJ_TAG) \
+biosprnt.$(OBJ_TAG) \
+biostime.$(OBJ_TAG) \
+chdir.$(OBJ_TAG) \
+_chdrv.$(OBJ_TAG) \
+conio.$(OBJ_TAG) \
+_conio.$(OBJ_TAG) \
+_dtablen.$(OBJ_TAG) \
+envset.$(OBJ_TAG) \
+_doscall.$(OBJ_TAG) \
+dos_cls.$(OBJ_TAG) \
+dos_cnew.$(OBJ_TAG) \
+dos_crea.$(OBJ_TAG) \
+dos_find.$(OBJ_TAG) \
+dos_gdrv.$(OBJ_TAG) \
+dos_gdf.$(OBJ_TAG) \
+dos_getd.$(OBJ_TAG) \
+dos_gett.$(OBJ_TAG) \
+dos_gfa.$(OBJ_TAG) \
+dos_gft.$(OBJ_TAG) \
+dos_gpwd.$(OBJ_TAG) \
+dos_open.$(OBJ_TAG) \
+dos_read.$(OBJ_TAG) \
+dos_sdrv.$(OBJ_TAG) \
+dos_setd.$(OBJ_TAG) \
+dos_sett.$(OBJ_TAG) \
+dos_sfa.$(OBJ_TAG) \
+dos_sft.$(OBJ_TAG) \
+dos_spwd.$(OBJ_TAG) \
+dos_writ.$(OBJ_TAG) \
+dpmi.$(OBJ_TAG) \
+dta.$(OBJ_TAG) \
+dtou.$(OBJ_TAG) \
+find.$(OBJ_TAG) \
+_find.$(OBJ_TAG) \
+getcurd.$(OBJ_TAG) \
+getcwd.$(OBJ_TAG) \
+getdate.$(OBJ_TAG) \
+_getdcwd.$(OBJ_TAG) \
+getdfree.$(OBJ_TAG) \
+getdisk.$(OBJ_TAG) \
+gettime.$(OBJ_TAG) \
+_harderr.$(OBJ_TAG) \
+llassert.$(OBJ_TAG) \
+llchmod.$(OBJ_TAG) \
+llchsize.$(OBJ_TAG) \
+llclose.$(OBJ_TAG) \
+llcreat.$(OBJ_TAG) \
+llcrit.$(OBJ_TAG) \
+lldup.$(OBJ_TAG) \
+llf.$(OBJ_TAG) \
+llfpstub.$(OBJ_TAG) \
+llgenv.$(OBJ_TAG) \
+llgetpos.$(OBJ_TAG) \
+llgettmp.$(OBJ_TAG) \
+llgft.$(OBJ_TAG) \
+llgtime.$(OBJ_TAG) \
+lliswrit.$(OBJ_TAG) \
+lllock.$(OBJ_TAG) \
+llmalloc.$(OBJ_TAG) \
+llopen.$(OBJ_TAG) \
+llread.$(OBJ_TAG) \
+llremove.$(OBJ_TAG) \
+llrename.$(OBJ_TAG) \
+llrmdir.$(OBJ_TAG) \
+llseek.$(OBJ_TAG) \
+llshf.$(OBJ_TAG) \
+llsft.$(OBJ_TAG) \
+llspawn.$(OBJ_TAG) \
+llstat.$(OBJ_TAG) \
+llstdio.$(OBJ_TAG) \
+llstime.$(OBJ_TAG) \
+lltty.$(OBJ_TAG) \
+lltz.$(OBJ_TAG) \
+lluio.$(OBJ_TAG) \
+lluiof.$(OBJ_TAG) \
+llutime.$(OBJ_TAG) \
+llwrite.$(OBJ_TAG) \
+llxcept.$(OBJ_TAG) \
+mkdir.$(OBJ_TAG) \
+osver.$(OBJ_TAG) \
+path.$(OBJ_TAG) \
+profile.$(OBJ_TAG) \
+proftime.$(OBJ_TAG) \
+_realint.$(OBJ_TAG) \
+rtldata.$(OBJ_TAG) \
+_searche.$(OBJ_TAG) \
+searchp.$(OBJ_TAG) \
+setdate.$(OBJ_TAG) \
+setdisk.$(OBJ_TAG) \
+settime.$(OBJ_TAG) \
+setvect.$(OBJ_TAG) \
+_seg0000.$(OBJ_TAG) \
+_seg0040.$(OBJ_TAG) \
+_seg0050.$(OBJ_TAG) \
+_segA000.$(OBJ_TAG) \
+_segB000.$(OBJ_TAG) \
+_segB800.$(OBJ_TAG) \
+_segread.$(OBJ_TAG) \
+sleep.$(OBJ_TAG) \
+_stklen.$(OBJ_TAG) \
+system.$(OBJ_TAG) \
+utod.$(OBJ_TAG)
+
+DEBUG_DEPENDENCIES = \
+asm.obj \
+asmops.obj \
+BREAKS.obj \
+compare.obj \
+DIS.obj 
+DEBUG_DEPENDENCIES_2 = \
+DISPATCH.obj \
+DUMP.obj \
+ENTRY.obj \ 
+EXEC.obj \
+FILL.obj 
+DEBUG_DEPENDENCIES_3 = \
+FP.obj \
+HBREAK.obj \
+HELP.obj \
+INOUT.obj \
+INPUT.obj 
+DEBUG_DEPENDENCIES_4 = \
+MATH.obj \
+mmx.obj \
+MTRAP.obj  \
+move.obj \
+OPCODES.obj \
+OPCOM.obj 
+DEBUG_DEPENDENCIES_5 = \
+OPERANDS.obj \
+PRINTS.obj \
+REGS.obj \
+SEARCH.obj \
+SWIFT.obj 
+
+startup: all c0dos c0dosd c0dosw c0doswhx c0doswd pmode.obj debug wildargs dosx
+!include "..\clib.mak"
+
+dosx:
+        nasm -fobj 386\_disable.nas
+        nasm -fobj 386\_int386.nas
+        nasm -fobj 386\_sound.nas
+        nasm -fobj 386\_delay.nas
+        cc386 /c _intr.c
+        move _intr.obj ..\object
+        move 386\_delay.obj ..\object
+        move 386\_sound.obj ..\object
+        move 386\_int386.obj ..\object
+        move 386\_disable.obj ..\object
+        mkliblst $(LIBLIST) .obj _disable _int386 _intr _sound _delay
+
+profile.obj: profile.c
+        cc386 /c /C+N /I..\stdinc profile
+	mkliblst $(LIBLIST) .obj profile
+        nasm -fobj profile.asm
+
+proftime.obj: proftime.c
+        cc386 /c /C+N /I..\stdinc proftime
+	mkliblst $(LIBLIST) .obj proftime
+        nasm -fobj proftime.asm
+
+pmode.obj: pmode308\pmode.asm
+	tasm /ml /m2 pmode308\pmode
+	mkliblst $(LIBLIST) .obj pmode
+	move pmode.obj ..\object
+	
+c0dos: 386\c0dos.nas
+  cd 386 
+  nasm -fobj c0dos.nas
+  cd ..
+  move 386\c0dos.obj ..\object
+
+c0dosd: 386\c0dos.nas
+  cd 386
+  nasm -fobj -DDEBUG -DCOPYRIGHT c0dos.nas
+  cd ..
+  move 386\c0dos.obj ..\object\c0dosd.obj
+
+c0dosw: 386\c0dosw.nas
+  cd 386
+  nasm -fobj c0dosw.nas
+  cd ..
+  move 386\c0dosw.obj ..\object
+
+c0doswd: 386\c0dosw.nas
+  cd 386
+  nasm -fobj -DDEBUG -DCOPYRIGHT c0dosw.nas
+  cd ..
+  move 386\c0dosw.obj ..\object\c0doswd.obj
+
+c0doswhx: 386\c0doswhx.nas
+  cd 386
+  nasm -fobj c0doswhx.nas
+  cd ..
+  move 386\c0doswhx.obj ..\object
+
+wildargs: wildargs.c
+        cc386 /c /S /I..\stdinc wildargs
+        nasm -fobj wildargs.asm
+        move wildargs.obj ..\object\wildargd.obj
+
+debug: $(DEBUG_DEPENDENCIES) $(DEBUG_DEPENDENCIES_2) $(DEBUG_DEPENDENCIES_3) $(DEBUG_DEPENDENCIES_4) $(DEBUG_DEPENDENCIES_5)
+	mkliblst $(LIBLIST) .obj $(DEBUG_DEPENDENCIES:.obj=)
+	mkliblst $(LIBLIST) .obj $(DEBUG_DEPENDENCIES_2:.obj=)
+	mkliblst $(LIBLIST) .obj $(DEBUG_DEPENDENCIES_3:.obj=)
+	mkliblst $(LIBLIST) .obj $(DEBUG_DEPENDENCIES_4:.obj=)
+	mkliblst $(LIBLIST) .obj $(DEBUG_DEPENDENCIES_5:.obj=)
+	move *.obj ..\object
+breaks.obj: debug\breaks.asm
+	tasm /ml /m3 /idebug debug\breaks.asm
+dis.obj: debug\dis.asm
+	tasm /ml /m3 /idebug debug\dis.asm
+dispatch.obj: debug\dispatch.asm
+	tasm /ml /m3 /idebug debug\dispatch.asm
+dump.obj: debug\dump.asm
+	tasm /ml /m3 /idebug debug\dump.asm
+entry.obj: debug\entry.asm
+	tasm /ml /m3 /idebug debug\entry.asm
+exec.obj: debug\exec.asm
+	tasm /ml /m3 /idebug debug\exec.asm
+fill.obj: debug\fill.asm
+	tasm /ml /m3 /idebug debug\fill.asm
+fp.obj: debug\fp.asm
+	tasm /ml /m3 /idebug debug\fp.asm
+help.obj: debug\help.asm
+	tasm /ml /m3 /idebug debug\help.asm
+inout.obj: debug\inout.asm
+	tasm /ml /m3 /idebug debug\inout.asm
+input.obj: debug\input.asm
+	tasm /ml /m3 /idebug debug\input.asm
+math.obj: debug\math.asm
+	tasm /ml /m3 /idebug debug\math.asm
+mmx.obj: debug\mmx.asm
+	tasm /ml /m3 /idebug debug\mmx.asm
+mtrap.obj: debug\mtrap.asm
+	tasm /ml /m3 /idebug debug\mtrap.asm
+opcodes.obj: debug\opcodes.asm
+	tasm /ml /m3 /idebug debug\opcodes.asm
+opcom.obj: debug\opcom.asm
+	tasm /ml /m3 /idebug debug\opcom.asm
+operands.obj: debug\operands.asm
+	tasm /ml /m3 /idebug debug\operands.asm
+prints.obj: debug\prints.asm
+	tasm /ml /m3 /idebug debug\prints.asm
+regs.obj: debug\regs.asm
+	tasm /ml /m3 /idebug debug\regs.asm
+search.obj: debug\search.asm
+	tasm /ml /m3 /idebug debug\search.asm
+swift.obj: debug\swift.asm
+	tasm /ml /m3 /idebug debug\swift.asm
+asm.obj: debug\asm.asm
+	tasm /ml /m3 /idebug debug\asm.asm
+asmops.obj: debug\asmops.asm
+	tasm /ml /m3 /idebug debug\asmops.asm
+compare.obj: debug\compare.asm
+	tasm /ml /m3 /idebug debug\compare.asm
+move.obj: debug\move.asm
+	tasm /ml /m3 /idebug debug\move.asm
+hbreak.obj: debug\hbreak.asm
+	tasm /ml /m3 /idebug debug\hbreak.asm

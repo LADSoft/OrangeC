@@ -1,0 +1,42 @@
+<CCIDEPROJECT>
+	<VERSION ID="5"/>
+	<TARGET NAME="xmlview.exe" TITLE="xmlview.exe">
+		<BUILD TYPE="1" FLAGS="-2146893823"/>
+		<DEBUG FLAGS="14"/>
+		<PATHS INCLUDE="" OUTPUT=""/>
+		<PREBUILD LABEL="">
+			
+		</PREBUILD>
+		<POSTBUILD LABEL="">
+			
+		</POSTBUILD>
+		<OPTS>
+			<COMPILER>
+				
+			</COMPILER>
+			<ASSEMBLER>
+				
+			</ASSEMBLER>
+			<LINKER>
+				
+			</LINKER>
+			<LIBRARIAN>
+				
+			</LIBRARIAN>
+		</OPTS>
+		<CMDLINE>
+			
+		</CMDLINE>
+		<DEFINEFLAGS VALUE="0"/>
+		<FILE NAME="xml.c" TITLE="xml.c">
+			<DEPENDENCY NAME="xml.h" TITLE="xml.h"/>
+		</FILE>
+		<FILE NAME="xmlview.c" TITLE="xmlview.c">
+			<DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+			<DEPENDENCY NAME="xml.h" TITLE="xml.h"/>
+		</FILE>
+		<FILE NAME="xmlview.rc" TITLE="xmlview.rc">
+			<DEPENDENCY NAME="winconst.h" TITLE="winconst.h"/>
+		</FILE>
+	</TARGET>
+</CCIDEPROJECT>

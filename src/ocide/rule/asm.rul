@@ -1,0 +1,31 @@
+<OCRULE>
+    <PROPGROUP VERSION="10" CLASS="FILE" NAME="Assembler Settings" ORDER="11">
+    	<COMMAND>
+            <ASSIGNMENTS>
+                <ASSIGN ID="AFLAGS">$(__AFLAGS)</ASSIGN>
+                <ASSIGN ID="INCLUDE">$(__ASMINCLUDE)</ASSIGN>
+                <ASSIGN ID="DEFINE">$(__ASMDEFINE)</ASSIGN>
+            </ASSIGNMENTS>
+			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
+    			"$$(LSINSTALLBIN)\oasm.exe" -! -fobj $$(AFLAGS) "/o%.o" $$(DEFINE) "/I$$(INCLUDE)" "$(INPUTFILE)"
+	    	</ITEM>
+			<ITEM NAME="Source Extension" ID="__SOURCE_EXTENSION" TYPE="TEXT">
+				%.asm %.nas
+			</ITEM>
+			<ITEM NAME="Target Extension" ID="__TARGET_EXTENSION" TYPE="TEXT">
+				%.o
+			</ITEM>
+            <ITEM NAME="Make Banner" ID="__MAKEBANNER" TYPE="TEXT">Assembling %s</ITEM>
+    	</COMMAND>	
+		<PROPS NAME="Assembler Settings" HELPID="600">
+			<ITEM NAME="Additional Preprocessor Directives" TYPE="PREPENDTEXT=/D" ID="__ASMDEFINE"/>
+			<ITEM NAME="Additional Include Paths" TYPE="SEPARATEDTEXT=;" ID="__ASMINCLUDE"/>
+			<ITEM NAME="Additional Dependencies" TYPE="TEXT" ID="__DEPENDENCIES"/>
+			<ITEM NAME="Additional Switches" TYPE="TEXT" ID="__AFLAGS"/>
+			<ITEM CLASS="File" NAME="Output File" TYPE="TEXT" ID="OUTPUTFILE">
+				$(OUTPUTDIR)\$(OUTPUTNAME)$(OUTPUTEXT)
+			</ITEM>
+		</PROPS>
+	</PROPGROUP>
+</OCRULE>
+

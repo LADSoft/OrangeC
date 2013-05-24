@@ -1,0 +1,27 @@
+language: **Reference Entry Language: what the software compiles/interprets... 
+package: **The name of the package 
+version: **Its current version 
+parts: **compiler, assembler, interpreter, translator, grammar(yacc, lex), library, documentation, examples, assembler, simulator, tutorial, test suite, byte-code compiler, run-time, translator(from-&gt;to)... Compilers that use C as an intermediate lanaguage should be noted as "compiler(-&gt;C)". Compilers that compile into a coded representation that is interpreted by a runtime module should be noted as "bytecode compiler". Do not say "source code" -- if source is not included, do not send an entry at all! 
+author: **the creator of the package. Email addresses are in the form "Real Name &amp;lt;email@address&amp;gt;". Surface mail addresses are not used unless there is no email address. 
+location: **where to get the source, how to get it -- usually an FTP://master_site or two. Only official sites should be listed. May have subheaders for specific areas or different ports of the software (don't overdo this!): The format for &lt;a href="ftp://directives/"&gt;ftp://directives&lt;/a&gt; is the valid URL, but "ftp dir/file from host", is also acceptable.No IP address is ever given. No other &lt;a href="ftp://formats/"&gt;ftp://formats&lt;/a&gt; are allowed. 
+Continent: Sites for continent. 
+Country: Sites for country. 
+System: Sites for a particular port. 
+description: **what the package is, possibly including some history A short review encouraged, but no propaganda please. 
+conformance: how well does it conform to the existing Standard, if one exists 
+reference: Research references and other external documentation. If there is more than one entry in the section indent all but first line of each entry by one character If there is only one entry, then don't indent that single entry at all. 
+features: 1. salient features not listed in the description. 2. You may list features with numbered lists 3. Or you may use bullet items: + every bullet item should be a plus + unless you want to say that something is an anti-feature - in which case you should use a minus. + but in any case, you should put the + or - at the beginning of the line. 
+bugs: known bugs (also: where to go to find/report bugs) 
+restriction: restrictions using the software will place on the user. 
+requires: what is needed to install it. A C compiler is assumed. 
+ports: where it has been installed 
+portability: how system-independent is it, system dependencies. 
+status: development status (active, history, supported, etc) 
+discussion: where discussion about the package takes place 
+help: where help may be gotten from 
+support: where support may be gotten from 
+contributions: possible requests for money contributions (but no shareware) 
+announcements: where new releases are announced 
+contact: who to reach concerning the package (if not author) Email addresses are in the form "Real Name &amp;lt;email@address&amp;gt;". Surface mail addresses are not used unless there is no email address. 
+updated: **last known update to the package, not time of the update to the entry in the catalog! The format of date is: yyyy/mm/dd, yyyy/mm, or yyyy. No other formats are allowed.
+

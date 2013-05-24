@@ -1,0 +1,147 @@
+;Software License Agreement (BSD License)
+;
+;Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+;All rights reserved.
+;
+;Redistribution and use of this software in source and binary forms, with or without modification, are
+;permitted provided that the following conditions are met:
+;
+;* Redistributions of source code must retain the above
+;  copyright notice, this list of conditions and the
+;  following disclaimer.
+;
+;* Redistributions in binary form must reproduce the above
+;  copyright notice, this list of conditions and the
+;  following disclaimer in the documentation and/or other
+;  materials provided with the distribution.
+;
+;* Neither the name of LADSoft nor the names of its
+;  contributors may be used to endorse or promote products
+;  derived from this software without specific prior
+;  written permission of LADSoft.
+;
+;THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+;WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+;PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+;ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+;LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+;TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+;ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;
+; math for sprintf/scanf/atof floating point support
+;
+;
+; this basically does NO checking for exceptions.
+; It does clear them after the fact :)
+; however, I do try to keep everything in bounds before doing any math...
+;
+;
+; rounding is done towards zero...
+;
+; later I will fix it...
+;
+; note I AM using log functions rather than a table-driven approach
+;
+	XDEF __fextract, __fnd, __fpow
+	section code
+;
+; get exponent and mantissa and sign
+;
+; returns 
+;  0 = ok vals
+;  -1 = infinity or nan
+;
+; int _fextract(long double *val, int *exp, int *sign);
+;
+__fextract:
+	link	a6,#0
+	fmove.l	FPCR,D0
+	move	D0,D1
+	and	#$FFCF,D0
+	or	#$10,D0
+	fmove.l	D0,FPCR
+
+	move.l	(8,A6),A0	; get val
+	FMOVE.X	(A0),FP0
+	fbne	dosign		; check for zero
+	clr	d0		; if so all vals = 0
+	fmove.l	#0,FP0
+	fmove.x	FP0,(a0)
+	move.l	(12,a6),A0
+	move.l	D0,(A0)
+	move.l	(16,A6),A0
+	move.l	D0,(A0)
+	bra	fxx
+
+dosign:
+	moveq	#1,D0		; nonzero, get sign
+	bpl	pos
+	moveq	#-1,D0
+pos:
+	move.l	(16,A6),A0	; store sign
+	move.l	D0,(A0)
+
+	move.l	#-1,D0		; assume NAM
+	fmove.l	FPSR,D1
+	and	#$01000000,D1
+	bne	fxx
+	move.l	#1,D0		; assume infinite
+	fmove.l	FPSR,D1
+	and	#$02000000,D1
+	bne	fxx
+
+	flog10.x FP0,FP0	; log to base 10
+
+	fint.x	FP0,FP1		; get int part
+	move.l	(12,A6),A0
+	fmove.x	Fp1,(A0)
+	
+	fsub.x	fp1,fp0		; now exponentiate fraction
+	ftentox.x fp0,fp0
+
+	move.l	(8,A6),A0	; save result
+	FMOVE.X	FP0,(A0)
+
+fxx:
+	fmove.l	D1,FPCR
+	unlk	A6
+	rts
+;
+; get next digit from mantissa
+;
+; int _fnd(long double *val);
+;
+__fnd:
+	link	a6,#0
+	fmove.l	FPCR,D0
+	move	D0,D1
+	and	#$FFCF,D0
+	or	#$10,D0
+	fmove.l	D0,FPCR
+
+	move.l	(8,A6),A0	; next digit
+	fmove.x	(A0),FP1
+	fint.x	FP1,FP0
+
+	fsub.x	fp0,fp1		; new mantissa
+	fmul.w	#10,FP1
+	fmove.x	FP1,(A0)
+	fmove.l	D1,FPCR
+	unlk	A6
+	rts
+
+;
+; calculate a power of 10
+;
+; long double __fpow(int exp);
+;
+__fpow:
+	link	a6,#0
+
+	move.l	(8,A6),A0	; calculate power
+	fmove.l	(A0),FP0
+	ftentox	fp0,fp0
+
+	unlk	A6
+	rts

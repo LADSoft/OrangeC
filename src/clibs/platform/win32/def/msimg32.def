@@ -1,0 +1,6 @@
+LIBRARY	MSIMG32.DLL
+
+EXPORTS
+	AlphaBlend
+	GradientFill
+	TransparentBlt

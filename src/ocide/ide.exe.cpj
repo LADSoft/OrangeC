@@ -1,0 +1,86 @@
+<CC386PROJECT>
+    <VERSION ID="5"/>
+    <TARGET TITLE="ide.exe">
+        <PROPERTIES>
+                <PROP ID="__PROJECTTYPE">1</PROP>
+                <PROP ID="__STOP_FIRST_CHANCE">1</PROP>
+                <PROP ID="__DEBUG_ARGUMENTS">*.c</PROP>
+        </PROPERTIES>
+        <FILES>
+            <FOLDER TITLE="Source Files">
+                <FILE NAME="alloc.c" TITLE="alloc.c" CLEAN="0"/>
+                <FILE NAME="asmwnd.c" TITLE="asmwnd.c" CLEAN="0"/>
+                <FILE NAME="browse.c" TITLE="browse.c" CLEAN="0"/>
+                <FILE NAME="ccide.C" TITLE="ccide.C" CLEAN="0"/>
+                <FILE NAME="codecomp.c" TITLE="codecomp.c" CLEAN="0"/>
+                <FILE NAME="databreak.c" TITLE="databreak.c" CLEAN="0"/>
+                <FILE NAME="dbgmain.c" TITLE="dbgmain.c" CLEAN="0"/>
+                <FILE NAME="dialog.c" TITLE="dialog.c" CLEAN="0"/>
+                <FILE NAME="DOCKMGR.C" TITLE="DOCKMGR.C" CLEAN="0"/>
+                <FILE NAME="DUMPWND.C" TITLE="DUMPWND.C" CLEAN="0"/>
+                <FILE NAME="EDITOR.C" TITLE="EDITOR.C" CLEAN="0"/>
+                <FILE NAME="effect.c" TITLE="effect.c" CLEAN="0"/>
+                <FILE NAME="error.c" TITLE="error.c" CLEAN="0"/>
+                <FILE NAME="eval.c" TITLE="eval.c" CLEAN="0"/>
+                <FILE NAME="FIF.C" TITLE="FIF.C" CLEAN="0"/>
+                <FILE NAME="filedlg.c" TITLE="filedlg.c" CLEAN="0"/>
+                <FILE NAME="HBREAK.C" TITLE="HBREAK.C" CLEAN="0"/>
+                <FILE NAME="help.c" TITLE="help.c" CLEAN="0"/>
+                <FILE NAME="HISTCOMB.C" TITLE="HISTCOMB.C" CLEAN="0"/>
+                <FILE NAME="instance.c" TITLE="instance.c" CLEAN="0"/>
+                <FILE NAME="lsblank.c" TITLE="lsblank.c" CLEAN="0"/>
+                <FILE NAME="lscont.c" TITLE="lscont.c" CLEAN="0"/>
+                <FILE NAME="lsctrl.c" TITLE="lsctrl.c" CLEAN="0"/>
+                <FILE NAME="lsframe.c" TITLE="lsframe.c" CLEAN="0"/>
+                <FILE NAME="lsgrip.c" TITLE="lsgrip.c" CLEAN="0"/>
+                <FILE NAME="lstab.c" TITLE="lstab.c" CLEAN="0"/>
+                <FILE NAME="lstool.c" TITLE="lstool.c" CLEAN="0"/>
+                <FILE NAME="LSTREE.C" TITLE="LSTREE.C" CLEAN="0"/>
+                <FILE NAME="lstt.c" TITLE="lstt.c" CLEAN="0"/>
+                <FILE NAME="make.c" TITLE="make.c" CLEAN="0"/>
+                <FILE NAME="MAKEGEN.C" TITLE="MAKEGEN.C" CLEAN="0"/>
+                <FILE NAME="menu.c" TITLE="menu.c" CLEAN="0"/>
+                <FILE NAME="MRU.C" TITLE="MRU.C" CLEAN="0"/>
+                <FILE NAME="OPCODES.C" TITLE="OPCODES.C" CLEAN="0"/>
+                <FILE NAME="OPERANDS.C" TITLE="OPERANDS.C" CLEAN="0"/>
+                <FILE NAME="PEFILE.C" TITLE="PEFILE.C" CLEAN="0"/>
+                <FILE NAME="POPUP.C" TITLE="POPUP.C" CLEAN="0"/>
+                <FILE NAME="print.c" TITLE="print.c" CLEAN="0"/>
+                <FILE NAME="PROFILE.C" TITLE="PROFILE.C" CLEAN="0"/>
+                <FILE NAME="progress.c" TITLE="progress.c" CLEAN="0"/>
+                <FILE NAME="project.c" TITLE="project.c" CLEAN="0"/>
+                <FILE NAME="props.c" TITLE="props.c" CLEAN="0"/>
+                <FILE NAME="regexp.c" TITLE="regexp.c" CLEAN="0"/>
+                <FILE NAME="regwnd.c" TITLE="regwnd.c" CLEAN="0"/>
+                <FILE NAME="SIMOPS.C" TITLE="SIMOPS.C" CLEAN="0"/>
+                <FILE NAME="slprefs.c" TITLE="slprefs.c" CLEAN="0"/>
+                <FILE NAME="slproj.c" TITLE="slproj.c" CLEAN="0"/>
+                <FILE NAME="slrule.c" TITLE="slrule.c" CLEAN="0"/>
+                <FILE NAME="slwa.c" TITLE="slwa.c" CLEAN="0"/>
+                <FILE NAME="Splash.c" TITLE="Splash.c" CLEAN="0"/>
+                <FILE NAME="SRCHPATH.C" TITLE="SRCHPATH.C" CLEAN="0"/>
+                <FILE NAME="stackwnd.c" TITLE="stackwnd.c" CLEAN="0"/>
+                <FILE NAME="stdprop.c" TITLE="stdprop.c" CLEAN="0"/>
+                <FILE NAME="SYMTAB.C" TITLE="SYMTAB.C" CLEAN="0"/>
+                <FILE NAME="TABWND.C" TITLE="TABWND.C" CLEAN="0"/>
+                <FILE NAME="TAGS.C" TITLE="TAGS.C" CLEAN="0"/>
+                <FILE NAME="thredwnd.c" TITLE="thredwnd.c" CLEAN="0"/>
+                <FILE NAME="toolbar.c" TITLE="toolbar.c" CLEAN="0"/>
+                <FILE NAME="UZ.C" TITLE="UZ.C" CLEAN="0"/>
+                <FILE NAME="version.c" TITLE="version.c" CLEAN="0"/>
+                <FILE NAME="wargs.c" TITLE="wargs.c" CLEAN="0"/>
+                <FILE NAME="watchwnd.c" TITLE="watchwnd.c" CLEAN="0"/>
+                <FILE NAME="..\CLIBS\win32\wildargsw.c" TITLE="wildargsw.c" CLEAN="0"/>
+                <FILE NAME="window.c" TITLE="window.c" CLEAN="0"/>
+                <FILE NAME="XEDIT.C" TITLE="XEDIT.C" CLEAN="0"/>
+                <FILE NAME="xml.c" TITLE="xml.c" CLEAN="0"/>
+            </FOLDER>
+            <FOLDER TITLE="Resource Files">
+                <FILE NAME="ccide.rc" TITLE="ccide.rc" CLEAN="0"/>
+            </FOLDER>
+            <FOLDER TITLE="Other Files">
+                <FILE NAME="..\parsedll\parser.lib" TITLE="parser.lib" CLEAN="0"/>
+            </FOLDER>
+        </FILES>
+    </TARGET>
+</CC386PROJECT>

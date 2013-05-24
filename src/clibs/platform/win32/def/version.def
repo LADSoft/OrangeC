@@ -1,0 +1,17 @@
+LIBRARY     VERSION.DLL
+
+EXPORTS
+    GetFileVersionInfoA            @1   
+    GetFileVersionInfoSizeA        @2   
+    GetFileVersionInfoSizeW        @3   
+    GetFileVersionInfoW            @4   
+    VerFThk_ThunkData32            @5   
+    VerFindFileA                   @6   
+    VerFindFileW                   @7   
+    VerInstallFileA                @8   
+    VerInstallFileW                @9   
+    VerLanguageNameA               @10  
+    VerLanguageNameW               @11  
+    VerQueryValueA                 @12  
+    VerQueryValueW                 @13  
+    VerThkSL_ThunkData32           @14  

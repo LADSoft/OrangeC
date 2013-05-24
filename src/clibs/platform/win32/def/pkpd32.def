@@ -1,0 +1,37 @@
+LIBRARY     PKPD32.DLL
+
+EXPORTS
+    AddInksetInterval              @630 
+    AddPointsPenData               @212 
+    BoundingRectFromPoints         @13  
+    CompressPenData                @240 
+    CreateInkset                   @631 
+    CreatePenDataEx                @208 
+    CreatePenDataRegion            @581 
+    DestroyInkset                  @632 
+    DestroyPenData                 @209 
+    DrawPenDataEx                  @229 
+    DuplicatePenData               @218 
+    ExtractPenDataPoints           @236 
+    ExtractPenDataStrokes          @243 
+    GetInksetInterval              @633 
+    GetInksetIntervalCount         @634 
+    GetPenDataAttributes           @220 
+    GetPenDataInfo                 @211 
+    GetPointsFromPenData           @221 
+    GetStrokeAttributes            @225 
+    GetStrokeTableAttributes       @227 
+    HitTestPenData                 @238 
+    InsertPenData                  @224 
+    InsertPenDataPoints            @234 
+    InsertPenDataStroke            @235 
+    MetricScalePenData             @215 
+    OffsetPenData                  @216 
+    PenDataFromBuffer              @247 
+    PenDataToBuffer                @248 
+    RedisplayPenData               @242 
+    RemovePenDataStrokes           @237 
+    ResizePenData                  @222 
+    SetStrokeAttributes            @226 
+    SetStrokeTableAttributes       @228 
+    TrimPenData                    @241 

@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OCC Defining Macros</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<div style="text-align: center;">
+<h2>OCC Defining Macros</h2>
+<div style="text-align: left;">/Dxxx&nbsp;&nbsp;&nbsp; define a macro<br>
+<br>
+&nbsp;&nbsp;&nbsp; This switch defines a macro as if a #define
+statement had been used somewhere in the source.&nbsp; It is useful for
+building different versions of a program without modifying the source
+files between compiles.&nbsp; Note that you may not give macros defined
+this way a value.&nbsp; For example:<br>
+<br>
+&nbsp;&nbsp;&nbsp; OCC /DORANGE myfunc.c<br>
+<br>
+&nbsp;&nbsp;&nbsp; is equivalent to placing the following statement in
+the file and compiling it.<br>
+<br>
+&nbsp;&nbsp;&nbsp; #define ORANGE <br>
+<br>
+</div>
+<br>
+</div>
+</body>
+</html>

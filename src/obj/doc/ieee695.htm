@@ -1,0 +1,1228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>ieee 695 LADSoft tools</title>
+  <meta content="documents the ieee695 format as used by LADSoft tools"
+ name="description">
+</head>
+<body>
+1.1.1. Introduction <br>
+<br>
+<div style="margin-left: 40px;">This documentation gives the usage of
+the IEEE695 object files, as used by the LADSoft tools. This is an
+ASCII rendition of IEEE695, but extends the functionality of the
+standard. <br>
+<br>
+Note that most numbers used in the file format are HEX-ASCII. But some
+numbers, such as dates and the CO record identifiers, are decimal.
+<br>
+</div>
+<br>
+2.1.1. Brief guide to linker format <br>
+<br>
+<div style="margin-left: 40px;">Each record in the relocatable object
+file starts with a two-letter command and ends with a '.'. Symbols with
+periods in them may be embedded in the text so the location of the
+ending period is context-sensitive. Control characters such as CR/LF
+can be used for readability and are generally assumed by the linker to
+occur after each '.' character at the end of a record. <br>
+<br>
+Checksums are kept as running additions of the ascii value of the
+characters, excluding any control characters that may be embedded.
+<br>
+<br>
+</div>
+2.2.1 Variable types <br>
+<br>
+<div style="margin-left: 40px;">IEEE695 defines the following types of
+variables. In each case the '#' indicates an index that is associated
+with the variable. <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">I#</span>
+public variable <br>
+<span style="font-weight: bold;">N#</span> local variable (ladsoft
+tools assume this is FILE global) <br>
+<span style="font-weight: bold;">X#</span> external variable index # <br>
+</div>
+<br>
+</div>
+<div style="margin-left: 40px;">In addition IEEE695 defines a variable
+that can be used to index into a relocatable section: <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">R#</span>
+relocatable section<br>
+</div>
+<br>
+The IEEE695 spec also defines: <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">L#</span>
+the low limit of a section. <br>
+<br>
+<div style="margin-left: 40px;">This is the address at which the
+section is relocated to and is only valid of an absolute object file is
+output. <br>
+</div>
+<br>
+<span style="font-weight: bold;">P</span> the current value of the
+program counter. <br>
+<br>
+<div style="margin-left: 40px;">This is only valid in the LR records.
+It is derived from the low limit of the section and the data previously
+encountered in the sections LD and LR records. <br>
+</div>
+</div>
+<br>
+The ladsoft tools also define the following extra variable types: <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">A#</span>
+an auto (stacked) variable <br>
+<span style="font-weight: bold;">E#</span> a variable in a register <br>
+<span style="font-weight: bold;">Y#</span> a segment value
+(e.g. for 8086 segmentation)<br>
+</div>
+<br>
+</div>
+2.2.2 Expressions <br>
+<br>
+<div style="margin-left: 40px;">In some cases such as in fixups/LR
+Records, an expression is used to specify an address or offset. An
+expression is a comma-delimited sequence of constants, the operators
+'+','-'.'*','/', and internal variables. <br>
+The elements of an expression are in postfix notation, that is the
+expression: <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">R23,8,+</span>
+<br>
+<br>
+</div>
+indicates a location that is 8 bytes beyond the beginning of section
+23. <br>
+<br>
+An expression such as: <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">P,424,+</span>
+<br>
+</div>
+<br>
+can be used to generate pc-relative offsets.
+<br>
+</div>
+<br>
+2.2.3 Strings <br>
+<br>
+<div style="margin-left: 40px;">when a string such as a name or comment
+text is placed into the output file, it is preceded by a two-digit
+hexadecimal number that gives the length of the string. This implicitly
+limits strings and variable names to 255 characters, but allows
+characters that would normally be record internal delimiters such as
+',' and '.' to be embedded in the string. <br>
+<br>
+For example to create a public variable with the name 'apple' one would
+do the following: <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">NI3,05apple.</span>
+<br>
+</div>
+</div>
+<br>
+3.1.1 Linker record definitions
+<br>
+<br>
+3.2.1 Module control
+<br>
+<br>
+<div style="margin-left: 40px;">This section defines various control
+records used by the linker to qualify the file contents.<br>
+</div>
+<br>
+3.2.2 Module Begin record<br>
+<br>
+<div style="margin-left: 40px;">The module begin record has the
+following format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">MBtranslator,filename.
+</span><br>
+</div>
+<br>
+<span style="font-style: italic;">translator</span> is a string which
+identifies the translator (for example
+'Ladsoft C Compiler')<br>
+<span style="font-style: italic;">filename</span> is a string which
+gives the name of the source file.<br>
+</div>
+<br>
+3.2.3 Module End Record<br>
+<br>
+<div style="margin-left: 40px;">The module end record has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">ME.</span><br>
+</div>
+<br>
+Data after this record will be discarded by all object module
+processing programs.<br>
+<br>
+</div>
+3.2.4 Date and Time Record<br>
+<br>
+<div style="margin-left: 40px;">The date and time record gives the time
+at which the object file was generated.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px; font-weight: bold;">DTYYYYMMDDHHMMSS. <br>
+</div>
+<br>
+Where all values are in decimal.<br>
+</div>
+<br>
+3.2.5 Architecture Definition Record<br>
+<br>
+<div style="margin-left: 40px;">The architecture definition record
+gives basic information about the processor architecture this file is
+targeted for.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">ADbpmau,maus,endian.</span><br>
+</div>
+<br>
+<span style="font-style: italic;">bpmau</span> is the bits per machine
+architectural unit.&nbsp; This is
+usually 8 to denote a byte-oriented architecture.<br>
+<br>
+<span style="font-style: italic;">maus</span> is the maximum number of
+machine architectural units the
+processor deals with.&nbsp; The LADSoft tools define this to be the
+maximimum number of machine architectural units in an address.&nbsp;
+For example on the 68K this would be either 2 or 4 depending on the
+processor type and compiler settings.<br>
+<br>
+<span style="font-style: italic;">endian</span> gives the
+endianness.&nbsp; It is 'L' for little endian, 'B'
+for big endian.&nbsp; Endianness is used for example when a tool needs
+to convert an LR record to an LD record when turning the object file
+into absolute format.<br>
+</div>
+<br>
+3.2.6 Checksum record. <br>
+<br>
+<div style="margin-left: 40px;">The checksum record gives a sanity
+check to indicate the file has not been modified up to this
+point.&nbsp; Checksums can be placed anywhere; additionally a
+translator can choose not to generate them.&nbsp; The format of a
+checksum record is:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">CSxx.</span><br>
+</div>
+<br>
+When a checksum record is encountered the two hex digits after it give
+the sum, modulo 128, of all non-control characters after the '.' of the
+last checksum record (or start of file) and up to and including the 'S'
+of the current checksum record.
+<br>
+<br>
+</div>
+3.2.7 Start Address Record<br>
+<br>
+<div style="margin-left: 40px;">The start address record gives the
+start address of the program.&nbsp; The linker will not allow more than
+one input module to have a start address; however a start address is
+totally optional and its presence is only useful when some type of
+loader is present to load the program and execute it.&nbsp; It has the
+format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">ASG,expr.
+</span><br>
+</div>
+<br>
+The expression can be an absolute number for non-relocatable files, or
+a standard IEEE expression for relocatable files.<br>
+</div>
+<br>
+3.3.1 Sections
+<br>
+<br>
+<div style="margin-left: 40px;">This section defines the records that
+deal with defining sections of data.<br>
+</div>
+<br>
+3.3.2 Section Type Record<br>
+<br>
+<div style="margin-left: 40px;">The section definition record is the
+initial definition of a section.&nbsp; It gives attributes for the
+section, and its name.&nbsp; The linker may use the attributes and
+name, with possibly some other input, to combine and relocate sections
+when generating the output.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">ST#,attributes,name.</span><br>
+</div>
+<br>
+Attributes are separated by ',' and are as follows: <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">'A'</span>:
+an absolute section not subject to
+relocation.<br>
+<div style="margin-left: 40px;">When this attribute is present an ASL
+record must be present in the input file telling exactly where the
+section is located. <br>
+</div>
+<span style="font-weight: bold;">'B'</span>: a section made up of bit
+values<br>
+<div style="margin-left: 40px;">This attribute is reserved for
+processors like the C167 or 8051. <br>
+</div>
+<span style="font-weight: bold;">'C'</span>: A common section. <br>
+<div style="margin-left: 40px;">Two common sections with the same name
+are overlayed on each other at link time. Non-common sections normally
+follow one another. <br>
+</div>
+<span style="font-weight: bold;">'E'</span>: an equal section<br>
+<div style="margin-left: 40px;">Two equal sections with the same name
+must have exactly the same contents and attributes when 'E' is present
+in the attribute list <br>
+</div>
+<span style="font-weight: bold;">'M'</span>: maximum section<br>
+<div style="margin-left: 40px;">if there are two sections with the same
+name, take the largest one. <br>
+</div>
+<span style="font-weight: bold;">'R'</span>: readonly (ROM) section <br>
+<span style="font-weight: bold;">'S'</span>: a non-common section
+(assumed without C or M or E) <br>
+<span style="font-weight: bold;">'U'</span>: unique section. <br>
+<div style="margin-left: 40px;">No other section can have the same name
+as a section with this attribute<br>
+</div>
+<span style="font-weight: bold;">'W'</span>: readwrite (RAM) section <br>
+<span style="font-weight: bold;">'X'</span>: executable section <br>
+<span style="font-weight: bold;">'Z':</span> section to be zeroed out<br>
+<div style="margin-left: 40px;">Generally data will not be provided
+with the SB,LR,LD records and the runtime system will use the size of
+the section to initialize it. (e.g. C language uninitialized
+variables).&nbsp; <br>
+</div>
+</div>
+<br>
+In addition there are attributes which consider ordering sections with
+the same
+name. <br>
+<br>
+<span style="font-weight: bold;">'N'</span>: 'now' order sections with
+this attribute first <br>
+<span style="font-weight: bold;">(no qualifier)</span>: order sections
+with this attribute next <br>
+<span style="font-weight: bold;">'P'</span>: 'postpone' order sections
+with this attribute last
+<br>
+</div>
+<br>
+<div style="margin-left: 40px;"><span style="font-style: italic;">name</span>
+is the name of a section, and is used by the linker for combining
+sections.<br>
+</div>
+<br>
+3.3.3 Section Alignment Record<br>
+<br>
+<div style="margin-left: 40px;">The section alignment record gives the
+minimum alignment required by a section.&nbsp; For example 68K
+processors require code to be aligned on two-byte boundaries, and often
+data as well.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">SA#,alignment.</span>
+<br>
+</div>
+<br>
+<span style="font-style: italic;">#</span> is the index of the section
+as defined in the <span style="font-weight: bold;">ST</span> record<span
+ style="font-weight: bold;">.<br>
+</span><span style="font-style: italic;"></span><span
+ style="font-style: italic;">alignment</span> is the desired section
+alignment.&nbsp; It must be a power of 2.<br>
+<br>
+When the Section Type record is present without a Section Alignment
+record, the section alignment is assumed to be 1.<br>
+<br>
+</div>
+3.3.4 Assign Symbol record<br>
+<br>
+<div style="margin-left: 40px;">The assign size record gives the size
+when used with a section.&nbsp; Even though the size is implied by the
+LD and LR records, this record is required to allow the linker to do
+relocations without having read in the LD/LR records.&nbsp; It has the
+format:<br>
+<span style="font-weight: bold;"><br>
+ASS#,size.</span><br>
+<span style="font-weight: bold;"><br>
+</span><span style="font-style: italic;">#</span> is the index of the
+section as defined in the <span style="font-weight: bold;">ST</span>
+record<span style="font-weight: bold;">.<br>
+</span><span style="font-style: italic;">size</span> is the number of
+mau's worth of data in the section.<br>
+</div>
+<br>
+3.3.5 Assign Location record<br>
+<br>
+<div style="margin-left: 40px;">The assign location record gives the
+absolute location a section should be loaded at.&nbsp; It would be used
+for example by a tool that converted the object file into one of the
+HEX file formats.&nbsp; It must be present for if the section has the
+'A' attribute, but otherwise should not be present.&nbsp; It has the
+format:<br>
+<br style="font-weight: bold;">
+<div style="margin-left: 40px;"><span style="font-weight: bold;">ASL#,location.</span>
+<br>
+<br>
+</div>
+<span style="font-style: italic;">#</span> is the index of the section
+as defined in the <span style="font-weight: bold;">ST</span> record<span
+ style="font-weight: bold;">.<br>
+<span style="font-weight: bold; font-style: italic;"></span></span><span
+ style="font-style: italic;">location</span> is an address constant
+specifying the location of the section.<span style="font-weight: bold;"><span
+ style="font-weight: bold;"></span><br>
+</span><span style="font-weight: bold;"></span>
+<div style="margin-left: 40px;"><span style="font-weight: bold;"></span><span
+ style="font-style: italic;"></span><br>
+</div>
+</div>
+3.4.1 Section data
+<br>
+<br>
+<div style="margin-left: 40px;">This section defines the records that
+are used to populate sections with data.<br>
+</div>
+<br>
+3.4.2 Section Begin. <br>
+<br>
+<div style="margin-left: 40px;">The section begin record indicates the
+start of data for a section.&nbsp; It has the following format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">SB#.</span><br>
+</div>
+<br>
+<span style="font-style: italic;">#</span> is the index of the section
+as defined in the <span style="font-weight: bold;">ST</span> record<span
+ style="font-weight: bold;">.<br>
+<span style="font-weight: bold; font-style: italic;"></span></span><span
+ style="font-style: italic;"></span><br>
+Successive LD and LR records, along with debug comment records, will
+refer to this section.&nbsp; No load address is specified in any of the
+data records; the load address is implied by the final section location
+and preceding LD and LR records in this section.<br>
+</div>
+<br>
+3.4.3 Load Data record<br>
+<br>
+<div style="margin-left: 40px;">The load data record loads pure data
+without modification.&nbsp; It is a hex-dump of arbitrary length, but
+it is recommended that the data portion of each record not be longer
+than 64
+ascii characters for readability.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">LDxxxxxxxxxxxxxxxxxxxxxxxx.
+</span><br>
+</div>
+<br>
+When the <span style="font-weight: bold;">AD</span> record specifies <span
+ style="font-style: italic;">maus=8</span> (byte architecture) the <span
+ style="font-weight: bold;">LD</span> record loads bytes of data, with
+each byte described by two ASCII characters.<br>
+</div>
+<br>
+3.4.4 Load Relocation record<br>
+<br>
+<div style="margin-left: 40px;">The load relocation record indicates
+the target address and source size for a relocation (fixup).&nbsp; It
+has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">LR(expr,size).
+</span><br>
+</div>
+<br>
+The expression can be any valid expression referencing symbols or
+section relative addresses, and generally calculates a relocated
+address. It could also be a constant, however, normally constants are
+going to be embedded directly in the LD statements.<br>
+<br>
+The size gives the size in <span style="font-style: italic;">maus</span>
+of the expression when it is resolved
+to an absolute format, e.g. the number of maus of space that this <span
+ style="font-weight: bold;">LR</span>
+record reserves.
+<br>
+</div>
+<br>
+3.5.1 Variable declarations <br>
+<br>
+<div style="margin-left: 40px;">This section defines the records used
+in declaring variables.<br>
+</div>
+<br>
+3.5.2 Name record<br>
+<br>
+<div style="margin-left: 40px;">The name record associates an internal
+variable index with a name.&nbsp; This is the record that creates the
+variable index.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">N$#,name.</span>
+<br>
+</div>
+<br>
+<span style="font-style: italic;">$</span> is the type of variable:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">'A'</span>
+auto <br>
+<span style="font-weight: bold;">'E'</span> register <br>
+<span style="font-weight: bold;">'I'</span> public <br>
+<span style="font-weight: bold;">'N'</span> local <br>
+<span style="font-weight: bold;">'X'</span> external
+<br>
+</div>
+<br>
+<span style="font-weight: bold;"><span style="font-style: italic;">#</span></span>
+is the index to assign<br>
+<br>
+<span style="font-style: italic;">name</span> is a string specifying
+the programmer's name for the variable.<br>
+</div>
+<br>
+3.5.3 Assign Symbol record<br>
+<br>
+<div style="margin-left: 40px;">The assign symbol record assigns the
+location for a variable or procedure, for example by using a
+section-relative expression.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">AS$#,expr</span>.
+<br>
+</div>
+<br>
+<span style="font-style: italic;">$</span> is the type of variable<br>
+</div>
+<div style="margin-left: 80px;"><span style="font-weight: bold;">'I'</span>
+public <br>
+<span style="font-weight: bold;">'N'</span> local <br>
+</div>
+<br>
+<div style="margin-left: 40px;"><span style="font-style: italic;">#</span>
+is the index assigned with the Name
+record<br>
+<br>
+<span style="font-style: italic;">expr</span> is an expression
+indicating the location of the variable or
+procedure<br>
+</div>
+<br>
+3.5.3 Assign Type record<br>
+<br>
+<div style="margin-left: 40px;">The assign type record assigns the type
+of a variable.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">AT$#,T%.
+</span><br>
+</div>
+<br>
+<span style="font-style: italic;">$</span> is the type of variable:<br>
+<br>
+</div>
+<div style="margin-left: 80px;"><span style="font-weight: bold;">'A'</span>
+auto <br>
+<span style="font-weight: bold;">'E'</span> register <br>
+<span style="font-weight: bold;">'I'</span> public <br>
+<span style="font-weight: bold;">'N'</span> local <br>
+<span style="font-weight: bold;">'X'</span> external
+<br>
+<br>
+additionally there is a command&nbsp; <span style="font-weight: bold;">ATT</span>
+which is used to construct new types.&nbsp; This is further defined in
+the section on debug information.<br>
+</div>
+<div style="margin-left: 40px;"><br>
+<span style="font-style: italic;">#</span> is the index assigned with
+the Name record<br>
+<br>
+<span style="font-style: italic;">%</span> is the type index.&nbsp; The
+type index can either be a built-in
+type or a type assigned with the <span style="font-weight: bold;">ATT</span>
+record.&nbsp; It may not however
+be a type constructor.<br>
+</div>
+<br>
+3.6.1 COMMENT records <br>
+<br>
+<div style="margin-left: 40px;">The IEEE695 standard defines comment
+style records with the intent of using them for some type of
+human-readable text that can be embedded in the object file for example
+to use by tools which read the object file. <br>
+<br>
+However, the LADSoft tools reserve most comment records for extensions
+to the object file format.&nbsp; One example use is for link pass
+separators.<br>
+<br>
+A comment record has the following format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">CO#,string.</span><br>
+</div>
+<br>
+<span style="font-style: italic;">#</span> is the comment record type
+in decimal<br>
+<br>
+<span style="font-style: italic;">string</span> is any textual data
+associated with the comment record.&nbsp; This string does have a
+length field, and sometimes other strings with length fields are nested
+within it.<br>
+<br>
+The following sections outline the comment records in use.
+<br>
+<br>
+</div>
+3.6.2 Comment records 1-99 <br>
+<br>
+<div style="margin-left: 40px;">A general comment inserted by the
+translator and discarded by other tools. For example: "CO1,16this is a
+cool program."
+<br>
+</div>
+<br>
+3.6.3 Pass separators<br>
+<br>
+<div style="margin-left: 40px;">&nbsp;There are three link pass
+separators in the LADSOFT format. The given text for each separator can
+either be left blank or arbitrarily chosen; tools relyon the
+index.&nbsp; Following are the defined pass separators:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">CO100,09some
+text.</span><br>
+<div style="margin-left: 40px;">The make pass
+separator. Make programs will quit processing after this. (optional) <br>
+</div>
+<span style="font-weight: bold;">CO101,09some text.<br>
+</span>
+<div style="margin-left: 40px;">The link pass separator. All
+declarations are
+done; two pass linkers can expect only loadable data beyond this point.
+<br>
+</div>
+<span style="font-weight: bold;">CO102,09some text.</span><br>
+<div style="margin-left: 40px;">The browse info separator. Linker does
+not need
+any info after this for relocation. (optional)
+<br>
+</div>
+</div>
+</div>
+<br>
+3.6.4 Windows DLL support <br>
+<br>
+<div style="margin-left: 40px;">There are two types of comment records
+for Windows DLL support.&nbsp; These include the import and export
+symbols.<br>
+<br>
+For an export symbol the record is as follows:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">CO200,$$type,name,qualifer.
+</span><br>
+</div>
+<br>
+<span style="font-style: italic;">$$</span> is the length of the string
+up to the '.' <br>
+<span style="font-style: italic;">type</span> = O or N for Ordinal or
+by Name <br>
+<span style="font-style: italic;">name</span> is the name of the symbol
+being exported <br>
+<span style="font-style: italic;">qualifier</span> is either the
+ordinal or the exported name. <br>
+<br>
+The names in this record are also strings which are further qualified
+with lengths.<br>
+<br>
+For an import symbol the record is as follows:<br>
+<br style="font-weight: bold;">
+<div style="margin-left: 40px;"><span style="font-weight: bold;">C0201,O,$$name,qualifier,dllname.
+</span><br>
+</div>
+<br>
+<span style="font-style: italic;">$$</span> is the length of the string
+up to the '.' <br>
+<span style="font-style: italic;">type</span> = O or N for Ordinal or
+by Name <br>
+<span style="font-style: italic;">name</span> is the name of the symbol
+being exported <br>
+<span style="font-style: italic;">qualifier</span> is either the
+ordinal or the exported name. <br>
+<span style="font-style: italic;">dllname</span> is the name of the dll
+to reference.<br>
+<br>
+The names in this record are also strings which are further qualified
+with lengths.<br>
+</div>
+<br>
+3.6.5 Source File Information Record <br>
+<br>
+<div style="margin-left: 40px;">The Source file information record
+gives information about a source or include file.&nbsp; It can be used
+for example by a make program to auto-make a project, or by a debugger
+to reference line number information.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">C0300,$$index,name,time.
+</span><br>
+</div>
+<br>
+<span style="font-style: italic;">$$</span> is the length of the
+following up to the '.' <br>
+<span style="font-style: italic;">index</span> is the source or header
+file index we are assigning, <br>
+<span style="font-style: italic;">name</span> is the name of the file,
+this is a string which is further
+qualified by a length.<br>
+<span style="font-style: italic;">time</span> is the time the file was
+last modified in YYYYMMDDHHMMSS format.
+<br>
+<br>
+</div>
+3.6.6 Debug Information records <br>
+<br>
+<div style="margin-left: 40px;">Comment records with index 400-405 are
+for debug information, and appear intermixed with the LD and LR
+records. More information is found in the debug information section.
+<br>
+</div>
+<br>
+3.6.7 Browse Information record<br>
+<br>
+<div style="margin-left: 40px;">Comment record index 500 is browse
+information for an editor.&nbsp; More information is found in the
+browse information section.<br>
+<br>
+</div>
+3.6.8 Librarian object module record<br>
+<span style="font-weight: bold;"></span><br>
+<div style="margin-left: 40px;">Comment record index 600 is reserved by
+the librarian as a marker before each object module.&nbsp; More
+information is found in the librarian section.<br>
+</div>
+<br>
+4.1.1 Debug info <br>
+<br>
+<div style="margin-left: 40px;">For debugging, a program is assumed to
+have program global variables, file global variables, functions, blocks
+within functions, and local variables within blocks. For global
+variables, some basic debug information can be extracted e.g. from the
+<span style="font-weight: bold;">N$, ASI</span>, <span
+ style="font-weight: bold;">ASN</span> and the <span
+ style="font-weight: bold;">AT$#</span> declarations given above. <br>
+<br>
+In addition to declaring types and locations, the debug information has
+to give locations at which local variables are 'live'. This debug
+information is interspersed with the <span style="font-weight: bold;">LD</span>
+and <span style="font-weight: bold;">LR</span> records for a section
+to
+define the layout of local data. It is handled with COMMENT-style
+records. Note that all type and debug information is not specified well
+by the IEEE695 spec and this information is heavily tools specific. <br>
+</div>
+<br>
+4.2.1 Derived Type record<br>
+<br>
+<div style="margin-left: 40px;">The derived type record allows
+construction of new types such as structures and unions.&nbsp; It has
+the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">ATT#,T%,type
+expression. </span><br style="font-weight: bold;">
+<br>
+</div>
+# is the type index assigned by the translator, which must be &gt;=
+1024. <br>
+% some type constructor such as a structure or union designator. <br>
+the type expression depends on the constructor used for the type, but
+is typically a base type, or a list of other types. type information is
+in the file header with other information about variables. It is
+further specified for each constructor below:<br>
+<br>
+</div>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">0</span>:
+undefined <br>
+<span style="font-weight: bold;">1</span>: pointer <span
+ style="font-weight: bold;">ATT$,T1,T#.</span> <br>
+<div style="margin-left: 40px;"><span style="font-style: italic;">$</span>
+is the translator-defined type of the
+pointer.<br>
+&nbsp;<span style="font-style: italic;">#</span> is the base type index
+<br>
+</div>
+<span style="font-weight: bold;">2</span>: function <span
+ style="font-weight: bold;">ATT$,T2,TR,#,argument list.</span> <br>
+<div style="margin-left: 40px;"><span style="font-style: italic;">$</span>
+is the translator defined type of
+the function <br>
+<span style="font-style: italic;">R</span> is the type index of the
+return value <br>
+<span style="font-style: italic;"># </span>is a hexadecimal value
+giving the linkage: <br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">0 </span>=
+unadorned label (assembler) <br>
+<span style="font-weight: bold;">1</span> = C style function call <br>
+<span style="font-weight: bold;">2</span> = stdcall style function call
+<br>
+<span style="font-weight: bold;">3</span> = pascall style function call
+<br>
+<span style="font-weight: bold;">4</span> = C++ object method <br>
+<br>
+</div>
+the argument list is a comma-delimited list of
+<span style="font-weight: bold;">A#</span>, which gives the parameters <br>
+<div style="margin-left: 40px;">the <span style="font-style: italic;">#</span>
+gives the references to an <span style="font-weight: bold;">NA</span>
+and
+<span style="font-weight: bold;">ATA</span> records for the variable.
+When an argument list is present, it will
+be interpreted according to implied rules about alignment of arguments.
+These rules are architecture-dependent, but for a 32-bit architecture
+the data will be a multiple of four bytes. in the case of integers it
+will be implicitly cast to (DWORD) and aligned as such according to the
+little/big endianness of the processor as assigned in the AD record. <br>
+</div>
+<div style="margin-left: 40px;"></div>
+</div>
+<span style="font-weight: bold;">3</span>: typedef <span
+ style="font-weight: bold;">ATT$,T3,T#. </span><br>
+<div style="margin-left: 40px;"><span style="font-style: italic;">$</span>
+is the translator-assigned type <br>
+<span style="font-style: italic;">#</span> is the base type we are
+equating it to <br>
+</div>
+<span style="font-weight: bold;">4</span>: structure <span
+ style="font-weight: bold;">ATT$,T4,list of base types. </span><br>
+<div style="margin-left: 40px;"><span style="font-style: italic;">$</span>
+is the translator-defined type the
+list of base types has comma-delimited elements as follows:
+<br>
+<br>
+<div style="margin-left: 40px; font-style: italic;">T#,name,offset <br>
+</div>
+<br>
+<span style="font-style: italic;">#</span> is the base type <br>
+<span style="font-style: italic;">name</span> is the name of the field
+<br>
+<span style="font-style: italic;">offset</span> is the offset from the
+beginning of the data for the field.<br>
+<br>
+The last element of a structure reference may be a reference to a
+'field' record to continue the
+list of elements in which case it doesn't need a name and offset. <br>
+</div>
+<span style="font-weight: bold;">5</span>: union <span
+ style="font-weight: bold;">ATT$,T5,list of base types. </span><br>
+<div style="margin-left: 40px;">see the definition of the structure
+type. offset will normally be 0. <br>
+</div>
+6: array <span style="font-weight: bold;">ATT$,T6,TB,TI,base,top</span>.<br>
+<div style="margin-left: 40px;"><span style="font-style: italic;">$</span>
+is the translator-defined type <br>
+</div>
+<div style="margin-left: 40px;"><span style="font-style: italic;">TB</span>
+is the type of the elements in the
+array <br>
+<span style="font-style: italic;">TI</span> is the type of the indexes
+of the array (usually T42 for C
+languages) <br>
+<span style="font-style: italic;">base</span> is the hexadecimal
+rendition of the low limit to the array index <br>
+<span style="font-style: italic;">top</span> is the hexadecimal
+rendition of the high limit to the array index
+(inclusive) <br>
+<br>
+multiple array records can be cascaded together to make a
+multi-dimensional array.&nbsp; In this case the first record will be
+the
+left-hand index in the declaration (assuming C-style declarations) <br>
+</div>
+<span style="font-weight: bold;">7</span>: enumeration <span
+ style="font-weight: bold;">ATT$,T7,list of base types.</span> <br>
+<div style="margin-left: 40px;">see the definition of the structure
+type. offset will be the index of the enumerated value. <br>
+</div>
+<span style="font-weight: bold;">8</span>: field list continuator <span
+ style="font-weight: bold;">ATT$,T8,list of base types.</span> <br>
+<div style="margin-left: 40px;">see the definition of the structure
+type. this can be used at the end of a structure, union, or enumerated
+constructor to continue the sequence of members.<br>
+</div>
+</div>
+<br>
+4.2.2 Base types <br>
+<br>
+<div style="margin-left: 40px;">A variety of base types are pre-defined
+for debugger interoperabilty; other types are built by combining the
+type constructors with these base types and with other
+translator-assigned types.<br>
+<br>
+The type indexes for the base types are as follows: <br>
+<span style="font-weight: bold;">32</span>: void <br>
+<span style="font-weight: bold;">33</span>: pointer to void <br>
+<span style="font-weight: bold;">34</span>: boolean <br>
+<span style="font-weight: bold;">35</span>: bit <br>
+<br>
+<span style="font-weight: bold;">40</span>: char <br>
+<span style="font-weight: bold;">41</span>: short <br>
+<span style="font-weight: bold;">42</span>: int <br>
+<span style="font-weight: bold;">43</span>: long <br>
+<span style="font-weight: bold;">44</span>: long long <br>
+<br>
+<span style="font-weight: bold;">48</span>: unsigned char <br>
+<span style="font-weight: bold;">49</span>: unsigned short <br>
+<span style="font-weight: bold;">50</span>: unsigned int <br>
+<span style="font-weight: bold;">51</span>: unsigned long <br>
+<span style="font-weight: bold;">52</span>: unsigned long long <br>
+<br>
+<span style="font-weight: bold;">56</span>: pointer to char <br>
+<span style="font-weight: bold;">57</span>: pointer to short <br>
+<span style="font-weight: bold;">58</span>: pointer to int <br>
+<span style="font-weight: bold;">59</span>: pointer to long <br>
+<span style="font-weight: bold;">60</span>: pointer to long long <br>
+<br>
+<span style="font-weight: bold;">64</span>: pointer to unsigned char <br>
+<span style="font-weight: bold;">65</span>: pointer to unsigned short <br>
+<span style="font-weight: bold;">66</span>: pointer to unsigned int <br>
+<span style="font-weight: bold;">67</span>: pointer to unsigned long <br>
+<span style="font-weight: bold;">68</span>: pointer to unsigned long
+long <br>
+<br>
+<span style="font-weight: bold;">72</span>: float <br>
+<span style="font-weight: bold;">73</span>: double <br>
+<span style="font-weight: bold;">74</span>: long double <br>
+<br>
+<span style="font-weight: bold;">80</span>: float (imaginary) <br>
+<span style="font-weight: bold;">81</span>: double (imaginary) <br>
+<span style="font-weight: bold;">82</span>: long double (imaginary) <br>
+<br>
+<span style="font-weight: bold;">88</span>: float (complex) <br>
+<span style="font-weight: bold;">89</span>: double (complex) <br>
+<span style="font-weight: bold;">90</span>: long double (complex) <br>
+<br>
+<span style="font-weight: bold;">96</span>: pointer to float <br>
+<span style="font-weight: bold;">97</span>: pointer to double <br>
+<span style="font-weight: bold;">98</span>: pointer to long double <br>
+<br>
+<span style="font-weight: bold;">104</span>: pointer to float
+(imaginary) <br>
+<span style="font-weight: bold;">105</span>: pointer to double
+(imaginary) <br>
+<span style="font-weight: bold;">106</span>: pointer to long double
+(imaginary) <br>
+<br>
+<span style="font-weight: bold;">112</span>: pointer to float (complex)
+<br>
+<span style="font-weight: bold;">113</span>: pointer to double
+(complex) <br>
+<span style="font-weight: bold;">114</span>: pointer to long double
+(complex) <br>
+<br>
+<span style="font-weight: bold;">115-1023</span>: reserved<br>
+<br>
+</div>
+4.3.1 Local variables and other debug information<br>
+<br>
+<div style="margin-left: 40px;">The records in this section are used to
+determine scope of local variables, and line number information<br>
+</div>
+<br>
+4.3.2 Declare variable in scope<br>
+<br>
+<div style="margin-left: 40px;">These records declare the beginning of
+scope for a local variable.&nbsp; They have the following formats:<br>
+<br>
+<div style="margin-left: 40px; font-weight: bold;">CO400,$$A#.<br>
+CO400,$$E#. <br>
+CO400,$$N#.<br>
+</div>
+<br>
+When <span style="font-weight: bold;">N#</span> variables are present
+they must have function scope, not file
+scope.<br>
+</div>
+<br>
+4.3.3 Declare source file line number<br>
+<br>
+<div style="margin-left: 40px;">This record specifies the relationship
+between a line of code in the
+source file, and executable code in the object file.<br>
+<br style="font-weight: bold;">
+<div style="margin-left: 40px;"><span style="font-weight: bold;">CO401,$$index,line.</span>
+<br>
+</div>
+<br>
+<span style="font-style: italic;">index</span> is the file index given
+in the CO300 record<br>
+<span style="font-style: italic;">line</span> is a line number, given
+in decimal.<br>
+</div>
+<br>
+4.3.3 Block declarations<br>
+<br>
+<div style="margin-left: 40px;">The block declarations serve to locate
+the end of scope for variables declared in a block.<br>
+<br>
+<div style="margin-left: 40px; font-weight: bold;">CO402. block is
+beginning here. <br>
+CO403. block is ending here. <br>
+</div>
+</div>
+<br>
+4.3.4 Function declarations<br>
+<br>
+<div style="margin-left: 40px;">The function declarations serve to
+locate the start and end of scope for function parameters.<br>
+<br>
+For a function start:<br>
+<div style="margin-left: 40px; font-weight: bold;">CO404,I#.<br>
+CO404, N#. <br>
+</div>
+<br>
+For a function end.<br>
+<div style="margin-left: 40px; font-weight: bold;">CO405,I#.<br>
+CO405, N#. <br>
+<br>
+</div>
+<div>The I and N variables specified must be declared with a type
+derived with the function constructor type.<br>
+</div>
+<div style="margin-left: 40px; font-weight: bold;"><br>
+</div>
+</div>
+<br>
+5.1.1 Browse info <br>
+<br>
+<div style="margin-left: 40px;">Browse info gives a cross-reference of
+symbols to file/line number pairs. It is independent of code
+generation. It can be generated by the translator, or tacked on after
+the fact. A separate browse file translator takes the information for
+the files in a program and generates a browse file database.&nbsp; The
+browse information is given as comment record type 500.&nbsp; It has
+the following format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">C0500,subtype,qualifiers,file
+index,linenumber,name. </span><br>
+</div>
+<br>
+<span style="font-style: italic;">subtype</span> gives the type of
+browse information.<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">0</span>:
+This is for preprocessor definitions
+like #defines. <br>
+<span style="font-weight: bold;">1</span>: variable: this is some type
+of program variable. <br>
+<span style="font-weight: bold;">2</span>: file start: this is a
+file start <br>
+<span style="font-weight: bold;">3</span>: function start: this is a
+function start <br>
+<span style="font-weight: bold;">4</span>: function end: this is the
+end of a function <br>
+<span style="font-weight: bold;">5</span>: block start: this is the
+start of a block <br>
+<span style="font-weight: bold;">6</span>: block end: this is the end
+of a block <br>
+</div>
+<br>
+<br>
+<span style="font-style: italic;">qualifiers</span> are used for
+variable and function names as follows: <br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">0</span>:
+program global <br>
+<span style="font-weight: bold;">1</span>: file global <br>
+<span style="font-weight: bold;">2</span>: external <br>
+<span style="font-weight: bold;">3</span>: local variable <br>
+<span style="font-weight: bold;">4</span>: function prototype<br>
+<br>
+</div>
+<span style="font-style: italic;">file index</span> gives the index
+assigned by the CO300 record<br>
+<br>
+<span style="font-style: italic;">
+line number</span> references the line within the given file and is
+given
+in decimal.<br>
+<br>
+</div>
+<div style="margin-left: 40px;"><span style="font-style: italic;">name</span>
+is the name of the symbol this
+record defines<br>
+</div>
+<br>
+&nbsp;6.1.1 librarian support <br>
+<br>
+<div style="margin-left: 40px;">This section gives a preliminary idea
+of the records involved in librarian support, however librarian support
+is subject to change.&nbsp;&nbsp; The library will have various control
+records, then the library modules will be streamed into the library
+intact, then records will be emitted giving a cross reference between
+symbols in the library and object modules to load.<br>
+</div>
+<br>
+6.1.2 Library Begin record<br>
+<br>
+<div style="margin-left: 40px;">The library begin record has the
+following format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">LBXXXXXXXX,name.</span><br>
+</div>
+<br>
+<span style="font-style: italic;">XXXXXXXX</span> is an 8-digit hex
+number which gives the&nbsp; offset in the
+library to SEEK to to find the dictionary.<br>
+<span style="font-style: italic;">name</span> is the library file name,
+<br>
+</div>
+<br>
+6.1.3 Library End record<br>
+<br>
+<div style="margin-left: 40px;">The library end record has the
+following format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">LE.</span><br>
+</div>
+</div>
+<br>
+6.1.4 Library Attributes record<br>
+<br>
+<div style="margin-left: 40px;">The library attributes record gives the
+librarian and linker information about how to parse the library.&nbsp;
+It has the following format:<br>
+<br style="font-weight: bold;">
+<div style="margin-left: 40px;"><span style="font-weight: bold;">LAattributes.</span>
+<br>
+</div>
+<br>
+<span style="font-style: italic;">attributes</span> is a 16 bit hex
+number. <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">bit 0
+= </span>case-insensitive library<span style="font-weight: bold;">
+</span><br>
+</div>
+</div>
+<br>
+6.1.4 Date and Time record<br>
+<br>
+<div style="margin-left: 40px;">This record is similar to the date and
+time record in an object file; when encountered in a library.&nbsp; It
+gives
+the time at which the library was generated.&nbsp; It has the following
+format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">DTYYYYMMDDHHMMSS.
+</span><br>
+</div>
+</div>
+<br>
+6.1.5 Object module comment<br>
+<br>
+<div style="margin-left: 40px;">The object module comment directly
+precedes each object module in the library.&nbsp; When the librarian
+encounters the first object module comment, it is done reading the
+header and can read in the symbol definitions.&nbsp; It has the format:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">CO600,name.<br>
+<br>
+</span></div>
+name is the name of the module as given in the MB record for the module.<br>
+</div>
+<br>
+6.1.6 object modules in library <br>
+<br>
+<div style="margin-left: 40px;">for each module in the library, the
+module is streamed directly into
+the library file unmodified. Just prior to the module will be a CO600
+record which gives the name of the library.<br>
+</div>
+<br>
+6.1.7 Libary Symbol records<br>
+<br>
+<div style="margin-left: 40px;">The library symbol records give a list
+of all public symbols which can
+be resolved by the library, and cross-references the symbol to a module
+to load.<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">LSXXXXXXXX,name.</span>
+<br>
+</div>
+<br>
+<span style="font-style: italic;"></span><span
+ style="font-style: italic;">XXXXXXXXX </span>is the offset in the
+file to find the object module.<br>
+<span style="font-style: italic;">name</span> is the symbol name<br>
+<span style="font-style: italic;"></span><br>
+A list of these records will appear at the end of the library to
+cross-reference the name with the offset in the library file at which
+the MB...xxx...ME sequence occurs for the related module
+<br>
+</div>
+<br>
+7.1.1 File layout used by tools. <br>
+<br>
+In the file layout, <span style="font-weight: bold;">CS</span> records
+are completely optional. The <span style="font-weight: bold;">CS</span>
+record
+layout below indicates how the LADSoft tools place them. <br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">MB</span>
+record <br>
+<span style="font-weight: bold;">AD</span> record <br>
+<span style="font-weight: bold;">DT</span> record <br>
+<span style="font-weight: bold;">CO300</span> record for the main
+source file<br>
+<span style="font-weight: bold;">CS</span> record <br>
+<span style="font-weight: bold;">CO300</span> records for any included
+files (optional) <br>
+<span style="font-weight: bold;">CO100</span> end of MAKE pass
+(optional) <br>
+<span style="font-weight: bold;">CS</span> record <br>
+<span style="font-weight: bold;">ST/SA/ASS/ASL</span> records for each
+defined section <br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">SA</span>
+records optional: missing record
+implies value of 1 <br>
+<span style="font-weight: bold;">ASS</span> records should always be
+present <br>
+<span style="font-weight: bold;">ASL</span> records should only exist
+for sections with the 'A' attribute <br>
+</div>
+<span style="font-weight: bold;">CS</span> record <br>
+<span style="font-weight: bold;">ATT</span> records (optional) <br>
+<span style="font-weight: bold;">CS</span> record <br>
+<span style="font-weight: bold;">NI/ASI/ATI</span> records for publics
+(ATI optional) <br>
+<span style="font-weight: bold;">NX/ATX</span> records for externals <br>
+<span style="font-weight: bold;">NN/ASN/ATN</span> records for locals
+(ATN optional) <br>
+<span style="font-weight: bold;">NA/ASA/ATA</span> records for autos
+(ATA optional) <br>
+<span style="font-weight: bold;">NE/ASE/ATE</span> records for register
+variables (ATE optional)<br>
+<span style="font-weight: bold;">CO201</span> records for imports
+(optional, windows specific) <br>
+<span style="font-weight: bold;">CO200</span> records for exports
+(optional, windows specific) <br>
+<span style="font-weight: bold;">ASG</span> record for start address
+(optional) <br>
+<span style="font-weight: bold;">CS</span> record <br>
+<span style="font-weight: bold;">CO101</span> link pass separator <br>
+<span style="font-weight: bold;">SB/LR/LD/CO4xx records </span><br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">SB</span>
+is not present for sections with the
+'Z' attribute <br>
+<span style="font-weight: bold;">LR</span> records are not required but
+should be present if the linker is to
+relocate the segment. <br>
+at least one <span style="font-weight: bold;">LD</span> or <span
+ style="font-weight: bold;">LR</span> record must be present if an SB
+record is <br>
+<span style="font-weight: bold;">C04xx</span> records are always
+optional <br>
+</div>
+<span style="font-weight: bold;">CS</span> record <br>
+<span style="font-weight: bold;">CO102</span> browse pass separator
+(optional) <br>
+<span style="font-weight: bold;">CO500</span> records for browse
+information (optional) <br>
+<span style="font-weight: bold;">CS</span> record <br>
+<span style="font-weight: bold;">ME</span> record<br>
+<br>
+</div>
+</body>
+</html>

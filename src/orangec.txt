@@ -1,0 +1,106 @@
+language: 	C
+package:  	Orange C
+version:  	4.1.7
+parts: 		compiler, assembler, linker, post-linkers, librarian, grep variant, 
+		make program, resource compiler, import librarian
+author: 	David Lindauer <dlindauer@acm.org>
+location: 	http://members.tripod.com/~ladsoft/orangec.htm
+description: 	Orange C is an optimizing C99 compiler for MSDOS/WIN32.  It 
+		features many of the things a standard DOS/Windows C compiler 
+		features.  As some history it was started as a research project to 
+		learn about optimization, and to get away from a whole range of 
+		problems with supporting an older compiler/tool chain.  Much of the 
+		user feedback from the old compiler was also incorporated in the new 
+		compiler.  There is also some direction being made in terms of 
+		retargetability.
+conformance: 	The parser was designed against the C99 draft standard, with 
+		reference to the C99 rationale.  The floating point operations 
+		may not act in 100% accordance with the floating point portions of 
+		the standard.  Two advanced floating point functions are missing 
+		from the RTL.  The RTL was taken from an older compiler and there
+		was much feedback about it historically, so it should be
+		reasonably conformant.
+reference:	ISO standard n869.pdf - draft standard for C99
+		C99 rationale version 5.10 - comments on C99 standard
+		Various x86 architecture documentation
+		IEEE-695 - object file format
+		"Building an Optimizing Compiler" - Robert Morgan -
+		 Basic information about optimizing compilers and some of the basic
+		 optimizations culled from this source
+		"Iterated Register Coalescing" - George & Appel
+		 Basics for register allocation
+		"A new MLRISC Register Allocator" - Leung & George
+		 Enhancements to the basic register allocation mechanism
+		"A Generalized algorithm for Graph-Coloring Register Allocation" -
+		 Smith, et.al
+		 enhancements to register allocation that help cope with 
+		 irregularities between architectures
+		"Lazy Code Motion" - Jens Knoop, Oliver Ruthing, Bernhard Steffen
+		 The global common subexpression optimization phase was culled from 
+		 this source
+		"Analysis of a Simple Algorithm for Global Data Flow Problems"
+		 Matthew S. Hecht, Jeffrey D. Uhlman 
+		 Comments on efficient mechanisms for bit field algorithms that iterate
+		 over a flow graph
+		Notes from the 'Scribble' project where used to cull the idea of
+		 how to do basic loop invariant code motion while the intermediate code 
+		 is in SSA form.
+		"Practical and Accurate Low-Level Pointer Analysis" -
+		 Bolei Guo, Matthew J. Bridges, Spyridon Triantafyllis 
+ 		 Guilherme Ottoni, Easwaran Raman, David I. August 
+		 this paper gives insite on how to do aliasing calculations on 
+		 assembly language code without help from the front end; it was 
+		 adapted to work on intermediate code.
+		"The Lengauer Tarjan Algorithm for Computing the Immediate 
+		 Dominator Tree of a Flowgraph" - Martin Richards
+		The Local Common Subexpression algorithm was written with some
+		 help from members of the comp.compilers newsgroup.
+features:
+		+ both source code and WIN32 executables are available
+		+ includes sources for a C language runtime library
+		+ the major test programs for this platform are various archivers
+		+ dos version can target a wide variety of MSDOS extenders
+		+ everything but the compiler and RTL is written in C++
+		+ source code is reused between tools to the extent possible
+		+ linker is generic, this project adds a post-link stage to generate 
+		  OS-specific binaries.  Post-linkers can be added by customizing
+		  an XML file the linker reads, and adding linker control files to
+		  set up standard declarations for link addresses, alignment, and so
+		  forth.  Since the object file format is abstracted in helper
+		  classes that are used across the tool chain, post linkers are
+		  generally easy to write.
+		+ supports common win32 compiler and tool extensions
+		+ utilizes a human-readable object file format
+		+ assembler uses XML-based architecture description file to 
+		  allow for retargeting, it is intended to extend this to support 
+		  the compiler as well.  Assembler syntax similar to NASM.  
+		  Compiler for this file is included with the sources.
+		+ current version of compiler is somewhat customizable to different 
+		  architectures.
+		+ RTL features an OS abstraction layer - OS specific functions are
+		  wrapped into this layer and isolated from the main RTL functions.
+		+ make program is similar to GNU make
+		+ Basic WIN32 headers
+		- this version of the compiler has a recursive-descent parser.
+bugs:		may be some issues with floating point and signal handling
+restriction: 	The main portions of source code are new work that is BSD Licensed.
+		The run-time library has also been relicensed with the BSD license.
+		MSDOS extenders from outside sources are included with this package; 
+		licensing for each extender is included with the executables
+		(most are freeware).  Source code for the basic extender is
+		included; source code for other extenders is unmodified and is
+		usually available from the author(s) of the original packages.  
+		This project includes modified WIN32 headers that were derived from 
+		GNU sources and are GPL'd.
+requires: 	WIN32.  Make files are for omake and Borland C++ 5.5.
+portability:	mostly system independent, with some dependencies on WIN32 in the
+		omake program and in generic libraries.  OS dependencies are generally
+		isolated in wrapper classes.  The compiler itself is designed to be
+		free of dependencies that don't exist in standard runtime libraries.
+		As usual, the RTL is os-dependent but main functions of the RTL are
+		kept as isolated from these dependencies as possible.  There may be 
+		some residual issues with const correctness in the C++ sources as the 
+		Borland compiler is lax in enforcing this.
+status:		active, worked on for several years, released spring of 2010
+updated: 	2010/10/14
+

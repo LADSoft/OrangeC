@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OCC Command Line</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<span style="font-weight: bold;"></span>
+<h2 style="text-align: center;">OCC Command Line</h2>
+<br>
+OCC has a variety of command line parameters, most of which aren't
+needed to just compile a file.&nbsp; It will also allow you to specify
+multiple input files.&nbsp; The current default for OCC is to generate
+executable files.&nbsp; While processing the command line, OCC may
+encounter a command to process command line arguments from a file.<br>
+<br>
+The general format of the command line is as follows:<br>
+<br>
+OCC [parameters]&nbsp; list of files<br>
+<br>
+The list of files can be a list of one or more C language files.&nbsp;
+C++ language files are partially supported, but the C++ support is
+minimal at this time.&nbsp; If you don't specify an extension on the
+command line it will default to .C; it will detect a .CPP extension and
+activate C++ mode as required.<br>
+<br>
+OCC will accept response files with a list of command line
+options.&nbsp; To use a response file, prefix its name with '@':<br>
+<br>
+OCC [parameters] @resp.cc<br>
+<br>
+There are a variety of parameters that can be set.&nbsp; Help is
+available for the following:<br>
+<br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Output%20Control.html">Output Control</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Error%20Control.html">Error Control</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20List%20File%20Control.html">List
+File Control</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Preprocessor%20File%20Control.html">Preprocessor
+File Control</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Compilation%20Modes.html">Compilation
+Modes</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Defining%20Macros.html">Defining
+Macros</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Specifying%20Include%20Paths.html">Specifying
+Include Paths</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Translating%20Trigraphs.html">Translating
+Trigraphs</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Code%20Generation%20Parameters.html">Code
+Generation Parameters</a><br>
+&nbsp;&nbsp;&nbsp; <a href="OCC%20Optimizer%20Parameters.html">Optimizer
+Parameters</a><br>
+<br>
+</body>
+</html>

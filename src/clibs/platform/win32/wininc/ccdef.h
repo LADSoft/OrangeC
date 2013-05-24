@@ -1,0 +1,958 @@
+/* 
+   ccdef.h
+
+   Base definitions
+
+   Copyright (C) 1996 Free Software Foundation, Inc.
+
+   This file is part of the Windows32 API Library.
+
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Library General Public
+   License as published by the Free Software Foundation; either
+   version 2 of the License, or (at your option) any later version.
+   
+   This library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Library General Public License for more details.
+
+   If you are interested in a warranty or support for this source code,
+   contact Scott Christley <scottc@net-community.com> for more information.
+   
+   You should have received a copy of the GNU Library General Public
+   License along with this library; see the file COPYING.LIB.
+   If not, write to the Free Software Foundation, 
+   59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+   -----------
+   DAL 2003 - this file modified extensively for my compiler.  New
+   definitionswnwn added as well.
+*/ 
+
+#define LPSTR_TEXTCALLBACKW   ((LPWSTR)-1L)
+#define LPSTR_TEXTCALLBACKA	((LPSTR)-1L)
+#ifdef UNICODE
+#define LPSTR_TEXTCALLBACK LPSTR_TEXTCALLBACKW
+#else
+#define LPSTR_TEXTCALLBACK LPSTR_TEXTCALLBACKA
+#endif /* UNICODE */
+
+#define ANIMATE_CLASSA "SysAnimate32"
+#define ANIMATE_CLASSW L"SysAnimate32"
+
+#define DATETIMEPICK_CLASSA "SysDateTimePick32"
+#define DATETIMEPICK_CLASSW L"SysDateTimePick32"
+
+#ifdef UNICODE
+#define DRAGLISTMSGSTRING L"commctrl_DragListMsg"
+#else
+#define DRAGLISTMSGSTRING "commctrl_DragListMsg"
+#endif
+
+#define HOTKEY_CLASSA "msctls_hotkey32"
+#define HOTKEY_CLASSW L"msctls_hotkey32"
+
+#define MONTHCAL_CLASSA "SysMonthCal32"
+#define MONTHCAL_CLASSW L"SysMonthCal32"
+
+#define PROGRESS_CLASSA "msctls_progress32"
+#define PROGRESS_CLASSW L"msctls_progress32"
+
+#define REBARCLASSNAMEA "ReBarWindow32"
+#define REBARCLASSNAMEW L"ReBarWindow32"
+
+#define STATUSCLASSNAMEA "msctls_statusbar32"
+#define STATUSCLASSNAMEW L"msctls_statusbar32"
+
+#define TOOLBARCLASSNAMEA "ToolbarWindow32"
+#define TOOLBARCLASSNAMEW L"ToolbarWindow32"
+
+#define TOOLTIPS_CLASSA "tooltips_class32"
+#define TOOLTIPS_CLASSW L"tooltips_class32"
+
+#define TRACKBAR_CLASSA "msctls_trackbar32"
+#define TRACKBAR_CLASSW L"msctls_trackbar32"
+
+#define UPDOWN_CLASSA "msctls_updown32"
+#define UPDOWN_CLASSW L"msctls_updown32"
+
+#define WC_COMBOBOXEXA "ComboBoxEx32"
+#define WC_COMBOBOXEXW L"ComboBoxEx32"
+
+#define WC_HEADERA "SysHeader32"
+#define WC_HEADERW L"SysHeader32"
+
+#define WC_IPADDRESSA "SysIPAddress32"
+#define WC_IPADDRESSW L"SysIPAddress32"
+
+#define WC_LISTVIEWA "SysListView32"
+#define WC_LISTVIEWW L"SysListView32"
+
+#define WC_NATIVEFONTCTLA "NativeFontCtl"
+#define WC_NATIVEFONTCTLW L"NativeFontCtl"
+
+#define WC_PAGESCROLLERA "SysPager"
+#define WC_PAGESCROLLERW L"SysPager"
+
+#define WC_TABCONTROLA "SysTabControl32"
+#define WC_TABCONTROLW L"SysTabControl32"
+
+#define WC_TREEVIEWA "SysTreeView32"
+#define WC_TREEVIEWW L"SysTreeView32"
+
+#ifdef UNICODE
+#define ANIMATE_CLASS ANIMATE_CLASSW
+#define DATETIMEPICK_CLASS DATETIMEPICK_CLASSW
+#define HOTKEY_CLASS HOTKEY_CLASSW
+#define MONTHCAL_CLASS MONTHCAL_CLASSW
+#define PROGRESS_CLASS PROGRESS_CLASSW
+#define TOOLBARCLASSNAME TOOLBARCLASSNAMEW
+#define TOOLTIPS_CLASS TOOLTIPS_CLASSW
+#define TRACKBAR_CLASS TRACKBAR_CLASSW
+#define UPDOWN_CLASS UPDOWN_CLASSW
+#define WC_COMBOBOXEX WC_COMBOBOXEXW
+#define WC_HEADER WC_HEADERW
+#define WC_IPADDRESS WC_IPADDRESSW
+#define WC_LISTVIEW WC_LISTVIEWW
+#define WC_NATIVEFONTCTL WC_NATIVEFONTCTLW
+#define WC_PAGESCROLLER WC_PAGESCROLLERW
+#define WC_TABCONTROL WC_TABCONTROLW
+#define WC_TREEVIEW WC_TREEVIEWW
+#else
+#define ANIMATE_CLASS ANIMATE_CLASSA
+#define DATETIMEPICK_CLASS DATETIMEPICK_CLASSA
+#define HOTKEY_CLASS HOTKEY_CLASSA
+#define MONTHCAL_CLASS MONTHCAL_CLASSA
+#define PROGRESS_CLASS PROGRESS_CLASSA
+#define TOOLBARCLASSNAME TOOLBARCLASSNAMEA
+#define TOOLTIPS_CLASS TOOLTIPS_CLASSA
+#define TRACKBAR_CLASS TRACKBAR_CLASSA
+#define UPDOWN_CLASS UPDOWN_CLASSA
+#define WC_COMBOBOXEX WC_COMBOBOXEXA
+#define WC_HEADER WC_HEADERA
+#define WC_IPADDRESS WC_IPADDRESSA
+#define WC_LISTVIEW WC_LISTVIEWA
+#define WC_NATIVEFONTCTL WC_NATIVEFONTCTLA
+#define WC_PAGESCROLLER WC_PAGESCROLLERA
+#define WC_TABCONTROL WC_TABCONTROLA
+#define WC_TREEVIEW WC_TREEVIEWA
+#endif
+
+#define ACN_START (1)
+#define ACN_STOP (2)
+
+#define ACS_AUTOPLAY (4)
+#define ACS_CENTER (1)
+#define ACS_TIMER (8)
+#define ACS_TRANSPARENT (2)
+
+#define BTNS_AUTOSIZE TBSTYLE_AUTOSIZE
+#define BTNS_BUTTON TBSTYLE_BUTTON
+#define BTNS_CHECK TBSTYLE_CHECK
+#define BTNS_CHECKGROUP TBSTYLE_CHECKGROUP
+#define BTNS_DROPDOWN TBSTYLE_DROPDOWN
+#define BTNS_GROUP TBSTYLE_GROUP
+#define BTNS_NOPREFIX TBSTYLE_NOPREFIX
+#define BTNS_SEP TBSTYLE_SEP
+#define BTNS_SHOWTEXT (64)
+#define BTNS_WHOLEDROPDOWN (128)
+
+#define CBEIF_DI_SETITEM (268435456)
+#define CBEIF_IMAGE (2)
+#define CBEIF_INDENT (16)
+#define CBEIF_LPARAM (32)
+#define CBEIF_OVERLAY (8)
+#define CBEIF_SELECTEDIMAGE (4)
+#define CBEIF_TEXT (1)
+
+#define CBEMAXSTRLEN (260)
+
+#define CBENF_DROPDOWN (4)
+#define CBENF_ESCAPE (3)
+#define CBENF_KILLFOCUS (1)
+#define CBENF_RETURN (2)
+
+#define CBES_EX_CASESENSITIVE (16)
+#define CBES_EX_NOEDITIMAGE (1)
+#define CBES_EX_NOEDITIMAGEINDENT (2)
+#define CBES_EX_NOSIZELIMIT (8)
+#define CBES_EX_PATHWORDBREAKPROC (4)
+
+#define CCS_ADJUSTABLE (32)
+#define CCS_BOTTOM (3)
+#define CCS_LEFT (CCS_VERT | CCS_TOP)
+#define CCS_NODIVIDER (64)
+#define CCS_NOMOVEX (CCS_VERT | CCS_NOMOVEY)
+#define CCS_NOMOVEY (2)
+#define CCS_NOPARENTALIGN (8)
+#define CCS_NORESIZE (4)
+#define CCS_RIGHT (CCS_VERT | CCS_BOTTOM)
+#define CCS_TOP (1)
+#define CCS_VERT (128)
+
+#define CDDS_ITEM (65536)
+#define CDDS_ITEMPOSTERASE (CDDS_ITEM | CDDS_POSTERASE)
+#define CDDS_ITEMPOSTPAINT (CDDS_ITEM | CDDS_POSTPAINT)
+#define CDDS_ITEMPREERASE (CDDS_ITEM | CDDS_PREERASE)
+#define CDDS_ITEMPREPAINT (CDDS_ITEM | CDDS_PREPAINT)
+#define CDDS_POSTERASE (4)
+#define CDDS_POSTPAINT (2)
+#define CDDS_PREERASE (3)
+#define CDDS_PREPAINT (1)
+#define CDDS_SUBITEM (131072)
+
+#define CDIS_CHECKED (8)
+#define CDIS_DEFAULT (32)
+#define CDIS_DISABLED (4)
+#define CDIS_FOCUS (16)
+#define CDIS_GRAYED (2)
+#define CDIS_HOT (64)
+#define CDIS_INDETERMINATE (256)
+#define CDIS_MARKED (128)
+#define CDIS_SELECTED (1)
+
+#define CDRF_DODEFAULT (0)
+#define CDRF_NEWFONT (2)
+#define CDRF_NOTIFYITEMDRAW (32)
+#define CDRF_NOTIFYPOSTERASE (64)
+#define CDRF_NOTIFYPOSTPAINT (16)
+#define CDRF_NOTIFYSUBITEMDRAW (32)
+#define CDRF_SKIPDEFAULT (4)
+
+#define CMB_MASKED (2)
+
+#define DL_BEGINDRAG (1157)
+#define DL_CANCELDRAG (1160)
+#define DL_COPYCURSOR (2)
+#define DL_CURSORSET (0)
+#define DL_DRAGGING (1158)
+#define DL_DROPPED (1159)
+#define DL_MOVECURSOR (3)
+#define DL_STOPCURSOR (1)
+
+#define DTS_APPCANPARSE (16)
+#define DTS_LONGDATEFORMAT (4)
+#define DTS_RIGHTALIGN (32)
+#define DTS_SHORTDATECENTURYFORMAT (12)
+#define DTS_SHORTDATEFORMAT (0)
+#define DTS_SHOWNONE (2)
+#define DTS_TIMEFORMAT (9)
+#define DTS_UPDOWN (1)
+
+#define FSB_ENCARTA_MODE (1)
+#define FSB_FLAT_MODE (2)
+#define FSB_REGULAR_MODE (0)
+
+#define GDTR_MAX (2)
+#define GDTR_MIN (1)
+
+#define GDT_ERROR (-1)
+#define GDT_NONE (1)
+#define GDT_VALID (0)
+
+#define GMR_DAYSTATE (1)
+#define GMR_VISIBLE (0)
+
+#define HDFT_HASNOVALUE (32768)
+#define HDFT_ISNUMBER (1)
+#define HDFT_ISSTRING (0)
+
+#define HDF_BITMAP (8192)
+#define HDF_BITMAP_ON_RIGHT (4096)
+#define HDF_CENTER (2)
+#define HDF_IMAGE (2048)
+#define HDF_JUSTIFYMASK (3)
+#define HDF_LEFT (0)
+#define HDF_OWNERDRAW (32768)
+#define HDF_RIGHT (1)
+#define HDF_RTLREADING (4)
+#define HDF_STRING (16384)
+
+#define HDI_BITMAP (16)
+#define HDI_DI_SETITEM (64)
+#define HDI_FILTER (256)
+#define HDI_FORMAT (4)
+#define HDI_HEIGHT HDI_WIDTH
+#define HDI_IMAGE (32)
+#define HDI_LPARAM (8)
+#define HDI_ORDER (128)
+#define HDI_TEXT (2)
+#define HDI_WIDTH (1)
+
+#define HDS_BUTTONS (2)
+#define HDS_DRAGDROP (64)
+#define HDS_FILTERBAR (256)
+#define HDS_FULLDRAG (128)
+#define HDS_HIDDEN (8)
+#define HDS_HORZ (0)
+#define HDS_HOTTRACK (4)
+
+#define HD_ITEM HDITEM
+#define HD_ITEMA HDITEMA
+#define HD_ITEMW HDITEMW
+#define HD_LAYOUT HDLAYOUT
+#define HD_NOTIFY NMHEADER
+#define HD_NOTIFYA NMHEADERA
+#define HD_NOTIFYW NMHEADERW
+
+#define HHT_ABOVE (256)
+#define HHT_BELOW (512)
+#define HHT_NOWHERE (1)
+#define HHT_ONDIVIDER (4)
+#define HHT_ONDIVOPEN (8)
+#define HHT_ONFILTER (16)
+#define HHT_ONFILTERBUTTON (32)
+#define HHT_ONHEADER (2)
+#define HHT_TOLEFT (2048)
+#define HHT_TORIGHT (1024)
+
+#define HICF_ACCELERATOR (4)
+#define HICF_ARROWKEYS (2)
+#define HICF_DUPACCEL (8)
+#define HICF_ENTERING (16)
+#define HICF_LEAVING (32)
+#define HICF_LMOUSE (128)
+#define HICF_MOUSE (1)
+#define HICF_OTHER (0)
+#define HICF_RESELECT (64)
+#define HICF_TOGGLEDROPDOWN (256)
+
+#define HINST_COMMCTRL ((HINSTANCE) -1)
+
+#define HIST_ADDTOFAVORITES (3)
+#define HIST_BACK (0)
+#define HIST_FAVORITES (2)
+#define HIST_FORWARD (1)
+#define HIST_VIEWTREE (4)
+
+#define HKCOMB_A (8)
+#define HKCOMB_C (4)
+#define HKCOMB_CA (64)
+#define HKCOMB_NONE (1)
+#define HKCOMB_S (2)
+#define HKCOMB_SA (32)
+#define HKCOMB_SC (16)
+#define HKCOMB_SCA (128)
+
+#define HOTKEYF_ALT (4)
+#define HOTKEYF_CONTROL (2)
+#define HOTKEYF_EXT (8)
+#define HOTKEYF_SHIFT (1)
+
+#define HOVER_DEFAULT (2147483647)
+
+#define ICC_ANIMATE_CLASS (128)
+#define ICC_BAR_CLASSES (4)
+#define ICC_COOL_CLASSES (1024)
+#define ICC_DATE_CLASSES (256)
+#define ICC_HOTKEY_CLASS (64)
+#define ICC_INTERNET_CLASSES (2048)
+#define ICC_LISTVIEW_CLASSES (1)
+#define ICC_NATIVEFNTCTL_CLASS (8192)
+#define ICC_PAGESCROLLER_CLASS (4096)
+#define ICC_PROGRESS_CLASS (32)
+#define ICC_TAB_CLASSES (8)
+#define ICC_TREEVIEW_CLASSES (2)
+#define ICC_UPDOWN_CLASS (16)
+#define ICC_USEREX_CLASSES (512)
+#define ICC_WIN95_CLASSES (255)
+
+#define IDB_HIST_LARGE_COLOR (9)
+#define IDB_HIST_SMALL_COLOR (8)
+#define IDB_STD_LARGE_COLOR (1)
+#define IDB_STD_SMALL_COLOR (0)
+#define IDB_VIEW_LARGE_COLOR (5)
+#define IDB_VIEW_SMALL_COLOR (4)
+
+#define ILCF_MOVE (0)
+#define ILCF_SWAP (1)
+
+#define ILC_COLOR (0)
+#define ILC_COLOR16 (16)
+#define ILC_COLOR24 (24)
+#define ILC_COLOR32 (32)
+#define ILC_COLOR4 (4)
+#define ILC_COLOR8 (8)
+#define ILC_COLORDDB (254)
+#define ILC_MASK (1)
+#define ILC_PALETTE (2048)
+
+#define INFOTIPSIZE (1024)
+
+#define I_CHILDRENCALLBACK (-1)
+#define I_IMAGECALLBACK (-1)
+#define I_IMAGENONE (-2)
+#define I_INDENTCALLBACK (-1)
+
+#define LVA_ALIGNLEFT (1)
+#define LVA_ALIGNTOP (2)
+#define LVA_DEFAULT (0)
+#define LVA_SNAPTOGRID (5)
+
+#define LVBKIF_SOURCE_HBITMAP (1)
+#define LVBKIF_SOURCE_MASK (3)
+#define LVBKIF_SOURCE_NONE (0)
+#define LVBKIF_SOURCE_URL (2)
+#define LVBKIF_STYLE_MASK (16)
+#define LVBKIF_STYLE_NORMAL (0)
+#define LVBKIF_STYLE_TILE (16)
+
+#define LVCFMT_BITMAP_ON_RIGHT (4096)
+#define LVCFMT_CENTER (2)
+#define LVCFMT_COL_HAS_IMAGES (32768)
+#define LVCFMT_IMAGE (2048)
+#define LVCFMT_JUSTIFYMASK (3)
+#define LVCFMT_LEFT (0)
+#define LVCFMT_RIGHT (1)
+
+#define LVCF_FMT (1)
+#define LVCF_IMAGE (16)
+#define LVCF_ORDER (32)
+#define LVCF_SUBITEM (8)
+#define LVCF_TEXT (4)
+#define LVCF_WIDTH (2)
+
+#define LVFI_NEARESTXY (64)
+#define LVFI_PARAM (1)
+#define LVFI_PARTIAL (8)
+#define LVFI_STRING (2)
+#define LVFI_WRAP (32)
+
+#define LVGIT_UNFOLDED (1)
+
+#define LVHT_ABOVE (8)
+#define LVHT_BELOW (16)
+#define LVHT_NOWHERE (1)
+#define LVHT_ONITEM (LVHT_ONITEMICON | LVHT_ONITEMLABEL | LVHT_ONITEMSTATEICON)
+#define LVHT_ONITEMICON (2)
+#define LVHT_ONITEMLABEL (4)
+#define LVHT_ONITEMSTATEICON (8)
+#define LVHT_TOLEFT (64)
+#define LVHT_TORIGHT (32)
+
+#define LVIF_DI_SETITEM (4096)
+#define LVIF_IMAGE (2)
+#define LVIF_INDENT (16)
+#define LVIF_NORECOMPUTE (2048)
+#define LVIF_PARAM (4)
+#define LVIF_STATE (8)
+#define LVIF_TEXT (1)
+
+#define LVIR_BOUNDS (0)
+#define LVIR_ICON (1)
+#define LVIR_LABEL (2)
+#define LVIR_SELECTBOUNDS (3)
+
+#define LVIS_ACTIVATING (32)
+#define LVIS_CUT (4)
+#define LVIS_DROPHILITED (8)
+#define LVIS_FOCUSED (1)
+#define LVIS_OVERLAYMASK (3840)
+#define LVIS_SELECTED (2)
+#define LVIS_STATEIMAGEMASK (61440)
+
+#define LVKF_ALT (1)
+#define LVKF_CONTROL (2)
+#define LVKF_SHIFT (4)
+
+#define LVNI_ABOVE (256)
+#define LVNI_ALL (0)
+#define LVNI_BELOW (512)
+#define LVNI_CUT (4)
+#define LVNI_DROPHILITED (8)
+#define LVNI_FOCUSED (1)
+#define LVNI_SELECTED (2)
+#define LVNI_TOLEFT (1024)
+#define LVNI_TORIGHT (2048)
+
+#define LVSCW_AUTOSIZE (-1)
+#define LVSCW_AUTOSIZE_USEHEADER (-2)
+
+#define LVSICF_NOINVALIDATEALL (1)
+#define LVSICF_NOSCROLL (2)
+
+#define LVSIL_NORMAL (0)
+#define LVSIL_SMALL (1)
+#define LVSIL_STATE (2)
+
+#define LVS_ALIGNLEFT (2048)
+#define LVS_ALIGNMASK (3072)
+#define LVS_ALIGNTOP (0)
+#define LVS_AUTOARRANGE (256)
+#define LVS_EDITLABELS (512)
+#define LVS_EX_CHECKBOXES (4)
+#define LVS_EX_FLATSB (256)
+#define LVS_EX_FULLROWSELECT (32)
+#define LVS_EX_GRIDLINES (1)
+#define LVS_EX_HEADERDRAGDROP (16)
+#define LVS_EX_INFOTIP (1024)
+#define LVS_EX_LABELTIP (16384)
+#define LVS_EX_MULTIWORKAREAS (8192)
+#define LVS_EX_ONECLICKACTIVATE (64)
+#define LVS_EX_REGIONAL (512)
+#define LVS_EX_SUBITEMIMAGES (2)
+#define LVS_EX_TRACKSELECT (8)
+#define LVS_EX_TWOCLICKACTIVATE (128)
+#define LVS_EX_UNDERLINECOLD (4096)
+#define LVS_EX_UNDERLINEHOT (2048)
+#define LVS_ICON (0)
+#define LVS_LIST (3)
+#define LVS_NOCOLUMNHEADER (16384)
+#define LVS_NOLABELWRAP (128)
+#define LVS_NOSCROLL (8192)
+#define LVS_NOSORTHEADER (32768)
+#define LVS_OWNERDATA (4096)
+#define LVS_OWNERDRAWFIXED (1024)
+#define LVS_REPORT (1)
+#define LVS_SHAREIMAGELISTS (64)
+#define LVS_SHOWSELALWAYS (8)
+#define LVS_SINGLESEL (4)
+#define LVS_SMALLICON (2)
+#define LVS_SORTASCENDING (16)
+#define LVS_SORTDESCENDING (32)
+#define LVS_TYPEMASK (3)
+#define LVS_TYPESTYLEMASK (64512)
+
+#define LV_MAX_WORKAREAS (16)
+
+#define MCHT_CALENDAR (131072)
+#define MCHT_CALENDARBK MCHT_CALENDAR
+#define MCHT_CALENDARDATE (MCHT_CALENDAR | 1)
+#define MCHT_CALENDARDATENEXT (MCHT_CALENDARDATE | MCHT_NEXT)
+#define MCHT_CALENDARDATEPREV (MCHT_CALENDARDATE | MCHT_PREV)
+#define MCHT_CALENDARDAY (MCHT_CALENDAR | 2)
+#define MCHT_CALENDARWEEKNUM (MCHT_CALENDAR | 3)
+#define MCHT_NEXT (16777216)
+#define MCHT_NOWHERE (0)
+#define MCHT_PREV (33554432)
+#define MCHT_TITLE (65536)
+#define MCHT_TITLEBK MCHT_TITLE
+#define MCHT_TITLEBTNNEXT (MCHT_TITLE | MCHT_NEXT | 3)
+#define MCHT_TITLEBTNPREV (MCHT_TITLE | MCHT_PREV | 3)
+#define MCHT_TITLEMONTH (MCHT_TITLE | 1)
+#define MCHT_TITLEYEAR (MCHT_TITLE | 2)
+#define MCHT_TODAYLINK (196608)
+
+#define MCSC_BACKGROUND (0)
+#define MCSC_MONTHBK (4)
+#define MCSC_TEXT (1)
+#define MCSC_TITLEBK (2)
+#define MCSC_TITLETEXT (3)
+#define MCSC_TRAILINGTEXT (5)
+
+#define MCS_DAYSTATE (1)
+#define MCS_MULTISELECT (2)
+#define MCS_NOTODAY (16)
+#define MCS_NOTODAYCIRCLE (8)
+#define MCS_WEEKNUMBERS (4)
+
+#define MINSYSCOMMAND SC_SIZE
+
+#define MSGF_COMMCTRL_BEGINDRAG (16896)
+#define MSGF_COMMCTRL_DRAGSELECT (16898)
+#define MSGF_COMMCTRL_SIZEHEADER (16897)
+#define MSGF_COMMCTRL_TOOLBARCUST (16899)
+
+#define NFS_ALL (16)
+#define NFS_BUTTON (8)
+#define NFS_EDIT (1)
+#define NFS_LISTCOMBO (4)
+#define NFS_STATIC (2)
+#define NFS_USEFONTASSOC (32)
+
+#define ODT_HEADER (100)
+#define ODT_LISTVIEW (102)
+#define ODT_TAB (101)
+
+#define PBS_SMOOTH (1)
+#define PBS_VERTICAL (4)
+
+#define PGB_BOTTOMORRIGHT (1)
+#define PGB_TOPORLEFT (0)
+
+#define PGF_CALCHEIGHT (2)
+#define PGF_CALCWIDTH (1)
+#define PGF_DEPRESSED (4)
+#define PGF_GRAYED (2)
+#define PGF_HOT (8)
+#define PGF_INVISIBLE (0)
+#define PGF_NORMAL (1)
+#define PGF_SCROLLDOWN (2)
+#define PGF_SCROLLLEFT (4)
+#define PGF_SCROLLRIGHT (8)
+#define PGF_SCROLLUP (1)
+
+#define PGK_CONTROL (2)
+#define PGK_MENU (4)
+#define PGK_SHIFT (1)
+
+#define PGS_AUTOSCROLL (2)
+#define PGS_DRAGNDROP (4)
+#define PGS_HORZ (1)
+#define PGS_VERT (0)
+
+#define RBBIM_BACKGROUND (128)
+#define RBBIM_CHILD (16)
+#define RBBIM_CHILDSIZE (32)
+#define RBBIM_COLORS (2)
+#define RBBIM_HEADERSIZE (2048)
+#define RBBIM_ID (256)
+#define RBBIM_IDEALSIZE (512)
+#define RBBIM_IMAGE (8)
+#define RBBIM_LPARAM (1024)
+#define RBBIM_SIZE (64)
+#define RBBIM_STYLE (1)
+#define RBBIM_TEXT (4)
+
+#define RBBS_BREAK (1)
+#define RBBS_CHILDEDGE (4)
+#define RBBS_FIXEDBMP (32)
+#define RBBS_FIXEDSIZE (2)
+#define RBBS_GRIPPERALWAYS (128)
+#define RBBS_HIDDEN (8)
+#define RBBS_HIDETITLE (1024)
+#define RBBS_NOGRIPPER (256)
+#define RBBS_NOVERT (16)
+#define RBBS_USECHEVRON (512)
+#define RBBS_VARIABLEHEIGHT (64)
+
+#define RBHT_CAPTION (2)
+#define RBHT_CHEVRON (8)
+#define RBHT_CLIENT (3)
+#define RBHT_GRABBER (4)
+#define RBHT_NOWHERE (1)
+
+#define RBIM_IMAGELIST (1)
+
+#define RBNM_ID (1)
+#define RBNM_LPARAM (4)
+#define RBNM_STYLE (2)
+
+#define RBS_AUTOSIZE (8192)
+#define RBS_BANDBORDERS (1024)
+#define RBS_BANDBORDERS (1024)
+#define RBS_DBLCLKTOGGLE (32768)
+#define RBS_FIXEDORDER (2048)
+#define RBS_FIXEDORDER (2048)
+#define RBS_REGISTERDROP (4096)
+#define RBS_TOOLTIPS (256)
+#define RBS_TOOLTIPS (256)
+#define RBS_VARHEIGHT (512)
+#define RBS_VARHEIGHT (512)
+#define RBS_VERTICALGRIPPER (16384)
+
+
+#define SBARS_SIZEGRIP (256)
+#define SBARS_TOOLTIPS (2048)
+
+#define SBT_NOBORDERS (256)
+#define SBT_NOTABPARSING (2048)
+#define SBT_OWNERDRAW (4096)
+#define SBT_POPOUT (512)
+#define SBT_RTLREADING (1024)
+#define SBT_TOOLTIPS (2048)
+
+#define STD_COPY (1)
+#define STD_CUT (0)
+#define STD_DELETE (5)
+#define STD_FILENEW (6)
+#define STD_FILEOPEN (7)
+#define STD_FILESAVE (8)
+#define STD_FIND (12)
+#define STD_HELP (11)
+#define STD_PASTE (2)
+#define STD_PRINT (14)
+#define STD_PRINTPRE (9)
+#define STD_PROPERTIES (10)
+#define STD_REDOW (4)
+#define STD_REPLACE (13)
+#define STD_UNDO (3)
+
+#define TBBF_LARGE (1)
+
+#define TBCDRF_BLENDICON (2097152)
+#define TBCDRF_HILITEHOTTRACK (131072)
+#define TBCDRF_NOEDGES (65536)
+#define TBCDRF_NOETCHEDEFFECT (1048576)
+#define TBCDRF_NOMARK (524288)
+#define TBCDRF_NOOFFSET (262144)
+
+#define TBCD_CHANNEL (3)
+#define TBCD_THUMB (2)
+#define TBCD_TICS (1)
+
+#define TBDDRET_DEFAULT (0)
+#define TBDDRET_NODEFAULT (1)
+#define TBDDRET_TREATPRESSED (2)
+
+#define TBIF_BYINDEX (2147483647)
+#define TBIF_COMMAND (32)
+#define TBIF_IMAGE (1)
+#define TBIF_LPARAM (16)
+#define TBIF_SIZE (64)
+#define TBIF_STATE (4)
+#define TBIF_STYLE (8)
+#define TBIF_TEXT (2)
+
+#define TBIMHT_AFTER (1)
+#define TBIMHT_BACKGROUND (2)
+
+#define TBNF_DI_SETITEM (268435456)
+#define TBNF_IMAGE (1)
+#define TBNF_TEXT (2)
+
+#define TBNRF_ENDCUSTOMIZE (2)
+#define TBNRF_HIDEHELP (1)
+
+#define TBSTATE_CHECKED (1)
+#define TBSTATE_ELLIPSES (64)
+#define TBSTATE_ENABLED (4)
+#define TBSTATE_HIDDEN (8)
+#define TBSTATE_INDETERMINATE (16)
+#define TBSTATE_MARKED (128)
+#define TBSTATE_PRESSED (2)
+#define TBSTATE_WRAP (32)
+
+#define TBSTYLE_ALTDRAG (1024)
+#define TBSTYLE_AUTOSIZE (16)
+#define TBSTYLE_BUTTON (0)
+#define TBSTYLE_CHECK (2)
+#define TBSTYLE_CHECKGROUP (TBSTYLE_GROUP | TBSTYLE_CHECK)
+#define TBSTYLE_CUSTOMERASE (8192)
+#define TBSTYLE_DROPDOWN (8)
+#define TBSTYLE_EX_DRAWDDARROWS (1)
+#define TBSTYLE_EX_HIDECLIPPEDBUTTONS (16)
+#define TBSTYLE_EX_MIXEDBUTTONS (8)
+#define TBSTYLE_FLAT (2048)
+#define TBSTYLE_GROUP (4)
+#define TBSTYLE_LIST (4096)
+#define TBSTYLE_NOPREFIX (32)
+#define TBSTYLE_REGISTERDROP (16384)
+#define TBSTYLE_SEP (1)
+#define TBSTYLE_TOOLTIPS (256)
+#define TBSTYLE_TRANSPARENT (32768)
+#define TBSTYLE_WRAPABLE (512)
+
+#define TBS_AUTOTICKS (1)
+#define TBS_BOTH (8)
+#define TBS_BOTTOM (0)
+#define TBS_ENABLESELRANGE (32)
+#define TBS_FIXEDLENGTH (64)
+#define TBS_HORZ (0)
+#define TBS_LEFT (4)
+#define TBS_NOTHUMB (128)
+#define TBS_NOTICKS (16)
+#define TBS_REVERSED (512)
+#define TBS_RIGHT (0)
+#define TBS_TOOLTIPS (256)
+#define TBS_TOP (4)
+#define TBS_VERT (2)
+
+#define TBTS_BOTTOM (2)
+#define TBTS_LEFT (1)
+#define TBTS_RIGHT (3)
+#define TBTS_TOP (0)
+
+#define TCHT_NOWHERE (1)
+#define TCHT_ONITEM (TCHT_ONITEMICON | TCHT_ONITEMLABEL)
+#define TCHT_ONITEMICON (2)
+#define TCHT_ONITEMLABEL (4)
+
+#define TCIF_IMAGE (2)
+#define TCIF_PARAM (8)
+#define TCIF_RTLREADING (4)
+#define TCIF_STATE (16)
+#define TCIF_TEXT (1)
+
+#define TCIS_BUTTONPRESSED (1)
+#define TCIS_HIGHLIGHTED (2)
+
+#define TCS_BOTTOM (2)
+#define TCS_BUTTONS (256)
+#define TCS_EX_FLATSEPARATORS (1)
+#define TCS_EX_REGISTERDROP (2)
+#define TCS_FIXEDWIDTH (1024)
+#define TCS_FLATBUTTONS (8)
+#define TCS_FOCUSNEVER (32768)
+#define TCS_FOCUSONBUTTONDOWN (4096)
+#define TCS_FORCEICONLEFT (16)
+#define TCS_FORCELABELLEFT (32)
+#define TCS_HOTTRACK (64)
+#define TCS_MULTILINE (512)
+#define TCS_MULTISELECT (4)
+#define TCS_OWNERDRAWFIXED (8192)
+#define TCS_RAGGEDRIGHT (2048)
+#define TCS_RIGHT (2)
+#define TCS_RIGHTJUSTIFY (0)
+#define TCS_SCROLLOPPOSITE (1)
+#define TCS_SINGLELINE (0)
+#define TCS_TABS (0)
+#define TCS_TOOLTIPS (16384)
+#define TCS_VERTICAL (128)
+
+#define TC_HITTESTINFO TCHITTESTINFO
+#define TC_ITEM TCITEM
+#define TC_ITEMA TCITEMA
+#define TC_ITEMHEADER TCITEMHEADER
+#define TC_ITEMHEADERA TCITEMHEADERA
+#define TC_ITEMHEADERW TCITEMHEADERW
+#define TC_ITEMW TCITEMW
+#define TC_KEYDOWN NMTCKEYDOWN
+
+#define TME_CANCEL (2147483647)
+#define TME_HOVER (1)
+#define TME_LEAVE (2)
+#define TME_NONCLIENT (16)
+#define TME_QUERY (1073741824)
+
+#define TTDT_AUTOMATIC (0)
+#define TTDT_AUTOPOP (2)
+#define TTDT_INITIAL (3)
+#define TTDT_RESHOW (1)
+
+#define TTF_ABSOLUTE (128)
+#define TTF_CENTERTIP (2)
+#define TTF_DI_SETITEM (32768)
+#define TTF_IDISHWND (1)
+#define TTF_RTLREADING (4)
+#define TTF_SUBCLASS (16)
+#define TTF_TRACK (32)
+#define TTF_TRANSPARENT (256)
+
+#define TTI_ERROR (3)
+#define TTI_INFO (1)
+#define TTI_NONE (0)
+#define TTI_WARNING (2)
+
+#define TTS_ALWAYSTIP (1)
+#define TTS_BALLOON (64)
+#define TTS_NOANIMATE (16)
+#define TTS_NOFADE (32)
+#define TTS_NOPREFIX (2)
+
+#define TVCDRF_NOIMAGES (65536)
+
+#define TVC_BYKEYBOARD (2)
+#define TVC_BYMOUSE (1)
+#define TVC_UNKNOWN (0)
+
+#define TVE_COLLAPSE (1)
+#define TVE_COLLAPSERESET (32768)
+#define TVE_EXPAND (2)
+#define TVE_EXPANDPARTIAL (16384)
+#define TVE_TOGGLE (3)
+
+#define TVGN_CARET (9)
+#define TVGN_CHILD (4)
+#define TVGN_DROPHILITE (8)
+#define TVGN_NEXT (1)
+#define TVGN_NEXTVISIBLE (6)
+#define TVGN_PARENT (3)
+#define TVGN_PREVIOUS (2)
+#define TVGN_PREVIOUSVISIBLE (7)
+#define TVGN_ROOT (0)
+
+#define TVHT_ABOVE (256)
+#define TVHT_BELOW (512)
+#define TVHT_NOWHERE (1)
+#define TVHT_ONITEM (TVHT_ONITEMICON | TVHT_ONITEMLABEL | TVHT_ONITEMSTATEICON)
+#define TVHT_ONITEMBUTTON (16)
+#define TVHT_ONITEMICON (2)
+#define TVHT_ONITEMINDENT (8)
+#define TVHT_ONITEMLABEL (4)
+#define TVHT_ONITEMRIGHT (32)
+#define TVHT_ONITEMSTATEICON (64)
+#define TVHT_TOLEFT (2048)
+#define TVHT_TORIGHT (1024)
+
+#define TVIF_CHILDREN (64)
+#define TVIF_DI_SETITEM (4096)
+#define TVIF_HANDLE (16)
+#define TVIF_IMAGE (2)
+#define TVIF_INTEGRAL (128)
+#define TVIF_PARAM (4)
+#define TVIF_SELECTEDIMAGE (32)
+#define TVIF_STATE (8)
+#define TVIF_TEXT (1)
+
+#define TVIS_BOLD (16)
+#define TVIS_CUT (4)
+#define TVIS_DROPHILITED (8)
+#define TVIS_EXPANDED (32)
+#define TVIS_EXPANDEDONCE (64)
+#define TVIS_EXPANDPARTIAL (128)
+#define TVIS_OVERLAYMASK (3840)
+#define TVIS_SELECTED (2)
+#define TVIS_STATEIMAGEMASK (61440)
+#define TVIS_USERMASK (61440)
+
+#define TVNRET_DEFAULT (0)
+#define TVNRET_SKIPNEW (2)
+#define TVNRET_SKIPOLD (1)
+
+#define TVSIL_NORMAL (0)
+#define TVSIL_STATE (2)
+
+#define TVSORTCB TV_SORTCB
+
+#define TVS_CHECKBOXES (256)
+#define TVS_DISABLEDRAGDROP (16)
+#define TVS_EDITLABELS (8)
+#define TVS_FULLROWSELECT (4096)
+#define TVS_HASBUTTONS (1)
+#define TVS_HASLINES (2)
+#define TVS_INFOTIP (2048)
+#define TVS_LINESATROOT (4)
+#define TVS_NOHSCROLL (32768)
+#define TVS_NONEVENHEIGHT (16384)
+#define TVS_NOSCROLL (8192)
+#define TVS_NOTOOLTIPS (128)
+#define TVS_RTLREADING (64)
+#define TVS_SHOWSELALWAYS (32)
+#define TVS_SINGLEEXPAND (1024)
+#define TVS_TRACKSELECT (512)
+
+#define UDS_ALIGNLEFT (8)
+#define UDS_ALIGNRIGHT (4)
+#define UDS_ARROWKEYS (32)
+#define UDS_AUTOBUDDY (16)
+#define UDS_HORZ (64)
+#define UDS_HOTTRACK (256)
+#define UDS_NOTHOUSANDS (128)
+#define UDS_SETBUDDYINT (2)
+#define UDS_WRAP (1)
+
+#define UD_MAXVAL (32767)
+#define UD_MINVAL (-32767)
+
+#define VIEW_DETAILS (3)
+#define VIEW_LARGEICONS (0)
+#define VIEW_LIST (2)
+#define VIEW_NETCONNECT (9)
+#define VIEW_NETDISCONNECT (10)
+#define VIEW_NEWFOLDER (11)
+#define VIEW_PARENTFOLDER (8)
+#define VIEW_SMALLICONS (1)
+#define VIEW_SORTDATE (6)
+#define VIEW_SORTNAME (4)
+#define VIEW_SORTSIZE (5)
+#define VIEW_SORTTYPE (7)
+#define VIEW_VIEWMENU (12)
+
+#define WM_MOUSEHOVER (673)
+#define WM_MOUSELEAVE (675)
+
+#define WSB_PROP_CXHSCROLL (2)
+#define WSB_PROP_CXHTHUMB (16)
+#define WSB_PROP_CXVSCROLL (8)
+#define WSB_PROP_CYHSCROLL (4)
+#define WSB_PROP_CYVSCROLL (1)
+#define WSB_PROP_CYVTHUMB (32)
+#define WSB_PROP_HBKGCOLOR (128)
+#define WSB_PROP_HSTYLE (512)
+#define WSB_PROP_MASK (4095)
+#define WSB_PROP_PALETTE (2048)
+#define WSB_PROP_VBKGCOLOR (64)
+#define WSB_PROP_VSTYLE (256)
+#define WSB_PROP_WINSTYLE (1024)

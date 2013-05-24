@@ -1,0 +1,185 @@
+LIBRARY     MAPI32.DLL
+
+EXPORTS
+    BMAPIAddress                   @225 
+    BMAPIDetails                   @227 
+    BMAPIFindNext                  @224 
+    BMAPIGetAddress                @226 
+    BMAPIGetReadMail               @223 
+    BMAPIReadMail                  @222 
+    BMAPIResolveName               @228 
+    BMAPISaveMail                  @221 
+    BMAPISendMail                  @220 
+    BuildDisplayTable@40          =BuildDisplayTable              @46  
+    CbOfEncoded@4                 =CbOfEncoded                    @207 
+    CchOfEncoding@4               =CchOfEncoding                  @206 
+    ChangeIdleRoutine@28          =ChangeIdleRoutine              @55  
+    CloseIMsgSession@4            =CloseIMsgSession               @197 
+    CreateIProp@24                =CreateIProp                    @60  
+    CreateTable@36                =CreateTable                    @61  
+    DeinitMapiUtil@0              =DeinitMapiUtil                 @34  
+    DeregisterIdleRoutine@4       =DeregisterIdleRoutine          @54  
+    EnableIdleRoutine@8           =EnableIdleRoutine              @53  
+    EncodeID@12                   =EncodeID                       @204 
+    FBadColumnSet@4               =FBadColumnSet                  @182 
+    FBadEntryList@4               =FBadEntryList                  @190 
+    FBadProp@4                    =FBadProp                       @181 
+    FBadPropTag@4                 =FBadPropTag                    @179 
+    FBadRestriction@4             =FBadRestriction                @191 
+    FBadRglpNameID@8              =FBadRglpNameID                 @178 
+    FBadRglpszA@8                 =FBadRglpszA                    @175 
+    FBadRglpszW@8                 =FBadRglpszW                    @176 
+    FBadRow@4                     =FBadRow                        @180 
+    FBadRowSet@4                  =FBadRowSet                     @177 
+    FBadSortOrderSet@4            =FBadSortOrderSet               @189 
+    FBinFromHex@8                 =FBinFromHex                    @44  
+    FDecodeID@12                  =FDecodeID                      @205 
+    FEqualNames@8                 =FEqualNames                    @72  
+    FPropCompareProp@12           =FPropCompareProp               @79  
+    FPropContainsProp@12          =FPropContainsProp              @78  
+    FPropExists@8                 =FPropExists                    @137 
+    FreePadrlist@4                =FreePadrlist                   @139 
+    FreeProws@4                   =FreeProws                      @140 
+    FtAdcFt@20                    =FtAdcFt                        @122 
+    FtAddFt@16                    =FtAddFt                        @121 
+    FtDivFtBogus@20               =FtDivFtBogus                   @127 
+    FtMulDw@12                    =FtMulDw                        @124 
+    FtMulDwDw@8                   =FtMulDwDw                      @125 
+    FtNegFt@8                     =FtNegFt                        @126 
+    FtSubFt@16                    =FtSubFt                        @123 
+    FtgRegisterIdleRoutine@20     =FtgRegisterIdleRoutine         @52  
+    GetAttribIMsgOnIStg@12        =GetAttribIMsgOnIStg            @200 
+    GetOutlookVersion              @250 
+    GetTnefStreamCodepage          @154 
+    GetTnefStreamCodepage@12      =GetTnefStreamCodepage          @153 
+    HexFromBin@12                 =HexFromBin                     @45  
+    HrAddColumns@16               =HrAddColumns                   @81  
+    HrAddColumnsEx@20             =HrAddColumnsEx                 @82  
+    HrAllocAdviseSink@12          =HrAllocAdviseSink              @36  
+    HrComposeEID@28               =HrComposeEID                   @143 
+    HrComposeMsgID@24             =HrComposeMsgID                 @145 
+    HrDecomposeEID@28             =HrDecomposeEID                 @144 
+    HrDecomposeMsgID@24           =HrDecomposeMsgID               @146 
+    HrDispatchNotifications@4     =HrDispatchNotifications        @239 
+    HrEntryIDFromSz@12            =HrEntryIDFromSz                @142 
+    HrGetOmiProvidersFlags         @246 
+    HrGetOmiProvidersFlags@8      =HrGetOmiProvidersFlags         @247 
+    HrGetOneProp@12               =HrGetOneProp                   @135 
+    HrIStorageFromStream@16       =HrIStorageFromStream           @194 
+    HrQueryAllRows@24             =HrQueryAllRows                 @75  
+    HrSetOmiProvidersFlagsInvalid  @248 
+    HrSetOmiProvidersFlagsInvalid@4=HrSetOmiProvidersFlagsInvalid  @249 
+    HrSetOneProp@8                =HrSetOneProp                   @136 
+    HrSzFromEntryID@12            =HrSzFromEntryID                @141 
+    HrThisThreadAdviseSink@8      =HrThisThreadAdviseSink         @42  
+    HrValidateIPMSubtree@20       =HrValidateIPMSubtree           @195 
+    HrValidateParameters@8        =HrValidateParameters           @241 
+    InstallFilterHook@4           =InstallFilterHook              @51  
+    IsBadBoundedStringPtr@8       =IsBadBoundedStringPtr          @74  
+    LAUNCHWIZARD                   @25  
+    LPropCompareProp@8            =LPropCompareProp               @80  
+    LaunchWizard@20               =LaunchWizard                   @26  
+    LpValFindProp@12              =LpValFindProp                  @173 
+    MAPIAddress                    @217 
+    MAPIAdminProfiles              @18  
+    MAPIAdminProfiles@8           =MAPIAdminProfiles              @19  
+    MAPIAllocateBuffer             @12  
+    MAPIAllocateBuffer@8          =MAPIAllocateBuffer             @13  
+    MAPIAllocateMore               @14  
+    MAPIAllocateMore@12           =MAPIAllocateMore               @15  
+    MAPIDeinitIdle@0              =MAPIDeinitIdle                 @50  
+    MAPIDeleteMail                 @215 
+    MAPIDetails                    @218 
+    MAPIFindNext                   @214 
+    MAPIFreeBuffer                 @16  
+    MAPIFreeBuffer@4              =MAPIFreeBuffer                 @17  
+    MAPIGetDefaultMalloc@0        =MAPIGetDefaultMalloc           @59  
+    MAPIInitIdle@4                =MAPIInitIdle                   @49  
+    MAPIInitialize                 @20  
+    MAPIInitialize@4              =MAPIInitialize                 @21  
+    MAPILogoff                     @210 
+    MAPILogon                      @209 
+    MAPILogonEx                    @10  
+    MAPILogonEx@20                =MAPILogonEx                    @11  
+    MAPIOpenFormMgr                @29  
+    MAPIOpenFormMgr@8             =MAPIOpenFormMgr                @30  
+    MAPIOpenLocalFormContainer     @31  
+    MAPIOpenLocalFormContainer@4  =MAPIOpenLocalFormContainer     @32  
+    MAPIReadMail                   @213 
+    MAPIResolveName                @219 
+    MAPISaveMail                   @212 
+    MAPISendDocuments              @208 
+    MAPISendMail                   @211 
+    MAPIUninitialize               @22  
+    MAPIUninitialize@0            =MAPIUninitialize               @23  
+    MNLS_CompareStringW@24        =MNLS_CompareStringW            @65  
+    MNLS_IsBadStringPtrW@8        =MNLS_IsBadStringPtrW           @68  
+    MNLS_MultiByteToWideChar@24   =MNLS_MultiByteToWideChar       @66  
+    MNLS_WideCharToMultiByte@32   =MNLS_WideCharToMultiByte       @67  
+    MNLS_lstrcmpW@8               =MNLS_lstrcmpW                  @63  
+    MNLS_lstrcpyW@8               =MNLS_lstrcpyW                  @64  
+    MNLS_lstrlenW@4               =MNLS_lstrlenW                  @62  
+    MapStorageSCode@4             =MapStorageSCode                @201 
+    OpenIMsgOnIStg@44             =OpenIMsgOnIStg                 @198 
+    OpenIMsgSession@12            =OpenIMsgSession                @196 
+    OpenStreamOnFile               @148 
+    OpenStreamOnFile@24           =OpenStreamOnFile               @147 
+    OpenTnefStream                 @150 
+    OpenTnefStream@28             =OpenTnefStream                 @149 
+    OpenTnefStreamEx               @152 
+    OpenTnefStreamEx@32           =OpenTnefStreamEx               @151 
+    PRProviderInit                 @24  
+    PpropFindProp@12              =PpropFindProp                  @138 
+    PropCopyMore@16               =PropCopyMore                   @76  
+    RTFSync                        @184 
+    RTFSync@12                    =RTFSync                        @183 
+    ScBinFromHexBounded@12        =ScBinFromHexBounded            @43  
+    ScCopyNotifications@16        =ScCopyNotifications            @165 
+    ScCopyProps@16                =ScCopyProps                    @171 
+    ScCountNotifications@12       =ScCountNotifications           @164 
+    ScCountProps@12               =ScCountProps                   @170 
+    ScCreateConversationIndex@16  =ScCreateConversationIndex      @244 
+    ScDupPropset@16               =ScDupPropset                   @174 
+    ScGenerateMuid@4              =ScGenerateMuid                 @35  
+    ScInitMapiUtil@4              =ScInitMapiUtil                 @33  
+    ScLocalPathFromUNC@12         =ScLocalPathFromUNC             @193 
+    ScMAPIXFromCMC                 @202 
+    ScMAPIXFromSMAPI               @203 
+    ScRelocNotifications@20       =ScRelocNotifications           @166 
+    ScRelocProps@20               =ScRelocProps                   @172 
+    ScUNCFromLocalPath@12         =ScUNCFromLocalPath             @192 
+    SetAttribIMsgOnIStg@16        =SetAttribIMsgOnIStg            @199 
+    SwapPlong@8                   =SwapPlong                      @47  
+    SwapPword@8                   =SwapPword                      @48  
+    SzFindCh@8                    =SzFindCh                       @130 
+    SzFindLastCh@8                =SzFindLastCh                   @131 
+    SzFindSz@8                    =SzFindSz                       @132 
+    UFromSz@4                     =UFromSz                        @133 
+    UNKOBJ_COFree@8               =UNKOBJ_COFree                  @162 
+    UNKOBJ_Free@8                 =UNKOBJ_Free                    @158 
+    UNKOBJ_FreeRows@8             =UNKOBJ_FreeRows                @159 
+    UNKOBJ_ScAllocate@12          =UNKOBJ_ScAllocate              @156 
+    UNKOBJ_ScAllocateMore@16      =UNKOBJ_ScAllocateMore          @157 
+    UNKOBJ_ScCOAllocate@12        =UNKOBJ_ScCOAllocate            @160 
+    UNKOBJ_ScCOReallocate@12      =UNKOBJ_ScCOReallocate          @161 
+    UNKOBJ_ScSzFromIdsAlloc@20    =UNKOBJ_ScSzFromIdsAlloc        @163 
+    UlAddRef@4                    =UlAddRef                       @128 
+    UlFromSzHex@4                 =UlFromSzHex                    @155 
+    UlPropSize@4                  =UlPropSize                     @77  
+    UlRelease@4                   =UlRelease                      @129 
+    WrapCompressedRTFStream        @186 
+    WrapCompressedRTFStream@12    =WrapCompressedRTFStream        @185 
+    WrapProgress@20               =WrapProgress                   @41  
+    WrapStoreEntryID@24           =WrapStoreEntryID               @73  
+    __CPPValidateParameters@8     =__CPPValidateParameters        @188 
+    __ValidateParameters@8        =__ValidateParameters           @187 
+    cmc_act_on                     @229 
+    cmc_free                       @230 
+    cmc_list                       @231 
+    cmc_logoff                     @232 
+    cmc_logon                      @233 
+    cmc_look_up                    @234 
+    cmc_query_configuration        @235 
+    cmc_read                       @236 
+    cmc_send                       @237 
+    cmc_send_documents             @238 

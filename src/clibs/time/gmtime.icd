@@ -1,0 +1,453 @@
+	SECTION	code
+
+	PUBLIC	_gmtime
+_gmtime:
+
+*************************FUNCTION gmtime********************************
+; loop dump
+; 22/single/B(12)/B(12) B(21) B(13) 
+; 23/root/B(1)/B(1) B(15) B(14) B(3) B(2) B(20) B(19) B(11) B(10) B(9) B(8) B(7) B(17) B(6) B(5) B(16) B(4) L(22) B(18) 
+; Flowgraph dump
+; 1:  * 2
+	 : 1 / 2
+	 $
+; 2:  1 * 3 4
+	 : 1 / 3 4 15
+	 $
+; 3:  2 * 15
+	 : 2 /
+	 $ 15
+; 4:  2 * 5 16
+	 : 2 / 5 6 16
+	 $ 15
+; 5:  4 * 6
+	 : 4 /
+	 $ 6
+; 6:  5 16 * 7 17
+	 : 4 / 7 8 17
+	 $ 15
+; 7:  6 * 8
+	 : 6 /
+	 $ 8
+; 8:  7 17 * 9 10
+	 : 6 / 9 10 11
+	 $ 15
+; 9:  8 * 11
+	 : 8 /
+	 $ 11
+; 10:  8 * 11
+	 : 8 /
+	 $ 11
+; 11:  10 9 * 18 19
+	 : 8 / 14 18 19
+	 $ 15
+; 12:  21 18 * 13
+	 : 18 / 13
+	 $ 14 12
+; 13:  12 * 20 21
+	 : 12 / 20 21
+	 $ 12 14
+; 14:  20 19 * 15
+	 : 11 /
+	 $ 15
+; 15:  14 3 *
+	 : 2 /
+	 $
+; 16:  4 * 6
+	 : 4 /
+	 $ 6
+; 17:  6 * 8
+	 : 6 /
+	 $ 8
+; 18:  11 * 12
+	 : 11 / 12
+	 $ 14
+; 19:  11 * 14
+	 : 11 /
+	 $ 14
+; 20:  13 * 14
+	 : 13 /
+	 $ 14
+; 21:  13 * 12
+	 : 13 /
+	 $ 12
+; loop dump
+; 22/single/B(12)/B(12) B(21) B(13) 
+; 23/root/B(1)/B(1) B(15) B(14) B(3) B(2) B(20) B(19) B(11) B(10) B(9) B(8) B(7) B(17) B(6) B(5) B(16) B(4) L(22) B(18) 
+Alias Dump:
+(RV.T14(EAX).A@0@0,0): []
+(RV.T59(EAX).A@0,0): (RV.T59(EAX).A@0@0,0) []
+(__monthdays:RAM.C,1): []
+(RV.T0(EAX).A@0,482): (RV.T0(EAX).A@0@482,0) [T30 T31 T32 T34 T35 T36 T37 T38 T39 T40 T41 T42 T45 T51 T52 T53 T62 T72 ]
+(RV.T14(EAX).A@0,0): (RV.T14(EAX).A@0@0,0) []
+(__monthdays:RAM.C,0): (__monthdays:RAM.C@0,0) [T43 T45 T48 T49 T50 T51 T52 T53 T62 ]
+(RV.T0(EAX).A@0@470,0): []
+(RV.T0(EAX).A@0,478): []
+(RV.T0(EAX).A@0,474): (RV.T0(EAX).A@0@474,0) [T30 T31 T32 T34 T35 T36 T37 T38 T39 T40 T41 T42 T45 T51 T52 T53 T62 T72 ]
+(#1D.C,0): [T43 T45 T48 T49 T50 T51 T52 T53 T62 ]
+(RV.T0(EAX).A@0@474,0): []
+(RV.T0(EAX).A@0,458): []
+(RV.T55(EAX).A@0@0,0): []
+(RV.T0(EAX).A@0,462): []
+(_time:LINK(8).A@0,0): (_time:LINK(8).A@0@0,0) [T3 T4 T5 T11 T12 T15 T16 T18 T20 T21 T23 T24 T27 T28 T30 T31 T32 T34 T35 T36 T37 T38 T39 T40 T41 T42 T45 T51 T52 T53 T61 T62 T65 T70 T72 ]
+(RV.T0(EAX).A@0,486): (RV.T55(EAX).A@0@0,0) []
+(RV.T0(EAX).A@0@482,0): []
+(RV.T55(EAX).A@0,0): (RV.T55(EAX).A@0@0,0) [T57 ]
+(_time:LINK(8).A@0@0@0,0): (_time:LINK(8).A@0@0@0@0,0) [T4 T5 T11 T12 T15 T16 T18 T20 T21 T23 T24 T27 T28 T30 T31 T32 T34 T35 T36 T37 T38 T39 T40 T41 T42 T45 T51 T52 T53 T61 T62 T65 T70 T72 ]
+(RV.T6(EAX).A@0@0,0): []
+(_time:LINK(8).A@0@0,0): (_time:LINK(8).A@0@0@0,0) [T4 T5 T11 T12 T15 T16 T18 T20 T21 T23 T24 T27 T28 T30 T31 T32 T34 T35 T36 T37 T38 T39 T40 T41 T42 T45 T51 T52 T53 T61 T62 T65 T70 T72 ]
+(#FFFFFFFF.I,0): [T45 T46 T47 T48 T49 T50 T51 T52 T53 T62 ]
+(RV.T0(EAX).A@0@0,0): []
+(RV.T59(EAX).A@0@0,0): []
+(RV.T0(EAX).A@0,0): (RV.T0(EAX).A@0@0,0) []
+(RV.T6(EAX).A@0,0): (RV.T6(EAX).A@0@0,0) [T5 T8 T9 T10 T11 T12 T15 T16 T18 T20 T21 T23 T24 T27 T28 T30 T31 T32 T34 T35 T36 T37 T38 T39 T40 T41 T42 T45 T51 T52 T53 T61 T62 T65 T70 T72 ]
+(RV.T0(EAX).A@0,470): (RV.T0(EAX).A@0@470,0) [T45 T46 T47 T48 T49 T50 T51 T52 T53 T62 ]
+(__monthdays:RAM.C@0,0): []
+(#1C.C,0): [T43 T45 T48 T49 T50 T51 T52 T53 T62 ]
+(RV.T0(EAX).A@0,454): []
+(RV.T0(EAX).A@0,466): []
+(_time:LINK(8).A@0@0@0@0,0): []
+T1:(RV.T0(EAX).A@0,0) 
+T2:(RV.T0(EAX).A@0,454) 
+T3:(_time:LINK(8).A@0@0@0,0) 
+T4:(_time:LINK(8).A@0@0@0@0,0) 
+T7:(RV.T6(EAX).A@0,0) 
+T8:(RV.T6(EAX).A@0@0,0) 
+T17:(RV.T0(EAX).A@0,454) 
+T19:(RV.T0(EAX).A@0,458) 
+T22:(RV.T0(EAX).A@0,462) 
+T25:(RV.T0(EAX).A@0,482) 
+T29:(RV.T0(EAX).A@0,478) 
+T30:(RV.T0(EAX).A@0@482,0) 
+T33:(RV.T0(EAX).A@0,474) 
+T36:(RV.T0(EAX).A@0@474,0) 
+T43:(__monthdays:RAM.C,1) 
+T44:(RV.T0(EAX).A@0,470) 
+T46:(RV.T0(EAX).A@0@470,0) 
+T48:(__monthdays:RAM.C,0) 
+T49:(__monthdays:RAM.C@0,0) 
+T54:(RV.T0(EAX).A@0,466) 
+T56:(RV.T55(EAX).A@0,0) 
+T57:(RV.T55(EAX).A@0@0,0) 
+T58:(RV.T0(EAX).A@0,486) 
+T60:(RV.T0(EAX).A@0,454) 
+T74:(RV.T0(EAX).A@0,0) 
+T75:(RV.T0(EAX).A@0,454) 
+T76:(RV.T0(EAX).A@0,454) 
+T77:(_time:LINK(8).A@0@0@0,0) 
+T78:(_time:LINK(8).A@0@0@0@0,0) 
+T82:(RV.T6(EAX).A@0,0) 
+T83:(RV.T6(EAX).A@0@0,0) 
+T96:(RV.T0(EAX).A@0,454) 
+T107:(RV.T0(EAX).A@0,454) 
+T108:(RV.T0(EAX).A@0,458) 
+T119:(RV.T0(EAX).A@0,454) 
+T120:(RV.T0(EAX).A@0,462) 
+T128:(RV.T0(EAX).A@0,454) 
+T129:(RV.T0(EAX).A@0,482) 
+T136:(RV.T0(EAX).A@0,454) 
+T137:(RV.T0(EAX).A@0,478) 
+T138:(RV.T0(EAX).A@0,454) 
+T139:(RV.T0(EAX).A@0,482) 
+T140:(RV.T0(EAX).A@0@482,0) 
+T145:(RV.T0(EAX).A@0,474) 
+T146:(RV.T0(EAX).A@0,454) 
+T147:(RV.T0(EAX).A@0,482) 
+T148:(RV.T0(EAX).A@0@482,0) 
+T152:(RV.T0(EAX).A@0,454) 
+T153:(RV.T0(EAX).A@0,482) 
+T154:(RV.T0(EAX).A@0@482,0) 
+T155:(RV.T0(EAX).A@0,474) 
+T156:(RV.T0(EAX).A@0@474,0) 
+T164:(RV.T0(EAX).A@0,454) 
+T165:(RV.T0(EAX).A@0,482) 
+T166:(RV.T0(EAX).A@0,454) 
+T167:(RV.T0(EAX).A@0,482) 
+T168:(RV.T0(EAX).A@0@482,0) 
+T169:(RV.T0(EAX).A@0,454) 
+T170:(RV.T0(EAX).A@0,482) 
+T171:(RV.T0(EAX).A@0@482,0) 
+T173:(RV.T0(EAX).A@0,454) 
+T174:(RV.T0(EAX).A@0,474) 
+T175:(RV.T0(EAX).A@0@474,0) 
+T177:(RV.T0(EAX).A@0,454) 
+T178:(RV.T0(EAX).A@0,474) 
+T179:(RV.T0(EAX).A@0@474,0) 
+T182:(__monthdays:RAM.C,1) 
+T183:(__monthdays:RAM.C,1) 
+T184:(RV.T0(EAX).A@0,454) 
+T185:(RV.T0(EAX).A@0,482) 
+T186:(RV.T0(EAX).A@0@482,0) 
+T188:(RV.T0(EAX).A@0,454) 
+T189:(RV.T0(EAX).A@0,470) 
+T193:(RV.T0(EAX).A@0,454) 
+T194:(RV.T0(EAX).A@0,470) 
+T195:(RV.T0(EAX).A@0@470,0) 
+T196:(__monthdays:RAM.C,0) 
+T197:(__monthdays:RAM.C@0,0) 
+T201:(RV.T0(EAX).A@0,466) 
+T202:(RV.T55(EAX).A@0,0) 
+T203:(RV.T55(EAX).A@0@0,0) 
+T204:(RV.T0(EAX).A@0,454) 
+T205:(RV.T0(EAX).A@0,486) 
+T206:(RV.T0(EAX).A@0,454) 
+T209:(RV.T0(EAX).A@0,454) 
+T210:(RV.T0(EAX).A@0,470) 
+T211:(RV.T0(EAX).A@0@470,0) 
+T213:(RV.T0(EAX).A@0@470,0) 
+T214:(__monthdays:RAM.C,0) 
+T215:(__monthdays:RAM.C@0,0) 
+UIV: (__monthdays:RAM.C,0) [T3 T4 T5 T8 T9 T10 T11 T12 T15 T16 T18 T20 T21 T23 T24 T27 T28 T30 T31 T32 T34 T35 T36 T37 T38 T39 T40 T41 T42 T43 T45 T46 T47 T48 T49 T50 T51 T52 T53 T57 T61 T62 T65 T70 T72 ]
+; loop dump
+; 22/single/B(12)/B(12) B(27) B(13) 
+; 23/root/B(1)/B(1) B(15) B(14) B(3) B(2) B(26) B(25) B(11) B(10) B(9) B(8) B(7) B(23) B(6) B(5) B(22) B(4) L(22) B(24) 
+	BLOCK 1	$0$	#00#
+	PROLOGUE	#48.N[0x0],#0.N[0x0]	$0$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 2	$0$	#00#
+L_1:	$0$	#00#
+; Line 44:	    struct tm *rv = &__getRtlData()->gmtime_buf;
+
+	$0$	#00#
+	GOSUB	#___getRtlData:PC.A[0x0]	$0$	#00#
+	PARMADJ	#0.N[0x0]	$0$	#00#
+	T229(EAX).A[0x1] =   RV.T0(EAX).A[0x1]	$1$	#00#	$0$ #0#
+	T230(EAX).A[0x1] = T229(EAX).A[0x1] + #1C6.I[0x1]	$3$	#00#	$0$ #0#
+	T231(EBX).A[0x8] =   T230(EAX).A[0x8]	$3$	#00#	$0$ #1#
+; Line 45:		time_t t = *time;
+
+	$0$	#00#
+	T232(EAX).A[0x9] =   _time:LINK(8).A[0x9]	$1$	#00#	$0$ #0#
+	T235(ESI).L[0x48] =   *(T232(EAX)).A.L[0x48]	$3$	#00#	$0$ #0#
+; Line 46:		int temp1,x=0;
+
+	$0$	#00#
+; Line 47:		
+
+	$0$	#00#
+; Line 48:	        t -= _daylight * 60 * 60;
+
+	$0$	#00#
+	GOSUB	#___getDaylight:PC.A[0x48]	$0$	#00#
+	PARMADJ	#0.N[0x48]	$0$	#00#
+	T236(EAX).A[0x49] =   RV.T6(EAX).A[0x49]	$1$	#00#	$0$ #0#
+	T237(EAX).I[0x49] =   *(T236(EAX)).A.I[0x49]	$3$	#00#	$0$ #0#
+	T239(EAX).I[0x49] = #E10.I[0x49] * T237(EAX).I[0x49]	$5$	#00#	$0$ #0#
+	T250(ECX).L[0xa] = T235(ESI).L[0xa] - T239(EAX).L[0xa]	$7$	#00#	$0$ #0#
+; Line 49:		if (t & 0x80000000)
+
+	$0$	#00#
+	T243(EAX).L[0xb] = T250(ECX).L[0xb] & #80000000.I[0xb]	$3$	#00#	$0$ #0#
+	CONDGO	L_4:PC ; T243(EAX).L[0xa] == #0.L[0xa]	$2$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 3	$0$	#00#
+; Line 50:			return NULL;
+
+	$0$	#00#
+	T372(EAX).A[0x1] =   #0.I[0x1]	$1$	#00#	$0$ #0#
+	RV.T14(EAX).A[0x0] =   T372(EAX).A[0x0]	$2$	#00#	$0$ #1#
+	GOTO	L_2:PC	$0$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 4	$0$	#00#
+L_4:	$0$	#00#
+; Line 51:		rv->tm_sec = t %60;
+
+	$0$	#00#
+	T246(EDX:EAX).LL[0xf] =   T250(ECX).L[0xf]	$3$	#00#	$0$ #0#
+	T389(ESI).I[0x4f] =   #3C.I[0x4f]	$1$	#00#	$0$ #0#
+	T390(EDX).L[0xe] = T246(EDX:EAX).LL[0xe] S% T389(ESI).I[0xe]	$7$	#00#	$0$ #0#
+	T249(EAX).A[0xf] =   T231(EBX).A[0xf]	$3$	#00#	$0$ #0#
+	*(T249(EAX)).A.I[0xa] =   T390(EDX).I[0xa]	$3$	#00#	$0$ #1#
+; Line 52:		t/=60;
+
+	$0$	#00#
+	T252(EDX:EAX).LL[0xd] =   T250(ECX).L[0xd]	$3$	#00#	$0$ #0#
+	T387(ECX).I[0xf] =   #3C.I[0xf]	$1$	#00#	$0$ #0#
+	T388(EAX).L[0x9] = T252(EDX:EAX).LL[0x9] S/ T387(ECX).I[0x9]	$7$	#00#	$0$ #0#
+; Line 53:		rv->tm_min = t %60;
+
+	$0$	#00#
+	T257(EDX:EAX).LL[0xd] =   T388(EAX).L[0xd]	$3$	#00#	$0$ #0#
+	T385(ECX).I[0xf] =   #3C.I[0xf]	$1$	#00#	$0$ #0#
+	T386(EDX).L[0xd] = T257(EDX:EAX).LL[0xd] S% T385(ECX).I[0xd]	$7$	#00#	$0$ #0#
+	*(T231(EBX) + 4).A.I[0x9] =   T386(EDX).I[0x9]	$3$	#00#	$0$ #1#
+; Line 54:		t /=60;
+
+	$0$	#00#
+	T264(EDX:EAX).LL[0xd] =   T388(EAX).L[0xd]	$3$	#00#	$0$ #0#
+	T383(ECX).I[0xf] =   #3C.I[0xf]	$1$	#00#	$0$ #0#
+	T384(EAX).L[0x9] = T264(EDX:EAX).LL[0x9] S/ T383(ECX).I[0x9]	$7$	#00#	$0$ #0#
+; Line 55:		rv->tm_hour = t %24;
+
+	$0$	#00#
+	T269(EDX:EAX).LL[0xd] =   T384(EAX).L[0xd]	$3$	#00#	$0$ #0#
+	T381(ECX).I[0xf] =   #18.I[0xf]	$1$	#00#	$0$ #0#
+	T382(EDX).L[0xd] = T269(EDX:EAX).LL[0xd] S% T381(ECX).I[0xd]	$7$	#00#	$0$ #0#
+	*(T231(EBX) + 8).A.I[0x9] =   T382(EDX).I[0x9]	$3$	#00#	$0$ #1#
+; Line 56:		t /=24;
+
+	$0$	#00#
+	T276(EDX:EAX).LL[0xd] =   T384(EAX).L[0xd]	$3$	#00#	$0$ #0#
+	T379(ECX).I[0xf] =   #18.I[0xf]	$1$	#00#	$0$ #0#
+	T380(EAX).L[0x9] = T276(EDX:EAX).LL[0x9] S/ T379(ECX).I[0x9]	$7$	#00#	$0$ #0#
+; Line 57:		rv->tm_yday = t;
+
+	$0$	#00#
+	*(T231(EBX) + 1C).A.I[0x9] =   T380(EAX).I[0x9]	$3$	#00#	$0$ #1#
+; Line 58:		rv->tm_wday = (t +4 )%7;
+
+	$0$	#00#
+	T284(EAX).L[0x9] = T380(EAX).L[0x9] + #4.I[0x9]	$3$	#00#	$0$ #0#
+	T285(EDX:EAX).LL[0xd] =   T284(EAX).L[0xd]	$3$	#00#	$0$ #0#
+	T377(ECX).I[0xf] =   #7.I[0xf]	$1$	#00#	$0$ #0#
+	T378(EDX).L[0xc] = T285(EDX:EAX).LL[0xc] S% T377(ECX).I[0xc]	$7$	#00#	$0$ #0#
+	*(T231(EBX) + 18).A.I[0x8] =   T378(EDX).I[0x8]	$3$	#00#	$0$ #1#
+; Line 59:		rv->tm_year = 70+(rv->tm_yday /365);
+
+	$0$	#00#
+	T292(EAX).I[0x9] =   *(T231(EBX) + 1C).A.I[0x9]	$3$	#00#	$0$ #0#
+	T294(EDX:EAX).LL[0xd] =   T292(EAX).I[0xd]	$3$	#00#	$0$ #0#
+	T375(ECX).I[0xf] =   #16D.I[0xf]	$1$	#00#	$0$ #0#
+	T376(EAX).I[0x9] = T294(EDX:EAX).LL[0x9] S/ T375(ECX).I[0x9]	$7$	#00#	$0$ #0#
+	T296(EAX).I[0x9] = #46.I[0x9] + T376(EAX).I[0x9]	$5$	#00#	$0$ #0#
+	*(T231(EBX) + 14).A.I[0x8] =   T296(EAX).I[0x8]	$3$	#00#	$0$ #1#
+; Line 60:		rv->tm_yday = rv->tm_yday % 365;
+
+	$0$	#00#
+	T300(EAX).I[0x9] =   *(T231(EBX) + 1C).A.I[0x9]	$3$	#00#	$0$ #0#
+	T302(EDX:EAX).LL[0xd] =   T300(EAX).I[0xd]	$3$	#00#	$0$ #0#
+	T373(ECX).I[0xf] =   #16D.I[0xf]	$1$	#00#	$0$ #0#
+	T374(EDX).I[0xc] = T302(EDX:EAX).LL[0xc] S% T373(ECX).I[0xc]	$7$	#00#	$0$ #0#
+	*(T231(EBX) + 1C).A.I[0x8] =   T374(EDX).I[0x8]	$3$	#00#	$0$ #1#
+; Line 61:		rv->tm_yday -= (rv->tm_year - 69)/4 ;
+
+	$0$	#00#
+	T313(EDX).I[0xc] =   *(T231(EBX) + 1C).A.I[0xc]	$3$	#00#	$0$ #0#
+	T308(EAX).I[0xd] =   *(T231(EBX) + 14).A.I[0xd]	$3$	#00#	$0$ #0#
+	T311(EAX).I[0xd] = T308(EAX).I[0xd] - #45.I[0xd]	$3$	#00#	$0$ #0#
+	CONDGO	L_17:PC ; T311(EAX).I[0xd] S>= #0.I[0xd]	$2$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 5	$0$	#00#
+	T311(EAX).I[0xd] = T311(EAX).I[0xd] + #3.I[0xd]	$3$	#00#	$0$ #1#
+	BLOCK END	$0$	#00#
+	BLOCK 6	$0$	#00#
+L_17:	$0$	#00#
+	T314(ECX).I[0xe] = T311(EAX).I[0xe] S>> #2.I[0xe]	$3$	#00#	$0$ #1#
+	T315(EAX).I[0x9] = T313(EDX).I[0x9] - T314(ECX).I[0x9]	$7$	#00#	$0$ #0#
+	*(T231(EBX) + 1C).A.I[0x8] =   T315(EAX).I[0x8]	$3$	#00#	$0$ #1#
+; Line 62:		if (rv->tm_yday <0) {
+
+	$0$	#00#
+	T320(EAX).I[0x9] =   *(T231(EBX) + 1C).A.I[0x9]	$3$	#00#	$0$ #0#
+	CONDGO	L_5:PC ; T320(EAX).I[0x8] S>= #0.I[0x8]	$2$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 7	$0$	#00#
+; Line 63:	        rv->tm_yday += 365;
+
+	$0$	#00#
+	*(T231(EBX) + 1C).A.I[0x8] = *(T231(EBX) + 1C).A.I[0x8] + #16D.I[0x8]	$3$	#00#	$0$ #1#
+; Line 64:			rv->tm_year--;
+
+	$0$	#00#
+	*(T231(EBX) + 14).A.I[0x8] = *(T231(EBX) + 14).A.I[0x8] - #1.I[0x8]	$3$	#00#	$0$ #1#
+	BLOCK END	$0$	#00#
+	BLOCK 8	$0$	#00#
+L_5:	$0$	#00#
+; Line 65:		}
+
+; Line 66:		if (((rv->tm_year-68) %4 == 0)) {
+
+	$0$	#00#
+	T331(EAX).I[0x9] =   *(T231(EBX) + 14).A.I[0x9]	$3$	#00#	$0$ #0#
+	T332(EAX).I[0x9] = T331(EAX).I[0x9] - #44.I[0x9]	$3$	#00#	$0$ #0#
+	T333(EAX).I[0x9] = T332(EAX).I[0x9] & #3.I[0x9]	$3$	#00#	$0$ #0#
+	CONDGO	L_8:PC ; T333(EAX).I[0x8] != #0.I[0x8]	$2$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 9	$0$	#00#
+; Line 67:			_monthdays[1] = 29;
+
+	$0$	#00#
+	*(# + __monthdays:RAM+1).A.C[0x8] =   #1D.C[0x8]	$0$	#00#	$0$ #1#
+	GOTO	L_11:PC	$0$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 10	$0$	#00#
+; Line 68:		}
+
+; Line 69:		else
+
+	$0$	#00#
+L_8:	$0$	#00#
+; Line 70:			_monthdays[1] = 28;
+
+	$0$	#00#
+	*(# + __monthdays:RAM+1).A.C[0x8] =   #1C.C[0x8]	$0$	#00#	$0$ #1#
+	BLOCK END	$0$	#00#
+	BLOCK 11	$0$	#00#
+L_11:	$0$	#00#
+; Line 71:		temp1 = rv->tm_yday;
+
+	$0$	#00#
+	T344(EAX).I[0x9] =   *(T231(EBX) + 1C).A.I[0x9]	$3$	#00#	$0$ #0#
+; Line 72:		rv->tm_mon = -1;
+
+	$0$	#00#
+	*(T231(EBX) + 10).A.I[0x9] =   #FFFFFFFF.I[0x9]	$1$	#00#	$0$ #1#
+	CONDGO	L_13:PC ; T344(EAX).I[0x9] S< #0.I[0x9]	$2$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 12	$0$	#00#
+L_12:	$0$	#00#
+; Line 74:			temp1-=_monthdays[++rv->tm_mon];
+
+	$0$	#00#
+	*(T231(EBX) + 10).A.I[0x9] = *(T231(EBX) + 10).A.I[0x9] + #1.I[0x9]	$3$	#00#	$0$ #1#
+	T365(ECX).I[0xb] =   *(T231(EBX) + 10).A.I[0xb]	$3$	#00#	$0$ #0#
+	T368(ECX).I[0xb] =   *(T365(ECX) + __monthdays:RAM).A.C[0xb]	$3$	#00#	$0$ #0#
+	T369(EAX).I[0x9] = T344(EAX).I[0x9] - T368(ECX).I[0x9]	$7$	#00#	$0$ #0#
+	T344(EAX).I[0x9] =   T369(EAX).I[0x9]	$3$	#00#	$0$ #1#
+	BLOCK END	$0$	#00#
+	BLOCK 13	$0$	#00#
+L_14:	$0$	#00#
+; Line 73:		while (temp1 >=0) 
+
+	$0$	#00#
+	CONDGO	L_12:PC ; T344(EAX).I[0x9] S>= #0.I[0x9]	$2$	#00#
+	BLOCK END	$0$	#00#
+	BLOCK 14	$0$	#00#
+L_13:	$0$	#00#
+; Line 75:		rv->tm_mday = temp1 + _monthdays[rv->tm_mon]+1;
+
+	$0$	#00#
+	T347(ECX).I[0xb] =   *(T231(EBX) + 10).A.I[0xb]	$3$	#00#	$0$ #0#
+	T350(ECX).I[0xb] =   *(T347(ECX) + __monthdays:RAM).A.C[0xb]	$3$	#00#	$0$ #0#
+	T351(EAX).I[0x9] = T344(EAX).I[0x9] + T350(ECX).I[0x9]	$7$	#00#	$0$ #0#
+	T352(EAX).I[0x9] = T351(EAX).I[0x9] + #1.I[0x9]	$3$	#00#	$0$ #0#
+	*(T231(EBX) + C).A.I[0x8] =   T352(EAX).I[0x8]	$3$	#00#	$0$ #1#
+; Line 76:	        rv->tm_isdst = _daylight;
+
+	$0$	#00#
+	GOSUB	#___getDaylight:PC.A[0x8]	$0$	#00#
+	PARMADJ	#0.N[0x8]	$0$	#00#
+	T354(EAX).A[0x9] =   RV.T55(EAX).A[0x9]	$1$	#00#	$0$ #0#
+	T355(EAX).I[0x9] =   *(T354(EAX)).A.I[0x9]	$3$	#00#	$0$ #0#
+	*(T231(EBX) + 20).A.I[0x8] =   T355(EAX).I[0x8]	$3$	#00#	$0$ #1#
+; Line 77:	   return rv;
+
+	$0$	#00#
+	T358(EAX).A[0x1] =   T231(EBX).A[0x1]	$3$	#00#	$0$ #0#
+	RV.T59(EAX).A[0x0] =   T358(EAX).A[0x0]	$2$	#00#	$0$ #1#
+	BLOCK END	$0$	#00#
+	BLOCK 15	$0$	#00#
+L_2:	$0$	#00#
+	EPILOGUE	#48.N[0x0]	$0$	#00#
+	RET	#0.N[0x0]	$0$	#00#
+	BLOCK END	$0$	#00#
+	SECTION	data
+
+	PUBLIC	__monthdays
+__monthdays:
+	DC.B	$1F,$1C,$1F,$1E,$1F,$1E,$1F,$1F,$1E,$1F,$1E,$1F
+	SECTION	const
+	SECTION	code
+	EXTRN	___getRtlData:PROC
+	EXTRN	___getDaylight:PROC
+

@@ -1,0 +1,4 @@
+LIBRARY     NETAPI32.DLL
+
+EXPORTS
+    Netbios                        @1   

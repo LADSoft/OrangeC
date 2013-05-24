@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OGrep Command Line Options</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h2 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">OGrep Command Line
+Options</span></h2>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;"><br>
+<span style="font-family: Times New Roman,Times,serif;">The general
+format of an <span style="font-weight: bold;">OGrep</span> command
+line is as follows:<br>
+<br>
+</span>OGrep [options] match-string list-of-files</span><br
+ style="font-family: Courier New,Courier,monospace;">
+</span><br>
+<span style="font-family: Times New Roman,Times,serif;">Where [options]
+are command line options, and the <span style="font-style: italic;">match-string</span>
+is searched for within
+the <span style="font-style: italic;">list-of-files</span>.&nbsp;
+Matches are listed with file and optionally
+line number.&nbsp; The files in the <span style="font-style: italic;">list-of-files</span>
+may contain
+wildcards, for example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OGrep "while"
+*.c</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+Looks through all C language source files in the current directory for
+the word <span style="font-weight: bold;">while</span>.<br>
+<br>
+By default the match-string is assumed to hold a <a
+ href="OGrep%20Regular%20Expressions.html">regular expression</a>.<br>
+<br>
+This page will discuss the various command-line options in detail.<br>
+<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;"></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Getting Help</span></h3>
+By default, if an incomplete command line is specified (for example the
+match string and files are not listed) <span style="font-weight: bold;">OGrep</span>
+will display a one-line
+version of usage text to prompt you.&nbsp; However, <span
+ style="font-weight: bold;">OGrep</span> also has a more detailed
+help-screen.&nbsp; To access it, you use the <span
+ style="font-weight: bold;">-?</span>&nbsp;
+command line switch.<br>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+</span><span style="font-family: Times New Roman,Times,serif;"></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Case Sensitivity</span></h3>
+<span style="font-family: Times New Roman,Times,serif;">By default,
+OGrep does case sensitive text matching.&nbsp; However, with the
+command line option <span style="font-weight: bold;">-i</span>, it
+will switch to doing case-insensitive
+comparisons.</span><br style="font-family: Times New Roman,Times,serif;">
+<br style="font-family: Times New Roman,Times,serif;">
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Disabling regular
+expressions</span></h3>
+To match a string without interpreting the <span
+ style="font-style: italic;">match-string</span> as a
+<a href="OGrep%20Regular%20Expressions.html">regular-expression</a>,
+use the <span style="font-weight: bold;">-r-</span>&nbsp; switch.<br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Recursing through
+subdirectories</span></h3>
+<span style="font-family: Times New Roman,Times,serif;">In some cases
+it can be useful to search through some subset of files within a
+directory tree.&nbsp; The <span style="font-weight: bold;">-d</span>
+switch can be used to specify that <span style="font-weight: bold;">OGrep</span>
+should search through the current directory and all subdirectories when
+trying to find files to match against.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OGrep -d
+"while" *.c</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+searches for the word <span style="font-weight: bold;">while</span> in
+all files ending in <span style="font-weight: bold;">.c</span>, in the
+current directory as well as all its subdirectories.<br>
+</span>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Matching complete
+words</span></h3>
+<span style="font-weight: bold;">OGrep</span>'s <a
+ href="OGrep%20Regular%20Expressions.html">regular expression</a>
+matching can be used to match complete
+words.&nbsp; For example by default the regular expression 'abc'&nbsp;
+would match
+within both 'abc' and 'xabcy'.&nbsp; There are regular expression
+modifiers that can be used to make it match only 'abc' since in the
+other case abc occurs within another word.&nbsp; With the <span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">-w</span> command line
+switch, <span style="font-weight: bold;">OGrep</span> automatically
+takes the match string and makes it into
+this type of regular expression.&nbsp; E.g, when the <span
+ style="font-weight: bold;">-w</span> switch is used
+<span style="font-weight: bold;">OGrep</span> will only match complete
+words that don't occur within other
+words.&nbsp; This facility may be used even when regular expressions
+are turned off with the <span style="font-weight: bold;">-r-</span>
+switch.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;"></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Controlling the output</span></h3>
+By default OGrep will
+list each filename when it finds the first match within a file, then
+list each matching line underneath it.&nbsp; At the end it will show a
+count of the number of matches.&nbsp; But there are various command
+line options which can modify the format of the output.<br>
+<br>
+<ul>
+  <li><span style="font-weight: bold;">-c</span>&nbsp; list the file
+names matched, along with a count of
+matches<br>
+  </li>
+  <li><span style="font-weight: bold;">-l&nbsp;</span> list only the
+file names for files that have matches</li>
+  <li><span style="font-weight: bold;">-n</span> list the line number
+of matching lines next to the matching
+line</li>
+  <li><span style="font-weight: bold;">-o</span> (Unix format) list the
+file name and line number to the left
+of each matching line, instead of showing the file names separately.</li>
+  <li><span style="font-weight: bold;">-v</span> lines nonmatching
+lines instead of matching lines</li>
+  <li><span style="font-weight: bold;">-z</span> list the file names
+matched, line numbers, and matched lines<br>
+  </li>
+</ul>
+<br>
+</body>
+</html>

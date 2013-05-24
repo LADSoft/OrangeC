@@ -1,0 +1,181 @@
+;Software License Agreement (BSD License)
+;
+;Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+;All rights reserved.
+;
+;Redistribution and use of this software in source and binary forms, with or without modification, are
+;permitted provided that the following conditions are met:
+;
+;* Redistributions of source code must retain the above
+;  copyright notice, this list of conditions and the
+;  following disclaimer.
+;
+;* Redistributions in binary form must reproduce the above
+;  copyright notice, this list of conditions and the
+;  following disclaimer in the documentation and/or other
+;  materials provided with the distribution.
+;
+;* Neither the name of LADSoft nor the names of its
+;  contributors may be used to endorse or promote products
+;  derived from this software without specific prior
+;  written permission of LADSoft.
+;
+;THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+;WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+;PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+;ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+;LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+;TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+;ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ME_DOMAIN = 1
+ME_SING = 2
+ME_OVERFLOW = 3
+ME_UNDERFLOW = 4
+ME_TLOSS = 5
+ME_STACKFAULT = 7
+
+;
+; this routine may NOT be rommed!!!!
+;
+
+	xref	_printf, __matherr, __rexit
+
+	xdef	trigerr,singerr,negerr, negeerr,_fpstackpos,allerr
+
+	section code
+;
+; next fields MUST be in this order and with no interruptions!!!
+;
+type	dc.l	0
+nm	dc.l	0
+arg1	dc.D	0
+arg2	dc.D	0
+retval	dc.D	0
+retpos	dc.l	0
+_fpstackpos dc.l	0
+
+sixtythree dc.l	63.0
+val	dc.l	0
+;
+;
+eferr	dc.b	"floating point %s error - func %s",0
+edomain	dc.b	"domain",0
+esing	dc.b	"singularity",0
+eover	dc.b	"over",0
+eunder	dc.b	"under",0
+etloss	dc.b	"total significance loss",0
+eploss	dc.b	"partial significance loss",0
+estack	dc.b	"stack overflow",0
+errm	dc.l	edomain-$,esing-$,eover-$,eunder-$,etloss-$
+	dc.l	eploss-$,estack-$, negeerr-$
+normx	dc.b	"none",0
+
+	.align 2
+;
+; error generator, calls __matherr and aborts or continues
+;	
+genmerr:
+	move.l	A2,-(A7)
+	lea.l	(type,pc),A2
+	move	D1,(A2)
+	move	d1,(4,A2)
+	fmove.d	FP0,(24,A2)
+	fmove.d	(A0),FP0
+	fmove.d	FP0,(8,A2)
+	cmpa	#0,A1
+	beq	nosecond
+	fmove.d	(A1),FP0
+	fmove.d	FP0,(16,A2)
+nosecond:
+	cmp	#ME_TLOSS,D0
+	beq	rv1
+	cmp	#ME_UNDERFLOW,D0
+	beq	rv1
+	moveq	#0,D0
+	sub	d0,d0
+	bra	rv0
+rv1:
+	moveq	#1,d0
+rv0:
+	movem.l	A0/A1,-(A7)
+	move.l	A1,-(A7)
+	pea	(type,pc)
+	bsr	__matherr
+	lea	(4,A7),A7
+	movem.l	(A7)+,A0/A1
+	or	d0,d0
+	bne	noerr
+	move.l	(nm,pc),-(A7)
+	move.l	(type,pc),D0
+	asl	#2,D0
+	move.l	D0,A2
+	move.l	(A2),D0
+	add.l	A2,D0
+	move.l	D0,-(A7)
+	pea	(eferr,pc)
+	bsr	_printf
+	lea	(16,A7),A7
+	moveq	#1,D0
+	bra	__rexit
+noerr:
+	fmove.l	FPSR,D0
+	and.l	#$FFFF0000,D0
+	fmove.l	D0,FPSR
+	fmove.d	(24,A2),FP0
+	move.l	(a7)+,A2
+	rts
+;
+; various common errors
+;
+trigerr:
+	fmove.d	(a0),FP0
+	fgetexp	FP0,FP0
+	fabs    FP0,FP0
+	fcmp.w	#63,FP0
+	fble	allerr
+	move.l	#ME_TLOSS,D1
+	bsr	genmerr
+	rts
+
+singerr:
+	fcmp	FP0,FP1
+	fbne	allerr
+	move.l	#ME_SING,D1
+	bsr	genmerr
+	rts
+
+negeerr:
+	ftst	fp0
+	fbgt	allerr
+	bra	ner
+negerr:
+	ftst	fp0
+	fbge	allerr
+ner:
+	move.l	#ME_DOMAIN,D1
+	bsr	genmerr
+	rts
+allerr:
+	fmove.l	FPSR,D0
+	and.l	#$e0,D0
+	beq	noaerr
+	bpl	notie
+	move.l	#ME_DOMAIN,D1
+	bsr	genmerr
+	bra	noaerr
+notie:
+	cmp	#$40,D1
+	bmi	notoe
+	move.l	#ME_OVERFLOW,D1
+	bsr	genmerr
+	bra	noaerr
+
+notoe:
+	cmp	#$40,D1
+	bmi	noaerr
+	move.l	#ME_UNDERFLOW,D1
+	bsr	genmerr
+	bra	noaerr
+noaerr:
+	rts

@@ -1,0 +1,42 @@
+# This makefile is for Borland make (IBM PC/80386+)
+
+#		*Translator Definitions*
+# Comment this next line out to generate the 68k compiler
+# leave it in to generate the 386 compiler
+#i386 = -Di386
+
+CC = \bcc55\bin\bcc32 -c -v -DBORLANDC -w- /I..\util /DL_INT=int /DL_UINT=unsigned /RT-
+ASM = TASM /zi /ml /m2
+LIB = tlib
+LINK = \bcc55\bin\ilink32 -Gn -Gi
+INCLUDEPATH = C:\bc45\INCLUDE;..\include
+
+.cpp.obj:
+	$(CC) $*
+#		*List Macros*
+
+EXE_dependencies = \
+Errors.obj \
+Floating.obj \
+InputFile.obj \
+ppCond.obj \
+ppCtx.obj \
+ppDefine.obj \
+ppExpr.obj \
+ppFile.obj \
+ppInclude.obj \
+ppMacro.obj \
+ppMain.obj \
+ppPragma.obj \
+PreProcessor.obj \
+SymbolTable.obj \
+Token.obj
+
+#		*Explicit Rules*
+ocpp.exe: $(EXE_dependencies)
+	$(LINK) /Tpe /ap /c/v/s/L\bcc55\lib @&&|
+c0x32.obj $(EXE_dependencies)
+ocpp.exe
+ocpp.map
+..\object\util.lib import32.lib cw32.lib
+|

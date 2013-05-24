@@ -1,0 +1,62 @@
+Asin/acos/atan for Complex Numbers
+
+Date: 3/27/96 at 2:43:43
+From: Jordan Justen
+Subject: asin/acos/atan for complex numbers
+
+Dr. Math,
+
+I read a letter from cjjones where he asked, if Sin(a) = 5 then what 
+is a?  From that letter I figured out that 
+  sin(x+iy) = sin(x)cosh(y) + i*cos(x)sinh(y) 
+and that 
+  cos(x+iy) = cos(x)cos(y) - i*sin(x)sinh(y).  
+
+But now I'm interested in going the other way.  How do you find 
+asin(x+iy), acos(x+iy), and atan(x+iy)?
+
+  Jordan Justen (jordan@wsu.edu)
+
+
+--------------------------------------------------------------------------------
+
+
+Date: 7/14/96 at 21:49:33
+From: Doctor Jerry
+Subject: Re: asin/acos/atan for complex numbers
+
+For convenience, let z=x+iy.  To calculate arcsin(z) we solve the 
+equation
+
+sin(w) = z, where w=u+iv.
+
+Since sin(w) = (e^(iw)-e^(-iw))/(2i), we solve
+
+(e^(iw)-e^(-iw))/(2i) = z. 
+
+Multiplying both sides of this equation by (2i)*e^(iw) we obtain
+
+e^(2iw)-1 = 2ize^(iw).
+
+Letting p = e^(iw), this equation becomes the quadratic
+
+p^2-(2iz)p-1 = 0.
+
+Solving for p = e^(iw),
+
+e^(iw) = iz+(1-z^2)^(1/2) or
+
+w = -i*ln(iz+(1-z^2)^(1/2)).
+
+This is a formula for w = arcsin(z) = arcsin(x+iy).
+
+I've given a "formal" argument and have skipped some details.  For 
+example, (1-z^2)^(1/2) can have more than one solution. 
+
+I hope my answer satisfies some of your curiosity.  To understand the 
+argument down to the last detail, it probably would be necessary for
+you to read an elementary book on complex variables.
+
+-Doctor Jerry,  The Math Forum
+ Check out our web site!  http://mathforum.org/dr.math/   
+    

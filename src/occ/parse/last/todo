@@ -1,0 +1,4 @@
+leave assignment of constants alone
+move generated copy instructions after conditionals when possible
+in some cases gen'd copy instructions are overwriting each other 
+in other cases gen'd copy instructions may not be needed

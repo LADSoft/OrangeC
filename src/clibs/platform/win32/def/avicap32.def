@@ -1,0 +1,6 @@
+LIBRARY     AVICAP32.DLL
+
+EXPORTS
+    avicapf_ThunkData32            @1   
+    capCreateCaptureWindowA        @2   
+    capGetDriverDescriptionA       @3   

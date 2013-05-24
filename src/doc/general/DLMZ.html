@@ -1,0 +1,117 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>DLMZ</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h1 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">DLMZ</span></h1>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+<span style="font-weight: bold;">DLMZ</span> is the postprocessor used
+to create DOS 16-bit executables.</span>&nbsp;
+There
+is quite a bit of linker defaults built around it; normally it will be
+called by the linker in response to use of a linker <span
+ style="font-weight: bold;">/T</span> switch that
+specifies an MSDOS output format..&nbsp; It would be rare for a user to
+need to call it directly.<br>
+<br>
+<h2 style="text-align: center;"><span style="font-family: Arial;">Command
+Line Options<br>
+</span></h2>
+The general form of a <span style="font-weight: bold;">DLMZ</span>
+command line is:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlmz
+[options] relffile</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Times New Roman,Times,serif;">Here the&nbsp;
+<span style="font-style: italic;">relfile</span> is the linker
+generated file that&nbsp; holds the linked
+code.</span>&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlmz test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+makes a console application called<span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">
+test.exe
+</span>from the linked code in <span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">test.rel</span>.<span
+ style="font-family: Courier New,Courier,monospace;"></span><br>
+<br>
+There are several command line options that control the output.&nbsp;
+These
+include options for specifying the output format, the output file name,
+and optionally a stub file to use.<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;"><br>
+</span></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying the output
+file name</span><br>
+</h3>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;">By default, <span
+ style="font-weight: bold;">DLMZ</span> will take the input file name,
+and replace the extension with the
+extension .EXE.<br>
+<br>
+</span></span>However in some cases it is useful to be able to specify
+the output
+file name.&nbsp; The specified name can have its extension specified,
+or it
+can be typed without an extension to allow dlhex to add one of the
+default extensions.&nbsp; The output file name is specified with the <span
+ style="font-weight: bold;">/o</span> switch. For example:<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><br>
+<span style="font-family: Courier New,Courier,monospace;">dlmz /mREAL
+/omyfile test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+makes a segmented executable called <span style="font-weight: bold;">myfile.exe</span>.<span
+ style="font-family: Courier New,Courier,monospace;"></span><br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying the output
+file format</span></h3>
+DLMZ supports two types of MSDOS executables with the /m switch, as
+follows:<br>
+<br>
+<ul>
+  <li>TINY - a tiny-mode program<br>
+  </li>
+  <li>REAL - a segmented program<br>
+  </li>
+</ul>
+The default output format if no <span style="font-weight: bold;">/m</span>
+switch is specified is REAL.<br>
+<br>
+<h2 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">General Considerations</span></h2>
+<span style="font-family: Times New Roman,Times,serif;">This toolchain
+isn't compatible with the normal MSDOS build process.&nbsp; Normally,
+MSDOS programs would have sections that also included something called
+a class name;&nbsp; the linker would take both the class name and the
+section name into account when determining how to create an output
+file.&nbsp; Class names aren't supported by this toolchain, instead it
+is preferred to write a linker specification file to specify how the
+sections should be combined.&nbsp; A generic linker specification file
+exists for each of the supported modes, however, since sections can be
+named and placed arbitrarily, this specification file would not work
+for all programs.&nbsp; It may be necessary to augment an MSDOS program
+with its own specific linker specification file.&nbsp; <br>
+<br>
+In tiny mode, it is customary to instruct most MSDOS assemblers to set
+a code origin of 100h.&nbsp; However, the linker specification file for
+tiny mode automatically sets this origin.&nbsp; Therefore it does not
+have to be present for this toolchain to generate tiny mode
+files.&nbsp; Such files still must start with a code sequence, however.<br>
+</span><br>
+</body>
+</html>

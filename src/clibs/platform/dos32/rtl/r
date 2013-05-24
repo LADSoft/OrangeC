@@ -1,0 +1,823 @@
+File aliasadr.c
+	asm mov [sel],ds
+File ARGSET.c
+	asm push edi
+	asm push es
+	asm mov ecx,-1
+	asm sub edi,edi
+   asm mov es,[__envseg]
+	asm sub al,al
+	asm repnz scasb
+	asm cmp es:[edi],al
+	asm jnz lp
+	asm add edi,3
+	asm movzx edx,byte ptr es:[edi+1]
+  asm mov [pos],edi
+  asm mov [sel],es
+	asm mov ecx,-1
+	asm repnz scasb
+	asm not ecx
+	asm mov [len],ecx
+	asm pop es
+	asm pop edi
+	asm mov [temp],edx
+File conio.c
+	asm mov [sel],ds
+	asm push fs
+	asm mov fs,[realdata]
+	asm mov al,fs:[0x449]
+	asm mov [mode],al
+	asm mov ax,fs:[0x450]
+	asm mov [curs],ax
+	asm pop fs
+	asm push fs;
+	asm mov fs,[realdata];
+	asm mov ecx,[pos];
+	asm mov al,fs:[ecx]
+	asm mov [atr],al
+  asm pop fs
+	asm  mov edx,[__portid];
+	asm  in al,dx;
+	asm  movzx eax,al;
+	asm  mov edx,[__portid];
+	asm  in ax,dx;
+	asm  movzx eax,ax;
+	asm  mov edx,[__portid];
+	asm  in eax,dx;
+	asm  mov edx,[__portid];
+	asm  in ax,dx;
+	asm  movsx eax,ax;
+	asm  mov edx,[__portid];
+	asm  in ax,dx;
+	asm  movzx eax,ax;
+	asm mov edx,[__portid];
+	asm mov al,[__value];
+	asm out dx,al;
+	asm mov edx,[__portid];
+	asm mov ax,word ptr [__value];
+	asm out dx,ax;
+	asm mov edx,[__portid];
+	asm mov eax,dword ptr [__value];
+	asm out dx,eax;
+	asm mov edx,[__portid];
+	asm mov al,byte ptr [__value];
+	asm out dx,al;
+	asm mov edx,[__portid];
+	asm mov ax,word ptr [__value];
+	asm out dx,ax;
+	asm push fs;
+	asm mov ax,[realdata];
+	asm mov fs,ax;
+	asm mov ecx,[pos];
+  asm mov ax,[value];
+	asm mov word ptr fs:[ecx],ax;
+	asm pop fs;
+	asm push fs;
+	asm mov ax,[realdata];
+	asm mov fs,ax;
+			asm mov eax,[p1];
+			asm mov ecx,[p2];
+			asm mov dx,word ptr fs:[ecx];
+			asm mov word ptr fs:[eax],dx;
+	asm pop fs
+	asm push fs;
+	asm mov ax,[realdata];
+	asm mov fs,ax;
+			asm mov eax,[p1];
+			asm mov ecx,[p2];
+			asm mov dx,word ptr fs:[ecx];
+			asm mov word ptr fs:[eax],dx;
+	asm pop fs;
+	asm push fs
+	asm mov fs,[realdata]
+			asm mov ecx,[pos];
+			asm inc [pos];
+			asm inc [pos];
+			asm mov ax,word ptr fs:[ecx];
+        		asm mov [value],ax;
+	asm pop fs;
+	asm push fs;
+	asm mov fs,[realdata]
+			asm mov ecx,[pos]
+			asm inc [pos]
+			asm inc [pos]
+        		asm mov ax,[value]
+			asm mov word ptr fs:[ecx],ax
+	asm pop fs
+File DPMI.c
+	asm mov cx,[num]
+	asm mov ax,0
+	asm int 0x31
+	asm jc xerr
+	asm mov ecx,[basesel]
+	asm mov [ecx],ax
+	asm push ebx
+	asm mov	bx,[sel]
+	asm mov	ax,1
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov ax,3
+	asm int 0x31
+	asm mov ecx,[rv]
+	asm movzx eax,ax
+	asm mov [ecx],eax
+	asm push ebx
+	asm mov bx,[sel]
+	asm mov ax,6
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm	mov ax,cx
+	asm shl eax,16
+	asm mov ax,dx
+	asm mov ecx,[base]
+	asm mov [ecx],eax
+	asm push ebx
+	asm mov bx,[sel]
+	asm mov ax,7
+	asm mov ecx,[base]
+	asm mov dx,cx
+	asm shr ecx,16
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov ax,[sel]
+	asm lsl eax,eax
+	asm mov ecx,[limit]
+	asm mov [ecx],eax
+	asm push ebx
+	asm mov bx,[sel]
+	asm mov ax,8
+	asm mov ecx,[limit]
+	asm mov dx,cx
+	asm shr ecx,16
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov ax,[sel]
+	asm lar eax,eax
+	asm mov ecx,[rights]
+	asm mov [ecx],eax
+	asm push ebx
+	asm mov bx,[sel]
+	asm mov ax,9
+	asm mov cx,[rights]
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm push ebx
+	asm mov bx,[sel]
+	asm mov ax,0xa
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov ecx,[alias]
+	asm mov [ecx],ax
+	asm push ebx
+	asm push edi
+	asm mov edi,[desc]
+  asm mov bx,[sel]
+	asm mov ax,0xc
+	asm int 0x31
+	asm pop edi
+	asm pop ebx
+	asm jc xerr
+	asm push ebx
+	asm push edi
+	asm mov edi,[desc]
+  asm mov bx,[sel]
+	asm mov ax,0xb
+	asm int 0x31
+	asm pop	edi
+	asm pop	ebx
+	asm jc xerr
+	asm push edi
+	asm mov edi,[desc]
+  asm mov cx,[count]
+	asm mov ax,0xf
+	asm int 0x31
+	asm pop edi
+	asm jc xerr
+	asm push edi
+	asm mov edi,[desc]
+  asm mov cx,[count]
+	asm mov ax,0xE
+	asm int 0x31
+	asm pop edi
+	asm jc xerr
+	asm push ebx
+	asm mov bx,[len]
+	asm mov ax,0x100
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov ecx,[sel]
+	asm mov [ecx],dx
+	asm mov ecx,[para]
+	asm mov [ecx],ax
+	asm mov dx,[sel]
+	asm mov ax,0x101
+	asm int 0x31
+	asm jc xerr
+	asm push ebx
+	asm mov bx,[size]
+	asm mov dx,[sel]
+	asm mov ax,0x102
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm push ds
+	asm push es
+	asm push esi
+	asm push edi
+	asm mov ecx,[len]
+	asm mov edi,[dest]
+  asm mov esi,[source]
+  asm mov es,[dstsel]
+  asm mov ds,[srcsel]
+	asm cld
+	asm rep movsb
+	asm pop edi
+	asm pop esi
+	asm pop es
+	asm pop ds
+	asm push es
+	asm push esi
+	asm push edi
+	asm mov ecx,[len]
+	asm mov edi,[dest]
+  asm mov esi,[source]
+  asm mov es,[sel]
+	asm cld
+	asm rep movsb
+	asm pop edi
+	asm pop esi
+	asm pop es
+	asm push ds
+	asm push esi
+	asm push edi
+	asm mov ecx,[len]
+	asm mov edi,[dest]
+  asm mov esi,[source]
+  asm mov ds,[sel]
+	asm cld
+	asm rep movsb
+	asm pop edi
+	asm pop esi
+	asm pop ds
+	asm push ebx
+	asm mov bx,[num]
+	asm mov ax,0x200
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov eax,[xseg]
+	asm mov [eax],cx
+	asm mov eax,[ofs]
+	asm mov [eax],dx
+	asm push ebx
+	asm mov bx,[num]
+	asm mov cx,[xseg]
+   asm mov dx,[ofs]
+	asm mov ax,0x201
+	asm int 0x31
+	asm pop ebx
+	asm jc	xerr
+	asm push ebx
+	asm mov bx,[num]
+	asm mov ax,0x202
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov eax,[sel]
+	asm mov [eax],cx
+	asm mov eax,[ofs]
+	asm mov [eax],edx
+	asm push ebx
+	asm mov bx,[num]
+	asm mov cx,[sel]
+    asm mov edx,[ofs]
+	asm mov ax,0x203
+	asm int 0x31
+	asm pop ebx
+	asm jc	xerr
+	asm push ebx
+	asm mov bx,[num]
+	asm mov ax,0x204
+	asm int 0x31
+	asm pop ebx
+	asm jc xerr
+	asm mov eax,[sel]
+	asm mov [eax],cx
+	asm mov eax,[ofs]
+	asm mov [eax],edx
+	asm push ebx
+	asm mov bx,[num]
+	asm mov cx,[sel]
+  asm mov edx,[ofs]
+	asm mov ax,0x205
+	asm int 0x31
+	asm pop ebx
+	asm jc	xerr
+	asm push ebx
+	asm push edi
+    asm push esi
+    asm push ebp
+	asm mov bx,[num]
+	asm sub bh,bh
+	asm mov edi,[val]
+	asm sub ecx,ecx
+	asm mov ax,0x300
+	asm int 0x31
+    asm pop ebp
+    asm pop esi
+	asm pop edi
+	asm pop ebx
+	asm jc	xerr
+	asm push ebx
+	asm push edi
+    asm push esi
+    asm push ebp
+	asm sub bx,bx
+	asm mov edi,[val]
+	asm sub ecx,ecx
+	asm mov ax,0x301
+	asm int 0x31
+    asm pop ebp
+    asm pop esi
+	asm pop edi
+	asm pop ebx
+	asm jc	xerr
+	asm push ebx
+	asm push edi
+    asm push esi
+    asm push ebp
+	asm sub bx,bx
+	asm mov edi,[val]
+	asm sub ecx,ecx
+	asm mov ax,0x302
+	asm int 0x31
+    asm pop ebp
+    asm pop esi
+	asm pop edi
+	asm pop ebx
+	asm jc	xerr
+	asm push esi
+	asm push edi
+   asm push ds
+   asm push cs
+   asm pop ds
+	asm mov esi,[proc]
+	asm mov edi,[buf]
+	asm mov ax,0x303
+	asm int 0x31
+   asm pop ds
+	asm pop edi
+   asm pop esi
+	asm jc xerr
+	asm mov	eax,[xseg]
+	asm mov	[eax],cx
+	asm mov eax,[ofs]
+	asm mov [eax],dx
+	asm mov cx,[xseg]
+	asm mov dx,[ofs]
+	asm mov ax,0x304
+	asm int 0x31
+	asm jc xerr
+	asm push esi
+	asm push edi
+	asm mov ax,0x305
+	asm int 0x31
+	asm push ebx
+	asm mov bx,[len]
+	asm movzx eax,ax
+	asm mov [ebx],eax
+	asm pop ebx
+	asm mov eax,[csel]
+	asm mov [eax],si
+	asm mov eax,[cofs]
+	asm mov [eax],edi
+	asm mov eax,[xseg]
+	asm mov [eax],cx
+	asm mov eax,[ofs]
+	asm mov [eax],dx
+	asm pop edi
+	asm pop esi
+	asm push esi
+	asm mov esi,[buf]
+	asm mov ax,[csel]
+	asm mov word ptr [fcall + 4],ax
+	asm mov eax,[proc]
+	asm mov dword ptr [fcall],eax
+	asm mov ax,[flag]
+	asm call fword ptr [fcall]
+	asm pop esi
+	asm mov ax,0x400
+	asm int 0x31
+	asm push esi
+	asm mov esi, [ver]
+	asm mov [esi],ax
+	asm mov [esi + 2],bx
+	asm mov [esi + 4],cl
+	asm mov [esi + 5],dx
+	asm pop esi
+	asm push edi
+	asm mov edi,[info]
+	asm mov ax,0x500
+	asm int 0x31
+	asm jc xerr
+	asm push esi
+	asm push edi
+	asm push ebx
+	asm mov ax,0x501
+	asm mov bx,word ptr [size + 2]
+	asm mov cx,word ptr [size]
+	asm int 0x31
+	asm jc xerr
+	asm mov eax,[linear]
+	asm mov [eax],cx
+	asm mov [eax+2],bx
+	asm mov eax,[handle]
+	asm mov [eax],di
+	asm mov [eax+2],si
+	asm pop ebx
+	asm pop edi
+	asm	pop esi
+	asm pop ebx
+	asm pop edi
+	asm pop esi
+	asm push esi
+	asm push edi
+	asm mov si,word ptr [handle+2]
+	asm mov di,word ptr [handle]
+	asm mov ax,0x502
+	asm int 0x31
+	asm pop edi
+	asm pop esi
+	asm jc xerr
+	asm push esi
+	asm push edi
+	asm push ebx
+	asm mov ax,0x503
+	asm mov bx,word ptr [size + 2]
+	asm mov cx,word ptr [size]
+	asm mov si,word ptr [handle+2]
+	asm mov di,word ptr [handle]
+	asm int 0x31
+	asm jc xerr
+	asm mov eax,[linear]
+	asm mov [eax],cx
+	asm mov [eax+2],bx
+	asm mov eax,[handle]
+	asm mov [eax],di
+	asm mov [eax+2],si
+	asm pop ebx
+	asm pop edi
+	asm pop esi
+	asm pop ebx
+	asm pop edi
+	asm pop esi
+	asm push esi
+	asm push edi
+	asm push ebx
+	asm mov si,word ptr [handle+2]
+	asm mov di,word ptr [handle]
+	asm mov ax,0x504
+	asm int 0x31
+	asm jc xerr
+	asm mov eax,[base]
+	asm mov [eax],si
+	asm mov [eax+2],di
+	asm mov eax,[size]
+	asm mov [eax],cx
+	asm mov [eax+2],bx
+	asm pop ebx
+	asm pop edi
+	asm pop esi
+	asm pop ebx
+	asm pop edi
+	asm pop esi
+  asm mov ax,0x901
+	asm int 0x31
+	asm movzx eax,al
+  asm mov ecx,[rv]
+	asm mov [ecx],eax
+  asm mov ax,0x900
+	asm int 0x31
+	asm movzx eax,al
+  asm mov ecx,[rv]
+	asm mov [ecx],eax
+  asm mov ax,0x902
+	asm int 0x31
+	asm movzx eax,al
+  asm mov ecx,[rv]
+	asm mov [ecx],eax
+File LLFPSTUB.c
+    asm cli
+      asm push ds
+      asm push es
+		asm mov	ds,cs:[pmodeds]
+		asm mov	es,cs:[pmodeds]
+      asm sti
+      asm cli
+      asm pop es
+      asm pop ds
+      asm pushad
+      asm push ds
+      asm push es
+		asm mov	ds,cs:[pmodeds]
+		asm mov	es,cs:[pmodeds]
+        asm mov al,0x65
+        asm out 0xa0,al
+        asm mov al,0x62
+        asm out 0xa0,al
+      asm sti
+      asm pop es
+      asm pop ds
+      asm popad
+            asm add esp,4;
+        asm retf;
+   asm fnstsw [work] ;
+   asm fwait ;
+	asm fnstsw	[work ];
+   asm fwait ;
+	asm fnclex
+	asm fstcw [work];
+	asm fwait
+	asm fldcw [work]
+   asm finit ;
+    asm fninit
+    asm mov [sel],cs
+  asm fninit
+  asm fnstsw [work]
+        asm fnstenv [dfltenv]
+    asm push esi
+    asm mov ecx,[linear]
+    asm mov esi,100000
+    asm mov dx,cx
+    asm shr ecx,16
+    asm mov di,si
+    asm shr esi,16
+    asm mov eax,0x600
+    asm int 0x31
+    asm pop esi
+File llgenv.c
+	asm push esi
+	asm push edi
+	asm push ebx
+	asm push es
+	asm cld
+   asm mov es,[__envseg]
+	asm mov edx,[ebp+8]
+	asm or edx,edx
+	asm jz lbl_count
+	asm mov edx,[ebp+12]
+	asm sub	eax,eax			/* set up for scan */
+	asm mov edi,eax
+	asm mov ecx,-1
+	asm test 	byte ptr es:[edi],0xff
+	asm jz	lbl_errenv
+	asm dec edx
+	asm jz	lbl_gotenv
+	asm repnz	scasb			/* scan for end of environment */
+	asm test	byte ptr es:[edi],0xff
+	asm jnz 	lbl_lp1
+	asm jmp	lbl_errenv
+	asm mov	esi,[ebp+8]
+	asm xchg	esi,edi
+	asm cli
+	asm push	ds
+	asm push	ds
+	asm push	es
+	asm pop	ds
+	asm pop	es
+	asm lodsb
+	asm stosb
+	asm or al,al
+	asm jnz lbl_mvlp
+	asm pop ds
+	asm sti
+	asm sub eax,eax
+	asm inc eax
+	asm jmp	lbl_exit
+	asm sub	eax,eax
+	asm jmp	lbl_exit
+	asm sub	eax,eax			/* set up for scan */
+	asm mov 	edi,eax
+	asm mov 	ecx,-1
+	asm mov edx,eax
+	asm inc edx
+	asm repnz	scasb			/* scan for end of environment */
+	asm test	byte ptr es:[edi],0xff
+	asm jnz 	lbl_lp
+	asm mov eax,edx
+	asm pop es
+	asm pop ebx
+	asm pop edi
+	asm pop esi
+	asm mov [answer],eax
+File llspawn.c
+      asm mov word [_DSS],ds
+      asm {
+		  asm {
+File llxcept.c
+		asm push eax
+        asm push ebp
+        asm test cs:[__pm308],1
+        asm jz stackswitch
+		asm mov ax,ss
+		asm cmp ax,cs:[pmodess]
+		asm jnz stackswitch
+        asm pop ebp
+		asm pop eax
+		asm jmp done
+        asm push ds
+        asm lea ebp,[esp + 16]
+        asm mov ds,[ebp + 8 + 16 + 4]
+        asm push ecx
+        asm mov cx,ss
+        asm mov ax,ds
+        asm cmp ax,cx
+        asm mov eax,[ebp + 8 + 16]
+        asm jnz notpmw
+        asm mov ecx,[eax - 8]
+        asm cmp ecx,[ebp + 8 + 8]
+        asm jnz notpmw
+        asm mov ecx,[eax - 12]
+        asm cmp ecx,[ebp + 8 + 4]
+        asm jnz notpmw
+        asm and word [eax - 4], 0xfeff
+        asm mov [eax - 12], resync
+        asm mov ax,[pmodecs]
+        asm mov [eax - 8],ax
+        asm mov eax,[ebp - 4]
+        asm mov [xceptretval],eax 
+        asm add ebp, 8
+        asm mov eax,[ebp]
+        asm mov [xceptxcept],eax 
+        asm mov eax,[ebp+4]
+        asm mov [xceptip],eax 
+        asm mov eax,[ebp+8]
+        asm mov [xceptcs],eax 
+        asm mov eax,[ebp+12]
+        asm mov [xceptflags],eax
+        asm and word [ebp + 12], 0xfeff
+        asm mov [ebp +4], resync
+        asm mov ax,[pmodecs]
+        asm mov [ebp + 8],ax
+        asm pop ecx
+		asm pop ds
+        asm pop ebp
+		asm pop eax
+		asm add esp,4
+		asm retf
+        asm push [xceptflags]
+        asm push [xceptcs]
+        asm push [xceptip]
+        asm push [xceptxcept]
+        asm push [xceptretval]
+        asm mov [winxcept], 1
+  asm mov ax,ss
+	asm mov cx,ds
+	asm cmp ax,cx
+	asm jz  restack
+	asm mov ecx,[_stacktop]
+	asm mov dword ptr [esp + 12 + 12],ecx
+	asm jmp join
+	asm mov esp,[_stacktop]
+	asm sti
+            asm add esp,4;
+        asm retf;
+      asm pushad
+      asm push ds
+      asm push es
+		asm mov	ds,cs:[pmodeds]
+		asm mov	es,cs:[pmodeds]
+      asm sti
+      asm pop es
+      asm pop ds
+      asm popad
+            asm add esp,4;
+        asm retf;
+		asm mov ss:[dssave],ds
+		asm mov ss:[essave],es
+		asm mov	ds,cs:[pmodeds]
+		asm mov	es,cs:[pmodeds]
+		asm mov [axsave],eax
+		asm mov [bxsave],ebx
+		asm mov [cxsave],ecx
+		asm mov [dxsave],edx
+		asm mov [sisave],esi
+		asm mov [disave],edi
+		asm mov [bpsave],ebp
+		asm mov [spsave],esp
+		asm mov [sssave],ss
+		asm mov [fssave],fs
+		asm mov [gssave],gs
+		asm pop eax
+		asm pop eax
+		asm mov [ipsave],eax
+		asm pop eax
+		asm mov [cssave],ax
+		asm pop eax
+		asm mov [flagssave],eax
+      asm pushad
+      asm push ds
+      asm push es
+		asm sti;
+      asm pop es
+      asm pop ds
+      asm popad
+            asm add esp,4;
+        asm retf;
+      asm pushad
+      asm push ds
+      asm push es
+		asm mov	ds,cs:[pmodeds]
+		asm mov	es,cs:[pmodeds]
+      asm sti
+      asm pop es
+      asm pop ds
+      asm popad
+            asm add esp,4;
+        asm retf;
+   asm push ds
+   asm mov ds,cs:[pmodeds]
+   asm or dword [_breakflag],2
+  asm pop ds
+  asm iretd
+   asm push ds
+   asm mov ds,cs:[pmodeds]
+   asm or dword [_breakflag],1
+  asm pop ds
+  asm iretd
+    asm mov [sel],cs
+    asm mov esi,[len]
+    asm mov ebx,[base]
+    asm mov ecx,ebx
+    asm shr ebx,16
+    asm mov edi,esi
+    asm shr esi,16
+    asm mov eax,0x600
+    asm int 0x31
+	asm mov [sel],cs
+      asm mov [pmodecs],cs
+		asm mov	[pmodeds],ds
+		asm mov [pmodess],ss
+File PROFTIME.c
+	asm sub eax,eax
+	asm mov al,0x36
+	asm out 0x43,al
+  asm in al,0x40
+	asm xchg al,ah
+	asm in al,0x40
+  asm xchg al,ah
+	asm not ax
+File SETVECT.c
+   asm mov ax,cs
+   asm mov [cseg],ax
+File _conio.c
+	asm mov dx,[port];
+	asm in	eax,dx;
+	asm mov dx,[port];
+	asm mov eax,dword ptr [val];
+	asm out dx,eax;
+File _harderr.c
+	asm mov [dev],edi
+	asm mov [dos],eax
+	asm mov eax,[ebp + 12]
+	asm shl eax,4
+	asm add eax,esi
+	asm mov [hdr],eax
+	asm push ds
+	asm push es
+	asm mov ds,cs:[holdds]
+	asm mov es,cs:[holdds]
+	asm pop es
+	asm pop ds
+	asm mov eax,[hardret]
+	asm mov [ebp + 32],eax
+			asm mov ax,cs
+			asm mov [cssel],ax
+			asm mov ax,ds
+			asm mov [holdds],ax
+File _SEG0000.c
+   asm {
+File _seg0040.c
+   asm {
+File _seg0050.c
+   asm {
+File _segA000.c
+   asm {
+File _segB000.c
+   asm {
+File _segB800.c
+   asm {
+File _segread.c
+	asm mov [sel],es
+	asm mov [sel],fs
+	asm mov [sel],gs
+	asm mov [sel],cs
+	asm mov [sel],ds
+	asm mov [sel],ss

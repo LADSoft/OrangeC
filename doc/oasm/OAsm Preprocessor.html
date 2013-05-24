@@ -1,0 +1,429 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OAsm Preprocessor</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h2 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">OAsm Preprocessor</span><br>
+</h2>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;">The OAsm
+preprocessor is a C preprocessor, with extensions.&nbsp; The
+preprocessor can be considered to be a set of routines which go through
+the code before it is assembled, making certain types of textual
+transformations to the source code.&nbsp; The transformations range
+from simple substitution of text or lines of text when a keyword is
+encountered, to inclusion of text from another file, to selectively
+ignoring some lines based on compile-time settings.&nbsp; The main
+difference from a C preprocessor, other than the extensions, is that
+instead of starting a preprocessor directive with a hash ('#')
+preprocessor directives are started with a percent ('%').<br>
+<br>
+Many of these directives involve <a
+ href="Conditional%20Processing.html">Conditional Processing</a>, which
+is a way
+to selectively choose what lines of code to assemble and what lines to
+ignore based on previous declarations.<br>
+<br>
+Table 1 shows the <a href="C-Style%20Preprocessor%20Directives.html">C-style
+preprocessor directives</a>.&nbsp; These directives are compatible with
+similar directives in a C Compiler's preprocessor.<br>
+<br>
+</span></div>
+<table
+ style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
+ border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">%define<br>
+      </td>
+      <td style="vertical-align: top;">define a constant or
+function-style macro<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%undef<br>
+      </td>
+      <td style="vertical-align: top;">undefine a macro<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%error<br>
+      </td>
+      <td style="vertical-align: top;">display an error<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%line<br>
+      </td>
+      <td style="vertical-align: top;">set the file and line displayed
+in error messages<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%include<br>
+      </td>
+      <td style="vertical-align: top;">include another file<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%if<br>
+      </td>
+      <td style="vertical-align: top;">conditional which tests for
+nonzero expression<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elif<br>
+      </td>
+      <td style="vertical-align: top;">else-style conditional which
+tests for nonzero-expression<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifdef<br>
+      </td>
+      <td style="vertical-align: top;">conditional which tests to see
+if a macro has been %defined<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifndef<br>
+      </td>
+      <td style="vertical-align: top;">conditional which tests to see
+if a macro has not been %defined<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%else<br>
+      </td>
+      <td style="vertical-align: top;">else clause for conditionals<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%endif<br>
+      </td>
+      <td style="vertical-align: top;">end of conditional<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div style="text-align: center;">Table 1 - C lanuage style preprocessor
+directives<br>
+<br>
+<div style="text-align: left; font-family: Times New Roman,Times,serif;">Table
+2 shows <a href="Basic%20Extensions%20to%20C%20Preprocessor.html">basic
+extensions to the C preprocessor</a> that are similar to
+directives already found in the preprocessor.&nbsp; This includes a new
+directive <span style="font-weight: bold;">%assign</span> which is
+like <span style="font-weight: bold;">%define</span> except it
+evaluates the macro
+value on the assumption it is a numeric expression.&nbsp; It also
+includes case insensitive
+macro definition directives, and the beginning of an extensive set of
+extensions to condtionals that are similar to the %elif
+mechanism.<br>
+<br>
+</div>
+</div>
+<table
+ style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
+ border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td>%assign<br>
+      </td>
+      <td style="vertical-align: top;">Like %define, but evaluates an
+expression and sets the value to the result<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%iassign </td>
+      <td style="vertical-align: top;">%assign with a case-insensitive
+name<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%idefine<br>
+      </td>
+      <td style="vertical-align: top;">%define with a case-insensitive
+name<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifdef</td>
+      <td style="vertical-align: top;">else-style conditional which
+tests to see if a macro has been %defined</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifndef</td>
+      <td style="vertical-align: top;">else-style conditional which
+tests to see if a macro has not been %defined</td>
+    </tr>
+  </tbody>
+</table>
+<div style="text-align: center;">Table 2 - Basic extensions to C style
+preprocessor<br>
+</div>
+<div style="text-align: center;">
+<div style="text-align: center;"><br>
+<div style="text-align: left;">Table 3 shows extensions to the
+conditional mechanism that allow <a
+ href="Text%20Comparison%20Conditionals.html">text comparisons</a>.&nbsp;
+There are both
+case sensitive and case insensitive forms of these directives.<br>
+<br>
+</div>
+</div>
+<table
+ style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
+ border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">%ifidn</td>
+      <td style="vertical-align: top;">Case sensitive test for string
+matching</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifnidn</td>
+      <td style="vertical-align: top;">Case sensitive test for string
+not matching</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifidn</td>
+      <td style="vertical-align: top;">else-style case sensitive test
+for string matching</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifnidn</td>
+      <td style="vertical-align: top;">else-style case sensitive test
+for string not matching</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifidni</td>
+      <td style="vertical-align: top;">Case insensitive test for string
+matching</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifnidni</td>
+      <td style="vertical-align: top;">Case insensitive test for string
+not matching</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifndi</td>
+      <td style="vertical-align: top;">else-style case insensitive test
+for string matching</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifnidni</td>
+      <td style="vertical-align: top;">else-style case insensitive test
+for string not matching</td>
+    </tr>
+  </tbody>
+</table>
+Table 3 - Text Comparison Conditionals<br>
+<div style="text-align: left;"><br>
+Table 4 shows various extensions to the conditional mechanism that
+allow <a href="Token%20Type%20Classification%20Conditionals.html">classification
+of a token's type</a>.&nbsp; They can be used for
+example in <a href="Multiline%20Macro%20Extensions.html">multiline
+macros</a>, to allow a single macro to have different behaviors
+based on the type of a macro argument.<br>
+<br>
+</div>
+</div>
+<table
+ style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
+ border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td>%ifid</td>
+      <td style="vertical-align: top;">test to see if argument is an
+identifier</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifnid</td>
+      <td style="vertical-align: top;">test to see if argument is not
+an identifier</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifid</td>
+      <td style="vertical-align: top;">else-style test to see if
+argument is an identifier</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifnid</td>
+      <td style="vertical-align: top;">else-style test to see if
+argument is not an identifier</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifnum</td>
+      <td style="vertical-align: top;">test to see if argument is a
+number</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifnnum</td>
+      <td style="vertical-align: top;">test to see if argument is not a
+number</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifnum</td>
+      <td style="vertical-align: top;">else-style test to see if
+argument is a number</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifnnum</td>
+      <td style="vertical-align: top;">else-style test to see if
+argument is not a number</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifstr</td>
+      <td style="vertical-align: top;">test to see if argument is a
+string</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifnstr</td>
+      <td style="vertical-align: top;">test to see if argument is not a
+string</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifstr</td>
+      <td style="vertical-align: top;">else-style test to see if
+argument is a string</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifnstr</td>
+      <td style="vertical-align: top;">else-style test to see if
+argument is not a string</td>
+    </tr>
+  </tbody>
+</table>
+<div style="text-align: center;">Table 4 - Token Type Classification
+Conditionals<br>
+<br>
+<div style="text-align: left;">Table 5 shows the <a
+ href="Multiline%20Macro%20Extensions.html">Multiline Macro Extensions</a>.
+and the <a href="Repeat%20Block%20Extensions.html">Repeat Block
+Extensions</a>.&nbsp; These extentions include multiline macros, as
+well as
+a powerful facility for using the preprocessor to repeat sections of
+code or data.<br>
+<br>
+</div>
+</div>
+<table
+ style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
+ border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">%macro<br>
+      </td>
+      <td style="vertical-align: top;">start a multiline macro<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%imacro<br>
+      </td>
+      <td style="vertical-align: top;">start a multiline macro, case
+insensitive name<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%endmacro </td>
+      <td style="vertical-align: top;">end a multiline macro<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%rotate</td>
+      <td style="vertical-align: top;">rotate arguments in a multiline
+macro<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%rep </td>
+      <td style="vertical-align: top;">start a repeat block </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%endrep </td>
+      <td style="vertical-align: top;">end a repeat block </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%exitrep</td>
+      <td style="vertical-align: top;">exit a repeat block prematurely</td>
+    </tr>
+  </tbody>
+</table>
+<div style="text-align: center;">Table 5 - Multiline Macro and Repeat
+Block Extensions<br>
+</div>
+<div style="text-align: center;"><br>
+<div style="text-align: left;">Table 6 shows the <a
+ href="Context-Related%20Extensions.html">Context-Related Extensions</a>.&nbsp;
+Preprocessor contexts are a powerful mechanism that
+can be used to 'remember' data between successive macro invocations,
+and for example could be used to construct a high-level representation
+of control constructs in the assembler.<br>
+<br>
+</div>
+</div>
+<table
+ style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
+ border="1" cellpadding="2" cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">%push<br>
+      </td>
+      <td style="vertical-align: top;">start a new context<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%pop<br>
+      </td>
+      <td style="vertical-align: top;">end a new context<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%repl<br>
+      </td>
+      <td style="vertical-align: top;">rename the context at the tope
+of the context stack<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifctx<br>
+      </td>
+      <td style="vertical-align: top;">test to see if a context is in
+effect<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%ifnctx<br>
+      </td>
+      <td style="vertical-align: top;">test to see if a context is not
+in effect<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifctx<br>
+      </td>
+      <td style="vertical-align: top;">else-style test to see if a
+context is in effect<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">%elifnctx<br>
+      </td>
+      <td style="vertical-align: top;">else-style test to see if a
+context is not in effect<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div style="text-align: center;">Table 6 - Context - Related Extensions<br>
+</div>
+<br>
+</body>
+</html>

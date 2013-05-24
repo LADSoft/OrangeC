@@ -1,0 +1,4 @@
+main()
+{
+    printf("hi\n");
+}

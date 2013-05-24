@@ -1,0 +1,108 @@
+<OCRULE>
+	<PROPGROUP VERSION="10" CLASS="GENERAL" NAME="General Properties">
+		<PROPS NAME="Editor Settings">
+			<PROPS NAME="Basic settings" HELPID="490">
+                <ITEM NAME="Editor Window Type" ID="TABBED_WINDOWS" TYPE="COMBO" DEFAULT="0">
+                    <SETTING NAME="Multiple Windows" VALUE="0"/>
+                    <SETTING NAME="Tabbed Windows" VALUE="1"/>
+                </ITEM>
+				<ITEM NAME="Show Line Numbers" ID="LINE_NUMBERS" TYPE="COMBO" DEFAULT="0">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
+				<ITEM NAME="Mouse Wheel Lines Per Tick" ID="MOUSEWHEEL_SCROLL" TYPE="NUMERIC" LOW="1" HIGH="120" DEFAULT="3"/>
+				<ITEM TYPE="SEPARATOR"/>
+				<ITEM NAME="Editor Font" ID="FONT" TYPE="FONT">
+					243 255 255 255 0 0 0 0 0 0 0 0 0 0 0 0 
+					144 1 0 0 0 0 0 0 3 2 1 49 66 105 116 115 
+					116 114 101 97 109 32 86 101 114 97 32 83 97 110 115 32 
+					77 111 110 111 0 0 0 0 0 0 0 0 
+				</ITEM>
+            </PROPS>
+			<PROPS NAME="Colors" HELPID="500">
+				<ITEM NAME="Text Color" ID="COLOR_TEXT" TYPE="COLOR" DEFAULT="0x000000" />
+				<ITEM NAME="Background Color" ID="COLOR_BACKGROUND" TYPE="COLOR" DEFAULT="0xffffff" />
+				<ITEM NAME="Readonly Background Color" ID="COLOR_READONLYBACKGROUND" TYPE="COLOR" DEFAULT="0xc0c0c0" />
+				<ITEM NAME="Columbar Color" ID="COLOR_COLUMNBAR" TYPE="COLOR" DEFAULT="0xccccff" />
+				<ITEM NAME="Selected Text Color" ID="COLOR_SELECTEDTEXT" TYPE="COLOR" DEFAULT="0xffffff" />
+				<ITEM NAME="Selected Background Color" ID="COLOR_SELECTEDBACKGROUND" TYPE="COLOR" DEFAULT="0xff0000" />
+				<ITEM NAME="Highlight Color" ID="COLOR_HIGHLIGHT" TYPE="COLOR" DEFAULT="0x80ffff" />
+				<ITEM NAME="Keyword Color" ID="COLOR_KEYWORD" TYPE="COLOR" DEFAULT="0xff8000" />
+				<ITEM NAME="Comment Color" ID="COLOR_COMMENT" TYPE="COLOR" DEFAULT="0x00c000" />
+				<ITEM NAME="Number Color" ID="COLOR_NUMBER" TYPE="COLOR" DEFAULT="0x0000ff" />
+				<ITEM NAME="String Color" ID="COLOR_STRING" TYPE="COLOR" DEFAULT="0x8000ff" />
+				<ITEM NAME="Directive Color" ID="COLOR_DIRECTIVE" TYPE="COLOR" DEFAULT="0xff0000" />
+			</PROPS>
+			<PROPS NAME="Formatting" HELPID="510">
+				<ITEM NAME="Tabs As Spaces" ID="TABS_AS_SPACES" TYPE="COMBO" DEFAULT="1">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
+				<ITEM NAME="Tab Indent" ID="TAB_INDENT" TYPE="NUMERIC" LOW="1" HIGH="80" DEFAULT="4"/>
+				<ITEM TYPE="SEPARATOR"/>
+				<ITEM NAME="Auto Indent" ID="AUTO_INDENT" TYPE="COMBO" DEFAULT="1">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
+				<ITEM NAME="Auto Format" ID="AUTO_FORMAT" TYPE="COMBO" DEFAULT="1">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
+				<ITEM NAME="Colorize" ID="COLORIZE" TYPE="COMBO" DEFAULT="1">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
+			</PROPS>
+			<PROPS NAME="Backup Settings" HELPID="520">
+				<ITEM NAME="Backup Files" ID="BACKUP_FILES" TYPE="COMBO" DEFAULT="1">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
+				<ITEM NAME="Backup Projects" ID="BACKUP_PROJECTS" TYPE="COMBO" DEFAULT="1">
+					<SETTING NAME="No" VALUE="0"/>
+					<SETTING NAME="Yes" VALUE="1"/>
+				</ITEM>
+			</PROPS>
+		</PROPS>
+		<PROPS NAME="Hints and Code Completion" HELPID="530">
+			<ITEM NAME="Editor Hints" ID="EDITOR_HINTS" TYPE="COMBO" DEFAULT="1">
+				<SETTING NAME="No" VALUE="0"/>
+				<SETTING NAME="Yes" VALUE="1"/>
+			</ITEM>
+			<ITEM NAME="Debugger Hints" ID="DEBUGGER_HINTS" TYPE="COMBO" DEFAULT="1">
+				<SETTING NAME="No" VALUE="0"/>
+				<SETTING NAME="Yes" VALUE="1"/>
+			</ITEM>
+			<ITEM NAME="Code Completion Level" ID="CODE_COMPLETION" TYPE="COMBO" DEFAULT="1">
+				<SETTING NAME="0 - None" VALUE="0"/>				
+				<SETTING NAME="1 - +Structure members and functions" VALUE="1"/>
+				<SETTING NAME="2 - +Variables and keywords" VALUE="2"/>
+			</ITEM>
+			<ITEM NAME="Code completion threshold(variables)" ID="CODE_COMPLETION_VARIABLE_THRESHOLD" TYPE="NUMERIC" LOW="1" HIGH="10" DEFAULT="3"/>
+			<ITEM NAME="Code completion threshold(keywords)" ID="CODE_COMPLETION_KEYWORD_THRESHOLD" TYPE="NUMERIC" LOW="1" HIGH="10" DEFAULT="2"/>
+		
+			<ITEM NAME="Browse Information" ID="BROWSE_INFORMATION" TYPE="COMBO" DEFAULT="1">
+				<SETTING NAME="No" VALUE="0"/>
+				<SETTING NAME="Yes" VALUE="1"/>
+			</ITEM>
+			<ITEM NAME="Match Parenthesis" ID="MATCH_PARENTHESIS" TYPE="COMBO" DEFAULT="1">
+				<SETTING NAME="No" VALUE="0"/>
+				<SETTING NAME="Yes" VALUE="1"/>
+			</ITEM>
+			<ITEM NAME="Column Mark" ID="COLUMN_MARK" TYPE="NUMERIC" LOW="0" HIGH="300" DEFAULT="80"/>
+		</PROPS>
+		<PROPS NAME="Printer Settings" HELPID="540">
+			<ITEM NAME="Left Margin (mm)" ID="PRINTER_LEFT" TYPE="NUMERIC" LOW="0" HIGH="40" DEFAULT="10"/>
+			<ITEM NAME="Right Margin (mm)" ID="PRINTER_RIGHT" TYPE="NUMERIC" LOW="0" HIGH="40" DEFAULT="10"/>
+			<ITEM NAME="Top Margin (mm)" ID="PRINTER_TOP" TYPE="NUMERIC" LOW="0" HIGH="40" DEFAULT="10"/>
+			<ITEM NAME="Bottom Margin (mm)" ID="PRINTER_BOTTOM" TYPE="NUMERIC" LOW="0" HIGH="40" DEFAULT="10"/>
+			<ITEM NAME="Header" ID="PRINTER_HEADER" TYPE="PRINTFORMAT">
+%F
+			</ITEM>
+			<ITEM NAME="Footer" ID="PRINTER_FOOTER" TYPE="PRINTFORMAT">
+%P of %#
+			</ITEM>
+		</PROPS>
+	</PROPGROUP>
+</OCRULE>
+

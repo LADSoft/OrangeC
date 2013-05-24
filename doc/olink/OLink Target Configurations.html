@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OLink Target Configurations</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<div style="text-align: center;">
+<h2><span style="font-family: Helvetica,Arial,sans-serif;">OLink Target
+Configurations</span><br>
+</h2>
+</div>
+OLink has several default target configurations, that associate the
+various data needed for post-processing the linker output
+together.&nbsp; Each target configuration includes a linker
+<a href="OLink%20Specification%20Files.html">specification file</a>,
+default definitions for items used but not declared
+in the specification file, and a reference to a post-processing tool
+that will take an image linked against the specification file and
+generate some final binary image, such as a ROM image or an Operating
+System executable.&nbsp; <br>
+<br>
+Each target configuration is accessible via the <span
+ style="font-weight: bold;">/T</span> linker switch.&nbsp;
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OLink /T:BIN
+test.o</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+invokes the target configuration associated with the name BIN.&nbsp; In
+the case of BIN the file is linked into three partitions; code, data
+and stack using the specification file <span style="font-weight: bold;">hex.spc</span>;
+and the results are
+dumped to a binary file using <span style="font-weight: bold;">DLHex</span>.<br>
+<br>
+The remainder of this section will discuss the default target
+configurations.<br>
+<br>
+<div style="text-align: center;">
+<h3><span style="font-family: Helvetica,Arial,sans-serif;">Rom-based
+images</span></h3>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;">There are several
+output file formats for generating a rom-based image.&nbsp; However,
+they all use a common specification file and post-processing
+tool.&nbsp; This section will briefly touch on the available output
+formats then touch on the specification file in more detail.<br>
+<br>
+The available output formats in this mode are:<br>
+<br>
+</span>
+<ul>
+  <li>/T:M1&nbsp; Motorola srecord file format, 2 byte addresses</li>
+  <li>/T:M2&nbsp; Motorola srecord file format, 3 byte addresses</li>
+  <li>/T:M3&nbsp; Motorola srecord file format, 4 byte addresses</li>
+  <li>/T:I1&nbsp;&nbsp;&nbsp; Intel hex file format, 16 bits</li>
+  <li>/T:I2&nbsp;&nbsp;&nbsp; Intel hex file format, segmented</li>
+  <li>/T:I4&nbsp;&nbsp;&nbsp; Intel hex file format, 32 bits</li>
+  <li>/T:BIN Binary file format</li>
+</ul>
+<br>
+The default specification file for these output formats is <span
+ style="font-weight: bold;">hex.spc</span>, and
+the default post-processing tool is <span style="font-weight: bold;">dlhex.exe</span>.&nbsp;
+<span style="font-weight: bold;">Hex.spc</span> has 4
+independent overlays for code and data.&nbsp; Table 1 lists the
+overlays, the section names that are recognized in each overlay.&nbsp;
+It also lists an identifier that can be used with the /D command line
+switch
+to the linker to adjust base addresses, and the default base address
+for each overlay.<br>
+<br>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top; font-weight: bold;">Overlay<br>
+      </td>
+      <td style="vertical-align: top; font-weight: bold;">Sections<br>
+      </td>
+      <td style="vertical-align: top; font-weight: bold;">Base Address
+Identifier<br>
+      </td>
+      <td style="vertical-align: top; font-weight: bold;">Base Address<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">RESET<br>
+      </td>
+      <td style="vertical-align: top;">reset<br>
+      </td>
+      <td style="vertical-align: top;">RESETBASE<br>
+      </td>
+      <td style="vertical-align: top;">0x00000<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">ROM<br>
+      </td>
+      <td style="vertical-align: top;">code, const, string<br>
+      </td>
+      <td style="vertical-align: top;">CODEBASE<br>
+      </td>
+      <td style="vertical-align: top;">0x00008<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">RAM<br>
+      </td>
+      <td style="vertical-align: top;">data, bss<br>
+      </td>
+      <td style="vertical-align: top;">RAMBASE<br>
+      </td>
+      <td style="vertical-align: top;">0x10000<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">STACK<br>
+      </td>
+      <td style="vertical-align: top;">stack<br>
+      </td>
+      <td style="vertical-align: top;">STACKBASE (size = STACKSIZE)<br>
+      </td>
+      <td style="vertical-align: top;">0x20000 ( 0x400)<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+</div>
+Table 1 - Hex.spc details<br>
+<br>
+<h2 style="font-family: Helvetica,Arial,sans-serif;">WIN32 (PE) Images</h2>
+<div style="text-align: left;">Several types of WIN32 images may be
+generated.&nbsp; These include:<br>
+<br>
+<ul>
+  <li>/T:CON - console application</li>
+  <li>/T:GUI&nbsp;&nbsp; - windowing application</li>
+  <li>/T:DLL&nbsp;&nbsp; - dll application</li>
+</ul>
+The default specification file for these output formats is <span
+ style="font-weight: bold;">pe.spc</span>, and
+the default post-processing tool is dlpe.exe.&nbsp; <span
+ style="font-weight: bold;">PE.spc</span> has two
+independent overlays for code and data.&nbsp; Table 2 lists the
+overlays, and the section names that are recognized in each
+overlay.&nbsp; Table 3 lists the various values supported by <span
+ style="font-weight: bold;">pe.spc</span> and <span
+ style="font-weight: bold;">dlpe.exe</span> that may be adjusted on the
+linker command line.<br>
+<br>
+<br>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top; font-weight: bold;">Overlay<br>
+      </td>
+      <td style="vertical-align: top; font-weight: bold;">Sections<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">.text<br>
+      </td>
+      <td style="vertical-align: top;">code, const<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">.data<br>
+      </td>
+      <td style="vertical-align: top;">data, string, bss<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+</div>
+Table 2 - PE.SPC overlays<br>
+<div style="text-align: left;"><br>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">Definition<br>
+      </td>
+      <td style="vertical-align: top;">Meaning<br>
+      </td>
+      <td style="vertical-align: top;">Default<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">FILEALIGN<br>
+      </td>
+      <td style="vertical-align: top;">Object Alignment within an
+executable file<br>
+      </td>
+      <td style="vertical-align: top;">0x200<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">HEAPCOMMIT<br>
+      </td>
+      <td style="vertical-align: top;">Amount of local heap to commit
+at program start<br>
+      </td>
+      <td style="vertical-align: top;">0<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">HEAPSIZE<br>
+      </td>
+      <td style="vertical-align: top;">Size of local heap<br>
+      </td>
+      <td style="vertical-align: top;">0x100000<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">IMAGEBASE<br>
+      </td>
+      <td style="vertical-align: top;">Base address for the image (used
+to resolve DLL Address collisions)<br>
+      </td>
+      <td style="vertical-align: top;">0x400000<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">OBJECTALIGN<br>
+      </td>
+      <td style="vertical-align: top;">Object alignment in memory<br>
+      </td>
+      <td style="vertical-align: top;">0x1000<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">STACKCOMMIT<br>
+      </td>
+      <td style="vertical-align: top;">Amount of stack to commit at
+program start<br>
+      </td>
+      <td style="vertical-align: top;">0x2000<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">STACKSIZE<br>
+      </td>
+      <td style="vertical-align: top;">Size of stack for default thread<br>
+      </td>
+      <td style="vertical-align: top;">0x100000<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div style="text-align: center;">Table 3 - PE.SPC adjustable parameters<br>
+<br>
+<div style="text-align: left;"><br>
+<br>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

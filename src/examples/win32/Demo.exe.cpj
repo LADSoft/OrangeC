@@ -1,0 +1,21 @@
+<CC386PROJECT>
+    <VERSION ID="5"/>
+    <WORKAREA NAME="C:\Users\David Lindauer\Documents\Orange C Projects\examples\windows examples\windows examples.cwa"/>
+    <TARGET TITLE="Demo">
+        <PROPERTIES>
+            <PROFILE NAME="WIN32" TYPE="DEBUG">
+                <PROP ID="__PROJECTTYPE">1</PROP>
+            </PROFILE>
+            <PROFILE NAME="WIN32" TYPE="RELEASE">
+                <PROP ID="__PROJECTTYPE">1</PROP>
+            </PROFILE>
+        </PROPERTIES>
+        <FILES>
+            <FOLDER TITLE="Include Files">
+            </FOLDER>
+            <FOLDER TITLE="Source Files">
+                <FILE NAME="win.c" TITLE="win.c" CLEAN="0"/>
+            </FOLDER>
+        </FILES>
+    </TARGET>
+</CC386PROJECT>

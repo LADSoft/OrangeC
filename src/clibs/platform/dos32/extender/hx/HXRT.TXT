@@ -1,0 +1,380 @@
+
+  1. About
+
+  The HX DOS extender runtime allows to run HX DOS extended or Win32
+  console applications in DOS. Furthermore there is limited support
+  for running Win32 graphics applications (DirectDraw, GDI, OpenGL).
+
+  HX has been tested to run with MS-DOS v5/6/7 and FreeDOS v1.0.
+  It might work with other DOS versions, but this is untested and not 
+  recommended.
+
+
+  2. Installation
+
+  To install the HX DOS extender runtime do:
+
+  þ unzip HXRT in a directory of your choice, for example C:\HX.
+
+  þ include the BIN subdirectory (C:\HX\BIN) into the PATH environment
+    variable, which usually is set in CONFIG.SYS or AUTOEXEC.BAT.
+    Or copy the files from C:\HX\BIN to a directory included in PATH.
+
+
+  3. Requirements
+
+  - CPU: the DPMI hosts HDPMI16 and HDPMI32, the PE loader DPMILD32 and
+    the Win32 emulation all need at least a 80386 cpu. Using some
+    optional features might require a 80486. DPMILD16 runs on a 80286.
+
+  - RAM: The memory footprint of the HX modules is small. A 4 MB machine
+    should be able to run simple Win32 console applications. By setting
+    some switches for HDPMI/DPMILD32 (see HDPMI.TXT/DPMILD32.TXT for
+    details), even a 2 MB machine might suffice.
+
+  - DOS: HDPMI and DPMILD32 work with MS-DOS 3.3 or better, the Win32
+    emulation needs at least MS-DOS 5. FreeDOS 1.0 works for both as well.
+
+
+  4. Running Win32 Applications
+
+  There are 3 possible ways to run Win32 applications after HX has been
+  installed:
+
+  þ HXLdr32: This is a DOS-TSR and it doesn't require any parameters.
+    Just type HXLdr32 and then try to start the Win32 apps you want to
+    run. This usually is the simplest and best option to do. View 
+    Doc\HXLdr32.txt for more details. 
+
+  þ PEStub: this tool will exchange the DOS-MZ header (stub) of the PE
+    binary. This should do no harm to the file, it still remains
+    a valid Win32 application. In DOS the new stub will load DPMILD32
+    which then will load and run the Win32 binary.
+
+  þ DPMILD32: HX's PE loader can be used to manually start a Win32
+    application. Just enter 'DPMILD32 filename'.
+
+
+  5. Hints / Known Problems
+
+  þ if HX doesn't run at all, please read TEST\README1.TXT. It describes
+    a strategy how to - hopefully - find the reason for the failure.
+
+  þ some programs may require that environment variable TZ has been set.
+    This is especially true for packer/unpacker apps, which store the
+    file's creation or last update time in UTC format. As an example: 
+    To set TZ to time zone GMT - 2 hours enter 'set TZ=CET-2'
+
+  þ to allow nested execution of Win32 applications it may be necessary
+    to set environment variables HDPMI=32 *and* DPMILDR=8. Fore more details
+    about this issue please read Doc\Compat.txt.
+
+  þ if a program imports a dll located in the windows system directory
+    avoid to include this directoy to the PATH environment variable.
+    That is because some HX win32 emulation dlls have the same
+    name as their windows counterparts. It is better to copy those dlls
+    to a directory included in PATH. Or, if the windows system directory must
+    be included in PATH, include it *after* the HX\Bin directory.
+
+  þ the graphics routines for GDI and DirectDraw emulation require a
+    VESA 2.0 Bios, since they only work with linear frame buffer (LFB)
+    enabled. They most likely don't work in a WinXP DOS box.
+
+  þ if HX is running on FreeDOS and a program crashes, run TEST\DOSTEST.EXE.
+    This may show if the current configuration is compatible with HX.
+    If any function fails try to disable FreeDOS' EMM386.EXE, where some
+    older versions are known to cause troubles. Also ensure that the FreeDOS
+    kernel you're using is not too old, the one contained in FreeDOS v1.0
+    has been verified to run with HX.
+
+  þ Sometimes DPMILD32 is unable to load a program because the currently
+    loaded DPMI host doesn't provide the functions needed. HX has a modular
+    design and can run on various DPMI hosts, but often HDPMI will be
+    required. That's due to restrictions in other hosts, not because HDPMI
+    supplies any hidden functionality. A comparison gives these results:
+
+              DOS API        alloc linear
+    host     translation   memory at 0x400000   comment
+    -------------------------------------------------------------------
+    CWSDPMI    No             No                v5
+    DPMIONE    Yes            No                also 386MAX host
+    32RTM      Yes            No                Borland's PowerPack
+    Win9x      Yes            No 
+    WinXP      Yes            No 
+    QDPMI      Yes            No
+    OS2        Yes            Yes(?)
+    DosEmu     Yes            Yes               v1.4.0
+    HDPMI      Yes            Yes
+
+    DPMILD32 will only load HDPMI if no DPMI host has been found. So
+    other hosts should be disabled or uninstalled if DPMILD32 cannot
+    load a program. Use TEST\DPMI.EXE to find out if a host offers
+    the functions required by HX (being able to alloc linear memory at
+    0x400000 is needed to load "fixed" Win32 binaries).
+
+  þ DPMILD32 allocates the application's stack as committed memory. This is
+    different to Win32, which usually just commits a - small - part of the
+    stack space and then let it grow dynamically. Most applications just
+    use a stack space of 1 MB, which usually is no problem, but some compilers
+    set it to 16 or even 32 MB. HX's PE loader DPMILD32 can be instructed to
+    limit the amount the stack space for an application to 128 kB. See
+    description of environment variable switch DPMILDR=4096 in DPMILD32.TXT.
+
+  þ The implementation of Win32 pipes requires SHARE to be loaded. Since
+    there exists no working SHARE for FAT32 pipes often may not work. Few
+    win32 applications rely on pipes, but one which needs them is Cygwin.
+    Please note that the FreeDOS SHARE.COM is a very crippled implementation
+    of SHARE, which won't help at all.
+
+  þ Virtual PC 2007 needs a modified version of HDPMI32, which runs clients
+    at IOPL 0. The binary is available at 
+    http://www.japheth.de/Download/hdpmivpc.zip
+
+
+  6. Files Overview
+
+  a. Binaries for 32-Bit applications:
+
+  þ HDPMI32.EXE: DPMI server for 32 bit clients, which is used in plain
+    DOS only. HX's PE loader DPMILD32 will load HDPMI32 silently in the
+    background if no DPMI API has been found. HDPMI is a fully functional
+    DPMI host, which also includes DOS API translation services.
+
+  þ DPMILD32.EXE: PE file loader. Usually this file is launched
+    automatically either by HXLdr32.EXE or DPMIST32.BIN. View DPMILD32.TXT
+    for more details.
+
+  þ HXLdr32.EXE: TSR program to automatically run PE apps in plain DOS. View
+    HXLdr32.TXT for more details.
+
+  þ PESTUB.EXE: Tool to check if a PE file will be compatible with 
+    DPMILD32 and to modify the MZ-Header of a PE file. Usually used
+    to add DPMIST32.BIN to an existing PE app. View PEStub.TXT for more
+    details.
+
+  þ DKRNL32.DLL, DADVAPI.DLL, DUSER32.DLL, DGDI32.DLL, DDDRAW.DLL: Win32
+    emulation dlls which will be loaded by DPMILD32 instead of the windows
+    dlls KERNEL32.DLL, ADVAPI32.DLL, USER32.DLL, GDI32.DLL and DDRAW.DLL.
+    View Doc\*.TXT and DPMILD32.TXT for more details.
+
+  þ OLE32.DLL, OLEAUT32.DLL, VERSION.DLL, SECUR32.DLL: Some more Win32 
+    Emulation dlls which have identical names as the dlls they are emulating.
+    Rarely used.
+
+  þ DPMIST32.BIN: this is a MZ stub to be added to PE binaries to make them
+    run in DOS without help of HXLdr32. It is used either by PEStub.EXE or
+    the linker. View DPMIST32.TXT for more details.
+
+  þ VESA32.DLL: helper dll for VESA support in protected mode. View Vesa32.txt
+    for more details.
+
+  þ HXVDD.DLL: a Win32 VDD (Virtual Device Driver). Implements support for
+    Windows clipboard when running in a NT/2K/XP DOS box. Not needed for
+    plain DOS.
+
+  b. Binaries for 16-Bit applications:
+
+  þ HDPMI16.EXE: DPMI server for 16 bit clients.
+  þ DPMILD16.EXE: NE file loader.
+
+  c. Documentation in Doc subdirectory.
+
+  d. Binaries in Unsupp directory
+
+  þ DPMILD32.EXE: PE file loader with LFN support disabled.
+  þ DOSX.EXE: replacement for Windows 3.1 DOSX.EXE. Will use HDPMI16 as DPMI
+    host in windows standard mode.
+
+  e. Others
+
+  þ BIN\CLASSES: Helper file in BIN subdirectory to support creating COM
+    objects with CoCreateInstance. 
+  þ TEST\*.*: some tools to test various aspects of HX's win32 emulation.
+
+
+  7. History
+
+  05/27/2011, V2.17: DPMILD32 V3.8, DKRNL32 V3.5, DADVAPI V2.11,
+                     DGDI32 V1.13, DUSER32 V2.14, OLE32 V1.10,
+                     VESA32 V1.13.
+  11/16/2009, V2.16: HDPMI V3.17, DPMILD32 V3.7, DKRNL32 V3.4,
+                     DADVAPI V2.10, DUSER32 V2.13, OLE32 V1.9,
+                     OLEAUT32 V1.8, HXLdr32 V1.12, 
+                     VERSION.DLL and SECUR32.DLL added.
+  01/20/2009, V2.15: HDPMI V3.16, DPMILD32 V3.6, DKRNL32 V3.3
+                     DADVAPI V2.9, DUSER32 V2.12, DGDI32 V1.12,
+                     OLE32 V1.8, OLEAUT32 V1.7, DDDRAW V2.8, VESA32 V1.12,
+                     HXLdr32 V1.11, PESTUB V2.9.
+                     All modules assembled with JWasm now.
+                     File HXVDD.DLL added.
+  03/02/2008, V2.14: HDPMI V3.15, DPMILD32 V3.5, DKRNL32 V3.2,
+                     DUSER32 V2.11, DGDI32 V1.11, VESA32 V1.11.
+  01/11/2008, V2.13: HDPMI V3.14, DPMILD32 V3.4, DKRNL32 V3.1,
+                     DADVAPI V2.8, DUSER32 V2.10, DGDI32 V1.10,
+                     OLE32 V1.7, DDDRAW V2.7, VESA32 V1.10, HXLdr32 V1.10
+  07/15/2007, V2.12: HDPMI V3.13, DPMILD32 V3.3.0, DKRNL32 V3.0,
+                     DADVAPI V2.7, DUSER32 V2.9.13, DGDI32 V1.9.8,
+                     OLE32 V1.6, OLEAUT32 V1.6, VESA32 V1.9.5, PESTUB V2.8
+                     don't mix DPMILD32 + DKRNL32 with older versions
+                     of these files.
+  03/15/2007, V2.11: HDPMI V3.12, DPMILD32 V3.2.0, DKRNL32 V2.9.13,
+                     DADVAPI V2.6, DUSER32 V2.9.12, DGDI32 V1.9.7,
+                     DDDRAW V2.6, VESA32 V1.9.4, PESTUB V2.7
+  12/14/2006, V2.10: HDPMI V3.11, DPMILD32 V3.1.8, DKRNL32 V2.9.12,
+                     DADVAPI V2.5, DUSER32 V2.9.11, VESA32 V1.9.3
+  10/15/2006, V2.9:  HDPMI V3.10, DPMILD32 V3.1.7, DKRNL32 V2.9.11,
+                     DUSER32 V2.9.10, DGDI32 V1.9.6, OLE32 V1.5,
+                     OLEAUT32 V1.5
+  09/14/2006, V2.8:  HDPMI V3.09, DPMILD32 V3.1.6, DKRNL32 V2.9.10,
+                     DUSER32 V2.9.9, DGDI32 V1.9.5, DDDRAW V2.5,
+                     HXLdr32 V1.9.1
+  08/15/2006, V2.7:  HDPMI V3.08, DKRNL32 V2.9.9, DUSER32 V2.9.8,
+                     DGDI32 V1.9.4, HXLdr32 V1.9, PESTUB V2.6
+  07/15/2006, V2.6:  HDPMI V3.07, DPMILD32 V3.1.5, DKRNL32 V2.9.8,
+                     DADVAPI V2.4, DUSER32 V2.9.7, DGDI32 V1.9.3,
+                     HXLdr32 V1.8
+  06/14/2006, V2.5:  HDPMI V3.06, DPMILD32 V3.1.4, DKRNL32 V2.9.7,
+                     DADVAPI V2.3, DUSER32 V2.9.6, DGDI32 V1.9.2,
+                     DDDRAW V2.4
+  05/15/2006, V2.4:  HDPMI V3.05, DPMILD32 V3.1.3, DKRNL32 V2.9.6,
+                     DADVAPI V2.2, DUSER32 V2.9.5  
+  05/02/2006, V2.3:  HDPMI V3.04, DPMILD32 V3.1.2, DKRNL32 V2.9.5
+                     some HDPMI changes.
+  04/21/2006, V2.2:  HDPMI V3.03, DKRNL32 V2.9.4, DUSER32 V2.9.4,
+                     DGDI32 V1.9.1, DDDRAW V2.3
+                     some additions and bugfixes for HDPMI mainly.
+  04/12/2006, V2.1.2:HDPMI V3.02
+                     fixed a bug in XMS memory allocation of HDPMI V3.0.1
+  04/07/2006, V2.1.1:HDPMI V3.01
+                     fixed a bug in DOS API translator of HDPMI V3.0.
+  04/04/2006, V2.1:  HDPMI V3.00, DPMILD32 V3.1.1, DUSER32 V2.9.3
+                     HDPMI protected-mode code moved to extended memory,
+                     which frees about 18 kB of DOS memory.
+  03/22/2006, V2.0.2:HDPMI V2.07, DKRNL32 V2.9.3
+                     fixed a problem with LFN when running on MS-DOS < 7.
+  03/19/2006, V2.0.1:HDPMI V2.06, PESTUB V2.5
+                     PEStub didn't work.
+  03/18/2006, V2.0:  HDPMI V2.05, DPMILD32 V3.1.0, DKRNL32 V2.9.2, 
+                     DADVAPI V2.1, DUSER32 V2.9.2, DGDI32 V1.9, DDDRAW V2.2,
+                     OLE32 V1.4, VESA32 V1.9.2, PESTUB V2.4
+                     A WinSocket emulation added to HXGUI. DosBox compatible
+                     with HX. Some test apps moved from HXGUI to HXRT. Tool
+                     HXDOSLD added. Some MSys tools work now. LFN support
+                     is activated in Bin\HDPMI32.EXE and Bin\DPMILD32.EXE,
+                     making Unsupp\HDPMI32.EXE and Unsupp\HDPMI16.EXE 
+                     redundant and therefore were deleted.
+  02/06/2006, V1.43: HDPMI V2.04, DPMILD32 V3.0.9, DKRNL32 V2.9.1,
+                     DUSER32 V2.9.1, DGDI32 V1.8, DDDRAW V2.1, VESA32 V1.9.1 
+  01/22/2006, V1.42: HDPMI V2.03, DKRNL32 V2.9, DADVAPI V2.0, DUSER32.V2.9,
+                     DGDI32 V1.7, DDDRAW V2.0, OLE32 V1.3, VESA32 V1.9 
+  01/02/2006, V1.41: HDPMI V2.02, DKRNL32 V2.8.36, DUSER32.V2.8,
+                     DGDI32 V1.6, DDDRAW V1.9, VESA32 V1.8, PESTUB V2.3.
+  12/20/2005, V1.40: DPMILD32 V3.0.8, DKRNL32 V2.8.35, DUSER32.V2.7,
+                     DGDI32 V1.5, DDDRAW V1.8., OLE32 V1.2
+  12/07/2005, V1.39: DPMILD32 V3.0.7, DKRNL32 V2.8.34, DUSER32.V2.6,
+                     DGDI32 V1.4, DDDRAW V1.7.
+  11/24/2005, V1.38: DPMILD32 V3.0.6, DKRNL32 V2.8.33, DADVAPI V1.9,
+                     DUSER32.V2.5, DGDI32 V1.3, DDDRAW V1.6, VESA32 V1.7,
+                     PESTUB V2.2.
+                     Unsupp\DPMILD32.EXE added.
+  11/18/2005, V1.37: HDPMI V2.01, DPMILD32 V3.0.5, DKRNL32 V2.8.32,
+                     DUSER32.V2.4, DGDI32 V1.2, DDDRAW V1.5, VESA32 V1.6,
+                     HXLdr32 V1.7 
+  11/07/2005, V1.36: HDPMI V2.00, DPMILD32 V3.0.4, DKRNL32 V2.8.31,
+                     DADVAPI V1.8, DUSER32.V2.3, DDDRAW V1.4, VESA32 V1.5.
+  10/24/2005, V1.35: HDPMI V1.99, DPMILD32 V3.0.3, DKRNL32 V2.8.30,
+                     DUSER32 V2.2, DGDI32 V1.1, DDDRAW V1.3, VESA32 V1.4.
+                     Vesa32.DLL added (previously included in HXDEV)
+  09/29/2005, V1.34: HDPMI V1.98, DPMILD32 V3.0.2, DKRNL32 V2.8.29,
+                     DUSER32 V2.1.
+                     DGDI32.DLL (V1.0) and DDDRAW.DLL added.
+  09/19/2005, V1.33: HDPMI V1.97, DPMILD32 V3.0.1, DKRNL32 V2.8.28,
+                     DUSER32 V2.0, HXLdr32 V1.6
+  09/05/2005, V1.32: HDPMI V1.96, DPMILD32 V3.0.0, DKRNL32 V2.8.27,
+                     DADVAPI V1.7
+                     Unsupp\DOSX.EXE + Unsupp\DOSX.TXT added.
+  08/28/2005, V1.31: HDPMI V1.95, DPMILD32 V2.9.9, DKRNL32 V2.8.26
+  08/14/2005, V1.30: HDPMI V1.94, DPMILD32 V2.9.8, DKRNL32 V2.8.25
+                     HXLdr32 V1.5
+  08/06/2005, V1.29: DPMILD32 V2.9.7, DKRNL32 V2.8.24
+  08/01/2005, V1.28.1: DKRNL32 V2.8.23
+  08/01/2005, V1.28: HDPMI V1.93, DPMILD32 V2.9.6, DKRNL32 V2.8.22,
+                     HXLdr32 V1.4
+  07/20/2005, V1.27: HDPMI V1.92, DPMILD32 V2.9.5, DKRNL32 V2.8.21,
+                     DUSER32 V1.9
+  07/15/2005, V1.26: HDPMI V1.91, DPMILD32 V2.9.4, DKRNL32 V2.8.20,
+                     fixed the bug which caused HDPMI to crash FreeDOS
+                     EMM386 (and 386MAX).
+  07/14/2005, V1.25: DKRNL32 V2.8.20
+                     previous DKRNL32 had a silly bug (wrong exception
+                     codes supplied) 
+  07/13/2005, V1.24: HDPMI V1.90, DPMILD32 V2.9.3, DKRNL32 V2.8.19,
+                     PESTUB V2.1
+                     HDPMI32 with LFN support now works under DR-DOS.
+  07/06/2005, V1.23: HDPMI V1.89, DPMILD32 V2.9.2, DKRNL32 V2.8.18,
+                     DUSER32 V1.8, PESTUB V2.0
+  06/26/2005, V1.22: DPMILD32 V2.9.1, DKRNL32 V2.8.17
+                     DPMILD32 had a severe bug causing low memory corruption.
+  06/23/2005, V1.21: HDPMI V1.88, DPMILD32 V2.9, DKRNL32 V2.8.16,
+                     DADVAPI V1.6
+                     LFN support for NT platforms added.
+  06/14/2005, V1.20: HDPMI V1.87, DPMILD32 V2.8.9, DKRNL32 V2.8.15,
+                     DUSER32 V1.7
+  06/07/2005, V1.19: DPMILD32 V2.8.8, DKRNL32 V2.8.14,
+                     DUSER32 V1.6, OLE32 V1.1, OLEAUT32 V1.3
+  06/05/2005, V1.18: DKRNL32 V2.8.13
+  06/02/2005, V1.17: DKRNL32 V2.8.12
+  05/22/2005, V1.16: DPMILD32 V2.8.8, DKRNL32 V2.8.11
+  05/20/2005, V1.15: HDPMI V1.86, DPMILD32 V2.8.7, DKRNL32 V2.8.10,
+                     DADVAPI V1.5, HXLdr32 V1.3, OLEAUT32 V1.2, DUSER32 V1.5
+                     HX's PE Loader (DPMILD32) should now run on OpenDOS
+                     without errors.
+  05/14/2005, V1.14: HDPMI V1.85, DPMILD32 V2.8.6, DKRNL32 V2.8.9,
+                     HXLdr32 V1.3
+  01/08/2005, V1.13: HDPMI V1.84, DPMILD32 V2.8.6, DKRNL32 V2.8.8,
+                     HXLdr32 V1.3
+  12/03/2004, V1.12: HDPMI V1.83, DPMILD32 V2.8.6, DKRNL32 V2.8.7,
+                     HXLdr32 V1.3, DUSER32 V1.4
+  11/25/2004, V1.11: HDPMI V1.82, DPMILD32 V2.8.5, DKRNL32 V2.8.6,
+                     DUSER32 V1.3, DADVAPI V1.4, PEStub V1.9, 
+  10/24/2004, V1.10: DADVAPI V1.3, PEStub V1.8, HXLdr32 V1.2
+                     DPMIST32.BIN added to support ALINK.
+  10/10/2004, V1.9:  HDPMI V1.80, DPMILD32 V2.8.4, DKRNL32 V2.8.5
+                     MinGW GCC, AS and LD run under HX.
+                     Free Pascal (Win32 version) runs under HX.
+  10/06/2004, V1.8:  DPMILD32 V2.8.3, DKRNL32 V2.8.4 
+                     DKRNL32.TXT added.
+                     DPMILD32 History added to DPMILD32.TXT.
+                     MF Object Cobol apps may run under HX now.
+  10/02/2004, V1.7:  HDPMI V1.79
+  09/30/2004, V1.6:  HDPMI V1.78, DKRNL32 V2.8.3, DADVAPI V1.2
+                     Open Watcom BINNT\VI.EXE runs now with HX.
+  09/18/2004, V1.5:  HDPMI V1.77, DKRNL32 V2.8.2, OLEAUT32 V1.1
+                     HX now supports running BCC32.EXE + ILINK32.EXE of
+                     free C++ Builder Command Line Tools. MS LINK.EXE now
+                     works when creating large libraries. NASMW runs
+                     with HX.
+  09/13/2004, V1.4:  HDPMI V1.76
+  09/11/2004, V1.3:  HDPMI V1.75, DPMILD32 V2.8.2, DKRNL32 V2.8.1 
+                     Tools DPMIRS32.EXE and DPMIRS16.EXE deleted.
+  08/31/2004, V1.2:  HDPMI V1.74, DKRNL32 V2.8.0, DUSER32 V1.2
+                     DPMILD16.EXE added.
+  08/29/2004, V1.1:  DKRNL32 V2.7.9, DUSER32 V1.1, HXLdr32 V1.1
+                     Unsupp\HDPMI32.EXE added (LFN version)
+  08/27/2004, V1.0:  HDPMI V1.73, DPMILD32 V2.8.1, DKRNL32 V2.7.8,
+                     DADVAPI V1.1, DUSER32 V1.0, OLE32 V1.0, OLEAUT32 V1.0
+                     HX runtime first version. Consists of the former
+                     packages HDPMI and DPMILDXX (partially).
+
+  For details about version changes see the documentation files
+  in subdirectory DOC.
+
+
+  8. License
+
+  The HX DOS extender runtime is freeware and may be used for any purpose.
+  Copyright Japheth 1996-2010. The HX runtime can be freely distributed
+  with any application.
+
+  Japheth   ( http://www.japheth.de )
+

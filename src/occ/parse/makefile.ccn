@@ -1,0 +1,64 @@
+
+LINK = valx
+
+.c.icd:
+    $(CC) $&
+
+!ifdef CPP
+CC = ccn /DCPREPROCESSOR /c /9 /DUSE_LONGLONG
+NAME = CPP
+EXE_dependencies = \
+    ppmain.icd \
+    osutil.icd \
+    memory.icd \
+    symtab.icd \
+    ccnrr.icd \
+    preproc.icd \
+    ppexpr.icd	
+!else
+CC = CCn /c /E1000 /DUSE_LONGLONG /9 /C+d
+NAME = CC
+EXE_dependencies = \
+    ccmain.icd \
+    alloc.icd \
+    beinterf.icd \
+    browse.icd \
+    ccerr.icd \
+    config.icd \
+    constopt.icd \
+    debug.icd \
+    declare.icd \
+    expr.icd \
+    float.icd \
+    help.icd \
+    ialias.icd \
+    iblock.icd \
+    iconfl.icd \
+    iconst.icd \
+    iexpr.icd \
+    iflow.icd \
+    igcse.icd \
+    ilive.icd \
+    ilocal.icd \
+    init.icd \
+    inline.icd \
+    ioptutil.icd \
+    iout.icd \
+    ipeep.icd \
+    istmt.icd \
+    lex.icd \
+    list.icd \
+    mangle.icd \
+    memory.icd \
+    osutil.icd \
+    output.icd \
+    preproc.icd \
+    ppexpr.icd \
+    stmt.icd \
+    symtab.icd \ 
+    types.icd \
+    unmangle.icd
+!endif
+
+#		*Explicit Rules*
+q77.exe: $(EXE_dependencies)

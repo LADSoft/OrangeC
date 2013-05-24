@@ -1,0 +1,113 @@
+    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+    <html>
+    <head>
+      <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+      <title>ORC</title>
+      <meta content="david" name="author">
+    </head>
+    <body>
+    <h1 style="text-align: center;">ORC</h1>
+    <span style="font-family: Times New Roman,Times,serif;"><br>
+    <span style="font-weight: bold;">ORC</span> is a windows resource
+    compiler.&nbsp; It handles compilation of a
+    file containing standard windows resources into a .RES file</span>.&nbsp;
+    The .RES file can be given to the linker or to DLPE for use in adding
+    resources to a windows executable file.&nbsp; The specification for the
+    format of the input file is mostly beyond the
+    scope of this document other than to say that the <span
+     style="font-weight: bold;">ORC</span> program has a C
+    language preprocessor.&nbsp;&nbsp; This makes it possible to define
+    symbolic constants.<br>
+    <br>
+    <h2 style="text-align: center;"><span
+     style="font-family: Helvetica,Arial,sans-serif;">Command Line Options</span></h2>
+    The general format of an <span style="font-weight: bold;">ORC</span>
+    command line is:<br>
+    <br>
+    <span style="font-family: Courier New,Courier,monospace;">ORC [options]
+    rcfile.rc</span><br style="font-family: Courier New,Courier,monospace;">
+    <br>
+    where rcfile.rc is the resource file to compile.<br>
+    <br>
+    <h3 style="text-align: center;"><span
+     style="font-family: Helvetica,Arial,sans-serif;">Response Files</span></h3>
+    <span style="font-family: Times New Roman,Times,serif;">Response files
+    can be used as an alternate to specifying input on the command
+    line.&nbsp; For example:<br>
+    <br>
+    <span style="font-family: Courier New,Courier,monospace;">ORC
+    @myresp.lst</span><br
+     style="font-family: Courier New,Courier,monospace;">
+    <br>
+    will take command line options from <span
+     style="font-family: Times New Roman,Times,serif; font-weight: bold;">myresp.lst</span>.&nbsp;
+    In general it isn't necessary to use response files with <span
+     style="font-weight: bold;">ORC</span> as the
+    amount of input required is minimal.<br>
+    <br>
+    </span><span style="font-family: Times New Roman,Times,serif;"></span>
+    <h3 style="text-align: center;"><span
+     style="font-family: Helvetica,Arial,sans-serif;">Setting include file
+    path</span><br>
+    </h3>
+    By default, <span style="font-weight: bold;">ORC</span> will use the C
+    language header include path as an
+    include path to search for files specified in preprocessor INCLUDE
+    directives.&nbsp; For example the statement:<br>
+    <br>
+    <span style="font-family: Courier New,Courier,monospace;">#include
+    &lt;windows.h&gt;</span><br
+     style="font-family: Courier New,Courier,monospace;">
+    <br>
+    will result in windows.h being found in the compiler include directory,
+    and included in the file.&nbsp; If there are other paths that should be
+    searched, they may be specified on the command line with the /i
+    switch.&nbsp; For example:<br>
+    <br>
+    <span style="font-family: Courier New,Courier,monospace;">ORC
+    /i.\include test.rc</span><br
+     style="font-family: Courier New,Courier,monospace;">
+    <br>
+    Searches in the directory <span style="font-weight: bold;">.\include</span>
+    as well as in the C language
+    include directory.<br>
+    <br>
+    The <span style="font-weight: bold;">ORC</span> preprocessor defines
+    the preprocessor symbol <span
+     style="font-family: Courier New,Courier,monospace;">RC_INVOKED</span>
+    to allow include files to specify sections that won't be evaluated by
+    <span style="font-weight: bold;">ORC</span>.&nbsp; For example the
+    windows headers use this to prevent RC
+    compilers from trying to parse structure definitions written in the C
+    language.&nbsp; This way instructions to the RC compiler can be
+    intermixed with instructions to the C compiler without causing <span
+     style="font-weight: bold;">ORC</span> to
+    process things it isn't capable of processing.<br>
+    <br>
+    <span style="font-family: Times New Roman,Times,serif;"><br>
+    </span><span style="font-family: Times New Roman,Times,serif;"></span>
+    <h3 style="text-align: center;"><span
+     style="font-family: Helvetica,Arial,sans-serif;">Defining variables</span></h3>
+    <br>
+    <span style="font-weight: bold;">ORC</span> has a <span
+     style="font-weight: bold;">/D</span> switch to define preprocessor
+    variables.<br>
+    <br>
+    For example<br>
+    <br>
+    <span style="font-family: Courier New,Courier,monospace;">ORC
+    /DMYINT=4 test.c</span><br
+     style="font-family: Courier New,Courier,monospace;">
+    <br>
+    defines the variable MYINT and gives it a value of 4.<br>
+    <span style="font-family: Courier New,Courier,monospace;"></span><br>
+    A variable doesn't have to be defined with a value:<br>
+    <br>
+    <span style="font-family: Courier New,Courier,monospace;">ORC /DWIN32
+    test.c</span><br style="font-family: Courier New,Courier,monospace;">
+    <br>
+    might be used to specify preprocessing based on the program looking for
+    the word WIN32 in #ifdef statements.<br>
+    <br>
+    </body>
+    </html>

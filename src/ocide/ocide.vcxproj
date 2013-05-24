@@ -1,0 +1,241 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2CFEA85D-DB01-44AC-99AB-63EFE46A3990}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ocide</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;GUI;BORLANDC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sqlite3</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;msimg32.lib;shell32.lib;comctl32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NO_MANIFEST</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Manifest>
+      <AdditionalManifestFiles>
+      </AdditionalManifestFiles>
+      <InputResourceManifests>
+      </InputResourceManifests>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;GUI;BORLANDC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sqlite3</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;msimg32.lib;shell32.lib;comctl32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Manifest>
+      <InputResourceManifests>
+      </InputResourceManifests>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\sqlite3\sqlite3.c" />
+    <ClCompile Include="altcomb.c" />
+    <ClCompile Include="autodepend.c" />
+    <ClCompile Include="brfold.c" />
+    <ClCompile Include="brkcode.c" />
+    <ClCompile Include="brkdata.c" />
+    <ClCompile Include="brkhdwe.c" />
+    <ClCompile Include="brkstep.c" />
+    <ClCompile Include="browse.c" />
+    <ClCompile Include="buildrul.c" />
+    <ClCompile Include="codecomp.c" />
+    <ClCompile Include="dbgasm.c" />
+    <ClCompile Include="dbgdb.c" />
+    <ClCompile Include="dbghints.c" />
+    <ClCompile Include="dbgmain.c" />
+    <ClCompile Include="dbgmem.c" />
+    <ClCompile Include="dbgreg.c" />
+    <ClCompile Include="dbgstack.c" />
+    <ClCompile Include="dbgsyms.c" />
+    <ClCompile Include="dbgthread.c" />
+    <ClCompile Include="dbgwatch.c" />
+    <ClCompile Include="dlgctlwnd.c" />
+    <ClCompile Include="DOCKMGR.c" />
+    <ClCompile Include="doswind.c" />
+    <ClCompile Include="drawacc.c" />
+    <ClCompile Include="drawdlg.c" />
+    <ClCompile Include="drawedit.c" />
+    <ClCompile Include="drawimage.c" />
+    <ClCompile Include="drawmenu.c" />
+    <ClCompile Include="drawrcdata.c" />
+    <ClCompile Include="drawstrings.c" />
+    <ClCompile Include="drawutil.c" />
+    <ClCompile Include="drawversion.c" />
+    <ClCompile Include="effect.c" />
+    <ClCompile Include="extools.c" />
+    <ClCompile Include="FileBrowse.c" />
+    <ClCompile Include="filedlg.c" />
+    <ClCompile Include="find.c" />
+    <ClCompile Include="idedialog.c" />
+    <ClCompile Include="ideeval.c" />
+    <ClCompile Include="idehelp.c" />
+    <ClCompile Include="idemenu.c" />
+    <ClCompile Include="ideregexp.c" />
+    <ClCompile Include="idexml.c" />
+    <ClCompile Include="imgdraw.c" />
+    <ClCompile Include="imgui.c" />
+    <ClCompile Include="infownd.c" />
+    <ClCompile Include="instance.c" />
+    <ClCompile Include="jumplist.c" />
+    <ClCompile Include="lsblank.c" />
+    <ClCompile Include="lscont.c" />
+    <ClCompile Include="lsctrl.c" />
+    <ClCompile Include="lsframe.c" />
+    <ClCompile Include="lsgrip.c" />
+    <ClCompile Include="lstab.c" />
+    <ClCompile Include="lstool.c" />
+    <ClCompile Include="LSTREE.c" />
+    <ClCompile Include="lstt.c" />
+    <ClCompile Include="make.c" />
+    <ClCompile Include="makecommon.c" />
+    <ClCompile Include="MAKEGEN.c" />
+    <ClCompile Include="MRU.c" />
+    <ClCompile Include="ocide.c" />
+    <ClCompile Include="OPCODES.c" />
+    <ClCompile Include="OPERANDS.c" />
+    <ClCompile Include="PEFILE.c" />
+    <ClCompile Include="POPUP.c" />
+    <ClCompile Include="print.c" />
+    <ClCompile Include="PRINTWM.c" />
+    <ClCompile Include="prjfile.c" />
+    <ClCompile Include="prjfolder.c" />
+    <ClCompile Include="prjprj.c" />
+    <ClCompile Include="prjutil.c" />
+    <ClCompile Include="prjwa.c" />
+    <ClCompile Include="prjwnd.c" />
+    <ClCompile Include="PROFILE.c" />
+    <ClCompile Include="progress.c" />
+    <ClCompile Include="props.c" />
+    <ClCompile Include="propswnd.c" />
+    <ClCompile Include="rcerr.c" />
+    <ClCompile Include="rcgs.c" />
+    <ClCompile Include="rcie.c" />
+    <ClCompile Include="rcinterf.c" />
+    <ClCompile Include="rckw.c" />
+    <ClCompile Include="rcpp.c" />
+    <ClCompile Include="rcread.c" />
+    <ClCompile Include="rcsym.c" />
+    <ClCompile Include="rcutil.c" />
+    <ClCompile Include="rcwrite.c" />
+    <ClCompile Include="SIMOPS.c" />
+    <ClCompile Include="slprefs.c" />
+    <ClCompile Include="slproj.c" />
+    <ClCompile Include="slrule.c" />
+    <ClCompile Include="slwa.c" />
+    <ClCompile Include="Splash.c" />
+    <ClCompile Include="SRCHPATH.c" />
+    <ClCompile Include="tabproj.c" />
+    <ClCompile Include="tabtool.c" />
+    <ClCompile Include="TAGS.c" />
+    <ClCompile Include="toolbar.c" />
+    <ClCompile Include="UZ.c" />
+    <ClCompile Include="wargs.c" />
+    <ClCompile Include="window.c" />
+    <ClCompile Include="XEDIT.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ASM_KW.H" />
+    <ClInclude Include="codecomp.h" />
+    <ClInclude Include="Cvexefmt.h" />
+    <ClInclude Include="C_KW.H" />
+    <ClInclude Include="c_types.h" />
+    <ClInclude Include="dbgtype.h" />
+    <ClInclude Include="HEADER.H" />
+    <ClInclude Include="helpid.h" />
+    <ClInclude Include="HtmlHelp.h" />
+    <ClInclude Include="img.h" />
+    <ClInclude Include="LSCTRL.H" />
+    <ClInclude Include="OPCODES.H" />
+    <ClInclude Include="OPERANDS.H" />
+    <ClInclude Include="parser.h" />
+    <ClInclude Include="PEFILE.H" />
+    <ClInclude Include="PROGRESS.H" />
+    <ClInclude Include="props.h" />
+    <ClInclude Include="rc.h" />
+    <ClInclude Include="rcgui.h" />
+    <ClInclude Include="rc_kw.h" />
+    <ClInclude Include="regexp.h" />
+    <ClInclude Include="resedit.h" />
+    <ClInclude Include="Splash.h" />
+    <ClInclude Include="TreeListView.h" />
+    <ClInclude Include="UTYPE.H" />
+    <ClInclude Include="wargs.h" />
+    <ClInclude Include="winconst.h" />
+    <ClInclude Include="XML.H" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ocide.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="res\ocide.exe.manifest" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

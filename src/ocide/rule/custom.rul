@@ -1,0 +1,11 @@
+<OCRULE>
+	<PROPGROUP CLASS="PROJECT" SELECT="CUSTOM" ORDER = "100" NAME="Custom Build">	
+		<PROPS NAME="Custom Build" HELPID="640">
+			<ITEM NAME="Display" ID="__CUSTOM_DISPLAY" TYPE="MULTITEXT">Performing Custom Build Step</ITEM>
+			<ITEM NAME="Commands" ID="__CUSTOM_COMMANDS" TYPE="MULTITEXT"/>
+			<ITEM NAME="Output Files" ID="__CUSTOM_OUTPUT" TYPE="MULTITEXT"/>
+			<ITEM NAME="Additional Dependencies" TYPE="TEXT" ID="__CUSTOM_DEPENDENCIES"/>
+		</PROPS>
+	</PROPGROUP>
+</OCRULE>
+

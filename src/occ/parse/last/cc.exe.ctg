@@ -1,0 +1,560 @@
+<CC386TARGET>
+    <VERSION ID="5"/>
+    <TARGET NAME="cc.exe" TITLE="cc.exe">
+        <BUILD TYPE="0" FLAGS="852033" LIBTYPE="0"/>
+        <DEFINEFLAGS VALUE="0"/>
+        <PATHS INCLUDE="..\preproc;..\middle" OUTPUT=""/>
+        <PREBUILD LABEL="">
+            
+        </PREBUILD>
+        <POSTBUILD LABEL="">
+            
+        </POSTBUILD>
+        <OPTS>
+            <COMPILER>
+                
+            </COMPILER>
+            <ASSEMBLER>
+                
+            </ASSEMBLER>
+            <LINKER>
+                
+            </LINKER>
+            <LIBRARIAN>
+                
+            </LIBRARIAN>
+        </OPTS>
+        <CMDLINE>
+            q.c /O-
+        </CMDLINE>
+        <DEFINE NAME="USE_LONGLONG" VALUE=""/>
+        <SOURCES>
+            <FILE NAME="beinterf.c" TITLE="beinterf.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="BROWSE.C" TITLE="BROWSE.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+                <DEPENDENCY NAME="browse.h" TITLE="browse.h"/>
+            </FILE>
+            <FILE NAME="ccerr.c" TITLE="ccerr.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="ccmain.c" TITLE="ccmain.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="config.c" TITLE="config.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+                <DEPENDENCY NAME="winmode.h" TITLE="winmode.h"/>
+                <DEPENDENCY NAME="regs.h" TITLE="regs.h"/>
+            </FILE>
+            <FILE NAME="constopt.c" TITLE="constopt.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="debug.c" TITLE="debug.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="declare.c" TITLE="declare.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="expr.c" TITLE="expr.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="float.c" TITLE="float.c">
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="help.c" TITLE="help.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\ialias.c" TITLE="ialias.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\IBLOCK.C" TITLE="IBLOCK.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\iconfl.c" TITLE="iconfl.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\ICONST.C" TITLE="ICONST.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\IEXPR.C" TITLE="IEXPR.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\IFLOW.C" TITLE="IFLOW.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\iinvar.c" TITLE="iinvar.c"/>
+            <FILE NAME="..\middle\ilazy.c" TITLE="ilazy.c"/>
+            <FILE NAME="..\middle\ilive.c" TITLE="ilive.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\ilocal.c" TITLE="ilocal.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\iloop.c" TITLE="iloop.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="init.c" TITLE="init.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="INLINE.C" TITLE="INLINE.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\ioptutil.c" TITLE="ioptutil.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\iout.c" TITLE="iout.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\IPEEP.C" TITLE="IPEEP.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\irc.c" TITLE="irc.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\ireshape.c" TITLE="ireshape.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\irewrite.c" TITLE="irewrite.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\issa.c" TITLE="issa.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\ISTMT.C" TITLE="ISTMT.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\middle\istren.c" TITLE="istren.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="lex.c" TITLE="lex.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="LIST.C" TITLE="LIST.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="mangle.c" TITLE="mangle.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="memory.c" TITLE="memory.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\preproc\osutil.c" TITLE="osutil.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="osutil.c" TITLE="osutil.c"/>
+            <FILE NAME="output.c" TITLE="output.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\preproc\ppexpr.c" TITLE="ppexpr.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="..\preproc\PREPROC.C" TITLE="PREPROC.C">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="stmt.c" TITLE="stmt.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="symtab.c" TITLE="symtab.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="types.c" TITLE="types.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+            <FILE NAME="unmangle.c" TITLE="unmangle.c">
+                <DEPENDENCY NAME="compiler.h" TITLE="compiler.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="floating.h" TITLE="floating.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="..\preproc\pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="..\middle\iexpr.h" TITLE="iexpr.h"/>
+                <DEPENDENCY NAME="c.h" TITLE="c.h"/>
+                <DEPENDENCY NAME="..\middle\iopt.h" TITLE="iopt.h"/>
+                <DEPENDENCY NAME="beinterf.h" TITLE="beinterf.h"/>
+                <DEPENDENCY NAME="compiler.p" TITLE="compiler.p"/>
+            </FILE>
+        </SOURCES>
+        <RESOURCES>
+        </RESOURCES>
+        <OTHER>
+        </OTHER>
+    </TARGET>
+</CC386TARGET>

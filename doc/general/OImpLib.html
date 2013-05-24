@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OImpLib</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h1 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">OImpLib</span></h1>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">OImpLib</span> is a
+WIN32 import librarian, suitable for various operations regarding the
+import sections of DLLs.</span>&nbsp; It can take input from one of
+several sources, and place output in one of several destinations.&nbsp;
+In its most basic format one could use it to take a .DEF file or .DLL
+file and construct an import library for use with the toolchain, but it
+can also be used to create a .DEF file or extract things from a library.<br>
+<br>
+<h2 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Command Line Options</span></h2>
+<br>
+The general format of an <span style="font-weight: bold;">OImpLib</span>
+command line is:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OImpLib
+[options] source dest</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Times New Roman,Times,serif;">where source
+and dest specify files to use, and further, by parsing the extensions
+of source and dest <span style="font-weight: bold;">OImpLib</span> is
+able to act in one of several modes</span><br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Response Files</span></h3>
+<span style="font-family: Times New Roman,Times,serif;">Response files
+can be used as an alternate to specifying input on the command
+line.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OImpLib
+test.l @myresp.lst</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will take command line options from <span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">myresp.lst</span>.&nbsp;
+In general it isn't necessary to use response files with <span
+ style="font-weight: bold;">OImpLib</span> as the
+amount of input required is minimal.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;"></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Case Insensitivity</span><br>
+</h3>
+<span style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-weight: bold;">OImpLib</span> will allow the creation
+of case insensitive libraries with the
+<span style="font-weight: bold;">/c-</span> switch, however, in general
+it isn't a good idea to make a
+case-insensitive import library, as WIN32 export records&nbsp; found in
+DLLs are case-sensitive.<span
+ style="font-family: Times New Roman,Times,serif;"></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;"></span></h3>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Operation modes</span><br>
+</h3>
+<span style="font-weight: bold;">OImpLib</span> will perform different
+operations depending on what the file
+extensions of the input files are.&nbsp; The output file is specified
+first, followed by one or more input files.&nbsp; The output file may
+be one of the following:<br>
+<br>
+<ul>
+  <li>a library file</li>
+  <li>an object file</li>
+  <li>a .DEF file</li>
+</ul>
+When the output file is a library file, the input file can be a list of
+object files, .DEF files, and .DLL files.&nbsp; The object files will
+be placed in the library, whereas the export sections of .DEF and .DLL
+files will be converted to object files that hold import records, and
+then placed in the library.<br>
+<br>
+When the output file is an object file, a single input file can be
+either a .DEF or .DLL file.&nbsp; The exports from the input file will
+be placed in the output file.<br>
+<br>
+When the output file is a .DEF file, the input file can be either a
+.DLL file or an object file.&nbsp; The exports in the .DLL file will be
+written to the .DEF file, or the import records in the object file will
+be converted to export records and written to the .DEF file.&nbsp; For
+example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OImpLib
+test.l kernel32.dll</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will make an import library holding the export definitions from
+<span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">kernel32.dll</span>
+and<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OImpLib
+test.ld mydll.def</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will make an import library containing the export definitions from <span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">mydll.def</span>.<br>
+<br>
+On the other hand:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OImpLib
+user32.def user32.dll</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will create a definition file from the export records in <span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">user32.dll</span>.<br>
+<br>
+<br>
+<br>
+</body>
+</html>

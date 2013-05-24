@@ -1,0 +1,24 @@
+LIBRARY     URL.DLL
+
+EXPORTS
+    AddMIMEFileTypesPS             @102 
+    AutodialHookCallback           @103 
+    DummyEntryPoint                @106 
+    DummyEntryPointA               @107 
+    FileProtocolHandler            @108 
+    FileProtocolHandlerA           @109 
+    InetIsOffline                  @110 
+    MIMEAssociationDialogA         @111 
+    MIMEAssociationDialogW         @112 
+    MailToProtocolHandler          @113 
+    MailToProtocolHandlerA         @114 
+    NewsProtocolHandler            @115 
+    NewsProtocolHandlerA           @116 
+    OpenURL                        @117 
+    OpenURLA                       @118 
+    TelnetProtocolHandler          @119 
+    TelnetProtocolHandlerA         @120 
+    TranslateURLA                  @121 
+    TranslateURLW                  @122 
+    URLAssociationDialogA          @123 
+    URLAssociationDialogW          @124 

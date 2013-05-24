@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OCC Code Generation Parameters</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<div style="text-align: center;">
+<h2>OCC Code Generation Parameters</h2>
+<div style="text-align: left;">/Cparams specifies code generation
+parameters<br>
+<br>
+&nbsp;&nbsp;&nbsp; Params is a list of parameters, seperated by + and -
+symbols.&nbsp; Use the + symbol to indicate a parameter is to be turned
+on, the minus symbol that the parameter is to be turned off.&nbsp; The
+default states of the various parameters are opposite what is shown
+here; i.e. this lists how to change the default state to something else.<br>
+<br>
+&nbsp;&nbsp;&nbsp; +d&nbsp;&nbsp;&nbsp; display diagnostics<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; displays memory diagnostics, and
+some indication of what internal errors have occurred<br>
+<br>
+&nbsp;&nbsp;&nbsp; -b&nbsp;&nbsp;&nbsp; merge BSS with initialized data
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Normally there are two segments
+used, one for initialized data and one for uninitialized data.&nbsp;
+This prevents the OS from having to load uninitialized data from a
+file; instead the program just zeroes it during startup.&nbsp; This
+switch merges the two sections into one initialized data section.<br>
+<br>
+&nbsp;&nbsp;&nbsp; -l&nbsp;&nbsp;&nbsp; don't put C source in the ASM
+file<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; When an ASM file output option is
+specified, this will create an ASM file without cross-referencing the
+assembly code to the lines of the source file.<br>
+<br>
+&nbsp;&nbsp;&nbsp; -m&nbsp;&nbsp;&nbsp; don't use leading underscores<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Normal C language procedure is to
+prepend each identifier with an underscore.&nbsp; If you want to use
+the compiler to generate function and variable names without an
+underscore use this switch.&nbsp; However, doing so will create an
+incompatibility with the run time libraries and you won't be able to
+link.<br>
+<br>
+&nbsp;&nbsp;&nbsp; +r&nbsp;&nbsp;&nbsp; reverse order of bit operations<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Normally bit fields are allocated
+from least significant bit to most significant bit of whatever size
+variable is being used.&nbsp; Use this switch to reverse the order,
+however this may create incompatibilities with the libraries which
+result in code bugs.<br>
+<br>
+&nbsp;&nbsp;&nbsp; +s&nbsp;&nbsp;&nbsp; align stack<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This switch causes OCC to emit
+code to align the stack to 16-byte boundaries.&nbsp; This is useful to
+speed up operations that involve loading and storing double-precision
+floating point values to auto variables.&nbsp; By default, the run-time
+libraries cause main() or WinMain() to execute with an aligned stack.<br>
+<br>
+&nbsp;&nbsp;&nbsp; +F&nbsp;&nbsp;&nbsp; use FLAT model in ASM file<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; When using ASM file, select FLAT
+model.<br>
+<br>
+&nbsp;&nbsp;&nbsp; +I&nbsp;&nbsp;&nbsp; use Microsoft-style imports<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Normally the linker creates a
+thunk table with jump addresses that jump indirectly through the import
+table.&nbsp; This allows basic C code to compile and link.&nbsp;
+However some linkers do not support this and instead need the compiler
+to call indirectly through the import table rather than to a thunk
+table.&nbsp; Use this switch to generate code compatible with these
+linkers.<br>
+<br>
+&nbsp;&nbsp;&nbsp; +M&nbsp;&nbsp;&nbsp; generate MASM assembler file<br>
+<br>
+&nbsp;&nbsp;&nbsp; +N&nbsp;&nbsp;&nbsp; generate NASM assembler file
+for OMF<br>
+<br>
+&nbsp;&nbsp;&nbsp; +NX&nbsp;&nbsp;&nbsp; generate generic NASM
+assembler file<br>
+<br>
+&nbsp;&nbsp;&nbsp; +R&nbsp;&nbsp;&nbsp; use the far keyword to create
+far pointers or far procedure frames<br>
+<br>
+&nbsp;&nbsp;&nbsp; +S&nbsp;&nbsp;&nbsp; add stack checking code<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This switch adds calls to the
+run-time library's stack checking code.&nbsp; If the stack overruns, an
+error is generated.<br>
+<br>
+&nbsp;&nbsp;&nbsp; +T&nbsp;&nbsp;&nbsp; generate TASM assembler file<br>
+<br>
+&nbsp;&nbsp;&nbsp; +U&nbsp;&nbsp;&nbsp; do not assume DS == SS<br>
+<br>
+&nbsp;&nbsp;&nbsp; +Z&nbsp;&nbsp;&nbsp; add profiler calls<br>
+<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; This switch adds calls to a
+profiler module at the beginning and ending of each compiled
+function.&nbsp; This is DOS compatibility; the WIN32 profiler module
+does not exist at present.<br>
+<br>
+&nbsp;&nbsp;&nbsp; for example:<br>
+<br>
+&nbsp;&nbsp;&nbsp; OCC /C+NX+Z myfile.c<br>
+<br>
+&nbsp;&nbsp;&nbsp; generates generic NASM assembler module, with
+profiler calls inserted.<br>
+<br>
+</div>
+<br>
+</div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OGrep</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h1 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">OGrep</span></h1>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">OGrep</span> is a
+utility that searches for text within files.&nbsp; It is capable of
+matching text with a direct string comparison, with or
+without case sensitivity.&nbsp; It also is capable of matching text
+within a file against <a href="OGrep%20Regular%20Expressions.html">regular
+expressions</a>.&nbsp; Regular expressions
+allow a mechanism for specifying ways to match text, while specifying
+parts of the text which can vary and still match.&nbsp; For example the
+'.' character matches any other character, so a regular expression such
+as 'a.c'&nbsp; would match any three-character string starting with 'a'
+and ending with 'c'.</span>&nbsp; More powerful matching is also
+possible, such as matching sequences of the same character, matching
+against any character in a specified set, and so forth.<br>
+<br>
+<h2 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Command Line Options</span></h2>
+<span style="font-family: Times New Roman,Times,serif;">The general
+format of an <span style="font-weight: bold;">OGrep</span> <a
+ href="OGrep%20Command%20Line%20Options.html">command line</a> is as
+follows:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OGrep
+[options] match-string list-of-files</span><br
+ style="font-family: Courier New,Courier,monospace;">
+</span><br>
+<span style="font-weight: bold;">OGrep</span> will search in the <span
+ style="font-style: italic;">list-of-files</span> for text that matches
+the <span style="font-style: italic;">match-string</span>, and
+list file and optionally line number information for each match
+found.&nbsp; In
+simple cases the match string does not need to be surrounded by quotes,
+but in more complex cases involving spacing characters and special
+symbols it may be necessary to quote the <span
+ style="font-style: italic;">match-string</span>.<br>
+<br>
+<h2 style="font-family: Helvetica,Arial,sans-serif; text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;"><span
+ style="font-weight: bold;"></span></span>Regular Expressions</h2>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">OGrep</span> has a
+powerful <a href="OGrep%20Regular%20Expressions.html">regular
+expression</a> matcher, which is turned on by default.&nbsp;
+However there is a <a href="OGrep%20Command%20Line%20Options.html">command
+line</a> option to disable it.&nbsp; When it is
+turned on some characters will not be matched directly against the
+text, but will be interpreted in a way that allows the program to
+perform abstract types of matches.&nbsp; There are several types of
+matching groups:<br>
+<br>
+</span>
+<ul>
+  <li>Match a character or sequence of the same character</li>
+  <li>Match the start or end of a line</li>
+  <li>Match the start, end, or middle of a word</li>
+  <li>Match one character out of a set of characters</li>
+  <li>A match can be specified to be repeated at another point within
+the sequence</li>
+</ul>
+Some of these matching algorithms can be combined, for example matching
+one character out of a set of characters can be combined with matching
+a sequence of characters to find words consisting of characters in a
+subset of the letters and numbers.<br>
+<br>
+</body>
+</html>

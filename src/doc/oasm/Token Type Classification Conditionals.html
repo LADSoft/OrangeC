@@ -1,0 +1,422 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>Token Type Classification Conditionals</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Token Type
+Classification Conditionals</span></h3>
+<br>
+<span style="font-family: Courier New,Courier,monospace;"><span
+ style="font-family: Times New Roman,Times,serif;">The Token Type
+Classification conditionals are used in <a
+ href="Conditional%20Processing.html">Conditional Processing</a>.&nbsp;
+They take a character stream, and determine what kind
+of token the assembler will think it would be if it were to assemble
+the stream as part of processing an instruction or directive.&nbsp;
+This is useful for example within multiline macro definitions, to
+change the behavior of a macro based on the type of data in one or more
+of the arguments.</span></span>&nbsp; Token Type classification
+directives can detect one of three types of token:&nbsp; labels,
+numbers, and strings.<br>
+<br>
+<div
+ style="text-align: center; font-family: Helvetica,Arial,sans-serif;">
+<h4>%ifid</h4>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifid</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+detects if the token could be a label, and
+processes the following block if it is.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%ifid&nbsp; myLabel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because myLabel
+matches a character sequence that could be used in a label.&nbsp; It
+does not matter if myLabel has actually been defined; the fact that it
+could be assembled as a label is all that is needed.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+<br>
+<h4>%ifnid</h4>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifnid</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+detects if the token could be a label, and
+processes the following block if it is not.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;">%ifnid 5</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because 5 is a
+number, and does not match the character sequence required for a label.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+<br>
+<h4>%elifid</h4>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifid</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+detects if the token could be a label, and
+processes the following block if it is.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%if 1 == 2</span><br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%elifid&nbsp;
+myLabel</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because myLabel
+matches a character sequence that could be used in a label.&nbsp; It
+does
+not matter if myLabel has actually been defined; the fact that it could
+be assembled as a label is all that is needed.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+<br>
+<h4>%elifnid</h4>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifnid</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+detects if the token could be a label, and
+processes the following block if it is not.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%if 1 == 2</span><br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%elifnid&nbsp; 5</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+</span>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;">would
+result in the mov statement being assembled because 5 is a number, and
+does not match the character sequence required for a label.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+</div>
+<br>
+<h4>%ifnum</h4>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifnum</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+detects if the token is a number, and
+processes the following block if it is.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%ifnum&nbsp; 5</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because 5 is a number.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+</span></div>
+</div>
+<br>
+<h4>%ifnnum</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifnnum</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+detects if the token is a number, and
+processes the following block if it is not.</span><br>
+<span style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%ifnnum&nbsp; 5</span></span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span></span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;">%endif</span></span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;">would result in
+the mov statement not being assembled because 5 is a number.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"></span></div>
+<span style="font-family: Times New Roman,Times,serif;"></span><br>
+<br>
+<h4>%elifnum</h4>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifnum</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+detects if the token could be a label, and
+processes the following block if it is.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%if 1 == 2</span><br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%elifnum 5</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because 5 is a number.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+</span></div>
+</div>
+<br>
+<h4>%elifnnum</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifnum</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+detects if the token is a number and
+processes the following block if it is not.</span><br>
+<span style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;">%if 1 == 2</span></span><br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%elifnnum&nbsp; hi</span></span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span></span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;">%endif</span></span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;">would result in
+the mov statement being assembled because 'hi' is not a number, it
+matches the format for a label.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"></span></div>
+<span style="font-family: Times New Roman,Times,serif;"></span><br>
+<br>
+<h4>%ifstr</h4>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifstr</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+detects if the token is a string, and
+processes the following block if it is.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%ifstr&nbsp; "This
+is a string"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because the argument
+is a string.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+<br>
+<h4>%ifnstr</h4>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifnstr</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+detects if the token is a string, and
+processes the following block if it is not.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%ifnstr&nbsp;
+"This is a string"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in nothing being assembled because the argument is a
+string.&nbsp; But:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%ifnstr 5</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov being assembled, because 5 is a number not a
+string.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+<br>
+<h4>%elifstr</h4>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifstr</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+detects if the token is a string, and
+processes the following block if it is.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%if 1 == 2</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%elifstr&nbsp;
+"This is a string"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because the argument
+is a string.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+<br>
+<h4>%elifnstr</h4>
+</div>
+<br>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifnstr</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+detects if the token is a string, and
+processes the following block if it is.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%if 1 == 2</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%elifnstr 5</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would result in the mov statement being assembled because 5 is a
+number, not a string.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+</div>
+</div>
+<br>
+</body>
+</html>

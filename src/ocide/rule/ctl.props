@@ -1,0 +1,505 @@
+<CTLPROPS>
+    <CONTROL TYPE="PUSHBUTTON">
+        <HEADER LABEL="Button Settings"/>
+        <CAPTION LABEL="Caption" TYPE="TEXT"/>
+        <STYLE LABEL="Horizontal Alignment" TYPE="COMBO" MASK="0x300">
+            <FIELD LABEL="Default" VALUE="0"/>
+            <FIELD LABEL="Left" VALUELABEL="BS_LEFT" VALUE="0x100"/>
+            <FIELD LABEL="Right" VALUELABEL="BS_RIGHT" VALUE="0x200"/>
+            <FIELD LABEL="Center" VALUELABEL="BS_CENTER" VALUE="0x300"/>
+        </STYLE>
+        <STYLE LABEL="Multiline" TYPE="YESNO" MASK="0x2000">
+            <FIELD VALUELABEL="BS_MULTILINE" VALUE="0x2000"/>
+        </STYLE>
+        <STYLE LABEL="Style" TYPE="COMBO" MASK="0x8000">
+            <FIELD LABEL="3D" VALUELABEL="BS_FLAT" VALUE="0"/>
+            <FIELD LABEL="FLAT" VALUELABEL="BS_FLAT" VALUE="0x8000"/>
+        </STYLE>
+        <STYLE LABEL="Type" TYPE="COMBO" MASK="0xc0">
+            <FIELD LABEL="Text" VALUE="0"/>
+            <FIELD LABEL="Default Text" VALUE="1"/>
+            <FIELD LABEL="Icon" VALUELABEL="BS_ICON" VALUE="0x40"/>
+            <FIELD LABEL="Bitmap" VALUELABEL="BS_BITMAP" VALUE="0x80"/>
+        </STYLE>
+        <STYLE LABEL="Vertical Alignment" TYPE="COMBO" MASK="0xc00">
+            <FIELD LABEL="Default" VALUE="0"/>
+            <FIELD LABEL="Top" VALUELABEL="BS_TOP" VALUE="0x400"/>
+            <FIELD LABEL="Bottom" VALUELABEL="BS_BOTTOM" VALUE="0x800"/>
+            <FIELD LABEL="Center" VALUELABEL="BS_VCENTER" VALUE="0xc00"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="CHECKBOX">
+        <HEADER LABEL="Checkbox Settings"/>
+        <CAPTION LABEL="Caption" TYPE="TEXT"/>
+        <STYLE LABEL="Pushlike" type="YESNO" MASK="0x1000">
+            <FIELD VALUELABEL="BS_PUSHLIKE" VALUE="0x1000"/>
+        </STYLE>
+        <STYLE LABEL="Text to left" type="YESNO" MASK="0x20">
+            <FIELD VALUELABEL="BS_LEFTTEXT" VALUE="0x20"/>
+        </STYLE>
+        <STYLE LABEL="Type" TYPE="COMBO" MASK="0xf">
+            <FIELD LABEL="Checkbox" VALUELABEL="BS_CHECKBOX" VALUE="2"/>
+            <FIELD LABEL="Auto Checkbox" VALUELABEL="BS_AUTOCHECKBOX" VALUE="3"/>
+            <FIELD LABEL="3-state" VALUELABEL="BS_3STATE" VALUE="5"/>
+            <FIELD LABEL="Auto 3-state" VALUELABEL="BS_AUTO3STATE" VALUE="6"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="RADIOBUTTON">
+        <HEADER LABEL="Radio Button Settings"/>
+        <CAPTION LABEL="Caption" TYPE="TEXT"/>
+        <STYLE LABEL="Pushlike" type="YESNO" MASK="0x1000">
+            <FIELD VALUELABEL="BS_PUSHLIKE" VALUE="0x1000"/>
+        </STYLE>
+        <STYLE LABEL="Text to left" type="YESNO" MASK="0x20">
+            <FIELD VALUELABEL="BS_LEFTTEXT" VALUE="0x20"/>
+        </STYLE>
+        <STYLE LABEL="Type" TYPE="COMBO" MASK="0xf">
+            <FIELD LABEL="Radio Button" VALUELABEL="BS_RADIOBUTTON" VALUE="4"/>
+            <FIELD LABEL="Auto Radio Button" VALUELABEL="BS_AUTORADIOBUTTON" VALUE="9"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="EDIT">
+        <HEADER LABEL="Edit Field Settings"/>
+        <STYLE LABEL="Filter" TYPE="COMBO" MASK="0x2018">
+            <FIELD LABEL="None" VALUE="0"/>
+            <FIELD LABEL="Upper Case" VALUELABEL="ES_UPPERCASE" VALUE="8"/>
+            <FIELD LABEL="Lower Case" VALUELABEL="ES_LOWERCASE" VALUE="0x10"/>
+            <FIELD LABEL="Number " VALUELABEL="ES_NUMBER" VALUE="x2000"/>
+        </STYLE>
+        <STYLE LABEL="Hide Selection" TYPE="NEGYESNO" MASK="0x100">
+            <FIELD VALUELABEL="ES_NOHIDESEL" VALUE="0x100"/>
+        </STYLE>
+        <STYLE LABEL="Horizontal Alignment" TYPE="COMBO" MASK="3">
+            <FIELD LABEL="Left" VALUELABEL="ES_LEFT" VALUE="0"/>
+            <FIELD LABEL="Right" VALUELABEL="ES_RIGHT" VALUE="2"/>
+            <FIELD LABEL="Center" VALUELABEL="ES_CENTER" VALUE="1"/>
+        </STYLE>
+        <STYLE LABEL="Multiline" TYPE="YESNO" MASK="4">
+            <FIELD VALUELABEL="ES_MULTILINE" VALUE="4"/>
+        </STYLE>
+        <STYLE LABEL="Password" TYPE="YESNO" MASK="0x20">
+            <FIELD VALUELABEL="ES_PASSWORD" VALUE="0x20"/>
+        </STYLE>
+        <STYLE LABEL="Read Only" TYPE="YESNO" MASK="0x800">
+            <FIELD VALUELABEL="ES_READONLY" VALUE="0x800"/>
+        </STYLE>
+        <STYLE LABEL="Scrollbars" TYPE="COMBO" MASK="0xc0">
+            <FIELD LABEL="None" VALUE="0"/>
+            <FIELD LABEL="Auto Horizontal" VALUELABEL="ES_AUTOHSCROLL" VALUE="0x80"/>
+            <FIELD LABEL="Auto Vertical" VALUELABEL="ES_AUTOHSCROLL" VALUE="0x40"/>
+            <FIELD LABEL="Auto Both" VALUELABEL="ES_AUTOHSCROLL | ES_AUTOVSCROLL" VALUE="0xc0"/>
+        </STYLE>
+        <CAPTION LABEL="Text" TYPE="TEXT"/>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="COMBOBOX">
+        <HEADER LABEL="Combobox Settings"/>
+        <STYLE LABEL="Disable No Scroll" TYPE="YESNO" MASK="0x800">
+            <FIELD VALUELABEL="CBS_DISABLENOSCROLL" VALUE="0x800"/>
+        </STYLE>
+        <STYLE LABEL="Filter" TYPE="COMBO" MASK="0x6000">
+            <FIELD LABEL="None" VALUE="0"/>
+            <FIELD LABEL="Upper Case" VALUELABEL="CBS_UPPERCASE" VALUE="0x2000"/>
+            <FIELD LABEL="Lower Case" VALUELABEL="CBS_LOWERCASE" VALUE="0x4000"/>
+        </STYLE>
+        <STYLE LABEL="Has Strings" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="CBS_HASSTRINGS" VALUE="0x200"/>
+        </STYLE>
+        <STYLE LABEL="Horizontal Scrollbar" TYPE="COMBO" MASK="0x40">
+            <FIELD LABEL="None" VALUE="0"/>
+            <FIELD LABEL="Auto" VALUELABEL="CBS_AUTOHSCROLL" VALUE="0x40"/>
+        </STYLE>
+        <STYLE LABEL="Integral Height" TYPE="NEGYESNO" MASK="0x400">
+            <FIELD VALUELABEL="CBS_NOINTEGRALHEIGHT" VALUE="0x400"/>
+        </STYLE>
+        <STYLE LABEL="Sort" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="CBS_SORT" VALUE="0x100"/>
+        </STYLE>
+        <STYLE LABEL="Type" TYPE="COMBO" MASK="0x3">
+            <FIELD LABEL="Simple" VALUELABEL="CBS_SIMPLE" VALUE="1"/>
+            <FIELD LABEL="Dropdown" VALUELABEL="CBS_DROPDOWN" VALUE="2"/>
+            <FIELD LABEL="Dropdown List" VALUELABEL="CBS_DROPDOWNLIST" VALUE="3"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="LISTBOX">
+        <HEADER LABEL="Listbox Settings"/>
+        <STYLE LABEL="Disable No Scroll" TYPE="YESNO" MASK="0x1000">
+            <FIELD VALUELABEL="LBS_DISABLENOSCROLL" VALUE="0x1000"/>
+        </STYLE>
+        <STYLE LABEL="Disable Selection" TYPE="YESNO" MASK="0x4000">
+            <FIELD VALUELABEL="LBS_NOSEL" VALUE="0x4000"/>
+        </STYLE>
+        <STYLE LABEL="Extended Selection" TYPE="YESNO" MASK="0x800">
+            <FIELD VALUELABEL="LBS_EXTENDEDSEL" VALUE="0x800"/>
+        </STYLE>
+        <STYLE LABEL="Has Strings" TYPE="YESNO" MASK="0x40">
+            <FIELD VALUELABEL="LBS_HASSTRINGS" VALUE="0x40"/>
+        </STYLE>
+        <STYLE LABEL="Integral Height" TYPE="NEGYESNO" MASK="0x100">
+            <FIELD VALUELABEL="LBS_NOINTEGRALHEIGHT" VALUE="0x100"/>
+        </STYLE>
+        <STYLE LABEL="Multicolumn" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="LBS_MULTICOLUMN" VALUE="0x200"/>
+        </STYLE>
+        <STYLE LABEL="Multiple Selection" TYPE="YESNO" MASK="8">
+            <FIELD VALUELABEL="LBS_MULTIPLESEL" VALUE="8"/>
+        </STYLE>
+        <STYLE LABEL="No Data" TYPE="YESNO" MASK="0x2000">
+            <FIELD VALUELABEL="LBS_NODATA" VALUE="0x2000"/>
+        </STYLE>
+        <STYLE LABEL="Sort" TYPE="YESNO" MASK="2">
+            <FIELD VALUELABEL="LBS_SORT" VALUE="2"/>
+        </STYLE>
+        <STYLE LABEL="Tab Stops" TYPE="YESNO" MASK="0x80">
+            <FIELD VALUELABEL="LBS_USETABSTOPS" VALUE="0x80"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="GROUPBOX">
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="STATICTEXT">
+        <HEADER LABEL="Static text settings"/>
+        <STYLE LABEL="Ellipsis Mode" TYPE="COMBO" MASK="0xC000">
+            <FIELD LABEL="None" VALUE="0"/>
+            <FIELD LABEL="End" VALUELABEL="SS_ENDELLIPSIS" VALUE="0x4000"/>
+            <FIELD LABEL="Path" VALUELABEL="SS_PATHELLIPSIS" VALUE="0x8000"/>
+            <FIELD LABEL="Word" VALUELABEL="SS_WORDELLIPSIS" VALUE="0xc000"/>
+        </STYLE>
+        <STYLE LABEL="Menu Translation" TYPE="NEGYESNO" MASK="0x80">
+            <FIELD VALUELABEL="SS_NOPREFIX" VALUE="0x80"/>
+        </STYLE>
+        <STYLE LABEL="Right Justify" TYPE="YESNO" MASK="0x400">
+            <FIELD VALUELABEL="SS_RIGHTJUST" VALUE="0x400"/>
+        </STYLE>
+        <STYLE LABEL="Sunken" TYPE="YESNO" MASK="0x1000">
+            <FIELD VALUELABEL="SS_SUNKEN" VALUE="0x1000"/>
+        </STYLE>
+        <CAPTION LABEL="Text" TYPE="TEXT"/>
+        <STYLE LABEL="Type" TYPE="COMBO" MASK="0x1f">
+            <FIELD LABEL="Left" VALUELABEL="SS_LEFT" VALUE="0"/>
+            <FIELD LABEL="Center" VALUELABEL="SS_CENTER" VALUE="1"/>
+            <FIELD LABEL="Right" VALUELABEL="SS_RIGHT" VALUE="2"/>
+            <FIELD LABEL="Simple" VALUELABEL="SS_SIMPLE" VALUE="0x0b"/>
+            <FIELD LABEL="No Word Wrap" VALUELABEL="SS_LEFTNOWORDWRAP" VALUE="0x0c"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="ICON">
+        <HEADER LABEL="Image Settings"/>
+        <STYLE LABEL="Center" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="SS_CENTERIMAGE" VALUE="0x200"/>
+        </STYLE>
+        <STYLE LABEL="Real Size" TYPE="YESNO" MASK="0x800">
+            <FIELD VALUELABEL="SS_REALSIZEIMAGE" VALUE="0x800"/>
+        </STYLE>
+        <STYLE LABEL="Type" TYPE="COMBO" MASK="0x1f">
+            <FIELD LABEL="Left" VALUELABEL="SS_ICON" VALUE="3"/>
+            <FIELD LABEL="Center" VALUELABEL="SS_BITMAP" VALUE="0xe"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="FRAME">
+        <HEADER LABEL="Frame Settings"/>
+        <STYLE LABEL="Color" TYPE="COMBO" MASK="0x1f">
+            <FIELD LABEL="Black" VALUELABEL="SS_BLACKFRAME" VALUE="7"/>
+            <FIELD LABEL="Gray" VALUELABEL="SS_GRAYFRAME" VALUE="8"/>
+            <FIELD LABEL="White" VALUELABEL="SS_WHITEFRAME" VALUE="9"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+    </CONTROL>
+    <CONTROL TYPE="RECTANGLE">
+        <HEADER LABEL="Rectangle Settings"/>
+        <STYLE LABEL="Color" TYPE="COMBO" MASK="0x1f">
+            <FIELD LABEL="Black" VALUELABEL="SS_BLACKRECT" VALUE="7"/>
+            <FIELD LABEL="Gray" VALUELABEL="SS_GRAYRECT" VALUE="8"/>
+            <FIELD LABEL="White" VALUELABEL="SS_WHITERECT" VALUE="9"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+    </CONTROL>
+    <CONTROL TYPE="ETCHED">
+        <HEADER LABEL="Frame Settings"/>
+        <STYLE LABEL="Color" TYPE="COMBO" MASK="0x1f">
+            <FIELD LABEL="Etched Horizontal" VALUELABEL="SS_ETCHEDHORZ" VALUE="0x10"/>
+            <FIELD LABEL="Etched Vertical" VALUELABEL="SS_ETCHEDVERT" VALUE="0x11"/>
+            <FIELD LABEL="Etched Frame" VALUELABEL="SS_ETCHEDFRAME" VALUE="0x12"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+    </CONTROL>
+    <CONTROL TYPE="HSCROLL">
+        <HEADER LABEL="Horizontal Scrollbar Settings"/>
+        <STYLE LABEL="Align" TYPE="COMBO" MASK="6">
+            <FIELD LABEL="None" VALUE="0"/>
+            <FIELD LABEL="Top" VALUELABEL="SBS_TOPALIGN" VALUE="2"/>
+            <FIELD LABEL="Bottom" VALUELABEL="SBS_BOTTOMALIGN" VALUE="4"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+    <CONTROL TYPE="VSCROLL">
+        <HEADER LABEL="Vertical Scrollbar Settings"/>
+        <STYLE LABEL="Align" TYPE="COMBO" MASK="6">
+            <FIELD LABEL="None" VALUE="0"/>
+            <FIELD LABEL="Left" VALUELABEL="SBS_LEFTALIGN" VALUE="2"/>
+            <FIELD LABEL="Right" VALUELABEL="SBS_RIGHTALIGN" VALUE="4"/>
+        </STYLE>
+        <HEADER LABEL="Common Settings"/>
+        <ID LABEL="Id" TYPE="ID" />
+        <NUMBER LABEL="x" TYPE="x"/>
+        <NUMBER LABEL="y" TYPE="y"/>
+        <NUMBER LABEL="width" TYPE="width"/>
+        <NUMBER LABEL="height" TYPE="height"/>
+        <EXSTYLE LABEL="Client Edge" TYPE="YESNO" MASK="0x200">
+            <FIELD VALUELABEL="WS_EX_CLIENTEDGE" VALUE="0x200"/>
+        </EXSTYLE>
+        <STYLE LABEL="Disabled" TYPE="YESNO" MASK="0x8000000">
+            <FIELD VALUELABEL="WS_DISABLED" VALUE="0x8000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Static Edge" TYPE="YESNO" MASK="0x20000">
+            <FIELD VALUELABEL="WS_EX_STATICEDGE" VALUE="0x20000"/>
+        </EXSTYLE>
+        <STYLE LABEL="Visible" TYPE="YESNO" MASK="0x10000000">
+            <FIELD VALUELABEL="WS_VISIBLE" VALUE="0x10000000"/>
+        </STYLE>
+        <EXSTYLE LABEL="Window Edge" TYPE="YESNO" MASK="0x100">
+            <FIELD VALUELABEL="WS_EX_WINDOWEDGE" VALUE="0x100"/>
+        </EXSTYLE>
+    </CONTROL>
+</CTLPROPS>
+

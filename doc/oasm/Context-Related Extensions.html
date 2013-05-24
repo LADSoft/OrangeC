@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>Context-Related Extensions</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h3 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">Context-Related
+Extensions</h3>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+The Context Related extensions are used to define preprocessor
+contexts.&nbsp; A preprocessor context can be used to create a memory
+of state information, between different invocations of multiline
+macros.&nbsp; For example, a set of macros could be defined to mimic
+high-level control functions such as loops and if statements.<br>
+<br>
+Many combinations of contexts can exist simultaneously.&nbsp; <span
+ style="font-weight: bold;">OAsm</span>
+maintains a stack of all open contexts, pushing new contexts on the top
+of the stack and removing old contents from the top of the stack.&nbsp;
+Each context has a name, and a state which can include context-specific
+variables and definitions.&nbsp; The name of the context on top of the
+stack can be examined to determine what the current context is, or
+changed.&nbsp; It might be useful to change it for example if two
+macros maintain a context, but a third macro might change the context
+based on its arguments, e.g. to allow processing by a fourth macro
+which would not succeed if the name on top of the context stack wasn't
+correct.<br>
+<br>
+Within a context, context-specific definitions and labels may be
+defined for reference from other macros.&nbsp; Each context-specific
+definition is in scope while that context is in scope, e.g. while the
+context is on top of the context-stack.&nbsp; If a context is open
+multiple times
+simultaneously, each instance of the open context is unique, even
+though the textual representation labels in in the source code for that
+context may be the same.<br>
+<br>
+Context-specific definitions and labels start with the sequence '%$'
+and then contain a label start character and other label characters,
+just like other identifiers.&nbsp; For example:<br>
+<br>
+%$HelloWorld<br>
+<br>
+could be used in a context-specific definition or label, and would
+signify that that label goes with the current context.&nbsp; As an
+example consider the two macros<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%macro BEGIN 0</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%push MyBegin</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%$HelloWorld:</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endmacro</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%macro
+FOREVER 0</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifctx MyBegin</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+jmp %$HelloWorld</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%pop</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%else</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%error
+FOREVER loop without matching BEGIN</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endmacro</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;"></span><br
+ style="font-family: Courier New,Courier,monospace;">
+could be used to implement an infinite loop as follows, if the macros
+are used in a pair.&nbsp; <br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+BEGIN</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+inc EAX</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+FOREVER<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">Contexts can
+also have 'local' definitions:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push&nbsp;
+MY_CONTEXT</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%define
+%$four 4</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+results in a definition that will only be valid while this instance of
+MY_CONTEXT is on top of the context stack.<br
+ style="font-family: Courier New,Courier,monospace;">
+</span></span><br>
+When contexts are used, they don't have to appear within a multiline
+macro definition, but it is often useful to use them this way.<br>
+<br>
+Note:&nbsp; <span style="font-weight: bold;">OAsm</span> does not
+separate context-specific label names into
+different namespaces.&nbsp; Instead, a prefix is inserted before the
+symbol's name and the symbol is entered in the global symbol
+table.&nbsp; The prefix takes the form of a non-local label, with
+context-instance identifying information.&nbsp; This identifying
+information is simply an integer followed by the character '$'.&nbsp;
+For example if the context instance number is 54, the label %$Hello
+would be translated to:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">..@54$Hello</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+by the preprocessor.&nbsp; Non-local labels of this general form should
+be avoided as they may collide with labels defined locally within a
+context.&nbsp; This also applies to locally defined <span
+ style="font-weight: bold;">%define</span> statements.<br>
+</span><br>
+<h4 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">%push</h4>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%push</span> creates a
+new context and pushes it on the top of the context stack:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push
+CONTEXT_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+'local' definitions can be made within this context as indicated in the
+introduction.<br>
+<br>
+If %push is used multiple times with the same context name, each
+context is unique even though the names are the same.&nbsp; So for
+example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push
+MY_CONTEXT</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%$contextLabel:</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%push
+MY_CONTEXT</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%$contextLabel:</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+is valid, because the two labels are named locally to the context and
+are in different context instances.&nbsp; When the label is used, it
+will be matched to the context currently on top of the context stack.<br>
+</span><br>
+<h4 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">%pop</h4>
+<span style="font-weight: bold;">%pop</span> removes the context at the
+top of the context stack:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push
+MY_CONTEXT</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%pop </span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+results in MY_CONTEXT no longer being active, and the context that was
+below it on the context-stack becomes active.&nbsp; Note, you should
+use any labels or definitions that are specific to a context before it
+is popped.&nbsp; Once a context is popped off the stack, its state is
+never recoverable.&nbsp; <br>
+<br>
+<br>
+<h4 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">%repl</h4>
+<span style="font-weight: bold;">%repl</span> changes the name of the
+context at the top of the
+context-stack.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push
+MY_CONTEXT</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+creates a context called MY_CONTEXT.&nbsp; If that is followed by:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%repl&nbsp;
+NEW_NAME</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+the context will now be called NEW_NAME.&nbsp; When a context is
+renamed this way, all previous local definitions and labels are still
+accessible while that context is on top of the context stack.&nbsp; The
+only affect of renaming the context is that
+conditionals which act on context names will be matched against the new
+name instead of the old one.<br>
+<br>
+<br>
+<h4 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">%ifctx</h4>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifctx</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+takes a context name as an argument.&nbsp;
+If the context name matches the name of the context on top of the
+context stack, the next block is assembled, otherwise it is not.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push MY_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifctx MY_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov statement being assembled because the top of the
+context stack is named MY_NAME, whereas:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push MY_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifctx&nbsp;
+ANOTHER_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+</span><br>
+will result in nothing being assembled because the name of the top of
+the context stack does not match the argument to <span
+ style="font-weight: bold;">%ifctx</span>.<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">See the section
+on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+<h4 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">%ifnctx</h4>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifnctx</span> is a
+<span style="font-style: italic;">%if-style conditional</span> that
+takes a context name as an argument.&nbsp;
+If the
+context name does not match the name of the context on top of the
+context
+stack, the next block is assembled, otherwise it is not.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push MY_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifnctx
+MY_NAME</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in nothing being assembled because the name of the context
+on top of the stack matches the argument.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push MY_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifnctx&nbsp;
+ANOTHER_NAME</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+</span><br>
+will result in the mov being assembled because the names do not match.<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">See the section
+on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span>
+<br>
+<br>
+<h4 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">%elfictx</h4>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifctx</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+takes a context name as an argument.&nbsp;
+If the
+context name matches the name of the context on top of the context
+stack, the next block is assembled, otherwise it is not.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push MY_NAME<br>
+%if 44<br style="font-family: Courier New,Courier,monospace;">
+</span><span style="font-family: Courier New,Courier,monospace;">%elifctx
+MY_NAME</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov statement being assembled because the top of the
+context stack is named MY_NAME.<br>
+</span><br>
+<span style="font-family: Times New Roman,Times,serif;">See the section
+on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+<br>
+<h4 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">%elifnctx</h4>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elifnctx</span> is a
+<span style="font-style: italic;">%elif-style conditional</span> that
+takes a context name as an argument.&nbsp;
+If the
+context name does not match the name of the context on top of the
+context
+stack, the next block is assembled, otherwise it is not.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%push MY_NAME<br>
+%if 44<br style="font-family: Courier New,Courier,monospace;">
+</span>
+<span style="font-family: Courier New,Courier,monospace;">%elifctx
+MY_NAME</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in nothing being assembled because the names match.<br>
+</span><br>
+<span style="font-family: Times New Roman,Times,serif;">See the section
+on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%elif-style
+conditionals</span>.<br>
+</span>
+<br>
+<br>
+</body>
+</html>

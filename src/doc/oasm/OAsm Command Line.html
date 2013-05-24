@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OAsm Command Line</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h2 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">OAsm Command Line</span></h2>
+The general format of an <span style="font-weight: bold;">OAsm</span>
+command line is:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OAsm
+[options] file-list</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Times New Roman,Times,serif;">where the
+<span style="font-style: italic;">file-list</span> is an arbitrary list
+of input files.</span><br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OAsm one.asm
+two.asm three.asm</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;">assembles several
+files, and makes output files called one.o, two.o and three.o.</span><br>
+<br>
+The file list can have wildcards:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OAsm *.asm</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+assembles all the files in the curent directory.<br>
+<br>
+</span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Response Files</span></h3>
+<span style="font-family: Times New Roman,Times,serif;">Response files
+can be used as an alternate to specifying input on the command
+line.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OAsm
+@myresp.lst</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will take command line options from <span style="font-weight: bold;">myresp.lst</span><span
+ style="font-family: Courier New,Courier,monospace;"></span>&nbsp;
+Response files aren't particularly useful with the assembler, but they
+are supported.<br>
+<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;"></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Case Insensitivity</span></h3>
+<span style="font-family: Times New Roman,Times,serif;">if the <span
+ style="font-weight: bold;">-i
+</span>switch is specified on the command line, <a
+ href="OAsm%20Labels.html">labels</a> will be treated as case
+insensitive.&nbsp; This can allow easier linkage between modules which
+use different case.&nbsp; Note that case insensitivity only extends to
+labels; preprocessor symbols are always case-sensitive in OAsm.</span><br>
+<br>
+<h3 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">Using
+the assembler as a preprocessor</h3>
+<h3><br>
+<span style="font-family: Times New Roman,Times,serif;"></span></h3>
+<span style="font-family: Times New Roman,Times,serif;">If the <span
+ style="font-weight: bold;">-e</span>
+switch is specified on the assembler command line, <span
+ style="font-weight: bold;">OAsm </span>will act as a
+preprocessor and not perform the actual assembly phase.&nbsp; This
+operation is equivalent to using <span style="font-weight: bold;">OCPP</span>
+in assembly-language mode.&nbsp;
+In preprocessor mode, the full functionality of the preprocessor is
+available, when it does not rely on information that would only be
+available while assemblying the file.&nbsp; Specifically, the
+preprocessor is fully functional, except that expressions that refer to
+labels or program counter locations will result in an error when
+used for example with the <span style="font-weight: bold;">%assign</span>
+preprocessor statement.<br>
+<br>
+<br>
+</span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying the output
+file name</span><br>
+</h3>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;">By default, <span
+ style="font-weight: bold;">OAsm</span> will take the input file name,
+and replace the extension with the
+extension <span style="font-weight: bold;">.o</span>.<br>
+<br>
+</span></span>However in some cases it is useful to be able to specify
+the output
+file name.&nbsp; The specified name can have its extension specified,
+or it
+can be typed without an extension to allow <span
+ style="font-weight: bold;">OAsm</span> to add the <span
+ style="font-weight: bold;">.o</span>
+extension.&nbsp; <span style="font-weight: bold;">OAsm</span> is only
+capable of producing object files.<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><br>
+<span style="font-family: Courier New,Courier,monospace;">OAsm
+/omyfile test.asm</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+makes an object file called <span style="font-weight: bold;">myfile.o</span>.<span
+ style="font-family: Courier New,Courier,monospace;"></span><br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying include
+file path</span></h3>
+<span style="font-family: Times New Roman,Times,serif;">By default,
+<span style="font-weight: bold;">OAsm</span> will search for include
+paths in the current directory.&nbsp; If
+there are other paths <span style="font-weight: bold;">OAsm</span>
+should search, the <span style="font-weight: bold;">/I</span> switch
+can be specified to have it search
+them.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;"></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Defining variables</span></h3>
+If it is necessary to define a variable on the command line, use the
+switch <span style="font-weight: bold;">/D</span>.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OAsm
+/DMYINT=4 test.c</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+defines the variable MYINT and gives it a value of 4. <br>
+<br>
+A variable doesn't have to be defined with a value:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OAsm /DMSDOS
+test.c</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+might be used to specify preprocessing based on the program looking for
+the word MSDOS in #ifdef statements.<br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Listing File</span></h3>
+When the command line switch <span style="font-weight: bold;">-l</span>
+is specified, <span style="font-weight: bold;">OAsm</span> will
+product a
+listing file correlating the output byte stream with input lines of the
+file.&nbsp; Note the listing file is not available in preprocessor mode
+as no assembly is done.&nbsp; <br>
+<br>
+By default the listing file will not show macro expansions.&nbsp; To
+get a listing file where macros are shown in expanded form, use
+<span style="font-weight: bold;">-ml</span>.&nbsp; This will also
+expand preprocessor repeat statements.&nbsp;
+Note that there is a special qualifier used in a macro definition,
+<span style="font-weight: bold;">.nolist</span>, which can be used on a
+macro-by-macro basis.&nbsp; When used,
+it prevents macros from being expanded in the listing file even when
+<span style="font-weight: bold;">-ml</span> is used.&nbsp; This is
+useful for example to prevent cluttering the
+the listing file with expansions of often-used macros or macros that
+are composed largely of preprocessor statements.&nbsp; In fact the
+builtin macros that map preprocessor directives to native form all use
+this qualifier.<br>
+<br>
+<br>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>Multiline Macro Extensions</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Repeat Block
+Extensions</span></h3>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+The Repeat Block Extensions </span>allow a method for replicating
+lines of code.&nbsp; In the simplest case, a sequence of instructions
+or data can be literally repeated a fixed number of times:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%rep 10</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+nop</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endrep</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+causes the preprocessor to present 10 nop instructions to the
+assembler.&nbsp; In a more complex case, <span
+ style="font-weight: bold;">%assign</span> can be used to define
+a function that varies with each loop iteration, allowing easy
+development of lookup tables:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%assign i 20</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%rep 10</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+db&nbsp;&nbsp; i</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+%assign i i - 1</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endrep</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+puts the numbers from 20 to 11 in a table, in decreasing order.&nbsp;
+This type of functionality could be used with more complex functions,
+for example <span style="font-weight: bold;">%rep</span> would be one
+way a CRC lookup table could be developed
+with OAsm.<br>
+<br>
+In another case the loop count could be made to vary based on previous
+declarations:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">hello&nbsp;&nbsp;
+db&nbsp;&nbsp; "Hello World"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%assign count
+64 - ($-Hello)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%rep count</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+db&nbsp;&nbsp; ' '</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endrep</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+While the latter example is not too exciting and could be done other
+ways, e.g. with the resb or times directives, more complex functions
+could be integrated into this type of loop to generate different kinds
+of data.<br>
+<br>
+Repeat blocks may be nested.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%assign i 10</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%rep 3</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%rep 3</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+db i</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+%assign i i + 1</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endrep</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%assign i i -
+6</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endrep</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+generates enough db statements to define the following sequence:<br>
+<br>
+10, 11, 12,&nbsp; 7, 8, 9, 4, 5, 6<br>
+<br>
+Repeat blocks can be exited prematurely.&nbsp; If a <span
+ style="font-weight: bold;">%exitrep</span> directive
+is parsed while a repeat block is being processed, the innermost repeat
+block exits immediately.&nbsp; Generally, one would use preprocessor
+conditionals to prevent the <span style="font-weight: bold;">%exitrep</span>
+directive from being processed,
+until some condition occurs.&nbsp; For example to pop all contexts
+named "MY_CONTEXT" from the top of the context stack:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%repeat
+1000&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+&nbsp;&nbsp; // 1000 is an arbitrary value</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifnctx
+MY_CONTEXT</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%exitrep</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endrep<br>
+</span><br>
+<br>
+<div
+ style="text-align: center; font-family: Helvetica,Arial,sans-serif;">
+<h4>%rep</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%rep</span> is used to
+start a repeat block.&nbsp; It takes one argument:&nbsp; the number of
+repetitions to go through.</span><br>
+</div>
+<br>
+<h4>%endrep</h4>
+<br>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%endrep</span> is used to
+end a repeat block.&nbsp; It takes no arguments</span><br>
+</div>
+<br>
+<h4>%exitrep</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%exitrep</span> is used to
+exit a repeat block prematurely.</span><br>
+</div>
+<br>
+</div>
+<br>
+<br>
+</body>
+</html>

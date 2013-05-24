@@ -1,0 +1,99 @@
+<CC386WORKSPACE>
+    <VERSION ID="2"/>
+    <COLORS KEYWORD="16744448" NUMBER="255" COMMENT="49152"
+            STRING="8388863" ESCAPE="16711680" BACKGROUND="16777215"
+            TEXT="0" HIGHLIGHT="8454143">
+        0 0 0 0 0 0 0 0 
+        0 0 0 0 0 0 0 0 
+    </COLORS>
+    <TABS SPACING="4"/>
+    <EDITOR FLAGS="1"/>
+    <FIND FLAGS1="12" FLAGS2="4"/>
+    <FONT>
+        240 255 255 255 0 0 0 0 0 0 0 0 0 0 0 0 
+        144 1 0 0 0 0 0 0 0 0 0 1 67 111 117 114 
+        105 101 114 32 78 101 119 0 0 0 0 0 0 0 0 0 
+        0 0 0 0 0 0 0 0 0 0 0 0 
+    </FONT>
+    <PRINTER LEFT="10" RIGHT="10" TOP="10" BOTTOM="10">
+        <HEADER>
+            "%F"
+        </HEADER>
+        <FOOTER>
+            "%P of %#"
+        </FOOTER>
+    </PRINTER>
+    <BROWSE VALUE="0" COMPLETION="1"/>
+    <WATCH ID="1" ENABLE="0" NAME="" MODE="3" SIZE="3"/>
+    <WATCH ID="2" ENABLE="0" NAME="" MODE="3" SIZE="3"/>
+    <WATCH ID="3" ENABLE="0" NAME="" MODE="3" SIZE="3"/>
+    <WATCH ID="4" ENABLE="0" NAME="" MODE="3" SIZE="3"/>
+    <PLACEMENT VALUE="2 3 -1 -1 -1 -1 1157 0 1280 780"/>
+    <TOOLBAR ID="20" HORIZ="120 121 145 153 125 -1 160 161 162 163 -1 170 171 172 173 -1 165 -1 176 177 174 175 " VERT="120 121 145 153 125 -1 160 161 162 163 -1 170 171 172 173 -1 165 -1 176 177 174 175 "/>
+    <TOOLBAR ID="21" HORIZ="202 200 206 201 " VERT="202 200 206 201 "/>
+    <TOOLBAR ID="22" HORIZ="219 -1 215 -1 216 -1 210 211 -1 214 212 213 " VERT="219 -1 215 -1 216 -1 210 211 -1 214 212 213 "/>
+    <DOCKS>
+        <DOCK ID="20" VALUE="32770 2 0 0 0 31000 0 0 469 50 0 38 469 69 0 38 469 69"/>
+        <DOCK ID="21" VALUE="32770 0 1 0 0 115000 0 0 115 50 0 69 115 100 0 69 115 100"/>
+        <DOCK ID="22" VALUE="32770 0 1 1 0 0 0 0 239 50 115 69 354 100 115 69 354 100"/>
+        <DOCK ID="3" VALUE="32776 2 0 0 0 1280408 0 0 500 110 0 610 1280 720 0 610 1280 720"/>
+        <DOCK ID="1" VALUE="32769 2 0 0 0 465116 0 0 200 200 0 100 200 602 0 100 200 602"/>
+        <DOCK ID="2" VALUE="32776 2 0 1 1 1280408 0 0 500 80 643 610 1280 720 643 610 1280 720"/>
+        <DOCK ID="4" VALUE="0 2 0 0 1 0 0 0 500 200 1 1 501 201 0 -23 500 177"/>
+        <DOCK ID="5" VALUE="0 2 0 0 1 0 0 0 640 192 1 1 641 193 0 -23 640 169"/>
+        <DOCK ID="6" VALUE="0 2 0 0 1 0 0 0 240 152 1 1 241 153 0 -23 240 129"/>
+        <DOCK ID="7" VALUE="0 2 0 0 1 0 0 0 240 152 1 1 241 153 0 -23 240 129"/>
+        <DOCK ID="9" VALUE="0 2 0 0 1 0 0 0 200 400 1 1 201 401 0 -23 200 377"/>
+    </DOCKS>
+    <EDITWINDOWS>
+        <WINDOW NAME="PREPROC.C" TITLE="PREPROC.C" X="29" Y="16" WIDTH="960" HEIGHT="341" LINENO="361"/>
+        <WINDOW NAME="memory.c" TITLE="memory.c" X="110" Y="145" WIDTH="960" HEIGHT="318" LINENO="76"/>
+        <WINDOW NAME="ccerr.c" TITLE="ccerr.c" X="154" Y="154" WIDTH="916" HEIGHT="323" LINENO="56"/>
+        <WINDOW NAME="ppmain.c" TITLE="ppmain.c" X="0" Y="0" WIDTH="916" HEIGHT="323" LINENO="166"/>
+    </EDITWINDOWS>
+    <HISTORY TYPE="FIND">
+        <HISTITEM VALUE="getline"/>
+        <HISTITEM VALUE="unary"/>
+        <HISTITEM VALUE="+"/>
+        <HISTITEM VALUE="return"/>
+        <HISTITEM VALUE="++"/>
+        <HISTITEM VALUE="getsch"/>
+        <HISTITEM VALUE="ppexpr"/>
+        <HISTITEM VALUE="doline"/>
+        <HISTITEM VALUE="expectstring"/>
+        <HISTITEM VALUE="preverror"/>
+    </HISTORY>
+    <HISTORY TYPE="FIFDIR">
+    </HISTORY>
+    <HISTORY TYPE="REPLACE">
+        <HISTITEM VALUE="int "/>
+        <HISTITEM VALUE="-&gt;next"/>
+        <HISTITEM VALUE="EOF_PREPROC"/>
+        <HISTITEM VALUE="EOF_COMMENT"/>
+        <HISTITEM VALUE="pperror"/>
+    </HISTORY>
+    <HISTORY TYPE="WATCH">
+        <HISTITEM VALUE="includes"/>
+        <HISTITEM VALUE="includes-&gt;next"/>
+        <HISTITEM VALUE="includes-&gt;lptr"/>
+        <HISTITEM VALUE="path"/>
+        <HISTITEM VALUE="includes-&gt;line"/>
+    </HISTORY>
+    <TAG ID="0">
+        <FILE NAME="PREPROC.C">
+            <TAGITEM LINENO="361" CP="0" ENABLED="1"/>
+            <TAGITEM LINENO="451" CP="0" ENABLED="3"/>
+            <TAGITEM LINENO="850" CP="0" ENABLED="3"/>
+        </FILE>
+        <FILE NAME="ppmain.c">
+            <TAGITEM LINENO="172" CP="0" ENABLED="1"/>
+        </FILE>
+    </TAG>
+    <TAG ID="3">
+    </TAG>
+    <CHANGELN>
+    </CHANGELN>
+    <TARGETS>
+        <FILE NAME="cpp.exe.ctg" FLAGS="7" DEBVIEW="4"/>
+    </TARGETS>
+</CC386WORKSPACE>

@@ -1,0 +1,240 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="parse\beinterf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\BROWSE.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\ccerr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\ccmain.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\constopt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\cpplookup.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\debug.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\declare.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\declcpp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\expr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\exprcpp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\float.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\help.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\INLINE.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\lex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\LIST.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\mangle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\osutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\output.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\stmt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\symtab.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\types.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\unmangle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ialias.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\IBLOCK.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\iconfl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ICONST.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\IEXPR.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\IFLOW.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\iinvar.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ilazy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ilive.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ilocal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\iloop.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ioptutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\iout.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\IPEEP.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\irc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ireshape.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\irewrite.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\issa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\ISTMT.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\istren.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="preproc\ppexpr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="preproc\PREPROC.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\dbgieee.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\gen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\inasm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\invoke.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\outasm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\outcode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\peep.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\config.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\rewrite.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\util\winsystem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x86\objieeea.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\cppbltin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\declcons.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="parse\beinterf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\BROWSE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\c.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\ccerr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\compiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\floating.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\osutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\WINMODE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="middle\IEXPR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="middle\IOPT.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x86\be.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x86\Cvinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

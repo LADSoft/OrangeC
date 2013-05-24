@@ -1,0 +1,14 @@
+NAME    test
+OPTION  quiet, eliminate, map, show
+DEBUG   all
+FILE    test.obj
+FILE    ObjExpression.obj
+FILE    ObjFactory.obj
+FILE    ObjFile.obj
+FILE    ObjIeeeRead.obj
+FILE    ObjIeeeWrite.obj
+FILE    ObjIndexManager.obj
+FILE    ObjMemory.obj
+FILE    ObjSourceFile.obj
+FILE    ObjType.obj
+FILE    ObjUtil.obj

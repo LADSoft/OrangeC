@@ -1,0 +1,41 @@
+
+#		*Translator Definitions*
+# Comment this next line out to generate the 68k compiler
+# leave it in to generate the 386 compiler
+#i386 = -Di386
+
+CC = cc386 /c /DMSDOS
+ASM = nasm -fobj
+LIB = xlib
+LINK = valx
+
+.c.obj:
+  @$(CC) $< 
+#		*List Macros*
+
+EXE_dependencies = \
+AFILE.obj \
+CL386.obj \
+FNAME.obj \
+GENER.obj \
+HELP.obj \
+OPTION.obj \
+PARAM.obj \
+SOURCE.obj \
+XFILE.obj \
+XFIND.obj \
+XPATH.obj
+
+#		*Explicit Rules*
+cl386.exe: upbuild $(EXE_dependencies)
+  $(LINK) -nci -lx -map @&&|
+c0dosw.obj $(EXE_dependencies),cl386.exe,cl386.map,cldos.lib,,
+|
+
+upbuild:
+        ..\upbuild $(FULLBUILD) CL386
+
+q.exe: $(EXE_dependencies)
+  $(LINK) -nci -use32 -map -pe -con @&&|
+c0xwin.obj $(EXE_dependencies),q.exe,q.map,clwin.lib climp.lib,,
+|

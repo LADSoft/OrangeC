@@ -1,0 +1,40 @@
+*elaborated specifier should look past names that hide the class
++*'final'  on class - can't be used as a base class
++*exists as soon as name is seen
+*injected class name: public
+*nested class can be declared outside its owner using nested paths
+*struct in func hides outer level struct of same name
+typedef that names a class is same as class but without CV Qualifiers in the typedef (when a classname expected)
++*no extern or register
++*nonstatic members must have complete types
++*bit fields cannot be static
++*anonymous structs and unions vs the global namespace... (must be static)
+*methods in class defs are inline {virtual style}
++*create vtabs and virtual thunks
++*unique final overrider
++*deleted and nondeleted virtual functions don't mix.
+
+*complete while defining in: function bodies, default arguments, exception specifications brace or equal     initializers
+thread local only for static members
++*override, final on member
+brace or assignment initialization of nonstatic members
+brace or assignment initialization of constant static members
+*lots of things within T can't be named T
+*member functions of local class have no linkage
+*local class: inline functions only
+local class cannot ODR use local variables or parameters
+*local class not static data members
+local class name must have an extra name component
+
+*virtual, const, volatile, pure functions (virtual cannot be static)
+
+fix linenumbers on structured inline functions
+
+---------------------------------------
+using declaration - also finds hidden class or enum defs
+enum names visible...
+even if multiple subclasses of type T, static members are unambiguous
+
+during class declaration, can lookup within the class either qualified or unqualified
+
+class-key identifier - smallest scope that will hold it BUT in a function header it goes in the next higher scope.

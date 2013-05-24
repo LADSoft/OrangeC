@@ -1,0 +1,135 @@
+/* A procedure for COMPLEX ARCCOSINE.                                                             */
+/* Based on the algorithm of T. E. Hull, T. F. Fairgrieve, and P. T. P. Tang,                     */
+/* "Implementing the Complex Arcsin and Arccosine Functions using Exception                       */
+/* Handling", in ACM Transactions on Mathematical Software, Vol. 23 No. 3,                        */
+/* September 1997, pp. 299-335.                                                                   */
+/* This translation by R. A. Vowels, 27 May 2001.                                                 */
+
+   %DECLARE nd                     CHARACTER;     /* nd = the number of floating-point digits.    */
+   %nd = 15;
+
+ACOS:
+   PROCEDURE (Z)        OPTIONS (REORDER)
+                                   RETURNS (FLOAT (nd) COMPLEX);
+      DECLARE Z                    FLOAT (nd) COMPLEX;
+      DECLARE (X, Y, R, S, A, Am1, B) FLOAT (nd);
+      DECLARE E                    FLOAT (nd) STATIC INITIAL ( (EPSILON(X)) ),
+         Foursqrtu                 FLOAT (nd) STATIC INITIAL ( (4*SQRT(TINY(X))) ),
+         Log2                      FLOAT (nd) STATIC INITIAL ( (LOG(2.00000000000000000E0)) ),
+         Sqrt2                     FLOAT (nd) STATIC INITIAL ( (SQRT(2.00000000000000000E0)) ),
+         Piby2                     FLOAT (nd) VALUE (1.57079632679489662E0),
+         PI                        FLOAT (nd) VALUE (3.14159265358979323E0),
+         SqrtAm1                   FLOAT (nd),
+         Acrossover                FLOAT      STATIC INITIAL (1.5),
+         Bcrossover                FLOAT (nd) STATIC INITIAL (0.6417);
+      DECLARE Answer               FLOAT (nd) COMPLEX,
+         (Answer_real, Answer_imag) FLOAT(nd);
+      DECLARE ACOS                 BUILTIN;
+
+      X = ABS(REAL(Z)); Y = ABS(IMAG(Z));
+
+      ON ERROR     SNAP GO TO Difficult;
+      ON UNDERFLOW SNAP GO TO Difficult;
+
+      R = SQRT((X+1)**2 + Y**2);  S = SQRT((X-1)**2 + Y**2);
+      A = (R+S)/2;  B = X/A;
+
+      IF B <= Bcrossover THEN
+         Answer_real = ACOS(B);
+      ELSE                                /* Use arctan and an accurate approximation to alpha-x. */
+         DO;
+            IF X <= 1 THEN
+               Answer_real = ATAN(SQRT((A+X)/2*(Y**2/(R+(X+1)) + (S+(1-X))))/X);
+            ELSE
+               Answer_real = ATAN((Y*SQRT(0.5*((A+X)/(R+(X+1)) + (A+X)/(S+(X-1)))))/X);
+         END;
+
+      IF A <= Acrossover THEN             /* Use log1p and an accurate approximation to alpha-1.  */
+         DO;
+            IF X < 1 THEN
+               Am1 = ( Y**2/(R+(X+1)) + Y**2/(S+(1-X)) )/2;
+            ELSE
+               Am1 = ( Y**2/(R+(X+1)) + (S+(X-1)))/2;
+            Answer_imag = Log1p(Am1 + SQRT(Am1*(A+1)));
+         END;
+      ELSE
+         Answer_imag = LOG(A + SQRT(A**2 - 1));
+
+      IF REAL(Z) < 0 THEN
+         Answer_real = Pi - Answer_real;
+      Answer_imag = -SIGN(IMAG(Z)) * Answer_imag;
+      Answer = COMPLEX(Answer_real, Answer_imag);
+      RETURN (Answer);
+
+      /* Error processing when the argument Z is outside the safe range.                          */
+
+Difficult:
+      REVERT ERROR, UNDERFLOW;
+      IF Y <= E*ABS(X-1) THEN                     /* Cases 1 and 1.                               */
+         IF X < 1 THEN
+            DO;
+               Answer_real = ACOS(X);
+               Answer_imag = Y/SQRT((1+X)*(1-X));
+            END;
+         ELSE
+            DO;
+               Answer_real = 0;
+               ON OVERFLOW GO TO RECOVER1;
+               Answer_imag = Log1p((X-1) + SQRT((X-1)*(X+1)));
+               GO TO LAST_STEP;
+RECOVER1:      REVERT OVERFLOW;                   /* (x-1)*(x+1) overflowed.                      */
+               Answer_imag = Log2 + LOG(X);
+            END;
+      ELSE IF Y < Foursqrtu THEN                  /* Case 3.                                      */
+         DO;
+            IF E*E >= 2*Foursqrtu THEN            /* Section for machines having a large exponent */
+                                                  /* range.                                       */
+               Answer_real, Answer_imag = SQRT(Y);
+            ELSE                                  /* Section for machines having a small exponent */
+                                                  /* range.                                       */
+               IF X = 1 THEN
+                  Answer_real, Answer_imag = SQRT(Y);
+               ELSE
+                  DO;
+                     S = ABS(X-1)*SQRT(1+(Y/(X-1))**2);
+                     IF X < 1 THEN
+                        DO;
+                           Answer_real = ATAN (SQRT(0.5*(1+X)*(S+(1-X)))/X);
+                           SqrtAm1 = 0.5*Y*SQRT(1/(1+X)+2/(S+(1-X)));
+                           Answer_imag = Log1p(SqrtAm1*(SqrtAm1+Sqrt2));
+                        END;
+                     ELSE
+                        DO;
+                           Answer_real = ATAN(Y*SQRT(X/(2*(X+1))+X/(S+(X-1)))/X);
+                           Am1 = (S+(X-1))/2;
+                           Answer_imag = Log1p(Am1+ SQRT(Am1*(1+X)));
+                        END;
+                  END;
+         END;
+      ELSE IF E*Y-1 >= X THEN                     /* Case 4.                                      */
+         DO;
+            Answer_real = Piby2;
+            Answer_imag = Log2 + LOG(Y);
+         END;
+      ELSE IF X > 1 THEN                          /* Case 5: x+1 and y are both very large.       */
+         DO;
+            Answer_real = ATAN(Y/X);
+            Answer_imag = Log2 + LOG(Y) + Log1p((X/Y)**2)/2;
+         END;
+      ELSE                                        /* Case 6: x alone is very small, and           */
+         DO;                                      /*  E <~ y <~ E**(-1).                          */
+            Answer_real = Piby2;
+            A = SQRT(1 + Y**2);
+            Answer_imag = Log1p(2*Y*(Y+A))/2;
+         END;
+
+      /* End of error processing.                                                                 */
+
+LAST_STEP:
+      IF REAL(Z) < 0 THEN
+         Answer_real = Pi - Answer_real;
+      Answer_imag = -SIGN(IMAG(Z)) * Answer_imag;
+      Answer = COMPLEX(Answer_real, Answer_imag);
+      RETURN (Answer);
+
+   END ACOS;

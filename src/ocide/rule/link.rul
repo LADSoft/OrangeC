@@ -1,0 +1,88 @@
+<OCRULE>
+    <PROPGROUP VERSION="10" CLASS="EXTENEDED" SELECT="LINK" NAME="Linker Settings" ORDER="21">
+    	<COMMAND>
+  			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
+   				"$$(LSINSTALLBIN)\olink.exe" -c -! "-o$(OUTPUTFILE)" $$(LFLAGS) @&amp;&amp;|
+            $$(LSTARTUP) "%.o" "%.l" $$(LLIBS) "%.res" "%.def"
+|
+   			</ITEM>
+            <ITEM NAME="Make Banner" ID="__MAKEBANNER" TYPE="TEXT">Linking</ITEM>
+            <ASSIGNMENTS>
+				<CHOOSE ID="__DEBUG" SELECT="1">
+					<ASSIGN ID="__LDEBUG">/v</ASSIGN>
+				</CHOOSE>
+                <CHOOSE ID="__PROJECTTYPE" SELECT="0">
+                    <ASSIGN ID="__FLAGS">/PE /CON</ASSIGN>
+                    <ASSIGN ID="__TARGET">CON32</ASSIGN>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="1">
+                        <ASSIGN ID="__STARTUP">c0xpe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">clwin.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="2">
+                        <ASSIGN ID="__STARTUP">c0xls.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">lscrtl.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="3">
+                        <ASSIGN ID="__STARTUP">c0xpe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">crtdll.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="4">
+                        <ASSIGN ID="__STARTUP">c0xpe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">msvcrt.l climp.l</ASSIGN>
+                    </CHOOSE>
+                </CHOOSE>
+                <CHOOSE ID="__PROJECTTYPE" SELECT="1">
+                    <ASSIGN ID="__TARGET">GUI32</ASSIGN>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="1">
+                        <ASSIGN ID="__STARTUP">c0pe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">clwin.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="2">
+                        <ASSIGN ID="__STARTUP">c0ls.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">lscrtl.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="3">
+                        <ASSIGN ID="__STARTUP">c0pe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">crtdll.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="4">
+                        <ASSIGN ID="__STARTUP">c0pe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">msvcrt.l climp.l</ASSIGN>
+                    </CHOOSE>
+                </CHOOSE>
+                <CHOOSE ID="__PROJECTTYPE" SELECT="2">
+                    <ASSIGN ID="__TARGET">DLL32</ASSIGN>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="1">
+                        <ASSIGN ID="__STARTUP">c0dpe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">clwin.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="2">
+                        <ASSIGN ID="__STARTUP">c0dls.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">lscrtl.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="3">
+                        <ASSIGN ID="__STARTUP">c0dpe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">crtdll.l climp.l</ASSIGN>
+                    </CHOOSE>
+                    <CHOOSE ID="__LIBRARYTYPE" SELECT="4">
+                        <ASSIGN ID="__STARTUP">c0dpe.o</ASSIGN>
+                        <ASSIGN ID="__LIBS">msvcrt.l climp.l</ASSIGN>
+                    </CHOOSE>
+                </CHOOSE>
+                <CHOOSE ID="__PROJECTTYPE" SELECT="4">
+                    <ASSIGN ID="__TARGET">DOS32</ASSIGN>
+                    <ASSIGN ID="__STARTUP">c0wat.o</ASSIGN>
+                    <ASSIGN ID="__LIBS">cldos.l</ASSIGN>
+                </CHOOSE>
+                <ASSIGN ID="LFLAGS">$(__LDEBUG) /T:$(__TARGET) $(__LFLAGS)</ASSIGN>
+                <ASSIGN ID="LSTARTUP">$(__STARTUP)</ASSIGN>
+                <ASSIGN ID="LLIBS">$(__LIBS) $(__LLIBS)</ASSIGN>
+            </ASSIGNMENTS>
+    	</COMMAND>	
+		<PROPS NAME="Linker Settings" HELPID="620">
+			<ITEM NAME="Additional Libraries" TYPE="TEXT" ID="__LLIBS"/>
+			<ITEM NAME="Additional Switches" TYPE="TEXT" ID="__LFLAGS"/>
+		</PROPS>
+	</PROPGROUP>
+</OCRULE>
+

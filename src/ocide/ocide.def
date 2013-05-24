@@ -1,0 +1,9 @@
+NAME      CCIDE.EXE
+
+IMPORTS
+    SHGetFolderPathA = SHFOLDER.SHGetFolderPathA
+    SHGetFolderPathW = SHFOLDER.SHGetFolderPathW
+	OpenThemeData = UXTHEME.OpenThemeData
+	CloseThemeData = UXTHEME.CloseThemeData
+	GetThemeSysColor = UXTHEME.GetThemeSysColor
+    SetWindowTheme = UXTHEME.SetWindowTheme

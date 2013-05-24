@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>DLPE</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h1 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">DLPE</span></h1>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+<span style="font-weight: bold;">DLPE</span> is the postprocessor used
+to create Win32 executables.</span>&nbsp; There
+is quite a bit of linker defaults built around it; normally it will be
+called by the linker in response to use of a linker <span
+ style="font-weight: bold;">/T</span> switch that
+specifies a WIN32 output format..&nbsp; It would be rare for a user to
+need to call it directly.<br>
+<br>
+<h2 style="text-align: center;"><span style="font-family: Arial;">Command
+Line Options<br>
+</span></h2>
+The general form of a <span style="font-weight: bold;">DLPE</span>
+command line is:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlpe
+[options] relfile [resourcefile]</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Times New Roman,Times,serif;">Here the&nbsp;
+<span style="font-style: italic;">relfile</span> is the linker
+generated file that&nbsp; holds the linked
+code, and the optional <span style="font-style: italic;">resourcefile</span>
+can be used to add resources to an
+executable.<br>
+</span><br>
+Resource files can be specified on the command line and DLPE will build
+a resource section for the exectuble.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlpe test.rel
+test.res</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+makes a console application called<span
+ style="font-weight: bold; font-family: Times New Roman,Times,serif;">
+test.exe
+</span>from the linked code in<span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">
+test.rel</span>,
+using resources as specified in <span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">test.res</span>.<br>
+<br>
+There are several command line options that control the output.&nbsp;
+These
+include options for specifying the output format, the output file name,
+and optionally a stub file to use.<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;"><br>
+</span></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying the output
+file name</span><br>
+</h3>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;">By default, <span
+ style="font-weight: bold;">DLPE</span> will take the input file name,
+and replace the extension with the
+extension .EXE to form an output file name.<br>
+<br>
+</span></span>However in some cases it is useful to be able to specify
+the output
+file name.&nbsp; The specified name can have its extension specified,
+or it
+can be typed without an extension to allow dlhex to add one of the
+default extensions.&nbsp; The output file name is specified with the <span
+ style="font-weight: bold;">/o</span> switch.&nbsp; For example:<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><br>
+<span style="font-family: Courier New,Courier,monospace;">dlpe /mGUI
+/omyfile test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+makes a windowing executable called<span
+ style="font-family: Courier New,Courier,monospace;"> <span
+ style="font-weight: bold; font-family: Times New Roman,Times,serif;">myfile.exe</span></span>.<br>
+<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying the output
+file format</span></h3>
+<span style="font-weight: bold;">DLPE</span> supports several types of
+WIN32 Executables with the <span style="font-weight: bold;">/m</span>
+switch.&nbsp; the switch is followed by one of the folowing:<br>
+<br>
+<ul>
+  <li>CON - a console application</li>
+  <li>GUI - a windowing application</li>
+  <li>DLL - a DLL<br>
+  </li>
+</ul>
+The default output format if no <span style="font-weight: bold;">/m</span>
+switch is specified is the console
+format.<br>
+<br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying a stub file</span></h3>
+<span style="font-family: Courier New,Courier,monospace;"></span>By
+default <span style="font-weight: bold;">DLPE</span> will add an MSDOS
+stub file which simply says that the
+program requires WIN32, if someone happens to run it on MSDOS.&nbsp;
+However, with the <span style="font-weight: bold;">/s</span> switch a
+specific stub can be specified.&nbsp;
+This might be useful for example with certain MSDOS DPMI extenders that
+mimic the WIN32 API for console mode programs.&nbsp; The <span
+ style="font-weight: bold;">/s</span> switch is
+used to change the stub file name.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlpe
+/smystub.exe test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+makes an output file <span
+ style="font-family: Times New Roman,Times,serif; font-weight: bold;">test.exe</span>
+which has the 16-bit program <span style="font-weight: bold;">mystub.exe</span>
+as its MSDOS stub.<br>
+<br>
+<br>
+</body>
+</html>

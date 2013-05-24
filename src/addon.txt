@@ -1,0 +1,14 @@
+The files in this directory aren't included with the normal distribution because
+virus scanners like to disavow them.  They are distributed in separate zip files
+with a password of 'orangec'.  Normally you won't need them for anything.  A
+short description of each follows in case you want to look at them.
+
+HX.ZIP is JAPHETHS MSDOS extender, which emulates windows console mode.  Many of
+the windows console programs will run under MSDOS using the files in this extender.
+as such, it is really only useful if you are running on MSDOS.  However, if
+you do try to run the compiler on MSDOS you will need these files installed as
+well as the compiler and tools are really windows console mode applications.
+
+LSCRTL.ZIP is the C Runtime library for Orange C, packaged in DLL format.  It is 
+mostly a curiosity at this point as you would want to do things another way, 
+but is distributed in case you want to look at it.

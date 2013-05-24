@@ -1,0 +1,9 @@
+LIBRARY     VDMDBG.DLL
+
+EXPORTS
+    VDMEnumProcessWOW              @1   
+    VDMGetPointer                  @2   
+    VDMGetThreadContext            @3   
+    VDMGetThreadSelectorEntry      @4   
+    VDMProcessException            @5   
+    VDMSetThreadContext            @6   

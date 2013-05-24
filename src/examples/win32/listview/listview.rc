@@ -1,0 +1,31 @@
+#include "winconst.h"
+#include <windows.h>
+
+MAINMENU MENU
+     {
+     POPUP "&File"
+          {
+		  MENUITEM "&Open File",				IDM_OPEN
+          MENUITEM "E&xit",                  	IDM_EXIT
+          }
+     POPUP "&Help"
+        {
+	  MENUITEM "A&bout",			IDM_ABOUT
+        }
+     }
+
+DLG_ABOUT DIALOG 3, 2, 122, 79
+EXSTYLE WS_EX_DLGMODALFRAME | WS_EX_CONTEXTHELP
+STYLE DS_MODALFRAME | DS_3DLOOK | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "About ListView"
+FONT 8, "MS Sans Serif"
+{
+ CONTROL "OK", IDOK, "BUTTON", BS_PUSHBUTTON | BS_CENTER | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 36, 53, 50, 14
+ CONTROL "ListView  Version 1.0", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 22, 8, 92, 9
+ CONTROL "Copyright (c) 2005", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 22, 22, 88, 8
+ CONTROL "David Lindauer", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 22, 30, 88, 9
+ CONTROL "<camille@bluegrass.net>", -1, "static", SS_LEFT | WS_CHILD | WS_VISIBLE, 22, 38, 81, 9
+}
+
+ID_NODE BITMAP "node.bmp"
+ID_ATTRIB BITMAP "attrib.bmp"

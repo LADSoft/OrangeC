@@ -1,0 +1,14 @@
+New work in this project is licensed under the new berkely license.  That includes
+most of the executable files in the tool chain, and the run-time library.  See the
+file 'license\berkely.lic' for details.
+
+An exception is that the WIN32 header files were derived from GNU sources, and
+are covered under the GNU lesser public license.  Since these files are header
+files rather than code it is unclear whether using them causes the GNU licensing
+terms to attach to derivative works.  See the file 'license\copying' for details.
+
+Additionally, the OCL program was originally written by Kirill Joss.
+Licensing terms can be found in the 'license' directory.
+
+Additionally, this package redistributes the runtimes for several MSDOS extenders.
+Licensing terms can be found in the 'license' directory.

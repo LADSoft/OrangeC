@@ -1,0 +1,70 @@
+
+LINK = tlink32
+LIBPATH = \bc5\lib
+.c.obj:
+	$(CC) $<
+
+!ifdef CPP
+CC = bcc32 /v /DCPREPROCESSOR /c /w+all /A+
+NAME = CPP
+EXE_dependencies = \
+	ppmain.obj \
+	osutil.obj \
+	memory.obj \
+	symtab.obj \
+	ccerr.obj \
+	preproc.obj \
+	ppexpr.obj	
+!else
+CC = bcc32 /v /c /w+all /A+
+NAME = CC
+EXE_dependencies = \
+	ccmain.obj \
+    alloc.obj \
+	beinterf.obj \
+	browse.obj \
+	ccerr.obj \
+	config.obj \
+	constopt.obj \
+	debug.obj \
+	declare.obj \
+	expr.obj \
+	float.obj \
+	help.obj \
+	ialias.obj \
+	iblock.obj \
+	iconfl.obj \
+    iconst.obj \
+	iexpr.obj \
+	iflow.obj \
+	igcse.obj \
+	ilimit.obj \
+	ilive.obj \
+	ilocal.obj \
+	iloop.obj \
+	init.obj \
+	inline.obj \
+	ioptutil.obj \
+	iout.obj \
+	ipeep.obj \
+    issa.obj \
+	istmt.obj \
+	lex.obj \
+	list.obj \
+	mangle.obj \
+	memory.obj \
+	osutil.obj \
+    output.obj \
+	preproc.obj \
+	ppexpr.obj \
+	stmt.obj \
+	symtab.obj \ 
+	types.obj \
+	unmangle.obj
+!endif
+
+#		*Explicit Rules*
+$(NAME).exe: $(EXE_dependencies)
+  $(LINK)  /c/v/s /L$(LIBPATH) @&&|
+c0x32.obj $(EXE_dependencies),$(NAME).exe,$(NAME).map,cw32.lib import32.lib
+|

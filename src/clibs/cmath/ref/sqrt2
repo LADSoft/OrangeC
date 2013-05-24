@@ -1,0 +1,19 @@
+complex<float> sqrt(const complex<float>& z) {
+  float re = z._M_re;
+  float im = z._M_im;
+  float mag = ::hypotf(re, im);
+  complex<float> result;
+
+  if (mag == 0.) {
+    result._M_re = result._M_im = 0.f;
+  } else if (re > 0.f) {
+    result._M_re = ::sqrtf(0.5f * (mag + re));
+    result._M_im = im/result._M_re/2.f;
+  } else {
+    result._M_im = ::sqrtf(0.5f * (mag - re));
+    if (im < 0.f)
+      result._M_im = - result._M_im;
+    result._M_re = im/result._M_im/2.f;
+  }
+  return result;
+}

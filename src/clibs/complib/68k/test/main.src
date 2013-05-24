@@ -1,0 +1,96 @@
+        xref    PROGSTART,PROGEND
+        xref    dbg_start,dbg_putchar
+	xref __muls,__mulu,__divs,__divu
+	xref __mods,__modu
+        .region boot
+
+        dc.l    PROGEND-PROGSTART
+        dc.l    main
+
+	section code
+main:
+        bsr     dbg_start
+	move	#456000,D0
+	bsr	putnum
+	move #8,d7
+	moveq	#1,D0
+lmuls:
+        bsr putnum
+	move.l	d0,-(A7)
+	move.l	#10,-(A7)
+	bsr	__muls
+	addq	#8,a7
+     	dbra	d7,lmuls
+	move #8,d7
+	moveq	#1,D0
+lmulu:
+        bsr putnum
+	move.l	d0,-(A7)
+	move.l	#10,-(A7)
+	bsr	__mulu
+	addq	#8,a7
+     	dbra	d7,lmulu
+	move #9,d7
+	move	#1000000000,D0
+ldivu:
+        bsr putnum
+	move.l	d0,-(A7)
+	move.l	#10,-(A7)
+	bsr	__divu
+	addq	#8,a7
+     	dbra	d7,ldivu
+	move #9,d7
+	move	#1000000000,D0
+ldivs:
+        bsr putnum
+	move.l	d0,-(A7)
+	move.l	#10,-(A7)
+	bsr	__divs
+	addq	#8,a7
+     	dbra	d7,ldivs
+	move #9,d7
+	move	#1234567894,D0
+lmodu:
+	move.l	d0,-(A7)
+	move.l	d0,-(A7)
+	move.l	#10,-(A7)
+	bsr	__modu
+	addq	#8,a7
+        bsr putnum
+	move.l  (a7)+,d0
+	divu.l	#10,d0
+     	dbra	d7,lmodu
+	move #9,d7
+	move	#1234567894,D0
+lmods:
+	move.l	d0,-(A7)
+	move.l	d0,-(A7)
+	move.l	#10,-(A7)
+	bsr	__mods
+	addq	#8,a7
+        bsr putnum
+	move.l  (a7)+,d0
+	divu.l	#10,d0
+     	dbra	d7,lmods
+
+        bra     *
+putnum:
+	move.l	d0,-(a7)
+	clr.l	d6
+	move.l	d0,d1
+lp:
+	divul.l #10,D0:D1
+	add.l	#$30,d0
+	move.l	d0,-(a7)
+	addq	#1,d6
+	tst.l	d1
+	bne.b	lp
+lp1:
+	move.l  (a7)+,d0
+	bsr	dbg_putchar
+    	subq	#1,D6
+	bne.b	lp1
+	moveq	#'\n',D0
+	bsr	dbg_putchar
+	move.l	(a7)+,d0 
+	rts

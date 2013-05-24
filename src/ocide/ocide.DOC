@@ -1,0 +1,177 @@
+CCIDE is an integrated development environment for use with the windows 
+version of the cc386 compiler.  It has three parts: an editor, a maker 
+which spawns the compiler/linker to build programs, and a debugger.
+
+1) Installation
+
+        CCIDE needs to be told where the exectuable images for the various 
+        programs are.  By pulling down the FILES|PROPERTIES menu and 
+        selecting the INSTALL tab on the properties box, 
+        a COMPILER PATH option will show at the bottom.  Set this to
+        the path the compiler tools are located in.  This defaults to '
+	C:\cc386\bin
+
+        Note that you need a windows version of the various tools 
+        because spawning the DOS versions from a windows program is 
+        somewhat problematic.
+
+2) MSDN help
+
+        CCIDE can be somewhat integrated with MSDN or the PLATFORM SDK
+        help.  If you put the cursor over the word you are interested 
+        in and then press F1, an attempt will be made to look up the 
+        word in the selected microsoft help files.  For the most part 
+        this is automatic.  CCIDE will first try to find an MSDN help 
+        file, then a platform SDK help file, then will look on a 
+        specified path.  However on the INSTALL tab of the PROPERTIES
+        dialog box you can tell CCIDE which help file to prefer.
+
+	You can also install a WINHELP file.  Select 'specified file' 
+	and type in the path to a filename with a ".HLP" extension.  
+	This for example gives access to win32 help files like the one at:
+
+		ftp://ftp.borland.com/pub/delphi/techpubs/delphi2/win32.zip
+
+	But you have to be careful with the latter hlp file, it is mostly 
+	correct but there are a few problems...
+
+3) EDITOR 
+ 
+        The editor is fully colorizing, and the colors may be set up
+        by pulling down the FILES|PROPERTIES menu then selecting the 
+        EDITOR tab on the properties box.  Click on the color you want 
+        to change and it will bring up a color dialog.  You can also 
+        set the tab spacing here.
+
+        There are some minor glitches with the colorizing and also
+        I've seen strange things with tabs.
+
+        The editor window also shows breakpoints and the current 
+        address of the program counter when the program is stopped 
+        during debugging.
+
+4) PROJECT window
+
+        The project window starts at the left hand side of the screen.  
+        It will dock there if you try to move to the left, or you can 
+        drag it out into the center of the screen and undock it.  It 
+        will ONLY dock at the left of the screen.
+        
+        There are several types of projects you can make.  First there 
+        are three types of EXE files:  windows console, windows GUI, 
+        and DOS.  (Note: the DOS selection seems broken).  Then you 
+        can make a standard library, or a standard DLL for windows.
+
+        You can have multiple targets as well in a single project.  
+        This facilitates things like debugging DLLs - by including the 
+        DLL as one of the targets it is easier to get access to source 
+        code while debugging a program/dll combination.  One caveat:
+        CCIDE will allow you to automatically break at a DLL entry 
+        point when the DLL is loaded, but trying to stop a debug 
+        session while the program is in a DLL entry point is not a good
+        idea.
+
+        After running the program, pull down the PROJECT menu and 
+        select ADD TARGET.  It will prompt you for a file name (it 
+        doesn't matter if it doesn't exist at this point).  After 
+        accepting that, the new target will be added to the project 
+        window on the left hand side of the screen.
+
+        You can also add a target by right-clicking on the project 
+        window.
+
+        Once you have a target in the target window, right-click on it
+        and select properties on the menu.  On the general tab you can
+        set various properties related to the build, including what 
+        type of build it is.  Note that if you want to debug you have
+        to uncheck the COMPILE VIA ASM button.
+
+        You can add files to your target by right-clicking on the 
+        target and then selecting ADD FILES.  For the moment this has
+        limited functionality; you can add as many files as you like 
+        but you have to do them one at a time.  You can add the 
+        following types of files to a target : C files, ASM files,
+        RC files, OBJ files, LIB files. (note if you want to do exports
+        the only way to do it is to use the _export keyword from the
+        C compiler, .DEF files are not supported).
+
+        After editing your files, you can right-click on the target and
+        click CALCULATE DEPENDENCIES.  It will go out and find all the 
+        include files related to the files in the project. (only works
+        for #included files from C language sources).
+
+        Choosing MAKE from the menus or from the toolbar will cause 
+        CCIDE to go out and calculate the times of all the files in all
+        the targets that exist, and decide what to rebuild.  Note 
+        that this seems a little buggy at present.  BUILD ALL builds 
+        all files in all targets regardless.
+
+        In the project window, you can also click on the 
+        REGISTERS tab to see the registers (only when debugging is in 
+        process).  Left click on a value and an edit box will come up 
+        to let you change it.
+
+5) BUiLD window
+
+        The build window starts out at the bottom of the screen.  It 
+        will dock there, or you can pull it out into the middle of the 
+        screen.
+
+        The basic purpose of the build window is to serve as a 
+        container for messages generated by the compiler and other 
+        tools.  When an error or warning occurs, you can click on it 
+        and have it bring up the code related to the message in an edit
+        window.
+
+6) WATCH window
+
+        The watch window starts out at the right of the screen.  It 
+        will dock there, or you can pull it out into the middle of the 
+        screen.  There are a couple of ways to get an item in the 
+        watch; first you can set the cursor over a word in the edit 
+        window and right-click for the editor menu, and it will let you 
+        add it.  Second you can right click in the watch window and it 
+        will prompt you for a variable name to add.
+
+        In the watch window you can left-click on a value to change it.
+        This is not debugged very well.
+
+7) DEBUGGING
+
+        After building the project, you select a target then pulldown
+        the DEBUG menu and select START DEBUGGING. (you can also
+        do this from the tool bar).  At this point the program will
+        be started in debug mode if it is an EXE file (other types of
+        targets cannot be directly debugged).
+
+        If you right click in the project window prior to doing 
+        this, then select PROPERTIES, there is a DEBUG tag.  You can
+        do some minimal customizing of the debug session this way.
+        In particular select BREAK IN WINMAIN to make the debugger find
+        the WINMAIN (or MAIN) routine of the program and stop executing 
+        when it gets there.  If your program loads a DLL that has debug
+        information, you can select BREAK AT DLL ENTRY POINT to have it
+        stop in the DllEntryPoint routine of the dll (be careful with 
+        this, if you try to stop debugging while at a breakpoint in a 
+        dllEntryPoint you will almost certainly bring windows down).
+
+        While debugging, breakpoints will be shown to the left of the
+        code as little stop signs.  The current EIP value will be 
+        highlighted with a yellow arrow.
+
+        In general, moving the mouse over the name of a variable in 
+        the edit window and holding it there will bring up the value of 
+        the variable.  Structured values and pointers are shown as an 
+        address only at this point.  This functionality can be disabled 
+        on the DEBUG tag of the target properties menu if it is 
+        annoying.
+
+8) TOOLBAR
+        
+        For the most part the toolbar is self-explanatory.  The only
+        confusing thing is the red hand that shows up when a program is 
+        running.  You can use this to attempt to stop the program at 
+        whatever point it happens to be at... in general it works but 
+        it is slightly under-designed; if all the threads in a process 
+        block waiting on other threads (deadlock) you won't be able to 
+        stop the process.

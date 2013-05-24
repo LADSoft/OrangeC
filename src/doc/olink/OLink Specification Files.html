@@ -1,0 +1,532 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OLink Specification Files</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<div style="text-align: center;">
+<h2><span style="font-family: Helvetica,Arial,sans-serif;">OLink
+Specification Files</span></h2>
+<div style="text-align: left;"><br>
+A specification file indicates the combination and ordering of sections
+of code and data.&nbsp; The
+specification file consists of one or more <span
+ style="font-weight: bold;">Partitions</span>, which are
+independent units of code and/or data.&nbsp; <br>
+<br>
+Each partition holds one
+or more <span style="font-weight: bold;">Overlays</span>.&nbsp;
+Overlays are units of code and/or data which
+may share the same location in memory; for example a processor with a
+small memory address can use bank switching to move different units of
+code in and out of the address range as necessary.&nbsp; These
+different units of code would however all share the same address, so
+the overlay mechanism gives a way of relocating multiple units of code
+to the same address.<br>
+<br>
+Each overlay holds one or more <span style="font-weight: bold;">Regions</span>;
+a region is what specifies
+which sections get combined.&nbsp; For example the region <span
+ style="font-weight: bold;">code</span> takes
+all sections named <span style="font-weight: bold;">code</span> from
+the input file and concatenates them
+together.&nbsp; Multiple regions can be concatenated one after another
+within an overlay.&nbsp; To support the overlay mechanism, each region
+may further be qualified with file names, so that you can specify that
+sections named <span style="font-weight: bold;">code</span> from one
+group of files go in one region, and
+sections named <span style="font-weight: bold;">code</span> from
+another group of files go in another
+region.&nbsp; These regions could be placed in different overlays to
+help with things like the bank-switch mechanism indicated above.<br>
+<br>
+Partitions, overlays, and regions can be given attributes to specify
+things like an absolute address, a maximum size, alignment, and so
+forth.<br>
+<br>
+You can also define labels within partitions and overlays similar to
+assignment statements in a high-level-language.&nbsp; Each label has an
+associated
+expression, which is calculated and then used as a value for the
+label.&nbsp; These values become globals to the linker, and are treated
+the
+same as the address obtained when declaring a global variable in the
+assembler and compiler.&nbsp; Code in the object files can reference
+these labels as if they were externals.&nbsp; <br>
+<br>
+Further, expressions used
+in defining a label or attribute could use another label which is not
+defined in the specification file; this might be defined for example
+somewhere in the code, or in a <a
+ href="OLink%20Command%20Line%20Options.html">command-line definition</a>.&nbsp;
+It is
+especially useful to define such labels in a command line definition,
+as a way to customize the specification file without rewriting
+it.&nbsp; For example, if two peices of hardware share the same source
+code but are linked at different base addresses, one might write a
+single linker specification file, referencing the base address as a
+label.&nbsp; Then a linker command-line definition could be used to
+resolve the specific address the code is linked for.<br>
+<br>
+The following will be used as an example:<br>
+<br>
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">partition</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">{</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} data [align=4];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} bss.</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+} RAM [addr=0x0000, size=0x4000];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">} DATA;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Courier New,Courier,monospace;">partition</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">{</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} code;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} const;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+} ROM;</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">} CODE
+[addr=0xf000, size=0x1000];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;"></span>This
+defines two partitions, in this case one is for data nad one is for
+code.&nbsp; The first partition is named DATA and consists of two
+groups of sections. &nbsp; First all sections named <span
+ style="font-weight: bold;">data</span> are concatenated
+together, then all sections named <span style="font-weight: bold;">bss</span>
+follow after that.&nbsp; This partition is
+defined with attributes to start address 0, and extend for 16K.&nbsp;
+If the actual size of the partition is greater than 16K, an error will
+be generated.&nbsp; In this case the overlay is named RAM; this overlay
+name is what is visible to ROM-generation tools such as <span
+ style="font-weight: bold;">DLHEX</span>.<br>
+<br>
+The second partition is named CODE and also consists of two groups of
+sections; first all sections named <span style="font-weight: bold;">code</span>
+are concatenated together,
+followed by all sections named <span style="font-weight: bold;">const</span>.&nbsp;
+This partition starts at
+address 0xf000, and extends for 4K.&nbsp; In this case the overlay name
+visible to <span style="font-weight: bold;">DLHEX</span> or other
+executable-generation tools is ROM.<br>
+<br>
+<br>
+In the first partition, an <span style="font-weight: bold;">align=4</span>
+attribute is declared on the <span style="font-weight: bold;">data</span>
+region.&nbsp; This means that each data section put into the region
+will be aligned
+on a four-byte boundary when it is loaded from its corresponding
+file.&nbsp; (Note:&nbsp; if
+assembly language code specifies a more stringent bound such as align =
+8, that will be used instead).<br>
+<br>
+In the following:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">partition</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">{</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region { bank1a.o bank1b.o bank1c.o } code;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+} BANK1;</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region { bank2a.o bank2b.o bank2c.o } code;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+} BANK2;</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region { bank3a.o bank3b.o bank3c.o } code;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+} BANK3;</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">} CODE [addr
+= 0xe000, size = 0x1000];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+Three banks of code have been defined, each of which starts at address
+0xe000 and extends for 4K.&nbsp; Each region references sections named
+<span style="font-weight: bold;">code</span>, however, file names are
+specifically specified for each region,
+so that only <span style="font-weight: bold;">code</span> sections
+from specific files will be included while
+processing the region.&nbsp; For example in the overlay BANK1, only
+files <span style="font-weight: bold;">bank1a.o</span>, <span
+ style="font-weight: bold;">bank1b.o</span>, and <span
+ style="font-weight: bold;">bank1c.o</span> will contributed to the
+contents
+of the region.<br>
+<br>
+Wildcards may be used in the file specification, so that the above
+could be written:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">partition</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">{</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region { bank1*.o } code;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+} BANK1;</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region { bank2*.o } code;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+} BANK2;</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;"> &nbsp;&nbsp;
+overlay {</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region { bank3*.o } code;</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;
+} BANK3;</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">} CODE [addr
+= 0xe000, size = 0x1000];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<br>
+<br>
+In the following:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">partition</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">{</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+overlay {</span><br>
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; RAMSTART=$</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} data [align=4];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} bss;<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; RAMEND=$<br>
+&nbsp;&nbsp;&nbsp; } RAM [addr=0x0000, size=0x4000];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">} DATA;<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">The labels
+RAMSTART and RAMEND have been defined.&nbsp; The '$' in the expression
+indicates to use the address at the location the label is specified, so
+these definitions effectively define labels at the beginning and ending
+of the overlay.&nbsp; As indicated before these define global
+variables, so an x86 assembler program such as the following could be
+used to set all data in these regions to zero:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">extern
+RAMSTART, RAMEND</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov edi, RAMSTART</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov ecx,RAMEND-RAMSTART</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov al, 0</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+cld</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+rep stosb</span><br style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+</span></span><br>
+Expressions may be more complex, consisting of add, subtract, multiply,
+divide and parenthesis.&nbsp; As a simple example the above example can
+be rewritten to define a size:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">partition</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">{</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+overlay {</span><br>
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; RAMSTART=$</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} data [align=4];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} bss;<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; RAMSIZE = $-RAMSTART<br>
+&nbsp;&nbsp;&nbsp; } RAM [addr=0x0000, size=0x4000];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">} DATA;<br>
+<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><br>
+Labels or
+expressions may be used in attributes, for example:<br>
+<br>
+</span></span><span style="font-family: Courier New,Courier,monospace;">partition</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">{</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+overlay {</span><br>
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; RAMSTART=$</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} data [align=4];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; region {} bss.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; RAMSIZE = $-RAMSTART<br>
+&nbsp;&nbsp;&nbsp; } RAM [addr=RAMBASE, size=0x4000];</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">} DATA;<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">Here the base
+address is defined in terms of a label RAMBASE.&nbsp; But RAMBASE is
+not defined anywhere in the specification file, so it has to be pulled
+from the linker's table of globals.&nbsp; In this case we might define
+it on the linker command line as follows:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OLink
+/DRAMBASE=0x7000 /smyspec.spc ...</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<br>
+Labels don't have to include '$' in the expression, although it is
+often useful.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">MYLABEL=0x44000+2000</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+is valid.<br>
+<br>
+Note that when using target configurations, the default specification
+files use these types of declarations, but the target configuration
+gives default values to use.&nbsp; For example the default value for
+RAMBASE in a hex file is 0x10000, when used with the default linker
+specification file that is used for binary and hex file output.&nbsp;
+But such values can be overridden on the command line; if it is
+desirable to use the default specification file but RAMBASE is 0x8000
+for the specific hardware in question one might use OLink as follows:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">OLink /T:M3
+/DRAMBASE=0x8000 ...<br>
+<br>
+<br>
+</span></span></span><span
+ style="font-family: Courier New,Courier,monospace;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Courier New,Courier,monospace;"></span></span></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Attributes</span></h3>
+Partitions, overlays, and regions can be attributed with one or more
+attributes.&nbsp; The attributes are comma delimited, and enclosed in
+braces.&nbsp; They occur after the name of the partition or overlay, or
+after the
+section specified by a region.<br>
+<br>
+The attributes are as follows:<br>
+<br>
+<table style="text-align: left; width: 100%;" border="1" cellpadding="2"
+ cellspacing="2">
+  <tbody>
+    <tr>
+      <td style="vertical-align: top;">Attribute<br>
+      </td>
+      <td style="vertical-align: top;">Meaning<br>
+      </td>
+      <td style="vertical-align: top;">Default Value for Partitions<br>
+      </td>
+      <td style="vertical-align: top;">Default Value for Overlays<br>
+      </td>
+      <td style="vertical-align: top;">Default Value for Regions<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">ADDR<br>
+      </td>
+      <td style="vertical-align: top;">Address<br>
+      </td>
+      <td style="vertical-align: top;">0, or end of previous partition<br>
+      </td>
+      <td style="vertical-align: top;">partition address<br>
+      </td>
+      <td style="vertical-align: top;">overlay address or end of
+previous region<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">SIZE<br>
+      </td>
+      <td style="vertical-align: top;">Absolute size<br>
+      </td>
+      <td style="vertical-align: top;">unassigned<br>
+      </td>
+      <td style="vertical-align: top;">partition size<br>
+      </td>
+      <td style="vertical-align: top;">unassigned<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">MAXSIZE<br>
+      </td>
+      <td style="vertical-align: top;">absolute size may vary up to
+this amount<br>
+      </td>
+      <td style="vertical-align: top;">unassigned<br>
+      </td>
+      <td style="vertical-align: top;">partition maxsize<br>
+      </td>
+      <td style="vertical-align: top;">unassigned<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">ROUNDSIZE<br>
+      </td>
+      <td style="vertical-align: top;">absolute size may vary, but will
+be rounded up to the next multiple of this<br>
+      </td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;">partition roundsize<br>
+      </td>
+      <td style="vertical-align: top;">unassigned<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">FILL<br>
+      </td>
+      <td style="vertical-align: top;">fill value used when absolute
+size does not match size of data included in region<br>
+      </td>
+      <td style="vertical-align: top;">0<br>
+      </td>
+      <td style="vertical-align: top;">partition fill<br>
+      </td>
+      <td style="vertical-align: top;">overlay fill<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">ALIGN<br>
+      </td>
+      <td style="vertical-align: top;">minimum alignment of region<br>
+      </td>
+      <td style="vertical-align: top;">1<br>
+      </td>
+      <td style="vertical-align: top;">partition alignment<br>
+      </td>
+      <td style="vertical-align: top;">overlay alignment<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">VIRTUAL<br>
+      </td>
+      <td style="vertical-align: top;">base address for linking the
+region, when base address does not match the <br>
+ADDR attribute<br>
+      </td>
+      <td style="vertical-align: top;">unassigned<br>
+      </td>
+      <td style="vertical-align: top;">partition virtual attribute<br>
+      </td>
+      <td style="vertical-align: top;">virtual address of overlay, or
+end of previous region<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Complex region
+specifiers</span></h3>
+<span style="font-family: Times New Roman,Times,serif;">Usually the
+region statement is used to specify a specific section name such as
+code:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">region { }
+code;</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+But sometimes it is useful to be able to combine multiple sections in a
+single region with the <span style="font-weight: bold;">or</span>
+operator<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">region {}
+code | const;<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">However this is
+different making two regions, one for <span style="font-weight: bold;">code</span>
+and one for <span style="font-weight: bold;">const</span>.&nbsp; The
+difference is that in this case code and const regions may be
+intermixed; whereas in the other case all the code sections would be
+combined together, separately from all the const regions.</span><br
+ style="font-family: Courier New,Courier,monospace;">
+</span><br>
+<br>
+Wildcards may be used in the region name:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">region {}
+code*</span><br>
+<br>
+matches the sections name code1, code2, code123, and so forth.<br>
+<br>
+And for example<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">region {} *</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+matches ALL sections.&nbsp; There are two wildcard characters:&nbsp; <span
+ style="font-weight: bold;">*</span> matches a sequence of characters,
+whereas <span style="font-weight: bold;">?</span> matches a single
+character.<br>
+<br>
+Other times you want to do a catch all which gets all sections except
+for a select section or group of sections.<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">region {} *
+&amp; !(code*)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+This uses the <span style="font-weight: bold;">and</span> operator and
+the <span style="font-weight: bold;">not</span> operator to select all
+sections which do not start with the four letters 'code'.<br>
+<br>
+</span>A region can be named with any potentially complex expression
+involving section names and these operators, to match various
+combinations of sections.<br>
+<br>
+</div>
+</div>
+</body>
+</html>

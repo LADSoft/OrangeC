@@ -1,0 +1,9 @@
+main()
+{
+	printf("%d\n",STRCHR("abc",'a'));
+	printf("%d\n",STRCHR("abc",'b'));
+	printf("%d\n",STRCHR("abc",'d'));
+	printf("%d\n",STRRCHR("abc",'a'));
+	printf("%d\n",STRRCHR("abc",'b'));
+	printf("%d\n",STRRCHR("abc",'d'));
+}

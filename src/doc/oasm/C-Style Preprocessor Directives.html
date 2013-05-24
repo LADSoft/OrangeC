@@ -1,0 +1,642 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>C-Style Preprocessor Directives</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">C-Style Preprocessor
+Directives</span></h3>
+<br>
+The C-Style preprocessor directives are compatible with similar
+directives that are existant in preprocessors for C compilers.&nbsp;
+OAsm does not change the behavior of these directives other than to
+change the initial character which introduces the directive from '#' to
+'%'.<br>
+<br>
+<div
+ style="text-align: center; font-family: Helvetica,Arial,sans-serif;">
+<h4>%define</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%define</span> introduces a
+method to perform textual substitutions.&nbsp; In its simplest form it
+will just replace an identifier with some text:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+HELLO_WORLD "Hello World"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+replaces all instances of the identifier HELLO_WORLD with the indicated
+string.&nbsp; For example after this definition the following statement:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">db HELLO_WORLD</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the string "Hello World" being compiled into the program.<br>
+<br>
+<span style="font-weight: bold;">%define</span> is not limited to
+giving names to strings, it will do any sort
+of text substitution you want.&nbsp; That could include defining names
+for constants, or giving a name to an often-used instruction, for
+example.<br>
+<br>
+In the below:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+ARRAY_MAX 4</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mov
+eax,ARRAY_MAX</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+the text "4" gets substituted for ARRAY_MAX prior to assembling the mov
+instruction, so what the assembler sees is:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mov eax,4</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+Note that definitions are also processed for substitution:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define ONE 1</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%define TWO
+(ONE + 1)</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%define THREE
+(TWO + 1)</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mov eax,THREE</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+is substituted multiple times during processing, with the final result
+being:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mov eax,((1 +
+1) + 1)</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+OAsm will detect recursive substitutions and halt the substitution
+process, so things like:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define ONE
+TWO</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%define TWO
+ONE</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+will halt after detecting the recursion.<br>
+<br>
+Also, the substitution text can be empty:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define EMPTY</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mov eax, EMPTY</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+results in the translated text:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mov eax,</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+which cannot be assembled and will result in a syntax error during
+assembly.<br>
+<br>
+<br>
+<span style="font-weight: bold;">%define</span> can also be used in its
+functional form for more advanced text
+replacement activities.&nbsp; In this form, the identifier is
+parameterized.&nbsp; During substitutions, arguments are also
+specified; and the original parameters are replaced with the arguments
+while substitution is occurring.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+mul(a,b)&nbsp; a * b</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mov
+eax,mul(4,7)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+is changed to:<br>
+<br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mov eax,4 * 7</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+prior to assembly.&nbsp; It is usually not a good idea to write this
+quite the way it was done however.&nbsp; The user may elect to put any
+text they want in the invocation, so one thing that can happen is they
+write:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mov eax,
+mul(4+3, 7+2)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+This gets translated to:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mov eax, 4 +
+3 * 7 + 2</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+which was probably not the intent.&nbsp; Below is what was probably
+desired:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mov eax,
+(4+3) * (7+2)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+For this reason it is a good idea to fully parenthesize the parameters
+used in the original definition:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+mul(a,b) ((a) * (b))</span><br>
+<br>
+so that the mov with mul gets translated to:<br>
+<br>
+mov eax, ((4 + 3) * (7 + 2))<br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+The extra set of parenthesis is used to prevent similar situations from
+happening when 'mul' is used as a subexpression of another expression.<br>
+<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">Note
+that when using <span style="font-weight: bold;">%define</span>,
+substituted text is not evaluated in any way, other than to process
+substitutions on the identifier and any specified
+parameters.&nbsp;&nbsp;&nbsp; So the move statement in the last example
+would be visible to the assembler exactly as the substitutions
+dictate, and the assembler has to do further evaluation of the
+expression if it wants a constant value.<br>
+</span><br>
+<span style="font-family: Times New Roman,Times,serif;">Within a
+definition, there are a couple of special-case substitutions
+that can occur with function-style definitions.&nbsp; In Stringizing, a
+parameter can be turned into a string.&nbsp; For example if you write:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+STRINGIZE(str) #str</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">db&nbsp;&nbsp;
+STRINGIZE(Hello World)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+quotes will be placed around the substituted parameter.&nbsp; So this
+translates to:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">db&nbsp;&nbsp;
+"Hello World"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+prior to assembly.<br>
+<br>
+In Tokenizing, new identifiers may be produced.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+Tokenizing(prefix, postfix) (prefix ## postfix + 4)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mov
+eax,Tokenizing(Hello,World)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+would be translated to:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mov
+eax,HelloWorld + 4</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+prior to assembly.<br>
+<br>
+Note that even though the hash character used to start a preprocessor
+statement has been changed to '%', hash is still used in stringizing
+and tokenizing.<br>
+<br>
+<br>
+Finally, <span style="font-weight: bold;">OAsm</span> supports the C99
+extension to function-style definitions,
+which allows variable-length argument lists.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+mylist(first, ...)&nbsp; dw first, __VA_ARGS__</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+where __VA_ARGS__ means append all remaining arguments that are
+specified, could be used like this:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">mylist(1)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mylist(1,2)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mylist(1,2,3,4,5)</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+and so on.&nbsp; These would expand to:<br>
+<br>
+dw&nbsp;&nbsp;&nbsp; 1<br>
+dw&nbsp;&nbsp;&nbsp; 1,2<br>
+dw&nbsp;&nbsp;&nbsp; 1,2,3,4,5<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">Note
+that the
+name of the identifier that is replaced is case-sensitive with <span
+ style="font-weight: bold;">%define</span>,
+for example HELLO_WORLD is not the same as Hello_World.&nbsp; There is
+a
+case-insensitive form of this directive <span
+ style="font-weight: bold;">%idefine</span> which can be used to
+make these and other related identifiers the same.<br>
+</span><br>
+<span style="font-family: Times New Roman,Times,serif;">Note: OAsm does
+not support overloading function-style macros.&nbsp; <br>
+<br>
+For convenience
+OAsm allows <span style="font-weight: bold;">%define</span>
+definitions on the command line, which are useful
+for tailoring build behavior either directly or through the conditional
+processing facility.<br>
+<br>
+<br>
+</span></div>
+<br>
+<h4>%undef</h4>
+<div style="text-align: left;"><span
+ style="font-family: Courier New,Courier,monospace;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%undef</span> undoes a
+previous definition, so that it will not be considered for further
+substitutions (unless defined again).&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define
+REG_EBX 3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%undef REG_EBX</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">mov eax,
+REG_EBX</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+results in no substitution occurring for the use of REG_EBX.<br>
+</span></span></div>
+<br>
+<h4>%error</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%error</span> displays an
+error, causing the assembler to not generate code.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%error my new
+error</span><br style="font-family: Courier New,Courier,monospace;">
+<br>
+might display something like:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">Error
+errdemo.asm(1): Error Directive: my new error<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">When the file
+is assembled.</span><br
+ style="font-family: Courier New,Courier,monospace;">
+</span></span></div>
+<br>
+<h4>%line</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%line</span> is used to
+change the file and line number listed in the error reporting.&nbsp; By
+default the
+error reporting indicates the file and line an error occur on.&nbsp;
+Sometimes in generated source code files, it is useful to refer to the
+line number in the original source code rather than in the file that is
+currently being assembled.&nbsp; <span style="font-weight: bold;">%line</span>
+accomplishes this by updating
+internal tables to indicate to the preprocessor that it should use
+alternate information when reporting an error.&nbsp; For example
+inserting the following at line 443 of test.asm:</span><br
+ style="font-family: Times New Roman,Times,serif;">
+<br style="font-family: Times New Roman,Times,serif;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,^4</span><br style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Times New Roman,Times,serif;">
+<span style="font-family: Times New Roman,Times,serif;">produces a
+syntax error when the code is assembled:</span><br
+ style="font-family: Times New Roman,Times,serif;">
+<br style="font-family: Times New Roman,Times,serif;">
+<span style="font-family: Courier New,Courier,monospace;">Error
+test.asm(443): Syntax Error.</span><br
+ style="font-family: Times New Roman,Times,serif;">
+<br style="font-family: Times New Roman,Times,serif;">
+<span style="font-family: Times New Roman,Times,serif;">If an
+additional %line directive is inserted:</span><br
+ style="font-family: Times New Roman,Times,serif;">
+<br style="font-family: Times New Roman,Times,serif;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+%line 10, "demo.c"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,^4</span><br style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Times New Roman,Times,serif;">
+<span style="font-family: Times New Roman,Times,serif;">the error
+changes to:</span><br style="font-family: Times New Roman,Times,serif;">
+<br style="font-family: Times New Roman,Times,serif;">
+<span style="font-family: Courier New,Courier,monospace;">Error
+demo.c(10): Syntax Error</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+Note that once <span style="font-weight: bold;">%line</span> is used
+to change the line number and file name, <span
+ style="font-weight: bold;">OAsm</span> remembers the new information
+and continues to increment the new line number each time it processes a
+line of source code.<br>
+<br>
+</span></div>
+<br>
+<h4>%include</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%include</span> is used to
+start the interpretation of another source file.&nbsp; The current
+source file is suspended, and the new source file is loaded and
+assembled.&nbsp; Once the assembler is done with the new source file
+(and anything it also <span style="font-weight: bold;">%includes</span>)
+assembly resumes beginning where it
+left off in the current source file.<br>
+<br>
+This facility is useful for example to hold preprocessor constants and
+structures that are shared between multiple source files.&nbsp; But the
+included file can include any valid assembler statement, including
+GLOBAL and EXTERN definitions.&nbsp; <br>
+<br>
+For example if <span style="font-weight: bold;">test.asm</span> is
+being assembled and the statement:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%include
+"test1.asm"</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+is encountered, the assembly of <span style="font-weight: bold;">test.asm</span>
+will temporarily be suspended
+while <span style="font-weight: bold;">OAsm</span> goes off to
+assemble <span style="font-weight: bold;">test1.asm</span>.&nbsp;
+After it is done with
+<span style="font-weight: bold;">test1.asm,</span> <span
+ style="font-weight: bold;">OAsm</span> remembers that it was
+previously assembling<span style="font-weight: bold;"> test.asm</span>
+and
+picks up in that file where it left off (e.g. at the line after the
+<span style="font-weight: bold;">%include</span> statement).<br>
+<br>
+This is not quite the same as specifying both <span
+ style="font-weight: bold;">test.asm</span> and <span
+ style="font-weight: bold;">test1.asm</span> on the command line.&nbsp;
+In the current example there is only one output file which contains the
+contents of both <span style="font-weight: bold;">test.asm</span> and <span
+ style="font-weight: bold;">test1.asm</span>, where as if both were
+specified on the command line they would result in separate output
+files.<br>
+<br>
+For convenience, an include path may be specified on the command line,
+and <span style="font-weight: bold;">OAsm</span> will search for
+included files both in the current directory,
+and in directories specified on that path.<br>
+<br>
+</span></div>
+<br>
+<h4>%if</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%if</span> is a <span
+ style="font-style: italic;">%if-style
+conditional </span>that takes a numeric expression as an
+argument.&nbsp; If
+the numeric expression evaluates to a non-zero value, the result of the
+evaluation will be true, otherwise it will be false. &nbsp; Note that
+for purposes of this conditional, expressions are always evaluated; if
+an undefined identifier is used in a <span style="font-weight: bold;">%if</span>
+expression it is replaced with '0' and evaluation continues. &nbsp;
+Subsequent blocks of code will either be
+assembled if the result of the evaluation is non-zero, or ignored if
+the result of the evaluation is zero.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define COLOR
+3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%if&nbsp;
+COLOR == 3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov statement being assembled because the result of
+the argument evaluation is a nonzero value.<br>
+<br>
+On the other hand:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;"></span><span
+ style="font-family: Courier New,Courier,monospace;">%if ZERO</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+results in nothing being assembled because the value of 'ZERO' is zero.<br>
+<br>
+See the section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span></div>
+<br>
+<h4>%elif</h4>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%elif
+</span>is a <span style="font-style: italic;">%elif-style conditional</span>
+that takes a numeric expression as an
+argument.&nbsp; If the numeric expression evaluates to a non-zero
+value, the next block will be assembled, otherwise it will be
+ignored.&nbsp; As with <span style="font-style: italic;">%if</span>,
+undefined symbols will be
+replaced with '0' for purposes of the evaulation.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define COLOR
+3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%if&nbsp;
+COLOR == 2</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%elif COLOR
+==
+3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+inc eax</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov statement being ignored and the inc statement
+being assembled because the result of the <span
+ style="font-weight: bold;">%if</span> argument evaluation is
+zero, and the result of the <span style="font-weight: bold;">%elif </span>argument
+evaluation is nonzero.<br>
+<br>
+See the section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on %elif-style conditionals.<br>
+</span></div>
+</div>
+<br>
+<h4>%ifdef</h4>
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifdef</span>
+is a <span style="font-style: italic;">%if-style</span> conditional
+that takes an identifer as an
+argument.&nbsp; If the identifier has been defined with a previous
+<span style="font-weight: bold;">%define</span> or <span
+ style="font-weight: bold;">%assign</span> statement, the next
+block will be assembled, otherwise it will be ignored.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define COLOR
+3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifdef COLOR</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov statement being assembled because COLOR has been
+defined.<br>
+<br>
+Note that a definition declared with <span style="font-weight: bold;">%define</span>
+or <span style="font-weight: bold;">%assign</span> must match the
+argument exactly, whereas a definition declared with <span
+ style="font-weight: bold;">%idefine</span> or
+<span style="font-weight: bold;">%iassign</span> can differ in case and
+still match.&nbsp; <span style="font-weight: bold;">%ifdef</span> will
+not
+match identifiers declared with <span style="font-weight: bold;">%macro</span>
+or <span style="font-weight: bold;">%imacro</span>.<br>
+<br>
+See the section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span></div>
+</div>
+<br>
+<h4>%ifndef</h4>
+<div style="text-align: left;">
+<div style="text-align: left;">
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%ifndef</span>
+is a <span style="font-style: italic;">%if-style conditional</span>
+that takes </span><span
+ style="font-family: Times New Roman,Times,serif;">an identifer as
+an argument.&nbsp; If the identifier has not been defined with a
+previous
+<span style="font-weight: bold;">%define</span> or <span
+ style="font-weight: bold;">%assign</span> statement, the next
+block will be assembled, otherwise it will be ignored.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">For
+example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define COLOR
+3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifndef COLOR</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov statement being ignored because COLOR has been
+defined.&nbsp; Alternatively:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%undef COLOR</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%ifndef COLOR</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,4</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov statement being assembled because COLOR is not
+currently defined.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">Note
+that a
+definition declared with <span style="font-weight: bold;">%define</span>
+or <span style="font-weight: bold;">%assign</span> can have any
+difference
+from the argument and trigger assembly of the block, whereas a
+definition declared with <span style="font-weight: bold;">%idefine</span>
+or <span style="font-weight: bold;">%iassign</span> must differ in
+some way
+other than in case.&nbsp; <span style="font-weight: bold;">%ifndef</span>
+will assemble the following block for identifiers declared
+with <span style="font-weight: bold;">%macro</span> or <span
+ style="font-weight: bold;">%imacro</span>.<br>
+</span><br>
+<span style="font-family: Times New Roman,Times,serif;">See the section
+on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%if-style
+conditionals</span>.<br>
+</span></div>
+</div>
+<br>
+</div>
+<br>
+<h4>%else</h4>
+<div style="text-align: left;"><span
+ style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%else</span> is used to
+select a block for assembly, when all previous <span
+ style="font-style: italic;">%if-style conditionals</span> and <span
+ style="font-style: italic;">%elif-style
+conditionals</span> in the same sequence have had their arguments
+evaluate to
+false.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">%define COLOR
+= 3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%if COLOR ==4</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+mov eax,3</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%else</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;&nbsp;
+inc eax</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">%endif</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+will result in the mov being ignored, but the inc being assembled,
+because the evaluation of the <span style="font-weight: bold;">%if</span>
+argument is false.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;">See the
+section on <a href="Conditional%20Processing.html">Conditional
+Processing</a> for more on <span style="font-style: italic;">%else</span>.<br>
+</span>
+<br>
+</div>
+<br>
+<h4>%endif</h4>
+</div>
+<br>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">%endif</span>&nbsp; is
+used to end a&nbsp; conditional sequence. Once a conditional sequence
+is ended, code assembly proceeds as normal, unless the conditional
+sequence was itself nested within a block of a higher-level conditional
+sequence that is not being assembled.<br>
+</span><br>
+<span style="font-family: Times New Roman,Times,serif;">See the section
+on <a href="Conditional%20Processing.html">Conditional Processing</a>
+for more on <span style="font-style: italic;">%endif</span>.<br>
+</span>
+</body>
+</html>

@@ -1,0 +1,110 @@
+Date: 12/25/96 at 09:51:24
+From: Thomas Glen Smith
+Subject: Why doesn't asin(sin(s)) = s for complex numbers?
+
+I calculate sin(3+4i) to be 3.85-27i, but when I compute
+arcsin(3.85-27i), I get .14-4i for an answer.  Why don't I get 3+4i?  
+I should think arcsin(sin(s)) should always produce s.  It seems to 
+work for arcsin(sin(.14-4i)).
+
+
+--------------------------------------------------------------------------------
+
+
+Date: 12/28/96 at 14:53:24
+From: Doctor Pete
+Subject: Re: Why doesn't asin(sin(s)) = s for complex numbers?
+
+Hi,
+
+The underlying reason why this phenomenon occurs is because inverse
+trigonometric functions are not one-to-one when analytically continued 
+to the complex plane.  This also explains, for instance, why there are 
+n n(th) roots of unity in the complex plane.
+
+To see what's going on in further detail, let's first look at a 
+simpler example, the complex exponential.  Euler's formula gives:
+
+     Exp[i*t] = Cos[t]+i*Sin[t]
+
+where i is the imaginary unit Sqrt[-1].  Then the exponential of a 
+general complex number in rectangular form z = a+i*b is:
+
+     Exp[z] = Exp[a](Cos[b]+i*Sin[b])
+
+From this, one can derive the inverse, the complex logarithm:
+
+     Log[z] = Ln[Abs[z]]+i*(Arg[z]+2*Pi*k), k = ...-2,-1,0,1,2,...
+
+where Abs[z] is the magnitude of z, and Arg[z] is its *principal* 
+argument, the angle it forms with the origin when plotted as a vector 
+in the complex plane, restricted to some range, usually (-Pi, Pi].  
+Note that we have included a factor of 2*Pi*k.  The reason for this is 
+because there are infinitely many ways of measuring the argument; for 
+instance, 
+
+  Arg[1+i] = Pi/4 
+but 
+  Arg[1+i] = {Pi/4, -7Pi/4, 9Pi/4, 17Pi/4, ... }.  
+
+Therefore, while we see that the real part of Log[z] is single-valued, 
+the imaginary part is multi-valued depending on what value of k we 
+choose.  Indeed, this is the dilemma at hand, for is there any 
+particular reason why you should choose one k over another?
+
+We see then, that Exp[z], compared to Log[z], is a fairly simple 
+function: for a given value of z, Exp[z] is unique, whereas Log[z] is 
+actually an infinite set of values.  But this is deceptive, for in 
+reality, Exp[z] is just as complex (no pun intended) as Log[z].  A 
+little thought shows that:
+
+     Exp[a+i*b] = Exp[a+i*(b+2*Pi)] = Exp[a+i*(b+4*Pi)] = ...
+
+In other words, there are infinitely many values of z which have the 
+same value of Exp[z].  So the full picture boils down to the fact that 
+Exp[z] is a many-to-one function, and Log[z] is a one-to-many 
+function.
+
+Furthermore, this strange behavior owes itself to the simple fact that
+Sin[x] and Cos[x] (for real x) are periodic functions with period 
+2*Pi.
+
+Now, it should not be too surprising, then, that we can use Euler's 
+formula to obtain Sin[z] and Cos[z] for complex z.  We have
+
+     Exp[i*z] = Cos[z] + i*Sin[z]
+     Exp[-i*z] = Cos[-z] + i*Sin[-z] = Cos[z] - i*Sin[z] 
+
+Adding these two gives:
+
+     2*Cos[z] = Exp[i*z] + Exp[-i*z]
+       Cos[z] = (Exp[i*z] + Exp[-i*z])/2
+
+and subtracting gives:
+
+     2*i*Sin[z] = Exp[i*z] - Exp[-i*z]
+         Sin[z] = (Exp[i*z] - Exp[-i*z])/(2*i)
+
+So the complex sine and cosine are expressible as sums of complex
+exponentials, and therefore are many-to-one functions.  Therefore 
+their inverses will behave like the complex logarithm in that they 
+will be one-to-many.
+
+With this in mind, it is quite easy now to see why ArcSin[Sin[z]] is 
+not necessarily z.  For if z1 and z2 are unequal and such that 
+Sin[z1] = Sin[z2], then ArcSin[Sin[z1]] is an infinite set which 
+contains z1 and z2.  Furthermore, ArcSin[Sin[z2]] is that same 
+infinite set.  Depending on which k-value you pick, you could even 
+have ArcSin[Sin[z1]] = z2 and vice versa.  However, if you knew what 
+z1 was, then you could certainly pick ArcSin[Sin[z1]] = z1.  But most 
+calculators are not sophisticated enough to consider this fact, and 
+instead simply choose the principal value (k=0) at all times.
+
+It may seem strange at first, but these phenomena are all rooted in 
+the periodicity of the trigonometric functions.  For example, 
+ArcSin[Sin[x]] = ArcSin[Sin[x + 2*Pi]].  The ideas are the same, only 
+with an added twist.
+
+-Doctor Pete,  The Math Forum
+ Check out our web site!  http://mathforum.org/dr.math/   
+    

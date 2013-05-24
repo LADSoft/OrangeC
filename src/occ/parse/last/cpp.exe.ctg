@@ -1,0 +1,64 @@
+<CC386TARGET>
+    <VERSION ID="5"/>
+    <TARGET NAME="cpp.exe" TITLE="cpp.exe">
+        <BUILD TYPE="0" FLAGS="851969" LIBTYPE="0"/>
+        <DEFINEFLAGS VALUE="0"/>
+        <PATHS INCLUDE="" OUTPUT=""/>
+        <PREBUILD LABEL="">
+            
+        </PREBUILD>
+        <POSTBUILD LABEL="">
+            
+        </POSTBUILD>
+        <OPTS>
+            <COMPILER>
+                
+            </COMPILER>
+            <ASSEMBLER>
+                
+            </ASSEMBLER>
+            <LINKER>
+                
+            </LINKER>
+            <LIBRARIAN>
+                
+            </LIBRARIAN>
+        </OPTS>
+        <CMDLINE>
+            memory.c
+        </CMDLINE>
+        <DEFINE NAME="CPREPROCESSOR" VALUE=""/>
+        <SOURCES>
+            <FILE NAME="ccerr.c" TITLE="ccerr.c">
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+            </FILE>
+            <FILE NAME="memory.c" TITLE="memory.c">
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+            </FILE>
+            <FILE NAME="osutil.c" TITLE="osutil.c">
+                <DEPENDENCY NAME="pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+            </FILE>
+            <FILE NAME="ppexpr.c" TITLE="ppexpr.c">
+                <DEPENDENCY NAME="pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+            </FILE>
+            <FILE NAME="ppmain.c" TITLE="ppmain.c">
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+                <DEPENDENCY NAME="pp.h" TITLE="pp.h"/>
+            </FILE>
+            <FILE NAME="PREPROC.C" TITLE="PREPROC.C">
+                <DEPENDENCY NAME="pp.h" TITLE="pp.h"/>
+                <DEPENDENCY NAME="ccerr.h" TITLE="ccerr.h"/>
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+            </FILE>
+            <FILE NAME="symtab.c" TITLE="symtab.c">
+                <DEPENDENCY NAME="osutil.h" TITLE="osutil.h"/>
+            </FILE>
+        </SOURCES>
+        <RESOURCES>
+        </RESOURCES>
+        <OTHER>
+        </OTHER>
+    </TARGET>
+</CC386TARGET>

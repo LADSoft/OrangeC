@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>OCC Compilation Modes</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<div style="text-align: center;">
+<h2>OCC Compilation Modes</h2>
+<div style="text-align: left;">+A&nbsp;&nbsp;&nbsp; disable non-ansi
+extensions<br>
+<br>
+&nbsp;&nbsp;&nbsp; By default the compiler allows several extensions to
+ansi, to make coding easier.&nbsp; If you want strict adherence to
+ansi, use this switch.&nbsp; For example:<br>
+<br>
+&nbsp;&nbsp;&nbsp; OCC +A myfunc.c<br>
+<br>
+&nbsp;&nbsp;&nbsp; will enable ANSI mode<br>
+<br>
++9&nbsp;&nbsp;&nbsp; C99 Compatibility<br>
+<br>
+&nbsp;&nbsp;&nbsp; By default the compiler compiles for pre-99
+standard.&nbsp; If you want extended features available in the later
+C99 standard, use this switch.&nbsp; For example:<br>
+<br>
+&nbsp;&nbsp;&nbsp; OCC /9 myfunc.c<br>
+<br>
+&nbsp;&nbsp;&nbsp; Will enable C99 mode.<br>
+</div>
+<br>
+</div>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>DLHex</title>
+  <meta content="david" name="author">
+</head>
+<body>
+<h1 style="text-align: center; font-family: Arial;">DLHex</h1>
+<p><span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-weight: bold;">DLHex</span> is a postprocessor for
+obtaining hex and binary files of the type used in
+generatring rom-based images for embedded systems.&nbsp; It can be used
+indirectly as part
+of the link
+process, if the default linker settings are sufficient.&nbsp; In many
+cases though configuring the output for an embedded system will require
+a customized linker specification file.&nbsp; The linker documentation
+discusses this in more detail.&nbsp; If a customized specification file
+is used, it may be necessary to call <span style="font-weight: bold;">DLHex</span>
+directly to obtain an output
+file.<br>
+</span></p>
+<h2 style="text-align: center; font-family: Arial;">Supported Formats</h2>
+<span style="font-family: Times New Roman,Times,serif;">DLHex can
+produce output in one of several formats.&nbsp; These include Motorola
+S19 files, Intel Hex files, and a pure binary output format.&nbsp; The
+S19 and Hex file formats are suitable for use with an EEProm burner or
+other device that can accept them; the binary format is available to
+make postprocessing the output for other types of requirements
+easier.&nbsp; In rare cases the binary format may be used directly,
+e.g. if a device has a file system and a suitable loader is written to
+load it into memory.<br>
+<br>
+</span><span style="font-family: Times New Roman,Times,serif;"></span>
+<h2 style="text-align: center;"><span style="font-family: Arial;">Command
+Line Options<br>
+</span></h2>
+The general form of a <span style="font-weight: bold;">DLHex</span>
+command line is:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlhex
+[options] relfile</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Times New Roman,Times,serif;">Here the&nbsp;
+<span style="font-style: italic;">rel file</span> is the linker
+generated file that&nbsp; holds the linked
+code.<br>
+&nbsp;</span><br style="font-family: Times New Roman,Times,serif;">
+There are several command line options that control the output.&nbsp;
+These include options for specifying what parts of the input file to
+process, how to format the output, and optionally a file name to use
+for the output file.<br>
+<br>
+<h3 style="font-family: Helvetica,Arial,sans-serif; text-align: center;">Specifying
+the input sections<br>
+</h3>
+<span style="font-family: Times New Roman,Times,serif;">The input file
+is a linker generated .rel file.&nbsp; Encoded in the input file is the
+program text, separated into the overlays indicated in the linker
+specification script.&nbsp; The <span style="font-weight: bold;">/c</span>
+command line option is used to
+specify which of these overlays will be placed in the output
+file.&nbsp; Following it overlay names are specified, separated by a
+comma.&nbsp; For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlhex /mM1
+/cCODE;DATA test.rel<br>
+<br>
+<span style="font-family: Times New Roman,Times,serif;">pulls the two
+overlays CODE and DATA from the test.rel file, and places the contents
+in a Motorola S19 file.&nbsp; By default, if no <span
+ style="font-weight: bold;">/c </span>switch is specified,
+all overlays will be pulled from the .rel file in the order specified.<br>
+<br>
+The linker has a default linker specification file, which is used if
+the linker <span style="font-weight: bold;">/T </span>switch is used
+to run dlhex to create an output
+file.&nbsp; The script is as follows:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">partition {<br>
+&nbsp; overlay {<br>
+&nbsp;&nbsp;&nbsp; region {} reset [ size = RESETSIZE];<br>
+&nbsp; } RESET;<br>
+} pt0 [addr = RESETBASE];<br>
+partition {<br>
+&nbsp; overlay {<br>
+&nbsp;&nbsp;&nbsp; region {} code [ align = 2];<br>
+&nbsp;&nbsp;&nbsp; region {} const [ align = 4];<br>
+&nbsp;&nbsp;&nbsp; region {} string [ align = 2];<br>
+&nbsp; } ROM;<br>
+} pt1 [addr=CODEBASE];<br>
+<br>
+partition {<br>
+&nbsp; overlay {<br>
+&nbsp;&nbsp;&nbsp; RAMDATA = $;<br>
+&nbsp;&nbsp;&nbsp; region {} data [ align = 4];<br>
+&nbsp;&nbsp;&nbsp; region {} bss [ align = 4];<br>
+&nbsp; } RAM ;<br>
+} pt2 [addr=RAMBASE];<br>
+<br>
+partition {<br>
+&nbsp; overlay {<br>
+&nbsp;&nbsp;&nbsp; region {} stack[size = $400];<br>
+&nbsp;&nbsp;&nbsp; STACKPOINTER = $;<br>
+&nbsp; } STACK;<br>
+} pt3 [addr = STACKBASE];<br>
+</span><br>
+</span></span>From the above you can see it has four
+overlay sections, which are named 'RESET','ROM', 'RAM' and
+'STACK'.&nbsp;&nbsp;
+In this case you may not want to extract the stack into an output file,
+since an embedded system might initialize it in a loop.&nbsp; It may or
+may not be useful to extract the RAM section either, depending on
+whether the design of the embedded system specifies initialized
+data.&nbsp; Assuming it is useful, the <span style="font-weight: bold;">/c</span>
+switch can be used to extract
+the RESET, ROM and RAM files into a single .HEX file like this:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlhex
+/cRESET,ROM,RAM /mM1 test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+or it can be used to extract the ROM and RAM sections into two files by
+running it twice like this:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlhex /cROM
+/mM1 /orom.S19 test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">dlhex /cRAM
+/mM1 /oram.S19 test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+<span style="font-family: Times New Roman,Times,serif;">Note that the
+above discussions assumes use of default linker files; it is acceptable
+to use a customized linker specification file and name overlays
+anything desirable.<br>
+<br>
+<br>
+</span></span>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying the output
+file name</span><br>
+</h3>
+<span style="font-family: Times New Roman,Times,serif;"><span
+ style="font-family: Times New Roman,Times,serif;"></span><br>
+<span style="font-family: Times New Roman,Times,serif;">By default, <span
+ style="font-weight: bold;">DLhex</span> will take the input file name,
+and replace the extension with an
+extension indicating what type of output is being used.&nbsp; These
+extensions are as follows:<br>
+<br>
+</span></span>
+<ul>
+  <li>.BIN - a binary output file<br>
+  </li>
+  <li>.S19 - a Motorola S19 file<br>
+  </li>
+  <li>.HEX - an Intel Hex file<br>
+  </li>
+</ul>
+However in some cases it is useful to be able to specify the output
+file name.&nbsp; The specified name can have its extension specified,
+or it can be typed without an extension to allow <span
+ style="font-weight: bold;">DLhex</span> to add one of
+the default extensions.&nbsp; The output file name is specified with
+the <span style="font-weight: bold;">/o</span> switch. For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlhex /mM1
+/omyfile.dat test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+makes a Motorola S19 file and stores it in <span
+ style="font-family: Courier New,Courier,monospace;">myfile.dat.</span>&nbsp;
+Whereas<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlhex /mM1
+/omyfile test.rel</span><br
+ style="font-family: Courier New,Courier,monospace;">
+<br>
+makes a Motorola S19 file and stores it in <span
+ style="font-family: Courier New,Courier,monospace;">myfile.S19</span>.<br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Specifying the output
+file format</span></h3>
+<span style="font-weight: bold;">DLHex</span> supports several types of
+Motorola S19 output files, several
+types of Intel Hex output files, and a binary output file format.&nbsp;
+The switch for selecting the output file type is <span
+ style="font-weight: bold;">/m</span>.&nbsp; This switch
+can be followed by one of the following specifiers:<br>
+<br>
+<ul>
+  <li>M1 -&nbsp; Motorola S19 files with two byte address fields<br>
+  </li>
+  <li>M2 -&nbsp; Motorola S19 files with three byte address fields<br>
+  </li>
+  <li>M3 -&nbsp; Motorola S19 files with four-byte address fields<br>
+  </li>
+  <li>I1&nbsp; -&nbsp; 16 bit Intel hex file.&nbsp; Can be segmented or
+not depending on the input.<br>
+  </li>
+  <li>I2&nbsp; -&nbsp; 16 bit Intel hex file.&nbsp; Starts with a
+segmentation record.<br>
+  </li>
+  <li>I4&nbsp; -&nbsp; 32 bit Intel hex file.<br>
+  </li>
+  <li>B - Binary output format</li>
+</ul>
+For practical purposes the I1 and I2 formats are the same, except the
+first record of an I2 file is guaranteed to be a segmentation record.<br>
+<br>
+The default output format if no /m switch is specified is the binary
+format.<br>
+<br>
+<h3 style="text-align: center;"><span
+ style="font-family: Helvetica,Arial,sans-serif;">Padding the output
+file</span></h3>
+By default <span style="font-weight: bold;">DLHex</span> does not pad
+output files.&nbsp; In the case of
+Motorola S19 and Intel Hex files there are address bytes in the output
+file, which means padding may be applied externally if necessary, e.g.
+by an EPROM programmer.&nbsp; In the case of the binary format, no
+address bytes exist, and without padding the input files are copied
+directly to the binary output file one section at a time, without
+regard for the fact that it may be useful to align subsequent sections
+at the appropriate place relative to the first section.&nbsp; In other
+words, the default for the binary format is to create a file that has
+sections offset from each other based on their actual size, rather than
+based on the addressing information the linker has provided.<br>
+<br>
+Because of this, DLHex has a <span style="font-weight: bold;">/p</span>
+switch to specify that padding is
+required.&nbsp; The /p switch is followed by a hexadecimal value, which
+is the value used in padding bytes.<br>
+<br>
+For example:<br>
+<br>
+<span style="font-family: Courier New,Courier,monospace;">dlhex /p:FF
+test.rel</span><br>
+<br>
+generates a binary output file, padded with FF values.<br>
+<br>
+</body>
+</html>

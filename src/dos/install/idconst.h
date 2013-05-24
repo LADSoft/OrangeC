@@ -1,0 +1,3 @@
+#define ID_INSTALLPATH ID_USER
+#define ID_MODIFYAUTO (ID_USER+ 1)
+#define ID_START (ID_USER + 2)

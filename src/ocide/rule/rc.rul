@@ -1,0 +1,33 @@
+<OCRULE>
+    <PROPGROUP VERSION="10" CLASS="FILE" NAME="Resource Compiler Settings" ORDER="30">
+    	<COMMAND>
+            <ASSIGNMENTS>
+                <ASSIGN ID="RCFLAGS">-r $(__RCFLAGS)</ASSIGN>
+                <ASSIGN ID="INCLUDE">$(__RCINCLUDE)</ASSIGN>
+                <ASSIGN ID="RCDEFINE">$(__RCDEFINE)</ASSIGN>
+            </ASSIGNMENTS>
+    		<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
+	    		"$$(LSINSTALLBIN)\orc.exe" -! @&amp;&amp;|
+$$(RCFLAGS) "-i$$(INCLUDE)" $$(UNICODE) $$(RCDEFINE)
+-r 
+"-o%.res" 
+| "%.rc"
+			</ITEM>
+			<ITEM NAME="Source Extension" ID="__SOURCE_EXTENSION" TYPE="TEXT">
+				%.rc
+			</ITEM>
+			<ITEM NAME="Target Extension" ID="__TARGET_EXTENSION" TYPE="TEXT">
+				%.res
+			</ITEM>
+            <ITEM NAME="Make Banner" ID="__MAKEBANNER" TYPE="TEXT">Compiling Resource %s</ITEM>
+    	</COMMAND>	
+		<PROPS NAME="Resource Compiler Settings" HELPID="610">
+			<ITEM NAME="Additional Preprocessor Directives" TYPE="PREPENDTEXT=/D" ID="__RCDEFINE"/>
+			<ITEM NAME="Additional Include Paths" TYPE="SEPARATEDTEXT=;" ID="__RCINCLUDE"/>
+			<ITEM NAME="Additional Switches" TYPE="TEXT" ID="__RCFLAGS"/>
+			<ITEM CLASS="File" NAME="Output File" TYPE="TEXT" ID="OUTPUTFILE">
+				$(OUTPUTDIR)\$(OUTPUTNAME)$(OUTPUTEXT)
+			</ITEM>
+		</PROPS>
+	</PROPGROUP>
+</OCRULE>

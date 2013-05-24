@@ -1,0 +1,21 @@
+CL386 Version 5.0b1 (c) Kirill Joss, email: joss@c4.com
+Usage: CL386.EXE [options] files
+ (first option is default)         @fname    specify response file
+ /A[-|+]   enable extensions       /?,/h,/H  this help
+ /Dxxx     define something        /Ennn     max number of errors
+ /Ipath    specify include path    /Lpath    specify .LIB & .OBJ dir
+ /Oxxx     optimize parameters     /Cxxx     codegen parameters
+ /q[-|+]   quiet mode              /X[-|+]   enable C++ exception handling
+ /K[-|+]   keep response file      /k[-|+]   keep generate files
+ /e[+|-]   dump errors to file     /m[-|+]   generate .MAP file
+ /l[-|+]   dump listing file       /i[-|+]   dump preprocessed file
+ /w-xxx    disable a warning       /n[-|+]   no default .LIB & .OBJ
+ /e=name   set name of .EXE file   /v[-|+]   debug info
+ /a        generate .ASM file      /c        generate .OBJ file
+
+ /NASM,/TASM,/TASMX,/TASM32,/MASM,/ML,/WASM,/LASM,/LASM32  use /assembler
+ /VALX,/TLINK,/LINK,/WLINK                                 use /linker
+ /PMODE,/PMODEW,/DOS4G,/WDOSX,/DOS32A,/ZRDX,/CAUSEWAY      use /DOSExtender
+
+Compile 'Feb 14 2001 08:11:03'
+

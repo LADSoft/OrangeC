@@ -3,26 +3,6 @@ OrangeC
 
 OrangeC Compiler And Tool Chain
 
-This is a tool chain that is heading toward being retargetable, but for now it only targets x86 32 bit.  
-The compiler in the tool chain is an optimizing compiler using some techniques out of the literature.
-
-License for code that I authored is Berkely style.
-
-I've only compiled this on windows but it is mostly OS agnostic.
-
-For windows make a directory ORANGEC off the root and put the src directory in it.
-
-you can build it with the makefiles but will need the free BCC55 release to do that.  
-The make *may* fail the first time as it won't copy the orc.exe file to a directory on the path before it is used.
-
-you can also build this with visual studio express, I've only tried it with the 2010 version however.
-
-after building it you can use MAKE DISTRIBUTE to build the release package.  
-Be careful though until I fix it MAKE DISTRIBUTE is going to delete this readme file.  
-I will try to get it fixed within a day or two.
-
-
-
 The Orange C compiler is going to be a retargetable optimizing compiler and toolchain.  Work over the last few years has resulted in an optimizing compiler than generates working WIN32 programs.  The optimizations in the compiler follow some of the standard optimizations, and also perform some optimizations from the literature.
 
 Orange C is released under a Berkely-style license.
@@ -31,7 +11,7 @@ This compiler comes in an install package with an IDE suitable for developing WI
 
 My primary development environment for many years has been Borland C 5.5, and I still support that.  Recently, I have started including build files for Visual Studio Express.  There is currently no support for compiling under other operating systems although most of the sources are OS-agnostic, with the exception of the make program which has heavy reliance on win32.
 
-The compiler uses a text-based output format, a variant of the IEEE-695 OMF.   I've preferred this since it is easier to debug…  at one point I did try turning it into a binary format but once I got far enough to prototype it there didn't seem to be enough gain to want to complete the work.
+The compiler uses a text-based output format, a variant of the IEEE-695 OMF.   I've preferred this since it is easier to debug…  at one point I did try turning it into a binary format but once I got far enough to prototype it there didn't seem to be enough gain to complete the work.  And I really like text files a lot lol!
 
 The make program is eerily similar to GNU make, however, with me never having the pleasure of actually using GNU make I don't know how close I got.  The code was developed independently of GNU make, and without ever looking at the sources for GNU make.
 

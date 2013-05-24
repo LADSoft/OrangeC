@@ -41,7 +41,6 @@ all:
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip examples\*.* examples\*
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip include\*.* include\*
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip lib\*.* lib\*
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip lic\*.* lic\*
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip license\*.* license\*
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip addon\hx.*
 	7z -tzip a src\doszip LICENSE.TXT

@@ -114,11 +114,13 @@ ifdef DISTMAKE
 include $(DISTMAKE)
 
 DISTRIBUTE:
+	$(COPYDIR) stdinc\*.h $(DISTINC)
+	$(COPYDIR) stdinc\sys\*.h $(DISTINC)\sys
+ifndef BUILDENV
 	$(COPYDIR) object\startup\*.l $(DISTLIB)
 	$(COPYDIR) object\startup\*.o $(DISTLIB)
 	$(COPYDIR) object\startup\*.exe $(DISTLIB)
 #	$(COPYDIR) object\startup\*.dll $(DISTBIN)
-	$(COPYDIR) stdinc\*.h $(DISTINC)
-	$(COPYDIR) stdinc\sys\*.h $(DISTINC)\sys
 	$(MAKE) /Cplatform DISTRIBUTE
+endif
 endif

@@ -45,7 +45,6 @@ DISTSRC=\orangec\dist\occ$(VERNAME)s.zip
 DISTRIBUTE:
 	-del $(DISTEXE)
 	-del $(DISTSRC)
-	move c:\orangec\src\occ2 \   
 	$(ZIP) -r0 a $(DISTEXE) orangec\bin\*.exe orangec\bin\*.app orangec\bin\*.spc orangec\bin\*.dll orangec\bin\*.cfg orangec\lib\*.* orangec\include\*.* orangec\examples\*.* orangec\doc\*.* orangec\license\*.* 
 	$(ZIP) a $(DISTEXE) orangec\lib\* orangec\include\* orangec\examples\* orangec\doc\* orangec\license\*
 	$(ZIP) a $(DISTEXE) orangec\rule\*.rul orangec\help\*.* orangec\addon\*.*
@@ -57,4 +56,3 @@ DISTRIBUTE:
 	$(ZIP) a $(DISTSRC) orangec\src\*.exe orangec\src\*.iss orangec\src\*.bmp orangec\src\config.bat orangec\src\ocidehld.bat
 	$(ZIP) a $(DISTSRC) orangec\src\license.txt orangec\src\relnotes.txt orangec\src\clibs\repobj.bat
 	iscc /Focc$(VERNAME) /O\orangec\dist orangec\src\occ.iss
-	move \occ2 c:\orangec\src

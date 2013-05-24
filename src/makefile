@@ -130,7 +130,7 @@ COPYDIR := $(realpath .\copydir.exe)
 define distdef
 DISTRIBUTE:
 	-mkdir $(DISTROOT)
-	-del /Q $(DISTROOT)
+#	-del /Q $(DISTROOT)
 	-mkdir $(DISTROOT)\rule
 	-del /Q $(DISTROOT)\rule
 	-mkdir $(DISTBIN)
@@ -203,10 +203,16 @@ DISTRIBUTE:
 	copy copying $(DISTLIC)
 	copy ocl.lic $(DISTLIC)
 	copy addon.txt $(DISTADDON)
+ifdef BUILDENV
+	$(MAKE) /Cclibs DISTRIBUTE /DBUILDENV
+else
 	$(MAKE) /Cclibs DISTRIBUTE
-	$(MAKE) /C..\ -f$(realpath .\doszip.mak)
-	$(MAKE) /Cdos\install -fmakefile.le
+# commented out because this is incomplete - you need to build DFLAT with CC386
+#	$(MAKE) /C..\ -f$(realpath .\doszip.mak)
+#	$(MAKE) /Cdos\install -fmakefile.le
 	$(MAKE) /Cc:\ -f$(realpath .\zip.mak)
+endif
+
 endef
 
 $(eval $(distdef))

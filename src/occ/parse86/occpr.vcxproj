@@ -87,9 +87,11 @@
     <ClCompile Include="..\parse\ccerr.c" />
     <ClCompile Include="..\parse\ccmain.c" />
     <ClCompile Include="..\parse\constopt.c" />
+    <ClCompile Include="..\parse\cppbltin.c" />
     <ClCompile Include="..\parse\cpplookup.c" />
     <ClCompile Include="..\parse\debug.c" />
     <ClCompile Include="..\parse\declare.c" />
+    <ClCompile Include="..\parse\declcons.c" />
     <ClCompile Include="..\parse\declcpp.c" />
     <ClCompile Include="..\parse\expr.c" />
     <ClCompile Include="..\parse\exprcpp.c" />

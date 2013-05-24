@@ -1,0 +1,12 @@
+*.props
+*.bak
+wildargsw.*
+colsstartup.*
+*.cwa
+*.cpj
+*.ttf
+ocide.exe
+orc.exe
+oimplib.exe
+obrc.exe
+occpr.exe

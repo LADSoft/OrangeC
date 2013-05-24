@@ -1,0 +1,13 @@
+*.cpp
+*.c
+*.h
+*.nas
+*.p
+*.spc
+makefile
+*.mak
+*.txt
+copying
+*.lic
+clibs\platform\extender\*.bin
+clibs\platform\extender\*.exe

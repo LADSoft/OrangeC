@@ -2,7 +2,7 @@
 #        D - F L A T   M A K E F I L E  -  CC386
 #-------------------------------------------------------------------
 
-all : memopad.exe memopad.hlp
+all : dflat.lib
 
 #-------------------------------------------------------------------
 #  Delete the TESTING macro to eliminate the Reload
@@ -25,16 +25,16 @@ DEBUG = -v
 LINKDEBUG = /DEB /Map
 #------------------------------------------------
 COMPILE = cc386 $(DEBUG) -D$(TESTING) -D$(FULL) -DBCPP /C+R /c
-LINK= valx -nci $(LINKDEBUG) -Detaillevel:2
+LINK= valx -le -32 -nci $(LINKDEBUG) -Detaillevel:2
 #------------------------------------------------
 
-.c.obj:
-    $(COMPILE) $*.c
+%.obj: %.c:
+	$(COMPILE) $*.c
 
 temp.obj: temp.c
 	cc386 +c temp.c
 memopad.exe : memopad.obj dialogs.obj menus.obj dflat.lib
-    $(LINK) c0dosw.obj memopad dialogs menus,memopad,memopad,dflat.lib cldos.lib
+	$(LINK) c0dosw.obj memopad dialogs menus,memopad,memopad,dflat.lib cldos.lib
 
 dflat.lib :   window.obj video.obj message.obj                         \
               mouse.obj console.obj textbox.obj listbox.obj            \
@@ -50,10 +50,10 @@ dflat.lib :   window.obj video.obj message.obj                         \
 	xlib dflat @dflat.bld
 
 huffc.exe : huffc.obj htree.obj
-    $(LINK) -le c0dosw.obj huffc htree,$*.exe,$*,$(LIBS) cldos
+	$(LINK) -le c0dosw.obj huffc htree,$*.exe,$*,$(LIBS) cldos
 
 fixhelp.exe : fixhelp.obj decomp.obj
-    $(LINK) @&&|
+	$(LINK) @&&|
 -le c0dosw.obj fixhelp decomp
 $*.exe
 $*
@@ -61,5 +61,5 @@ $(LIBS) cldos
 |
 
 memopad.hlp : memopad.txt huffc.exe fixhelp.exe
-    huffc memopad.txt memopad.hlp
-    fixhelp memopad
+	huffc memopad.txt memopad.hlp
+	fixhelp memopad

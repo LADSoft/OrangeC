@@ -1500,9 +1500,17 @@ static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **c
             else while (TRUE)
             {
                 (*desc)->hr = (*desc)->hr->next;
-                if (!(*desc)->hr || !((SYMBOL *)((*desc)->hr->p))->tp->hasbits || !((SYMBOL *)((*desc)->hr->p))->anonymous)
-                    if (!(*desc)->hr || ((SYMBOL *)((*desc)->hr->p))->offset != offset)
+                if (!(*desc)->hr)
+                    break;
+                if (((SYMBOL *)((*desc)->hr->p))->tp->hasbits)
+                {
+                    if (!((SYMBOL *)((*desc)->hr->p))->anonymous)
                         break;
+                }
+                else if (((SYMBOL *)((*desc)->hr->p))->offset != offset)
+                {
+                    break;
+                }
             }
             if ((*desc)->hr)
                 (*desc)->reloffset = ((SYMBOL *)((*desc)->hr->p))->offset;

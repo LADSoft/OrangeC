@@ -1,5 +1,23 @@
 Release notes
 
+version 5.0.4: 5/25/2013
+
+    occ:    add support for #pragma pack syntax with keywords push and pop 
+		(i.e. #pragma pack(push,1), #pragma pack(pop)
+    occ:    static initialization of anonymous unions was broken
+    clibs:  fix problems with asctime and ctime not working
+
+version 5.0.3:
+    ocide:  workaround for i.e. flagging help files as dangerous content
+    ocide:  fix bug with debugger sometimes crashing
+
+version 5.0.2:
+    ocide: fix problems with help files, help/about
+
+version 5.0.1:
+
+    add OCIDE with RC Editor, many many bug fixes and some new features
+
 version 4.2.1:
     occ:        fix '--(char *)myvar;' to work again
     occ:        sequences of the form:

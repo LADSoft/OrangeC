@@ -253,8 +253,8 @@ typedef    struct type
     {
         enum e_bt type; /* the type */
         long size; /* total size of type */
-        long arraySkew; /* amount to be added for padding when the structure is embedded in an array */
         struct type *btp; /* pointer to next type (pointers & arrays */
+        long arraySkew; /* amount to be added for padding when the structure is embedded in an array */
         int used:1; /* type has actually been used in a declaration or cast or expression */
         int array:1; /* not a dereferenceable pointer */
         int vla:1;   /* varriable length array */

@@ -323,24 +323,11 @@ static void dumpDynamicInitializers(void)
 static void dumpTLSInitializers(void)
 {
 #ifndef PARSER_ONLY
-    STATEMENT *st = NULL, **stp = &st;
-    SYMBOL *sp = makeID(sc_auto, &stdpointer, NULL, "__$$TLSBase");
-    EXPRESSION *val = varNode(en_auto, sp);
-    sp->offset = chosenAssembler->arch->retblocksize;
-    insert(sp, localNameSpace->syms);
-    deref(&stdint, &val);
-    while (TLSInitializers)
+    if (TLSInitializers)
     {
-        EXPRESSION *exp;
-        TLSInitializers->init->next = NULL;
-        exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, TLSInitializers->init, val);
-        *stp = stmtNode(NULL, st_expr);
-        (*stp)->select = exp;
-        stp = &(*stp)->next;
-        TLSInitializers = TLSInitializers->next;	
-    }
-    if (st)
-    {
+        STATEMENT *st = NULL, **stp = &st;
+        SYMBOL *sp = makeID(sc_auto, &stdpointer, NULL, "__$$TLSBase");
+        EXPRESSION *val = varNode(en_auto, sp);
         SYMBOL *funcsp ;
         TYPE *tp = Alloc(sizeof(TYPE));
         tp->type = bt_ifunc;
@@ -348,10 +335,25 @@ static void dumpTLSInitializers(void)
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
         funcsp = makeID(sc_static, tp, NULL,"__DYNAMIC_TLS_STARTUP__");
+        SetLinkerNames(funcsp, lk_none);
+        sp->offset = chosenAssembler->arch->retblocksize;
+        deref(&stdint, &val);
+        AllocateLocalContext(NULL, funcsp);
+        insert(sp, localNameSpace->syms);
+        while (TLSInitializers)
+        {
+            EXPRESSION *exp;
+            TLSInitializers->init->next = NULL;
+            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, TLSInitializers->init, val);
+            *stp = stmtNode(NULL, st_expr);
+            (*stp)->select = exp;
+            stp = &(*stp)->next;
+            TLSInitializers = TLSInitializers->next;	
+        }
         funcsp->inlineFunc.stmt = stmtNode(NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
-        SetLinkerNames(funcsp, lk_none);
         genfunc(funcsp);
+        FreeLocalContext(NULL, funcsp);
         tlsstartupseg();
         gensrref(funcsp, 32);
     }
@@ -361,27 +363,14 @@ static void dumpDynamicDestructors(void)
 {
 #ifndef PARSER_ONLY
     STATEMENT *st = NULL;
-    symListTail = symListHead;
-    while (symListTail)
+    while (dynamicDestructors)
     {
-        SYMBOL *sp = (SYMBOL *)symListTail->data;
-        if (sp->dest)
-        {
-            if (sp->linkage3 != lk_threadlocal)
-            {
-                INITIALIZER *lst = sp->dest;
-                while (lst)
-                {
-                    EXPRESSION *exp = convertInitToExpression(lst->basetp, sp, lst, NULL);
-                    STATEMENT *stmt = stmtNode(NULL, st_expr);
-                    stmt->select = exp;
-                    stmt->next = st;
-                    st = stmt;
-                    lst = lst->next;
-                }
-            }
-        }
-        symListTail = symListTail->next;
+        EXPRESSION *exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, dynamicDestructors->init, NULL);
+        STATEMENT *stmt = stmtNode(NULL, st_expr);
+        stmt->select = exp;
+        stmt->next = st;
+        st = stmt;
+        dynamicDestructors = dynamicDestructors->next;
     }
     if (st)
     {
@@ -404,36 +393,11 @@ static void dumpDynamicDestructors(void)
 static void dumpTLSDestructors(void)
 {
 #ifndef PARSER_ONLY
-    STATEMENT *st = NULL;
-    SYMBOL *sp = makeID(sc_auto, &stdpointer, NULL, "__$$TLSBase");
-    EXPRESSION *val = varNode(en_auto, sp);
-    sp->offset = chosenAssembler->arch->retblocksize;
-    insert(sp, localNameSpace->syms);
-    deref(&stdint, &val);
-    symListTail = symListHead;
-    while (symListTail)
+    if (TLSDestructors)
     {
-        SYMBOL *sp = (SYMBOL *)symListTail->data;
-        if (sp->dest)
-        {
-            if (sp->linkage3 == lk_threadlocal)
-            {
-                INITIALIZER *lst = sp->dest;
-                while (lst)
-                {
-                    EXPRESSION *exp = convertInitToExpression(lst->basetp, sp, lst, val);
-                    STATEMENT *stmt = stmtNode(NULL, st_expr);
-                    stmt->select = exp;
-                    stmt->next = st;
-                    st = stmt;
-                    lst = lst->next;
-                }
-            }
-        }
-        symListTail = symListTail->next;
-    }
-    if (st)
-    {
+        STATEMENT *st = NULL;
+        SYMBOL *sp = makeID(sc_auto, &stdpointer, NULL, "__$$TLSBase");
+        EXPRESSION *val = varNode(en_auto, sp);
         SYMBOL *funcsp ;
         TYPE *tp = Alloc(sizeof(TYPE));
         tp->type = bt_ifunc;
@@ -441,10 +405,25 @@ static void dumpTLSDestructors(void)
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
         funcsp = makeID(sc_static, tp, NULL,"__DYNAMIC_TLS_RUNDOWN__");
+        SetLinkerNames(funcsp, lk_none);
+        sp->offset = chosenAssembler->arch->retblocksize;
+        deref(&stdint, &val);
+        AllocateLocalContext(NULL, funcsp);
+        insert(sp, localNameSpace->syms);
+        while (TLSDestructors)
+        {
+            EXPRESSION *exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, TLSDestructors->init, val);
+            STATEMENT *stmt = stmtNode(NULL, st_expr);
+            stmt->select = exp;
+            stmt->next = st;
+            st = stmt;
+            TLSDestructors = TLSDestructors->next;
+        }
+
         funcsp->inlineFunc.stmt = stmtNode(NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
-        SetLinkerNames(funcsp, lk_none);
         genfunc(funcsp);
+        FreeLocalContext(NULL, funcsp);
         tlsrundownseg();
         gensrref(funcsp, 32);
     }

@@ -885,11 +885,25 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, INITIALIZER *init, EXP
             expsym = varNode(en_auto, sp);
             break;
         case sc_localstatic:
-            expsym = varNode(en_label, sp);
+            if (sp->linkage3 == lk_threadlocal)
+            {
+                expsym = exprNode(en_add, thisptr, intNode(en_c_i, sp->offset));
+            }
+            else
+            {
+                expsym = varNode(en_label, sp);
+            }
             break;
         case sc_static:
         case sc_global:
-            expsym = varNode(en_global, sp);
+            if (sp->linkage3 == lk_threadlocal)
+            {
+                expsym = exprNode(en_add, thisptr, intNode(en_c_i, sp->offset));
+            }
+            else
+            {
+                expsym = varNode(en_global, sp);
+            }
             break;
         case sc_member:
             if (thisptr)

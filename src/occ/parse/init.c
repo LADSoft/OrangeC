@@ -1494,13 +1494,15 @@ static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **c
     {
         if (isstructured((*desc)->tp))
         {
+            int offset = (*desc)->reloffset;
             if (isunion((*desc)->tp))
                 (*desc)->hr = NULL;
             else while (TRUE)
             {
                 (*desc)->hr = (*desc)->hr->next;
                 if (!(*desc)->hr || !((SYMBOL *)((*desc)->hr->p))->tp->hasbits || !((SYMBOL *)((*desc)->hr->p))->anonymous)
-                    break;
+                    if (!(*desc)->hr || ((SYMBOL *)((*desc)->hr->p))->offset != offset)
+                        break;
             }
             if ((*desc)->hr)
                 (*desc)->reloffset = ((SYMBOL *)((*desc)->hr->p))->offset;

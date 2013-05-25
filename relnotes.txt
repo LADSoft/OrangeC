@@ -1,0 +1,309 @@
+Release notes
+
+version 4.2.1:
+    occ:        fix '--(char *)myvar;' to work again
+    occ:        sequences of the form:
+                    void *a();
+                    return (long long)a();
+                resulted in bad code
+    occ:        casting an integer constant to void * within a function argument
+                resulted in a warning
+    occ:        "#pragma rundown aa" would crash the compiler if aa was undefined
+    olink:      fix bug where section alignments could be off
+    rtl:        add threads.h & its functionality
+    rtl:        add stdatomic.h & its functionality
+    rtl:        add uchar.h & its functionality
+    rtl:        add aligned_alloc
+    rtl:        add at_quick_exit and quick_exit
+    rtl:        increase maximum number of atexit functions to 100
+    rtl:        add support for exclusive file access
+    rtl:        fix problems with wsprintf and friends not producing legible output
+    rtl:        updated wsprintf, wsscanf and friends to latest
+    rtl:        changed byte order of fputwc (and thus all wide character output functions)
+                to be little endian.
+    rtl:        updated wcs versions of atoi and atof and friends to latest 
+
+version 4.1.25:
+    occ:    miscellaneous internal improvements
+    occ:    improved how casts are parsed
+    ocpp, orc, oasm:    fix '#if defined(MYDIR)'  when MYDIR is defined
+    orc:    wasn't concatenating strings when they came one after the other
+    orc:    fix NOT keyword to do a one's complement
+
+version 4.1.24:
+    occ:  in C99 mode, __VA_ARGS__ not handled properly
+    occ:  fix "int a = b + c; int j = sizeof(double[a]);" to work in C99 mode...
+    occ:  allow (void)myStructVar to work
+    occ:  improve the accepted sequencing of storage class specifiers, type 
+            qualifiers, and types in declaration
+    occ:  allow declarations like "extern int aa[]" within a function body
+    occ:  miscellaneous internal improvements...
+    olink: if the same symbol is used in multiple libraries, don't generate an
+            error
+    rtl:    fix problems with _splitpath and _makepath
+    rtl:    fix more problems with truncating various unsigned types in sprintf.c and sscanf.c
+    rtl:    lscrtl.dll wouldn't be linked to properly
+    rtl:    when compiling for system RTL DLLs, use the old prototype for
+            swprintf and friends
+
+version 4.1.23:
+    occ:  fix sizeof(("my string")) where the extra parenthesis caused a wrong
+            value to be returned
+
+version 4.1.22:
+    occ/olink:  workaround for FREEDOS: write a version of SYSTEM() that does not
+                use the freedos command processor to allow spawns to work
+    occ:  things like the following generated errors due to a preprocessor bug
+            #include <limits.h>
+            #define UL (unsigned long)
+            int a = ULONG_MAX;
+    occ:    CONSTANT-VALUE optimizations were broken for long-long types
+    rtl:    fix bug in _sscanf that made it max out at half the requested int size
+version 4.1.21:
+	occ:	'signed int' is a valid type specification
+	occ:	add '#pragma warning'
+	occ:	allow prototypes such as the following:	void MyFunc(struct aa []);
+	occ:	fix problem with sizeof("string") returning the size of a pointer
+	occ:	add unordered floating point comparisons
+	
+	rtl:	fix problems with snprintf not working to the standard, exception
+			when buffer was exactly the right size
+	rtl:	add code-page related windows functions (e.g. widechartomultibyte)
+	rtl:	update WIN32 headers SHELLAPI and WINERROR, add headers SHLOBJ and friends	
+	rtl:	add imports for msimg32.dll
+
+version 4.1.20:
+	occ:	fix problems with crashing when boolean operations were combined with long longs
+	occ:	promote unsigned constants to unsigned long long if necessary
+	occ:	fix crash in register allocator
+	occ:	'const long long aa = 4;' for example, the optimization to constant resulted
+			in truncation to int.
+	occ:	fix crash when calculating offsets for const struct members
+	occ:	improve speed of parsing floating point numbers, useful for big arrays
+			of floating point values
+
+	rtl:	change 'DLLEntryPoint' to 'DllMain'
+	rtl:	make wide character versions of some win32 header structures
+	rtl:	add win32 spooler defines and win32 common dialog errors
+	rtl:	remove DLLCANUNLOADNOW and DLLGETCLASSNAME references from the import library
+	rtl:	restore ftime.c
+	rtl:	improve string handling on command line
+	rtl:	allow NULL to be passed as first argument to sprintf and friends
+	rtl:	week number in strftime was wrong first and last week of year
+	rtl:	fix minor bug in threading support
+	rtl:	fix %.0f and %.0g to work properly in printf format strings
+	rtl:	add _wcsicmp, _wcsnicmp
+	rtl:	add vsnwprintf _vsnwprintf snwprintf _snwprintf
+	rtl:	fix return value of 'div' function
+
+version 4.1.19:
+
+	OCC:	fix problem with nested anonymous unions: wasn't supported
+	OCC:	fix recursion problem int the optimizer that could lead to a crash 
+			for some source files
+	OCC:	modify preprocessor to handle recursion and tokenizing properly
+	OCC:	make 'i64' and 'ui64' suffixes on numbers case-insensitive
+	OCC:	fixed 'whereis' example
+	RTL:	fix _splitpath to allow null for arguments
+	RTL:	added delay(), sound(), nosound(), and int386() without underscores
+	RTL:	fix stack allocation code for large stacks, could crash the program 
+			if the allocated amount of space was an even multiple of the page size.
+version 4.1.18:
+	OCC:	preprocessing stringizer sometimes got confused by quotes
+	RTL:	add mousewheel support to WIN32 headers
+	RTL:	fix stdout & friends with CRTDLL.DLL
+	RTL:	fix sprintf & family, there was a space between a negative sign and its number
+
+version 4.1.17:
+	OCC:	fix the macro preprocessor to handle a wider variety of standard cases
+	OCC/DLPE/RTL: revert the import behavior, needed to be allowed to link to C-style
+			functions without fully prototyping everything...
+	ORC:	further improve internationalization
+	ORC:	fix broken string table and language resource handling
+			(neither case should need a resource id)
+	RTL:	change definition of ffs();
+	RTL/DOS: fix CTRL-C and CTRL-BREAK to not crash
+
+version 4.1.16
+	OCC:	macro arguments were getting substituted twice
+	OCC:	loop invariant calculations could move floating point expressions,
+			which doesn't work well on the x86 because they aren't real registers
+	OCC:	local definitions of a structure that is cyclical would cause a crash
+	OCC:	bad structure declarations such as this would crash the compiler:
+			struct nn
+			{
+				struct nn *p, // note the comma
+				int a;
+			};
+	OASM:	allow '%%' style labels
+	OCL:	used ONASM in compile-via-assembly mode instead make it use OASM
+	ORC:	fix bug: if you get a non-ansi character into the RC file, ORC 
+			wouldn't handle it correctly
+	ORC:	treat BEGIN the same as '{' and END the same as '}'
+	ORC:	allow C-style escape sequence inside strings
+	RTL:	fgets was going one character past the end of the supplied buffer...
+	RTL:	fix custcntl.h to have A and W structure names
+	RTL:	fix definition of wsprintf
+	RTL:	fix wildargsw, needed hInstance.
+	RTL:	fix dll startup routines, was crashing when dll created by the tools loaded
+	RTL:	fix fputc, if it happened at the end of a buffer it wouldn't flush the buffer
+			but would instead overrun memory...	
+	RTL:	exit routines not being called, e.g. automatic end-of-program
+			behaviors such as files being flushed when not explicitly closed 
+			would not occur
+	RTL:	rewrote printf & family to handle "%s" using arbitrarily large strings...
+	RTL:	fixed MSDOS debugger
+
+version 4.1.15
+	OCC:	support signed zero
+	RTL:	fix a bug where flushing a file in text read mode could result in a seek
+			to the wrong file position
+	RTL:	fix integer to ascii functions to use lower case letters for hex, only
+			do negative signs in base 10, buffer overflow problems.
+	RTL:	add ffs() and 'strings.h' and related functions
+	RTL:	fix definition of size_t in sys\types.h
+	RTL:	fix isctrl('\0') to return true
+	RTL:	fix isspace('\t') to return false
+	RTL:	treat buffered strings as binary...
+	RTL:	miscelleneous updates to floating point display handling, including 
+			improved handling of nans and signed zero
+
+version 4.1.14
+	OCC - fix problem where registers used for long long calculations could
+			sometimes collide
+	OCC - fix new problem where sometimes function calls would cause the compiler to crash
+	OCC - fix new problem where local statics could collide, resulting in
+			a redefinition error, when they were previously declared external
+	OCC	- reorder commutative expressions to generate better code, needed especially
+			to reduce the number of floating point registers in use simultaneously
+version 4.1.12
+	rtl:	fix WIN32 header bug that caused CCIDE to not work reliably
+
+version 4.1.11
+	OCC - remove import record from ASM file, when DLL name not specified
+	OCC - fix problems with statements such as:
+			typedef void AA(int b);
+			AA ss,*tt;
+			ss(4);
+			tt(4);
+
+			the typedef wasn't processed right and it resulted in errors
+	OCC - add __int8, __int16, __int32
+	OCC, DLPE, RTL: adjust for optimized imports
+	RTL	-	work with RTL DLLs
+
+version 4.1.10
+	OCC	- problem with declaring things like void (*printf)(...) in a structure 
+			would cause a redefined identifier error
+	OCC - problem with assigning to the first member of a structure, when the member
+			was a pointer, would crash the compiler
+			
+version 4.1.9
+	OCC	- there was a problem with sign extensions in statements such as p+=c 
+			where p is a pointer and c is a character value - the sign extension
+			would be done after multiplying by the size of a pointer leading to
+			overflow
+
+version 4.1.8
+	OCC - 4.1.7 broke some programs with infinite loops
+	OCC - fix problem where strength reduction could be incorrectly applied
+			when induction variables of nested loops were multiplied together
+	OCC - fix problem with division: sequences such as:
+
+			a = t %60
+			t = t / 60
+			b = t % 60
+			t = t / 60
+
+			would incorrectly generate code for:
+
+			a = t % 60
+			t = t / 60 / 60
+			b = t % 60
+			t = t / 60 / 60
+
+			because of bugs in dealing with the x86 IDIV instruction
+
+version 4.17
+	OCC	- comment out some test code that is no longer needed
+	OCC - fix problems with functions returning a structured value
+
+version 4.16
+	OCC	- fix problem that broke the runtime library
+	OCC	- fix problems with statically initialized bit fields
+	OCC - deal with zero-length anonymous bit fields properly
+	OCC	- more speedups
+	OCC	- deal with several crash conditions
+	OCC - deal with some incorrect code generation problems
+	OCC - fix some floating point problems
+
+version 4.15
+	OASM -  fix problems with constants, structures, and improve code gen for move immediate to reg
+	OCC	- 	speed up compilations, fix bugs, add a branch optimization
+	OMAKE -	fix bugs
+	ORC	-	allow integer values for resource types, e.g. for manifests
+
+	distributing source starting with this version
+
+version 4.1.4
+	OASM -  some floating point instructions involving memory access were generated incorrectly
+	OCC	-	floating point - use memory access more often
+	OCC -   floating point - change div by a constant into mul by a constant
+	OCC -   loops - generate code at the top of the loop to test the loop condition
+			instead of branching to the bottom of the loop
+			(while and for loops) and optimize such code away when possible.
+	OCC -   worked on constant propagation code, was not folding assignments
+	OCL	-	use OASM instead of ONASM
+	OMAKE - fix problem where VPATH would not be considered if a file did not exist
+	OMAKE - fix 'F' and 'D' suffixes on special macros, for example $@F and $@D
+
+version 4.1.3
+	OCC - fix two crash conditions in code generator
+	OCC - some algorithmic rewrites to get an order of magnitude speed improvement
+			on large bulky functions.
+	OCC - fix problem with register allocator, on very complex programs register
+			usage could sometimes overlap when it shouldn't
+	OCC - fix problem in static initialization when fixed point constants are 
+			stored as floating point constants:  size of the storage did not match
+			size when the value was loaded
+	OCC - fix peephole optimization problem that caused code to disappear
+	OCC - fix floating point global optimization to adjust properly for x86 FP unit
+	OCC - fix register allocation/peephole optimization in the presence of infinite loops
+	OCC - add the functionality to use two-character character constants
+	OCC - fix packing of unions to work according to the windows standard...
+	OCC - fix problems with cascaded shift operations
+	OCC - fix problems with aliasing in the presence of assignments of structures
+	OMAKE - dependencies were correctly qualified off VPATH, but when they showed up
+			in a command the VPATH path was missing
+	OMAKE - enable searching for implicit rules when explicit rules exist for dependencies
+			but there are no commands
+	ORC - add LOADONCALL parsing (doesn't do anything)
+	ORC - scan for bitmap files etc... on the include path
+	RTL - utime.h is now in *both* include and include\sys for portability
+	RTL - add VOS__ constants to windows.h
+	RTL - toolchain and generated programs would crash if an environment variable was greater than 1024 bytes long
+	RTL - fix console mode of stdin to allow echoed line input on windows 7
+	RTL - fix getch() and friends - were broken because of the compiler union packing issue
+	RTL - rename winversion.h to winver.h
+
+Version 4.1.2
+	OASM - was generating an error when a large number was used as
+		a byte operand to a math instruction but it was in-range for a signed value.
+	OCC - feature addition - OCC will look in its home directory for olink.exe
+	OCC - prototype warnings - only warn once, remove superfluous warnings
+	OCC - /O switch would add a .o extension to an executable and use it as an object file
+		which resulted in duplicate modules being passed to the linker and linker errors.
+		fix the /O switch to only register the exe name.
+	OCC - if a continuation character '\' was used in strings, and it was followed
+		by a // style comment within the string, this generated parser errors.
+	OCC - was filling out the entire BSS with zeros, which resulted in very 
+		large object files when there is a lot of static uninitialized data
+	OCC - when compile fails, delete the output file
+    OCC - correct code gen/register allocation/peephole optimization bugs
+	OLINK - documentation changed to use correct target names for windows targets
+	RTL - when the following was done in the source prior to including files:
+
+		#define size_t int
+
+		then there was a collision between string.h and memory.h
+

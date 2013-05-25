@@ -723,23 +723,45 @@ void dopragma(void)
             return;
         }
         skipspace();
-        if (*includes->lptr == ')')
+        if (!strncmp(includes->lptr, "pop", 3))
+        {
+            includes->lptr += 3;
+            skipspace();
+            if (*includes->lptr == ')')
+            {
+                if (packlevel)
+                    packlevel--;
+            }
+        }
+        else if (*includes->lptr == ')')
         {
             if (packlevel)
                 packlevel--;
         }
-        else if (isdigit(*includes->lptr))
+        else 
         {
-            if (packlevel < sizeof(packdata) - 1)
+            if (!strncmp(includes->lptr, "push",4 ))    
             {
-                packdata[++packlevel] = expectnum();
-                if (packdata[packlevel] < 1)
-                    packdata[packlevel] = 1;
+                includes->lptr += 4;
                 skipspace();
-                if (*includes->lptr != ')')
-                {
-                    packlevel--;
+                if (*includes->lptr != ',')
                     return;
+                includes->lptr++;
+                skipspace();
+            }
+            if (isdigit(*includes->lptr))
+            {
+                if (packlevel < sizeof(packdata) - 1)
+                {
+                    packdata[++packlevel] = expectnum();
+                    if (packdata[packlevel] < 1)
+                        packdata[packlevel] = 1;
+                    skipspace();
+                    if (*includes->lptr != ')')
+                    {
+                        packlevel--;
+                        return;
+                    }
                 }
             }
         }

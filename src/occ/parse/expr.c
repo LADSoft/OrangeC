@@ -2230,7 +2230,7 @@ static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp)
     }
     if (!exp)
     {
-        exp = intNode(en_c_i, tp->size); 
+        exp = intNode(en_c_i, tp->size + tp->arraySkew); 
     }
     return exp;			  
 }

@@ -528,9 +528,12 @@ static void calculateStructOffsets(SYMBOL *sp)
     }
     sp->tp->size = size ;
     sp->structAlign = totalAlign;
-    sp->tp->arraySkew = sp->tp->size % totalAlign;
-    if (sp->tp->arraySkew)
-        sp->tp->arraySkew = totalAlign - sp->tp->arraySkew;
+    if (cparams.prm_cplusplus)
+    {
+        sp->tp->arraySkew = sp->tp->size % totalAlign;
+        if (sp->tp->arraySkew)
+            sp->tp->arraySkew = totalAlign - sp->tp->arraySkew;
+    }
 }
 static void resolveAnonymousGlobalUnion(SYMBOL *sp)
 {

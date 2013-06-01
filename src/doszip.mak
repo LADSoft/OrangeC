@@ -37,7 +37,7 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 all:
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip bin\*.* bin\*
-#	7z -r -tzip -x@src\dosxclude.lst a src\doszip doc\*.* doc\*
+	7z -r -tzip -x@src\dosxclude.lst a src\doszip doc\tools.htm
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip examples\*.* examples\*
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip include\*.* include\*
 	7z -r -tzip -x@src\dosxclude.lst a src\doszip lib\*.* lib\*

@@ -37,8 +37,8 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 stubexe:
 	$(RESTUB) $(DISTBIN)\$(NAME).exe $(STUB)
-	upx $(DISTBIN)\$(NAME).exe
-	$(RENSEG) $(DISTBIN)\$(NAME).exe
+#	upx $(DISTBIN)\$(NAME).exe
+#	$(RENSEG) $(DISTBIN)\$(NAME).exe
 distcopy:
 	copy $(RELEASEPATH)\$(NAME).exe $(DISTBIN)
 copyexe: distcopy stubexe

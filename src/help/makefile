@@ -42,3 +42,4 @@ EXEFILE:
 
 DISTRIBUTE:
 	copy *.chm $(DISTHELP)
+	copy tools.htm $(DISTDOC)

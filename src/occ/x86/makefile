@@ -171,9 +171,8 @@ endif
 include $(CPPMAKE)
 
 DISTRIBUTE:
-#	copy occ.exe $(DISTBIN) 
-	copy c:\orangec\src\release\occ.exe $(DISTBIN) 
+	copy $(RELEASEPATH)\occ.exe $(DISTBIN)
 	$(RESTUB) $(DISTBIN)\occ.exe $(STUB)
-	upx $(DISTBIN)\occ.exe
-	$(RENSEG) $(DISTBIN)\occ.exe
+#	upx $(DISTBIN)\occ.exe
+#	$(RENSEG) $(DISTBIN)\occ.exe
 	copy target.cfg $(DISTBIN)\occ.cfg

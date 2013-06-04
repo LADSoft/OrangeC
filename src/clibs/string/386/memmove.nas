@@ -35,25 +35,25 @@
 
 [extern memcpy_x]
 
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 _memmove:
-    push	ebx
-    mov	ecx,[esp+16]
-    jecxz x1
-    mov	ebx,[esp+12]
-    mov	edx,[esp+8]
+	push	ebx
+	mov	ecx,[esp+16]
+	jecxz x1
+	mov	ebx,[esp+12]
+	mov	edx,[esp+8]
 join:
-    cmp	edx,ebx	
-    jbe	memcpy_x
-    add	ebx,ecx
-    add	edx,ecx
+	cmp	edx,ebx	
+	jbe	memcpy_x
+	add	ebx,ecx
+	add	edx,ecx
 lp2:
-    dec	ebx
-    dec	edx
-    mov	al,[ebx]
-    mov	[edx],al
-    loop	lp2
+	dec	ebx
+	dec	edx
+	mov	al,[ebx]
+	mov	[edx],al
+	loop	lp2
 x1:
-    mov	eax,edx
-    pop	ebx
-    ret
+	mov	eax,[esp+8]
+	pop	ebx
+	ret

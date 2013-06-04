@@ -72,7 +72,7 @@ BOOL startOfType(LEXEME *lex)
     if (lex->type == l_id || MATCHKW(lex, classsel))
     {
         SYMBOL *sp;
-        nestedSearch(lex, &sp, NULL, NULL, FALSE);
+        nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
         if (cparams.prm_cplusplus)
             backupsym(0);
         return sp && istype(sp->storage_class);
@@ -876,7 +876,12 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, INITIALIZER *init, EXP
     EXPRESSION *exp = NULL, **expp;
     EXPRESSION *expsym;
     if (!sp)
-        expsym = intNode(en_c_i, 0);
+    {
+        if (thisptr)
+            expsym = thisptr;
+        else
+            expsym = intNode(en_c_i, 0);
+    }
     else switch (sp->storage_class)
     {
         case sc_auto:

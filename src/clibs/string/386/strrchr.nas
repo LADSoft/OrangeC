@@ -32,38 +32,39 @@
 [export _strrchr]
 %endif
 [global _strrchr]
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 
 _strrchr:
-    mov		eax,[esp+4]
-    dec	eax
+	mov		eax,[esp+4]
+	dec	eax
 lp1:
-    inc	eax
-    test al,3
-    jnz x1
+	inc	eax
+	test al,3
+	jnz x1
 lp2:
-    mov	ecx,[eax]
-    add	eax,BYTE 4
-    mov edx,ecx
-    sub	edx,001010101h
-    not ecx
-    and edx,080808080h
-    and edx,ecx
-    jz lp2
-    sub eax,BYTE 4
+	mov	ecx,[eax]
+	add	eax,BYTE 4
+	mov edx,ecx
+	sub	edx,001010101h
+	not ecx
+	and edx,080808080h
+	and edx,ecx
+	jz lp2
+	sub eax,BYTE 4
 x1:
-    cmp	byte [eax],BYTE 0
-    jne	lp1
+	cmp	byte [eax],BYTE 0
+	jne	lp1
 
-    mov	edx,[esp+4]
-    mov	ecx,[esp+8]
+	inc	eax
+	mov	edx,[esp+4]
+	mov	ecx,[esp+8]
 lp:
-    dec	eax
-    cmp		edx,eax
-    ja		none
-    cmp		cl,[eax]
-    jne		lp
-    ret
+	dec	eax
+	cmp		edx,eax
+	ja		none
+	cmp		cl,[eax]
+	jne		lp
+	ret
 none
-    sub		eax,eax
-    ret	
+	sub		eax,eax
+	ret	

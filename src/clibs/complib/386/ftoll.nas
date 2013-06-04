@@ -35,27 +35,27 @@
 %endif
 [global __ftoll]
 SECTION data CLASS=DATA USE32
-nm  db "_ftol",0
+nm  db "_ftoll",0
 
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 __ftoll:
     lea eax,[nm]
     call clearmath
-    sub	esp,12
-    fnstcw	[esp+8]
-    mov	ax,[esp+8]
-    or	ah,0ch
-    mov	[esp+10],ax
-    fldcw	[esp+10]
-    fistp	qword [esp]
+	sub	esp,12
+	fnstcw	[esp+8]
+	mov	ax,[esp+8]
+	or	ah,0ch
+	mov	[esp+10],ax
+	fldcw	[esp+10]
+	fistp	qword [esp]
     call checkinvalid
     jnc ok
     popone
     mov dword [esp],0ffffffffh
-    mov dword [esp+4],07fffffffh
+	mov dword [esp+4],07fffffffh
 ok:
-    fldcw	[esp+8]
-    mov	eax,[esp]
-    mov edx,[esp + 4]
+	fldcw	[esp+8]
+	mov	eax,[esp]
+	mov edx,[esp + 4]
     add esp,12
-    ret
+	ret

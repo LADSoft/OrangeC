@@ -119,7 +119,7 @@ int __ll_namedstat(const char *name, void *__statbuf) ;
 int __ll_writeable(const char *path) ;
 
 /* Internal functions, already implemented */
-FILE *__basefopen(const char *name, const char *mode,FILE *stream, int fd);
+FILE *__basefopen(const char *name, const char *mode,FILE *stream, int fd, int share);
 int __basefclose(FILE *stream,int release);
 int __writebuf(FILE *__stream);
 int __readbuf(FILE *stream) ;

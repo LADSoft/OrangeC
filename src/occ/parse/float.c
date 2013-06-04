@@ -1,51 +1,18 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
-#ifdef TEST
-#define LLONG_TYPE long long
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#define USE_LONGLONG
+#define TRUE 1
+#define FALSE 0
 #include "floating.h"
-int BigEndian = 0;
-#else
-#include "compiler.h"
-extern ARCH_ASM *chosenAssembler;
-#define BigEndian chosenAssembler->arch->big_endian
+void diag(char *s);
+#if defined(TEST) || defined(LIBFLOAT)
+#define diag(s) puts(s)
 #endif
+//#undef USE_LONGLONG
 
-#include "math.h"
+static const int BigEndian = 0;
 
 /*
 ** emfloat.c
@@ -119,8 +86,6 @@ int ValueIsOne(FPF *value)
     if (value->type != IFPF_IS_NORMAL)
         return 0;
     if (value->exp != 1)
-        return 0;
-    if (value->sign)
         return 0;
     return IsMantissaOne(value->mantissa);
 }
@@ -351,6 +316,8 @@ void normalize(FPF *ptr)
 {
 u16     carry;
 
+if (ptr->type == IFPF_IS_ZERO || ptr->type == IFPF_IS_INFINITY || ptr->type == IFPF_IS_NAN)
+	return;
 /*
 ** As long as there's a highmost 0 bit, shift the significand
 ** left 1 bit.  Each time you do this, though, you've
@@ -377,6 +344,11 @@ void denormalize(FPF *ptr,
                 int minimum_exponent)
 {
 long exponent_difference;
+
+if (IsMantissaZero(ptr->mantissa))
+{
+        printf("Error:  zero significand in denormalize\n");
+}
 
 exponent_difference = ptr->exp-minimum_exponent;
 if (exponent_difference < 0)
@@ -419,7 +391,9 @@ if (ptr->type == IFPF_IS_NORMAL ||
         {
         
                 /* clear the extraneous bits */
-                ptr->mantissa[INTERNAL_FPF_PRECISION-1] &= 0xfff8;
+//                ptr->mantissa[INTERNAL_FPF_PRECISION-1] &= 0xfff8;
+				if (IsMantissaZero(ptr->mantissa))
+					SetFPFZero(ptr, ptr->sign);
 /*              for (i=4; i<INTERNAL_FPF_PRECISION; i++)
                 {
                         ptr->mantissa[i] = 0;
@@ -1131,8 +1105,8 @@ void FPFMultiplyPowTen(FPF *value, int power)
         return;
     value->exp += power ;
     if (power < 0) { /* constant 0.2 */
-        for (i=0; i < INTERNAL_FPF_PRECISION; i++)
-            temp.mantissa[i] = 0xCCCC;
+	    for (i=0; i < INTERNAL_FPF_PRECISION; i++)
+	        temp.mantissa[i] = 0xCCCC;
         power = - power;
         temp.exp = -2 ;
         temp.type = IFPF_IS_NORMAL;
@@ -1148,7 +1122,7 @@ void FPFMultiplyPowTen(FPF *value, int power)
     mul = temp;
     while (power) {
         FPF internal;
-        if (power & 1) { 
+    	if (power & 1) { 
             MultiplyFPF(value, &mul, &internal);
             *value = internal;
         }
@@ -1178,94 +1152,110 @@ char * FPFToString(char *dest,
                 FPF *src)
 {
     char *old = dest;
-    if (src->type == IFPF_IS_NAN)
-    {
-        if (src->sign)
-            *dest++ = '-';
-        strcpy(dest, "nan");
-    }
-    else if (src->type == IFPF_IS_INFINITY)
-    {
-        if (src->sign)
-            *dest++ = '-';
-        strcpy(dest, "inf");
-    }
-    else
-    {
-        u16 mantissa[INTERNAL_FPF_PRECISION];
-        FPF temp = *src;
-        int power = FPFTensExponent(&temp);
-        u16 carry;
-        int val,val1,i,j;
-        if (src->type == IFPF_IS_ZERO)
-        {
-            strcpy(dest, "0.0");
-            return dest;
-        }
-        FPFMultiplyPowTen(&temp,-power);
-        val = 0;
-        if (temp.sign)
-            *dest++ = '-';
-        if (temp.exp > 0) {
-            while (temp.exp--) {
-                carry = 0;
-                ShiftMantLeft1(&carry,temp.mantissa);
-                val <<= 1;
-                val |= !!carry;
-            }
-            *dest++ = val + '0';
-            *dest++ = '.' ;
-        }
-        else {
-            *dest++ = '0';
-            *dest++ = '.';
-            while (temp.exp++) {
-                carry = 0;
-                ShiftMantRight1(&carry, temp.mantissa);
-            }
-        }    
-        for (i=0; i < 18; i++) {
-            carry = 0;
-            val = 0;
-            ShiftMantLeft1(&carry,temp.mantissa);
-            val <<= 1;
-            val |= !!carry;
-            val1 = val ;
-            memcpy(mantissa,temp.mantissa, INTERNAL_FPF_PRECISION * sizeof(u16));
-            carry = 0;
-            ShiftMantLeft1(&carry,temp.mantissa);
-            val <<= 1;
-            val |= !!carry;
-            carry = 0;
-            ShiftMantLeft1(&carry,temp.mantissa);
-            val <<= 1;
-            val |= !!carry;
-            val += val1 ;
-            carry = 0;
-            for (j= INTERNAL_FPF_PRECISION-1; j >=0; j--) {
-                Add16Bits(&carry, temp.mantissa + j, mantissa[j], temp.mantissa[j]);
-            }
-            val += !!carry;
-            *dest++ = '0' + val;
-        }
-        if (power) {
-           *dest++ = 'E';
-            if (power < 0) {
-                power = - power;
-                *dest++ = '-';
-            } else
-                *dest++ = '+';
-            sprintf(dest,"%d",power);
-        } else
-            *dest = 0 ;
-    }
+	if (src->type == IFPF_IS_NAN)
+	{
+		if (src->sign)
+			*dest++ = '-';
+		strcpy(dest, "nan");
+	}
+	else if (src->type == IFPF_IS_INFINITY)
+	{
+		if (src->sign)
+			*dest++ = '-';
+		strcpy(dest, "inf");
+	}
+	else if (src->type == IFPF_IS_ZERO)
+	{
+		if (src->sign)
+			*dest++ = '-';
+		strcpy(dest, "0.0");
+	}
+	else
+	{
+	    u16 mantissa[INTERNAL_FPF_PRECISION];
+	    FPF temp = *src;
+	    int power = FPFTensExponent(&temp);
+	    u16 carry;
+	    int val,val1,i,j,c;
+	    FPFMultiplyPowTen(&temp,-power);
+	    val = 0;
+	    if (temp.sign)
+	        *dest++ = '-';
+	    if (temp.exp > 0) {
+	        while (temp.exp--) {
+	            carry = 0;
+	            ShiftMantLeft1(&carry,temp.mantissa);
+	            val <<= 1;
+	            val |= !!carry;
+	        }
+	        *dest++ = val + '0';
+	        *dest++ = '.' ;
+	    }
+	    else {
+	        *dest++ = '0';
+	        *dest++ = '.';
+	        while (temp.exp++) {
+	            carry = 0;
+	            ShiftMantRight1(&carry, temp.mantissa);
+	        }
+	    }
+	    c = *(dest-2) != '0';
+	    for (i=0; i < 24 - c; i++) {
+	        carry = 0;
+	        val = 0;
+	        ShiftMantLeft1(&carry,temp.mantissa);
+	        val <<= 1;
+	        val |= !!carry;
+	        val1 = val ;
+	        memcpy(mantissa,temp.mantissa, INTERNAL_FPF_PRECISION * sizeof(u16));
+	        carry = 0;
+	        ShiftMantLeft1(&carry,temp.mantissa);
+	        val <<= 1;
+	        val |= !!carry;
+	        carry = 0;
+	        ShiftMantLeft1(&carry,temp.mantissa);
+	        val <<= 1;
+	        val |= !!carry;
+	        val += val1 ;
+	        carry = 0;
+	        for (j= INTERNAL_FPF_PRECISION-1; j >=0; j--) {
+	            Add16Bits(&carry, temp.mantissa + j, mantissa[j], temp.mantissa[j]);
+	        }
+	        val += !!carry;
+	        *dest++ = '0' + val;
+	    }
+	    if (*(dest-1) > '4') {
+	        char *t = dest-2;
+	        while (t >= old) {
+	            if (*t < '0') {
+	                t--;
+	                continue;
+	            }
+	            (*t)++;
+	            if (*t != '9'+1)
+	                break;
+	            *t-- = '0';
+	        }
+	    }
+	    dest--;
+	    if (power) {
+	       *dest++ = 'E';
+	        if (power < 0) {
+	            power = - power;
+	            *dest++ = '-';
+	        } else
+	            *dest++ = '+';
+	        sprintf(dest,"%d",power);
+	    } else
+	        *dest = 0 ;
+	}
     return old;
 }
 
 LLONG_TYPE FPFToLongLong(FPF *src)
 {
-    FPF stemp = *src;
-    int exp = stemp.exp;
+	FPF stemp = *src;
+	int exp = stemp.exp;
     LLONG_TYPE temp;
     u16 tmant[INTERNAL_FPF_PRECISION];
     int i;
@@ -1335,30 +1325,39 @@ LLONG_TYPE FPFToLongLong(FPF *src)
 int FPFToFloat(unsigned char *dest, FPF *src)
 {
     u32 val ;
-    if (src->type == IFPF_IS_ZERO)
-        val = 0 ;
-    else 
-    {
-        if (src->type == IFPF_IS_INFINITY)
-            val = 0x7f800000;
-        else if (src->type == IFPF_IS_NAN)
-            val = 0x7fc00000;
-        else {
-            if (src->exp <= -126)
-            {
-                val = (((src->mantissa[0]) << 7) + (src->mantissa[1] >> 9)) >> (-126 - src->exp) ;
-            }
-            else
-            {
-                val = ((src->mantissa[0] & 0x7fff) << 8) + (src->mantissa[1] >> 8) ;
-                val |= (src->exp + 126) << 23;
-            }
-            if (src->exp > 129)
-            {
-                diag("FPFToFloat: invalid exponent");
-            }
-        }
-    }
+      FPFTruncate(src, 24, 128, -126);
+	if (src->type == IFPF_IS_ZERO)
+		val = 0 ;
+	else 
+	{
+		if (src->type == IFPF_IS_INFINITY)
+			val = 0x7f800000;
+		else if (src->type == IFPF_IS_NAN)
+			val = 0x7fc00000;
+		else {
+			if (src->exp <= -126)
+			{
+				val = ((src->mantissa[0]) << 7) + (src->mantissa[1] >> 9) ;
+			}
+			else
+			{
+				val = ((src->mantissa[0] & 0x7fff) << 8) + (src->mantissa[1] >> 8) ;
+			}
+		    if (src->exp > 129 || src->exp < - 126)
+			{
+				if (src->exp < -126 && src->exp >= -149)
+				{
+					int n = -(src->exp + 126);
+					u32 r = !!(val & (1 << (n - 1)));
+					val >>= n;
+					val += r;
+				}
+				else diag("FPFToFloat: invalid exponent");
+			}
+			else
+			    val |= (src->exp + 126) << 23;
+		}
+	}
     if (src->sign)
         val |= 0x80000000L;
     if (BigEndian) {
@@ -1376,114 +1375,205 @@ int FPFToFloat(unsigned char *dest, FPF *src)
 }
 int FPFToDouble(unsigned char *dest, FPF *src)
 {
-    ULLONG_TYPE val;
-    if (src->type == IFPF_IS_ZERO)
-        val = 0;
-    else 
-    {
-        if (src->type == IFPF_IS_INFINITY)
-            val = 0x7ff0000000000000i64;
-        else if (src->type == IFPF_IS_NAN)
-            val = 0x7ff8000000000000i64;
-        else {
-            if (src->exp <= -1022)
-            {
-                val = (unsigned)((src->mantissa[0] << 16) + src->mantissa[1]) ;
-                val <<= 20;
-                val |= (src->mantissa[2] << 4) + (src->mantissa[3] >> 12) ;
-                val >>= -1022 - src->exp;
-            }
-            else
-            {
-                val = (src->exp + 1022);
-                val <<= 31;
-                val |= ((src->mantissa[0] & 0x7fff) << 16) + src->mantissa[1]  ;
-                val <<= 21;
-                val |= (src->mantissa[2] << 5) + (src->mantissa[3] >> 11) ;
-            }
-            if (src->exp > 1025)
-            {
-                diag("FPFToDouble: invalid exponent");
-            }
-        }
-    }
+    u32 val[2] ;
+      FPFTruncate(src, 53, 1024, -1022);
+	if (src->type == IFPF_IS_ZERO)
+		val[0] = val[1] = 0 ;
+	else 
+	{
+		if (src->type == IFPF_IS_INFINITY)
+			val[0] = 0x7ff00000, val[1] = 0;
+		else if (src->type == IFPF_IS_NAN)
+			val[0] = 0x7ff80000, val[1] = 0;
+	    else {
+			if (src->exp <= -1022)
+			{
+			    val[0] = ((src->mantissa[0]) << 4) + (src->mantissa[1] >> 12) ;
+			    val[1] = (src->mantissa[1] << 20) + (src->mantissa[2] << 4) + (src->mantissa[3] >> 12) ;
+			}
+			else
+			{
+			    val[0] = ((src->mantissa[0] & 0x7fff) << 5) + (src->mantissa[1] >> 11) ;
+			    val[1] = (src->mantissa[1] << 21) + (src->mantissa[2] << 5) + (src->mantissa[3] >> 11) ;
+			}
+	        if (src->exp > 1025 || src->exp < - 1022)
+			{
+				if (src->exp < -1022 && src->exp >= -1074)
+				{
+					int n = -(src->exp + 1022);
+					u32 c = val[0], r, t;
+					if (n < 32)
+					{
+						r = !!(val[1] & (1 << (n - 1)));
+						val[0] >>= n;
+						val[1] >>= n;
+						val[1] |= (c & ~(1 << n)) << (32 - n);
+					}
+					else
+					{
+						if (n == 32) r = !!(val[1] & (1 << 31));
+						else r = !!(c & (1 << (n - 33)));
+						val[0] = 0;
+						val[1] = c >> (n - 32);
+					}
+					t = val[1];
+					t += r;
+					if (t < val[1]) val[0]++;
+					val[1] = t;
+				}
+				else diag("FPFToDouble: invalid exponent");
+			}
+			else
+		        val[0] |= (src->exp + 1022) << 20;
+	    }
+	}
     if (src->sign)
-        val |= 0x8000000000000000i64;
+        val[0] |= 0x80000000L;
     if (BigEndian) {
-        dest[0] = val >> 56;
-        dest[1] = (val >> 48) & 0xff ;
-        dest[2] = (val >> 40) & 0xff ;
-        dest[3] = (val >> 32) & 0xff ;
-        dest[4] = (val >> 24) & 0xff;
-        dest[5] = (val >> 16) & 0xff ;
-        dest[6] = (val >> 8) & 0xff ;
-        dest[7] = (val >> 0) & 0xff ;
+        dest[0] = val[0] >> 24;
+        dest[1] = (val[0] >> 16) & 0xff ;
+        dest[2] = (val[0] >> 8) & 0xff ;
+        dest[3] = (val[0] >> 0) & 0xff ;
+        dest[4] = val[1] >> 24;
+        dest[5] = (val[1] >> 16) & 0xff ;
+        dest[6] = (val[1] >> 8) & 0xff ;
+        dest[7] = (val[1] >> 0) & 0xff ;
     } else {
-        dest[7] = val >> 56;
-        dest[6] = (val >> 48) & 0xff ;
-        dest[5] = (val >> 40) & 0xff ;
-        dest[4] = (val >> 32) & 0xff ;
-        dest[3] = (val >> 24) & 0xff;
-        dest[2] = (val >> 16) & 0xff ;
-        dest[1] = (val >> 8) & 0xff ;
-        dest[0] = (val >> 0) & 0xff ;
+        dest[7] = val[0] >> 24;
+        dest[6] = (val[0] >> 16) & 0xff ;
+        dest[5] = (val[0] >> 8) & 0xff ;
+        dest[4] = (val[0] >> 0) & 0xff ;
+        dest[3] = val[1] >> 24;
+        dest[2] = (val[1] >> 16) & 0xff ;
+        dest[1] = (val[1] >> 8) & 0xff ;
+        dest[0] = (val[1] >> 0) & 0xff ;
     }
     return 1;
 }
 int FPFToLongDouble(unsigned char *dest, FPF *src)
 {
-    int exp;
-    ULLONG_TYPE val;
+    u32 val[3] ;
+    FPFTruncate(src, 64, 16384, -16382);
     /* have to or in the high bit in case infinity or nan*/
-    if (src->type == IFPF_IS_ZERO)
-        exp = val = 0;
-    else 
-    {
-        if (src->type == IFPF_IS_INFINITY)
-            exp = 0x7fff, val = 0x8000000000000000i64;
-        else if (src->type == IFPF_IS_NAN)
-        {
-            exp = 0x7fff;
-            val = 0xc000000000000000i64;
-        }
-        else {
-            exp = 0;
-            val = (unsigned)((src->mantissa[0] << 16) + src->mantissa[1]) ;
-            val <<= 32;
-            val |= (unsigned)((src->mantissa[2] << 16) + src->mantissa[3]) ;
-            if (src->exp > 16385)
-                diag("FPFToLongDouble: invalid exponent");
-            else if (src->exp <= - 16382)
-                val >>= - 16382 - src->exp;
-            else
-                exp = src->exp + 16382;
-        }
-    }
+	if (src->type == IFPF_IS_ZERO)
+		val[0] = val[1] = val[2] = 0 ;
+	else 
+	{
+		if (src->type == IFPF_IS_INFINITY)
+			val[0] = 0x7fff, val[1] = 0x80000000, val[2] = 0;
+		else if (src->type == IFPF_IS_NAN)
+		{
+			val[0] = 0x7fff;
+			val[1] = 0xc0000000;
+			val[2] = 0;
+		}
+	    else {
+			val[0] = 0;
+		    val[1] = (src->mantissa[0] << 16) + src->mantissa[1];
+		    val[2] = (src->mantissa[2] << 16) + src->mantissa[3];
+	        if (src->exp > 16385 || src->exp < - 16382)
+				if (src->exp < -16382 && src->exp >= -16446)
+				{
+					int n = -(src->exp + 16381);
+					u32 c = val[1], r, t;
+					if (n < 32)
+					{
+						r = !!(val[2] & (1 << (n - 1)));
+						val[1] >>= n;
+						val[2] >>= n;
+						val[2] |= (c & ~(1 << n)) << (32 - n);
+					}
+					else if (n < 64)
+					{
+						if (n == 32) r = !!(val[2] & (1 << 31));
+						else r = !!(c & (1 << (n - 33)));
+						val[1] = 0;
+						val[2] = c >> (n - 32);
+					}
+					else
+					{
+						if (n == 64) r = !!(c & (1 << 31));
+						else r = 0;
+						val[1] = 0;
+						val[2] = 0;
+					}
+					t = val[2];
+					t += r;
+					if (t < val[2]) val[1]++;
+					val[2] = t;
+				}
+				else diag("FPFToLongDouble: invalid exponent");
+			else
+		        val[0] = src->exp + 16382;
+	    }
+	}
     if (src->sign)
-        exp |= 0x8000L;
+        val[0] |= 0x8000L;
         
     if (BigEndian) {
-        dest[0] = exp >> 8;
-        dest[1] = exp & 0xff;
-        dest[2] = val >> 56;
-        dest[3] = (val >> 48) & 0xff ;
-        dest[4] = (val >> 40) & 0xff ;
-        dest[5] = (val >> 32) & 0xff ;
-        dest[6] = (val >> 24) & 0xff;
-        dest[7] = (val >> 16) & 0xff ;
-        dest[8] = (val >> 8) & 0xff ;
-        dest[9] = (val >> 0) & 0xff ;
+        dest[0] = val[0] >> 8;
+        dest[1] = val[0] & 0xff;
+        dest[2] = val[1] >> 24;
+        dest[3] = (val[1] >> 16) & 0xff ;
+        dest[4] = (val[1] >> 8) & 0xff ;
+        dest[5] = (val[1] >> 0) & 0xff ;
+        dest[6] = val[2] >> 24;
+        dest[7] = (val[2] >> 16) & 0xff ;
+        dest[8] = (val[2] >> 8) & 0xff ;
+        dest[9] = (val[2] >> 0) & 0xff ;
     } else {
-        dest[9] = exp >> 8;
-        dest[8] = exp & 0xff;
-        dest[7] = val >> 56;
-        dest[6] = (val >> 48) & 0xff ;
-        dest[5] = (val >> 40) & 0xff ;
-        dest[4] = (val >> 32) & 0xff ;
-        dest[3] = (val >> 24) & 0xff;
-        dest[2] = (val >> 16) & 0xff ;
-        dest[1] = (val >> 8) & 0xff ;
-        dest[0] = (val >> 0) & 0xff ;
+        dest[9] = val[0] >> 8;
+        dest[8] = val[0] & 0xff;
+        dest[7] = val[1] >> 24;
+        dest[6] = (val[1] >> 16) & 0xff ;
+        dest[5] = (val[1] >> 8) & 0xff ;
+        dest[4] = (val[1] >> 0) & 0xff ;
+        dest[3] = val[2] >> 24;
+        dest[2] = (val[2] >> 16) & 0xff ;
+        dest[1] = (val[2] >> 8) & 0xff ;
+        dest[0] = (val[2] >> 0) & 0xff ;
+    }
+    return 1;
+}
+int LongDoubleToFPF(FPF *dest, unsigned char *src)
+{
+    int i, exp;
+    if (BigEndian) {
+        for (i = 0; i < INTERNAL_FPF_PRECISION - 1; i++)
+            dest->mantissa[i] = *((u16 *)src + i + 1);
+        dest->mantissa[i] = 0;
+        exp = *(u16 *)src;
+    } else {
+        for (i = 0; i < INTERNAL_FPF_PRECISION - 1; i++)
+            dest->mantissa[i] = *((u16 *)src + INTERNAL_FPF_PRECISION - 2 - i);
+        dest->mantissa[i] = 0;
+        exp = *((u16 *)src + INTERNAL_FPF_PRECISION - 1);
+    }
+    dest->sign = !!(exp & 0x8000);
+    exp &= 0x7fff;
+    if (exp == 0) {
+       if (IsMantissaZero(dest->mantissa)) {
+           dest->type = IFPF_IS_ZERO;
+           dest->exp = exp;
+       }
+       else {
+           dest->type = IFPF_IS_SUBNORMAL;
+           dest->exp = exp - 16381;
+           FPFTruncate(dest, 64, MAX_EXP, MIN_EXP);
+       }
+    }
+    else if (exp == 0x7fff)
+    {
+       if (dest->mantissa[0] == 0x8000 &&
+           (dest->mantissa[1] | dest->mantissa[2] | dest->mantissa[3]) == 0)
+           dest->type = IFPF_IS_INFINITY;
+       else
+           dest->type = IFPF_IS_NAN;
+       dest->exp = exp;
+    }
+    else {
+       dest->type = IFPF_IS_NORMAL;
+       dest->exp = exp - 16382;
     }
     return 1;
 }
@@ -1497,13 +1587,14 @@ void FPFTruncate(FPF *value, int bits, int maxexp, int minexp)
             return;
         case IFPF_IS_NORMAL:
         case IFPF_IS_SUBNORMAL:
-            normalize(value);
+			normalize(value);
             if (value->exp > maxexp)
                 SetFPFInfinity(value, value->sign);
             else if (value->exp < minexp) {
                 if (value->exp + bits < minexp)
                     SetFPFZero(value, 0);
                 else {
+/*
                     while (value->exp < minexp) {
                         u16 carry = 0;
                         ShiftMantRight1(&carry, value->mantissa);
@@ -1512,68 +1603,73 @@ void FPFTruncate(FPF *value, int bits, int maxexp, int minexp)
                     if (IsMantissaZero(value->mantissa))
                         SetFPFZero(value,0);
                     else
+*/
                         value->type = IFPF_IS_SUBNORMAL;
                 }
             } else {
                 int i, v;
-                int rounding = FALSE;
-                if (bits % 16) {
+				int rounding = FALSE;
+                /*if (bits % 16)*/ {
                     int mask = 0x8000, mask2 = 0x8000;
-                    for (i= 1; i < bits % 16; i++) {
+                    for (i= 1; i <= bits % 16; i++) {
                         mask >>= 1;
-                        mask2 >>= 1;
+						mask2 >>= 1;
                         mask |= 0x8000;
                     }
-                    if (value->mantissa[bits/16] & ~mask)
-                        rounding = TRUE;
+					if (value->mantissa[bits/16] & mask2)
+						rounding = TRUE;
                     value->mantissa[bits /16] &= mask;
-                    v = mask2;
+					v = mask2;
                 }
-                else
-                    v = 1;
-                for (i = (bits + 15)/16; i < INTERNAL_FPF_PRECISION; i++)
-                {
-                    if (value->mantissa[i])
-                        rounding ++;
+/*
+				else
+					v = 0x8000;
+*/
+/* Needed if "& mask2", above, is changed back to "& ~mask"
+                for (i = bits / 16 + 1; i < INTERNAL_FPF_PRECISION; i++)
+				{
+					if (value->mantissa[i])
+						rounding ++;
                     value->mantissa[i] = 0;
-                }
-                if (rounding)
-                {
-                    int n;
+				}
+*/
+				if (rounding)
+				{
+					int n;
 
-                    /* do an add of 1 to the LSB */
-                    for (i= bits/16; i >= 0; i--)
-                    {
-                        n =	value->mantissa[i] + v;
-                        value->mantissa[i] = n;
-                        if (n < 0x10000)
-                            break;
-                        v = 1;
-                    }
-                    /* overflow????? */
-                    if (n >= 0x10000)
-                    {
-                        value->exp++;
-                        /* exponent too large ? */
-                        if (value->exp >= maxexp)
-                        {
-                            /* yes leave it alone */
-                            SetFPFInfinity(value, value->sign);
-                        }
-                        else 
-                        {
-                            /* else shift mantissa right and increment exponent... */
-                            u16 carry = 1 ; /* high bit should be one */
-                            ShiftMantRight1(&carry, value->mantissa);
-                        }
-                    }
-                }
+					/* do an add of 1 to the LSB */
+					for (i= bits/16; i >= 0; i--)
+					{
+						n =	value->mantissa[i] + v;
+						value->mantissa[i] = n;
+						if (n < 0x10000)
+							break;
+						v = 1;
+					}
+					// overflow????? 
+					if (n >= 0x10000)
+					{
+						value->exp++;
+						/* exponent too large ? */
+						if (value->exp >= maxexp)
+						{
+							/* yes leave it alone */
+							SetFPFInfinity(value, value->sign);
+						}
+						else
+						{
+							/* else shift mantissa right and increment exponent... */
+							u16 carry = 1 ; /* high bit should be one */
+							ShiftMantRight1(&carry, &value->mantissa);
+						}
+					}
+				}
             }
             break ;
     }
 }
 #ifdef TEST
-int main()
+void main()
 {
     int i;
     char buf[256];
@@ -1591,13 +1687,15 @@ int main()
 /*    FPFMultiplyPowTen(&one, -2);*/
 /*    printf("%d\n",memcmp(&one,&three,sizeof(one)));*/
     FPFToString(buf,&three);
-    
     printf("%s\n",buf);
     FPFToFloat(&f,&one);
     FPFToDouble(&d,&one);
     FPFToLongDouble(&l, &one);
+    LongDoubleToFPF(&three, &l);
+    FPFToString(buf,&three);
+    printf("%s\n",buf);
     aa = FPFToLongLong(&one) ;
-    printf("%f %f %Lf %ld", f,d,l, aa);
+    printf("%f %f %Lf %ld ", f,d,l, aa);
     for (i=0; i < INTERNAL_FPF_PRECISION; i++)
         printf("%x ",one.mantissa[i]);
     printf("\n%d\n",one.type);

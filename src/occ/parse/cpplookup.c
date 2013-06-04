@@ -507,7 +507,7 @@ static SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, B
         }
     }
 }
-LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly)
+LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *destructor, BOOL tagsOnly)
 {
     SYMBOL *encloser = NULL;
     NAMESPACEVALUES *ns = NULL;
@@ -526,9 +526,26 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
         return lex;
     }
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly);
+    if (cparams.prm_cplusplus && MATCHKW(lex, compl))
+    {
+        if (destructor)
+        {
+            *destructor = TRUE;
+        }
+        else
+        {
+            error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
+        }
+        lex = getsym();
+    }
     if (ISID(lex))
     {
         *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass);
+    }
+    else if (destructor)
+    {
+        *destructor = FALSE;
+        error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
     }
     if (encloser&& strSym)
         *strSym = encloser;

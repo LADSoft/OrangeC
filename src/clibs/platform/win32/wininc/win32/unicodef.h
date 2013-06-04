@@ -413,6 +413,8 @@ extern DWORD
     LPCWSTR lpFileName
     );
 
+extern DWORD PASCAL WINBASEAPI GetPrivateProfileSectionNamesW(LPWSTR,DWORD,LPCWSTR);
+
 extern WINBOOL
  PASCAL WINBASEAPI WritePrivateProfileSectionW(
     LPCWSTR lpAppName,

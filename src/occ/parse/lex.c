@@ -215,6 +215,8 @@ KEYWORD keywords[] = {
     { "__stdcall", 9,  kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__typeid", 8,  kw___typeid, KW_CPLUSPLUS, 0},
     { "_absolute", 9,  kw__absolute, KW_NONANSI | KW_ALL, TT_STORAGE_CLASS},
+    { "_alloca", 7,  kw_alloca, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
+    { "_asm", 4,  kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL },
     { "_cdecl", 6,  kw__cdecl, KW_NONANSI, TT_LINKAGE },
     { "_export", 7,  kw__export, KW_NONANSI, TT_LINKAGE},
 //	{ "_far", 4,  kw__far, KW_NONANSI, TT_TYPEQUAL | TT_POINTERQUAL },
@@ -440,7 +442,7 @@ KEYWORD *searchkw(char **p)
         KEYWORD *found;
 #ifdef KW_HASH
         int len = 0;
-        while (ispunct(*q1))
+        while (ispunct((unsigned char)*q1))
             *q++ = *q1++, len++;
         if (len)
         {
@@ -881,9 +883,9 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     BOOL hasdot = FALSE;
     BOOL floating = FALSE;
     enum e_lexType lastst ;
-    if (!isdigit(**ptr) && **ptr != '.')
+    if (!isdigit((unsigned char)**ptr) && **ptr != '.')
         return  INT_MIN;
-    if (**ptr == '.' && !isdigit(*(*ptr + 1)))
+    if (**ptr == '.' && !isdigit((unsigned char)*(*ptr + 1)))
         return INT_MIN;
     if (**ptr == '0')
     {

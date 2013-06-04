@@ -184,11 +184,20 @@ extern  unsigned char _RTL_DATA    _osminor;
 
 /* Constants for MSC pathname functions */
 
+#ifndef _WIN32
 #define _MAX_PATH       80
 #define _MAX_DRIVE      3
 #define _MAX_DIR        66
 #define _MAX_FNAME      9
 #define _MAX_EXT        5
+#else
+#define _MAX_PATH       260
+#define _MAX_DRIVE      3
+#define _MAX_DIR        256
+#define _MAX_FNAME      256
+#define _MAX_EXT        256
+#endif
+#define _MAX_PATH2      (_MAX_PATH+4)
 
 long double     _RTL_FUNC _atold(const char *__s);
 void            _RTL_FUNC _exit(int __status);
@@ -198,6 +207,10 @@ char     *  _RTL_FUNC _itoa(int __value, char *__string, int __radix);
 char     *  _RTL_FUNC _i64toa(__int64 __value, char *__string, int __radix);
 char     *  _RTL_FUNC ltoa(long __value, char *__string, int __radix);
 char     *  _RTL_FUNC _ltoa(long __value, char *__string, int __radix);
+#if  __STDC_VERSION__ >= 199901L
+char * _RTL_FUNC lltoa(long long __value, char *__string, int __radix);
+char * _RTL_FUNC _lltoa(long long __value, char *__string, int __radix);
+#endif
 void        _RTL_FUNC      _makepath( char *__path,
                                  const char *__drive,
                                  const char *__dir,
@@ -213,11 +226,16 @@ void        _RTL_FUNC _searchenv(const char *__file,
 void        _RTL_FUNC _searchstr(const char *__file,
                                  const char *__ipath,
                                  char *__pathname);
-void        _RTL_FUNC _splitpath( const char *__path,
+void        _RTL_FUNC _splitpath(const char *__path,
                                  char *__drive,
                                  char *__dir,
                                  char *__name,
                                  char *__ext );
+void        _RTL_FUNC _splitpath2(const char *__path, char *__outpath,
+                                  char **__drive,
+                                  char **__dir,
+                                  char **__name,
+                                  char **__ext);
 void        _RTL_FUNC swab(char *__from, char *__to, int __nbytes);
 void        _RTL_FUNC _swab(char *, char *, int);
 char     *  _RTL_FUNC ultoa(unsigned long __value, char *__string,
@@ -226,11 +244,14 @@ char     *  _RTL_FUNC _ultoa(unsigned long __value, char *__string,
                                  int __radix);
 char     *  _RTL_FUNC _ui64toa(unsigned __int64 __value, char *__string,
                                  int __radix);
+char * _RTL_FUNC utoa(unsigned __value, char *__string, int __radix);
+char * _RTL_FUNC _utoa(unsigned __value, char *__string, int __radix);
+#if  __STDC_VERSION__ >= 199901L
 char     *  _RTL_FUNC ulltoa(unsigned __int64 __value, char *__string,
                                  int __radix);
 char     *  _RTL_FUNC _ulltoa(unsigned __int64 __value, char *__string,
                                  int __radix);
-
+#endif
 char * _RTL_FUNC _ecvt(double, int, int *, int *);
 char * _RTL_FUNC _fcvt(double, int, int *, int *);
 char * _RTL_FUNC _gcvt(double, int, char *);
@@ -385,6 +406,10 @@ void _RTL_FUNC _seterrormode(int);
     using std::_exit;
     using std::itoa;
     using std::ltoa;
+#if  __STDC_VERSION__ >= 199901L
+    using std::lltoa:
+    using std::_lltoa:
+#endif
     using std::_itoa;
     using std::_ltoa;
     using std::_i64toa;
@@ -401,12 +426,19 @@ void _RTL_FUNC _seterrormode(int);
     using std::_searchenv;
     using std::_searchstr;
     using std::_splitpath;
+    using std::_splitpath2;
     using std::swab;
     using std::_swab;
     using std::ultoa;
     using std::_ultoa;
     using std::_ui64toa;
+#if  __STDC_VERSION__ >= 199901L
     using std::ulltoa;
+    using std::_ulltoa:
+#endif
+	using std::_ui64toa;
+    using std::utoa;
+    using std::_utoa;
     using std::perror;
     using std::time;
     using std::randomize;

@@ -120,7 +120,7 @@ c0x32.obj $(addprefix $(OBJECT)\,$(EXE_dependencies) $(BACKEND_FILES)),occpr.exe
 
 
 DISTRIBUTE:
-	copy occpr.exe $(DISTBIN) 
+	copy $(RELEASEPATH)\occpr.exe $(DISTBIN)
 	$(RESTUB) $(DISTBIN)\occpr.exe $(STUB)
-	upx $(DISTBIN)\occpr.exe
-	$(RENSEG) $(DISTBIN)\occpr.exe
+#	upx $(DISTBIN)\occpr.exe
+#	$(RENSEG) $(DISTBIN)\occpr.exe

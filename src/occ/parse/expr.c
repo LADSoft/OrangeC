@@ -2709,12 +2709,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 else if (basetype(*tp)->scoped)
                     error(ERR_SCOPED_TYPE_MISMATCH);
                 else
-                    if (atp && basetype(atp)->type < bt_int)
-                    {
-                        cast(atp, exp);
-                        *tp = atp;
-                    }
-                    else if (basetype(*tp)->type < bt_int)
+                    if (basetype(*tp)->type < bt_int)
                     {
                         cast(&stdint, exp);
                         *tp = &stdint;
@@ -3821,6 +3816,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 }
                 if (isstructured(*tp) && (!isstructured(tp1) || !comparetypes(*tp, tp1, TRUE)))
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                else if (isstructured(*tp) && !(*tp)->size)
+                    errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
                 else if (!isstructured(*tp) && isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
                 else if (basetype(*tp)->type == bt_memberptr)

@@ -45,12 +45,13 @@
 SECTION data CLASS=DATA USE32
 
 
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 
 _fegetenv:
     mov ecx,[esp + 4]
     fnstenv [ecx]
     fldenv [ecx]
+    sub eax,eax
     ret
 _fesetenv:
     mov ecx,[esp+4]
@@ -59,6 +60,7 @@ _fesetenv:
     and ax,0ff00h
     mov [ecx + 4],ax
     fldenv [ecx]
+    sub eax,eax
     ret
 _feupdateenv:
     fstsw ax
@@ -66,6 +68,7 @@ _feupdateenv:
     mov ecx,[esp+4]
     or [ecx+4],ax
     fldenv [ecx]
+    sub eax,eax
     ret
 _feholdexcept:
     mov ecx,[esp+4]

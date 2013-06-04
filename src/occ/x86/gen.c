@@ -306,7 +306,11 @@ void make_floatconst(AMODE *ap)
     if (ValueIsOne(&ap->offset->v.f))
     {
         ap->mode = am_fconst;
-        ap->preg = fcone;
+        if (ap->offset->v.f.sign)
+            ap->preg = fcmone;
+        else
+            ap->preg = fcone;
+            
     }
     else if (ap->offset->v.f.type == IFPF_IS_ZERO)
     {
@@ -408,6 +412,8 @@ void floatLoad(AMODE *ap, int sz, int okind)
             else
             {
                 gen_code(op_fld1, 0, 0);
+                if (ap->preg == fcmone)
+                    gen_code(op_fchs, 0, 0);
             }
         }
         else if (!okind || sz == ISZ_LDOUBLE)
@@ -2565,7 +2571,15 @@ void asm_mul(QUAD *q)               /* signed multiply */
             gen_codes(op_imul, q->ans->size, apal, apll);
         else if (apll->mode == am_immed)
         {
-            gen_code3(op_imul, apal, aprl, apll);
+            if (aprl->mode == am_immed)
+            {
+                apll = aimmed(apll->offset->v.i * aprl->offset->v.i);
+                gen_codes(op_imul, q->ans->size, apal, apll);
+            }
+            else
+            {
+                gen_code3(op_imul, apal, aprl, apll);
+            }
         }
         else if (aprl->mode == am_immed)
         {

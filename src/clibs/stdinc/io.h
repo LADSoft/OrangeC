@@ -1,34 +1,34 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2008, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        Software License Agreement (BSD License)
+
+        Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+        All rights reserved.
+
+        Redistribution and use of this software in source and binary forms, with or without modification, are
+        permitted provided that the following conditions are met:
+
+        * Redistributions of source code must retain the above
+          copyright notice, this list of conditions and the
+          following disclaimer.
+
+        * Redistributions in binary form must reproduce the above
+          copyright notice, this list of conditions and the
+          following disclaimer in the documentation and/or other
+          materials provided with the distribution.
+
+        * Neither the name of LADSoft nor the names of its
+          contributors may be used to endorse or promote products
+          derived from this software without specific prior
+          written permission of LADSoft.
+
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+        WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+        PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+        ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+        LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+        INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+        TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /*  io.h
@@ -99,6 +99,11 @@ struct _finddata_t
 #define SEEK_END    2
 #define SEEK_SET    0
 
+#define F_OK    0
+#define X_OK    1
+#define W_OK    2
+#define R_OK    4
+
 int  _RTL_FUNC  access  (const char *__path, int __amode);
 int  _RTL_FUNC   chmod   (const char *__path, int __amode);
 int  _RTL_FUNC   chsize  (int __handle, long __size);
@@ -127,6 +132,7 @@ int  _RTL_FUNC   sopen (const char *__path, int __access, int __shflag,
                       ... /* unsigned mode */);
 int  _RTL_FUNC  rmdir(const char *__path);
 long _RTL_FUNC   tell  (int __handle);
+int  _RTL_FUNC  umask(int perm);
 int  _RTL_FUNC  unlink(const char *__path);
 int  _RTL_FUNC     unlock(int __handle, long __offset, long __length);
 int  _RTL_FUNC    write (int __handle, const void *__buf, unsigned __len);
@@ -155,6 +161,7 @@ int _RTL_FUNC _read(int, void *, unsigned int);
 int _RTL_FUNC _setmode(int, int);
 int _RTL_FUNC _sopen(const char *, int, int, ...);
 long _RTL_FUNC _tell(int);
+int  _RTL_FUNC _umask(int perm);
 int _RTL_FUNC _unlink(const char *);
 int _RTL_FUNC _write(int, const void *, unsigned int);
 
@@ -168,61 +175,60 @@ int _RTL_FUNC _write(int, const void *, unsigned int);
 #endif  /* __IO_H */
 #if defined(__cplusplus) && !defined (__USING_CNAME__) && !defined(__IO_H_USING_LIST)
 #define IO_H_USING_LIST
-    using std::access;
-    using std::chmod;
-    using std::chsize;
-    using std::close;
-    using std::creat;
-    using std::dup;
-    using std::dup2;
-    using std::eof;
-    using std::filelength;
-    using std::getftime;
-    using std::isatty;
-    using std::lock;
-    using std::locking;
-    using std::lseek;
-    using std::mktemp;
-    using std::open;
-    using std::open;
-    using std::read;
-    using std::remove;
-    using std::rename;
-    using std::setftime;
-    using std::setmode;
-    using std::sopen;
-    using std::sopen;
-    using std::tell;
-//	using std::umask;
-    using std::unlink;
-    using std::unlock;
-    using std::write;
-    using std::_findfirst;
-    using std::_findnext;
-    using std::_findclose;
-    using std::_get_osfhandle;
-    using std::_open_osfhandle;
+        using std::access;
+        using std::chmod;
+        using std::chsize;
+        using std::close;
+        using std::creat;
+        using std::dup;
+        using std::dup2;
+        using std::eof;
+        using std::filelength;
+        using std::getftime;
+        using std::isatty;
+        using std::lock;
+        using std::locking;
+        using std::lseek;
+        using std::mktemp;
+        using std::open;
+        using std::read;
+        using std::remove;
+        using std::rename;
+        using std::setftime;
+        using std::setmode;
+        using std::sopen;
+        using std::tell;
+        using std::umask;
+        using std::unlink;
+        using std::unlock;
+        using std::write;
+        using std::_findfirst;
+        using std::_findnext;
+        using std::_findclose;
+        using std::_get_osfhandle;
+        using std::_open_osfhandle;
     using std::ftime;
     using std::_nfile;
     using std::_finddata_t;
-    using std::_access;
-    using std::_chmod;
-    using std::_chsize;
-    using std::_close;
-    using std::_creat;
-    using std::_dup;
-    using std::_dup2;
-    using std::_eof;
-    using std::_filelength;
-    using std::_isatty;
-    using std::_locking;
-    using std::_lseek;
-    using std::_mktemp;
-    using std::_open;
-    using std::_read;
-    using std::_setmode;
-    using std::_sopen;
-    using std::_tell;
-    using std::_unlink;
-    using std::_write;
+        using std::_access;
+        using std::_chmod;
+        using std::_chsize;
+        using std::_close;
+        using std::_creat;
+        using std::_dup;
+        using std::_dup2;
+        using std::_eof;
+        using std::_filelength;
+        using std::_isatty;
+        using std::_locking;
+        using std::_lseek;
+        using std::_mktemp;
+        using std::_open;
+        using std::_read;
+        using std::_setmode;
+        using std::_sopen;
+        using std::_tell;
+        using std::_umask;
+        using std::_unlink;
+        using std::_write;
 #endif

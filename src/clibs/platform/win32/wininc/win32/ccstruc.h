@@ -983,7 +983,7 @@ typedef struct tagTVINSERTSTRUCT {
     {
         TVITEMEX itemex;
         TV_ITEM  item;
-    } u;
+    };
 } TVINSERTSTRUCT,  *LPTVINSERTSTRUCT;
 
 typedef int (CALLBACK *PFNTVCOMPARE)(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);

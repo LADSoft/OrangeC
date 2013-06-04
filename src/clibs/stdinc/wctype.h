@@ -1,34 +1,34 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2008, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	Software License Agreement (BSD License)
+	
+	Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+	All rights reserved.
+	
+	Redistribution and use of this software in source and binary forms, with or without modification, are
+	permitted provided that the following conditions are met:
+	
+	* Redistributions of source code must retain the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer.
+	
+	* Redistributions in binary form must reproduce the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer in the documentation and/or other
+	  materials provided with the distribution.
+	
+	* Neither the name of LADSoft nor the names of its
+	  contributors may be used to endorse or promote products
+	  derived from this software without specific prior
+	  written permission of LADSoft.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+	PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef __WCTYPE_H
 #define __WCTYPE_H
@@ -60,17 +60,17 @@ typedef const wchar_t *wctrans_t;
 
 #ifndef _IS_CONSTANTS
 #define _IS_CONSTANTS
-#define _IS_SP     1           /* space */
-#define _IS_DIG    2           /* digit */
-#define _IS_UPP    4           /* upper case */
-#define _IS_LOW    8           /* lower case */
-#define _IS_HEX   16           /* [0..9] or [A-F] or [a-f] */
-#define _IS_CTL   32           /* control */
-#define _IS_PUN   64           /* punctuation */
-#define _IS_BLK  128           /* blank */
-#define _IS_GPH  256            /* graphic */
+#define _IS_UPP     1           /* upper case */
+#define _IS_LOW     2           /* lower case */
+#define _IS_DIG     4           /* digit */
+#define _IS_SP      8           /* space */
+#define _IS_PUN    16           /* punctuation */
+#define _IS_CTL    32           /* control */
+#define _IS_BLK    64           /* blank */
+#define _IS_HEX   128           /* [0..9] or [A-F] or [a-f] */
+#define _IS_GPH   512
 
-#define _IS_ALPHA    (_IS_UPP | _IS_LOW)
+#define _IS_ALPHA    (0x100 | _IS_UPP | _IS_LOW)
 #define _IS_ALNUM    (_IS_DIG | _IS_ALPHA)
 #define _IS_GRAPH    (_IS_ALNUM | _IS_HEX | _IS_PUN)
 #define _IS_PRINT    (_IS_GRAPH | _IS_BLK)
@@ -136,22 +136,22 @@ extern const wchar_t *__ctype_u_toupper; /* Case conversions.  */
 #endif /* __WCTYPE_H  */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__WCTYPE_H_USING_LIST)
 #define __WCTYPE_H_USING_LIST
-    using std::iswalnum;
-    using std::iswalpha;
-    using std::iswcntrl;
-    using std::iswdigit;
-    using std::iswgraph;
-    using std::iswlower;
-    using std::iswprint;
-    using std::iswpunct;
-    using std::iswspace;
-    using std::iswupper;
-    using std::iswxdigit;
-    using std::iswbank;
-    using std::wctype;
-    using std::iswctype;
-    using std::towlower;
-    using std::towupper;
-    using std::wctrans;
-    using std::towctrans;
+	using std::iswalnum;
+	using std::iswalpha;
+	using std::iswcntrl;
+	using std::iswdigit;
+	using std::iswgraph;
+	using std::iswlower;
+	using std::iswprint;
+	using std::iswpunct;
+	using std::iswspace;
+	using std::iswupper;
+	using std::iswxdigit;
+	using std::iswbank;
+	using std::wctype;
+	using std::iswctype;
+	using std::towlower;
+	using std::towupper;
+	using std::wctrans;
+	using std::towctrans;
 #endif

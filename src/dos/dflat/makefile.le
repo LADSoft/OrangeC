@@ -2,7 +2,7 @@
 #        D - F L A T   M A K E F I L E  -  CC386
 #-------------------------------------------------------------------
 
-all : dflat.lib
+all : memopad.exe #memopad.hlp
 
 #-------------------------------------------------------------------
 #  Delete the TESTING macro to eliminate the Reload
@@ -25,10 +25,10 @@ DEBUG = -v
 LINKDEBUG = /DEB /Map
 #------------------------------------------------
 COMPILE = cc386 $(DEBUG) -D$(TESTING) -D$(FULL) -DBCPP /C+R /c
-LINK= valx -le -32 -nci $(LINKDEBUG) -Detaillevel:2
+LINK= valx -32 -le -nci $(LINKDEBUG) -Detaillevel:2
 #------------------------------------------------
 
-%.obj: %.c:
+.c.obj:
 	$(COMPILE) $*.c
 
 temp.obj: temp.c

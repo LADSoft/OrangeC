@@ -206,7 +206,7 @@ static BOOL constCopyConstructor(SYMBOL *sp)
     e = sp->vbaseEntries;
     while (e)
     {
-        if (!hasConstFuncs(e->cls, CI_CONSTRUCTOR))
+        if (e->alloc && !hasConstFuncs(e->cls, CI_CONSTRUCTOR))
             return FALSE;
         e = e->next;
     }
@@ -274,7 +274,7 @@ static BOOL constAssignmentOp(SYMBOL *sp)
     e = sp->vbaseEntries;
     while (e)
     {
-        if (!hasConstFuncs(e->cls, assign - kw_new + CI_NEW))
+        if (e->alloc && !hasConstFuncs(e->cls, assign - kw_new + CI_NEW))
             return FALSE;
         e = e->next;
     }
@@ -331,7 +331,7 @@ static BOOL matchesCopy(SYMBOL *sp, BOOL move)
     HASHREC *hr = sp->tp->syms->table[0];
     SYMBOL *arg1 = (SYMBOL *)hr->p;
     SYMBOL *arg2 = (SYMBOL *)hr->next->p;
-    if (!arg2 || arg2->init)
+    if (!hr->next || ((SYMBOL *)hr->next->p)->init)
     {
         if (arg1->tp->type == (move ? bt_rref : bt_lref))
         {
@@ -634,10 +634,13 @@ static BOOL isDefaultDeleted(SYMBOL *sp)
     vbase = sp->vbaseEntries;
     while (vbase)
     {
-        if (checkDest(sp, vbase->cls->tp->syms))
-            return TRUE;
-        if (checkDefaultCons(sp, vbase->cls->tp->syms))
-            return TRUE;
+        if (vbase->alloc)
+        {
+            if (checkDest(sp, vbase->cls->tp->syms))
+                return TRUE;
+            if (checkDefaultCons(sp, vbase->cls->tp->syms))
+                return TRUE;
+        }
         vbase = vbase->next;
     }
     return FALSE;
@@ -707,10 +710,13 @@ static BOOL isCopyConstructorDeleted(SYMBOL *sp)
     vbase = sp->vbaseEntries;
     while (vbase)
     {
-        if (checkDest(sp, vbase->cls->tp->syms))
-            return TRUE;
-        if (checkCopyCons(sp, vbase->cls))
-            return TRUE;
+        if (vbase->alloc)
+        {
+            if (checkDest(sp, vbase->cls->tp->syms))
+                return TRUE;
+            if (checkCopyCons(sp, vbase->cls))
+                return TRUE;
+        }
         vbase = vbase->next;
     }
     return FALSE;
@@ -776,7 +782,7 @@ static BOOL isCopyAssignmentDeleted(SYMBOL *sp)
     vbase = sp->vbaseEntries;
     while (vbase)
     {
-        if (checkCopyAssign(sp, vbase->cls))
+        if (vbase->alloc && checkCopyAssign(sp, vbase->cls))
             return TRUE;
         vbase = vbase->next;
     }
@@ -848,10 +854,13 @@ static BOOL isMoveConstructorDeleted(SYMBOL *sp)
     vbase = sp->vbaseEntries;
     while (vbase)
     {
-        if (checkDest(sp, vbase->cls->tp->syms))
-            return TRUE;
-        if (checkMoveCons(sp, vbase->cls))
-            return TRUE;
+        if (vbase->alloc)
+        {
+            if (checkDest(sp, vbase->cls->tp->syms))
+                return TRUE;
+            if (checkMoveCons(sp, vbase->cls))
+                return TRUE;
+        }
         vbase = vbase->next;
     }
     return FALSE;
@@ -917,7 +926,7 @@ static BOOL isMoveAssignmentDeleted(SYMBOL *sp)
     vbase = sp->vbaseEntries;
     while (vbase)
     {
-        if (checkMoveAssign(sp, vbase->cls))
+        if (vbase->alloc && checkMoveAssign(sp, vbase->cls))
             return TRUE;
         vbase = vbase->next;
     }
@@ -1181,19 +1190,22 @@ static void virtualBaseThunks(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *thisptr)
     STATEMENT *st;
     while (entries)
     {
-        EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, entries->pointerOffset));
-        EXPRESSION *right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
-        EXPRESSION *asn;
-        deref(&stdpointer, &left);
-        asn = exprNode(en_assign, left, right);
-        if (!*pos)
+        if (entries->alloc)
         {
-            *pos = asn;
-        }
-        else
-        {
-            *pos = exprNode(en_void, *pos, asn);
-            pos = &(*pos)->right;
+            EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, entries->pointerOffset));
+            EXPRESSION *right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
+            EXPRESSION *asn;
+            deref(&stdpointer, &left);
+            asn = exprNode(en_assign, left, right);
+            if (!*pos)
+            {
+                *pos = asn;
+            }
+            else
+            {
+                *pos = exprNode(en_void, *pos, asn);
+                pos = &(*pos)->right;
+            }
         }
         entries = entries->next;
     }
@@ -1247,7 +1259,8 @@ static void doVirtualBases(BLOCK *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBASEEN
 	if (vbe)
 	{
 	    doVirtualBases(b, sp, mi, vbe->next, thisptr);
-		genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, FALSE, thisptr);
+        if (vbe->alloc)
+    		genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, FALSE, thisptr);
 	}
 }
 static void lookupInitializers(SYMBOL *cls)
@@ -1294,7 +1307,7 @@ void thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons)
     lookupInitializers(cons);
     if (sym->vbaseEntries)
     {
-        SYMBOL *sp = makeID(sc_auto, &stdint, NULL, "__$$constop");
+        SYMBOL *sp = makeID(sc_parameter, &stdint, NULL, "__$$constop");
         EXPRESSION *val = varNode(en_auto, sp);
         int lbl = beGetLabel;
         STATEMENT *st;
@@ -1355,7 +1368,8 @@ static void asnVirtualBases(BLOCKDATA *b, SYMBOL *sp, VBASEENTRY *vbe,
 	if (vbe)
 	{
 	    asnVirtualBases(b, sp, vbe->next, thisptr, other, move, isconst);
-		genAsnCall(b, sp, vbe->cls, vbe->structOffset, thisptr, other, move, isconst);
+        if (vbe->alloc)
+    		genAsnCall(b, sp, vbe->cls, vbe->structOffset, thisptr, other, move, isconst);
 	}
 }
 static void genAsnData(BLOCKDATA *b, SYMBOL *cls, SYMBOL *member, EXPRESSION *thisptr, EXPRESSION *other)
@@ -1438,7 +1452,7 @@ static void thunkAssignments(BLOCKDATA *b, SYMBOL *sym, BOOL move, BOOL isconst)
     EXPRESSION *thisptr = varNode(en_this, sym);
     BASECLASS *base;
     HASHREC *hr;
-    SYMBOL *othersym = makeID(sc_auto, sym->tp, NULL, "__$$other");
+    SYMBOL *othersym = makeID(sc_parameter, sym->tp, NULL, "__$$other");
     EXPRESSION *other = varNode(en_auto, othersym);
     sym->decoratedName = sym->errname = sym->name;
     sym->offset = chosenAssembler->arch->retblocksize + getSize(bt_pointer);
@@ -1535,7 +1549,7 @@ void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp)
     undoBases(b, sp->baseClasses, thisptr);
     if (vbe)
     {
-        SYMBOL *sp = makeID(sc_auto, &stdint, NULL, "__$$desttop");
+        SYMBOL *sp = makeID(sc_parameter, &stdint, NULL, "__$$desttop");
         EXPRESSION *val = varNode(en_auto, sp);
         int lbl = beGetLabel;
         STATEMENT *st;
@@ -1548,7 +1562,8 @@ void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp)
         st->label = lbl;
         while (vbe)
         {
-            genDestructorCall(b, vbe->cls, thisptr, vbe->structOffset, FALSE);
+            if (vbe->alloc)
+                genDestructorCall(b, vbe->cls, thisptr, vbe->structOffset, FALSE);
             vbe = vbe->next;
         }
         st = stmtNode(b, st_label);

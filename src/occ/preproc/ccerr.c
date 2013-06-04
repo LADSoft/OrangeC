@@ -82,6 +82,7 @@ static struct {
 {"Too many identififiers in type", ERROR },
 {"Unexpected end of file", ERROR },
 {"File not terminated with End Of Line character", TRIVIALWARNING},
+{"Nested Comments", TRIVIALWARNING},
 {"Non-terminated comment in file started at line %d", WARNING},
 {"Non-terminated preprocessor conditional in include file started at line %d", ERROR},
 {"#elif without #if", ERROR},

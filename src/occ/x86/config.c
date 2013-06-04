@@ -162,17 +162,17 @@ static KEYWORD prockeywords[] =
 };
 static ARCH_DEFINES defines[] = { 
     /* must come first in this order */
-    {"__WIN32__","",FALSE, TRUE },
-    {"__LSCRTL_DLL","",FALSE, TRUE },
-    {"__DOS__","",FALSE, TRUE },
-    {"_WIN32","",FALSE, TRUE },
-    {"__MSVCRT_DLL","",FALSE, TRUE },
-    {"__CRTDLL_DLL","",FALSE, TRUE },
-    {"__RAW_IMAGE__","",FALSE, TRUE },
+    {"__WIN32__","1",FALSE, TRUE },
+    {"__LSCRTL_DLL","1",FALSE, TRUE },
+    {"__DOS__","1",FALSE, TRUE },
+    {"_WIN32","1",FALSE, TRUE },
+    {"__MSVCRT_DLL","1",FALSE, TRUE },
+    {"__CRTDLL_DLL","1",FALSE, TRUE },
+    {"__RAW_IMAGE__","1",FALSE, TRUE },
     /* end ordered */
-    {"__386__","",TRUE,TRUE },
-    {"__i386__","",TRUE,TRUE },
-    {"_i386_","",TRUE,TRUE },
+    {"__386__","1",TRUE,TRUE },
+    {"__i386__","1",TRUE,TRUE },
+    {"_i386_","1",TRUE,TRUE },
     {0 },
 };
 static ARCH_SIZING sizes = {
@@ -240,7 +240,7 @@ static ARCH_FLOAT aflt = {
     -126 , 126, 128, 24
 } ;
 static ARCH_FLOAT adbl = {
-    -1022, 1022, 1024, 54
+    -1022, 1022, 1024, 53
     } ;
 static ARCH_FLOAT aldbl = {
     -16382, 16382, 16384, 64

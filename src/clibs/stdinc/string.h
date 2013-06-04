@@ -56,6 +56,10 @@ void         _RTL_INTRINS bzero(void *, size_t);
 
 int          _RTL_INTRINS ffs(int);
 
+//char         _RTL_INTRINS *index(const char *, int);
+
+//char         _RTL_INTRINS *rindex(const char *, int);
+
 int          _RTL_INTRINS strcasecmp(const char *, const char *);
 
 int          _RTL_INTRINS strncasecmp(const char *, const char *, size_t);

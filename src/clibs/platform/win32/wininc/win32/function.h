@@ -295,6 +295,7 @@
 #define GetPrivateProfileString  GetPrivateProfileStringW
 #define WritePrivateProfileString  WritePrivateProfileStringW
 #define GetPrivateProfileSection  GetPrivateProfileSectionW
+#define GetPrivateProfileSectionNames GetPrivateProfileSectionNamesW
 #define WritePrivateProfileSection  WritePrivateProfileSectionW
 #define GetDriveType  GetDriveTypeW
 #define GetSystemDirectory  GetSystemDirectoryW
@@ -693,6 +694,7 @@
 #define GetPrivateProfileString  GetPrivateProfileStringA
 #define WritePrivateProfileString  WritePrivateProfileStringA
 #define GetPrivateProfileSection  GetPrivateProfileSectionA
+#define GetPrivateProfileSectionNames GetPrivateProfileSectionNamesA
 #define WritePrivateProfileSection  WritePrivateProfileSectionA
 #define GetDriveType  GetDriveTypeA
 #define GetSystemDirectory  GetSystemDirectoryA

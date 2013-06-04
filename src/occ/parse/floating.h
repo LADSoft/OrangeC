@@ -1,44 +1,27 @@
-/*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
-#ifndef FLOATING_H
-#define FLOATING_H
-
+#include <limits.h>
+#ifndef M_LN2
+#define M_LN2       0.693147180559945309417
+#endif
+#ifndef M_LN10
+#define M_LN10      2.30258509299404568402
+#endif
 #define INTERNAL_FPF_PRECISION ((80/8)/sizeof(u16))
+#ifdef USE_LONGLONG
+#ifdef BORLAND
+    #define ULLONG_TYPE unsigned __int64
+    #define LLONG_TYPE __int64
+    #define LLONG_MIN _I64_MIN
+    #define LLONG_MAX _I64_MAX
+    #define ULLONG_MAX ((_I64_MAX << 1) + 1)
+#else
+    #define ULLONG_TYPE unsigned long long
+    #define LLONG_TYPE long long
+#endif
+#else 
+    #define ULLONG_TYPE unsigned long 
+    #define LLONG_TYPE long
+    #define ULLONG_MAX ULONG_MAX
+#endif 
 /*
 ** DEFINES
 */
@@ -48,8 +31,8 @@
 #define uchar unsigned char
 #define ulong unsigned long
 
-#define MAX_EXP 33000
-#define MIN_EXP -33000
+#define MAX_EXP SHRT_MAX
+#define MIN_EXP SHRT_MIN
 
 #define IFPF_IS_ZERO 0
 #define IFPF_IS_SUBNORMAL 1
@@ -105,10 +88,53 @@
 
 typedef struct
 {
-        long exp;      /* Signed exponent...no bias */
-        u16 mantissa[INTERNAL_FPF_PRECISION];
         u8 type;        /* Indicates, NORMAL, SUBNORMAL, etc. */
         u8 sign;        /* Mantissa sign */
+        long exp;      /* Signed exponent...no bias */
+        u16 mantissa[INTERNAL_FPF_PRECISION];
 } FPF;
 
+/*
+** PROTOTYPES
+*/
+#ifdef XXXXX
+void SetupCPUEmFloatArrays(FPF *abase,
+        FPF *bbase, FPF *cbase, ulong arraysize);
+ulong DoEmFloatIteration(FPF *abase,
+        FPF *bbase, FPF *cbase,
+        ulong arraysize, ulong loops);
 #endif
+void SetFPFZero(FPF *dest,
+                        uchar sign);
+void SetFPFInfinity(FPF *dest,
+                        uchar sign);
+void SetFPFNaN(FPF *dest);
+int IsMantissaZero(u16 *mant);
+int IsMantissaOne(u16 *mant);
+void Add16Bits(u16 *carry,u16 *a,u16 b,u16 c);
+void Sub16Bits(u16 *borrow,u16 *a,u16 b,u16 c);
+void ShiftMantLeft1(u16 *carry,u16 *mantissa);
+void ShiftMantRight1(u16 *carry,u16 *mantissa);
+void StickyShiftRightMant(FPF *ptr,int amount);
+void normalize(FPF *ptr);
+void denormalize(FPF *ptr,int minimum_exponent);
+void RoundFPF(FPF *ptr);
+void choose_nan(FPF *x,FPF *y,FPF *z,
+                int intel_flag);
+void AddSubFPF(uchar operation,FPF *x,
+                FPF *y,FPF *z);
+void MultiplyFPF(FPF *x,FPF *y,
+                        FPF *z);
+void DivideFPF(FPF *x,FPF *y, 
+                        FPF *z);
+void LongToFPF(long mylong,
+                FPF *dest);
+int FPFTensExponent(FPF *value);
+void FPFMultiplyPowTen(FPF *value, int power);
+char * FPFToString(char *dest,
+                FPF *src);
+void LongLongToFPF(FPF *value, LLONG_TYPE i);
+void UnsignedLongLongToFPF(FPF *value, LLONG_TYPE i);
+int FPFToLongDouble(unsigned char *dest, FPF *src);
+void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
+int LongDoubleToFPF(FPF *dest, unsigned char *src);

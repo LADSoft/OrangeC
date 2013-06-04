@@ -50,172 +50,177 @@ extern WINBOOL  PASCAL WINBASEAPI AbortProc(HDC, int);
 extern int  PASCAL WINBASEAPI AbortDoc(HDC);
 extern WINBOOL  PASCAL WINBASEAPI AbortPath(HDC);
 extern WINBOOL  PASCAL WINBASEAPI AccessCheck(
-            PSECURITY_DESCRIPTOR  pSecurityDescriptor,
-            HANDLE  ClientToken,
-            DWORD  DesiredAccess,
-            PGENERIC_MAPPING  GenericMapping,
-            PPRIVILEGE_SET  PrivilegeSet,
-            LPDWORD  PrivilegeSetLength,
-            LPDWORD  GrantedAccess,
-            LPBOOL  AccessStatus
-            );
+		    PSECURITY_DESCRIPTOR  pSecurityDescriptor,
+		    HANDLE  ClientToken,
+		    DWORD  DesiredAccess,
+		    PGENERIC_MAPPING  GenericMapping,
+		    PPRIVILEGE_SET  PrivilegeSet,
+		    LPDWORD  PrivilegeSetLength,
+		    LPDWORD  GrantedAccess,
+		    LPBOOL  AccessStatus
+		    );
 */
 extern LONG
  PASCAL WINBASEAPI InterlockedIncrement(
-             LPLONG lpAddend
-             );
+		     LPLONG lpAddend
+		     );
 
 extern LONG
  PASCAL WINBASEAPI InterlockedDecrement(
-             LPLONG lpAddend
-             );
+		     LPLONG lpAddend
+		     );
 
 extern LONG
  PASCAL WINBASEAPI InterlockedExchange(
-            LPLONG Target,
-            LONG Value
-            );
+		    LPLONG Target,
+		    LONG Value
+		    );
+
+extern LONG PASCAL WINBASEAPI InterlockedExchangeAdd(LPLONG,LONG);
+
+extern int  PASCAL WINBASEAPI AddFontMemResourceEx(PVOID, DWORD, PVOID , DWORD*);
+extern int  PASCAL WINBASEAPI RemoveFontMemResourceEx( HANDLE);
 
 extern WINBOOL
  PASCAL WINBASEAPI FreeResource(
-         HGLOBAL hResData
-         );
+	     HGLOBAL hResData
+	     );
 
 extern LPVOID
  PASCAL WINBASEAPI LockResource(
-         HGLOBAL hResData
-         );
+	     HGLOBAL hResData
+	     );
 
 #define UnlockResource(hResData) ((hResData), 0)
 
 extern int
  PASCAL WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nShowCmd
-    );
+	HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
+	int nShowCmd
+	);
 
 extern int
  PASCAL DllMain(
-     HINSTANCE hinstDLL,
-    DWORD fdwReason,
-    LPVOID lpvReserved
-    );
+ 	HINSTANCE hinstDLL,
+	DWORD fdwReason,
+	LPVOID lpvReserved
+	);
 
 #define DllEntryPoint DllMain
 
 extern WINBOOL
  PASCAL WINBASEAPI FreeLibrary(
-        HINSTANCE hLibModule
-        );
+	    HINSTANCE hLibModule
+	    );
 
 
 extern VOID
  PASCAL WINBASEAPI FreeLibraryAndExitThread(
-             HMODULE hLibModule,
-             DWORD dwExitCode
-             );
+			 HMODULE hLibModule,
+			 DWORD dwExitCode
+			 );
 
 extern WINBOOL
  PASCAL WINBASEAPI DisableThreadLibraryCalls(
-              HMODULE hLibModule
-              );
+			  HMODULE hLibModule
+			  );
 
 extern FARPROC
  PASCAL WINBASEAPI GetProcAddress(
-           HINSTANCE hModule,
-           LPCSTR lpProcName
-           );
+	       HINSTANCE hModule,
+	       LPCSTR lpProcName
+	       );
 
 extern DWORD
  PASCAL WINBASEAPI GetVersion( VOID );
 
 extern HGLOBAL
  PASCAL WINBASEAPI GlobalAlloc(
-        UINT uFlags,
-        DWORD dwBytes
-        );
+	    UINT uFlags,
+	    DWORD dwBytes
+	    );
 
 extern HGLOBAL
 GlobalDiscard(
-          HGLOBAL hglbMem
-          );
+	      HGLOBAL hglbMem
+	      );
 
 extern HGLOBAL
  PASCAL WINBASEAPI GlobalReAlloc(
-          HGLOBAL hMem,
-          DWORD dwBytes,
-          UINT uFlags
-          );
+	      HGLOBAL hMem,
+	      DWORD dwBytes,
+	      UINT uFlags
+	      );
 
 extern DWORD
  PASCAL WINBASEAPI GlobalSize(
-       HGLOBAL hMem
-       );
+	   HGLOBAL hMem
+	   );
 
 extern UINT
  PASCAL WINBASEAPI GlobalFlags(
-        HGLOBAL hMem
-        );
+	    HGLOBAL hMem
+	    );
 
 
 extern LPVOID
  PASCAL WINBASEAPI GlobalLock(
-       HGLOBAL hMem
-       );
+	   HGLOBAL hMem
+	   );
 
 extern HGLOBAL
  PASCAL WINBASEAPI GlobalHandle(
-         LPCVOID pMem
-         );
+	     LPCVOID pMem
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GlobalUnlock(
-         HGLOBAL hMem
-         );
+	     HGLOBAL hMem
+	     );
 
 
 extern HGLOBAL
  PASCAL WINBASEAPI GlobalFree(
-       HGLOBAL hMem
-       );
+	   HGLOBAL hMem
+	   );
 
 extern UINT
  PASCAL WINBASEAPI GlobalCompact(
-          DWORD dwMinFree
-          );
+	      DWORD dwMinFree
+	      );
 
 
 extern VOID
  PASCAL WINBASEAPI GlobalFix(
-      HGLOBAL hMem
-      );
+	  HGLOBAL hMem
+	  );
 
 
 extern VOID
  PASCAL WINBASEAPI GlobalUnfix(
-        HGLOBAL hMem
-        );
+	    HGLOBAL hMem
+	    );
 
 
 extern LPVOID
  PASCAL WINBASEAPI GlobalWire(
-       HGLOBAL hMem
-       );
+	   HGLOBAL hMem
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GlobalUnWire(
-         HGLOBAL hMem
-         );
+	     HGLOBAL hMem
+	     );
 
 
 extern VOID
  PASCAL WINBASEAPI GlobalMemoryStatus(
-           LPMEMORYSTATUS lpBuffer
-           );
+		   LPMEMORYSTATUS lpBuffer
+		   );
 
 extern WINBOOL 
  PASCAL WINBASEAPI IsDebuggerPresent(
@@ -224,293 +229,293 @@ extern WINBOOL
 
 extern HLOCAL
  PASCAL WINBASEAPI LocalAlloc(
-       UINT uFlags,
-       UINT uBytes
-       );
+	   UINT uFlags,
+	   UINT uBytes
+	   );
 
 extern HLOCAL
 LocalDiscard(
-         HLOCAL hlocMem
-         );
+	     HLOCAL hlocMem
+	     );
 
 extern HLOCAL
  PASCAL WINBASEAPI LocalReAlloc(
-         HLOCAL hMem,
-         UINT uBytes,
-         UINT uFlags
-         );
+	     HLOCAL hMem,
+	     UINT uBytes,
+	     UINT uFlags
+	     );
 
 
 extern LPVOID
  PASCAL WINBASEAPI LocalLock(
-      HLOCAL hMem
-      );
+	  HLOCAL hMem
+	  );
 
 
 extern HLOCAL
  PASCAL WINBASEAPI LocalHandle(
-        LPCVOID pMem
-        );
+	    LPCVOID pMem
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI LocalUnlock(
-        HLOCAL hMem
-        );
+	    HLOCAL hMem
+	    );
 
 
 extern UINT
  PASCAL WINBASEAPI LocalSize(
-      HLOCAL hMem
-      );
+	  HLOCAL hMem
+	  );
 
 
 extern UINT
  PASCAL WINBASEAPI LocalFlags(
-       HLOCAL hMem
-       );
+	   HLOCAL hMem
+	   );
 
 
 extern HLOCAL
  PASCAL WINBASEAPI LocalFree(
-      HLOCAL hMem
-      );
+	  HLOCAL hMem
+	  );
 
 
 extern UINT
  PASCAL WINBASEAPI LocalShrink(
-        HLOCAL hMem,
-        UINT cbNewSize
-        );
+	    HLOCAL hMem,
+	    UINT cbNewSize
+	    );
 
 
 extern UINT
  PASCAL WINBASEAPI LocalCompact(
-         UINT uMinFree
-         );
+	     UINT uMinFree
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FlushInstructionCache(
-              HANDLE hProcess,
-              LPCVOID lpBaseAddress,
-              DWORD dwSize
-              );
+		      HANDLE hProcess,
+		      LPCVOID lpBaseAddress,
+		      DWORD dwSize
+		      );
 
 
 extern LPVOID
  PASCAL WINBASEAPI VirtualAlloc(
-         LPVOID lpAddress,
-         DWORD dwSize,
-         DWORD flAllocationType,
-         DWORD flProtect
-         );
+	     LPVOID lpAddress,
+	     DWORD dwSize,
+	     DWORD flAllocationType,
+	     DWORD flProtect
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI VirtualFree(
-        LPVOID lpAddress,
-        DWORD dwSize,
-        DWORD dwFreeType
-        );
+	    LPVOID lpAddress,
+	    DWORD dwSize,
+	    DWORD dwFreeType
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI VirtualProtect(
-           LPVOID lpAddress,
-           DWORD dwSize,
-           DWORD flNewProtect,
-           PDWORD lpflOldProtect
-           );
+	       LPVOID lpAddress,
+	       DWORD dwSize,
+	       DWORD flNewProtect,
+	       PDWORD lpflOldProtect
+	       );
 
 
 extern DWORD
  PASCAL WINBASEAPI VirtualQuery(
-         LPCVOID lpAddress,
-         PMEMORY_BASIC_INFORMATION lpBuffer,
-         DWORD dwLength
-         );
+	     LPCVOID lpAddress,
+	     PMEMORY_BASIC_INFORMATION lpBuffer,
+	     DWORD dwLength
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI VirtualProtectEx(
-         HANDLE hProcess,
-         LPVOID lpAddress,
-         DWORD dwSize,
-         DWORD flNewProtect,
-         PDWORD lpflOldProtect
-         );
+		 HANDLE hProcess,
+		 LPVOID lpAddress,
+		 DWORD dwSize,
+		 DWORD flNewProtect,
+		 PDWORD lpflOldProtect
+		 );
 
 
 extern DWORD
  PASCAL WINBASEAPI VirtualQueryEx(
-           HANDLE hProcess,
-           LPCVOID lpAddress,
-           PMEMORY_BASIC_INFORMATION lpBuffer,
-           DWORD dwLength
-           );
+	       HANDLE hProcess,
+	       LPCVOID lpAddress,
+	       PMEMORY_BASIC_INFORMATION lpBuffer,
+	       DWORD dwLength
+	       );
 
 
 extern HANDLE
  PASCAL WINBASEAPI HeapCreate(
-       DWORD flOptions,
-       DWORD dwInitialSize,
-       DWORD dwMaximumSize
-       );
+	   DWORD flOptions,
+	   DWORD dwInitialSize,
+	   DWORD dwMaximumSize
+	   );
 
 extern WINBOOL
  PASCAL WINBASEAPI HeapDestroy(
-        HANDLE hHeap
-        );
+	    HANDLE hHeap
+	    );
 
 extern LPVOID
  PASCAL WINBASEAPI HeapAlloc(
-      HANDLE hHeap,
-      DWORD dwFlags,
-      DWORD dwBytes
-      );
+	  HANDLE hHeap,
+	  DWORD dwFlags,
+	  DWORD dwBytes
+	  );
 
 extern LPVOID
  PASCAL WINBASEAPI HeapReAlloc(
-        HANDLE hHeap,
-        DWORD dwFlags,
-        LPVOID lpMem,
-        DWORD dwBytes
-        );
+	    HANDLE hHeap,
+	    DWORD dwFlags,
+	    LPVOID lpMem,
+	    DWORD dwBytes
+	    );
 
 extern WINBOOL
  PASCAL WINBASEAPI HeapFree(
-     HANDLE hHeap,
-     DWORD dwFlags,
-     LPVOID lpMem
-     );
+	 HANDLE hHeap,
+	 DWORD dwFlags,
+	 LPVOID lpMem
+	 );
 
 extern DWORD
  PASCAL WINBASEAPI HeapSize(
-     HANDLE hHeap,
-     DWORD dwFlags,
-     LPCVOID lpMem
-     );
+	 HANDLE hHeap,
+	 DWORD dwFlags,
+	 LPCVOID lpMem
+	 );
 
 extern WINBOOL
  PASCAL WINBASEAPI HeapValidate(
-         HANDLE hHeap,
-         DWORD dwFlags,
-         LPCVOID lpMem
-         );
+	     HANDLE hHeap,
+	     DWORD dwFlags,
+	     LPCVOID lpMem
+	     );
 
 extern UINT
  PASCAL WINBASEAPI HeapCompact(
-        HANDLE hHeap,
-        DWORD dwFlags
-        );
+	    HANDLE hHeap,
+	    DWORD dwFlags
+	    );
 
 extern HANDLE
  PASCAL WINBASEAPI GetProcessHeap( VOID );
 
 extern DWORD
  PASCAL WINBASEAPI GetProcessHeaps(
-        DWORD NumberOfHeaps,
-        PHANDLE ProcessHeaps
-        );
+		DWORD NumberOfHeaps,
+		PHANDLE ProcessHeaps
+		);
 
 extern WINBOOL
  PASCAL WINBASEAPI HeapLock(
-     HANDLE hHeap
-     );
+	 HANDLE hHeap
+	 );
 
 extern WINBOOL
  PASCAL WINBASEAPI HeapUnlock(
-       HANDLE hHeap
-       );
+	   HANDLE hHeap
+	   );
 
 extern WINBOOL
  PASCAL WINBASEAPI HeapWalk(
-     HANDLE hHeap,
-     LPPROCESS_HEAP_ENTRY lpEntry
-     );
+	 HANDLE hHeap,
+	 LPPROCESS_HEAP_ENTRY lpEntry
+	 );
 
 extern WINBOOL
  PASCAL WINBASEAPI GetProcessAffinityMask(
-               HANDLE hProcess,
-               LPDWORD lpProcessAffinityMask,
-               LPDWORD lpSystemAffinityMask
-               );
+		       HANDLE hProcess,
+		       LPDWORD lpProcessAffinityMask,
+		       LPDWORD lpSystemAffinityMask
+		       );
 
 extern WINBOOL
  PASCAL WINBASEAPI GetProcessTimes(
-        HANDLE hProcess,
-        LPFILETIME lpCreationTime,
-        LPFILETIME lpExitTime,
-        LPFILETIME lpKernelTime,
-        LPFILETIME lpUserTime
-        );
+		HANDLE hProcess,
+		LPFILETIME lpCreationTime,
+		LPFILETIME lpExitTime,
+		LPFILETIME lpKernelTime,
+		LPFILETIME lpUserTime
+		);
 
 extern WINBOOL
  PASCAL WINBASEAPI GetProcessWorkingSetSize(
-             HANDLE hProcess,
-             LPDWORD lpMinimumWorkingSetSize,
-             LPDWORD lpMaximumWorkingSetSize
-             );
+			 HANDLE hProcess,
+			 LPDWORD lpMinimumWorkingSetSize,
+			 LPDWORD lpMaximumWorkingSetSize
+			 );
 
 extern WINBOOL
  PASCAL WINBASEAPI SetProcessWorkingSetSize(
-             HANDLE hProcess,
-             DWORD dwMinimumWorkingSetSize,
-             DWORD dwMaximumWorkingSetSize
-             );
+			 HANDLE hProcess,
+			 DWORD dwMinimumWorkingSetSize,
+			 DWORD dwMaximumWorkingSetSize
+			 );
 
 extern HANDLE
  PASCAL WINBASEAPI OpenProcess(
-        DWORD dwDesiredAccess,
-        WINBOOL bInheritHandle,
-        DWORD dwProcessId
-        );
+	    DWORD dwDesiredAccess,
+	    WINBOOL bInheritHandle,
+	    DWORD dwProcessId
+	    );
 
 extern HANDLE
  PASCAL WINBASEAPI GetCurrentProcess(
-          VOID
-          );
+		  VOID
+		  );
 
 extern DWORD
  PASCAL WINBASEAPI GetCurrentProcessId(
-            VOID
-            );
+		    VOID
+		    );
 
 extern VOID
  PASCAL WINBASEAPI ExitProcess(
-        UINT uExitCode
-        );
+	    UINT uExitCode
+	    );
 
 extern WINBOOL
  PASCAL WINBASEAPI TerminateProcess(
-         HANDLE hProcess,
-         UINT uExitCode
-         );
+		 HANDLE hProcess,
+		 UINT uExitCode
+		 );
 
 extern WINBOOL
  PASCAL WINBASEAPI GetExitCodeProcess(
-           HANDLE hProcess,
-           LPDWORD lpExitCode
-           );
+		   HANDLE hProcess,
+		   LPDWORD lpExitCode
+		   );
 
 extern VOID
  PASCAL WINBASEAPI FatalExit(
-      int ExitCode
-      );
+	  int ExitCode
+	  );
 
 extern VOID
  PASCAL WINBASEAPI RaiseException(
-           DWORD dwExceptionCode,
-           DWORD dwExceptionFlags,
-           DWORD nNumberOfArguments,
-           CONST DWORD *lpArguments
-           );
+	       DWORD dwExceptionCode,
+	       DWORD dwExceptionFlags,
+	       DWORD nNumberOfArguments,
+	       CONST DWORD *lpArguments
+	       );
 
 extern LONG
  PASCAL WINBASEAPI UnhandledExceptionFilter(
-             struct _EXCEPTION_POINTERS *ExceptionInfo
-             );
+			 struct _EXCEPTION_POINTERS *ExceptionInfo
+			 );
 
 /* TODO: Should this go somewhere else? Colin Peters 1997/10/20 */
 typedef LONG (*LPTOP_LEVEL_EXCEPTION_FILTER) (struct _EXCEPTION_POINTERS *);
@@ -523,288 +528,288 @@ extern LPTOP_LEVEL_EXCEPTION_FILTER
 
 extern HANDLE
  PASCAL WINBASEAPI CreateThread(
-         LPSECURITY_ATTRIBUTES lpThreadAttributes,
-         DWORD dwStackSize,
-         LPTHREAD_START_ROUTINE lpStartAddress,
-         LPVOID lpParameter,
-         DWORD dwCreationFlags,
-         LPDWORD lpThreadId
-         );
+	     LPSECURITY_ATTRIBUTES lpThreadAttributes,
+	     DWORD dwStackSize,
+	     LPTHREAD_START_ROUTINE lpStartAddress,
+	     LPVOID lpParameter,
+	     DWORD dwCreationFlags,
+	     LPDWORD lpThreadId
+	     );
 
 
 extern HANDLE
  PASCAL WINBASEAPI CreateRemoteThread(
-           HANDLE hProcess,
-           LPSECURITY_ATTRIBUTES lpThreadAttributes,
-           DWORD dwStackSize,
-           LPTHREAD_START_ROUTINE lpStartAddress,
-           LPVOID lpParameter,
-           DWORD dwCreationFlags,
-           LPDWORD lpThreadId
-           );
+		   HANDLE hProcess,
+		   LPSECURITY_ATTRIBUTES lpThreadAttributes,
+		   DWORD dwStackSize,
+		   LPTHREAD_START_ROUTINE lpStartAddress,
+		   LPVOID lpParameter,
+		   DWORD dwCreationFlags,
+		   LPDWORD lpThreadId
+		   );
 
 
 extern HANDLE
  PASCAL WINBASEAPI GetCurrentThread(
-         VOID
-         );
+		 VOID
+		 );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetCurrentThreadId(
-           VOID
-           );
+		   VOID
+		   );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetThreadAffinityMask(
-              HANDLE hThread,
-              DWORD dwThreadAffinityMask
-              );
+		      HANDLE hThread,
+		      DWORD dwThreadAffinityMask
+		      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetThreadPriority(
-          HANDLE hThread,
-          int nPriority
-          );
+		  HANDLE hThread,
+		  int nPriority
+		  );
 
 
 extern int
  PASCAL WINBASEAPI GetThreadPriority(
-          HANDLE hThread
-          );
+		  HANDLE hThread
+		  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetThreadTimes(
-           HANDLE hThread,
-           LPFILETIME lpCreationTime,
-           LPFILETIME lpExitTime,
-           LPFILETIME lpKernelTime,
-           LPFILETIME lpUserTime
-           );
+	       HANDLE hThread,
+	       LPFILETIME lpCreationTime,
+	       LPFILETIME lpExitTime,
+	       LPFILETIME lpKernelTime,
+	       LPFILETIME lpUserTime
+	       );
 
 
 extern VOID
  PASCAL WINBASEAPI ExitThread(
-       DWORD dwExitCode
-       );
+	   DWORD dwExitCode
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI TerminateThread(
-        HANDLE hThread,
-        DWORD dwExitCode
-        );
+		HANDLE hThread,
+		DWORD dwExitCode
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetExitCodeThread(
-          HANDLE hThread,
-          LPDWORD lpExitCode
-          );
+		  HANDLE hThread,
+		  LPDWORD lpExitCode
+		  );
 
 extern WINBOOL
  PASCAL WINBASEAPI GetThreadSelectorEntry(
-               HANDLE hThread,
-               DWORD dwSelector,
-               LPLDT_ENTRY lpSelectorEntry
-               );
+		       HANDLE hThread,
+		       DWORD dwSelector,
+		       LPLDT_ENTRY lpSelectorEntry
+		       );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetLastError(
-         VOID
-         );
+	     VOID
+	     );
 
 
 extern VOID
  PASCAL WINBASEAPI SetLastError(
-         DWORD dwErrCode
-         );
+	     DWORD dwErrCode
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetOverlappedResult(
-            HANDLE hFile,
-            LPOVERLAPPED lpOverlapped,
-            LPDWORD lpNumberOfBytesTransferred,
-            WINBOOL bWait
-            );
+		    HANDLE hFile,
+		    LPOVERLAPPED lpOverlapped,
+		    LPDWORD lpNumberOfBytesTransferred,
+		    WINBOOL bWait
+		    );
 
 
 extern HANDLE
  PASCAL WINBASEAPI CreateIoCompletionPort(
-               HANDLE FileHandle,
-               HANDLE ExistingCompletionPort,
-               DWORD CompletionKey,
-               DWORD NumberOfConcurrentThreads
-               );
+		       HANDLE FileHandle,
+		       HANDLE ExistingCompletionPort,
+		       DWORD CompletionKey,
+		       DWORD NumberOfConcurrentThreads
+		       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetQueuedCompletionStatus(
-              HANDLE CompletionPort,
-              LPDWORD lpNumberOfBytesTransferred,
-              LPDWORD lpCompletionKey,
-              LPOVERLAPPED *lpOverlapped,
-              DWORD dwMilliseconds
-              );
+			  HANDLE CompletionPort,
+			  LPDWORD lpNumberOfBytesTransferred,
+			  LPDWORD lpCompletionKey,
+			  LPOVERLAPPED *lpOverlapped,
+			  DWORD dwMilliseconds
+			  );
 
 extern UINT
  PASCAL WINBASEAPI SetErrorMode(
-         UINT uMode
-         );
+	     UINT uMode
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ReadProcessMemory(
-          HANDLE hProcess,
-          LPCVOID lpBaseAddress,
-          LPVOID lpBuffer,
-          DWORD nSize,
-          LPDWORD lpNumberOfBytesRead
-          );
+		  HANDLE hProcess,
+		  LPCVOID lpBaseAddress,
+		  LPVOID lpBuffer,
+		  DWORD nSize,
+		  LPDWORD lpNumberOfBytesRead
+		  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI WriteProcessMemory(
-           HANDLE hProcess,
-           LPVOID lpBaseAddress,
-           LPVOID lpBuffer,
-           DWORD nSize,
-           LPDWORD lpNumberOfBytesWritten
-           );
+		   HANDLE hProcess,
+		   LPVOID lpBaseAddress,
+		   LPVOID lpBuffer,
+		   DWORD nSize,
+		   LPDWORD lpNumberOfBytesWritten
+		   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetThreadContext(
-         HANDLE hThread,
-         LPCONTEXT lpContext
-         );
+		 HANDLE hThread,
+		 LPCONTEXT lpContext
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetThreadContext(
-         HANDLE hThread,
-         CONST CONTEXT *lpContext
-         );
+		 HANDLE hThread,
+		 CONST CONTEXT *lpContext
+		 );
 
 
 extern DWORD
  PASCAL WINBASEAPI SuspendThread(
-          HANDLE hThread
-          );
+	      HANDLE hThread
+	      );
 
 
 extern DWORD
  PASCAL WINBASEAPI ResumeThread(
-         HANDLE hThread
-         );
+	     HANDLE hThread
+	     );
 
 
 extern VOID
  PASCAL WINBASEAPI DebugBreak(
-       VOID
-       );
+	   VOID
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI WaitForDebugEvent(
-          LPDEBUG_EVENT lpDebugEvent,
-          DWORD dwMilliseconds
-          );
+		  LPDEBUG_EVENT lpDebugEvent,
+		  DWORD dwMilliseconds
+		  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ContinueDebugEvent(
-           DWORD dwProcessId,
-           DWORD dwThreadId,
-           DWORD dwContinueStatus
-           );
+		   DWORD dwProcessId,
+		   DWORD dwThreadId,
+		   DWORD dwContinueStatus
+		   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DebugActiveProcess(
-           DWORD dwProcessId
-           );
+		   DWORD dwProcessId
+		   );
 
 
 extern VOID
  PASCAL WINBASEAPI InitializeCriticalSection(
-              LPCRITICAL_SECTION lpCriticalSection
-              );
+			  LPCRITICAL_SECTION lpCriticalSection
+			  );
 
 
 extern VOID
  PASCAL WINBASEAPI EnterCriticalSection(
-             LPCRITICAL_SECTION lpCriticalSection
-             );
+		     LPCRITICAL_SECTION lpCriticalSection
+		     );
 
 extern VOID
  PASCAL WINBASEAPI TryEnterCriticalSection(
-             LPCRITICAL_SECTION lpCriticalSection
-             );
+		     LPCRITICAL_SECTION lpCriticalSection
+		     );
 
 extern VOID
  PASCAL WINBASEAPI LeaveCriticalSection(
-             LPCRITICAL_SECTION lpCriticalSection
-             );
+		     LPCRITICAL_SECTION lpCriticalSection
+		     );
 
 
 extern VOID
  PASCAL WINBASEAPI DeleteCriticalSection(
-              LPCRITICAL_SECTION lpCriticalSection
-              );
+		      LPCRITICAL_SECTION lpCriticalSection
+		      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetEvent(
-     HANDLE hEvent
-     );
+	 HANDLE hEvent
+	 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ResetEvent(
-       HANDLE hEvent
-       );
+	   HANDLE hEvent
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI PulseEvent(
-       HANDLE hEvent
-       );
+	   HANDLE hEvent
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ReleaseSemaphore(
-         HANDLE hSemaphore,
-         LONG lReleaseCount,
-         LPLONG lpPreviousCount
-         );
+		 HANDLE hSemaphore,
+		 LONG lReleaseCount,
+		 LPLONG lpPreviousCount
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ReleaseMutex(
-         HANDLE hMutex
-         );
+	     HANDLE hMutex
+	     );
 
 
 extern DWORD
  PASCAL WINBASEAPI WaitForSingleObject(
-            HANDLE hHandle,
-            DWORD dwMilliseconds
-            );
+		    HANDLE hHandle,
+		    DWORD dwMilliseconds
+		    );
 
 
 extern DWORD
  PASCAL WINBASEAPI WaitForMultipleObjects(
-               DWORD nCount,
-               CONST HANDLE *lpHandles,
-               WINBOOL bWaitAll,
-               DWORD dwMilliseconds
-               );
+		       DWORD nCount,
+		       CONST HANDLE *lpHandles,
+		       WINBOOL bWaitAll,
+		       DWORD dwMilliseconds
+		       );
 
 
 extern VOID
@@ -815,450 +820,450 @@ extern VOID
 
 extern HGLOBAL
  PASCAL WINBASEAPI LoadResource(
-         HINSTANCE hModule,
-         HRSRC hResInfo
-         );
+	     HINSTANCE hModule,
+	     HRSRC hResInfo
+	     );
 
 
 extern DWORD
  PASCAL WINBASEAPI SizeofResource(
-           HINSTANCE hModule,
-           HRSRC hResInfo
-           );
+	       HINSTANCE hModule,
+	       HRSRC hResInfo
+	       );
 
 
 
 extern ATOM
  PASCAL WINBASEAPI GlobalDeleteAtom(
-         ATOM nAtom
-         );
+		 ATOM nAtom
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI InitAtomTable(
-          DWORD nSize
-          );
+	      DWORD nSize
+	      );
 
 
 extern ATOM
  PASCAL WINBASEAPI DeleteAtom(
-       ATOM nAtom
-       );
+	   ATOM nAtom
+	   );
 
 
 extern UINT
  PASCAL WINBASEAPI SetHandleCount(
-           UINT uNumber
-           );
+	       UINT uNumber
+	       );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetLogicalDrives(
-         VOID
-         );
+		 VOID
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI LockFile(
-     HANDLE hFile,
-     DWORD dwFileOffsetLow,
-     DWORD dwFileOffsetHigh,
-     DWORD nNumberOfBytesToLockLow,
-     DWORD nNumberOfBytesToLockHigh
-     );
+	 HANDLE hFile,
+	 DWORD dwFileOffsetLow,
+	 DWORD dwFileOffsetHigh,
+	 DWORD nNumberOfBytesToLockLow,
+	 DWORD nNumberOfBytesToLockHigh
+	 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI UnlockFile(
-       HANDLE hFile,
-       DWORD dwFileOffsetLow,
-       DWORD dwFileOffsetHigh,
-       DWORD nNumberOfBytesToUnlockLow,
-       DWORD nNumberOfBytesToUnlockHigh
-       );
+	   HANDLE hFile,
+	   DWORD dwFileOffsetLow,
+	   DWORD dwFileOffsetHigh,
+	   DWORD nNumberOfBytesToUnlockLow,
+	   DWORD nNumberOfBytesToUnlockHigh
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI LockFileEx(
-       HANDLE hFile,
-       DWORD dwFlags,
-       DWORD dwReserved,
-       DWORD nNumberOfBytesToLockLow,
-       DWORD nNumberOfBytesToLockHigh,
-       LPOVERLAPPED lpOverlapped
-       );
+	   HANDLE hFile,
+	   DWORD dwFlags,
+	   DWORD dwReserved,
+	   DWORD nNumberOfBytesToLockLow,
+	   DWORD nNumberOfBytesToLockHigh,
+	   LPOVERLAPPED lpOverlapped
+	   );
 
 extern WINBOOL
  PASCAL WINBASEAPI UnlockFileEx(
-         HANDLE hFile,
-         DWORD dwReserved,
-         DWORD nNumberOfBytesToUnlockLow,
-         DWORD nNumberOfBytesToUnlockHigh,
-         LPOVERLAPPED lpOverlapped
-         );
+	     HANDLE hFile,
+	     DWORD dwReserved,
+	     DWORD nNumberOfBytesToUnlockLow,
+	     DWORD nNumberOfBytesToUnlockHigh,
+	     LPOVERLAPPED lpOverlapped
+	     );
 
 extern WINBOOL
  PASCAL WINBASEAPI GetFileInformationByHandle(
-               HANDLE hFile,
-               LPBY_HANDLE_FILE_INFORMATION lpFileInformation
-               );
+			   HANDLE hFile,
+			   LPBY_HANDLE_FILE_INFORMATION lpFileInformation
+			   );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetFileType(
-        HANDLE hFile
-        );
+	    HANDLE hFile
+	    );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetFileSize(
-        HANDLE hFile,
-        LPDWORD lpFileSizeHigh
-        );
+	    HANDLE hFile,
+	    LPDWORD lpFileSizeHigh
+	    );
 
 
 extern HANDLE
  PASCAL WINBASEAPI GetStdHandle(
-         DWORD nStdHandle
-         );
+	     DWORD nStdHandle
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetStdHandle(
-         DWORD nStdHandle,
-         HANDLE hHandle
-         );
+	     DWORD nStdHandle,
+	     HANDLE hHandle
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI WriteFile(
-      HANDLE hFile,
-      LPCVOID lpBuffer,
-      DWORD nNumberOfBytesToWrite,
-      LPDWORD lpNumberOfBytesWritten,
-      LPOVERLAPPED lpOverlapped
-      );
+	  HANDLE hFile,
+	  LPCVOID lpBuffer,
+	  DWORD nNumberOfBytesToWrite,
+	  LPDWORD lpNumberOfBytesWritten,
+	  LPOVERLAPPED lpOverlapped
+	  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ReadFile(
-     HANDLE hFile,
-     LPVOID lpBuffer,
-     DWORD nNumberOfBytesToRead,
-     LPDWORD lpNumberOfBytesRead,
-     LPOVERLAPPED lpOverlapped
-     );
+	 HANDLE hFile,
+	 LPVOID lpBuffer,
+	 DWORD nNumberOfBytesToRead,
+	 LPDWORD lpNumberOfBytesRead,
+	 LPOVERLAPPED lpOverlapped
+	 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FlushFileBuffers(
-         HANDLE hFile
-         );
+		 HANDLE hFile
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DeviceIoControl(
-        HANDLE hDevice,
-        DWORD dwIoControlCode,
-        LPVOID lpInBuffer,
-        DWORD nInBufferSize,
-        LPVOID lpOutBuffer,
-        DWORD nOutBufferSize,
-        LPDWORD lpBytesReturned,
-        LPOVERLAPPED lpOverlapped
-        );
+		HANDLE hDevice,
+		DWORD dwIoControlCode,
+		LPVOID lpInBuffer,
+		DWORD nInBufferSize,
+		LPVOID lpOutBuffer,
+		DWORD nOutBufferSize,
+		LPDWORD lpBytesReturned,
+		LPOVERLAPPED lpOverlapped
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetEndOfFile(
-         HANDLE hFile
-         );
+	     HANDLE hFile
+	     );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetFilePointer(
-           HANDLE hFile,
-           LONG lDistanceToMove,
-           PLONG lpDistanceToMoveHigh,
-           DWORD dwMoveMethod
-           );
+	       HANDLE hFile,
+	       LONG lDistanceToMove,
+	       PLONG lpDistanceToMoveHigh,
+	       DWORD dwMoveMethod
+	       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FindClose(
-      HANDLE hFindFile
-      );
+	  HANDLE hFindFile
+	  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetFileTime(
-        HANDLE hFile,
-        LPFILETIME lpCreationTime,
-        LPFILETIME lpLastAccessTime,
-        LPFILETIME lpLastWriteTime
-        );
+	    HANDLE hFile,
+	    LPFILETIME lpCreationTime,
+	    LPFILETIME lpLastAccessTime,
+	    LPFILETIME lpLastWriteTime
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetFileTime(
-        HANDLE hFile,
-        CONST FILETIME *lpCreationTime,
-        CONST FILETIME *lpLastAccessTime,
-        CONST FILETIME *lpLastWriteTime
-        );
+	    HANDLE hFile,
+	    CONST FILETIME *lpCreationTime,
+	    CONST FILETIME *lpLastAccessTime,
+	    CONST FILETIME *lpLastWriteTime
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI CloseHandle(
-        HANDLE hObject
-        );
+	    HANDLE hObject
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DuplicateHandle(
-        HANDLE hSourceProcessHandle,
-        HANDLE hSourceHandle,
-        HANDLE hTargetProcessHandle,
-        LPHANDLE lpTargetHandle,
-        DWORD dwDesiredAccess,
-        WINBOOL bInheritHandle,
-        DWORD dwOptions
-        );
+		HANDLE hSourceProcessHandle,
+		HANDLE hSourceHandle,
+		HANDLE hTargetProcessHandle,
+		LPHANDLE lpTargetHandle,
+		DWORD dwDesiredAccess,
+		WINBOOL bInheritHandle,
+		DWORD dwOptions
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetHandleInformation(
-             HANDLE hObject,
-             LPDWORD lpdwFlags
-             );
+		     HANDLE hObject,
+		     LPDWORD lpdwFlags
+		     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetHandleInformation(
-             HANDLE hObject,
-             DWORD dwMask,
-             DWORD dwFlags
-             );
+		     HANDLE hObject,
+		     DWORD dwMask,
+		     DWORD dwFlags
+		     );
 
 extern DWORD
  PASCAL WINBASEAPI LoadModule(
-       LPCSTR lpModuleName,
-       LPVOID lpParameterBlock
-       );
+	   LPCSTR lpModuleName,
+	   LPVOID lpParameterBlock
+	   );
 
 
 extern UINT
  PASCAL WINBASEAPI WinExec(
-    LPCSTR lpCmdLine,
-    UINT uCmdShow
-    );
+	LPCSTR lpCmdLine,
+	UINT uCmdShow
+	);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ClearCommBreak(
-           HANDLE hFile
-           );
+	       HANDLE hFile
+	       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ClearCommError(
-           HANDLE hFile,
-           LPDWORD lpErrors,
-           LPCOMSTAT lpStat
-           );
+	       HANDLE hFile,
+	       LPDWORD lpErrors,
+	       LPCOMSTAT lpStat
+	       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetupComm(
-      HANDLE hFile,
-      DWORD dwInQueue,
-      DWORD dwOutQueue
-      );
+	  HANDLE hFile,
+	  DWORD dwInQueue,
+	  DWORD dwOutQueue
+	  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI EscapeCommFunction(
-           HANDLE hFile,
-           DWORD dwFunc
-           );
+		   HANDLE hFile,
+		   DWORD dwFunc
+		   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetCommConfig(
-          HANDLE hCommDev,
-          LPCOMMCONFIG lpCC,
-          LPDWORD lpdwSize
-          );
+	      HANDLE hCommDev,
+	      LPCOMMCONFIG lpCC,
+	      LPDWORD lpdwSize
+	      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetCommMask(
-        HANDLE hFile,
-        LPDWORD lpEvtMask
-        );
+	    HANDLE hFile,
+	    LPDWORD lpEvtMask
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetCommProperties(
-          HANDLE hFile,
-          LPCOMMPROP lpCommProp
-          );
+		  HANDLE hFile,
+		  LPCOMMPROP lpCommProp
+		  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetCommModemStatus(
-           HANDLE hFile,
-           LPDWORD lpModemStat
-           );
+		   HANDLE hFile,
+		   LPDWORD lpModemStat
+		   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetCommState(
-         HANDLE hFile,
-         LPDCB lpDCB
-         );
+	     HANDLE hFile,
+	     LPDCB lpDCB
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetCommTimeouts(
-        HANDLE hFile,
-        LPCOMMTIMEOUTS lpCommTimeouts
-        );
+		HANDLE hFile,
+		LPCOMMTIMEOUTS lpCommTimeouts
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI PurgeComm(
-      HANDLE hFile,
-      DWORD dwFlags
-      );
+	  HANDLE hFile,
+	  DWORD dwFlags
+	  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetCommBreak(
-         HANDLE hFile
-         );
+	     HANDLE hFile
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetCommConfig(
-          HANDLE hCommDev,
-          LPCOMMCONFIG lpCC,
-          DWORD dwSize
-          );
+	      HANDLE hCommDev,
+	      LPCOMMCONFIG lpCC,
+	      DWORD dwSize
+	      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetCommMask(
-        HANDLE hFile,
-        DWORD dwEvtMask
-        );
+	    HANDLE hFile,
+	    DWORD dwEvtMask
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetCommState(
-         HANDLE hFile,
-         LPDCB lpDCB
-         );
+	     HANDLE hFile,
+	     LPDCB lpDCB
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetCommTimeouts(
-        HANDLE hFile,
-        LPCOMMTIMEOUTS lpCommTimeouts
-        );
+		HANDLE hFile,
+		LPCOMMTIMEOUTS lpCommTimeouts
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI TransmitCommChar(
-         HANDLE hFile,
-         char cChar
-         );
+		 HANDLE hFile,
+		 char cChar
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI WaitCommEvent(
-          HANDLE hFile,
-          LPDWORD lpEvtMask,
-          LPOVERLAPPED lpOverlapped
-          );
+	      HANDLE hFile,
+	      LPDWORD lpEvtMask,
+	      LPOVERLAPPED lpOverlapped
+	      );
 
 
 
 extern DWORD
  PASCAL WINBASEAPI SetTapePosition(
-        HANDLE hDevice,
-        DWORD dwPositionMethod,
-        DWORD dwPartition,
-        DWORD dwOffsetLow,
-        DWORD dwOffsetHigh,
-        WINBOOL bImmediate
-        );
+		HANDLE hDevice,
+		DWORD dwPositionMethod,
+		DWORD dwPartition,
+		DWORD dwOffsetLow,
+		DWORD dwOffsetHigh,
+		WINBOOL bImmediate
+		);
 
 
 extern DWORD
  PASCAL WINBASEAPI GetTapePosition(
-        HANDLE hDevice,
-        DWORD dwPositionType,
-        LPDWORD lpdwPartition,
-        LPDWORD lpdwOffsetLow,
-        LPDWORD lpdwOffsetHigh
-        );
+		HANDLE hDevice,
+		DWORD dwPositionType,
+		LPDWORD lpdwPartition,
+		LPDWORD lpdwOffsetLow,
+		LPDWORD lpdwOffsetHigh
+		);
 
 
 extern DWORD
  PASCAL WINBASEAPI PrepareTape(
-        HANDLE hDevice,
-        DWORD dwOperation,
-        WINBOOL bImmediate
-        );
+	    HANDLE hDevice,
+	    DWORD dwOperation,
+	    WINBOOL bImmediate
+	    );
 
 
 extern DWORD
  PASCAL WINBASEAPI EraseTape(
-      HANDLE hDevice,
-      DWORD dwEraseType,
-      WINBOOL bImmediate
-      );
+	  HANDLE hDevice,
+	  DWORD dwEraseType,
+	  WINBOOL bImmediate
+	  );
 
 
 extern DWORD
  PASCAL WINBASEAPI CreateTapePartition(
-            HANDLE hDevice,
-            DWORD dwPartitionMethod,
-            DWORD dwCount,
-            DWORD dwSize
-            );
+		    HANDLE hDevice,
+		    DWORD dwPartitionMethod,
+		    DWORD dwCount,
+		    DWORD dwSize
+		    );
 
 
 extern DWORD
  PASCAL WINBASEAPI WriteTapemark(
-          HANDLE hDevice,
-          DWORD dwTapemarkType,
-          DWORD dwTapemarkCount,
-          WINBOOL bImmediate
-          );
+	      HANDLE hDevice,
+	      DWORD dwTapemarkType,
+	      DWORD dwTapemarkCount,
+	      WINBOOL bImmediate
+	      );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetTapeStatus(
-          HANDLE hDevice
-          );
+	      HANDLE hDevice
+	      );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetTapeParameters(
-          HANDLE hDevice,
-          DWORD dwOperation,
-          LPDWORD lpdwSize,
-          LPVOID lpTapeInformation
-          );
+		  HANDLE hDevice,
+		  DWORD dwOperation,
+		  LPDWORD lpdwSize,
+		  LPVOID lpTapeInformation
+		  );
 
 extern DWORD
  PASCAL WINBASEAPI SetTapeParameters(
-          HANDLE hDevice,
-          DWORD dwOperation,
-          LPVOID lpTapeInformation
-          );
+		  HANDLE hDevice,
+		  DWORD dwOperation,
+		  LPVOID lpTapeInformation
+		  );
 
 extern WINBOOL
  PASCAL WINBASEAPI Beep(
@@ -1269,112 +1274,112 @@ extern WINBOOL
 
 extern VOID
  PASCAL WINBASEAPI OpenSound(
-      VOID
-      );
+	  VOID
+	  );
 
 
 extern VOID
  PASCAL WINBASEAPI CloseSound(
-       VOID
-       );
+	   VOID
+	   );
 
 
 extern VOID
  PASCAL WINBASEAPI StartSound(
-       VOID
-       );
+	   VOID
+	   );
 
 
 extern VOID
  PASCAL WINBASEAPI StopSound(
-      VOID
-      );
+	  VOID
+	  );
 
 
 extern DWORD
  PASCAL WINBASEAPI WaitSoundState(
-           DWORD nState
-           );
+	       DWORD nState
+	       );
 
 
 extern DWORD
  PASCAL WINBASEAPI SyncAllVoices(
-          VOID
-          );
+	      VOID
+	      );
 
 
 extern DWORD
  PASCAL WINBASEAPI CountVoiceNotes(
-        DWORD nVoice
-        );
+		DWORD nVoice
+		);
 
 
 extern LPDWORD
  PASCAL WINBASEAPI GetThresholdEvent(
-          VOID
-          );
+		  VOID
+		  );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetThresholdStatus(
-           VOID
-           );
+		   VOID
+		   );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetSoundNoise(
-          DWORD nSource,
-          DWORD nDuration
-          );
+	      DWORD nSource,
+	      DWORD nDuration
+	      );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetVoiceAccent(
-           DWORD nVoice,
-           DWORD nTempo,
-           DWORD nVolume,
-           DWORD nMode,
-           DWORD nPitch
-           );
+	       DWORD nVoice,
+	       DWORD nTempo,
+	       DWORD nVolume,
+	       DWORD nMode,
+	       DWORD nPitch
+	       );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetVoiceEnvelope(
-         DWORD nVoice,
-         DWORD nShape,
-         DWORD nRepeat
-         );
+		 DWORD nVoice,
+		 DWORD nShape,
+		 DWORD nRepeat
+		 );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetVoiceNote(
-         DWORD nVoice,
-         DWORD nValue,
-         DWORD nLength,
-         DWORD nCdots
-         );
+	     DWORD nVoice,
+	     DWORD nValue,
+	     DWORD nLength,
+	     DWORD nCdots
+	     );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetVoiceQueueSize(
-          DWORD nVoice,
-          DWORD nBytes
-          );
+		  DWORD nVoice,
+		  DWORD nBytes
+		  );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetVoiceSound(
-          DWORD nVoice,
-          DWORD Frequency,
-          DWORD nDuration
-          );
+	      DWORD nVoice,
+	      DWORD Frequency,
+	      DWORD nDuration
+	      );
 
 
 extern DWORD
  PASCAL WINBASEAPI SetVoiceThreshold(
-          DWORD nVoice,
-          DWORD nNotes
-          );
+		  DWORD nVoice,
+		  DWORD nNotes
+		  );
 
 
 extern int
@@ -1384,243 +1389,244 @@ extern int
        int nDenominator
        );
 
+extern WINBOOL PASCAL WINBASEAPI SetSystemPowerState (WINBOOL, WINBOOL);
 
 extern VOID
  PASCAL WINBASEAPI GetSystemTime(
-          LPSYSTEMTIME lpSystemTime
-          );
+	      LPSYSTEMTIME lpSystemTime
+	      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetSystemTime(
-          CONST SYSTEMTIME *lpSystemTime
-          );
+	      CONST SYSTEMTIME *lpSystemTime
+	      );
 
 
 extern VOID
  PASCAL WINBASEAPI GetSystemTimeAsFileTime(
           LPFILETIME lpSystemTimeAsFileTime
-          );
+	      );
 
 
 extern VOID
  PASCAL WINBASEAPI GetLocalTime(
-         LPSYSTEMTIME lpSystemTime
-         );
+	     LPSYSTEMTIME lpSystemTime
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetLocalTime(
-         CONST SYSTEMTIME *lpSystemTime
-         );
+	     CONST SYSTEMTIME *lpSystemTime
+	     );
 
 
 extern VOID
  PASCAL WINBASEAPI GetSystemInfo(
-          LPSYSTEM_INFO lpSystemInfo
-          );
+	      LPSYSTEM_INFO lpSystemInfo
+	      );
 
 extern WINBOOL
  PASCAL WINBASEAPI SystemTimeToTzSpecificLocalTime(
-                LPTIME_ZONE_INFORMATION lpTimeZoneInformation,
-                LPSYSTEMTIME lpUniversalTime,
-                LPSYSTEMTIME lpLocalTime
-                );
+				LPTIME_ZONE_INFORMATION lpTimeZoneInformation,
+				LPSYSTEMTIME lpUniversalTime,
+				LPSYSTEMTIME lpLocalTime
+				);
 
 
 extern DWORD
  PASCAL WINBASEAPI GetTimeZoneInformation(
-               LPTIME_ZONE_INFORMATION lpTimeZoneInformation
-               );
+		       LPTIME_ZONE_INFORMATION lpTimeZoneInformation
+		       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetTimeZoneInformation(
-               CONST TIME_ZONE_INFORMATION *lpTimeZoneInformation
-               );
+		       CONST TIME_ZONE_INFORMATION *lpTimeZoneInformation
+		       );
 
 extern WINBOOL
  PASCAL WINBASEAPI SystemTimeToFileTime(
-             CONST SYSTEMTIME *lpSystemTime,
-             LPFILETIME lpFileTime
-             );
+		     CONST SYSTEMTIME *lpSystemTime,
+		     LPFILETIME lpFileTime
+		     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FileTimeToLocalFileTime(
-            CONST FILETIME *lpFileTime,
-            LPFILETIME lpLocalFileTime
-            );
+			CONST FILETIME *lpFileTime,
+			LPFILETIME lpLocalFileTime
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI LocalFileTimeToFileTime(
-            CONST FILETIME *lpLocalFileTime,
-            LPFILETIME lpFileTime
-            );
+			CONST FILETIME *lpLocalFileTime,
+			LPFILETIME lpFileTime
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FileTimeToSystemTime(
-             CONST FILETIME *lpFileTime,
-             LPSYSTEMTIME lpSystemTime
-             );
+		     CONST FILETIME *lpFileTime,
+		     LPSYSTEMTIME lpSystemTime
+		     );
 
 
 extern LONG
  PASCAL WINBASEAPI CompareFileTime(
-        CONST FILETIME *lpFileTime1,
-        CONST FILETIME *lpFileTime2
-        );
+		CONST FILETIME *lpFileTime1,
+		CONST FILETIME *lpFileTime2
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FileTimeToDosDateTime(
-              CONST FILETIME *lpFileTime,
-              LPWORD lpFatDate,
-              LPWORD lpFatTime
-              );
+		      CONST FILETIME *lpFileTime,
+		      LPWORD lpFatDate,
+		      LPWORD lpFatTime
+		      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DosDateTimeToFileTime(
-              WORD wFatDate,
-              WORD wFatTime,
-              LPFILETIME lpFileTime
-              );
+		      WORD wFatDate,
+		      WORD wFatTime,
+		      LPFILETIME lpFileTime
+		      );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetTickCount(
-         VOID
-         );
+	     VOID
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetSystemTimeAdjustment(
-            DWORD dwTimeAdjustment,
-            WINBOOL  bTimeAdjustmentDisabled
-            );
+			DWORD dwTimeAdjustment,
+			WINBOOL  bTimeAdjustmentDisabled
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetSystemTimeAdjustment(
-            PDWORD lpTimeAdjustment,
-            PDWORD lpTimeIncrement,
-            PWINBOOL  lpTimeAdjustmentDisabled
-            );
+			PDWORD lpTimeAdjustment,
+			PDWORD lpTimeIncrement,
+			PWINBOOL  lpTimeAdjustmentDisabled
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI CreatePipe(
-       PHANDLE hReadPipe,
-       PHANDLE hWritePipe,
-       LPSECURITY_ATTRIBUTES lpPipeAttributes,
-       DWORD nSize
-       );
+	   PHANDLE hReadPipe,
+	   PHANDLE hWritePipe,
+	   LPSECURITY_ATTRIBUTES lpPipeAttributes,
+	   DWORD nSize
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ConnectNamedPipe(
-         HANDLE hNamedPipe,
-         LPOVERLAPPED lpOverlapped
-         );
+		 HANDLE hNamedPipe,
+		 LPOVERLAPPED lpOverlapped
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DisconnectNamedPipe(
-            HANDLE hNamedPipe
-            );
+		    HANDLE hNamedPipe
+		    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetNamedPipeHandleState(
-            HANDLE hNamedPipe,
-            LPDWORD lpMode,
-            LPDWORD lpMaxCollectionCount,
-            LPDWORD lpCollectDataTimeout
-            );
+			HANDLE hNamedPipe,
+			LPDWORD lpMode,
+			LPDWORD lpMaxCollectionCount,
+			LPDWORD lpCollectDataTimeout
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetNamedPipeInfo(
-         HANDLE hNamedPipe,
-         LPDWORD lpFlags,
-         LPDWORD lpOutBufferSize,
-         LPDWORD lpInBufferSize,
-         LPDWORD lpMaxInstances
-         );
+		 HANDLE hNamedPipe,
+		 LPDWORD lpFlags,
+		 LPDWORD lpOutBufferSize,
+		 LPDWORD lpInBufferSize,
+		 LPDWORD lpMaxInstances
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI PeekNamedPipe(
-          HANDLE hNamedPipe,
-          LPVOID lpBuffer,
-          DWORD nBufferSize,
-          LPDWORD lpBytesRead,
-          LPDWORD lpTotalBytesAvail,
-          LPDWORD lpBytesLeftThisMessage
-          );
+	      HANDLE hNamedPipe,
+	      LPVOID lpBuffer,
+	      DWORD nBufferSize,
+	      LPDWORD lpBytesRead,
+	      LPDWORD lpTotalBytesAvail,
+	      LPDWORD lpBytesLeftThisMessage
+	      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI TransactNamedPipe(
-          HANDLE hNamedPipe,
-          LPVOID lpInBuffer,
-          DWORD nInBufferSize,
-          LPVOID lpOutBuffer,
-          DWORD nOutBufferSize,
-          LPDWORD lpBytesRead,
-          LPOVERLAPPED lpOverlapped
-          );
+		  HANDLE hNamedPipe,
+		  LPVOID lpInBuffer,
+		  DWORD nInBufferSize,
+		  LPVOID lpOutBuffer,
+		  DWORD nOutBufferSize,
+		  LPDWORD lpBytesRead,
+		  LPOVERLAPPED lpOverlapped
+		  );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetMailslotInfo(
-        HANDLE hMailslot,
-        LPDWORD lpMaxMessageSize,
-        LPDWORD lpNextSize,
-        LPDWORD lpMessageCount,
-        LPDWORD lpReadTimeout
-        );
+		HANDLE hMailslot,
+		LPDWORD lpMaxMessageSize,
+		LPDWORD lpNextSize,
+		LPDWORD lpMessageCount,
+		LPDWORD lpReadTimeout
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetMailslotInfo(
-        HANDLE hMailslot,
-        DWORD lReadTimeout
-        );
+		HANDLE hMailslot,
+		DWORD lReadTimeout
+		);
 
 
 extern LPVOID
  PASCAL WINBASEAPI MapViewOfFile(
-          HANDLE hFileMappingObject,
-          DWORD dwDesiredAccess,
-          DWORD dwFileOffsetHigh,
-          DWORD dwFileOffsetLow,
-          DWORD dwNumberOfBytesToMap
-          );
+	      HANDLE hFileMappingObject,
+	      DWORD dwDesiredAccess,
+	      DWORD dwFileOffsetHigh,
+	      DWORD dwFileOffsetLow,
+	      DWORD dwNumberOfBytesToMap
+	      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FlushViewOfFile(
-        LPCVOID lpBaseAddress,
-        DWORD dwNumberOfBytesToFlush
-        );
+		LPCVOID lpBaseAddress,
+		DWORD dwNumberOfBytesToFlush
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI UnmapViewOfFile(
-        LPVOID lpBaseAddress
-        );
+		LPVOID lpBaseAddress
+		);
 
 extern HFILE
  PASCAL WINBASEAPI OpenFile(
-     LPCSTR lpFileName,
-     LPOFSTRUCT lpReOpenBuff,
-     UINT uStyle
-     );
+	 LPCSTR lpFileName,
+	 LPOFSTRUCT lpReOpenBuff,
+	 UINT uStyle
+	 );
 
 
 extern HFILE
@@ -1632,9 +1638,9 @@ extern HFILE
 
 extern HFILE
  PASCAL WINBASEAPI _lcreat(
-    LPCSTR lpPathName,
-    int  iAttribute
-    );
+	LPCSTR lpPathName,
+	int  iAttribute
+	);
 
 
 extern UINT
@@ -1647,10 +1653,10 @@ extern UINT
 
 extern UINT
  PASCAL WINBASEAPI _lwrite(
-    HFILE hFile,
-    LPCSTR lpBuffer,
-    UINT uBytes
-    );
+	HFILE hFile,
+	LPCSTR lpBuffer,
+	UINT uBytes
+	);
 
 
 extern long
@@ -1663,148 +1669,148 @@ extern long
 
 extern long
  PASCAL WINBASEAPI _hwrite(
-    HFILE hFile,
-    LPCSTR lpBuffer,
-    long lBytes
-    );
+	HFILE hFile,
+	LPCSTR lpBuffer,
+	long lBytes
+	);
 
 
 extern HFILE
  PASCAL WINBASEAPI _lclose(
-    HFILE hFile
-    );
+	HFILE hFile
+	);
 
 
 extern LONG
  PASCAL WINBASEAPI _llseek(
-    HFILE hFile,
-    LONG lOffset,
-    int iOrigin
-    );
+	HFILE hFile,
+	LONG lOffset,
+	int iOrigin
+	);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsTextUnicode(
-          CONST LPVOID lpBuffer,
-          int cb,
-          LPINT lpi
-          );
+	      CONST LPVOID lpBuffer,
+	      int cb,
+	      LPINT lpi
+	      );
 
 
 extern DWORD
  PASCAL WINBASEAPI TlsAlloc(
-     VOID
-     );
+	 VOID
+	 );
 
 extern LPVOID
  PASCAL WINBASEAPI TlsGetValue(
-        DWORD dwTlsIndex
-        );
+	    DWORD dwTlsIndex
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI TlsSetValue(
-        DWORD dwTlsIndex,
-        LPVOID lpTlsValue
-        );
+	    DWORD dwTlsIndex,
+	    LPVOID lpTlsValue
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI TlsFree(
-    DWORD dwTlsIndex
-    );
+	DWORD dwTlsIndex
+	);
 
 extern DWORD
  PASCAL WINBASEAPI SleepEx(
-    DWORD dwMilliseconds,
-    WINBOOL bAlertable
-    );
+	DWORD dwMilliseconds,
+	WINBOOL bAlertable
+	);
 
 
 extern DWORD
  PASCAL WINBASEAPI WaitForSingleObjectEx(
-              HANDLE hHandle,
-              DWORD dwMilliseconds,
-              WINBOOL bAlertable
-              );
+		      HANDLE hHandle,
+		      DWORD dwMilliseconds,
+		      WINBOOL bAlertable
+		      );
 
 
 extern DWORD
  PASCAL WINBASEAPI WaitForMultipleObjectsEx(
-             DWORD nCount,
-             CONST HANDLE *lpHandles,
-             WINBOOL bWaitAll,
-             DWORD dwMilliseconds,
-             WINBOOL bAlertable
-             );
+			 DWORD nCount,
+			 CONST HANDLE *lpHandles,
+			 WINBOOL bWaitAll,
+			 DWORD dwMilliseconds,
+			 WINBOOL bAlertable
+			 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ReadFileEx(
-       HANDLE hFile,
-       LPVOID lpBuffer,
-       DWORD nNumberOfBytesToRead,
-       LPOVERLAPPED lpOverlapped,
-       LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
-       );
+	   HANDLE hFile,
+	   LPVOID lpBuffer,
+	   DWORD nNumberOfBytesToRead,
+	   LPOVERLAPPED lpOverlapped,
+	   LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI WriteFileEx(
-        HANDLE hFile,
-        LPCVOID lpBuffer,
-        DWORD nNumberOfBytesToWrite,
-        LPOVERLAPPED lpOverlapped,
-        LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
-        );
+	    HANDLE hFile,
+	    LPCVOID lpBuffer,
+	    DWORD nNumberOfBytesToWrite,
+	    LPOVERLAPPED lpOverlapped,
+	    LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI BackupRead(
-       HANDLE hFile,
-       LPBYTE lpBuffer,
-       DWORD nNumberOfBytesToRead,
-       LPDWORD lpNumberOfBytesRead,
-       WINBOOL bAbort,
-       WINBOOL bProcessSecurity,
-       LPVOID *lpContext
-       );
+	   HANDLE hFile,
+	   LPBYTE lpBuffer,
+	   DWORD nNumberOfBytesToRead,
+	   LPDWORD lpNumberOfBytesRead,
+	   WINBOOL bAbort,
+	   WINBOOL bProcessSecurity,
+	   LPVOID *lpContext
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI BackupSeek(
-       HANDLE hFile,
-       DWORD  dwLowBytesToSeek,
-       DWORD  dwHighBytesToSeek,
-       LPDWORD lpdwLowByteSeeked,
-       LPDWORD lpdwHighByteSeeked,
-       LPVOID *lpContext
-       );
+	   HANDLE hFile,
+	   DWORD  dwLowBytesToSeek,
+	   DWORD  dwHighBytesToSeek,
+	   LPDWORD lpdwLowByteSeeked,
+	   LPDWORD lpdwHighByteSeeked,
+	   LPVOID *lpContext
+	   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI BackupWrite(
-        HANDLE hFile,
-        LPBYTE lpBuffer,
-        DWORD nNumberOfBytesToWrite,
-        LPDWORD lpNumberOfBytesWritten,
-        WINBOOL bAbort,
-        WINBOOL bProcessSecurity,
-        LPVOID *lpContext
-        );
+	    HANDLE hFile,
+	    LPBYTE lpBuffer,
+	    DWORD nNumberOfBytesToWrite,
+	    LPDWORD lpNumberOfBytesWritten,
+	    WINBOOL bAbort,
+	    WINBOOL bProcessSecurity,
+	    LPVOID *lpContext
+	    );
 
 extern WINBOOL
  PASCAL WINBASEAPI SetProcessShutdownParameters(
-                 DWORD dwLevel,
-                 DWORD dwFlags
-                 );
+			     DWORD dwLevel,
+			     DWORD dwFlags
+			     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetProcessShutdownParameters(
-                 LPDWORD lpdwLevel,
-                 LPDWORD lpdwFlags
-                 );
+			     LPDWORD lpdwLevel,
+			     LPDWORD lpdwFlags
+			     );
 
 
 extern VOID
@@ -1820,909 +1826,909 @@ extern WINBOOL
 
 extern WINBOOL
  PASCAL WINBASEAPI CloseEventLog(
-           HANDLE hEventLog
-        );
+	       HANDLE hEventLog
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DeregisterEventSource(
-               HANDLE hEventLog
-            );
+		       HANDLE hEventLog
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI NotifyChangeEventLog(
-              HANDLE hEventLog,
-              HANDLE hEvent
-               );
+		      HANDLE hEventLog,
+		      HANDLE hEvent
+		       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetNumberOfEventLogRecords(
-                HANDLE hEventLog,
-                PDWORD NumberOfRecords
-                 );
+			    HANDLE hEventLog,
+			    PDWORD NumberOfRecords
+			     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetOldestEventLogRecord(
-             HANDLE hEventLog,
-             PDWORD OldestRecord
-              );
+			 HANDLE hEventLog,
+			 PDWORD OldestRecord
+			  );
 
 extern WINBOOL
  PASCAL WINBASEAPI DuplicateToken(
-           HANDLE ExistingTokenHandle,
-           SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
-           PHANDLE DuplicateTokenHandle
-           );
+	       HANDLE ExistingTokenHandle,
+	       SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
+	       PHANDLE DuplicateTokenHandle
+	       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetKernelObjectSecurity(
-             HANDLE Handle,
-             SECURITY_INFORMATION RequestedInformation,
-             PSECURITY_DESCRIPTOR pSecurityDescriptor,
-             DWORD nLength,
-             LPDWORD lpnLengthNeeded
-              );
+			 HANDLE Handle,
+			 SECURITY_INFORMATION RequestedInformation,
+			 PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			 DWORD nLength,
+			 LPDWORD lpnLengthNeeded
+			  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ImpersonateNamedPipeClient(
-               HANDLE hNamedPipe
-               );
+			   HANDLE hNamedPipe
+			   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI ImpersonateSelf(
-        SECURITY_IMPERSONATION_LEVEL ImpersonationLevel
-        );
+		SECURITY_IMPERSONATION_LEVEL ImpersonationLevel
+		);
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI RevertToSelf(
-          VOID
-           );
+	      VOID
+	       );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetThreadToken(
-        PHANDLE Thread,
-        HANDLE Token
-         );
+		PHANDLE Thread,
+		HANDLE Token
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AccessCheck(
-         PSECURITY_DESCRIPTOR pSecurityDescriptor,
-         HANDLE ClientToken,
-         DWORD DesiredAccess,
-         PGENERIC_MAPPING GenericMapping,
-         PPRIVILEGE_SET PrivilegeSet,
-         LPDWORD PrivilegeSetLength,
-         LPDWORD GrantedAccess,
-         LPBOOL AccessStatus
-          );
+	     PSECURITY_DESCRIPTOR pSecurityDescriptor,
+	     HANDLE ClientToken,
+	     DWORD DesiredAccess,
+	     PGENERIC_MAPPING GenericMapping,
+	     PPRIVILEGE_SET PrivilegeSet,
+	     LPDWORD PrivilegeSetLength,
+	     LPDWORD GrantedAccess,
+	     LPBOOL AccessStatus
+	      );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI OpenProcessToken(
-          HANDLE ProcessHandle,
-          DWORD DesiredAccess,
-          PHANDLE TokenHandle
-           );
+		  HANDLE ProcessHandle,
+		  DWORD DesiredAccess,
+		  PHANDLE TokenHandle
+		   );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI OpenThreadToken(
-         HANDLE ThreadHandle,
-         DWORD DesiredAccess,
-         WINBOOL OpenAsSelf,
-         PHANDLE TokenHandle
-          );
+		 HANDLE ThreadHandle,
+		 DWORD DesiredAccess,
+		 WINBOOL OpenAsSelf,
+		 PHANDLE TokenHandle
+		  );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetTokenInformation(
-             HANDLE TokenHandle,
-             TOKEN_INFORMATION_CLASS TokenInformationClass,
-             LPVOID TokenInformation,
-             DWORD TokenInformationLength,
-             PDWORD ReturnLength
-              );
+		     HANDLE TokenHandle,
+		     TOKEN_INFORMATION_CLASS TokenInformationClass,
+		     LPVOID TokenInformation,
+		     DWORD TokenInformationLength,
+		     PDWORD ReturnLength
+		      );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetTokenInformation(
-             HANDLE TokenHandle,
-             TOKEN_INFORMATION_CLASS TokenInformationClass,
-             LPVOID TokenInformation,
-             DWORD TokenInformationLength
-              );
+		     HANDLE TokenHandle,
+		     TOKEN_INFORMATION_CLASS TokenInformationClass,
+		     LPVOID TokenInformation,
+		     DWORD TokenInformationLength
+		      );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AdjustTokenPrivileges(
-               HANDLE TokenHandle,
-               WINBOOL DisableAllPrivileges,
-               PTOKEN_PRIVILEGES NewState,
-               DWORD BufferLength,
-               PTOKEN_PRIVILEGES PreviousState,
-               PDWORD ReturnLength
-            );
+		       HANDLE TokenHandle,
+		       WINBOOL DisableAllPrivileges,
+		       PTOKEN_PRIVILEGES NewState,
+		       DWORD BufferLength,
+		       PTOKEN_PRIVILEGES PreviousState,
+		       PDWORD ReturnLength
+			);
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AdjustTokenGroups(
-           HANDLE TokenHandle,
-           WINBOOL ResetToDefault,
-           PTOKEN_GROUPS NewState,
-           DWORD BufferLength,
-           PTOKEN_GROUPS PreviousState,
-           PDWORD ReturnLength
-            );
+		   HANDLE TokenHandle,
+		   WINBOOL ResetToDefault,
+		   PTOKEN_GROUPS NewState,
+		   DWORD BufferLength,
+		   PTOKEN_GROUPS PreviousState,
+		   PDWORD ReturnLength
+		    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI PrivilegeCheck(
-        HANDLE ClientToken,
-        PPRIVILEGE_SET RequiredPrivileges,
-        LPBOOL pfResult
-         );
+		HANDLE ClientToken,
+		PPRIVILEGE_SET RequiredPrivileges,
+		LPBOOL pfResult
+		 );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsValidSid(
-        PSID pSid
-         );
+	    PSID pSid
+	     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI EqualSid(
-      PSID pSid1,
-      PSID pSid2
-       );
+	  PSID pSid1,
+	  PSID pSid2
+	   );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI EqualPrefixSid(
-        PSID pSid1,
-        PSID pSid2
-         );
+		PSID pSid1,
+		PSID pSid2
+		 );
 
 
 
 extern DWORD
  PASCAL WINBASEAPI GetSidLengthRequired(
-              UCHAR nSubAuthorityCount
-               );
+		      UCHAR nSubAuthorityCount
+		       );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AllocateAndInitializeSid(
-              PSID_IDENTIFIER_AUTHORITY pIdentifierAuthority,
-              BYTE nSubAuthorityCount,
-              DWORD nSubAuthority0,
-              DWORD nSubAuthority1,
-              DWORD nSubAuthority2,
-              DWORD nSubAuthority3,
-              DWORD nSubAuthority4,
-              DWORD nSubAuthority5,
-              DWORD nSubAuthority6,
-              DWORD nSubAuthority7,
-              PSID *pSid
-               );
+			  PSID_IDENTIFIER_AUTHORITY pIdentifierAuthority,
+			  BYTE nSubAuthorityCount,
+			  DWORD nSubAuthority0,
+			  DWORD nSubAuthority1,
+			  DWORD nSubAuthority2,
+			  DWORD nSubAuthority3,
+			  DWORD nSubAuthority4,
+			  DWORD nSubAuthority5,
+			  DWORD nSubAuthority6,
+			  DWORD nSubAuthority7,
+			  PSID *pSid
+			   );
 
 
 extern PVOID
  PASCAL WINBASEAPI FreeSid(
-    PSID pSid
-    );
+	PSID pSid
+	);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI InitializeSid(
-           PSID Sid,
-           PSID_IDENTIFIER_AUTHORITY pIdentifierAuthority,
-           BYTE nSubAuthorityCount
-        );
+	       PSID Sid,
+	       PSID_IDENTIFIER_AUTHORITY pIdentifierAuthority,
+	       BYTE nSubAuthorityCount
+		);
 
 
 
 extern PSID_IDENTIFIER_AUTHORITY
  PASCAL WINBASEAPI GetSidIdentifierAuthority(
-               PSID pSid
-                );
+			   PSID pSid
+			    );
 
 
 
 extern PDWORD
  PASCAL WINBASEAPI GetSidSubAuthority(
-            PSID pSid,
-            DWORD nSubAuthority
-             );
+		    PSID pSid,
+		    DWORD nSubAuthority
+		     );
 
 
 
 extern PUCHAR
  PASCAL WINBASEAPI GetSidSubAuthorityCount(
-             PSID pSid
-              );
+			 PSID pSid
+			  );
 
 
 
 extern DWORD
  PASCAL WINBASEAPI GetLengthSid(
-          PSID pSid
-           );
+	      PSID pSid
+	       );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI CopySid(
-     DWORD nDestinationSidLength,
-     PSID pDestinationSid,
-     PSID pSourceSid
-      );
+	 DWORD nDestinationSidLength,
+	 PSID pDestinationSid,
+	 PSID pSourceSid
+	  );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AreAllAccessesGranted(
-               DWORD GrantedAccess,
-               DWORD DesiredAccess
-            );
+		       DWORD GrantedAccess,
+		       DWORD DesiredAccess
+			);
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AreAnyAccessesGranted(
-               DWORD GrantedAccess,
-               DWORD DesiredAccess
-            );
+		       DWORD GrantedAccess,
+		       DWORD DesiredAccess
+			);
 
 
 
 extern VOID
  PASCAL WINBASEAPI MapGenericMask(
-        PDWORD AccessMask,
-        PGENERIC_MAPPING GenericMapping
-         );
+		PDWORD AccessMask,
+		PGENERIC_MAPPING GenericMapping
+		 );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsValidAcl(
-        PACL pAcl
-         );
+	    PACL pAcl
+	     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI InitializeAcl(
-           PACL pAcl,
-           DWORD nAclLength,
-           DWORD dwAclRevision
-        );
+	       PACL pAcl,
+	       DWORD nAclLength,
+	       DWORD dwAclRevision
+		);
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetAclInformation(
-           PACL pAcl,
-           LPVOID pAclInformation,
-           DWORD nAclInformationLength,
-           ACL_INFORMATION_CLASS dwAclInformationClass
-            );
+		   PACL pAcl,
+		   LPVOID pAclInformation,
+		   DWORD nAclInformationLength,
+		   ACL_INFORMATION_CLASS dwAclInformationClass
+		    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetAclInformation(
-           PACL pAcl,
-           LPVOID pAclInformation,
-           DWORD nAclInformationLength,
-           ACL_INFORMATION_CLASS dwAclInformationClass
-            );
+		   PACL pAcl,
+		   LPVOID pAclInformation,
+		   DWORD nAclInformationLength,
+		   ACL_INFORMATION_CLASS dwAclInformationClass
+		    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AddAce(
-    PACL pAcl,
-    DWORD dwAceRevision,
-    DWORD dwStartingAceIndex,
-    LPVOID pAceList,
-    DWORD nAceListLength
-     );
+	PACL pAcl,
+	DWORD dwAceRevision,
+	DWORD dwStartingAceIndex,
+	LPVOID pAceList,
+	DWORD nAceListLength
+	 );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DeleteAce(
-       PACL pAcl,
-       DWORD dwAceIndex
-        );
+	   PACL pAcl,
+	   DWORD dwAceIndex
+	    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetAce(
-    PACL pAcl,
-    DWORD dwAceIndex,
-    LPVOID *pAce
-     );
+	PACL pAcl,
+	DWORD dwAceIndex,
+	LPVOID *pAce
+	 );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AddAccessAllowedAce(
-             PACL pAcl,
-             DWORD dwAceRevision,
-             DWORD AccessMask,
-             PSID pSid
-              );
+		     PACL pAcl,
+		     DWORD dwAceRevision,
+		     DWORD AccessMask,
+		     PSID pSid
+		      );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AddAccessDeniedAce(
-            PACL pAcl,
-            DWORD dwAceRevision,
-            DWORD AccessMask,
-            PSID pSid
-             );
+		    PACL pAcl,
+		    DWORD dwAceRevision,
+		    DWORD AccessMask,
+		    PSID pSid
+		     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI AddAuditAccessAce(
-          PACL pAcl,
-          DWORD dwAceRevision,
-          DWORD dwAccessMask,
-          PSID pSid,
-          WINBOOL bAuditSuccess,
-          WINBOOL bAuditFailure
-          );
+		  PACL pAcl,
+		  DWORD dwAceRevision,
+		  DWORD dwAccessMask,
+		  PSID pSid,
+		  WINBOOL bAuditSuccess,
+		  WINBOOL bAuditFailure
+		  );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FindFirstFreeAce(
-          PACL pAcl,
-          LPVOID *pAce
-           );
+		  PACL pAcl,
+		  LPVOID *pAce
+		   );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI InitializeSecurityDescriptor(
-                  PSECURITY_DESCRIPTOR pSecurityDescriptor,
-                  DWORD dwRevision
-                   );
+			      PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			      DWORD dwRevision
+			       );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsValidSecurityDescriptor(
-               PSECURITY_DESCRIPTOR pSecurityDescriptor
-                );
+			   PSECURITY_DESCRIPTOR pSecurityDescriptor
+			    );
 
 
 
 extern DWORD
  PASCAL WINBASEAPI GetSecurityDescriptorLength(
-                 PSECURITY_DESCRIPTOR pSecurityDescriptor
-                  );
+			     PSECURITY_DESCRIPTOR pSecurityDescriptor
+			      );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetSecurityDescriptorControl(
-                  PSECURITY_DESCRIPTOR pSecurityDescriptor,
-                  PSECURITY_DESCRIPTOR_CONTROL pControl,
-                  LPDWORD lpdwRevision
-                   );
+			      PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			      PSECURITY_DESCRIPTOR_CONTROL pControl,
+			      LPDWORD lpdwRevision
+			       );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetSecurityDescriptorDacl(
-               PSECURITY_DESCRIPTOR pSecurityDescriptor,
-               WINBOOL bDaclPresent,
-               PACL pDacl,
-               WINBOOL bDaclDefaulted
-                );
+			   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			   WINBOOL bDaclPresent,
+			   PACL pDacl,
+			   WINBOOL bDaclDefaulted
+			    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetSecurityDescriptorDacl(
-               PSECURITY_DESCRIPTOR pSecurityDescriptor,
-               LPBOOL lpbDaclPresent,
-               PACL *pDacl,
-               LPBOOL lpbDaclDefaulted
-                );
+			   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			   LPBOOL lpbDaclPresent,
+			   PACL *pDacl,
+			   LPBOOL lpbDaclDefaulted
+			    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetSecurityDescriptorSacl(
-               PSECURITY_DESCRIPTOR pSecurityDescriptor,
-               WINBOOL bSaclPresent,
-               PACL pSacl,
-               WINBOOL bSaclDefaulted
-                );
+			   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			   WINBOOL bSaclPresent,
+			   PACL pSacl,
+			   WINBOOL bSaclDefaulted
+			    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetSecurityDescriptorSacl(
-               PSECURITY_DESCRIPTOR pSecurityDescriptor,
-               LPBOOL lpbSaclPresent,
-               PACL *pSacl,
-               LPBOOL lpbSaclDefaulted
-                );
+			   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			   LPBOOL lpbSaclPresent,
+			   PACL *pSacl,
+			   LPBOOL lpbSaclDefaulted
+			    );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetSecurityDescriptorOwner(
-                PSECURITY_DESCRIPTOR pSecurityDescriptor,
-                PSID pOwner,
-                WINBOOL bOwnerDefaulted
-                 );
+			    PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			    PSID pOwner,
+			    WINBOOL bOwnerDefaulted
+			     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetSecurityDescriptorOwner(
-                PSECURITY_DESCRIPTOR pSecurityDescriptor,
-                PSID *pOwner,
-                LPBOOL lpbOwnerDefaulted
-                 );
+			    PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			    PSID *pOwner,
+			    LPBOOL lpbOwnerDefaulted
+			     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetSecurityDescriptorGroup(
-                PSECURITY_DESCRIPTOR pSecurityDescriptor,
-                PSID pGroup,
-                WINBOOL bGroupDefaulted
-                 );
+			    PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			    PSID pGroup,
+			    WINBOOL bGroupDefaulted
+			     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetSecurityDescriptorGroup(
-                PSECURITY_DESCRIPTOR pSecurityDescriptor,
-                PSID *pGroup,
-                LPBOOL lpbGroupDefaulted
-                 );
+			    PSECURITY_DESCRIPTOR pSecurityDescriptor,
+			    PSID *pGroup,
+			    LPBOOL lpbGroupDefaulted
+			     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI CreatePrivateObjectSecurity(
-                 PSECURITY_DESCRIPTOR ParentDescriptor,
-                 PSECURITY_DESCRIPTOR CreatorDescriptor,
-                 PSECURITY_DESCRIPTOR * NewDescriptor,
-                 WINBOOL IsDirectoryObject,
-                 HANDLE Token,
-                 PGENERIC_MAPPING GenericMapping
-                  );
+			     PSECURITY_DESCRIPTOR ParentDescriptor,
+			     PSECURITY_DESCRIPTOR CreatorDescriptor,
+			     PSECURITY_DESCRIPTOR * NewDescriptor,
+			     WINBOOL IsDirectoryObject,
+			     HANDLE Token,
+			     PGENERIC_MAPPING GenericMapping
+			      );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetPrivateObjectSecurity(
-              SECURITY_INFORMATION SecurityInformation,
-              PSECURITY_DESCRIPTOR ModificationDescriptor,
-              PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
-              PGENERIC_MAPPING GenericMapping,
-              HANDLE Token
-               );
+			  SECURITY_INFORMATION SecurityInformation,
+			  PSECURITY_DESCRIPTOR ModificationDescriptor,
+			  PSECURITY_DESCRIPTOR *ObjectsSecurityDescriptor,
+			  PGENERIC_MAPPING GenericMapping,
+			  HANDLE Token
+			   );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI GetPrivateObjectSecurity(
-              PSECURITY_DESCRIPTOR ObjectDescriptor,
-              SECURITY_INFORMATION SecurityInformation,
-              PSECURITY_DESCRIPTOR ResultantDescriptor,
-              DWORD DescriptorLength,
-              PDWORD ReturnLength
-               );
+			  PSECURITY_DESCRIPTOR ObjectDescriptor,
+			  SECURITY_INFORMATION SecurityInformation,
+			  PSECURITY_DESCRIPTOR ResultantDescriptor,
+			  DWORD DescriptorLength,
+			  PDWORD ReturnLength
+			   );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DestroyPrivateObjectSecurity(
-                  PSECURITY_DESCRIPTOR * ObjectDescriptor
-                   );
+			      PSECURITY_DESCRIPTOR * ObjectDescriptor
+			       );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI MakeSelfRelativeSD(
-            PSECURITY_DESCRIPTOR pAbsoluteSecurityDescriptor,
-            PSECURITY_DESCRIPTOR pSelfRelativeSecurityDescriptor,
-            LPDWORD lpdwBufferLength
-             );
+		    PSECURITY_DESCRIPTOR pAbsoluteSecurityDescriptor,
+		    PSECURITY_DESCRIPTOR pSelfRelativeSecurityDescriptor,
+		    LPDWORD lpdwBufferLength
+		     );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI MakeAbsoluteSD(
-        PSECURITY_DESCRIPTOR pSelfRelativeSecurityDescriptor,
-        PSECURITY_DESCRIPTOR pAbsoluteSecurityDescriptor,
-        LPDWORD lpdwAbsoluteSecurityDescriptorSize,
-        PACL pDacl,
-        LPDWORD lpdwDaclSize,
-        PACL pSacl,
-        LPDWORD lpdwSaclSize,
-        PSID pOwner,
-        LPDWORD lpdwOwnerSize,
-        PSID pPrimaryGroup,
-        LPDWORD lpdwPrimaryGroupSize
-         );
+		PSECURITY_DESCRIPTOR pSelfRelativeSecurityDescriptor,
+		PSECURITY_DESCRIPTOR pAbsoluteSecurityDescriptor,
+		LPDWORD lpdwAbsoluteSecurityDescriptorSize,
+		PACL pDacl,
+		LPDWORD lpdwDaclSize,
+		PACL pSacl,
+		LPDWORD lpdwSaclSize,
+		PSID pOwner,
+		LPDWORD lpdwOwnerSize,
+		PSID pPrimaryGroup,
+		LPDWORD lpdwPrimaryGroupSize
+		 );
 
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetKernelObjectSecurity(
-             HANDLE Handle,
-             SECURITY_INFORMATION SecurityInformation,
-             PSECURITY_DESCRIPTOR SecurityDescriptor
-              );
+			 HANDLE Handle,
+			 SECURITY_INFORMATION SecurityInformation,
+			 PSECURITY_DESCRIPTOR SecurityDescriptor
+			  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FindNextChangeNotification(
-               HANDLE hChangeHandle
-               );
+			   HANDLE hChangeHandle
+			   );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI FindCloseChangeNotification(
-                HANDLE hChangeHandle
-                );
+			    HANDLE hChangeHandle
+			    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI VirtualLock(
-        LPVOID lpAddress,
-        DWORD dwSize
-        );
+	    LPVOID lpAddress,
+	    DWORD dwSize
+	    );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI VirtualUnlock(
-          LPVOID lpAddress,
-          DWORD dwSize
-          );
+	      LPVOID lpAddress,
+	      DWORD dwSize
+	      );
 
 
 extern LPVOID
  PASCAL WINBASEAPI MapViewOfFileEx(
-        HANDLE hFileMappingObject,
-        DWORD dwDesiredAccess,
-        DWORD dwFileOffsetHigh,
-        DWORD dwFileOffsetLow,
-        DWORD dwNumberOfBytesToMap,
-        LPVOID lpBaseAddress
-        );
+		HANDLE hFileMappingObject,
+		DWORD dwDesiredAccess,
+		DWORD dwFileOffsetHigh,
+		DWORD dwFileOffsetLow,
+		DWORD dwNumberOfBytesToMap,
+		LPVOID lpBaseAddress
+		);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI SetPriorityClass(
-         HANDLE hProcess,
-         DWORD dwPriorityClass
-         );
+		 HANDLE hProcess,
+		 DWORD dwPriorityClass
+		 );
 
 
 extern DWORD
  PASCAL WINBASEAPI GetPriorityClass(
-         HANDLE hProcess
-         );
+		 HANDLE hProcess
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsBadReadPtr(
-         CONST VOID *lp,
-         UINT ucb
-         );
+	     CONST VOID *lp,
+	     UINT ucb
+	     );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsBadWritePtr(
-          LPVOID lp,
-          UINT ucb
-          );
+	      LPVOID lp,
+	      UINT ucb
+	      );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsBadHugeReadPtr(
-         CONST VOID *lp,
-         UINT ucb
-         );
+		 CONST VOID *lp,
+		 UINT ucb
+		 );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsBadHugeWritePtr(
-          LPVOID lp,
-          UINT ucb
-          );
+		  LPVOID lp,
+		  UINT ucb
+		  );
 
 
 extern WINBOOL
  PASCAL WINBASEAPI IsBadCodePtr(
-         FARPROC lpfn
-         );
+	     FARPROC lpfn
+	     );
 
 extern WINBOOL
  PASCAL WINBASEAPI AllocateLocallyUniqueId(
-            PLUID Luid
-            );
+			PLUID Luid
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI QueryPerformanceCounter(
-            LARGE_INTEGER *lpPerformanceCount
-            );
+			LARGE_INTEGER *lpPerformanceCount
+			);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI QueryPerformanceFrequency(
-              LARGE_INTEGER *lpFrequency
-              );
+			  LARGE_INTEGER *lpFrequency
+			  );
 
 #if 0
 extern VOID
  PASCAL WINBASEAPI MoveMemory(
-        PVOID Destination,
-        CONST VOID *Source,
-        DWORD Length
-         );
+	    PVOID Destination,
+	    CONST VOID *Source,
+	    DWORD Length
+	     );
 
 extern VOID
  PASCAL WINBASEAPI FillMemory(
-        PVOID Destination,
-        DWORD Length,
-        BYTE  Fill
-         );
+	    PVOID Destination,
+	    DWORD Length,
+	    BYTE  Fill
+	     );
 
 extern VOID
  PASCAL WINBASEAPI ZeroMemory(
-        PVOID Destination,
-        DWORD Length
-         );
+	    PVOID Destination,
+	    DWORD Length
+	     );
 #endif
 
 #ifdef WIN95
 extern HKL
  PASCAL WINBASEAPI ActivateKeyboardLayout(
-               HKL hkl,
-               UINT Flags);
+		       HKL hkl,
+		       UINT Flags);
 #else
 extern WINBOOL
  PASCAL WINBASEAPI ActivateKeyboardLayout(
-               HKL hkl,
-               UINT Flags);
+		       HKL hkl,
+		       UINT Flags);
 #endif /* WIN95 */
 
  
 extern int
  PASCAL WINBASEAPI ToUnicodeEx(
-        UINT wVirtKey,
-        UINT wScanCode,
-        PBYTE lpKeyState,
-        LPWSTR pwszBuff,
-        int cchBuff,
-        UINT wFlags,
-        HKL dwhkl);
+	    UINT wVirtKey,
+	    UINT wScanCode,
+	    PBYTE lpKeyState,
+	    LPWSTR pwszBuff,
+	    int cchBuff,
+	    UINT wFlags,
+	    HKL dwhkl);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI UnloadKeyboardLayout(
-             HKL hkl);
+		     HKL hkl);
 
  
 extern int
  PASCAL WINBASEAPI GetKeyboardLayoutList(
-              int nBuff,
-              HKL *lpList);
+		      int nBuff,
+		      HKL *lpList);
 
  
 extern HKL
  PASCAL WINBASEAPI GetKeyboardLayout(
-          DWORD dwLayout
-          );
+		  DWORD dwLayout
+		  );
 
  
 extern HDESK
  PASCAL WINBASEAPI OpenInputDesktop(
-         DWORD dwFlags,
-         WINBOOL fInherit,
-         DWORD dwDesiredAccess);
+		 DWORD dwFlags,
+		 WINBOOL fInherit,
+		 DWORD dwDesiredAccess);
 
 extern WINBOOL
  PASCAL WINBASEAPI EnumDesktopWindows(
-           HDESK hDesktop,
-           WNDENUMPROC lpfn,
-           LPARAM lParam);
+		   HDESK hDesktop,
+		   WNDENUMPROC lpfn,
+		   LPARAM lParam);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SwitchDesktop(
-          HDESK hDesktop);
+	      HDESK hDesktop);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetThreadDesktop(
-         HDESK hDesktop);
+		 HDESK hDesktop);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CloseDesktop(
-         HDESK hDesktop);
+	     HDESK hDesktop);
 
  
 extern HDESK
  PASCAL WINBASEAPI GetThreadDesktop(
-         DWORD dwThreadId);
+		 DWORD dwThreadId);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CloseWindowStation(
-           HWINSTA hWinSta);
+		   HWINSTA hWinSta);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetProcessWindowStation(
-            HWINSTA hWinSta);
+			HWINSTA hWinSta);
 
  
 extern HWINSTA
  PASCAL WINBASEAPI GetProcessWindowStation(
-            VOID);
+			VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetUserObjectSecurity(
-              HANDLE hObj,
-              PSECURITY_INFORMATION pSIRequested,
-              PSECURITY_DESCRIPTOR pSID);
+		      HANDLE hObj,
+		      PSECURITY_INFORMATION pSIRequested,
+		      PSECURITY_DESCRIPTOR pSID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetUserObjectSecurity(
-              HANDLE hObj,
-              PSECURITY_INFORMATION pSIRequested,
-              PSECURITY_DESCRIPTOR pSID,
-              DWORD nLength,
-              LPDWORD lpnLengthNeeded);
+		      HANDLE hObj,
+		      PSECURITY_INFORMATION pSIRequested,
+		      PSECURITY_DESCRIPTOR pSID,
+		      DWORD nLength,
+		      LPDWORD lpnLengthNeeded);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI TranslateMessage(
-         CONST MSG *lpMsg);
+		 CONST MSG *lpMsg);
 
 extern WINBOOL
  PASCAL WINBASEAPI SetMessageQueue(
-        int cMessagesMax);
+		int cMessagesMax);
 
 extern WINBOOL
  PASCAL WINBASEAPI RegisterHotKey(
-           HWND hWnd ,
-           int anID,
-           UINT fsModifiers,
-           UINT vk);
+	       HWND hWnd ,
+	       int anID,
+	       UINT fsModifiers,
+	       UINT vk);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI UnregisterHotKey(
-         HWND hWnd,
-         int anID);
+		 HWND hWnd,
+		 int anID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ExitWindowsEx(
-          UINT uFlags,
-          DWORD dwReserved);
+	      UINT uFlags,
+	      DWORD dwReserved);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SwapMouseButton(
-        WINBOOL fSwap);
+		WINBOOL fSwap);
 
  
 extern DWORD
  PASCAL WINBASEAPI GetMessagePos(
-          VOID);
+	      VOID);
 
  
 extern LONG
  PASCAL WINBASEAPI GetMessageTime(
-           VOID);
+	       VOID);
 
  
 extern LONG
  PASCAL WINBASEAPI GetMessageExtraInfo(
-            VOID);
+		    VOID);
 
  
 extern LPARAM
  PASCAL WINBASEAPI SetMessageExtraInfo(
-            LPARAM lParam);
+		    LPARAM lParam);
 
  
 extern long  
    PASCAL WINBASEAPI BroadcastSystemMessage(
-               DWORD, 
-               LPDWORD, 
-               UINT, 
-               WPARAM, 
-               LPARAM);
+		       DWORD, 
+		       LPDWORD, 
+		       UINT, 
+		       WPARAM, 
+		       LPARAM);
 
 extern WINBOOL
  PASCAL WINBASEAPI AttachThreadInput(
-          DWORD idAttach,
-          DWORD idAttachTo,
-          WINBOOL fAttach);
+		  DWORD idAttach,
+		  DWORD idAttachTo,
+		  WINBOOL fAttach);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ReplyMessage(
-         LRESULT lResult);
+	     LRESULT lResult);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI WaitMessage(
-        VOID);
+	    VOID);
 
  
 extern DWORD
  PASCAL WINBASEAPI WaitForInputIdle(
-         HANDLE hProcess,
-         DWORD dwMilliseconds);
+		 HANDLE hProcess,
+		 DWORD dwMilliseconds);
 
  
 extern VOID
  PASCAL WINBASEAPI PostQuitMessage(
-        int nExitCode);
+		int nExitCode);
 
 extern WINBOOL
  PASCAL WINBASEAPI InSendMessage(
-          VOID);
+	      VOID);
 
  
 extern UINT
  PASCAL WINBASEAPI GetDoubleClickTime(
-           VOID);
+		   VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetDoubleClickTime(
-           UINT);
+		   UINT);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsWindow(
-     HWND hWnd);
+	 HWND hWnd);
 
  
 extern WINBOOL
@@ -2732,195 +2738,195 @@ extern WINBOOL
  
 extern WINBOOL
  PASCAL WINBASEAPI IsChild(
-    HWND hWndParent,
-    HWND hWnd);
+	HWND hWndParent,
+	HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DestroyWindow(
-          HWND hWnd);
+	      HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ShowWindow(
-       HWND hWnd,
-       int nCmdShow);
+	   HWND hWnd,
+	   int nCmdShow);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ShowWindowAsync(
-        HWND hWnd,
-        int nCmdShow);
+		HWND hWnd,
+		int nCmdShow);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI FlashWindow(
-        HWND hWnd,
-        WINBOOL bInvert);
+	    HWND hWnd,
+	    WINBOOL bInvert);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ShowOwnedPopups(
-        HWND hWnd,
-        WINBOOL fShow);
+		HWND hWnd,
+		WINBOOL fShow);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI OpenIcon(
-     HWND hWnd);
+	 HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CloseWindow(
-        HWND hWnd);
+	    HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI MoveWindow(
-       HWND hWnd,
-       int X,
-       int Y,
-       int nWidth,
-       int nHeight,
-       WINBOOL bRepaint);
+	   HWND hWnd,
+	   int X,
+	   int Y,
+	   int nWidth,
+	   int nHeight,
+	   WINBOOL bRepaint);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetWindowPos(
-         HWND hWnd,
-         HWND hWndInsertAfter ,
-         int X,
-         int Y,
-         int cx,
-         int cy,
-         UINT uFlags);
+	     HWND hWnd,
+	     HWND hWndInsertAfter ,
+	     int X,
+	     int Y,
+	     int cx,
+	     int cy,
+	     UINT uFlags);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetWindowPlacement(
-           HWND hWnd,
-           WINDOWPLACEMENT *lpwndpl);
+		   HWND hWnd,
+		   WINDOWPLACEMENT *lpwndpl);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetWindowPlacement(
-           HWND hWnd,
-           CONST WINDOWPLACEMENT *lpwndpl);
+		   HWND hWnd,
+		   CONST WINDOWPLACEMENT *lpwndpl);
 
  
 extern HDWP
  PASCAL WINBASEAPI BeginDeferWindowPos(
-            int nNumWindows);
+		    int nNumWindows);
 
  
 extern HDWP
  PASCAL WINBASEAPI DeferWindowPos(
-           HDWP hWinPosInfo,
-           HWND hWnd,
-           HWND hWndInsertAfter,
-           int x,
-           int y,
-           int cx,
-           int cy,
-           UINT uFlags);
+	       HDWP hWinPosInfo,
+	       HWND hWnd,
+	       HWND hWndInsertAfter,
+	       int x,
+	       int y,
+	       int cx,
+	       int cy,
+	       UINT uFlags);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EndDeferWindowPos(
-          HDWP hWinPosInfo);
+		  HDWP hWinPosInfo);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsWindowVisible(
-        HWND hWnd);
+		HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsIconic(
-     HWND hWnd);
+	 HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI AnyPopup(
-     VOID);
+	 VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI BringWindowToTop(
-         HWND hWnd);
+		 HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsZoomed(
-     HWND hWnd);
+	 HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EndDialog(
-      HWND hDlg,
-      int nResult);
+	  HWND hDlg,
+	  int nResult);
 
  
 extern HWND
  PASCAL WINBASEAPI GetDlgItem(
-       HWND hDlg,
-       int nIDDlgItem);
+	   HWND hDlg,
+	   int nIDDlgItem);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetDlgItemInt(
-          HWND hDlg,
-          int nIDDlgItem,
-          UINT uValue,
-          WINBOOL bSigned);
+	      HWND hDlg,
+	      int nIDDlgItem,
+	      UINT uValue,
+	      WINBOOL bSigned);
 
  
 extern UINT
  PASCAL WINBASEAPI GetDlgItemInt(
-          HWND hDlg,
-          int nIDDlgItem,
-          WINBOOL *lpTranslated,
-          WINBOOL bSigned);
+	      HWND hDlg,
+	      int nIDDlgItem,
+	      WINBOOL *lpTranslated,
+	      WINBOOL bSigned);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CheckDlgButton(
-           HWND hDlg,
-           int nIDButton,
-           UINT uCheck);
+	       HWND hDlg,
+	       int nIDButton,
+	       UINT uCheck);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CheckRadioButton(
-         HWND hDlg,
-         int nIDFirstButton,
-         int nIDLastButton,
-         int nIDCheckButton);
+		 HWND hDlg,
+		 int nIDFirstButton,
+		 int nIDLastButton,
+		 int nIDCheckButton);
 
  
 extern UINT
  PASCAL WINBASEAPI IsDlgButtonChecked(
-           HWND hDlg,
-           int nIDButton);
+		   HWND hDlg,
+		   int nIDButton);
 
  
 extern HWND
  PASCAL WINBASEAPI GetNextDlgGroupItem(
-            HWND hDlg,
-            HWND hCtl,
-            WINBOOL bPrevious);
+		    HWND hDlg,
+		    HWND hCtl,
+		    WINBOOL bPrevious);
 
  
 extern HWND
  PASCAL WINBASEAPI GetNextDlgTabItem(
-          HWND hDlg,
-          HWND hCtl,
-          WINBOOL bPrevious);
+		  HWND hDlg,
+		  HWND hCtl,
+		  WINBOOL bPrevious);
 
  
 extern int
  PASCAL WINBASEAPI GetDlgCtrlID(
-         HWND hWnd);
+	     HWND hWnd);
 
  
 extern long
@@ -2928,403 +2934,403 @@ extern long
 
 extern WINBOOL
  PASCAL WINBASEAPI OpenClipboard(
-          HWND hWndNewOwner);
+	      HWND hWndNewOwner);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CloseClipboard(
-           VOID);
+	       VOID);
 
  
 extern HWND
  PASCAL WINBASEAPI GetClipboardOwner(
-          VOID);
+		  VOID);
 
  
 extern HWND
  PASCAL WINBASEAPI SetClipboardViewer(
-           HWND hWndNewViewer);
+		   HWND hWndNewViewer);
 
  
 extern HWND
  PASCAL WINBASEAPI GetClipboardViewer(
-           VOID);
+		   VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ChangeClipboardChain(
-             HWND hWndRemove,
-             HWND hWndNewNext);
+		     HWND hWndRemove,
+		     HWND hWndNewNext);
 
  
 extern HANDLE
  PASCAL WINBASEAPI SetClipboardData(
-         UINT uFormat,
-         HANDLE hMem);
+		 UINT uFormat,
+		 HANDLE hMem);
 
  
 extern HANDLE
  PASCAL WINBASEAPI GetClipboardData(
-         UINT uFormat);
+		 UINT uFormat);
 
  
  
 extern int
  PASCAL WINBASEAPI CountClipboardFormats(
-              VOID);
+		      VOID);
 
  
 extern UINT
  PASCAL WINBASEAPI EnumClipboardFormats(
-             UINT format);
+		     UINT format);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EmptyClipboard(
-           VOID);
+	       VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsClipboardFormatAvailable(
-               UINT format);
+			   UINT format);
 
  
 extern int
  PASCAL WINBASEAPI GetPriorityClipboardFormat(
-               UINT *paFormatPriorityList,
-               int cFormats);
+			   UINT *paFormatPriorityList,
+			   int cFormats);
 
  
 extern HWND
  PASCAL WINBASEAPI GetOpenClipboardWindow(
-               VOID);
+		       VOID);
 
  
 /* Despite the A these are ASCII functions! */
 extern LPSTR
  PASCAL WINBASEAPI CharNextExA(
-        WORD CodePage,
-        LPCSTR lpCurrentChar,
-        DWORD dwFlags);
+	    WORD CodePage,
+	    LPCSTR lpCurrentChar,
+	    DWORD dwFlags);
 
  
 extern LPSTR
  PASCAL WINBASEAPI CharPrevExA(
-        WORD CodePage,
-        LPCSTR lpStart,
-        LPCSTR lpCurrentChar,
-        DWORD dwFlags);
+	    WORD CodePage,
+	    LPCSTR lpStart,
+	    LPCSTR lpCurrentChar,
+	    DWORD dwFlags);
 
  
 extern HWND
  PASCAL WINBASEAPI SetFocus(
-     HWND hWnd);
+	 HWND hWnd);
 
  
 extern HWND
  PASCAL WINBASEAPI GetActiveWindow(
-        VOID);
+		VOID);
 
  
 extern HWND
  PASCAL WINBASEAPI GetFocus(
-     VOID);
+	 VOID);
 
  
 extern UINT
  PASCAL WINBASEAPI GetKBCodePage(
-          VOID);
+	      VOID);
 
  
 extern SHORT
  PASCAL WINBASEAPI GetKeyState(
-        int nVirtKey);
+	    int nVirtKey);
 
  
 extern SHORT
  PASCAL WINBASEAPI GetAsyncKeyState(
-         int vKey);
+		 int vKey);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetKeyboardState(
-         PBYTE lpKeyState);
+		 PBYTE lpKeyState);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetKeyboardState(
-         LPBYTE lpKeyState);
+		 LPBYTE lpKeyState);
 
  
 extern int
  PASCAL WINBASEAPI GetKeyboardType(
-        int nTypeFlag);
+		int nTypeFlag);
 
  
 extern int
  PASCAL WINBASEAPI ToAscii(
-    UINT uVirtKey,
-    UINT uScanCode,
-    PBYTE lpKeyState,
-    LPWORD lpChar,
-    UINT uFlags);
+	UINT uVirtKey,
+	UINT uScanCode,
+	PBYTE lpKeyState,
+	LPWORD lpChar,
+	UINT uFlags);
 
  
 extern int
  PASCAL WINBASEAPI ToAsciiEx(
-      UINT uVirtKey,
-      UINT uScanCode,
-      PBYTE lpKeyState,
-      LPWORD lpChar,
-      UINT uFlags,
-      HKL dwhkl);
+	  UINT uVirtKey,
+	  UINT uScanCode,
+	  PBYTE lpKeyState,
+	  LPWORD lpChar,
+	  UINT uFlags,
+	  HKL dwhkl);
 
  
 extern int
  PASCAL WINBASEAPI ToUnicode(
-      UINT wVirtKey,
-      UINT wScanCode,
-      PBYTE lpKeyState,
-      LPWSTR pwszBuff,
-      int cchBuff,
-      UINT wFlags);
+	  UINT wVirtKey,
+	  UINT wScanCode,
+	  PBYTE lpKeyState,
+	  LPWSTR pwszBuff,
+	  int cchBuff,
+	  UINT wFlags);
 
  
 extern DWORD
  PASCAL WINBASEAPI OemKeyScan(
-       WORD wOemChar);
+	   WORD wOemChar);
 
  
 extern VOID
  PASCAL WINBASEAPI keybd_event(
-        BYTE bVk,
-        BYTE bScan,
-        DWORD dwFlags,
-        DWORD dwExtraInfo);
+	    BYTE bVk,
+	    BYTE bScan,
+	    DWORD dwFlags,
+	    DWORD dwExtraInfo);
 
  
 extern VOID
  PASCAL WINBASEAPI mouse_event(
-        DWORD dwFlags,
-        DWORD dx,
-        DWORD dy,
-        DWORD cButtons,
-        DWORD dwExtraInfo);
+	    DWORD dwFlags,
+	    DWORD dx,
+	    DWORD dy,
+	    DWORD cButtons,
+	    DWORD dwExtraInfo);
 
 extern WINBOOL
  PASCAL WINBASEAPI GetInputState(
-          VOID);
+	      VOID);
 
  
 extern DWORD
  PASCAL WINBASEAPI GetQueueStatus(
-           UINT flags);
+	       UINT flags);
 
  
 extern HWND
  PASCAL WINBASEAPI GetCapture(
-       VOID);
+	   VOID);
 
  
 extern HWND
  PASCAL WINBASEAPI SetCapture(
-       HWND hWnd);
+	   HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ReleaseCapture(
-           VOID);
+	       VOID);
 
  
 extern DWORD
  PASCAL WINBASEAPI MsgWaitForMultipleObjects(
-              DWORD nCount,
-              LPHANDLE pHandles,
-              WINBOOL fWaitAll,
-              DWORD dwMilliseconds,
-              DWORD dwWakeMask);
+			  DWORD nCount,
+			  LPHANDLE pHandles,
+			  WINBOOL fWaitAll,
+			  DWORD dwMilliseconds,
+			  DWORD dwWakeMask);
 
  
 extern UINT
  PASCAL WINBASEAPI SetTimer(
-     HWND hWnd ,
-     UINT nIDEvent,
-     UINT uElapse,
-     TIMERPROC lpTimerFunc);
+	 HWND hWnd ,
+	 UINT nIDEvent,
+	 UINT uElapse,
+	 TIMERPROC lpTimerFunc);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI KillTimer(
-      HWND hWnd,
-      UINT uIDEvent);
+	  HWND hWnd,
+	  UINT uIDEvent);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsWindowUnicode(
-        HWND hWnd);
+		HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EnableWindow(
-         HWND hWnd,
-         WINBOOL bEnable);
+	     HWND hWnd,
+	     WINBOOL bEnable);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsWindowEnabled(
-        HWND hWnd);
+		HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DestroyAcceleratorTable(
-            HACCEL hAccel);
+			HACCEL hAccel);
 
 extern int
  PASCAL WINBASEAPI GetSystemMetrics(
-         int nIndex);
+		 int nIndex);
 
 extern HMENU
  PASCAL WINBASEAPI GetMenu(
-    HWND hWnd);
+	HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetMenu(
-    HWND hWnd,
-    HMENU hMenu);
+	HWND hWnd,
+	HMENU hMenu);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI HiliteMenuItem(
-           HWND hWnd,
-           HMENU hMenu,
-           UINT uIDHiliteItem,
-           UINT uHilite);
+	       HWND hWnd,
+	       HMENU hMenu,
+	       UINT uIDHiliteItem,
+	       UINT uHilite);
 
  
 extern UINT
  PASCAL WINBASEAPI GetMenuState(
-         HMENU hMenu,
-         UINT uId,
-         UINT uFlags);
+	     HMENU hMenu,
+	     UINT uId,
+	     UINT uFlags);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DrawMenuBar(
-        HWND hWnd);
+	    HWND hWnd);
 
  
 extern HMENU
  PASCAL WINBASEAPI GetSystemMenu(
-          HWND hWnd,
-          WINBOOL bRevert);
+	      HWND hWnd,
+	      WINBOOL bRevert);
 
  
 extern HMENU
  PASCAL WINBASEAPI CreateMenu(
-       VOID);
+	   VOID);
 
  
 extern HMENU
  PASCAL WINBASEAPI CreatePopupMenu(
-        VOID);
+		VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DestroyMenu(
-        HMENU hMenu);
+	    HMENU hMenu);
 
  
 extern DWORD
  PASCAL WINBASEAPI CheckMenuItem(
-          HMENU hMenu,
-          UINT uIDCheckItem,
-          UINT uCheck);
+	      HMENU hMenu,
+	      UINT uIDCheckItem,
+	      UINT uCheck);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EnableMenuItem(
-           HMENU hMenu,
-           UINT uIDEnableItem,
-           UINT uEnable);
+	       HMENU hMenu,
+	       UINT uIDEnableItem,
+	       UINT uEnable);
 
  
 extern HMENU
  PASCAL WINBASEAPI GetSubMenu(
-       HMENU hMenu,
-       int nPos);
+	   HMENU hMenu,
+	   int nPos);
 
  
 extern UINT
  PASCAL WINBASEAPI GetMenuItemID(
-          HMENU hMenu,
-          int nPos);
+	      HMENU hMenu,
+	      int nPos);
 
  
 extern int
  PASCAL WINBASEAPI GetMenuItemCount(
-         HMENU hMenu);
+		 HMENU hMenu);
 
 extern WINBOOL
  PASCAL WINBASEAPI RemoveMenu(
-           HMENU hMenu,
-           UINT uPosition,
-           UINT uFlags);
+		   HMENU hMenu,
+		   UINT uPosition,
+		   UINT uFlags);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DeleteMenu(
-       HMENU hMenu,
-       UINT uPosition,
-       UINT uFlags);
+	   HMENU hMenu,
+	   UINT uPosition,
+	   UINT uFlags);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetMenuItemBitmaps(
-           HMENU hMenu,
-           UINT uPosition,
-           UINT uFlags,
-           HBITMAP hBitmapUnchecked,
-           HBITMAP hBitmapChecked);
+		   HMENU hMenu,
+		   UINT uPosition,
+		   UINT uFlags,
+		   HBITMAP hBitmapUnchecked,
+		   HBITMAP hBitmapChecked);
 
  
 extern LONG
  PASCAL WINBASEAPI GetMenuCheckMarkDimensions(
-               VOID);
+			   VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI TrackPopupMenu(
-           HMENU hMenu,
-           UINT uFlags,
-           int x,
-           int y,
-           int nReserved,
-           HWND hWnd,
-           CONST RECT *prcRect);
+	       HMENU hMenu,
+	       UINT uFlags,
+	       int x,
+	       int y,
+	       int nReserved,
+	       HWND hWnd,
+	       CONST RECT *prcRect);
 
 extern UINT
  PASCAL WINBASEAPI GetMenuDefaultItem(
-           HMENU hMenu, 
-           UINT fByPos, 
-           UINT gmdiFlags);
+		   HMENU hMenu, 
+		   UINT fByPos, 
+		   UINT gmdiFlags);
 
 extern WINBOOL
  PASCAL WINBASEAPI SetMenuDefaultItem(
-           HMENU hMenu, 
-           UINT uItem, 
-           UINT fByPos);
+		   HMENU hMenu, 
+		   UINT uItem, 
+		   UINT fByPos);
 
 extern WINBOOL
  PASCAL WINBASEAPI GetMenuItemRect(HWND hWnd, 
-        HMENU hMenu, 
-        UINT uItem, 
-        LPRECT lprcItem);
+		HMENU hMenu, 
+		UINT uItem, 
+		LPRECT lprcItem);
 
 extern int
  PASCAL WINBASEAPI MenuItemFromPoint(HWND hWnd, 
-          HMENU hMenu, 
-          POINT ptScreen);
+		  HMENU hMenu, 
+		  POINT ptScreen);
 
  
 extern DWORD
@@ -3333,29 +3339,29 @@ extern DWORD
  
 extern WINBOOL
  PASCAL WINBASEAPI DragDetect(HWND hwnd, 
-       POINT pt);
+	   POINT pt);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DrawIcon(
-     HDC hDC,
-     int X,
-     int Y,
-     HICON hIcon);
+	 HDC hDC,
+	 int X,
+	 int Y,
+	 HICON hIcon);
 
 extern WINBOOL
  PASCAL WINBASEAPI UpdateWindow(
-         HWND hWnd);
+	     HWND hWnd);
 
  
 extern HWND
  PASCAL WINBASEAPI SetActiveWindow(
-        HWND hWnd);
+		HWND hWnd);
 
  
 extern HWND
  PASCAL WINBASEAPI GetForegroundWindow(
-            VOID);
+		    VOID);
 
 extern WINBOOL
  PASCAL WINBASEAPI PaintDesktop(HDC hdc);
@@ -3363,15 +3369,15 @@ extern WINBOOL
  
 extern WINBOOL
  PASCAL WINBASEAPI SetForegroundWindow(
-            HWND hWnd);
+		    HWND hWnd);
 
 extern WINBOOL
  PASCAL WINBASEAPI AllowSetForegroundWindow(
-            DWORD dwProcessId);
+			DWORD dwProcessId);
   
 extern HWND
  PASCAL WINBASEAPI WindowFromDC(
-         HDC hDC);
+	     HDC hDC);
 
  
 extern HDC
@@ -3381,208 +3387,208 @@ extern HDC
  
 extern HDC
  PASCAL WINBASEAPI GetDCEx(
-    HWND hWnd ,
-    HRGN hrgnClip,
-    DWORD flags);
+	HWND hWnd ,
+	HRGN hrgnClip,
+	DWORD flags);
 
  
 extern HDC
  PASCAL WINBASEAPI GetWindowDC(
-        HWND hWnd);
+	    HWND hWnd);
 
  
 extern int
  PASCAL WINBASEAPI ReleaseDC(
-      HWND hWnd,
-      HDC hDC);
+	  HWND hWnd,
+	  HDC hDC);
 
  
 extern HDC
  PASCAL WINBASEAPI BeginPaint(
-       HWND hWnd,
-       LPPAINTSTRUCT lpPaint);
+	   HWND hWnd,
+	   LPPAINTSTRUCT lpPaint);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EndPaint(
-     HWND hWnd,
-     CONST PAINTSTRUCT *lpPaint);
+	 HWND hWnd,
+	 CONST PAINTSTRUCT *lpPaint);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetUpdateRect(
-          HWND hWnd,
-          LPRECT lpRect,
-          WINBOOL bErase);
+	      HWND hWnd,
+	      LPRECT lpRect,
+	      WINBOOL bErase);
 
  
 extern int
  PASCAL WINBASEAPI GetUpdateRgn(
-         HWND hWnd,
-         HRGN hRgn,
-         WINBOOL bErase);
+	     HWND hWnd,
+	     HRGN hRgn,
+	     WINBOOL bErase);
 
  
 extern int
  PASCAL WINBASEAPI SetWindowRgn(
-         HWND hWnd,
-         HRGN hRgn,
-         WINBOOL bRedraw);
+	     HWND hWnd,
+	     HRGN hRgn,
+	     WINBOOL bRedraw);
 
  
 extern int
  PASCAL WINBASEAPI GetWindowRgn(
-         HWND hWnd,
-         HRGN hRgn);
+	     HWND hWnd,
+	     HRGN hRgn);
 
  
 extern int
  PASCAL WINBASEAPI ExcludeUpdateRgn(
-         HDC hDC,
-         HWND hWnd);
+		 HDC hDC,
+		 HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI InvalidateRect(
-           HWND hWnd ,
-           CONST RECT *lpRect,
-           WINBOOL bErase);
+	       HWND hWnd ,
+	       CONST RECT *lpRect,
+	       WINBOOL bErase);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ValidateRect(
-         HWND hWnd ,
-         CONST RECT *lpRect);
+	     HWND hWnd ,
+	     CONST RECT *lpRect);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI InvalidateRgn(
-          HWND hWnd,
-          HRGN hRgn,
-          WINBOOL bErase);
+	      HWND hWnd,
+	      HRGN hRgn,
+	      WINBOOL bErase);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ValidateRgn(
-        HWND hWnd,
-        HRGN hRgn);
+	    HWND hWnd,
+	    HRGN hRgn);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI RedrawWindow(
-         HWND hWnd,
-         CONST RECT *lprcUpdate,
-         HRGN hrgnUpdate,
-         UINT flags);
+	     HWND hWnd,
+	     CONST RECT *lprcUpdate,
+	     HRGN hrgnUpdate,
+	     UINT flags);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI LockWindowUpdate(
-         HWND hWndLock);
+		 HWND hWndLock);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ScrollWindow(
-         HWND hWnd,
-         int XAmount,
-         int YAmount,
-         CONST RECT *lpRect,
-         CONST RECT *lpClipRect);
+	     HWND hWnd,
+	     int XAmount,
+	     int YAmount,
+	     CONST RECT *lpRect,
+	     CONST RECT *lpClipRect);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ScrollDC(
-     HDC hDC,
-     int dx,
-     int dy,
-     CONST RECT *lprcScroll,
-     CONST RECT *lprcClip ,
-     HRGN hrgnUpdate,
-     LPRECT lprcUpdate);
+	 HDC hDC,
+	 int dx,
+	 int dy,
+	 CONST RECT *lprcScroll,
+	 CONST RECT *lprcClip ,
+	 HRGN hrgnUpdate,
+	 LPRECT lprcUpdate);
 
  
 extern int
  PASCAL WINBASEAPI ScrollWindowEx(
-           HWND hWnd,
-           int dx,
-           int dy,
-           CONST RECT *prcScroll,
-           CONST RECT *prcClip ,
-           HRGN hrgnUpdate,
-           LPRECT prcUpdate,
-           UINT flags);
+	       HWND hWnd,
+	       int dx,
+	       int dy,
+	       CONST RECT *prcScroll,
+	       CONST RECT *prcClip ,
+	       HRGN hrgnUpdate,
+	       LPRECT prcUpdate,
+	       UINT flags);
 
  
 extern int
  PASCAL WINBASEAPI SetScrollPos(
-         HWND hWnd,
-         int nBar,
-         int nPos,
-         WINBOOL bRedraw);
+	     HWND hWnd,
+	     int nBar,
+	     int nPos,
+	     WINBOOL bRedraw);
 
  
 extern int
  PASCAL WINBASEAPI GetScrollPos(
-         HWND hWnd,
-         int nBar);
+	     HWND hWnd,
+	     int nBar);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetScrollRange(
-           HWND hWnd,
-           int nBar,
-           int nMinPos,
-           int nMaxPos,
-           WINBOOL bRedraw);
+	       HWND hWnd,
+	       int nBar,
+	       int nMinPos,
+	       int nMaxPos,
+	       WINBOOL bRedraw);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetScrollRange(
-           HWND hWnd,
-           int nBar,
-           LPINT lpMinPos,
-           LPINT lpMaxPos);
+	       HWND hWnd,
+	       int nBar,
+	       LPINT lpMinPos,
+	       LPINT lpMaxPos);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ShowScrollBar(
-          HWND hWnd,
-          int wBar,
-          WINBOOL bShow);
+	      HWND hWnd,
+	      int wBar,
+	      WINBOOL bShow);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EnableScrollBar(
-        HWND hWnd,
-        UINT wSBflags,
-        UINT wArrows);
+		HWND hWnd,
+		UINT wSBflags,
+		UINT wArrows);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetClientRect(
-          HWND hWnd,
-          LPRECT lpRect);
+	      HWND hWnd,
+	      LPRECT lpRect);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetWindowRect(
-          HWND hWnd,
-          LPRECT lpRect);
+	      HWND hWnd,
+	      LPRECT lpRect);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI AdjustWindowRect(
-         LPRECT lpRect,
-         DWORD dwStyle,
-         WINBOOL bMenu);
+		 LPRECT lpRect,
+		 DWORD dwStyle,
+		 WINBOOL bMenu);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI AdjustWindowRectEx(
-           LPRECT lpRect,
-           DWORD dwStyle,
-           WINBOOL bMenu,
-           DWORD dwExStyle);
+		   LPRECT lpRect,
+		   DWORD dwStyle,
+		   WINBOOL bMenu,
+		   DWORD dwExStyle);
 
 extern WINBOOL
  PASCAL WINBASEAPI SetWindowContextHelpId(HWND, DWORD);
@@ -3599,298 +3605,298 @@ extern DWORD
  
 extern WINBOOL
  PASCAL WINBASEAPI MessageBeep(
-        UINT uType);
+	    UINT uType);
 
  
 extern int
  PASCAL WINBASEAPI ShowCursor(
-       WINBOOL bShow);
+	   WINBOOL bShow);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetCursorPos(
-         int X,
-         int Y);
+	     int X,
+	     int Y);
 
  
 extern HCURSOR
  PASCAL WINBASEAPI SetCursor(
-      HCURSOR hCursor);
+	  HCURSOR hCursor);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetCursorPos(
-         LPPOINT lpPoint);
+	     LPPOINT lpPoint);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ClipCursor(
-       CONST RECT *lpRect);
+	   CONST RECT *lpRect);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetClipCursor(
-          LPRECT lpRect);
+	      LPRECT lpRect);
 
  
 extern HCURSOR
  PASCAL WINBASEAPI GetCursor(
-      VOID);
+	  VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CreateCaret(
-        HWND hWnd,
-        HBITMAP hBitmap ,
-        int nWidth,
-        int nHeight);
+	    HWND hWnd,
+	    HBITMAP hBitmap ,
+	    int nWidth,
+	    int nHeight);
 
  
 extern UINT
  PASCAL WINBASEAPI GetCaretBlinkTime(
-          VOID);
+		  VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetCaretBlinkTime(
-          UINT uMSeconds);
+		  UINT uMSeconds);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DestroyCaret(
-         VOID);
+	     VOID);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI HideCaret(
-      HWND hWnd);
+	  HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ShowCaret(
-      HWND hWnd);
+	  HWND hWnd);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetCaretPos(
-        int X,
-        int Y);
+	    int X,
+	    int Y);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetCaretPos(
-        LPPOINT lpPoint);
+	    LPPOINT lpPoint);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ClientToScreen(
-           HWND hWnd,
-           LPPOINT lpPoint);
+	       HWND hWnd,
+	       LPPOINT lpPoint);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI ScreenToClient(
-           HWND hWnd,
-           LPPOINT lpPoint);
+	       HWND hWnd,
+	       LPPOINT lpPoint);
 
  
 extern int
  PASCAL WINBASEAPI MapWindowPoints(
-        HWND hWndFrom,
-        HWND hWndTo,
-        LPPOINT lpPoints,
-        UINT cPoints);
+		HWND hWndFrom,
+		HWND hWndTo,
+		LPPOINT lpPoints,
+		UINT cPoints);
 
  
 extern HWND
  PASCAL WINBASEAPI WindowFromPoint(
-        POINT Point);
+		POINT Point);
 
  
 extern HWND
  PASCAL WINBASEAPI ChildWindowFromPoint(
-             HWND hWndParent,
-             POINT Point);
+		     HWND hWndParent,
+		     POINT Point);
 
  
 extern DWORD
  PASCAL WINBASEAPI GetSysColor(
-        int nIndex);
+	    int nIndex);
 
  
 extern HBRUSH
  PASCAL WINBASEAPI GetSysColorBrush(
-         int nIndex);
+		 int nIndex);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetSysColors(
-         int cElements,
-         CONST INT * lpaElements,
-         CONST COLORREF * lpaRgbValues);
+	     int cElements,
+	     CONST INT * lpaElements,
+	     CONST COLORREF * lpaRgbValues);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DrawFocusRect(
-          HDC hDC,
-          CONST RECT * lprc);
+	      HDC hDC,
+	      CONST RECT * lprc);
 
  
 extern int
  PASCAL WINBASEAPI FillRect(
-     HDC hDC,
-     CONST RECT *lprc,
-     HBRUSH hbr);
+	 HDC hDC,
+	 CONST RECT *lprc,
+	 HBRUSH hbr);
 
  
 extern int
  PASCAL WINBASEAPI FrameRect(
-      HDC hDC,
-      CONST RECT *lprc,
-      HBRUSH hbr);
+	  HDC hDC,
+	  CONST RECT *lprc,
+	  HBRUSH hbr);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI InvertRect(
-       HDC hDC,
-       CONST RECT *lprc);
+	   HDC hDC,
+	   CONST RECT *lprc);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetRect(
-    LPRECT lprc,
-    int xLeft,
-    int yTop,
-    int xRight,
-    int yBottom);
+	LPRECT lprc,
+	int xLeft,
+	int yTop,
+	int xRight,
+	int yBottom);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetRectEmpty(
-         LPRECT lprc);
+	     LPRECT lprc);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI CopyRect(
-     LPRECT lprcDst,
-     CONST RECT *lprcSrc);
+	 LPRECT lprcDst,
+	 CONST RECT *lprcSrc);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI InflateRect(
-        LPRECT lprc,
-        int dx,
-        int dy);
+	    LPRECT lprc,
+	    int dx,
+	    int dy);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IntersectRect(
-          LPRECT lprcDst,
-          CONST RECT *lprcSrc1,
-          CONST RECT *lprcSrc2);
+	      LPRECT lprcDst,
+	      CONST RECT *lprcSrc1,
+	      CONST RECT *lprcSrc2);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI UnionRect(
-      LPRECT lprcDst,
-      CONST RECT *lprcSrc1,
-      CONST RECT *lprcSrc2);
+	  LPRECT lprcDst,
+	  CONST RECT *lprcSrc1,
+	  CONST RECT *lprcSrc2);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SubtractRect(
-         LPRECT lprcDst,
-         CONST RECT *lprcSrc1,
-         CONST RECT *lprcSrc2);
+	     LPRECT lprcDst,
+	     CONST RECT *lprcSrc1,
+	     CONST RECT *lprcSrc2);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI OffsetRect(
-       LPRECT lprc,
-       int dx,
-       int dy);
+	   LPRECT lprc,
+	   int dx,
+	   int dy);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI IsRectEmpty(
-        CONST RECT *lprc);
+	    CONST RECT *lprc);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EqualRect(
-      CONST RECT *lprc1,
-      CONST RECT *lprc2);
+	  CONST RECT *lprc1,
+	  CONST RECT *lprc2);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI PtInRect(
-     CONST RECT *lprc,
-     POINT pt);
+	 CONST RECT *lprc,
+	 POINT pt);
 
  
 extern WORD
  PASCAL WINBASEAPI GetWindowWord(
-          HWND hWnd,
-          int nIndex);
+	      HWND hWnd,
+	      int nIndex);
 
  
 extern WORD
  PASCAL WINBASEAPI SetWindowWord(
-          HWND hWnd,
-          int nIndex,
-          WORD wNewWord);
+	      HWND hWnd,
+	      int nIndex,
+	      WORD wNewWord);
 
  
 extern WORD
  PASCAL WINBASEAPI GetClassWord(
-         HWND hWnd,
-         int nIndex);
+	     HWND hWnd,
+	     int nIndex);
 
  
 extern WORD
  PASCAL WINBASEAPI SetClassWord(
-         HWND hWnd,
-         int nIndex,
-         WORD wNewWord);
+	     HWND hWnd,
+	     int nIndex,
+	     WORD wNewWord);
 
 extern HWND
  PASCAL WINBASEAPI GetDesktopWindow(
-         VOID);
+		 VOID);
 
  
 extern HWND
  PASCAL WINBASEAPI GetParent(
-      HWND hWnd);
+	  HWND hWnd);
 
  
 extern HWND
  PASCAL WINBASEAPI SetParent(
-      HWND hWndChild,
-      HWND hWndNewParent);
+	  HWND hWndChild,
+	  HWND hWndNewParent);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EnumChildWindows(
-         HWND hWndParent,
-         WNDENUMPROC lpEnumFunc,
-         LPARAM lParam);
+		 HWND hWndParent,
+		 WNDENUMPROC lpEnumFunc,
+		 LPARAM lParam);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EnumWindows(
-        WNDENUMPROC lpEnumFunc,
-        LPARAM lParam);
+	    WNDENUMPROC lpEnumFunc,
+	    LPARAM lParam);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI EnumThreadWindows(
-          DWORD dwThreadId,
-          WNDENUMPROC lpfn,
-          LPARAM lParam);
+		  DWORD dwThreadId,
+		  WNDENUMPROC lpfn,
+		  LPARAM lParam);
 
 extern HWND
  PASCAL WINBASEAPI GetTopWindow(
-         HWND hWnd);
+	     HWND hWnd);
 
 #define GetNextWindow(hWnd, wCmd) GetWindow(hWnd, wCmd)
 #define GetSysModalWindow() (NULL)
@@ -3898,38 +3904,38 @@ extern HWND
  
 extern DWORD
  PASCAL WINBASEAPI GetWindowThreadProcessId(
-             HWND hWnd,
-             LPDWORD lpdwProcessId);
+			 HWND hWnd,
+			 LPDWORD lpdwProcessId);
 
 #define GetWindowTask(hWnd) \
-    ((HANDLE)GetWindowThreadProcessId(hWnd, NULL))
+	((HANDLE)GetWindowThreadProcessId(hWnd, NULL))
  
 extern HWND
  PASCAL WINBASEAPI GetLastActivePopup(
-           HWND hWnd);
+		   HWND hWnd);
 
  
 extern HWND
  PASCAL WINBASEAPI GetWindow(
-      HWND hWnd,
-      UINT uCmd);
+	  HWND hWnd,
+	  UINT uCmd);
 
 extern WINBOOL
  PASCAL WINBASEAPI UnhookWindowsHook(
-          int nCode,
-          HOOKPROC pfnFilterProc);
+		  int nCode,
+		  HOOKPROC pfnFilterProc);
 
 extern WINBOOL
  PASCAL WINBASEAPI UnhookWindowsHookEx(
-            HHOOK hhk);
+		    HHOOK hhk);
 
  
 extern LRESULT
  PASCAL WINBASEAPI CallNextHookEx(
-           HHOOK hhk,
-           int nCode,
-           WPARAM wParam,
-           LPARAM lParam);
+	       HHOOK hhk,
+	       int nCode,
+	       WPARAM wParam,
+	       LPARAM lParam);
 
 #define DefHookProc(nCode, wParam, lParam, phhk)\
         CallNextHookEx((HHOOK)*phhk, nCode, wParam, lParam)
@@ -3939,105 +3945,105 @@ extern WINBOOL
 
 extern HCURSOR
  PASCAL WINBASEAPI CreateCursor(
-         HINSTANCE hInst,
-         int xHotSpot,
-         int yHotSpot,
-         int nWidth,
-         int nHeight,
-         CONST VOID *pvANDPlane,
-         CONST VOID *pvXORPlane);
+	     HINSTANCE hInst,
+	     int xHotSpot,
+	     int yHotSpot,
+	     int nWidth,
+	     int nHeight,
+	     CONST VOID *pvANDPlane,
+	     CONST VOID *pvXORPlane);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DestroyCursor(
-          HCURSOR hCursor);
+	      HCURSOR hCursor);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI SetSystemCursor(
-        HCURSOR hcur,
-        DWORD   anID);
+		HCURSOR hcur,
+		DWORD   anID);
 
  
 extern HICON
  PASCAL WINBASEAPI CreateIcon(
-       HINSTANCE hInstance,
-       int nWidth,
-       int nHeight,
-       BYTE cPlanes,
-       BYTE cBitsPixel,
-       CONST BYTE *lpbANDbits,
-       CONST BYTE *lpbXORbits);
+	   HINSTANCE hInstance,
+	   int nWidth,
+	   int nHeight,
+	   BYTE cPlanes,
+	   BYTE cBitsPixel,
+	   CONST BYTE *lpbANDbits,
+	   CONST BYTE *lpbXORbits);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI DestroyIcon(
-        HICON hIcon);
+	    HICON hIcon);
 
  
 extern int
  PASCAL WINBASEAPI LookupIconIdFromDirectory(
-              PBYTE presbits,
-              WINBOOL fIcon);
+			  PBYTE presbits,
+			  WINBOOL fIcon);
 
  
 extern int
  PASCAL WINBASEAPI LookupIconIdFromDirectoryEx(
-                PBYTE presbits,
-                WINBOOL  fIcon,
-                int   cxDesired,
-                int   cyDesired,
-                UINT  Flags);
+			    PBYTE presbits,
+			    WINBOOL  fIcon,
+			    int   cxDesired,
+			    int   cyDesired,
+			    UINT  Flags);
 
  
 extern HICON
  PASCAL WINBASEAPI CreateIconFromResource(
-               PBYTE presbits,
-               DWORD dwResSize,
-               WINBOOL fIcon,
-               DWORD dwVer);
+		       PBYTE presbits,
+		       DWORD dwResSize,
+		       WINBOOL fIcon,
+		       DWORD dwVer);
 
  
 extern HICON
  PASCAL WINBASEAPI CreateIconFromResourceEx(
-             PBYTE presbits,
-             DWORD dwResSize,
-             WINBOOL  fIcon,
-             DWORD dwVer,
-             int   cxDesired,
-             int   cyDesired,
-             UINT  Flags);
+			 PBYTE presbits,
+			 DWORD dwResSize,
+			 WINBOOL  fIcon,
+			 DWORD dwVer,
+			 int   cxDesired,
+			 int   cyDesired,
+			 UINT  Flags);
 
  
 extern HICON
  PASCAL WINBASEAPI CopyImage(
-      HANDLE,
-      UINT,
-      int,
-      int,
-      UINT);
+	  HANDLE,
+	  UINT,
+	  int,
+	  int,
+	  UINT);
 
  
 extern HICON
  PASCAL WINBASEAPI CreateIconIndirect(
-           PICONINFO piconinfo);
+		   PICONINFO piconinfo);
 
  
 extern HICON
  PASCAL WINBASEAPI CopyIcon(
-     HICON hIcon);
+	 HICON hIcon);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI GetIconInfo(
-        HICON hIcon,
-        PICONINFO piconinfo);
+	    HICON hIcon,
+	    PICONINFO piconinfo);
 
  
 extern WINBOOL
  PASCAL WINBASEAPI MapDialogRect(
-          HWND hDlg,
-          LPRECT lpRect);
+	      HWND hDlg,
+	      LPRECT lpRect);
 
 extern int
  PASCAL WINBASEAPI SetScrollInfo(HWND, int, LPCSCROLLINFO, WINBOOL);
@@ -4047,13 +4053,13 @@ extern WINBOOL
 
 extern WINBOOL
  PASCAL WINBASEAPI TranslateMDISysAccel(
-             HWND hWndClient,
-             LPMSG lpMsg);
+		     HWND hWndClient,
+		     LPMSG lpMsg);
 
  
 extern UINT
  PASCAL WINBASEAPI ArrangeIconicWindows(
-             HWND hWnd);
+		     HWND hWnd);
 
 extern WORD
  PASCAL WINBASEAPI TileWindows(HWND hwndParent, UINT wHow, CONST RECT * lpRect, UINT cKids, const HWND *lpKids);
@@ -4064,15 +4070,15 @@ extern WORD
  
 extern VOID
  PASCAL WINBASEAPI SetLastErrorEx(
-           DWORD dwErrCode,
-           DWORD dwType
-           );
+	       DWORD dwErrCode,
+	       DWORD dwType
+	       );
 
  
 extern VOID
  PASCAL WINBASEAPI SetDebugErrorLevel(
-           DWORD dwLevel
-           );
+		   DWORD dwLevel
+		   );
 
 extern WINBOOL
  PASCAL WINBASEAPI DrawEdge(HDC hdc, LPRECT qrc, UINT edge, UINT grfFlags);
@@ -4094,8 +4100,8 @@ extern HWND
 
 extern WINBOOL
  PASCAL WINBASEAPI DrawIconEx(HDC hdc, int xLeft, int yTop,
-       HICON hIcon, int cxWidth, int cyWidth,
-       UINT istepIfAniCur, HBRUSH hbrFlickerFreeDraw, UINT diFlags);
+	   HICON hIcon, int cxWidth, int cyWidth,
+	   UINT istepIfAniCur, HBRUSH hbrFlickerFreeDraw, UINT diFlags);
 
 extern WINBOOL
  PASCAL WINBASEAPI AnimatePalette(HPALETTE, UINT, UINT, CONST PALETTEENTRY *);
@@ -4372,7 +4378,7 @@ extern WINBOOL
 
 extern WINBOOL
  PASCAL WINBASEAPI MaskBlt(HDC, int, int, int, int,
-    HDC, int, int, HBITMAP, int, int, DWORD);
+	HDC, int, int, HBITMAP, int, int, DWORD);
 
 extern WINBOOL
  PASCAL WINBASEAPI PlgBlt(HDC, CONST POINT *, HDC, int, int, int,
@@ -4461,7 +4467,7 @@ extern int
 
 extern int
  PASCAL WINBASEAPI SetDIBitsToDevice(HDC, int, int, DWORD, DWORD, int,
-          int, UINT, UINT, CONST VOID *, CONST BITMAPINFO *, UINT);
+		  int, UINT, UINT, CONST VOID *, CONST BITMAPINFO *, UINT);
 
 extern DWORD
  PASCAL WINBASEAPI SetMapperFlags(HDC, DWORD);
@@ -4494,7 +4500,7 @@ extern WINBOOL
  PASCAL WINBASEAPI SetRectRgn(HRGN, int, int, int, int);
 extern int
  PASCAL WINBASEAPI StretchDIBits(HDC, int, int, int, int, int, int, int, int, CONST
-          VOID *, CONST BITMAPINFO *, UINT, DWORD);
+	      VOID *, CONST BITMAPINFO *, UINT, DWORD);
 
 extern int
  PASCAL WINBASEAPI SetROP2(HDC, int);
@@ -4534,7 +4540,7 @@ extern WINBOOL
 
 extern WINBOOL
  PASCAL WINBASEAPI EnumEnhMetaFile(HDC, HENHMETAFILE, ENHMETAFILEPROC,
-        LPVOID, CONST RECT *);
+		LPVOID, CONST RECT *);
 
 extern UINT
  PASCAL WINBASEAPI GetEnhMetaFileHeader(HENHMETAFILE, UINT, LPENHMETAHEADER );
@@ -5164,29 +5170,29 @@ extern WINBOOL
 
 extern void
  PASCAL WINBASEAPI DragAcceptFiles(
-    HWND,
-    WINBOOL
-    );
+	HWND,
+	WINBOOL
+	);
 
 
 extern void
  PASCAL WINBASEAPI DragFinish(
-    HDROP
-    );
+	HDROP
+	);
 
 
 extern WINBOOL
  PASCAL WINBASEAPI DragQueryPoint(
-    HDROP,
-    LPPOINT
-    );
+	HDROP,
+	LPPOINT
+	);
 
 
 extern HICON
  PASCAL WINBASEAPI DuplicateIcon(
-    HINSTANCE,
-    HICON
-    );
+	HINSTANCE,
+	HICON
+	);
 
 
 /* ddeml.h */
@@ -5202,14 +5208,14 @@ extern HCONV  PASCAL WINBASEAPI DdeReconnect(HCONV);
 extern WINBOOL  PASCAL WINBASEAPI DdeUninitialize(DWORD);
 
 extern DWORD  PASCAL WINBASEAPI NetUserEnum(LPWSTR, DWORD, DWORD, LPBYTE*, DWORD, LPDWORD,
-                LPDWORD, LPDWORD);
+				LPDWORD, LPDWORD);
 extern DWORD  PASCAL WINBASEAPI NetApiBufferFree(LPVOID);
 extern DWORD  PASCAL WINBASEAPI NetUserGetInfo(LPWSTR, LPWSTR, DWORD, LPBYTE);
 extern DWORD  PASCAL WINBASEAPI NetGetDCName(LPWSTR, LPWSTR, LPBYTE*);
 extern DWORD  PASCAL WINBASEAPI NetGroupEnum(LPWSTR, DWORD, LPBYTE*, DWORD, LPDWORD,
-                LPDWORD, LPDWORD);
+				LPDWORD, LPDWORD);
 extern DWORD  PASCAL WINBASEAPI NetLocalGroupEnum(LPWSTR, DWORD, LPBYTE*, DWORD, LPDWORD,
-                LPDWORD, LPDWORD);
+				LPDWORD, LPDWORD);
 
 
 /* Extensions to OpenGL */
@@ -5219,7 +5225,7 @@ extern int  PASCAL WINBASEAPI ChoosePixelFormat(HDC, CONST PIXELFORMATDESCRIPTOR
 extern int  PASCAL WINBASEAPI DescribePixelFormat(HDC, int, UINT, LPPIXELFORMATDESCRIPTOR);
 
 extern UINT  PASCAL WINBASEAPI GetEnhMetaFilePixelFormat(HENHMETAFILE, DWORD,
-              CONST PIXELFORMATDESCRIPTOR *);
+			  CONST PIXELFORMATDESCRIPTOR *);
 
 /* extern int  PASCAL WINBASEAPI GetPixelFormat(HDC); */
 
@@ -5268,14 +5274,12 @@ extern WINBOOL  PASCAL WINBASEAPI IsDBCSLeadByte(BYTE TestChar);
 extern WINBOOL  PASCAL WINBASEAPI IsDBCSLeadByteEx(UINT CodePage, BYTE TestChar);
 
 extern int  PASCAL WINBASEAPI MultiByteToWideChar(UINT CodePage,DWORD dwFlags,LPCSTR lpMultiByteStr,
-                        int cbMultiByte,LPWSTR lpWideCharStr,int cchWideChar);
+						int cbMultiByte,LPWSTR lpWideCharStr,int cchWideChar);
 
 extern int  PASCAL WINBASEAPI WideCharToMultiByte(UINT CodePage,DWORD dwFlags,LPCWSTR lpWideCharStr,
-                        int cchWideChar, LPSTR lpMultiByteStr,int cbMultiByte,
-                        LPCSTR lpDefaultChar, LPBOOL lpUsedDefaultChar);
+						int cchWideChar, LPSTR lpMultiByteStr,int cbMultiByte,
+						LPCSTR lpDefaultChar, LPBOOL lpUsedDefaultChar);
 
-extern int  PASCAL WINBASEAPI AddFontMemResourceEx(PVOID, DWORD, PVOID , DWORD*);
-extern int  PASCAL WINBASEAPI RemoveFontMemResourceEx( HANDLE);
 
 /* ansi compatibility for win 3.1 */
 #define AnsiToOem CharToOemA

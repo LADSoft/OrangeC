@@ -92,17 +92,17 @@ extern fenv_t * const __fe_default_env;
 
 #define FE_DFL_ENV  (__fe_default_env)
 
-void feclearexcept(int __excepts);
-void fegetexceptflag(fexcept_t *__flagp, int __excepts);
-void feraiseexcept(int __excepts);
-void fesetexceptflag(fexcept_t *__flagp, int __excepts);
+int feclearexcept(int __excepts);
+int fegetexceptflag(fexcept_t *__flagp, int __excepts);
+int feraiseexcept(int __excepts);
+int fesetexceptflag(fexcept_t *__flagp, int __excepts);
 int fetestexcept(int __excepts);
 int fegetround(void);
 int fesetround(int __round);
-void fegetenv(fenv_t *__envp);
+int fegetenv(fenv_t *__envp);
 int feholdexcept(fenv_t *__envp);
-void fesetenv(const fenv_t *__envp);
-void feupdateenv(const fenv_t *__envp);
+int fesetenv(const fenv_t *__envp);
+int feupdateenv(const fenv_t *__envp);
 
 #ifdef __cplusplus
 }
@@ -114,17 +114,17 @@ void feupdateenv(const fenv_t *__envp);
 #endif /* __FENV_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__FENV_H_USING_LIST)
 #define __FENV_H_USING_LIST
-    using std::feclearexcept;
-    using std::fegetexceptflag;
-    using std::feraiseexcept;
-    using std::fesetexceptflag;
-    using std::fetestexcept;
-    using std::fegetround;
-    using std::fesetround;
-    using std::fegetenv;
-    using std::feholdexcept;
-    using std::fesetenv;
-    using std::feupdateenv;
+	using std::feclearexcept;
+	using std::fegetexceptflag;
+	using std::feraiseexcept;
+	using std::fesetexceptflag;
+	using std::fetestexcept;
+	using std::fegetround;
+	using std::fesetround;
+	using std::fegetenv;
+	using std::feholdexcept;
+	using std::fesetenv;
+	using std::feupdateenv;
     using std::fexcept_t;
     using std::fenv_t;
     using std::__fe_default_env;

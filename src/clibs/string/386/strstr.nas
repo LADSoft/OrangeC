@@ -33,39 +33,44 @@
 %endif
 [global _strstr]
 
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 
 _strstr:
-    push	ebx
-    mov		ebx,[esp+8]
-    dec		ebx
+	push	ebx
+	mov		ebx,[esp+8]
+	mov		ecx,ebx
+	dec		ebx
 lp:
-    mov		edx,[esp+12]
-    mov		al,[edx]
+	mov		edx,[esp+12]
+	test		edx,edx
+	jz		x1
+	mov		al,[edx]
+	test		al,al
+	jz		x1
 lp2:
-    inc		ebx
-    mov		ah, [ebx]
-    or		ah,ah
-    jz		none
-    cmp		al,	ah
-    jnz		lp2
-    mov		ecx,ebx
+	inc		ebx
+	mov		ah, [ebx]
+	or		ah,ah
+	jz		none
+	cmp		al,	ah
+	jnz		lp2
+	mov		ecx,ebx
 
 lp3:
-    inc		edx
-    inc		ebx
-    mov		ah,[edx]
-    and		ah,ah
-    jz		x1
-    cmp		ah,[ebx]
-    jz		lp3
-    mov		ebx,ecx
-    jmp		lp
+	inc		edx
+	inc		ebx
+	mov		ah,[edx]
+	and		ah,ah
+	jz		x1
+	cmp		ah,[ebx]
+	jz		lp3
+	mov		ebx,ecx
+	jmp		lp
 x1:
-    mov		eax,ecx
-    pop		ebx
-    ret
+	mov		eax,ecx
+	pop		ebx
+	ret
 none:
-    sub		eax,eax
-    pop		ebx
-    ret
+	sub		eax,eax
+	pop		ebx
+	ret

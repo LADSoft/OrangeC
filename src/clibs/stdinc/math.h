@@ -1,34 +1,34 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2008, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	Software License Agreement (BSD License)
+	
+	Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+	All rights reserved.
+	
+	Redistribution and use of this software in source and binary forms, with or without modification, are
+	permitted provided that the following conditions are met:
+	
+	* Redistributions of source code must retain the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer.
+	
+	* Redistributions in binary form must reproduce the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer in the documentation and/or other
+	  materials provided with the distribution.
+	
+	* Neither the name of LADSoft nor the names of its
+	  contributors may be used to endorse or promote products
+	  derived from this software without specific prior
+	  written permission of LADSoft.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+	PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /*  math.h
 
@@ -124,7 +124,7 @@ typedef enum
 typedef float float_t ;
 typedef double double_t ;
 
-struct  exception
+struct  _exception
 {
     int type;
     char *name;
@@ -145,6 +145,10 @@ struct  _exceptionl
 #define _LHUGE_VAL  HUGE_VALL
 
 #if  __STDC_VERSION__ >= 199901L
+float _RTL_FUNC nanf(const char *tagp);
+double _RTL_FUNC nan(const char *tagp);
+long double _RTL_FUNC nanl(const char *tagp);
+
 int _RTL_FUNC __fpclassifyf(float __x);
 int _RTL_FUNC __fpclassify(double __x);
 int _RTL_FUNC __fpclassifyl(long double __x);
@@ -173,6 +177,7 @@ int _RTL_FUNC __nancompare(long double __x, long double __y, int type);
 #define isgreaterequal(x,y) __nancompare((x),(y),2)
 #define isless(x,y) __nancompare((x),(y),-1)
 #define islessequal(x,y) __nancompare((x),(y),-2)
+#define islessgreater(x,y) __nancompare((x),(y),-3)
 #define isunordered(x,y) __nancompare((x),(y),0)
 
 float _RTL_FUNC acosf  (float __x);
@@ -356,7 +361,7 @@ long double _RTL_FUNC truncl (long double __x);
 
 #endif
 
-int         _RTL_FUNC _matherr (struct exception *__e);
+int         _RTL_FUNC _matherr (struct _exception *__e);
 
 #if  __STDC_VERSION__ >= 199901L
 float       _RTL_FUNC hypotf (float __x, float __y);
@@ -444,205 +449,205 @@ long double  _RTL_FUNC ynl(int, long double);
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__MATH_H_USING_LIST)
 #define __MATH_H_USING_LIST
 #if  __STDC_VERSION__ >= 199901L
-    using std::__fpclassifyf;
-    using std::__fpclassify;
-    using std::__fpclassifyl;
-    using std::__signbitf;
-    using std::__signbit;
-    using std::__signbitl;
-    using std::__nancompare;
-    using std::acosf;
-    using std::asinf;
-    using std::atan2f;
-    using std::atanf;
-    using std::ceilf;
-    using std::cosf;
-    using std::expf;
-    using std::fabsf;
-    using std::floorf;
-    using std::fmodf;
-    using std::frexpf;
-    using std::ldexpf;
-    using std::log10f;
-    using std::logf;
-    using std::modff;
-    using std::powf;
-    using std::sinhf;
-    using std::sinf;
-    using std::sqrtf;
-    using std::tanhf;
-    using std::tanf;
+        using std::__fpclassifyf;
+        using std::__fpclassify;
+        using std::__fpclassifyl;
+        using std::__signbitf;
+        using std::__signbit;
+        using std::__signbitl;
+        using std::__nancompare;
+        using std::acosf;
+        using std::asinf;
+        using std::atan2f;
+        using std::atanf;
+        using std::ceilf;
+        using std::cosf;
+        using std::expf;
+        using std::fabsf;
+        using std::floorf;
+        using std::fmodf;
+        using std::frexpf;
+        using std::ldexpf;
+        using std::log10f;
+        using std::logf;
+        using std::modff;
+        using std::powf;
+        using std::sinhf;
+        using std::sinf;
+        using std::sqrtf;
+        using std::tanhf;
+        using std::tanf;
 #endif
-    using std::acos;
-    using std::asin;
-    using std::atan2;
-    using std::atan;
-    using std::ceil;
-    using std::cos;
-    using std::cosh;
-    using std::exp;
-    using std::fabs;
-    using std::floor;
-    using std::fmod;
-    using std::frexp;
-    using std::ldexp;
-    using std::log;
-    using std::log10;
-    using std::modf;
-    using std::pow;
-    using std::sin;
-    using std::sinh;
-    using std::sqrt;
-    using std::tan;
-    using std::tanh;
-    using std::acosl;
-    using std::asinl;
-    using std::atan2l;
-    using std::atanl;
-    using std::ceill;
-    using std::coshl;
-    using std::cosl;
-    using std::expl;
-    using std::fabsl;
-    using std::floorl;
-    using std::fmodl;
-    using std::frexpl;
-    using std::ldexpl;
-    using std::log10l;
-    using std::logl;
-    using std::modfl;
-    using std::powl;
-    using std::sinhl;
-    using std::sinl;
-    using std::sqrtl;
-    using std::tanhl;
-    using std::tanl;
+        using std::acos;
+        using std::asin;
+        using std::atan2;
+        using std::atan;
+        using std::ceil;
+        using std::cos;
+        using std::cosh;
+        using std::exp;
+        using std::fabs;
+        using std::floor;
+        using std::fmod;
+        using std::frexp;
+        using std::ldexp;
+        using std::log;
+        using std::log10;
+        using std::modf;
+        using std::pow;
+        using std::sin;
+        using std::sinh;
+        using std::sqrt;
+        using std::tan;
+        using std::tanh;
+        using std::acosl;
+        using std::asinl;
+        using std::atan2l;
+        using std::atanl;
+        using std::ceill;
+        using std::coshl;
+        using std::cosl;
+        using std::expl;
+        using std::fabsl;
+        using std::floorl;
+        using std::fmodl;
+        using std::frexpl;
+        using std::ldexpl;
+        using std::log10l;
+        using std::logl;
+        using std::modfl;
+        using std::powl;
+        using std::sinhl;
+        using std::sinl;
+        using std::sqrtl;
+        using std::tanhl;
+        using std::tanl;
 #if  __STDC_VERSION__ >= 199901L
 
-    using std::acoshf;
-    using std::asinhf;
-    using std::atanhf;
-    using std::cbrtf;
-    using std::copysignf;
-    using std::coshf;
-    using std::erff;
-    using std::erfcf;
-    using std::exp2f;
-    using std::expm1f;
-    using std::fdimf;
-    using std::fmaf;
-    using std::fmaxf;
-    using std::fminf;
-    using std::ilogbf;
-    using std::lgammaf;
-    using std::lrintf;
-    using std::llrintf;
-    using std::log1pf;
-    using std::log2f;
-    using std::logbf;
-    using std::lroundf;
-    using std::llroundf;
-    using std::nearbyintf;
-    using std::nextafterf;
-    using std::nexttowardf;
-    using std::remainderf;
-    using std::remquof;
-    using std::rintf;
-    using std::roundf;
-    using std::scalbnf;
-    using std::scalblnf;
+        using std::acoshf;
+        using std::asinhf;
+        using std::atanhf;
+        using std::cbrtf;
+        using std::copysignf;
+        using std::coshf;
+        using std::erff;
+        using std::erfcf;
+        using std::exp2f;
+        using std::expm1f;
+        using std::fdimf;
+        using std::fmaf;
+        using std::fmaxf;
+        using std::fminf;
+        using std::ilogbf;
+        using std::lgammaf;
+        using std::lrintf;
+        using std::llrintf;
+        using std::log1pf;
+        using std::log2f;
+        using std::logbf;
+        using std::lroundf;
+        using std::llroundf;
+        using std::nearbyintf;
+        using std::nextafterf;
+        using std::nexttowardf;
+        using std::remainderf;
+        using std::remquof;
+        using std::rintf;
+        using std::roundf;
+        using std::scalbnf;
+        using std::scalblnf;
     using std::significandf;
-    using std::tgammaf;
-    using std::truncf;
-    using std::acosh;
-    using std::asinh;
-    using std::atanh;
-    using std::cbrt;
-    using std::copysign;
-    using std::erf;
-    using std::erfc;
-    using std::exp2;
-    using std::expm1;
-    using std::fdim;
-    using std::fma;
-    using std::fmax;
-    using std::fmin;
-    using std::ilogb;
-    using std::lgamma;
-    using std::lrint;
-    using std::llrint;
-    using std::logb;
-    using std::log1p;
-    using std::log2;
-    using std::lround;
-    using std::llround;
-    using std::nearbyint;
-    using std::nextafter;
-    using std::nexttoward;
-    using std::remainder;
-    using std::remquo;
-    using std::rint;
-    using std::round;
-    using std::scalbn;
-    using std::scalbln;
+        using std::tgammaf;
+        using std::truncf;
+        using std::acosh;
+        using std::asinh;
+        using std::atanh;
+        using std::cbrt;
+        using std::copysign;
+        using std::erf;
+        using std::erfc;
+        using std::exp2;
+        using std::expm1;
+        using std::fdim;
+        using std::fma;
+        using std::fmax;
+        using std::fmin;
+        using std::ilogb;
+        using std::lgamma;
+        using std::lrint;
+        using std::llrint;
+        using std::logb;
+        using std::log1p;
+        using std::log2;
+        using std::lround;
+        using std::llround;
+        using std::nearbyint;
+        using std::nextafter;
+        using std::nexttoward;
+        using std::remainder;
+        using std::remquo;
+        using std::rint;
+        using std::round;
+        using std::scalbn;
+        using std::scalbln;
     using std::significand;
-    using std::tgamma;
-    using std::trunc;
-    using std::acoshl;
-    using std::asinhl;
-    using std::atanhl;
-    using std::cbrtl;
-    using std::copysignl;
-    using std::erfl;
-    using std::erfcl;
-    using std::exp2l;
-    using std::expm1l;
-    using std::fdiml;
-    using std::fmal;
-    using std::fmaxl;
-    using std::fminl;
-    using std::ilogbl;
-    using std::lgammal;
-    using std::lrintl;
-    using std::llrintl;
-    using std::log1pl;
-    using std::log2l;
-    using std::logbl;
-    using std::lroundl;
-    using std::llroundl;
-    using std::nearbyintl;
-    using std::nextafterl;
-    using std::nexttowardl;
-    using std::remainderl;
-    using std::remquol;
-    using std::rintl;
-    using std::roundl;
-    using std::scalbnl;
-    using std::scalblnl;
+        using std::tgamma;
+        using std::trunc;
+        using std::acoshl;
+        using std::asinhl;
+        using std::atanhl;
+        using std::cbrtl;
+        using std::copysignl;
+        using std::erfl;
+        using std::erfcl;
+        using std::exp2l;
+        using std::expm1l;
+        using std::fdiml;
+        using std::fmal;
+        using std::fmaxl;
+        using std::fminl;
+        using std::ilogbl;
+        using std::lgammal;
+        using std::lrintl;
+        using std::llrintl;
+        using std::log1pl;
+        using std::log2l;
+        using std::logbl;
+        using std::lroundl;
+        using std::llroundl;
+        using std::nearbyintl;
+        using std::nextafterl;
+        using std::nexttowardl;
+        using std::remainderl;
+        using std::remquol;
+        using std::rintl;
+        using std::roundl;
+        using std::scalbnl;
+        using std::scalblnl;
     using std::significandl;
-    using std::tgammal;
-    using std::truncl;
+        using std::tgammal;
+        using std::truncl;
 #endif
-    using std::_matherr;
+        using std::_matherr;
 #if  __STDC_VERSION__ >= 199901L
-    using std::hypotf;
-    using std::polyf;
-    using std::pow10f;
+        using std::hypotf;
+        using std::polyf;
+        using std::pow10f;
 #endif
-    using std::hypot;
-    using std::poly;
-    using std::pow10;
-    using std::hypotl;
-    using std::polyl;
-    using std::pow10l;
-    using std::abs;
-    using std::labs;
+        using std::hypot;
+        using std::poly;
+        using std::pow10;
+        using std::hypotl;
+        using std::polyl;
+        using std::pow10l;
+        using std::abs;
+        using std::labs;
 #if  __STDC_VERSION__ >= 199901L
-    using std::llabs;
+        using std::llabs;
 #endif
-    using std::atof;
-    using std::_matherrl;
-    using std::_atold;
+        using std::atof;
+        using std::_matherrl;
+        using std::_atold;
 #if  __STDC_VERSION__ >= 199901L
     using std::complex;
     using std::_complexl;

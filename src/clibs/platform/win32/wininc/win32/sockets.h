@@ -1,4 +1,4 @@
-/* 
+/*
    Sockets.h
 
    Windows Sockets specification version 1.1
@@ -8,14 +8,14 @@
 
    Author:  Scott Christley <scottc@net-community.com>
    Date: 1996
-   
+
    This file is part of the Windows32 API Library.
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -23,16 +23,16 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
-*/ 
+*/
 
 /*-
  * Portions Copyright (c) 1980, 1983, 1988, 1993
@@ -48,8 +48,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -98,7 +98,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Skip if invoked by resource compiler */
-#ifndef	RC_INVOKED
+#ifndef RC_INVOKED
 
 /* BSD */
 typedef unsigned char   u_char;
@@ -106,7 +106,7 @@ typedef unsigned short  u_short;
 typedef unsigned int    u_int;
 typedef unsigned long   u_long;
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 /*
   Default maximium number of sockets.
@@ -126,7 +126,7 @@ typedef unsigned long   u_long;
   fd_set structures.
   */
 
-#ifndef	RC_INVOKED
+#ifndef RC_INVOKED
 
 typedef u_int           SOCKET;
 
@@ -174,6 +174,8 @@ extern int PASCAL WINBASEAPI __WSAFDIsSet(SOCKET, fd_set*);
 #endif
 #define FD_ISSET(fd, set) __WSAFDIsSet((SOCKET)(fd), (fd_set*)(set))
 
+#ifndef _TIMEVAL_DEFINED /* also in sys/time.h */
+#define _TIMEVAL_DEFINED
 /*
   time structures
   */
@@ -191,13 +193,14 @@ struct timezone {
 
  NB: timercmp does not work for >= or <=.
  */
-#define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
-#define	timercmp(tvp, uvp, cmp)	\
+#define timerisset(tvp)         ((tvp)->tv_sec || (tvp)->tv_usec)
+#define timercmp(tvp, uvp, cmp) \
     (((tvp)->tv_sec == (uvp)->tv_sec && (tvp)->tv_usec cmp (uvp)->tv_usec) \
     || (tvp)->tv_sec cmp (uvp)->tv_sec)
-#define	timerclear(tvp)		((tvp)->tv_sec = (tvp)->tv_usec = 0)
+#define timerclear(tvp)         ((tvp)->tv_sec = (tvp)->tv_usec = 0)
+#endif /* _TIMEVAL_DEFINED */
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 /*
   ioctl command encoding.
@@ -213,9 +216,9 @@ struct timezone {
 #define _IO(c,d)        (IOC_VOID | ((c)<<8) | (d))
 /* _IOXX(magic, subcode, arg_t) */
 #define _IOW(c,d,t)     (IOC_IN | (((long)sizeof(t) & IOCPARM_MASK)<<16) | \
-             ((c)<<8) | (d))
+                         ((c)<<8) | (d))
 #define _IOR(c,d,t)     (IOC_OUT | (((long)sizeof(t) & IOCPARM_MASK)<<16) | \
-             ((c)<<8) | (d))
+                         ((c)<<8) | (d))
 
 /*
   This stuff is hard-coded on Linux
@@ -239,7 +242,7 @@ struct timezone {
  Slight modifications for differences between Linux and winsock.h
  */
 
-#ifndef	RC_INVOKED
+#ifndef RC_INVOKED
 
 struct  hostent {
   char    *h_name;                /* official name of host */
@@ -328,12 +331,12 @@ enum {
   /* Ports less than this value are reservered for privileged processes. */
   IPPORT_RESERVED = 1024,
 
-  /* Ports greater than this value are reserved for 
+  /* Ports greater than this value are reserved for
      (non-privileged) processes */
   IPPORT_USERRESERVED = 5000
 };
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 
 /* Link numbers. */
@@ -358,7 +361,7 @@ struct in_addr {
 #define s_lh    S_un.S_un_b.s_b3
 };
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 /*
  Definitions of bits in internet address integers.
@@ -384,7 +387,7 @@ struct in_addr {
 
 #define INADDR_ANY              (u_long)0x00000000
 #define INADDR_LOOPBACK         0x7f000001
-#define INADDR_BROADCAST        (u_long)0xffffffff    
+#define INADDR_BROADCAST        (u_long)0xffffffff
 #define INADDR_NONE             0xffffffff
 
 
@@ -400,7 +403,7 @@ struct sockaddr_in {
   char    sin_zero[8];
 };
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 /*
   EVERYTHING FROM THIS POINT IS MAINLY SPECIFIC TO Win32
@@ -411,7 +414,7 @@ struct sockaddr_in {
 #define WSADESCRIPTION_LEN      256
 #define WSASYS_STATUS_LEN       128
 
-#ifndef	RC_INVOKED
+#ifndef RC_INVOKED
 
 typedef struct WSAData {
   WORD wVersion;
@@ -423,7 +426,7 @@ typedef struct WSAData {
   char *lpVendorInfo;
 } WSADATA, *LPWSADATA;
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 #define IP_OPTIONS          1
 #define IP_MULTICAST_IF     2
@@ -436,14 +439,14 @@ typedef struct WSAData {
 #define IP_DEFAULT_MULTICAST_LOOP  1
 #define IP_MAX_MEMBERSHIPS         20
 
-#ifndef	RC_INVOKED
+#ifndef RC_INVOKED
 
 struct ip_mreq {
   struct in_addr imr_multiaddr;
   struct in_addr imr_interface;
 };
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 /*
  * Definitions related to sockets: types, address families, options,
@@ -461,7 +464,7 @@ struct ip_mreq {
 #define SOCK_STREAM     1
 #define SOCK_DGRAM      2
 #define SOCK_RAW        3
-#define SOCK_RDM        4 
+#define SOCK_RDM        4
 #define SOCK_SEQPACKET  5
 
 /* For setsockoptions(2) */
@@ -569,7 +572,7 @@ struct sockproto {
   u_short sp_protocol;
 };
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 
 /*
@@ -598,7 +601,7 @@ struct sockproto {
 #define PF_MAX          AF_MAX
 
 
-#ifndef	RC_INVOKED
+#ifndef RC_INVOKED
 
 /*
  * Structure used for manipulating linger option.
@@ -608,7 +611,7 @@ struct  linger {
   u_short l_linger;
 };
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 /*
  * Level number for (get/set)sockopt() to apply to socket itself.
@@ -626,7 +629,7 @@ struct  linger {
 
 #define MSG_MAXIOVLEN   16
 
-#define	MSG_PARTIAL     0x8000          /* partial send or recv for message xport */
+#define MSG_PARTIAL     0x8000          /* partial send or recv for message xport */
 
 /*
  * Define constant based on rfc883, used by gethostbyxxxx() calls.
@@ -789,7 +792,7 @@ struct  linger {
 
 /* Socket function prototypes */
 
-#ifndef	RC_INVOKED
+#ifndef RC_INVOKED
 
 SOCKET PASCAL WINBASEAPI accept (SOCKET s, struct sockaddr *addr,
                           int *addrlen);
@@ -892,7 +895,7 @@ FARPROC PASCAL WINBASEAPI WSASetBlockingHook(FARPROC lpBlockFunc);
 int PASCAL WINBASEAPI WSACancelBlockingCall(void);
 
 HANDLE PASCAL WINBASEAPI WSAAsyncGetServByName(HWND hWnd, u_int wMsg,
-                                        const char * name, 
+                                        const char * name,
                                         const char * proto,
                                         char * buf, int buflen);
 
@@ -960,7 +963,7 @@ typedef struct timeval TIMEVAL;
 typedef struct timeval *PTIMEVAL;
 typedef struct timeval *LPTIMEVAL;
 
-#endif	/* RC_INVOKED */
+#endif  /* RC_INVOKED */
 
 /*
  * Windows message parameter composition and decomposition

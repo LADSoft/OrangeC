@@ -1,36 +1,35 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2008, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	Software License Agreement (BSD License)
+	
+	Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+	All rights reserved.
+	
+	Redistribution and use of this software in source and binary forms, with or without modification, are
+	permitted provided that the following conditions are met:
+	
+	* Redistributions of source code must retain the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer.
+	
+	* Redistributions in binary form must reproduce the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer in the documentation and/or other
+	  materials provided with the distribution.
+	
+	* Neither the name of LADSoft nor the names of its
+	  contributors may be used to endorse or promote products
+	  derived from this software without specific prior
+	  written permission of LADSoft.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+	PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
@@ -205,35 +204,35 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
 char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict arg, int *restrict count,int *restrict chars,int *restrict argn, int *restrict ch)
 {
     LLONG_TYPE max=INT_MAX,min= INT_MIN;
-    int ignore = 0;
-    int width = INT_MAX;
-    int size = 0;
-    int sgn = 0;
+	int ignore = 0;
+	int width = INT_MAX;
+	int size = 0;
+	int sgn = 0;
    int skip=0,didit = 0;
    int type ;
-    unsigned cu;
+	unsigned cu;
    char *s;
    int i;
    int radix = 0 ;
    int lc = 0x20 ;
-    long double fval;
+	long double fval;
    LLONG_TYPE c ;
    wchar_t fbuf[40];
    char _sctab[256] ;
    mbstate_t st;
-    int found = 0;
-    
-    if (*format == '*') {
-        ignore = 1;
-        format++;
-    }
-    if (isdigit(*format))  {
+	int found = 0;
+	
+	if (*format == '*') {
+		ignore = 1;
+		format++;
+	}
+	if (isdigit(*format))  {
       width = 0;
       while (isdigit(*format))
-            width = width *10 + *format++ -'0';
+			width = width *10 + *format++ -'0';
     }
    if (*format == 'h' || *format == 'l') {
-        size = *format++;
+		size = *format++;
       if (size == 'h') {
         max = SHRT_MAX;
         min = SHRT_MIN;
@@ -271,7 +270,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
      type |= 0x20;
    }
    switch((type)) {
-        case 'c':
+		case 'c':
             if (size == 'l') {
                 memset(&st,0,sizeof(st));
                 while (width >= 0 && *ch) {
@@ -287,17 +286,17 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                     *ch = fgetc(fil);
                 }
             }
-            else {
+			else {
               if (width == INT_MAX) 
                 width = 1;
               while (width-- && *ch != EOF) {
-                if (!ignore) {
+				if (!ignore) {
                    *((char *)arg)++ = (char)*ch;
-                }		
-                *ch = fgetc(fil) ;
-                (*chars)++;
+				}		
+				*ch = fgetc(fil) ;
+				(*chars)++;
               }
-            }
+			}
          if (!ignore) {
             (*count)++;
             (*argn)++;
@@ -306,7 +305,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
         case 'x':
         case 'p':
         case 'o':
-        case 'd':
+		case 'd':
         case 'u':
         case 'i':
         case 'b':
@@ -314,26 +313,26 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
             *ch = fgetc(fil) ;
             (*chars)++ ;
          }
-         switch(type)
-         {
-             case 'x':
-            case 'p':
-                if (!isxdigit(*ch) && *ch != '-' && *ch != '+')
-                    return NULL;
-                break;
-            case 'o':
-                if ((!isdigit(*ch) || (*ch) > '7') && *ch != '-' && *ch != '+')
-                    return NULL;
-                break;
-            case 'b':
-                if ((!isdigit(*ch) || (*ch) > '1') && *ch != '-' && *ch != '+')
-                    return NULL;
-                break;
-            default:
-                if (!isdigit(*ch) && *ch != '-' && *ch != '+')
-                    return NULL;
-                break;
-         }
+		 switch(type)
+		 {
+		 	case 'x':
+			case 'p':
+				if (!isxdigit(*ch) && *ch != '-' && *ch != '+')
+					return NULL;
+				break;
+			case 'o':
+				if ((!isdigit(*ch) || (*ch) > '7') && *ch != '-' && *ch != '+')
+					return NULL;
+				break;
+			case 'b':
+				if ((!isdigit(*ch) || (*ch) > '1') && *ch != '-' && *ch != '+')
+					return NULL;
+				break;
+			default:
+				if (!isdigit(*ch) && *ch != '-' && *ch != '+')
+					return NULL;
+				break;
+		 }
          switch(type) {
             case 'd':
                  c = __xstrtoimax(fil,width,ch,chars,10,max,0, STRT_ERR_RET_SIGNED);
@@ -363,19 +362,19 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                 else if (size == 'l')
                    *(long *)arg = c ;
                 else if (size == 'h') 
-                        *(short *)arg = (short)c;
+    					*(short *)arg = (short)c;
                     else if (size == 'c')
                         *(char *)arg = (char)c;
-                    else
+    				else
                    *(int *)arg = (int)c;
-            }
+    	    }
          break ;
-        case 'e':
-        case 'f':
-        case 'g': 
+		case 'e':
+		case 'f':
+		case 'g': 
         case 'a':
 #ifndef USE_FLOAT
-                fprintf(stderr,"FP not linked");
+				fprintf(stderr,"FP not linked");
 #else
                 FILE fil1;
                 char buf[256], *p;
@@ -384,13 +383,13 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                 fil1.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING;
                 fil1.buffer = fil1.curp = buf;
                 fil1.token = FILTOK;
-                 while (*ch != EOF && isspace(*ch)) {
-                    *ch = fgetc(fil) ;
-                    (*chars)++ ;
-                 }
-             if (!isdigit(*ch) && *ch != '-' && *ch != '+' && *ch != '.' &&
-                 *ch != 'i' && *ch != 'I' && *ch != 'n' && *ch != 'N')
-                 return NULL;
+		         while (*ch != EOF && isspace(*ch)) {
+		            *ch = fgetc(fil) ;
+		            (*chars)++ ;
+		         }
+			 if (!isdigit(*ch) && *ch != '-' && *ch != '+' && *ch != '.' &&
+			     *ch != 'i' && *ch != 'I' && *ch != 'n' && *ch != 'N')
+				 return NULL;
                 if (!(p = __fil2strd(fil, width, ch, chars)))
                   return NULL;
                 strcpy (buf, p);
@@ -398,21 +397,21 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                 fil1.bsize = strlen(buf);
                 ch1 = fgetc(&fil1);
                 fval = __xstrtod(&fil1,256,&ch1,&chars1, LDBL_MAX, LDBL_MAX_EXP, LDBL_MAX_10_EXP,1);
-                if (!ignore) {
-                    (*count)++;
-                    (*argn)++;
+				if (!ignore) {
+					(*count)++;
+					(*argn)++;
                if (size == 'L') 
                   *(long double *)arg = fval;
                else if (size == 'l') 
                   *(double *)arg = fval;
                else 
                     *(float *)arg = fval;
-                }
+				}
 #endif
-            break;
-        case 'n':
+			break;
+		case 'n':
          if (!ignore) {
-           (*argn)++;
+		   (*argn)++;
              if (size == '1') {
                 *(LLONG_TYPE *)arg = (*chars) ;
              } else if (size == 'l' || size == 'L')
@@ -424,7 +423,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
              else
                 *(int *)arg = (*chars);
          }
-         break;
+	     break;
       case '[': {
            int t = 0,c ;
            if (*format == '^') {
@@ -455,7 +454,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
              format-- ;
          }
          /* fall through */
-        case 's':
+		case 's':
          if (type == 's') {
             for (i=0; i < sizeof(_sctab); i++) {
                 _sctab[i] = isspace(i) ? STP : 0;
@@ -466,7 +465,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
             (*chars)++ ;
 //			found=1;
          }
-            s = (char *)arg;
+			s = (char *)arg;
          skip = width == INT_MAX ? 0 : 1;
          memset(&st,0,sizeof(st));
          while (*ch != EOF && !(_sctab[*ch]& STP) && (width || !skip)) {
@@ -480,7 +479,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                     }
                     width--;
                     (*chars)++;
-                    found=1;
+					found=1;
                     *ch = fgetc(fil);
             } else {
                if (!ignore)
@@ -488,7 +487,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                *ch = fgetc(fil) ;
                width--;
                (*chars)++;
-                found=1;
+				found=1;
             }
          }
 
@@ -497,21 +496,21 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                 *(wchar_t *)arg = L'\0';
             else
                 *s = 0;
-            if (found)
-               (*count) ++;
+			if (found)
+	           (*count) ++;
             (*argn)++;
          }
          break;
-        case '%':
+		case '%':
             if (*ch != '%')
-                    return 0;
+					return 0;
             *ch = fgetc(fil) ;
             (*chars)++;
-                break;
-        default:
-            format++;
-    }
-    return format;
+				break;
+		default:
+			format++;
+	}
+	return format;
 }
 
 int __scanf(FILE *restrict fil, const char *restrict format,void *restrict arglist)
@@ -527,8 +526,8 @@ int __scanf(FILE *restrict fil, const char *restrict format,void *restrict argli
                j++ ;
             }
             while (*format && isspace(*format)) format++;
-        }
-        else  {
+		}
+		else  {
             if (*format++ != ch) {
                 goto __scanf_end;
 //                if (ch != EOF)
@@ -537,13 +536,13 @@ int __scanf(FILE *restrict fil, const char *restrict format,void *restrict argli
             }
             ch = fgetc(fil) ;
             j++;
-        }
-      }
+		}
+	  }
       if (*format /* && ch != EOF */) {
-          format++;
+	      format++;
           format = __strtoone(fil,format,((char **)arglist)[k],&i,&j,&k,&ch);
-      }
-    }
+	  }
+	}
 __scanf_end:
     if (ch != EOF)
         ungetc(ch,fil);

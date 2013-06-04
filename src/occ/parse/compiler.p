@@ -130,10 +130,11 @@ SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
-                    enum e_ac access, BOOL *notype, BOOL *defd);
+                    enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
                       NAMESPACEVALUES **nsv, enum e_sc storage_class,
-							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOL *destructor, BOOL asFriend);
+							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOL asFriend,
+                        int consdest);
 void sizeQualifiers(TYPE *tp);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
@@ -786,7 +787,7 @@ LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, BOOL tagsOnly);
 SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOL qualified, BOOL tagsOnly);
 SYMBOL *classsearch(char *name, BOOL tagsOnly);
 LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, BOOL *throughPath, BOOL tagsOnly);
-LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, 
+LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *destructor, 
                      BOOL tagsOnly);
 LEXEME *getIdName(LEXEME *lex, char *buf, int *ov);
 LEXEME *id_expression(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly, char *name);

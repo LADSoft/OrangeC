@@ -48,6 +48,7 @@
 extern int stdpragmas;
 extern ARCH_ASM *chosenAssembler;
 extern TYPE stdvoid;
+extern BOOL initializingGlobalVar;
 
 static EXPRESSION *asidehead,  **asidetail;
 ULLONG_TYPE reint(EXPRESSION *node);
@@ -63,7 +64,7 @@ void constoptinit(void)
 }
 static int optimizerfloatconst(EXPRESSION *en)
 {
-    if (en->pragmas &STD_PRAGMA_FENV)
+    if ((en->pragmas &STD_PRAGMA_FENV) && !initializingGlobalVar)
         return FALSE;
 
     return isfloatconst(en) || isimaginaryconst(en) || iscomplexconst(en);
@@ -363,10 +364,10 @@ static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
  */
 {
     int mode = 0;
-    if ((ep1->pragmas &STD_PRAGMA_FENV) && (isfloatconst(ep1) ||
+    if (!initializingGlobalVar && (ep1->pragmas &STD_PRAGMA_FENV) && (isfloatconst(ep1) ||
         isimaginaryconst(ep1) || iscomplexconst(ep1)))
         return 0;
-    if (ep2 && (ep2->pragmas &STD_PRAGMA_FENV) && (isfloatconst(ep2) ||
+    if (!initializingGlobalVar && ep2 && (ep2->pragmas &STD_PRAGMA_FENV) && (isfloatconst(ep2) ||
         isimaginaryconst(ep2) || iscomplexconst(ep2)))
         return 0;
     if (isintconst(ep1))
@@ -559,7 +560,10 @@ FPF CastToFloat(int size, FPF *value)
 FPF *IntToFloat(FPF* temp, int size, LLONG_TYPE value)
 {
     LLONG_TYPE t = CastToInt(size,value);
-    LongLongToFPF(temp,t);
+    if (size < 0)
+        LongLongToFPF(temp,t);
+    else
+        UnsignedLongLongToFPF(temp,t);
     return temp;
 }
 FPF refloat(EXPRESSION *node)
@@ -1255,7 +1259,6 @@ void dooper(EXPRESSION **node, int mode)
                 DivideFPF(&temp, &ep2->v.f, &temp);
                 ep2->v.f = temp;
                 ep->type = en_mul;
-                refloat(ep);
             }
                 break;
             case 9:
@@ -1545,6 +1548,7 @@ int opt0(EXPRESSION **node)
                 rv = TRUE;
                 ep->type = ep->left->type;
                 ep->v.i = ~ep->left->v.i;
+                ep->v.i = reint(ep);
                 ep->unionoffset = ep->left->unionoffset;
             }
             return rv ;
@@ -1556,6 +1560,7 @@ int opt0(EXPRESSION **node)
                 rv = TRUE;
                 ep->type = ep->left->type;
                 ep->v.i =  - ep->left->v.i;
+                ep->v.i = reint(ep);
                 ep->unionoffset = ep->left->unionoffset;
             }
             else if (ep->left->type == en_c_d || ep->left->type ==
@@ -1655,6 +1660,31 @@ int opt0(EXPRESSION **node)
                     dooper(node, mode);
                 rv = TRUE;
                 break;
+#ifdef XXXXX
+            case 21:
+                if (ep->type != en_sub)
+                {
+                    if (ep->left->v.c.r.type == IFPF_IS_ZERO &&
+                        ep->left->v.c.i.type == IFPF_IS_ZERO)
+                    {
+                        *node = ep->right;
+                    }
+                    else
+                        dooper(node, mode);
+                    rv = TRUE;
+                }
+                break;
+#endif
+            case 22:
+                if (ep->right->v.c.r.type == IFPF_IS_ZERO &&
+                    ep->right->v.c.i.type == IFPF_IS_ZERO)
+                {
+                    *node = ep->left;
+                }
+                else
+                    dooper(node, mode);
+                rv = TRUE;
+                break;
             }
             return rv ;
         case en_mul:
@@ -1697,7 +1727,7 @@ int opt0(EXPRESSION **node)
                         *node = exprNode(negtype, ep->right, 0);
                     else
                     {
-                        sc = pwrof2(ep->left->v.i);
+                        sc = pwrof2(val);
                         if (sc !=  - 1)
                         {
                             EXPRESSION *temp = ep->left;
@@ -1752,12 +1782,16 @@ int opt0(EXPRESSION **node)
                         *node = ep->right;
                     }
                     else if (val == 1)
+                    {
                         *node = ep->left;
+                    }
                     else if (val ==  - 1)
+                    {
                         *node = exprNode(negtype, ep->left, 0);
+                    }
                     else
                     {
-                        sc = pwrof2(ep->right->v.i);
+                        sc = pwrof2(val);
                         if (sc !=  - 1)
                         {
                             rv = TRUE;
@@ -1792,9 +1826,13 @@ int opt0(EXPRESSION **node)
                 else
 #endif
                 if (!dval.sign && ValueIsOne(&dval))
+                {
                     *node = ep->left;
+                }
                 else if (dval.sign && ValueIsOne(&dval))
+                {
                     *node = exprNode(negtype, ep->left, 0);
+                }
                 else
                     dooper(node, mode);
                 rv = TRUE;
@@ -1835,6 +1873,36 @@ int opt0(EXPRESSION **node)
                 rv = TRUE;
                 break;
 #endif
+#ifdef XXXXX
+            case 21:
+                dval = ep->left->v.c.r;
+                if (ep->left->v.c.i.type == IFPF_IS_ZERO)
+                {
+                    if (!dval.sign && ValueIsOne(&dval))
+                        *node = ep->right;
+                    else if (dval.sign && ValueIsOne(&dval))
+                        *node = exprNode(negtype, ep->right, 0);
+                    else
+                        dooper(node, mode);
+                }
+                else
+                    dooper(node, mode);
+                rv = TRUE;
+                break;
+#endif
+            case 22:
+                dval = ep->right->v.c.r;
+                if (ep->right->v.c.i.type == IFPF_IS_ZERO)
+                {
+                    if (!dval.sign && ValueIsOne(&dval))
+                        *node = ep->left;
+                    else if (dval.sign && ValueIsOne(&dval))
+                    {
+                        *node = exprNode(negtype, ep->left, 0);
+                    }
+                    else
+                        dooper(node, mode);
+                }
             }
             break;
         case en_arraydiv:
@@ -1885,7 +1953,7 @@ int opt0(EXPRESSION **node)
                         *node = exprNode(negtype, ep->left, 0);
                     else
                     {
-                        sc = pwrof2(ep->right->v.i);
+                        sc = pwrof2(val);
                         if (sc !=  - 1)
                         {
                             rv = TRUE;
@@ -1908,14 +1976,33 @@ int opt0(EXPRESSION **node)
                 rv = TRUE;
                 break;
             case 8:
-#ifdef XXXXX
                 dval = ep->right->v.f;
+#ifdef XXXXX
                 if (dval.type == IFPF_IS_ZERO)
                     *node = ep->left;
                 else 
 #endif
+                if (!dval.sign && ValueIsOne(&dval))
+                    *node = ep->left;
                 if (dval.sign && ValueIsOne(&dval))
                     *node = exprNode(negtype, ep->left, 0);
+                else
+                    dooper(node, mode);
+                rv = TRUE;
+                break;
+              case 22:
+                dval = ep->right->v.c.r;
+                if (ep->right->v.c.i.type == IFPF_IS_ZERO)
+                {
+                    if (!dval.sign && ValueIsOne(&dval))
+                        *node = ep->left;
+                    else if (dval.sign && ValueIsOne(&dval))
+                    {
+                        *node = exprNode(negtype, ep->left, 0);
+                    }
+                    else
+                        dooper(node, mode);
+                }
                 else
                     dooper(node, mode);
                 rv = TRUE;
@@ -2059,15 +2146,18 @@ int opt0(EXPRESSION **node)
             break;
         case en_land:
             rv |= opt0(&(ep->left));
-            rv |= opt0(&(ep->right));
             if (isintconst(ep->left))
             {
                 if (!ep->left->v.i)
                 {
                     rv = TRUE;
                     *node = intNode(en_c_i, 0);
+                    break;
                 }
-                else goto join_land;
+                else 
+                {
+                    goto join_land;
+                }
             }
             else switch(ep->left->type)
             {
@@ -2102,20 +2192,24 @@ join_land:
                     }
                 }
                 default:
+                    rv |= opt0(&(ep->right));
                     break;
             }
             break;
         case en_lor:
             rv |= opt0(&(ep->left));
-            rv |= opt0(&(ep->right));
             if (isintconst(ep->left))
             {
                 if (ep->left->v.i)
                 {
                     rv = TRUE;
                     *node = intNode(en_c_i, 1);
+                    break;
                 }
-                else goto join_lor;
+                else 
+                {
+                    goto join_lor;
+                }
             }
             else switch(ep->left->type)
             {
@@ -2126,6 +2220,7 @@ join_land:
                 case en_labcon:
                 case en_auto:
                     /* assumes nothing can be relocated to address 0 */
+                    rv |= opt0(&(ep->right));
                     *node = intNode(en_c_i, 1);
                     rv = TRUE;
                     break;
@@ -2163,6 +2258,11 @@ join_lor:
                 *node = intNode(en_c_i, (!ep->left->v.i));
                 rv = TRUE;
             }
+            else if (isfloatconst(ep->left))
+            {
+                *node = intNode(en_c_i, ep->left->v.f.type == IFPF_IS_ZERO);
+                rv = TRUE;
+            }
             break;
         case en_eq:
             rv |= opt0(&(ep->left));
@@ -2176,6 +2276,10 @@ join_lor:
                 rv = TRUE;
 
                 break;
+            case 4:
+                *node = intNode(en_c_i, FPFEQ(&ep->left->v.f, &ep->right->v.f));
+                rv = TRUE;
+                break;
             }
             break;
         case en_ne:
@@ -2187,6 +2291,10 @@ join_lor:
             case 1:
                 *node = intNode(en_c_i, (ep->left->v.i != ep->right
                     ->v.i));
+                rv = TRUE;
+                break;
+            case 4:
+                *node = intNode(en_c_i, !FPFEQ(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
                 break;
             }
@@ -2202,6 +2310,10 @@ join_lor:
                     );
                 rv = TRUE;
                 break;
+            case 4:
+                *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
+                rv = TRUE;
+                break;
             }
             break;
         case en_le:
@@ -2213,6 +2325,10 @@ join_lor:
             case 1:
                 *node = intNode(en_c_i, (ep->left->v.i <= ep->right
                     ->v.i));
+                rv = TRUE;
+                break;
+            case 4:
+                *node = intNode(en_c_i, !FPFGT(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
                 break;
             }
@@ -2280,6 +2396,10 @@ join_lor:
                     );
                 rv = TRUE;
                 break;
+            case 4:
+                *node = intNode(en_c_i, FPFGT(&ep->left->v.f, &ep->right->v.f));
+                rv = TRUE;
+                break;
             }
             break;
         case en_ge:
@@ -2291,6 +2411,10 @@ join_lor:
             case 1:
                 *node = intNode(en_c_i, (ep->left->v.i >= ep->right
                     ->v.i));
+                rv = TRUE;
+                break;
+            case 4:
+                *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
                 break;
             }
@@ -3440,7 +3564,7 @@ static void rebalance(EXPRESSION *ep)
 
 void optimize_for_constants(EXPRESSION **expr)
 {
-    int rv = TRUE, count = 4;
+    int rv = TRUE, count = 8;
     asidehead = 0;
     asidetail = &asidehead;
     while (rv && count--)

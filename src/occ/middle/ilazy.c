@@ -400,6 +400,7 @@ static void CalculateTransparent(void)
                 AliasUses(tempBytes, tail->ans, TRUE);
                 for (i=0; i < tempCount; i++)
                 {
+                    /*
                     if (tempInfo[i]->uses)
                     {
                         for (j = 0; j < n; j++)
@@ -413,6 +414,13 @@ static void CalculateTransparent(void)
                             if (tempInfo[i]->terms)
                                 andmap(tail->transparent, tempInfo[i]->terms);
                         }
+                    }
+                    */
+                    if (isset(tempBytes, i))
+                    {
+                        clearbit(tail->transparent, i);
+                        if (tempInfo[i]->terms)
+                            andmap(tail->transparent, tempInfo[i]->terms);
                     }
                 }
             }

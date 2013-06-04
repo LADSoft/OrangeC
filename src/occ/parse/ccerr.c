@@ -97,6 +97,7 @@ static struct {
 {"Too many identififiers in type", ERROR },
 {"Unexpected end of file", ERROR },
 {"File not terminated with End Of Line character", TRIVIALWARNING},
+{"Nested Comments", TRIVIALWARNING},
 {"Non-terminated comment in file started at line %d", WARNING},
 {"Non-terminated preprocessor conditional in include file started at line %d", ERROR},
 {"#elif without #if", ERROR},
@@ -394,11 +395,12 @@ static struct {
 {"Could not find a match for literal suffix '%s'", ERROR },
 {"Literal suffix mismatch", ERROR },
 {"Structured type '%s' not defined", ERROR },
-{"Cannot define destructor here", ERROR },
+{"Incorrect use of destructor syntax", ERROR },
 {"Constructor or destructor for %s must have parameter list", ERROR },
 {"Default may only be used on a special function", ERROR },
 {"Constructor for %s must have body", ERROR },
 {"Constructor or destructor cannot be declared const or volatile", ERROR },
+{"Initializer list requires constructor", ERROR },
 {"Constructor or destructor cannot have a return type", ERROR },
 {"Cannot take address of constructor or destructor", ERROR },
 {"Pointer type expected", ERROR },
@@ -410,6 +412,7 @@ static struct {
 {"Cannot find an appropriate constructor for class %s", ERROR },
 {"Cannot find a matching copy constructor for class %s", ERROR },
 {"Cannot find a default constructor for class %s", ERROR },
+{"'%s' is not a member of '%s', because the type is not defined", ERROR },
 
 #endif
 } ;
@@ -644,8 +647,8 @@ void errorabstract(int error, SYMBOL *sp)
 void membererror(char *name, TYPE *tp1)
 {
     char tpb[256];
-    typeToString(tpb, tp1);
-    printerr(ERR_MEMBER_NAME_EXPECTED, errorfile, errorline, name, tpb);
+    typeToString(tpb, basetype(tp1));
+    printerr(tp1->size? ERR_MEMBER_NAME_EXPECTED : ERR_MEMBER_NAME_EXPECTED_NOT_DEFINED, errorfile, errorline, name, tpb);
 }
 void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
 {

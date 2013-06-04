@@ -62,7 +62,6 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
     int exceptBlock[2];
     char quote;
     char *cmd;
-    quote = 0;
     if (startupStruct.flags & GUI)
         _win32 = 1;
     __xceptinit(&exceptBlock);
@@ -98,6 +97,7 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
             else if (startupStruct.flags & GUI)
             {
                 cmd = _oscmd;
+                quote = *cmd;
                 while ((!quote || *cmd != ' ') && *cmd)
                 {
                     if (*cmd == '"')

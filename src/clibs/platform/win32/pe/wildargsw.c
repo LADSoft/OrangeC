@@ -74,9 +74,12 @@ static char *litlate(char *dir, char *t)
         if (!t)
                 return 0;
    if (dir) {
+      char *p;
       strcpy(buf,dir) ;
       q = strrchr(buf,'\\') ;
-      if (!q) q = strrchr(buf,'/');
+      p = strrchr(buf,'/');
+      if (p > q)
+        q = p;
       if (q)
         strcpy(q+1,t) ;
       else

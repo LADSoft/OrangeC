@@ -38,7 +38,8 @@
 /* declare in select has multiple vars */
 #include "compiler.h"
 extern INCLUDES *includes;
-
+extern char *errorfile;
+extern int errorline;
 static char *cppbuiltin = "void * operator new(unsigned size); " 
     "void * operator new[](unsigned size); " 
     "void   operator delete  (void *); " 
@@ -55,13 +56,17 @@ void ParseBuiltins(void)
     if (cparams.prm_cplusplus)
     {
         LEXEME *lex;
+        FILE *handle = includes->handle;
         char *p = includes->lptr;
+        errorfile="--builtin--";
         includes->lptr = cppbuiltin;
+        includes->handle = NULL;
         lex = getsym();
         if (lex)
         {
             while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL) ;
         }
+        includes->handle = handle;
         includes->lptr = p;
     }
 }

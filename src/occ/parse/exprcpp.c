@@ -235,7 +235,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     TYPE *throwaway = NULL;
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOL defd = FALSE;
-    lex = getBasicType(lex, funcsp, &throwaway, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd);
+    lex = getBasicType(lex, funcsp, &throwaway, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))
@@ -767,6 +767,11 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     TYPE *tpf = NULL;
     EXPRESSION *arrSize = NULL, *exp1;
     SYMBOL *s1 = NULL;
+    STATEMENT *st = NULL;
+    BLOCKDATA b;
+    int lbl = beGetLabel;
+    memset(&b, 0, sizeof(BLOCKDATA));
+    b.type = begin;
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
@@ -783,19 +788,19 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         }
         needkw(&lex, closepa);
     }
-    if (!tp)
+    if (!*tp)
     {
         if (MATCHKW(lex, openpa))
         {
             // type in parenthesis
             lex = getsym();
-            lex = get_type_id(lex, &tp, funcsp);
+            lex = get_type_id(lex, tp, funcsp);
             needkw(&lex, closepa);
         }
         else
         {
             // new type id
-            lex = get_type_id(lex, &tp, funcsp);
+            lex = get_type_id(lex, tp, funcsp);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;
@@ -831,17 +836,6 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 optimize_for_constants(&arrSize);
             }
         }
-    }
-    if (KW(lex) == openpa)
-    {
-        // initializers
-        initializers = Alloc(sizeof(FUNCTIONCALL));
-        lex = getArgs(lex, funcsp, initializers);
-    }
-    else if (KW(lex) == begin)
-    {
-        // braced initializers
-        assert(0);
     }
     if (*tp)
     {
@@ -888,6 +882,11 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     if (s1)
     {
         FUNCTIONCALL *funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+        SYMBOL *sp = makeID(sc_auto, &stdpointer, NULL, AnonymousName());
+        EXPRESSION *val = varNode(en_auto, sp);
+        sp->decoratedName = sp->errname = sp->name;
+        insert(sp, localNameSpace->syms);
+        deref(&stdpointer, &val);
         s1->throughClass = s1->parentClass != NULL;
         if (s1->throughClass && !isAccessible(s1->parentClass, s1->parentClass, s1, funcsp, placement->thisptr ? ac_protected : ac_public, FALSE))
         {
@@ -897,14 +896,58 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         funcparams->functp = s1->tp;
         exp1 = intNode(en_func, 0);
         exp1->v.func = funcparams;
-        exp1 = exprNode(en_void, *exp, exp1);
-        *exp = exp1;
-        *tp = s1->tp;
-        expression_arguments(NULL, funcsp, tp, exp);
-        if (arrSize)
-            *exp = exprNode(en_add, *exp, intNode(en_c_i, chosenAssembler->arch->rtlAlign));
-        callConstructor(tp, exp, initializers, FALSE, arrSize, TRUE);
+        exp1 = exprNode(en_assign, val, exp1);
+        st = stmtNode(&b, st_notselect);
+        st->select = exp1;
+        st->label = lbl;
     }
+    if (KW(lex) == openpa)
+    {
+        // initializers
+        initializers = Alloc(sizeof(FUNCTIONCALL));
+        lex = getArgs(lex, funcsp, initializers);
+        if (s1)
+        {
+            *exp = exp1;
+            *tp = s1->tp;
+            expression_arguments(NULL, funcsp, tp, exp);
+            if (arrSize)
+                *exp = exprNode(en_add, *exp, intNode(en_c_i, chosenAssembler->arch->rtlAlign));
+            callConstructor(tp, exp, initializers, FALSE, arrSize, TRUE);
+        }
+    }
+    else if (KW(lex) == begin)
+    {
+        // braced initializers
+        if (*tp)
+        {
+            if (!isstructured(*tp) || (*tp)->sp->trivialCons)
+            {
+                INITIALIZER *init = NULL, *dest = NULL;
+                EXPRESSION *base = exp1;
+                lex = initType(lex, funcsp, 0, sc_member, &init, &dest, *tp, NULL, FALSE);
+                // dest is lost for these purposes
+                *exp = convertInitToExpression(*tp, NULL, init, base);
+                if (isstructured(*tp))
+                {
+                    EXPRESSION *exp1 = exprNode(en_blockclear, base, NULL);
+                    exp1->size = (*tp)->size;
+                    *exp = exprNode(en_void, exp1, *exp);
+                }
+            }
+            else
+            {
+                error(ERR_STRUCTURE_INITIALIZATION_NEEDS_CONSTRUCTOR);
+                skip(&lex, end);
+            }
+        }
+    }
+    st = stmtNode(&b, st_expr);
+    st->select = *exp;
+    st = stmtNode(&b, st_label);
+    st->label = lbl;
+    *exp = exprNode(en_stmt, 0, 0);
+    (*exp)->v.stmt = b.head;
     return lex;
 }
 LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global)

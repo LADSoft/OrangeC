@@ -183,7 +183,7 @@ enum e_am
 
 enum fconst
 {
-    fczero, fcone
+    fczero, fcone, fcmone
 };
 
 /*      addressing mode structure       */

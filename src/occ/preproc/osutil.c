@@ -216,34 +216,35 @@ FILE *SrchPth3(char *string, char *searchpath, char *mode)
     FILE *in;
     char *newpath = searchpath;
 
-    /* Search local path */
-    in = fopen((char*)string, mode);
-    if (in !=  NULL)
+    /* If no path specified we search along the search path */
+    if (string[0] != '\\' && string[1] != ':' && string[0] != '/')
     {
-        return (in);
+        char buffer[200];
+        while (newpath)
+        {
+            int n;;
+            /* Create a file name along this path */
+            newpath = parsepath(newpath, buffer);
+            n = strlen(buffer);
+            if (n && buffer[n - 1] != '\\' && buffer[n - 1] != '/')
+                strcat(buffer, "\\");
+            strcat(buffer, (char*)string);
+
+            /* Check this path */
+            in = fopen(buffer, mode);
+            if (in !=  NULL)
+            {
+                strcpy(string, buffer);
+                return (in);
+            }
+        }
     }
     else
     {
-        /* If no path specified we search along the search path */
-        if (string[0] != '\\' && string[1] != ':')
+        in = fopen((char*)string, mode);
+        if (in !=  NULL)
         {
-            char buffer[200];
-            while (newpath)
-            {
-                /* Create a file name along this path */
-                newpath = parsepath(newpath, buffer);
-                if (buffer[strlen(buffer) - 1] != '\\')
-                    strcat(buffer, "\\");
-                strcat(buffer, (char*)string);
-
-                /* Check this path */
-                in = fopen(buffer, mode);
-                if (in !=  NULL)
-                {
-                    strcpy(string, buffer);
-                    return (in);
-                }
-            }
+            return (in);
         }
     }
     return (NULL);
@@ -866,9 +867,8 @@ int parseconfigfile(char *name)
     {
         FILE *temp;
 #ifdef CPREPROCESSOR
-        strcpy(p + 1, "CPP");
+        strcpy(p + 1, "OCPP");
 #else
-        strcpy(p + 1, "CC");
         strcpy(p + 1, chosenAssembler->cfgname);
 #endif
         strcat(p, ".CFG");
@@ -940,7 +940,7 @@ void ccinit(int argc, char *argv[])
     outfile[0] = 0;
 
 #ifdef CPREPROCESSOR
-    banner("CPP Version %s %s", version, copyright);
+    banner("ocpp Version %s %s", version, copyright);
 #else
 
     banner("%s Version %s %s", chosenAssembler->progname, version, copyright);

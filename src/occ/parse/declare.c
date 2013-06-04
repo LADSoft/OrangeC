@@ -73,9 +73,13 @@ SYMBOL *enumSyms;
 static int unnamed_tag_id, unnamed_id, anonymous_id;
 static char *importFile;
 
+#define CT_NONE 0
+#define CT_CONS 1
+#define CT_DEST 2
+
 LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOL *blocked, BOOL *constexpression, TYPE **tp, 
-                       enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd);
+                       enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 
 void declare_init(void)
 {
@@ -196,7 +200,7 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
     *rsp = NULL;
     if (ISID(lex) || MATCHKW(lex, classsel))
     {
-        lex = nestedSearch(lex, rsp, &strSym, &nsv, TRUE);
+        lex = nestedSearch(lex, rsp, &strSym, &nsv, NULL, TRUE);
         if (*rsp)
         {
             lex = getsym();
@@ -296,9 +300,9 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp)
     SYMBOL *sp = NULL;
     *tp = NULL;
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
-    lex = getBasicType(lex, funcsp, tp, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd);
+    lex = getBasicType(lex, funcsp, tp, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
-    lex = getBeforeType(lex, funcsp, tp, &sp, NULL, NULL, sc_cast, &linkage, &linkage2, &linkage3, NULL, FALSE); /* fixme at file scope init */
+    lex = getBeforeType(lex, funcsp, tp, &sp, NULL, NULL, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE); /* fixme at file scope init */
     sizeQualifiers(*tp);
     if (sp && !sp->anonymous)
         error(ERR_TOO_MANY_IDENTIFIERS);
@@ -779,6 +783,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc stor
             sp->tp->tags = CreateHashTable(1);
             injected = Alloc(sizeof(SYMBOL));
             *injected = *sp;
+            injected->mainsym = sp; // for constructor/destructor matching
             insert(injected, sp->tp->tags); // inject self
             injected->access = ac_public;
         }
@@ -1212,8 +1217,14 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOL allowstatic)
 {
     while (KWTYPE(lex, TT_TYPEQUAL)|| allowstatic && MATCHKW(lex, kw_static))
     {
-        TYPE *tpn = Alloc(sizeof(TYPE));
+        TYPE *tpn;
         TYPE *tpl;
+        if (MATCHKW(lex, kw__intrinsic))
+        {
+            lex = getsym();
+            continue;
+        }
+        tpn = Alloc(sizeof(TYPE));
         switch(KW(lex))
         {
             case kw_static:
@@ -1350,7 +1361,7 @@ LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *lin
 static LEXEME *nestedTypeSearch(LEXEME *lex, SYMBOL **sym)
 {
     *sym = NULL;
-    lex = nestedSearch(lex, sym, NULL, NULL, FALSE);
+    lex = nestedSearch(lex, sym, NULL, NULL, NULL, FALSE);
     if (!*sym || !istype((*sym)->storage_class))
     {
         error(ERR_TYPE_NAME_EXPECTED);
@@ -1358,7 +1369,8 @@ static LEXEME *nestedTypeSearch(LEXEME *lex, SYMBOL **sym)
     return lex;
 }
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, 
-                     enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3_in, enum e_ac access, BOOL *notype, BOOL *defd)
+                     enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3_in, 
+                     enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
     enum e_bt type = bt_none;
     TYPE *tn = NULL ;
@@ -1532,6 +1544,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                         type = bt_unsigned_long_long;
                         break;
                     case bt_none:
+                    case bt_signed:
                         int64 = TRUE;
                         type = bt_long_long;
                         break;
@@ -1748,7 +1761,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                 else if (ISID(lex) || MATCHKW(lex, classsel))
                 {
                     SYMBOL *sp;
-                    lex = nestedSearch(lex, &sp, NULL, NULL, FALSE);
+                    lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
                     if (!sp)
                         error(ERR_UNDEFINED_IDENTIFIER);
                     else
@@ -1815,10 +1828,13 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
         type = bt_int;
         if (iscomplex || imaginary)
             error(ERR_MISSING_TYPE_SPECIFIER);			
-        else if (ISID(lex) || MATCHKW(lex, classsel))
+        else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, compl))
         {
+            NAMESPACEVALUES *nsv = NULL;
+            SYMBOL *strSym = NULL;
             SYMBOL *sp;
-            lex = nestedSearch(lex, &sp, NULL, NULL, FALSE);
+            BOOL destructor = FALSE;
+            lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, FALSE);
             if (sp && istype(sp->storage_class))
             {
                 tn = sp->tp;
@@ -1830,11 +1846,30 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                     *linkage_in = linkage;
                 }
                 if (linkage2 != lk_none)
-                    *linkage2_in = linkage2;	
-                goto exit;
+                    *linkage2_in = linkage2;
+                if (cparams.prm_cplusplus && MATCHKW(lex, openpa) && (strSym && strSym == sp->mainsym || !strSym && storage_class == sc_member && structSyms && structSyms->data == sp->mainsym))
+                {
+                    if (destructor)
+                    {
+                        *consdest = CT_DEST;
+                    }
+                    else
+                    {
+                        *consdest = CT_CONS;
+                    }
+                    goto exit;
+                }
+                else if (destructor)
+                {
+                    error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
+                }
             }
             else if (cparams.prm_cplusplus)
             {
+                if (destructor)
+                {
+                    error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
+                }
                 lex = backupsym(0);
             }
         }
@@ -2204,8 +2239,10 @@ static LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYP
                 spi = NULL;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class,
-                       &address, &blocked, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd);
-                lex = getBeforeType(lex, funcsp, &tp1, &spi, NULL, NULL, storage_class, &linkage, &linkage2, &linkage3, NULL, FALSE);
+                       &address, &blocked, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+                if (!basetype(tp1))
+                    error(ERR_TYPE_NAME_EXPECTED);
+                lex = getBeforeType(lex, funcsp, &tp1, &spi, NULL, NULL, storage_class, &linkage, &linkage2, &linkage3, FALSE, FALSE);
                 if (!spi)
                 {
                     spi = makeID(sc_parameter, tp1, NULL, NewUnnamedID());
@@ -2354,14 +2391,14 @@ static LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYP
                 BOOL notype = FALSE;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class,
-                       &address, &blocked, &constexpression,&tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd);
+                       &address, &blocked, &constexpression,&tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
 
                 while (1)
                 {
                     TYPE *tpx = tp1;
                     spi = NULL;
                     lex = getBeforeType(lex, funcsp, &tpx, &spi, NULL, NULL,
-                                        sc_parameter, &linkage, &linkage2, &linkage3, NULL, FALSE);
+                                        sc_parameter, &linkage, &linkage2, &linkage3, FALSE, FALSE);
                     sizeQualifiers(tpx);
                     if (!spi || spi->anonymous)
                     {
@@ -2685,7 +2722,7 @@ static  void stripfarquals(TYPE **tp)
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, 
                       SYMBOL **strSym, NAMESPACEVALUES **nsv, enum e_sc storage_class,
                              enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, 
-                             BOOL *destructor, BOOL asFriend)
+                             BOOL asFriend, int consdest)
 {
     SYMBOL *sp;
     TYPE *ptype = NULL;
@@ -2715,7 +2752,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                     *strSym = NULL;
                 if (nsv)
                     *nsv = NULL;
-                lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, storage_class, linkage, linkage2, linkage3, NULL, asFriend);
+                lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, storage_class, linkage, linkage2, linkage3, asFriend, FALSE);
                 if (*tp  &&(ptype != *tp && isref(*tp)))
                 {
                     error(ERR_NO_REF_POINTER_REF);
@@ -2726,13 +2763,6 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             {
                 char buf[512];
                 int ov = 0;
-                if (MATCHKW(lex, compl))
-                {
-                    if (destructor)
-                        *destructor = TRUE;
-                    else
-                        error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
-                }
                 lex = getIdName(lex, buf, &ov);
                 if (!buf[0])
                 {
@@ -2743,6 +2773,10 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 }
                 else
                 {
+                    if (consdest == CT_DEST)
+                    {
+                        error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
+                    }
                     sp = makeID(storage_class, *tp, *spi, litlate(buf));
                     sp->operatorId = ov;
                     sp->declcharpos = lex->charindex;
@@ -2763,11 +2797,11 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
     else switch(KW(lex))
     {
         case openpa:
-            lex = getsym();
             /* in a parameter, open paren followed by a type is an  unnamed function */
             if (storage_class == sc_parameter && startOfType(lex) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE) ))
             {
                 TYPE *tp1;
+                lex = getsym();
                 if (!*spi)
                 {
                     ptype = Alloc(sizeof(TYPE));
@@ -2789,6 +2823,19 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 *tp = tp1;
                 return lex;
             }
+            else if (cparams.prm_cplusplus && consdest)
+            {
+                // constructor or destructor name
+                char *name;
+                if (consdest == CT_DEST)
+                    name = overloadNameTab[CI_DESTRUCTOR];
+                else
+                    name = overloadNameTab[CI_CONSTRUCTOR];
+                sp = makeID(storage_class, *tp, *spi, name);
+                sp->declcharpos = lex->charindex;
+                *spi = sp;
+                lex = getAfterType(lex, funcsp, tp, spi, storage_class);
+            }
             else
             {
                 TYPE *quals = NULL;
@@ -2797,9 +2844,10 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                  * we are treating them both the same, e.g. the resulting
                  * pointer-to-function will be stdcall linkage either way
                  */
+                lex = getsym();
                 lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
                 lex = getBeforeType(lex, funcsp, &ptype, spi, strSym, nsv, 
-                                    storage_class, linkage, linkage2, linkage3, NULL, asFriend);
+                                    storage_class, linkage, linkage2, linkage3, asFriend, FALSE);
                 if (!ptype || !ispointer(ptype) && !isfunction(ptype) && basetype(ptype)->type != bt_memberptr)
                 {
                     // if here is not a potential pointer to func
@@ -2874,7 +2922,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             *tp = ptype;
             lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
             lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, 
-                                storage_class, linkage, linkage2, linkage3, NULL, asFriend);
+                                storage_class, linkage, linkage2, linkage3, asFriend, FALSE);
             if (*tp  &&(ptype != *tp && isref(*tp)))
             {
                 error(ERR_NO_REF_POINTER_REF);
@@ -2893,7 +2941,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 lex = getsym();
                 lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
                 lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, 
-                                    storage_class, linkage, linkage2, linkage3, NULL, asFriend);
+                                    storage_class, linkage, linkage2, linkage3, asFriend, FALSE);
                 if (*tp)
                 {
                     tp2 = *tp;
@@ -3117,13 +3165,13 @@ static BOOL sameQuals(TYPE *tp1, TYPE *tp2)
 }
 static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOL *blocked, BOOL *constexpression, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, 
-                       enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd)
+                       enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
     BOOL foundType = FALSE;
     *blocked = FALSE;
     *constexpression = FALSE;
     
-    while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) || !foundType && startOfType(lex))
+    while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) || !foundType && startOfType(lex) || MATCHKW(lex, compl))
     {
         if (KWTYPE(lex, TT_DECLARE))
         {
@@ -3145,7 +3193,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
             if (MATCHKW(lex, kw_atomic))
             {
                 foundType = TRUE;
-                lex = getBasicType(lex, funcsp, tp, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd);
+                lex = getBasicType(lex, funcsp, tp, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
             }
         }
         else if (foundType)
@@ -3155,7 +3203,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
         else
         {
             foundType = TRUE;
-            lex = getBasicType(lex, funcsp, tp, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd);
+            lex = getBasicType(lex, funcsp, tp, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
         }
     }
     return lex;
@@ -3230,9 +3278,10 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
             BOOL constexpression;
             BOOL defd = FALSE;
             BOOL notype = FALSE;
+            BOOL consdest = CT_NONE;
             IncGlobalFlag(); /* in case we have to initialize a func level static */
             lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class_in, 
-                                    &address, &blocked, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd);
+                                    &address, &blocked, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest);
             if (blocked)
             {
                 if (tp != NULL)
@@ -3259,7 +3308,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                 {
                     TYPE *tp1 = tp;
                     NAMESPACEVALUES *oldGlobals;
-                    BOOL destructor = FALSE;
                     if (!tp1)
                     {
                         // safety net
@@ -3270,7 +3318,11 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                     sp = NULL;
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, 
-                                        storage_class, &linkage, &linkage2, &linkage3, &destructor, asFriend);
+                                        storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest);
+                    if (sp && (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]) ||
+                               !strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR])))
+                        if (!isfunction(tp1))
+                            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_HAVE_PARAMETERS);
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
                     // if defining something outside its scope set the symbol tables
@@ -3293,42 +3345,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             l->next = structSyms;
                             structSyms = l ;   
                         }
-                    }
-                    if (nsv)
-                    {
-                        if (!strcmp(nsv->name, sp->name))
-                        {
-                            if (!isfunction(tp1))
-                                errorsym(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_HAVE_PARAMETERS, sp);
-                            else if (destructor)
-                                sp->name = overloadNameTab[CI_DESTRUCTOR];
-                            else
-                                sp->name = overloadNameTab[CI_CONSTRUCTOR];
-                        }
-                        else if (destructor)
-                        {
-                            error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
-                        }    
-                    }
-                    else if (strSym)
-                    {
-                        if (!strcmp(strSym->name, sp->name))
-                        {
-                            if (!isfunction(tp1))
-                                errorsym(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_HAVE_PARAMETERS, sp);
-                            else if (destructor)
-                                sp->name = overloadNameTab[CI_DESTRUCTOR];
-                            else
-                                sp->name = overloadNameTab[CI_CONSTRUCTOR];
-                        }
-                        else if (destructor)
-                        {
-                            error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
-                        }    
-                    }
-                    else if (destructor)
-                    {
-                        error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
                     }
                     if (!incrementedStorageClass && tp1->type == bt_func)
                     {
@@ -3843,13 +3859,10 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                     else if (MATCHKW(lex, kw_default))
                                     {
                                         sp->defaulted = TRUE;
-                                        if (sp->redeclared)
-                                        {
-                                            errorsym(ERR_DELETE_ON_REDECLARATION, sp);
-                                        }
                                         // fixme add more
-                                        if (sp->name != overloadNameTab[CI_CONSTRUCTOR] &&
-                                            sp->name != overloadNameTab[CI_DESTRUCTOR])
+                                        if (strcmp(sp->name,overloadNameTab[CI_CONSTRUCTOR]) &&
+                                            strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]) &&
+                                            strcmp(sp->name, overloadNameTab[assign - kw_new + CI_NEW])) // this is meant to be a copy cons but is too loose
                                                 error(ERR_DEFAULT_ONLY_SPECIAL_FUNCTION);
                                             
                                         lex = getsym();

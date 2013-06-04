@@ -217,34 +217,35 @@ FILE *SrchPth3(char *string, char *searchpath, char *mode)
     FILE *in;
     char *newpath = searchpath;
 
-    /* Search local path */
-    in = fopen((char*)string, mode);
-    if (in !=  NULL)
+    /* If no path specified we search along the search path */
+    if (string[0] != '\\' && string[1] != ':' && string[0] != '/')
     {
-        return (in);
+        char buffer[200];
+        while (newpath)
+        {
+            int n;;
+            /* Create a file name along this path */
+            newpath = parsepath(newpath, buffer);
+            n = strlen(buffer);
+            if (n && buffer[n - 1] != '\\' && buffer[n - 1] != '/')
+                strcat(buffer, "\\");
+            strcat(buffer, (char*)string);
+
+            /* Check this path */
+            in = fopen(buffer, mode);
+            if (in !=  NULL)
+            {
+                strcpy(string, buffer);
+                return (in);
+            }
+        }
     }
     else
     {
-        /* If no path specified we search along the search path */
-        if (string[0] != '\\' && string[1] != ':')
+        in = fopen((char*)string, mode);
+        if (in !=  NULL)
         {
-            char buffer[200];
-            while (newpath)
-            {
-                /* Create a file name along this path */
-                newpath = parsepath(newpath, buffer);
-                if (buffer[strlen(buffer) - 1] != '\\')
-                    strcat(buffer, "\\");
-                strcat(buffer, (char*)string);
-
-                /* Check this path */
-                in = fopen(buffer, mode);
-                if (in !=  NULL)
-                {
-                    strcpy(string, buffer);
-                    return (in);
-                }
-            }
+            return (in);
         }
     }
     return (NULL);
@@ -610,6 +611,8 @@ void setglbdefs(void)
         if (*s == '=')
             *s++ = 0;
         glbdefine(n, s,FALSE);
+        if (*s)
+            s[-1] = '=';
         l = l->next;
     }
     l = undeflist;
@@ -631,7 +634,7 @@ void setglbdefs(void)
     {
         glbdefine("__cplusplus", "",TRUE);
         if (cparams.prm_xcept)
-            glbdefine("__RTTI__", "",TRUE);
+            glbdefine("__RTTI__", "1",TRUE);
     }
     glbdefine("__STDC__", "1",TRUE);
     if (cparams.prm_c99)

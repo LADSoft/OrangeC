@@ -1,34 +1,34 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2008, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	Software License Agreement (BSD License)
+	
+	Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+	All rights reserved.
+	
+	Redistribution and use of this software in source and binary forms, with or without modification, are
+	permitted provided that the following conditions are met:
+	
+	* Redistributions of source code must retain the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer.
+	
+	* Redistributions in binary form must reproduce the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer in the documentation and/or other
+	  materials provided with the distribution.
+	
+	* Neither the name of LADSoft nor the names of its
+	  contributors may be used to endorse or promote products
+	  derived from this software without specific prior
+	  written permission of LADSoft.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+	PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef __PROCESS_H
 #define __PROCESS_H
@@ -44,6 +44,17 @@
 #define P_WAIT    0
 #define P_NOWAIT  1
 #define P_OVERLAY 2
+#define P_NOWAITO 3
+#define P_DETACH  4
+
+#define _P_WAIT    P_WAIT
+#define _P_NOWAIT  P_NOWAIT
+#define _P_OVERLAY P_OVERLAY
+#define _P_NOWAITO P_NOWAITO
+#define _P_DETACH  P_DETACH
+
+#define WAIT_CHILD      0
+#define WAIT_GRANDCHILD 1
 
 #ifdef __cplusplus
 namespace std {
@@ -95,7 +106,7 @@ int _RTL_FUNC _spawnvp(int, const char *, const char * const *);
 int _RTL_FUNC _spawnvpe(int, const char *, const char * const *,
         const char * const *);
 
-#ifndef __STDC__
+#ifdef _WIN32
 uintptr_t _RTL_FUNC _beginthread(void( __cdecl *__start_address )( void * ),
    unsigned __stack_size,
    void *__arglist 
@@ -103,11 +114,16 @@ uintptr_t _RTL_FUNC _beginthread(void( __cdecl *__start_address )( void * ),
 uintptr_t _RTL_FUNC _beginthreadex(void *__security, unsigned __stack_size,
    unsigned ( __stdcall *__start_address )( void * ),
    void *__arglist, unsigned __initflag, unsigned *__thrdaddr);
-#endif
-   
+
 void _RTL_FUNC _endthread( void );
 void _RTL_FUNC _endthreadex(unsigned retval);
 
+int _RTL_FUNC getpid(void);
+int _RTL_FUNC _getpid(void);
+int _RTL_FUNC _threadid(void);
+int _RTL_FUNC __threadid(void);
+#endif
+   
 #ifdef __cplusplus
 };
 };
@@ -116,48 +132,48 @@ void _RTL_FUNC _endthreadex(unsigned retval);
 #endif /* __PROCESS_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__PROCESS_H_USING_LIST)
 #define __PROCESS_H_USING_LIST
-    using std::abort;
-    using std::_cexit;
-    using std::_c_exit;
-    using std::exit;
-    using std::_exit;
-    using std::cwait;
-    using std::execl;
-    using std::execle;
-    using std::execlp;
-    using std::execlpe;
-    using std::execv;
-    using std::execve;
-    using std::execvp;
-    using std::execvpe;
-    using std::spawnl;
-    using std::spawnle;
-    using std::spawnlp;
-    using std::spawnlpe;
-    using std::spawnv;
-    using std::spawnve;
-    using std::spawnvp;
-    using std::spawnvpe;
-    using std::_cwait;
-    using std::_execl;
-    using std::_execle;
-    using std::_execlp;
-    using std::_execlpe;
-    using std::_execv;
-    using std::_execve;
-    using std::_execvp;
-    using std::_execvpe;
-    using std::_spawnl;
-    using std::_spawnle;
-    using std::_spawnlp;
-    using std::_spawnlpe;
-    using std::_spawnv;
-    using std::_spawnve;
-    using std::_spawnvp;
-    using std::_spawnvpe;
-    using std::_beginthread;
-    using std::_beginthreadex;
-    using std::_endthread;
-    using std::_endthreadex;
+	using std::abort;
+	using std::_cexit;
+	using std::_c_exit;
+	using std::exit;
+	using std::_exit;
+	using std::cwait;
+	using std::execl;
+	using std::execle;
+	using std::execlp;
+	using std::execlpe;
+	using std::execv;
+	using std::execve;
+	using std::execvp;
+	using std::execvpe;
+	using std::spawnl;
+	using std::spawnle;
+	using std::spawnlp;
+	using std::spawnlpe;
+	using std::spawnv;
+	using std::spawnve;
+	using std::spawnvp;
+	using std::spawnvpe;
+	using std::_cwait;
+	using std::_execl;
+	using std::_execle;
+	using std::_execlp;
+	using std::_execlpe;
+	using std::_execv;
+	using std::_execve;
+	using std::_execvp;
+	using std::_execvpe;
+	using std::_spawnl;
+	using std::_spawnle;
+	using std::_spawnlp;
+	using std::_spawnlpe;
+	using std::_spawnv;
+	using std::_spawnve;
+	using std::_spawnvp;
+	using std::_spawnvpe;
+	using std::_beginthread;
+	using std::_beginthreadex;
+	using std::_endthread;
+	using std::_endthreadex;
     using std::uintptr_t;
 #endif

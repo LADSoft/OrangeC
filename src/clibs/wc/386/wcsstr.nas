@@ -32,46 +32,51 @@
 [export _wcsstr]
 %endif
 [global _wcsstr]
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 
 _wcsstr:
-    push	ebp
-    mov	ebp,esp
-    push	esi
-    push	edi
-    mov	edi,[ebp+12]
-    push	edi
-    sub	ax,ax
-    mov	ecx,-1
-    cld
-    repne	scasw
-    not	ecx
-    dec	ecx
-    pop	edi
-    mov	esi,[ebp+8]
+	push	ebp
+	mov	ebp,esp
+	push	esi
+	push	edi
+	mov	esi,[ebp+8]
+	mov	edi,[ebp+12]
+	test	edi,edi
+	jz	exit	
+	mov	ax,[edi]
+	test	ax,ax
+	jz	exit	
+	push	edi
+	sub	ax,ax
+	mov	ecx,-1
+	cld
+	repne	scasw
+	not	ecx
+	dec	ecx
+	pop	edi
 lp:
-    mov	ax,[esi]
-    or	ax,ax
-    je	badexit
-    cmp	ax,[edi]
-    jne	nocomp
-    push	ecx
-    push	esi
-    push	edi
-    rep	cmpsb
-    pop	edi
-    pop	esi
-    pop	ecx
-    je	exit
+	mov	ax,[esi]
+	or	ax,ax
+	je	badexit
+	cmp	ax,[edi]
+	jne	nocomp
+	push	ecx
+	push	esi
+	push	edi
+	rep	cmpsb
+	pop	edi
+	pop	esi
+	pop	ecx
+	je	exit
 nocomp:
+	inc esi
     inc esi
-    inc esi
-    jmp	lp
+	jmp	lp
 badexit:
-    sub	esi,esi
+	sub	esi,esi
 exit:
-    mov	eax,esi
-    pop	edi
-    pop	esi
-    pop	ebp
-    ret
+	mov	eax,esi
+	pop	edi
+	pop	esi
+	pop	ebp
+	ret

@@ -1,4 +1,4 @@
-/* 
+/*
    cdstruc.h
 
    Base definitions
@@ -11,7 +11,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -19,20 +19,20 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
-*/ 
+*/
+#pragma pack(1)
 
 typedef UINT (CALLBACK *LPOFNHOOKPROC) (HWND, UINT, WPARAM, LPARAM);
 
-#pragma pack(1)
 
 typedef struct tagOFN {
    DWORD        lStructSize;
@@ -55,20 +55,22 @@ typedef struct tagOFN {
    LPARAM       lCustData;
    LPOFNHOOKPROC lpfnHook;
    LPCTSTR       lpTemplateName;
+#if (_WIN32_WINNT >= 0x0500)
    void *       pvReserved;
    DWORD        dwReserved;
    DWORD        FlagsEx;
+#endif
 } OPENFILENAME, *LPOPENFILENAME;
 
 #define OPENFILENAME_SIZE_VERSION_400  CDSIZEOF_STRUCT(OPENFILENAME,lpTemplateName)
 
 typedef UINT (CALLBACK *LPCCHOOKPROC) (HWND, UINT, WPARAM, LPARAM);
-typedef struct 
+typedef struct
 _OFNOTIFY
 {
         NMHDR           hdr;
         LPOPENFILENAME lpOFN;
-        LPSTR           pszFile;        
+        LPSTR           pszFile;
 } OFNOTIFY, FAR *LPOFNOTIFY;
 
 typedef struct _OFNOTIFYEX
@@ -76,7 +78,7 @@ typedef struct _OFNOTIFYEX
         NMHDR           hdr;
         LPOPENFILENAME lpOFN;
         LPVOID          psf;
-        LPVOID          pidl;          
+        LPVOID          pidl;
 } OFNOTIFYEX, FAR *LPOFNOTIFYEX;
 
 typedef struct tagCHOOSECOLOR {
@@ -94,43 +96,43 @@ typedef struct tagCHOOSECOLOR {
 typedef UINT (CALLBACK *LPFRHOOKPROC) (HWND, UINT, WPARAM, LPARAM);
 
 typedef struct tagFINDREPLACE {
-   DWORD        lStructSize;        
-   HWND         hwndOwner;          
-   HINSTANCE    hInstance;          
-                                    
-   DWORD        Flags;              
-   LPTSTR        lpstrFindWhat;      
-   LPTSTR        lpstrReplaceWith;   
-   WORD         wFindWhatLen;       
-   WORD         wReplaceWithLen;    
-   LPARAM       lCustData;          
-   LPFRHOOKPROC lpfnHook;           
-   LPCSTR       lpTemplateName;     
+   DWORD        lStructSize;
+   HWND         hwndOwner;
+   HINSTANCE    hInstance;
+
+   DWORD        Flags;
+   LPTSTR        lpstrFindWhat;
+   LPTSTR        lpstrReplaceWith;
+   WORD         wFindWhatLen;
+   WORD         wReplaceWithLen;
+   LPARAM       lCustData;
+   LPFRHOOKPROC lpfnHook;
+   LPCSTR       lpTemplateName;
 } FINDREPLACE, *LPFINDREPLACE;
 
 typedef UINT (CALLBACK *LPCFHOOKPROC) (HWND, UINT, WPARAM, LPARAM);
 
 typedef struct tagCHOOSEFONT {
    DWORD           lStructSize;
-   HWND            hwndOwner;          
-   HDC             hDC;                
-   LPLOGFONT       lpLogFont;          
-   INT             iPointSize;         
-   DWORD           Flags;              
-   COLORREF        rgbColors;          
-   LPARAM          lCustData;          
-   LPCFHOOKPROC    lpfnHook;           
-   LPCSTR          lpTemplateName;     
-   HINSTANCE       hInstance;          
-                                 
-   LPTSTR           lpszStyle;          
-                                       
-   WORD            nFontType;          
-                                                                              
+   HWND            hwndOwner;
+   HDC             hDC;
+   LPLOGFONT       lpLogFont;
+   INT             iPointSize;
+   DWORD           Flags;
+   COLORREF        rgbColors;
+   LPARAM          lCustData;
+   LPCFHOOKPROC    lpfnHook;
+   LPCSTR          lpTemplateName;
+   HINSTANCE       hInstance;
+
+   LPTSTR           lpszStyle;
+
+   WORD            nFontType;
+
    WORD            ___MISSING_ALIGNMENT__;
-   INT             nSizeMin;           
-   INT             nSizeMax;           
-                                       
+   INT             nSizeMin;
+   INT             nSizeMax;
+
 } CHOOSEFONT, *LPCHOOSEFONT;
 
 typedef UINT (CALLBACK *LPPRINTHOOKPROC) (HWND, UINT, WPARAM, LPARAM);
@@ -164,27 +166,27 @@ typedef struct tagPRINTPAGERANGE {
 } PRINTPAGERANGE, *LPPRINTPAGERANGE;
 
 typedef struct tagPDEX {
-   DWORD                 lStructSize;          
-   HWND                  hwndOwner;            
-   HGLOBAL               hDevMode;             
-   HGLOBAL               hDevNames;            
-   HDC                   hDC;                  
-   DWORD                 Flags;                
-   DWORD                 Flags2;               
-   DWORD                 ExclusionFlags;       
-   DWORD                 nPageRanges;          
-   DWORD                 nMaxPageRanges;       
-   LPPRINTPAGERANGE      lpPageRanges;         
-   DWORD                 nMinPage;             
-   DWORD                 nMaxPage;             
-   DWORD                 nCopies;              
-   HINSTANCE             hInstance;            
-   LPCTSTR                lpPrintTemplateName;  
-   LPVOID                lpCallback;           
-   DWORD                 nPropertyPages;       
-   HPROPSHEETPAGE       *lphPropertyPages;     
-   DWORD                 nStartPage;           
-   DWORD                 dwResultAction;       
+   DWORD                 lStructSize;
+   HWND                  hwndOwner;
+   HGLOBAL               hDevMode;
+   HGLOBAL               hDevNames;
+   HDC                   hDC;
+   DWORD                 Flags;
+   DWORD                 Flags2;
+   DWORD                 ExclusionFlags;
+   DWORD                 nPageRanges;
+   DWORD                 nMaxPageRanges;
+   LPPRINTPAGERANGE      lpPageRanges;
+   DWORD                 nMinPage;
+   DWORD                 nMaxPage;
+   DWORD                 nCopies;
+   HINSTANCE             hInstance;
+   LPCTSTR                lpPrintTemplateName;
+   LPUNKNOWN             lpCallback;
+   DWORD                 nPropertyPages;
+   HPROPSHEETPAGE       *lphPropertyPages;
+   DWORD                 nStartPage;
+   DWORD                 dwResultAction;
 } PRINTDLGEX, *LPPRINTDLGEX;
 typedef struct tagDEVNAMES {
    WORD wDriverOffset;

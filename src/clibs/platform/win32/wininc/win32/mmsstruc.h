@@ -40,26 +40,26 @@ typedef struct mmtime_tag
     UINT            wType;      
     union
     {
-    DWORD       ms;         
-    DWORD       sample;     
-    DWORD       cb;         
-    DWORD       ticks;      
+	DWORD       ms;         
+	DWORD       sample;     
+	DWORD       cb;         
+	DWORD       ticks;      
 
-    struct
-    {
-        BYTE    hour;       
-        BYTE    min;        
-        BYTE    sec;        
-        BYTE    frame;      
-        BYTE    fps;        
-        BYTE    dummy;      
-        BYTE    pad[2];
-    } smpte;
-    
-    struct
-    {
-        DWORD songptrpos;   
-    } midi;
+	struct
+	{
+	    BYTE    hour;       
+	    BYTE    min;        
+	    BYTE    sec;        
+	    BYTE    frame;      
+	    BYTE    fps;        
+	    BYTE    dummy;      
+	    BYTE    pad[2];
+	} smpte;
+	
+	struct
+	{
+	    DWORD songptrpos;   
+	} midi;
     } u;
 } MMTIME, *PMMTIME, NEAR *NPMMTIME, *LPMMTIME;
 
@@ -118,7 +118,7 @@ typedef struct tagWAVEINCAPS {
     DWORD   dwFormats;               
     WORD    wChannels;               
     WORD    wReserved1;              
-} WAVEINCAPSA, *PWAVEINCAPS, *NPWAVEINCAPS, *LPWAVEINCAPS;
+} WAVEINCAPS, *PWAVEINCAPS, *NPWAVEINCAPS, *LPWAVEINCAPS;
 
 #ifndef __WAVEFORMAT
 #define __WAVEFORMAT
@@ -143,7 +143,7 @@ typedef struct tWAVEFORMATEX
     WORD        nBlockAlign;        
     WORD        wBitsPerSample;     
     WORD        cbSize;             
-                    
+				    
 } WAVEFORMATEX, *PWAVEFORMATEX, NEAR *NPWAVEFORMATEX, *LPWAVEFORMATEX;
 typedef const WAVEFORMATEX *LPCWAVEFORMATEX;
 #endif
@@ -261,12 +261,12 @@ typedef struct tagMIXERLINE {
     BCHAR        szShortName[MIXER_SHORT_NAME_CHARS];
     BCHAR        szName[MIXER_LONG_NAME_CHARS];
     struct {
-        DWORD   dwType;                 
-        DWORD   dwDeviceID;             
-        WORD    wMid;                   
-        WORD    wPid;                   
-        MMVERSION vDriverVersion;       
-        BCHAR    szPname[MAXPNAMELEN];   
+		DWORD   dwType;                 
+		DWORD   dwDeviceID;             
+		WORD    wMid;                   
+		WORD    wPid;                   
+		MMVERSION vDriverVersion;       
+		BCHAR    szPname[MAXPNAMELEN];   
     } Target;
 } MIXERLINE, *PMIXERLINE, *LPMIXERLINE;
 
@@ -279,20 +279,20 @@ typedef struct tagMIXERCONTROL {
     BCHAR            szShortName[MIXER_SHORT_NAME_CHARS];
     BCHAR            szName[MIXER_LONG_NAME_CHARS];
     union {
-    struct {
-        LONG    lMinimum;           
-        LONG    lMaximum;           
-    };
-    struct {
-        DWORD   dwMinimum;          
-        DWORD   dwMaximum;          
-    };
-    DWORD       dwReserved[6];
+	struct {
+	    LONG    lMinimum;           
+	    LONG    lMaximum;           
+	};
+	struct {
+	    DWORD   dwMinimum;          
+	    DWORD   dwMaximum;          
+	};
+	DWORD       dwReserved[6];
     } Bounds;
     union {
-        DWORD       cSteps;             
-        DWORD       cbCustomData;       
-        DWORD       dwReserved[6];      
+		DWORD       cSteps;             
+		DWORD       cbCustomData;       
+		DWORD       dwReserved[6];      
     } Metrics;
 } MIXERCONTROL, *PMIXERCONTROL, *LPMIXERCONTROL;
 
@@ -300,8 +300,8 @@ typedef struct tagMIXERLINECONTROLS {
     DWORD           cbStruct;       
     DWORD           dwLineID;       
     union {
-        DWORD       dwControlID;    
-        DWORD       dwControlType;  
+		DWORD       dwControlID;    
+		DWORD       dwControlType;  
     };
     DWORD           cControls;      
     DWORD           cbmxctrl;       
@@ -313,8 +313,8 @@ typedef struct tMIXERCONTROLDETAILS {
     DWORD           dwControlID;    
     DWORD           cChannels;      
     union {
-        HWND        hwndOwner;      
-        DWORD       cMultipleItems; 
+		HWND        hwndOwner;      
+		DWORD       cMultipleItems; 
     };
     DWORD           cbDetails;      
     LPVOID          paDetails;      
@@ -409,44 +409,44 @@ typedef DWORD           FOURCC;
 typedef char  *    HPSTR;          
 DECLARE_HANDLE(HMMIO);                  
 typedef LRESULT (CALLBACK *MMIOPROC)(LPSTR lpmmioinfo, UINT uMsg,
-        LPARAM lParam1, LPARAM lParam2);
+	    LPARAM lParam1, LPARAM lParam2);
 typedef MMIOPROC *LPMMIOPROC;
 
 typedef struct _MMIOINFO
 {
-    
-    DWORD           dwFlags;        
-    FOURCC          fccIOProc;      
-    LPMMIOPROC      pIOProc;        
-    UINT            wErrorRet;      
-    HTASK           htask;          
+	
+	DWORD           dwFlags;        
+	FOURCC          fccIOProc;      
+	LPMMIOPROC      pIOProc;        
+	UINT            wErrorRet;      
+	HTASK           htask;          
 
-    
-    LONG            cchBuffer;      
-    HPSTR           pchBuffer;      
-    HPSTR           pchNext;        
-    HPSTR           pchEndRead;     
-    HPSTR           pchEndWrite;    
-    LONG            lBufOffset;     
+	
+	LONG            cchBuffer;      
+	HPSTR           pchBuffer;      
+	HPSTR           pchNext;        
+	HPSTR           pchEndRead;     
+	HPSTR           pchEndWrite;    
+	LONG            lBufOffset;     
 
-    
-    LONG            lDiskOffset;    
-    DWORD           adwInfo[3];     
+	
+	LONG            lDiskOffset;    
+	DWORD           adwInfo[3];     
 
-    
-    DWORD           dwReserved1;    
-    DWORD           dwReserved2;    
-    HMMIO           hmmio;          
+	
+	DWORD           dwReserved1;    
+	DWORD           dwReserved2;    
+	HMMIO           hmmio;          
 } MMIOINFO, *PMMIOINFO, NEAR *NPMMIOINFO, *LPMMIOINFO;
 typedef const MMIOINFO *LPCMMIOINFO;
 
 typedef struct _MMCKINFO
 {
-    FOURCC          ckid;           
-    DWORD           cksize;         
-    FOURCC          fccType;        
-    DWORD           dwDataOffset;   
-    DWORD           dwFlags;        
+	FOURCC          ckid;           
+	DWORD           cksize;         
+	FOURCC          fccType;        
+	DWORD           dwDataOffset;   
+	DWORD           dwFlags;        
 } MMCKINFO, *PMMCKINFO, NEAR *NPMMCKINFO, *LPMMCKINFO;
 typedef const MMCKINFO *LPCMMCKINFO;
 

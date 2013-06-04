@@ -339,6 +339,24 @@ static ALIASNAME *LookupAliasName(ALIASNAME *name, int offset)
     (*uivs)->result = result;
     return result;
 }
+static ALIASNAME *GetAliasName(ALIASNAME *name, int offset)
+{
+    int str[(sizeof(ALIASNAME *) + sizeof(int))/sizeof(int)];
+    int hash;
+    ALIASNAME *result;
+    struct UIVHash **uivs;
+    str[0] = offset;
+    *((ALIASNAME **)(str + 1)) = name;
+    hash = dhash(str, sizeof(str));
+    uivs = &names[hash];
+    while (*uivs)
+    {
+        if ((*uivs)->name == name && (*uivs)->offset == offset)
+            return (*uivs)->result;
+        uivs = &(*uivs)->next;
+    }
+	return NULL;
+}
 static ALIASADDRESS *LookupAddress(ALIASNAME *name, int offset)
 {
     int str[(sizeof(ALIASNAME *) + sizeof(int))/sizeof(int)];
@@ -386,6 +404,25 @@ static ALIASADDRESS *LookupAddress(ALIASNAME *name, int offset)
     li->next = name->addresses;
     name->addresses = li;
     return addr;
+}
+static ALIASADDRESS *GetAddress(ALIASNAME *name, int offset)
+{
+    int str[(sizeof(ALIASNAME *) + sizeof(int))/sizeof(int)];
+    int hash;
+    ALIASADDRESS *addr, **search;
+    IMODE *im;
+    LIST *li;
+    str[0] = offset;
+    *((ALIASNAME **)(str + 1)) = name;
+    hash = dhash(str, sizeof(str));
+    search = &addresses[hash];
+    while (*search)
+    {
+        if ((*search)->name == name && (*search)->offset == offset)
+            return (*search);
+        search = &(*search)->next;
+    }
+	return NULL;
 }
 static void CreateMem(IMODE *im)
 {
@@ -880,19 +917,22 @@ static void HandleAssnBlock(QUAD *head)
     }
     for (i=0; i < n; i++)
     {
-        ALIASLIST *ldest = dest;
-        while (ldest)
+        ALIASLIST *lsrc = src;
+        while (lsrc)
         {
-            ALIASADDRESS *aadest = LookupAddress(ldest->address->name, i);
-            ALIASLIST *lsrc = src;
-            while (lsrc)
-            {
-                ALIASADDRESS *aasrc = LookupAddress(lsrc->address->name, i);
-                AliasUnion(&aadest->pointsto, aasrc->pointsto);
-                lsrc = lsrc->next;
-            }
-            ldest = ldest->next;
-        }
+            ALIASADDRESS *aasrc = GetAddress(lsrc->address->name, i);
+			if (aasrc)
+			{
+				ALIASLIST *ldest = dest;
+				while (ldest)
+				{
+					ALIASADDRESS *aadest = LookupAddress(ldest->address->name, i);
+					AliasUnion(&aadest->pointsto, aasrc->pointsto);
+					ldest = ldest->next;
+				}
+			}
+			lsrc = lsrc->next;
+		}
     }
 }
 static void HandleParmBlock(QUAD *head)
@@ -908,6 +948,7 @@ static void HandleParm(QUAD *head)
         {
             base = &tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
         }
+        /*
         else if (!isintconst(head->dc.left->offset) && head->dc.left->offset->type != en_labcon)
         {
             ALIASNAME *an = LookupMem(head->dc.left->offset->v.sp->imvalue);
@@ -917,6 +958,7 @@ static void HandleParm(QUAD *head)
             aa = LookupAddress(an, 0);
             base = &aa->pointsto;
         }
+        */
         if (base)
         {
             addr = *base;
@@ -1056,13 +1098,16 @@ void AliasStruct(BITINT *bits, IMODE *ans, IMODE *left, IMODE *right)
             while (aa->merge) aa = aa->merge;
             for (i=0; i < n; i++)
             {
-                ALIASNAME *an = LookupAliasName(aa->name, i);
-                ALIASADDRESS *aa2 = LookupAddress(an, 0);
-                while (aa2->merge) aa2 = aa2->merge;
-                if (aa2 && aa2->modifiedBy)
-                {
-                    ormap(bits, aa2->modifiedBy);
-                }
+                ALIASNAME *an = GetAliasName(aa->name, i);
+				if (an)
+				{
+					ALIASADDRESS *aa2 = LookupAddress(an, 0);
+					while (aa2->merge) aa2 = aa2->merge;
+					if (aa2 && aa2->modifiedBy)
+					{
+						ormap(bits, aa2->modifiedBy);
+					}
+				}
             }
             src = src->next;
         }
@@ -1075,15 +1120,18 @@ void AliasStruct(BITINT *bits, IMODE *ans, IMODE *left, IMODE *right)
         ALIASADDRESS *aa;
         for (i=0; i < n; i++)
         {
-            ALIASNAME *an2 = LookupAliasName(an, i);
-            aa = LookupAddress(an2, 0);
-            while (aa->merge) aa = aa->merge;
-            if (aa && aa->modifiedBy)
-            {
-                ormap(bits, aa->modifiedBy);
-            }
-            ResetProcessed();
-            scanDepends(bits, aa->pointsto);
+            ALIASNAME *an2 = GetAliasName(an, i);
+			if (an2)
+			{
+				aa = LookupAddress(an2, 0);
+				while (aa->merge) aa = aa->merge;
+				if (aa && aa->modifiedBy)
+				{
+					ormap(bits, aa->modifiedBy);
+				}
+				ResetProcessed();
+				scanDepends(bits, aa->pointsto);
+			}
         }
         return;
     }

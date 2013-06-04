@@ -11,7 +11,7 @@
 #  define EXTERN_C extern
 # endif  /* __cplusplus */ 
 # ifndef __int64
-#  define __int64 long long
+#  define __int64 __int64
 # endif
 # ifndef __int32
 #  define __int32 long

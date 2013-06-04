@@ -1,37 +1,36 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2008, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	Software License Agreement (BSD License)
+	
+	Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+	All rights reserved.
+	
+	Redistribution and use of this software in source and binary forms, with or without modification, are
+	permitted provided that the following conditions are met:
+	
+	* Redistributions of source code must retain the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer.
+	
+	* Redistributions in binary form must reproduce the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer in the documentation and/or other
+	  materials provided with the distribution.
+	
+	* Neither the name of LADSoft nor the names of its
+	  contributors may be used to endorse or promote products
+	  derived from this software without specific prior
+	  written permission of LADSoft.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+	PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <time.h> 
-#include <stdio.h>
 #include <string.h>
 #include <locale.h>
 #include "_locale.h"
@@ -43,8 +42,7 @@ extern void *__locale_data[LC_LAST+1] ;
 #pragma startup init 149 /* sequencing with the locale stuff is important */
 static void init()
 {
-    __locale_data[LC_TIME] = & C_time_data;
-    
+	__locale_data[LC_TIME] = & C_time_data;
 }
 
 static int weekbasedoffset(struct tm *t)
@@ -114,42 +112,42 @@ static int weeknum(struct tm *t, int startday)
         return 0;
     rv = t2.tm_yday / 7;
     if (!startday)
-        rv += ((t2.tm_yday % 7) > t2.tm_wday);
+        rv += ((t2.tm_yday % 7) >= t2.tm_wday);
     else
-        rv += ((t2.tm_yday % 7) > ((t2.tm_wday + 6) % 7));
+        rv += ((t2.tm_yday % 7) >= ((t2.tm_wday + 6) % 7));
     return rv;
 }
 static int pstr(char *str,char *astr, int maxsize, int mode, int *cursize)
 {
-    int l;
-    if (*cursize > maxsize)
-        return 1;
-    l = strlen(astr);
-    str += *cursize;
-    while (*cursize < maxsize-1 && l) {
-        *str++ = *astr++;
-        (*cursize)++;
-        l--;
-    }
-    *str = 0;
-    if (l)
-        return 1;
-    return 0;
+	int l;
+	if (*cursize > maxsize)
+		return 1;
+	l = strlen(astr);
+	str += *cursize;
+	while (*cursize < maxsize-1 && l) {
+		*str++ = *astr++;
+		(*cursize)++;
+		l--;
+	}
+	*str = 0;
+	if (l)
+		return 1;
+	return 0;
 }
 static int pchar(char *str,char astr, int maxsize, int mode, int *cursize)
 {
-    if (*cursize > maxsize)
-        return 1;
-    str += *cursize;
-    *str++ = astr;
-    (*cursize)++;
-    *str = 0;
-    return 0;
+	if (*cursize > maxsize)
+		return 1;
+	str += *cursize;
+	*str++ = astr;
+	(*cursize)++;
+	*str = 0;
+	return 0;
 }
 static int pnum(char *str, int num, int fwidth, int maxsize, int mode, int *cursize)
 {
-    char buf[11],*p = &buf[9], *nm;
-    int i;
+	char buf[11],*p = &buf[9], *nm;
+	int i;
     TIME_DATA *td = __locale_data[LC_TIME];
     nm = td->ths;
     buf[0] = 0;
@@ -160,168 +158,176 @@ static int pnum(char *str, int num, int fwidth, int maxsize, int mode, int *curs
             nm += strlen(nm);
         }
         if (*nm)
-            return(pstr(str,nm,maxsize,mode,cursize));
+        	return(pstr(str,nm,maxsize,mode,cursize));
     }
-    for (i=0; i < 10; i++)
-        buf[i] = '0';
+	for (i=0; i < 10; i++)
+    	buf[i] = '0';
     buf[10] = 0;
     while (num) {
-        *p-- = (char)(num %10)+'0';
-        num = num / 10;
+    	*p-- = (char)(num %10)+'0';
+	    num = num / 10;
     }
-    return(pstr(str,buf+10-fwidth,maxsize,mode,cursize));
+	return(pstr(str,buf+10-fwidth,maxsize,mode,cursize));
 }
 static int basic_format(char *restrict format, const struct tm * restrict t,
         char *restrict str, size_t maxsize, int mode, int *restrict cursize)
 {
         int temp ;
         TIME_DATA *td = __locale_data[LC_TIME];
-            switch(*format) {
-                case 'a':
-                    if (pstr(str,td->shortdays[t->tm_wday],maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'A':
-                    if (pstr(str,td->longdays[t->tm_wday],maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'b':
+			switch(*format) {
+				case 'a':
+					if (pstr(str,td->shortdays[t->tm_wday],maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'A':
+					if (pstr(str,td->longdays[t->tm_wday],maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'b':
                 case 'h':
-                    if (pstr(str,td->shortmonths[t->tm_mon],maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'B':
-                    if (pstr(str,td->longmonths[t->tm_mon],maxsize,mode,cursize))
-                        return 0;
-                    break;
+					if (pstr(str,td->shortmonths[t->tm_mon],maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'B':
+					if (pstr(str,td->longmonths[t->tm_mon],maxsize,mode,cursize))
+						return 0;
+					break;
                 case 'C':
-                    if (pnum(str,(t->tm_year+1900)/100,2,maxsize,mode,cursize))
-                        return 0;
+					if (pnum(str,(t->tm_year+1900)/100,2,maxsize,mode,cursize))
+						return 0;
                     break;
-                case 'd':
-                    if (pnum(str,t->tm_mday,2,maxsize,mode,cursize))
-                        return 0;
-                    break;
+				case 'd':
+					if (pnum(str,t->tm_mday,2,maxsize,mode,cursize))
+						return 0;
+					break;
                 case 'e':
                     if (t->tm_mday < 10) {
-                        if (pstr(str," ",maxsize,mode,cursize))
-                            return 0;
-                        if (pnum(str,t->tm_mday,1,maxsize,mode,cursize))
-                            return 0;
+    					if (pstr(str," ",maxsize,mode,cursize))
+	    					return 0;
+    					if (pnum(str,t->tm_mday,1,maxsize,mode,cursize))
+	    					return 0;
                     } else
-                        if (pnum(str,t->tm_mday,2,maxsize,mode,cursize))
-                            return 0;
+    					if (pnum(str,t->tm_mday,2,maxsize,mode,cursize))
+	    					return 0;
                     break;
                 case 'g':
-                    if (pnum(str,weekbasedyear(t)%100,2,maxsize,mode,cursize))
-                            return 0;
+    			    if (pnum(str,weekbasedyear(t)%100,2,maxsize,mode,cursize))
+	    					return 0;
                     break ;
                 case 'G':
-                    if (pnum(str,weekbasedyear(t),4,maxsize,mode,cursize))
-                            return 0;
+    			    if (pnum(str,weekbasedyear(t),4,maxsize,mode,cursize))
+	    					return 0;
                     break ;                    
-                case 'H':
-                    if (pnum(str,t->tm_hour,2,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'I':
+				case 'H':
+					if (pnum(str,t->tm_hour,2,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'I':
                 case 'i':
                     temp = t->tm_hour % 12;
                     if (temp == 0) temp = 12;
-                    if (pnum(str,temp,2,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'j':
-                    if (pnum(str,t->tm_yday,3,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'm':
-                    if (pnum(str,t->tm_mon+1,2,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'M':
-                    if (pnum(str,t->tm_min,2,maxsize,mode,cursize))
-                        return 0;
-                    break;
+					if (pnum(str,temp,2,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'j':
+					if (pnum(str,t->tm_yday,3,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'm':
+					if (pnum(str,t->tm_mon+1,2,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'M':
+					if (pnum(str,t->tm_min,2,maxsize,mode,cursize))
+						return 0;
+					break;
                 case 'n':
-                    if (pchar(str,'\n',maxsize,mode,cursize))
-                        return 0;
+					if (pchar(str,'\n',maxsize,mode,cursize))
+						return 0;
                     break;
-                case 'P':
+				case 'P':
                 case 'p':
-                    if (pstr(str,td->am + (t->tm_hour/12) * sizeof(td->am),maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'S':
-                    if (pnum(str,t->tm_sec,2,maxsize,mode,cursize))
-                        return 0;
-                    break;
+					{
+					char buf[sizeof(td->am)];
+					strcpy(buf, td->am + (t->tm_hour/12) * sizeof(td->am));
+					if (*format == 'p')
+						strupr(buf);
+					else
+						strlwr(buf);
+					if (pstr(str,buf,maxsize,mode,cursize))
+						return 0;
+					}
+					break;
+				case 'S':
+					if (pnum(str,t->tm_sec,2,maxsize,mode,cursize))
+						return 0;
+					break;
                 case 't':
-                    if (pchar(str,'\t',maxsize,mode,cursize))
-                        return 0;
+					if (pchar(str,'\t',maxsize,mode,cursize))
+						return 0;
                     break ;
-                case 'U':
-                    if (pnum(str,weeknum(t,0),2,maxsize,mode,cursize))
-                        return 0;
-                    break;
+				case 'U':
+					if (pnum(str,weeknum(t,0),2,maxsize,mode,cursize))
+						return 0;
+					break;
                 case 'u':
                     if (t->tm_wday == 0)
                         temp = 6 ;
                     else
                         temp = t->tm_wday-1;
-                    if (pnum(str,temp,1,maxsize,mode,cursize))
-                        return 0;
-                    break;
+					if (pnum(str,temp,1,maxsize,mode,cursize))
+						return 0;
+					break;
                 case  'V':
-                    if (pnum(str,weekbasedyearweek(t),2,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'w':
-                    if (pnum(str,t->tm_wday,1,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'W':
-                    if (pnum(str,weeknum(t,1),2,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'y':
-                    if (pnum(str,t->tm_year %100,2,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'Y':
-                    if (pnum(str,t->tm_year+1900,4,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                case 'z':
+					if (pnum(str,weekbasedyearweek(t),2,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'w':
+					if (pnum(str,t->tm_wday,1,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'W':
+					if (pnum(str,weeknum(t,1),2,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'y':
+					if (pnum(str,t->tm_year %100,2,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'Y':
+					if (pnum(str,t->tm_year+1900,4,maxsize,mode,cursize))
+						return 0;
+					break;
+				case 'z':
                                         if (pstr(str,__getTzName(),maxsize,mode,cursize))
-                        return 0;
-                    break;
+						return 0;
+					break;
                 case 'Z':
                     temp = *__getTimezone()/60;
                     if (temp > 0)
-                        if (pchar(str,'-',maxsize,mode,cursize))
-                            return 0;
-                    if (pnum(str,temp/60,2,maxsize,mode,cursize))
-                        return 0;
-                    if (pnum(str,temp%60,2,maxsize,mode,cursize))
-                        return 0;
+    					if (pchar(str,'-',maxsize,mode,cursize))
+	    					return 0;
+					if (pnum(str,temp/60,2,maxsize,mode,cursize))
+						return 0;
+					if (pnum(str,temp%60,2,maxsize,mode,cursize))
+						return 0;
+					break;
+				default: // also catch %%
+					if (pchar(str,*format,maxsize,mode,cursize))
+						return 0;
                     break;
-                default: // also catch %%
-                    if (pchar(str,*format,maxsize,mode,cursize))
-                        return 0;
-                    break;
-                    
-            }
+					
+			}
         return 1;
 }
 static int advanced_format(char *restrict format, const struct tm * restrict t,
         char *restrict str, size_t maxsize, int *restrict cursize)
 {
-    int i,size,xsize;
+	int i,size,xsize;
     int mode,index ;
     TIME_DATA *td = __locale_data[LC_TIME];
-    for (i=0; i < strlen(format); i++) {
-        if (format[i] == '%') {
+	for (i=0; i < strlen(format); i++) {
+		if (format[i] == '%') {
             if (!format[++i])
                 return cursize;
             mode = 0;
@@ -331,7 +337,7 @@ static int advanced_format(char *restrict format, const struct tm * restrict t,
                     return cursize;
             }
             switch(format[i]) {
-                case 'c':
+				case 'c':
                     index = mode == 'E';
                     if (!strcmp(td->qualname,"C")) {
                         if (!advanced_format("%A %B %d %T %Y",t,str,maxsize,cursize))
@@ -339,8 +345,8 @@ static int advanced_format(char *restrict format, const struct tm * restrict t,
                     } else {
                         if (!advanced_format(td->dates[index],t,str,maxsize,cursize))
                             return 0;                    
-                        if (pchar(str,' ',maxsize,mode,cursize))
-                            return 0;
+    					if (pchar(str,' ',maxsize,mode,cursize))
+	    					return 0;
                         if (!advanced_format(td->times[index],t,str,maxsize,cursize))
                             return 0;                    
                     }
@@ -365,35 +371,35 @@ static int advanced_format(char *restrict format, const struct tm * restrict t,
                     if (!advanced_format("%H:%M:%S",t,str,maxsize,cursize))
                         return 0;                    
                     break ;                    
-                case 'x':
+				case 'x':
                     index = mode == 'E';
                     if (!advanced_format(td->dates[index],t,str,maxsize,cursize))
                         return 0;                    
-                    break;
-                case 'X':
+					break;
+				case 'X':
                     index = mode == 'E';
                     if (!advanced_format(td->times[index],t,str,maxsize,cursize))
                         return 0;                    
-                    break;
+					break;
                 default:
                     if (!basic_format(format + i,t,str,maxsize,mode,cursize))
                         return 0;
                     break ;					
-            }
-        }
-        else {
-            if (pchar(str,format[i],maxsize,mode,cursize))
-                return 0;
-        }
-    }
-    return 1;
+			}
+		}
+		else {
+			if (pchar(str,format[i],maxsize,mode,cursize))
+				return 0;
+		}
+	}
+	return 1;
 }
 size_t _RTL_FUNC strftime(char *restrict str, size_t maxsize, 
                 const char *restrict format, const struct tm * restrict t)
 {
-    int rv = 0;
+	int rv = 0;
     str[0] = 0;
     if (!advanced_format(format,t,str,maxsize,&rv))
         return 0;                    
-    return rv;
+	return rv;
 }

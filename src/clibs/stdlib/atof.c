@@ -1,34 +1,34 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2008, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-    TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	Software License Agreement (BSD License)
+	
+	Copyright (c) 1997-2008, David Lindauer, (LADSoft).
+	All rights reserved.
+	
+	Redistribution and use of this software in source and binary forms, with or without modification, are
+	permitted provided that the following conditions are met:
+	
+	* Redistributions of source code must retain the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer.
+	
+	* Redistributions in binary form must reproduce the above
+	  copyright notice, this list of conditions and the
+	  following disclaimer in the documentation and/or other
+	  materials provided with the distribution.
+	
+	* Neither the name of LADSoft nor the names of its
+	  contributors may be used to endorse or promote products
+	  derived from this software without specific prior
+	  written permission of LADSoft.
+	
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+	WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+	PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+	LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdlib.h>
 #include <ctype.h>
@@ -42,6 +42,7 @@
 #include <float.h>
 #include "_locale.h"
 #include "libp.h"
+#include "_lfloat.h"
 
 static unsigned floating_infinity = 0x7f800000;
 static unsigned floating_nan = 0x7fc00000;
@@ -49,14 +50,13 @@ static unsigned floating_nan = 0x7fc00000;
 #define nextchar { *ch = fgetc(fil); \
                     (*chars)++; \
                     if (!count) return val; \
-                    else count--; };
+                    else count--; }
                     
 long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max, int exp2, int exp10, int full)
 {
-    int sign = 0;
-    int fracdigits =0;
-    long double val = 0;
-    int exp=0;
+	int sign = 0;
+	long double val = 0.0;
+	int exp=0;
     int radix = 10;
     char *bpos = fil->curp;
     NUMERIC_DATA *nd = __locale_data[LC_NUMERIC];
@@ -66,12 +66,12 @@ long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max
     while (isspace(*ch)) nextchar;
         
     if (*ch == '-') {
-        sign++;
+		sign++;
         nextchar;
-    }
+	}
     else if (*ch == '+') {
         nextchar;
-    }
+	}
     if (*ch == '0') {
         nextchar;
         if (*(ch) == 'x' || *(ch) == 'X')  {
@@ -80,7 +80,6 @@ long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max
         }
     } else if (full && *ch == 'i' || *ch == 'I') {
         int i;
-//        char *bpos2;
         nextchar;
          if (*ch != 'n' && *ch != 'N') {
             fil->curp = bpos;
@@ -141,123 +140,177 @@ long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max
                fil->curp = bpos;
          }
          val = *(float *)&nan;
-           if (sign)
-            val = -val;
+    	   if (sign)
+    		val = -val;
          return val;
     } else if (!isdigit(*ch) && *ch != nd->decimal_point[0]) {
         fil->curp = bpos;
         return 0;
     }
     if (radix == 2) {
+        unsigned LLONG_TYPE i = 0;
+        int k = 0;
+        FPF rval, temp, temp1;
+        __UnsignedLongLongToFPF(&rval, i);
         while (isxdigit(*ch)) {
-            val = val * 16 ;
+            i = i * 16;
             if (*ch <= '9')
-                val += *ch - '0';
+                i += *ch - '0';
             else if (*ch >= 'a')
-                val += *ch - 'a' + 10;
+                i += *ch - 'a' + 10;
             else
-                val += *ch - 'A' + 10;
+                i += *ch - 'A' + 10;
+            if (++k == sizeof(i) * 2)
+            {
+                __UnsignedLongLongToFPF(&temp, i);
+                __AddSubFPF(0,&rval,&temp,&temp1);
+                rval = temp1;
+                k = 0;
+                i = 0;
+            }
             nextchar;
         }
+        __UnsignedLongLongToFPF(&temp, i);
+        __AddSubFPF(0,&rval,&temp,&temp1);
+        rval = temp1;
         if (*ch == nd->decimal_point[0]) {
+            int pow = 0;
+            k = 0;
+            i = 0;
             nextchar;
             while (isxdigit(*ch)) {
-                val = val * 16 ;
+                i = i * 16;
                 if (*ch <= '9')
-                    val += *ch - '0';
+                    i += *ch - '0';
                 else if (*ch >= 'a')
-                    val += *ch - 'a' + 10;
+                    i += *ch - 'a' + 10;
                 else
-                    val += *ch - 'A' + 10;
+                    i += *ch - 'A' + 10;
+                pow--;
+                if (++k == sizeof(i) * 2)
+                {
+                    __UnsignedLongLongToFPF(&temp, i);
+                    temp.exp += 4 * pow;
+                    __AddSubFPF(0,&rval,&temp,&temp1);
+                    rval = temp1;
+                    k = 0;
+                    i = 0;
+                }
                 nextchar;
-                fracdigits += 4;
             }
+            __UnsignedLongLongToFPF(&temp, i);
+            temp.exp += 4 * pow;
+            __AddSubFPF(0,&rval,&temp,&temp1);
+            rval = temp1;
         }
-        if (sign)
-            val = - val;
-    if (fracdigits) {
-        val = scalbnl(val,-fracdigits);
-        fracdigits = 0;
-    }
+    	if (sign)
+      {
+    		val = - val;
+    		rval.sign = 1;
+      }
         if (*ch == 'p' || *ch == 'P') {
-            sign = 0;
+    		sign = 0;
             nextchar;
             if (*ch == '-') {
-                sign++;
+    			sign++;
                 nextchar;
-            }
+    		}
             else if (*ch == '+') {
                 nextchar;
-            }
+    		}
             if (!isdigit(*ch)) {
                 fil->curp = bpos;
                 return 0;
             }
             while(isdigit(*ch)) {
-                exp*= 10;
+    			exp*= 10;
                 exp += (*ch-'0');
                 nextchar;
-            }
-            if (exp > exp2) {
+    		}
+    		if (!sign && exp > exp2) {
                 goto rangeerr;
             }
-            if (sign)
-                val = scalbnl(val,-exp-fracdigits);
-            else
-                val = scalbnl(val,exp-fracdigits);
-        } else if (fracdigits)
-            val = scalbnl(val,-fracdigits);
+		if (sign)
+		    exp = -exp;
+		rval.exp += exp;
+    	}
+	__FPFToLongDouble(&val, &rval);
     } else {
+        unsigned LLONG_TYPE i = 0;
+        int k = 0;
+        FPF rval, temp, temp1;
+        __UnsignedLongLongToFPF(&rval, i);
         while (isdigit(*ch)) {
-            val = val * 10 + (*ch - '0');
+            i = i * 10 + (*ch - '0');
+            if (++k == (int)(sizeof(i) * CHAR_BIT * M_LN2 / M_LN10))
+            {
+                __UnsignedLongLongToFPF(&temp, i);
+                __AddSubFPF(0,&rval,&temp,&temp1);
+                rval = temp1;
+                k = 0;
+                i = 0;
+            }
             nextchar;
         }
+        __UnsignedLongLongToFPF(&temp, i);
+        __AddSubFPF(0,&rval,&temp,&temp1);
+        rval = temp1;
         if (*ch == nd->decimal_point[0]) {
+            int pow = 0;
+            k = 0;
+            i = 0;
             nextchar;
             while(isdigit(*ch)) {
-                val = val * 10 + (*ch - '0');
+                i = i * 10 + (*ch - '0');
+                pow--;
+                if (++k == (int)(sizeof(i) * CHAR_BIT * M_LN2 / M_LN10))
+                {
+                    __UnsignedLongLongToFPF(&temp, i);
+                    __FPFMultiplyPowTen(&temp, pow);
+                    __AddSubFPF(0,&rval,&temp,&temp1);
+                    rval = temp1;
+                    k = 0;
+                    i = 0;
+                }
                 nextchar ;
-                fracdigits++;
-            }
-        }
-        if (sign)
-            val = - val;
-    if (fracdigits) {
-        val = val / pow10l(fracdigits);
-        fracdigits = 0;
-    }
+    	    }
+          __UnsignedLongLongToFPF(&temp, i);
+          __FPFMultiplyPowTen(&temp, pow);
+          __AddSubFPF(0,&rval,&temp,&temp1);
+          rval = temp1;
+    	}
+    	if (sign)
+      {
+    		val = - val;
+    		rval.sign = 1;
+      }
         if (*ch == 'e' || *ch == 'E') {
-            sign = 0;
+    		sign = 0;
             nextchar;
             if (*ch == '-') {
-                sign++;
+    			sign++;
                 nextchar;
-            }
+    		}
             else if (*ch == '+') {
                 nextchar;
-            }
+    		}
             if (!isdigit(*ch)) {
                 fil->curp = bpos;
                 return 0;
             }
             while(isdigit(*ch)) {
-                exp*= 10;
+    			exp*= 10;
                 exp += (*ch-'0');
                 nextchar;
-            }
-            if (exp > exp10) {
+    		}
+    		if (!sign && exp > exp10) {
                 goto rangeerr;
             }
-            if (sign) {
-                exp += fracdigits ;
-                val = val / pow10l(exp);
-            } else {
-                exp -= fracdigits ;
-                val = val * pow10l(exp);
-            }
-        } else if (fracdigits) {
-               val = val / pow10l(fracdigits);
-        }
+		if (sign)
+		    exp = -exp;
+		__FPFMultiplyPowTen(&rval, exp);
+    	}
+	__FPFToLongDouble(&val, &rval);
     }
     if (val > max || val < - max) {
 rangeerr:
@@ -269,7 +322,7 @@ rangeerr:
         else
             return copysignl(HUGE_VALL,val);
     }
-    return val;
+	return val;
 }
 static long double __strtod(const char *buf, char **endptr, int width,
         long double max,int exp2,int exp10, int full)

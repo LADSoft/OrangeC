@@ -76,6 +76,8 @@ typedef struct _dyninit_
     INITIALIZER *init;
 } DYNAMIC_INITIALIZER;
 
+BOOL initializingGlobalVar ;
+
 static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
 static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
 static STARTUP *startupList, *rundownList;
@@ -93,6 +95,7 @@ void init_init(void)
     aliasHash = CreateHashTable(13);
     dynamicInitializers = TLSInitializers = NULL;
     dynamicDestructors = TLSDestructors = NULL;
+    initializingGlobalVar = FALSE;
 }
 void dumpStartups(void)
 {
@@ -2382,11 +2385,13 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             break;
         case sc_global:
         case sc_external:
+            initializingGlobalVar = TRUE;
             sp->assigned = TRUE;
             sp->used = TRUE;
             break;
         case sc_static:
         case sc_localstatic:
+            initializingGlobalVar = TRUE;
             sp->assigned = TRUE;
             break;
         case sc_auto:
@@ -2405,11 +2410,11 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     tp = basetype(sp->tp);
     if (ispointer(tp) && tp->array || isref(tp))
         tp = basetype(tp->btp);
-    if (sp->storage_class != sc_typedef && isstructured(tp) && !tp->syms)
+    if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !tp->syms)
     {
         if (MATCHKW(lex, assign))
             errskim(&lex, skim_semi);
-        errorsym(ERR_STRUCT_NOT_DEFINED, sp);
+        errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
     else if (MATCHKW(lex, assign) || cparams.prm_cplusplus && (MATCHKW(lex, openpa) || storage_class_in == sc_member && MATCHKW(lex, begin)))
@@ -2534,5 +2539,6 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         insertInitSym(sp);
     }
     DecGlobalFlag();
+    initializingGlobalVar = FALSE;
     return lex;
 }

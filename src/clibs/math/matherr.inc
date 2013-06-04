@@ -53,9 +53,9 @@
 [extern invalid]
 
 %macro popone 0
-	fstp	tword [poptemp]
+	fstp st0
 %endmacro
 %macro poptwo 0
-	fstp	tword [poptemp]
-	fstp	tword [poptemp]
+	fstp st0
+	fstp st0
 %endmacro

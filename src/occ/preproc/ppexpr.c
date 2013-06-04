@@ -41,6 +41,8 @@
 extern INCLUDES *includes;
 extern COMPILER_PARAMS cparams;
 
+static PPINT iecommaop(void);
+
 int getsch(int bytes, char **source) /* return an in-quote character */
 {
     register int i=*(*source)++, j;
@@ -236,7 +238,14 @@ static PPINT iemultops(void)
                 val1 = val1 * val2;
                 break;
             case '/':
-                val1 = val1 / val2;
+                if (val2 == 0)
+                {
+                    val1 = 0;
+                }
+                else
+                {
+                    val1 = val1 / val2;
+                }
                 break;
             case '%':
                 val1 = val1 % val2;
@@ -388,7 +397,7 @@ static PPINT iecondop(void)
    PPINT val1 = ielorop(),val2, val3;
         if (*ILP == '?') {
             ILP ++;
-            val2 = ielorop();
+            val2 = iecommaop();
             if (*ILP != ':')
                 pperror(ERR_NEEDY, ':');
             ILP++;

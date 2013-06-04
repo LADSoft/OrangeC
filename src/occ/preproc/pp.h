@@ -81,7 +81,7 @@ typedef struct _includes_
     int		skiplevel;
     BOOL	elsetaken;
     char	*data;
-    char 	*lptr;
+    unsigned char *lptr;
     int		pos;
     int		sysflags;
     BOOL	sys_inc;

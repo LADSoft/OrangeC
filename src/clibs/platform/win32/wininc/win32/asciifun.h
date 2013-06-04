@@ -45,319 +45,319 @@ extern "C" {
 
 extern WINBOOL
  PASCAL WINBASEAPI GetBinaryTypeA(
-           LPCSTR lpApplicationName,
-           LPDWORD lpBinaryType
-           );
+	       LPCSTR lpApplicationName,
+	       LPDWORD lpBinaryType
+	       );
 
 extern DWORD
  PASCAL WINBASEAPI GetShortPathNameA(
-          LPCSTR lpszLongPath,
-          LPSTR  lpszShortPath,
-          DWORD    cchBuffer
-          );
+		  LPCSTR lpszLongPath,
+		  LPSTR  lpszShortPath,
+		  DWORD    cchBuffer
+		  );
 
 extern LPSTR
  PASCAL WINBASEAPI GetEnvironmentStringsA(
-               VOID
-               );
+		       VOID
+		       );
 
 extern WINBOOL
  PASCAL WINBASEAPI FreeEnvironmentStringsA(
-            LPSTR
-            );
+			LPSTR
+			);
 
 extern DWORD
  PASCAL WINBASEAPI FormatMessageA(
-           DWORD dwFlags,
-           LPCVOID lpSource,
-           DWORD dwMessageId,
-           DWORD dwLanguageId,
-           LPSTR lpBuffer,
-           DWORD nSize,
-           va_list *Arguments
-           );
+	       DWORD dwFlags,
+	       LPCVOID lpSource,
+	       DWORD dwMessageId,
+	       DWORD dwLanguageId,
+	       LPSTR lpBuffer,
+	       DWORD nSize,
+	       va_list *Arguments
+	       );
 
 extern HANDLE
  PASCAL WINBASEAPI CreateMailslotA(
-        LPCSTR lpName,
-        DWORD nMaxMessageSize,
-        DWORD lReadTimeout,
-        LPSECURITY_ATTRIBUTES lpSecurityAttributes
-        );
+		LPCSTR lpName,
+		DWORD nMaxMessageSize,
+		DWORD lReadTimeout,
+		LPSECURITY_ATTRIBUTES lpSecurityAttributes
+		);
 
 extern int
  PASCAL WINBASEAPI lstrcmpA(
-     LPCSTR lpString1,
-     LPCSTR lpString2
-     );
+	 LPCSTR lpString1,
+	 LPCSTR lpString2
+	 );
 
 extern int
  PASCAL WINBASEAPI lstrcmpiA(
-      LPCSTR lpString1,
-      LPCSTR lpString2
-      );
+	  LPCSTR lpString1,
+	  LPCSTR lpString2
+	  );
 
 extern LPSTR
  PASCAL WINBASEAPI lstrcpynA(
-      LPSTR lpString1,
-      LPCSTR lpString2,
-      int iMaxLength
-      );
+	  LPSTR lpString1,
+	  LPCSTR lpString2,
+	  int iMaxLength
+	  );
 
 extern LPSTR
  PASCAL WINBASEAPI lstrcpyA(
-     LPSTR lpString1,
-     LPCSTR lpString2
-     );
+	 LPSTR lpString1,
+	 LPCSTR lpString2
+	 );
 
 extern LPSTR
  PASCAL WINBASEAPI lstrcatA(
-     LPSTR lpString1,
-     LPCSTR lpString2
-     );
+	 LPSTR lpString1,
+	 LPCSTR lpString2
+	 );
 
 extern int
  PASCAL WINBASEAPI lstrlenA(
-     LPCSTR lpString
-     );
+	 LPCSTR lpString
+	 );
 
 extern HANDLE
  PASCAL WINBASEAPI CreateMutexA(
-         LPSECURITY_ATTRIBUTES lpMutexAttributes,
-         WINBOOL bInitialOwner,
-         LPCSTR lpName
-         );
+	     LPSECURITY_ATTRIBUTES lpMutexAttributes,
+	     WINBOOL bInitialOwner,
+	     LPCSTR lpName
+	     );
 
 extern HANDLE
  PASCAL WINBASEAPI OpenMutexA(
-       DWORD dwDesiredAccess,
-       WINBOOL bInheritHandle,
-       LPCSTR lpName
-       );
+	   DWORD dwDesiredAccess,
+	   WINBOOL bInheritHandle,
+	   LPCSTR lpName
+	   );
 
 extern HANDLE
  PASCAL WINBASEAPI CreateEventA(
-         LPSECURITY_ATTRIBUTES lpEventAttributes,
-         WINBOOL bManualReset,
-         WINBOOL bInitialState,
-         LPCSTR lpName
-         );
+	     LPSECURITY_ATTRIBUTES lpEventAttributes,
+	     WINBOOL bManualReset,
+	     WINBOOL bInitialState,
+	     LPCSTR lpName
+	     );
 
 extern HANDLE
  PASCAL WINBASEAPI OpenEventA(
-       DWORD dwDesiredAccess,
-       WINBOOL bInheritHandle,
-       LPCSTR lpName
-       );
+	   DWORD dwDesiredAccess,
+	   WINBOOL bInheritHandle,
+	   LPCSTR lpName
+	   );
 
 extern HANDLE
  PASCAL WINBASEAPI CreateSemaphoreA(
-         LPSECURITY_ATTRIBUTES lpSemaphoreAttributes,
-         LONG lInitialCount,
-         LONG lMaximumCount,
-         LPCSTR lpName
-         );
+		 LPSECURITY_ATTRIBUTES lpSemaphoreAttributes,
+		 LONG lInitialCount,
+		 LONG lMaximumCount,
+		 LPCSTR lpName
+		 );
 
 extern HANDLE
  PASCAL WINBASEAPI OpenSemaphoreA(
-           DWORD dwDesiredAccess,
-           WINBOOL bInheritHandle,
-           LPCSTR lpName
-           );
+	       DWORD dwDesiredAccess,
+	       WINBOOL bInheritHandle,
+	       LPCSTR lpName
+	       );
 
 extern HANDLE
  PASCAL WINBASEAPI CreateFileMappingA(
-           HANDLE hFile,
-           LPSECURITY_ATTRIBUTES lpFileMappingAttributes,
-           DWORD flProtect,
-           DWORD dwMaximumSizeHigh,
-           DWORD dwMaximumSizeLow,
-           LPCSTR lpName
-           );
+		   HANDLE hFile,
+		   LPSECURITY_ATTRIBUTES lpFileMappingAttributes,
+		   DWORD flProtect,
+		   DWORD dwMaximumSizeHigh,
+		   DWORD dwMaximumSizeLow,
+		   LPCSTR lpName
+		   );
 
 extern HANDLE
  PASCAL WINBASEAPI OpenFileMappingA(
-         DWORD dwDesiredAccess,
-         WINBOOL bInheritHandle,
-         LPCSTR lpName
-         );
+		 DWORD dwDesiredAccess,
+		 WINBOOL bInheritHandle,
+		 LPCSTR lpName
+		 );
 
 extern DWORD
  PASCAL WINBASEAPI GetLogicalDriveStringsA(
-            DWORD nBufferLength,
-            LPSTR lpBuffer
-            );
+			DWORD nBufferLength,
+			LPSTR lpBuffer
+			);
 
 extern HINSTANCE
  PASCAL WINBASEAPI LoadLibraryA(
-         LPCSTR lpLibFileName
-         );
+	     LPCSTR lpLibFileName
+	     );
 
 extern HINSTANCE
  PASCAL WINBASEAPI LoadLibraryExA(
-           LPCSTR lpLibFileName,
-           HANDLE hFile,
-           DWORD dwFlags
-           );
+	       LPCSTR lpLibFileName,
+	       HANDLE hFile,
+	       DWORD dwFlags
+	       );
 
 extern DWORD
  PASCAL WINBASEAPI GetModuleFileNameA(
-           HINSTANCE hModule,
-           LPSTR lpFilename,
-           DWORD nSize
-           );
+		   HINSTANCE hModule,
+		   LPSTR lpFilename,
+		   DWORD nSize
+		   );
 
 extern HMODULE
  PASCAL WINBASEAPI GetModuleHandleA(
-         LPCSTR lpModuleName
-         );
+		 LPCSTR lpModuleName
+		 );
 
 extern VOID
  PASCAL WINBASEAPI FatalAppExitA(
-          UINT uAction,
-          LPCSTR lpMessageText
-          );
+	      UINT uAction,
+	      LPCSTR lpMessageText
+	      );
 
 extern LPSTR
  PASCAL WINBASEAPI GetCommandLineA(
-        VOID
-        );
+		VOID
+		);
 
 extern DWORD
  PASCAL WINBASEAPI GetEnvironmentVariableA(
-            LPCSTR lpName,
-            LPSTR lpBuffer,
-            DWORD nSize
-            );
+			LPCSTR lpName,
+			LPSTR lpBuffer,
+			DWORD nSize
+			);
 
 extern WINBOOL
  PASCAL WINBASEAPI SetEnvironmentVariableA(
-            LPCSTR lpName,
-            LPCSTR lpValue
-            );
+			LPCSTR lpName,
+			LPCSTR lpValue
+			);
 
 extern DWORD
  PASCAL WINBASEAPI ExpandEnvironmentStringsA(
-              LPCSTR lpSrc,
-              LPSTR lpDst,
-              DWORD nSize
-              );
+			  LPCSTR lpSrc,
+			  LPSTR lpDst,
+			  DWORD nSize
+			  );
 
 extern VOID
  PASCAL WINBASEAPI OutputDebugStringA(
-           LPCSTR lpOutputString
-           );
+		   LPCSTR lpOutputString
+		   );
 
 extern HRSRC
  PASCAL WINBASEAPI FindResourceA(
-          HINSTANCE hModule,
-          LPCSTR lpName,
-          LPCSTR lpType
-          );
+	      HINSTANCE hModule,
+	      LPCSTR lpName,
+	      LPCSTR lpType
+	      );
 
 extern HRSRC
  PASCAL WINBASEAPI FindResourceExA(
-        HINSTANCE hModule,
-        LPCSTR lpType,
-        LPCSTR lpName,
-        WORD    wLanguage
-        );
+		HINSTANCE hModule,
+		LPCSTR lpType,
+		LPCSTR lpName,
+		WORD    wLanguage
+		);
 
 extern WINBOOL
  PASCAL WINBASEAPI EnumResourceTypesA(
-           HINSTANCE hModule,
-           ENUMRESTYPEPROC lpEnumFunc,
-           LONG lParam
-           );
+		   HINSTANCE hModule,
+		   ENUMRESTYPEPROC lpEnumFunc,
+		   LONG lParam
+		   );
 
 extern WINBOOL
  PASCAL WINBASEAPI EnumResourceNamesA(
-           HINSTANCE hModule,
-           LPCSTR lpType,
-           ENUMRESNAMEPROC lpEnumFunc,
-           LONG lParam
-           );
+		   HINSTANCE hModule,
+		   LPCSTR lpType,
+		   ENUMRESNAMEPROC lpEnumFunc,
+		   LONG lParam
+		   );
 
 extern WINBOOL
  PASCAL WINBASEAPI EnumResourceLanguagesA(
-               HINSTANCE hModule,
-               LPCSTR lpType,
-               LPCSTR lpName,
-               ENUMRESLANGPROC lpEnumFunc,
-               LONG lParam
-               );
+		       HINSTANCE hModule,
+		       LPCSTR lpType,
+		       LPCSTR lpName,
+		       ENUMRESLANGPROC lpEnumFunc,
+		       LONG lParam
+		       );
 
 extern HANDLE
  PASCAL WINBASEAPI BeginUpdateResourceA(
-             LPCSTR pFileName,
-             WINBOOL bDeleteExistingResources
-             );
+		     LPCSTR pFileName,
+		     WINBOOL bDeleteExistingResources
+		     );
 
 extern WINBOOL
  PASCAL WINBASEAPI UpdateResourceA(
-        HANDLE      hUpdate,
-        LPCSTR     lpType,
-        LPCSTR     lpName,
-        WORD        wLanguage,
-        LPVOID      lpData,
-        DWORD       cbData
-        );
+		HANDLE      hUpdate,
+		LPCSTR     lpType,
+		LPCSTR     lpName,
+		WORD        wLanguage,
+		LPVOID      lpData,
+		DWORD       cbData
+		);
 
 extern WINBOOL
  PASCAL WINBASEAPI EndUpdateResourceA(
-           HANDLE      hUpdate,
-           WINBOOL        fDiscard
-           );
+		   HANDLE      hUpdate,
+		   WINBOOL        fDiscard
+		   );
 
 extern ATOM
  PASCAL WINBASEAPI GlobalAddAtomA(
-           LPCSTR lpString
-           );
+	       LPCSTR lpString
+	       );
 
 extern ATOM
  PASCAL WINBASEAPI GlobalFindAtomA(
-        LPCSTR lpString
-        );
+		LPCSTR lpString
+		);
 
 extern UINT
  PASCAL WINBASEAPI GlobalGetAtomNameA(
-           ATOM nAtom,
-           LPSTR lpBuffer,
-           int nSize
-           );
+		   ATOM nAtom,
+		   LPSTR lpBuffer,
+		   int nSize
+		   );
 
 extern ATOM
  PASCAL WINBASEAPI AddAtomA(
-     LPCSTR lpString
-     );
+	 LPCSTR lpString
+	 );
 
 extern ATOM
  PASCAL WINBASEAPI FindAtomA(
-      LPCSTR lpString
-      );
+	  LPCSTR lpString
+	  );
 
 extern UINT
  PASCAL WINBASEAPI GetAtomNameA(
-         ATOM nAtom,
-         LPSTR lpBuffer,
-         int nSize
-         );
+	     ATOM nAtom,
+	     LPSTR lpBuffer,
+	     int nSize
+	     );
 
 extern UINT
  PASCAL WINBASEAPI GetProfileIntA(
-           LPCSTR lpAppName,
-           LPCSTR lpKeyName,
-           INT nDefault
-           );
+	       LPCSTR lpAppName,
+	       LPCSTR lpKeyName,
+	       INT nDefault
+	       );
 
 extern DWORD
  PASCAL WINBASEAPI GetProfileStringA(
-          LPCSTR lpAppName,
-          LPCSTR lpKeyName,
-          LPCSTR lpDefault,
-          LPSTR lpReturnedString,
-          DWORD nSize
-          );
+		  LPCSTR lpAppName,
+		  LPCSTR lpKeyName,
+		  LPCSTR lpDefault,
+		  LPSTR lpReturnedString,
+		  DWORD nSize
+		  );
 
 extern WINBOOL
  PASCAL WINBASEAPI WriteProfileStringA(
@@ -412,6 +412,8 @@ extern DWORD
     DWORD nSize,
     LPCSTR lpFileName
     );
+
+extern DWORD PASCAL WINBASEAPI GetPrivateProfileSectionNamesA(LPSTR,DWORD,LPCSTR);
 
 extern WINBOOL
  PASCAL WINBASEAPI WritePrivateProfileSectionA(
@@ -546,7 +548,7 @@ extern WINBOOL
 
 extern DWORD
  PASCAL WINBASEAPI SearchPathA(
-        LPCSTR lpPath,
+	    LPCSTR lpPath,
     LPCSTR lpFileName,
     LPCSTR lpExtension,
     DWORD nBufferLength,
@@ -1686,7 +1688,7 @@ extern WINBOOL
                     );
 
 extern DWORD
- PASCAL WINBASEAPI GetCharacterPlacementA(HDC, LPCSTR, int, int, LPGCP_RESULTS, DWORD);
+ PASCAL WINBASEAPI GetCharacterPlacementA(HDC, LPCSTR, int, int, LPGCP_RESULTSA, DWORD);
 
 extern HDC
  PASCAL WINBASEAPI ResetDCA(HDC, CONST DEVMODE *);
@@ -2506,22 +2508,22 @@ extern SERVICE_STATUS_HANDLE
 
 extern WINBOOL
  PASCAL WINBASEAPI StartServiceCtrlDispatcherA(
-                LPSERVICE_TABLE_ENTRY    lpServiceStartTable
-                );
+			    LPSERVICE_TABLE_ENTRY    lpServiceStartTable
+			    );
 
 extern WINBOOL
  PASCAL WINBASEAPI StartServiceA(
-          SC_HANDLE            hService,
-          DWORD                dwNumServiceArgs,
-          LPCSTR             *lpServiceArgVectors
-          );
+	      SC_HANDLE            hService,
+	      DWORD                dwNumServiceArgs,
+	      LPCSTR             *lpServiceArgVectors
+	      );
 
 /* Extensions to OpenGL */
 
 extern WINBOOL  PASCAL WINBASEAPI wglUseFontBitmapsA(HDC, DWORD, DWORD, DWORD);
 
 extern WINBOOL  PASCAL WINBASEAPI wglUseFontOutlinesA(HDC, DWORD, DWORD, DWORD, FLOAT,
-            FLOAT, int, LPGLYPHMETRICSFLOAT);
+		    FLOAT, int, LPGLYPHMETRICSFLOAT);
 
 /* -------------------------------------------------- */
 /* From ddeml.h in old Cygnus headers */
@@ -2537,18 +2539,12 @@ extern DWORD  PASCAL WINBASEAPI DdeQueryStringA(DWORD, HSZ, char *, DWORD, int);
 
 extern WINBOOL  PASCAL WINBASEAPI LogonUserA(LPSTR, LPSTR, LPSTR, DWORD, DWORD, HANDLE *);
 extern WINBOOL  PASCAL WINBASEAPI CreateProcessAsUserA(HANDLE, LPCTSTR, LPTSTR,
-    SECURITY_ATTRIBUTES*, SECURITY_ATTRIBUTES*, WINBOOL, DWORD, LPVOID,
-    LPCTSTR, STARTUPINFO*, PROCESS_INFORMATION*);
+	SECURITY_ATTRIBUTES*, SECURITY_ATTRIBUTES*, WINBOOL, DWORD, LPVOID,
+	LPCTSTR, STARTUPINFO*, PROCESS_INFORMATION*);
 
 extern WINBOOL  PASCAL WINBASEAPI PlaySoundA(LPCSTR pszSound, HMODULE hmod, DWORD fdwSound);
 
 extern WINBOOL  PASCAL WINBASEAPI GetCPInfoExA(UINT CodePage,DWORD dwFlags, LPCPINFOEX lpCPInfoEx);
-
-extern WINBOOL PASCAL WINBASEAPI GetFileAttributesExA(
-    LPCSTR lpFileName,
-    GET_FILEEX_INFO_LEVELS fInfoLevelId,
-    LPVOID lpFileInformation
-    );
 
 #ifdef __cplusplus
 }

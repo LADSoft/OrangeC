@@ -41,6 +41,7 @@
 #include <win32/cdmsg.h>
 
 #ifndef RC_INVOKED
+#include <unknwn.h>
 #include <win32/cdmacro.h>
 #include <win32/cdstruc.h>
 #include <win32/cdfunc.h>

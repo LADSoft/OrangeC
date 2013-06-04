@@ -1,5 +1,21 @@
 Release notes
 
+version 5.0.5:
+
+    occ:    improve handling of trigraphs and digraphs
+    occ:    improve #define processing
+    occ:    improve search order for #includes
+    occ:    improve floating point handling
+    occ:    ! (not operator) would sometimes cast the argument down, losing high order bits
+    occ:    allow declaration of externs with incomplete type
+    occ:    sped up compile of sqlite3
+    occ:    sped up aliasing
+    occ:    make -1.0 an intrinsic value
+    orc:    &tools in general - searching complex paths could lead to lockup or crash
+    ocpp:   make it friendly to avast, fix it to parse the correct configuration file
+    clibs:  improve various functions, add various functions, improve various headers
+    clibs:  use floating point emulation for floating point functions that convert a number to ASCII
+
 version 5.0.4: 5/25/2013
 
     occ:    add support for #pragma pack syntax with keywords push and pop 

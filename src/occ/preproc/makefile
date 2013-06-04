@@ -41,8 +41,8 @@ c0x32.obj $(addprefix $(OBJECT)\,$(EXE_dependencies)),ocpp.exe,ocpp.map, cw32.li
 	$(PEPATCH) $(NAME).exe
 
 DISTRIBUTE:
-	copy ocpp.exe $(DISTBIN) 
+	copy $(RELEASEPATH)\ocpp.exe $(DISTBIN)
 	$(RESTUB) $(DISTBIN)\ocpp.exe $(STUB)
-	upx $(DISTBIN)\ocpp.exe
+#	upx $(DISTBIN)\ocpp.exe
+#	$(RENSEG) $(DISTBIN)\ocpp.exe
 	copy target.cfg $(DISTBIN)\ocpp.cfg
-	$(RENSEG) $(DISTBIN)\ocpp.exe

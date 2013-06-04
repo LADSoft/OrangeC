@@ -217,8 +217,7 @@ int doerror(void)
     int i = 0;
     if (ifskip)
         return incldepth == 0;
-    temp = rcAlloc(pstrlen(lptr) *3+2);
-    pstrcpy(temp, lptr);
+    temp = rcAlloc(pstrlen(lptr) + 1);
     while (*lptr)
     {
         temp[i++] = *lptr;

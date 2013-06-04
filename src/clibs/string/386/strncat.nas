@@ -32,44 +32,47 @@
 [export _strncat]
 %endif
 [global _strncat]
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 
 _strncat:
-    push	ebx
-    mov		ecx,[esp+16]
-    jecxz	x2
-    mov	ebx,[esp+8]
-    dec	ebx
+	push	ebx
+	mov		ecx,[esp+16]
+	jecxz	x2
+	mov	ebx,[esp+8]
+	dec	ebx
 lp1:
-    inc	ebx
-    test bl,3
-    jnz x1
+	inc	ebx
+	test bl,3
+	jnz x1
 lp2:
-    mov	ecx,[ebx]
-    add	ebx,4
-    mov edx,ecx
-    sub	edx,001010101h
-    not ecx
-    and edx,080808080h
-    and edx,ecx
-    jz lp2
-    sub ebx,4
+	mov	ecx,[ebx]
+	add	ebx,4
+	mov edx,ecx
+	sub	edx,001010101h
+	not ecx
+	and edx,080808080h
+	and edx,ecx
+	jz lp2
+	sub ebx,4
 x1:
-    cmp	byte [ebx],0
-    jne	lp1
+	cmp	byte [ebx],0
+	jne	lp1
 
-    dec		ebx
-    mov		edx,[esp+12]
-    mov		ecx,[esp+16]
+	dec		ebx
+	mov		edx,[esp+12]
+	mov		ecx,[esp+16]
 lp:
-    inc		ebx
-    mov		al,[edx]
-    inc		edx
-    mov		[ebx],al
-    or		al,al
-    loopnz	lp
+	inc		ebx
+	mov		al,[edx]
+	inc		edx
+	mov		[ebx],al
+	or		al,al
+	loopnz	lp
+	jz		x2
+	inc		ebx
+	mov		byte [ebx],0
 x2:	
-    mov	eax,[esp+8]
-    pop	ebx
-    ret
-    
+	mov	eax,[esp+8]
+	pop	ebx
+	ret
+	

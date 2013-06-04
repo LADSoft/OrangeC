@@ -159,7 +159,7 @@ std::string Utils::SearchForFile(const std::string &path, const std::string &nam
         else
         {
             current = fpath.substr(0, npos);
-            fpath.erase(npos + 1);
+            fpath.erase(0, npos + 1);
         }
         if (current[current.size()] != CmdFiles::DIR_SEP[0])
         {

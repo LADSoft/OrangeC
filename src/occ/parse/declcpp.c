@@ -737,7 +737,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         if (MATCHKW(lex,classsel) || ISID(lex))
         {
             bcsym = NULL;
-            lex = nestedSearch(lex, &bcsym, NULL, NULL, TRUE);
+            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, TRUE);
             if (bcsym)
             {
                 BASECLASS *t = declsym->baseClasses;
@@ -1096,6 +1096,34 @@ void checkOperatorArgs(SYMBOL *sp)
                         }
                     }
                     break;
+                case kw_new:
+                case kw_newa:
+                    if (hr)
+                    {
+                        // any number of args, but first must be a size
+                        TYPE *tp = ((SYMBOL *)hr->p)->tp;
+                        if (!isint(tp))
+                            errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                    }
+                    else
+                    {
+                        errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                    }
+                    break;
+                case kw_delete:
+                case kw_dela:
+                    if (hr && !hr->next)
+                    {
+                        // one arg, must be a pointer
+                        TYPE *tp = ((SYMBOL *)hr->p)->tp;
+                        if (!ispointer(tp))
+                            errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                    }
+                    else
+                    {
+                        errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
+                    }
+                    break;
                 default:
                     errorstr(ERR_OPERATOR_MUST_BE_NONSTATIC, overloadXlateTab[sp->operatorId]);
                     break;
@@ -1177,7 +1205,7 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
             {
                 char buf1[512];
                 strcpy(buf1, lex->value.s.a);
-                lex = nestedSearch(lex, &sp, NULL, NULL, FALSE);
+                lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
                 if (!sp)
                 {
                     errorstr(ERR_UNDEFINED_IDENTIFIER, buf1);
@@ -1386,7 +1414,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class)
             char buf1[512];
             HASHREC **hr;
             strcpy(buf1, lex->value.s.a);
-            lex = nestedSearch(lex, &sp, NULL, NULL, FALSE);
+            lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
             if (!sp)
             {
                 errorstr(ERR_UNDEFINED_IDENTIFIER, buf1);
@@ -1446,7 +1474,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class)
                 lex = backupsym(0);
             }
         }
-        lex = nestedSearch(lex, &sp, NULL, NULL, FALSE);
+        lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
         if (!sp)
         {
             error(ERR_IDENTIFIER_EXPECTED);

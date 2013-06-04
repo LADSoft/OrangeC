@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <locale.h>
 #include <wchar.h>
+#include <share.h>
 #include "libp.h"
 
 FILE *_RTL_FUNC freopen(const char *restrict name, const char *restrict mode, FILE *restrict stream)
@@ -53,7 +54,7 @@ FILE *_RTL_FUNC freopen(const char *restrict name, const char *restrict mode, FI
    free(stream->name);
    __basefclose(stream,0);
    stream->flags &= ~(_F_READ | _F_WRIT | _F_APPEND | _F_EOF | _F_ERR | _F_XEOF | _F_VBUF | _F_IN | _F_OUT);
-   if (!__basefopen(buf,mode,stream, -1)) {
+   if (!__basefopen(buf,mode,stream, -1, SH_COMPAT)) {
         return 0;
    }
    return stream;

@@ -37,13 +37,13 @@
 
 SECTION data CLASS=DATA USE32
 
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 
 ___nancompare:
     mov ecx,[esp + 28]
     mov eax,0
     call clearmath
-    fld tword [esp+16] ; y
+    fld tword [esp+4]  ; x
     fnclex
     fxam
     fnclex
@@ -51,7 +51,7 @@ ___nancompare:
     and ah,45h
     cmp ah,1
     jz retunordered1
-    fld	tword [esp+4]  ; x
+    fld tword [esp+16] ; y
     fnclex
     fxam
     fnclex
@@ -64,15 +64,17 @@ ___nancompare:
     fcompp
     fstsw ax
     test cl,1
-    jnz  notequal
+    jnz notequal
     sahf
     jz rettrue
-notequal
+notequal:
     test cl,cl
     jns less
     sahf
     ja rettrue
-    jmp retfalse    
+    cmp cl,-3 ; less or greater
+    je less
+    jmp retfalse
 less:
     sahf
     jb rettrue
@@ -86,6 +88,8 @@ retunordered2:
     ffree st1
 retunordered1:
     ffree st0
+    or ecx,ecx
+    jnz retfalse
 rettrue:
     mov eax,1
     ret

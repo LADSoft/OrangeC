@@ -116,6 +116,8 @@ include $(DISTMAKE)
 DISTRIBUTE:
 	$(COPYDIR) stdinc\*.h $(DISTINC)
 	$(COPYDIR) stdinc\sys\*.h $(DISTINC)\sys
+	$(COPYDIR) platform\win32\wininc\*.h $(DISTINC)
+	$(COPYDIR) platform\win32\wininc\win32\*.h $(DISTINC)\win32
 ifndef BUILDENV
 	$(COPYDIR) object\startup\*.l $(DISTLIB)
 	$(COPYDIR) object\startup\*.o $(DISTLIB)

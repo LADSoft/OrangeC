@@ -125,7 +125,7 @@ int defid(char *name, char **p)
  */
 {
     int count = 0;
-    while (issymchar(**p))
+    while (issymchar((unsigned char)**p))
     {
         if (count < SYMBOL_NAME_LEN)
         {
@@ -138,12 +138,12 @@ int defid(char *name, char **p)
 }
 void skipspace(void)
 {
-    while (isspace(*includes->lptr))
+    while (isspace((unsigned char)*includes->lptr))
         includes->lptr++;
 }
 BOOL expectid(char *buf)
 {
-    if (isstartchar(*includes->lptr))
+    if (isstartchar((unsigned char)*includes->lptr))
     {
         defid(buf, &includes->lptr);
         return TRUE;
@@ -276,6 +276,11 @@ static void stripcomment(char *line)
             }
             else
             {
+                if (*e == '/' && *(e+1) == '*')
+                {
+                    errorline = includes->line+1;
+                    error(ERR_NESTEDCOMMENTS);
+                }
                 if (*e == '*')
                 {
                     if (*(e+1) == '/')
@@ -302,8 +307,50 @@ static void stripcomment(char *line)
     *s = 0;
 }
 
+/* strip digraphs */
+void stripdigraph(char *buf)
+{
+    char *cp = buf;
+    while (*cp)
+    {
+        if (*cp == '<' && *(cp + 1) == ':')
+        {
+            cp += 2;
+            *buf++ = '[';
+        }
+        else if (*cp == ':' && *(cp + 1) == '>')
+        {
+            cp += 2;
+            *buf++ = ']';
+        }
+        else if (*cp == '<' && *(cp + 1) == '%')
+        {
+            cp += 2;
+            *buf++ = '{';
+        }
+        else if (*cp == '%' && *(cp + 1) == '>')
+        {
+            cp += 2;
+            *buf++ = '}';
+        }
+        else if (*cp == '%' && *(cp + 1) == ':')
+        {
+            cp += 2;
+            *buf++ = '#';
+            if (*cp == '%' && *(cp + 1) == ':')
+            {
+                cp += 2;
+                *buf++ = '#';
+            }
+        }
+        else
+            *buf++ = *cp++;
+    }
+    *buf = 0;
+}
+
 /* strip trigraphs */
-static void striptrigraph(char *buf)
+void striptrigraph(char *buf)
 {
     char *cp = buf;
     while (*cp)
@@ -342,7 +389,7 @@ static void striptrigraph(char *buf)
                     break;
                 default:
                     cp -= 3;
-                    *buf++ =  *cp++;
+                    *buf++ = *cp++;
                     break;
             }
         }
@@ -354,6 +401,12 @@ static void striptrigraph(char *buf)
 int getstring(char *s, int len, FILE *file)
 {
     char *olds = s;
+    if (!file)
+    {
+        *s = 0;
+        includes->inputlen = 0;
+        return s == olds;
+    }
     while (TRUE)
     {
         while (includes->inputlen--)
@@ -436,6 +489,8 @@ BOOL getline(void)
                 }
             }
 #endif
+            if (cparams.prm_trigraph)
+                striptrigraph(includes->inputline + rvc);
             stripcomment(includes->inputline + rvc);
             /* for the back end*/
 #ifndef CPREPROCESSOR
@@ -445,7 +500,7 @@ BOOL getline(void)
             }
 #endif
             rvc = strlen(includes->inputline);
-            while (rvc && isspace(includes->inputline[rvc - 1]))
+            while (rvc && isspace((unsigned char)includes->inputline[rvc - 1]))
                 rvc--;
 
             if (!rvc || !commentlevel && includes->inputline[rvc - 1] != '\\')
@@ -501,16 +556,19 @@ BOOL getline(void)
         }
         if (rv)
             return 1;
-        if (cparams.prm_trigraph)
-            striptrigraph(includes->inputline);
         includes->lptr = includes->inputline;
 
-        while (*includes->lptr != '\n' && isspace(*includes->lptr))
+        while (*includes->lptr != '\n' && isspace((unsigned char)*includes->lptr))
             includes->lptr++;
-        if (includes->lptr[0] == '#' || includes->lptr[0] == '%' && includes->lptr[1] == ':')
+        if (includes->lptr[0] == '#' || cparams.prm_trigraph && (includes->lptr[0] == '%' && includes->lptr[1] == ':'))
         {
-            preprocess();
-            prepping = TRUE;
+            if (cparams.prm_trigraph)
+                stripdigraph(includes->lptr);
+            if (!commentlevel)
+            {
+                preprocess();
+                prepping = TRUE;
+            }
         }
     }
     while (includes->ifskip || prepping)
@@ -575,7 +633,8 @@ void preprocess(void)
         doline();
     else
     {
-        pperrorstr(ERR_UNKNOWNDIR, name);
+        if (!includes->ifskip)
+            pperrorstr(ERR_UNKNOWNDIR, name);
     }
 }
 
@@ -610,7 +669,7 @@ void dowarning(void)
 char *getauxname(char *ptr, char **bufp)
 {
     char buf[512],  *bp = buf;
-    while (isspace(*ptr))
+    while (isspace((unsigned char)*ptr))
         ptr++;
     if (!expectstring(bp, &ptr, TRUE))
         return 0;
@@ -699,7 +758,7 @@ void dopragma(void)
             if (*includes->lptr++ != '(')
                 return;
             skipspace();
-            while (*includes->lptr && *includes->lptr != ')' && !isspace(*includes->lptr))
+            while (*includes->lptr && *includes->lptr != ')' && !isspace((unsigned char)*includes->lptr))
                 *p++ = *includes->lptr++;
             skipspace();
             if (*includes->lptr++ != ')')
@@ -844,19 +903,8 @@ void Compile_Pragma(void)
         char *p = includes->lptr;
         while (*p)
         {
-            if (*p == '\\')
-                if (*(p + 1) == '"')
-                {
-                    *q++ = '"';
-                    p ++;
-                    continue;
-                } 
-                else if (*(p + 1) == '\\')
-                {
-                    *q++ = '\\';
-                    p ++;
-                    continue;
-                }
+            if (*p == '\\' && (*(p + 1) == '"' || *(p + 1) == '\\'))
+                p++;
             else if (*p == '"')
                 break;
             *q++ =  *p++;
@@ -887,13 +935,11 @@ void doline(void)
 {
     if (includes->ifskip)
         return ;
+    ppdefcheck(includes->lptr);
     includes->line = expectnum();
     skipspace();
-    if (*includes->lptr != '"' && *includes->lptr != '<')
-    {
-        ppdefcheck(includes->lptr);
-    }
-    expectstring(includes->fname, &includes->lptr, TRUE);
+    if (*includes->lptr)
+        expectstring(includes->fname, &includes->lptr, TRUE);
 }
 
 
@@ -937,15 +983,29 @@ void doinclude(void)
         pperror(ERR_INCL_FILE_NAME, 0);
         return;
     }
-    if (!inc->sys_inc)
-        inc->handle = SrchPth(name, prm_searchpath, "r", FALSE)
-            ;
-    if (inc->sys_inc || inc->handle ==  NULL)
+
+    if (inc->sys_inc)
+        inc->handle = SrchPth(name, sys_searchpath, "r", TRUE) ;
+    if (inc->handle == NULL && includes) 
     {
-        inc->handle = SrchPth(name, sys_searchpath, "r", TRUE);
-        if (inc->handle == NULL && inc->sys_inc)
-            inc->handle = SrchPth(name, prm_searchpath, "r", FALSE);
+        char buf[260], *p, *q;
+        strcpy(buf, (char *)includes->fname);
+        p = strrchr(buf, '\\');
+        q = strrchr(buf, '/');
+        if (p < q) 
+            p = q;
+        if (p) {
+            *p = 0;
+            inc->handle = SrchPth(name, buf, "r", FALSE) ;
+        }
     }
+    if (inc->handle == NULL)
+        inc->handle = SrchPth(name, ".", "r", FALSE) ;
+    if (inc->handle == NULL)
+        inc->handle = SrchPth(name, prm_searchpath, "r", FALSE) ;
+    if (!inc->sys_inc && inc->handle == NULL)
+        inc->handle = SrchPth(name, sys_searchpath, "r", TRUE) ;
+        
     IncGlobalFlag();
     inc->fname = litlate(name);
     DecGlobalFlag();
@@ -1041,12 +1101,14 @@ int undef2(char *name)
  * Doesn't check for redefine with different value
  * Does handle ANSI macros
  */
+#define MAX_MACRO_ARGS 128
 void dodefine(void)
 {
     char name[SYMBOL_NAME_LEN];
     DEFSTRUCT *hr;
     DEFSTRUCT *def;
-    char *args[256], count = 0;
+    char *args[128];
+    int count = 0;
     char *ps;
     int p,i,j;
     int charindex;
@@ -1073,13 +1135,15 @@ void dodefine(void)
         BOOL gotcomma=FALSE,nullargs=TRUE;
         includes->lptr++;
         skipspace();
-        while (isstartchar(*includes->lptr))
+        while (isstartchar((unsigned char)*includes->lptr))
         {
             int j;
             gotcomma = FALSE;
             nullargs = FALSE;
             expectid(name);
             args[count++] = litlate(name);
+            if (count >= MAX_MACRO_ARGS)
+                fatal("Macro arg count > %d", MAX_MACRO_ARGS);
             for (j=0; j < count-1; j++)
                 if (!strcmp(args[count-1],args[j])) {
                     pperrorstr(ERR_DUPLICATE_IDENTIFIER, name) ;
@@ -1111,9 +1175,14 @@ void dodefine(void)
         def->argcount = count + 1;
     }
     skipspace();
+    if (isspace((unsigned char)includes->lptr[-1]))
+        *(--includes->lptr) = TOKENIZING_PLACEHOLDER;
     p = strlen(includes->lptr);
-    if (includes->lptr[p - 1] == '\n')
-        includes->lptr[--p] = 0;
+    while (isspace((unsigned char)includes->lptr[p-1]))
+        p--;
+    if (isspace((unsigned char)includes->lptr[p]))
+        includes->lptr[p++] = TOKENIZING_PLACEHOLDER;
+    includes->lptr[p] = 0;
     for (i=0,j=0; i < p+1; i++,j++)
         if (!strncmp(includes->lptr + i, "##", 2)) {
             includes->lptr[j] = REPLACED_TOKENIZING;
@@ -1126,12 +1195,11 @@ void dodefine(void)
         } else
             includes->lptr[j] = includes->lptr[i];
     p = strlen(includes->lptr);
-    for (i=0; i < p && isspace(includes->lptr[i]); i++) ;
+    for (i=0; i < p && isspace((unsigned char)includes->lptr[i]); i++) ;
         if (i[includes->lptr] == REPLACED_TOKENIZING)
             pperror(ERR_PP_INV_DEFINITION, 0);
-    for (i = p-1; i >=0 && isspace(includes->lptr[i]); i--) ;
-    if (i[includes->lptr] == '#' || i[includes->lptr] == REPLACED_TOKENIZING
-        || i[includes->lptr] == '%' && i[includes->lptr+1] == ':')
+    for (i = p-1; i >=0 && isspace((unsigned char)includes->lptr[i]); i--) ;
+    if (i[includes->lptr] == '#' || i[includes->lptr] == REPLACED_TOKENIZING)
         pperror(ERR_PP_INV_DEFINITION, 0);
     
     ps = Alloc((p = strlen(includes->lptr)) + 1);
@@ -1152,15 +1220,15 @@ void dodefine(void)
             p = def->string;
             q = hr->string;
             while (*p && *q) {
-                if (isspace(*p))
-                    if (isspace(*q)) {
-                        while (isspace(*p)) p++;
-                        while (isspace(*q)) q++;
+                if (isspace((unsigned char)*p))
+                    if (isspace((unsigned char)*q)) {
+                        while (isspace((unsigned char)*p)) p++;
+                        while (isspace((unsigned char)*q)) q++;
                     } else {
                         break ;
                     }
                 else
-                    if (isspace(*q)) {
+                    if (isspace((unsigned char)*q)) {
                         break ;
                     }
                     else if (*p != *q)
@@ -1169,10 +1237,10 @@ void dodefine(void)
                         p++, q++;
             }
             if (*p)
-                while (isspace(*p))
+                while (isspace((unsigned char)*p))
                     p++;
             if (*q)
-                while (isspace(*q))
+                while (isspace((unsigned char)*q))
                     q++;
             if (*p || *q)
                 same = FALSE;
@@ -1230,7 +1298,7 @@ int definsert(char *macro, char *end, char *begin, char *text, char *etext, int 
     int val;
     int stringizing = FALSE;
     q = end;
-    while (*q >=0 && isspace(*q)) q++;
+    while (*q >=0 && isspace((unsigned char)*q)) q++;
     if (*q == REPLACED_TOKENIZING)
     {
         if (text[0] == 0)
@@ -1241,7 +1309,7 @@ int definsert(char *macro, char *end, char *begin, char *text, char *etext, int 
     else
     {
         q = begin-1;
-        while (q > macro && *q >= 0 && isspace(*q)) q--;
+        while (q > macro && *q >= 0 && isspace((unsigned char)*q)) q--;
         if (*q == REPLACED_TOKENIZING)
         {
             if (text[0] == 0)
@@ -1291,26 +1359,27 @@ void defstringizing(char *macro)
     int waiting = 0;
     while (*q)
     {
-        if (!waiting && (*q == '"' 
-            ||  *q == '\'') && (*(q - 1) != '\\' || *(q - 2) == '\\'))
+        if (!waiting && (*q == '"' ||  *q == '\'') && *(q - 1) != '\\')
         {
             waiting =  *q;
             *p++ = *q++;
         }
         else if (waiting)
         {
-            if (*q == waiting && (*(q - 1) != '\\' || *(q - 2) == '\\'))
+            if (*q == waiting && *(q - 1) != '\\')
                 waiting = 0;
             *p++ = *q++;
         }
-        else if (*q == '#')
+        else if (*q == '#' && *(q-1) != '#' && *(q+1) != '#')  /* # ## # */
         {
             q++;
-            while (isspace(*q))
+            while (isspace((unsigned char)*q))
                 q++;
             *p++ = '"';
             while (*q && *q != STRINGIZING_PLACEHOLDER)
             {
+                while (isspace((unsigned char)*q) && isspace((unsigned char)*(q+1)))
+                        q++;
                 if (*q == '\\' || *q == '"')
                 {
                     *p++ = '\\';
@@ -1340,21 +1409,19 @@ int defreplaceargs(char *macro, int count, char **oldargs, char **newargs,
     while (*p)
     {
         if (!waiting && (*p == '"' 
-            ||  *p == '\'') && (*(p - 1) != '\\' || *(p - 2) == '\\'))
+            ||  *p == '\'') && *(p - 1) != '\\')
         {
             waiting =  *p;
         }
         else if (waiting)
         {
-            if (*p == waiting && (*(p - 1) != '\\' || *(p - 2) == '\\'))
+            if (*p == waiting && *(p - 1) != '\\')
                 waiting = 0;
         }
-        else if (isstartchar(*p))
+        else if (issymchar((unsigned char)*p))
         {
-            char *r = p;
             q = p;
             defid(name, &p);
-            r = macro;
             if (cparams.prm_c99 && !strcmp(name,"__VA_ARGS__")) 
             {
                 if (!varargs[0]) {
@@ -1396,7 +1463,7 @@ void deftokenizing(char *macro)
     while (*e)
     {
         if (!waiting && (*e == '"' 
-            ||  *e == '\'') && (*(e - 1) != '\\' || *(e - 2) == '\\'))
+            ||  *e == '\'') && *(e - 1) != '\\')
         {
             waiting =  *e;
             *b++ = *e++;
@@ -1409,9 +1476,9 @@ void deftokenizing(char *macro)
         }
         else if (*e == REPLACED_TOKENIZING)
         {
-            while (b != macro && isspace(*(b-1)))
+            while (b != macro && isspace((unsigned char)*(b-1)))
                 b-- ;
-            while (*++e != 0 && isspace(*e)) ;
+            while (*++e != 0 && isspace((unsigned char)*e)) ;
             if (b != macro && b[-1] == TOKENIZING_PLACEHOLDER && *e != TOKENIZING_PLACEHOLDER)
                 b--;
             if (*e == TOKENIZING_PLACEHOLDER)
@@ -1519,10 +1586,13 @@ void SetupAlreadyReplaced(char *macro)
 {
     char nn[MACRO_REPLACE_SIZE], *src = nn;
     char name[256];
+    int instr = FALSE;
     strcpy(nn, macro);
     while (*src)
     {
-        if (isstartchar(*src))
+        if ((*src == '"' || *src == '\'') && src[-1] != '\\')
+            instr = !instr;
+        if (isstartchar((unsigned char)*src) && !instr)
         {
             DEFSTRUCT *sp;
             defid(name, &src);
@@ -1542,8 +1612,8 @@ void SetupAlreadyReplaced(char *macro)
 }
 int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **pptr)
 {
-    char *args[100], *expandedargs[100];
-    char macro[MACRO_REPLACE_SIZE],varargs[5000];
+    char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
+    char macro[MACRO_REPLACE_SIZE],varargs[4096];
     char name[256];
     BOOL waiting = FALSE;
     int rv;
@@ -1557,18 +1627,18 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
     {
         q = p;
         if (!waiting && (*p == '"' 
-            ||  *p == '\'') && (p < start+2 || *(p - 1) != '\\' || *(p - 2) == '\\'))
+            ||  *p == '\'') && (p < start+1 || *(p - 1) != '\\'))
         {
             waiting =  *p;
             p++;
         }
         else if (waiting)
         {
-            if (*p == waiting && (p < start + 2 || *(p - 1) != '\\' || *(p - 2) == '\\'))
+            if (*p == waiting && (p < start + 2 || *(p - 1) != '\\' || *(p-2) == '\\'))
                 waiting = 0;
             p++;
         }
-        else if (isstartchar(*p) && (p == start || !issymchar(p[-1])))
+        else if (isstartchar((unsigned char)*p) && (p == start || !issymchar((unsigned char)p[-1])))
         {
             name[0] = 0;
             defid(name, &p);
@@ -1582,7 +1652,7 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                     
                     varargs[0] = 0;
                     
-                    while (isspace(*q)) q++ ;
+                    while (isspace((unsigned char)*q)) q++ ;
                     if (q > start && *(q - 1) == '\n')
                     {
                         return INT_MIN + 1;
@@ -1600,18 +1670,17 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                             char *nm = macro;
                             int nestedparen = 0, nestedstring = 0;
                             insize = 0;
-                            while (isspace(*p)) p++;
+                            while (isspace((unsigned char)*p)) p++;
                             while (*p && (((*p != ',' &&  *p != ')') ||
                                 nestedparen || nestedstring) &&  *p != '\n'))
                             {
                                 if (nestedstring)
                                 {
-                                    if (*p == nestedstring && (*(p - 1) != '\\'
-                                        || *(p - 2) == '\\'))
+                                    if (*p == nestedstring && *(p - 1) != '\\')
                                         nestedstring = 0;
                                 }
                                 else if ((*p == '\'' ||  *p == '"') 
-                                    && (*(p - 1) != '\\' || *(p - 2) == '\\'))
+                                    && *(p - 1) != '\\')
                                     nestedstring =  *p;
                                 else if (*p == '(')
                                     nestedparen++;
@@ -1619,7 +1688,7 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                                     nestedparen--;
                                 *nm++ =  *p++;
                             }
-                            while (nm > macro && isspace(nm[-1]))
+                            while (nm > macro && isspace((unsigned char)nm[-1]))
                                 nm--;
                             *nm = 0;
                             args[count] = litlate(macro);
@@ -1638,7 +1707,7 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                     else 
                     {
                         count = 0;
-                        while (isspace(*p)) p++;
+                        while (isspace((unsigned char)*p)) p++;
                         if (*p == ')')
                             p++;
                     }
@@ -1683,18 +1752,22 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                         }
                     defstringizing(macro);
                     deftokenizing(macro);
-                    r = macro, s = macro;
-                    while (*r)
-                    {
-                        if (*r != TOKENIZING_PLACEHOLDER)
-                            *s++ = *r++;
-                        else
-                            r++;
-                    }
-                    *s = 0;					
                 } else {
                     strcpy(macro,sp->string);
                 }
+                r = macro, s = macro;
+                while (*r)
+                {
+                    if (*r != TOKENIZING_PLACEHOLDER)
+                    {
+                        *s++ = *r++;
+                    }
+                    else
+                    {
+                        r++;
+                    }
+                }
+                *s = 0;					
                 sp->preprocessing = TRUE;
                 SetupAlreadyReplaced(macro);
                 size = strlen(macro);
@@ -1739,7 +1812,6 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
         *pptr = p ;
     return end - orig_end ;
 }
-
 void ppdefcheck(char *line)
 {
     defcheck(line);
@@ -1782,17 +1854,17 @@ static void repdefines(char *lptr)
         {
             BOOL needend = FALSE;
             lptr += 7;
-            while (isspace(*lptr))
+            while (isspace((unsigned char)*lptr))
                 lptr++;
             if (*lptr == '(')
             {
                 lptr++;
                 needend = TRUE;
             }
-            while (isspace(*lptr))
+            while (isspace((unsigned char)*lptr))
                 lptr++;
             defid(name, &lptr);
-            while (isspace(*lptr))
+            while (isspace((unsigned char)*lptr))
                 lptr++;
             if (needend)
                 if (*lptr == ')')

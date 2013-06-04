@@ -44,7 +44,7 @@
 SECTION data CLASS=DATA USE32
 
 feflagshold dw    0
-SECTION code CLASS=CODE USE32
+section code CLASS=CODE USE32
 
 _feclearexcept:
     mov ax,[esp+4]
@@ -56,6 +56,7 @@ _feclearexcept:
     fldenv [esp]
     add esp,28
     and [feflagshold],ax
+    sub eax,eax
     ret
 _fegetexceptflag:
     fnstsw ax
@@ -64,6 +65,7 @@ _fegetexceptflag:
     or  ax,[feflagshold]
     mov ecx, [esp+4]
     mov word [ecx],ax
+    sub eax,eax
     ret
 _fesetexceptflag:
     mov ax,[esp+8]
@@ -71,6 +73,7 @@ _fesetexceptflag:
     and ax,[ecx]
     and ax,0ffh
     mov [feflagshold],ax
+    sub eax,eax
     ret
 _feraiseexcept:
     mov eax,[esp+4]
@@ -81,6 +84,7 @@ _feraiseexcept:
     fldenv [esp]
     fwait
     add esp,28
+    sub eax,eax
     ret
 _fetestexcept:
     fstsw ax

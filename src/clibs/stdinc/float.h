@@ -66,16 +66,16 @@
 #define FLT_DECIMAL_DIG     FLT_DIG
 #define LDBL_DECIMAL_DIG    LDBL_DIG
 
-#define DECIMAL_DIG         18
+#define DECIMAL_DIG         21
 
 #define DBL_EPSILON         0x1P-52
 #define FLT_EPSILON         0x1P-23
 #define LDBL_EPSILON        0x1P-63
 
 /* smallest positive IEEE normal numbers */
-#define DBL_MIN             0x1P-1021
-#define FLT_MIN             0x1P-125F
-#define LDBL_MIN            0x1P-16381L
+#define DBL_MIN             0x1P-1022
+#define FLT_MIN             0x1P-126F
+#define LDBL_MIN            0x1P-16382L
 
 #define DBL_MAX             0x1.FFFFFFFFFFFFFP+1023
 #define FLT_MAX             0x1.FFFFFEP+127F

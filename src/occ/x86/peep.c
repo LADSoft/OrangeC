@@ -1477,9 +1477,19 @@ void peep_push(OCODE *ip)
             {
                 if (!live(ip1->oper1->liveRegs, ip1->oper1->preg))
                 {
-                    ip->oper1 = ip1->oper2;
-                    remove_peep_entry(ip1);
-                    return;
+                    if (ip->oper1->length == ip1->oper2->length)
+                    {
+                        ip->oper1 = ip1->oper2;
+                        remove_peep_entry(ip1);
+                        return;
+                    }
+                    else if (ip1->oper2->mode == am_immed)
+                    {
+                        ip->oper1 = ip1->oper2;
+                        ip->oper1->length = ISZ_UINT;
+                        remove_peep_entry(ip1);
+                        return;
+                    }
                 }
             }
             if (ip1->opcode == op_xor && equal_address(ip1->oper1, ip1->oper2) &&

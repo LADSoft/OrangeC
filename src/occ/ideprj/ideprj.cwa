@@ -41,8 +41,8 @@
 	<EDITWINDOWS>
 		<WINDOW NAME="..\..\ocide\todo." TITLE="todo." X="0" Y="0" WIDTH="683" HEIGHT="286" LINENO="2" COPYID="1"/>
 		<WINDOW NAME="..\..\ocide\xedit.c" TITLE="xedit.c" X="25" Y="25" WIDTH="683" HEIGHT="286" LINENO="4800" COPYID="1"/>
-		<WINDOW NAME="..\parse\ccmain.c" TITLE="ccmain.c" X="0" Y="0" WIDTH="683" HEIGHT="262" LINENO="558" COPYID="1"/>
-		<WINDOW NAME="..\parse\osutil.c" TITLE="osutil.c" X="50" Y="50" WIDTH="683" HEIGHT="262" LINENO="953" COPYID="1"/>
+		<WINDOW NAME="..\parse\ccmain.c" TITLE="ccmain.c" X="0" Y="0" WIDTH="683" HEIGHT="262" LINENO="1" COPYID="1"/>
+		<WINDOW NAME="..\parse\osutil.c" TITLE="osutil.c" X="50" Y="50" WIDTH="683" HEIGHT="262" LINENO="949" COPYID="1"/>
 		<ACTIVE NAME="C:\orangec\src\occ\parse\osutil.c" TITLE="osutil.c"/>
 	</EDITWINDOWS>
 	<HISTORY TYPE="FIND">

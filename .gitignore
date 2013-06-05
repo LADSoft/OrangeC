@@ -26,9 +26,13 @@
 *.opensdf
 *.log
 *.user
+*.old
+*.lss
 q
 q.*
 q1.*
+/src/occ/ideprj/*.*
+/src/occ/ideprj/win32
 /src/debug
 /src/release
 /addon/

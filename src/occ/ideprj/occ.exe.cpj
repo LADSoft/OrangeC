@@ -4,12 +4,13 @@
 	<TARGET TITLE="occ">
 		<PROPERTIES>
 			<PROFILE NAME="WIN32" TYPE="DEBUG">
-				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
+				<PROP ID="__DEBUG_ARGUMENTS">/DUSE_LONGLONG /I..\parse;..\preproc;..\middle /9 /c ..\parse\ccmain.c</PROP>
 				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
+				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
 			</PROFILE>
 			<PROFILE NAME="WIN32" TYPE="RELEASE">
-				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
 				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
+				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
 			</PROFILE>
 		</PROPERTIES>
 		<FILES>
@@ -31,8 +32,8 @@
 				<FILE NAME="..\preproc\pp.h" TITLE="pp.h" CLEAN="0"/>
 				<FILE NAME="..\x86\r.h" TITLE="r.h" CLEAN="0"/>
 				<FILE NAME="..\parse\regs.h" TITLE="regs.h" CLEAN="0"/>
-				<FILE NAME="..\x86\WINMODE.H" TITLE="WINMODE.H" CLEAN="0"/>
 				<FILE NAME="..\parse\WINMODE.h" TITLE="WINMODE.h" CLEAN="0"/>
+				<FILE NAME="..\x86\WINMODE.H" TITLE="WINMODE.H" CLEAN="0"/>
 				<FILE NAME="..\x86\x86regs.h" TITLE="x86regs.h" CLEAN="0"/>
 			</FOLDER>
 			<FOLDER TITLE="Source Files">
@@ -42,10 +43,12 @@
 				<FILE NAME="..\parse\ccmain.c" TITLE="ccmain.c" CLEAN="0"/>
 				<FILE NAME="..\x86\config.c" TITLE="config.c" CLEAN="0"/>
 				<FILE NAME="..\parse\constopt.c" TITLE="constopt.c" CLEAN="0"/>
+				<FILE NAME="..\parse\cppbltin.c" TITLE="cppbltin.c" CLEAN="0"/>
 				<FILE NAME="..\parse\cpplookup.c" TITLE="cpplookup.c" CLEAN="0"/>
 				<FILE NAME="..\x86\dbgieee.c" TITLE="dbgieee.c" CLEAN="0"/>
 				<FILE NAME="..\parse\debug.c" TITLE="debug.c" CLEAN="0"/>
 				<FILE NAME="..\parse\declare.c" TITLE="declare.c" CLEAN="0"/>
+				<FILE NAME="..\parse\declcons.c" TITLE="declcons.c" CLEAN="0"/>
 				<FILE NAME="..\parse\declcpp.c" TITLE="declcpp.c" CLEAN="0"/>
 				<FILE NAME="..\parse\expr.c" TITLE="expr.c" CLEAN="0"/>
 				<FILE NAME="..\parse\exprcpp.c" TITLE="exprcpp.c" CLEAN="0"/>
@@ -80,7 +83,7 @@
 				<FILE NAME="..\parse\LIST.c" TITLE="LIST.c" CLEAN="0"/>
 				<FILE NAME="..\parse\mangle.c" TITLE="mangle.c" CLEAN="0"/>
 				<FILE NAME="..\parse\memory.c" TITLE="memory.c" CLEAN="0"/>
-				<FILE NAME="..\x86\objieeeb.c" TITLE="objieeeb.c" CLEAN="0"/>
+				<FILE NAME="..\x86\objieeea.c" TITLE="objieeea.c" CLEAN="0"/>
 				<FILE NAME="..\parse\osutil.c" TITLE="osutil.c" CLEAN="0"/>
 				<FILE NAME="..\x86\outasm.c" TITLE="outasm.c" CLEAN="0"/>
 				<FILE NAME="..\x86\outcode.c" TITLE="outcode.c" CLEAN="0"/>

@@ -138,7 +138,7 @@ int defid(char *name, char **p)
 }
 void skipspace(void)
 {
-    while (isspace((unsigned char)*includes->lptr))
+    while (isspace((unsigned char)*includes->lptr) || *includes->lptr == TOKENIZING_PLACEHOLDER)
         includes->lptr++;
 }
 BOOL expectid(char *buf)
@@ -231,7 +231,7 @@ static void lineToCpp(void)
 {
     if (cppFile)
     {
-        char *p = includes->inputline;
+        unsigned char *p = includes->inputline;
         /* this isn't quite kosher, because, for example
          * #define FFLUSH -2
          * int a = -FFLUSH;
@@ -239,7 +239,10 @@ static void lineToCpp(void)
          */
         while (*p)
         {
-            fputc(*p++, cppFile);
+            if (*p != TOKENIZING_PLACEHOLDER)
+                fputc(*p++, cppFile);
+            else
+                p++;
         }
     }
 }
@@ -936,6 +939,7 @@ void doline(void)
     if (includes->ifskip)
         return ;
     ppdefcheck(includes->lptr);
+    skipspace();
     includes->line = expectnum();
     skipspace();
     if (*includes->lptr)
@@ -1180,7 +1184,7 @@ void dodefine(void)
     p = strlen(includes->lptr);
     while (isspace((unsigned char)includes->lptr[p-1]))
         p--;
-    if (isspace((unsigned char)includes->lptr[p]))
+    if (isspace((unsigned char)includes->lptr[p]) && includes->lptr[p] != '\n')
         includes->lptr[p++] = TOKENIZING_PLACEHOLDER;
     includes->lptr[p] = 0;
     for (i=0,j=0; i < p+1; i++,j++)
@@ -1290,10 +1294,10 @@ void doundef(void)
 /* 
  * Insert a replacement string
  */
-int definsert(char *macro, char *end, char *begin, char *text, char *etext, int len, int replen)
+int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, unsigned char *text, unsigned char *etext, int len, int replen)
 {
-    char *q;
-    static char NULLTOKEN[] = { TOKENIZING_PLACEHOLDER, 0 };
+    unsigned char *q;
+    static unsigned char NULLTOKEN[] = { TOKENIZING_PLACEHOLDER, 0 };
     int i, p, r;
     int val;
     int stringizing = FALSE;
@@ -1352,21 +1356,30 @@ int definsert(char *macro, char *end, char *begin, char *text, char *etext, int 
         *begin++ = STRINGIZING_PLACEHOLDER;
     return (p);
 }
-void defstringizing(char *macro)
+static int oddslash(char *start, char *p)
 {
-    char replmac[MACRO_REPLACE_SIZE];
-    char *p = replmac, *q = macro;
+    int v = 0;
+    while (p >= start && *p-- == '\\')
+    {
+        v++;
+    }
+    return v & 1;
+}
+void defstringizing(unsigned char *macro)
+{
+    unsigned char replmac[MACRO_REPLACE_SIZE];
+    unsigned char *p = replmac, *q = macro;
     int waiting = 0;
     while (*q)
     {
-        if (!waiting && (*q == '"' ||  *q == '\'') && *(q - 1) != '\\')
+        if (!waiting && (*q == '"' ||  *q == '\'') && !oddslash(macro, q-1))
         {
             waiting =  *q;
             *p++ = *q++;
         }
         else if (waiting)
         {
-            if (*q == waiting && *(q - 1) != '\\')
+            if (*q == waiting && !oddslash(macro, q-1))
                 waiting = 0;
             *p++ = *q++;
         }
@@ -1399,23 +1412,23 @@ void defstringizing(char *macro)
     strcpy(macro, replmac);
 }
 /* replace macro args */
-int defreplaceargs(char *macro, int count, char **oldargs, char **newargs, 
-                   char **expandedargs, char *varargs)
+int defreplaceargs(unsigned char *macro, int count, unsigned char **oldargs, unsigned char **newargs, 
+                   unsigned char **expandedargs, unsigned char *varargs)
 {
     int i, rv;
-    char name[256];
-    char *p = macro,  *q;
+    unsigned char name[256];
+    unsigned char *p = macro,  *q;
     int waiting = 0;
     while (*p)
     {
         if (!waiting && (*p == '"' 
-            ||  *p == '\'') && *(p - 1) != '\\')
+            ||  *p == '\'') && !oddslash(macro, p-1))
         {
             waiting =  *p;
         }
         else if (waiting)
         {
-            if (*p == waiting && *(p - 1) != '\\')
+            if (*p == waiting && !oddslash(macro, p-1))
                 waiting = 0;
         }
         else if (issymchar((unsigned char)*p))
@@ -1456,21 +1469,21 @@ int defreplaceargs(char *macro, int count, char **oldargs, char **newargs,
     }
     return (TRUE);
 }
-void deftokenizing(char *macro)
+void deftokenizing(unsigned char *macro)
 {
-    char *b = macro,  *e = macro;
+    unsigned char *b = macro,  *e = macro;
     int waiting = 0;
     while (*e)
     {
         if (!waiting && (*e == '"' 
-            ||  *e == '\'') && *(e - 1) != '\\')
+            ||  *e == '\'') && !oddslash(macro, e-1))
         {
             waiting =  *e;
             *b++ = *e++;
         }
         else if (waiting)
         {
-            if (*e == waiting && (*(e - 1) != '\\' || *(e - 2) == '\\'))
+            if (*e == waiting && !oddslash(macro, e-1))
                 waiting = 0;
             *b++ = *e++;
         }
@@ -1582,15 +1595,15 @@ void defmacroreplace(char *macro, char *name)
 }
 
 /*-------------------------------------------------------------------------*/
-void SetupAlreadyReplaced(char *macro)
+void SetupAlreadyReplaced(unsigned char *macro)
 {
-    char nn[MACRO_REPLACE_SIZE], *src = nn;
-    char name[256];
+    unsigned char nn[MACRO_REPLACE_SIZE], *src = nn;
+    unsigned char name[256];
     int instr = FALSE;
     strcpy(nn, macro);
     while (*src)
     {
-        if ((*src == '"' || *src == '\'') && src[-1] != '\\')
+        if ((*src == '"' || *src == '\'') && !oddslash(macro, src-1))
             instr = !instr;
         if (isstartchar((unsigned char)*src) && !instr)
         {
@@ -1610,31 +1623,31 @@ void SetupAlreadyReplaced(char *macro)
     }	
     *macro = 0;
 }
-int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **pptr)
+int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int totallen, char **pptr)
 {
-    char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
-    char macro[MACRO_REPLACE_SIZE],varargs[4096];
-    char name[256];
+    unsigned char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
+    unsigned char macro[MACRO_REPLACE_SIZE],varargs[4096];
+    unsigned char name[256];
     BOOL waiting = FALSE;
     int rv;
     int size;
-    char *p,  *q;
+    unsigned char *p,  *q;
     DEFSTRUCT *sp;
     int insize,rv1;
-    char * orig_end = end ;
+    unsigned char * orig_end = end ;
     p = start;
     while (p < end)
     {
         q = p;
         if (!waiting && (*p == '"' 
-            ||  *p == '\'') && (p < start+1 || *(p - 1) != '\\'))
+            ||  *p == '\'') && !oddslash(start, p-1))
         {
             waiting =  *p;
             p++;
         }
         else if (waiting)
         {
-            if (*p == waiting && (p < start + 2 || *(p - 1) != '\\' || *(p-2) == '\\'))
+            if (*p == waiting && !oddslash(start, p-1))
                 waiting = 0;
             p++;
         }
@@ -1644,11 +1657,10 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
             defid(name, &p);
             if ((!cparams.prm_cplusplus || name[0] != 'R' || name[1] != '\0' || *p != '"') && (sp = (DEFSTRUCT *)search(name, defsyms)) != 0 && !sp->undefined && q[-1] != REPLACED_ALREADY)
             {
-                char *r, *s;
                 if (sp->argcount)
                 {
                     int count = 0;
-                    char *q = p;
+                    unsigned char *q = p;
                     
                     varargs[0] = 0;
                     
@@ -1667,7 +1679,7 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                         int lm, ln = strlen(name);
                         do
                         {
-                            char *nm = macro;
+                            unsigned char *nm = macro;
                             int nestedparen = 0, nestedstring = 0;
                             insize = 0;
                             while (isspace((unsigned char)*p)) p++;
@@ -1676,11 +1688,11 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                             {
                                 if (nestedstring)
                                 {
-                                    if (*p == nestedstring && *(p - 1) != '\\')
+                                    if (*p == nestedstring && !oddslash(macro, p-1))
                                         nestedstring = 0;
                                 }
                                 else if ((*p == '\'' ||  *p == '"') 
-                                    && *(p - 1) != '\\')
+                                    && !oddslash(macro, p-1))
                                     nestedstring =  *p;
                                 else if (*p == '(')
                                     nestedparen++;
@@ -1750,24 +1762,11 @@ int replacesegment(char *start, char *end, int *inbuffer, int totallen, char **p
                         if (!defreplaceargs(macro, count, sp->args, args, expandedargs, varargs)) {
                             return  INT_MIN;
                         }
-                    defstringizing(macro);
                     deftokenizing(macro);
+                    defstringizing(macro);
                 } else {
                     strcpy(macro,sp->string);
                 }
-                r = macro, s = macro;
-                while (*r)
-                {
-                    if (*r != TOKENIZING_PLACEHOLDER)
-                    {
-                        *s++ = *r++;
-                    }
-                    else
-                    {
-                        r++;
-                    }
-                }
-                *s = 0;					
                 sp->preprocessing = TRUE;
                 SetupAlreadyReplaced(macro);
                 size = strlen(macro);
@@ -1817,11 +1816,11 @@ void ppdefcheck(char *line)
     defcheck(line);
 }
 /* Scan line for macros and do replacements */
-int defcheck(char *line)
+int defcheck(unsigned char *line)
 {
     int inbuffer = strlen(line);
     int rv = replacesegment(line, line + inbuffer, &inbuffer, MACRO_REPLACE_SIZE,0);
-    char *p = line;
+    unsigned char *p = line;
     while (*p)
     {
         if (*p != REPLACED_ALREADY)

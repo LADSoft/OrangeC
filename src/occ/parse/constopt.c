@@ -2220,7 +2220,6 @@ join_land:
                 case en_labcon:
                 case en_auto:
                     /* assumes nothing can be relocated to address 0 */
-                    rv |= opt0(&(ep->right));
                     *node = intNode(en_c_i, 1);
                     rv = TRUE;
                     break;

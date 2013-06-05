@@ -2230,7 +2230,7 @@ static LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYP
                 BOOL blocked;
                 BOOL constexpression;
                 ADDRESS address;
-                TYPE *tpb;
+                TYPE *tpb, *tpx;
                 enum e_lk linkage = lk_none;
                 enum e_lk linkage2 = lk_none;
                 enum e_lk linkage3 = lk_none;

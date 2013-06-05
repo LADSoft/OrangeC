@@ -298,6 +298,10 @@ static void chkdos(void)
         WinmodeSetup(0, "a"); // DOS32A
         prm_useesp = FALSE;
     }
+    else
+    {
+        WinmodeSetup(0, "c"); // Windows console
+    }
 }
 static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
 {

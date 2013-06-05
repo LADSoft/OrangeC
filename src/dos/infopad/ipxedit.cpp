@@ -1246,58 +1246,63 @@ void scrollleft(EDITDATA *p, int cols)
 
 void scrollup(EDITDATA *p, int lines)
 {
-    TRect r, update;
-    int totallines, movelines = lines;
-    int pos = p->textshowncharpos, len = 0;
-    ClientArea(p, &r);
-    totallines = r.b.y;
-    if (lines < 0)
+    static int inscrollup;
+    if (!inscrollup++)
     {
-        lines =  - lines;
-        while (lines && pos > 0)
+        TRect r, update;
+        int totallines, movelines = lines;
+        int pos = p->textshowncharpos, len = 0;
+        ClientArea(p, &r);
+        totallines = r.b.y - r.a.y;
+        if (lines < 0)
         {
-            --pos;
-            if (p->cd->text[pos].ch == '\n')
+            lines =  - lines;
+            while (lines && pos > 0)
             {
-                lines--;
-                len--;
+                --pos;
+                if (p->cd->text[pos].ch == '\n')
+                {
+                    lines--;
+                    len--;
+                }
             }
-        }
-        while (pos)
-        {
-            --pos;
-            if (p->cd->text[pos].ch == '\n')
+            while (pos)
             {
+                --pos;
+                if (p->cd->text[pos].ch == '\n')
+                {
+                    pos++;
+                    break;
+                }
+            }
+            SendUpdate(p);
+            if (lines < totallines)
+                p->delta.y -= movelines + lines;
+            p->textshowncharpos = pos;
+        }
+        else
+        {
+            while (lines && pos < p->cd->textlen)
+            {
+                if (p->cd->text[pos].ch == '\n')
+                {
+                    lines--;
+                    len++;
+                }
                 pos++;
-                break;
             }
-        }
-        SendUpdate(p);
-        if (lines < totallines)
-            p->delta.y -= movelines + lines;
-        p->textshowncharpos = pos;
-    }
-    else
-    {
-        while (lines && pos < p->cd->textlen)
-        {
-            if (p->cd->text[pos].ch == '\n')
+            SendUpdate(p);
+            if (lines < totallines)
             {
-                lines--;
-                len++;
+                p->delta.y += movelines - lines;
             }
-            pos++;
+            p->textshowncharpos = pos;
         }
+        p->drawView();
         SendUpdate(p);
-        if (lines < totallines)
-        {
-            p->delta.y -= movelines - lines;
-        }
-        p->textshowncharpos = pos;
+        VScrollPos(p, len, FALSE);
     }
-    p->drawView();
-    SendUpdate(p);
-    VScrollPos(p, len, FALSE);
+    inscrollup--;
 }
 
 /**********************************************************************
@@ -1317,8 +1322,8 @@ void ScrollCaretIntoView(EDITDATA *p, BOOL middle)
         return ;
     }
     ClientArea(p, &r);
-    lines = r.b.y;
-    cols = r.b.x;
+    lines = r.b.y - r.a.y;
+    cols = r.b.x - r.a.x;
     if (cols == 0)
         cols = 80;
     if (pos1 > p->textshowncharpos)
@@ -3853,7 +3858,7 @@ void mm()
                         break;
                     case kbPgUp:
                         ClientArea(p, &r);
-                        i = r.b.y;
+                        i = r.b.y - r.a.y;
                         upline(p, 2-i);
                         p->parent->WinMessage(EN_SETCURSOR, 0, 0);    
                         break;
@@ -3865,7 +3870,7 @@ void mm()
                         break;
                     case kbPgDn:
                         ClientArea(p, &r);
-                        i = r.b.y;
+                        i = r.b.y - r.a.y;
                         upline(p, i - 2);
                         p->parent->WinMessage(EN_SETCURSOR, 0, 0);
                         break;

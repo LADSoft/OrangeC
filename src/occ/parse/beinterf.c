@@ -145,9 +145,13 @@ TYPE std__func__nc =
 {
     bt_pointer, 4, &stdchar
 };
+static TYPE std__func__c = 
+{
+    bt_const, 4, &stdchar
+};
 TYPE std__func__ = 
 {
-    bt_const, 4, &std__func__nc
+    bt_pointer, 4, &std__func__c
 };
 TYPE stdstring = 
 {

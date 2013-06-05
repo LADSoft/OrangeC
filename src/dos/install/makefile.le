@@ -31,13 +31,16 @@ COMPILE = cc386 $(DEBUG) -D$(TESTING) -D$(FULL) -DBCPP +c /C+R /I..\dflat
 LINK= valx -le -nci $(LINKDEBUG)
 #------------------------------------------------
 
-%.obj: %.c:
-	$(COMPILE) $*.c
+install.obj: ..\..\version.h
 
-install.exe: install.obj menus.obj uz.obj dialogs.obj
-	$(LINK) /STUB:(DOS32a.exe) c0dosw.obj install menus uz dialogs,install,install,..\dflat\dflat.lib cldos.lib
+%.obj: %.c
+	$(COMPILE) $^
 
-pack.exe: pack.obj
+install.exe: install.obj menus.obj uz.obj dialogs.obj ..\dflat\dflat.lib
+	$(LINK) /STUB:($(ORANGEC)\lib\DOS32a.exe) c0dosw.obj install menus uz dialogs,install,install,..\dflat\dflat.lib cldos.lib
+
+
+pack.exe: pack.c
 	cc386 /Wc pack.c
 
 dopack: pack.exe install.exe

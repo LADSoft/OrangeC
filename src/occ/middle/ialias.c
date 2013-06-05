@@ -948,17 +948,25 @@ static void HandleParm(QUAD *head)
         {
             base = &tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
         }
-        /*
-        else if (!isintconst(head->dc.left->offset) && head->dc.left->offset->type != en_labcon)
+        else if (!isintconst(head->dc.left->offset))
         {
-            ALIASNAME *an = LookupMem(head->dc.left->offset->v.sp->imvalue);
+            ALIASNAME *an;
             ALIASADDRESS *aa;
+            switch (head->dc.left->offset->type)
+            {
+                case en_labcon:
+                case en_global:
+                case en_label:
+                case en_pc:
+                case en_threadlocal:
+                    return;
+            }
+            an = LookupMem(head->dc.left->offset->v.sp->imvalue);
             if (head->dc.left->mode == i_direct)
                 an = LookupAliasName(an, 0);
             aa = LookupAddress(an, 0);
             base = &aa->pointsto;
         }
-        */
         if (base)
         {
             addr = *base;
@@ -1142,6 +1150,7 @@ void AliasStruct(BITINT *bits, IMODE *ans, IMODE *left, IMODE *right)
 }
 void AliasGosub(QUAD *tail, BITINT *parms, BITINT *bits, int n)
 {
+    int i;
     andmap(bits, uivBytes);
     tail = tail->back;
     while (tail && tail->dc.opcode != i_block && tail->dc.opcode != i_gosub && tail->dc.opcode != i_label)
@@ -1166,6 +1175,12 @@ void AliasGosub(QUAD *tail, BITINT *parms, BITINT *bits, int n)
         }
         tail = tail->back;
     }
+    for (i=0; i < n; i++)
+    {
+        *bits &= ~*parms;
+        bits++, parms++;
+    }
+    
 }
 void AliasUses(BITINT *bits, IMODE *im, BOOL rhs)
 {
@@ -1196,6 +1211,7 @@ void AliasUses(BITINT *bits, IMODE *im, BOOL rhs)
                 }
             }
             else if (im->mode == i_immed && !isintconst(im->offset) && 
+                     !iscomplexconst(im->offset) &&
                      !isfloatconst(im->offset) && im->offset->type != en_labcon)
             {
                 ALIASNAME *an = LookupMem(im);
@@ -1204,10 +1220,14 @@ void AliasUses(BITINT *bits, IMODE *im, BOOL rhs)
                 while (aa->merge) aa = aa->merge;
                 if (aa->modifiedBy)
                     ormap(bits, aa->modifiedBy);
-                im = GetLoadTemp(im);
+                im = im->offset->v.sp->imvalue;
                 if (im)
                 {
-                    setbit(bits, im->offset->v.sp->value.i);
+                    im = GetLoadTemp(im);
+                    if (im)
+                    {
+                        setbit(bits, im->offset->v.sp->value.i);
+                    }
                 }
             }
         }

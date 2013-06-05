@@ -1915,7 +1915,8 @@ void asm_passthrough(QUAD *q)        /* reserved */
             val->oper2->length = len;
         }
     }
-    gen_code(val->opcode, val->oper1, val->oper2);
+    val = gen_code(val->opcode, val->oper1, val->oper2);
+    val->noopt = TRUE;
 }
 void asm_datapassthrough(QUAD *q)        /* reserved */
 {

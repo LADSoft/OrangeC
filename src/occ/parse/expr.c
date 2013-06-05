@@ -2708,12 +2708,14 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                     error(ERR_NOT_AN_ALLOWED_TYPE);
                 else if (basetype(*tp)->scoped)
                     error(ERR_SCOPED_TYPE_MISMATCH);
+                    /*
                 else
                     if (basetype(*tp)->type < bt_int)
                     {
                         cast(&stdint, exp);
                         *tp = &stdint;
                     }
+                    */
                 if ((*tp)->type == bt_memberptr)
                 {
                        *exp = exprNode(en_mp_as_bool, *exp, NULL);

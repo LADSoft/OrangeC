@@ -37,7 +37,7 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 ASM_DEPENDENCIES = $(wildcard 386\*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
-C_FLAGS=/C-E
+C_FLAGS=/C-E #forces stack frames for this part of the RTL
 
 all: $(DEPENDENCIES)
 

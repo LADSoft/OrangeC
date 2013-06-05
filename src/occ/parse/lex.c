@@ -504,7 +504,7 @@ int getChar(char **source, enum e_lexType *tp)
     if (*p == '\'')
     {
         int i ;
-        p++;
+        do p++; while (*p == TOKENIZING_PLACEHOLDER);
         i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
         if (i == INT_MIN)
         {
@@ -532,11 +532,11 @@ int getChar(char **source, enum e_lexType *tp)
                     error(ERR_UNTERM_CHAR_CONSTANT);
                 }
                 else
-                    p++;
+                    do p++; while (*p == TOKENIZING_PLACEHOLDER);
             }
         }
         else
-            p++;
+            do p++; while (*p == TOKENIZING_PLACEHOLDER);
         *tp = v;
         *source = p;
         return i;
@@ -556,34 +556,34 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
     if (*p == 'L')
     {
         v = l_wstr;
-        p++;
+        do p++; while (*p == TOKENIZING_PLACEHOLDER);
     }
     else if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
         if (*p == 'u')
         {
             v = l_ustr;
-            p++;
+            do p++; while (*p == TOKENIZING_PLACEHOLDER);
             if (*p == '8')
             {
                 v = l_u8str;
-                p++;
+                do p++; while (*p == TOKENIZING_PLACEHOLDER);
             }
         }
         else if (*p == 'U')
         {
             v = l_Ustr;
-            p++;
+            do p++; while (*p == TOKENIZING_PLACEHOLDER);
         }
     }
     if (cparams.prm_cplusplus && *p == 'R')
     {
         raw = TRUE;
-        p++;
+        do p++; while (*p == TOKENIZING_PLACEHOLDER);
     }
     if (*p == '"')
     {
-        p++;
+        do p++; while (*p == TOKENIZING_PLACEHOLDER);
         if (raw)
         {
             // fixme utf8 raw strings...
@@ -596,7 +596,10 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             while (TRUE)
             {
                 if (*p)
-                    st[0] = *p++;
+                {
+                    st[0] = *p;
+                    do p++; while (*p == TOKENIZING_PLACEHOLDER);
+                }
                 else if (getstring(st, 1, includes->handle))
                 {
                     errorint(ERR_EOF_RAW_STRING, lineno);
@@ -638,7 +641,10 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             else while(TRUE)
             {
                 if (*p)
-                    st[0] = *p++;
+                {
+                    st[0] = *p;
+                    do p++; while (*p == TOKENIZING_PLACEHOLDER);
+                }
                 else if (getstring(st, 1, includes->handle))
                 {
                     errorint(ERR_EOF_RAW_STRING, lineno);
@@ -687,7 +693,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             }
             *dest = 0;
             found = TRUE;
-            while (isspace(*p))
+            while (isspace(*p) || *p == TOKENIZING_PLACEHOLDER)
                 p++;
             *source = p;
         }
@@ -754,9 +760,9 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             if (*p != '"')
                 error(ERR_UNTERM_STRING_CONSTANT);
             else
-                p++;
+                do p++; while (*p == TOKENIZING_PLACEHOLDER);
             found = TRUE;
-            while (isspace(*p))
+            while (isspace(*p) || *p == TOKENIZING_PLACEHOLDER)
                 p++;
             *source = p;
         }
@@ -802,7 +808,6 @@ static LLONG_TYPE getbase(int b, char **ptr)
         if (i > (llminus1 - j) / b)
             if (!errd)
             {
-                printf("%s\n", s);
                 error(ERR_CONSTTOOLARGE);
                 errd++;
             }
@@ -1222,7 +1227,7 @@ LEXEME *getsym(void)
                 {
                     return NULL;
                 }
-            while (isspace(*includes->lptr))
+            while (isspace(*includes->lptr) || *includes->lptr == TOKENIZING_PLACEHOLDER)
                 includes->lptr++;
         } while (*includes->lptr == 0);
         lex->charindex = includes->lptr - includes->inputline;

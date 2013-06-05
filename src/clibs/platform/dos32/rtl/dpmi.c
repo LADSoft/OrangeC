@@ -45,7 +45,7 @@
 int	_RTL_FUNC dpmi_alloc_descriptors(SELECTOR * basesel,UWORD num)
 {
     asm mov cx,[num]
-    asm mov ax,0
+    asm mov eax,0
     asm int 0x31
     asm mov ecx,-1
     asm jc xout
@@ -69,7 +69,7 @@ xout:
 }
 int	_RTL_FUNC dpmi_get_sel_increment(ULONG * rv)
 {
-    asm mov ax,3
+    asm mov eax,3
     asm int 0x31
     asm mov ecx,[rv]
     asm movzx eax,ax
@@ -80,7 +80,7 @@ int _RTL_FUNC dpmi_get_sel_base(ULONG * base, SELECTOR sel)
 {
     asm push ebx
     asm mov bx,[sel]
-    asm mov ax,6
+    asm mov eax,6
     asm int 0x31
     asm pop ebx
     asm mov eax,-1
@@ -97,7 +97,7 @@ int	_RTL_FUNC dpmi_set_sel_base(SELECTOR sel, ULONG base)
 {
     asm push ebx
     asm mov bx,[sel]
-    asm mov ax,7
+    asm mov eax,7
     asm mov ecx,[base]
     asm mov dx,cx
     asm shr ecx,16
@@ -123,7 +123,7 @@ int	_RTL_FUNC dpmi_set_sel_limit(SELECTOR sel , ULONG limit)
 {
     asm push ebx
     asm mov bx,[sel]
-    asm mov ax,8
+    asm mov eax,8
     asm mov ecx,[limit]
     asm mov dx,cx
     asm shr ecx,16
@@ -149,7 +149,7 @@ int	_RTL_FUNC dpmi_set_sel_access_rights(SELECTOR sel, UWORD rights)
 {
     asm push ebx
     asm mov bx,[sel]
-    asm mov ax,9
+    asm mov eax,9
     asm mov cx,[rights]
     asm int 0x31
     asm pop ebx
@@ -162,7 +162,7 @@ int	_RTL_FUNC dpmi_get_alias_descriptor(SELECTOR *alias, SELECTOR sel)
 {
     asm push ebx
     asm mov bx,[sel]
-    asm mov ax,0xa
+    asm mov eax,0xa
     asm int 0x31
     asm pop ebx
     asm mov ecx,-1
@@ -181,7 +181,7 @@ int	_RTL_FUNC dpmi_set_descriptor(SELECTOR sel, DESCRIPTOR *desc)
     asm push edi
     asm mov edi,[desc]
   asm mov bx,[sel]
-    asm mov ax,0xc
+    asm mov eax,0xc
     asm int 0x31
     asm pop edi
     asm pop ebx
@@ -196,7 +196,7 @@ int	_RTL_FUNC dpmi_get_descriptor(DESCRIPTOR *desc, SELECTOR sel)
     asm push edi
     asm mov edi,[desc]
   asm mov bx,[sel]
-    asm mov ax,0xb
+    asm mov eax,0xb
     asm int 0x31
     asm pop	edi
     asm pop	ebx
@@ -210,7 +210,7 @@ int	_RTL_FUNC dpmi_set_multiple_descriptors(MULTIPLE_DESCRIPTOR *desc , UWORD co
     asm push edi
     asm mov edi,[desc]
   asm mov cx,[count]
-    asm mov ax,0xf
+    asm mov eax,0xf
     asm int 0x31
     asm pop edi
     asm mov eax,-1
@@ -224,7 +224,7 @@ int	_RTL_FUNC dpmi_get_multiple_descriptors(MULTIPLE_DESCRIPTOR *desc , UWORD co
     asm push edi
     asm mov edi,[desc]
   asm mov cx,[count]
-    asm mov ax,0xE
+    asm mov eax,0xE
     asm int 0x31
     asm pop edi
     asm mov eax,-1
@@ -238,7 +238,7 @@ int	_RTL_FUNC dpmi_alloc_real_memory(SELECTOR *sel, UWORD *para, UWORD len)
 {
     asm push ebx
     asm mov bx,[len]
-    asm mov ax,0x100
+    asm mov eax,0x100
     asm int 0x31
     asm pop ebx
     asm mov ecx,-1
@@ -256,7 +256,7 @@ xout:
 int	_RTL_FUNC dpmi_dealloc_real_memory(SELECTOR sel)
 {
     asm mov dx,[sel]
-    asm mov ax,0x101
+    asm mov eax,0x101
     asm int 0x31
     asm mov eax,-1
     asm jc xout
@@ -268,7 +268,7 @@ int	_RTL_FUNC dpmi_realloc_real_memory(SELECTOR sel, UWORD size)
     asm push ebx
     asm mov bx,[size]
     asm mov dx,[sel]
-    asm mov ax,0x102
+    asm mov eax,0x102
     asm int 0x31
     asm pop ebx
     asm mov eax,-1
@@ -334,7 +334,7 @@ int	_RTL_FUNC dpmi_get_real_interrupt(UWORD *xseg, UWORD *ofs, UWORD num)
 {
     asm push ebx
     asm mov bx,[num]
-    asm mov ax,0x200
+    asm mov eax,0x200
     asm int 0x31
     asm pop ebx
     asm mov ecx,-1
@@ -353,7 +353,7 @@ int	_RTL_FUNC dpmi_set_real_interrupt(UWORD num ,UWORD xseg,UWORD ofs)
     asm mov bx,[num]
     asm mov cx,[xseg]
    asm mov dx,[ofs]
-    asm mov ax,0x201
+    asm mov eax,0x201
     asm int 0x31
     asm pop ebx
     asm mov eax,-1
@@ -366,7 +366,7 @@ int	_RTL_FUNC dpmi_get_protected_except(SELECTOR *sel, ULONG *ofs, UWORD num)
 {
     asm push ebx
     asm mov bx,[num]
-    asm mov ax,0x202
+    asm mov eax,0x202
     asm int 0x31
     asm pop ebx
     asm mov eax,-1
@@ -385,7 +385,7 @@ int	_RTL_FUNC dpmi_set_protected_except(UWORD num,SELECTOR sel,ULONG ofs)
     asm mov bx,[num]
     asm mov cx,[sel]
     asm mov edx,[ofs]
-    asm mov ax,0x203
+    asm mov eax,0x203
     asm int 0x31
     asm pop ebx
     asm mov eax,-1
@@ -398,7 +398,7 @@ int	_RTL_FUNC dpmi_get_protected_interrupt(SELECTOR *sel, ULONG *ofs, UWORD num)
 {
     asm push ebx
     asm mov bx,[num]
-    asm mov ax,0x204
+    asm mov eax,0x204
     asm int 0x31
     asm pop ebx
     asm mov eax,-1
@@ -417,7 +417,7 @@ int	_RTL_FUNC dpmi_set_protected_interrupt(UWORD num,SELECTOR sel,ULONG ofs)
     asm mov bx,[num]
     asm mov cx,[sel]
   asm mov edx,[ofs]
-    asm mov ax,0x205
+    asm mov eax,0x205
     asm int 0x31
     asm pop ebx
     asm mov eax,-1
@@ -432,14 +432,14 @@ int	_RTL_FUNC dpmi_simulate_real_interrupt(UWORD num, DPMI_REGS *val)
     asm push ebx
     asm push edi
     asm push esi
-    asm push ebp
+//    asm push ebp
     asm mov bx,[num]
     asm sub bh,bh
     asm mov edi,[val]
     asm sub ecx,ecx
-    asm mov ax,0x300
+    asm mov eax,0x300
     asm int 0x31
-    asm pop ebp
+//    asm pop ebp
     asm pop esi
     asm pop edi
     asm pop ebx
@@ -454,13 +454,13 @@ int	_RTL_FUNC dpmi_simulate_proc_far_ret_frame(DPMI_REGS *val)
     asm push ebx
     asm push edi
     asm push esi
-    asm push ebp
+//    asm push ebp
     asm sub bx,bx
     asm mov edi,[val]
     asm sub ecx,ecx
-    asm mov ax,0x301
+    asm mov eax,0x301
     asm int 0x31
-    asm pop ebp
+//    asm pop ebp
     asm pop esi
     asm pop edi
     asm pop ebx
@@ -475,13 +475,13 @@ int	_RTL_FUNC dpmi_simulate_proc_int_frame(DPMI_REGS *val)
     asm push ebx
     asm push edi
     asm push esi
-    asm push ebp
+//    asm push ebp
     asm sub bx,bx
     asm mov edi,[val]
     asm sub ecx,ecx
-    asm mov ax,0x302
+    asm mov eax,0x302
     asm int 0x31
-    asm pop ebp
+//    asm pop ebp
     asm pop esi
     asm pop edi
     asm pop ebx
@@ -499,7 +499,7 @@ int	_RTL_FUNC dpmi_get_real_callback(void *proc, void *buf, UWORD *xseg, UWORD *
    asm pop ds
     asm mov esi,[proc]
     asm mov edi,[buf]
-    asm mov ax,0x303
+    asm mov eax,0x303
     asm int 0x31
    asm pop ds
     asm pop edi
@@ -517,7 +517,7 @@ int	_RTL_FUNC dpmi_free_real_callback(UWORD xseg , UWORD ofs )
 {
     asm mov cx,[xseg]
     asm mov dx,[ofs]
-    asm mov ax,0x304
+    asm mov eax,0x304
     asm int 0x31
     asm mov eax,-1
     asm jc xout
@@ -528,7 +528,7 @@ int	_RTL_FUNC dpmi_get_state_save_restore(SELECTOR *csel, void *cofs, UWORD *xse
 {
     asm push esi
     asm push edi
-    asm mov ax,0x305
+    asm mov eax,0x305
     asm int 0x31
     asm push ebx
     asm mov bx,[len]
@@ -564,7 +564,7 @@ int	_RTL_FUNC dpmi_call_state_save_restore(SELECTOR csel, void *proc, void *buf,
 }
 int	_RTL_FUNC dpmi_get_version(DPMI_VER *ver)
 {
-    asm mov ax,0x400
+    asm mov eax,0x400
     asm int 0x31
     asm push esi
     asm mov esi, [ver]
@@ -582,7 +582,7 @@ int	_RTL_FUNC dpmi_get_memory_info( DPMI_FREEMEM_INFO *info)
 {
     asm push edi
     asm mov edi,[info]
-    asm mov ax,0x500
+    asm mov eax,0x500
     asm int 0x31
     asm mov eax,-1
     asm jc xout
@@ -594,7 +594,7 @@ int	_RTL_FUNC dpmi_get_memory( ULONG *linear, DPMI_MEM_HANDLE *handle, ULONG siz
     asm push esi
     asm push edi
     asm push ebx
-    asm mov ax,0x501
+    asm mov eax,0x501
     asm mov bx,word ptr [size + 2]
     asm mov cx,word ptr [size]
     asm int 0x31
@@ -619,7 +619,7 @@ int	_RTL_FUNC dpmi_free_memory(DPMI_MEM_HANDLE handle)
     asm push edi
     asm mov si,word ptr [handle+2]
     asm mov di,word ptr [handle]
-    asm mov ax,0x502
+    asm mov eax,0x502
     asm int 0x31
     asm pop edi
     asm pop esi
@@ -634,7 +634,7 @@ int	_RTL_FUNC dpmi_resize_memory( ULONG *linear, DPMI_MEM_HANDLE *handle, ULONG 
     asm push esi
     asm push edi
     asm push ebx
-    asm mov ax,0x503
+    asm mov eax,0x503
     asm mov bx,word ptr [size + 2]
     asm mov cx,word ptr [size]
     asm mov si,word ptr [handle+2]
@@ -662,7 +662,7 @@ int	_RTL_FUNC dpmi_get_memory_params(ULONG *base, ULONG *size, DPMI_MEM_HANDLE h
     asm push ebx
     asm mov si,word ptr [handle+2]
     asm mov di,word ptr [handle]
-    asm mov ax,0x504
+    asm mov eax,0x504
     asm int 0x31
     asm mov eax,-1
     asm jc xout
@@ -683,7 +683,7 @@ xout:
 /* group 9 */
 int	_RTL_FUNC dpmi_enable_virtual_flag(ULONG * rv)
 {
-  asm mov ax,0x901
+  asm mov eax,0x901
     asm int 0x31
     asm movzx eax,al
   asm mov ecx,[rv]
@@ -692,7 +692,7 @@ int	_RTL_FUNC dpmi_enable_virtual_flag(ULONG * rv)
 }
 int	_RTL_FUNC dpmi_disable_virtual_flag(ULONG * rv)
 {
-  asm mov ax,0x900
+  asm mov eax,0x900
     asm int 0x31
     asm movzx eax,al
   asm mov ecx,[rv]
@@ -701,7 +701,7 @@ int	_RTL_FUNC dpmi_disable_virtual_flag(ULONG * rv)
 }
 int	_RTL_FUNC dpmi_return_virtual_flag(ULONG * rv)
 {
-  asm mov ax,0x902
+  asm mov eax,0x902
     asm int 0x31
     asm movzx eax,al
   asm mov ecx,[rv]

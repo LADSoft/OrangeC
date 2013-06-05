@@ -43,11 +43,11 @@ typedef LLONG_TYPE PPINT;
 #define FALSE 0
 
 /* ## sequences */
-#define REPLACED_TOKENIZING -80
+#define REPLACED_TOKENIZING ((unsigned char)-80)
 /* left or right-hand size of a ## when an arg has been replaced by an empty string */
-#define TOKENIZING_PLACEHOLDER -79
-#define STRINGIZING_PLACEHOLDER -78
-#define REPLACED_ALREADY -77
+#define TOKENIZING_PLACEHOLDER ((unsigned char)-79)
+#define STRINGIZING_PLACEHOLDER ((unsigned char)-78)
+#define REPLACED_ALREADY ((unsigned char)-77)
  
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))

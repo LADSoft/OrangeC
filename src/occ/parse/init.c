@@ -1931,7 +1931,9 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     }
     if (!lex || MATCHKW(lex, begin) || !str_candidate(lex, itype))
         if (needkw(&lex, begin))
+        {
             needend = TRUE;
+        }
 
     while (lex)
     {

@@ -39,6 +39,7 @@
 #define PREPROC_H
 
 typedef LLONG_TYPE PPINT;
+typedef ULLONG_TYPE PPUINT;
 #define TRUE 1
 #define FALSE 0
 
@@ -48,6 +49,7 @@ typedef LLONG_TYPE PPINT;
 #define TOKENIZING_PLACEHOLDER ((unsigned char)-79)
 #define STRINGIZING_PLACEHOLDER ((unsigned char)-78)
 #define REPLACED_ALREADY ((unsigned char)-77)
+#define MACRO_PLACEHOLDER ((unsigned char)-76)
  
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))

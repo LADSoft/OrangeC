@@ -191,7 +191,9 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
     {
         case en_auto:
             {
-                    temp = ((EXPRESSION *)(temp->v.sp->inlineFunc.stmt))->left;
+                temp = ((EXPRESSION *)(temp->v.sp->inlineFunc.stmt));
+                if (temp->type != en_auto) // in case of structs or unions
+                    temp = temp->left;
             }
             break;
         case en_this:
@@ -312,6 +314,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
         case en_autoinc:
         case en_autodec:
         case en_add:
+        case en_structadd:
         case en_sub:
 /*        case en_addcast: */
         case en_lsh:
@@ -324,7 +327,6 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
         case en_arraymul:
         case en_arrayadd:
         case en_arraydiv:
-        case en_structadd:
         case en_mul:
         case en_div:
         case en_umul:

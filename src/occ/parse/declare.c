@@ -168,6 +168,8 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage)
             TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
             tp->type = bt_aggregate;
             funcs = makeID(sc_overloads, tp, 0, sp->name) ;
+            funcs->parentClass = sp->parentClass;
+            funcs->parentNameSpace = sp->parentNameSpace;
             tp->sp = funcs;
             SetLinkerNames(funcs, linkage);
             insert(funcs, table);
@@ -2185,6 +2187,8 @@ static LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYP
     BOOL voiderror = FALSE;
     BOOL hasellipse = FALSE;
     HASHTABLE *locals = localNameSpace->syms;
+    marksym();
+    lex = getsym();
     IncGlobalFlag();
     if (sp)
     {
@@ -2504,18 +2508,30 @@ static LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYP
     }
     else if (cparams.prm_cplusplus)
     {
-        spi = makeID(sc_parameter, tp1, NULL, NewUnnamedID());
-        spi->anonymous = TRUE;
-        SetLinkerNames(spi, lk_none);
-        spi->tp = Alloc(sizeof(TYPE));
-        spi->tp->type = bt_void;
-        insert(spi, (*tp)->syms);
-        if (!MATCHKW(lex, closepa))
+        // () is a function
+        if (MATCHKW(lex, closepa))
+        {
+            spi = makeID(sc_parameter, tp1, NULL, NewUnnamedID());
+            spi->anonymous = TRUE;
+            SetLinkerNames(spi, lk_none);
+            spi->tp = Alloc(sizeof(TYPE));
+            spi->tp->type = bt_void;
+            insert(spi, (*tp)->syms);
+            lex = getsym();
+        }
+        // else may have a constructor
+        else if (*spin && isstructured((*tp)->btp))
+        {
+            (*spin)->tp = (*tp) = (*tp)->btp;
+            // constructor initialization
+            lex = backupsym(0);
+            // will do initialization later...
+        }
+        else
         {
             error(ERR_FUNCTION_PARAMETER_EXPECTED);
             errskim(&lex, skim_closepa);
         }
-        skip(&lex, closepa);
     }
     else 
     {
@@ -2564,67 +2580,69 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
         switch(KW(lex))
         {
             case openpa:
-                lex = getsym();
                 lex = getFunctionParams(lex, funcsp, sp, tp, storage_class);
                 tp1 = *tp;
-                *tp = (*tp)->btp;
-                getAfterType(lex, funcsp, tp, sp, storage_class);
-                tp1->btp = *tp;
-                *tp = tp1;
-                if (cparams.prm_cplusplus)
+                if (tp1->type == bt_func)
                 {
-                    BOOL foundFinal = FALSE;
-                    BOOL foundOverride = FALSE;
-                    BOOL done = FALSE;
-                    BOOL foundConst = FALSE;
-                    BOOL foundVolatile = FALSE;
-                    BOOL foundPure = FALSE;
-                    while (lex != NULL && !done)
+                    *tp = (*tp)->btp;
+                    getAfterType(lex, funcsp, tp, sp, storage_class);
+                    tp1->btp = *tp;
+                    *tp = tp1;
+                    if (cparams.prm_cplusplus)
                     {
-                        switch(KW(lex))
+                        BOOL foundFinal = FALSE;
+                        BOOL foundOverride = FALSE;
+                        BOOL done = FALSE;
+                        BOOL foundConst = FALSE;
+                        BOOL foundVolatile = FALSE;
+                        BOOL foundPure = FALSE;
+                        while (lex != NULL && !done)
                         {
-                            case kw_final:
-                                if (foundFinal)
-                                    error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
-                                foundFinal = TRUE;
-                                (*sp)->isfinal = TRUE;
-                                lex = getsym();
-                                break;
-                            case kw_override:
-                                if (foundOverride)
-                                    error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
-                                foundOverride = TRUE;
-                                (*sp)->isoverride = TRUE;
-                                lex = getsym();
-                                break;
-                            case kw_const:
-                                foundConst = TRUE;
-                                lex = getsym();
-                                break;
-                            case kw_volatile:
-                                foundVolatile = TRUE;
-                                lex = getsym();
-                                break;
-                            default:
-                                done = TRUE;
-                                break;
+                            switch(KW(lex))
+                            {
+                                case kw_final:
+                                    if (foundFinal)
+                                        error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
+                                    foundFinal = TRUE;
+                                    (*sp)->isfinal = TRUE;
+                                    lex = getsym();
+                                    break;
+                                case kw_override:
+                                    if (foundOverride)
+                                        error(ERR_FUNCTION_CAN_HAVE_ONE_FINAL_OR_OVERRIDE);
+                                    foundOverride = TRUE;
+                                    (*sp)->isoverride = TRUE;
+                                    lex = getsym();
+                                    break;
+                                case kw_const:
+                                    foundConst = TRUE;
+                                    lex = getsym();
+                                    break;
+                                case kw_volatile:
+                                    foundVolatile = TRUE;
+                                    lex = getsym();
+                                    break;
+                                default:
+                                    done = TRUE;
+                                    break;
+                            }
                         }
-                    }
-                    if (foundVolatile)
-                    {
-                        tp1 = Alloc(sizeof(TYPE));
-                        tp1->size = (*tp)->size;
-                        tp1->type = bt_volatile;
-                        tp1->btp = *tp;
-                        *tp = tp1;   
-                    }
-                    if (foundConst)
-                    {
-                        tp1 = Alloc(sizeof(TYPE));
-                        tp1->size = (*tp)->size;
-                        tp1->type = bt_const;
-                        tp1->btp = *tp;
-                        *tp = tp1;   
+                        if (foundVolatile)
+                        {
+                            tp1 = Alloc(sizeof(TYPE));
+                            tp1->size = (*tp)->size;
+                            tp1->type = bt_volatile;
+                            tp1->btp = *tp;
+                            *tp = tp1;   
+                        }
+                        if (foundConst)
+                        {
+                            tp1 = Alloc(sizeof(TYPE));
+                            tp1->size = (*tp)->size;
+                            tp1->type = bt_const;
+                            tp1->btp = *tp;
+                            *tp = tp1;   
+                        }
                     }
                 }
                 break;
@@ -2801,7 +2819,6 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             if (storage_class == sc_parameter && startOfType(lex) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE) ))
             {
                 TYPE *tp1;
-                lex = getsym();
                 if (!*spi)
                 {
                     ptype = Alloc(sizeof(TYPE));
@@ -2828,9 +2845,13 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 // constructor or destructor name
                 char *name;
                 if (consdest == CT_DEST)
+                {
                     name = overloadNameTab[CI_DESTRUCTOR];
+                }
                 else
+                {
                     name = overloadNameTab[CI_CONSTRUCTOR];
+                }
                 sp = makeID(storage_class, *tp, *spi, name);
                 sp->declcharpos = lex->charindex;
                 *spi = sp;
@@ -3319,10 +3340,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, 
                                         storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest);
-                    if (sp && (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]) ||
-                               !strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR])))
-                        if (!isfunction(tp1))
-                            error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_HAVE_PARAMETERS);
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
                     // if defining something outside its scope set the symbol tables
@@ -3698,6 +3715,26 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 error(ERR_ONLY_MEMBER_CONST_VOLATILE);
                         }
                     }
+                    if (sp)
+                        if  (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]))
+                        {
+                            if (!isfunction(tp1))
+                            {
+                                errorsym(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_BE_FUNCTION, sp->parentClass);
+                            }
+                            else
+                            {
+                                HASHREC *hr = basetype(tp1)->syms->table[0];
+                                SYMBOL *s = (SYMBOL *)hr->p;
+                                if (s->tp->type != bt_void)
+                                    errorsym(ERR_DESTRUCTOR_CANNOT_HAVE_PARAMETERS, sp->parentClass);
+                            }
+                        }
+                        else if (!strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR]))
+                        {                        
+                            if (!isfunction(tp1))
+                                errorsym(ERR_CONSTRUCTOR_OR_DESTRUCTOR_MUST_BE_FUNCTION, sp->parentClass);
+                        }
                     checkDeclarationAccessible(sp->tp, isfunction(sp->tp) ? sp : NULL);
                     if (sp->operatorId)
                         checkOperatorArgs(sp);

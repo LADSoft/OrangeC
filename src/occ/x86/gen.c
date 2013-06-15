@@ -2238,10 +2238,6 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
         
     if (en)
         tp = en->v.sp->tp;
-    // fixme float pop
-//	if (ispointer(tp) && isfunction(basetype(tp)->btp)) 
-//		tp = basetype(tp)->btp;
-//	tp = tp->btp;
         
     if (q->dc.left->mode == i_immed)
     {
@@ -2252,26 +2248,27 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
         apl->liveRegs = q->liveRegs;
         gen_code(op_call, apl, 0);
     }
-    if (tp)
+    
+    // pop the stack if returning from a function returning floating point
+    // whose return value lies unused.
+    if (q->novalue >= 0)
     {
-        switch (tp->type)
+        switch (q->novalue)
         {
-            case bt_float:
-            case bt_double:
-            case bt_long_double:
-            case bt_float_imaginary:
-            case bt_double_imaginary:
-            case bt_long_double_imaginary:
-                floatpop = 1;
+            case ISZ_CFLOAT:
+            case ISZ_CDOUBLE:
+            case ISZ_CLDOUBLE:
+                gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
+                // fall through
+            case ISZ_FLOAT:
+            case ISZ_DOUBLE:
+            case ISZ_LDOUBLE:
+            case ISZ_IFLOAT:
+            case ISZ_IDOUBLE:
+            case ISZ_ILDOUBLE:
+                gen_codes(op_fstp, ISZ_LDOUBLE, makefreg(0), 0);
                 break;
-            case bt_float_complex:
-            case bt_double_complex:
-            case bt_long_double_complex:
-                floatpop = 2 ;
-                break;
-            default:
-                floatpop = 0;
-                break;
+            
         }
     }
 }

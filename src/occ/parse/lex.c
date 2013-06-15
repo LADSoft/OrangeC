@@ -206,6 +206,7 @@ KEYWORD keywords[] = {
     { "__export", 8,  kw__export, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__func__", 8,  kw___func__, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "__import", 8,  kw__import, KW_NONANSI | KW_ALL, TT_LINKAGE},
+    { "__inline", 8,  kw__inline, KW_NONANSI | KW_ALL, TT_LINKAGE },
     { "__int16", 7,  kw_short, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT },
     { "__int32", 7,  kw_int, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT | TT_BASE },
     { "__int64", 7,  kw___int64, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT },
@@ -504,7 +505,7 @@ int getChar(char **source, enum e_lexType *tp)
     if (*p == '\'')
     {
         int i ;
-        do p++; while (*p == TOKENIZING_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER);
         i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
         if (i == INT_MIN)
         {
@@ -532,11 +533,11 @@ int getChar(char **source, enum e_lexType *tp)
                     error(ERR_UNTERM_CHAR_CONSTANT);
                 }
                 else
-                    do p++; while (*p == TOKENIZING_PLACEHOLDER);
+                    do p++; while (*p == MACRO_PLACEHOLDER);
             }
         }
         else
-            do p++; while (*p == TOKENIZING_PLACEHOLDER);
+            do p++; while (*p == MACRO_PLACEHOLDER);
         *tp = v;
         *source = p;
         return i;
@@ -556,34 +557,34 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
     if (*p == 'L')
     {
         v = l_wstr;
-        do p++; while (*p == TOKENIZING_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER);
     }
     else if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
         if (*p == 'u')
         {
             v = l_ustr;
-            do p++; while (*p == TOKENIZING_PLACEHOLDER);
+            do p++; while (*p == MACRO_PLACEHOLDER);
             if (*p == '8')
             {
                 v = l_u8str;
-                do p++; while (*p == TOKENIZING_PLACEHOLDER);
+                do p++; while (*p == MACRO_PLACEHOLDER);
             }
         }
         else if (*p == 'U')
         {
             v = l_Ustr;
-            do p++; while (*p == TOKENIZING_PLACEHOLDER);
+            do p++; while (*p == MACRO_PLACEHOLDER);
         }
     }
     if (cparams.prm_cplusplus && *p == 'R')
     {
         raw = TRUE;
-        do p++; while (*p == TOKENIZING_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER);
     }
     if (*p == '"')
     {
-        do p++; while (*p == TOKENIZING_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER);
         if (raw)
         {
             // fixme utf8 raw strings...
@@ -598,7 +599,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
                 if (*p)
                 {
                     st[0] = *p;
-                    do p++; while (*p == TOKENIZING_PLACEHOLDER);
+                    do p++; while (*p == MACRO_PLACEHOLDER);
                 }
                 else if (getstring(st, 1, includes->handle))
                 {
@@ -643,7 +644,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
                 if (*p)
                 {
                     st[0] = *p;
-                    do p++; while (*p == TOKENIZING_PLACEHOLDER);
+                    do p++; while (*p == MACRO_PLACEHOLDER);
                 }
                 else if (getstring(st, 1, includes->handle))
                 {
@@ -693,7 +694,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             }
             *dest = 0;
             found = TRUE;
-            while (isspace(*p) || *p == TOKENIZING_PLACEHOLDER)
+            while (isspace(*p) || *p == MACRO_PLACEHOLDER)
                 p++;
             *source = p;
         }
@@ -760,9 +761,9 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             if (*p != '"')
                 error(ERR_UNTERM_STRING_CONSTANT);
             else
-                do p++; while (*p == TOKENIZING_PLACEHOLDER);
+                do p++; while (*p == MACRO_PLACEHOLDER);
             found = TRUE;
-            while (isspace(*p) || *p == TOKENIZING_PLACEHOLDER)
+            while (isspace(*p) || *p == MACRO_PLACEHOLDER)
                 p++;
             *source = p;
         }
@@ -819,24 +820,25 @@ static LLONG_TYPE getbase(int b, char **ptr)
 /*
  *      getfrac - get fraction part of a floating number.
  */
-static void getfrac(int radix, char **ptr, FPF *rval)
+static int getfrac(int radix, char **ptr, FPF *rval)
 {
     ULLONG_TYPE i = 0;
-    int pow = 0, j, k = 0;
+    int j, k = 0;
     FPF temp, temp1;
+    int digits = 0;
     while ((j = radix36(**ptr)) < radix)
     {
         i = radix * i + j;
-        pow--;
-        if (++k == (int)(sizeof(i) * CHAR_BIT * M_LN2 / M_LN10))
+        if (++k == sizeof(i) * 16 / CHAR_BIT) // number of digits that can fit in an int
         {
             UnsignedLongLongToFPF(&temp, i);
             if (radix == 10)
-                FPFMultiplyPowTen(&temp, pow);
+                FPFMultiplyPowTen(rval, k);
             else
-                temp.exp += 4 * pow;
+                rval->exp += 4 * k;
             AddSubFPF(0,rval,&temp,&temp1);
             *rval = temp1;
+            digits += k;
             k = 0;
             i = 0;
         }
@@ -844,11 +846,13 @@ static void getfrac(int radix, char **ptr, FPF *rval)
     }
     UnsignedLongLongToFPF(&temp, i);
     if (radix == 10)
-        FPFMultiplyPowTen(&temp, pow);
+        FPFMultiplyPowTen(rval, k);
     else
-        temp.exp += 4 * pow;
+        rval->exp += 4 * k;
     AddSubFPF(0,rval,&temp,&temp1);
     *rval = temp1;
+    digits += k;
+    return radix == 10 ? - digits : - digits * 4;
 }
 
 /*
@@ -885,6 +889,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     char buf[200],  *p = buf ;
     int radix = 10;
     int floatradix = 0;
+    int frac = 0;
     BOOL hasdot = FALSE;
     BOOL floating = FALSE;
     enum e_lexType lastst ;
@@ -979,7 +984,9 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     /* at this point the next char is any qualifier after the number*/
 
     if (radix36(*p) < radix)
+    {
         *ival = getbase(radix, &p);
+    }
     else
     {
            *ival = 0;
@@ -988,9 +995,9 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     {
         p++;
         UnsignedLongLongToFPF(rval,*ival);
-        getfrac(radix, &p, rval);
-        floating = TRUE;
+        frac = getfrac(radix, &p, rval); // rval needs to be adjusted down by ival to make it fractional
         *ival = 0;
+        floating = TRUE;
     }
     if (*p == 'e' ||  *p == 'E' ||  *p == 'p' ||  *p == 'P')
     {
@@ -1000,7 +1007,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
             floating = TRUE;
         }
         p++;
-        *ival = getexp(&p);
+        *ival = getexp(&p); // total exponent takes into account that rval is an integer that needs to be divided down
     }
     *end = *ptr;
     *suffix = 0;
@@ -1079,6 +1086,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     else
     {
         /* floating point too large goes to infinity... */
+        *ival += frac;
         if (floatradix == 2)
         {
            rval->exp += *ival;
@@ -1089,6 +1097,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
         }
         if (!stricmp(suffix, "F"))
         {
+            float f;
             lastst = l_f;
             CastToFloat(ISZ_FLOAT, rval);
             suffix[0] = 0;
@@ -1111,6 +1120,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
         }
         else
         {
+            double d;
             lastst = l_d;
             CastToFloat(ISZ_DOUBLE, rval);
         }
@@ -1199,6 +1209,8 @@ LEXEME *getsym(void)
     {
         lex =  &llex[index];
         top = index = (index+1)%MAX_LOOKBACK;
+        errorline = lex->line;
+        errorfile = lex->file;
         return lex;
     }
     lex = &llex[head];	
@@ -1223,11 +1235,18 @@ LEXEME *getsym(void)
             if (!includes)
                 return NULL;
             if (!includes->lptr || !*includes->lptr)
+            {
                 if (getline())
                 {
                     return NULL;
                 }
-            while (isspace(*includes->lptr) || *includes->lptr == TOKENIZING_PLACEHOLDER)
+            }
+            else
+            {
+                errorline = includes->line;
+                errorfile = includes->fname;
+            }
+            while (isspace(*includes->lptr) || *includes->lptr == MACRO_PLACEHOLDER)
                 includes->lptr++;
         } while (*includes->lptr == 0);
         lex->charindex = includes->lptr - includes->inputline;

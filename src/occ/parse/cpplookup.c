@@ -1538,6 +1538,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             if (!found1)
             {
                 SYMBOL *sym = Alloc(sizeof(SYMBOL));
+                sym->parentClass = sp->parentClass;
                 sym->name = sp->name;
                 if (atp)
                 {

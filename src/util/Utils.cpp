@@ -74,7 +74,7 @@ void Utils::banner(char *progName)
     // no banner if they specify -!, this is also caught in the cmd switch module
     // so it is transparent to the proggy
     for (int i=1; i < __argc; i++)
-        if (__argv[i][0] == '/' || __argv[i][0] == '-')
+        if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if (__argv[i][1] == '!')
                 return;
        printf("%s Version "STRING_VERSION" "COPYRIGHT"\n", ShortName(progName));

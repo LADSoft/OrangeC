@@ -41,7 +41,7 @@
 extern INCLUDES *includes;
 extern COMPILER_PARAMS cparams;
 
-static PPINT iecommaop(void);
+static PPINT iecommaop(BOOL *uns);
 
 int getsch(int bytes, char **source) /* return an in-quote character */
 {
@@ -133,10 +133,9 @@ int getsch(int bytes, char **source) /* return an in-quote character */
             return (char)i;
     }
 }
-
-static PPINT ieprimary(void)   
+static PPINT ieprimary(BOOL *uns)   
 /*
- * PRimary integer
+ * Primary integer
  *    id
  *    iconst
  *    (cast )intexpr
@@ -144,9 +143,11 @@ static PPINT ieprimary(void)
  */
 {
        PPINT     temp;
+       *uns = FALSE;
+          
         if (isdigit(*ILP))
         {
-            PPINT rv = expectnum();
+            PPINT rv = expectnum(uns);
             skipspace();
             return rv;
         }
@@ -170,7 +171,8 @@ static PPINT ieprimary(void)
             }
             else
             {
-                temp = ppexpr();
+                skipspace();
+                temp = iecommaop(uns);
                 if (*ILP != ')')
                     pperror(ERR_NEEDY, ')');
                 else
@@ -198,44 +200,49 @@ static PPINT ieprimary(void)
  *   ~unary
  *   primary
  */
-static PPINT ieunary(void)
+static PPINT ieunary(BOOL *uns)
 {
    PPINT temp;
    skipspace();
     switch (*ILP) {
         case '-':
             ILP++;
-            temp = -ieunary();
+            temp = -ieunary(uns);
             break;
         case '!':
             ILP++;
-            temp = !ieunary();
+            temp = !ieunary(uns);
             break;
         case '~':
             ILP++;
-            temp = ~ieunary();
+            temp = ~ieunary(uns);
             break;
       case '+':
             ILP++;
-            temp = ieunary() ;
+            temp = ieunary(uns) ;
             break ;
         default:
-                temp = ieprimary();
+                temp = ieprimary(uns);
                 break;
     }
     skipspace();
     return(temp);
 }
-static PPINT iemultops(void)
+static PPINT iemultops(BOOL *uns)
 /* Multiply ops */
 {
-   PPINT val1 = ieunary(),val2;
+   PPINT val1 = ieunary(uns),val2;
     while (ILP[0] == '*' || ILP[0] == '/' || ILP[0] == '%') {
         char type = *ILP++;
-        val2 = ieunary();
+        BOOL uns1;
+        val2 = ieunary(&uns1);
+        *uns = *uns | uns1;
         switch(type) {
             case '*':
-                val1 = val1 * val2;
+                if (*uns)
+                    val1 = (PPUINT)val1 * (PPUINT)val2;
+                else
+                    val1 = val1 * val2;
                 break;
             case '/':
                 if (val2 == 0)
@@ -244,25 +251,33 @@ static PPINT iemultops(void)
                 }
                 else
                 {
-                    val1 = val1 / val2;
+                    if (*uns)
+                        val1 = (PPUINT)val1 / (PPUINT)val2;
+                    else
+                        val1 = val1 / val2;
                 }
                 break;
             case '%':
-                val1 = val1 % val2;
+                if (*uns)
+                    val1 = (PPUINT)val1 % (PPUINT)val2;
+                else
+                    val1 = val1 % val2;
                 break;
         }
     }
     skipspace();
     return(val1);
 }
-static PPINT ieaddops(void)
+static PPINT ieaddops(BOOL *uns)
 /* Add ops */
 {
-   PPINT val1 = iemultops(),val2;
+   PPINT val1 = iemultops(uns),val2;
     while (ILP[0] == '+' && ILP[1] != '+' || ILP[0] == '-' && ILP[1] != '-')	{
         char type = ILP[0];
+        BOOL uns1;
         ILP++;
-        val2 = iemultops();
+        val2 = iemultops(&uns1);
+        *uns = *uns | uns1;
         if (type == '+') 
             val1 = val1 + val2;
         else
@@ -271,14 +286,15 @@ static PPINT ieaddops(void)
     skipspace();
     return(val1);
 }
-static PPINT ieshiftops(void)
+static PPINT ieshiftops(BOOL *uns)
 /* Shift ops */
 {
-   PPINT val1 = ieaddops(), val2;
+   PPINT val1 = ieaddops(uns), val2;
     while (ILP[0] == '<' && ILP[1] == '<' || ILP[0] == '>' && ILP[1] == '>') {
         int type = ILP[0];
+        BOOL uns1;
         ILP += 2;
-        val2 = ieaddops();
+        val2 = ieaddops(&uns1);
         if (type == '<')
             val1 <<= val2;
         else
@@ -287,12 +303,13 @@ static PPINT ieshiftops(void)
     skipspace();
     return(val1);
 }
-static PPINT ierelation(void)
+static PPINT ierelation(BOOL *uns)
 /* non-eq relations */
 {
-   PPINT val1 = ieshiftops(), val2;
+   PPINT val1 = ieshiftops(uns), val2;
     while (ILP[0] == '<' && ILP[1] != '<' || ILP[0] == '>' && ILP[1] != '>') {
         BOOL eq = FALSE;
+        BOOL uns1;
         int type = ILP[0];
         ILP++;
         if (*ILP == '=')
@@ -300,29 +317,48 @@ static PPINT ierelation(void)
             eq = TRUE;
             ILP++;
         }
-        val2 = ieshiftops();
-        if (type == '<')
-            if (eq)
-                val1 = val1 <= val2;
+        val2 = ieshiftops(&uns1);
+        *uns = *uns | uns1;
+        if (*uns)
+        {
+            if (type == '<')
+                if (eq)
+                    val1 = (PPUINT)val1 <= (PPUINT)val2;
+                else
+                    val1 = (PPUINT)val1 < (PPUINT)val2;
             else
-                val1 = val1 < val2;
+                if (eq)
+                    val1 = (PPUINT)val1 >= (PPUINT)val2;
+                else
+                    val1 = (PPUINT)val1 > (PPUINT)val2;
+        }
         else
-            if (eq)
-                val1 = val1 >= val2;
+        {
+            if (type == '<')
+                if (eq)
+                    val1 = val1 <= val2;
+                else
+                    val1 = val1 < val2;
             else
-                val1 = val1 > val2;
+                if (eq)
+                    val1 = val1 >= val2;
+                else
+                    val1 = val1 > val2;
+        }
     }
     skipspace();
     return(val1);
 }
-static PPINT ieequalops(void)
+static PPINT ieequalops(BOOL *uns)
 /* eq relations */
 {
-   PPINT val1 = ierelation(),val2;
+   PPINT val1 = ierelation(uns),val2;
     while ((ILP[0] == '=' || ILP[0] == '!') && ILP[1] == '=') {
+        BOOL uns1;
         char type =ILP[0];
         ILP += 2;
-        val2 = ierelation();
+        val2 = ierelation(&uns1);
+        *uns = *uns | uns1;
         if (type == '!')
             val1 = val1 != val2;
         else
@@ -331,77 +367,87 @@ static PPINT ieequalops(void)
     skipspace();
     return(val1);
 }
-static PPINT ieandop(void)
+static PPINT ieandop(BOOL *uns)
 /* and op */
 {
-   PPINT val1 = ieequalops(),val2;
+   PPINT val1 = ieequalops(uns),val2;
     while (ILP[0] == '&' && ILP[1] != '&') {
+        BOOL uns1;
         ILP +=1;
-        val2 = ieequalops();
+        val2 = ieequalops(&uns1);
+        *uns = *uns | uns1;
         val1 = val1 & val2;
     }
     skipspace();
     return(val1);
 }
-static PPINT iexorop(void)
+static PPINT iexorop(BOOL *uns)
 /* xor op */
 {
-   PPINT val1 = ieandop(),val2;
+   PPINT val1 = ieandop(&uns),val2;
     while (ILP[0] == '^') {
+        BOOL uns1;
         ILP ++;
-        val2 = ieandop();
+        val2 = ieandop(&uns1);
+        *uns = *uns | uns1;
         val1 = val1 ^ val2;
     }         
     skipspace();
     return(val1);
 }
-static PPINT ieorop(void)
+static PPINT ieorop(BOOL *uns)
 /* or op */
 {
-   PPINT val1 = iexorop(),val2;
+   PPINT val1 = iexorop(uns),val2;
     while (ILP[0] == '|' && ILP[1] != '|') {
+        BOOL uns1;
         ILP ++;
-        val2 = iexorop();
+        val2 = iexorop(&uns1);
+        *uns = *uns | uns1;
         val1 = val1 | val2;
     }
     skipspace();
     return(val1);
 }
-static PPINT ielandop(void)
+static PPINT ielandop(BOOL *uns)
 /* logical and op */
 {
-   PPINT val1 = ieorop(),val2;
+   PPINT val1 = ieorop(uns),val2;
     while (ILP[0] == '&' && ILP[1] == '&') {
         ILP +=2;
-        val2 = ieorop();
+        val2 = ieorop(uns);
+        *uns = FALSE;
         val1 = val1 && val2;
     }
     skipspace();
     return(val1);
 }
-static PPINT ielorop(void)
+static PPINT ielorop(BOOL *uns)
 /* logical or op */
 {
-   PPINT val1 = ielandop(),val2;
+   PPINT val1 = ielandop(uns),val2;
     while (ILP[0] == '|' && ILP[1] == '|') {
         ILP += 2;
-        val2 = ielandop();
+        val2 = ielandop(uns);
+        *uns = FALSE;
         val1 = val1 || val2;
     }
     skipspace();
     return(val1);
 }
-static PPINT iecondop(void)
+static PPINT iecondop(BOOL *uns)
 /* Hook op */
 {
-   PPINT val1 = ielorop(),val2, val3;
+   PPINT val1 = ielorop(uns),val2, val3;
         if (*ILP == '?') {
+            BOOL uns1, uns2;
             ILP ++;
-            val2 = iecommaop();
+            val2 = iecommaop(&uns1);
             if (*ILP != ':')
                 pperror(ERR_NEEDY, ':');
             ILP++;
-            val3 = iecondop();
+            val3 = iecondop(&uns2);
+            *uns = uns1 || uns2;
             if (val1)
                 val1 = val2;
             else
@@ -410,13 +456,14 @@ static PPINT iecondop(void)
     skipspace();
     return(val1);
 }
-static PPINT iecommaop(void)
+static PPINT iecommaop(BOOL *uns)
 /* Hook op */
 {
-   PPINT val1 = iecondop();
+   PPINT val1 = iecondop(uns);
         while (*ILP == ',') {
+            BOOL throwaway;
             ILP ++;
-            iecondop();
+            iecondop(&throwaway);
         }
     skipspace();
     return(val1);
@@ -424,6 +471,7 @@ static PPINT iecommaop(void)
 PPINT ppexpr(void)
 /* Integer expressions */
 {
+    BOOL uns;
     skipspace();
-    return iecommaop();
+    return iecommaop(&uns);
 }

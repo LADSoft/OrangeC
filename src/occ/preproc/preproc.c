@@ -138,7 +138,7 @@ int defid(char *name, char **p)
 }
 void skipspace(void)
 {
-    while (isspace((unsigned char)*includes->lptr) || *includes->lptr == TOKENIZING_PLACEHOLDER)
+    while (isspace((unsigned char)*includes->lptr) || *includes->lptr == MACRO_PLACEHOLDER)
         includes->lptr++;
 }
 BOOL expectid(char *buf)
@@ -209,18 +209,28 @@ LLONG_TYPE strtoll(char *s, char **e, int radix)
     return rv;
 }
 #endif
-PPINT expectnum(void)
+PPINT expectnum(BOOL *uns)
 {
 #ifdef USE_LONGLONG
     LLONG_TYPE rv = strtoll(includes->lptr, &includes->lptr, 0);
 #else
     LLONG_TYPE rv = strtol(includes->lptr, &includes->lptr, 0);
 #endif
+    if (uns)
+    {
+        *uns = FALSE;
+        if (tolower(includes->lptr[-1])== 'u')
+            *uns = TRUE;
+    }
     while (*includes->lptr == 'l' ||
         *includes->lptr == 'L' ||
         *includes->lptr == 'u' ||
         *includes->lptr == 'U')
+    {
+        if (uns && tolower(*includes->lptr) == 'u')
+            *uns = TRUE;
         includes->lptr++;
+    }
     return rv;
 }
 
@@ -239,7 +249,7 @@ static void lineToCpp(void)
          */
         while (*p)
         {
-            if (*p != TOKENIZING_PLACEHOLDER)
+            if (*p != MACRO_PLACEHOLDER)
                 fputc(*p++, cppFile);
             else
                 p++;
@@ -815,7 +825,7 @@ void dopragma(void)
             {
                 if (packlevel < sizeof(packdata) - 1)
                 {
-                    packdata[++packlevel] = expectnum();
+                    packdata[++packlevel] = expectnum(NULL);
                     if (packdata[packlevel] < 1)
                         packdata[packlevel] = 1;
                     skipspace();
@@ -879,7 +889,7 @@ void dopragma(void)
 
     if (isdigit(*includes->lptr))
     {
-        val = expectnum();
+        val = expectnum(NULL);
     }
     else
         val = 64;
@@ -936,14 +946,18 @@ void doline(void)
  * Handle #line directive
  */
 {
+    char buf[260];
     if (includes->ifskip)
         return ;
     ppdefcheck(includes->lptr);
     skipspace();
-    includes->line = expectnum();
+    includes->line = expectnum(NULL)-1;
     skipspace();
     if (*includes->lptr)
-        expectstring(includes->fname, &includes->lptr, TRUE);
+    {
+        expectstring(buf, &includes->lptr, TRUE);
+        includes->fname = litlate(buf);
+    }
 }
 
 
@@ -1179,13 +1193,11 @@ void dodefine(void)
         def->argcount = count + 1;
     }
     skipspace();
-    if (isspace((unsigned char)includes->lptr[-1]))
-        *(--includes->lptr) = TOKENIZING_PLACEHOLDER;
+    *(--includes->lptr) = MACRO_PLACEHOLDER;
     p = strlen(includes->lptr);
     while (isspace((unsigned char)includes->lptr[p-1]))
         p--;
-    if (isspace((unsigned char)includes->lptr[p]) && includes->lptr[p] != '\n')
-        includes->lptr[p++] = TOKENIZING_PLACEHOLDER;
+    includes->lptr[p++] = MACRO_PLACEHOLDER;
     includes->lptr[p] = 0;
     for (i=0,j=0; i < p+1; i++,j++)
         if (!strncmp(includes->lptr + i, "##", 2)) {
@@ -1385,23 +1397,31 @@ void defstringizing(unsigned char *macro)
         }
         else if (*q == '#' && *(q-1) != '#' && *(q+1) != '#')  /* # ## # */
         {
+            unsigned char *s, *r;
             q++;
-            while (isspace((unsigned char)*q))
-                q++;
+            while (isspace(*q))
+                    q++;
             *p++ = '"';
+            s = r = p;
             while (*q && *q != STRINGIZING_PLACEHOLDER)
             {
-                while (isspace((unsigned char)*q) && isspace((unsigned char)*(q+1)))
-                        q++;
+                while (*q == MACRO_PLACEHOLDER) q++;
                 if (*q == '\\' || *q == '"')
                 {
-                    *p++ = '\\';
+                        *p++ = '\\';
                 }
-                *p++ = *q++;
+                if (*q != STRINGIZING_PLACEHOLDER)
+                    *p++ = *q++;
             }
-            if (*q)
-                q++;
             *p++ = '"';
+            if (*q)
+                    q++;
+            while (s < p)
+            {
+                while (isspace(*s) && isspace(s[1])) s++;
+                *r++ = *s++;
+            }
+            p = r;
         }
         else
         {
@@ -1489,9 +1509,9 @@ void deftokenizing(unsigned char *macro)
         }
         else if (*e == REPLACED_TOKENIZING)
         {
-            while (b != macro && isspace((unsigned char)*(b-1)))
+            while (b != macro && (isspace((unsigned char)*(b-1))|| b[-1] == MACRO_PLACEHOLDER))
                 b-- ;
-            while (*++e != 0 && isspace((unsigned char)*e)) ;
+            while (*++e != 0 && (isspace((unsigned char)*e) || *e == MACRO_PLACEHOLDER)) ;
             if (b != macro && b[-1] == TOKENIZING_PLACEHOLDER && *e != TOKENIZING_PLACEHOLDER)
                 b--;
             if (*e == TOKENIZING_PLACEHOLDER)
@@ -1562,6 +1582,8 @@ void datemac(char *string)
     time(&t2);
     t1 = localtime(&t2);
     strftime(string, 40, "\"%b %d %Y\"", t1);
+    if (string[5] == '0')
+        string[5] = ' '; /* as asctime() */
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1579,7 +1601,7 @@ void timemac(char *string)
 
 void linemac(char *string)
 {
-    sprintf(string, "%d", includes->line);
+    sprintf(string, "%d", errorline);
 } 
 /* Scan for default macros and replace them */
 void defmacroreplace(char *macro, char *name)
@@ -1623,6 +1645,34 @@ void SetupAlreadyReplaced(unsigned char *macro)
     }	
     *macro = 0;
 }
+//
+// a preprocessing number starts with a digit or '.' followed by a digit, then
+// has any number of alphanumeric charactors or any of the sequences
+// E+ e+ P+ p+
+int ppNumber(char *start, char *pos)
+{
+    char *x = pos;
+    if (*pos == '+' || *pos == '-' || isdigit(*pos)) // we would get here with the first alpha char following the number
+    {
+        // backtrack through all characters that could possibly be part of the number
+        while (pos >= start &&
+               issymchar(*pos) || *pos == '.' ||
+               (*pos == '-' || *pos == '+') && (pos[-1] == 'e' || pos[-1] == 'E' || pos[-1] == 'p' || pos[-1] == 'P'))
+        {
+            if (*pos == '-' || *pos == '+') pos--;
+            pos--;
+        }
+        // go forward, skipping sequences that couldn't actually start a number
+        pos++;
+        if (!isdigit(*pos))
+        {
+            while (pos < x && (* pos != '.' || isdigit(pos[-1]) || !isdigit(pos[1]))) pos++;
+        }
+        // if we didn't get back where we started we have a number
+        return pos < x;
+    }
+    return FALSE;
+}
 int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int totallen, char **pptr)
 {
     unsigned char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
@@ -1655,16 +1705,17 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
         {
             name[0] = 0;
             defid(name, &p);
-            if ((!cparams.prm_cplusplus || name[0] != 'R' || name[1] != '\0' || *p != '"') && (sp = (DEFSTRUCT *)search(name, defsyms)) != 0 && !sp->undefined && q[-1] != REPLACED_ALREADY)
+            if ((!cparams.prm_cplusplus || name[0] != 'R' || name[1] != '\0' || *p != '"') && (sp = (DEFSTRUCT *)search(name, defsyms)) != 0 && !sp->undefined && q[-1] != REPLACED_ALREADY && !ppNumber(start, q-1))
             {
                 if (sp->argcount)
                 {
+                    unsigned char *r, *s;
                     int count = 0;
                     unsigned char *q = p;
                     
                     varargs[0] = 0;
                     
-                    while (isspace((unsigned char)*q)) q++ ;
+                    while (isspace((unsigned char)*q) || *q == MACRO_PLACEHOLDER) q++ ;
                     if (q > start && *(q - 1) == '\n')
                     {
                         return INT_MIN + 1;
@@ -1741,7 +1792,6 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                             }   
                             *q = 0 ;
                             p++ ;
-                            count = (sp->argcount - 1);
                         }
                         if (*(p - 1) != ')' || count != sp->argcount - 1)
                         {
@@ -1764,6 +1814,15 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                         }
                     deftokenizing(macro);
                     defstringizing(macro);
+                    r = macro, s = macro;
+                    while (*r)
+                    {
+                            if (*r != TOKENIZING_PLACEHOLDER)
+                                    *s++ = *r++;
+                            else
+                                    r++;
+                    }
+                    *s = 0;
                 } else {
                     strcpy(macro,sp->string);
                 }

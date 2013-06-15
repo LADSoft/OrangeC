@@ -232,25 +232,22 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp)
 }
 LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
-    TYPE *throwaway = NULL;
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOL defd = FALSE;
-    lex = getBasicType(lex, funcsp, &throwaway, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
+    lex = getBasicType(lex, funcsp, tp, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))
         {
             INITIALIZER *init = NULL, *dest=NULL;
-            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, NULL, FALSE);
-            *exp = convertInitToExpression(*tp, NULL, init, NULL);
-            // so the destructor will be called at the end of the block
-            if (dest)
+            SYMBOL *sp = NULL;
+            if (isstructured(*tp))
             {
-                SYMBOL *sp = makeID(sc_auto, *tp, NULL, AnonymousName());
-                sp->dest = dest;
+                sp = makeID(sc_auto, *tp, NULL, AnonymousName());
                 insert(sp, localNameSpace->syms);
-                
             }
+            lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE);
+            *exp = convertInitToExpression(*tp, NULL, init, NULL);
         }
         else
         {
@@ -261,17 +258,44 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     }
     else
     {
-        lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE);
-        if ((*exp)->type == en_func)
-            *exp = (*exp)->v.func->fcall;
-        if (throwaway)
-            if (isvoid(throwaway) && !isvoid(*tp))
-                error(ERR_NOT_AN_ALLOWED_TYPE);
-            else if ((isstructured(throwaway) && !isvoid(*tp) || basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
-                      && !comparetypes(throwaway, *tp, TRUE))
-                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+        if (isstructured(*tp))
+        {
+            if (basetype(*tp)->sp->trivialCons)
+            {
+                FUNCTIONCALL funcparams;
+                memset(&funcparams, 0, sizeof(funcparams));
+                lex = getArgs(lex, funcsp, &funcparams);
+                if (funcparams.arguments)
+                {
+                    errortype(ERR_CANNOT_CAST_TYPE, funcparams.arguments->tp, *tp);
+                }
+                *exp = intNode(en_c_i, 0);
+            }
             else
-                cast(*tp, exp);
+            {
+                INITIALIZER *init = NULL, *dest=NULL;
+                SYMBOL *sp;
+                sp = makeID(sc_auto, *tp, NULL, AnonymousName());
+                insert(sp, localNameSpace->syms);
+                lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sp, FALSE);
+                *exp = convertInitToExpression(*tp, NULL, init, NULL);
+            }
+        }
+        else
+        {
+            TYPE *throwaway;
+            lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE);
+            if ((*exp)->type == en_func)
+                *exp = (*exp)->v.func->fcall;
+            if (throwaway)
+                if (isvoid(throwaway) && !isvoid(*tp))
+                    error(ERR_NOT_AN_ALLOWED_TYPE);
+                else if ((isstructured(throwaway) && !isvoid(*tp) || basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
+                          && !comparetypes(throwaway, *tp, TRUE))
+                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                else
+                    cast(*tp, exp);
+        }
     }
     return lex;
 }
@@ -937,7 +961,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             }
             else
             {
-                error(ERR_STRUCTURE_INITIALIZATION_NEEDS_CONSTRUCTOR);
+                errorsym(ERR_STRUCTURE_INITIALIZATION_NEEDS_CONSTRUCTOR, (*tp)->sp );
                 skip(&lex, end);
             }
         }

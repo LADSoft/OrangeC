@@ -173,6 +173,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 if (cparams.prm_cplusplus)
                 {
                     lex = backupsym(0);
+                    *tp = NULL;
                     lex = expression_func_type_cast(lex, funcsp, tp, exp);
                     return lex;
                 }
@@ -2499,7 +2500,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 {
     TYPE *oldType;
     BOOL done = FALSE;
-    if (KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS))
+    if (cparams.prm_cplusplus && KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS))
     {
         lex = expression_func_type_cast(lex, funcsp, tp, exp);
     }
@@ -2858,18 +2859,16 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
             if (MATCHKW(lex, begin))
             {
                 INITIALIZER *init = NULL, *dest = NULL;
-                if (!cparams.prm_c99)
+                SYMBOL *sp = NULL;
+                if (!cparams.prm_c99 && !cparams.prm_cplusplus)
                     error(ERR_C99_STYLE_INITIALIZATION_USED);
-                lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, NULL, FALSE);
-                *exp = convertInitToExpression(*tp, NULL, init, NULL);
-                // so the destructor will be called at the end of the block
-                if (dest)
+                if (cparams.prm_cplusplus)
                 {
-                    SYMBOL *sp = makeID(sc_auto, *tp, NULL, AnonymousName());
-                    sp->dest = dest;
+                    sp = makeID(sc_auto, *tp, NULL, AnonymousName());
                     insert(sp, localNameSpace->syms);
-                    
                 }
+                lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE);
+                *exp = convertInitToExpression(*tp, NULL, init, NULL);
             }
             else
             { 

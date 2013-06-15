@@ -184,6 +184,7 @@ typedef struct quad
     int OCPGenned:1; /* node was generated already in an OCP sort */
     int spill:1;
     int ignoreMe:1;
+    char novalue;
     char temps;
     char precolored;
     char moved;

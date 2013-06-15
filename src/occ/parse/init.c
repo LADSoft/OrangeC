@@ -5,7 +5,7 @@
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
+    with or without modification, are permitted provideinitiad that the following 
     conditions are met:
     
     * Redistributions of source code must retain the above
@@ -540,11 +540,7 @@ static int dumpInit(SYMBOL *sp, INITIALIZER *init)
     int rv = getSize(tp->type);
     LLONG_TYPE i;
     FPF f, im;
-    if (init->cons)
-    {
-        insertDynamicInitializer(sp, init);
-    }
-    else if (isfloatconst(init->exp))
+    if (isfloatconst(init->exp))
     {
         f = init->exp->v.f;
         i = FPFToLongLong(&f);
@@ -887,7 +883,7 @@ void insertInitSym(SYMBOL *sp)
     }
 }
 static INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp, 
-                               int offset, EXPRESSION *cons)
+                               int offset)
 {
     INITIALIZER *pos1 = Alloc(sizeof(INITIALIZER));
 
@@ -895,7 +891,6 @@ static INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp,
     pos1->exp = exp;
     pos1->offset = offset;
     pos1->tag = inittag++;
-    pos1->cons = cons;
     *pos = pos1;
     return pos1;
 }
@@ -933,7 +928,7 @@ static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
             optimize_for_constants(&exp);
         }
     }
-    initInsert(init, itype, exp, offset, NULL);
+    initInsert(init, itype, exp, offset);
     if (needend)
     {
         if (!needkw(&lex, closebr))
@@ -946,8 +941,8 @@ static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
 }
 static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, TYPE *itype, INITIALIZER **init)
 {
-    TYPE *tp;
-    EXPRESSION *exp;
+    TYPE *tp = NULL;
+    EXPRESSION *exp = NULL;
     BOOL needend = FALSE;
     if (MATCHKW(lex, begin))
     {
@@ -976,7 +971,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
             optimize_for_constants(&exp);
         }
     }
-    initInsert(init, itype, exp, offset, NULL);
+    initInsert(init, itype, exp, offset);
     if (needend)
     {
         if (!needkw(&lex, end))
@@ -1075,7 +1070,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         if (!comparetypes(itype, tp, TRUE) && !isint(tp))
             cast(tp, &exp);
     }
-    initInsert(init, itype, exp, offset, NULL);
+    initInsert(init, itype, exp, offset);
     refExp(exp);
     if (needend)
     {
@@ -1116,7 +1111,7 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
     {
         exp = intNode(en_memberptr, 0); // no SP means fill it with zeros...
     }
-    initInsert(init, itype, exp, offset, NULL);
+    initInsert(init, itype, exp, offset);
     if (needend)
     {
         if (!needkw(&lex, end))
@@ -1307,7 +1302,7 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                 
             }
     }
-    initInsert(init, itype, exp, offset, NULL);
+    initInsert(init, itype, exp, offset);
     if (needend)
     {
         if (!needkw(&lex, end))
@@ -1599,9 +1594,10 @@ static INITIALIZER *sort_aggregate_initializers(INITIALIZER *data)
     INITIALIZER **left = &data, **right;
     int items = 1;
     BOOL sortit = FALSE;
-    int offsetLeft = ((*left)->offset << 7) + basetype((*left)->basetp)->startbit;
+    int offsetLeft;
     if (!data)
         return data;
+    offsetLeft = ((*left)->offset << 7) + basetype((*left)->basetp)->startbit;
     /* check to see if already in order) */
     /* normally it will already be in order, the only time it won't is for the
      * new C99 declarators in arrays and structs
@@ -1737,7 +1733,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
             for (i=0; i < len; i++)
             {
                 EXPRESSION *exp = intNode(en_c_i, string->pointers[j]->str[i]);
-                initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, NULL); /* NULL=no initializer */
+                initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset); /* NULL=no initializer */
                 (*desc)->reloffset += btp->size;
                 next = &(*next)->next;
                 index++;
@@ -1755,7 +1751,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
             exp  = intNode(en_c_i, 0);
         else
             exp = NULL;
-        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, NULL); /* NULL=no initializer */
+        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset); /* NULL=no initializer */
         (*desc)->reloffset += btp->size;
         next = &(*next)->next;
         index++;
@@ -1764,7 +1760,7 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
     {
         EXPRESSION *exp = intNode(en_c_i, 0);
         
-        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, NULL); /* NULL=no initializer */
+        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset); /* NULL=no initializer */
         (*desc)->reloffset += btp->size;
     }
     return lex;
@@ -1774,10 +1770,17 @@ static TYPE *nexttp(AGGREGATE_DESCRIPTOR *desc)
     TYPE *rv;
     if (isstructured(desc->tp))
     {
-        HASHREC *hr = desc->hr;
-        if (!hr)
-            return NULL;
-        rv = ((SYMBOL *)hr->p)->tp;
+        if (!cparams.prm_cplusplus  || desc->tp->sp->trivialCons)
+        {
+            HASHREC *hr = desc->hr;
+            if (!hr)
+                return NULL;
+            rv = ((SYMBOL *)hr->p)->tp;
+        }
+        else
+        {
+            rv = desc->tp;
+        }
     }
     else
         rv = basetype(desc->tp)->btp;
@@ -1799,7 +1802,7 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
     }
     else
     {
-        initInsert(init, itype, expr, offset, NULL);
+        initInsert(init, itype, expr, offset);
 
     }
     return lex;
@@ -1850,85 +1853,116 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     BOOL c99 = FALSE;
     BOOL toomany = FALSE;
     BOOL needend = FALSE;
+    BOOL assn = FALSE;
     allocate_desc(itype, offset, &desc, &cache);
     desc->stopgap = TRUE;
-    if (cparams.prm_cplusplus && isstructured(itype) && basetype(itype)->sp->hasUserCons)
+    if (MATCHKW(lex, assign))
     {
-        if (!MATCHKW(lex, begin))
+        assn = TRUE;
+        lex = getsym();
+    }
+    if (cparams.prm_cplusplus && isstructured(itype) && (!basetype(itype)->sp->trivialCons || 
+             arrayMember || !MATCHKW(lex, begin)))
+    {
+        // initialization via constructor
+        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+        EXPRESSION *baseexp,*exp;
+        TYPE *ctype = itype;
+        exp = baseexp= exprNode(en_add, getVarNode(base), intNode(en_c_i, offset));
+        if (MATCHKW(lex, begin))
         {
-            // initialization via constructor
-            FUNCTIONCALL *funcparams = NULL;
-            EXPRESSION *baseexp = exprNode(en_add, getVarNode(base), intNode(en_c_i, offset));
-            EXPRESSION *exp = baseexp;
+            errorsym(ERR_STRUCTURE_INITIALIZATION_NEEDS_CONSTRUCTOR, itype->sp);
             lex = getsym();
-            
-            if (ISID(lex))
+            errskim(&lex, skim_end);
+            if (MATCHKW(lex, end))
+                lex = getsym();
+            return lex;
+        }
+        else if (assn || arrayMember)
+        {
+            // assignments or array members come here
+            if (startOfType(lex))
             {
-                TYPE *tp = NULL;
-                marksym();
-                lex = get_type_id(lex, &tp, funcsp);
-                if (tp && comparetypes(itype, tp, TRUE) && MATCHKW(lex, openpa))
+                TYPE *tp1 = NULL;
+                enum e_lk linkage, linkage2, linkage3;
+                BOOL defd = FALSE;
+                lex = getBasicType(lex, funcsp, &tp1, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL);
+                if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), TRUE))
                 {
-                    funcparams = Alloc(sizeof(FUNCTIONCALL));
+                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                    errskim(&lex, skim_semi);
+                    return lex;
+                }
+                else if (MATCHKW(lex, openpa))
+                {
+                    // conversion constructor params
                     lex = getArgs(lex, funcsp, funcparams);
-                    needkw(&lex, closepa);
+                    if (funcparams->arguments && basetype(itype)->sp->trivialCons)
+                    {
+                        errortype(ERR_CANNOT_CAST_TYPE, funcparams->arguments->tp, basetype(itype));
+                    }
                 }
                 else
                 {
-                    backupsym(0);
+                    // default constructor without param list
                 }
             }
-            if (!funcparams)
+            else
             {
-                funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                lex = getArgs(lex, funcsp, funcparams);
-            }
-            callConstructor(&itype, &exp, funcparams, TRUE, NULL, TRUE); 
-            initInsert(init, itype, NULL, offset, exp);
-            if (!arrayMember)
-            {
-                INITIALIZER *it = NULL;
-                exp = baseexp;
-                if (!funcsp)
+                // shortcut for conversion from single expression
+                EXPRESSION *exp1 = NULL;
+                TYPE *tp1 = NULL;
+                lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+                funcparams->arguments = Alloc(sizeof(ARGLIST));
+                funcparams->arguments->tp = tp1;
+                funcparams->arguments->rootexp = funcparams->arguments->exp = exp1;
+                if (tp1 && basetype(itype)->sp->trivialCons)
                 {
-                    callDestructor(basetype(itype)->sp, &exp, NULL, TRUE);
-                    initInsert(&it, itype, NULL, offset, exp);
-                    insertDynamicDestructor(funcsp, it);
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, basetype(itype));
                 }
             }
-            return lex;
         }
         else if (MATCHKW(lex, openpa))
         {
-            FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-            EXPRESSION *baseexp = exprNode(en_add, getVarNode(base), intNode(en_c_i, offset));
-            EXPRESSION *exp = baseexp;
-            INITIALIZER *it = NULL;
-            lex = getsym();
+            // conversion constructor params
             lex = getArgs(lex, funcsp, funcparams);
-            needkw(&lex, closepa);
-            callConstructor(&itype, &exp, funcparams, TRUE, NULL, TRUE); 
-            initInsert(init, itype, NULL, offset, exp);
-            if (!arrayMember)
+            if (funcparams->arguments && basetype(itype)->sp->trivialCons)
             {
-                it = NULL;
-                exp = baseexp;
-                if (!funcsp)
-                {
-                    callDestructor(basetype(itype)->sp, &exp, NULL, TRUE);
-                    initInsert(&it, itype, NULL, offset, exp);
-                    insertDynamicDestructor(funcsp, it);
-                }
+                errortype(ERR_CANNOT_CONVERT_TYPE, funcparams->arguments->tp, basetype(itype));
             }
-            
         }
         else
         {
-            error(ERR_STRUCTURE_INITIALIZATION_NEEDS_CONSTRUCTOR);
-            skip(&lex, end);
-            return lex;
+            // default constructor without param list
         }
+        if (!basetype(itype)->sp->trivialCons)
+        {
+            INITIALIZER *it = NULL;
+            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE); 
+            initInsert(&it, itype, exp, offset);
+            if (sc != sc_auto && !arrayMember)
+            {
+                insertDynamicInitializer(base, it);
+            }
+            else
+            {
+                *init = it;
+            }
+            exp = baseexp;
+            callDestructor(basetype(itype)->sp, &exp, NULL, TRUE);
+            initInsert(&it, itype, exp, offset);
+            if (sc != sc_auto && !arrayMember)
+            {
+                insertDynamicDestructor(base, it);
+            }
+            else
+            {
+                *dest = it;
+            }
+        }
+        return lex;
     }
+    // if we get here it is an array or a trivial structure
     if (!lex || MATCHKW(lex, begin) || !str_candidate(lex, itype))
         if (needkw(&lex, begin))
         {
@@ -1942,7 +1976,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         c99 |= designator(&lex, funcsp, &desc, &cache);
         tp2 = nexttp(desc);
         
-        while (tp2 && (isarray(tp2) || isstructured(tp2)))
+        while (tp2 && (isarray(tp2) || isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons)))
         {
             if (MATCHKW(lex, begin))
             {
@@ -1977,7 +2011,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         else
         {
             lex = initType(lex, funcsp, desc->offset + desc->reloffset,
-                           sc, next, dest, nexttp(desc), NULL, isarray(itype));
+                           sc, next, dest, nexttp(desc), base, isarray(itype));
         }
         increment_desc(&desc, &cache);
         while (*next)
@@ -2037,20 +2071,77 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     set_array_sizes(cache);
     
     *init = data = sort_aggregate_initializers(data);
+    // have to fill in unused array elements with C++ constructors
+    // this doesn't play well with the designator stuff but doesn't matter in C++
     if (cparams.prm_cplusplus && isarray(itype) && 
-        isstructured(basetype(itype->btp)) && basetype(itype->btp)->sp->hasUserCons)
+        isstructured(basetype(itype->btp)) && !basetype(itype->btp)->sp->trivialCons)
     {
-        EXPRESSION *sz = intNode(en_c_i, itype->size/itype->btp->size);
-        EXPRESSION *baseexp = exprNode(en_add, getVarNode(base), intNode(en_c_i, offset));
-        EXPRESSION *exp = baseexp;
-        callConstructor(&itype, &exp, NULL, TRUE, sz, TRUE );
-        initInsert(init, itype, NULL, offset, exp);
-        if (!funcsp)
+        int s = (itype->btp->size + itype->btp->arraySkew);
+        INITIALIZER *test = *init;
+        INITIALIZER *testd = *dest;
+        INITIALIZER *firstInit = NULL, *firstDest = NULL, **up = &firstInit, **down = &firstDest ;
+        int last = 0, i;
+        for (i = 0; i <= itype->size; i +=s, (test = test ? test->next : test), (testd = testd ? testd->next :testd))
         {
-            exp = baseexp;
-            callDestructor(basetype(itype->btp)->sp, &exp, sz, TRUE);
-            initInsert(init, itype, NULL, offset, exp);
-            insertDynamicDestructor(funcsp, init);
+            if (test && test->basetp && i == test->offset || i == itype->size)
+            {
+                if (last < i - s)
+                {
+                    INITIALIZER *it = NULL;
+                    TYPE *ctype = basetype(itype)->btp;
+                    EXPRESSION *sz = i - last - 2 * s ? intNode(en_c_i, (i - last - s)/s) : NULL;
+                    EXPRESSION *baseexp = exprNode(en_add, getVarNode(base), intNode(en_c_i, last));
+                    EXPRESSION *exp = baseexp;
+                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE );
+                    initInsert(up, basetype(itype)->btp, exp, offset);
+                    exp = baseexp;
+                    callDestructor(basetype(itype->btp)->sp, &exp, sz, TRUE);
+                    initInsert(down, basetype(itype)->btp, exp, offset);
+                    
+                }
+                last = i;
+            }
+            else
+            {
+                *up = test;
+                *down = testd;
+                if (*up)
+                    up = &(*up)->next;
+                if (*down)
+                    down = &(*down)->next;
+            }            
+        }
+        if (firstInit)
+        {
+            if (sc == sc_auto)
+            {
+                while (firstInit)
+                {
+                    insertDynamicInitializer(base, firstInit);
+                    firstInit = firstInit->next;
+                }
+                *init = NULL;
+            }   
+            else
+            {
+                *init = firstInit;
+            }
+        }
+        if (firstDest)
+        {
+            if (sc == sc_auto)
+            {
+                while (firstDest)
+                {
+                    insertDynamicDestructor(base, firstDest);
+                    firstDest = firstDest->next;
+                }
+                *dest = NULL;
+            }   
+            else
+            {
+                *dest = firstDest;
+            }
         }
     }   
     return lex;
@@ -2101,7 +2192,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
             }
             sp->tp = tp; // sets type for variable
         }
-        initInsert(init, sp->tp, exp, offset, NULL);
+        initInsert(init, sp->tp, exp, offset);
     }
     return lex;
 }
@@ -2171,10 +2262,22 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
         case bt_union:
         case bt_class:
             if (tp->syms)
-                if (!MATCHKW(lex, begin) && (sc == sc_auto || sc == sc_register))
-                    return initialize_auto_struct(lex, funcsp, offset, tp, init);
+                if (!cparams.prm_cplusplus && MATCHKW(lex, assign) && (sc == sc_auto || sc == sc_register))
+                {
+                    lex = getsym();
+                    if (MATCHKW(lex, begin))
+                    {
+                        return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember);
+                    }
+                    else
+                    {
+                        return initialize_auto_struct(lex, funcsp, offset, tp, init);
+                    }
+                }
                 else
+                {
                     return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember);
+                }
             /* fallthrough */
         default:
             errortype(ERR_CANNOT_INITIALIZE, tp, NULL);
@@ -2462,16 +2565,72 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             else
             */
             {
-                if (MATCHKW(lex, assign))
+                if (MATCHKW(lex, assign) && !isstructured(sp->tp))
                     lex = getsym(); /* past = */
                 lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE);
-                
                 /* set up an end tag */
-                init = &sp->init;			
+                if (sp->init)
+                {
+                    init = &sp->init;			
+                    while (*init)
+                        init = &(*init)->next;
+                    initInsert(init, NULL, NULL, sp->tp->size);
+                }
+            }
+        }
+    }
+    else if (cparams.prm_cplusplus)
+    {
+        if (isstructured(sp->tp))
+        {
+            // default constructor without (), or array of structures without an initialization list
+            lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE);
+            /* set up an end tag */
+            if (sp->init)
+            {
+                INITIALIZER **init = &sp->init;
                 while (*init)
                     init = &(*init)->next;
-                initInsert(init, NULL, NULL, sp->tp->size, NULL);
+                initInsert(init, NULL, NULL, sp->tp->size);
             }
+        }
+        else if (isarray(sp->tp))
+        {
+            // constructors for uninitialized array
+            TYPE *z = sp->tp;
+            while (isarray(z))
+                z = basetype(z)->btp;
+            z= basetype(z);
+            if (isstructured(z) && !z->sp->trivialCons)
+            {
+                INITIALIZER *init = NULL, *it = NULL;
+                int n = sp->tp->size/(z->size + z->arraySkew);
+                TYPE *ctype = z;
+                EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
+                EXPRESSION *baseexp = exprNode(en_add, getVarNode(sp), intNode(en_c_i, 0));
+                EXPRESSION *exp = baseexp;
+                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE );
+                initInsert(&it, z, exp, 0);
+                if (storage_class_in != sc_auto)
+                {
+                    insertDynamicInitializer(sp, it);
+                }
+                else
+                {
+                    sp->init = it;
+                }
+                exp = baseexp;
+                callDestructor(z->sp, &exp, sz, TRUE);
+                initInsert(&init, z, exp, 0);
+                if (storage_class_in != sc_auto)
+                {
+                    insertDynamicDestructor(sp, init);
+                }
+                else
+                {
+                    sp->dest = init;
+                }
+            }   
         }
     }
     if (sp->tp->type == bt_auto)

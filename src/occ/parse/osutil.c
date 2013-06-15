@@ -218,7 +218,7 @@ FILE *SrchPth3(char *string, char *searchpath, char *mode)
     char *newpath = searchpath;
 
     /* If no path specified we search along the search path */
-    if (string[0] != '\\' && string[1] != ':' && string[0] != '/')
+    if (string[0] != '\\' && string[1] != ':')
     {
         char buffer[200];
         while (newpath)

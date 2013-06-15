@@ -1,5 +1,18 @@
 Release notes
 
+version 5.0.7:
+    occ: make __DATE__ work like asctime as per the spec
+    occ: more preprocessor fixes ported from cc386
+    occ: allow unsigneds in preprocessor expressions
+    occ: fix #line directive, could overflow a buffer
+    occ: improve parsing of floating point numbers
+    occ: floating point improvements from Frank Uberto
+    occ: when a function returning floating point was called without using
+            its return value, the value would remain on the floating point stack.
+    occ: fix inline functions with local vars that are of structured type
+    occ: add __inline keyword
+    omake: fixed command line switches to work again
+
 version 5.0.6: 06/05/2013
     occ:    fixed type of __func__ to use const correctly
     occ:    fixed aliasing, wasn't handling parameters right...

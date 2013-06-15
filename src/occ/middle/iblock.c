@@ -724,7 +724,7 @@ void gen_icgoto(int op, long label, IMODE *left, IMODE *right)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_igosub(int op, IMODE *left)
+QUAD *gen_igosub(int op, IMODE *left)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -741,6 +741,7 @@ void gen_igosub(int op, IMODE *left)
     flush_dag();
 /*     addblock(op); */
     wasgoto = TRUE;
+    return intermed_tail;
 }
 
 /*-------------------------------------------------------------------------*/

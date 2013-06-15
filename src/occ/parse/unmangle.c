@@ -126,7 +126,12 @@ static char *unmang_intrins(char *buf, char *name, char *last)
                     case 1:
                         *buf++ = '~';
                     case 0:
-                        strcpy(buf, last);
+                    {
+                        char *p = last,*q=buf;
+                        while (*p && *p != ':')
+                            *q++ = *p++;
+                        *q = 0;
+                    }
                         break;
                 }
             }

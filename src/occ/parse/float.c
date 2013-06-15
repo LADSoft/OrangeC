@@ -13,7 +13,7 @@ void diag(char *s);
 //#undef USE_LONGLONG
 
 static const int BigEndian = 0;
-
+static FPF tensTab[10];
 /*
 ** emfloat.c
 ** BYTEmark (tm)
@@ -21,6 +21,19 @@ static const int BigEndian = 0;
 ** Rick Grehan, BYTE Magazine.
 */
 
+static void FPFInit(void)
+{
+    int i;
+    tensTab[0].mantissa[0] = 0xa000;
+    for (i=1; i < INTERNAL_FPF_PRECISION; i++)
+        tensTab[0].mantissa[i] = 0;
+    tensTab[0].exp = 4;
+    tensTab[0].type = IFPF_IS_NORMAL;
+    for (i=1; i < 10 ;i++)
+    {
+        MultiplyFPF(&tensTab[0], &tensTab[i-1], &tensTab[i]);
+    }
+}
 /***********************
 ** SetFPFZero **
 ************************
@@ -93,9 +106,11 @@ int FPFEQ(FPF *left, FPF *right)
 {
     if (left->type != right->type)
         return 0;
+    if (left->type == IFPF_IS_ZERO)
+        return 1;
     if (left->sign != right->sign)
         return 0;
-    if (left->type == IFPF_IS_INFINITY || left->type == IFPF_IS_ZERO)
+    if (left->type == IFPF_IS_INFINITY)
         return 1;
     if (left->type == IFPF_IS_NAN)
         return 0;
@@ -106,6 +121,8 @@ int FPFEQ(FPF *left, FPF *right)
 int FPFGT(FPF *left, FPF *right)
 {
     if (left->type == IFPF_IS_NAN || right->type == IFPF_IS_NAN)
+        return 0;
+    if (left->type == IFPF_IS_ZERO && right->type == IFPF_IS_ZERO)
         return 0;
     if (left->sign && !right->sign)
         return 0;
@@ -815,7 +832,7 @@ case NORMAL_NORMAL:
         /*
         ** Set the sticky bit if any bits set in extra bits.
         */
-        if (IsMantissaZero(extra_bits))
+        if (!IsMantissaZero(extra_bits))
         {
                 z->mantissa[INTERNAL_FPF_PRECISION-1] |= 1;
         }
@@ -1099,18 +1116,37 @@ void FPFMultiplyPowTen(FPF *value, int power)
 {
     FPF temp,mul ;
     int i;
+    if (!tensTab[0].mantissa[0])
+        FPFInit();
     temp.sign = 0;
  /* 10^x = 5^x * 2^x*/
     if (value->type == IFPF_IS_ZERO || value->type == IFPF_IS_NAN || value->type == IFPF_IS_INFINITY)
         return;
-    value->exp += power ;
     if (power < 0) { /* constant 0.2 */
-	    for (i=0; i < INTERNAL_FPF_PRECISION; i++)
-	        temp.mantissa[i] = 0xCCCC;
-        power = - power;
-        temp.exp = -2 ;
-        temp.type = IFPF_IS_NORMAL;
+        if (power < - 20)
+        {
+            value->exp += power ;
+    	    for (i=0; i < INTERNAL_FPF_PRECISION; i++)
+	            temp.mantissa[i] = 0xCCCC;
+            power = - power;
+            temp.exp = -2 ;
+            temp.type = IFPF_IS_NORMAL;
+        }
+        else
+        {
+            power = - power;
+            if (power > 10)
+            {
+                DivideFPF(value, &tensTab[9], &temp);
+                *value = temp;
+                power -= 10;
+            }
+            DivideFPF(value, &tensTab[power-1], &temp);
+            *value = temp;
+            return;
+        }
     } else if (power > 0) { /* constant 5 */
+        value->exp += power ;
         temp.mantissa[0] = 0xa000;
         for (i=1; i < INTERNAL_FPF_PRECISION; i++)
             temp.mantissa[i] = 0;

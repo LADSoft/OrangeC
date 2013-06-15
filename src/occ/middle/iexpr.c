@@ -1365,6 +1365,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     IMODE *ap;
     int adjust = 0 ;
     int adjust2 = 0;
+    QUAD *gosub = NULL;
     if (!f->ascall)
     {
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
@@ -1429,7 +1430,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     if (f->fcall->type == en_imode)
     {
         ap = f->fcall->v.imode;
-        gen_igosub(node->type == en_intcall ? i_int : i_gosub, ap);
+        gosub = gen_igosub(node->type == en_intcall ? i_int : i_gosub, ap);
     }
     else
     {
@@ -1453,7 +1454,15 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
                     type = i_fargosub;
 */
         }
-        gen_igosub(type, ap);
+        gosub = gen_igosub(type, ap);
+    }
+    if (flags & F_NOVALUE)
+    {
+        gosub->novalue = sizeFromType(f->functp->btp);
+    }
+    else
+    {
+        gosub->novalue = -1;
     }
     /* undo pars and make a temp for the result */
     if (f->sp->linkage != lk_stdcall && f->sp->linkage != lk_pascal)

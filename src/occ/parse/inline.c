@@ -182,6 +182,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
      */
     EXPRESSION *temp,  *temp1;
     FUNCTIONCALL *fp;
+    int i;
     (void)fromlval;
     if (node == 0)
         return 0;
@@ -373,7 +374,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
             fp = node->v.func;
             if (fp->sp->linkage == lk_inline)
             {
-                int i;
+                // check for recursion
                 for (i=0; i <inlinesp_count; i++)
                 {
                     if (inlinesp_list[i] == fp->sp)
@@ -381,6 +382,9 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
                         break;
                     }
                 }
+            }
+            if (fp->sp->linkage == lk_inline && i >= inlinesp_count)
+            {
                 if (inlinesp_count >= MAX_INLINE_NESTING)
                 {
                     diag("inline sp queue too deep");
@@ -412,9 +416,9 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
             }
             break;
         case en_stmt:
-            /* the only way we get this is from this function, and it will 
-             * already have been traversed 
-             * fallthrough just in case */
+            temp->v.stmt = inlinestmt(temp->v.stmt);
+            temp->left = inlineexpr(temp->left, FALSE);
+            break;
         default:
             diag("Invalid expr type in inlineexpr");
             break;

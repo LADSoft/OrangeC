@@ -1651,6 +1651,7 @@ void SetupAlreadyReplaced(unsigned char *macro)
 // E+ e+ P+ p+
 int ppNumber(char *start, char *pos)
 {
+    BOOL sixteensexp = FALSE;
     char *x = pos;
     if (*pos == '+' || *pos == '-' || isdigit(*pos)) // we would get here with the first alpha char following the number
     {
@@ -1669,7 +1670,7 @@ int ppNumber(char *start, char *pos)
             while (pos < x && (* pos != '.' || isdigit(pos[-1]) || !isdigit(pos[1]))) pos++;
         }
         // if we didn't get back where we started we have a number
-        return pos < x;
+        return pos < x && (sixteensexp || pos[0] != '0' || pos[1] != 'x' && pos[1] != 'X') ;
     }
     return FALSE;
 }

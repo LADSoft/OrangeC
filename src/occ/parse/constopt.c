@@ -215,7 +215,6 @@ static BOOL hasFloats(EXPRESSION *node)
         case en_trapcall:
         case en_global:
         case en_auto:
-        case en_this:
         case en_pc:
         case en_threadlocal:
         case en_absolute:
@@ -2229,8 +2228,11 @@ join_lor:
                     rv |= opt0(&(ep->right));
                     if (isintconst(ep->right))
                     {
-                        rv = TRUE;
-                        *node = intNode(en_c_i, !!ep->right->v.i);
+                        if (ep->right->v.i)
+                        {
+                            rv = TRUE;
+                            *node = intNode(en_c_i, 1);
+                        }
                     }
                     else switch(ep->right->type)
                     {
@@ -2461,6 +2463,8 @@ join_lor:
             break;
         case en_func:
             rv |= opt0(&((*node)->v.func->fcall));
+            if ((*node)->v.func->thisptr)
+                rv |= opt0(&((*node)->v.func->thisptr));
             return rv;
         case en_atomic:
             rv |= opt0(&((*node)->v.ad->flg));
@@ -2801,7 +2805,6 @@ int fold_const(EXPRESSION *node)
             }
             break;
         case en_auto:
-        case en_this:
         case en_c_d:
         case en_c_ld:
         case en_c_f:
@@ -3459,7 +3462,6 @@ static int depth(EXPRESSION *ep)
         case en_c_ldi:
         case en_global:
         case en_auto:
-        case en_this:
         case en_pc:
         case en_threadlocal:
         case en_labcon:
@@ -3503,7 +3505,6 @@ static void rebalance(EXPRESSION *ep)
         case en_c_ldi:
         case en_global:
         case en_auto:
-        case en_this:
         case en_pc:
         case en_threadlocal:
         case en_labcon:

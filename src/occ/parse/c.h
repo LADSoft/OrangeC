@@ -40,8 +40,9 @@
 
 #define CI_CONSTRUCTOR 0
 #define CI_DESTRUCTOR 1
-#define CI_NEW 2
-#define CI_DELETE 3
+#define CI_CAST 2
+#define CI_NEW 3
+#define CI_DELETE 4
 #define CI_NEWA (compl+1+2)
 #define CI_DELETEA (compl+2+2)
 #define CI_LIT (compl + 3+2)
@@ -148,8 +149,8 @@ enum e_node
         en_and, en_or, en_land, en_lor, en_xor, en_umul, en_autoinc, en_autodec,
         en_udiv, en_umod, en_ugt, en_uge, en_ule, en_ult, en_blockclear, en_stackblock, 
         en_blockassign, en_rshd, en_bits,
-        en_this, en_imode, en_x_p, en_substack, en_alloca,
-        en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder
+        en_imode, en_x_p, en_substack, en_alloca,
+        en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim
 };
 /*      statement node descriptions     */
 
@@ -226,6 +227,7 @@ typedef struct expr
     int atomicinit:1;
     int unionoffset:1;
     int isfunc:1;
+    int rref:1;
 } EXPRESSION;
 
 typedef struct casedata
@@ -290,6 +292,7 @@ typedef struct stmt
     struct stmt *blockTail;
     enum e_stmt type;
     EXPRESSION *select;
+    EXPRESSION *destexp;
     LINEDATA *lineData;
     TYPE *returntype;
     struct sym *sym;
@@ -329,7 +332,7 @@ typedef struct init
     TYPE *basetp;
     EXPRESSION *exp;
     int tag; /* sequence number */
-    
+    int noassign : 1;    
 } INITIALIZER;
     
 typedef struct ifunc
@@ -421,6 +424,9 @@ typedef struct sym
         unsigned addressTaken : 1; /* address taken */
         unsigned wasUsing : 1; /* came to this symbol table as a result of 'using' */
         unsigned redeclared : 1; /* symbol was declared more than once */
+        unsigned thisPtr: 1; /*is a this pointer*/
+        unsigned constop:1; /* a constructor 'top' parameter */
+        unsigned castoperator:1; /* a cast operator */
         unsigned deleted : 1; /* function was deleted */
         unsigned defaulted : 1; /* function was defaulted */
         unsigned isfinal :1 ; /* class or virtual function is final */
@@ -434,6 +440,7 @@ typedef struct sym
         unsigned hasUserCons : 1; /* has user-defined constructors */
         unsigned trivialCons : 1; /* constructor is trivial */
         unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
+        unsigned stackblock : 1; // stacked structure in C++ mode
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -453,7 +460,7 @@ typedef struct sym
     struct _vbaseEntry *vbaseEntries;
     struct _vtabEntry *vtabEntries;
     struct lexeme *deferredCompile ;
-    struct init * init, *dest;
+    struct init * init, *lastInit, *dest;
     LIST *friends;
     /* Type declarations */
     struct type *tp;
@@ -506,7 +513,8 @@ typedef struct arglist
     struct arglist *next;
     TYPE *tp;
     EXPRESSION *exp;
-    EXPRESSION *rootexp;
+    EXPRESSION *dest;
+    byRef : 1;
 } ARGLIST;
 
 typedef struct functioncall
@@ -584,7 +592,7 @@ typedef struct kwblk
 
 typedef struct lexeme
 {
-    struct lexeme *next;
+    struct lexeme *next, *prev;
     enum e_lexType { l_none, l_i, l_ui, l_l, l_ul, l_ll, l_ull, l_f, l_d, l_ld, l_I, 
             l_id, l_kw, 
             l_astr, l_wstr,  l_ustr, l_Ustr, l_u8str, 
@@ -597,9 +605,17 @@ typedef struct lexeme
     char *file;
     int line;
     int charindex;
+    int filenum;
     KEYWORD *kw;
     SYMBOL *typequal;
 } LEXEME;
+
+typedef struct lexContext {
+    struct lexContext *next;
+    LEXEME *cur;
+    LEXEME *mark;
+} LEXCONTEXT ;
+
 
 typedef struct _string
 {

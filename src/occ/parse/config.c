@@ -341,7 +341,7 @@ static BOOL hasbp(EXPRESSION *expr)
         return FALSE;
     if (expr->type == en_add)
         return (hasbp(expr->left) || hasbp(expr->right));
-    return expr->type == en_auto || expr->type == en_this;
+    return expr->type == en_auto;
 }
 static IMODE *FindConst(QUAD *ins)
 {
@@ -607,8 +607,6 @@ static BOOL MatchesConst(EXPRESSION *one, EXPRESSION *two)
             return one->v.sp == two->v.sp;
         case en_label:
             return (one->v.i == two->v.i);
-        case en_this:
-            return TRUE;
         default:
             return FALSE;		
     }

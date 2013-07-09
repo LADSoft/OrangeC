@@ -443,7 +443,6 @@ TYPE *typenum(char *buf, TYPE *tp)
 }
 void typeToString(char *buf, TYPE *typ)
 {
-    *buf++ = '\'';
     *buf = 0;
     while (typ)
     {
@@ -451,8 +450,6 @@ void typeToString(char *buf, TYPE *typ)
         buf = buf + strlen(buf);
         if (typ)
             *buf++ = ',';
-        else
-            *buf++ = '\'';
     }
     *buf = 0;
 }

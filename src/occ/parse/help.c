@@ -509,12 +509,16 @@ SYMBOL *anonymousVar(enum e_sc storage_class, TYPE *tp)
 void deref(TYPE *tp, EXPRESSION **exp)
 {
     enum e_node en = en_l_i;
+    BOOL rref = FALSE;
     tp = basetype(tp);
     switch ((tp->type == bt_enum && tp->btp ) ? tp->btp->type : tp->type)
     {
         case bt_lref: /* only used during initialization */
+            en = en_l_ref;
+            break;
         case bt_rref: /* only used during initialization */
             en = en_l_ref;
+            rref = TRUE;
             break;
         case bt_bit:
             en = en_l_bit;
@@ -605,6 +609,7 @@ void deref(TYPE *tp, EXPRESSION **exp)
             break;
     }
     *exp = exprNode(en, *exp, NULL);
+    (*exp)->rref = rref;
 }
 int sizeFromType(TYPE *tp)
 {
@@ -865,22 +870,30 @@ BOOL lvalue(EXPRESSION *exp)
         case en_l_di:
         case en_l_ldi:
         case en_l_p:
-        case en_l_ref:
             return TRUE;
+        case en_l_ref:
+            return !exp->rref;
         default:
             return FALSE;
     }
 }
-EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, INITIALIZER *init, EXPRESSION *thisptr)
+EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr)
 {
     EXPRESSION *exp = NULL, **expp;
     EXPRESSION *expsym;
+    if (!init->exp)
+        return intNode(en_c_i, 0);// must be an error
     if (!sp)
     {
         if (thisptr)
             expsym = thisptr;
+        else if (funcsp)
+            expsym = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
         else
+        {
             expsym = intNode(en_c_i, 0);
+            diag("convertInitToExpression: no this ptr");
+        }
     }
     else switch (sp->storage_class)
     {
@@ -913,8 +926,13 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, INITIALIZER *init, EXP
         case sc_member:
             if (thisptr)
                 expsym = thisptr;
+            else if (funcsp)
+                expsym = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
             else
-                expsym = varNode(en_this, sp->parentClass);
+            {
+                expsym = intNode(en_c_i, 0);
+                diag("convertInitToExpression: no this ptr");
+            }
             expsym = exprNode(en_add, expsym, intNode(en_c_i, sp->offset));
             break;
         case sc_external:
@@ -926,7 +944,13 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, INITIALIZER *init, EXP
             expsym = intNode(en_c_i, 0);
             break;
     }	
-    if (isstructured(tp) || isarray(tp))
+    if (init->noassign)
+    {
+        exp = init->exp;
+        if (thisptr && exp->type == en_func)
+            exp->v.func->thisptr = expsym;
+    }
+    else if (isstructured(tp) || isarray(tp))
     {
         INITIALIZER *temp = init;
         if (isstructured(temp->basetp))
@@ -958,7 +982,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, INITIALIZER *init, EXP
             if (temp)
             {
                 /* some members are non-constant expressions */
-                if (!cparams.prm_c99)
+                if (!cparams.prm_c99 && !cparams.prm_cplusplus)
                     error(ERR_C99_NON_CONSTANT_INITIALIZATION);
                 if (!sp)
                 {
@@ -1188,9 +1212,9 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOL 
         return tp1;
     }
     if (isref(tp1))
-        tp1 = tp1->btp;
+        tp1 = basetype(tp1)->btp;
     if (isref(tp2))
-        tp2 = tp2->btp;
+        tp2 = basetype(tp2)->btp;
     tp1 = basetype(tp1);
     tp2 = basetype(tp2);
     isctp1 = isarithmetic(tp1);

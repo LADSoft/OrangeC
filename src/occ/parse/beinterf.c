@@ -206,7 +206,6 @@ static int recurseNode(EXPRESSION *node, EXPRESSION **type, EXPRESSION **bits)
                 case en_auto:
                 case en_global:
                 case en_pc:
-                case en_this:
                 case en_threadlocal:
                     *type = node;
                     return 0;
@@ -264,7 +263,6 @@ BE_IMODEDATA *beArgType(IMODE *in)
                     rv->u.sym.sp = node->v.sp;
                     rv->u.tempRegNum = node->v.sp->offset;
                     break;
-                case en_this:
                 case en_auto:
                 case en_absolute:
                     rv->u.sym.localOffset = node->v.sp->offset;
@@ -281,7 +279,6 @@ BE_IMODEDATA *beArgType(IMODE *in)
                     switch(node->type)
                     {
                         case en_auto:
-                        case en_this:
                             rv->mode = bee_local;
                             break;
                         case en_absolute:

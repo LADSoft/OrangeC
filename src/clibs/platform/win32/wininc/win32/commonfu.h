@@ -5293,6 +5293,13 @@ extern int  PASCAL WINBASEAPI WideCharToMultiByte(UINT CodePage,DWORD dwFlags,LP
 #define AnsiNext CharNextA
 #define AnsiPrev CharPrevA
 
+/* objbase */
+#define WINOLEAPI        EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
+#define WINOLEAPI_(type) EXTERN_C DECLSPEC_IMPORT type STDAPICALLTYPE
+WINOLEAPI CoInitialize(PVOID);
+WINOLEAPI CoInitializeEx(LPVOID,DWORD);
+WINOLEAPI_(void) CoUninitialize(void);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

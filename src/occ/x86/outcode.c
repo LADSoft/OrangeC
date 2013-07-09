@@ -4497,10 +4497,6 @@ int resolveoffset(OCODE *ins, EXPRESSION *n, int *resolved)
             case en_auto:
                 rv += n->v.sp->offset;
                 break;
-            case en_this:
-                rv += chosenAssembler->arch->retblocksize+(theCurrentFunc->farproc
-                    *getSize(bt_pointer));
-                break;
             case en_labcon:
             case en_global:
             case en_label:

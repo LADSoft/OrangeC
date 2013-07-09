@@ -1465,7 +1465,6 @@ void peep_prefixes(OCODE *ip)
 /*
  * treat move reg, value followed by push reg when value is an int or constant
  */
- extern int errorline;
 void peep_push(OCODE *ip)
 {
     if (ip->oper1->mode == am_dreg)

@@ -431,6 +431,16 @@ static void CreateMem(IMODE *im)
     {
         if (im->mode == i_immed)
         {
+            if (!im->offset->v.sp->imvalue)
+            {
+                // make one in the case of global addresses that aren't used
+                // directly
+                IMODE *ap2 = (IMODE *)Alloc(sizeof(IMODE));
+                ap2->offset = im->offset;
+                ap2->mode = i_direct;
+                ap2->size = ISZ_ADDR;
+                im->offset->v.sp->imvalue = ap2;
+            }
             p = LookupMem(im->offset->v.sp->imvalue);
         }
         else
@@ -470,6 +480,13 @@ static void Createaddresses(void)
                     if (head->dc.left->mode == i_direct || !isarithmeticconst(head->dc.left->offset) &&
                         head->dc.left->offset->type != en_labcon && head->dc.left->offset->type != en_add)
                         CreateMem(head->dc.left);
+                }
+                if (head->dc.right && !(head->temps & TEMP_RIGHT))
+                {
+                    // fixme...
+                    if (head->dc.right->mode == i_direct || !isarithmeticconst(head->dc.right->offset) &&
+                        head->dc.right->offset->type != en_labcon && head->dc.right->offset->type != en_add)
+                        CreateMem(head->dc.right);
                 }
             }
         head = head->fwd;

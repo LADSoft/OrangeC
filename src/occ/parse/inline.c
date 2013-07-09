@@ -43,7 +43,6 @@ extern NAMESPACEVALUES *localNameSpace;
 extern TYPE stdpointer;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
-static LIST *thisptrs;
 
 static SYMBOL *inlinesp_list[MAX_INLINE_NESTING];
 static int inlinesp_count;
@@ -56,7 +55,6 @@ void inlineinit(void)
     namenumber = 0;
     inlineHead = NULL;
     inlineVTabHead = NULL;
-    thisptrs = NULL;
     vc1Thunks = CreateHashTable(1);
 }
 static void UndoPreviousCodegen(SYMBOL *sym)
@@ -97,7 +95,7 @@ void dumpInlines(void)
     while (vtabList)
     {
         SYMBOL *sym = (SYMBOL *)vtabList->data;
-        if (sym->genreffed)
+        if (sym->genreffed && hasVTab(sym))
         {
             sym->genreffed = FALSE;
             dumpVTab(sym);
@@ -173,7 +171,7 @@ void InsertInline(SYMBOL *sp)
 }
 /*-------------------------------------------------------------------------*/
 
-EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
+EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
 {
     /*
      * routine takes an enode tree and replaces it with a copy of itself.
@@ -190,19 +188,6 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
-        case en_auto:
-            {
-                temp = ((EXPRESSION *)(temp->v.sp->inlineFunc.stmt));
-                if (temp->type != en_auto) // in case of structs or unions
-                    temp = temp->left;
-            }
-            break;
-        case en_this:
-            {
-                SYMBOL *sym = (SYMBOL *)thisptrs->data;
-                temp = ((EXPRESSION *)(sym->inlineFunc.stmt))->left;
-            }
-            break;
         case en_c_ll:
         case en_c_ull:
         case en_c_d:
@@ -233,6 +218,16 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
         case en_const:
         case en_threadlocal:
             break;
+        case en_auto:
+            if (temp->v.sp->inlineFunc.stmt)
+            {
+                // guaranteed to be an lvalue at this point
+                temp = ((EXPRESSION *)(temp->v.sp->inlineFunc.stmt));
+                temp = inlineexpr(temp, fromlval);
+                if (fromlval)
+                    *fromlval = TRUE;
+            }
+            break;
         case en_l_sp:
         case en_l_fp:
         case en_bits:
@@ -262,14 +257,19 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+            /*
             if (node->left->type == en_auto)
             {
                 memcpy(temp, (EXPRESSION *)(node->left->v.sp->inlineFunc.stmt), sizeof(EXPRESSION));
 //                temp->left = (EXPRESSION *)(node->left->v.sp->inlineFunc.stmt);
             }
             else
+            */
             {
-                temp->left = inlineexpr(node->left, TRUE);
+                BOOL lval = FALSE;
+                temp->left = inlineexpr(temp->left, &lval);
+                if (lval)
+                    temp = temp->left;
             }
             break;
         case en_uminus:
@@ -409,7 +409,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval)
                 {
                     *p = Alloc(sizeof(ARGLIST));
                     **p = *args;
-                    (*p)->exp = (*p)->rootexp = inlineexpr((*p)->exp, FALSE);
+                    (*p)->exp = inlineexpr((*p)->exp, FALSE);
                     args = args->next;
                     p = &(*p)->next;
                 }
@@ -652,7 +652,6 @@ static BOOL sideEffects(EXPRESSION *node)
         case en_labcon:
         case en_const:
         case en_auto:
-        case en_this:
             rv = FALSE;
             break;
         case en_l_sp:
@@ -798,47 +797,44 @@ static BOOL sideEffects(EXPRESSION *node)
     }
     return rv;
 }
-
+static void setExp(SYMBOL *sx, EXPRESSION *exp, STATEMENT ***stp)
+{
+    if (!sx->altered && !sx->addressTaken && !sideEffects(exp))
+    {
+        // well if the expression is too complicated it gets evaluated over and over
+        // but maybe the backend can clean it up again...
+        sx->inlineFunc.stmt = (STATEMENT *)exp;
+    }
+    else
+    {
+        EXPRESSION *tnode = varNode(en_auto, anonymousVar(sc_auto, sx->tp));
+        deref(sx->tp, &tnode);
+        sx->inlineFunc.stmt = (STATEMENT *)tnode;
+        tnode = exprNode(en_assign, tnode, exp);
+        **stp = Alloc(sizeof(STATEMENT));
+        memset(**stp, 0 , sizeof(STATEMENT));
+        (**stp)->type = st_expr;
+        (**stp)->select = tnode;
+        *stp = &(**stp)->next;
+    }
+}
 static STATEMENT *SetupArguments(FUNCTIONCALL *params)
 {
     STATEMENT *st = NULL, **stp = &st;
     ARGLIST *al = params->arguments;
     HASHREC *hr = params->sp->inlineFunc.syms->table[0];
+    if (params->sp->storage_class == sc_member || params->sp->storage_class == sc_virtual)
+    {
+        SYMBOL *sx = (SYMBOL *)hr->p;
+        setExp(sx, params->thisptr, &stp);
+        hr = hr->next;
+    }
     while (al && hr)
     {
-        SYMBOL *sx;
-        if (al == params->arguments && (params->sp->storage_class == sc_member || params->sp->storage_class == sc_virtual))
-        {
-            LIST *l = Alloc(sizeof(LIST));
-            l->next = thisptrs;
-            thisptrs = l;
-            l->data = (void *)(sx = makeID(sc_auto, &stdpointer, NULL, "__$this$__"));
-        }
-        else
-        {
-            sx = (SYMBOL *)hr->p;
-        }
-        if (!sx->altered && !sx->addressTaken && !sideEffects(al->exp))
-        {
-            // well if the expression is too complicated it gets evaluated over and over
-            // but maybe the backend can clean it up again...
-            sx->inlineFunc.stmt = (STATEMENT *)al->exp;
-        }
-        else
-        {
-            EXPRESSION *tnode = varNode(en_auto, anonymousVar(sc_auto, sx->tp));
-            deref(sx->tp, &tnode);
-            sx->inlineFunc.stmt = (STATEMENT *)tnode;
-            tnode = exprNode(en_assign, tnode, al->exp);
-            *stp = Alloc(sizeof(STATEMENT));
-            memset(*stp, 0 , sizeof(STATEMENT));
-            (*stp)->type = st_expr;
-            (*stp)->select = tnode;
-            stp = &(*stp)->next;
-        }
+        SYMBOL *sx = (SYMBOL *)hr->p;
+        setExp(sx, al->exp, &stp);
         al = al->next;
-        if (hr)
-            hr = hr->next;
+        hr = hr->next;
     }
     return st;
 }
@@ -911,10 +907,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
         newExpression->left = newReturn(basetype(params->sp->tp)->btp);
         reduceReturns(stmt, params->sp->tp->btp, newExpression->left);
     }
-
-    if (params->sp->storage_class == sc_virtual || params->sp->storage_class == sc_member)
-        thisptrs = thisptrs->next;
-        
+    optimize_for_constants(&newExpression->left);
     if (allocated)
     {
         FreeLocalContext(NULL, NULL);

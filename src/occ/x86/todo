@@ -10,3 +10,8 @@ complex constants
 cplxdiv
 copy small structures and push
 scan args for each function call individually...
+
+cpp
+--------
+operator (cast)
+const & ref members are allowed uninitialized except by constructor

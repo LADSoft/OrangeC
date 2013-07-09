@@ -99,14 +99,16 @@ void ParseBuiltins(void);
 void declare_init(void);
 void checkOperatorArgs(SYMBOL *sp);
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype);
-MEMBERINITIALIZERS *GetMemberInitializers(LEXEME *lex, SYMBOL *sp);
+MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *sp);
 void createDefaultConstructors(SYMBOL *sp);
-void destructBlock(BLOCKDATA *bl, HASHTABLE *syms);
-void thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons);
-void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp);
+void destructBlock(EXPRESSION **exp, HASHREC *hr);
+void thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers);
+void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms);
 void createAssignment(SYMBOL *sym, SYMBOL *asnfunc);
 void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top);
-BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, BOOL checkcopy, EXPRESSION *arrayElms, BOOL top);
+BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
+                    BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
+                    BOOL maybeConversion);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOL *linked);
 LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class);
 LEXEME *handleStaticAssert(LEXEME *lex);
@@ -116,13 +118,13 @@ char *AnonymousName(void);
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name);
 void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage);
 LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOL braces);
-LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp);
+LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOL beforeOnly);
 int classRefCount(SYMBOL *base, SYMBOL *derived);
 int allocVTabSpace(VTABENTRY *vtab, int offset);
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset);
 void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOL isvirtual, int offset);
-LEXEME *deferredCompile(LEXEME *lex);
-LEXEME *backFillDeferredInitializers(LEXEME *lex, SYMBOL *declsym, SYMBOL *funcsp);
+void deferredCompile(void);
+void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp);
 void warnCPPWarnings(SYMBOL *sym, BOOL localClassWarnings);
 BOOL usesVTab(SYMBOL *sym);
 LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defaultAccess);
@@ -134,9 +136,10 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
                       NAMESPACEVALUES **nsv, enum e_sc storage_class,
 							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOL asFriend,
-                        int consdest);
+                        int consdest, BOOL beforeOnly);
 void sizeQualifiers(TYPE *tp);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
+void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOL needsemi, BOOL asExpression, BOOL asfriend, enum e_ac access );
 
@@ -154,8 +157,11 @@ BOOL doDynamicCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *func
 BOOL doStaticCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst);
 BOOL doConstCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
 BOOL doReinterpretCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst);
+void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other);
+BOOL cppCast(TYPE *src, TYPE **dest, EXPRESSION **exp);
 LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp);
 LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
+BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcParams);
 BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
                         TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1);
 LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global);
@@ -167,6 +173,8 @@ EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val);
 EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en);
 LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams);
+void DerivedToBase(SYMBOL *tpn, SYMBOL *tpo, EXPRESSION **exp);
+void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand);
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector);
@@ -272,7 +280,7 @@ void cast(TYPE *tp, EXPRESSION **exp);
 BOOL castvalue(EXPRESSION *exp);
 BOOL lvalue(EXPRESSION *exp);
 BOOL xvalue(EXPRESSION *exp);
-EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, INITIALIZER *init, EXPRESSION *thisptr);
+EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr);
 BOOL assignDiscardsConst(TYPE *dest, TYPE *source);
 BOOL isconstzero(TYPE *tp, EXPRESSION *exp);
 BOOL isarithmeticconst(EXPRESSION *exp);
@@ -461,7 +469,7 @@ void InsertInline(SYMBOL *sp);
 SYMBOL *getvc1Thunk(int offset);
 SYMBOL *inlineSearch(SYMBOL *name);
 void inlineinsert(SYMBOL *sp);
-EXPRESSION *inlineexpr(EXPRESSION *node, BOOL fromlval);
+EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval);
 STATEMENT *inlinestmt(STATEMENT *block);
 STATEMENT *inlinefuncargs(FUNCTIONCALL *params);
 void inlinereblock(SYMBOL *sp);
@@ -618,7 +626,7 @@ LEXEME *SkipToNextLine(void);
 LEXEME *getsym(void);
 void marksym(void);
 LEXEME *backupsym(int rel);
-LEXEME *SetAlternateLex(LEXEME *lex, LEXEME *lexList);
+LEXEME *SetAlternateLex(LEXEME *lexList);
 
                                /* List.c */
 
@@ -629,6 +637,7 @@ void list_table(HASHTABLE *t, int j);
 
                               /* Mangle.c */
 
+char *mangleType (char *in, TYPE *tp, BOOL first);
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage);
 char *unmangle(char *name, char *source);
 
@@ -766,15 +775,17 @@ void doendif(void);
 void statement_ini(void);
 void InsertLineData(int lineno, int fileindex, char *fname, char *line);
 void FlushLineData(char *file, int lineno);
-STATEMENT *currentLineData(BLOCKDATA *parent, char *file, int lineno);
-STATEMENT *stmtNode(BLOCKDATA *parent, enum e_stmt stype);
+STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex);
+STATEMENT *stmtNode(LEXEME *lex, BLOCKDATA *parent, enum e_stmt stype);
 int insertLabel(BLOCKDATA *parent);
 LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent);
+void assignParam(int *base, SYMBOL *param);
 LEXEME *body (LEXEME *lex, SYMBOL *funcsp);
 
                               /* Symtab.c */
 
 void syminit(void);
+BOOL singlebase(SYMBOL *base, SYMBOL *of);
 HASHTABLE *CreateHashTable(int size);
 void AllocateLocalContext(BLOCKDATA *parent, SYMBOL *sp);
 void FreeLocalContext(BLOCKDATA *parent, SYMBOL *sp);
@@ -789,14 +800,18 @@ SYMBOL *classsearch(char *name, BOOL tagsOnly);
 LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, BOOL *throughPath, BOOL tagsOnly);
 LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *destructor, 
                      BOOL tagsOnly);
-LEXEME *getIdName(LEXEME *lex, char *buf, int *ov);
-LEXEME *id_expression(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly, char *name);
+LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
+LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly, char *name);
 BOOL isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOL asAddress);
 BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, BOOL asAddress);
 BOOL checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);
 SYMBOL *LookupSym(char *name);
+SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp);
+SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp);
+SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
-                              FUNCTIONCALL *args, TYPE *atp, BOOL toErr);
+                              FUNCTIONCALL *args, TYPE *atp, BOOL toErr, 
+                              BOOL maybeConversion);
 void insert(SYMBOL *in, HASHTABLE *table);
 void insertOverload(SYMBOL *in, HASHTABLE *table);
 

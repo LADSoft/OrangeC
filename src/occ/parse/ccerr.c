@@ -56,9 +56,9 @@ extern INCLUDES *includes;
 #endif
 
 SYMBOL *theCurrentFunc;
-int errorline;
-char *errorfile;
-int errorfilenum;
+extern int preprocLine;
+extern char *preprocFile;
+extern LEXCONTEXT *context;
 
 static LIST *listErrors;
 int currentErrorLine;
@@ -104,10 +104,10 @@ static struct {
 {"#else without #if", ERROR},
 {"#endif without #if", ERROR},
 {"Macro substitution error", ERROR},
-{"Incorrect macro argument in call to %s", ERROR},
+{"Incorrect macro argument in call to '%s'", ERROR},
 {"Unexpected end of line in directive", ERROR},
-{"Unknown preprocessor directive %s", ERROR},
-{"#error: %s", ERROR},
+{"Unknown preprocessor directive '%s'", ERROR},
+{"#error: '%s'", ERROR},
 {"Expected include file name", ERROR},
 {"Cannot open include file \"%s\"", ERROR},
 {"Invalid macro definition", ERROR},
@@ -116,7 +116,7 @@ static struct {
 {"warning: %s", WARNING},
 {"Previous declaration of '%s' here", WARNING},
 #ifndef CPREPROCESSOR
-{"Unknown symbol %c", ERROR},
+{"Unknown symbol '%c'", ERROR},
 {"Size of '%s' is unknown or zero", ERROR},
 {"Size of the type '%s' is unknown or zero", ERROR },
 {"Tag '%s' not defined as this type", ERROR},
@@ -150,8 +150,8 @@ static struct {
 {"Declaration not allowed here", ERROR },
 {"'%s' has already been included", ERROR },
 {"Missing type in declaration", WARNING },
-{"Missing type for parameter %s", WARNING },
-{"%s is a C99 or C11 keyword - did you mean to specify C99 or C11 mode?", WARNING },
+{"Missing type for parameter '%s'", WARNING },
+{"'%s' is a C99 or C11 keyword - did you mean to specify C99 or C11 mode?", WARNING },
 {"Too many types in declaration", ERROR },
 {"Too many identifiers in declaration", ERROR },
 {"Type '%s' requires C99", ERROR },
@@ -178,7 +178,7 @@ static struct {
 {"Type mismatch in redeclaration of function '%s'", ERROR },
 {"Untyped parameters must be used with a function body", ERROR },
 {"Function parameter expected", ERROR },
-{"Parameter %s missing name", ERROR },
+{"Parameter '%s' missing name", ERROR },
 {"Functions may not be part of a structure or union", ERROR },
 {"Functions may not return functions or arrays", ERROR },
 {"Function should return a value", WARNING },
@@ -190,7 +190,7 @@ static struct {
 {"Argument list too long in call to '%s'", ERROR },
 {"Argument list too short in call to '%s'", ERROR },
 {"Call of nonfunction", ERROR },
-{"Type mismatch in argument %s in call to '%s'", ERROR },
+{"Type mismatch in argument '%s' in call to '%s'", ERROR },
 {"extern object may not be initialized", ERROR },
 {"typedef may not be initialized", ERROR },
 {"object with variably modified type may not be initialized", ERROR },
@@ -200,11 +200,11 @@ static struct {
 {"Bitwise object may not be initialized", ERROR },
 {"Object of type '%s' may not be initialized", ERROR }, /* fixme */
 {"Objects with _absolute storage class may not be initialized", ERROR },
-{"const variable '%s' must be initialized", ERROR },
+{"Constant variable '%s' must be initialized", ERROR },
 {"String type mismatch in initialization", TRIVIALWARNING },
 {"Multiple initialization of '%s'", ERROR },
 {"Initialization bypassed", WARNING },
-{"Object with variably modified type in line %s bypassed by goto", ERROR },
+{"Object with variably modified type in line '%s' bypassed by goto", ERROR },
 {"Nonportable pointer conversion", WARNING },
 {"Nonportable pointer comparison", WARNING },
 {"Nonportable pointer conversion", ERROR },
@@ -224,7 +224,7 @@ static struct {
 {"Not an allowed type", ERROR },
 {"Cannot modify a const object", ERROR },
 {"Expression syntax error", ERROR },
-{"signed/unsigned mismatch in %s comparison", TRIVIALWARNING },
+{"signed/unsigned mismatch in '%s' comparison", TRIVIALWARNING },
 {"sizeof may not be used with a function designator", ERROR},
 {"Invalid structure assignment", ERROR },
 {"Invalid structure operation", ERROR },
@@ -273,23 +273,23 @@ static struct {
 {"Ansi forbids omission of semicolon", ERROR },
 {"Pointer or reference to reference is not allowed", ERROR },
 {"Array of references is not allowed", ERROR },
-{"Reference variable %s must be initialized", ERROR },
+{"Reference variable '%s' must be initialized", ERROR },
 {"Reference initialization requires Lvalue", ERROR },
 {"Reference initialization of type '%s' requires Lvalue of type '%s'", ERROR},
-{"Reference variable %s in a class with no constructors", ERROR },
-{"Reference variable %s not initialized in class constructor", ERROR },
+{"Reference variable '%s' in a class with no constructors", ERROR },
+{"Reference variable '%s' not initialized in class constructor", ERROR },
 {"Qualified reference variable not allowed", WARNING },
 {"Attempt to return reference to local variable", ERROR },
-{"Cannot convert %s to %s", ERROR },
-{"Cannot cast %s to %s", ERROR },
+{"Cannot convert '%s' to '%s'", ERROR },
+{"Cannot cast '%s' to '%s'", ERROR },
 {"Invalid use of namespace '%s'", ERROR },
 {"Cannot declare namespace within function", ERROR },
 {"'%s' is not a namespace", ERROR },
 {"Namespace '%s' not previously declared as inline", ERROR },
 {"Expected namespace name", ERROR },
 {"Cyclic using directive", TRIVIALWARNING },
-{"%s", ERROR },
-{"Creating temporary for variable of type %s", TRIVIALWARNING },
+{"'%s'", ERROR },
+{"Creating temporary for variable of type '%s'", TRIVIALWARNING },
 {"Type name expected", ERROR },
 {"Ambiguity between '%s' and '%s'", ERROR },
 {"Unknown linkage specifier '%s'", WARNING },
@@ -304,7 +304,7 @@ static struct {
 {"Variable style constexpr declaration needs simple type", ERROR },
 {"Function returning reference must return a value", ERROR },
 {"Qualified name not allowed here", ERROR },
-{"%s", ERROR },
+{"'%s'", ERROR },
 {"Qualifier '%s' is not a class or namespace", ERROR },
 {"Linkage mismatch in overload of function '%s'", ERROR },
 {"Overload of '%s' differs only in return type", ERROR },
@@ -329,7 +329,7 @@ static struct {
 {"'auto' variable '%s' needs initialization", ERROR },
 {"Type 'auto' not allowed in this context", ERROR },
 {"Reference initialization discards qualifiers", ERROR },
-{"Initialization of rvalue reference cannot use lvalue of type '%s'", ERROR },
+{"Initialization of lvalue reference cannot use rvalue of type '%s'", ERROR },
 {"Global anonymous union not static", ERROR },
 {"Union having base classes not allowed", ERROR },
 {"Union as a base class not allowed", ERROR },
@@ -373,21 +373,21 @@ static struct {
 {"Pointers and arrays cannot be friends", ERROR },
 {"Declarator not allowed here", ERROR },
 {"'this' may only be used in a member function", ERROR },
-{"operator %s not allowed", ERROR },
-{"operator %s must be a function", ERROR },
-{"operator %s requires no parameters", ERROR },
-{"operator %s requires one parameter", ERROR },
-{"operator %s requires zero or one parameter", ERROR },
-{"operator %s requires parameter be type int", ERROR },
-{"operator %s must be nonstatic when used as a member function", ERROR },
-{"operator %s requires structured or enumeration parameter when used as a non-member", ERROR },
-{"operator %s requires two parameters", ERROR },
-{"operator %s requires one or two parameters", ERROR },
-{"operator %s requires second parameter be type int", ERROR },
-{"operator %s must be a nonstatic member function", ERROR },
-{"operator %s must return a reference or pointer type", ERROR },
+{"operator '%s' not allowed", ERROR },
+{"operator '%s' must be a function", ERROR },
+{"operator '%s' must have no parameters", ERROR },
+{"operator '%s' must have one parameter", ERROR },
+{"operator '%s' must have zero or one parameter", ERROR },
+{"operator '%s' must have parameter of type int", ERROR },
+{"operator '%s' must be nonstatic when used as a member function", ERROR },
+{"operator '%s' must have structured or enumeration parameter when used as a non-member", ERROR },
+{"operator '%s' must have two parameters", ERROR },
+{"operator '%s' must have one or two parameters", ERROR },
+{"operator '%s' must have second parameter of type int", ERROR },
+{"operator '%s' must be a nonstatic member function", ERROR },
+{"operator '%s' must return a reference or pointer type", ERROR },
 {"Cannot create instance of abstract class '%s'", ERROR},
-{"Class '%s' is abstract because of '%s = 0'", ERROR },
+{"Class '%s' is abstract because of ''%s' = 0'", ERROR },
 {"operator \"\" requires empty string", ERROR },
 {"operator \"\" requires identifier", ERROR },
 {"'%s' requires namespace scope", ERROR },
@@ -396,9 +396,9 @@ static struct {
 {"Literal suffix mismatch", ERROR },
 {"Structured type '%s' not defined", ERROR },
 {"Incorrect use of destructor syntax", ERROR },
-{"Constructor or destructor for %s must be a function", ERROR },
+{"Constructor or destructor for '%s' must be a function", ERROR },
 {"Default may only be used on a special function", ERROR },
-{"Constructor for %s must have body", ERROR },
+{"Constructor for '%s' must have body", ERROR },
 {"Constructor or destructor cannot be declared const or volatile", ERROR },
 {"Initializer list requires constructor", ERROR },
 {"Constructor or destructor cannot have a return type", ERROR },
@@ -414,7 +414,10 @@ static struct {
 {"Cannot find a default constructor for class '%s'", ERROR },
 {"'%s' is not a member of '%s', because the type is not defined", ERROR },
 {"Destructor for '%s' must have empty parameter list", ERROR },
-
+{"Reference member '%s' is not intialized", ERROR },
+{"Constant member '%s' is not intialized", ERROR },
+{"Improper use of typedef '%s'", ERROR },
+{"Return type is implicit for 'operator %s'", ERROR },
 #endif
 } ;
 int total_errors;
@@ -450,12 +453,44 @@ static char kwtosym(enum e_kw kw)
             return '?';
     }
 };
+static BOOL alwaysErr(int err)
+{
+    switch (err)
+    {
+        case ERR_TOO_MANY_ERRORS:
+        case ERR_UNDEFINED_IDENTIFIER:
+        case ERR_ABSTRACT_BECAUSE:
+        case ERR_REF_MUST_INITIALIZE:
+        case ERR_CONSTANT_MUST_BE_INITIALIZED:
+        case ERR_REF_MEMBER_MUST_INITIALIZE:
+        case ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED:
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
 void printerr(int err, char *file, int line, ...)
 {
     char buf[256];
     char infunc[256];
     char *listerr;
     char nameb[265], *name = nameb;
+    if (!file)
+    {
+#ifndef CPREPROCESSOR
+        if (context)
+        {
+            line = context->cur->line;
+            file = context->cur->file;
+        }
+        else
+        {
+            file = "unknown";
+        }
+#else
+        file = "unknown";
+#endif
+    }
     strcpy(nameb, file);
     if (strchr(infile, '\\') != 0 || strchr(infile, ':') != 0)
     {
@@ -463,9 +498,7 @@ void printerr(int err, char *file, int line, ...)
     }
     if (total_errors > cparams.prm_maxerr)
         return;
-    if (err != ERR_TOO_MANY_ERRORS && err != ERR_UNDEFINED_IDENTIFIER &&
-        err != ERR_ABSTRACT_BECAUSE &&
-        currentErrorFile && !strcmp(currentErrorFile, file) && 
+    if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, file) && 
         line == currentErrorLine)
         return;
     if (err >= sizeof(errors)/sizeof(errors[0]))
@@ -528,15 +561,15 @@ void printerr(int err, char *file, int line, ...)
 }
 void pperror(int err, int data)
 {
-    printerr(err, errorfile, errorline, data);
+    printerr(err, preprocFile, preprocLine, data);
 }
 void pperrorstr(int err, char *str)
 {
-    printerr(err, errorfile, errorline, str);
+    printerr(err, preprocFile, preprocLine, str);
 }
 void preverror(int err, char *name, char *origfile, int origline)
 {
-    printerr(err, errorfile, errorline, name);
+    printerr(err, preprocFile, preprocLine, name);
     if (origfile && origline)
         printerr(ERR_PREVIOUS, origfile, origline, name);
 }
@@ -589,19 +622,19 @@ void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
         getns(buf, nsv->name);
     }
     strcat(buf, "'");
-    printerr(err, errorfile, errorline, buf);
+    printerr(err, preprocFile, preprocLine, buf);
 }
 void error(int err)
 {
-    printerr(err, errorfile, errorline);
+    printerr(err, preprocFile, preprocLine);
 }
 void errorint(int err, int val)
 {
-    printerr(err, errorfile, errorline, val);
+    printerr(err, preprocFile, preprocLine, val);
 }
 void errorstr(int err, char *val)
 {
-    printerr(err, errorfile, errorline, val);
+    printerr(err, preprocFile, preprocLine, val);
 }
 void errorsym(int err, SYMBOL *sym)
 {
@@ -611,7 +644,7 @@ void errorsym(int err, SYMBOL *sym)
 #else
     unmangle(buf, sym->errname);
 #endif
-    printerr(err, errorfile, errorline, buf);
+    printerr(err, preprocFile, preprocLine, buf);
 }
 #ifndef CPREPROCESSOR
 void errorsym2(int err, SYMBOL *sym1, SYMBOL *sym2)
@@ -619,13 +652,13 @@ void errorsym2(int err, SYMBOL *sym1, SYMBOL *sym2)
     char one[512], two[512];
     unmangle(one, sym1->errname);
     unmangle(two, sym2->errname);
-    printerr(err, errorfile, errorline, one, two);
+    printerr(err, preprocFile, preprocLine, one, two);
 }
 void errorstrsym(int err, char *name, SYMBOL *sym2)
 {
     char two[512];
     unmangle(two, sym2->errname);
-    printerr(err, errorfile, errorline, name, two);
+    printerr(err, preprocFile, preprocLine, name, two);
 }
 void errortype (int err, TYPE *tp1, TYPE *tp2)
 {
@@ -633,7 +666,7 @@ void errortype (int err, TYPE *tp1, TYPE *tp2)
     typeToString(tpb1, tp1);
     if (tp2)
         typeToString(tpb2, tp2);
-    printerr(err, errorfile, errorline, tpb1, tpb2);
+    printerr(err, preprocFile, preprocLine, tpb1, tpb2);
 }
 void errorabstract(int error, SYMBOL *sp)
 {
@@ -649,7 +682,7 @@ void membererror(char *name, TYPE *tp1)
 {
     char tpb[256];
     typeToString(tpb, basetype(tp1));
-    printerr(tp1->size? ERR_MEMBER_NAME_EXPECTED : ERR_MEMBER_NAME_EXPECTED_NOT_DEFINED, errorfile, errorline, name, tpb);
+    printerr(tp1->size? ERR_MEMBER_NAME_EXPECTED : ERR_MEMBER_NAME_EXPECTED_NOT_DEFINED, preprocFile, preprocLine, name, tpb);
 }
 void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
 {
@@ -665,7 +698,7 @@ void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
     }
     unmangle(buf, funcsp->errname);
     currentErrorLine = 0;
-    printerr(err, errorfile, errorline, argbuf, buf);
+    printerr(err, preprocFile, preprocLine, argbuf, buf);
 }
 static BALANCE *newbalance(LEXEME *lex, BALANCE *bal)
 {
@@ -1037,7 +1070,7 @@ void checkGotoPastVLA(STATEMENT *stmt, BOOL first)
                                 {
                                     if (temp->type == v_blockend)
                                     {
-                                          STATEMENT *st = stmtNode(NULL, st_expr);
+                                          STATEMENT *st = stmtNode(NULL, NULL, st_expr);
                                         *st = *gotop->stmt;
                                         gotop->stmt->type = st_expr;
                                         gotop->stmt->select = temp->stmt->blockTail->select;
@@ -1072,7 +1105,7 @@ void checkUnlabeledReferences(BLOCKDATA *block)
                 STATEMENT *st;
                 specerror(ERR_UNDEFINED_LABEL, sp->name, sp->declfile, sp->declline);
                 sp->storage_class = sc_label;
-                st = stmtNode(block, st_label);
+                st = stmtNode(NULL, block, st_label);
                 st->label = sp->offset;
             }
             hr = hr->next;
@@ -1203,8 +1236,6 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
     {
         case en_auto:
             node->v.sp->used = TRUE;
-            break;
-        case en_this:
             break;
         case en_const:
             break;
@@ -1407,8 +1438,6 @@ static int checkDefaultExpression(EXPRESSION *node)
     {
         case en_auto:
             rv = TRUE;
-            break;
-        case en_this:
             break;
         case en_const:
             break;

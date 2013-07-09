@@ -48,20 +48,17 @@
 #endif
 
 #define KW_HASH
-#define MAX_LOOKBACK 1024
+#define MAX_LOOKBACK 256
 
 extern COMPILER_PARAMS cparams ;
 extern INCLUDES *includes;
-extern char *errorfile;
-extern int errorline;
 
 int endline;
+LEXCONTEXT *context;
 
-static LEXEME *alternateLex;
-static BOOL usingAlternateLex;
+static LEXEME pool[MAX_LOOKBACK];
 static ULLONG_TYPE llminus1;
-static LEXEME llex[MAX_LOOKBACK];
-static int index, head, tail, mark, top;
+static int nextFree;
 #ifdef KW_HASH
 HASHTABLE *kwhash;
 #endif
@@ -339,6 +336,8 @@ void lexini(void)
 #endif
     llminus1 = 0;
     llminus1--;
+    context = Alloc(sizeof(LEXCONTEXT));
+    nextFree = 0;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -657,7 +656,6 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
                     if (st[0] == '\n')
                     {
                         ++includes->line;
-                        ++errorline;
                     }
                 }
                 if (len == 1)
@@ -1187,9 +1185,12 @@ int getId(char **ptr , char *dest)
 }
 LEXEME *SkipToNextLine(void)
 {
-    head = tail = index = 0;
-    while (*includes->lptr)
-        includes->lptr++;
+    if (!context->next)
+    {
+        while (*includes->lptr)
+            includes->lptr++;
+        context->cur = context->mark = NULL;
+    }
     return getsym();
 }
 LEXEME *getsym(void)
@@ -1205,28 +1206,25 @@ LEXEME *getsym(void)
     int cval;
     LCHAR *strptr;
 
-    if (index != head)
-    {
-        lex =  &llex[index];
-        top = index = (index+1)%MAX_LOOKBACK;
-        errorline = lex->line;
-        errorfile = lex->file;
-        return lex;
-    }
-    lex = &llex[head];	
-    if (head == (tail + MAX_LOOKBACK - 1) % MAX_LOOKBACK)
-    {
-        tail = (tail+1) %MAX_LOOKBACK;
-    }
-    top = index = head = (head+1) %MAX_LOOKBACK;
-    if (usingAlternateLex)
-    {
-        if (!alternateLex)
-            return NULL;
-        *lex = *alternateLex;
-        alternateLex = alternateLex->next;
-        return lex;
-    }
+    if (context->cur)
+        if (context->cur->next)
+        {
+            return context->cur = context->cur->next;
+        }
+        else {
+            if (context->next)
+                return NULL;
+        }
+    lex = &pool[nextFree];
+    lex->prev = context->cur;
+    lex->next = NULL;
+    context->cur = lex;
+    if (lex->prev)
+        lex->prev->next = lex;
+    else
+        context->mark = lex;
+    if (++nextFree >= MAX_LOOKBACK)
+        nextFree = 0;
     do
     {
         contin = FALSE;
@@ -1241,17 +1239,13 @@ LEXEME *getsym(void)
                     return NULL;
                 }
             }
-            else
-            {
-                errorline = includes->line;
-                errorfile = includes->fname;
-            }
             while (isspace(*includes->lptr) || *includes->lptr == MACRO_PLACEHOLDER)
                 includes->lptr++;
         } while (*includes->lptr == 0);
         lex->charindex = includes->lptr - includes->inputline;
-        lex->line = endline = errorline;
-        lex->file = errorfile;
+        lex->line = includes->line;
+        lex->file = includes->fname;
+        lex->filenum = includes->fileindex;
         if ((cval = getChar(&includes->lptr, &tp)) != INT_MIN)
         {
                if (tp == l_achr && !cparams.prm_charisunsigned && !(cval & 0xffffff00))
@@ -1339,33 +1333,35 @@ LEXEME *getsym(void)
 }
 void marksym(void)
 {
-    mark = (top + MAX_LOOKBACK-1)%MAX_LOOKBACK;
+    context->mark = context->cur;
 }
 LEXEME *backupsym(int rel)
 {
     if (rel == 0)
-        index = mark;
-    else
-        index = (index + MAX_LOOKBACK - rel -1) %MAX_LOOKBACK;
-    return getsym();
+        return context->cur = context->mark;
+    else {
+        while (rel && context->cur->prev)
+            rel--, context->cur = context->cur->prev;
+        if (rel)
+        {
+            diag("backupsym:  invalid rel");
+        }
+        return context->cur;
+    }
 }
-LEXEME *SetAlternateLex(LEXEME *lex, LEXEME *lexList)
-{
-    static LEXEME lastLex;
-    alternateLex = lexList;
-    usingAlternateLex = lexList != NULL;
-    if (usingAlternateLex)
+LEXEME *SetAlternateLex(LEXEME *lexList)
+{        
+    if (lexList)
     {
-        lastLex = *lex;
-        if (lastLex.type == l_id)
-            lastLex.value.s.a = litlate(lastLex.value.s.a);
-        top = index = mark = head;
-        return getsym();
+        LEXCONTEXT *newContext = Alloc(sizeof(LEXCONTEXT));
+        newContext->next = context;
+        context = newContext;
+        context->cur = context->mark = lexList;
+        return context->cur;
     }
     else
     {
-        top = index = mark = head = 1;
-        llex[0] = lastLex;
-        return &llex[0];
+        context = context->next;
+        return NULL;
     }
 }

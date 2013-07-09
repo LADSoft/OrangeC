@@ -66,24 +66,24 @@ extern char anonymousNameSpaceName[512];
     
     char *cpp_funcname_tab[] = 
     {
-        "$bctr", "$bdtr", "$bnew", "$bdel", "$badd", "$bsub", "$bmul", "$bdiv",
+        "$bctr", "$bdtr", "$bcast", "$bnew", "$bdel", "$badd", "$bsub", "$bmul", "$bdiv",
             "$bshl", "$bshr", "$bmod", "$bequ", "$bneq", "$blt", "$bleq", 
             "$bgt", "$bgeq", "$basn", "$basadd", "$bassub", "$basmul", 
             "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand", "$basor", 
-            "$basxor", "$binc", "$bdec", "$barray", "$bcast", "$bpstar", 
+            "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bpstar", 
             "$barrow", "$bcomma", "$blor", "$bland", "$bnot", "$bor", "$band", "$bxor", 
             "$bcpl", "$bnwa", "$bdla", "$blit"
 
     };
     char *xlate_tab[] = 
     {
-        0, 0, "new", "delete", "+", "-", "*", "/", "<<", ">>", "%", "==", "!=",
+        0, 0, 0, "new", "delete", "+", "-", "*", "/", "<<", ">>", "%", "==", "!=",
             "<", "<=", ">", ">=", "=", "+=", "-=", "*=", "/=", "%=", "<<=", 
             ">>=", "&=", "|=", "^=", "++", "--", "[]", "()", "->*", "->", ",", "||",
             "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\" ",
     };
-#define IT_THRESHOLD 2
-#define IT_OV_THRESHOLD 4
+#define IT_THRESHOLD 3
+#define IT_OV_THRESHOLD 5
 #define IT_SIZE (sizeof(cpp_funcname_tab)/sizeof(char *))
 
 static char *unmangcpptype(char *buf, char *name);
@@ -123,9 +123,19 @@ static char *unmang_intrins(char *buf, char *name, char *last)
             {
                 switch (i)
                 {
-                    case 1:
+                    case 2: // cast op
+                        strcpy(buf, "operator ");
+                        if (*name == '$')
+                        {
+                            buf += strlen(buf);
+                            name = unmang1(buf, name+1);
+                            strcat(buf, "()");
+                        }
+                        break;
+                    case 1: // delete
                         *buf++ = '~';
-                    case 0:
+                        // fallthrough
+                    case 0: // new
                     {
                         char *p = last,*q=buf;
                         while (*p && *p != ':')
@@ -302,6 +312,10 @@ static char *unmang1(char *buf, char *name)
             *p = 0;
             strcpy(buf, buf1);
             strcat(buf, ")");
+            if (cconst)
+                strcat(buf, tn_const);
+            if (cvol)
+                strcat(buf, tn_volatile);
             buf += strlen(buf);
             break;
         case 'h':
@@ -450,16 +464,34 @@ static char *unmang1(char *buf, char *name)
                 buf = buf + strlen(buf);
             }
             break;
-        case 'r':
+        case 'R':
+            if (cconst)
+            {
+                strcat(buf, tn_const);
+            }
+            if (cvol)
+            {
+                strcat(buf , tn_volatile);
+            }
+            buf = buf + strlen(buf);
             name = unmang1(buf, name);
             buf = buf + strlen(buf);
+            *buf++ = '&';
             *buf++ = '&';
             *buf = 0;
             break;
-        case 'R':
+        case 'r':
+            if (cconst)
+            {
+                strcat(buf, tn_const);
+            }
+            if (cvol)
+            {
+                strcat(buf , tn_volatile);
+            }
+            buf = buf + strlen(buf);
             name = unmang1(buf, name);
             buf = buf + strlen(buf);
-            *buf++ = '&';
             *buf++ = '&';
             *buf = 0;
             break;

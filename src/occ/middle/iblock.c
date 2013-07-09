@@ -127,8 +127,6 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
             return FPFEQ(&node1->v.c.r,&node2->v.c.r) && FPFEQ(&node1->v.c.i,&node2->v.c.i);
         case en_tempref:
             return node1->v.sp == node2->v.sp;
-        case en_this:
-            return TRUE;
     }
 }
 
@@ -340,7 +338,6 @@ BOOL usesAddress(IMODE *im)
             case en_absolute:
             case en_global:
             case en_label:
-            case en_this:
             case en_threadlocal:
                 return TRUE ;
             default:

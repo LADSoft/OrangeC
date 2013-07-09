@@ -1734,13 +1734,6 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOL doSign)
     int toffs;
     switch (offset->type)
     {
-        case en_this:
-            toffs = chosenAssembler->arch->retblocksize+(theCurrentFunc->farproc
-                    *getSize(bt_pointer));
-            if (doSign)
-                beputc('+');    
-            bePrintf( "0%lXH", toffs);
-            break;
         case en_auto:
             if (doSign)
             {
@@ -2010,7 +2003,6 @@ int islabeled(EXPRESSION *n)
         case en_absolute:
         case en_label:
         case en_pc:
-        case en_this:
         case en_threadlocal:
             return 1;
         default:
@@ -2615,6 +2607,14 @@ void oa_exitseg(enum e_sg seg)
             {
                 bePrintf( "_TLS\tENDS\n");
             }
+            else if (seg == tlssuseg)
+            {
+                bePrintf( "tlsstartup\tENDS\n");
+            }
+            else if (seg == tlsrdseg)
+            {
+                bePrintf( "tlsrundown\tENDS\n");
+            }
         }
         oa_nl();
     }
@@ -2684,6 +2684,30 @@ void oa_enterseg(enum e_sg seg)
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
                     bePrintf( "SECTION tls\n");
+                else
+                {
+                    bePrintf( "SECTION .data\n");
+                    bePrintf( "[BITS 32]\n");
+                }
+            else
+                bePrintf( 
+                    "_TLS\tSEGMENT USE32 PUBLIC DWORD \042TLS\042\n");
+         } else if (seg == tlssuseg) {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (!prm_nodos)
+                    bePrintf( "SECTION tlsstartup\n");
+                else
+                {
+                    bePrintf( "SECTION .data\n");
+                    bePrintf( "[BITS 32]\n");
+                }
+            else
+                bePrintf( 
+                    "_TLS\tSEGMENT USE32 PUBLIC DWORD \042TLS\042\n");
+         } else if (seg == tlsrdseg) {
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (!prm_nodos)
+                    bePrintf( "SECTION tlsrundown\n");
                 else
                 {
                     bePrintf( "SECTION .data\n");

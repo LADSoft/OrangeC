@@ -47,9 +47,9 @@ extern char *prm_searchpath,  *sys_searchpath;
 extern char version[];
 
 extern FILE *cppFile;
-extern char *errorfile;
-extern int errorline;
-extern int errorfilenum;
+
+int preprocLine;
+char *preprocFile;
 
 HASHTABLE *defsyms;
 INCLUDES *includes, *inclData;
@@ -67,6 +67,7 @@ int packlevel;
 
 void filemac(char *string);
 void datemac(char *string);
+void dateisomac(char *string);
 void timemac(char *string);
 void linemac(char *string);
 
@@ -75,7 +76,7 @@ static int commentlevel, commentline;
 static char defkw[] = "defined";
 static int currentfile;
 /* List of standard macros */
-#define INGROWNMACROS 4
+#define INGROWNMACROS 5
 
 struct inmac
 {
@@ -89,6 +90,10 @@ struct inmac
     , 
     {
         "__DATE__", datemac, 
+    }
+    , 
+    {
+        "__DATEISO__", dateisomac, 
     }
     , 
     {
@@ -291,7 +296,6 @@ static void stripcomment(char *line)
             {
                 if (*e == '/' && *(e+1) == '*')
                 {
-                    errorline = includes->line+1;
                     error(ERR_NESTEDCOMMENTS);
                 }
                 if (*e == '*')
@@ -474,16 +478,15 @@ BOOL getline(void)
         ErrorsToListFile();
 #endif
         add:
-        errorfile = includes->fname;
-        errorfilenum = includes->fileindex;
-        errorline = includes->line+1;
         while (rvc + 131 < MACRO_REPLACE_SIZE && !rv)
         {
             int temp;
             ++includes->line;
+            preprocLine = includes->line;
+            preprocFile = includes->fname;
 #ifdef PARSER_ONLY
             if (!includes->ifskip)
-                ccSetFileLine(errorfile, includes->line);
+                ccSetFileLine(includes->fname, includes->line);
 #endif
             rv = getstring(includes->inputline + rvc, MACRO_REPLACE_SIZE-132-rvc, includes->handle);
             if (rv)
@@ -598,6 +601,8 @@ BOOL getline(void)
         }
     }
     lineToCpp();
+    preprocLine = 0;
+    preprocFile = 0;
     return 0;
 }
 /* Preprocessor dispatch */
@@ -1148,6 +1153,8 @@ void dodefine(void)
     def->name = litlate(name);
     def->args = 0;
     def->argcount = 0;
+    def->line = includes->line;
+    def->file = includes->fname;
     if (*includes->lptr == '(')
     {
         BOOL gotcomma=FALSE,nullargs=TRUE;
@@ -1266,12 +1273,10 @@ void dodefine(void)
             preverror(ERR_PP_REDEFINE_NOT_SAME, hr->name, hr->file, hr->line);
         }
     }
-    def->line = errorline;
-    def->file = errorfile;
     insert((SYMBOL *)def, defsyms);
     DecGlobalFlag();
 #ifndef CPREPROCESSOR
-    browse_define(name, errorline, charindex);
+    browse_define(name, def->line, charindex);
 #endif
 }
 
@@ -1586,6 +1591,15 @@ void datemac(char *string)
         string[5] = ' '; /* as asctime() */
 }
 
+void dateisomac(char *string)
+{
+    struct tm *t1;
+    time_t t2;
+    time(&t2);
+    t1 = localtime(&t2);
+    strftime(string, 40, "\"%Y-%m-%d\"", t1);
+}
+
 /*-------------------------------------------------------------------------*/
 
 void timemac(char *string)
@@ -1601,7 +1615,7 @@ void timemac(char *string)
 
 void linemac(char *string)
 {
-    sprintf(string, "%d", errorline);
+    sprintf(string, "%d", includes->line);
 } 
 /* Scan for default macros and replace them */
 void defmacroreplace(char *macro, char *name)
@@ -1977,7 +1991,7 @@ void popif(void)
     }
 #ifdef PARSER_ONLY
     if (!includes->ifskip)
-        ccSetFileLine(errorfile, includes->line);
+        ccSetFileLine(includes->fname, includes->line);
 #endif
 }
 

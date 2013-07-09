@@ -62,6 +62,7 @@ extern BLOCK *currentBlock;
 extern BLOCKLIST *blocktail;
 
 int calling_inline;
+
 IMODE *inlinereturnap;
 IMODE *structret_imode;
 LIST *immed_list;
@@ -74,7 +75,6 @@ static STORETEMPHASH *loadHash[DAGSIZE];
 static STORETEMPHASH *immedHash[DAGSIZE];
 static CASTTEMPHASH *castHash[DAGSIZE];
 static DAGLIST *name_value_hash[DAGSIZE];
-static int inlineCount;
 static LIST *incdecList;
 static LIST *incdecListLast;
 static int push_nesting;
@@ -88,7 +88,6 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label);
 
 void iexpr_init(void)
 {
-    inlineCount = 0;
     calling_inline = 0;
     immed_list = 0;
     inlinesp_count = 0;
@@ -1171,6 +1170,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
     IMODE *ap, *ap3;
     int temp;
     int rv = 0;
+    EXPRESSION *exp;
     switch (ep->type)
     {
         case en_argnopush:
@@ -1181,6 +1181,22 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             gen_nodag(i_parm, 0, ap, 0);
             rv = sizeFromISZ(ap->size);
             break;
+        case en_func:
+            exp = ep->v.func->returnEXP;
+            if (!exp)
+                exp = ep->v.func->thisptr;
+            if (exp && exp->type == en_auto && exp->v.sp->stackblock)
+            {
+                // constructor or other function creating a structure on the stack
+                rv = exp->v.sp->tp->size;
+                if (rv % chosenAssembler->arch->stackalign)
+                    rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
+                gen_icode(i_substack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
+                exp->v.sp->imvalue = ap;
+                gen_expr(funcsp, ep, 0, ISZ_UINT );
+                break;
+            }
+            // fallthrough
         default:
             temp = natural_size(ep);
             ap3 = gen_expr( funcsp, ep, 0, temp);
@@ -1200,7 +1216,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
 
 /*-------------------------------------------------------------------------*/
 
-int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
+static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
 /*
  * Push a structure on the stack
  */
@@ -1228,7 +1244,7 @@ int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
 
 /*-------------------------------------------------------------------------*/
 
-int gen_parm(ARGLIST *a, SYMBOL *funcsp)
+static int gen_parm(ARGLIST *a, SYMBOL *funcsp)
 /*
  *      push a list of parameters onto the stack and return the
  *      size of parameters pushed.
@@ -1240,26 +1256,24 @@ int gen_parm(ARGLIST *a, SYMBOL *funcsp)
             TYPE *btp = basetype(a->tp);
             if (btp->vla || basetype(btp->btp)->vla)
             {
-                rv = push_stackblock(inlineCount ? a->exp : a->rootexp, 
-                                       funcsp, a->tp->size);
+                rv = push_stackblock(a->exp, funcsp, a->tp->size);
                 DumpIncDec(funcsp);
                 push_nesting += rv;
                 return rv;
             }
         }
-        if (isstructured(a->tp))
-            rv = push_stackblock(inlineCount ? a->exp : a->rootexp, 
-                                   funcsp, a->exp->size);
+        if (!cparams.prm_cplusplus && isstructured(a->tp))
+            rv = push_stackblock(a->exp, funcsp, a->exp->size);
         else
-            rv = push_param(inlineCount ? a->exp : a->rootexp, funcsp);
+            rv = push_param(a->exp, funcsp);
         DumpIncDec(funcsp);
         push_nesting += rv;
         return rv;
 }
-int sizeParam(ARGLIST *a, SYMBOL *funcsp)
+static int sizeParam(ARGLIST *a, SYMBOL *funcsp)
 {
     int rv ;
-    if (ispointer(a->tp) || isref(a->tp) || a->tp->type == bt_func || a->tp->type == bt_ifunc)
+    if (ispointer(a->tp) || isref(a->tp) || a->tp->type == bt_func || a->tp->type == bt_ifunc || a->byRef)
         rv = sizeFromISZ(ISZ_ADDR);
     else
         rv = a->tp->size;
@@ -1267,7 +1281,7 @@ int sizeParam(ARGLIST *a, SYMBOL *funcsp)
         rv += chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
     return rv;
 }
-int genCdeclArgs(ARGLIST *args, SYMBOL *funcsp)
+static int genCdeclArgs(ARGLIST *args, SYMBOL *funcsp)
 {
     int rv = 0;
     if (args)
@@ -1277,7 +1291,7 @@ int genCdeclArgs(ARGLIST *args, SYMBOL *funcsp)
     }
     return rv;
 }
-int genPascalArgs(ARGLIST *args, SYMBOL *funcsp)
+static int genPascalArgs(ARGLIST *args, SYMBOL *funcsp)
 {
     int rv = 0;
     if (args)
@@ -1287,7 +1301,7 @@ int genPascalArgs(ARGLIST *args, SYMBOL *funcsp)
     }
     return rv;
 }
-int sizeParams(ARGLIST *args, SYMBOL *funcsp)
+static int sizeParams(ARGLIST *args, SYMBOL *funcsp)
 {
     int rv = 0;
     if (args)
@@ -1334,7 +1348,6 @@ IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
     CASTTEMPHASH *holdcast[DAGSIZE];
     DAGLIST *holdnv[DAGSIZE];
     (void)flags;
-    inlineCount++;
     memcpy(holdst, storeHash, sizeof(storeHash));
     memcpy(holdld, loadHash, sizeof(loadHash));
     memcpy(holdnv, name_value_hash, sizeof(name_value_hash));
@@ -1347,11 +1360,19 @@ IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
     memcpy(name_value_hash, holdnv, sizeof(name_value_hash));
     memcpy(immedHash, holdim, sizeof(immedHash));
     memcpy(castHash, holdcast, sizeof(castHash));
-    inlineCount--;
     return gen_expr( funcsp, node->left, 0, natural_size(node->left));
 }
 /*-------------------------------------------------------------------------*/
 
+static void gen_arg_destructors(SYMBOL *funcsp, ARGLIST *arg)
+{
+    if (arg)
+    {
+        gen_arg_destructors(funcsp, arg->next);
+        if (arg->dest)
+            gen_expr( funcsp, arg->dest, F_NOVALUE, natural_size(arg->dest));
+    }
+}
 IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 /*
  *      generate a function call node and return the address mode
@@ -1415,15 +1436,15 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     {
         int n = 0;
         genCdeclArgs(f->arguments, funcsp);
+        if (f->thisptr)
+        {
+            push_param(f->thisptr, funcsp);
+        }
         if (isstructured(f->functp->btp) || basetype(f->functp->btp)->type == bt_memberptr)
         {
             push_param(f->returnEXP, funcsp);
             
         }
-    }
-    if (f->thisptr)
-    {
-        push_param(f->thisptr, funcsp);
     }
     /* named function */
     if (f->fcall->type == en_imode)
@@ -1455,9 +1476,9 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         }
         gosub = gen_igosub(type, ap);
     }
-    if (flags & F_NOVALUE)
+    if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp))
     {
-        gosub->novalue = sizeFromType(f->functp->btp);
+        gosub->novalue = sizeFromType(basetype(f->functp)->btp);
     }
     else
     {
@@ -1491,6 +1512,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             ap = tempreg(ISZ_ADDR, 0);
             ap->retval = TRUE;
     }
+    gen_arg_destructors(funcsp, f->arguments);
     return ap;
 }
 IMODE *gen_atomic_barrier(SYMBOL *funcsp, ATOMICDATA *ad, IMODE *addr, IMODE *barrier)
@@ -1898,20 +1920,28 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = NULL;
             break;
         case en_threadlocal:
-            rv = make_ioffset(node);
+            ap1 = make_ioffset(node);
+            ap1->offset = node;
             ap2 = LookupLoadTemp(ap1, ap1);
             if (ap1 != ap2)
                 gen_icode(i_assn, ap2, ap1, NULL);
             rv = ap2;
             break;
+        case en_auto:
+            if (node->v.sp->stackblock)
+            {
+                rv = node->v.sp->imvalue;
+                break;
+            }
         case en_pc:
         case en_global:
         case en_absolute:
         case en_label:
-        case en_auto:
             node->v.sp->genreffed = TRUE;
-        case en_this:
-            ap1 = make_imaddress(node, ISZ_ADDR);
+            ap1 = (IMODE *)Alloc(sizeof(IMODE));
+            ap1->offset = node;
+            ap1->mode = i_immed;
+            ap1->size = size;
             ap2 = LookupImmedTemp(ap1, ap1);
             if (ap1 != ap2)
             {
@@ -1919,6 +1949,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 ap1 = ap2;
             }
             rv = ap1; /* return reg */
+            node->v.sp->imaddress = ap1;
             break;
         case en_labcon:
             ap1 = (IMODE *)Alloc(sizeof(IMODE));
@@ -2355,7 +2386,6 @@ int natural_size(EXPRESSION *node)
         case en_global:
         case en_absolute:
         case en_labcon:
-        case en_this:
             return ISZ_ADDR;
         case en_tempref:
             return ISZ_UINT;

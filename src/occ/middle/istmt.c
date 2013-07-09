@@ -63,8 +63,6 @@ extern int prm_optlive;
 extern int blockCount, exitBlock;
 extern int nextLabel;
 extern int total_errors;
-extern int errorline;
-extern char *errorfile;
 extern TEMP_INFO **tempInfo;
 extern BOOL functionHasAssembly;
 extern TYPE stddouble;
@@ -338,8 +336,9 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
  *      generate a return statement.
  */
 {
-    IMODE *ap,  *ap1, *ap3;
+    IMODE *ap = NULL,  *ap1, *ap3;
     EXPRESSION ep;
+    int size;
     /* returns a value? */
     if (stmt != 0 && stmt->select != 0)
     {
@@ -348,91 +347,20 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         {
             SYMBOL *sp = anonymousVar(sc_parameter, &stdpointer);
             EXPRESSION *en = varNode(en_auto, sp);
-            IMODE *ap3 = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR), *ap2, *ap1;
+            gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
             DumpIncDec(funcsp);
-            if (!ap3->retval)
-            {
-                ap1 = LookupLoadTemp(NULL, ap3);
-                if (ap1 != ap3)
-                {
-                    IMODE *barrier;
-                    if (stmt->select->isatomic)
-                    {
-                        barrier = doatomicFence(funcsp, stmt->select, NULL);
-                    }
-                    gen_icode(i_assn, ap1, ap3, NULL);
-                    if (stmt->select->isatomic)
-                    {
-                        doatomicFence(funcsp, stmt->select, barrier);
-                    }
-                }
-            }
-            else
-            {
-                ap1 = ap3;
-            }
+            sp->offset = chosenAssembler->arch->retblocksize;
             if ((funcsp->linkage == lk_pascal) &&
-                basetype(funcsp->tp)->syms->table[0] && 
-                ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
-            {
+                    basetype(funcsp->tp)->syms->table[0] && 
+                    ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
                 sp->offset = funcsp->paramsize;
-            }
-            else
-            {
-                sp->offset = chosenAssembler->arch->retblocksize+(funcsp->farproc
-                    *getSize(bt_pointer));
-                if (funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual)
-                    sp->offset += getSize(bt_pointer);
-            }
-                
-            en = exprNode(en_l_p, en, NULL);
-            ap3 = gen_expr(funcsp, en, 0, ISZ_ADDR);
-            ap = LookupLoadTemp(NULL, ap3);
-            if (ap != ap3)
-            {
-                IMODE *barrier;
-                if (en->isatomic)
-                {
-                    barrier = doatomicFence(funcsp, en, NULL);
-                }
-                gen_icode(i_assn, ap, ap3, NULL);
-                if (en->isatomic)
-                {
-                    doatomicFence(funcsp, en, barrier);
-                }
-            }
-            gen_icode(i_assnblock, make_immed(ISZ_NONE, basetype(funcsp->tp)->btp->size),
-                      ap, ap1);
-            ap1 = tempreg(ISZ_ADDR, 0);
-            ap1->retval = TRUE;
-            gen_icode(i_assn, ap1, ap, NULL);
-        }
-        else if (basetype(funcsp->tp)->btp && basetype(funcsp->tp)->btp->type ==
-            bt_memberptr)
-        {
-            ap3 = gen_expr(funcsp, stmt->select, F_VOL, ISZ_ADDR);
-            DumpIncDec(funcsp);
-            ap = LookupLoadTemp(NULL, ap3);
-            if (ap != ap3)
-            {
-                IMODE *barrier;
-                if (stmt->select->isatomic)
-                {
-                    barrier = doatomicFence(funcsp, stmt->select, NULL);
-                }
-                gen_icode(i_assn, ap, ap3, NULL);
-                if (stmt->select->isatomic)
-                {
-                    doatomicFence(funcsp, stmt->select, barrier);
-                }
-            }
-            ap1 = tempreg(ISZ_ADDR, 0);
-            ap1->retval = TRUE;
-            gen_icode(i_assn, ap1, ap, 0);
+            deref(&stdpointer, &en);
+            ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
+            size = ISZ_ADDR;
         }
         else
         {
-            int size = natural_size(stmt->select);
+            size = natural_size(stmt->select);
             ap3 = gen_expr(funcsp, stmt->select, 0, size);
             DumpIncDec(funcsp);
             ap = LookupLoadTemp(NULL, ap3);
@@ -451,14 +379,21 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
             }
             if (abs(size) < ISZ_UINT)
                 size = -ISZ_UINT;
-            ap1 = tempreg(size, 0);
-            ap1->retval = TRUE;
-            gen_icode(i_assn, ap1, ap, 0);
         }
     }
     else
     {
         DumpIncDec(funcsp);
+    }
+    if (stmt != 0 && stmt->destexp)
+    {
+        gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
+    }
+    if (ap)
+    {
+        ap1 = tempreg(size, 0);
+        ap1->retval = TRUE;
+        gen_icode(i_assn, ap1, ap, 0);
     }
     /* create the return or a branch to the return
      * return is put at end of function...

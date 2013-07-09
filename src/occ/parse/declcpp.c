@@ -48,9 +48,6 @@ extern enum e_kw skim_semi_declare[];
 extern enum e_kw skim_comma[];
 extern TYPE stdint;
 extern TYPE stdpointer;
-extern int errorline;
-extern char *errorfile;
-extern int currentErrorLine;
 extern char infile[256];
 extern int total_errors;
 extern LIST *structSyms;
@@ -542,16 +539,17 @@ void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOL isvirtual, int o
         }
     }    
 }
-LEXEME *deferredCompile(LEXEME *lex)
+void deferredCompile(void)
 {
     static int inFunc;
-    if (inFunc || !lex)
-        return lex;
+    if (inFunc)
+        return;
     inFunc++;
     if (!theCurrentFunc)
     {
         while (deferredBackfill)
         {
+            LEXEME *lex;
             SYMBOL *cur = (SYMBOL *)deferredBackfill->data;
             BOOL addedStrSym = FALSE;
             // function body
@@ -564,9 +562,9 @@ LEXEME *deferredCompile(LEXEME *lex)
                 structSyms = l ;   
                 addedStrSym = TRUE;
             }
-            lex = SetAlternateLex(lex, cur->deferredCompile);
+            lex = SetAlternateLex(cur->deferredCompile);
             lex = body(lex, cur);
-            lex = SetAlternateLex(lex, NULL);
+            SetAlternateLex(NULL);
             if (addedStrSym)
             {
                 structSyms = structSyms->next;
@@ -597,9 +595,8 @@ LEXEME *deferredCompile(LEXEME *lex)
         }
     }
     inFunc--;
-    return lex;
 }
-LEXEME *backFillDeferredInitializers(LEXEME *lex, SYMBOL *declsym, SYMBOL *funcsp)
+void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp)
 {
     HASHREC *hr = basetype(declsym->tp)->syms->table[0];
     while (hr)
@@ -631,9 +628,9 @@ LEXEME *backFillDeferredInitializers(LEXEME *lex, SYMBOL *declsym, SYMBOL *funcs
                         if (cur1->deferredCompile)
                         {
                             // default for parameter
-                            lex = SetAlternateLex(lex, cur1->deferredCompile);
+                            LEXEME *lex = SetAlternateLex(cur1->deferredCompile);
                             lex = initialize(lex, funcsp, cur1, sc_parameter); /* also reserves space */
-                            lex = SetAlternateLex(lex, NULL);
+                            SetAlternateLex(NULL);
                         }
                             
                         pr = pr->next;
@@ -659,7 +656,6 @@ LEXEME *backFillDeferredInitializers(LEXEME *lex, SYMBOL *declsym, SYMBOL *funcs
         }
         hr = hr->next;
     }
-    return lex;
 }
 void warnCPPWarnings(SYMBOL *sym, BOOL localClassWarnings)
 {
@@ -837,7 +833,7 @@ static BOOL classOrEnumParam(SYMBOL *param)
 {
     TYPE *tp = param->tp;
     if (isref(tp))
-        tp = tp->btp;
+        tp = basetype(tp)->btp;
     tp = basetype(tp);
     return isstructured(tp) || tp->type == bt_enum;
 }
@@ -845,17 +841,38 @@ void checkOperatorArgs(SYMBOL *sp)
 {
     TYPE *tp = sp->tp;
     if (isref(tp))
-        tp = tp->btp;
+        tp = basetype(tp)->btp;
     if (!isfunction (tp))
     {
-        errorstr(ERR_OPERATOR_MUST_BE_FUNCTION, overloadXlateTab[sp->operatorId]);
+        char buf[256];
+        if (sp->castoperator)
+        {
+            strcpy(buf, "typedef()");
+        }
+        else
+        {
+            strcpy( buf, overloadXlateTab[sp->operatorId]);
+        }
+        errorstr(ERR_OPERATOR_MUST_BE_FUNCTION, buf);
     }
     else
     {
         HASHREC *hr = basetype(sp->tp)->syms->table[0];
+        if (!hr)
+            return;
         if (structSyms) // nonstatic member
         {
-            switch((enum e_kw)(sp->operatorId - CI_NEW))
+            if (sp->operatorId == CI_CAST)
+            {
+                // needs no argument
+                SYMBOL *sym = (SYMBOL *)hr->p;
+                if (sym->tp->type != bt_void)
+                {
+                    char buf[256];
+                    errortype(ERR_OPERATOR_NEEDS_NO_PARAMETERS, basetype(sp->tp)->btp, NULL);
+                }
+            }
+            else switch((enum e_kw)(sp->operatorId - CI_NEW))
             {
                 SYMBOL *sym;
                 case plus:
@@ -971,7 +988,14 @@ void checkOperatorArgs(SYMBOL *sp)
             }
             if (sp->storage_class != sc_member && sp->storage_class != sc_virtual)
             {
-                errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->operatorId]);
+                if (sp->operatorId == CI_CAST)
+                {
+                    errortype(ERR_OPERATOR_NONSTATIC, basetype(sp->tp)->btp, NULL);
+                }
+                else
+                {
+                    errorstr(ERR_OPERATOR_NONSTATIC, overloadXlateTab[sp->operatorId]);
+                }
             }
         }
         else
@@ -1125,7 +1149,14 @@ void checkOperatorArgs(SYMBOL *sp)
                     }
                     break;
                 default:
-                    errorstr(ERR_OPERATOR_MUST_BE_NONSTATIC, overloadXlateTab[sp->operatorId]);
+                    if (sp->operatorId == CI_CAST)
+                    {
+                        errortype(ERR_OPERATOR_MUST_BE_NONSTATIC, basetype(sp->tp)->btp, NULL);
+                    }
+                    else
+                    {
+                        errorstr(ERR_OPERATOR_MUST_BE_NONSTATIC, overloadXlateTab[sp->operatorId]);
+                    }
                     break;
             }
         }
@@ -1465,7 +1496,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class)
             {
                 TYPE *tp = NULL;
                 lex = getsym();
-                lex = get_type_id(lex, &tp, NULL);
+                lex = get_type_id(lex, &tp, NULL, FALSE);
                 checkauto(tp);
                 return lex;
             }

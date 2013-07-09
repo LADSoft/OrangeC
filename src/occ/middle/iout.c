@@ -1212,9 +1212,6 @@ void putconst(EXPRESSION *offset, int color)
                        oprintf(icdFile,"(%s)",lookupRegName(color));
             }
             break;
-        case en_this:
-            oprintf(icdFile, "THIS");
-            break;
         case en_auto:
             oprintf(icdFile, "%s:LINK", ((SYMBOL*)offset->v.sp)->decoratedName);
 /*            if (offset->v.sp->value.i >= chosenAssembler->arch->retblocksize)*/

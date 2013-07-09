@@ -41,18 +41,18 @@ extern SYMBOL *theCurrentFunc;
 
     char *overloadNameTab[] = 
     {
-        "$bctr", "$bdtr", "$bnew", "$bdel", "$badd", "$bsub", "$bmul", "$bdiv",
+        "$bctr", "$bdtr", "$bcast", "$bnew", "$bdel", "$badd", "$bsub", "$bmul", "$bdiv",
             "$bshl", "$bshr", "$bmod", "$bequ", "$bneq", "$blt", "$bleq", 
             "$bgt", "$bgeq", "$basn", "$basadd", "$bassub", "$basmul", 
             "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand", "$basor", 
-            "$basxor", "$binc", "$bdec", "$barray", "$bcast", "$bpstar", 
+            "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bpstar", 
             "$barrow", "$bcomma", "$blor", "$bland", "$bnot", "$bor", "$band", "$bxor", 
             "$bcpl", "$bnwa", "$bdla", "$blit"
 
     };
     char *overloadXlateTab[] = 
     {
-        0, 0, "new", "delete", "+", "-", "*", "/", "<<", ">>", "%", "==", "!=",
+        0, 0, 0, "new", "delete", "+", "-", "*", "/", "<<", ">>", "%", "==", "!=",
             "<", "<=", ">", ">=", "=", "+=", "-=", "*=", "/=", "%=", "<<=", 
             ">>=", "&=", "|=", "^=", "++", "--", "[]", "()", "->*", "->", ",", "||",
             "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\""
@@ -111,7 +111,7 @@ static char *getName(char *in, SYMBOL *sp)
     in += strlen(in);
     return in;
 }
-static char *mangleType (char *in, TYPE *tp, BOOL first)
+char *mangleType (char *in, TYPE *tp, BOOL first)
 {
     char nm[512];
     int i;
@@ -122,7 +122,14 @@ static char *mangleType (char *in, TYPE *tp, BOOL first)
     }
     else
     {
-        if (ispointer(tp) || isfunction(tp))
+        if (ispointer(tp) || isref(tp))
+        {
+            if (isconst(basetype(tp)->btp))
+                *in++ = 'x';
+            if (isvolatile(basetype(tp)->btp))
+                *in++ = 'y';
+        }
+        if (isfunction(tp))
         {
             if (isconst(tp))
                 *in++ = 'x';
@@ -308,7 +315,14 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
             if (isfunction(sym->tp))
             {
                 *p++ = '$';
-                p = mangleType(p, sym->tp, TRUE);
+                if (sym->castoperator)
+                {
+                    p = mangleType(p, basetype(sym->tp)->btp, TRUE); // cast operators get their cast type in the name
+                }
+                else
+                {
+                    p = mangleType(p, sym->tp, TRUE); // otherwise functions get their parameter list in the name
+                }            
             }
             *p = 0;
             break;

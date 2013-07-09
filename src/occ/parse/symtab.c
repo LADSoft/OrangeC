@@ -38,11 +38,11 @@
 #include "compiler.h"
 
 extern int nextLabel;
-extern int errorline;
 
 #ifndef CPREPROCESSOR
 extern ARCH_DEBUG *chosenDebugger;
 extern FILE *listFile;
+extern INCLUDES *includes;
 #endif
 NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 HASHTABLE *labelSyms;
@@ -81,11 +81,11 @@ void AllocateLocalContext(BLOCKDATA *block, SYMBOL *sp)
     STATEMENT *st;
     LIST *l;
     int label = nextLabel++;
-    st = stmtNode(block, st_dbgblock);
+    st = stmtNode(NULL, block, st_dbgblock);
     st->label = 1;
     if (block && cparams.prm_debug)
     {
-        st = stmtNode(block, st_label);
+        st = stmtNode(NULL, block, st_label);
         st->label = label;
         tn->blocknum = st->blocknum;
     }
@@ -117,7 +117,7 @@ void TagSyms(HASHTABLE *syms)
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            sp->ccEndLine = errorline;
+            sp->ccEndLine = includes->line+1;
             hr = hr->next;
         }    
     }
@@ -131,7 +131,7 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp)
     int label = nextLabel++;
     if (block && cparams.prm_debug)
     {
-        st = stmtNode(block, st_label);
+        st = stmtNode(NULL, block, st_label);
         st->label = label;
     }
     checkUnused(localNameSpace->syms);
@@ -153,7 +153,8 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp)
     if (sp)
         sp->value.i--;
 
-    destructBlock(block, localNameSpace->syms);    
+    st = stmtNode(NULL, block, st_expr);
+    destructBlock(&st->select, localNameSpace->syms->table[0]);    
     localNameSpace->syms = localNameSpace->syms->next;
     localNameSpace->tags = localNameSpace->tags->next;
 
@@ -171,7 +172,7 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp)
         sp->inlineFunc.syms = locals;
         sp->inlineFunc.tags = tags;
     }
-    st = stmtNode(block, st_dbgblock);
+    st = stmtNode(NULL, block, st_dbgblock);
     st->label = 0;
 }
 #endif

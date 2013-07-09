@@ -1254,7 +1254,6 @@ static BOOL eval(QUAD *q)
                         case en_global:
                         case en_auto:
                         case en_absolute:
-                        case en_this:
                         case en_threadlocal:
                             break;
                         default:

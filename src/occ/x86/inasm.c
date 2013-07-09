@@ -46,8 +46,6 @@ extern ASMNAME oplst[];
 
 extern int prm_assembler;
 extern HASHTABLE *labelSyms;
-extern char *errorfile;
-extern int errorline;
 extern int usingEsp;
 
 static ASMREG *regimage;
@@ -491,8 +489,9 @@ static EXPRESSION *inasm_ident(void)
             sp = Alloc(sizeof(SYMBOL ));
             sp->storage_class = sc_ulabel;
             sp->name = litlate(nm);
-            sp->declfile = errorfile;
-            sp->declline = errorline;
+            sp->declfile = lex->file;
+            sp->declline = lex->line;
+            sp->declfilenum = lex->filenum;
             sp->used = TRUE;
             sp->tp = beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
@@ -572,8 +571,9 @@ static EXPRESSION *inasm_label(void)
         sp = Alloc(sizeof(SYMBOL ));
         sp->storage_class = sc_label;
         sp->name = litlate(lex->value.s.a);
-        sp->declfile = errorfile;
-        sp->declline = errorline;
+        sp->declfile = lex->file;
+        sp->declline = lex->line;
+        sp->declfilenum = lex->filenum;
         sp->tp = beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;
         sp->tp->bits = sp->tp->startbit =  - 1;
@@ -2396,7 +2396,7 @@ LEXEME *inasm_statement(LEXEME *inlex, BLOCKDATA *parent)
     inasm_txsym();
     do
     {
-        snp = stmtNode(parent, st_passthrough);
+        snp = stmtNode(lex, parent, st_passthrough);
         if (!lex)
         {
             return lex;
@@ -2502,14 +2502,14 @@ LEXEME *inasm_statement(LEXEME *inlex, BLOCKDATA *parent)
             case op_jns:
                 if (rv->oper1->offset->type == en_labcon)
                 {
-                    snp = stmtNode(parent, st_asmcond);
+                    snp = stmtNode(lex, parent, st_asmcond);
                     snp->label =  rv->oper1->offset->v.i;
                 }
                 break;
             case op_jmp:
                 if (rv->oper1->offset->type == en_labcon)
                 {
-                    snp = stmtNode(parent, st_asmgoto);
+                    snp = stmtNode(lex, parent, st_asmgoto);
                     snp->label =  rv->oper1->offset->v.i;
                 }
                 break;

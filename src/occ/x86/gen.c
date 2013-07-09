@@ -168,7 +168,7 @@ AMODE *aimmedt(long i, int size)
 /*-------------------------------------------------------------------------*/
 BOOL isauto(EXPRESSION *ep)
 {
-    if (ep->type == en_auto || ep->type == en_this)
+    if (ep->type == en_auto)
         return TRUE;
     if (ep->type == en_add || ep->type == en_structadd)
         return isauto(ep->left) || isauto(ep->right);
@@ -2138,7 +2138,7 @@ void asm_parmblock(QUAD *q)          /* push a block of memory */
     if (q->dc.left->mode == i_immed)
     {
         op = op_lea;
-        if (ofs->type == en_auto || ofs->type == en_this)
+        if (ofs->type == en_auto)
         {
             if (usingEsp)
             {
@@ -3781,7 +3781,7 @@ void asm_assnblock(QUAD *q)          /* copy block of memory*/
     if (q->dc.right->mode == i_immed)
     {
         op = op_lea;
-        if (ofs->type == en_auto || ofs->type == en_this)
+        if (ofs->type == en_auto)
         {
             if (usingEsp)
             {
@@ -3799,7 +3799,7 @@ void asm_assnblock(QUAD *q)          /* copy block of memory*/
     if (q->dc.left->mode == i_immed)
     {
         opa = op_lea;
-        if (ofsa->type == en_auto || ofsa->type == en_this)
+        if (ofsa->type == en_auto)
         {
             if (usingEsp)
             {
@@ -3960,7 +3960,7 @@ void asm_clrblock(QUAD *q)           /* clear block of memory */
     if (q->dc.left->mode == i_immed)
     {
         op = op_lea;
-        if (ofs->type == en_auto || ofs->type == en_this)
+        if (ofs->type == en_auto)
         {
             if (usingEsp)
             {
@@ -4152,7 +4152,10 @@ void asm_prologue(QUAD *q)           /* function prologue */
           }
         funcstackheight = n;
     }
-
+    else
+    {
+        funcstackheight = 0;
+    }
     if (beGetIcon(q->dc.left) != 0)
     {
         int cnt = 0;

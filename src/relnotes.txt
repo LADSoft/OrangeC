@@ -1,6 +1,18 @@
 Release notes
 
-version 5.0.7:
+version 5.0.8:
+    occ: fix problem where using a global's address but never its value in a function
+         could crash the optimizer
+    occ: fix C++ function-like operator to work
+    occ: further work on constructors and destructors
+    occ: fix bug where stack framing could be off on rare occasions
+    occ: allow taking the address of a thread local variable
+    occ: varname || 0 would be optimized to FALSE
+    clibs: add coinitialize and friends back into windows.h
+
+
+version 5.0.7: 06/19/2013
+
     occ: make __DATE__ work like asctime as per the spec
     occ: more preprocessor fixes ported from cc386
     occ: allow unsigneds in preprocessor expressions

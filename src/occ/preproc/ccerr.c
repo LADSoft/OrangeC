@@ -46,15 +46,14 @@
 
 extern COMPILER_PARAMS cparams ;
 extern char infile[256];
+extern int preprocLine;
+extern char *preprocFile;
 
 SYMBOL *theCurrentFunc;
-int errorline;
-char *errorfile;
-int errorfilenum;
 
 static LIST *listErrors;
-int currentErrorLine;
-static char *currentErrorFile;
+int currentpreprocLine;
+static char *currentpreprocFile;
 
 static struct {
     char *name;
@@ -107,7 +106,7 @@ int diagcount ;
 void errorinit(void)
 {
     total_errors = diagcount = 0;
-    currentErrorFile = NULL;
+    currentpreprocFile = NULL;
 }
 
 static void printerr(int err, char *file, int line, ...)
@@ -116,6 +115,9 @@ static void printerr(int err, char *file, int line, ...)
     char infunc[256];
     char *listerr;
     char nameb[265], *name = nameb;
+    
+    if (!file)
+        file = "unknown";
     strcpy(nameb, file);
     if (strchr(infile, '\\') != 0 || strchr(infile, ':') != 0)
     {
@@ -124,8 +126,8 @@ static void printerr(int err, char *file, int line, ...)
     if (total_errors > cparams.prm_maxerr)
         return;
     if (err != ERR_TOO_MANY_ERRORS && err != ERR_UNDEFINED_IDENTIFIER &&
-        currentErrorFile && !strcmp(currentErrorFile, file) && 
-        line == currentErrorLine)
+        currentpreprocFile && !strcmp(currentpreprocFile, file) && 
+        line == currentpreprocLine)
         return;
     if (err >= sizeof(errors)/sizeof(errors[0]))
     {
@@ -144,8 +146,8 @@ static void printerr(int err, char *file, int line, ...)
             printf("Error   ");
         listerr = "ERROR";
         total_errors++;
-        currentErrorFile = file;
-        currentErrorLine = line;
+        currentpreprocFile = file;
+        currentpreprocLine = line;
     }
     else
     {
@@ -164,33 +166,33 @@ static void printerr(int err, char *file, int line, ...)
 }
 void pperror(int err, int data)
 {
-    printerr(err, errorfile, errorline, data);
+    printerr(err, preprocFile, preprocLine, data);
 }
 void pperrorstr(int err, char *str)
 {
-    printerr(err, errorfile, errorline, str);
+    printerr(err, preprocFile, preprocLine, str);
 }
 void preverror(int err, char *name, char *origfile, int origline)
 {
-    printerr(err, errorfile, errorline, name);
+    printerr(err, preprocFile, preprocLine, name);
     if (origfile && origline)
         printerr(ERR_PREVIOUS, origfile, origline, name);
 }
 void error(int err)
 {
-    printerr(err, errorfile, errorline);
+    printerr(err, preprocFile, preprocLine);
 }
 void errorint(int err, int val)
 {
-    printerr(err, errorfile, errorline, val);
+    printerr(err, preprocFile, preprocLine, val);
 }
 void errorstr(int err, char *val)
 {
-    printerr(err, errorfile, errorline, val);
+    printerr(err, preprocFile, preprocLine, val);
 }
 void errorsym(int err, SYMBOL *sym)
 {
     char buf[256];
     strcpy(buf, sym->name);
-    printerr(err, errorfile, errorline, buf);
+    printerr(err, preprocFile, preprocLine, buf);
 }

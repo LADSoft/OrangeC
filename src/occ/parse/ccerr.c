@@ -418,6 +418,10 @@ static struct {
 {"Constant member '%s' is not intialized", ERROR },
 {"Improper use of typedef '%s'", ERROR },
 {"Return type is implicit for 'operator %s'", ERROR },
+{"Invalid Psuedo-Destructor", ERROR},
+{"Destructor name must match class name", ERROR},
+{"Must call or take the address of a member function", ERROR},
+
 #endif
 } ;
 int total_errors;
@@ -1304,7 +1308,9 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
                     usageErrorCheck(node->left->v.sp);
             }
             else
+            {
                 assignmentUsages(node->left, FALSE);
+            }
             break;
         case en_uminus:
         case en_compl:
@@ -1363,6 +1369,7 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
         case en_rsh:
         case en_rshd:
         case en_void:
+        case en_voidnz:
 /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:
@@ -1418,6 +1425,10 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
                 {
                     assignmentUsages(args->exp, FALSE);
                     args = args->next;
+                }
+                if (cparams.prm_cplusplus && fp->thisptr && !fp->fcall)
+                {
+                    error(ERR_MUST_CALL_OR_TAKE_ADDRESS_OF_MEMBER_FUNCTION);                    
                 }
             }
             break;
@@ -1556,6 +1567,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_rsh:
         case en_rshd:
         case en_void:
+        case en_voidnz:
 /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:

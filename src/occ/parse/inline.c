@@ -324,6 +324,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
         case en_rshd:
         case en_assign:
         case en_void:
+        case en_voidnz:
 /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:
@@ -738,6 +739,7 @@ static BOOL sideEffects(EXPRESSION *node)
         case en_rsh:
         case en_rshd:
         case en_void:
+        case en_voidnz:
 /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:

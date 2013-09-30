@@ -687,11 +687,34 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
         return lex;
     }
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly);
-    lex = getIdName(lex, funcsp, buf, &ov, &castType);
-    if (buf[0])
+    if (MATCHKW(lex, compl))
     {
-        *sym = finishSearch(ov == CI_CAST ? overloadNameTab[CI_CAST] : buf, 
-                            encloser, ns, tagsOnly, throughClass);
+        lex = getsym();
+        if (ISID(lex))
+        {
+            if (encloser)
+            {
+                if (strcmp(encloser->name, lex->value.s.a))
+                {
+                    error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
+                }
+                *sym = finishSearch(overloadNameTab[CI_DESTRUCTOR], 
+                                    encloser, ns, tagsOnly, throughClass);
+            }
+        }
+        else
+        {
+            error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
+        }
+    }
+    else
+    {
+        lex = getIdName(lex, funcsp, buf, &ov, &castType);
+        if (buf[0])
+        {
+            *sym = finishSearch(ov == CI_CAST ? overloadNameTab[CI_CAST] : buf, 
+                                encloser, ns, tagsOnly, throughClass);
+        }
     }
     if (encloser&& strSym)
         *strSym = encloser;

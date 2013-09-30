@@ -2255,10 +2255,9 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_voidnz:
             lab0 = nextLabel++;
             falsejp(node->left->left, funcsp, lab0);
-            gen_void(node->right, funcsp);
+            gen_void(node->left->right, funcsp);
             gen_label(lab0);
-            ap3 = gen_expr(funcsp, node->left->right, 0, ISZ_UINT); /* will typically
-                be part of a void tree, or top of tree */
+            ap3 = gen_expr(funcsp, node->right, 0, ISZ_UINT);
             ap1 = LookupLoadTemp(NULL, ap3);
             if (ap1 != ap3)
                 gen_icode(i_assn, ap1, ap3, NULL);

@@ -963,11 +963,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     TYPE *tpf = NULL;
     EXPRESSION *arrSize = NULL, *exp1;
     SYMBOL *s1 = NULL;
-    STATEMENT *st = NULL;
-    BLOCKDATA b;
+    EXPRESSION *val = NULL, *newfunc = NULL;
     int lbl = beGetLabel;
-    memset(&b, 0, sizeof(BLOCKDATA));
-    b.type = begin;
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
@@ -975,14 +972,15 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         if (startOfType(lex))
         {
             // type in parenthesis
-            lex = get_type_id(lex, &tp, funcsp, FALSE);
+            lex = get_type_id(lex, tp, funcsp, FALSE);
+            needkw(&lex, closepa);
         }
         else
         {
             // placement new
+            lex = backupsym(1);
             lex = getArgs(lex, funcsp, placement);
         }
-        needkw(&lex, closepa);
     }
     if (!*tp)
     {
@@ -996,7 +994,11 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         else
         {
             // new type id
-            lex = get_type_id(lex, tp, funcsp, FALSE);
+            enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
+            BOOL defd = FALSE;
+            SYMBOL *sp = NULL;
+            BOOL notype = FALSE;
+            lex = getBasicType(lex, funcsp, tp, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;
@@ -1077,9 +1079,9 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE);
     if (s1)
     {
-        FUNCTIONCALL *funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
         SYMBOL *sp = makeID(sc_auto, &stdpointer, NULL, AnonymousName());
-        EXPRESSION *val = varNode(en_auto, sp);
+        sp->assigned = TRUE;
+        val = varNode(en_auto, sp);
         sp->decoratedName = sp->errname = sp->name;
         insert(sp, localNameSpace->syms);
         deref(&stdpointer, &val);
@@ -1088,28 +1090,39 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             errorsym(ERR_CANNOT_ACCESS, s1);
         }
-        funcparams->sp = s1;
-        funcparams->functp = s1->tp;
+        placement->sp = s1;
+        placement->functp = s1->tp;
+        placement->ascall = TRUE;
+        placement->fcall = varNode(en_pc, s1);
         exp1 = intNode(en_func, 0);
-        exp1->v.func = funcparams;
-        exp1 = exprNode(en_assign, val, exp1);
-        st = stmtNode(lex, &b, st_notselect);
-        st->select = exp1;
-        st->label = lbl;
+        exp1->v.func = placement;
+        exp1 = doinline(placement, s1);
+        newfunc = exp1;
     }
     if (KW(lex) == openpa)
     {
         // initializers
-        initializers = Alloc(sizeof(FUNCTIONCALL));
-        lex = getArgs(lex, funcsp, initializers);
-        if (s1)
+        if (isstructured(*tp))
         {
-            *exp = exp1;
-            *tp = s1->tp;
-            expression_arguments(NULL, funcsp, tp, exp);
-            if (arrSize)
-                *exp = exprNode(en_add, *exp, intNode(en_c_i, chosenAssembler->arch->rtlAlign));
-            callConstructor(tp, exp, initializers, FALSE, arrSize, TRUE, FALSE);
+            initializers = Alloc(sizeof(FUNCTIONCALL));
+            lex = getArgs(lex, funcsp, initializers);
+            if (s1)
+            {
+                *exp = val;
+                if (arrSize)
+                    *exp = exprNode(en_add, *exp, intNode(en_c_i, chosenAssembler->arch->rtlAlign));
+                callConstructor(tp, exp, initializers, FALSE, arrSize, TRUE, FALSE);
+            }
+        }
+        else
+        {
+            exp1 = NULL;
+            lex = expression_func_type_cast(lex, funcsp, &tpf, &exp1);
+            if (exp1 && val)
+            {
+                cast(*tp, &exp1);
+                *exp = exprNode(en_assign, val, exp1);
+            }
         }
     }
     else if (KW(lex) == begin)
@@ -1138,12 +1151,34 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             }
         }
     }
-    st = stmtNode(lex, &b, st_expr);
-    st->select = *exp;
-    st = stmtNode(lex, &b, st_label);
-    st->label = lbl;
-    *exp = exprNode(en_stmt, 0, 0);
-    (*exp)->v.stmt = b.head;
+    else if (isstructured(*tp))
+    {
+        if (s1)
+        {
+            // call default constructor
+            *exp = val;
+            if (arrSize)
+                *exp = exprNode(en_add, *exp, intNode(en_c_i, chosenAssembler->arch->rtlAlign));
+            callConstructor(tp, exp, NULL, FALSE, arrSize, TRUE, FALSE);
+        }
+    }
+    tpf = Alloc(sizeof(TYPE));
+    tpf->type = bt_pointer;
+    tpf->size = getSize(bt_pointer);
+    tpf->btp = *tp;
+    *tp = tpf;
+
+    if (val && newfunc)
+    {
+        exp1 = exprNode(en_assign, val, newfunc);
+        if (*exp)
+            exp1 = exprNode(en_voidnz, exprNode(en_void, exp1, *exp), val);
+        *exp = exp1;
+    }
+    else
+    {
+        *exp = intNode(en_c_i, 0);
+    }
     return lex;
 }
 LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global)
@@ -1154,7 +1189,9 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     ARGLIST *one = NULL;
     EXPRESSION *exp1 = NULL, *exp2;
     TYPE *tpf;
+    int lbl = beGetLabel;
     char *name = overloadNameTab[CI_DELETE];
+    EXPRESSION *in;
     lex = getsym();
     if (MATCHKW(lex, openbr))
     {
@@ -1166,6 +1203,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE);
     if (!ispointer(*tp))
         error(ERR_POINTER_TYPE_EXPECTED);
+    in = *exp;
     if (byArray)
     {
         exp1 = exprNode(en_sub, *exp, intNode(en_c_i, chosenAssembler->arch->rtlAlign));
@@ -1176,7 +1214,10 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     {
         exp2 = *exp;
     }
-    callDestructor(basetype(*tp)->sp, exp, exp1, TRUE);
+    if (isstructured(basetype(*tp)->btp))
+    {
+        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE);
+    }
     exp1 = exp2;
     if (!global)
     {
@@ -1210,13 +1251,17 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         }
         funcparams->sp = s1;
         funcparams->functp = s1->tp;
+        funcparams->ascall = TRUE;
+        funcparams->fcall = varNode(en_pc, s1);
         exp1 = intNode(en_func, 0);
         exp1->v.func = funcparams;
+        exp1 = doinline(funcparams, s1);
         exp1 = exprNode(en_void, *exp, exp1);
+        exp1 = exprNode(en_voidnz, exprNode(en_void, in, exp1), intNode(en_c_i, 0));
         *exp = exp1;
         *tp = s1->tp;
-        expression_arguments(NULL, funcsp, tp, exp);
     }
+    *tp = &stdvoid;
     return lex;
 }
 LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)

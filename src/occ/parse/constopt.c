@@ -319,6 +319,7 @@ static BOOL hasFloats(EXPRESSION *node)
         case en_land:
         case en_lor:
         case en_void:
+        case en_voidnz:
             return (hasFloats(node->left) || hasFloats(node->right));
         case en_cond:
             return hasFloats(node->right);

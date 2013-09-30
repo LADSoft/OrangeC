@@ -2396,6 +2396,7 @@ BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams)
         case en_rsh:
         case en_rshd:
         case en_void:
+        case en_voidnz:
 /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:

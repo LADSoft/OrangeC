@@ -514,7 +514,7 @@ typedef struct arglist
     TYPE *tp;
     EXPRESSION *exp;
     EXPRESSION *dest;
-    byRef : 1;
+    int byRef : 1;
 } ARGLIST;
 
 typedef struct functioncall

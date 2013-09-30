@@ -148,9 +148,9 @@ BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
             return FALSE;
         hr1 = typ1->syms->table[0];
         hr2 = typ2->syms->table[0];
-        if (((SYMBOL *)hr1->p)->thisPtr)
+        if (hr1 && ((SYMBOL *)hr1->p)->thisPtr)
             hr1 = hr1->next;
-        if (((SYMBOL *)hr2->p)->thisPtr)
+        if (hr2 && ((SYMBOL *)hr2->p)->thisPtr)
             hr2 = hr2->next;
         while (hr1 && hr2)
         {

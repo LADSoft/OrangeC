@@ -462,6 +462,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     TYPE *typein = *tp;
     BOOL points = FALSE;
     BOOL thisptr = (*exp)->type == en_auto && (*exp)->v.sp->thisPtr;
+    char *tokenName = lex->kw->name;
     (void)funcsp;
     if (MATCHKW(lex, pointsto))
     {
@@ -493,32 +494,126 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         {
             *tp = basetype(*tp);
             *tp = (*tp)->btp;
-            if (!isstructured(*tp))
+        }
+    }
+    lex = getsym();
+    if (cparams.prm_cplusplus && MATCHKW(lex, compl))
+    {
+        // direct destructor or psuedo-destructor
+        enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
+        BOOL defd = FALSE;
+        SYMBOL *sp = NULL;
+        BOOL notype = FALSE;
+        TYPE *tp1 = NULL;
+        lex = getsym();
+        lex = getBasicType(lex, funcsp, &tp1, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+        if (!tp1)
+        {
+            error(ERR_TYPE_NAME_EXPECTED);
+        }
+        else if (!comparetypes(*tp, tp1, TRUE))
+        {
+            error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
+        }
+        else if (isstructured(*tp))
+        {
+            // destructor
+            SYMBOL *sp2 = search(overloadNameTab[CI_DESTRUCTOR], (basetype(*tp)->sp)->tp->syms);
+            if (sp2)
             {
-                errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, lex->kw->name);
+                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                funcparams->sp = sp2;
+                funcparams->thisptr = *exp;
+                funcparams->thistp = Alloc(sizeof(TYPE));
+                funcparams->thistp->size = getSize(bt_pointer);
+                funcparams->thistp->type = bt_pointer;
+                funcparams->thistp->btp = basetype(*tp);
+                if (!points)
+                    funcparams->novtab = TRUE;
+                *exp = Alloc(sizeof(EXPRESSION));
+                (*exp)->type = en_func;
+                (*exp)->v.func = funcparams;   
+            }
+            else
+            {
+                if (needkw(&lex, openpa))
+                    needkw(&lex, closepa);
             }
         }
         else
-            errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, lex->kw->name);
-    }
-    else if (!isstructured(*tp))
-    {
-        errorstr(ERR_STRUCTURED_TYPE_EXPECTED, lex->kw->name);
-    }
-    if (!isstructured(*tp))
-    {
-        lex = getsym();
-        while (ISID(lex))
         {
-            lex = getsym();
-            if (!MATCHKW(lex, pointsto) && !MATCHKW(lex, dot))
-                break;
-            lex = getsym();
+            // psuedo-destructor, no further activity required.
+            if (needkw(&lex, openpa))
+                needkw(&lex, closepa);
+        }
+        *tp = &stdvoid;
+    }
+    else if (!isstructured(*tp) || points && !ispointer(typein))
+    {
+        if (cparams.prm_cplusplus && ISKW(lex) && (lex->kw->tokenTypes & TT_BASETYPE))
+        {
+            // possible psuedo destructor with selector
+            enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
+            BOOL defd = FALSE;
+            SYMBOL *sp = NULL;
+            BOOL notype = FALSE;
+            TYPE *tp1 = NULL;
+            lex = getBasicType(lex, funcsp, &tp1, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+            if (!tp1)
+            {
+                error(ERR_TYPE_NAME_EXPECTED);
+            }
+            else if (!comparetypes(*tp, tp1, TRUE))
+            {
+                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+            }
+            if (!MATCHKW(lex, classsel))
+            {
+                error(ERR_INVALID_PSUEDO_DESTRUCTOR);
+            }
+            else
+            {
+                lex = getsym();
+                if (!MATCHKW(lex, compl))
+                {
+                    error(ERR_INVALID_PSUEDO_DESTRUCTOR);
+                }
+                else
+                {
+                    lex = getsym();
+                    tp1 = NULL;
+                    lex = getBasicType(lex, funcsp, &tp1, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+                    if (!tp1)
+                    {
+                        error(ERR_TYPE_NAME_EXPECTED);
+                    }
+                    else if (!comparetypes(*tp, tp1, TRUE))
+                    {
+                        error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
+                    }
+                    else if (needkw(&lex , openpa))
+                        needkw(&lex, closepa);
+                }
+            }
+            *tp = &stdvoid;
+        }
+        else
+        { 
+            if (points)
+                errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, tokenName);
+            else
+                errorstr(ERR_STRUCTURED_TYPE_EXPECTED, tokenName);
+            while (ISID(lex))
+            {
+                lex = getsym();
+                if (!MATCHKW(lex, pointsto) && !MATCHKW(lex, dot))
+                    break;
+                lex = getsym();
+            }
         }
     }
     else
     {
-        lex = getsym();
         if (!ISID(lex))
         {
             error(ERR_IDENTIFIER_EXPECTED);
@@ -585,6 +680,11 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 }
                 else 
                 {
+                    if (sp2->mainsym != basetype(typ2)->sp && 
+                            classRefCount(sp2, basetype(typ2)->sp) != 1)
+                    {
+                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp2, basetype(typ2)->sp);
+                    }
                     if (!isAccessible(basetype(typ2)->sp, basetype(typ2)->sp, sp2, funcsp, thisptr ? ac_protected : ac_public, FALSE))
                     {
                         errorsym(ERR_CANNOT_ACCESS, sp2);

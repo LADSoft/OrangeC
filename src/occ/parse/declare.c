@@ -1852,7 +1852,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                 }
                 if (linkage2 != lk_none)
                     *linkage2_in = linkage2;
-                if (cparams.prm_cplusplus && MATCHKW(lex, openpa) && (strSym && strSym == sp->mainsym || !strSym && storage_class == sc_member && structSyms && structSyms->data == sp->mainsym))
+                if (cparams.prm_cplusplus && MATCHKW(lex, openpa) && (strSym && (strSym->mainsym == sp->mainsym || strSym == sp->mainsym) || !strSym && storage_class == sc_member && structSyms && structSyms->data == sp->mainsym))
                 {
                     if (destructor)
                     {
@@ -3572,6 +3572,14 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         if (isstructured(tp1) && basetype(tp1)->sp->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
+                        if (structSyms && structSyms->next && strSym)
+                        {
+                            if (strSym != structSyms->next->data && strSym->mainsym != structSyms->next->data)
+                            {
+                                errorsym(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, sp);
+                            }
+                        }
+                               
                         spi = NULL;
                         if (nsv)
                         {

@@ -422,6 +422,8 @@ static struct {
 {"Destructor name must match class name", ERROR},
 {"Must call or take the address of a member function", ERROR},
 {"Need numeric expression", ERROR },
+{"Identifier '%s' cannot have a type qualifier", ERROR },
+
 #endif
 } ;
 int total_errors;

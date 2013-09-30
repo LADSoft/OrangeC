@@ -421,7 +421,7 @@ static struct {
 {"Invalid Psuedo-Destructor", ERROR},
 {"Destructor name must match class name", ERROR},
 {"Must call or take the address of a member function", ERROR},
-
+{"Need numeric expression", ERROR },
 #endif
 } ;
 int total_errors;

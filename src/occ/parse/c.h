@@ -43,9 +43,9 @@
 #define CI_CAST 2
 #define CI_NEW 3
 #define CI_DELETE 4
-#define CI_NEWA (compl+1+2)
-#define CI_DELETEA (compl+2+2)
-#define CI_LIT (compl + 3+2)
+#define CI_NEWA (compl+1+3)
+#define CI_DELETEA (compl+2+3)
+#define CI_LIT (compl + 3+3)
 
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))

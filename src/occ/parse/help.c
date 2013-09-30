@@ -885,6 +885,13 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
     EXPRESSION *expsym;
     if (!init->exp)
         return intNode(en_c_i, 0);// must be an error
+    if (isstructured(tp) || isarray(tp))
+    {
+        INITIALIZER **i2 = &init;
+        while (*i2)
+            i2 = &(*i2)->next;
+        initInsert(i2, NULL, NULL, tp->size, FALSE);
+    }
     if (!sp)
     {
         if (thisptr)
@@ -1021,7 +1028,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 DecGlobalFlag();
                 exp = varNode(en_label, spc);
                 spc->label =nextLabel++;
-                if (sp)
+                if (expsym)
                 {
                     exp = exprNode(en_blockassign, expsym, exp);
                     exp->size = tp->size;
@@ -1058,17 +1065,17 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         if (exp->type == en_void)
         {
             cast(tp, &exp->right);
-            if (sp)
+            if (expsym)
                 exp->right = exprNode(en_assign, expsym, exp->right);
         }
         else
         {
             cast(tp, &exp);
-            if (sp)
+            if (expsym)
                 exp = exprNode(en_assign, expsym, exp);
         }
     }
-    if (sp->init && isatomic(tp) && needsAtomicLockFromType(tp))
+    if (sp && sp->init && isatomic(tp) && needsAtomicLockFromType(tp))
     {
         EXPRESSION *p1 = exprNode(en_add, expsym->left, intNode(en_c_i, tp->size - ATOMIC_FLAG_SPACE));
         deref(&stdint, &p1);

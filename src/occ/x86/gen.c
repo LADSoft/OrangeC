@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "be.h"
 
 extern OCODE *peep_tail ;
@@ -3951,10 +3952,14 @@ void asm_clrblock(QUAD *q)           /* clear block of memory */
 {
     int n = q->dc.right->offset->v.i;
     AMODE *apl, *aph;
-    enum e_op op;
+    AMODE *aprl, *aprh;
+    enum e_op op, opr;
     EXPRESSION *ofs;
-    
+
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);    
     getAmodes(q, &op, q->dc.left, &apl, &aph);
+    if (q->dc.right->mode != i_immed)
+        n = INT_MAX;
     
     ofs = apl->offset ;
     if (q->dc.left->mode == i_immed)
@@ -4014,7 +4019,15 @@ void asm_clrblock(QUAD *q)           /* clear block of memory */
         gen_codes(op_push, ISZ_UINT, ax, 0);
         pushlevel += 12;
         gen_codes(op_xor, ISZ_UINT, ax, ax);
-        gen_codes(op_mov, ISZ_UINT, cx, aimmed(n/ 4));
+        if (n == INT_MAX)
+        {
+            gen_codes(op_mov, ISZ_UINT, cx, aprl);
+            gen_codes(op_shr, ISZ_UINT, cx, aimmed(2));
+        }
+        else
+        {
+            gen_codes(op_mov, ISZ_UINT, cx, aimmed(n/ 4));
+        }
         gen_codes(op, ISZ_UINT, di, apl);
         gen_code(op_cld, 0, 0);
         gen_code(op_rep, 0, 0);

@@ -1031,14 +1031,27 @@ IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
  * Generate code to copy one structure to another
  */
 {
-    IMODE *ap1, *ap3;
-    if (!node->size)
+    IMODE *ap1, *ap3, *ap4, *ap5;
+    if (node->size)
+    {
+        ap4 = make_immed(ISZ_NONE,node->size);
+    }
+    else if (node->right)
+    {
+        ap5 = gen_expr( funcsp, node->right, F_VOL, ISZ_UINT);
+        ap4 = LookupLoadTemp(NULL, ap5);
+        if (ap5 != ap4)
+            gen_icode(i_assn, ap4, ap5, NULL);
+    }
+    else
+    {
         return (0);
+    }
     ap3 = gen_expr( funcsp, node->left, F_VOL, ISZ_UINT);
     ap1 = LookupLoadTemp(NULL, ap3);
     if (ap1 != ap3)
         gen_icode(i_assn, ap1, ap3, NULL);
-    gen_icode(i_clrblock, 0, ap1, make_immed(ISZ_NONE,node->size));
+    gen_icode(i_clrblock, 0, ap1, ap4);
     return (ap1);
 }
 

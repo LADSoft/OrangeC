@@ -1227,9 +1227,9 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
                         SYMBOL *member, int offset, 
                         EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons)
 {
-    thisptr = exprNode(en_add, thisptr, intNode(en_c_i, offset));
     if (matchesCopy(parentCons, FALSE) || matchesCopy(parentCons, TRUE))
     {
+        thisptr = exprNode(en_add, thisptr, intNode(en_c_i, offset));
         otherptr = exprNode(en_add, otherptr, intNode(en_c_i, offset));
         if (isstructured(member->tp))
         {
@@ -1280,26 +1280,8 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
     }
     else if (member->init)
     {
-        TYPE *ctype = member->tp;
-        EXPRESSION *iexp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr);
-        EXPRESSION *dexp;
-        EXPRESSION *exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
-        FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+        EXPRESSION *exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr);
         STATEMENT *st;
-        params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
-        params->arguments->tp = member->tp;
-        params->arguments->exp = iexp;
-        if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE))
-            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-        if (member->dest)
-        {
-            dexp = convertInitToExpression(member->tp, member, NULL, member->dest, thisptr);
-            exp = exprNode(en_void, iexp, exprNode(en_void, exp, dexp));
-        }
-        else
-        {
-            exp = exprNode(en_void, iexp, exp);
-        }
         st = stmtNode(NULL,b, st_expr);
         optimize_for_constants(&exp);
         st->select = exp;
@@ -1941,7 +1923,6 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
         makeArrayConsDest(&tp, exp, dest1, FALSE, arrayElms);
         dest1->genreffed = TRUE;
     }
-    /*
     else if (dest1->linkage == lk_inline)
     {
         EXPRESSION *e1;
@@ -1960,7 +1941,6 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
         if (e1)
             *exp = e1;
     }
-        */
     else
     {
         *exp = Alloc(sizeof(EXPRESSION));

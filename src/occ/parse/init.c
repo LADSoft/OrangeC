@@ -2187,6 +2187,8 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
     TYPE *tp = basetype(itype);
     switch(tp->type)
     {
+        case bt_aggregate:
+            return lex;
         case bt_bool:
             return initialize_bool_type(lex, funcsp, offset, sc, tp, init);
         case bt_char:

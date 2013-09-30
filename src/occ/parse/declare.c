@@ -2082,6 +2082,8 @@ static void matchFunctionDeclaration(SYMBOL *sp, SYMBOL *spo)
         {
             hro1 = basetype(spo->tp)->syms->table[0];
             hr1 = basetype(sp->tp)->syms->table[0];
+            if (hro1 && ((SYMBOL *)(hro1->p))->thisPtr)
+                hro1 = hro1->next;
             if (hro1 && hr1 && ((SYMBOL *)(hro1->p))->tp)
             {
                 while (hro1 && hr1)
@@ -2683,7 +2685,7 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                     lex = getsym();
                     (*sp)->memberInitializers = GetMemberInitializers(&lex, *sp);
                 }
-                else if ((*sp)->storage_class == sc_member)
+                else if (*sp && (*sp)->storage_class == sc_member)
                 {
                     //error(ERR_BIT_STRUCT_MEMBER);
                     if (cparams.prm_ansi)
@@ -2875,6 +2877,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 {
                     name = overloadNameTab[CI_CONSTRUCTOR];
                 }
+                *strSym = (*tp)->sp;
                 *tp = &stdvoid; // return val for a cons or dest
                 sp = makeID(storage_class, *tp, *spi, name);
                 sp->declcharpos = lex->charindex;
@@ -3519,7 +3522,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
                         if (storage_class_in == sc_member && structSyms)
-                            sp->parentClass = structSyms->data;                            
+                            sp->parentClass = structSyms->data;
                         sp->constexpression = constexpression;
                         sp->access = access;
                         if (sp->constexpression)
@@ -3590,14 +3593,24 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 spi = (SYMBOL *)(*p)->p;
                             }
                         }
-                        if (strSym && !p)
-                        {
-                            errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sp->name);
-                        }
                         if (spi && spi->storage_class == sc_overloads)
                         {
                             SYMBOL *sym = searchOverloads(sp->decoratedName, spi->tp->syms);
-                            if (cparams.prm_cplusplus)
+                            if (!sym && strSym)
+                            {
+                                char buf[256];
+                                if (!strcmp(sp->name, "$bctr"))
+                                    strcpy(buf, strSym->name);
+                                else if (!strcmp(sp->name, "$bdtr"))
+                                {
+                                    buf[0] = '~';
+                                    strcpy(buf+1, strSym->name);
+                                }
+                                else
+                                    strcpy(buf, sp->name);
+                                errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, buf);  
+                            }
+                            else if (cparams.prm_cplusplus)
                                 if (mismatchedOverloadLinkage(sp, spi->tp->syms))
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->declfile, spi->declline);
@@ -3612,9 +3625,26 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             {
                                 if (nsv || strSym)
                                 {
-                                    errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, spi->name);                    
+                                    char buf[256];
+                                    if (!strcmp(sp->name, "$bctr"))
+                                        strcpy(buf, strSym->name);
+                                    else if (!strcmp(sp->name, "$bdtr"))
+                                    {
+                                        buf[0] = '~';
+                                        strcpy(buf+1, strSym->name);
+                                    }
+                                    else
+                                        strcpy(buf, sp->name);
+                                    errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, buf);   
                                 }
                                 spi = NULL;
+                            }
+                        }
+                        else
+                        {
+                            if (strSym && !structSyms && !p)
+                            {
+                                errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sp->name);
                             }
                         }
                         if (spi)
@@ -3623,7 +3653,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 matchFunctionDeclaration(sp, spi);
                             if (sp->parentClass)
                                 preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
-
+                            else
+                                sp->parentClass = strSym;
                             if (sp->constexpression)
                                 spi->constexpression = TRUE;
                             if (istype(spi->storage_class))
@@ -3735,6 +3766,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 spi->declline = sp->declline;
                                 spi->declfilenum = sp->declfilenum;
                             }
+                            spi->memberInitializers = sp->memberInitializers;
                             sp = spi;
                             sp->redeclared = TRUE;
                         }

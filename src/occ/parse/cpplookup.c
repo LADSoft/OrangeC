@@ -1559,27 +1559,30 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
 }
 static LIST *GetMemberCasts(LIST *gather, SYMBOL *sp)
 {
-    BASECLASS *bcl = sp->baseClasses;
-    SYMBOL *sym = sp;
-    while (sym)
+    if (sp)
     {
-        // conversion of one class to another
-        SYMBOL *find = search(overloadNameTab[CI_CAST], basetype(sym->tp)->syms);
-        if (find)
+        BASECLASS *bcl = sp->baseClasses;
+        SYMBOL *sym = sp;
+        while (sym)
         {
-            LIST *lst = Alloc(sizeof(LIST));
-            lst->data = find;
-            lst->next = gather;
-            gather = lst;
-        }
-        if (bcl)
-        {
-            sym = bcl->cls;
-            bcl = bcl->next;
-        }
-        else
-        {
-            sym = NULL;
+            // conversion of one class to another
+            SYMBOL *find = search(overloadNameTab[CI_CAST], basetype(sym->tp)->syms);
+            if (find)
+            {
+                LIST *lst = Alloc(sizeof(LIST));
+                lst->data = find;
+                lst->next = gather;
+                gather = lst;
+            }
+            if (bcl)
+            {
+                sym = bcl->cls;
+                bcl = bcl->next;
+            }
+            else
+            {
+                sym = NULL;
+            }
         }
     }
     return gather;

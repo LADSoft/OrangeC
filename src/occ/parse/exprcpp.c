@@ -273,7 +273,7 @@ void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, T
                     cst->genreffed = TRUE;
                 }
                 *exp = e1;
-                cast(*tp, exp);
+                cast(other, exp);
                 *tp = basetype(cst->tp)->btp;
                 return;
             }

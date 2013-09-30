@@ -1161,7 +1161,37 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op
 }
 
 /*-------------------------------------------------------------------------*/
-
+static EXPRESSION *getAddress(EXPRESSION *exp)
+{
+    EXPRESSION *rv = NULL;
+    if (exp->type == en_add)
+    {
+        rv = getAddress(exp->left);
+        if (!rv)
+           rv = getAddress(exp->right);
+    }
+    else if (exp->type == en_auto)
+    {
+        return exp;
+    }
+    return rv;
+}
+/*-------------------------------------------------------------------------*/
+static EXPRESSION *getFunc(EXPRESSION *exp)
+{
+    EXPRESSION *rv = NULL;
+    if (exp->type == en_add)
+    {
+        rv = getFunc(exp->left);
+        if (!rv)
+           rv = getFunc(exp->right);
+    }
+    else if (exp->type == en_func)
+    {
+        return exp;
+    }
+    return rv;
+}
 int push_param(EXPRESSION *ep, SYMBOL *funcsp)
 /*
  *      push the operand expression onto the stack.
@@ -1170,8 +1200,39 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
     IMODE *ap, *ap3;
     int temp;
     int rv = 0;
-    EXPRESSION *exp;
-    switch (ep->type)
+    EXPRESSION *exp = getFunc(ep);
+    if (exp)
+    {
+        EXPRESSION *ep1 = exp;
+        exp = ep1->v.func->returnEXP;
+        if (!exp)
+            exp = ep1->v.func->thisptr;
+        if (exp)
+            exp = getAddress(exp);
+        if (exp && exp->type == en_auto && exp->v.sp->stackblock)
+        {
+            // constructor or other function creating a structure on the stack
+            rv = exp->v.sp->tp->size;
+            if (rv % chosenAssembler->arch->stackalign)
+                rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
+            gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
+            exp->v.sp->imvalue = ap;
+            gen_expr(funcsp, ep, 0, ISZ_UINT );
+        }
+        else
+        {
+            temp = natural_size(ep);
+            ap3 = gen_expr( funcsp, ep, 0, temp);
+            ap = LookupLoadTemp(NULL, ap3);
+            if (ap != ap3)
+                gen_icode(i_assn, ap, ap3, NULL);
+            if (ap->size == ISZ_NONE)
+                ap->size = temp;
+            gen_nodag(i_parm, 0, ap, 0);
+            rv = sizeFromISZ(ap->size);
+        }
+    }
+    else switch (ep->type)
     {
         case en_argnopush:
             gen_expr( funcsp, ep->left, 0, ISZ_UINT);
@@ -1181,22 +1242,6 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             gen_nodag(i_parm, 0, ap, 0);
             rv = sizeFromISZ(ap->size);
             break;
-        case en_func:
-            exp = ep->v.func->returnEXP;
-            if (!exp)
-                exp = ep->v.func->thisptr;
-            if (exp && exp->type == en_auto && exp->v.sp->stackblock)
-            {
-                // constructor or other function creating a structure on the stack
-                rv = exp->v.sp->tp->size;
-                if (rv % chosenAssembler->arch->stackalign)
-                    rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
-                gen_icode(i_substack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
-                exp->v.sp->imvalue = ap;
-                gen_expr(funcsp, ep, 0, ISZ_UINT );
-                break;
-            }
-            // fallthrough
         default:
             temp = natural_size(ep);
             ap3 = gen_expr( funcsp, ep, 0, temp);
@@ -1230,7 +1275,7 @@ static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
             ap = ep->v.imode;
             break;
         default:
-            ap3 = gen_expr( funcsp, ep->left, F_ADDR, ISZ_UINT);
+            ap3 = gen_expr( funcsp, ep, F_ADDR, ISZ_UINT);
             ap = LookupLoadTemp(NULL, ap3);
             if (ap != ap3)
                 gen_icode(i_assn, ap, ap3, NULL);
@@ -1256,14 +1301,16 @@ static int gen_parm(ARGLIST *a, SYMBOL *funcsp)
             TYPE *btp = basetype(a->tp);
             if (btp->vla || basetype(btp->btp)->vla)
             {
-                rv = push_stackblock(a->exp, funcsp, a->tp->size);
+                rv = push_stackblock(a->exp->left, funcsp, a->tp->size);
                 DumpIncDec(funcsp);
                 push_nesting += rv;
                 return rv;
             }
         }
         if (!cparams.prm_cplusplus && isstructured(a->tp))
-            rv = push_stackblock(a->exp, funcsp, a->exp->size);
+            rv = push_stackblock(a->exp->left, funcsp, a->exp->size);
+        else if (a->exp->type == en_stackblock)
+            rv = push_stackblock(a->exp->left, funcsp, a->tp->size);
         else
             rv = push_param(a->exp, funcsp);
         DumpIncDec(funcsp);

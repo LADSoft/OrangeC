@@ -148,6 +148,10 @@ BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
             return FALSE;
         hr1 = typ1->syms->table[0];
         hr2 = typ2->syms->table[0];
+        if (((SYMBOL *)hr1->p)->thisPtr)
+            hr1 = hr1->next;
+        if (((SYMBOL *)hr2->p)->thisPtr)
+            hr2 = hr2->next;
         while (hr1 && hr2)
         {
             SYMBOL *sp1 = (SYMBOL *)hr1->p;
@@ -180,7 +184,7 @@ BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         {
             if (typ1->sp != typ2->sp)
             {
-                if (classRefCount(typ2->sp, typ1->sp) != 1)
+                if (classRefCount(typ1->sp, typ2->sp) != 1)
                     return FALSE;
             }
             return comparetypes(typ1->btp, typ2->btp, exact);

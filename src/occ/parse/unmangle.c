@@ -96,7 +96,7 @@ static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 static char *unmang_intrins(char *buf, char *name, char *last)
 {
-    char cur[245],  *p = cur,  *q;
+    char cur[512],  *p = cur,  *q;
     int i;
     *p++ = *name++; // past the '$'
     while (*name != '@' &&  *name != '$' &&  *name)
@@ -104,11 +104,16 @@ static char *unmang_intrins(char *buf, char *name, char *last)
     *p = 0;
     if (cur[1] == 'o')
     {
-        strcpy(p, name);
-        (name) += strlen(name);
+        p = cur;
         strcpy(buf, "operator ");
         buf += strlen(buf);
-        unmang1(buf, cur + 2);
+        p = unmang1(buf, p + 2);
+        buf += strlen(buf);
+        if (p[0] == '$')
+        {
+            unmang1(buf, p +1);
+            buf += strlen(buf);
+        }
     }
     else
     {
@@ -211,7 +216,7 @@ static char *unmang1(char *buf, char *name)
 {
     int v;
     int cvol = 0, cconst = 0;
-    char buf1[256],  *p, buf2[256];
+    char buf1[256],  *p, buf2[256], buf3[256];
     while (*name == '_')
         name++;
     while (*name == 'x' ||  *name == 'y')
@@ -355,15 +360,15 @@ static char *unmang1(char *buf, char *name)
                 v =  *name++ - '0';
                 if (v > 9)
                     v -= 7;
-                strcpy(buf1, manglenames[v]);
-                p = buf1 + strlen(buf1);
+                strcpy(buf2, manglenames[v]);
+                p = buf2 + strlen(buf2);
             }
             else
             {
                 v =  *name++ - '0';
                 while (isdigit(*name))
                     v = v * 10+ *name++ - '0';
-                p = buf1;
+                p = buf2;
                 while (v--)
                 {
                     if (*name == '@')
@@ -377,24 +382,27 @@ static char *unmang1(char *buf, char *name)
                     *p = 0;
                 }
                 if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-                    strcpy(manglenames[manglenamecount++], buf1);
+                    strcpy(manglenames[manglenamecount++], buf2);
             }
 
             strcpy(p, "::*");
-            buf2[0] = 0;
+            buf3[0] = 0;
+            if (name[0] == 'q')
+            {
+                name = unmang1(buf3, name);
+            }
+            buf1[0] = 0;
             if (name[0] == '$')
             {
-                name = unmang1(buf2, ++name);
-                sprintf(buf, "(%s) (%s)", buf1, buf2);
-                if (*name == '$' && *(name +1) == 'q')
-                {
-                    name = unmang1(buf+strlen(buf), ++name);
-                }
+                name = unmang1(buf1, ++name);
+            }
+            if (buf3[0])
+            {
+                sprintf(buf, "%s (%s)%s", buf1, buf2, buf3);
             }
             else
             {
-                name = unmang1(buf2, name);
-                sprintf(buf, "%s %s", buf2, buf1);
+                sprintf(buf, "%s %s", buf1, buf2);
             }
             break;
         case 'n':

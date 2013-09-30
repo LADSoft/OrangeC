@@ -501,6 +501,7 @@ SYMBOL *anonymousVar(enum e_sc storage_class, TYPE *tp)
     rv->tp = tp;
     rv->anonymous = TRUE;
     rv->allocate = TRUE;
+    rv->assigned = TRUE;
     rv->name = AnonymousName();
     InsertSymbol(rv, storage_class, FALSE);
     SetLinkerNames(rv, lk_none);
@@ -694,6 +695,7 @@ int sizeFromType(TYPE *tp)
         case bt_ifunc:
         case bt_lref:
         case bt_rref:
+        case bt_memberptr:
             rv = ISZ_ADDR;
             break;
         default:

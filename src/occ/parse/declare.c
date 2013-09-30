@@ -1929,11 +1929,11 @@ exit:
             {
                 tn->size += n;
             }
-            tn->size += ATOMIC_FLAG_SPACE;
         }
         tl = &quals;
         while (*tl)
         {
+            (*tl)->size = tn->size;
             tl = &(*tl)->btp;
         }
         *tl = tn;
@@ -1950,6 +1950,7 @@ exit:
     }
     else
         *tp = tn;
+    sizeQualifiers(*tp);
     return lex;
 }
 static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, 

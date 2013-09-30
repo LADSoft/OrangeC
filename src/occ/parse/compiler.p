@@ -173,7 +173,7 @@ EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val);
 EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en);
 LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams);
-void DerivedToBase(SYMBOL *tpn, SYMBOL *tpo, EXPRESSION **exp);
+void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp);
 void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand);

@@ -1994,6 +1994,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
         }
     }
     */
+    /*
     if (params && params->arguments && !params->arguments->next &&
         params->arguments->exp->type == en_func)
     {
@@ -2009,6 +2010,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             return TRUE;
         }
     }
+    */
     if (!params)
     {
         params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -2058,6 +2060,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 e1->v.func = oparams;
                 cons1->genreffed = TRUE;
             }
+            /*
             if (!isref(basetype(cons1->tp)->btp))
             {
                 cons1 = NULL;
@@ -2067,6 +2070,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 e1 = exprNode(en_blockassign, *exp, e1);
                 e1->size = sp->tp->size;
             }
+            */
         }
         else 
         {

@@ -442,12 +442,9 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOL make_label)
     EXPRESSION expx, *exp = &expx;
     if (make_label)
     {
-        if (sp)
-            lbl = sp->label;
-        if (lbl != 0)
-        {
-            return lbl;
-        }
+        // well if we wanted we could reuse existing structures, but,
+        // it doesn't seem like the amount of duplicates there might be is
+        // really worth the work.  Borland didn't think so anyway...
         dseg();
         lbl = nextLabel++;
         if (sp)
@@ -1266,28 +1263,21 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                 {
                     errortype(ERR_REF_INITIALIZATION_CANNOT_USE_RVALUE_OF_TYPE, tp, tp);
                 }
-                if (funcsp)
-                {
-                    exp = createTemporary(itype, exp);
-                }
-                else
-                {
-                    if (!basetype(tp)->array)
-                        if (itype->type != bt_rref || exp->type != en_not_lvalue || !lvalue(exp->left))
-                        {
-                            error(ERR_REF_INIT_REQUIRES_LVALUE);
-                        }
-                        else
-                        {
+                if (!basetype(tp)->array)
+                    if (itype->type != bt_rref || exp->type != en_not_lvalue || !lvalue(exp->left))
+                    {
+                        error(ERR_REF_INIT_REQUIRES_LVALUE);
+                    }
+                    else
+                    {
+                        exp = exp->left;
+                        while (castvalue(exp))
                             exp = exp->left;
-                            while (castvalue(exp))
-                                exp = exp->left;
-                            if (referenceTypeError(itype, exp) != exp->type)
-                                errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
-                            if (lvalue(exp))
-                                exp = exp->left;
-                        }
-                }
+                        if (referenceTypeError(itype, exp) != exp->type)
+                            errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
+                        if (lvalue(exp))
+                            exp = exp->left;
+                    }
             }
             else
             {

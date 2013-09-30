@@ -836,7 +836,8 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
 join:                     
                     if (!comparetypes(list->tp, decl->tp, FALSE))
                     {
-                        errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
+                        if (basetype(decl->tp)->type != bt_memberptr)
+                            errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                     }
                     else if (assignDiscardsConst(decl->tp, list->tp))
                         if (cparams.prm_cplusplus)
@@ -888,7 +889,7 @@ join:
             if (basetype(list->tp)->type < bt_double)
                 dest = &stddouble;
         }
-        if (dest && (!list || !comparetypes(dest, list->tp, TRUE)))
+        if (dest && basetype(dest)->type != bt_memberptr && (!list || !comparetypes(dest, list->tp, TRUE)))
         {
             cast(basetype(dest), &list->exp);
             list->tp = dest;
@@ -949,12 +950,12 @@ LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams)
     }
 	return lex;
 }
-void DerivedToBase(SYMBOL *tpn, SYMBOL *tpo, EXPRESSION **exp)
+void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp)
 {
     if (isref(tpn))
         tpn = basetype(tpn)->btp;
     if (isref(tpo))
-        tpn = basetype(tpo)->btp;
+        tpo = basetype(tpo)->btp;
     if (isstructured(tpn) && isstructured(tpo))
     {
         SYMBOL *spn = basetype(tpn)->sp;
@@ -971,9 +972,17 @@ void DerivedToBase(SYMBOL *tpn, SYMBOL *tpo, EXPRESSION **exp)
                 optimize_for_constants(&v);
                 if (v->type == en_c_i) // check for no virtual base
                 {
-                    if (isAccessible(spo, spo, spn, NULL, ac_public, FALSE))
+//                    if (isAccessible(spo, spo, spn, NULL, ac_public, FALSE))
                     {
-                        *exp = exprNode(en_add, *exp, v);
+                        SYMBOL *sp = anonymousVar(sc_auto, &stdpointer);
+                        EXPRESSION *var = exprNode(en_l_p, varNode(en_auto, sp), NULL);
+                        EXPRESSION *asn = exprNode(en_assign, var, *exp);
+                        EXPRESSION *left = exprNode(en_add, var, v);
+                        EXPRESSION *right = var;
+                        insert(sp, localNameSpace->syms);
+                        *exp = exprNode(en_cond, var, exprNode(en_void, left, right));
+                        *exp = exprNode(en_void, asn, *exp);
+                        
                         return;
                     }
                 }
@@ -1003,8 +1012,11 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
         {
             if (isstructured(sym->tp))
             {
+                TYPE *tpx = p->tp;
+                if (isref(tpx))
+                    tpx = basetype(tpx)->btp;
                 // use constructor or conversion function and push on stack ( no destructor)
-                if (p->exp->type == en_func)
+                if (p->exp->type == en_func && comparetypes(sym->tp, tpx, TRUE))
                 {
                     EXPRESSION **exp = NULL;
                     SYMBOL *esp;
@@ -1025,7 +1037,6 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                         esp = anonymousVar(sc_auto, tp); // sc_parameter to push it...
                         esp->stackblock = TRUE;
                         consexp = varNode(en_auto, esp);
-                        DerivedToBase(sym->tp, tp, &consexp);
                         *exp = consexp;
                     }
                 }
@@ -1034,15 +1045,19 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                     TYPE *ctype = sym->tp;
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     ARGLIST *arg = Alloc(sizeof(ARGLIST));
-                    SYMBOL *esp = anonymousVar(sc_auto, p->tp); // sc_parameter to push it...
+                    SYMBOL *esp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
                     EXPRESSION *consexp = varNode(en_auto, esp);
+                    EXPRESSION *destexp = consexp;
+                    EXPRESSION *old = p->exp;
                     esp->stackblock = TRUE;
                     arg->exp = p->exp;
                     arg->tp = p->tp;
                     funcparams->arguments = arg;
-                    callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE);
+                    callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE);
+                    p->exp=consexp;
                     if (p->exp->type == en_func)
                     {
+                        BOOL ref = FALSE;
                         SYMBOL *spx = p->exp->v.func->sp;
                         TYPE *tpx = basetype(spx->tp);
                         TYPE *tpx1, *tpx2;
@@ -1057,8 +1072,33 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                             tpx1 = ((SYMBOL *)tpx->syms->table[0]->next->p)->tp;
                             tpx2 = spx->parentClass->tp;
                         }
-                        DerivedToBase(tpx, p->tp, &p->exp->v.func->thisptr);
-                        DerivedToBase(sym->tp, tpx, &p->exp);
+                        esp->tp = tpx2;
+                        if (!comparetypes(basetype(sym->tp), basetype(tpx2), TRUE))
+                        {
+                            esp->stackblock = FALSE; // make it a real variable
+                            insert(esp, localNameSpace->syms);
+                            funcparams = Alloc(sizeof(FUNCTIONCALL));
+                            arg = Alloc(sizeof(ARGLIST));
+                            esp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
+                            esp->stackblock = TRUE;
+                            consexp = varNode(en_auto, esp);
+                            // have to do another constructor
+//                            DerivedToBase(sym->tp, tpx2, &p->exp);
+                            arg->exp = p->exp;
+                            arg->tp = tpx2;
+                            funcparams->arguments = arg;
+                            ctype = sym->tp;
+                            callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, FALSE);
+                            p->exp = consexp;
+                            callDestructor(basetype(tpx2)->sp, &destexp, NULL, TRUE);
+                            (*lptr)->dest = destexp;
+                        }
+                        else if (old->type == en_func && old->v.func->returnEXP)
+                        {
+                            destexp = old->v.func->returnEXP;
+                            callDestructor(old->v.func->returnSP, &destexp, NULL, TRUE);
+                            (*lptr)->dest = destexp;
+                        }
                     }
                 }
                 p->tp = sym->tp;
@@ -1067,7 +1107,11 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
             {
                 if (isstructured(basetype(sym->tp)->btp))
                 {
-                    if (!isconst(basetype(sym->tp)->btp) && isconst(p->tp) || !comparetypes(sym->tp, p->tp, TRUE))
+                    TYPE *tpx = p->tp;
+                    if (isref(tpx))
+                        tpx = basetype(tpx)->btp;
+                    if (!isconst(basetype(sym->tp)->btp) && isconst(tpx) || !comparetypes(sym->tp, tpx, TRUE) 
+                        && !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp))
                     { 
                         // make temp via constructor or conversion function
                         SYMBOL *esp = anonymousVar(sc_auto,basetype(sym->tp)->btp);
@@ -1078,7 +1122,7 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                         ARGLIST *arg = Alloc(sizeof(ARGLIST));
                         insert(esp, localNameSpace->syms);
                         arg->exp = p->exp;
-                        arg->tp = p->tp;
+                        arg->tp = basetype(p->tp);
                         funcparams->arguments = arg;
                         p->exp = consexp;
                         callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE); 
@@ -1092,6 +1136,8 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                             {
                                 tpx1 = spx->parentClass->tp;
                                 tpx2 = tpx->btp;
+                                if (isref(tpx2))
+                                    tpx2 = basetype(tpx2)->btp;
                             }
                             else
                             {
@@ -1104,10 +1150,12 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                                 DerivedToBase(sym->tp, tpx2, &p->exp);
                             else
                                 cast(sym->tp, &p->exp);
-                            spx = (SYMBOL *)basetype(spx->tp)->syms->table[0]->next->p;
-                            callDestructor(basetype(tpx1)->sp, &destexp, NULL, TRUE);
-                            (*lptr)->dest = destexp;
                         }
+                    }
+                    else
+                    {
+                        if (!comparetypes(sym->tp, p->tp, TRUE))
+                            DerivedToBase(sym->tp, p->tp, &p->exp);
                     }
                 }
                 else if (comparetypes(sym->tp, p->tp, TRUE))
@@ -1121,7 +1169,7 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                     {
                         // pass address
                         EXPRESSION *exp = p->exp;
-                        while (castvalue(exp))
+                        while (castvalue(exp) || exp->type == en_not_lvalue)
                             exp = exp->left;
                         if (exp->type != en_l_ref)
                         {
@@ -1137,15 +1185,8 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                 }
                 else if (isstructured(p->tp))
                 {
-                    TYPE *etp = sym->tp;
-                    if (isstructured(etp))
-                    {
-                        cppCast(p->tp, &etp, &p->exp);
-                    }
-                    else
-                    {
-                        castToArithmetic(FALSE, &etp, &p->exp, (enum e_kw)-1, p->tp);
-                    }
+                    TYPE *etp = basetype(sym->tp)->btp;
+                    castToArithmetic(FALSE, &etp, &p->exp, (enum e_kw)-1, p->tp);
                     p->exp = createTemporary(sym->tp, p->exp);                        
                 }
                 else
@@ -1160,13 +1201,57 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                 // handle base class conversion
                 TYPE *tpb = basetype(sym->tp)->btp;
                 TYPE *tpd = basetype(p->tp)->btp;
-                if (isstructured(tpb) && isstructured(tpd))
+                if (!comparetypes(basetype(tpb), basetype(tpd), TRUE))
                 {
-                    SYMBOL *base = basetype(tpb)->sp;
-                    SYMBOL *derived = basetype(tpd)->sp;
-                    p->exp = baseClassOffset(base, derived, p->exp);
+                    if (isstructured(tpb) && isstructured(tpd))
+                    {
+                        DerivedToBase(tpb, tpd, &p->exp);
+                    }
+                    p->tp = sym->tp;
                 }
-                p->tp = sym->tp;
+            }
+            else if (basetype(sym->tp)->type == bt_memberptr)
+            {
+                if (p->exp->type == en_memberptr)
+                {
+                    int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, TRUE);
+                    p->exp = intNode(en_labcon, lbl);
+                    p->exp = exprNode(en_stackblock, p->exp, NULL);
+                    p->exp->size = sym->tp->size;
+                }
+                else if (isconstzero(p->tp, p->exp) || p->exp->type == en_nullptr)
+                {
+                    EXPRESSION *dest = createTemporary(sym->tp, NULL);
+                    p->exp = exprNode(en_blockclear, dest, NULL);
+                    p->exp->size = sym->tp->size;
+                    p->exp = exprNode(en_void, p->exp, dest);
+                    p->exp = exprNode(en_stackblock, p->exp, NULL);
+                    p->exp->size = sym->tp->size;
+                    p->tp = sym->tp;
+                }
+                else if (p->exp->type == en_func && p->exp->v.func->returnSP)
+                {
+                    SYMBOL *esp = anonymousVar(sc_auto, sym->tp);
+                    EXPRESSION *dest = varNode(en_auto, esp);
+                    esp->stackblock = TRUE;
+                    p->exp->v.func->returnSP->allocate = FALSE;
+                    p->exp->v.func->returnEXP = dest;
+                    p->exp->size = sym->tp->size;
+                    /*
+                    EXPRESSION *dest = createTemporary(sym->tp, NULL);
+                    p->exp->v.func->returnSP->allocate = FALSE;
+                    p->exp->v.func->returnEXP = dest;
+                    p->exp = exprNode(en_void, p->exp, dest) ;
+                    p->exp = exprNode(en_stackblock, p->exp, NULL);
+                    p->exp->size = sym->tp->size;
+                    */
+                }
+                else
+                {
+                    p->exp = exprNode(en_stackblock, p->exp, NULL);
+                    p->exp->size = sym->tp->size;
+                }
+                p->tp->size = sym->tp->size;
             }
         }
         else
@@ -4073,7 +4158,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 {
                     if (exp1->type == en_memberptr)
                     {
-                        if (classRefCount(exp1->v.sp->parentClass, basetype(*tp)->sp) != 1)
+                        if (exp1->v.sp->parentClass != basetype(*tp)->sp && classRefCount(exp1->v.sp->parentClass, basetype(*tp)->sp) != 1)
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
 
                     }
@@ -4142,22 +4227,19 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             {
                 int lbl = dumpMemberPtr(exp1->v.sp, *tp, TRUE);
                 exp1 = intNode(en_labcon, lbl);
-                if (exp1->type == en_func && exp1->v.func->returnSP)
-                {
-                    exp1->v.func->returnSP->allocate = FALSE;
-                    exp1->v.func->returnEXP = *exp;
-                    *exp = exp1;
-                }
-                else
-                {
-                    *exp = exprNode(en_blockassign, *exp, exp1);
-                    (*exp)->size = (*tp)->size;
-                }
+                *exp = exprNode(en_blockassign, *exp, exp1);
+                (*exp)->size = (*tp)->size;
             }
             else if (isconstzero(tp1, exp1) || exp1->type == en_nullptr)
             {
                 *exp = exprNode(en_blockclear, *exp, NULL);
                 (*exp)->size = (*tp)->size;
+            }
+            else if (exp1->type == en_func && exp1->v.func->returnSP)
+            {
+                exp1->v.func->returnSP->allocate = FALSE;
+                exp1->v.func->returnEXP = *exp;
+                *exp = exp1;
             }
             else
             {

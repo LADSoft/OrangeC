@@ -82,7 +82,10 @@ static char *mangleClasses(char *in, SYMBOL *sp)
         in = mangleClasses(in, sp->parentClass);
     else
         in = mangleNameSpaces(in, sp->parentNameSpace);
-    sprintf(in, "@%s", sp->name);
+    if (sp->castoperator)
+        strcat(in, "@");
+    else
+        sprintf(in, "@%s", sp->name);
     return in + strlen(in);
 }
 static char *getName(char *in, SYMBOL *sp)
@@ -161,6 +164,24 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
             case bt_memberptr:
                 *in++ = 'M';
                 in = getName(in, tp->sp);
+                if (isfunction(tp->btp))
+                {
+                    *in++ = 'q';
+                    hr = tp->btp->syms->table[0];
+                    while (hr)
+                    {
+                        SYMBOL *sp = (SYMBOL *)hr->p;
+                        in = mangleType(in, sp->tp, TRUE);
+                        hr = hr->next ;
+                    }
+                    *in++ = '$';
+                    in = mangleType (in, tp->btp->btp, TRUE);
+                }
+                else
+                {
+                    *in++ = '$';
+                    in = mangleType (in, tp->btp, TRUE);
+                }
                 break;
             case bt_enum:
             case bt_struct:
@@ -317,7 +338,10 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
                 *p++ = '$';
                 if (sym->castoperator)
                 {
+                    *p++ = 'o';
                     p = mangleType(p, basetype(sym->tp)->btp, TRUE); // cast operators get their cast type in the name
+                    *p++ = '$';
+                    p = mangleType(p, sym->tp, TRUE); // add the $qv
                 }
                 else
                 {

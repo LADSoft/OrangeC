@@ -1113,7 +1113,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             if (s1)
             {
                 *exp = val;
-                callConstructor(tp, exp, initializers, FALSE, arrSize, TRUE, FALSE);
+                tpf = *tp;
+                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE);
             }
         }
         else
@@ -1184,7 +1185,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             // call default constructor
             *exp = val;
-            callConstructor(tp, exp, NULL, FALSE, arrSize, TRUE, FALSE);
+            tpf = *tp;
+            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE);
         }
     }
     tpf = Alloc(sizeof(TYPE));

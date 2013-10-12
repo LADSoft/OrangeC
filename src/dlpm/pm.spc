@@ -4,12 +4,14 @@ partition {
 	CODEBASE = $;
 	region {} hdr [ size = RESERVE0];
     region {} code [ align = 2, roundsize = 8];
+    region {} vsc* [ align = 2, roundsize = 8];
 	region {} const [ align = 8, roundsize = 4];
     _TLSINITSTART = $;
     region {} tls [align = 4, roundsize = 4];
     _TLSINITEND = $;
 	RAMBASE = $;
     region {} data [ align = 8, roundsize = 4];
+    region {} vsd* [ align = 8, roundsize = 4];
 	_INITSTART = $;
 	region {} cstartup [ align = 2];
 	_INITEND = $;

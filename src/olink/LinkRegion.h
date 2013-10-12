@@ -113,6 +113,8 @@ class LinkRegion
     protected:
         void AddData(SectionData &data, ObjFile *file, ObjSection *section);
     private:
+        std::map<std::string, int> equalSections;
+        bool CheckEqualSection(ObjSection *sect);
         void AddFile(ObjFile *file);
         bool ParseFiles(CmdFiles &files, LinkTokenizer &spec);
         bool ParseName(LinkTokenizer &spec);

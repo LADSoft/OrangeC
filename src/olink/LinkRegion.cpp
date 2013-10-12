@@ -261,6 +261,26 @@ void LinkRegion::AddData(SectionData &data, ObjFile *file, ObjSection *section)
     }
     ns->sections.push_back(OneSection(file, section));
 }
+bool LinkRegion::CheckEqualSection(ObjSection *sect)
+{
+    if (sect->GetQuals() & ObjSection::equal)
+    {
+        std::map<std::string, int>::iterator it = equalSections.find(sect->GetName());
+        if (it == equalSections.end())
+        {
+            equalSections[sect->GetName()] = sect->GetAbsSize();
+        }
+        else
+        {
+            if (equalSections[sect->GetName()] != sect->GetAbsSize())
+            {
+                LinkManager::LinkError("Region " + QualifiedRegionName() + " Section " + sect->GetName() + "equal qualifier with unequal sections");
+            }
+            return true;
+        }
+    }
+    return false;
+}
 void LinkRegion::AddFile(ObjFile *file)
 {
     LinkNameLogic logic(name);
@@ -274,21 +294,24 @@ void LinkRegion::AddFile(ObjFile *file)
                 attribs.SetAlign(new LinkExpression(sect->GetAlignment()));
             // using section::utility flag to for placed regions
             sect->SetUtilityFlag(true);
-            if (quals & ObjSection::now)
+            if (!CheckEqualSection(sect))
             {
-                if (quals &ObjSection::postpone)
-                    LinkManager::LinkError("file " + file->GetName() + "Region " 
-                                             + QualifiedRegionName() + 
-                                "has both 'now' and 'postpone' qualifiers");
-                AddNowData(file, sect);
-            }
-            else if (quals & ObjSection::postpone)
-            {
-                AddPostponeData(file, sect);
-            }
-            else
-            {
-                AddNormalData(file, sect);
+                if (quals & ObjSection::now)
+                {
+                    if (quals &ObjSection::postpone)
+                        LinkManager::LinkError("file " + file->GetName() + "Region " 
+                                                 + QualifiedRegionName() + 
+                                    "has both 'now' and 'postpone' qualifiers");
+                    AddNowData(file, sect);
+                }
+                else if (quals & ObjSection::postpone)
+                {
+                    AddPostponeData(file, sect);
+                }
+                else
+                {
+                    AddNormalData(file, sect);
+                }
             }
         }
     }
@@ -412,7 +435,7 @@ void LinkRegion::CheckAttributes()
                     anySeparate = true;
             }
         }
-        if (anyCommon)
+        if (anyCommon && !anyEqual)
             common = true;
         if (n > 1 && anyUnique)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " unique qualifier with multiple sections");
@@ -424,8 +447,6 @@ void LinkRegion::CheckAttributes()
             LinkManager::LinkError("Region " + QualifiedRegionName() + " Mixing equal and max characteristics");
         if (anySeparate && anyCommon)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " Mixing separate and common sections");
-        if (anyEqual && notEqual)
-            LinkManager::LinkError("Region " + QualifiedRegionName() + " equal qualifier with unequal sections");
         if (maxAlign > attribs.GetAlign())
             attribs.SetAlign(new LinkExpression(maxAlign));
     }

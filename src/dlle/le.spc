@@ -3,6 +3,7 @@ partition {
 	_CODESTART = $;
 	CODEBASE = $;
     region {} code [ align = 2];
+    region {} vsc* [ align = 2];
 	region {} const [ align = 8, roundsize = 4];
     _TLSINITSTART = $;
     region {} tls [align = 4, roundsize = 4];
@@ -15,6 +16,7 @@ partition {
   overlay {
 	RAMBASE = $;
     region {} data [ align = 8, roundsize = 4];
+    region {} vsd* [ align = 8, roundsize = 4];
 	_INITSTART = $;
 	region {} cstartup [ align = 2];
 	_INITEND = $;

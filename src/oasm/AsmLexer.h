@@ -58,7 +58,7 @@ public:
         // must be after punctuation
         ABSOLUTE, ALIGN, CLASS, DB, DD, DQ, DT, DW, EXPORT, EXTERN, EQU, GROUP, 
         IMPORT, INCBIN, PUBLIC, RESB, RESD, RESQ, REST, RESW, SECTION, SEG, 
-        STACK, WRT, TIMES, USE16, USE32
+        STACK, WRT, TIMES, USE16, USE32, VIRTUAL
     };
     Lexer(PreProcessor &PP);
     ~Lexer() { }

@@ -55,7 +55,7 @@ class Fixup;
 class Section
 {
 public:
-    Section(std::string Name, int Sect) : name(Name), sect(Sect), align(1), pc(0) { memset(beValues, 0, sizeof(beValues)); }
+    Section(std::string Name, int Sect) : name(Name), sect(Sect), align(1), pc(0), isVirtual(false) { memset(beValues, 0, sizeof(beValues)); }
     virtual ~Section();
     ObjSection *CreateObject(ObjFactory &factory);
     bool MakeData(ObjFactory &factory, AsmFile *fil);
@@ -88,6 +88,7 @@ private:
     std::string name;
     int sect;
     int align;
+    bool isVirtual;
     std::vector<Instruction *> instructions;
     int instructionPos;
     ObjSection *objectSection;

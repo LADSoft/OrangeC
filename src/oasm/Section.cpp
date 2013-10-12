@@ -81,6 +81,11 @@ void Section::Parse(AsmFile *fil)
             fil->NextToken();
             fil->GetId();
         }
+        else if (fil->GetKeyword() == Lexer::VIRTUAL)
+        {
+            isVirtual = true;
+            fil->NextToken();
+        }
         else if (fil->GetKeyword() == Lexer::STACK)
         {
             fil->NextToken();
@@ -134,6 +139,8 @@ void Section::Resolve(AsmFile *fil)
 ObjSection *Section::CreateObject(ObjFactory &factory)
 {
     objectSection = factory.MakeSection(name);
+    if (isVirtual)
+        objectSection->SetQuals(objectSection->GetQuals() | ObjSection::equal);
     return objectSection;
 }
 ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFactory &factory)

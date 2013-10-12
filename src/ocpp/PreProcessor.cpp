@@ -46,7 +46,7 @@ bool IsSymbolStartChar(const char *data)
 {
     if (asmMode)
     {
-        return *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
+        return *data == '@' || *data == '_' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
     }
     else
     {

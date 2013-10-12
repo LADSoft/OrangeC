@@ -83,6 +83,7 @@
     <ClCompile Include="ObjMemory.cpp" />
     <ClCompile Include="ObjSection.cpp" />
     <ClCompile Include="ObjSourceFile.cpp" />
+    <ClCompile Include="ObjSymbol.cpp" />
     <ClCompile Include="ObjType.cpp" />
     <ClCompile Include="ObjUtil.cpp" />
   </ItemGroup>

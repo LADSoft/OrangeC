@@ -51,6 +51,9 @@
     <ClCompile Include="ObjIeeeAsciiWrite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ObjSymbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ObjBrowseInfo.h">

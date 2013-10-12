@@ -73,7 +73,7 @@ void LibDictionary::CreateDictionary(LibFiles &files)
                 std::map<ObjString, ObjString>::iterator it = publics.find((*pi)->GetName());
                 if (it != publics.end())
                 {
-                    std::cout << "Warning: public '" << (*pi)->GetName() << "' defined in both module '"
+                    std::cout << "Warning: public '" << (*pi)->GetDisplayName() << "' defined in both module '"
                         << it->second <<"' and '"<<fd->name << "'" << std::endl;
                 }
                 else

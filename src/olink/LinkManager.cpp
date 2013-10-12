@@ -101,7 +101,7 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
         if (publics.find(&test) != publics.end())
         {
             if (toerr)
-                LinkError("Duplicate public " + (*it)->GetName() + " in module " + file->GetName());
+                LinkError("Duplicate public " + (*it)->GetDisplayName() + " in module " + file->GetName());
         }
         else
         {
@@ -544,7 +544,7 @@ bool LinkManager::ExternalErrors()
         }
         if (!found)
         {
-            LinkError("Undefined External " + (*pt)->GetSymbol()->GetName() +
+            LinkError("Undefined External " + (*pt)->GetSymbol()->GetDisplayName() +
                   " in module " + (*pt)->GetFile()->GetName());
             rv = true;
         }

@@ -139,7 +139,7 @@ void LinkMap::ShowSymbol(std::fstream &stream, const MapSymbolData &symbol)
         stream << "   ";
     else
         stream << " X ";
-    stream << symbol.sym->GetSymbol()->GetName() << std::setw(1) << std::endl;
+    stream << symbol.sym->GetSymbol()->GetDisplayName() << std::setw(1) << std::endl;
 }
 void LinkMap::NormalSections(std::fstream &stream)
 {

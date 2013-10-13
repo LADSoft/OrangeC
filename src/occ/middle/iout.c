@@ -1440,7 +1440,7 @@ void put_code(QUAD *q)
     if (q->ans)
         oprintf(icdFile,"\t$%d$ #%d#", q->ans->vol,q->OCP != 0);
     oputc('\n', icdFile);
-    if (q->OCP)
+    if (q->OCP && icdFile)
     {
         int i;
         oprintf(icdFile, "Uses :");

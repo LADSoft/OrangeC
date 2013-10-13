@@ -131,9 +131,9 @@ static void PrintTemps(BITINT *modifiedBy)
     if (modifiedBy)
     {
         oprintf(icdFile, "[");
-        for (i=1; i < cachedTempCount; i+=2)
+        for (i=1; i < cachedTempCount; i)
             if (isset(modifiedBy, i))
-                oprintf(icdFile, "T%d ", i/2);
+                oprintf(icdFile, "T%d ", i);
         oprintf(icdFile, "]");
     }
 }
@@ -1288,8 +1288,6 @@ static void ScanUIVs(void)
             switch (im->offset->type)
             {
                 case en_auto:
-                    if (im->offset->v.sp->storage_class != sc_parameter)
-                        break;
                 case en_global:
                 case en_label:
                 case en_pc:
@@ -1302,7 +1300,6 @@ static void ScanUIVs(void)
             aa = aa->next;
         }
     }
-    complementmap(uivBytes);
 }
 static void MakeAliasLists(void)
 {
@@ -1413,5 +1410,7 @@ void AliasPass2(void)
     MakeAliasLists();
     ScanUIVs();
     ScanMem();
-    DumpAliases();
+    if (icdFile)
+        DumpAliases();
+    complementmap(uivBytes);
 }

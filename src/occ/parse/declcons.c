@@ -138,12 +138,12 @@ static void SetParams(SYMBOL *cons)
     int base = chosenAssembler->arch->retblocksize;
     while (params)
     {
-        assignParam(&base, (SYMBOL *)params->p);
+        assignParam(cons, &base, (SYMBOL *)params->p);
         params = params->next;
     }
     cons->paramsize = base - chosenAssembler->arch->retblocksize;
 }
-static SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
+SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
 {
     SYMBOL *funcs = search(ovl->name, basetype(sp->tp)->syms);
     ovl->parentClass = sp;
@@ -151,7 +151,8 @@ static SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
     ovl->linkage = lk_inline;
     ovl->defaulted = TRUE;
     ovl->access = ac_public;
-    SetLinkerNames(ovl, lk_cdecl);
+    if (!ovl->decoratedName)
+        SetLinkerNames(ovl, lk_cdecl);
     if (!funcs)
     {
         TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
@@ -1073,6 +1074,22 @@ static BOOL conditionallyDeleteCopyAssignment(SYMBOL *func, BOOL move)
     }
     return FALSE;
 }
+void createConstructorsForLambda(SYMBOL *sp)
+{
+    SYMBOL *newcons;
+    declareDestructor(sp);
+    newcons = declareConstructor(sp, TRUE, FALSE); // default
+    newcons->deleted = TRUE;
+    newcons = declareConstructor(sp, FALSE, FALSE); // copy
+    conditionallyDeleteCopyConstructor(newcons, FALSE);
+    newcons = declareAssignmentOp(sp, FALSE);
+    newcons->deleted = TRUE;
+    if (!isMoveConstructorDeleted(sp))
+    {
+        newcons = declareConstructor(sp, FALSE, TRUE);
+        newcons->deleted = isMoveAssignmentDeleted(sp);
+    }
+}
 void createDefaultConstructors(SYMBOL *sp)
 {
     SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
@@ -1937,9 +1954,11 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
             while (*p) p = &(*p)->next;
             *p = x;
         }
+        /*
         e1 = doinline(params, dest1);
         if (e1)
             *exp = e1;
+        */
     }
     else
     {

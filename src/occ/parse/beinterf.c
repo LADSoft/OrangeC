@@ -49,6 +49,10 @@ TYPE stdvoid =
 {
     bt_void, 0
 } ;
+TYPE stdauto =
+{
+    bt_auto, 0
+} ;
 TYPE stdfunc =
 {
     bt_func, 0, &stdvoid
@@ -538,6 +542,8 @@ int getSize(enum e_bt type)
 int getBaseAlign(enum e_bt type)
 {
     TYPE tp ;
+    if (type == bt_auto)
+        type = bt_struct;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
     return basesize(chosenAssembler->arch->type_align, &tp);    
 }

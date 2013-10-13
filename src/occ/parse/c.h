@@ -43,6 +43,7 @@
 #define CI_CAST 2
 #define CI_NEW 3
 #define CI_DELETE 4
+#define CI_FUNC (openpa+3)
 #define CI_NEWA (compl+1+3)
 #define CI_DELETEA (compl+2+3)
 #define CI_LIT (compl + 3+3)
@@ -381,6 +382,7 @@ typedef struct sym
     struct _imode_ *imvalue;
     struct _im_list *imind;
     struct _imode_ *imstore;
+    enum e_cm lambdaMode;
     INLINEFUNC inlineFunc;
 #ifdef PARSER_ONLY
     int      ccEndLine;      /* end line for code completion */
@@ -441,6 +443,8 @@ typedef struct sym
         unsigned trivialCons : 1; /* constructor is trivial */
         unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
         unsigned stackblock : 1; // stacked structure in C++ mode
+        unsigned islambda : 1; // lambda closure struct
+        unsigned omitFrame : 1; // true if should omit the frame pointer
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -465,6 +469,33 @@ typedef struct sym
     /* Type declarations */
     struct type *tp;
 } SYMBOL;
+
+typedef struct __lambda
+{
+    struct __lambda *prev, *next;
+    enum e_cm { cmNone, cmValue, cmRef, cmThis } captureMode;
+    BOOL isMutable;
+    BOOL captureThis;
+    HASHTABLE *captured;
+    SYMBOL *cls;
+    SYMBOL *func;
+    SYMBOL *lthis;
+    TYPE *functp;
+    HASHREC *funcargs;
+    SYMBOL *enclosingFunc;
+    HASHREC *oldSyms;
+    HASHREC *oldTags;
+    TYPE *rv;
+    int index;
+} LAMBDA;
+
+typedef struct __lambdasp
+{
+    char *name;
+    SYMBOL *sym;
+    SYMBOL *parent;
+    LAMBDA *enclosing;
+} LAMBDASP;
 
 typedef struct _memberInitializers
 {

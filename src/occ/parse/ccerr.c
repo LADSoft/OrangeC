@@ -423,7 +423,15 @@ static struct {
 {"Must call or take the address of a member function", ERROR},
 {"Need numeric expression", ERROR },
 {"Identifier '%s' cannot have a type qualifier", ERROR },
-
+{"Lambda function outside function scope cannot capture variables", ERROR },
+{"Invalid lambda capture mode", ERROR },
+{"Capture item listed multiple times", ERROR },
+{"Explicit capture blocked", ERROR },
+{"Implicit capture blocked", ERROR },
+{"Cannot default paramaters of lambda function", ERROR },
+{"Cannot capture this", ERROR },
+{"Must capture variables with 'auto' storage class or 'this'", ERROR },
+{"Lambda function must have body", ERROR },
 #endif
 } ;
 int total_errors;
@@ -1627,6 +1635,8 @@ static int checkDefaultExpression(EXPRESSION *node)
                     args = args->next;
                 }
             }
+            if (fp->sp->parentClass && fp->sp->parentClass->islambda)
+                rv |= 2;
             break;
         case en_stmt:
             break;
@@ -1644,10 +1654,14 @@ void checkDefaultArguments(SYMBOL *spi)
     {
         r |= checkDefaultExpression(p->exp);
         p = p->next;
-    }    
+    }
     if (r & 1)
     {
         error(ERR_NO_LOCAL_VAR_OR_PARAMETER_DEFAULT_ARGUMENT);
+    }
+    if (r & 2)
+    {
+        error(ERR_LAMBDA_CANNOT_CAPTURE);
     }
 }
 #endif

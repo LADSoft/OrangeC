@@ -198,6 +198,9 @@
     <ClCompile Include="parse\declcons.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="parse\lambda.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parse\beinterf.h">

@@ -1063,26 +1063,16 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                     ->storage_class == sc_global)
                     sp = sp->value.classdata.gdeclare;
                     */
-                if (sp->storage_class == sc_global || sp->storage_class ==
+                if ((xseg & 0xc0000000) || sp->storage_class == sc_global || sp->storage_class ==
                     sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads)
                 {
                     if (rel)
                     {
-                    /*
-                        if (iseg == curseg)
-                        {
-                            sprintf(buf, "%X", sp->offset - fixup
-                                ->address - 4);
-                        }
-                        else
-                    */
-                        {
-                            sprintf(buf, "R%X,%X,+,4,-,P,-", xseg, sp->offset + offs);
-                        }
+                        sprintf(buf, "R%X,%X,+,4,-,P,-", xseg & ~0xc0000000, sp->offset + offs);
                     }
                     else
                     {
-                        sprintf(buf, "R%X,%X,+", xseg, sp->offset + offs);
+                        sprintf(buf, "R%X,%X,+", xseg & ~0xc0000000, sp->offset + offs);
                     }
                     /* segment relative */
                 }
@@ -1156,7 +1146,7 @@ static long putlr(FIXUP *p, EMIT_LIST *s, int curseg, int offs)
     char buf[512];
     link_Fixups(buf, p, s, curseg, offs);
     if (strstr(buf, "R0"))
-        printf("hi");
+        diag("putlr: invalid segment");
     emit_record_ieee("LR(%s,%X).\r\n", buf, 4);
     return (long)(4);
 }

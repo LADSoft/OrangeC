@@ -2965,6 +2965,7 @@ int fold_const(EXPRESSION *node)
             }
             break;
         case en_stmt:
+            /*
             if (node->v.stmt->type == st_block)
             {
                 STATEMENT *st = node->v.stmt->lower;
@@ -2982,6 +2983,7 @@ int fold_const(EXPRESSION *node)
                     }
                 }
             }
+            */
             break;
     }
     return rv;

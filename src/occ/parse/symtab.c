@@ -266,7 +266,7 @@ SYMBOL *search(char *name, HASHTABLE *table)
             return (SYMBOL *)(*p)->p;
         table = table->next;
     }
-    return 0;
+    return NULL;
 }
 SYMBOL *searchOverloads(char *name, HASHTABLE *table)
 {

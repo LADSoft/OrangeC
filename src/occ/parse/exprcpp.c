@@ -72,6 +72,7 @@ extern char *overloadXlateTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern LIST *structSyms;
 extern SYMBOL *enumSyms;
+extern LAMBDA *lambdas;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -185,13 +186,41 @@ void getThisType(SYMBOL *sym, TYPE **tp)
 EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp)
 {
     EXPRESSION *en;
-    if (structSyms)
+    
+    if (structSyms) // lambdas will be caught by this too
     {
-        SYMBOL *enclosing = (SYMBOL *)structSyms->data;
+        SYMBOL *enclosing;
         if (funcsp)
             en = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
         else
             en = intNode(en_thisshim, 0);
+        if (lambdas && !memberSym->parentClass->islambda)
+        {
+            if (!lambdas->lthis || !lambdas->captured)
+            {
+                en = intNode(en_c_i, 0);
+                errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+            }
+            else
+            {
+                SYMBOL *sp = search("$this", lambdas->cls->tp->syms);
+                enclosing = basetype(lambdas->lthis->tp)->btp->sp;
+                if (sp)
+                {
+                    deref(&stdpointer, &en);
+                    en = exprNode(en_add, en, intNode(en_c_i, sp->offset));
+                }
+                else
+                {
+                    diag("getMemberBase: cannot find lambda this");
+                }
+                  
+            }
+        }
+        else
+        {
+            enclosing = (SYMBOL *)structSyms->data;
+        }
         deref(&stdpointer, &en);
         if (enclosing != memberSym->parentClass)
         {
@@ -236,15 +265,89 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp)
     }
     return rv;
 }
+static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
+{
+    SYMBOL *sp = basetype(*tp)->sp;
+    if (!other || isarithmetic(other))
+    {
+        SYMBOL *cst = integer ? lookupIntCast(sp, other ? other : &stdint) 
+                              : lookupArithmeticCast(sp, other ? other : &stddouble);
+        if (cst)
+        {
+            FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
+            EXPRESSION *e1;
+            
+            DerivedToBase(cst->parentClass->tp, *tp, exp);
+            params->fcall = varNode(en_pc, cst);
+            params->thisptr = *exp;
+            params->thistp = Alloc(sizeof(TYPE));
+            params->thistp->type = bt_pointer;
+            params->thistp->btp = cst->parentClass->tp;
+            params->thistp->size = getSize(bt_pointer);
+            params->functp = cst->tp;
+            params->sp = cst;
+            params->ascall = TRUE;
+            /*
+            if (cons1->linkage == lk_inline)  
+            {
+                e1 = doinline(params, cons1);
+            }
+            else
+            */
+            {
+                e1 = Alloc(sizeof(EXPRESSION));
+                e1->type = en_func;
+                e1->v.func = params;
+                cst->genreffed = TRUE;
+            }
+            *exp = e1;
+            cast(other, exp);
+            *tp = basetype(cst->tp)->btp;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
 void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
 {
     if (cparams.prm_cplusplus && isstructured(*tp))
     {
-        SYMBOL *sp = basetype(*tp)->sp;
-        if (!other || isarithmetic(other))
+        if (!castToArithmeticInternal(integer, tp, exp, kw, other))
         {
-            SYMBOL *cst = integer ? lookupIntCast(sp, other ? other : &stdint) 
-                                  : lookupArithmeticCast(sp, other ? other : &stddouble);
+            // failed at conversion
+            if (kw >= kw_new && kw <= compl)
+            {
+                // LHS, put up an operator whatever message
+                char buf[256];
+                char tbuf[256];
+                tbuf[0] = 0;
+                typeToString(tbuf, *tp);
+                if (other)
+                {
+                    strcat(tbuf, ", ");
+                    typeToString(tbuf+strlen(tbuf), other);
+                }
+                sprintf(buf, "operator %s(%s)", overloadXlateTab[kw - kw_new + CI_NEW], tbuf);
+                errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
+            }
+            else
+            {
+                // otherwise RHS, do a can't convert message
+                if (!isarithmetic(other))
+                    other = &stdint;
+                errortype(ERR_CANNOT_CONVERT_TYPE, *tp, other);
+            }
+        }
+    }
+}
+BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
+{
+    if (cparams.prm_cplusplus && isstructured(*tp))
+    {
+        SYMBOL *sp = basetype(*tp)->sp;
+        if (ispointer(other) || basetype(other)->type == bt_memberptr)
+        {
+            SYMBOL *cst = lookupPointerCast(sp, other) ;
             if (cst)
             {
                 FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
@@ -274,82 +377,86 @@ void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, T
                     cst->genreffed = TRUE;
                 }
                 *exp = e1;
-                cast(other, exp);
+                if (ispointer(other))
+                {
+                    cast(other, exp);
+                }
+                else
+                {
+                    SYMBOL *retsp = makeID(sc_auto, other, NULL, AnonymousName());
+                    retsp->allocate = TRUE;
+                    retsp->used = retsp->assigned = TRUE;
+                    SetLinkerNames(retsp, lk_cdecl);
+                    insert(retsp, localNameSpace->syms);
+                    params->returnSP = retsp;
+                    params->returnEXP = varNode(en_auto, retsp);
+                }
                 *tp = basetype(cst->tp)->btp;
-                return;
+                return TRUE;
             }
-        }
-        // failed at conversion
-        if (kw >= kw_new && kw <= compl)
-        {
-            // LHS, put up an operator whatever message
-            char buf[256];
-            char tbuf[256];
-            tbuf[0] = 0;
-            typeToString(tbuf, *tp);
-            if (other)
-            {
-                strcat(tbuf, ", ");
-                typeToString(tbuf+strlen(tbuf), other);
-            }
-            sprintf(buf, "operator %s(%s)", overloadXlateTab[kw - kw_new + CI_NEW], tbuf);
-            errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);
-        }
-        else
-        {
-            // otherwise RHS, do a can't convert message
-            if (!isarithmetic(other))
-                other = &stdint;
-            errortype(ERR_CANNOT_CONVERT_TYPE, *tp, other);
         }
     }
+    return FALSE;
 }
 BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
 {
     if (isstructured(src))
     {
-        SYMBOL *sp = basetype(src)->sp;
-        SYMBOL *cst = lookupSpecificCast(sp, *tp);
-        if (cst)
+        if (isstructured(*tp))
         {
-            FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
-            EXPRESSION *e1;
-            DerivedToBase(cst->parentClass->tp, src, exp);
-            params->fcall = varNode(en_pc, cst);
-            params->thisptr = *exp;
-            params->thistp = Alloc(sizeof(TYPE));
-            params->thistp->type = bt_pointer;
-            params->thistp->size = getSize(bt_pointer);
-            params->thistp->btp = cst->parentClass->tp;
-            params->functp = cst->tp;
-            params->sp = cst;
-            params->ascall = TRUE;
-            if (isstructured(*tp))
+            SYMBOL *sp = basetype(src)->sp;
+            SYMBOL *cst = lookupSpecificCast(sp, *tp);
+            if (cst)
             {
-                SYMBOL *av = anonymousVar(sc_auto, *tp);
-                EXPRESSION *ev = varNode(en_auto, av);
-                insert(av, localNameSpace->syms);
-                params->returnEXP = ev;
-                params->returnSP = sp;
-                callDestructor(*tp, &ev, NULL, TRUE);
-                initInsert(&av->dest, *tp, exp, 0, TRUE);
+                FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
+                EXPRESSION *e1;
+                DerivedToBase(cst->parentClass->tp, src, exp);
+                params->fcall = varNode(en_pc, cst);
+                params->thisptr = *exp;
+                params->thistp = Alloc(sizeof(TYPE));
+                params->thistp->type = bt_pointer;
+                params->thistp->size = getSize(bt_pointer);
+                params->thistp->btp = cst->parentClass->tp;
+                params->functp = cst->tp;
+                params->sp = cst;
+                params->ascall = TRUE;
+                if (isstructured(*tp))
+                {
+                    SYMBOL *av = anonymousVar(sc_auto, *tp);
+                    EXPRESSION *ev = varNode(en_auto, av);
+                    insert(av, localNameSpace->syms);
+                    params->returnEXP = ev;
+                    params->returnSP = sp;
+                    callDestructor(*tp, &ev, NULL, TRUE);
+                    initInsert(&av->dest, *tp, exp, 0, TRUE);
+                }
+                /*
+                if (cons1->linkage == lk_inline)  
+                {
+                    e1 = doinline(params, cons1);
+                }
+                else
+                */
+                {
+                    e1 = Alloc(sizeof(EXPRESSION));
+                    e1->type = en_func;
+                    e1->v.func = params;
+                    cst->genreffed = TRUE;
+                }
+                *exp = e1;
+                DerivedToBase(*tp, basetype(cst)->btp, exp);
+                return TRUE;
             }
-            /*
-            if (cons1->linkage == lk_inline)  
-            {
-                e1 = doinline(params, cons1);
-            }
-            else
-            */
-            {
-                e1 = Alloc(sizeof(EXPRESSION));
-                e1->type = en_func;
-                e1->v.func = params;
-                cst->genreffed = TRUE;
-            }
-            *exp = e1;
-            DerivedToBase(*tp, basetype(cst)->btp, exp);
-            return TRUE;
+        }
+        else if (isarithmetic(*tp))
+        {
+            TYPE *tp1 = src;
+            return castToArithmeticInternal(FALSE, &tp1, exp, (enum e_kw)-1, *tp);
+        }
+        else if (ispointer(*tp) || basetype(*tp)->type == bt_memberptr)
+        {
+            TYPE *tp1 = src;
+            return castToPointer(&tp1, exp, (enum e_kw)-1, *tp);
         }
     }
     return FALSE;   

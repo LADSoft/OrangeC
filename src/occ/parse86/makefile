@@ -96,6 +96,7 @@ EXE_dependencies = \
     help.obj \
     init.obj \
     inline.obj \
+    lambda.obj \
     lex.obj \
     list.obj \
     mangle.obj \

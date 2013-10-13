@@ -80,7 +80,7 @@ static LIST *mpthunklist;
 static int breaklab;
 static int contlab;
 
-void genstmt(STATEMENT *stmt, SYMBOL *funcsp);
+IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp);
 
 void genstmtini(void)
 {
@@ -465,12 +465,13 @@ void gen_dbgblock(int start)
 }
 /*-------------------------------------------------------------------------*/
 
-void genstmt(STATEMENT *stmt, SYMBOL *funcsp)
+IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
 /*
  *      genstmt will generate a statement and follow the next pointer
  *      until the block is generated.
  */
 {
+    IMODE *rv = NULL;
     while (stmt != 0)
     {
         switch (stmt->type)
@@ -485,7 +486,7 @@ void genstmt(STATEMENT *stmt, SYMBOL *funcsp)
 /*				gen_tryblock(stmt->label); */
                 break;
             case st_block:
-                genstmt(stmt->lower, funcsp);
+                rv = genstmt(stmt->lower, funcsp);
                 genstmt(stmt->blockTail, funcsp);
                 break;
             case st_label:
@@ -511,7 +512,8 @@ void genstmt(STATEMENT *stmt, SYMBOL *funcsp)
 */
             case st_expr:
             case st_declare:
-                gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
+                if (stmt->select)
+                    rv = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
                 break;
             case st_return:
                 genreturn(stmt, funcsp, 0, 0, NULL);
@@ -543,6 +545,7 @@ void genstmt(STATEMENT *stmt, SYMBOL *funcsp)
         }
         stmt = stmt->next;
     }
+    return rv;
 }
 
 /*-------------------------------------------------------------------------*/

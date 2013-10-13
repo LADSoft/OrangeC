@@ -54,6 +54,7 @@ extern TYPE stdchar32tptr;
 extern TYPE stdint;
 extern TYPE stdvoid;
 extern TYPE stdpointer;
+extern int startlab, retlab;
 
 typedef struct _startups_
 {
@@ -327,7 +328,10 @@ static void dumpDynamicInitializers(void)
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         SetLinkerNames(funcsp, lk_none);
+        startlab = nextLabel++;
+        retlab = nextLabel++;
         genfunc(funcsp);
+        startlab = retlab = 0;
         startupseg();
         gensrref(funcsp, 32);
     }
@@ -363,7 +367,10 @@ static void dumpTLSInitializers(void)
         }
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
+        startlab = nextLabel++;
+        retlab = nextLabel++;
         genfunc(funcsp);
+        startlab = retlab = 0;
         tlsstartupseg();
         gensrref(funcsp, 32);
     }
@@ -394,7 +401,10 @@ static void dumpDynamicDestructors(void)
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         SetLinkerNames(funcsp, lk_none);
+        startlab = nextLabel++;
+        retlab = nextLabel++;
         genfunc(funcsp);
+        startlab = retlab = 0;
         rundownseg();
         gensrref(funcsp, 32);
     }
@@ -428,7 +438,10 @@ static void dumpTLSDestructors(void)
 
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
+        startlab = nextLabel++;
+        retlab = nextLabel++;
         genfunc(funcsp);
+        startlab = retlab = 0;
         tlsrundownseg();
         gensrref(funcsp, 32);
     }
@@ -581,7 +594,10 @@ static int dumpInit(SYMBOL *sp, INITIALIZER *init)
         if (!IsConstantExpression(exp, FALSE))
         {
             if (cparams.prm_cplusplus)
+            {
                 insertDynamicInitializer(sp, init);
+                return 0;
+            }
             else
                 diag("dumpsym: unknown constant type");
         }
@@ -641,6 +657,7 @@ static int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     else if (cparams.prm_cplusplus)
                     {
                         insertDynamicInitializer(sp, init);
+                        return 0;
                     }
                     else
                     {
@@ -956,6 +973,10 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
     }
     else
     {
+        if (cparams.prm_cplusplus && isarithmetic(itype) && isstructured(tp))
+        {
+            castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype);
+        }
         if (isstructured(tp))
             error(ERR_ILL_STRUCTURE_ASSIGNMENT);
         else if (ispointer(tp))
@@ -1057,6 +1078,10 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
     }
     if (tp)
     {
+        if (cparams.prm_cplusplus && isstructured(tp))
+        {
+            castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+        }
         if (isstructured(tp))
             error(ERR_ILL_STRUCTURE_ASSIGNMENT);
         else if (!ispointer(tp) && !isfunction(tp) && !isint(tp))
@@ -1102,9 +1127,16 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                 error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
 
         }
-        else if (!comparetypes(itype, tp, TRUE))
+        else 
         {
-            errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+            if (cparams.prm_cplusplus && isstructured(tp))
+            {
+                castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+            }
+            if (!comparetypes(itype, tp, TRUE))
+            {
+                errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+            }
         }
     }
     else
@@ -2139,7 +2171,7 @@ static LEXEME *initialize_bit(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc
 static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
                                      enum e_sc sc, TYPE *itype, INITIALIZER **init, SYMBOL *sp)
 {
-    if (MATCHKW(lex, openbr))
+    if (MATCHKW(lex, begin))
     {
         // later this will be an initializer list
         assert(0);
@@ -2458,6 +2490,17 @@ BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams)
     }
     return rv;
 }
+static BOOL hasData(TYPE *tp)
+{
+    HASHREC *hr = basetype(tp)->syms->table[0];
+    while (hr)
+    {
+        if (((SYMBOL *)hr->p)->tp->size)
+            return TRUE;
+        hr = hr->next;
+    }
+    return FALSE;
+}
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in)
 {
     TYPE *tp;
@@ -2655,11 +2698,11 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         {
             if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member)
             {
-                if (!isstructured(tp) || !cparams.prm_cplusplus || basetype(tp)->sp->trivialCons)
+                if (!isstructured(tp) || !cparams.prm_cplusplus || basetype(tp)->sp->trivialCons && hasData(tp))
                     errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
             }
         }
-        else if (isstructured(tp) && basetype(tp)->sp->trivialCons)
+        else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp))
         {
             errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
         }

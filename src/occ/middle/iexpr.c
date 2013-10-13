@@ -1402,6 +1402,7 @@ IMODE *gen_trapcall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 }
 IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
 {
+    IMODE *rv;
     STORETEMPHASH *holdst[DAGSIZE];
     STORETEMPHASH *holdld[DAGSIZE];
     STORETEMPHASH *holdim[DAGSIZE];
@@ -1414,13 +1415,15 @@ IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
     memcpy(holdim, immedHash, sizeof(immedHash));
     memcpy(holdcast, castHash, sizeof(castHash));
     /* relies on stmt only being used for inlines */
-    genstmt(node->v.stmt, funcsp);	
+    rv = genstmt(node->v.stmt, funcsp);	
     memcpy(storeHash, holdst, sizeof(storeHash));
     memcpy(loadHash, holdld, sizeof(loadHash));
     memcpy(name_value_hash, holdnv, sizeof(name_value_hash));
     memcpy(immedHash, holdim, sizeof(immedHash));
     memcpy(castHash, holdcast, sizeof(castHash));
-    return gen_expr( funcsp, node->left, 0, natural_size(node->left));
+    if (node->left)
+        rv = gen_expr( funcsp, node->left, 0, natural_size(node->left));
+    return rv;
 }
 /*-------------------------------------------------------------------------*/
 

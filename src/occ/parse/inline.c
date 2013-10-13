@@ -41,6 +41,7 @@ extern ARCH_ASM *chosenAssembler;
 extern TYPE stdint;
 extern NAMESPACEVALUES *localNameSpace;
 extern TYPE stdpointer;
+extern int startlab, retlab;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
 
@@ -77,20 +78,29 @@ static void UndoPreviousCodegen(SYMBOL *sym)
 void dumpInlines(void)
 {
 #ifndef PARSER_ONLY
-
-    LIST *funcList = inlineHead, *vtabList;
+    BOOL done;
+    LIST *vtabList;
     cseg();
-    while (funcList)
+    do
     {
-        SYMBOL *sym = (SYMBOL *)funcList->data;
-        if (sym->genreffed && sym->inlineFunc.stmt)
+        LIST *funcList = inlineHead;
+        done = TRUE;
+        while (funcList)
         {
-            sym->genreffed = FALSE;
-            UndoPreviousCodegen(sym);
-            genfunc(sym);
+            SYMBOL *sym = (SYMBOL *)funcList->data;
+            if (sym->genreffed && sym->inlineFunc.stmt)
+            {
+                sym->genreffed = FALSE;
+                UndoPreviousCodegen(sym);
+                startlab = nextLabel++;
+                retlab = nextLabel++;
+                genfunc(sym);
+                done = FALSE;
+            }
+            funcList = funcList->next;
         }
-        funcList = funcList->next;
-    }
+    } while (!done);
+    startlab = retlab = 0;
     vtabList = inlineVTabHead;
     while (vtabList)
     {
@@ -372,6 +382,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
             temp->v.ad->third = inlineexpr(node->v.ad->third, FALSE);
             break;
         case en_func:
+            temp->v.func = NULL;
             fp = node->v.func;
             if (fp->sp->linkage == lk_inline)
             {
@@ -393,12 +404,12 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
                 else
                 {
                     inlinesp_list[inlinesp_count++] = fp->sp;
-                    temp = doinline(fp, NULL); /* discarding our allocation */
+                    temp->v.func = doinline(fp, NULL); /* discarding our allocation */
                     inlinesp_count--;
                     
                 }
             }
-            else
+            if (temp->v.func == NULL)
             {
                 ARGLIST *args = fp->arguments;
                 ARGLIST **p ;
@@ -414,6 +425,8 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
                     args = args->next;
                     p = &(*p)->next;
                 }
+                if (temp->v.func->thisptr)
+                    temp->v.func->thisptr = inlineexpr(temp->v.func->thisptr, FALSE);
             }
             break;
         case en_stmt:
@@ -902,7 +915,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
         /* optimization for simple inline functions that only have
          * one return statement, don't save to an intermediate variable
          */
-        newExpression->left = scanReturn(stmt, basetype(params->sp->tp)->btp);
+        scanReturn(stmt, basetype(params->sp->tp)->btp);
     }
     else
     {

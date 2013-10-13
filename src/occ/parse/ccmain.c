@@ -440,6 +440,7 @@ void compile(void)
     declare_init();
     init_init();
     inlineinit();
+    lambda_init();
     statement_ini();
     syminit();
     preprocini(infile, inputFile);

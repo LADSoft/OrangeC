@@ -100,6 +100,8 @@ void declare_init(void);
 void checkOperatorArgs(SYMBOL *sp);
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype);
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *sp);
+SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
+void createConstructorsForLambda(SYMBOL *sp);
 void createDefaultConstructors(SYMBOL *sp);
 void destructBlock(EXPRESSION **exp, HASHREC *hr);
 void thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers);
@@ -129,6 +131,7 @@ void warnCPPWarnings(SYMBOL *sym, BOOL localClassWarnings);
 BOOL usesVTab(SYMBOL *sym);
 LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defaultAccess);
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
+LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, enum e_sc storage_class);
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
@@ -149,6 +152,8 @@ void checkscope(TYPE *tp1, TYPE *tp2);
 void checkauto(TYPE *tp);
 void qualifyForFunc(SYMBOL *sym, TYPE **tp);
 void getThisType(SYMBOL *sym, TYPE **tp);
+SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit);
+LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp);
 EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp);
 EXPRESSION *getMemberNode(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp);
 EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp);
@@ -157,6 +162,7 @@ BOOL doDynamicCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *func
 BOOL doStaticCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst);
 BOOL doConstCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
 BOOL doReinterpretCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst);
+BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other);
 void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other);
 BOOL cppCast(TYPE *src, TYPE **dest, EXPRESSION **exp);
 LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp);
@@ -603,7 +609,7 @@ int gcs_compare(void const *left, void const *right);
 void genxswitch(STATEMENT *stmt, SYMBOL *funcsp);
 void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE *allocaAP);
 void gen_tryblock(void *val);
-void genstmt(STATEMENT *stmt, SYMBOL *funcsp);
+IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp);
 SYMBOL *gen_mp_virtual_thunk(SYMBOL *vsp);
 SYMBOL *gen_vsn_virtual_thunk(SYMBOL *func, int ofs);
 void optimize(SYMBOL *funcsp);
@@ -779,7 +785,7 @@ STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex);
 STATEMENT *stmtNode(LEXEME *lex, BLOCKDATA *parent, enum e_stmt stype);
 int insertLabel(BLOCKDATA *parent);
 LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent);
-void assignParam(int *base, SYMBOL *param);
+void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param);
 LEXEME *body (LEXEME *lex, SYMBOL *funcsp);
 
                               /* Symtab.c */
@@ -807,8 +813,10 @@ BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, BOOL asAddress);
 BOOL checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);
 SYMBOL *LookupSym(char *name);
 SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp);
+SYMBOL *lookupNonspecificCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp);
+SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOL toErr, 
                               BOOL maybeConversion);

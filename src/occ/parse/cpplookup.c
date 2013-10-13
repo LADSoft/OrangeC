@@ -45,7 +45,7 @@ extern TYPE stdint;
 extern LIST *structSyms;
 extern SYMBOL *enumSyms;
 extern char *overloadNameTab[];
-
+extern LAMBDA *lambdas;
 #ifndef CPREPROCESSOR
 extern ARCH_DEBUG *chosenDebugger;
 extern FILE *listFile;
@@ -56,6 +56,7 @@ HASHTABLE *CreateHashTable(int size);
 #define F_INTEGER 2
 #define F_ARITHMETIC 4
 #define F_STRUCTURE 8
+#define F_POINTER 16
 
 static SYMBOL *getUserConversion(int flags,
                               TYPE *tpp, TYPE *tpa, EXPRESSION *expa,
@@ -473,13 +474,32 @@ static SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, B
         rv = search(name, localNameSpace->syms);
         if (!rv)
             rv = search(name, localNameSpace->tags);
+        if (lambdas)
+        {
+            LAMBDA *srch = lambdas;
+            while (srch && !rv)
+            {
+                rv = search(name, srch->oldSyms);
+                if (!rv)
+                    rv = search(name, srch->oldTags);
+                srch = srch->next;
+            }
+        }
         if (!rv)
             rv = namespacesearch(name, localNameSpace, FALSE, tagsOnly);
         if (!rv && enumSyms)
             rv = search(name, enumSyms->tp->syms);
         if (!rv)
         {
-            rv = classsearch(name, tagsOnly);
+            if (lambdas)
+            {
+                if (lambdas->lthis)
+                {
+                    rv = search(name, basetype(lambdas->lthis->tp)->btp->syms);
+                }
+            }
+            if (!rv)
+                rv = classsearch(name, tagsOnly);
             if (rv)
                 rv->throughClass = TRUE;
         }
@@ -933,6 +953,10 @@ SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp)
 {
     return getUserConversion(F_STRUCTURE, tp, sp->tp, NULL, NULL, NULL, NULL);
 }
+SYMBOL *lookupNonspecificCast(SYMBOL *sp, TYPE *tp)
+{
+    return getUserConversion(0, tp, sp->tp, NULL, NULL, NULL, NULL);
+}
 SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp)
 {
     return getUserConversion(F_INTEGER, tp, sp->tp, NULL, NULL, NULL, NULL);
@@ -940,6 +964,10 @@ SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp)
 SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp)
 {
     return getUserConversion(F_ARITHMETIC, tp, sp->tp, NULL, NULL, NULL, NULL);
+}
+SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp)
+{
+    return getUserConversion(F_POINTER, tp, sp->tp, NULL, NULL, NULL, NULL);
 }
 static LIST *structuredArg(SYMBOL *sp, LIST *in, TYPE *tp)
 {
@@ -1693,6 +1721,7 @@ static SYMBOL *getUserConversion(int flags,
                     if (isref(tpc))
                         tpc = basetype(tpc)->btp;
                     if ((flags & F_INTEGER) && !isint(tpc)
+                        || (flags & F_POINTER) && !ispointer(tpc) && basetype(tpc)->type != bt_memberptr
                         || (flags & F_ARITHMETIC) && !isarithmetic(tpc)
                         || (flags & F_STRUCTURE) && !isstructured(tpc))
                     {
@@ -1814,7 +1843,7 @@ static void getQualConversion(TYPE *tpp, TYPE *tpa, int *n, enum e_cvsrn *seq)
     BOOL hasconst = TRUE, hasvol = TRUE;
     BOOL sameconst = TRUE, samevol = TRUE;
     BOOL first = TRUE;
-    while (tpa && tpp)
+    while (tpa && tpp && tpa->type == bt_pointer && tpp->type == bt_pointer)
     {
         if (isconst(tpp) != isconst(tpa))
         {
@@ -1844,7 +1873,7 @@ static void getQualConversion(TYPE *tpp, TYPE *tpa, int *n, enum e_cvsrn *seq)
         tpa = basetype(tpa)->btp;
         tpp = basetype(tpp)->btp;
     }
-    if (!tpa && !tpp)
+    if (!tpa && !tpp || tpa->type != bt_pointer && tpp->type != bt_pointer)
     {
         if (!sameconst || !samevol)
             seq[(*n)++] = CV_QUALS;

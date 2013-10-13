@@ -67,6 +67,7 @@ extern BOOL setjmp_used;
 extern LIST *structSyms;
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *localNameSpace;
+extern LAMBDA *lambdas;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -153,6 +154,21 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         HASHREC *hr;
         *tp = sp->tp;
         lex = getsym();
+        switch (sp->storage_class)
+        {	
+            case sc_member:
+                sp = lambda_capture(sp, cmThis, FALSE);
+                break;
+            case sc_auto:
+            case sc_register:
+            case sc_parameter:            
+                sp = lambda_capture(sp, cmNone, FALSE);
+                break;
+            case sc_constant:
+                if (ampersand && sp->parent)
+                    sp = lambda_capture(sp, cmNone, FALSE);
+                break;
+        }
         switch (sp->storage_class)
         {	
             case sc_member:
@@ -680,8 +696,12 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 }
                 else 
                 {
-                    if (sp2->mainsym != basetype(typ2)->sp && 
-                            classRefCount(sp2, basetype(typ2)->sp) != 1)
+                    SYMBOL *sp3 = sp2->parentClass, *sp4 = basetype(typ2)->sp;
+                    if (sp3->mainsym)
+                        sp3 = sp3->mainsym;
+                    if (sp4->mainsym)
+                        sp4 = sp4->mainsym;
+                    if (sp3 != sp4 && classRefCount(sp3, sp4) != 1)
                     {
                         errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp2, basetype(typ2)->sp);
                     }
@@ -1285,8 +1305,10 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                 }
                 else if (isstructured(p->tp))
                 {
+                    // arithmetic or pointer
                     TYPE *etp = basetype(sym->tp)->btp;
-                    castToArithmetic(FALSE, &etp, &p->exp, (enum e_kw)-1, p->tp);
+                    if (cppCast(p->tp, &etp, &p->exp))
+                        p->tp = etp;
                     p->exp = createTemporary(sym->tp, p->exp);                        
                 }
                 else
@@ -1295,6 +1317,13 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                     p->exp = createTemporary(sym->tp, p->exp);
                 }
                 p->tp = sym->tp;
+            }
+            else if (isstructured(p->tp))
+            {
+                // arithmetic or pointer
+                TYPE *etp = sym->tp;
+                if (cppCast(p->tp, &etp, &p->exp))
+                    p->tp = etp;
             }
             else if (ispointer(sym->tp) && ispointer(p->tp))
             {
@@ -1396,7 +1425,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         funcparams = Alloc(sizeof(FUNCTIONCALL));
         if (ispointer(tpx))
             tpx = basetype(tpx)->btp;
-        sym = tpx->sp;
+        sym = basetype(tpx)->sp;
         if (sym)
         {
             funcparams->sp = sym;
@@ -1490,6 +1519,20 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         }
     }
 
+    if (!isfunction(*tp))
+    {
+        // might be operator ()
+        if (cparams.prm_cplusplus)
+        {
+            EXPRESSION *exp_arg = exp_cpp;
+            TYPE *tp_arg = tp_cpp;
+            if (insertOperatorParams(funcsp, &tp_cpp, &exp_cpp, funcparams))
+            {
+                *tp = tp_cpp;
+                *exp = exp_cpp;
+            }
+        }
+    }
     {
         HASHTABLE *temp = basetype(*tp)->syms;
         if (temp)
@@ -1513,20 +1556,6 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             lptr = &funcparams->arguments;
             AdjustParams(hr, lptr, operands);
-            if (!isfunction(*tp))
-            {
-                // might be operator ()
-                if (cparams.prm_cplusplus)
-                {
-                    EXPRESSION *exp_arg = exp_cpp;
-                    TYPE *tp_arg = tp_cpp;
-                    if (insertOperatorParams(funcsp, &tp_cpp, &exp_cpp, funcparams))
-                    {
-                        *tp = tp_cpp;
-                        *exp = exp_cpp;
-                    }
-                }
-            }
             if (isfunction(*tp))
             {
                 if (isstructured((*tp)->btp) || basetype((*tp)->btp)->type == bt_memberptr)
@@ -2300,6 +2329,9 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
         case l_kw:
             switch(KW(lex))
             {
+                case openbr:
+                    lex = expression_lambda(lex, funcsp, atp, tp, exp);
+                    break;
                 case classsel:
                 case kw_operator:
                     lex = variableName(lex, funcsp, atp, tp, exp, ampersand);
@@ -2310,7 +2342,36 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     lex = getsym();
                     break;
                 case kw_this:
-                    if (structSyms && funcsp->parentClass)
+                    if (lambdas)
+                    {
+                        lambda_capture(NULL, cmThis, FALSE);
+                        if (lambdas->captureThis)
+                        {
+                            SYMBOL *ths = search("$this", lambdas->cls->tp->syms);
+                            if (ths)
+                            {
+                                TYPE *t1 = Alloc(sizeof(TYPE));
+                                t1->type = bt_pointer;
+                                t1->size = getSize(bt_pointer);
+                                t1->btp = basetype(lambdas->lthis->tp)->btp;
+                                *tp = t1;
+                                *exp = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
+                                deref(&stdpointer, exp);
+                                *exp = exprNode(en_add, *exp, intNode(en_c_i, ths->offset));
+                                deref(&stdpointer, exp);
+                            }
+                            else
+                            {
+                                diag("expression_primary: missing lambda this");
+                            }
+                        }
+                        else
+                        {
+                            *exp = intNode(en_c_i, 0);
+                            *tp = &stdint;
+                        }
+                    }
+                    else if (structSyms && funcsp->parentClass)
                     {
                         getThisType(funcsp, tp);
                         *exp = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr

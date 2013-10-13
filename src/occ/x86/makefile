@@ -124,6 +124,7 @@ EXE_dependencies = \
     issa$(OBJ) \
     istmt$(OBJ) \
     istren$(OBJ) \
+    lambda$(OBJ) \
     lex$(OBJ) \
     list$(OBJ) \
     mangle$(OBJ) \

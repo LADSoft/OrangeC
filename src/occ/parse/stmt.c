@@ -40,7 +40,7 @@
 
 extern ARCH_DEBUG *chosenDebugger;
 extern ARCH_ASM *chosenAssembler;
-extern TYPE stdint;
+extern TYPE stdint, stdvoid;
 extern int stdpragmas;
 extern INCLUDES *includes;
 extern HASHTABLE *labelSyms;
@@ -764,6 +764,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     STATEMENT *st;
     TYPE *tp = NULL;
     EXPRESSION *returnexp = NULL;
+    TYPE *returntype = NULL;
     EXPRESSION *destexp = NULL;
 
     if (funcsp->linkage3 == lk_noreturn)
@@ -817,6 +818,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         // default constructor without param list
                         errorsym(ERR_IMPROPER_USE_OF_TYPEDEF, basetype(tp)->sp);
                     }
+                    returntype = tp1;
                 }
                 else
                 {
@@ -828,6 +830,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     funcparams->arguments->tp = tp1;
                     funcparams->arguments->exp = exp1;
                     maybeConversion = FALSE;
+                    returntype = tp1;
                 }
                 callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion); 
                 returnexp = en;
@@ -844,6 +847,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 {
                     returnexp = exprNode(en_blockassign, en, returnexp);
                     returnexp->size = basetype(tp)->size;
+                    returntype = tp;
                 }
             }
         }
@@ -854,6 +858,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             {
                 error(ERR_EXPRESSION_SYNTAX);
             }
+            returntype = tp;
         }
         if (isref(basetype(funcsp->tp)->btp))
         {
@@ -900,7 +905,16 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st = stmtNode(lex, parent, st_return);
     st->select = returnexp;
     st->destexp = destexp;
-    if (returnexp)
+    // for infering the return type of lambda functions
+    if (tp)
+    {
+        st->returntype = returntype;
+    }
+    else
+    {
+        st->returntype = &stdvoid;
+    }
+    if (returnexp && basetype(funcsp->tp)->btp->type != bt_auto)
     {
         if (tp->type == bt_void)
         {
@@ -1665,9 +1679,10 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     stdpragmas = pragmas;
     return lex;
 }
-void assignParam(int *base, SYMBOL *param)
+void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param)
 {
     TYPE *tp = basetype(param->tp);
+    param->parent = funcsp;
     if (tp->type == bt_void)
         return;
     if (!ispointer(tp) && tp->size <= chosenAssembler->arch->parmwidth)
@@ -1693,7 +1708,7 @@ void assignParam(int *base, SYMBOL *param)
             *base += chosenAssembler->arch->parmwidth - *base % chosenAssembler->arch->parmwidth;
     }
 }
-static void assignCParams(LEXEME *lex, int *base, HASHREC *params, TYPE *rv, BLOCKDATA *block)
+static void assignCParams(LEXEME *lex, SYMBOL *funcsp, int *base, HASHREC *params, TYPE *rv, BLOCKDATA *block)
 {
     if (isstructured(rv))
     {
@@ -1705,18 +1720,18 @@ static void assignCParams(LEXEME *lex, int *base, HASHREC *params, TYPE *rv, BLO
     {
         STATEMENT *s = stmtNode(lex, block, st_varstart);
         s->select = varNode(en_auto, (SYMBOL *)params->p);
-        assignParam(base, (SYMBOL *)params->p);
+        assignParam(funcsp, base, (SYMBOL *)params->p);
         params = params->next;
     }
 }
-static void assignPascalParams(LEXEME *lex, int *base, HASHREC *params, TYPE *rv, BLOCKDATA *block)
+static void assignPascalParams(LEXEME *lex, SYMBOL *funcsp, int *base, HASHREC *params, TYPE *rv, BLOCKDATA *block)
 {
     if (params)
     {
         STATEMENT *s;
         if (params->next)
-            assignPascalParams(lex, base, params->next, rv, block);
-        assignParam(base, (SYMBOL *)params->p);
+            assignPascalParams(lex, funcsp, base, params->next, rv, block);
+        assignParam(funcsp, base, (SYMBOL *)params->p);
         s = stmtNode(lex, block, st_varstart);
         s->select = varNode(en_auto, (SYMBOL *)params->p);
     }
@@ -1727,7 +1742,7 @@ static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
     int base = chosenAssembler->arch->retblocksize;
     if (funcsp->linkage == lk_pascal)
     {
-        assignPascalParams(lex, &base, params, basetype(funcsp->tp)->btp, block);
+        assignPascalParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
     }
     else
     {
@@ -1739,10 +1754,10 @@ static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
         if (funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual)
         {
             // handle 'this' pointer
-            assignParam(&base, (SYMBOL *)params->p);
+            assignParam(funcsp, &base, (SYMBOL *)params->p);
             params = params->next;
         }
-        assignCParams(lex, &base, params, basetype(funcsp->tp)->btp, block);
+        assignCParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
     }
     funcsp->paramsize = base - chosenAssembler->arch->retblocksize;
 }
@@ -1800,6 +1815,10 @@ static void handleInlines(SYMBOL *funcsp)
 }
 LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
 {
+    int oldstartlab = startlab, oldretlab = retlab;
+    BOOL oldsetjmp_used = setjmp_used;
+    BOOL oldfunctionHasAssembly = functionHasAssembly;
+    SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA block;
     STATEMENT *startStmt;
     functionHasAssembly = FALSE;
@@ -1839,6 +1858,10 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
 #ifndef PARSER_ONLY
     localFree();
 #endif
-    theCurrentFunc = NULL;
+    theCurrentFunc = oldtheCurrentFunc;
+    startlab = oldstartlab;
+    retlab = oldretlab;
+    setjmp_used = oldsetjmp_used;
+    functionHasAssembly = oldfunctionHasAssembly;
     return lex;
 }

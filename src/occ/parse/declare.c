@@ -59,6 +59,7 @@ extern TYPE stdvoid;
 extern TYPE stdchar32tptr;
 extern char *overloadNameTab[];
 extern LEXCONTEXT *context;
+extern LAMBDA *lambdas;
 
 #ifndef BORLAND
 extern int wcslen(short *);
@@ -1717,9 +1718,11 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                     }
                     if (extended)
                     {
-                        if (xvalue(exp))
+                        if (!lambdas && xvalue(exp))
                         {
                             TYPE *tp2 = Alloc(sizeof(TYPE));
+                            if (isref(tn))
+                                tn = basetype(tn)->btp;
                             tp2->type = bt_rref;
                             tp2->size = getSize(bt_pointer);
                             tp2->btp = tn;
@@ -1728,6 +1731,16 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                         else if (lvalue(exp))
                         {
                             TYPE *tp2 = Alloc(sizeof(TYPE));
+                            if (isref(tn))
+                                tn = basetype(tn)->btp;
+                            if (lambdas && !lambdas->isMutable)
+                            {
+                                tp2->type = bt_const;
+                                tp2->size = tn->size;
+                                tp2->btp = tn;
+                                tn = tp2;
+                                tp2 = Alloc(sizeof(TYPE));
+                            }
                             tp2->type = bt_lref;
                             tp2->size = getSize(bt_pointer);
                             tp2->btp = tn;
@@ -2182,7 +2195,7 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOL braces)
     }
     return lex;
 }
-static LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, enum e_sc storage_class)
+LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, enum e_sc storage_class)
 {
     SYMBOL *sp = *spin;
     SYMBOL *spi;
@@ -2283,7 +2296,7 @@ static LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYP
                         if (spi->init)
                             checkDefaultArguments(spi);
                     }
-                    if (isfuncptr(spi->tp))
+                    if (isfuncptr(spi->tp) && lvalue(spi->init->exp))
                         error(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT);
                     if (sp->storage_class == sc_typedef)
                         error(ERR_NO_DEFAULT_ARGUMENT_IN_TYPEDEF);
@@ -2896,7 +2909,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
                 lex = getBeforeType(lex, funcsp, &ptype, spi, strSym, nsv, 
                                     storage_class, linkage, linkage2, linkage3, asFriend, FALSE, beforeOnly);
-                if (!ptype || !ispointer(ptype) && !isfunction(ptype) && basetype(ptype)->type != bt_memberptr)
+                if (!ptype || !isref(ptype) && !ispointer(ptype) && !isfunction(ptype) && basetype(ptype)->type != bt_memberptr)
                 {
                     // if here is not a potential pointer to func
                     if (!ptype)
@@ -3271,6 +3284,8 @@ void injectThisPtr(SYMBOL *sp, HASHTABLE *syms)
     HASHREC **hr = &syms->table[0];
     SYMBOL *ths;
     TYPE *type, *tpx;
+    if (*hr && ((SYMBOL *)(*hr)->p)->thisPtr)
+        return;
     type = tpx = Alloc(sizeof(TYPE));
     tpx->type = bt_pointer;
     tpx->size = getSize(bt_pointer);
@@ -3519,6 +3534,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                     {
                         SYMBOL *spi;
                         HASHREC **p;
+                        sp->parent = funcsp; /* function vars have a parent */
                         if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
                         if (storage_class_in == sc_member && structSyms)

@@ -1464,9 +1464,10 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         int v = sizeFromISZ(ISZ_ADDR);
         if (v % chosenAssembler->arch->stackalign)
             v = v + chosenAssembler->arch->stackalign - v % chosenAssembler->arch->stackalign;
-        if (isstructured(f->functp->btp) || basetype(f->functp->btp)->type == bt_memberptr)
+        if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
-            n += v;
+            if (f->returnEXP)
+                n += v;
         }
         if (f->thisptr)
         {
@@ -1489,9 +1490,10 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     }
     if(f->sp->linkage == lk_pascal)
     {
-        if (isstructured(f->functp->btp) || basetype(f->functp->btp)->type == bt_memberptr)
+        if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
-            push_param(f->returnEXP, funcsp);
+            if (f->returnEXP)
+                push_param(f->returnEXP, funcsp);
         }
         genPascalArgs(f->arguments, funcsp);
     }
@@ -1503,10 +1505,10 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         {
             push_param(f->thisptr, funcsp);
         }
-        if (isstructured(f->functp->btp) || basetype(f->functp->btp)->type == bt_memberptr)
+        if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
-            push_param(f->returnEXP, funcsp);
-            
+            if (f->returnEXP)
+                push_param(f->returnEXP, funcsp);        
         }
     }
     /* named function */
@@ -1555,7 +1557,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     push_nesting -= adjust;
     if (!(flags &F_NOVALUE) && !isvoid(f->functp->btp)) {
         /* structures handled by callee... */
-        if (!isstructured(f->functp->btp) && f->functp->btp->type != bt_memberptr)
+        if (!isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
         {
             IMODE *ap1, *ap2;
              int siz1 = sizeFromType(f->functp->btp);
@@ -2333,10 +2335,10 @@ int natural_size(EXPRESSION *node)
             return natural_size(node->left);
         case en_func:
         case en_intcall:
-            if (isstructured(node->v.func->functp->btp) || node->v.func->functp->btp->type == bt_memberptr)
+            if (isstructured(basetype(node->v.func->functp)->btp) || basetype(node->v.func->functp)->btp->type == bt_memberptr)
                 return 0;
             else if (node->v.func->ascall)
-                return sizeFromType(node->v.func->functp->btp);
+                return sizeFromType(basetype(node->v.func->functp)->btp);
             else
                 return ISZ_ADDR;
         case en_substack:

@@ -36,6 +36,7 @@ q.*
 q1.*
 /src/occ/ideprj/*.*
 /src/occ/ideprj/win32
+/src/occ/x86/*.cpp
 /src/debug
 /src/release
 /addon/

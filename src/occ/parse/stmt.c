@@ -1710,12 +1710,6 @@ void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param)
 }
 static void assignCParams(LEXEME *lex, SYMBOL *funcsp, int *base, HASHREC *params, TYPE *rv, BLOCKDATA *block)
 {
-    if (isstructured(rv))
-    {
-        *base += getSize(bt_pointer);
-        if (*base % chosenAssembler->arch->parmwidth)
-            *base += chosenAssembler->arch->parmwidth - *base % chosenAssembler->arch->parmwidth;
-    }
     while (params)
     {
         STATEMENT *s = stmtNode(lex, block, st_varstart);
@@ -1746,10 +1740,12 @@ static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
     }
     else
     {
-        if (isstructured(funcsp->tp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr)
+        if (isstructured(basetype(funcsp->tp)->btp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr)
         {
             // handle structured return values
             base += getSize(bt_pointer);
+            if (base % chosenAssembler->arch->parmwidth)
+                base += chosenAssembler->arch->parmwidth - base % chosenAssembler->arch->parmwidth;
         }
         if (funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual)
         {
@@ -1774,7 +1770,7 @@ static void handleInlines(SYMBOL *funcsp)
          
     if (isstructured(basetype(funcsp->tp)->btp))
     {
-        funcsp->linkage = lk_cdecl;
+        funcsp->noinline = TRUE;
     }
     else
     {
@@ -1786,14 +1782,14 @@ static void handleInlines(SYMBOL *funcsp)
         {
             if (ht->table[0])
             {
-                funcsp->linkage = lk_cdecl;
+                funcsp->noinline = TRUE;
                 break;
             }
             ht = ht->next;
         }
         if (funcsp->inlineFunc.syms->next)
         {
-            funcsp->linkage = lk_cdecl;
+            funcsp->noinline = TRUE;
         }
         if (funcsp->linkage == lk_inline)
         {
@@ -1805,7 +1801,7 @@ static void handleInlines(SYMBOL *funcsp)
                 head = (SYMBOL *)hr->p;
                 if (isstructured(head->tp))
                 {
-                    funcsp->linkage = lk_cdecl;
+                    funcsp->noinline = TRUE;
                     break;
                 }
                 hr = hr->next;
@@ -1837,8 +1833,8 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     assignParameterSizes(lex, funcsp, &block);
     browse_startfunc(funcsp, funcsp->declline);
     lex = compound(lex, funcsp, &block, TRUE);
-    handleInlines(funcsp);
     browse_endfunc(funcsp, lex?lex->line : endline);
+    handleInlines(funcsp);
     checkUnlabeledReferences(&block);
     checkGotoPastVLA(block.head, TRUE);
     funcsp->inlineFunc.stmt = stmtNode(lex, NULL, st_block);

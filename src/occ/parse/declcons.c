@@ -136,6 +136,19 @@ static void SetParams(SYMBOL *cons)
     // c style only
     HASHREC *params = basetype(cons->tp)->syms->table[0];
     int base = chosenAssembler->arch->retblocksize;
+    if (isstructured(basetype(cons->tp)->btp) || basetype(basetype(cons->tp)->btp)->type == bt_memberptr)
+    {
+        // handle structured return values
+        base += getSize(bt_pointer);
+        if (base % chosenAssembler->arch->parmwidth)
+            base += chosenAssembler->arch->parmwidth - base % chosenAssembler->arch->parmwidth;
+    }
+    if (cons->storage_class == sc_member || cons->storage_class == sc_virtual)
+    {
+        // handle 'this' pointer
+        assignParam(cons, &base, (SYMBOL *)params->p);
+        params = params->next;
+    }
     while (params)
     {
         assignParam(cons, &base, (SYMBOL *)params->p);

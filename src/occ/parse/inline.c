@@ -95,6 +95,7 @@ void dumpInlines(void)
                 startlab = nextLabel++;
                 retlab = nextLabel++;
                 genfunc(sym);
+                sym->inlineFunc.stmt = NULL;
                 done = FALSE;
             }
             funcList = funcList->next;
@@ -892,6 +893,8 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!isfunction(params->functp))
         return NULL;
     if (params->sp->linkage != lk_inline)
+        return NULL;
+    if (params->sp->noinline)
         return NULL;
     if (!params->sp->inlineFunc.syms)
         return NULL;

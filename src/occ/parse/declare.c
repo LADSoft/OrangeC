@@ -3920,7 +3920,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 errorstr(ERR_INVALID_STORAGE_CLASS, "static");
                             if (storage_class == sc_member && !cparams.prm_cplusplus)
                                 error(ERR_FUNCTION_NOT_IN_STRUCT);
-                            if (isstructured(sp->tp->btp) || basetype(sp->tp->btp)->type == bt_enum)
+                            if (isstructured(basetype(sp->tp)->btp) || basetype(basetype(sp->tp)->btp)->type == bt_enum)
                                 if (defd)
                                     errorsym(ERR_TYPE_DEFINITION_NOT_ALLOWED_HERE, basetype(sp->tp->btp)->sp);
                             ConsDestDeclarationErrors(sp, notype);

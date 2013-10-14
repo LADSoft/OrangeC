@@ -1558,9 +1558,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             AdjustParams(hr, lptr, operands);
             if (isfunction(*tp))
             {
-                if (isstructured((*tp)->btp) || basetype((*tp)->btp)->type == bt_memberptr)
+                if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {
-                    funcparams->returnSP = anonymousVar(sc_auto, (*tp)->btp);
+                    funcparams->returnSP = anonymousVar(sc_auto, basetype(*tp)->btp);
                     funcparams->returnEXP = varNode(en_auto, funcparams->returnSP);
                 }
                 funcparams->ascall = TRUE;    
@@ -1582,9 +1582,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     if (exp_in)
                         *exp = exp_in;
                 }
-                if (funcparams->sp && isref(funcparams->sp->tp->btp))
+                if (funcparams->sp && isref(basetype(funcparams->sp->tp)->btp))
                 {
-                    deref(basetype(funcparams->sp->tp->btp)->btp, exp);
+                    deref(basetype(basetype(funcparams->sp->tp)->btp)->btp, exp);
                 }
             }
             else

@@ -136,14 +136,7 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
             {
                 if (lambdas->captureThis)
                 {
-                    if (isExplicit)
-                    {
-                        error(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES);
-                    }
-                }
-                else
-                {
-                    BOOL error = FALSE;
+                    BOOL errorflg = FALSE;
                     LAMBDA *check = lambdas;
                     // have to try to replicate the symbol into the current context
                     while (check && !error)
@@ -154,24 +147,24 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
                             {
                                 if (lambdas->prev)
                                 {
-                                    error = TRUE;
+                                    errorflg = TRUE;
                                     errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
                                 }
                             }
                             else
                             {
-                                error = TRUE;
+                                errorflg = TRUE;
                                 errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
                             }
                         }
                         else if (check->captureMode == cmValue && isExplicit)
                         {
-                            error = TRUE;
+                            errorflg = TRUE;
                             errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
                         }
                         check = check->next;
                     }
-                    if (!error)
+                    if (!errorflg)
                     {
                         check = lambdas;
                         while (check)
@@ -180,6 +173,10 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
                             check = check->next;
                         }
                     }
+                }
+                else
+                {
+                     errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
                 }
             }
         }
@@ -252,7 +249,7 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
                         ins->name = sym->name;
                         ins->parent = sym;
                         sym = clonesym(sym);
-                        sym->lambdaMode = mode == cmNone ? lambdas->captureMode : mode;
+                        sym->lambdaMode = mode == cmNone ? current->captureMode : mode;
                         sym->tp = lambda_type(sym->tp, sym->lambdaMode);
                         sym->storage_class = sc_member;
                         sym->parent = current->func;
@@ -321,6 +318,7 @@ static void inferType(void)
 static TYPE * realArgs(SYMBOL *func)
 {
     TYPE *tp;
+    HASHREC **dest, *src;
     func = clonesym(func);
     tp = Alloc(sizeof(TYPE));
     *tp = *(func->tp);
@@ -330,7 +328,15 @@ static TYPE * realArgs(SYMBOL *func)
         *(tp->btp) = *(func->tp->btp);
     }
     func->tp = tp;
-    basetype(func->tp)->syms->table[0] = lambdas->funcargs;
+    dest = &basetype(func->tp)->syms->table[0] ;
+    src = lambdas->funcargs;
+    while (src)
+    {
+        *dest = Alloc(sizeof(HASHREC));
+        (*dest)->p = clonesym((SYMBOL *)src->p);
+        dest = &(*dest)->next;
+        src = src->next;
+    }
     return func->tp;
 }
 static void createCaller(void)
@@ -349,7 +355,7 @@ static void createCaller(void)
     memset(&block2, 0, sizeof(BLOCKDATA));
     insertFunc(lambdas->cls, func);
     InsertInline(func);
-    st = stmtNode(NULL, &block2, st_return);
+    st = stmtNode(NULL, &block2, st_expr);
     st->select = varNode(en_func, NULL);
     st->select->v.func = params;
     params->arguments = Alloc(sizeof(ARGLIST));
@@ -387,7 +393,7 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
     memset(&block1, 0, sizeof(BLOCKDATA));
     memset(&block2, 0, sizeof(BLOCKDATA));
     insertFunc(lambdas->cls, func);
-    st = stmtNode(NULL, &block2, st_return);
+    st = stmtNode(NULL, &block2, st_expr);
     st->select = varNode(en_func, NULL);
     st->select->v.func = params;
     params->arguments = Alloc(sizeof(ARGLIST));
@@ -723,6 +729,11 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     }
                     else
                     {
+                        if (self->captureThis)
+                        {
+                            error(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES);
+                        }
+                        self->captureThis = TRUE;
                         lambda_capture(NULL, cmThis, TRUE);
                     }
                     continue;

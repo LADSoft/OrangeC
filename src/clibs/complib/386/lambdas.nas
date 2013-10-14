@@ -29,15 +29,16 @@
 ;TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ;ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 %ifdef __BUILDING_LSCRTL_DLL
-[export @__lambdaCall$qpv$]
-[export @__lambdaPtrCall$qpvpv$]
+[export @__lambdaCallS$qpv$]
+[export @__lambdaPtrCallS$qpvpv$]
 %endif
-[global @__lambdaCall$qpv$]
-[global @__lambdaPtrCall$qpvpv$]
+[global @__lambdaCallS$qpv$]
+[global @__lambdaPtrCallS$qpvpv$]
 
 ; frame in
 ;    args
 ;    this
+;    struct ptr ; discarded on return
 ;    rv1
 ;    function ; discarded on return
 ;    rv2
@@ -47,18 +48,27 @@
 ;     rv2
 ;     rv1
 ;     this
+;    struct ptr
 SECTION code CLASS=CODE USE32
-@__lambdaCall$qpv$:
+
+
+
+@__lambdaCallS$qpv$:
     pop ecx
-    xchg ecx,[esp + 8]
+    xchg ecx,[esp + 12]
+    xchg ecx,[esp+4]
+    xchg ecx,[esp+8]
     xchg ecx,[esp]
     call ecx
     mov ecx,[esp]
-    xchg ecx,[esp+8]
+    xchg ecx,[esp + 8];
+    xchg ecx,[esp + 4]
+    xchg ecx,[esp + 12]
     jmp ecx
 
 ; frame in
 ;    args
+;    struct ptr
 ;    rv1
 ;    function ; discarded on return
 ;    this
@@ -69,10 +79,15 @@ SECTION code CLASS=CODE USE32
 ;     rv1
 ;     rv2
 ;     this
-@__lambdaPtrCall$qpvpv$:
+;    struct ptr
+@__lambdaPtrCallS$qpvpv$:
     pop ecx
+    xchg ecx,[esp + 12]
+    xchg ecx,[esp + 0]
     xchg ecx,[esp + 4]
     call ecx
-    mov ecx,[esp + 4]
-    jmp  ecx
+    xchg ecx,[esp + 4]
+    xchg ecx,[esp + 0]
+    xchg ecx,[esp + 12]
+    jmp ecx
     

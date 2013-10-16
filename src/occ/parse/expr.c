@@ -1573,6 +1573,12 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 if (isref(*tp))
                     *tp = basetype(*tp)->btp;
                   checkArgs(funcparams, funcsp);
+                if (funcparams->sp->constexpression)
+                {
+                    exp_in = EvaluateConstFunction(funcparams, funcsp);
+                    if (exp_in)
+                        *exp = exp_in;
+                }
                 if (!funcparams->novtab && funcparams->sp && funcparams->sp->storage_class == sc_virtual)
                 {
                     deref(&stdpointer, &exp_in);

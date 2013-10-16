@@ -3985,28 +3985,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                     SetGlobalFlag(old + (sp->linkage == lk_inline));
                                     lex = body(lex, sp);
                                     SetGlobalFlag(old);
-                                    if (sp->constexpression)
-                                    {
-                                        if (sp->inlineFunc.stmt->type != st_block)
-                                        {
-                                            error(ERR_CONSTANT_FUNCTION_EXPECTED);
-                                        }
-                                        else
-                                        {
-                                            STATEMENT *st1 = sp->inlineFunc.stmt->lower;
-                                            STATEMENT *st;
-                                            while (st1->type == st_varstart)
-                                                st1 = st1->next;
-                                            st = st1->lower;
-                                            while (st->type == st_line || st->type == st_dbgblock)
-                                                st = st->next;
-                                            if (st->type != st_return || !IsConstantExpression(st->select, TRUE))
-                                            {
-                                                st1->lower->select = intNode(en_c_i, 0);
-                                                errorat(ERR_CONSTANT_FUNCTION_EXPECTED, NULL, sp->declfile, sp->declline);
-                                            }
-                                        }
-                                    }
                                 }
                                 needsemi = FALSE;
                             }

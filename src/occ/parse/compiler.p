@@ -480,6 +480,7 @@ STATEMENT *inlinestmt(STATEMENT *block);
 STATEMENT *inlinefuncargs(FUNCTIONCALL *params);
 void inlinereblock(SYMBOL *sp);
 EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp);
+EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *funcparams, SYMBOL *funcsp);
 
                              /* Ioptutil.c */
 

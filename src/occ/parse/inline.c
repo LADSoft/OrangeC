@@ -884,12 +884,9 @@ void SetupVariables(SYMBOL *sp)
 
 EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
-    static SYMBOL *curfunc;
     STATEMENT *stmt = NULL, **stp = &stmt;
     EXPRESSION *newExpression;
     BOOL allocated = FALSE;
-    if (funcsp)
-        curfunc = funcsp;
     if (!isfunction(params->functp))
         return NULL;
     if (params->sp->linkage != lk_inline)
@@ -930,7 +927,47 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     {
         FreeLocalContext(NULL, NULL);
     }
-    if (funcsp)
-        curfunc = NULL;
+    return newExpression;
+}
+EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
+{
+    static SYMBOL *curfunc;
+    STATEMENT *stmt = NULL, **stp = &stmt;
+    EXPRESSION *newExpression;
+    BOOL allocated = FALSE;
+    if (!isfunction(params->functp))
+        return NULL;
+    if (!params->sp->inlineFunc.syms)
+        return NULL;
+
+    AllocateLocalContext(NULL, NULL);
+    stmt = SetupArguments(params);
+    SetupVariables(params->sp);
+
+    while (*stp)
+        stp = &(*stp)->next;
+    *stp = inlinestmt(params->sp->inlineFunc.stmt);
+    newExpression = exprNode(en_stmt, NULL, NULL);
+    newExpression->v.stmt = stmt;
+    
+    if (params->sp->retcount == 1)
+    {
+        /* optimization for simple inline functions that only have
+         * one return statement, don't save to an intermediate variable
+         */
+        scanReturn(stmt, basetype(params->sp->tp)->btp);
+        optimize_for_constants(&newExpression);
+        if (!IsConstantExpression(newExpression, FALSE))
+        {
+            newExpression = NULL;
+        }
+    }
+    else
+    {
+        newExpression = NULL;
+    }
+    FreeLocalContext(NULL, NULL);
+    if (!newExpression)
+        error(ERR_CONSTANT_FUNCTION_EXPECTED);
     return newExpression;
 }

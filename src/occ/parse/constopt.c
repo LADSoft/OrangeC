@@ -2965,7 +2965,6 @@ int fold_const(EXPRESSION *node)
             }
             break;
         case en_stmt:
-            /*
             if (node->v.stmt->type == st_block)
             {
                 STATEMENT *st = node->v.stmt->lower;
@@ -2978,12 +2977,16 @@ int fold_const(EXPRESSION *node)
                         st = st->next;
                     if (st->type == st_expr)
                     {
-                        *node = *st->select;
-                        rv = TRUE;
+                        EXPRESSION *exp = st->select;
+                        optimize_for_constants(&st->select);
+                        if (IsConstantExpression(exp, TRUE))
+                        {
+                            *node = *st->select;
+                            rv = TRUE;
+                        }
                     }
                 }
             }
-            */
             break;
     }
     return rv;

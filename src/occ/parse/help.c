@@ -973,6 +973,16 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 exp2->v.func->returnEXP = expsym;
                 exp = exp2;
             }
+            else if (cparams.prm_cplusplus)
+            {
+                TYPE *ctype = tp;
+                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                funcparams->arguments = Alloc(sizeof(ARGLIST));
+                funcparams->arguments->tp = ctype;
+                funcparams->arguments->exp = exp2;
+                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE); 
+                exp = expsym;
+            }
             else
             {
                 exp = exprNode(en_blockassign, expsym, exp2);
@@ -1030,8 +1040,21 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 spc->label =nextLabel++;
                 if (expsym)
                 {
-                    exp = exprNode(en_blockassign, expsym, exp);
-                    exp->size = tp->size;
+                    if (cparams.prm_cplusplus)
+                    {
+                        TYPE *ctype = tp;
+                        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                        funcparams->arguments = Alloc(sizeof(ARGLIST));
+                        funcparams->arguments->tp = ctype;
+                        funcparams->arguments->exp = exp;
+                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE); 
+                        exp = expsym;
+                    }
+                    else
+                    {
+                        exp = exprNode(en_blockassign, expsym, exp);
+                        exp->size = tp->size;
+                    }
                 }
             }
         }

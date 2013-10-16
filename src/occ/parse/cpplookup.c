@@ -1651,6 +1651,8 @@ static SYMBOL *getUserConversion(int flags,
     if (!infunc)
     {
         LIST *gather = NULL;
+        if (tpp->type == bt_typedef)
+            tpp = tpp->btp;
         infunc = TRUE;
         if (flags & F_WITHCONS)
         {
@@ -1933,6 +1935,8 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
 {
     BOOL lref;
     BOOL rref;
+    while (expa && expa->type == en_void)
+        expa = expa->right;
     if (tpp->type != tpa->type && (tpp->type == bt_void || tpa->type == bt_void))
     {
          seq[(*n)++] = CV_NONE;

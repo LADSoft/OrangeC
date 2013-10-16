@@ -446,6 +446,7 @@ typedef struct sym
         unsigned islambda : 1; // lambda closure struct
         unsigned omitFrame : 1; // true if should omit the frame pointer
         unsigned noinline :1; // don't inline an inline qualified function
+        unsigned didinline :1; // already genned an inline func for this symbol
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */

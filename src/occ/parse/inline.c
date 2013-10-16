@@ -88,14 +88,14 @@ void dumpInlines(void)
         while (funcList)
         {
             SYMBOL *sym = (SYMBOL *)funcList->data;
-            if (sym->genreffed && sym->inlineFunc.stmt)
+            if (sym->genreffed && sym->inlineFunc.stmt && !sym->didinline)
             {
                 sym->genreffed = FALSE;
                 UndoPreviousCodegen(sym);
                 startlab = nextLabel++;
                 retlab = nextLabel++;
                 genfunc(sym);
-                sym->inlineFunc.stmt = NULL;
+                sym->didinline = TRUE;
                 done = FALSE;
             }
             funcList = funcList->next;

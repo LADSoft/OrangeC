@@ -1555,12 +1555,12 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     else
         gen_nodag(i_parmadj, 0, make_parmadj(adjust2), make_parmadj(adjust));
     push_nesting -= adjust;
-    if (!(flags &F_NOVALUE) && !isvoid(f->functp->btp)) {
+    if (!(flags &F_NOVALUE) && !isvoid(basetype(f->functp)->btp)) {
         /* structures handled by callee... */
         if (!isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
         {
             IMODE *ap1, *ap2;
-             int siz1 = sizeFromType(f->functp->btp);
+             int siz1 = sizeFromType(basetype(f->functp)->btp);
              ap1 = tempreg(siz1, 0);
             ap1->retval = TRUE;
             gen_icode(i_assn, ap = tempreg(siz1, 0), ap1, 0);

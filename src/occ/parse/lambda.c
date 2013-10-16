@@ -253,6 +253,7 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
                         sym->tp = lambda_type(sym->tp, sym->lambdaMode);
                         sym->storage_class = sc_member;
                         sym->parent = current->func;
+                        sym->init = NULL;
                         lambda_insert(sym, current);
                         ins->sym = sym;
                         ins->enclosing = current;
@@ -355,7 +356,7 @@ static void createCaller(void)
     memset(&block2, 0, sizeof(BLOCKDATA));
     insertFunc(lambdas->cls, func);
     InsertInline(func);
-    st = stmtNode(NULL, &block2, st_expr);
+    st = stmtNode(NULL, &block2, isstructured(basetype(lambdas->func->tp)->btp) ? st_expr : st_return);
     st->select = varNode(en_func, NULL);
     st->select->v.func = params;
     params->arguments = Alloc(sizeof(ARGLIST));
@@ -393,7 +394,7 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
     memset(&block1, 0, sizeof(BLOCKDATA));
     memset(&block2, 0, sizeof(BLOCKDATA));
     insertFunc(lambdas->cls, func);
-    st = stmtNode(NULL, &block2, st_expr);
+    st = stmtNode(NULL, &block2, isstructured(basetype(lambdas->func->tp)->btp) ? st_expr : st_return);
     st->select = varNode(en_func, NULL);
     st->select->v.func = params;
     params->arguments = Alloc(sizeof(ARGLIST));
@@ -497,6 +498,20 @@ static EXPRESSION *createLambda(void)
         cls->label = nextLabel++;
         insertInitSym(cls);
     }
+    {
+        INITIALIZER *init = NULL;
+        EXPRESSION *exp = clsThs;
+        callDestructor(cls, &exp, NULL, TRUE);
+        initInsert(&init, cls->tp, exp, 0, TRUE);
+        if (cls->storage_class != sc_auto)
+        {
+            insertDynamicDestructor(cls, init);
+        }
+        else
+        {
+            cls->dest = init;
+        }
+    }
     parentThs = varNode(en_auto, (SYMBOL *)basetype(lambdas->func->tp)->syms->table[0]->p); // this ptr
     hr = lambdas->cls->tp->syms->table[0];
     while (hr)
@@ -539,13 +554,13 @@ static EXPRESSION *createLambda(void)
         else if (sp->lambdaMode)
         {
             LAMBDASP *lsp = search(sp->name, lambdas->captured);
-            en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->offset));
-            deref(&stdpointer, &en1);
             if (lsp)
             {
+                en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->offset));
                 if (sp->lambdaMode == cmRef)
                 {
                     SYMBOL *capture = lsp->parent;
+                    deref(&stdpointer, &en1);
                     if (capture->lambdaMode)
                     {
                         en = parentThs;
@@ -581,11 +596,9 @@ static EXPRESSION *createLambda(void)
                         ctp = basetype(ctp)->btp;
                         deref(&stdpointer, &en);
                     }
-                    deref(ctp, &en);
                     if (isstructured(ctp))
                     {
                         FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                        en  = exprNode(en_add, parentThs, intNode(en_c_i, capture->offset));
                         params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
                         params->arguments->tp = ctp;
                         params->arguments->exp = en;
@@ -595,6 +608,8 @@ static EXPRESSION *createLambda(void)
                     }
                     else
                     {
+                        deref(ctp, &en1);
+                        deref(ctp, &en);
                         en = exprNode(en_assign, en1, en);
                     }
                 }
@@ -630,14 +645,7 @@ static EXPRESSION *createLambda(void)
         }
         hr = hr->next;
     }
-    // trim the last node.
-    cur = &rv;
-    while (*cur && (*cur)->right)
-    {
-        cur = &(*cur)->right;
-    }
-    if (*cur)
-        *cur = (*cur)->left;
+    *cur = clsThs; // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
 LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp)
@@ -675,6 +683,8 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     self->next = lambdas;
     lambdas = self;
     
+    localNameSpace->syms = CreateHashTable(1);
+    localNameSpace->tags = CreateHashTable(1);
     if (lambdas->next)
     {
         self->lthis = lambdas->next->lthis;
@@ -758,6 +768,13 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 if (ISID(lex))
                 {
                     SYMBOL *sp = search(lex->value.s.a, localNameSpace->syms);
+                    LAMBDA *current = lambdas;
+                    while (current && !sp)
+                    {
+                        sp = search(lex->value.s.a, current->oldSyms);
+                        current = current->next;
+                        
+                    }
                     if (sp)
                         lambda_capture(sp, localMode, TRUE);
                     else
@@ -834,8 +851,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         spi->anonymous = TRUE;
         spi->tp = Alloc(sizeof(TYPE));
         spi->tp->type = bt_void;
-        localNameSpace->syms = tp1->syms = CreateHashTable(1);
-        insert(spi, tp1->syms);
+        insert(spi, localNameSpace->syms);
         SetLinkerNames(spi, lk_cpp);
         self->funcargs = self->func->tp->syms->table[0];
         self->func->tp->syms->table[0] = NULL;

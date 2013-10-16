@@ -254,7 +254,7 @@ static int dumpBits(INITIALIZER **init)
     return 4;
 #endif
 }
-static void insertDynamicInitializer(SYMBOL *sp, INITIALIZER *init)
+void insertDynamicInitializer(SYMBOL *sp, INITIALIZER *init)
 {
     DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
     di->sp = sp;
@@ -282,7 +282,7 @@ static void insertTLSInitializer(SYMBOL *sp, INITIALIZER *init)
 //	genstorage(sp->tp->size);
     
 }
-static void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init)
+void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init)
 {
     DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
     di->sp = sp;
@@ -1825,7 +1825,6 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
     else
     {
         initInsert(init, itype, expr, offset, FALSE);
-
     }
     return lex;
 }
@@ -2169,7 +2168,8 @@ static LEXEME *initialize_bit(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc
     return lex;
 }
 static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
-                                     enum e_sc sc, TYPE *itype, INITIALIZER **init, SYMBOL *sp)
+                                     enum e_sc sc, TYPE *itype, 
+                                     INITIALIZER **init, INITIALIZER **dest, SYMBOL *sp)
 {
     if (MATCHKW(lex, begin))
     {
@@ -2203,7 +2203,27 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
             }
             sp->tp = tp; // sets type for variable
         }
-        initInsert(init, sp->tp, exp, offset, FALSE);
+        if (cparams.prm_cplusplus && isstructured(sp->tp))
+        {
+
+            INITIALIZER *dest = NULL, *it ;
+            EXPRESSION *expl = getVarNode(sp);
+            initInsert(init, sp->tp, exp, offset, FALSE);
+            callDestructor(sp, &expl, NULL, TRUE);
+            initInsert(&dest, sp->tp, expl, offset, TRUE);
+            if (sp->storage_class != sc_auto)
+            {
+                insertDynamicDestructor(sp, dest);
+            }
+            else
+            {
+                sp->dest = dest;
+            }
+        }
+        else
+        {
+            initInsert(init, sp->tp, exp, offset, FALSE);
+        }
     }
     return lex;
 }
@@ -2270,7 +2290,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
         case bt_bit:
             return initialize_bit(lex, funcsp, offset, sc, tp, init);
         case bt_auto:
-            return initialize_auto(lex, funcsp, offset, sc, tp, init, sp);
+            return initialize_auto(lex, funcsp, offset, sc, tp, init, dest, sp);
         case bt_struct:
         case bt_union:
         case bt_class:

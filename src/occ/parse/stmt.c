@@ -780,7 +780,19 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
     }
     else
-    {   tp = basetype(funcsp->tp)->btp;
+    {   
+        tp = basetype(funcsp->tp)->btp;
+        if (cparams.prm_cplusplus && tp->type == bt_auto & ISID(lex))
+        {
+            SYMBOL *sp = NULL;
+            SYMBOL *strSym = NULL;
+            NAMESPACEVALUES *nsv = NULL;
+            marksym();
+            lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, lex->value.s.a);
+            lex = backupsym(0);
+            if (sp && isstructured(sp->tp))
+                tp = sp->tp;
+        }
         if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
         {
             SYMBOL *sp = anonymousVar(sc_parameter, &stdpointer);

@@ -1953,6 +1953,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
         makeArrayConsDest(&tp, exp, dest1, FALSE, arrayElms);
         dest1->genreffed = TRUE;
     }
+    /*
     else if (dest1->linkage == lk_inline)
     {
         EXPRESSION *e1;
@@ -1967,12 +1968,11 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
             while (*p) p = &(*p)->next;
             *p = x;
         }
-        /*
         e1 = doinline(params, dest1);
         if (e1)
             *exp = e1;
-        */
     }
+        */
     else
     {
         *exp = Alloc(sizeof(EXPRESSION));

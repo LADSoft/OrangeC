@@ -1003,11 +1003,15 @@ join:
         {
             if (basetype(list->tp)->type <= bt_int)
                 dest = &stdint;
+            else
+                cast(list->tp, &list->exp);
         }
         else if (isfloat(list->tp))
         {
             if (basetype(list->tp)->type < bt_double)
                 dest = &stddouble;
+            else
+                cast(list->tp, &list->exp);
         }
         if (dest && basetype(dest)->type != bt_memberptr && (!list || !comparetypes(dest, list->tp, TRUE)))
         {

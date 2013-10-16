@@ -1671,7 +1671,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     if (first && cparams.prm_cplusplus && !strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
         thunkDestructorTail(&blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
     FreeLocalContext(&blockstmt, funcsp);
-    if (first && !blockstmt.needlabel && !isvoid(basetype(funcsp->tp)->btp))
+    if (first && !blockstmt.needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto)
     {
         if (funcsp->linkage3 == lk_noreturn)
             error(ERR_NORETURN);

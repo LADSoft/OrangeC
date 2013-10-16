@@ -655,6 +655,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     HASHREC *hrl;
     TYPE *ltp;
     LIST ssl;
+    funcsp->noinline = TRUE;
     IncGlobalFlag();
     self = Alloc(sizeof(LAMBDA));
     ltp = Alloc(sizeof(TYPE));
@@ -853,6 +854,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         spi->tp->type = bt_void;
         insert(spi, localNameSpace->syms);
         SetLinkerNames(spi, lk_cpp);
+        self->func->tp->syms = localNameSpace->syms;
         self->funcargs = self->func->tp->syms->table[0];
         self->func->tp->syms->table[0] = NULL;
     }

@@ -882,6 +882,8 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     FUNCTIONCALL *funcparams;
     char *name = overloadNameTab[kw - kw_new + CI_NEW];
     TYPE *tpx;
+    if (!*tp)
+        return FALSE;
     if (!isstructured(*tp) && basetype(*tp)->type != bt_enum
         && (!tp1 || !isstructured(tp1) && basetype(tp1)->type != bt_enum))
         return FALSE;

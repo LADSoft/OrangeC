@@ -263,7 +263,7 @@ KEYWORD keywords[] = {
     { "explicit", 8,  kw_explicit, KW_CPLUSPLUS, TT_UNKNOWN },
     { "export", 6,  kw_export, KW_CPLUSPLUS, TT_UNKNOWN },
     { "extern", 6,  kw_extern, KW_ASSEMBLER, TT_STORAGE_CLASS },
-    { "false", 4, kw_false, KW_CPLUSPLUS, TT_VAR },
+    { "false", 5, kw_false, KW_CPLUSPLUS, TT_VAR },
 //	{ "far", 3,  kw__far, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
     { "final", 5, kw_final, KW_CPLUSPLUS, 0 },
     { "float", 5,  kw_float, 0, TT_BASETYPE | TT_FLOAT },

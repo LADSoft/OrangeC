@@ -464,7 +464,7 @@ EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val);
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
 				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOL arrayMember);
 BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams);
-LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in);
+LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOL uninitconst);
 
                               /* Inline.c */
 
@@ -808,7 +808,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, BOOL *throug
 LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *destructor, 
                      BOOL tagsOnly);
 LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
-LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly, char *name);
+LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly, BOOL membersOnly, char *name);
 BOOL isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOL asAddress);
 BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, BOOL asAddress);
 BOOL checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);

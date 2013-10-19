@@ -432,6 +432,17 @@ static struct {
 {"Cannot capture this", ERROR },
 {"Must capture variables with 'auto' storage class or 'this'", ERROR },
 {"Lambda function must have body", ERROR },
+{"For-range iterator begin() and end() have mismatched types", ERROR },
+{"For-range iterator begin() and/or end() are missing", ERROR },
+{"Operator ++() missing on for-range iterator type", ERROR },
+{"Operator *() missing on for-range iterator type", ERROR },
+{"Operator ==() missing on for-range iterator type", ERROR },
+{"Indirection on for-range iterator returns wrong type", ERROR },
+{"For-range expression requires structured or array type", ERROR },
+{"For-range array expression unsized", ERROR },
+{"For-range declarator cannot be initialized", ERROR },
+{"For declarator must be initialized", ERROR },
+{"Initialization from higher type", WARNING },
 #endif
 } ;
 int total_errors;

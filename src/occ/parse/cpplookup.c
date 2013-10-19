@@ -466,7 +466,7 @@ SYMBOL *classsearch(char *name, BOOL tagsOnly)
     }
     return rv;
 }
-static SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOL tagsOnly, BOOL throughClass)
+SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOL tagsOnly, BOOL throughClass)
 {
     SYMBOL *rv = NULL;
     if (!encloser && !ns)
@@ -676,7 +676,7 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
     }
     return lex;
 }
-LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly, char *idname)
+LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL tagsOnly, BOOL membersOnly, char *idname)
 {
     SYMBOL *encloser = NULL;
     NAMESPACEVALUES *ns = NULL;
@@ -732,6 +732,8 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
         lex = getIdName(lex, funcsp, buf, &ov, &castType);
         if (buf[0])
         {
+            if (!encloser && membersOnly)
+                encloser = (SYMBOL *)structSyms->data;
             *sym = finishSearch(ov == CI_CAST ? overloadNameTab[CI_CAST] : buf, 
                                 encloser, ns, tagsOnly, throughClass);
         }

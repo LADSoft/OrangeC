@@ -2292,7 +2292,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                     }    
                     else
                     {
-                        lex = initialize(lex, funcsp, spi, sc_parameter); /* also reserves space */
+                        lex = initialize(lex, funcsp, spi, sc_parameter, TRUE); /* also reserves space */
                         if (spi->init)
                             checkDefaultArguments(spi);
                     }
@@ -3620,21 +3620,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         if (spi && spi->storage_class == sc_overloads)
                         {
                             SYMBOL *sym = searchOverloads(sp->decoratedName, spi->tp->syms);
-                            if (!sym && strSym)
-                            {
-                                char buf[256];
-                                if (!strcmp(sp->name, "$bctr"))
-                                    strcpy(buf, strSym->name);
-                                else if (!strcmp(sp->name, "$bdtr"))
-                                {
-                                    buf[0] = '~';
-                                    strcpy(buf+1, strSym->name);
-                                }
-                                else
-                                    strcpy(buf, sp->name);
-                                errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, buf);  
-                            }
-                            else if (cparams.prm_cplusplus)
+                            if (sym && cparams.prm_cplusplus)
                                 if (mismatchedOverloadLinkage(sp, spi->tp->syms))
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->declfile, spi->declline);
@@ -3647,7 +3633,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 spi = sym;
                             else
                             {
-                                if (nsv || strSym)
+                                if ((nsv || strSym) && storage_class_in != sc_member)
                                 {
                                     char buf[256];
                                     if (!strcmp(sp->name, "$bctr"))
@@ -3666,7 +3652,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         else
                         {
-                            if (strSym && !structSyms && !p)
+                            if (strSym && storage_class_in != sc_member)
                             {
                                 errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sp->name);
                             }
@@ -4053,7 +4039,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             }
                             if (sp->storage_class == sc_localstatic && !sp->label)
                                 sp->label = nextLabel++;
-                            lex = initialize(lex, funcsp, sp, storage_class_in); /* also reserves space */
+                            lex = initialize(lex, funcsp, sp, storage_class_in, asExpression); /* also reserves space */
                             if (sp->storage_class == sc_auto || sp->storage_class == sc_register)
                             {
                                 if (sp->init)

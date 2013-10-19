@@ -3567,7 +3567,6 @@ static void rebalance(EXPRESSION *ep)
             break;
     }
 }
-
 void optimize_for_constants(EXPRESSION **expr)
 {
     int rv = TRUE, count = 8;

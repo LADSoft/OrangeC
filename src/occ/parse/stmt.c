@@ -37,7 +37,7 @@
 */
 /* declare in select has multiple vars */
 #include "compiler.h"
-
+#include <assert.h>
 extern ARCH_DEBUG *chosenDebugger;
 extern ARCH_ASM *chosenAssembler;
 extern TYPE stdint, stdvoid;
@@ -155,12 +155,14 @@ static BOOL isselectfalse(EXPRESSION *exp)
         return !exp->v.i;
     return FALSE;
 }
-static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION **exp, SYMBOL *funcsp, enum e_kw kw)
+static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION **exp, SYMBOL *funcsp, enum e_kw kw, BOOL *declaration)
 {
     TYPE *tp = NULL;
     (void)parent;
     if (startOfType(lex) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
     {
+        if (declaration)
+            *declaration = TRUE;
         if ((cparams.prm_cplusplus && kw != kw_do || cparams.prm_c99 && kw == kw_for)
             && kw != kw_else)
         {
@@ -182,6 +184,8 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
     else
     {
 /*		BOOL openparen = MATCHKW(lex, openpa); */
+        if (declaration)
+            *declaration = FALSE;
         lex = expression(lex, funcsp, NULL, &tp, exp, kw != kw_for);
         if (tp)
         {
@@ -372,7 +376,7 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         if (MATCHKW(lex, openpa))
         {				
             lex = getsym();
-            lex = selection_expression(lex, &dostmt, &select, funcsp, kw_do);
+            lex = selection_expression(lex, &dostmt, &select, funcsp, kw_do, NULL);
             if (!MATCHKW(lex, closepa))
             {
                 error(ERR_DOWHILE_NEEDS_CLOSEPA);
@@ -428,6 +432,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
+        BOOL declaration = FALSE;
         lex = getsym();
         if (!MATCHKW(lex, semicolon))
         {
@@ -437,8 +442,563 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 AllocateLocalContext(parent, funcsp);
             }
         
-            lex = selection_expression(lex, &forstmt, &init, funcsp, kw_for);
+            lex = selection_expression(lex, &forstmt, &init, funcsp, kw_for, &declaration);
+            if (cparams.prm_cplusplus && !cparams.prm_oldfor && declaration && MATCHKW(lex, colon))
+            {
+                // range based for statement
+                // we will ignore 'init'.
+                TYPE *selectTP;
+                SYMBOL *declSP = (SYMBOL *)localNameSpace->syms->table[0]->p;
+                EXPRESSION *declExp;
+                if (!declSP)
+                {
+                    diag("statement_for: Cannot get range based range variable");
+                    declExp = intNode(en_c_i, 0);
+                }
+                else
+                {
+                    if (declSP->init)
+                    {
+                        if (isstructured(declSP->init))
+                        {
+                            error(ERR_FORRANGE_DECLARATOR_NO_INIT);
+                        }
+                        else
+                        {
+                            error(ERR_FORRANGE_DECLARATOR_NO_INIT);
+                        }
+                    }
+                    declExp = varNode(en_auto, declSP);
+                    declSP->assigned = declSP->used = TRUE;
+                }
+                lex = getsym();
+                if (MATCHKW(lex, begin))
+                {
+                    assert(0);
+                }
+                else
+                {
+                    lex = expression_no_comma(lex, funcsp, NULL, &selectTP, &select);
+                }
+                if (!selectTP)
+                {
+                    error(ERR_EXPRESSION_SYNTAX);
+                }
+                else
+                {
+                    EXPRESSION *ibegin=NULL, *iend=NULL;
+                    TYPE *iteratorType = NULL;
+                    TYPE *tpref = Alloc(sizeof(TYPE));
+                    SYMBOL *rangeSP = makeID(sc_auto, tpref, NULL, AnonymousName());
+                    EXPRESSION *rangeExp = varNode(en_auto, rangeSP);
+                    deref(&stdpointer, &rangeExp);
+                    needkw(&lex, closepa);
+                    forline = currentLineData(NULL, lex);
+                    while (castvalue(select))
+                        select = select->left;
+                    if (lvalue(select))
+                        select = select->left;
+                    tpref->size = getSize(bt_pointer);
+                    tpref->type = bt_rref;
+                    tpref->btp = selectTP;
+                    rangeSP->allocate = TRUE;
+                    rangeSP->assigned = rangeSP->used = TRUE;
+                    insert(rangeSP, localNameSpace->syms);
+                    st = stmtNode(lex, &forstmt, st_expr);
+                    st->select = exprNode(en_assign, rangeExp, select);
+                    if (!isstructured(selectTP))
+                    {
+                        // create array references for begin and end
+                        iteratorType = basetype(selectTP)->btp;
+                        if (!isarray(selectTP))
+                        {
+                            error(ERR_FORRANGE_REQUIRES_STRUCT_OR_ARRAY);
+                            iteratorType = &stdint;
+                        }
+                        else if (!selectTP->size)
+                        {
+                            error(ERR_FORRANGE_ARRAY_UNSIZED);
+                        }
+                        ibegin = rangeExp;
+                        iend = exprNode(en_add, rangeExp, intNode(en_c_i, selectTP->size));
+                    }
+                    else
+                    {
+                        // try to lookup in structure
+                        TYPE thisTP;
+                        memset(&thisTP, NULL, sizeof(thisTP));
+                        thisTP.type = bt_pointer;
+                        thisTP.size - getSize(bt_pointer);
+                        thisTP.btp = rangeSP->tp->btp;
+                        ibegin = search("begin", basetype(selectTP)->syms);
+                        iend = search("end", basetype(selectTP)->syms);
+                        if (ibegin && iend)
+                        {
+                            SYMBOL *beginFunc =NULL, *endFunc = NULL;
+                            FUNCTIONCALL fcb, fce;
+                            TYPE *ctp;
+                            memset(&fcb, 0, sizeof(fcb));
+                            fcb.thistp = &thisTP;
+                            fcb.thisptr = rangeExp;
+                            ctp = rangeSP->tp;
+                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE);
+                            memset(&fce, 0, sizeof(fce));
+                            fce.thistp = &thisTP;
+                            fce.thisptr = rangeExp;
+                            ctp = rangeSP->tp;
+                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE);
+                            if (beginFunc && endFunc)
+                            {
+                                if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, TRUE))
+                                {
+                                    error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
+                                }
+                                else
+                                {
+                                    FUNCTIONCALL *fc;
+                                    iteratorType = basetype(beginFunc->tp)->btp;
+                                    if (isstructured(iteratorType))
+                                    {
+                                        INITIALIZER *dest;
+                                        EXPRESSION *exp;
+                                        fcb.returnSP = makeID(sc_auto, iteratorType, NULL, AnonymousName());
+                                        fcb.returnSP->allocate = TRUE;
+                                        fcb.returnSP->assigned = TRUE;
+                                        fcb.returnSP->used = TRUE;
+                                        fcb.returnEXP = varNode(en_auto, fcb.returnSP);
+                                        insert(fcb.returnSP, localNameSpace->syms);
+                                        exp = fcb.returnEXP;
+                                        dest = NULL;
+                                        callDestructor(fcb.returnSP, &exp, NULL, TRUE);
+                                        initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                        fcb.returnSP->dest = dest;
+                                       
+                                        fce.returnSP = makeID(sc_auto, iteratorType, NULL, AnonymousName());
+                                        fce.returnSP->allocate = TRUE;
+                                        fce.returnSP->assigned = TRUE;
+                                        fce.returnSP->used = TRUE;
+                                        fce.returnEXP = varNode(en_auto, fce.returnSP);
+                                        insert(fce.returnSP, localNameSpace->syms);
+                                        exp = fce.returnEXP;
+                                        dest = NULL;
+                                        callDestructor(fce.returnSP, &exp, NULL, TRUE);
+                                        initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                        fce.returnSP->dest = dest;
+                                    }
+                                    fc = Alloc(sizeof(FUNCTIONCALL));
+                                    *fc = fcb;
+                                    fc->sp = beginFunc;
+                                    fc->functp = beginFunc->tp;
+                                    fc->ascall = TRUE;
+                                    ibegin = exprNode(en_func, NULL, NULL);
+                                    ibegin->v.func = fc;
+                                    fc = Alloc(sizeof(FUNCTIONCALL));
+                                    *fc = fce;
+                                    fc->sp = endFunc;
+                                    fc->functp = endFunc->tp;
+                                    fc->ascall = TRUE;
+                                    iend = exprNode(en_func, NULL, NULL);
+                                    iend->v.func = fc;
+                                    iteratorType = basetype(beginFunc->tp)->btp;
+                                        
+                                }
+                                
+                            }
+                            else
+                            {
+                                ibegin = iend = NULL;
+                            }
+                        }
+                        // possibly lookup in search area
+                        if (!ibegin && !iend)
+                        {
+                            ibegin = namespacesearch("begin", globalNameSpace, FALSE, FALSE);
+                            iend = namespacesearch("end", globalNameSpace, FALSE, FALSE);
+                            // now possibly lookup in namespace std
+                            if (!ibegin || !iend)
+                            {
+                                SYMBOL *standard = namespacesearch("std", globalNameSpace, FALSE, FALSE);
+                                if (standard)
+                                {
+                                    ibegin = namespacesearch("begin", standard->nameSpaceValues, FALSE, FALSE);
+                                    iend = namespacesearch("end", standard->nameSpaceValues, FALSE, FALSE);
+                                }
+                            }
+                            if (!ibegin || !iend)
+                            {
+                                if (rangeSP->tp->btp->sp->parentNameSpace)
+                                {
+                                    ibegin = namespacesearch("begin", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, FALSE, FALSE);
+                                    iend = namespacesearch("end", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, FALSE, FALSE);                                    
+                                }
+                            }
+                            {
+                                SYMBOL *beginFunc =NULL, *endFunc = NULL;
+                                ARGLIST args;
+                                FUNCTIONCALL fcb, fce;
+                                TYPE *ctp;
+                                memset(&fcb, 0, sizeof(fcb));
+                                memset(&args, 0, sizeof(args));
+                                args.tp = rangeSP->tp->btp;
+                                args.exp = rangeExp;
+                                fcb.arguments = &args;
+                                ctp = rangeSP->tp;
+                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE);
+                                memset(&fce, 0, sizeof(fce));
+                                fce.arguments = &args;
+                                ctp = rangeSP->tp;
+                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE);
+                                if (beginFunc && endFunc)
+                                {
+                                    TYPE *it2;
+                                    it2 = iteratorType = basetype(beginFunc->tp)->btp;
+                                    if (isref(it2))
+                                        it2 = it2->btp;
+                                    if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, TRUE))
+                                    {
+                                        error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
+                                    }
+                                    else
+                                    {
+                                        FUNCTIONCALL *fc;
+                                        if (isstructured(iteratorType))
+                                        {
+                                            INITIALIZER *dest;
+                                            EXPRESSION *exp;
+                                            fcb.returnSP = makeID(sc_auto, iteratorType, NULL, AnonymousName());
+                                            fcb.returnSP->allocate = TRUE;
+                                            fcb.returnSP->assigned = TRUE;
+                                            fcb.returnSP->used = TRUE;
+                                            fcb.returnEXP = varNode(en_auto, fcb.returnSP);
+                                            insert(fcb.returnSP, localNameSpace->syms);
+                                            exp = fcb.returnEXP;
+                                            dest = NULL;
+                                            callDestructor(fcb.returnSP, &exp, NULL, TRUE);
+                                            initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                            fcb.returnSP->dest = dest;
+                                            
+                                            fce.returnSP = makeID(sc_auto, iteratorType, NULL, AnonymousName());
+                                            fce.returnSP->allocate = TRUE;
+                                            fce.returnSP->assigned = TRUE;
+                                            fce.returnSP->used = TRUE;
+                                            fce.returnEXP = varNode(en_auto, fce.returnSP);
+                                            insert(fce.returnSP, localNameSpace->syms);
+                                            exp = fce.returnEXP;
+                                            dest = NULL;
+                                            callDestructor(fce.returnSP, &exp, NULL, TRUE);
+                                            initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                            fce.returnSP->dest = dest;
+                                        }
+                                        fc = Alloc(sizeof(FUNCTIONCALL));
+                                        *fc = fcb;
+                                        fc->sp = beginFunc;
+                                        fc->functp = beginFunc->tp;
+                                        fc->ascall = TRUE;
+                                        fc->arguments = Alloc(sizeof(ARGLIST));                                        
+                                        *fc->arguments = *fcb.arguments;
+                                        if (isstructured(it2) && isstructured(((SYMBOL *)(it2->syms->table[0]->p))->tp))
+                                        {
+                                            SYMBOL *esp = anonymousVar(sc_auto, basetype(rangeSP->tp)->btp); // sc_parameter to push it...
+                                            EXPRESSION *consexp = varNode(en_auto, esp);
+                                            FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                                            TYPE *ctype = basetype(rangeSP->tp)->btp;
+                                            esp->stackblock = TRUE;
+                                            funcparams->arguments = Alloc(sizeof(ARGLIST));
+                                            *funcparams->arguments = *fc->arguments;
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE);
+                                            fc->arguments->exp = consexp;                                                             
+                                        }
+                                        else
+                                        {
+                                            fc->arguments->tp = Alloc(sizeof(TYPE));
+                                            fc->arguments->tp->type = bt_lref;
+                                            fc->arguments->tp->size = getSize(bt_pointer);
+                                            fc->arguments->tp->btp = fcb.arguments->tp;
+                                        }
+                                        ibegin = exprNode(en_func, NULL, NULL);
+                                        ibegin->v.func = fc;
+                                        fc = Alloc(sizeof(FUNCTIONCALL));
+                                        *fc = fce;
+                                        fc->sp = endFunc;
+                                        fc->functp = endFunc->tp;
+                                        fc->ascall = TRUE;
+                                        fc->arguments = Alloc(sizeof(ARGLIST));
+                                        *fc->arguments = *fce.arguments;
+                                        if (isstructured(it2) && isstructured(((SYMBOL *)(it2->syms->table[0]->p))->tp))
+                                        {
+                                            SYMBOL *esp = anonymousVar(sc_auto, basetype(rangeSP->tp)->btp); // sc_parameter to push it...
+                                            EXPRESSION *consexp = varNode(en_auto, esp);
+                                            FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                                            TYPE *ctype = basetype(rangeSP->tp)->btp;
+                                            esp->stackblock = TRUE;
+                                            funcparams->arguments = Alloc(sizeof(ARGLIST));
+                                            *funcparams->arguments = *fc->arguments;
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE);
+                                            fc->arguments->exp = consexp;
+                                        }
+                                        else
+                                        {
+                                            fc->arguments->tp = Alloc(sizeof(TYPE));
+                                            fc->arguments->tp->type = bt_lref;
+                                            fc->arguments->tp->size = getSize(bt_pointer);
+                                            fc->arguments->tp->btp = fce.arguments->tp;
+                                        }
+                                        iend = exprNode(en_func, NULL, NULL);
+                                        iend->v.func = fc;
+                                    }
+                                    
+                                }
+                                else
+                                {
+                                    ibegin = iend = NULL;
+                                }
+                            }
+                        }
+                    }
+                    if (ibegin && iend)
+                    {
+                        EXPRESSION *compare;
+                        EXPRESSION *eBegin;
+                        EXPRESSION *eEnd;
+                        EXPRESSION *declDest = NULL;
+                        if (isstructured(selectTP) && isstructured(iteratorType) && ibegin->type == en_func && iend->type == en_func )
+                        {
+                            eBegin = ibegin->v.func->returnEXP;
+                            eEnd = iend->v.func->returnEXP;
+                            st = stmtNode(lex, &forstmt, st_expr);
+                            st->select = ibegin;
+                            st = stmtNode(lex, &forstmt, st_expr);
+                            st->select = iend;
+                        }
+                        else
+                        {
+                            SYMBOL *sBegin = makeID(sc_auto, iteratorType, NULL, AnonymousName());
+                            SYMBOL *sEnd = makeID(sc_auto, iteratorType, NULL, AnonymousName());
+                            eBegin = varNode(en_auto, sBegin);
+                            eEnd = varNode(en_auto, sEnd);
+                            deref(&stdpointer, &eBegin);
+                            deref(&stdpointer, &eEnd);
+                            sBegin->allocate = TRUE;
+                            sBegin->used = sBegin->assigned = TRUE;
+                            insert(sBegin, localNameSpace->syms);
+                            sEnd->allocate = TRUE;
+                            sEnd->used = sBegin->assigned = TRUE;
+                            insert(sEnd, localNameSpace->syms);
+                            st = stmtNode(lex, &forstmt, st_expr);
+                            st->select = exprNode(en_assign, eBegin, ibegin);
+                            st = stmtNode(lex, &forstmt, st_expr);
+                            st->select = exprNode(en_assign, eEnd, iend);
+                        }
+                        if (isref(iteratorType))
+                            iteratorType = iteratorType->btp;
+                        if (!isstructured(selectTP) || !isstructured(iteratorType))
+                        {
+                            compare = exprNode(en_eq, eBegin, eEnd);
+                        }
+                        else
+                        {
+                            TYPE *eqType = iteratorType;
+                            compare = eBegin;
+                            if (!insertOperatorFunc(ovcl_unary_prefix, eq,
+                                                   funcsp, &eqType, &compare, iteratorType, eEnd ))
+                            {
+                                error(ERR_MISSING_OPERATOR_EQ_FORRANGE_ITERATOR);
+                                
+                            }
+                        }
+                        
+                        
+                        st = stmtNode(lex, &forstmt, st_select);
+                        st->label = forstmt.breaklabel;
+                        st->altlabel = testlabel;
+                        st->select = compare;
+                            
+                        st = stmtNode(lex, &forstmt, st_label);
+                        st->label = loopLabel;
+
+                        AllocateLocalContext(parent, funcsp);
+                        
+                        // initialize var here
+                        st = stmtNode(lex, &forstmt, st_expr);
+                        if (!isstructured(selectTP))
+                        {
+                            if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
+                            {
+                                error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                            }
+                            if (isstructured(declSP->tp))
+                            {
+                                EXPRESSION *decl = declExp;
+                                TYPE *ctype = declSP->tp;
+                                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                                ARGLIST *args = Alloc(sizeof(ARGLIST));
+                                funcparams->arguments = args;
+                                args->tp = declSP->tp;
+                                args->exp = eBegin;
+                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE);
+                                st->select = decl;
+                                declDest = declExp;
+                                callDestructor(declSP, &declDest, NULL, TRUE);
+                            }
+                            else if (isarray(selectTP))
+                            {
+                                EXPRESSION *decl = declExp;
+                                deref(declSP->tp, &decl);
+                                st->select = eBegin;
+                                if (!isref(declSP->tp))
+                                    deref(basetype(selectTP)->btp, &st->select);
+                                st->select = exprNode(en_assign, decl, st->select);
+                            }
+                        }
+                        else
+                        {
+                            TYPE *starType = iteratorType;
+                            st->select = eBegin;
+                            if (ispointer(iteratorType))
+                            {
+                                if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
+                                {
+                                    error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                }
+                                else if (!isstructured(declSP->tp))
+                                {
+                                    EXPRESSION *decl = declExp;
+                                    deref(declSP->tp, &decl);
+                                    st->select = eBegin;
+                                    if (!isref(declSP->tp))
+                                        deref(basetype(iteratorType)->btp, &st->select);
+                                    st->select = exprNode(en_assign, decl, st->select);
+                                }
+                                else
+                                {
+                                    EXPRESSION *decl = declExp;
+                                    TYPE *ctype = declSP->tp;
+                                    FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                                    ARGLIST *args = Alloc(sizeof(ARGLIST));
+                                    funcparams->arguments = args;
+                                    args->tp = declSP->tp;
+                                    args->exp = eBegin;
+                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE);
+                                    st->select = decl;
+                                    declDest = declExp;
+                                    callDestructor(declSP, &declDest, NULL, TRUE);
+                                }
+                            }
+                            else if (!insertOperatorFunc(ovcl_unary_prefix, star,
+                                                   funcsp, &starType, &st->select, NULL,NULL))
+                            {
+                                error(ERR_MISSING_OPERATOR_STAR_FORRANGE_ITERATOR);
+                                
+                            }
+                            else if (!comparetypes(declSP->tp, starType, TRUE))
+                            {
+                                error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                            }
+                            else
+                            {
+                                while (castvalue(st->select))
+                                    st->select = st->select->left;
+                                if (lvalue(st->select))
+                                {
+                                    st->select = st->select->left;
+                                }
+                                st->select = exprNode(en_assign, declExp, st->select);
+                            }
+                        }
+                        
+                        lex = statement(lex, funcsp, &forstmt, TRUE);
+                        FreeLocalContext(&forstmt, funcsp);
+                        if (declDest)
+                        {
+                            st = stmtNode(lex, &forstmt, st_expr);
+                            st->select = declDest;
+                        }
+                        st = stmtNode(lex, &forstmt, st_label);
+                        st->label = forstmt.continuelabel;
+                        st = stmtNode(lex, &forstmt, st_expr);
+
+                        // do ++ here
+                        if (!isstructured(selectTP))
+                        {
+                            if (isarray(selectTP))
+                                st->select = exprNode(en_assign, eBegin, exprNode(en_add, eBegin, intNode(en_c_i, basetype(selectTP)->btp->size)));
+                        }
+                        else
+                        {
+                            EXPRESSION *ppType = iteratorType;
+                            st->select = eBegin;
+                            if (ispointer(iteratorType))
+                            {
+                                st->select = exprNode(en_assign, eBegin, exprNode(en_add, eBegin, intNode(en_c_i, basetype(iteratorType)->btp->size)));
+                            }
+                            else if (!insertOperatorFunc(ovcl_unary_prefix, autoinc,
+                                                   funcsp, &ppType, &st->select, NULL,NULL))
+                            {
+                                error(ERR_MISSING_OPERATOR_PLUSPLUS_FORRANGE_ITERATOR);
+                            }
+                            else
+                            {
+                                if (isstructured(ppType))
+                                {
+                                    st->select->v.func->returnSP = makeID(sc_auto, ppType, NULL, AnonymousName());
+                                    st->select->v.func->returnEXP = varNode(en_auto, st->select->v.func->returnSP);
+                                    st->select->v.func->returnSP->allocate = TRUE;
+                                    st->select->v.func->returnSP->used = TRUE;
+                                    st->select->v.func->returnSP->assigned = TRUE;
+                                    insert(st->select->v.func->returnSP, localNameSpace->syms);
+                                    declDest = st->select->v.func->returnEXP;
+                                    callDestructor(st->select->v.func->returnSP, &declDest, NULL, TRUE);
+                                    st = stmtNode(lex, &forstmt, st_expr);
+                                    st->select = declDest;
+                                }
+                            }
+                                
+                        }
+                        
+                        if (forline)
+                        {
+                            if (forstmt.head)
+                                forstmt.tail = forstmt.tail->next = forline;
+                            else
+                                forstmt.head = forstmt.tail = forline;
+                        }
+                        st = stmtNode(lex, &forstmt, st_label);
+                        st->label = testlabel;
+                        
+                        st = stmtNode(lex, &forstmt, st_notselect);
+                        st->label = loopLabel;
+                        st->select = compare;
+
+                        if (!forstmt.hasbreak && (!st->select || isselectfalse(st->select)))
+                            parent->needlabel = TRUE;
+                        st = stmtNode(lex, &forstmt, st_label);
+                        st->label = forstmt.breaklabel;
+                        parent->hassemi = forstmt.hassemi;
+                        parent->nosemi = forstmt.nosemi;
+                    }
+                    else
+                    {
+                        error(ERR_MISSING_FORRANGE_BEGIN_END);
+                    }
+                }
+                while (addedBlock--)
+                    FreeLocalContext( &forstmt, funcsp);
+                AddBlock(lex, parent, &forstmt);
+                return lex;
+            }
+            else
+            {
+                if (declaration)
+                {
+                    SYMBOL *declSP = (SYMBOL *)localNameSpace->syms->table[0]->p;
+                    if (!declSP->init)
+                    {
+                        error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);                        
+                    }
+                }
+            }
         }
+        // normal FOR statement continues here
         if (!needkw(&lex, semicolon))
         {
             error(ERR_FOR_NEEDS_SEMI);
@@ -545,7 +1105,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         skip(&lex, closepa);
     } 
     while (addedBlock--)
-        FreeLocalContext(parent, funcsp);
+        FreeLocalContext(&forstmt, funcsp);
     AddBlock(lex, parent, &forstmt);
     return lex;
 }
@@ -566,7 +1126,7 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             addedBlock++;
             AllocateLocalContext(parent, funcsp);
         }
-        lex = selection_expression(lex, parent, &select, funcsp, kw_if);
+        lex = selection_expression(lex, parent, &select, funcsp, kw_if, NULL);
         if (MATCHKW(lex, closepa))
         {
             BOOL optimized = FALSE;
@@ -788,7 +1348,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             SYMBOL *strSym = NULL;
             NAMESPACEVALUES *nsv = NULL;
             marksym();
-            lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, lex->value.s.a);
+            lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, FALSE, lex->value.s.a);
             lex = backupsym(0);
             if (sp && isstructured(sp->tp))
                 tp = sp->tp;
@@ -877,7 +1437,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             if (lvalue(returnexp))
             {
                 EXPRESSION *exp2 = returnexp;
-                returnexp = returnexp->left;
+                if (!isstructured(basetype(funcsp->tp)->btp->btp))
+                    returnexp = returnexp->left;
                 if (returnexp->type == en_auto)
                 {
                     if (returnexp->v.sp->storage_class == sc_auto)
@@ -1042,7 +1603,7 @@ static LEXEME *statement_switch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             addedBlock++;
             AllocateLocalContext(parent, funcsp);
         }
-        lex = selection_expression(lex, &switchstmt, &select, funcsp, kw_switch);
+        lex = selection_expression(lex, &switchstmt, &select, funcsp, kw_switch, NULL);
         if (MATCHKW(lex, closepa))
         {
             STATEMENT *st1;
@@ -1108,7 +1669,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             addedBlock++;
             AllocateLocalContext(parent, funcsp);
         }
-        lex = selection_expression(lex, &whilestmt, &select, funcsp, kw_while);
+        lex = selection_expression(lex, &whilestmt, &select, funcsp, kw_while, NULL);
         if (!MATCHKW(lex, closepa))
         {
             error(ERR_WHILE_NEEDS_CLOSEPA);

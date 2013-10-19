@@ -629,7 +629,7 @@ void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp)
                         {
                             // default for parameter
                             LEXEME *lex = SetAlternateLex(cur1->deferredCompile);
-                            lex = initialize(lex, funcsp, cur1, sc_parameter); /* also reserves space */
+                            lex = initialize(lex, funcsp, cur1, sc_parameter, TRUE); /* also reserves space */
                             SetAlternateLex(NULL);
                         }
                             

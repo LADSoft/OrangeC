@@ -922,36 +922,43 @@ static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
         needend = TRUE;
         lex = getsym();
     }
-    lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
-    if (!tp)
+    if (cparams.prm_cplusplus && needend && MATCHKW(lex, end))
     {
-        error(ERR_EXPRESSION_SYNTAX);
+        exp = intNode(en_c_bool, 0);
     }
     else
     {
-        if (sc != sc_auto && sc != sc_register && !cparams.prm_cplusplus)
+        lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        if (!tp)
         {
-            if (isstructured(tp))
-                error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-            else if (!isarithmeticconst(exp))
-                error(ERR_CONSTANT_VALUE_EXPECTED);
+            error(ERR_EXPRESSION_SYNTAX);
         }
-    /*	exp = exprNode(en_not, exp, NULL);
-        exp = exprNode(en_not, exp, NULL);
-        */
-        if (!comparetypes(itype, tp, TRUE))
+        else
         {
-            cast(itype, &exp);
-            optimize_for_constants(&exp);
+            if (sc != sc_auto && sc != sc_register && !cparams.prm_cplusplus)
+            {
+                if (isstructured(tp))
+                    error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                else if (!isarithmeticconst(exp))
+                    error(ERR_CONSTANT_VALUE_EXPECTED);
+            }
+        /*	exp = exprNode(en_not, exp, NULL);
+            exp = exprNode(en_not, exp, NULL);
+            */
+            if (!comparetypes(itype, tp, TRUE))
+            {
+                cast(itype, &exp);
+                optimize_for_constants(&exp);
+            }
         }
     }
     initInsert(init, itype, exp, offset, FALSE);
     if (needend)
     {
-        if (!needkw(&lex, closebr))
+        if (!needkw(&lex, end))
         {
-            errskim(&lex, skim_closebr);
-            skip(&lex, closebr);
+            errskim(&lex, skim_end);
+            skip(&lex, end);
         }
     }
     return lex;
@@ -966,30 +973,41 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         needend = TRUE;
         lex = getsym();
     }
-    lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
-    if (!tp)
+    if (cparams.prm_cplusplus && needend && MATCHKW(lex, end))
     {
-        error(ERR_EXPRESSION_SYNTAX);
+        exp = intNode(en_c_i, 0);
+        cast(itype, &exp);
     }
     else
     {
-        if (cparams.prm_cplusplus && isarithmetic(itype) && isstructured(tp))
+        lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        if (!tp)
         {
-            castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype);
+            error(ERR_EXPRESSION_SYNTAX);
         }
-        if (isstructured(tp))
-            error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-        else if (ispointer(tp))
-            error(ERR_NONPORTABLE_POINTER_CONVERSION);
-        else if (!isarithmetic(tp) || sc != sc_auto && sc != sc_register &&
-                 !isarithmeticconst(exp)&& !cparams.prm_cplusplus)
-            error(ERR_CONSTANT_VALUE_EXPECTED);
-        else 
-            checkscope(tp, itype);
-        if (!comparetypes(itype, tp, TRUE))
+        else
         {
-            cast(itype, &exp);
-            optimize_for_constants(&exp);
+            if (cparams.prm_cplusplus && isarithmetic(itype) && isstructured(tp))
+            {
+                castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype);
+            }
+            if (isstructured(tp))
+                error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+            else if (ispointer(tp))
+                error(ERR_NONPORTABLE_POINTER_CONVERSION);
+            else if (!isarithmetic(tp) || sc != sc_auto && sc != sc_register &&
+                     !isarithmeticconst(exp)&& !cparams.prm_cplusplus)
+                error(ERR_CONSTANT_VALUE_EXPECTED);
+            else 
+                checkscope(tp, itype);
+            if (!comparetypes(itype, tp, TRUE))
+            {
+                if (cparams.prm_cplusplus && basetype(tp)->type > bt_int)
+                    if (basetype(itype)->type < basetype(tp)->type)        
+                        error(ERR_INIT_NARROWING);
+                cast(itype, &exp);
+                optimize_for_constants(&exp);
+            }
         }
     }
     initInsert(init, itype, exp, offset, FALSE);
@@ -1059,41 +1077,49 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         needend = TRUE;
         lex = getsym();
     }
-    if (!lex || lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr)
+    if (cparams.prm_cplusplus && needend && MATCHKW(lex, end))
     {
-        lex = optimized_expression(lex, funcsp, itype, &tp, &exp, FALSE);
-        if (!tp)
-        {
-            error(ERR_EXPRESSION_SYNTAX);
-        }
+        exp = intNode(en_c_i, 0);
     }
     else
     {
-        lex = initialize_string(lex, funcsp, &tp, &exp);
-    }
-    if (sc != sc_auto && sc != sc_register)
-    {
-        if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)
-            error(ERR_NEED_CONSTANT_OR_ADDRESS);
-    }
-    if (tp)
-    {
-        if (cparams.prm_cplusplus && isstructured(tp))
+        if (!lex || lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr)
         {
-            castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+            lex = optimized_expression(lex, funcsp, itype, &tp, &exp, FALSE);
+            if (!tp)
+            {
+                error(ERR_EXPRESSION_SYNTAX);
+            }
         }
-        if (isstructured(tp))
-            error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-        else if (!ispointer(tp) && !isfunction(tp) && !isint(tp))
-            error(ERR_INVALID_POINTER_CONVERSION);
-        else if (isint(tp) && !isconstzero(tp, exp))
-            error(ERR_NONPORTABLE_POINTER_CONVERSION);
-        else if ((ispointer(tp) || isfunction(tp))&& !comparetypes(itype, tp, TRUE))
-            if (!isvoidptr(tp) && !isvoidptr(itype))
-                error(ERR_SUSPICIOUS_POINTER_CONVERSION);
-        /* might want other types of conversion checks */
-        if (!comparetypes(itype, tp, TRUE) && !isint(tp))
-            cast(tp, &exp);
+        else
+        {
+            lex = initialize_string(lex, funcsp, &tp, &exp);
+        }
+        
+        if (sc != sc_auto && sc != sc_register)
+        {
+            if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)
+                error(ERR_NEED_CONSTANT_OR_ADDRESS);
+        }
+        if (tp)
+        {
+            if (cparams.prm_cplusplus && isstructured(tp))
+            {
+                castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+            }
+            if (isstructured(tp))
+                error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+            else if (!ispointer(tp) && !isfunction(tp) && !isint(tp))
+                error(ERR_INVALID_POINTER_CONVERSION);
+            else if (isint(tp) && !isconstzero(tp, exp))
+                error(ERR_NONPORTABLE_POINTER_CONVERSION);
+            else if ((ispointer(tp) || isfunction(tp))&& !comparetypes(itype, tp, TRUE))
+                if (!isvoidptr(tp) && !isvoidptr(itype))
+                    error(ERR_SUSPICIOUS_POINTER_CONVERSION);
+            /* might want other types of conversion checks */
+            if (!comparetypes(itype, tp, TRUE) && !isint(tp))
+                cast(tp, &exp);
+        }
     }
     initInsert(init, itype, exp, offset, FALSE);
     refExp(exp);
@@ -1118,30 +1144,37 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
         needend = TRUE;
         lex = getsym();
     }
-    lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
-    if (!isconstzero(tp, exp) && exp->type != en_nullptr)
+    if (cparams.prm_cplusplus && needend && MATCHKW(lex, end))
     {
-        if (exp->type == en_memberptr)
-        {
-            if (classRefCount(exp->v.sp->parentClass, basetype(itype)->sp) != 1)
-                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-
-        }
-        else 
-        {
-            if (cparams.prm_cplusplus && isstructured(tp))
-            {
-                castToPointer(&tp, &exp, (enum e_kw)-1, itype);
-            }
-            if (!comparetypes(itype, tp, TRUE))
-            {
-                errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
-            }
-        }
+        exp = intNode(en_memberptr, 0); // no SP means fill it with zeros...
     }
     else
     {
-        exp = intNode(en_memberptr, 0); // no SP means fill it with zeros...
+        lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        if (!isconstzero(tp, exp) && exp->type != en_nullptr)
+        {
+            if (exp->type == en_memberptr)
+            {
+                if (classRefCount(exp->v.sp->parentClass, basetype(itype)->sp) != 1)
+                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+    
+            }
+            else 
+            {
+                if (cparams.prm_cplusplus && isstructured(tp))
+                {
+                    castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+                }
+                if (!comparetypes(itype, tp, TRUE))
+                {
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                }
+            }
+        }
+        else
+        {
+            exp = intNode(en_memberptr, 0); // no SP means fill it with zeros...
+        }
     }
     initInsert(init, itype, exp, offset, FALSE);
     if (needend)
@@ -2171,10 +2204,19 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
                                      enum e_sc sc, TYPE *itype, 
                                      INITIALIZER **init, INITIALIZER **dest, SYMBOL *sp)
 {
+    TYPE *tp;
+    EXPRESSION *exp;
+    BOOL needend = FALSE;
     if (MATCHKW(lex, begin))
     {
-        // later this will be an initializer list
-        assert(0);
+        needend = TRUE;
+        lex = getsym();
+    }
+    if (cparams.prm_cplusplus && needend && MATCHKW(lex, end))
+    {
+        exp = intNode(en_c_i, 0);
+        sp->tp = &stdint; // sets type for variable
+        initInsert(init, sp->tp, exp, offset, FALSE);
     }
     else
     {
@@ -2223,6 +2265,14 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
         else
         {
             initInsert(init, sp->tp, exp, offset, FALSE);
+        }
+    }
+    if (needend)
+    {
+        if (!needkw(&lex, end))
+        {
+            errskim(&lex, skim_end);
+            skip(&lex, end);
         }
     }
     return lex;
@@ -2521,7 +2571,7 @@ static BOOL hasData(TYPE *tp)
     }
     return FALSE;
 }
-LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in)
+LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOL asExpression)
 {
     TYPE *tp;
     inittag = 0;
@@ -2566,7 +2616,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
-    else if (MATCHKW(lex, assign) || cparams.prm_cplusplus && (MATCHKW(lex, openpa) || storage_class_in == sc_member && MATCHKW(lex, begin)))
+    else if (MATCHKW(lex, assign) || cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin)))
     {
         INITIALIZER **init;
         sp->assigned = TRUE;
@@ -2623,7 +2673,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             }
         }
     }
-    else if (cparams.prm_cplusplus && sp->storage_class != sc_typedef)
+    else if (cparams.prm_cplusplus && sp->storage_class != sc_typedef && asExpression)
     {
         if (isstructured(sp->tp))
         {
@@ -2714,7 +2764,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
     }
     if (isconst(tp))
-        if  (!sp->init)
+        if  (!sp->init && asExpression)
         {
             if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member)
             {
@@ -2722,7 +2772,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
             }
         }
-        else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp))
+        else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp) && asExpression)
         {
             errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
         }
@@ -2737,7 +2787,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (isref(sp->tp) && sp->storage_class != sc_typedef)
     {
-        if (!sp->init && sp->storage_class != sc_external && sp->storage_class != sc_member)
+        if (!sp->init && sp->storage_class != sc_external && sp->storage_class != sc_member && asExpression)
         {
             errorsym(ERR_REF_MUST_INITIALIZE, sp);
         }

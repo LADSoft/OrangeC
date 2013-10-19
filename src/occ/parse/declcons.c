@@ -1503,7 +1503,7 @@ static void lookupInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
             {
                 init->sp->init = NULL;
                 lex = SetAlternateLex(init->initData);
-                lex = initialize(lex, NULL, init->sp, sc_member);
+                lex = initialize(lex, NULL, init->sp, sc_member, TRUE);
                 SetAlternateLex(NULL);
                 init->sp->init->exp = unshim(init->sp->init->exp, ths);
             }

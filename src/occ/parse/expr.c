@@ -141,7 +141,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     NAMESPACEVALUES *nsv = NULL;
     if (cparams.prm_cplusplus)
     {
-        lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, idname);
+        lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, FALSE, idname);
     }
     else
     {
@@ -643,7 +643,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 l.next = structSyms;
                 l.data = basetype(*tp)->sp;
                 structSyms = &l;
-                lex = id_expression(lex, funcsp, &sp2, NULL, NULL, FALSE, NULL);
+                lex = id_expression(lex, funcsp, &sp2, NULL, NULL, FALSE, TRUE, NULL);
                 structSyms = structSyms->next;
             }
             else

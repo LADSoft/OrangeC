@@ -51,7 +51,7 @@ static char *cppbuiltin = "void * operator new(unsigned size); "
     "void * __GetTypeInfo(void *block, void *instance); " 
     "void _ThrowException(void *,void *,void*); " 
 	"void _RethrowException(); "
-    "void __arrCall(void *, int, int, int); ";
+    "void __arrCall(void *, void *, void *, int, int); ";
 
 void ParseBuiltins(void)
 {

@@ -541,21 +541,22 @@ typedef struct _vbaseEntry
     unsigned pointerOffset;
     unsigned structOffset;
 } VBASEENTRY;
-typedef struct arglist
+typedef struct initlist
 {
-    struct arglist *next;
+    struct initlist *next;
     TYPE *tp;
     EXPRESSION *exp;
     EXPRESSION *dest;
+    struct initlist *nested;
     int byRef : 1;
-} ARGLIST;
+} INITLIST;
 
 typedef struct functioncall
 {
     SYMBOL *sp;
     TYPE *functp;
     EXPRESSION *fcall;
-    ARGLIST *arguments;
+    INITLIST *arguments;
     SYMBOL *returnSP;
     EXPRESSION *returnEXP;
     EXPRESSION *thisptr;

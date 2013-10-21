@@ -119,7 +119,12 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
     char nm[512];
     int i;
     HASHREC *hr ;
-    if (tp->type == bt_typedef)
+    if(!tp)
+    {
+        sprintf(in, "%d%s", strlen("initializer-list"), "initializer-list");
+        in += strlen(in);
+    }
+    else if (tp->type == bt_typedef)
     {
        in = mangleType(in, tp->btp, FALSE);
     }

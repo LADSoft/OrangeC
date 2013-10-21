@@ -40,7 +40,7 @@
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM *chosenAssembler;
 extern int stdpragmas;
-extern enum e_kw skim_closepa[];
+extern enum e_kw skim_closepa[], skim_end[];
 extern enum e_kw skim_closebr[];
 extern enum e_kw skim_semi[];
 extern TYPE stdpointer;
@@ -139,6 +139,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     SYMBOL *sp = NULL;
     SYMBOL *strSym = NULL;
     NAMESPACEVALUES *nsv = NULL;
+    marksym();
     if (cparams.prm_cplusplus)
     {
         lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, FALSE, idname);
@@ -183,19 +184,10 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 break;
             case sc_type:
             case sc_typedef:
-                if (cparams.prm_cplusplus)
-                {
-                    lex = backupsym(0);
-                    *tp = NULL;
-                    lex = expression_func_type_cast(lex, funcsp, tp, exp);
-                    return lex;
-                }
-                else
-                {
-                    error(ERR_IDENTIFIER_EXPECTED);
-                    *exp = intNode(en_c_i, 1);
-                }
-                break;
+                lex = backupsym(0);
+                *tp = NULL;
+                lex = expression_func_type_cast(lex, funcsp, tp, exp);
+                return lex;
             case sc_overloads:
                 if (!strcmp(sp->name, "setjmp") && sp->parentClass == NULL && sp->parentNameSpace == NULL)
                     setjmp_used = TRUE;
@@ -505,7 +497,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             }
         }
         while (cparams.prm_cplusplus && insertOperatorFunc(ovcl_pointsto, pointsto,
-                               funcsp, tp, exp, NULL,NULL));
+                               funcsp, tp, exp, NULL,NULL, NULL));
         if (ispointer(*tp))
         {
             *tp = basetype(*tp);
@@ -782,89 +774,106 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     TYPE *tp2;
     EXPRESSION *expr2 = NULL;
     lex = getsym();
-    lex = expression_comma(lex, funcsp, NULL, &tp2, &expr2, FALSE);
-    if (tp2)
+    if (cparams.prm_cplusplus && MATCHKW(lex, begin))
     {
+        INITLIST *args = NULL;
+        lex = getInitList(lex, funcsp, &args);
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_openbr, openbr,
-                               funcsp, tp, exp, tp2, expr2))
+                               funcsp, tp, exp, NULL, NULL, args))
         {
-        }
-        else if (isvoid(tp2) || isvoid(*tp))
-            error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if (basetype(tp2)->type == bt_memberptr || basetype(tp2)->type == bt_memberptr)
-            error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-        else if (basetype(tp2)->scoped || basetype(*tp)->scoped)
-            error(ERR_SCOPED_TYPE_MISMATCH);
-        else if (ispointer(*tp))
-        {
-            if (!isint(tp2))
-                if (ispointer(tp2))
-                    error(ERR_NONPORTABLE_POINTER_CONVERSION);
-                else
-                    error(ERR_NEED_INTEGER_EXPRESSION);
-            /* unreference pointer to VLA */
-            if (!(*tp)->vla && basetype(basetype(*tp)->btp)->vla)
-                (*tp) = basetype(*tp)->btp;
-            if ((*tp)->vla)
-            {
-                int soa = getSize(bt_pointer);
-                int sou = getSize(bt_unsigned);
-                EXPRESSION *vlanode = varNode(en_auto, (*tp)->sp);
-                EXPRESSION *exp1 = exprNode(en_add, vlanode, intNode(en_c_i, soa + sou *(1 + (*tp)->vlaindex)));
-                deref(&stdint, &exp1);
-                cast(&stdpointer, &expr2);
-                exp1 = exprNode(en_umul, exp1, expr2);
-                *exp = exprNode(en_add, *exp, exp1);
-                *tp = basetype(*tp)->btp;
-            }
-            else
-            {
-                EXPRESSION *exp1 = NULL;
-                *tp = basetype(*tp)->btp;
-                cast( &stdint, &expr2);
-                exp1 = exprNode(en_umul, expr2, 
-                               intNode(en_c_i, (*tp)->size + (*tp)->arraySkew));
-                *exp = exprNode(en_add, *exp, exp1);
-            }
-            if (!(*tp)->array && !(*tp)->vla)
-                deref(*tp, exp);
-        }
-        else if (ispointer(tp2))
-        {
-            if (!isint(*tp))
-                if (ispointer(*tp))
-                    error(ERR_NONPORTABLE_POINTER_CONVERSION);
-                else
-                    error(ERR_NEED_INTEGER_EXPRESSION);
-            if (tp2->vla)
-            {
-                int soa = getSize(bt_pointer);
-                int sou = getSize(bt_unsigned);
-                EXPRESSION *vlanode = varNode(en_auto, tp2->sp);
-                expr2 = exprNode(en_add, expr2, intNode(en_c_i, soa + sou *( 1 + tp2->vlaindex)));
-                deref(&stdint, exp);
-                *exp = exprNode(en_umul, expr2, *exp);
-                deref(&stdpointer, &vlanode);
-                *exp = exprNode(en_add, *exp, vlanode);
-                *tp = basetype(tp2)->btp;
-            }
-            else
-            {
-                EXPRESSION *exp1 = NULL;
-                *tp = basetype(tp2)->btp;
-                cast(&stdint, exp);
-                exp1 = exprNode(en_umul, *exp, 
-                               intNode(en_c_i, (*tp)->size + (*tp)->arraySkew));
-                *exp = exprNode(en_add, expr2, exp1);
-            }
-            if (!(*tp)->array && !(*tp)->vla)
-                deref(*tp, exp);
         }
         else
-            error(ERR_DEREF);		
+        {
+            error(ERR_CANNOT_USE_INIT_LIST_WITH_BUILTIN_BRACKET);
+        }
+                
     }
     else
-        error(ERR_EXPRESSION_SYNTAX);
+    {
+        lex = expression_comma(lex, funcsp, NULL, &tp2, &expr2, FALSE);
+        if (tp2)
+        {
+            if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_openbr, openbr,
+                                   funcsp, tp, exp, tp2, expr2, NULL))
+            {
+            }
+            else if (isvoid(tp2) || isvoid(*tp))
+                error(ERR_NOT_AN_ALLOWED_TYPE);
+            else if (basetype(tp2)->type == bt_memberptr || basetype(tp2)->type == bt_memberptr)
+                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+            else if (basetype(tp2)->scoped || basetype(*tp)->scoped)
+                error(ERR_SCOPED_TYPE_MISMATCH);
+            else if (ispointer(*tp))
+            {
+                if (!isint(tp2))
+                    if (ispointer(tp2))
+                        error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                    else
+                        error(ERR_NEED_INTEGER_EXPRESSION);
+                /* unreference pointer to VLA */
+                if (!(*tp)->vla && basetype(basetype(*tp)->btp)->vla)
+                    (*tp) = basetype(*tp)->btp;
+                if ((*tp)->vla)
+                {
+                    int soa = getSize(bt_pointer);
+                    int sou = getSize(bt_unsigned);
+                    EXPRESSION *vlanode = varNode(en_auto, (*tp)->sp);
+                    EXPRESSION *exp1 = exprNode(en_add, vlanode, intNode(en_c_i, soa + sou *(1 + (*tp)->vlaindex)));
+                    deref(&stdint, &exp1);
+                    cast(&stdpointer, &expr2);
+                    exp1 = exprNode(en_umul, exp1, expr2);
+                    *exp = exprNode(en_add, *exp, exp1);
+                    *tp = basetype(*tp)->btp;
+                }
+                else
+                {
+                    EXPRESSION *exp1 = NULL;
+                    *tp = basetype(*tp)->btp;
+                    cast( &stdint, &expr2);
+                    exp1 = exprNode(en_umul, expr2, 
+                                   intNode(en_c_i, (*tp)->size + (*tp)->arraySkew));
+                    *exp = exprNode(en_add, *exp, exp1);
+                }
+                if (!(*tp)->array && !(*tp)->vla)
+                    deref(*tp, exp);
+            }
+            else if (ispointer(tp2))
+            {
+                if (!isint(*tp))
+                    if (ispointer(*tp))
+                        error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                    else
+                        error(ERR_NEED_INTEGER_EXPRESSION);
+                if (tp2->vla)
+                {
+                    int soa = getSize(bt_pointer);
+                    int sou = getSize(bt_unsigned);
+                    EXPRESSION *vlanode = varNode(en_auto, tp2->sp);
+                    expr2 = exprNode(en_add, expr2, intNode(en_c_i, soa + sou *( 1 + tp2->vlaindex)));
+                    deref(&stdint, exp);
+                    *exp = exprNode(en_umul, expr2, *exp);
+                    deref(&stdpointer, &vlanode);
+                    *exp = exprNode(en_add, *exp, vlanode);
+                    *tp = basetype(tp2)->btp;
+                }
+                else
+                {
+                    EXPRESSION *exp1 = NULL;
+                    *tp = basetype(tp2)->btp;
+                    cast(&stdint, exp);
+                    exp1 = exprNode(en_umul, *exp, 
+                                   intNode(en_c_i, (*tp)->size + (*tp)->arraySkew));
+                    *exp = exprNode(en_add, expr2, exp1);
+                }
+                if (!(*tp)->array && !(*tp)->vla)
+                    deref(*tp, exp);
+            }
+            else
+                error(ERR_DEREF);		
+        }
+        else
+            error(ERR_EXPRESSION_SYNTAX);
+    }
     if (!MATCHKW(lex, closebr))
     {
         error(ERR_ARRAY_NEED_CLOSEBRACKET);
@@ -876,7 +885,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
     HASHREC *hr = basetype(params->functp)->syms->table[0];
-    ARGLIST *list = params->arguments;
+    INITLIST *list = params->arguments;
     BOOL matching = TRUE;
     BOOL tooshort = FALSE;
     BOOL toolong = FALSE;
@@ -1037,42 +1046,61 @@ join:
     else if (tooshort)
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
 }
-LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams)
+static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enum e_kw finish, BOOL allowNesting)
 {
-    ARGLIST **lptr = &funcparams->arguments;
+    *lptr = NULL;
     lex = getsym(); /* past ( */
-    while (!MATCHKW(lex,closepa))
+    while (!MATCHKW(lex,finish))
     {
-        ARGLIST *p = Alloc(sizeof(ARGLIST));
-        lex = expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, FALSE);
-        if (p->tp && isvoid(p->tp))
-            error(ERR_NOT_AN_ALLOWED_TYPE);
-        optimize_for_constants(&p->exp);
-        assignmentUsages(p->exp, FALSE);
-        if (p->tp)
+        INITLIST *p = Alloc(sizeof(INITLIST));
+        if (MATCHKW(lex, begin))
         {
+            lex = getInitInternal(lex, funcsp, &p->nested, end, FALSE);
             *lptr = p;
             lptr = &(*lptr)->next;
+            if (!allowNesting)
+                error(ERR_CANNOT_USE_INIT_LIST);
         }
         else
         {
-            error(ERR_IDENTIFIER_EXPECTED);
-            errskim(&lex, skim_closepa);
+            lex = expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, FALSE);
+            if (p->tp && isvoid(p->tp))
+                error(ERR_NOT_AN_ALLOWED_TYPE);
+            optimize_for_constants(&p->exp);
+            assignmentUsages(p->exp, FALSE);
+            if (p->tp)
+            {
+                *lptr = p;
+                lptr = &(*lptr)->next;
+            }
+            else
+            {
+                error(ERR_IDENTIFIER_EXPECTED);
+                errskim(&lex, finish == closepa ? skim_closepa : skim_end);
+            }
         }
         if (!MATCHKW(lex, comma))
         {
             break;
         }
         lex = getsym();
-        if (MATCHKW(lex, closepa))
+        if (MATCHKW(lex, finish))
             error(ERR_IDENTIFIER_EXPECTED);
     }
-    if (!needkw(&lex, closepa))
+    if (!needkw(&lex, finish))
     {
-        errskim(&lex, skim_closepa);
-        skip(&lex, closepa);
+        errskim(&lex, finish == closepa ? skim_closepa : skim_end);
+        skip(&lex, finish);
     }
 	return lex;
+}
+LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner)
+{
+    lex = getInitInternal(lex, funcsp, owner, end, FALSE);
+}
+LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish)
+{
+    return getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE);
 }
 void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp)
 {
@@ -1115,7 +1143,7 @@ void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp)
         }
     }
 }
-void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
+void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands)
 {
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
         hr = hr->next;
@@ -1123,135 +1151,183 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
     {
         SYMBOL *sym= (SYMBOL *)hr->p;
         EXPRESSION *exp = NULL;
-        ARGLIST *p;
+        INITLIST *p;
         if (!*lptr)
         {
             EXPRESSION *p = sym->init->exp;
-            *lptr = Alloc(sizeof(ARGLIST));
+            *lptr = Alloc(sizeof(INITLIST));
             (*lptr)->exp = p;
             (*lptr)->tp = sym->tp;
         }        
         p = *lptr;
         if (cparams.prm_cplusplus)
         {
-            if (isstructured(sym->tp))
+            BOOL done = FALSE;
+            if (!p->tp)
             {
-                TYPE *tpx = p->tp;
-                if (isref(tpx))
-                    tpx = basetype(tpx)->btp;
-                // use constructor or conversion function and push on stack ( no destructor)
-                if (p->exp->type == en_func && comparetypes(sym->tp, tpx, TRUE))
+                // initlist
+                INITLIST *pinit = p->nested;
+                if (isstructured(sym->tp) || isref(sym->tp) && isstructured(basetype(sym->tp)->btp))
                 {
-                    EXPRESSION **exp = NULL;
-                    SYMBOL *esp;
-                    EXPRESSION *consexp;
-                    TYPE *tp;
-                    if (p->exp->v.func->returnEXP)
+                    TYPE *stype = sym->tp;
+                    SYMBOL *sp;
+                    EXPRESSION *thisptr;
+                    if (isref(stype))
+                        stype = basetype(stype)->btp;
+                    sp = anonymousVar(theCurrentFunc ? sc_auto : sc_localstatic, stype);
+                    thisptr = varNode(theCurrentFunc ? en_auto : en_label, sp);
+                    if (!theCurrentFunc)
                     {
-                        exp = &p->exp->v.func->returnEXP;
-                        tp = p->exp->v.func->returnSP->tp;
+                        sp->label = nextLabel++;
+                        insertInitSym(sp);
+                    }
+                    if (stype->sp->trivialCons)
+                    {
+                        INITIALIZER *init = NULL, **it = &init;
+                        HASHREC *hr = stype->syms->table[0];
+                        while (pinit && hr)
+                        {
+                            SYMBOL *shr = (SYMBOL *)hr->p;
+                            if (ismemberdata(shr))
+                            {
+                                initInsert(it, pinit->tp, pinit->exp, shr->offset, FALSE);
+                                it = &(*it)->next;
+                                pinit = pinit->next;
+                            }
+                            hr = hr->next;
+                        }
+                        p->exp = convertInitToExpression(stype, NULL, theCurrentFunc, init, thisptr);
+                        if (!isref(sym->tp))
+                            sp->stackblock = TRUE;
+                        done = TRUE;
                     }
                     else
                     {
-                        exp = &p->exp->v.func->thisptr;
-                        tp = p->exp->v.func->thistp;
-                    }
-                    if (exp)
-                    {
-                        esp = anonymousVar(sc_auto, tp); // sc_parameter to push it...
-                        esp->stackblock = TRUE;
-                        consexp = varNode(en_auto, esp);
-                        *exp = consexp;
-                    }
-                }
-                else
-                {
-                    TYPE *ctype = sym->tp;
-                    FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                    ARGLIST *arg = Alloc(sizeof(ARGLIST));
-                    SYMBOL *esp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
-                    EXPRESSION *consexp = varNode(en_auto, esp);
-                    EXPRESSION *destexp = consexp;
-                    EXPRESSION *old = p->exp;
-                    esp->stackblock = TRUE;
-                    arg->exp = p->exp;
-                    arg->tp = p->tp;
-                    funcparams->arguments = arg;
-                    callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE);
-                    p->exp=consexp;
-                    if (p->exp->type == en_func)
-                    {
-                        BOOL ref = FALSE;
-                        SYMBOL *spx = p->exp->v.func->sp;
-                        TYPE *tpx = basetype(spx->tp);
-                        TYPE *tpx1, *tpx2;
-                        HASHREC *hr1;
-                        if (spx->castoperator)
+                        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                        TYPE *ctype = sp->tp;
+                        EXPRESSION *dexp = thisptr;
+                        funcparams->arguments = pinit;
+                        p->exp = thisptr;
+                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE);
+                        if (!isref(sym->tp))
                         {
-                            tpx1 = spx->parentClass->tp;
-                            tpx2 = tpx->btp;
+                            sp->stackblock = TRUE;
                         }
                         else
                         {
-                            tpx1 = ((SYMBOL *)tpx->syms->table[0]->next->p)->tp;
-                            tpx2 = spx->parentClass->tp;
+                            callDestructor(stype->sp, &dexp, NULL, TRUE);
+                            if (dexp)
+                                p->dest = dexp;
                         }
-                        esp->tp = tpx2;
-                        if (!comparetypes(basetype(sym->tp), basetype(tpx2), TRUE))
+                        done = TRUE;
+                    }
+                    p->tp = sym->tp;
+                }
+                else if (ispointer(sym->tp))
+                {
+                    INITIALIZER *init = NULL, **it = &init;
+                    SYMBOL *sp = anonymousVar(theCurrentFunc ? sc_auto : sc_localstatic, sym->tp);
+                    EXPRESSION *thisptr = varNode(theCurrentFunc ? en_auto : en_label, sp);
+                    int n = 0;
+                    TYPE *btp = sym->tp;
+                    while (isarray(btp))
+                        btp = basetype(btp)->btp;
+                    if (!theCurrentFunc)
+                    {
+                        sp->label = nextLabel++;
+                        insertInitSym(sp);
+                    }
+                    if (!isarray(sym->tp))
+                    {
+                        TYPE *gtype = Alloc(sizeof(TYPE));
+                        INITLIST *xx = pinit;
+                        *gtype = *sym->tp;
+                        gtype->array = TRUE;
+                        while (xx)
                         {
-                            esp->stackblock = FALSE; // make it a real variable
-                            insert(esp, localNameSpace->syms);
-                            funcparams = Alloc(sizeof(FUNCTIONCALL));
-                            arg = Alloc(sizeof(ARGLIST));
-                            esp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
-                            esp->stackblock = TRUE;
-                            consexp = varNode(en_auto, esp);
-                            // have to do another constructor
-//                            DerivedToBase(sym->tp, tpx2, &p->exp);
-                            arg->exp = p->exp;
-                            arg->tp = tpx2;
-                            funcparams->arguments = arg;
-                            ctype = sym->tp;
-                            callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, FALSE);
-                            p->exp = consexp;
-                            callDestructor(basetype(tpx2)->sp, &destexp, NULL, TRUE);
-                            (*lptr)->dest = destexp;
+                            n ++;
+                            xx = xx->next;
                         }
-                        else if (old->type == en_func && old->v.func->returnEXP)
-                        {
-                            destexp = old->v.func->returnEXP;
-                            callDestructor(old->v.func->returnSP, &destexp, NULL, TRUE);
-                            (*lptr)->dest = destexp;
-                        }
+                        sym->tp = gtype;
+                        sym->tp->size = btp->size * n;
+                    }
+                    n = 0;
+                    while (pinit)
+                    {
+                        initInsert(it, pinit->tp, pinit->exp, n, FALSE);
+                        it = &(*it)->next;
+                        n += btp->size;
+                        pinit = pinit->next;
+                    }
+                    p->exp = convertInitToExpression(sym->tp, NULL, theCurrentFunc, init, thisptr);
+                    p->tp = sym->tp;
+                    done = TRUE;
+                }
+                else
+                {
+                    // defer to below processing
+                    if (pinit)
+                    {
+                        p->exp = pinit->exp;
+                        p->tp = pinit->tp;
+                    }
+                    else
+                    {
+                        p->exp = intNode(en_c_i, 0);
+                        p->tp = &stdint;
                     }
                 }
-                p->tp = sym->tp;
             }
-            else if (isref(sym->tp))
+            if (!done)
             {
-                if (isstructured(basetype(sym->tp)->btp))
+                if (isstructured(sym->tp))
                 {
                     TYPE *tpx = p->tp;
                     if (isref(tpx))
                         tpx = basetype(tpx)->btp;
-                    if (!isconst(basetype(sym->tp)->btp) && isconst(tpx) || !comparetypes(sym->tp, tpx, TRUE) 
-                        && !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp))
-                    { 
-                        // make temp via constructor or conversion function
-                        SYMBOL *esp = anonymousVar(sc_auto,basetype(sym->tp)->btp);
+                    // use constructor or conversion function and push on stack ( no destructor)
+                    if (p->exp->type == en_func && comparetypes(sym->tp, tpx, TRUE))
+                    {
+                        EXPRESSION **exp = NULL;
+                        SYMBOL *esp;
+                        EXPRESSION *consexp;
+                        TYPE *tp;
+                        if (p->exp->v.func->returnEXP)
+                        {
+                            exp = &p->exp->v.func->returnEXP;
+                            tp = p->exp->v.func->returnSP->tp;
+                        }
+                        else
+                        {
+                            exp = &p->exp->v.func->thisptr;
+                            tp = p->exp->v.func->thistp;
+                        }
+                        if (exp)
+                        {
+                            esp = anonymousVar(sc_auto, tp); // sc_parameter to push it...
+                            esp->stackblock = TRUE;
+                            consexp = varNode(en_auto, esp);
+                            *exp = consexp;
+                        }
+                    }
+                    else
+                    {
+                        TYPE *ctype = sym->tp;
+                        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                        INITLIST *arg = Alloc(sizeof(INITLIST));
+                        SYMBOL *esp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
                         EXPRESSION *consexp = varNode(en_auto, esp);
                         EXPRESSION *destexp = consexp;
-                        TYPE *ctype = basetype(sym->tp)->btp;
-                        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                        ARGLIST *arg = Alloc(sizeof(ARGLIST));
-                        insert(esp, localNameSpace->syms);
+                        EXPRESSION *old = p->exp;
+                        esp->stackblock = TRUE;
                         arg->exp = p->exp;
-                        arg->tp = basetype(p->tp);
+                        arg->tp = p->tp;
                         funcparams->arguments = arg;
-                        p->exp = consexp;
-                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE); 
+                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE);
+                        p->exp=consexp;
                         if (p->exp->type == en_func)
                         {
+                            BOOL ref = FALSE;
                             SYMBOL *spx = p->exp->v.func->sp;
                             TYPE *tpx = basetype(spx->tp);
                             TYPE *tpx1, *tpx2;
@@ -1260,131 +1336,202 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
                             {
                                 tpx1 = spx->parentClass->tp;
                                 tpx2 = tpx->btp;
-                                if (isref(tpx2))
-                                    tpx2 = basetype(tpx2)->btp;
                             }
                             else
                             {
                                 tpx1 = ((SYMBOL *)tpx->syms->table[0]->next->p)->tp;
                                 tpx2 = spx->parentClass->tp;
                             }
-                            esp->tp = tpx1; // guaranteed to be a structured type or reference to one
-                            DerivedToBase(tpx1, p->tp, &p->exp->v.func->thisptr);
-                            if (isstructured(tpx2) || isref(tpx2) && isstructured(basetype(tpx2)->btp))
-                                DerivedToBase(sym->tp, tpx2, &p->exp);
-                            else
-                                cast(sym->tp, &p->exp);
+                            esp->tp = tpx2;
+                            if (!comparetypes(basetype(sym->tp), basetype(tpx2), TRUE))
+                            {
+                                esp->stackblock = FALSE; // make it a real variable
+                                insert(esp, localNameSpace->syms);
+                                funcparams = Alloc(sizeof(FUNCTIONCALL));
+                                arg = Alloc(sizeof(INITLIST));
+                                esp = anonymousVar(sc_auto, sym->tp); // sc_parameter to push it...
+                                esp->stackblock = TRUE;
+                                consexp = varNode(en_auto, esp);
+                                // have to do another constructor
+    //                            DerivedToBase(sym->tp, tpx2, &p->exp);
+                                arg->exp = p->exp;
+                                arg->tp = tpx2;
+                                funcparams->arguments = arg;
+                                ctype = sym->tp;
+                                callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, FALSE);
+                                p->exp = consexp;
+                                callDestructor(basetype(tpx2)->sp, &destexp, NULL, TRUE);
+                                (*lptr)->dest = destexp;
+                            }
+                            else if (old->type == en_func && old->v.func->returnEXP)
+                            {
+                                destexp = old->v.func->returnEXP;
+                                callDestructor(old->v.func->returnSP, &destexp, NULL, TRUE);
+                                (*lptr)->dest = destexp;
+                            }
                         }
                     }
-                    else
-                    {
-                        if (!comparetypes(sym->tp, p->tp, TRUE))
-                            DerivedToBase(sym->tp, p->tp, &p->exp);
-                    }
+                    p->tp = sym->tp;
                 }
-                else if (comparetypes(sym->tp, p->tp, TRUE))
+                else if (isref(sym->tp))
                 {
-                    if (isarithmeticconst(p->exp) || basetype(sym->tp)->type != bt_rref && !isconst(basetype(sym->tp)->btp) && isconst(p->tp))
+                    if (isstructured(basetype(sym->tp)->btp))
+                    {
+                        TYPE *tpx = p->tp;
+                        if (isref(tpx))
+                            tpx = basetype(tpx)->btp;
+                        if (!isconst(basetype(sym->tp)->btp) && isconst(tpx) || !comparetypes(sym->tp, tpx, TRUE) 
+                            && !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp))
+                        { 
+                            // make temp via constructor or conversion function
+                            SYMBOL *esp = anonymousVar(sc_auto,basetype(sym->tp)->btp);
+                            EXPRESSION *consexp = varNode(en_auto, esp);
+                            EXPRESSION *destexp = consexp;
+                            TYPE *ctype = basetype(sym->tp)->btp;
+                            FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                            INITLIST *arg = Alloc(sizeof(INITLIST));
+                            insert(esp, localNameSpace->syms);
+                            arg->exp = p->exp;
+                            arg->tp = basetype(p->tp);
+                            funcparams->arguments = arg;
+                            p->exp = consexp;
+                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE); 
+                            if (p->exp->type == en_func)
+                            {
+                                SYMBOL *spx = p->exp->v.func->sp;
+                                TYPE *tpx = basetype(spx->tp);
+                                TYPE *tpx1, *tpx2;
+                                HASHREC *hr1;
+                                if (spx->castoperator)
+                                {
+                                    tpx1 = spx->parentClass->tp;
+                                    tpx2 = tpx->btp;
+                                    if (isref(tpx2))
+                                        tpx2 = basetype(tpx2)->btp;
+                                }
+                                else
+                                {
+                                    tpx1 = ((SYMBOL *)tpx->syms->table[0]->next->p)->tp;
+                                    tpx2 = spx->parentClass->tp;
+                                }
+                                esp->tp = tpx1; // guaranteed to be a structured type or reference to one
+                                DerivedToBase(tpx1, p->tp, &p->exp->v.func->thisptr);
+                                if (isstructured(tpx2) || isref(tpx2) && isstructured(basetype(tpx2)->btp))
+                                    DerivedToBase(sym->tp, tpx2, &p->exp);
+                                else
+                                    cast(sym->tp, &p->exp);
+                            }
+                        }
+                        else
+                        {
+                            if (!comparetypes(sym->tp, p->tp, TRUE))
+                                DerivedToBase(sym->tp, p->tp, &p->exp);
+                        }
+                    }
+                    else if (comparetypes(sym->tp, p->tp, TRUE))
+                    {
+                        if (isarithmeticconst(p->exp) || basetype(sym->tp)->type != bt_rref && !isconst(basetype(sym->tp)->btp) && isconst(p->tp))
+                        {
+                            // make numeric temp and perform cast
+                            p->exp = createTemporary(sym->tp, p->exp);
+                        }
+                        else
+                        {
+                            // pass address
+                            EXPRESSION *exp = p->exp;
+                            while (castvalue(exp) || exp->type == en_not_lvalue)
+                                exp = exp->left;
+                            if (exp->type != en_l_ref)
+                            {
+                                if (!lvalue(exp))
+                                {
+                                    // make numeric temp and perform cast
+                                    exp = createTemporary(sym->tp, exp);
+                                }
+                                exp = exp->left; // take address
+                                p->exp = exp;
+                            }
+                        }
+                    }
+                    else if (isstructured(p->tp))
+                    {
+                        // arithmetic or pointer
+                        TYPE *etp = basetype(sym->tp)->btp;
+                        if (cppCast(p->tp, &etp, &p->exp))
+                            p->tp = etp;
+                        p->exp = createTemporary(sym->tp, p->exp);                        
+                    }
+                    else
                     {
                         // make numeric temp and perform cast
                         p->exp = createTemporary(sym->tp, p->exp);
                     }
-                    else
-                    {
-                        // pass address
-                        EXPRESSION *exp = p->exp;
-                        while (castvalue(exp) || exp->type == en_not_lvalue)
-                            exp = exp->left;
-                        if (exp->type != en_l_ref)
-                        {
-                            if (!lvalue(exp))
-                            {
-                                // make numeric temp and perform cast
-                                exp = createTemporary(sym->tp, exp);
-                            }
-                            exp = exp->left; // take address
-                            p->exp = exp;
-                        }
-                    }
+                    p->tp = sym->tp;
                 }
                 else if (isstructured(p->tp))
                 {
                     // arithmetic or pointer
-                    TYPE *etp = basetype(sym->tp)->btp;
+                    TYPE *etp = sym->tp;
                     if (cppCast(p->tp, &etp, &p->exp))
                         p->tp = etp;
-                    p->exp = createTemporary(sym->tp, p->exp);                        
                 }
-                else
+                else if (ispointer(sym->tp) && ispointer(p->tp))
                 {
-                    // make numeric temp and perform cast
-                    p->exp = createTemporary(sym->tp, p->exp);
-                }
-                p->tp = sym->tp;
-            }
-            else if (isstructured(p->tp))
-            {
-                // arithmetic or pointer
-                TYPE *etp = sym->tp;
-                if (cppCast(p->tp, &etp, &p->exp))
-                    p->tp = etp;
-            }
-            else if (ispointer(sym->tp) && ispointer(p->tp))
-            {
-                // handle base class conversion
-                TYPE *tpb = basetype(sym->tp)->btp;
-                TYPE *tpd = basetype(p->tp)->btp;
-                if (!comparetypes(basetype(tpb), basetype(tpd), TRUE))
-                {
-                    if (isstructured(tpb) && isstructured(tpd))
+                    // handle base class conversion
+                    TYPE *tpb = basetype(sym->tp)->btp;
+                    TYPE *tpd = basetype(p->tp)->btp;
+                    if (!comparetypes(basetype(tpb), basetype(tpd), TRUE))
                     {
-                        DerivedToBase(tpb, tpd, &p->exp);
+                        if (isstructured(tpb) && isstructured(tpd))
+                        {
+                            DerivedToBase(tpb, tpd, &p->exp);
+                        }
+                        p->tp = sym->tp;
                     }
-                    p->tp = sym->tp;
                 }
-            }
-            else if (basetype(sym->tp)->type == bt_memberptr)
-            {
-                if (p->exp->type == en_memberptr)
+                else if (basetype(sym->tp)->type == bt_memberptr)
                 {
-                    int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, TRUE);
-                    p->exp = intNode(en_labcon, lbl);
-                    p->exp = exprNode(en_stackblock, p->exp, NULL);
-                    p->exp->size = sym->tp->size;
+                    if (p->exp->type == en_memberptr)
+                    {
+                        int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, TRUE);
+                        p->exp = intNode(en_labcon, lbl);
+                        p->exp = exprNode(en_stackblock, p->exp, NULL);
+                        p->exp->size = sym->tp->size;
+                    }
+                    else if (isconstzero(p->tp, p->exp) || p->exp->type == en_nullptr)
+                    {
+                        EXPRESSION *dest = createTemporary(sym->tp, NULL);
+                        p->exp = exprNode(en_blockclear, dest, NULL);
+                        p->exp->size = sym->tp->size;
+                        p->exp = exprNode(en_void, p->exp, dest);
+                        p->exp = exprNode(en_stackblock, p->exp, NULL);
+                        p->exp->size = sym->tp->size;
+                        p->tp = sym->tp;
+                    }
+                    else if (p->exp->type == en_func && p->exp->v.func->returnSP)
+                    {
+                        SYMBOL *esp = anonymousVar(sc_auto, sym->tp);
+                        EXPRESSION *dest = varNode(en_auto, esp);
+                        esp->stackblock = TRUE;
+                        p->exp->v.func->returnSP->allocate = FALSE;
+                        p->exp->v.func->returnEXP = dest;
+                        p->exp->size = sym->tp->size;
+                        /*
+                        EXPRESSION *dest = createTemporary(sym->tp, NULL);
+                        p->exp->v.func->returnSP->allocate = FALSE;
+                        p->exp->v.func->returnEXP = dest;
+                        p->exp = exprNode(en_void, p->exp, dest) ;
+                        p->exp = exprNode(en_stackblock, p->exp, NULL);
+                        p->exp->size = sym->tp->size;
+                        */
+                    }
+                    else
+                    {
+                        p->exp = exprNode(en_stackblock, p->exp, NULL);
+                        p->exp->size = sym->tp->size;
+                    }
+                    p->tp->size = sym->tp->size;
                 }
-                else if (isconstzero(p->tp, p->exp) || p->exp->type == en_nullptr)
-                {
-                    EXPRESSION *dest = createTemporary(sym->tp, NULL);
-                    p->exp = exprNode(en_blockclear, dest, NULL);
-                    p->exp->size = sym->tp->size;
-                    p->exp = exprNode(en_void, p->exp, dest);
-                    p->exp = exprNode(en_stackblock, p->exp, NULL);
-                    p->exp->size = sym->tp->size;
-                    p->tp = sym->tp;
-                }
-                else if (p->exp->type == en_func && p->exp->v.func->returnSP)
-                {
-                    SYMBOL *esp = anonymousVar(sc_auto, sym->tp);
-                    EXPRESSION *dest = varNode(en_auto, esp);
-                    esp->stackblock = TRUE;
-                    p->exp->v.func->returnSP->allocate = FALSE;
-                    p->exp->v.func->returnEXP = dest;
-                    p->exp->size = sym->tp->size;
-                    /*
-                    EXPRESSION *dest = createTemporary(sym->tp, NULL);
-                    p->exp->v.func->returnSP->allocate = FALSE;
-                    p->exp->v.func->returnEXP = dest;
-                    p->exp = exprNode(en_void, p->exp, dest) ;
-                    p->exp = exprNode(en_stackblock, p->exp, NULL);
-                    p->exp->size = sym->tp->size;
-                    */
-                }
-                else
-                {
-                    p->exp = exprNode(en_stackblock, p->exp, NULL);
-                    p->exp->size = sym->tp->size;
-                }
-                p->tp->size = sym->tp->size;
             }
         }
         else
@@ -1401,7 +1548,7 @@ void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands)
     }
     while (*lptr) // take care of elliptical arguments and arguments without a prototype
     {
-        ARGLIST *p = *lptr;
+        INITLIST *p = *lptr;
         if (isstructured(p->tp))
         {
             p->exp = exprNode(en_stackblock, p->exp, NULL);
@@ -1419,7 +1566,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     TYPE *tp_cpp = *tp;
     EXPRESSION *exp_cpp = *exp;
     FUNCTIONCALL *funcparams;
-    ARGLIST **lptr ;
+    INITLIST **lptr ;
     EXPRESSION *exp_in = *exp;
     BOOL operands = FALSE;
     if (exp_in->type != en_func || isfuncptr(*tp))
@@ -1452,7 +1599,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     }
     if (lex)
     {
-        lex = getArgs(lex, funcsp, funcparams);
+        lex = getArgs(lex, funcsp, funcparams, closepa);
     }
     if (*tp)
         getFunctionSP(tp);
@@ -1463,9 +1610,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         if (!funcparams->thisptr && funcparams->sp->parentClass)
         {
             TYPE *tp = Alloc(sizeof(TYPE)), *tpx;
-            if (!structSyms)
-                errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
-            funcparams->thisptr = getMemberBase(funcparams->sp, funcsp);
+            funcparams->thisptr = getMemberBase(funcparams->sp, funcsp, FALSE);
             funcparams->thistp = tp;
             tp->type = bt_pointer;
             tp->size = getSize(bt_pointer);
@@ -1546,7 +1691,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             {
                 if (operands)
                 {
-                    ARGLIST *al = Alloc(sizeof(ARGLIST));
+                    INITLIST *al = Alloc(sizeof(INITLIST));
                     al->exp = funcparams->thisptr;
                     al->tp = funcparams->thistp;
                     al->next = funcparams->arguments;
@@ -1556,6 +1701,8 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             else
             {
+                if (!structSyms)
+                    errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
                 operands = FALSE;
             }
             lptr = &funcparams->arguments;
@@ -1696,10 +1843,10 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 f->sp = sym1;
                 f->functp = sym1->tp;
                 f->fcall = varNode(en_pc, sym1);
-                f->arguments = Alloc(sizeof(ARGLIST));
+                f->arguments = Alloc(sizeof(INITLIST));
                 f->arguments->tp = sym2->tp;
                 f->arguments->exp = *exp;
-                f->arguments->next = Alloc(sizeof(ARGLIST));
+                f->arguments->next = Alloc(sizeof(INITLIST));
                 f->arguments->next->tp = &stdunsigned;
                 f->arguments->next->exp = intNode(en_c_i, elems);
                 *exp = intNode(en_func, 0);
@@ -1884,7 +2031,7 @@ static BOOL getSuffixedChar(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION *
             f->sp = sym1;
             f->functp = sym1->tp;
             f->fcall = varNode(en_pc, sym1);
-            f->arguments = Alloc(sizeof(ARGLIST));
+            f->arguments = Alloc(sizeof(INITLIST));
             f->arguments->tp = *tp;
             f->arguments->exp = *exp;
             *exp = intNode(en_func, 0);
@@ -1928,7 +2075,7 @@ static BOOL getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION
             f->sp = sym1;
             f->functp = sym1->tp;
             f->fcall = varNode(en_pc, sym1);
-            f->arguments = Alloc(sizeof(ARGLIST));
+            f->arguments = Alloc(sizeof(INITLIST));
             if (lex->type == l_ull)
             {
                 f->arguments->tp = &stdunsignedlonglong;
@@ -1973,7 +2120,7 @@ static BOOL getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION
                 f->sp = sym1;
                 f->functp = sym1->tp;
                 f->fcall = varNode(en_pc, sym1);
-                f->arguments = Alloc(sizeof(ARGLIST));
+                f->arguments = Alloc(sizeof(INITLIST));
                 f->arguments->tp = &stdcharptr;
                 f->arguments->tp->size = (strlen(lex->litaslit) + 1) * f->arguments->tp->btp->size;
                 IncGlobalFlag();
@@ -2769,7 +2916,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
         TYPE *btp, *tp1;
         btp = basetype(*tp);
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_any, and,
-                               funcsp, tp, exp, NULL,NULL))
+                               funcsp, tp, exp, NULL,NULL, NULL))
         {
             return lex;
         }
@@ -2887,7 +3034,7 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
     lex = getsym();
     lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE);
     if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_pointer, star,
-                           funcsp, tp, exp, NULL,NULL))
+                           funcsp, tp, exp, NULL,NULL, NULL))
     {
         return lex;
     }
@@ -2942,7 +3089,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 {
     TYPE *oldType;
     BOOL done = FALSE;
-    if (cparams.prm_cplusplus && KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS))
+    if (KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS))
     {
         lex = expression_func_type_cast(lex, funcsp, tp, exp);
     }
@@ -3002,7 +3149,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                 kw = KW(lex);
                 lex = getsym();
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_postfix, kw,
-                                       funcsp, tp, exp, NULL,NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL))
                 {
                 }
                 else
@@ -3077,7 +3224,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numeric, plus,
-                                       funcsp, tp, exp, NULL,NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL))
                 {
                 }                                       
                 else 
@@ -3113,7 +3260,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numeric, minus,
-                                       funcsp, tp, exp, NULL,NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL))
                 {
                 }
                 else {
@@ -3155,7 +3302,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numericptr, not,
-                                       funcsp, tp, exp, NULL,NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL))
                 {
                 }
                 else 
@@ -3198,7 +3345,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_int, compl,
-                                       funcsp, tp, exp, NULL,NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL))
                 {
                 }
                 else {
@@ -3239,7 +3386,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_prefix, kw,
-                                       funcsp, tp, exp, NULL,NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL))
                 {
                 }
                 else 
@@ -3389,7 +3536,7 @@ static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
           lex = getsym();
         lex = expression_cast(lex, funcsp, NULL, &tp1, &exp1, FALSE);
         if (cparams.prm_cplusplus && kw == pointstar && insertOperatorFunc(ovcl_binary_any, pointstar,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
             continue;
         }
@@ -3514,7 +3661,7 @@ static LEXEME *expression_times(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         }
         if (cparams.prm_cplusplus
             && insertOperatorFunc(kw == mod ? ovcl_binary_int : ovcl_binary_numeric, kw,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
         }
         else 
@@ -3572,7 +3719,7 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
             continue;
         }
@@ -3666,7 +3813,7 @@ static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_int, kw,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
         }
         else {
@@ -3741,7 +3888,7 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
                 return lex;
             }
             if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
-                                   funcsp, tp, exp, tp1, exp1))
+                                   funcsp, tp, exp, tp1, exp1, NULL))
             {
             }
             else
@@ -3839,7 +3986,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
         }
         else
@@ -3959,7 +4106,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         }
         if (cparams.prm_cplusplus 
             && insertOperatorFunc(kw == en_lor || kw == en_land ? ovcl_binary_numericptr : ovcl_binary_int, kw,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
             continue;
         }
@@ -4085,6 +4232,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
 {
     BOOL done = FALSE;
     EXPRESSION *exp1=NULL;
+    EXPRESSION *asndest = NULL;
     TYPE *tp2;
     lex = expression_hook(lex, funcsp, atp, tp, exp);
     if (*tp == NULL)
@@ -4123,12 +4271,43 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         lex = getsym();
         switch(kw)
         {
+            case assign:
+                if (cparams.prm_cplusplus && MATCHKW(lex, begin))
+                {
+                    if (isstructured(*tp))
+                    {
+                        SYMBOL *sp = anonymousVar(sc_auto, *tp);
+                        EXPRESSION *destexp;
+                        INITIALIZER *init = NULL, *dest=NULL;
+                        SYMBOL *spinit = NULL;
+                        destexp = exp1 = varNode(en_auto, sp);
+                        tp1 = *tp;
+                        spinit = anonymousVar(sc_localstatic, tp1);
+                        insert(spinit, localNameSpace->syms);
+                        lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, tp1, spinit, FALSE);
+                        exp1 = convertInitToExpression(tp1, NULL, funcsp, init, exp1);
+                    }
+                    else
+                    {
+                        lex = getsym();
+                        lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE);
+                        if (!needkw(&lex, end))
+                        {
+                            errskim(&lex, skim_end);
+                            skip(&lex, end);
+                        }
+                    }
+                }
+                else
+                {
+                    lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE);
+                }
+                break;
             case asplus:
             case asminus:
             case asand:
             case asor:
             case asxor:
-            case assign:
                 lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE);
                 break;
             default:
@@ -4141,8 +4320,16 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(selovcl, kw,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
+            // unallocated var for destructor
+            if (asndest)
+            {
+                SYMBOL *sp = anonymousVar(sc_auto, tp1);
+                callDestructor(sp, &asndest, NULL, TRUE);
+                initInsert(&sp->dest, tp1, asndest, 0, TRUE);
+            }
+            
             continue;
         }
         if (selector)
@@ -4502,7 +4689,7 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
             break;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_comma, comma,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1, NULL))
         {
             continue;
         }

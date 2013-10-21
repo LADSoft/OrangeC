@@ -71,7 +71,7 @@ void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype)
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *sym)
 {
     LEXEME *lex = *lex2;
-    MEMBERINITIALIZERS *first = NULL, **cur = &first ;
+    MEMBERINITIALIZERS *first = NULL, **cur = &first, *last = NULL ;
 //    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
 //        error(ERR_INITIALIZER_LIST_REQUIRES_CONSTRUCTOR);
     while (lex != NULL)
@@ -83,31 +83,38 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *sym)
             (*cur)->line = lex->line;
             (*cur)->file = lex->file;
             lex = getsym();
-            if (MATCHKW(lex, openpa))
+            if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
+                enum e_kw open = KW(lex), close = open == openpa ? closepa : end;
                 int paren = 0;
                 LEXEME **mylex = &(*cur)->initData;
                 *mylex = Alloc(sizeof(*(*cur)->initData));
                 **mylex = *lex;
+                (*mylex)->prev = last;
+                last = *mylex;
                 mylex = &(*mylex)->next;
                 lex = getsym();
-                while (lex && (!MATCHKW(lex, closepa) || paren))
+                while (lex && (!MATCHKW(lex, close) || paren))
                 {
-                    if (MATCHKW(lex, openpa))
+                    if (MATCHKW(lex, open))
                         paren++;
-                    if (MATCHKW(lex, closepa))
+                    if (MATCHKW(lex, close))
                         paren--;
                     if (lex->type == l_id)
                         lex->value.s.a = litlate(lex->value.s.a);
                     *mylex = Alloc(sizeof(*(*cur)->initData));
                     **mylex = *lex;
+                    (*mylex)->prev = last;
+                    last = *mylex;
                     mylex = &(*mylex)->next;
                     lex = getsym();
                 }
-                if (MATCHKW(lex, closepa))
+                if (MATCHKW(lex, close))
                 {
                     *mylex = Alloc(sizeof(*(*cur)->initData));
                     **mylex = *lex;
+                    (*mylex)->prev = last;
+                    last = *mylex;
                     mylex = &(*mylex)->next;
                     lex = getsym();
                 }
@@ -115,7 +122,7 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *sym)
             else
             {
                 error(ERR_MEMBER_INITIALIZATION_REQUIRED);
-                skip(&lex, openbr);
+                skip(&lex, closepa);
                 break;
             }
             cur = &(*cur)->next;            
@@ -131,7 +138,7 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *sym)
     *lex2 = lex;
     return first;
 }
-static void SetParams(SYMBOL *cons)
+void SetParams(SYMBOL *cons)
 {
     // c style only
     HASHREC *params = basetype(cons->tp)->syms->table[0];
@@ -213,7 +220,7 @@ static BOOL hasConstFuncs(SYMBOL *sp, int type)
     if (ovl)
     {
         FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-        params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
+        params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
         params->arguments->tp = (TYPE *)Alloc(sizeof(TYPE));
         params->arguments->tp->type = bt_const;
         params->arguments->tp->size = basetype(sp->tp)->size;
@@ -449,7 +456,7 @@ static SYMBOL *getCopyCons(SYMBOL *base, BOOL move)
     if (ovl)
     {
         FUNCTIONCALL funcparams;
-        ARGLIST arg;
+        INITLIST arg;
         EXPRESSION exp,exp1;
         TYPE tpp;
         TYPE *tpx = NULL;
@@ -488,7 +495,7 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOL move)
     if (ovl)
     {
         FUNCTIONCALL funcparams;
-        ARGLIST arg;
+        INITLIST arg;
         EXPRESSION exp, exp1;
         TYPE tpt;
         TYPE *tpx = NULL;
@@ -1291,33 +1298,25 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
 }
 static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOL top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons)
 {
-    MEMBERINITIALIZERS *v = getInit(mi, member);
-    if (v)
+    if (member->init)
     {
-        TYPE *ctype = member->tp;
-        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-        EXPRESSION *exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
+        EXPRESSION *exp;
         STATEMENT *st;
-        LEXEME *lex = SetAlternateLex(v->initData);
-        lex = getArgs(lex, NULL, funcparams);
-        SetAlternateLex(NULL);
-        if (!callConstructor(&ctype, &exp, funcparams, FALSE, NULL, top, FALSE))
-            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-            
+        if (member->init->exp)
+        {
+            exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr);
+        }
+        else
+        {
+            exp = exprNode(en_add, thisptr, intNode(en_c_i, member->offset));
+            exp = exprNode(en_blockclear, exp, 0);
+            exp->size = member->tp->size;
+        }
         st = stmtNode(NULL,b, st_expr);
         optimize_for_constants(&exp);
         st->select = exp;
     }
-    else if (member->init)
-    {
-        EXPRESSION *exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr);
-        STATEMENT *st;
-        st = stmtNode(NULL,b, st_expr);
-        optimize_for_constants(&exp);
-        st->select = exp;
-    }
-    else
-        
+    else 
     {
         TYPE *ctype = member->tp;
         EXPRESSION *exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
@@ -1339,7 +1338,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             {
                 tp=member->tp;
             }
-            params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
+            params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE))
@@ -1362,7 +1361,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             {
                 tp = member->tp;
             }
-            params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
+            params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE))
@@ -1501,11 +1500,38 @@ static void lookupInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
             }
             else
             {
-                init->sp->init = NULL;
+                BOOL done = FALSE;
                 lex = SetAlternateLex(init->initData);
-                lex = initialize(lex, NULL, init->sp, sc_member, TRUE);
+                if (MATCHKW(lex, openpa) && (!isstructured(init->sp->tp) || init->sp->tp->sp->trivialCons))
+                {
+                    lex = getsym();
+                    if (MATCHKW(lex, closepa))
+                    {
+                        lex = getsym();
+                        init->sp->init = NULL;
+                        if (isstructured(init->sp->tp))
+                        {
+                            initInsert(&init->sp->init, NULL, NULL, init->sp->offset, FALSE);
+                        }
+                        else
+                        {
+                            initInsert(&init->sp->init, init->sp->tp, intNode(en_c_i,0), init->sp->offset, FALSE);
+                        }
+                        done = TRUE;
+                    }
+                    else
+                    {
+                        lex = backupsym(0);
+                    }
+                }
+                if (!done)
+                {
+                    init->sp->init = NULL;
+                    lex = initType(lex, cons, NULL, sc_auto, &init->sp->init, &init->sp->dest, init->sp->tp, init->sp, FALSE);
+                    if (init->sp->init->exp)
+                        init->sp->init->exp = unshim(init->sp->init->exp, ths);
+                }
                 SetAlternateLex(NULL);
-                init->sp->init->exp = unshim(init->sp->init->exp, ths);
             }
         }
         else
@@ -1554,7 +1580,7 @@ static void releaseInitializers(SYMBOL *cls)
         hr = hr->next;
     }
 }
-void thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers)
+EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers)
 {
     BASECLASS *bc;
     HASHREC *hr = syms->table[0];
@@ -1622,16 +1648,21 @@ void thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *sy
     }
     if (parseInitializers)
         releaseInitializers(sym);
+    return thisptr;
 }
 static void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
 {
     HASHTABLE *syms;
     BLOCKDATA b;
+    STATEMENT *st;
+    EXPRESSION *thisptr;
     memset(&b, 0, sizeof(BLOCKDATA));
     b.type = begin;
     syms = localNameSpace->syms;
     localNameSpace->syms = basetype(consfunc->tp)->syms;
-    thunkConstructorHead(&b, sp, consfunc, basetype(consfunc->tp)->syms, FALSE);
+    thisptr = thunkConstructorHead(&b, sp, consfunc, basetype(consfunc->tp)->syms, FALSE);
+    st = stmtNode(NULL, &b, st_return);
+    st->select = thisptr;
     consfunc->inlineFunc.stmt = stmtNode(NULL,NULL, st_block);
     consfunc->inlineFunc.stmt->lower = b.head;
 //    consfunc->inlineFunc.stmt->blockTail = b.tail;
@@ -1693,7 +1724,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     {
         tp = base->tp;
     }
-    params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
+    params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
     params->arguments->tp = tp;
     params->arguments->exp = right;
     AdjustParams(basetype(cons->tp)->syms->table[0], &params->arguments, FALSE);
@@ -1706,6 +1737,15 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
         
     if (asn1)
     {
+        SYMBOL *parm = asn1->tp->syms->table[0]->next->p;
+        if (parm && isref(parm->tp))
+        {
+            TYPE *tp1 = Alloc(sizeof(TYPE));
+            tp1->type = bt_lref;
+            tp1->size = getSize(bt_lref);
+            tp1->btp = params->arguments->tp;
+            params->arguments->tp = tp1;
+        }
         if (!isAccessible(base,base, asn1, NULL, ac_protected, FALSE))
         {
             errorsym(ERR_CANNOT_ACCESS, asn1);
@@ -1804,9 +1844,10 @@ void createAssignment(SYMBOL *sym, SYMBOL *asnfunc)
 static void genDestructorCall(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *base, int offset, BOOL top)
 {
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
-    EXPRESSION *exp = exprNode(en_add, base, intNode(en_c_i, offset)) ;
+    EXPRESSION *exp = base ;
     STATEMENT *st;
     deref(&stdpointer, &exp);
+    exp = exprNode(en_add, exp, intNode(en_c_i, offset)) ;
     dest = (SYMBOL *)basetype(dest->tp)->syms->table[0]->p;
     if (dest->defaulted && !dest->inlineFunc.stmt)
     {
@@ -1886,29 +1927,33 @@ static void createDestructor(SYMBOL *sp)
     InsertInline(dest);
     localNameSpace->syms = syms;
 }
-static void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *func, BOOL forward, EXPRESSION *count)
+void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count)
 {
     EXPRESSION *size = intNode(en_c_i, (*tp)->size + (*tp)->arraySkew);
-    EXPRESSION *efunc = varNode(en_pc, func);
+    EXPRESSION *econs = (cons ? varNode(en_pc, cons) : NULL), *edest = varNode(en_pc, dest);
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
     SYMBOL *asn1;
-    ARGLIST *arg1 = (ARGLIST *)Alloc(sizeof(ARGLIST)); // func
-    ARGLIST *arg2 = (ARGLIST *)Alloc(sizeof(ARGLIST)); // size
-    ARGLIST *arg3 = (ARGLIST *)Alloc(sizeof(ARGLIST)); // count
-    ARGLIST *arg4 = (ARGLIST *)Alloc(sizeof(ARGLIST)); // forward
+    INITLIST *arg0 = (INITLIST *)Alloc(sizeof(INITLIST)); // this
+    INITLIST *arg1 = (INITLIST *)Alloc(sizeof(INITLIST)); // cons
+    INITLIST *arg2 = (INITLIST *)Alloc(sizeof(INITLIST)); // dest
+    INITLIST *arg3 = (INITLIST *)Alloc(sizeof(INITLIST)); // size
+    INITLIST *arg4 = (INITLIST *)Alloc(sizeof(INITLIST)); // count
     SYMBOL *ovl = search("__arrCall", globalNameSpace->syms);
-    params->arguments = arg1;
+    params->arguments = arg0;
+    arg0->next = arg1;
     arg1->next = arg2;
     arg2->next = arg3;
     arg3->next = arg4;
     
-    arg1->exp = efunc;
+    arg0->exp = *exp;
+    arg0->tp = &stdpointer;
+    arg1->exp = econs ? econs : intNode(en_c_i, 0);
     arg1->tp = &stdpointer;
-    arg2->exp = size;
-    arg2->tp = &stdint;
+    arg2->exp = edest;
+    arg2->tp = &stdpointer;
     arg3->exp = count;
     arg3->tp = &stdint;
-    arg4->exp = intNode(en_c_i, forward);
+    arg4->exp = size;
     arg4->tp = &stdint;
     
     asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, NULL, TRUE, FALSE);
@@ -1918,7 +1963,16 @@ static void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *func, BOOL fo
     }
     else
     {
+        params->functp = asn1->tp;
+        params->sp = asn1;
+        params->ascall = TRUE;
+        *exp = Alloc(sizeof(EXPRESSION));
+        (*exp)->type = en_func;
+        (*exp)->v.func = params;
         asn1->genreffed = TRUE;
+        if (cons)
+            cons->genreffed = TRUE;
+        dest->genreffed = TRUE;
     }
     
 }
@@ -1927,7 +1981,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     SYMBOL *dest1;
     SYMBOL *against = top ? sp : sp->parentClass;
-    TYPE *tp = NULL;
+    TYPE *tp = NULL, *stp = sp->tp;
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
     if (!*exp)
     {
@@ -1950,7 +2004,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
     params->ascall = TRUE;
     if (arrayElms)
     {
-        makeArrayConsDest(&tp, exp, dest1, FALSE, arrayElms);
+        makeArrayConsDest(&stp, exp, NULL, dest1, arrayElms);
         dest1->genreffed = TRUE;
     }
     /*
@@ -1959,7 +2013,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
         EXPRESSION *e1;
         if (sp->vbaseEntries)
         {
-            ARGLIST *x = (ARGLIST *)Alloc(sizeof(ARGLIST)), **p;
+            INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
             x->tp = (TYPE *)Alloc(sizeof(TYPE));
             x->tp->type = bt_int;
             x->tp->size = getSize(bt_int);
@@ -1985,6 +2039,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                      BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
                      BOOL maybeConversion)
 {
+    TYPE *stp = *tp;
     SYMBOL *sp = basetype(*tp)->sp;
     SYMBOL *against = top ? sp : sp->parentClass;
     SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
@@ -2098,15 +2153,36 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 createConstructor(sp, cons1);
             if (arrayElms)
             {
-                makeArrayConsDest(tp, exp, cons1, TRUE, arrayElms);
-                cons1->genreffed = TRUE;
+                SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
+                SYMBOL *dest1;
+                SYMBOL *against = top ? sp : sp->parentClass;
+                TYPE *tp = NULL;
+                FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                if (!*exp)
+                {
+                    diag("callDestructor: no this pointer");
+                }
+                params->thisptr= *exp;
+                params->thistp = Alloc(sizeof(TYPE));
+                params->thistp->type = bt_pointer;
+                params->thistp->size = getSize(bt_pointer);
+                params->thistp->btp = sp->tp;
+                dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
+                if (dest1 && !isAccessible(against,sp, dest1, NULL, against == sp ? ac_public : ac_protected, FALSE))
+                {
+                    errorsym(ERR_CANNOT_ACCESS, dest1);
+                }
+                if (dest1 && dest1->defaulted && !dest1->inlineFunc.stmt)
+                    createDestructor(sp);
+                makeArrayConsDest(&stp, exp, cons1, dest1, arrayElms);
+                e1 = *exp;
             }
             /*
             else if (cons1->linkage == lk_inline)
             {
                 if (sp->vbaseEntries)
                 {
-                    ARGLIST *x = (ARGLIST *)Alloc(sizeof(ARGLIST)), **p;
+                    INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
                     x->tp = (TYPE *)Alloc(sizeof(TYPE));
                     x->tp->type = bt_int;
                     x->tp->size = getSize(bt_int);

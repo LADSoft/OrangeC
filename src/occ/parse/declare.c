@@ -2145,7 +2145,7 @@ static void matchFunctionDeclaration(SYMBOL *sp, SYMBOL *spo)
 }
 LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOL braces)
 {
-    LEXEME **cur = &sym->deferredCompile;
+    LEXEME **cur = &sym->deferredCompile, *last = NULL;
     int paren = 0;
     while (lex != NULL)
     {
@@ -2160,6 +2160,8 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOL braces)
             {
                 *cur = Alloc(sizeof(LEXEME));
                 **cur = *lex;
+                (*cur)->prev = last;
+                last = *cur;
                 lex = getsym();
                 break;
             }
@@ -2190,6 +2192,8 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOL braces)
         if (lex->type == l_id)
             lex->value.s.a = litlate(lex->value.s.a);
         **cur = *lex;
+        (*cur)->prev = last;
+        last = *cur;
         cur = &(*cur)->next;
         lex = getsym();
     }
@@ -2306,6 +2310,9 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 insert(spi, (*tp)->syms);
                 tpb = basetype(tp1);
                 if (tpb->array)
+                {
+                    if (cparams.prm_cplusplus && isstructured(tpb->btp))
+                        error(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG);
                     if (tpb->vla)
                     {
                         TYPE *tpx = Alloc(sizeof(TYPE));
@@ -2326,6 +2333,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
 //						tpb->array = FALSE;
 //						tpb->size = getSize(bt_pointer);
                     }
+                }
                 sizeQualifiers(tp1);
                 if (tpb->type == bt_void)
                     if (pastfirst || !spi->anonymous)
@@ -3994,6 +4002,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                     else if (MATCHKW(lex, kw_default))
                                     {
                                         sp->defaulted = TRUE;
+                                        SetParams(sp);
                                         // fixme add more
                                         if (strcmp(sp->name,overloadNameTab[CI_CONSTRUCTOR]) &&
                                             strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]) &&

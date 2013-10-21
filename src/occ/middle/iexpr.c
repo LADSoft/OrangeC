@@ -1214,14 +1214,21 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
     int temp;
     int rv = 0;
     EXPRESSION *exp = getFunc(ep);
-    if (exp)
+    if (exp || ep->type == en_blockassign || ep->type == en_blockclear)
     {
         EXPRESSION *ep1 = exp;
-        exp = ep1->v.func->returnEXP;
-        if (!exp)
-            exp = ep1->v.func->thisptr;
         if (exp)
-            exp = getAddress(exp);
+        {
+            exp = ep1->v.func->returnEXP;
+            if (!exp)
+                exp = ep1->v.func->thisptr;
+            if (exp)
+                exp = getAddress(exp);
+        }
+        else
+        {
+            exp = ep->left;
+        }
         if (exp && exp->type == en_auto && exp->v.sp->stackblock)
         {
             // constructor or other function creating a structure on the stack
@@ -1245,30 +1252,33 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             rv = sizeFromISZ(ap->size);
         }
     }
-    else switch (ep->type)
+    else
     {
-        case en_argnopush:
-            gen_expr( funcsp, ep->left, 0, ISZ_UINT);
-            break;
-        case en_imode:
-            ap = (IMODE *)ep->left;
-            gen_nodag(i_parm, 0, ap, 0);
-            rv = sizeFromISZ(ap->size);
-            break;
-        default:
-            temp = natural_size(ep);
-            ap3 = gen_expr( funcsp, ep, 0, temp);
-            ap = LookupLoadTemp(NULL, ap3);
-            if (ap != ap3)
-                gen_icode(i_assn, ap, ap3, NULL);
-            if (ap->size == ISZ_NONE)
-                ap->size = temp;
-            gen_nodag(i_parm, 0, ap, 0);
-            rv = sizeFromISZ(ap->size);
-            break;
+        switch (ep->type)
+        {
+            case en_argnopush:
+                gen_expr( funcsp, ep->left, 0, ISZ_UINT);
+                break;
+            case en_imode:
+                ap = (IMODE *)ep->left;
+                gen_nodag(i_parm, 0, ap, 0);
+                rv = sizeFromISZ(ap->size);
+                break;
+            default:
+                temp = natural_size(ep);
+                ap3 = gen_expr( funcsp, ep, 0, temp);
+                ap = LookupLoadTemp(NULL, ap3);
+                if (ap != ap3)
+                    gen_icode(i_assn, ap, ap3, NULL);
+                if (ap->size == ISZ_NONE)
+                    ap->size = temp;
+                gen_nodag(i_parm, 0, ap, 0);
+                rv = sizeFromISZ(ap->size);
+                break;
+        }
+        if (rv % chosenAssembler->arch->stackalign)
+            rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
     }
-    if (rv % chosenAssembler->arch->stackalign)
-        rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
     return rv;
 }
 
@@ -1302,7 +1312,7 @@ static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
 
 /*-------------------------------------------------------------------------*/
 
-static int gen_parm(ARGLIST *a, SYMBOL *funcsp)
+static int gen_parm(INITLIST *a, SYMBOL *funcsp)
 /*
  *      push a list of parameters onto the stack and return the
  *      size of parameters pushed.
@@ -1330,7 +1340,7 @@ static int gen_parm(ARGLIST *a, SYMBOL *funcsp)
         push_nesting += rv;
         return rv;
 }
-static int sizeParam(ARGLIST *a, SYMBOL *funcsp)
+static int sizeParam(INITLIST *a, SYMBOL *funcsp)
 {
     int rv ;
     if (ispointer(a->tp) || isref(a->tp) || a->tp->type == bt_func || a->tp->type == bt_ifunc || a->byRef)
@@ -1341,7 +1351,7 @@ static int sizeParam(ARGLIST *a, SYMBOL *funcsp)
         rv += chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
     return rv;
 }
-static int genCdeclArgs(ARGLIST *args, SYMBOL *funcsp)
+static int genCdeclArgs(INITLIST *args, SYMBOL *funcsp)
 {
     int rv = 0;
     if (args)
@@ -1351,7 +1361,7 @@ static int genCdeclArgs(ARGLIST *args, SYMBOL *funcsp)
     }
     return rv;
 }
-static int genPascalArgs(ARGLIST *args, SYMBOL *funcsp)
+static int genPascalArgs(INITLIST *args, SYMBOL *funcsp)
 {
     int rv = 0;
     if (args)
@@ -1361,7 +1371,7 @@ static int genPascalArgs(ARGLIST *args, SYMBOL *funcsp)
     }
     return rv;
 }
-static int sizeParams(ARGLIST *args, SYMBOL *funcsp)
+static int sizeParams(INITLIST *args, SYMBOL *funcsp)
 {
     int rv = 0;
     if (args)
@@ -1427,13 +1437,13 @@ IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
 }
 /*-------------------------------------------------------------------------*/
 
-static void gen_arg_destructors(SYMBOL *funcsp, ARGLIST *arg)
+static void gen_arg_destructors(SYMBOL *funcsp, INITLIST *arg)
 {
     if (arg)
     {
         gen_arg_destructors(funcsp, arg->next);
         if (arg->dest)
-            gen_expr( funcsp, arg->dest, F_NOVALUE, natural_size(arg->dest));
+            gen_expr( funcsp, arg->dest, F_NOVALUE, ISZ_UINT);
     }
 }
 IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
@@ -1508,7 +1518,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
             if (f->returnEXP)
-                push_param(f->returnEXP, funcsp);        
+                push_param(f->returnEXP, funcsp);
         }
     }
     /* named function */

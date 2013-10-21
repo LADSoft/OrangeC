@@ -1480,7 +1480,7 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                 int left=0, right=0;
                 int l=0,r=0;
                 int k=0;
-                ARGLIST *args = funcparams->arguments;
+                INITLIST *args = funcparams->arguments;
                 HASHREC *hrl = basetype(spList[i]->tp)->syms->table[0];
                 HASHREC *hrr = basetype(spList[j]->tp)->syms->table[0];
                 for (k=0; k < argCount; k++)
@@ -1678,7 +1678,7 @@ static SYMBOL *getUserConversion(int flags,
             int m = 0;
             SYMBOL *found1, *found2;
             FUNCTIONCALL funcparams;
-            ARGLIST args;
+            INITLIST args;
             TYPE thistp;
             EXPRESSION exp;
             lst2 = gather;
@@ -2190,12 +2190,100 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
         }
     }
 }
+static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, enum e_cvsrn *seq, SYMBOL **userFunc)
+{
+    INITLIST *a = list->nested;
+    if (isstructured(tp) || isref(tp) && isstructured(basetype(tp)->btp))
+    {
+        if (isref(tp))
+            tp = basetype(basetype(tp)->btp);
+        if (tp->sp->trivialCons)
+        {
+            HASHREC *structSyms = tp->syms->table[0];
+            while (a && structSyms)
+            {
+                SYMBOL *member = (SYMBOL *)structSyms->p;
+                if (ismemberdata(member))
+                {
+                    getSingleConversion(member->tp, a->tp, a->exp, n, seq, userFunc); 
+                    if (*n > 3)
+                        break;
+                    a = a->next;
+                }
+                structSyms = structSyms->next;
+            }
+            if (a)
+            {
+                seq[(*n)++] = CV_NONE;
+            }
+        }
+        else
+        {
+            SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], tp->syms);
+            if (!cons)
+            {
+                // should never happen
+                seq[(*n)++] = CV_NONE;
+            }            
+            else
+            {
+                EXPRESSION exp,*expp = &exp;
+                TYPE *ctype = cons->tp;
+                TYPE thistp;
+                FUNCTIONCALL funcparams;
+                memset(&exp, 0, sizeof(exp));
+                memset(&funcparams, 0, sizeof(funcparams));
+                memset(&thistp, 0, sizeof(thistp));
+                funcparams.arguments = a;
+                exp.type = en_c_i;
+                thistp.type = bt_pointer;
+                thistp.btp = tp;
+                thistp.size = getSize(bt_pointer);
+                funcparams.thistp = &thistp;
+                funcparams.thisptr = &exp;
+                cons = GetOverloadedFunction(&ctype, &expp, cons, & funcparams, NULL, FALSE, TRUE);
+                if (!cons)    
+                {
+                    seq[(*n)++] = CV_NONE;
+                }
+            }
+        }     
+    }
+    else if (ispointer(tp))
+    {
+        TYPE *btp = tp;
+        int x;
+        while (isarray(btp))
+            btp = basetype(btp)->btp;
+        x = tp->size / btp->size;
+        while (a)
+        {
+            getSingleConversion(btp, a->tp, a->exp, n, seq, userFunc);                
+            if (*n > 3)
+                break;
+            if (--x < 0) // too many items...
+            {
+                seq[(*n)++] = CV_NONE;
+                break;
+            }
+            a = a->next;
+        }
+    }
+    else
+    {
+        a = list->nested;
+        if (a && a->next)
+            seq[(*n)++] = CV_NONE;
+        else if (a)
+            getSingleConversion(tp, a ? a->tp : tpp, a ? a->exp : NULL, n, seq, userFunc);                
+    }
+}
 static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *parent, enum e_cvsrn arr[], int *sizes, int count, SYMBOL **userFunc)
 {
     int pos = 0;
     int n = 0;
     int i;
-    ARGLIST *a = NULL;
+    INITLIST *a = NULL;
     HASHREC **hr = basetype(sp->tp)->syms->table;
     HASHREC **hrt = NULL;
     enum e_cvsrn seq[100], cur;
@@ -2256,7 +2344,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
     {
         if (f)
         {
-            if (f->thisptr)
+            if (f->thisptr && sp->storage_class == sc_member || sp->storage_class == sc_virtual)
             {
                 // nonstatic function
                 TYPE *argtp = sp->tp;
@@ -2331,8 +2419,15 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
                 return TRUE;
             }
             m = 0;
-            getSingleConversion(argsym->tp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
+            if (a && !a->tp)
+            {
+                getInitListConversion(argsym->tp, a, a ? NULL : ((SYMBOL *)(*hrt)->p)->tp, &m, seq, userFunc ? &userFunc[n] : NULL);
+            }
+            else
+            {
+                getSingleConversion(argsym->tp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
                                 userFunc ? &userFunc[n] : NULL);
+            }
             m1 = m;
             while (m1 && seq[m1-1] == CV_IDENTITY)
                 m1--;
@@ -2404,10 +2499,11 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         // ok the sym is a valid candidate for argument search
                     if (args)
                     {
-                        ARGLIST *list = args->arguments;
+                        INITLIST *list = args->arguments;
                         while (list)
                         {
-                            gather = searchOneArg(sp, gather, list->tp);
+                            if (list->tp)
+                                gather = searchOneArg(sp, gather, list->tp);
                             list = list->next;
                         }
                         if (args->thisptr)
@@ -2447,7 +2543,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         }
         if (maybeConversion)
         {
-            if (args->arguments && !args->arguments->next) // one arg
+            if (args->arguments && !args->arguments->next && !args->arguments->nested) // one arg
                 gather = GetMemberCasts(gather, basetype(args->arguments->tp)->sp);
         }
         // pass 3 - the actual argument-based resolution
@@ -2477,7 +2573,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 int argCount = 0;
                 if (args)
                 {
-                    ARGLIST *v = args->arguments;
+                    INITLIST *v = args->arguments;
                     while (v)
                     {
                         argCount++;
@@ -2558,7 +2654,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                     else
                     {
                         int v = 1;
-                        ARGLIST *a = args->arguments;
+                        INITLIST *a = args->arguments;
                         sym->tp = Alloc(sizeof(TYPE));
                         sym->tp->type = bt_func;
                         sym->tp->size = getSize(bt_pointer);

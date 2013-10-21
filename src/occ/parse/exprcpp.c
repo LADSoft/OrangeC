@@ -183,7 +183,7 @@ void getThisType(SYMBOL *sym, TYPE **tp)
     (*tp)->btp = sym->parentClass->tp;
     qualifyForFunc(sym, tp);
 }
-EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp)
+EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp, BOOL toError)
 {
     EXPRESSION *en;
     
@@ -199,7 +199,8 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp)
             if (!lambdas->lthis || !lambdas->captured)
             {
                 en = intNode(en_c_i, 0);
-                errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+                if (toError)
+                    errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
             }
             else
             {
@@ -226,11 +227,13 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp)
         {
             if (classRefCount(memberSym->parentClass, enclosing) != 1)
             {
-                errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->parentClass, enclosing);
+                if (toError)
+                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->parentClass, enclosing);
             }
             else if (!isExpressionAccessible(memberSym, funcsp, FALSE))
             {
-                errorsym(ERR_CANNOT_ACCESS, memberSym);
+                if (toError)
+                    errorsym(ERR_CANNOT_ACCESS, memberSym);
             }
             en = baseClassOffset(memberSym->parentClass, enclosing, en);
         }
@@ -238,13 +241,14 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp)
     else
     {
         en = intNode(en_c_i, 0);
-        errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+        if (toError)
+            errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
     }
     return en;
 }
 EXPRESSION *getMemberNode(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp)
 {
-    EXPRESSION *en = getMemberBase(memberSym, funcsp);
+    EXPRESSION *en = getMemberBase(memberSym, funcsp, TRUE);
     en = exprNode(en_add, en, intNode(en_c_i, memberSym->offset));
     *tp = memberSym->tp;
     return en;
@@ -472,13 +476,18 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         {
             INITIALIZER *init = NULL, *dest=NULL;
             SYMBOL *sp = NULL;
-            if (isstructured(*tp))
-            {
-                sp = anonymousVar(sc_auto, *tp);
-                insert(sp, localNameSpace->syms);
-            }
+            sp = anonymousVar(sc_auto, *tp);
+            insert(sp, localNameSpace->syms);
             lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE);
-            *exp = convertInitToExpression(*tp, NULL, funcsp, init, NULL);
+            *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL);
+            if (sp)
+            {
+                EXPRESSION **e1 = exp;
+                while ((*e1)->type == en_void)
+                    e1 = &(*e1)->right;
+                *e1 = exprNode(en_void, *e1, varNode(en_auto, sp));
+                sp->dest = dest;
+            }
         }
         else
         {
@@ -487,6 +496,12 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             errskim(&lex, skim_semi);
         }
     }
+    else if (!cparams.prm_cplusplus)
+    {
+        *exp = intNode(en_c_i, 0);
+        needkw(&lex, begin);
+        errskim(&lex, skim_semi);
+    }
     else
     {
         if (isstructured(*tp))
@@ -494,7 +509,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             TYPE *ctype = *tp;
             SYMBOL *sp;
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
-            lex = getArgs(lex, funcsp, &funcparams);
+            lex = getArgs(lex, funcsp, &funcparams, closepa);
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
             *exp = varNode(en_auto, sp);
@@ -504,6 +519,8 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         {
             TYPE *throwaway;
             lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE);
+            if (throwaway && (*tp)->type == bt_auto)
+                *tp = throwaway;
             if ((*exp)->type == en_func)
                 *exp = (*exp)->v.func->fcall;
             if (throwaway)
@@ -875,17 +892,18 @@ BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONC
     return FALSE;
 }
 BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
-                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1)
+                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args)
 {
     SYMBOL *s1 = NULL, *s2 = NULL, *s3;
     HASHREC **hrd, *hrs;
     FUNCTIONCALL *funcparams;
     char *name = overloadNameTab[kw - kw_new + CI_NEW];
     TYPE *tpx;
+    LIST l ;
     if (!*tp)
         return FALSE;
     if (!isstructured(*tp) && basetype(*tp)->type != bt_enum
-        && (!tp1 || !isstructured(tp1) && basetype(tp1)->type != bt_enum))
+        && (!tp1 && !args || tp1 && !isstructured(tp1) && basetype(tp1)->type != bt_enum))
         return FALSE;
         
     // first find some occurrance either in the locals or in the extant global namespace
@@ -913,19 +931,21 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
                s1 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
             break;
     }
+    l.next = structSyms;
     // next find some occurrance in the class or struct
     if (isstructured(*tp))
     {
-        LIST l ;
         l.data = (void *)basetype(*tp)->sp;
         l.next = structSyms;
         structSyms = &l;
         s2 = classsearch(name, FALSE);
-        structSyms = l.next;
     }
     // quit if there are no matches because we will use the default...
     if (!s1 && !s2)
+    {
+        structSyms = l.next;
         return FALSE;
+    }
     // finally make a shell to put all this in and add shims for any builtins we want to try
     tpx = (TYPE *)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
@@ -966,16 +986,22 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         funcparams->thistp->size = getSize(bt_pointer);
         funcparams->thistp->btp = *tp;        
         funcparams->thisptr = *exp;
-        if (tp1)
+        if (args)
         {
-            ARGLIST *one = Alloc(sizeof(ARGLIST));
+            INITLIST *one = Alloc(sizeof(INITLIST));
+            one->nested = args;
+            funcparams->arguments = one;
+        }
+        else if (tp1)
+        {
+            INITLIST *one = Alloc(sizeof(INITLIST));
             one->exp = exp1;
             one->tp = tp1;
             funcparams->arguments = one;
         }
         else if (cls == ovcl_unary_postfix)
         {
-            ARGLIST *one = Alloc(sizeof(ARGLIST));
+            INITLIST *one = Alloc(sizeof(INITLIST));
             one->exp = intNode(en_c_i, 0);
             one->tp = &stdint;
             funcparams->arguments = one;
@@ -983,24 +1009,30 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     }
     else
     {
-        ARGLIST *one = NULL, *two = NULL;
+        INITLIST *one = NULL, *two = NULL;
         if (*tp)
         {
-            one = Alloc(sizeof(ARGLIST));
+            one = Alloc(sizeof(INITLIST));
             one->exp = *exp;
             one->tp = *tp;
             funcparams->arguments = one;
         }
-        if (tp1)
+        if (args)
         {
-            two = Alloc(sizeof(ARGLIST));
+            INITLIST *one = Alloc(sizeof(INITLIST));
+            one->nested = args;
+            funcparams->arguments = one;
+        }
+        else if (tp1)
+        {
+            two = Alloc(sizeof(INITLIST));
             two->exp = exp1;
             two->tp = tp1;
             funcparams->arguments = two;
         }
         else if (cls == ovcl_unary_postfix)
         {
-            two = Alloc(sizeof(ARGLIST));
+            two = Alloc(sizeof(INITLIST));
             two->exp = intNode(en_c_i, 0);
             two->tp = &stdint;
             funcparams->arguments = two;
@@ -1061,8 +1093,10 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         expression_arguments(NULL, funcsp, tp, exp);
         if (s3->defaulted && kw == assign)
             createAssignment(s3->parentClass, s3);
+        structSyms = l.next;
         return TRUE;
     }
+    structSyms = l.next;
     return FALSE;
 }
 LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global)
@@ -1089,7 +1123,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             // placement new
             lex = backupsym(1);
-            lex = getArgs(lex, funcsp, placement);
+            lex = getArgs(lex, funcsp, placement, closepa);
         }
     }
     if (!*tp)
@@ -1148,7 +1182,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     if (*tp)
     {
         EXPRESSION *sz;
-        ARGLIST *sza;
+        INITLIST *sza;
         int n = (*tp)->size;
         if (arrSize && isstructured(*tp))
         {
@@ -1162,7 +1196,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             sz = exprNode(en_mul, sz, arrSize);
         }
         optimize_for_constants(&sz);
-        sza = Alloc(sizeof(ARGLIST));
+        sza = Alloc(sizeof(INITLIST));
         sza->exp = sz;
         sza->tp = &stdint;
         sza->next = placement->arguments;
@@ -1188,8 +1222,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE);
     if (s1)
     {
-        SYMBOL *sp = makeID(sc_auto, &stdpointer, NULL, AnonymousName());
-        sp->assigned = TRUE;
+        SYMBOL *sp = anonymousVar(sc_auto, &stdpointer);
         val = varNode(en_auto, sp);
         sp->decoratedName = sp->errname = sp->name;
         if (localNameSpace->syms)
@@ -1218,7 +1251,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         if (isstructured(*tp))
         {
             initializers = Alloc(sizeof(FUNCTIONCALL));
-            lex = getArgs(lex, funcsp, initializers);
+            lex = getArgs(lex, funcsp, initializers, closepa);
             if (s1)
             {
                 *exp = val;
@@ -1230,7 +1263,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             exp1 = NULL;
             initializers = Alloc(sizeof(FUNCTIONCALL));
-            lex = getArgs(lex, funcsp, initializers);
+            lex = getArgs(lex, funcsp, initializers, closepa);
             if (initializers->arguments)
             {
                 if (!isarithmetic(initializers->arguments->tp) || initializers->arguments->next)
@@ -1240,6 +1273,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 else
                 {
                     exp1 = initializers->arguments->exp;
+                    if ((*tp)->type == bt_auto)
+                        *tp = initializers->arguments->tp;
                     if (exp1 && val)
                     {
                         EXPRESSION *pval = val;
@@ -1254,37 +1289,79 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     else if (KW(lex) == begin)
     {
         // braced initializers
+        // this is just a little buggy, for example new aa[10][10] { {1},{2},{3} } won't work properly
+        // i can't make it work well because the array indexes aren't necessarily constants...
         if (*tp)
         {
-            if (!isstructured(*tp) || (*tp)->sp->trivialCons)
+            INITIALIZER *init = NULL, *dest = NULL;
+            EXPRESSION *base = val;
+            TYPE *tp1 = *tp;
+            SYMBOL *sp = NULL;
+            if (isstructured(*tp))
             {
-                INITIALIZER *init = NULL, *dest = NULL;
-                EXPRESSION *base = val;
-                TYPE *tp1 = *tp;
-                if (arrSize)
-                {
-                    tp1 = Alloc(sizeof(TYPE));
-                    tp1->size = 0;
-                    tp1->array = 1;
-                    tp1->type = bt_pointer;
-                    tp1->btp = *tp;
-                }
-                lex = initType(lex, funcsp, 0, sc_member, &init, &dest, tp1, NULL, FALSE);
-                // dest is lost for these purposes
-                if (theCurrentFunc)
+                sp = anonymousVar(sc_localstatic, *tp);
+//                insert(sp, localNameSpace->syms);
+            }
+            if (arrSize)
+            {
+                tp1 = Alloc(sizeof(TYPE));
+                tp1->size = 0;
+                tp1->array = 1;
+                tp1->type = bt_pointer;
+                tp1->btp = *tp;
+            }
+            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp1, sp, FALSE);
+            if (!isstructured(*tp) && !arrSize)
+            {
+                if (!init || init->next || init->basetp && isstructured(init->basetp))
+                    error(ERR_NONSTRUCTURED_INIT_LIST);
+            }
+            // dest is lost for these purposes
+            if (theCurrentFunc)
+            {
+                if (init->exp)
                 {
                     *exp = convertInitToExpression(tp1, NULL, funcsp, init, base);
+                }
+                if (arrSize && !isstructured(*tp))
+                {
                     if (arrSize)
                     {
-                        exp1 = exprNode(en_blockclear, base, arrSize);
+                        exp1 = exprNode(en_blockclear, base, exprNode(en_mul, arrSize, intNode(en_c_i, (*tp)->size)));
+                    }
+                    else
+                    {
+                        exp1 = exprNode(en_blockclear, base, NULL);
+                        exp1->size = (*tp)->size;
+                    }
+                    if (*exp)
                         *exp = exprNode(en_void, exp1, *exp);
+                    else
+                        *exp = exp1;
+                }
+                else if (isstructured(*tp) && (arrSize || !init->exp))
+                {
+                    EXPRESSION *exp1;
+                    exp1 = val;
+                    if (arrSize)
+                    {
+                        INITIALIZER *it = init;
+                        while (it && it->exp)
+                            it= it->next;
+                        arrSize = exprNode(en_sub, arrSize, intNode(en_c_i, it->offset/(basetype(*tp)->size + basetype(*tp)->arraySkew)));
+                        exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
+                    }
+                    tpf = *tp;
+                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE);
+                    if (*exp)
+                    {
+                        *exp = exprNode(en_void, *exp, exp1);
+                    }
+                    else
+                    {
+                        *exp = exp1;
                     }
                 }
-            }
-            else
-            {
-                errorsym(ERR_STRUCTURE_INITIALIZATION_NEEDS_CONSTRUCTOR, (*tp)->sp );
-                errskim(&lex, skim_end);
             }
         }
     }
@@ -1322,7 +1399,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     BOOL byArray = FALSE;
     SYMBOL *s1 = NULL;
     FUNCTIONCALL *funcparams;
-    ARGLIST *one = NULL;
+    INITLIST *one = NULL;
     EXPRESSION *exp1 = NULL, *exp2;
     TYPE *tpf;
     int lbl = beGetLabel;
@@ -1335,6 +1412,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         needkw(&lex, closebr);
         byArray = TRUE;
         name = overloadNameTab[CI_DELETEA];
+        exp1 = intNode(en_c_i, 0); // signal to the runtime to load the number of elems dynamically
     }
     lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE);
     if (!ispointer(*tp))
@@ -1364,7 +1442,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     }
     // should always find something
     funcparams = Alloc(sizeof(FUNCTIONCALL));
-    one = Alloc(sizeof(ARGLIST));
+    one = Alloc(sizeof(INITLIST));
     one->exp =exp1;
     one->tp = &stdpointer;
     funcparams->arguments = one;

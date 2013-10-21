@@ -140,16 +140,19 @@ void dumpVTab(SYMBOL *sym)
 // will return 0 for not a base class, 1 for unambiguous base class, >1 for ambiguous base class
 int classRefCount(SYMBOL *base, SYMBOL *derived)
 {
-    int rv = 0;
-    BASECLASS *lst = derived->baseClasses;
-    while(lst)
+    int rv = base == derived;
+    if (!rv)
     {
-        if (lst->cls == base)
+        BASECLASS *lst = derived->baseClasses;
+        while(lst)
         {
-            return 1;
+            if (lst->cls == base)
+            {
+                return 1;
+            }
+            rv += classRefCount(base, lst->cls);
+            lst = lst->next;
         }
-        rv += classRefCount(base, lst->cls);
-        lst = lst->next;
     }
     return rv;
 }

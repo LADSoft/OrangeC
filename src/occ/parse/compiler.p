@@ -104,9 +104,10 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
 void createConstructorsForLambda(SYMBOL *sp);
 void createDefaultConstructors(SYMBOL *sp);
 void destructBlock(EXPRESSION **exp, HASHREC *hr);
-void thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers);
+EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers);
 void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms);
 void createAssignment(SYMBOL *sym, SYMBOL *asnfunc);
+void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count);
 void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top);
 BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                     BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
@@ -154,7 +155,7 @@ void qualifyForFunc(SYMBOL *sym, TYPE **tp);
 void getThisType(SYMBOL *sym, TYPE **tp);
 SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit);
 LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp);
-EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp);
+EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp, BOOL toError);
 EXPRESSION *getMemberNode(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp);
 EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp);
 LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
@@ -169,7 +170,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
 LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
 BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcParams);
 BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
-                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1);
+                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args);
 LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global);
 LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global);
 LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
@@ -178,9 +179,10 @@ EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right);
 EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val);
 EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en);
-LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams);
+LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner);
+LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish);
 void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp);
-void AdjustParams(HASHREC *hr, ARGLIST **lptr, BOOL operands);
+void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand);
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector);

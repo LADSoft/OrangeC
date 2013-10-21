@@ -412,15 +412,15 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
             }
             if (temp->v.func == NULL)
             {
-                ARGLIST *args = fp->arguments;
-                ARGLIST **p ;
+                INITLIST *args = fp->arguments;
+                INITLIST **p ;
                 temp->v.func = Alloc(sizeof(FUNCTIONCALL));
                 *temp->v.func = *fp;
                 p = &temp->v.func->arguments;
                 *p = NULL;
                 while (args)
                 {
-                    *p = Alloc(sizeof(ARGLIST));
+                    *p = Alloc(sizeof(INITLIST));
                     **p = *args;
                     (*p)->exp = inlineexpr((*p)->exp, FALSE);
                     args = args->next;
@@ -837,7 +837,7 @@ static void setExp(SYMBOL *sx, EXPRESSION *exp, STATEMENT ***stp)
 static STATEMENT *SetupArguments(FUNCTIONCALL *params)
 {
     STATEMENT *st = NULL, **stp = &st;
-    ARGLIST *al = params->arguments;
+    INITLIST *al = params->arguments;
     HASHREC *hr = params->sp->inlineFunc.syms->table[0];
     if (params->sp->storage_class == sc_member || params->sp->storage_class == sc_virtual)
     {

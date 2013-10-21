@@ -306,9 +306,9 @@ static void dumpDynamicInitializers(void)
     STATEMENT *st = NULL, **stp = &st;
     while (dynamicInitializers)
     {
-        EXPRESSION *exp;
-        STATEMENT *stmt = stmtNode(NULL, NULL, st_expr);
-        dynamicInitializers->init->next = NULL;
+        EXPRESSION *exp = NULL;
+        STATEMENT *stmt;
+        stmt = stmtNode(NULL, NULL, st_expr);
         exp = convertInitToExpression(dynamicInitializers->init->basetp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL);
         optimize_for_constants(&exp);
         stmt->select = exp;
@@ -356,8 +356,8 @@ static void dumpTLSInitializers(void)
         while (TLSInitializers)
         {
             EXPRESSION *exp;
-            STATEMENT *stmt = stmtNode(NULL, NULL, st_expr);
-            TLSInitializers->init->next = NULL;
+            STATEMENT *stmt;
+            stmt = stmtNode(NULL, NULL, st_expr);
             exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, NULL, TLSInitializers->init, NULL);
             optimize_for_constants(&exp);
             stmt->select = exp;
@@ -780,6 +780,11 @@ void dumpInitializers(void)
     int data = 0;
     int thread = 0;
     int *sizep;
+    dumpDynamicInitializers();
+    dumpTLSInitializers();
+    dumpDynamicDestructors();
+    dumpTLSDestructors();
+    dumpvc1Thunks();
     symListTail = symListHead;
     while (symListTail)
     {
@@ -788,7 +793,10 @@ void dumpInitializers(void)
             || sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
         {
             TYPE *tp = sp->tp;
+            TYPE *stp = tp;
             int al ;
+            while (isarray(stp))
+                stp = basetype(stp)->btp;
             if (IsConstWithArr(sp->tp) && !isvolatile(sp->tp))
             {
                 xconstseg();
@@ -878,11 +886,6 @@ void dumpInitializers(void)
         }
         symListTail = symListTail->next;
     }
-    dumpDynamicInitializers();
-    dumpTLSInitializers();
-    dumpDynamicDestructors();
-    dumpTLSDestructors();
-    dumpvc1Thunks();
 #endif
 }
 void insertInitSym(SYMBOL *sp)
@@ -1866,6 +1869,9 @@ EXPRESSION *getVarNode(SYMBOL *sp)
     EXPRESSION *exp;
     switch (sp->storage_class)
     {
+        case sc_member:
+            exp = exprNode(en_add, varNode(en_thisshim, NULL), intNode(en_c_i, sp->offset));
+            break;            
         case sc_auto:
         case sc_parameter:
         case sc_register:	/* register variables are treated as 
@@ -1917,7 +1923,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         lex = getsym();
     }
     if (cparams.prm_cplusplus && isstructured(itype) && (!basetype(itype)->sp->trivialCons || 
-             arrayMember || !MATCHKW(lex, begin)))
+             arrayMember))
     {
         // initialization via constructor
         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
@@ -1927,56 +1933,54 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         BOOL maybeConversion = TRUE;
         BOOL isconversion;
         exp = baseexp= exprNode(en_add, getVarNode(base), intNode(en_c_i, offset));
-        if (MATCHKW(lex, begin))
-        {
-            errorsym(ERR_STRUCTURE_INITIALIZATION_NEEDS_CONSTRUCTOR, itype->sp);
-            lex = getsym();
-            errskim(&lex, skim_end);
-            if (MATCHKW(lex, end))
-                lex = getsym();
-            return lex;
-        }
-        else if (assn || arrayMember)
+        if (assn || arrayMember)
         {
             // assignments or array members come here
             if (startOfType(lex))
             {
                 TYPE *tp1 = NULL;
-                enum e_lk linkage, linkage2, linkage3;
-                BOOL defd = FALSE;
-                lex = getBasicType(lex, funcsp, &tp1, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL);
+                EXPRESSION *exp1;
+                lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+                if (tp1->type == bt_auto)
+                    tp1 = itype;
                 if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), TRUE))
                 {
                     error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                     errskim(&lex, skim_semi);
                     return lex;
                 }
-                else if (MATCHKW(lex, openpa))
-                {
-                    // conversion constructor params
-                    lex = getArgs(lex, funcsp, funcparams);
-                }
                 else
                 {
-                    // default constructor without param list
+                    funcparams->arguments = Alloc(sizeof(INITLIST));
+                    funcparams->arguments->tp = tp1;
+                    funcparams->arguments->exp = exp1;
+                    maybeConversion = FALSE;
                 }
             }
             else
             {
-                // shortcut for conversion from single expression
-                EXPRESSION *exp1 = NULL;
-                TYPE *tp1 = NULL;
-                lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
-                funcparams->arguments = Alloc(sizeof(ARGLIST));
-                funcparams->arguments->tp = tp1;
-                funcparams->arguments->exp = exp1;
-                maybeConversion = FALSE;
+                if (MATCHKW(lex, begin))
+                {
+                    lex = getArgs(lex, funcsp, funcparams, end);
+                    maybeConversion = FALSE;
+                }
+                else
+                {
+                    // shortcut for conversion from single expression
+                    EXPRESSION *exp1 = NULL;
+                    TYPE *tp1 = NULL;
+                    lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+                    funcparams->arguments = Alloc(sizeof(INITLIST));
+                    funcparams->arguments->tp = tp1;
+                    funcparams->arguments->exp = exp1;
+                    maybeConversion = FALSE;
+                }
             }
         }
-        else if (MATCHKW(lex, openpa))
+        else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
         {
             // conversion constructor params
-            lex = getArgs(lex, funcsp, funcparams);
+            lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end);
         }
         else
         {
@@ -1984,7 +1988,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         }
         callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion); 
         initInsert(&it, itype, exp, offset, TRUE);
-        if (sc != sc_auto && !arrayMember)
+        if (sc != sc_auto && sc != sc_member && !arrayMember)
         {
             insertDynamicInitializer(base, it);
         }
@@ -1995,7 +1999,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         exp = baseexp;
         callDestructor(basetype(itype)->sp, &exp, NULL, TRUE);
         initInsert(&it, itype, exp, offset, TRUE);
-        if (sc != sc_auto && !arrayMember)
+        if (sc != sc_auto && sc != sc_member && !arrayMember)
         {
             insertDynamicDestructor(base, it);
         }
@@ -2007,183 +2011,234 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     }
     // if we get here it is an array or a trivial structure
     if (!lex || MATCHKW(lex, begin) || !str_candidate(lex, itype))
-        if (needkw(&lex, begin))
+    {
+        if (cparams.prm_cplusplus && !MATCHKW(lex, begin))
+        {
+            TYPE *tp1 = NULL;
+            EXPRESSION *exp1 = NULL;
+            lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1);
+            if (!tp1)
+                error(ERR_EXPRESSION_SYNTAX);
+            else if (!comparetypes(itype, tp1, TRUE))
+                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                
+            if (exp1)
+            {
+                INITIALIZER *it = NULL;
+                initInsert(&it, itype, exp1, offset, FALSE);
+                if (sc != sc_auto && sc != sc_member && !arrayMember)
+                {
+                    insertDynamicInitializer(base, it);
+                }
+                else
+                {
+                    *init = it;
+                }
+            }
+            return lex;
+        }
+        else if (needkw(&lex, begin))
         {
             needend = TRUE;
         }
-
-    while (lex)
+    }
+    if (cparams.prm_cplusplus && needend && MATCHKW(lex, end))
     {
-        BOOL gotcomma = FALSE;
-        TYPE *tp2;
-        c99 |= designator(&lex, funcsp, &desc, &cache);
-        tp2 = nexttp(desc);
-        
-        while (tp2 && (isarray(tp2) || isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons)))
+        // empty braces
+        lex = getsym();
+        initInsert(init, NULL, NULL, itype->size, FALSE);
+    }
+    else
+    {
+        while (lex)
         {
-            if (MATCHKW(lex, begin))
+            BOOL gotcomma = FALSE;
+            TYPE *tp2;
+            c99 |= designator(&lex, funcsp, &desc, &cache);
+            tp2 = nexttp(desc);
+            
+            while (tp2 && (isarray(tp2) || isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons)))
             {
-                lex = getsym();
-                allocate_desc(tp2, desc->offset + desc->reloffset, 
-                          &desc, &cache);
-                desc->stopgap = TRUE;
-                c99 |= designator(&lex, funcsp, &desc, &cache);
-            }
-            else
-            {
-                if (!atend(desc))
+                if (MATCHKW(lex, begin))
+                {
+                    lex = getsym();
                     allocate_desc(tp2, desc->offset + desc->reloffset, 
                               &desc, &cache);
+                    desc->stopgap = TRUE;
+                    c99 |= designator(&lex, funcsp, &desc, &cache);
+                }
                 else
-                    break;
+                {
+                    if (!atend(desc))
+                        allocate_desc(tp2, desc->offset + desc->reloffset, 
+                                  &desc, &cache);
+                    else
+                        break;
+                }
+                tp2 = nexttp(desc);
             }
-            tp2 = nexttp(desc);
-        }
-        if (atend(desc))
-        {
-            toomany = TRUE;
-            break;
-        }
-        /* when we get here, DESC has an aggregate with an element that isn't
-         * an aggregate
-         */
-        if (str_candidate(lex, desc->tp) != 0)
-        {
-            lex = read_strings(lex, next, &desc);
-        }
-        else
-        {
-            lex = initType(lex, funcsp, desc->offset + desc->reloffset,
-                           sc, next, dest, nexttp(desc), base, isarray(itype));
-        }
-        increment_desc(&desc, &cache);
-        while (*next)
-            next = &(*next)->next;
-        if ((sc != sc_auto && sc != sc_register || needend) && 
-            MATCHKW(lex, comma) || MATCHKW(lex, end))
-        {
-            gotcomma = MATCHKW(lex, comma);
-            if (gotcomma && needend)
-                lex = getsym();
-            while (MATCHKW(lex, end))
+            if (atend(desc))
             {
-                gotcomma = FALSE;
-                lex = getsym();
-                unwrap_desc(&desc, &cache);
-                free_desc(&desc, &cache);
-                if (!desc)
-                {
-                    if (!needend)
-                    {
-                        error(ERR_DECLARE_SYNTAX); /* extra end */
-                    }
-                    break;
-                }
-                increment_desc(&desc, &cache);
-                if (MATCHKW(lex, comma))
-                {
-                    gotcomma = TRUE;
-                    lex = getsym();
-                }
+                toomany = TRUE;
+                break;
             }
-            if (!desc)
+            /* when we get here, DESC has an aggregate with an element that isn't
+             * an aggregate
+             */
+            if (str_candidate(lex, desc->tp) != 0)
+            {
+                lex = read_strings(lex, next, &desc);
+            }
+            else
+            {
+                lex = initType(lex, funcsp, desc->offset + desc->reloffset,
+                               sc, next, dest, nexttp(desc), base, isarray(itype));
+            }
+            increment_desc(&desc, &cache);
+            while (*next)
+                next = &(*next)->next;
+            if ((sc != sc_auto && sc != sc_register || needend) && 
+                MATCHKW(lex, comma) || MATCHKW(lex, end))
+            {
+                gotcomma = MATCHKW(lex, comma);
+                if (gotcomma && needend)
+                    lex = getsym();
+                while (MATCHKW(lex, end))
+                {
+                    gotcomma = FALSE;
+                    lex = getsym();
+                    unwrap_desc(&desc, &cache);
+                    free_desc(&desc, &cache);
+                    if (!desc)
+                    {
+                        if (!needend)
+                        {
+                            error(ERR_DECLARE_SYNTAX); /* extra end */
+                        }
+                        break;
+                    }
+                    increment_desc(&desc, &cache);
+                    if (MATCHKW(lex, comma))
+                    {
+                        gotcomma = TRUE;
+                        lex = getsym();
+                    }
+                }
+                if (!desc)
+                    break;
+            }
+            if (!desc || !gotcomma || !needend)
                 break;
         }
-        if (!desc || !gotcomma || !needend)
-            break;
-    }
-    if (c99 && !cparams.prm_c99)
-        error(ERR_C99_STYLE_INITIALIZATION_USED);
-    if (toomany)
-        error(ERR_TOO_MANY_INITIALIZERS);
-    if (desc)
-    {
-        unwrap_desc(&desc, &cache);
-        if (needend || desc->next)
+        if (c99 && !cparams.prm_c99)
+            error(ERR_C99_STYLE_INITIALIZATION_USED);
+        if (toomany)
+            error(ERR_TOO_MANY_INITIALIZERS);
+        if (desc)
         {
-            error(ERR_DECLARE_SYNTAX);
-            errskim(&lex, skim_semi);
+            unwrap_desc(&desc, &cache);
+            if (needend || desc->next)
+            {
+                error(ERR_DECLARE_SYNTAX);
+                errskim(&lex, skim_semi);
+            }
         }
+        /* theoretically desc will be NULL if there are no errors */
+        while (desc)
+        {
+            unwrap_desc(&desc, &cache);
+            free_desc(&desc, &cache);
+        }
+        set_array_sizes(cache);
+        
+        *init = data = sort_aggregate_initializers(data);
     }
-    /* theoretically desc will be NULL if there are no errors */
-    while (desc)
-    {
-        unwrap_desc(&desc, &cache);
-        free_desc(&desc, &cache);
-    }
-    set_array_sizes(cache);
-    
-    *init = data = sort_aggregate_initializers(data);
     // have to fill in unused array elements with C++ constructors
     // this doesn't play well with the designator stuff but doesn't matter in C++
-    if (cparams.prm_cplusplus && isarray(itype) && 
-        isstructured(basetype(itype->btp)) && !basetype(itype->btp)->sp->trivialCons)
+    if (cparams.prm_cplusplus && isarray(itype) && !arrayMember)
     {
-        int s = (itype->btp->size + itype->btp->arraySkew);
-        INITIALIZER *test = *init;
-        INITIALIZER *testd = *dest;
-        INITIALIZER *firstInit = NULL, *firstDest = NULL, **up = &firstInit, **down = &firstDest ;
-        int last = 0, i;
-        for (i = 0; i <= itype->size; i +=s, (test = test ? test->next : test), (testd = testd ? testd->next :testd))
+        TYPE *btp = itype;
+        while (isarray(btp))
+            btp = basetype(btp)->btp;
+        btp = basetype(btp);
+        if (isstructured(btp) && !btp->sp->trivialCons)
         {
-            if (test && test->basetp && i == test->offset || i == itype->size)
+            int s = (btp->size + btp->arraySkew);
+            INITIALIZER *test = *init;
+            INITIALIZER *testd = *dest;
+            INITIALIZER *first = NULL, **push = &first;
+            int last = 0, i;
+            for ( ;test || last < itype->size; )
             {
-                if (last < i - s)
+                if (test && last < test->offset || !test && last < itype->size)
                 {
-                    INITIALIZER *it = NULL;
-                    TYPE *ctype = basetype(itype)->btp;
-                    EXPRESSION *sz = i - last - 2 * s ? intNode(en_c_i, (i - last - s)/s) : NULL;
-                    EXPRESSION *baseexp = exprNode(en_add, getVarNode(base), intNode(en_c_i, last));
-                    EXPRESSION *exp = baseexp;
+                    int n = (test ? test->offset - last : itype->size - last) / s;
+                    EXPRESSION *sz = NULL;
+                    TYPE *ctype = btp, *tn = btp;
+                    EXPRESSION *exp ;
+                    if (last)
+                        exp = exprNode(en_add, getVarNode(base), intNode(en_c_i, last));
+                    else
+                        exp = getVarNode(base);
+                    if (n > 1)
+                    {
+                        sz = intNode(en_c_i, n);
+                        tn = Alloc(sizeof(TYPE));
+                        tn->array = TRUE;
+                        tn->type = bt_pointer;
+                        tn->size = n * s;
+                        tn->btp = btp;
+                    }
                     callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE);
-                    initInsert(up, basetype(itype)->btp, exp, offset, TRUE);
-                    exp = baseexp;
-                    callDestructor(basetype(itype->btp)->sp, &exp, sz, TRUE);
-                    initInsert(down, basetype(itype)->btp, exp, offset, TRUE);
-                    
+                    initInsert(push, tn, exp, last, TRUE);
+                    push = &(*push)->next;
+                    last += n * s;
                 }
-                last = i;
-            }
-            else
-            {
-                *up = test;
-                *down = testd;
-                if (*up)
-                    up = &(*up)->next;
-                if (*down)
-                    down = &(*down)->next;
-            }            
-        }
-        if (firstInit)
-        {
-            if (sc == sc_auto)
-            {
-                while (firstInit)
+                if (test)
                 {
-                    insertDynamicInitializer(base, firstInit);
-                    firstInit = firstInit->next;
+                    *push = test;
+                    test = test->next;
+                    push = &(*push)->next;
+                    *push = NULL;
+                    last += s;
                 }
+            }
+            if (sc != sc_auto && sc != sc_member)
+            {
                 *init = NULL;
-            }   
-            else
-            {
-                *init = firstInit;
+                insertDynamicInitializer(base, first);
             }
-        }
-        if (firstDest)
-        {
-            if (sc == sc_auto)
-            {
-                while (firstDest)
-                {
-                    insertDynamicDestructor(base, firstDest);
-                    firstDest = firstDest->next;
-                }
-                *dest = NULL;
-            }   
             else
             {
-                *dest = firstDest;
+                *init = first;
+            }
+            first = NULL, push = &first;
+            {
+                int n = itype->size / s;
+                EXPRESSION *exp;
+                EXPRESSION *sz = NULL;
+                TYPE *tn = btp;
+                exp = getVarNode(base);
+                if (n > 1)
+                {
+                    sz = intNode(en_c_i, n);
+                    tn = Alloc(sizeof(TYPE));
+                    tn->array = TRUE;
+                    tn->type = bt_pointer;
+                    tn->size = n * s;
+                    tn->btp = btp;
+                }
+                callDestructor(btp->sp, &exp, sz, TRUE);
+                initInsert(push, tn, exp, last, FALSE);
+            }
+            if (sc != sc_auto && sc != sc_member)
+            {
+                insertDynamicDestructor(base, first);
+                *dest = NULL;
+            }
+            else
+            {
+                *dest = first;
             }
         }
     }   
@@ -2253,7 +2308,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
             initInsert(init, sp->tp, exp, offset, FALSE);
             callDestructor(sp, &expl, NULL, TRUE);
             initInsert(&dest, sp->tp, expl, offset, TRUE);
-            if (sp->storage_class != sc_auto)
+            if (sp->storage_class != sc_auto && sp->storage_class != sc_member)
             {
                 insertDynamicDestructor(sp, dest);
             }
@@ -2667,15 +2722,20 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 {
                     init = &sp->init;			
                     while (*init)
+                    {
+                        if (!(*init)->basetp)
+                            break;
                         init = &(*init)->next;
-                    initInsert(init, NULL, NULL, sp->tp->size, FALSE);
+                    }
+                    if (!*init)
+                        initInsert(init, NULL, NULL, sp->tp->size, FALSE);
                 }
             }
         }
     }
-    else if (cparams.prm_cplusplus && sp->storage_class != sc_typedef && asExpression)
+    else if (cparams.prm_cplusplus && sp->storage_class != sc_typedef && !asExpression)
     {
-        if (isstructured(sp->tp))
+        if (isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
         {
             // default constructor without (), or array of structures without an initialization list
             lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE);
@@ -2684,8 +2744,13 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             {
                 INITIALIZER **init = &sp->init;
                 while (*init)
+                {
+                    if (!(*init)->basetp)
+                        break;
                     init = &(*init)->next;
-                initInsert(init, NULL, NULL, sp->tp->size, FALSE);
+                }
+                if (!*init)
+                    initInsert(init, NULL, NULL, sp->tp->size, FALSE);
             }
         }
         else if (isarray(sp->tp))
@@ -2701,11 +2766,11 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 int n = sp->tp->size/(z->size + z->arraySkew);
                 TYPE *ctype = z;
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
-                EXPRESSION *baseexp = exprNode(en_add, getVarNode(sp), intNode(en_c_i, 0));
+                EXPRESSION *baseexp = getVarNode(sp);
                 EXPRESSION *exp = baseexp;
                 callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE);
-                initInsert(&it, z, exp, 0, FALSE);
-                if (storage_class_in != sc_auto)
+                initInsert(&it, z, exp, 0, TRUE);
+                if (storage_class_in != sc_auto && storage_class_in != sc_member)
                 {
                     insertDynamicInitializer(sp, it);
                 }
@@ -2715,14 +2780,26 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 }
                 exp = baseexp;
                 callDestructor(z->sp, &exp, sz, TRUE);
-                initInsert(&init, z, exp, 0, FALSE);
-                if (storage_class_in != sc_auto)
+                initInsert(&init, z, exp, 0, TRUE);
+                if (storage_class_in != sc_auto && storage_class_in != sc_member)
                 {
                     insertDynamicDestructor(sp, init);
                 }
                 else
                 {
                     sp->dest = init;
+                }
+                if (sp->init)
+                {
+                    INITIALIZER **init = &sp->init;
+                    while (*init)
+                    {
+                        if (!(*init)->basetp)
+                            break;
+                        init = &(*init)->next;
+                    }
+                    if (!*init)
+                        initInsert(init, NULL, NULL, sp->tp->size, FALSE);
                 }
             }   
         }

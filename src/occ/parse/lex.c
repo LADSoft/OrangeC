@@ -1372,7 +1372,7 @@ LEXEME *SetAlternateLex(LEXEME *lexList)
     }
     else
     {
-        context = context->next;
+        context = context->cur = context->next;
         return NULL;
     }
 }

@@ -55,6 +55,7 @@ extern TYPE stdlongdoublecomplex;
 extern TYPE stdchar16t;
 extern TYPE stdchar32t;
 extern int nextLabel;
+extern SYMBOL *theCurrentFunc;
 
 BOOL istype(enum e_sc storageClass)
 {
@@ -62,8 +63,7 @@ BOOL istype(enum e_sc storageClass)
 }
 BOOL ismemberdata(SYMBOL *sp)
 {
-    (void)sp;
-    return TRUE;
+    return (!isfunction(sp) && sp->storage_class == sc_member);
 }
 BOOL startOfType(LEXEME *lex)
 {
@@ -502,7 +502,10 @@ SYMBOL *anonymousVar(enum e_sc storage_class, TYPE *tp)
     rv->anonymous = TRUE;
     rv->allocate = TRUE;
     rv->assigned = TRUE;
+    rv->used = TRUE;
     rv->name = AnonymousName();
+    if (storage_class == sc_localstatic && !theCurrentFunc)
+        storage_class = sc_static;
     InsertSymbol(rv, storage_class, FALSE);
     SetLinkerNames(rv, lk_none);
     return rv;
@@ -881,10 +884,9 @@ BOOL lvalue(EXPRESSION *exp)
 }
 EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr)
 {
+    EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
     EXPRESSION *expsym;
-    if (!init->exp)
-        return intNode(en_c_i, 0);// must be an error
     if (isstructured(tp) || isarray(tp))
     {
         INITIALIZER **i2 = &init;
@@ -953,159 +955,209 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             expsym = intNode(en_c_i, 0);
             break;
     }	
-    if (init->noassign)
+    while (init)
     {
-        exp = init->exp;
-        if (thisptr && exp->type == en_func)
-            exp->v.func->thisptr = expsym;
-    }
-    else if (isstructured(tp) || isarray(tp))
-    {
-        INITIALIZER *temp = init;
-        if (isstructured(temp->basetp))
+        exp = NULL;
+        if (init->basetp)
         {
-            EXPRESSION *exp2 = init->exp;;
-            while(exp2->type == en_not_lvalue)
-                exp2 = exp2->left;
-            if (exp2->type == en_func && exp2->v.func->returnSP)
+            if (init->noassign)
             {
-                exp2->v.func->returnSP->allocate = FALSE;
-                exp2->v.func->returnEXP = expsym;
-                exp = exp2;
+                exp = init->exp;
+                if (thisptr && exp->type == en_func)
+                    exp->v.func->thisptr = init->offset ? exprNode(en_add, expsym, intNode(en_c_i, init->offset)) : expsym;
             }
-            else if (cparams.prm_cplusplus)
+            else if (!init->exp)
             {
-                TYPE *ctype = tp;
-                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                funcparams->arguments = Alloc(sizeof(ARGLIST));
-                funcparams->arguments->tp = ctype;
-                funcparams->arguments->exp = exp2;
-                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE); 
-                exp = expsym;
-            }
-            else
-            {
-                exp = exprNode(en_blockassign, expsym, exp2);
-                exp->size = tp->size;
-            }
-        }
-        else
-        {
-            while (temp)
-            {
-                if (temp->exp)
-                    if (!isarithmeticconst(temp->exp) && !isconstaddress(temp->exp))
-                        break;
-                temp = temp->next;
-            }
-            if (temp)
-            {
-                /* some members are non-constant expressions */
-                if (!cparams.prm_c99 && !cparams.prm_cplusplus)
-                    error(ERR_C99_NON_CONSTANT_INITIALIZATION);
-                if (!sp)
-                {
-                    sp = anonymousVar(sc_auto, tp);
-                    expsym = varNode(en_auto, sp);
-                }
+                // usually empty braces, coudl be an error though
                 exp = exprNode(en_blockclear, expsym, NULL);
-                exp->size = tp->size;
-                exp = exprNode(en_void, exp, NULL);
-                expp = &exp->right;
-                while (init)
-                {
-                    if (init->exp)
-                    {
-                        EXPRESSION *asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
-                        EXPRESSION *right = init->exp;
-                        deref(init->basetp, &asn);
-                        cast(init->basetp, &right);
-                        *expp = exprNode(en_assign, asn, right);
-                        *expp = exprNode(en_void, *expp, NULL);
-                        expp = &(*expp)->right;
-                    }
-                    init = init->next;
-                }
+                exp->size = init->offset;
             }
-            else
+            else if (isstructured(init->basetp) || isarray(init->basetp))
             {
-                /* constant expression */
-                SYMBOL *spc ;
-                IncGlobalFlag();
-                spc = anonymousVar(sc_localstatic, tp);
-                spc->init = init ;
-                insertInitSym(spc);
-                DecGlobalFlag();
-                exp = varNode(en_label, spc);
-                spc->label =nextLabel++;
-                if (expsym)
+                INITIALIZER *temp = init;
+                if (isstructured(temp->basetp))
                 {
-                    if (cparams.prm_cplusplus)
+                    EXPRESSION *exp2 = init->exp;
+                    while(exp2->type == en_not_lvalue)
+                        exp2 = exp2->left;
+                    if (exp2->type == en_func && exp2->v.func->returnSP)
                     {
-                        TYPE *ctype = tp;
+                        exp2->v.func->returnSP->allocate = FALSE;
+                        exp2->v.func->returnEXP = expsym;
+                        exp = exp2;
+                    }
+                    else if (cparams.prm_cplusplus)
+                    {
+                        TYPE *ctype = init->basetp;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                        funcparams->arguments = Alloc(sizeof(ARGLIST));
+                        funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = ctype;
-                        funcparams->arguments->exp = exp;
+                        funcparams->arguments->exp = exp2;
                         callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE); 
                         exp = expsym;
                     }
                     else
                     {
-                        exp = exprNode(en_blockassign, expsym, exp);
-                        exp->size = tp->size;
+                        exp = exprNode(en_blockassign, expsym, exp2);
+                        exp->size = init->basetp->size;
+                    }
+                }
+                else
+                {
+                    TYPE *btp = init->basetp;
+                    while(isarray(btp))
+                        btp = basetype(btp)->btp;
+                    btp = basetype(btp);
+                    while (temp)
+                    {
+                        if (temp->exp)
+                            if (!isarithmeticconst(temp->exp) && !isconstaddress(temp->exp))
+                                break;
+                        temp = temp->next;
+                    }
+                    if (temp)
+                    {
+                        /* some members are non-constant expressions */
+                        if (!cparams.prm_c99 && !cparams.prm_cplusplus)
+                            error(ERR_C99_NON_CONSTANT_INITIALIZATION);
+                        if (!sp)
+                        {
+                            sp = anonymousVar(sc_auto, init->basetp);
+                            expsym = varNode(en_auto, sp);
+                        }
+                        if (!isstructured(btp) || btp->sp->trivialCons)
+                        {
+                            exp = exprNode(en_blockclear, expsym, NULL);
+                            exp->size = init->basetp->size;
+                            exp = exprNode(en_void, exp, NULL);
+                            expp = &exp->right;
+                        }
+                        else
+                        {
+                            expp = &exp;
+                        }
+                        {
+                            EXPRESSION *right = init->exp;
+                            if (!isstructured(btp))
+                            {
+                                EXPRESSION *asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
+                                deref(init->basetp, &asn);
+                                cast(init->basetp, &right);
+                                right = exprNode(en_assign, asn, right);
+                            }
+                            *expp = exprNode(en_void, *expp, right);
+                            expp = &(*expp)->right;
+                        }
+                    }
+                    else
+                    {
+                        /* constant expression */
+                        SYMBOL *spc ;
+                        IncGlobalFlag();
+                        spc = anonymousVar(sc_localstatic, init->basetp);
+                        spc->init = init ;
+                        insertInitSym(spc);
+                        DecGlobalFlag();
+                        exp = varNode(en_label, spc);
+                        spc->label =nextLabel++;
+                        if (expsym)
+                        {
+                            if (cparams.prm_cplusplus && isstructured(init->basetp) && !init->basetp->sp->trivialCons)
+                            {
+                                TYPE *ctype = init->basetp;
+                                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                                funcparams->arguments = Alloc(sizeof(INITLIST));
+                                funcparams->arguments->tp = ctype;
+                                funcparams->arguments->exp = exp;
+                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE); 
+                                exp = expsym;
+                            }
+                            else
+                            {
+                                exp = exprNode(en_blockassign, expsym, exp);
+                                exp->size = init->basetp->size;
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-    else if (basetype(tp)->type == bt_memberptr)
-    {
-        EXPRESSION *exp2 = init->exp;;
-        while(exp2->type == en_not_lvalue)
-            exp2 = exp2->left;
-        if (exp2->type == en_func && exp2->v.func->returnSP)
-        {
-            exp2->v.func->returnSP->allocate = FALSE;
-            exp2->v.func->returnEXP = expsym;
-            exp = exp2;
-        }
-        else
-        {
-            if (exp2->type == en_memberptr)
+            else if (basetype(init->basetp)->type == bt_memberptr)
             {
-                int lab = dumpMemberPtr(exp2->v.sp, tp, TRUE);
-                exp2 = intNode(en_labcon, lab);
+                EXPRESSION *exp2 = init->exp;;
+                while(exp2->type == en_not_lvalue)
+                    exp2 = exp2->left;
+                if (exp2->type == en_func && exp2->v.func->returnSP)
+                {
+                    exp2->v.func->returnSP->allocate = FALSE;
+                    exp2->v.func->returnEXP = expsym;
+                    exp = exp2;
+                }
+                else
+                {
+                    if (exp2->type == en_memberptr)
+                    {
+                        int lab = dumpMemberPtr(exp2->v.sp, init->basetp, TRUE);
+                        exp2 = intNode(en_labcon, lab);
+                    }
+                    exp = exprNode(en_blockassign, expsym, exp2);
+                    exp->size = init->basetp->size;
+                }
             }
-            exp = exprNode(en_blockassign, expsym, exp2);
-            exp->size = tp->size;
+            else
+            {
+                EXPRESSION *exps = expsym;
+                if (init->offset)
+                    exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
+                deref(init->basetp, &exps);
+                exp = init->exp;
+                if (exp->type == en_void)
+                {
+                    cast(init->basetp, &exp->right);
+                    if (expsym)
+                        exp->right = exprNode(en_assign, exps, exp->right);
+                }
+                else
+                {
+                    cast(init->basetp, &exp);
+                    if (exps)
+                        exp = exprNode(en_assign, exps, exp);
+                }
+            }
+            if (sp && sp->init && isatomic(init->basetp) && needsAtomicLockFromType(init->basetp))
+            {
+                EXPRESSION *p1 = exprNode(en_add, expsym->left, intNode(en_c_i, init->basetp->size - ATOMIC_FLAG_SPACE));
+                deref(&stdint, &p1);
+                p1 = exprNode(en_assign, p1, intNode(en_c_i, 0));
+                exp = exprNode(en_void, exp, p1);
+            }
         }
-    }
-    else
-    {
-        deref(tp, &expsym);
-        exp = init->exp;
-        if (exp->type == en_void)
+        if (exp)
         {
-            cast(tp, &exp->right);
-            if (expsym)
-                exp->right = exprNode(en_assign, expsym, exp->right);
+            if (*pos)
+            {
+                *pos = exprNode(en_void, *pos, exp);
+                pos = &(*pos)->right;
+            }
+            else
+            {
+                *pos = exp;
+            }
+        }
+        init = init->next;
+    }
+    if (isstructured(tp) && (!cparams.prm_cplusplus || !basetype(tp)->sp->trivialCons))
+    {
+        if (*pos)
+        {
+            *pos = exprNode(en_void, *pos, expsym);
+            pos = &(*pos)->right;
         }
         else
         {
-            cast(tp, &exp);
-            if (expsym)
-                exp = exprNode(en_assign, expsym, exp);
+            *pos = expsym;
         }
     }
-    if (sp && sp->init && isatomic(tp) && needsAtomicLockFromType(tp))
-    {
-        EXPRESSION *p1 = exprNode(en_add, expsym->left, intNode(en_c_i, tp->size - ATOMIC_FLAG_SPACE));
-        deref(&stdint, &p1);
-        p1 = exprNode(en_assign, p1, intNode(en_c_i, 0));
-        exp = exprNode(en_void, exp, p1);
-    }
-    return exp;
+    return rv;
 }
 BOOL assignDiscardsConst(TYPE *dest, TYPE *source)
 {
@@ -1184,7 +1236,7 @@ BOOL isconstaddress(EXPRESSION *exp)
         case en_labcon:
             return TRUE;
         case en_func:
-            return isconstaddress(exp->v.func->fcall);
+            return !exp->v.func->ascall;
         case en_threadlocal:
         default:
             return FALSE;

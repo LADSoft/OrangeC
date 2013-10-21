@@ -443,6 +443,10 @@ static struct {
 {"For-range declarator cannot be initialized", ERROR },
 {"For declarator must be initialized", ERROR },
 {"Initialization from higher type", WARNING },
+{"Nonstructured initializer list expected", ERROR },
+{"Cannot use initializer list here", ERROR },
+{"Initializer list requires overloaded operator []", ERROR },
+{"Cannot use array of structures as function argument", ERROR },
 #endif
 } ;
 int total_errors;
@@ -1441,7 +1445,7 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
         case en_func:
             fp = node->v.func;
             {
-                ARGLIST *args = fp->arguments;
+                INITLIST *args = fp->arguments;
                 while (args)
                 {
                     assignmentUsages(args->exp, FALSE);
@@ -1639,7 +1643,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_func:
             fp = node->v.func;
             {
-                ARGLIST *args = fp->arguments;
+                INITLIST *args = fp->arguments;
                 while (args)
                 {
                     rv |= checkDefaultExpression(args->exp);

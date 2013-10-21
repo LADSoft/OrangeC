@@ -359,7 +359,7 @@ static void createCaller(void)
     st = stmtNode(NULL, &block2, isstructured(basetype(lambdas->func->tp)->btp) ? st_expr : st_return);
     st->select = varNode(en_func, NULL);
     st->select->v.func = params;
-    params->arguments = Alloc(sizeof(ARGLIST));
+    params->arguments = Alloc(sizeof(INITLIST));
     params->arguments->exp = varNode(en_pc, lambdas->func);
     params->arguments->tp = &stdpointer;
     params->ascall = TRUE;
@@ -378,7 +378,7 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
 {
     // if the closure is copied then used on another thread yes the resulting
     // code can get into a race condition...
-    ARGLIST *args;
+    INITLIST *args;
     FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
     TYPE *pargs = realArgs(lambdas->func);
     SYMBOL *func = makeID(sc_static, pargs, NULL, "$ptrcaller");
@@ -397,10 +397,10 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
     st = stmtNode(NULL, &block2, isstructured(basetype(lambdas->func->tp)->btp) ? st_expr : st_return);
     st->select = varNode(en_func, NULL);
     st->select->v.func = params;
-    params->arguments = Alloc(sizeof(ARGLIST));
+    params->arguments = Alloc(sizeof(INITLIST));
     params->arguments->exp = varNode(en_pc, lambdas->func);
     params->arguments->tp = &stdpointer;
-    args = Alloc(sizeof(ARGLIST));
+    args = Alloc(sizeof(INITLIST));
     args->next = params->arguments;
     params->arguments = args;
     params->arguments->exp = exp;
@@ -599,7 +599,7 @@ static EXPRESSION *createLambda(void)
                     if (isstructured(ctp))
                     {
                         FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                        params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
+                        params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                         params->arguments->tp = ctp;
                         params->arguments->exp = en;
                         if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE))
@@ -630,7 +630,7 @@ static EXPRESSION *createLambda(void)
             TYPE *ctp = sp->tp;
             FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
             en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->offset));
-            params->arguments = (ARGLIST *)Alloc(sizeof(ARGLIST));
+            params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = ctp;
             params->arguments->exp = en;
             if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE))

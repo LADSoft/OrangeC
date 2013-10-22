@@ -839,7 +839,7 @@ int link_getseg(SYMBOL *sp)
         case sc_external:
         case sc_localstatic:
         case sc_overloads:
-            if (sp->linkage == lk_inline)
+            if (sp->linkage == lk_inline && cparams.prm_cplusplus)
                 return sp->value.i | 0xc0000000;
             if (isfunction(sp->tp))
 /*				

@@ -2841,17 +2841,21 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
     }
     if (isconst(tp))
-        if  (!sp->init && asExpression)
+        if  (!sp->init)
         {
-            if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member)
+            if (!asExpression)
             {
-                if (!isstructured(tp) || !cparams.prm_cplusplus || basetype(tp)->sp->trivialCons && hasData(tp))
-                    errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member)
+                {
+                    if (!isstructured(tp) || !cparams.prm_cplusplus || basetype(tp)->sp->trivialCons && hasData(tp))
+                        errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                }
             }
         }
-        else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp) && asExpression)
+        else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp))
         {
-            errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+            if (!asExpression)
+                errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
         }
         else if (isintconst(sp->init->exp) && isint(sp->tp) && !sp->parentClass)
             {
@@ -2864,7 +2868,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (isref(sp->tp) && sp->storage_class != sc_typedef)
     {
-        if (!sp->init && sp->storage_class != sc_external && sp->storage_class != sc_member && asExpression)
+        if (!sp->init && sp->storage_class != sc_external && sp->storage_class != sc_member && !asExpression)
         {
             errorsym(ERR_REF_MUST_INITIALIZE, sp);
         }

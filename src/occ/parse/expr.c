@@ -689,11 +689,11 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 else 
                 {
                     SYMBOL *sp3 = sp2->parentClass, *sp4 = basetype(typ2)->sp;
-                    if (sp3->mainsym)
+                    if (sp3 && sp3->mainsym)
                         sp3 = sp3->mainsym;
-                    if (sp4->mainsym)
+                    if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
-                    if (sp3 != sp4 && classRefCount(sp3, sp4) != 1)
+                    if (sp3 && sp4 && sp3 != sp4 && classRefCount(sp3, sp4) != 1)
                     {
                         errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp2, basetype(typ2)->sp);
                     }
@@ -1701,7 +1701,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             else
             {
-                if (!structSyms)
+                if (!structSyms && !ispointer(tp_cpp))
                     errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
                 operands = FALSE;
             }

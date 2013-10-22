@@ -605,6 +605,7 @@ static void resolveAnonymousUnions(SYMBOL *sp)
             {
                 SYMBOL *newsp = (SYMBOL *)newhr->p;
                 newsp->offset += spm->offset;
+                newsp->parentClass = sp;
                 /*
                 if (type == bt_union)
                 {

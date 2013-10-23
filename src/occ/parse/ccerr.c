@@ -365,7 +365,7 @@ static struct {
 {"Invalid storage class for thread local variable", ERROR },
 {"Thread local variable cannot have auto or register storage class", ERROR },
 {"Functions cannot be thread local", WARNING },
-{"Thread local variable must have storage class", ERROR },
+{"Mismatched thread_local storage class specifier", ERROR },
 {"Qualifiers not allowed with atomic type specifier", WARNING },
 {"Function or array not allowed as atomic type", ERROR },
 {"Redeclaration of '%s' ouside its class not allowed", ERROR },
@@ -447,8 +447,12 @@ static struct {
 {"Cannot use initializer list here", ERROR },
 {"Initializer list requires overloaded operator []", ERROR },
 {"Cannot use array of structures as function argument", ERROR },
+{"Anonymous union cannot contain function or nested type", ERROR },
+{"Anonymous union must contain only public members", ERROR },
+{"Anonymous union must contain only nonstatic data members", ERROR },
 #endif
 } ;
+
 int total_errors;
 int diagcount ;
 

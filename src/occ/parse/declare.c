@@ -545,18 +545,98 @@ static void calculateStructOffsets(SYMBOL *sp)
             sp->tp->arraySkew = totalAlign - sp->tp->arraySkew;
     }
 }
+static BOOL validateAnonymousUnion(SYMBOL *parent, TYPE *unionType)
+{
+    BOOL rv = TRUE;
+    unionType = basetype(unionType);
+    if (cparams.prm_cplusplus && (!unionType->sp->trivialCons || unionType->tags->table[0]->next))
+    {
+        error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
+        rv = FALSE;
+    }
+    else 
+    {
+        HASHREC *newhr =  unionType->syms->table[0];
+        while (newhr)
+        {
+            HASHREC **hhr;
+            SYMBOL *member = (SYMBOL *)newhr->p;
+            if (cparams.prm_cplusplus && member->storage_class == sc_overloads)
+            {
+                if (strcmp(member->name, overloadNameTab[CI_CONSTRUCTOR]) &&
+                    strcmp(member->name, overloadNameTab[CI_DESTRUCTOR]))
+                    if (strcmp(member->name, overloadNameTab[assign - kw_new + CI_NEW]))
+                    {
+                        error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
+                        rv = FALSE;
+                    }   
+                    else
+                    {
+                        HASHREC *hr = basetype(member->tp)->syms->table[0];
+                        while (hr)
+                        {
+                            if (!((SYMBOL *)hr->p)->defaulted)
+                            {
+                                error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
+                                rv = FALSE;
+                                break;
+                            }
+                            hr = hr->next;
+                        }
+                    } 
+            }
+            else if (cparams.prm_cplusplus && member->storage_class == sc_type || member->storage_class == sc_typedef)
+            {
+                error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
+                rv = FALSE;
+            }
+            else if (cparams.prm_cplusplus && member->access == ac_private || member->access == ac_protected)
+            {
+                error(ERR_ANONYMOUS_UNION_PUBLIC_MEMBERS);
+                rv = FALSE;
+            }
+            else if (cparams.prm_cplusplus && member->storage_class != sc_member)
+            {
+                error(ERR_ANONYMOUS_UNION_NONSTATIC_MEMBERS);
+                rv = FALSE;
+            }
+            else if (parent && (hhr = LookupName(member->name, parent->tp->syms)) != NULL)
+            {
+                SYMBOL *spi = (SYMBOL *)(*hhr)->p;
+                currentErrorLine = 0;
+                preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
+                rv = FALSE;
+            }
+            newhr = newhr->next;
+        }
+    }    
+    return rv;
+}
 static void resolveAnonymousGlobalUnion(SYMBOL *sp)
 {
     HASHREC *hr = sp->tp->syms->table[0];
+    validateAnonymousUnion(NULL, sp->tp);
     sp->label = nextLabel++;
     sp->storage_class = sc_localstatic;
     insertInitSym(sp);
     while (hr)
     {
         SYMBOL *sym = (SYMBOL *)hr->p;
-        sym->storage_class = sc_localstatic;
-        sym->label = sp->label;
-        InsertSymbol(sym, sc_static, lk_c);
+        if (sym->storage_class == sc_member)
+        {
+            SYMBOL *spi;
+            if ((spi = gsearch(sym->name)) != NULL)
+            {
+                currentErrorLine = 0;
+                preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
+            }
+            else
+            {
+                sym->storage_class = sc_localstatic;
+                sym->label = sp->label;
+                InsertSymbol(sym, sc_static, lk_c);
+            }
+        }
         hr = hr->next;
     }
 }
@@ -568,64 +648,48 @@ static void resolveAnonymousUnions(SYMBOL *sp)
     while (*member)
     {
         SYMBOL *spm = (SYMBOL *)(*member)->p;
-        if (isstructured(spm->tp) && spm->anonymous)
+        // anonymous structured type declaring anonymous variable is a candidate for
+        // an anonymous structure or union
+        if (isstructured(spm->tp) && spm->anonymous && basetype(spm->tp)->sp->anonymous)
         {
 #ifdef ERROR
 #error NESTEDANONYUNION
 #endif
-        
-        /* fixme - nested anonymous unions */
-            enum e_bt type = basetype(spm->tp)->type;
             HASHREC *next = (*member)->next;
-            HASHREC *newhr ;
             resolveAnonymousUnions(spm);
-            newhr =  spm->tp->syms->table[0];
-            while (newhr)
+            validateAnonymousUnion(sp, spm->tp);
+            *member = spm->tp->syms->table[0];
+            if (basetype(spm->tp)->type == bt_union)
             {
-                HASHREC **hhr;
-                if ((hhr = LookupName(newhr->p->name, sp->tp->syms)) != NULL)
+                if (!cparams.prm_c99 && !cparams.prm_cplusplus)
                 {
-                    SYMBOL *spi = (SYMBOL *)(*hhr)->p;
-                    currentErrorLine = 0;
-                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
+                    error(ERR_ANONYMOUS_UNION_WARNING);
                 }
-                newhr = newhr->next;
             }
-            newhr =  spm->tp->syms->table[0];
-            *member = newhr;
-            if (!cparams.prm_c99 && type == bt_union)
-            {
-                error(ERR_ANONYMOUS_UNION_WARNING);
-            }
-            else if (type != bt_union)
+            else
             {
                 error(ERR_ANONYMOUS_STRUCT_WARNING);
             }
-            while (newhr)
+            while (*member)
             {
-                SYMBOL *newsp = (SYMBOL *)newhr->p;
-                newsp->offset += spm->offset;
-                newsp->parentClass = sp;
-                /*
-                if (type == bt_union)
+                SYMBOL *newsp = (SYMBOL *)(*member)->p;
+                if (newsp->storage_class == sc_member && !isfunction(newsp->tp))
                 {
-                    newsp->offset = spm->offset;
+                    newsp->offset += spm->offset;
+                    newsp->parentClass = sp;
+                    member = &(*member)->next;
                 }
                 else
                 {
-                    newsp->offset += spm->offset;
+                    *member = (*member)->next;
                 }
-                */
-                if (!newhr->next)
-                {
-                    newhr->next = next;
-                    member = &newhr;
-                    break;
-                }
-                newhr = newhr->next;
             }
+            *member = next;
         }
-        member = &(*member)->next;
+        else   
+        {
+            member = &(*member)->next;
+        }
     }
 }
 static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac currentAccess)

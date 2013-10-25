@@ -385,10 +385,6 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
     {
         DumpIncDec(funcsp);
     }
-    if (stmt != 0 && stmt->destexp)
-    {
-        gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
-    }
     if (ap)
     {
         ap1 = tempreg(size, 0);
@@ -474,6 +470,10 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
     IMODE *rv = NULL;
     while (stmt != 0)
     {
+        if (stmt->destexp)
+        {
+            gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
+        }
         switch (stmt->type)
         {
             case st_varstart:

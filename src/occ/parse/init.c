@@ -55,6 +55,7 @@ extern TYPE stdint;
 extern TYPE stdvoid;
 extern TYPE stdpointer;
 extern int startlab, retlab;
+extern BOOL declareAndInitialize;
 
 typedef struct _startups_
 {
@@ -2880,7 +2881,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             sp = clonesym(sp);
         insertInitSym(sp);
     }
-    DecGlobalFlag();
+    if (sp->init)
+        declareAndInitialize = TRUE;
+
+    DecGlobalFlag();    
     initializingGlobalVar = FALSE;
     return lex;
 }

@@ -89,14 +89,14 @@ void AllocateLocalContext(BLOCKDATA *block, SYMBOL *sp)
         st->label = label;
         tn->blocknum = st->blocknum;
     }
-    tn->next = localNameSpace->syms;
+    tn->next = tn->chain = localNameSpace->syms;
     localNameSpace->syms = tn;
     tn = CreateHashTable(1);
     if (block && cparams.prm_debug)
     {
         tn->blocknum = st->blocknum;
     }
-    tn->next = localNameSpace->tags;
+    tn->next = tn->chain = localNameSpace->tags;
     localNameSpace->tags = tn;
     if (sp)
         localNameSpace->tags->blockLevel = sp->value.i++;

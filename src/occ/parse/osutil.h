@@ -91,7 +91,7 @@ typedef struct _hashrec_
 
 typedef struct _hashtable_
 {
-    struct _hashtable_ *next;
+    struct _hashtable_ *next, *chain;
     int size;
     int blockLevel;
     int blocknum; /* debugger block number */

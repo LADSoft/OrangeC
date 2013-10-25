@@ -43,6 +43,7 @@
 #define TRIVIALWARNING	4
 #define ANSIERROR 	8
 #define ANSIWARNING 16
+#define CPLUSPLUSERROR 32
 
 extern COMPILER_PARAMS cparams ;
 
@@ -450,6 +451,8 @@ static struct {
 {"Anonymous union cannot contain function or nested type", ERROR },
 {"Anonymous union must contain only public members", ERROR },
 {"Anonymous union must contain only nonstatic data members", ERROR },
+{"Goto bypasses initialization", CPLUSPLUSERROR | WARNING },
+
 #endif
 } ;
 
@@ -545,7 +548,8 @@ void printerr(int err, char *file, int line, ...)
         vsprintf(buf, errors[err].name, arg);
         va_end(arg);
     }
-    if ((errors[err].level & ERROR) || cparams.prm_ansi && (errors[err].level & ANSIERROR))
+    if ((errors[err].level & ERROR) || cparams.prm_ansi && (errors[err].level & ANSIERROR) 
+        || cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR))
     {
         if (!cparams.prm_quiet)
             printf("Error   ");
@@ -891,6 +895,41 @@ void AddErrorToList(char *tag, char *str)
         listErrors = l;	
     }
 }
+static BOOL hasGoto(STATEMENT *stmt)
+{
+    while (stmt)
+    {
+        switch(stmt->type)
+        {
+            case st_block:
+            case st_switch:
+                if (hasGoto(stmt->lower))
+                    return TRUE;
+                break;
+            case st_declare:
+            case st_expr:
+                break;
+            case st_goto:
+                return TRUE;
+            case st_return:
+            case st_select:
+            case st_notselect:
+            case st_label:
+            case st_line:
+            case st_passthrough:
+            case st_datapassthrough:
+            case st_asmcond:
+            case st_varstart:
+            case st_dbgblock:
+                break;
+            default:
+                diag("unknown stmt type in hasgoto");
+                break;
+        }
+        stmt = stmt->next;
+    }
+    return FALSE;
+}
 static BOOL findVLAs(STATEMENT *stmt)
 {
     while (stmt)
@@ -904,7 +943,7 @@ static BOOL findVLAs(STATEMENT *stmt)
                 break;
             case st_declare:
             case st_expr:
-                if (stmt->hasvla)
+                if (stmt->hasvla || stmt->hasdeclare)
                     return TRUE;
                 break;
             case st_return:
@@ -930,7 +969,7 @@ static BOOL findVLAs(STATEMENT *stmt)
 typedef struct vlaShim
 {
     struct vlaShim *next, *prev;
-    enum { v_label, v_goto, v_vla, v_blockstart, v_blockend } type;
+    enum { v_label, v_goto, v_vla, v_declare, v_blockstart, v_blockend } type;
     STATEMENT *stmt;
     int level;
     int label;
@@ -978,6 +1017,19 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
                     **shims = Alloc(sizeof(VLASHIM));
                     (**shims)->prev = *prev;
                     (**shims)->type = v_vla;
+                    (**shims)->level = level;
+                    (**shims)->label = stmt->label;
+                    (**shims)->line = stmt->line;
+                    (**shims)->file = stmt->file;
+                    (**shims)->stmt = stmt;
+                    *prev = **shims;
+                    *shims = &(**shims)->next;
+                }
+                else if (stmt->hasdeclare)
+                {
+                    **shims = Alloc(sizeof(VLASHIM));
+                    (**shims)->prev = *prev;
+                    (**shims)->type = v_declare;
                     (**shims)->level = level;
                     (**shims)->label = stmt->label;
                     (**shims)->line = stmt->line;
@@ -1035,10 +1087,17 @@ static void vlaError(VLASHIM *gotoShim, VLASHIM *errShim)
     currentErrorLine = 0;
     specerror(ERR_GOTO_BYPASSES_VLA_INITIALIZATION, buf, gotoShim->file, gotoShim->line);
 }
+static void declError(VLASHIM *gotoShim, VLASHIM *errShim)
+{
+    char buf[256];
+    sprintf(buf, "%d", errShim->line);
+    currentErrorLine = 0;
+    specerror(ERR_GOTO_BYPASSES_INITIALIZATION, buf, gotoShim->file, gotoShim->line);
+}
 void checkGotoPastVLA(STATEMENT *stmt, BOOL first)
 {
     
-    if (findVLAs(stmt))
+    if (hasGoto(stmt) && findVLAs(stmt))
     {
         VLASHIM *vlaList = NULL, **pvlaList = &vlaList, *prev = NULL, *gotop;
         if (first)
@@ -1070,6 +1129,8 @@ void checkGotoPastVLA(STATEMENT *stmt, BOOL first)
                                     {
                                         if (temp->type == v_vla)
                                             vlaError(gotop, temp);
+                                        else if (temp->type == v_declare)
+                                            declError(gotop, temp);
                                         level = temp->level;
                                     }
                                     temp = temp->prev;
@@ -1092,6 +1153,8 @@ void checkGotoPastVLA(STATEMENT *stmt, BOOL first)
                                 {
                                     if (temp->type == v_vla)
                                         vlaError(gotop, temp);
+                                    else if (temp->type == v_declare)
+                                        declError(gotop, temp);
                                     temp = temp->prev;
                                 }
                             }

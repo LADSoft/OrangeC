@@ -295,9 +295,12 @@ typedef struct stmt
     EXPRESSION *select;
     EXPRESSION *destexp;
     LINEDATA *lineData;
-    TYPE *returntype;
+    union {
+        TYPE *returntype;
+        CASEDATA *cases;
+        struct blockdata *parent;
+    };
     struct sym *sym;
-    CASEDATA *cases;
     int blocknum;
     int charpos;
     int line;
@@ -306,6 +309,7 @@ typedef struct stmt
     int breaklabel;
     int altlabel;
     int hasvla: 1;
+    int hasdeclare: 1;
     int purelabel: 1;
 } STATEMENT;
 
@@ -316,6 +320,7 @@ typedef struct blockdata
     CASEDATA *cases;
     STATEMENT *head, *tail;
     STATEMENT *blockTail;
+    HASHTABLE *table;
     int breaklabel;
     int continuelabel;
     int defaultlabel;
@@ -460,6 +465,7 @@ typedef struct sym
     char *importfile; /* import name */
     struct sym *mainsym; /* pointer to the global version of a copied symbol */
     struct _memberInitializers *memberInitializers; /* initializers for constructor */
+    STATEMENT *gotoTable; /* pointer to hashtable associated with goto or label */
     /* these fields depend on storage_class */
     union u_val value;
     struct _baseClass *baseClasses;

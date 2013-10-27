@@ -847,8 +847,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 //
                 if (!t)
                 {
-                    SYMBOL *injected = Alloc(sizeof(SYMBOL));
-                    *injected = *bcsym;
+                    SYMBOL *injected = clonesym(bcsym);
                     injected->parentClass = declsym;
                     injected->access = currentAccess;
                     insert(injected, declsym->tp->tags);

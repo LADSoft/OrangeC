@@ -852,8 +852,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc stor
         if (cparams.prm_cplusplus)
         {
             sp->tp->tags = CreateHashTable(1);
-            injected = Alloc(sizeof(SYMBOL));
-            *injected = *sp;
+            injected = clonesym(sp);
             injected->mainsym = sp; // for constructor/destructor matching
             insert(injected, sp->tp->tags); // inject self
             injected->access = ac_public;
@@ -2341,8 +2340,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
     IncGlobalFlag();
     if (sp)
     {
-        SYMBOL *sp2 = Alloc(sizeof(SYMBOL));
-        *sp2 = *sp;
+        SYMBOL *sp2 = clonesym(sp);
         sp2->name = litlate(sp->name);
         *spin = sp = sp2;
     }

@@ -39,6 +39,7 @@
 
 extern char anonymousNameSpaceName[512];
     char *tn_void = "void";
+    char *tn_bool = "bool";
     char *tn_char = "char";
     char *tn_int = "int";
     char *tn_long = "long";

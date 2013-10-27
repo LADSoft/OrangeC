@@ -831,6 +831,53 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
 LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
     lex = getsym();
+    if (needkw(&lex, openpa))
+    {
+        if (startOfType(lex))
+        {
+            lex = get_type_id(lex, tp, funcsp, FALSE);
+        }
+        else
+        {
+            lex = expression(lex, funcsp, NULL, tp, exp, FALSE);
+        }
+        if (tp)
+        {
+            SYMBOL *sp = gsearch("__GetTypeInfo");
+            if (sp)
+            {
+                
+                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                INITLIST *arg = Alloc(sizeof(INITLIST));
+                SYMBOL *rtti = RTTIDumpType(*tp);
+                sp = basetype(sp->tp)->syms->table[0]->p;
+                funcparams->arguments = arg;
+                funcparams->sp = sp;
+                funcparams->functp = sp->tp;
+                funcparams->fcall = varNode(en_pc, sp);
+                funcparams->ascall = TRUE;
+                arg->tp = &stdpointer;
+                arg->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
+                *exp = exprNode(en_func, 0, 0);
+                (*exp)->v.func = funcparams;
+                sp = gsearch("std");
+                if (sp->storage_class == sc_namespace)
+                {
+                    sp = namespacesearch("type_info", sp->nameSpaceValues, TRUE, FALSE);
+                    if (sp)
+                    {
+                        if (!sp->tp->syms)
+                            error(ERR_NEED_TYPEINFO_H);
+                        *tp = Alloc(sizeof(TYPE));
+                        (*tp)->type = bt_const;
+                        (*tp)->size = sp->tp->size;
+                        (*tp)->btp = sp->tp;
+                    }
+                }
+            }
+        }
+        needkw(&lex, closepa);
+    }
     return lex;
 }
 BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcparams)
@@ -857,7 +904,10 @@ BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONC
     }
     // quit if there are no matches because we will use the default...
     if (!s2)
+    {
+        funcparams->thistp = funcparams->thisptr = NULL;
         return FALSE;
+    }
     // finally make a shell to put all this in and add shims for any builtins we want to try
     tpx = (TYPE *)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
@@ -889,6 +939,7 @@ BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONC
         *tp = s3->tp;
         return TRUE;
     }
+    funcparams->thistp = funcparams->thisptr = NULL;
     return FALSE;
 }
 BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 

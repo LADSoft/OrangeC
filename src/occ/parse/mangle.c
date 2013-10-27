@@ -64,7 +64,7 @@ extern SYMBOL *theCurrentFunc;
 #define MAX_MANGLE_NAME_COUNT 36
 
 static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
-static int mangledNamesCount ;
+int mangledNamesCount ;
 
 static char *mangleNameSpaces(char *in, SYMBOL *sp)
 {

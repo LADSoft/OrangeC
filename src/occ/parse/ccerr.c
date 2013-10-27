@@ -452,7 +452,16 @@ static struct {
 {"Anonymous union must contain only public members", ERROR },
 {"Anonymous union must contain only nonstatic data members", ERROR },
 {"Goto bypasses initialization", CPLUSPLUSERROR | WARNING },
-
+{"Try keyword requires compound statement", ERROR },
+{"One or more catch handlers expected", ERROR },
+{"Catch handler requires compound statement", ERROR },
+{"catch (...) must be last catch handler", ERROR },
+{"Catch handler without try", ERROR },
+{"Constructor or Destructor returns a value", ERROR },
+{"Cannot use goto to enter a try block or catch handler", ERROR },
+{"Exception specifier of virtual function '%s' must be at least as restrictive as base class declarations", ERROR },
+{"Exception specifier of function '%s' must match earlier declarations", ERROR },
+{"Use of typeid requires '#include <typeinfo>'", ERROR },
 #endif
 } ;
 
@@ -903,6 +912,8 @@ static BOOL hasGoto(STATEMENT *stmt)
         {
             case st_block:
             case st_switch:
+            case st_try:
+            case st_catch:
                 if (hasGoto(stmt->lower))
                     return TRUE;
                 break;
@@ -938,6 +949,8 @@ static BOOL findVLAs(STATEMENT *stmt)
         {
             case st_block:
             case st_switch:
+            case st_try:
+            case st_catch:
                 if (findVLAs(stmt->lower))
                     return TRUE;
                 break;
@@ -985,6 +998,8 @@ static void getVLAList(STATEMENT *stmt, VLASHIM ***shims, VLASHIM **prev, int le
         {
             case st_block:
             case st_switch:
+            case st_try:
+            case st_catch:
                 **shims = Alloc(sizeof(VLASHIM));
                 (**shims)->prev = *prev;
                 (**shims)->type = v_blockstart;
@@ -1500,6 +1515,7 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
+        case en_thisref:
             assignmentUsages(node->left, FALSE);
             break;
         case en_atomic:
@@ -1698,6 +1714,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
+        case en_thisref:
             rv |= checkDefaultExpression(node->left);
             break;
         case en_atomic:

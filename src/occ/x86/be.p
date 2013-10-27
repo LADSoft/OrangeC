@@ -176,6 +176,7 @@ void oa_genint(enum e_gt type, LLONG_TYPE val);
 void oa_genaddress(ULLONG_TYPE val);
 void oa_gensrref(SYMBOL *sp, int val);
 void oa_genref(SYMBOL *sp, int offset);
+void oa_genlabref(int label, int offset);
 void oa_genpcref(SYMBOL *sp, int offset);
 void oa_genstorage(int nbytes);
 void oa_gen_labref(int n);

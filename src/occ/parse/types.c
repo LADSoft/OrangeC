@@ -40,6 +40,7 @@
 extern TYPE stdvoid;
 
 extern char *tn_void;
+extern char *tn_bool;
 extern char *tn_char;
 extern char *tn_int;
 extern char *tn_long;
@@ -67,28 +68,6 @@ extern char *tn_char32_t;
 
 TYPE *typenum(char *buf, TYPE *tp);
 
-#ifdef XXXXX
-BOOL checktypeassign(TYPE *typ1, TYPE *typ2)
-{
-    /* this is so we can put an ampersand in front of a func name we are using */
-    if (isfuncptr(typ1) && isfuncptr(typ2))
-        return TRUE;
-    while (typ1 && typ2)
-    {
-        typ1 = basetype(typ1);
-        typ2 = basetype(typ2);
-        if (isarithmetic(typ1) && isarithmetic(typ2))
-               return TRUE;
-        if (isstructured(typ1) && comparetypes(typ1, typ2, TRUE))
-            return TRUE;
-        typ1 = typ1->btp;
-        typ2 = typ2->btp;
-    }
-    if (!typ1 && !typ2)
-        return (TRUE);
-    return (FALSE);
-}
-#endif
 BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
 {
     if (typ1->type == bt_any || typ2->type == bt_any)
@@ -380,7 +359,7 @@ TYPE *typenum(char *buf, TYPE *tp)
             strcpy(buf, tn_char);
             break;
         case bt_bool:
-            strcpy(buf, "bool");
+            strcpy(buf, tn_bool);
             break;
         case bt_bit:
             strcpy(buf, "bit");

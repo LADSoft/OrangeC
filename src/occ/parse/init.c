@@ -2601,6 +2601,7 @@ BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams)
         case en_argnopush:
         case en_not_lvalue:
         case en_mp_as_bool:
+        case en_thisref:
             rv = IsConstantExpression(node->left, allowParams);
             break;
         case en_func:

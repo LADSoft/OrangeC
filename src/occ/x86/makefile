@@ -133,6 +133,7 @@ EXE_dependencies = \
     output$(OBJ) \
     preproc$(OBJ) \
     ppexpr$(OBJ) \
+    rtti$(OBJ) \
     stmt$(OBJ) \
     symtab$(OBJ) \
     types$(OBJ) \

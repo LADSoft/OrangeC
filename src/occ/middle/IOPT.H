@@ -351,6 +351,7 @@ typedef struct _blocklist
 		int visiteddfst:1;
 		int onstack:1;
 		int globalChanged:1;
+        int alwayslive:1;
         short callcount;
 		short preWalk ;
 		short postWalk;

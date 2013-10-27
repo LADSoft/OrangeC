@@ -98,6 +98,7 @@ void displayLexeme(LEXEME *lex);
 void ParseBuiltins(void);
 void declare_init(void);
 void checkOperatorArgs(SYMBOL *sp);
+SYMBOL *getCopyCons(SYMBOL *base, BOOL move);
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype);
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *sp);
 SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
@@ -527,6 +528,7 @@ void genenum(int val);
 int genstring(STRING *str);
 void genaddress(ULLONG_TYPE address);
 void gensrref(SYMBOL *sp, int val);
+void genlabref(int label);
 void genref(SYMBOL *sp, int offset);
 void genpcref(SYMBOL *sp, int offset);
 void localdef(SYMBOL *sp);
@@ -778,6 +780,11 @@ void doif(void);
 void doelif(void);
 void doelse(void);
 void doendif(void);
+
+                               /* Rtti.c */
+
+SYMBOL * RTTIDumpType(TYPE *tp);
+void XTDumpTab(SYMBOL *funcsp);
 
                                /* Stmt.c */
 

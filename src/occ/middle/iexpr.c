@@ -60,6 +60,7 @@ extern SYMBOL *inlinesp_list[];
 extern int inlinesp_count;
 extern BLOCK *currentBlock;
 extern BLOCKLIST *blocktail;
+extern int catchLevel;
 
 int calling_inline;
 
@@ -789,7 +790,9 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                 break;
             case en_auto:
                 sp = node->left->v.sp;
-                if (!sp->imaddress)
+                if (catchLevel)
+                    sp->inCatch = TRUE;
+                if (!sp->imaddress && catchLevel)
                 {
                     ap1 = make_ioffset(node);
                     break;
@@ -2271,6 +2274,18 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             ap1 = gen_expr( funcsp, node->right, flags, size);
             rv = ap1;
             break;
+        case en_thisref:
+            if (node->dest && node->v.t.thisptr->xcDest)
+            {
+                gen_label(node->v.t.thisptr->xcDest);
+            }
+            ap1 = gen_expr( funcsp, node->left, flags, size);
+            if (!node->dest && node->v.t.thisptr->xcInit)
+            {
+                gen_label(node->v.t.thisptr->xcInit);
+            }
+            rv = ap1;
+            break;
         case en_structadd:
             rv = gen_binary( funcsp, node,flags,ISZ_ADDR,/*i_struct*/ i_add);
             break;
@@ -2516,6 +2531,7 @@ int natural_size(EXPRESSION *node)
         case en_rsh:
         case en_ursh:
         case en_argnopush:
+        case en_thisref:
             return natural_size(node->left);
 /*		case en_array:
             return ISZ_ADDR ;

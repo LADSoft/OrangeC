@@ -839,26 +839,29 @@ static void CalculateOCPAndRO(void)
     ocpTerms = lallocbit(termCount);
     for (i=0; i < blocks; i++)
     {		
-        QUAD *head = forwardOrder[i]->head;
-        while (head != forwardOrder[i]->tail->fwd)
+        if (forwardOrder[i])
         {
-            if (head->OCP)
+            QUAD *head = forwardOrder[i]->head;
+            while (head != forwardOrder[i]->tail->fwd)
             {
-            
-                copymap(head->OCP, head->isolated);
-                complementmap(head->OCP);
-                andmap(head->OCP, head->latest);
-                andmap(head->OCP, unMoveableTerms);
-                ormap(ocpTerms, head->OCP);
-                copymap(head->RO, head->latest);
-                andmap(head->RO, head->isolated);
-                complementmap(head->RO);
-                andmap(head->RO, head->uses);
-                andmap(head->RO, unMoveableTerms);
-                ormap(ocpTerms, head->RO);
+                if (head->OCP)
+                {
                 
+                    copymap(head->OCP, head->isolated);
+                    complementmap(head->OCP);
+                    andmap(head->OCP, head->latest);
+                    andmap(head->OCP, unMoveableTerms);
+                    ormap(ocpTerms, head->OCP);
+                    copymap(head->RO, head->latest);
+                    andmap(head->RO, head->isolated);
+                    complementmap(head->RO);
+                    andmap(head->RO, head->uses);
+                    andmap(head->RO, unMoveableTerms);
+                    ormap(ocpTerms, head->RO);
+                    
+                }
+                head = head->fwd;
             }
-            head = head->fwd;
         }
     }
 }

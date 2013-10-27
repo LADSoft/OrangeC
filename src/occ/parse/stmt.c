@@ -54,7 +54,9 @@ extern TYPE stdpointer;
 extern int endline;
 extern char *overloadNameTab[];
 extern LEXCONTEXT *context;
+extern TYPE stdXC;
 
+BOOL hasXCInfo;
 int startlab, retlab;
 int nextLabel;
 BOOL setjmp_used;
@@ -228,6 +230,67 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
     }
     return lex;
 }
+static BLOCKDATA *getCommonParent(BLOCKDATA *src, BLOCKDATA *dest)
+{
+    BLOCKDATA *top = src;
+    while (top)
+    {
+        BLOCKDATA *test = dest;
+        while (test && test != top)
+            test = test->next;
+        if (test)
+        {
+            top = test;
+            break;
+        }
+        top = top->next;
+    }
+    return top;
+}
+static void thunkCatchCleanup(STATEMENT *st, BLOCKDATA *src, BLOCKDATA *dest)
+{
+    BLOCKDATA *top = dest ? getCommonParent(src, dest) : NULL, *srch = src;
+    while (srch != top)
+    {
+        if (srch->type == kw_catch)
+        {
+            SYMBOL *sp = gsearch("_CatchCleanup");
+            if (sp)
+            {
+                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                STATEMENT **find = &src->head;
+                sp = basetype(sp->tp)->syms->table[0]->p;
+                funcparams->ascall = TRUE;
+                funcparams->sp = sp;
+                funcparams->functp = sp->tp;
+                funcparams->fcall = varNode(en_pc, sp);
+                while (*find && *find != st)
+                    find = &(*find)->next;
+                if (*find == st)
+                {
+                    *find = Alloc(sizeof(STATEMENT));
+                    **find = *st;
+                    (*find)->next = st;
+                    (*find)->type = st_expr;
+                    (*find)->select = exprNode(en_func, NULL, NULL);
+                    (*find)->select->v.func = funcparams;
+                }
+            }
+            break;
+        }
+        srch = srch->next;
+    }
+    srch = dest;
+    while (srch != top)
+    {
+        if (srch->type == kw_try || srch->type == kw_catch)
+        {
+            error(ERR_GOTO_INTO_TRY_OR_CATCH_BLOCK);
+            break;
+        }
+        srch = srch->next;
+    }
+}
 static void thunkRetDestructors(EXPRESSION **exp, HASHTABLE *top, HASHTABLE *syms)
 {
     if (syms)
@@ -240,20 +303,8 @@ static void thunkRetDestructors(EXPRESSION **exp, HASHTABLE *top, HASHTABLE *sym
 static void thunkGotoDestructors(EXPRESSION **exp, BLOCKDATA *gotoTab, BLOCKDATA *labelTab)
 {
     // find the common parent
-    BLOCKDATA *top = gotoTab;
     BLOCKDATA *realtop;
-    while (top)
-    {
-        BLOCKDATA *test = labelTab;
-        while (test && test != top)
-            test = test->next;
-        if (test)
-        {
-            top = test;
-            break;
-        }
-        top = top->next;
-    }
+    BLOCKDATA *top = getCommonParent(gotoTab, labelTab);
     if (gotoTab->next != top)
     {
         realtop = gotoTab;
@@ -269,7 +320,7 @@ static LEXEME *statement_break(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     (void)lex;
     (void)funcsp;
     (void)parent;
-    while (breakableStatement && breakableStatement->type == begin)
+    while (breakableStatement && (breakableStatement->type == begin ||breakableStatement->type == kw_try ||breakableStatement->type == kw_catch))
     {
         breakableStatement = breakableStatement->next;
     }
@@ -279,11 +330,12 @@ static LEXEME *statement_break(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     else
     {
         STATEMENT *st ;
-        thunkRetDestructors(&exp, breakableStatement->table, localNameSpace->syms);
         currentLineData(parent, lex);
+        thunkRetDestructors(&exp, breakableStatement->table, localNameSpace->syms);
         st = stmtNode(lex, parent, st_goto);
         st->label = breakableStatement->breaklabel;
         st->destexp = exp;
+        thunkCatchCleanup(st, parent, breakableStatement);
         parent->needlabel = TRUE;
         breakableStatement->needlabel = FALSE;
         breakableStatement->hasbreak = TRUE;
@@ -322,7 +374,7 @@ static LEXEME *statement_case(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     }
     else if (isintconst(exp))
     {
-        CASEDATA **cases = switchstmt->cases, *data;
+        CASEDATA **cases = &switchstmt->cases, *data;
         char *fname = lex->file;
         int line = lex->line;
         val = exp->v.i;
@@ -365,7 +417,7 @@ static LEXEME *statement_continue(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent
     EXPRESSION *exp = NULL;
     (void)lex;
     (void)funcsp;
-    while (continuableStatement && (continuableStatement->type == kw_switch || continuableStatement->type == begin))
+    while (continuableStatement && (continuableStatement->type == kw_switch || continuableStatement->type == begin || continuableStatement->type == kw_try || continuableStatement->type == kw_catch))
     {
         continuableStatement = continuableStatement->next;
     }
@@ -379,6 +431,7 @@ static LEXEME *statement_continue(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent
         st = stmtNode(lex, parent, st_goto);
         st->label = continuableStatement->continuelabel;		
         st->destexp = exp;
+        thunkCatchCleanup(st, parent, continuableStatement);
         parent->needlabel = TRUE;
     }
     return getsym();
@@ -1331,6 +1384,7 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         else
         {
             thunkGotoDestructors(&st->destexp, block, spx->gotoTable->parent);
+            thunkCatchCleanup(st, block, spx->gotoTable->parent);
         }
         st->label = spx->offset;
         lex = getsym();
@@ -1357,6 +1411,7 @@ static LEXEME *statement_label(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         {
             spx->storage_class = sc_label;
             thunkGotoDestructors(&spx->gotoTable->destexp, spx->gotoTable->parent, parent);
+            thunkCatchCleanup(spx->gotoTable, spx->gotoTable->parent, parent);
         }
         else
         {
@@ -1567,6 +1622,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st = stmtNode(lex, parent, st_return);
     st->select = returnexp;
     st->destexp = destexp;
+    thunkCatchCleanup(st, parent, NULL); // to top level
     // for infering the return type of lambda functions
     if (tp)
     {
@@ -1581,13 +1637,18 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         if (tp->type == bt_void)
         {
             if (!cparams.prm_cplusplus || basetype(funcsp->tp)->btp->type != bt_void)
-                error(ERR_CANNOT_RETURN_VOID_VALUE);
+                error(ERR_CANNOT_RETURN_VOID_VALUE);                                                 
         }
         else if (basetype(funcsp->tp)->btp && basetype(funcsp->tp)->btp->type == bt_void)
             error(ERR_RETURN_NO_VALUE);
         else
         {
-            if (isstructured(basetype(funcsp->tp)->btp) || isstructured(tp))
+            if (cparams.prm_cplusplus && (funcsp->name == overloadNameTab[CI_CONSTRUCTOR]
+                                               || funcsp->name == overloadNameTab[CI_DESTRUCTOR]))
+            {
+                error(ERR_CONSTRUCTOR_HAS_RETURN);
+            }
+            else if (isstructured(basetype(funcsp->tp)->btp) || isstructured(tp))
             {
                 if (!comparetypes(basetype(funcsp->tp)->btp, tp, FALSE))
                     error(ERR_RETMISMATCH);
@@ -1834,6 +1895,7 @@ static void checkNoEffect(EXPRESSION *exp)
             case en_void:
                 checkNoEffect(exp->right);
             case en_not_lvalue:
+            case en_thisref:
                 checkNoEffect(exp->left);
                 break;
             default:
@@ -1899,6 +1961,192 @@ static LEXEME *asm_declare(LEXEME *lex)
             lex = getsym();
         }
     } while (lex && MATCHKW(lex, comma));
+    return lex;
+}
+void makeXCTab(SYMBOL *funcsp)
+{
+    char name[512];
+    SYMBOL *sp; 
+    if (!funcsp->xc)
+    {
+        funcsp->xc = Alloc(sizeof(struct xcept));
+    }
+    if (!funcsp->xc->xctab)
+    {
+        sp = makeID(sc_auto, &stdXC, NULL, "$$xctab");
+        sp->decoratedName = sp->errname = sp->name;
+        sp->allocate = TRUE;
+        sp->used = sp->assigned = TRUE;
+        insert(sp, localNameSpace->syms);
+        funcsp->xc->xctab = sp;
+    }
+}
+LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
+{
+    TYPE *tp = NULL;
+    EXPRESSION *exp = NULL;
+    STATEMENT *st = stmtNode(lex, parent, st_expr); // rethow has null expression
+    hasXCInfo = TRUE;
+    lex = getsym();
+    if (!MATCHKW(lex, semicolon))
+    {
+        SYMBOL *sp = gsearch("_ThrowException");
+        makeXCTab(funcsp);
+        lex = expression_assign(lex, funcsp, NULL, &tp, &exp, FALSE);
+        if (!tp)
+        {
+            error(ERR_EXPRESSION_SYNTAX);
+        }   
+        else if (sp)
+        {
+            FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
+            INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
+            INITLIST *arg2 = Alloc(sizeof(INITLIST)); // instance
+            INITLIST *arg3 = Alloc(sizeof(INITLIST)); // array size
+            INITLIST *arg4 = Alloc(sizeof(INITLIST)); // constructor
+            INITLIST *arg5 = Alloc(sizeof(INITLIST)); // exception block
+            SYMBOL *rtti = RTTIDumpType(tp);
+            SYMBOL *cons = NULL;
+            if (isstructured(tp))
+            {
+                cons = getCopyCons(basetype(tp)->sp, FALSE);
+            }
+            sp = basetype(sp->tp)->syms->table[0]->p;
+            arg1->next = arg2;
+            arg2->next = arg3;
+            arg3->next = arg4;
+            arg4->next = arg5;
+            arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+            arg1->tp = &stdpointer;
+            arg2->exp = exp;
+            arg2->tp = tp;
+            arg3->exp = isarray(tp) ? intNode(en_c_i, tp->size/(basetype(tp)->btp->size + basetype(tp)->btp->arraySkew)) : intNode(en_c_i, 1);
+            arg3->tp = &stdint;
+            arg4->exp = cons ? varNode(en_pc, cons) : 0;
+            arg4->tp = &stdpointer;
+            arg5->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
+            arg5->tp = &stdvoid;
+            params->arguments = arg1;
+            params->ascall = TRUE;
+            params->sp = sp;
+            params->functp = sp->tp;
+            params->fcall = varNode(en_pc, sp);
+            st->select = exprNode(en_func, NULL, NULL);
+            st->select->v.func = params;
+        }
+    }
+    else
+    {
+        SYMBOL *sp = gsearch("_RethrowException");
+        if (sp)
+        {
+            FUNCTIONCALL *parms = Alloc(sizeof(FUNCTIONCALL));
+            sp = basetype(sp->tp)->syms->table[0]->p;
+            parms->ascall = TRUE;
+            parms->sp = sp;
+            parms->functp = sp->tp;
+            parms->fcall = varNode(en_pc, sp);
+            st->select = exprNode(en_func, NULL, NULL);
+            st->select->v.func = parms;
+        }
+    }
+    return lex;
+}
+LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, int label, int startlab, int endlab)
+{
+    BOOL last = FALSE;
+    if (!MATCHKW(lex, kw_catch))
+    {
+        error(ERR_EXPECTED_CATCH_CLAUSE);
+    }
+    while (MATCHKW(lex, kw_catch))
+    {
+        if (last)
+            error(ERR_NO_MORE_CATCH_CLAUSES_ALLOWED);
+        lex = getsym();
+        if (needkw(&lex, openpa))
+        {
+            STATEMENT *st;
+            TYPE *tp = NULL;
+            BLOCKDATA *catchstmt = Alloc(sizeof(BLOCKDATA));
+            catchstmt->breaklabel = label;
+            catchstmt->next = parent;
+            catchstmt->defaultlabel = -1; /* no default */
+            catchstmt->type = kw_catch;
+            catchstmt->table = localNameSpace->syms;
+            AllocateLocalContext(catchstmt, funcsp);
+            if (MATCHKW(lex, ellipse))
+            {
+                last = TRUE;
+                lex = getsym();
+            }
+            else
+            {
+                lex = declare(lex, funcsp,&tp, sc_catchvar, lk_none, catchstmt , FALSE, TRUE,FALSE, ac_public);               
+            }
+            if (needkw(&lex, closepa))
+            {
+                if (MATCHKW(lex, begin))
+                {
+                    lex = compound(lex, funcsp, catchstmt, FALSE);
+                    parent->nosemi = TRUE;
+                    if (parent->next)
+                        parent->next->nosemi = TRUE;
+                }
+                else
+                {
+                    error(ERR_EXPECTED_CATCH_BLOCK);
+                }
+            }
+            FreeLocalContext(catchstmt, funcsp);
+            st = stmtNode(lex, parent, st_catch);
+            st->label = startlab;
+            st->endlabel = endlab;
+            st->altlabel = beGetLabel;
+            st->breaklabel = catchstmt->breaklabel;
+            st->blockTail = catchstmt->blockTail;
+            st->lower = catchstmt->head;
+            st->tp = tp;
+        }
+        else
+        {
+            errskim(&lex, skim_end);
+        }
+    }
+    return lex;
+}
+LEXEME *statement_try(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
+{
+    STATEMENT *st;
+    BLOCKDATA *trystmt = Alloc(sizeof(BLOCKDATA));
+    hasXCInfo = TRUE;
+    trystmt->breaklabel = beGetLabel;
+    trystmt->next = parent;
+    trystmt->defaultlabel = -1; /* no default */
+    trystmt->type = kw_try;
+    trystmt->table = localNameSpace->syms;
+    lex = getsym();
+    if (!MATCHKW(lex, begin))
+    {
+        error(ERR_EXPECTED_TRY_BLOCK);
+    }
+    else
+    {
+        AllocateLocalContext(trystmt, funcsp);
+        lex = compound(lex, funcsp, trystmt, FALSE);
+        FreeLocalContext(trystmt, funcsp);
+        st = stmtNode(lex, parent, st_try);
+        st->label = beGetLabel;
+        st->endlabel = beGetLabel;
+        st->breaklabel = trystmt->breaklabel;
+        st->blockTail = trystmt->blockTail;
+        st->lower = trystmt->head;
+        parent->nosemi = TRUE;
+        if (parent->next)
+            parent->next->nosemi = TRUE;
+        lex = statement_catch(lex, funcsp, parent,st->breaklabel, st->label, st->endlabel);
+    }
+    
     return lex;
 }
 LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
@@ -2106,6 +2354,16 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
     parent->nosemi = FALSE;
     switch(KW(lex))
     {
+        case kw_try:
+            lex = statement_try(lex, funcsp, parent);
+            break;
+        case kw_catch:
+            error(ERR_CATCH_WITHOUT_TRY);
+            lex = statement_catch(lex, funcsp, parent,1,1,1);
+            break;
+        case kw_throw:
+            lex = statement_throw(lex, funcsp, parent);
+            break;
         case begin:
             lex = compound(lex, funcsp, parent, FALSE);
             parent->nosemi = TRUE;
@@ -2233,6 +2491,59 @@ static void thunkThisReturns(STATEMENT *st, EXPRESSION *thisptr)
         st = st->next;
     }
 }
+static void insertXCInfo(SYMBOL *funcsp)
+{
+    char name[512];
+    SYMBOL *sp; 
+    makeXCTab(funcsp);
+    sprintf(name, "@$xc%s", funcsp->decoratedName);
+    sp = makeID(sc_global, &stdpointer, NULL, litlate(name));
+    sp->linkage = lk_inline;
+    sp->decoratedName = sp->errname = sp->name;
+    sp->allocate = TRUE;
+    sp->used = sp->assigned = TRUE;
+    funcsp->xc->xcInitLab = beGetLabel;
+    funcsp->xc->xcDestLab = beGetLabel;
+    funcsp->xc->xclab = sp;
+    
+    sp = gsearch("_InitializeException");
+    if (sp)
+    {
+        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+        INITLIST *arg1 = Alloc(sizeof(INITLIST));
+        INITLIST *arg2 = Alloc(sizeof(INITLIST));
+        EXPRESSION *exp;
+        sp = basetype(sp->tp)->syms->table[0]->p;
+        funcparams->functp = sp->tp;
+        funcparams->sp = sp;
+        funcparams->fcall = varNode(en_pc, sp);
+        funcparams->ascall = TRUE;
+        funcparams->arguments = arg1;
+        arg1->next = arg2;
+        arg1->tp = &stdpointer;
+
+
+        arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+        arg2->tp = &stdpointer;
+        arg2->exp = varNode(en_global, funcsp->xc->xclab);
+        exp = exprNode(en_func, 0, 0);
+        exp->v.func = funcparams;
+        funcsp->xc->xcInitializeFunc = exp;
+        sp = gsearch("_RundownException");
+        if (sp)
+        {
+            sp = basetype(sp->tp)->syms->table[0]->p;
+            funcparams = Alloc(sizeof(FUNCTIONCALL));
+            funcparams->functp = sp->tp;
+            funcparams->sp = sp;
+            funcparams->fcall = varNode(en_pc, sp);
+            funcparams->ascall = TRUE;
+            exp = exprNode(en_func, 0, 0);
+            exp->v.func = funcparams;
+            funcsp->xc->xcRundownFunc = exp;
+        }
+    }
+}
 static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, 
                         BLOCKDATA *parent,   
                         BOOL first)
@@ -2264,7 +2575,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             n++;
             hr = hr->next;
         }
-        if (cparams.prm_cplusplus && !strcmp(funcsp->name, overloadNameTab[CI_CONSTRUCTOR]))
+        if (cparams.prm_cplusplus && funcsp->name == overloadNameTab[CI_CONSTRUCTOR])
             thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, TRUE);
     }
     lex = getsym(); /* past { */
@@ -2348,9 +2659,11 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             }
         }
     }
-    if (first && cparams.prm_cplusplus && !strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
-        thunkDestructorTail(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
-    FreeLocalContext(blockstmt, funcsp);
+    if (first && cparams.prm_cplusplus)
+    {
+        if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
+            thunkDestructorTail(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
+    }
     if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto)
     {
         if (funcsp->linkage3 == lk_noreturn)
@@ -2366,12 +2679,56 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         else
             error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
     }
-    if (first && thisptr)
-    {
-        stmtNode(NULL, blockstmt, st_return);
-        thunkThisReturns(blockstmt->head, thisptr);
-    }
     needkw(&lex, end);
+    if (first && cparams.prm_cplusplus)
+    {
+        if (funcsp->hasTry)
+        {
+            STATEMENT *last = stmtNode(NULL, blockstmt, st_return);
+            lex = statement_catch(lex, funcsp, blockstmt, retlab, startlab, 0);
+            if (last->next)
+            {
+                int label;
+                last = last->next;
+                label = last->altlabel;
+                do
+                {
+                    last->endlabel = label;
+                    last = last->next;
+                } while (last);
+            }
+            hasXCInfo = TRUE;
+        }
+        if (hasXCInfo && cparams.prm_xcept)
+        {
+            insertXCInfo(funcsp);
+        }
+    }
+    FreeLocalContext(blockstmt, funcsp);
+    if (parent->type == kw_catch)
+    {
+        SYMBOL *sp = gsearch("_CatchCleanup");
+        if (sp)
+        {
+            FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+            STATEMENT *st = stmtNode(lex, blockstmt, st_expr);
+            sp = basetype(sp->tp)->syms->table[0]->p;
+            funcparams->ascall = TRUE;
+            funcparams->sp = sp;
+            funcparams->functp = sp->tp;
+            funcparams->fcall = varNode(en_pc, sp);
+            st->select = exprNode(en_func, NULL, NULL);
+            st->select->v.func = funcparams;
+        }
+    }
+    if (first)
+    {
+        if (thisptr)
+        {
+            stmtNode(NULL, blockstmt, st_return);
+            thunkThisReturns(blockstmt->head, thisptr);
+        }
+    }
     AddBlock(lex, parent, blockstmt);
     stdpragmas = pragmas;
     return lex;
@@ -2512,15 +2869,20 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     BOOL oldsetjmp_used = setjmp_used;
     BOOL oldfunctionHasAssembly = functionHasAssembly;
     BOOL oldDeclareAndInitialize = declareAndInitialize;
+    BOOL oldXCInfo = hasXCInfo;
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA *block = Alloc(sizeof(BLOCKDATA)) ;
     STATEMENT *startStmt;
     functionHasAssembly = FALSE;
     setjmp_used = FALSE;
+    declareAndInitialize = FALSE;
+    hasXCInfo = FALSE;
     startlab = nextLabel++;
     retlab = nextLabel++;
-    block->type = begin;
+    block->type = funcsp->hasTry ? kw_try : begin;
     theCurrentFunc = funcsp;
+    if (funcsp->xcMode != xc_unspecified)
+        hasXCInfo = TRUE;
     FlushLineData(funcsp->declfile, funcsp->declline);
     startStmt = currentLineData(NULL, lex);
     if (startStmt)
@@ -2546,11 +2908,14 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     }
 #ifndef PARSER_ONLY
     else
+    {
         genfunc(funcsp);
+    }
 #endif
 #ifndef PARSER_ONLY
     localFree();
 #endif
+    hasXCInfo = oldXCInfo;
     declareAndInitialize = oldDeclareAndInitialize;
     theCurrentFunc = oldtheCurrentFunc;
     startlab = oldstartlab;

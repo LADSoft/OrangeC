@@ -614,44 +614,51 @@ static void PruneInductionCandidate(int tnum, LOOP *l)
     else
     {
         QUAD *I = tempInfo[tnum]->instructionDefines;
-        switch(I->dc.opcode)
+        if (I)
         {
-            case i_phi:
-                {
-                    PHIDATA *pd = I->dc.v.phi;
-                    struct _phiblock *pb = pd->temps;
-                    while (pb)
+            switch(I->dc.opcode)
+            {
+                case i_phi:
                     {
-                        if (!briggsTest(candidates, pb->Tn) && !isInvariant(pb->Tn, l))
+                        PHIDATA *pd = I->dc.v.phi;
+                        struct _phiblock *pb = pd->temps;
+                        while (pb)
                         {
-                            briggsReset(candidates, tnum);
-                            break;
+                            if (!briggsTest(candidates, pb->Tn) && !isInvariant(pb->Tn, l))
+                            {
+                                briggsReset(candidates, tnum);
+                                break;
+                            }
+                            pb = pb->next;
                         }
-                        pb = pb->next;
                     }
-                }
-                break;
-            case i_add:
-            case i_sub:
-                if (I->temps & TEMP_RIGHT)
-                {
-                    int tn2 = I->dc.right->offset->v.sp->value.i;
-                    if (!briggsTest(candidates, tn2))
-                        briggsReset(candidates, tnum);
-                }
-                /* FALLTHROUGH */
-            case i_neg:
-            case i_assn:
-                if (I->temps & TEMP_LEFT)
-                {
-                    int tn2 = I->dc.left->offset->v.sp->value.i;
-                    if (!briggsTest(candidates, tn2))
-                        briggsReset(candidates, tnum);
-                }
-                break;
-            default:
-                diag("PruneInductionCandidate: invalid form");
-                break;
+                    break;
+                case i_add:
+                case i_sub:
+                    if (I->temps & TEMP_RIGHT)
+                    {
+                        int tn2 = I->dc.right->offset->v.sp->value.i;
+                        if (!briggsTest(candidates, tn2))
+                            briggsReset(candidates, tnum);
+                    }
+                    /* FALLTHROUGH */
+                case i_neg:
+                case i_assn:
+                    if (I->temps & TEMP_LEFT)
+                    {
+                        int tn2 = I->dc.left->offset->v.sp->value.i;
+                        if (!briggsTest(candidates, tn2))
+                            briggsReset(candidates, tnum);
+                    }
+                    break;
+                default:
+                    diag("PruneInductionCandidate: invalid form");
+                    break;
+            }
+        }
+        else
+        {
+            briggsReset(candidates, tnum);
         }
     }
 }

@@ -36,6 +36,7 @@
 
 */
 #include "compiler.h"
+#include "rtti.h"
 
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM *chosenAssembler;
@@ -240,7 +241,13 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     (*exp)->type = en_func;
                     (*exp)->v.func = funcparams;
                 }
-                break;	
+                break;
+            case sc_catchvar:
+                makeXCTab(funcsp);
+                *exp = varNode(en_auto, funcsp->xc->xctab);
+                *exp = exprNode(en_add, *exp, intNode(en_c_i, (LLONG_TYPE)&(((struct _xctab *)0)->instance)));
+                deref(&stdpointer, exp);
+                break;
             case sc_enumconstant:		
                 *exp = intNode(en_c_i, sp->value.i);
                 break;

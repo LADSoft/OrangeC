@@ -151,7 +151,7 @@ enum e_node
         en_udiv, en_umod, en_ugt, en_uge, en_ule, en_ult, en_blockclear, en_stackblock, 
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
-        en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim
+        en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref
 };
 /*      statement node descriptions     */
 
@@ -159,15 +159,15 @@ enum e_stmt
 {
     st_line, st_expr, st_declare, st_goto, st_asmgoto, st_asmcond, 
     st_loopgoto, st_select, st_notselect, st_varstart, st_dbgblock,
-    st_switch, st_return, st_block, st__genword, st_passthrough, 
-    st_datapassthrough, st_abs, st_throw, st_tryblock, st_label
+    st_switch, st_return, st_block, st_throw, st_try, st_catch,
+    st__genword, st_passthrough, st_datapassthrough, st_abs, st_label
 };
 
 /* storage classes */
 enum e_sc
 {
         sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, 
-        sc_parameter, sc_type, sc_typedef, sc_member, sc_cast, sc_defunc, sc_label, sc_ulabel,
+        sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_cast, sc_defunc, sc_label, sc_ulabel,
         sc_overloads, sc_constant, sc_enumconstant, sc_absolute,
         sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
            sc_memberreg, sc_namespace, sc_namespacealias, sc_temp, sc_virtual
@@ -218,7 +218,12 @@ typedef struct expr
         struct _atomicData *ad;
         struct stmt *stmt;
         struct _imode_ *imode;
+        struct {
+            struct expr *thisptr;
+            struct type *tp;
+        } t;
     } v;
+    int xcInit, xcDest;
     int lockOffset;
     char bits;
     char startbit;
@@ -229,6 +234,7 @@ typedef struct expr
     int unionoffset:1;
     int isfunc:1;
     int rref:1;
+    int dest:1; // for thisref
 } EXPRESSION;
 
 typedef struct casedata
@@ -297,6 +303,7 @@ typedef struct stmt
     LINEDATA *lineData;
     union {
         TYPE *returntype;
+        TYPE *tp;
         CASEDATA *cases;
         struct blockdata *parent;
     };
@@ -306,7 +313,8 @@ typedef struct stmt
     int line;
     char *file;
     int label;
-    int breaklabel;
+    int endlabel;
+    int breaklabel; // also the label at the end of the try block
     int altlabel;
     int hasvla: 1;
     int hasdeclare: 1;
@@ -452,6 +460,9 @@ typedef struct sym
         unsigned omitFrame : 1; // true if should omit the frame pointer
         unsigned noinline :1; // don't inline an inline qualified function
         unsigned didinline :1; // already genned an inline func for this symbol
+        unsigned hasTry : 1; // function surrounded by try statement
+        unsigned hasDest: 1; // class has a destructor that is called
+        unsigned inCatch:1; // used inside a catch block
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -473,6 +484,16 @@ typedef struct sym
     struct _vtabEntry *vtabEntries;
     struct lexeme *deferredCompile ;
     struct init * init, *lastInit, *dest;
+    enum e_xc { xc_unspecified, xc_none, xc_all, xc_dynamic } xcMode;
+    struct xcept
+    {
+        LIST *xcDynamic; // list of types, the exception specification when dynamic
+        int xcInitLab, xcDestLab; // for auto vars
+        struct sym *xctab;
+        struct sym *xclab;
+        EXPRESSION *xcInitializeFunc;
+        EXPRESSION *xcRundownFunc;
+    } *xc;
     LIST *friends;
     /* Type declarations */
     struct type *tp;

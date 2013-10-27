@@ -37,8 +37,9 @@
 */
 /* declare in select has multiple vars */
 #include "compiler.h"
+#include "rtti.h"
 extern INCLUDES *includes;
-static char *cppbuiltin = "void * operator new(unsigned size); " 
+static char *cppbuiltin = "void * operator new(unsigned size); "
     "void * operator new[](unsigned size); " 
     "void   operator delete  (void *); " 
 	"void   operator delete[](void *); "
@@ -47,11 +48,20 @@ static char *cppbuiltin = "void * operator new(unsigned size); "
     "void * __lambdaCallS(void *); "
     "void * __lambdaPtrCall(void *, void *); "
     "void * __lambdaPtrCallS(void *, void *); "
-    "void   _CatchCleanup(); " 
-    "void * __GetTypeInfo(void *block, void *instance); " 
-    "void _ThrowException(void *,void *,void*); " 
+    "void * __GetTypeInfo(void *); " 
+    "void _ThrowException(void *,void *,int,void*,void *); "
 	"void _RethrowException(); "
-    "void __arrCall(void *, void *, void *, int, int); ";
+    "void _CatchCleanup(); " 
+    "void _InitializeException(void *, void *); "
+    "void _RundownException(); "
+    "void __arrCall(void *, void *, void *, int, int); "
+    "namespace std { "
+    "class type_info; "
+    "} "
+    "typedef std::type_info typeinfo; ";
+TYPE stdXC = { 
+    bt_struct, sizeof(XCTAB)
+};
 
 void ParseBuiltins(void)
 {
@@ -70,5 +80,7 @@ void ParseBuiltins(void)
         includes->handle = handle;
         includes->lptr = p;
         includes->line = 0;
+        stdXC.syms = CreateHashTable(1);
+        stdXC.sp = makeID(sc_type, &stdXC, NULL, "$$XCTYPE");
     }
 }

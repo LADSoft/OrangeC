@@ -52,6 +52,7 @@ extern char infile[256];
 extern int total_errors;
 extern LIST *structSyms;
 extern TYPE stdvoid;
+extern int currentErrorLine;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -112,11 +113,15 @@ void dumpVTab(SYMBOL *sym)
     char buf[256];
     THUNK thunks[1000];
     SYMBOL *localsp;
+    SYMBOL *xtSym = RTTIDumpType(sym);
     int count = 0;
 
     dseg();
     gen_virtual(sym->vtabsp, TRUE);
-    genaddress(0); // will eventually be the xception table
+    if (xtSym)
+        genref(xtSym, NULL);
+    else
+        genaddress(0);
     count = dumpVTabEntries(count, thunks, sym, sym->vtabEntries);
     gen_endvirtual(sym->vtabsp);
 
@@ -306,6 +311,83 @@ static void checkAmbiguousVirtualFunc(SYMBOL *sp, VTABENTRY **match, VTABENTRY *
         vt = vt->next;
     }
 }
+static void checkXT(SYMBOL *sym1, SYMBOL *sym2)
+{
+
+    if (sym1->xcMode == xc_dynamic && sym2->xcMode == xc_dynamic)
+    {
+        // check to see that everything in sym1 is also in sym2
+        LIST *l1 = sym1->xc->xcDynamic;
+        while (l1)
+        {
+            LIST *l2 = sym2->xc->xcDynamic;
+            while (l2)
+            {
+                if (comparetypes((TYPE *)l2->data, (TYPE *)l1->data, TRUE) && intcmp((TYPE *)l2->data, (TYPE *)l1->data))
+                    break;
+                l2 = l2->next;
+            }
+            if (!l2)
+            {
+                currentErrorLine = 0;
+                errorsym(ERR_EXCEPTION_SPECIFIER_AT_LEAST_AS_RESTRICTIVE, sym1);
+                break;
+            }
+            l1 = l1->next;
+        }
+    }
+    else if (sym1->xcMode != sym2->xcMode)
+    {
+        if (sym1->xcMode == xc_all && sym2->xcMode != xc_unspecified 
+            || sym1->xcMode == xc_unspecified && sym2->xcMode != xc_all || sym2->xcMode == xc_none)
+        {
+            currentErrorLine = 0;
+            errorsym(ERR_EXCEPTION_SPECIFIER_AT_LEAST_AS_RESTRICTIVE, sym1);
+        }
+    }
+}
+static void checkExceptionSpecification(SYMBOL *sp)
+{
+    HASHREC *hr = basetype(sp->tp)->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        if (sym->storage_class == sc_overloads)
+        {
+            HASHREC *hr1 = basetype(sym->tp)->syms->table[0];
+            while (hr1)
+            {
+                SYMBOL *sym1 = (SYMBOL *)hr1->p;
+                if (sym1->storage_class == sc_virtual)
+                {
+                    BASECLASS *bc = sp->baseClasses;
+                    char *f1 = strrchr(sym1->decoratedName, '@');
+                    while (bc && f1)
+                    {
+                        SYMBOL *sym2 = search(sym->name, basetype(bc->cls->tp)->syms);
+                        if (sym2)
+                        {
+                            HASHREC *hr3 = basetype(sym2->tp)->syms->table[0];
+                            while (hr3)
+                            {
+                                SYMBOL *sym3 = (SYMBOL *)hr3->p;
+                                char *f2 = strrchr(sym3->decoratedName, '@');
+                                if (f2 && !strcmp(f1, f2))
+                                {
+                                    checkXT(sym1, sym3);
+                                }
+                                hr3 = hr3->next;
+                            }
+                        }
+                        bc = bc->next;
+                    }
+                }
+                hr1 = hr1->next;
+            }
+        }
+        hr = hr->next;
+    }
+}
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
 {
     BASECLASS *lst = base->baseClasses;
@@ -430,6 +512,7 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
         }
         vb = vb->next;
     }
+    checkExceptionSpecification(sp);
     allocVTabSpace(sp->vtabEntries, 0);
     if (sp->vtabEntries)
     {

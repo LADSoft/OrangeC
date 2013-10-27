@@ -563,8 +563,8 @@ static BOOL validateAnonymousUnion(SYMBOL *parent, TYPE *unionType)
             SYMBOL *member = (SYMBOL *)newhr->p;
             if (cparams.prm_cplusplus && member->storage_class == sc_overloads)
             {
-                if (strcmp(member->name, overloadNameTab[CI_CONSTRUCTOR]) &&
-                    strcmp(member->name, overloadNameTab[CI_DESTRUCTOR]))
+                if (member->name != overloadNameTab[CI_CONSTRUCTOR] &&
+                    member->name != overloadNameTab[CI_DESTRUCTOR])
                     if (strcmp(member->name, overloadNameTab[assign - kw_new + CI_NEW]))
                     {
                         error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
@@ -2139,72 +2139,133 @@ static void resolveVLAs(TYPE *tp)
         tp = tp->btp;
     }
 }
-static void matchFunctionDeclaration(SYMBOL *sp, SYMBOL *spo)
+BOOL intcmp(TYPE *t1, TYPE *t2)
+{
+    while (isref(t1))
+        t1 = basetype(t1)->btp;
+    while (isref(t2))
+        t2 = basetype(t2)->btp;
+        
+    while (ispointer(t1) && ispointer(t2))
+    {
+        t1 = basetype(t1)->btp;
+        t2 = basetype(t2)->btp;
+    }
+    return t1->type == t2->type;
+}
+static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo)
 {
     HASHREC *hro;
     
-    if (sp->storage_class == sc_member)
-        return;
-        
-    /* two oldstyle declarations aren't compared */
-    if (!spo || spo->oldstyle && sp->oldstyle || !spo->hasproto)
-        return;
-    if (spo && isfunction(spo->tp))
+    if (sp->storage_class != sc_member)
     {
-        HASHREC *hro1, *hr1;
-        if (!comparetypes(spo->tp->btp, sp->tp->btp, TRUE))
+            
+        /* two oldstyle declarations aren't compared */
+        if (!(spo || spo->oldstyle && sp->oldstyle || !spo->hasproto))
         {
-            preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
-        }
-        else
-        {
-            hro1 = basetype(spo->tp)->syms->table[0];
-            hr1 = basetype(sp->tp)->syms->table[0];
-            if (hro1 && ((SYMBOL *)(hro1->p))->thisPtr)
-                hro1 = hro1->next;
-            if (hro1 && hr1 && ((SYMBOL *)(hro1->p))->tp)
+            if (spo && isfunction(spo->tp))
             {
-                while (hro1 && hr1)
-                {
-                    SYMBOL *spo1 = (SYMBOL *)hro1->p;
-                    SYMBOL *sp1 = (SYMBOL *)hr1->p;                    
-                    if (!comparetypes(spo1->tp, sp1->tp, TRUE))
-                    {
-                        break;
-                    }
-                    hro1 = hro1->next;
-                    hr1 = hr1->next;
-                }
-                if (hro1 || hr1)
+                HASHREC *hro1, *hr1;
+                if (!comparetypes(spo->tp->btp, sp->tp->btp, TRUE))
                 {
                     preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
                 }
                 else
                 {
-                    BOOL err = FALSE;
-                    SYMBOL *last = NULL;
                     hro1 = basetype(spo->tp)->syms->table[0];
                     hr1 = basetype(sp->tp)->syms->table[0];
-                    while (hro1 && hr1)
-                    {
-                        SYMBOL *so = (SYMBOL *)hro1->p;
-                        SYMBOL *s = (SYMBOL *)hr1->p;
-                        if (so != s && so->init && s->init)
-                            errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
-                        if (!err && last && last->init && !(so->init || s->init))
-                        {
-                            err = TRUE;
-                            errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
-                        }
-                        last = so;
-                        if (so->init)
-                            s->init = so->init;    
-                        hro1->p = hr1->p;
+                    if (hro1 && ((SYMBOL *)(hro1->p))->thisPtr)
                         hro1 = hro1->next;
-                        hr1 = hr1->next;
+                    if (hro1 && hr1 && ((SYMBOL *)(hro1->p))->tp)
+                    {
+                        while (hro1 && hr1)
+                        {
+                            SYMBOL *spo1 = (SYMBOL *)hro1->p;
+                            SYMBOL *sp1 = (SYMBOL *)hr1->p;                    
+                            if (!comparetypes(spo1->tp, sp1->tp, TRUE))
+                            {
+                                break;
+                            }
+                            hro1 = hro1->next;
+                            hr1 = hr1->next;
+                        }
+                        if (hro1 || hr1)
+                        {
+                            preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
+                        }
+                        else
+                        {
+                            BOOL err = FALSE;
+                            SYMBOL *last = NULL;
+                            hro1 = basetype(spo->tp)->syms->table[0];
+                            hr1 = basetype(sp->tp)->syms->table[0];
+                            while (hro1 && hr1)
+                            {
+                                SYMBOL *so = (SYMBOL *)hro1->p;
+                                SYMBOL *s = (SYMBOL *)hr1->p;
+                                if (so != s && so->init && s->init)
+                                    errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
+                                if (!err && last && last->init && !(so->init || s->init))
+                                {
+                                    err = TRUE;
+                                    errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
+                                }
+                                last = so;
+                                if (so->init)
+                                    s->init = so->init;    
+                                hro1->p = hr1->p;
+                                hro1 = hro1->next;
+                                hr1 = hr1->next;
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+    if (spo->xc && spo->xc->xcDynamic || sp->xc && sp->xc->xcDynamic)
+    {
+        if (!sp->xc || !sp->xc->xcDynamic)
+        { 
+            if (!MATCHKW(lex, begin))
+                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+        }
+        else if (!spo->xc || !spo->xc->xcDynamic || spo->xcMode != sp->xcMode)
+        {
+                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);                
+        }
+        else
+        {
+            LIST *lo = spo->xc->xcDynamic;
+            while (lo)
+            {
+                LIST *li = sp->xc->xcDynamic;
+                while (li)
+                {
+                    if (comparetypes((TYPE *)lo->data, (TYPE *)li->data, TRUE)  && intcmp((TYPE *)lo->data, (TYPE *)li->data))
+                    {
+                        break;
+                    }
+                    li = li->next;
+                }
+                if (!li)
+                {
+                    errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+                }
+                lo = lo->next;
+            }
+        }
+    }
+    else if (spo->xcMode != sp->xcMode)
+    {
+        if (sp->xcMode == xc_unspecified)
+        {
+            if (!MATCHKW(lex, begin))
+                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+        }
+        else
+        {
+            errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
         }
     }
 }
@@ -2662,6 +2723,68 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
         error(ERR_VOID_ONLY_PARAMETER);
     return lex;
 }
+LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class)
+{
+    switch (KW(lex))
+    {
+        case kw_throw:
+            lex = getsym();
+            if (MATCHKW(lex, openpa))
+            {
+                sp->xcMode = xc_dynamic;
+                if (!sp->xc)
+                    sp->xc = Alloc(sizeof(struct xcept));
+                do
+                {
+                    TYPE *tp = NULL;
+                    lex = getsym();
+                    lex = get_type_id(lex, &tp, funcsp, FALSE);
+                    if (!tp)
+                    {
+                        error(ERR_TYPE_NAME_EXPECTED);
+                    }
+                    else
+                    {
+                        // this is reverse order but who cares?
+                        LIST *p = Alloc(sizeof(LIST));
+                        p->next = sp->xc->xcDynamic;
+                        p->data = tp;
+                        sp->xc->xcDynamic = p;
+                    }
+                } while (MATCHKW(lex, comma));
+                needkw(&lex, closepa);
+            }
+            else
+            {
+                needkw(&lex, openpa);
+            }
+            break;
+        case kw_noexcept:
+            lex = getsym();
+            if (MATCHKW(lex, openpa))
+            {
+                TYPE *tp = NULL;
+                EXPRESSION *exp = NULL;
+                lex = getsym();
+                lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+                if (!IsConstantExpression(exp, FALSE))
+                {
+                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                }
+                else
+                {
+                    sp->xcMode = exp->v.i ? xc_none : xc_all;
+                }
+                needkw(&lex, closepa);
+            }
+            else
+            {
+                sp->xcMode = xc_none;
+            }
+            break;
+    }
+    return lex;
+}
 static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp, enum e_sc storage_class, int consdest)
 {
     BOOL isvla = FALSE;
@@ -2736,6 +2859,8 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                             tp1->btp = *tp;
                             *tp = tp1;   
                         }
+                        if (cparams.prm_cplusplus && *sp)
+                            lex = getExceptionSpecifiers(lex, funcsp, *sp, storage_class);
                     }
                 }
                 break;
@@ -2768,8 +2893,7 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
             case colon:
                 if (consdest == CT_CONS)
                 {
-                    lex = getsym();
-                    (*sp)->memberInitializers = GetMemberInitializers(&lex, *sp);
+                    // defer to later
                 }
                 else if (*sp && (*sp)->storage_class == sc_member)
                 {
@@ -3608,6 +3732,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         SYMBOL *spi;
                         HASHREC **p;
                         sp->parent = funcsp; /* function vars have a parent */
+                        if (strSym && !strcmp(strSym->name, sp->name))
+                            sp->name = overloadNameTab[CI_CONSTRUCTOR];
                         if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
                         if (storage_class_in == sc_member && structSyms)
@@ -3634,6 +3760,21 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             sp->importfile = importFile;
                         }
                         SetLinkerNames(sp, storage_class_in == sc_auto && isstructured(sp->tp) ? lk_auto : linkage);
+                        if (cparams.prm_cplusplus && isfunction(sp->tp) && (MATCHKW(lex, kw_try) || MATCHKW(lex, colon)))
+                        {
+                            BOOL viaTry = MATCHKW(lex, kw_try);
+                            int old = GetGlobalFlag();
+                            if (viaTry)
+                            {
+                                sp->hasTry = TRUE;
+                                lex = getsym();                                
+                            }
+                            if (MATCHKW(lex, colon))
+                            {
+                                lex = getsym();                                
+                                sp->memberInitializers = GetMemberInitializers(&lex, sp);
+                            }
+                        }
                         if (storage_class == sc_absolute)
                             sp->value.i= address;
                         if (sp->storage_class == sc_global && linkage == lk_inline)
@@ -3690,6 +3831,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 spi = (SYMBOL *)(*p)->p;
                             }
                         }
+                            ConsDestDeclarationErrors(sp, notype);
                         if (spi && spi->storage_class == sc_overloads)
                         {
                             SYMBOL *sym = searchOverloads(sp->decoratedName, spi->tp->syms);
@@ -3733,7 +3875,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         if (spi)
                         {
                             if (isfunction(spi->tp))		
-                                matchFunctionDeclaration(sp, spi);
+                                matchFunctionDeclaration(lex, sp, spi);
                             if (sp->parentClass)
                                 preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
                             else
@@ -3850,6 +3992,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 spi->declfilenum = sp->declfilenum;
                             }
                             spi->memberInitializers = sp->memberInitializers;
+                            spi->hasTry = sp->hasTry;
                             sp = spi;
                             sp->redeclared = TRUE;
                         }
@@ -3857,8 +4000,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         {
                             if (!asFriend || isfunction(sp->tp))
                             {
-                                if (isfunction(sp->tp))		
-                                    matchFunctionDeclaration(sp, sp);
                                 if (sp->constexpression && sp->storage_class == sc_global)
                                     sp->storage_class = sc_static;
                                 if (sp->storage_class == sc_external)
@@ -3982,7 +4123,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             if (isstructured(basetype(sp->tp)->btp) || basetype(basetype(sp->tp)->btp)->type == bt_enum)
                                 if (defd)
                                     errorsym(ERR_TYPE_DEFINITION_NOT_ALLOWED_HERE, basetype(sp->tp->btp)->sp);
-                            ConsDestDeclarationErrors(sp, notype);
                             if (sp->castoperator)
                             {
                                 if (!notype)
@@ -4019,6 +4159,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 {
                                     SYMBOL *sym = (SYMBOL *)hr->p;
                                     TYPE *tpl = sym->tp;
+                                    int old = GetGlobalFlag();
                                     while (tpl)
                                     {
                                         if (tpl->unsized)
@@ -4052,6 +4193,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 browse_variable(sp); 
                                 if (sp->memberInitializers)
                                     errorsym(ERR_CONSTRUCTOR_MUST_HAVE_BODY, sp);
+                                else if (sp->hasTry)
+                                    error(ERR_EXPECTED_TRY_BLOCK);
                                 if (cparams.prm_cplusplus && MATCHKW(lex, assign))
                                 {
                                     lex = getsym();

@@ -372,6 +372,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
         case en_mp_as_bool:
         case en_blockclear:
         case en_argnopush:
+        case en_thisref:
             temp->left = inlineexpr(node->left, FALSE);
             break;
         case en_atomic:
@@ -456,13 +457,9 @@ STATEMENT *inlinestmt(STATEMENT *block)
         {
             case st__genword:
                 break;
-            case st_tryblock:
-                break;
-            case st_throw:
-                if (block->select)
-                {
-                    (*outptr)->select = inlineexpr(block->select, FALSE);
-                }
+            case st_try:
+            case st_catch:
+                (*outptr)->lower = inlinestmt(block->lower);
                 break;
             case st_return:
             case st_expr:
@@ -540,9 +537,9 @@ static void reduceReturns(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode)
         {
             case st__genword:
                 break;
-            case st_tryblock:
-                break;
-            case st_throw:
+            case st_try:
+            case st_catch:
+                reduceReturns(block->lower, rettp, retnode);
                 break;
             case st_return:
                 inlineResetReturn(block, rettp, retnode);
@@ -586,9 +583,9 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
         {
             case st__genword:
                 break;
-            case st_tryblock:
-                break;
-            case st_throw:
+            case st_try:
+            case st_catch:
+                rv = scanReturn(block->lower, rettp);
                 break;
             case st_return:
                 rv = block->select;
@@ -791,6 +788,7 @@ static BOOL sideEffects(EXPRESSION *node)
         case en_mp_as_bool:
         case en_blockclear:
         case en_argnopush:
+        case en_thisref:
             rv |= sideEffects(node->left);
             break;
         case en_atomic:

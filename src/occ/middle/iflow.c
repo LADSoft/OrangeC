@@ -265,6 +265,17 @@ static void gather_flowgraph(void)
             }
         }
     }
+    // associate live blocks without a predecessor with blockarray[0]
+    for (i=0; i < blockCount; i++)
+    {
+        BLOCK *b = blockArray[i];
+        if (b->alwayslive && !b->pred)
+        {
+            BLOCK *temp = blockArray[0];
+            flowinsert(&temp->succ, b);
+            flowinsert(&b->pred, temp);
+        }
+    }
 }
 
 
@@ -428,6 +439,9 @@ void reflowConditional(BLOCK *src, BLOCK *dst)
         if (blockArray[i])
             blockArray[i]->temp = FALSE;
     removeMark(bls, blockArray[0]);
+    for (i=1; i < blockCount; i++)
+        if (blockArray[i] && blockArray[i]->alwayslive)
+            removeMark(bls, blockArray[i]);
     src->succ = bl1;
     for (i=0; i < blockCount; i++)
         if (blockArray[i])
@@ -816,7 +830,7 @@ enum e_fgtype getEdgeType(int first, int second)
 /* SSA doesn't work well when there are dead paths */
 static void removeDeadBlock(BLOCK *b)
 {
-    if (b->pred == NULL)
+    if (b->pred == NULL && !b->alwayslive)
     {
         BLOCKLIST *bl = b->succ;
         while (bl)

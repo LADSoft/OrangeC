@@ -571,6 +571,14 @@ void removeDead(BLOCK *b)
         QUAD *head = intermed_head;
         BOOL changed = FALSE;
         int i;
+        /*
+        for (i=0; i < blockCount; i++)
+        {
+            if (blockArray[i])
+                if (blockArray[i]->alwayslive && !blockArray[i]->visiteddfst)
+                    removeDead(blockArray[i]);
+        }
+        */
         for (i=0; i < blockCount; i++)
         {
             BLOCK *b1 = blockArray[i];

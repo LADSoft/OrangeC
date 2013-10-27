@@ -105,6 +105,7 @@ EXE_dependencies = \
     output.obj \
     preproc.obj \
     ppexpr.obj \
+    rtti.obj \
     stmt.obj \
     symtab.obj \
     types.obj \

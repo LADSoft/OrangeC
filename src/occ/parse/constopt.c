@@ -327,6 +327,7 @@ static BOOL hasFloats(EXPRESSION *node)
             return 0;
         case en_argnopush:
         case en_not_lvalue:
+        case en_thisref:
             return hasFloats(node->left);
     }
     return (0);
@@ -2460,6 +2461,7 @@ join_lor:
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
+        case en_thisref:
             rv |= opt0(&(ep->left));
             break;
         case en_func:
@@ -2950,6 +2952,7 @@ int fold_const(EXPRESSION *node)
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
+        case en_thisref:
             rv |= fold_const(node->left);
             break;
         case en_func:
@@ -3100,6 +3103,7 @@ int typedconsts(EXPRESSION *node1)
         case en_savestack:
         case en_blockclear:
         case en_mp_as_bool:
+        case en_thisref:
             rv |= typedconsts(node1->left);
             break;
         case en_func:

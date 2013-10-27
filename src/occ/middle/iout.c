@@ -2025,7 +2025,6 @@ void gensrref(SYMBOL *sp, int val)
 }
 
 /*-------------------------------------------------------------------------*/
-
 void genref(SYMBOL *sp, int offset)
 /*
  * Output a reference to the data area (also gens fixups )

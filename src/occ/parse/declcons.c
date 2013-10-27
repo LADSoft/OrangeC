@@ -37,6 +37,7 @@
 */
 #include "compiler.h"
 extern ARCH_ASM *chosenAssembler;
+extern BOOL hasXCInfo;
 
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
@@ -450,7 +451,7 @@ static BOOL checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
     }
     return FALSE;
 }
-static SYMBOL *getCopyCons(SYMBOL *base, BOOL move)
+SYMBOL *getCopyCons(SYMBOL *base, BOOL move)
 {
     SYMBOL *ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(base->tp)->syms);
     if (ovl)
@@ -2034,6 +2035,15 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
         (*exp)->v.func = params;
         dest1->genreffed = TRUE;
     }
+    if (*exp)
+    {
+        params->thisptr->xcDest = beGetLabel;
+        *exp = exprNode(en_thisref, *exp, NULL);
+        (*exp)->dest = TRUE;
+        (*exp)->v.t.thisptr = params->thisptr;
+        (*exp)->v.t.tp = sp->tp;
+        sp->hasDest = TRUE;
+    }
 }
 BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                      BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
@@ -2203,6 +2213,15 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             }
         }
         *exp = e1;
+        if (*exp)
+        {
+            params->thisptr->xcInit = beGetLabel;
+            *exp = exprNode(en_thisref, *exp, NULL);
+            (*exp)->v.t.thisptr = params->thisptr;
+            (*exp)->v.t.tp = sp->tp;
+            hasXCInfo = TRUE;
+        }
+        
         return TRUE;
     }
     return FALSE;

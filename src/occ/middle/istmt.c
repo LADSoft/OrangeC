@@ -73,6 +73,7 @@ extern BLOCK **blockArray;
 extern int maxBlocks, maxTemps;
 extern int retlab, startlab;
 
+int catchLevel;
 int tempCount;
 int optflags = ~0;
 static LIST *mpthunklist;
@@ -330,7 +331,27 @@ void genselect(STATEMENT *stmt, SYMBOL *funcsp, BOOL jmptrue)
     }
 }
 /*-------------------------------------------------------------------------*/
-
+static void gen_try(SYMBOL *funcsp, int startLab, int endLab, int transferLab, STATEMENT *lower)
+{
+    gen_label(startLab);
+    genstmt(lower, funcsp);
+    gen_label(endLab);
+    /* not using gen_igoto because it will make a new block */
+    gen_icode(i_goto, NULL, NULL, NULL);
+    intermed_tail->dc.v.label = transferLab;
+}
+static void gen_catch(SYMBOL *funcsp, int startLab, int transferLab, STATEMENT *lower)
+{
+    gen_label(startLab);
+    currentBlock->alwayslive = TRUE;
+    intermed_tail->alwayslive = TRUE;
+    catchLevel++;
+    genstmt(lower, funcsp);
+    catchLevel--;
+    /* not using gen_igoto because it will make a new block */
+    gen_icode(i_goto, NULL, NULL, NULL);
+    intermed_tail->dc.v.label = transferLab;
+}
 void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE *allocaAP)
 /*
  *      generate a return statement.
@@ -412,6 +433,8 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
                 gen_icode(i_unloadcontext,0,0,0);
 */
         
+            if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcRundownFunc)
+                gen_expr(funcsp, funcsp->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
             gen_icode(i_epilogue,0,0,0);
             if (funcsp->linkage == lk_interrupt || funcsp->linkage == lk_fault) {
 /*				if (funcsp->loadds)
@@ -433,12 +456,6 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
     }
 }
 
-/*-------------------------------------------------------------------------*/
-void gen_tryblock(void *val)
-{
-    /* xceptoffs will be put in the label field later */
-    gen_icode(i_tryblock, 0, make_immed(ISZ_NONE, (int)val), 0);
-}
 void gen_varstart(void *exp)
 {
     IMODE *ap = (IMODE *)Alloc(sizeof(IMODE));
@@ -482,8 +499,6 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
             case st_dbgblock:
                 gen_dbgblock(stmt->label);
                 break;
-            case st_tryblock:
-/*				gen_tryblock(stmt->label); */
                 break;
             case st_block:
                 rv = genstmt(stmt->lower, funcsp);
@@ -501,15 +516,22 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
             case st_asmcond:
                 gen_igoto(i_asmcond, (int)stmt->label);
                 break;
-            case st_throw:
-/*                gen_throw((TYPE *)stmt->lst, stmt->select);*/
+            case st_try:
+                gen_try(funcsp, stmt->label, stmt->endlabel, stmt->breaklabel, stmt->lower);
                 break;
-/*			case st_functailexpr: 
-                gen_icode(i_functailstart, 0, 0, 0); 
-                gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select)); *
-                gen_icode(i_functailend, 0, 0, 0);
-               break;
-*/
+            case st_catch:
+            {
+                STATEMENT *last;
+                while (stmt && stmt->type == st_catch)
+                {
+                    gen_catch(funcsp, stmt->altlabel, stmt->breaklabel, stmt->lower);
+                    last = stmt;
+                    stmt = stmt->next;
+                }
+                stmt = last;
+                gen_label(stmt->breaklabel);
+            }
+                break;
             case st_expr:
             case st_declare:
                 if (stmt->select)
@@ -547,115 +569,6 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
     }
     return rv;
 }
-
-/*-------------------------------------------------------------------------*/
-#ifdef XXXXX
-SYMBOL *gen_mp_virtual_thunk(SYMBOL *vsp)
-{
-
-        QUAD *oi = intermed_head, *ot = intermed_tail;
-        LIST *v = mpthunklist;
-        SYMBOL *sp;
-        IMODE *ap1,  *ap2;
-        char buf[256];
-        while (v)
-        {
-            sp = (SYMBOL*)v->data;
-            if (sp->value.i == vsp->value.classdata.vtabindex)
-                if (isstructured(vsp->tp->btp) == isstructured(sp->tp->btp))
-                    return sp;
-            v = v->link;
-        }
-        intermed_head = intermed_tail = NULL;
-        blockMax = 0;
-        blockCount = tempCount = 0;
-        exitBlock = 0;
-        IncGlobalFlag();
-        sp = Alloc(sizeof(SYMBOL));
-        sp->storage_class = sc_static;
-        sp->tp = vsp->tp;
-        sp->value.i = vsp->value.classdata.vtabindex;
-        //sprintf(buf, "@$mpt$%d$%d", sp->value.i, isstructured(sp->tp->btp));
-        sp->name = sp->decoratedName = litlate(buf);
-        sp->errname = sp->decoratedName;
-        sp->staticlabel = FALSE;
-        sp->gennedvirtfunc = TRUE;
-        v = (LIST *)Alloc(sizeof(LIST));
-        v->data = sp;
-        v->link = mpthunklist;
-        mpthunklist = v;
-        DecGlobalFlag();
-
-        gen_virtual(sp, FALSE);
-        addblock(i_goto);
-        gen_icode(i_substack, NULL, ap2 = tempreg(ISZ_ADDR, 0), NULL);
-        gen_icode(i_add, ap2, ap2 , make_immed(ISZ_NONE, isstructured(sp->tp->btp) ? ISZ_ADDR * 2 : ISZ_ADDR));
-        ap1 = indnode(ap2, ISZ_ADDR);
-        gen_icode(i_assn, ap2 = tempreg(ISZ_ADDR, 0), ap1, 0);
-        if (sp->value.classdata.baseofs)
-            gen_icode(i_add, ap2, ap2, make_immed(ISZ_NONE, sp->value.classdata.baseofs));
-        ap1 = indnode(ap2, ISZ_ADDR);
-        gen_icode(i_assn, ap2 = tempreg(ISZ_ADDR, 0), ap1, 0);
-        gen_icode(i_add, ap2, ap2, make_immed(ISZ_NONE, sp->value.i));
-        ap1 = indnode(ap2, ISZ_ADDR);
-        gen_icode(i_directbranch, 0, ap1, 0);
-        addblock(i_ret);
-        optimize();
-        rewrite_icode(); /* Translate to machine code & dump */
-        if (chosenAssembler->gen->post_function_gen)
-            chosenAssembler->gen->post_function_gen(intermed_head);
-        gen_endvirtual(sp);
-        intermed_head = oi;
-        intermed_tail = ot;
-        return sp;
-}
-
-/*-------------------------------------------------------------------------*/
-
-SYMBOL *gen_vsn_virtual_thunk(SYMBOL *func, int ofs)
-{
-        QUAD *oi = intermed_head, *ot = intermed_tail;		
-        SYMBOL *sp;
-        IMODE *ap1,  *ap2;
-        char buf[256];
-        //sprintf(buf, "@$vsn%s$%d", func->decoratedName, ofs);
-        sp = search(buf, gsyms);
-        if (sp)
-            return sp;
-        intermed_head = intermed_tail = NULL;
-        blockMax = 0;
-        blockCount = tempCount = 0;
-        exitBlock = 0;
-        IncGlobalFlag();
-        sp = Alloc(sizeof(SYMBOL));
-        sp->storage_class = sc_static;
-        sp->value.i = ofs;
-        sp->name = sp->decoratedName = litlate(buf);
-        sp->errname = sp->decoratedName;
-        sp->staticlabel = FALSE;
-        sp->tp = func->tp;
-        sp->gennedvirtfunc = TRUE;
-        insert(sp, gsyms);
-        DecGlobalFlag();
-        gen_virtual(sp, FALSE);
-        addblock(i_goto);
-        gen_icode(i_substack, NULL, ap2 = tempreg(ISZ_ADDR, 0), NULL );
-        gen_icode(i_add, ap1 = tempreg(ISZ_ADDR, 0), ap2, make_immed(ISZ_NONE, getSize(bt_pointer)));
-        ap1 = indnode(ap1, ISZ_ADDR);
-        gen_icode(i_add, ap1, ap1 , make_immed(ISZ_NONE, - ofs));
-        ap1 = make_imaddress(varNode(en_napccon, func), ISZ_ADDR);
-        gen_icode(i_directbranch, 0, ap1, 0);
-        addblock(i_ret);
-        optimize();
-        rewrite_icode(); /* Translate to machine code & dump */
-        if (chosenAssembler->gen->post_function_gen)
-            chosenAssembler->gen->post_function_gen(intermed_head);
-        gen_endvirtual(sp);
-        intermed_head = oi;
-        intermed_tail = ot;
-        return sp;
-}
-#endif
 /* coming into this routine we have two major requirements:
  * first, imodes that describe the same thing are the same object
  * second, identical expressions can be identified in that the temps
@@ -856,6 +769,8 @@ void genfunc(SYMBOL *funcsp)
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();
+
+
     /*      firstlabel = nextLabel;*/
     cseg();
     gen_line(funcsp->linedata);
@@ -879,6 +794,11 @@ void genfunc(SYMBOL *funcsp)
 /*	        gen_icode(i_loadcontext, 0,0,0); */
     }
     gen_icode(i_prologue,0,0,0);
+    if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)
+    {
+        gen_label(funcsp->xc->xcInitLab);
+        gen_expr(funcsp, funcsp->xc->xcInitializeFunc, F_NOVALUE, ISZ_UINT);
+    }
     gen_label(startlab);
 /*    if (funcsp->loadds && funcsp->farproc) */
 /*	        gen_icode(i_loadcontext, 0,0,0); */
@@ -913,6 +833,7 @@ void genfunc(SYMBOL *funcsp)
         chosenAssembler->gen->post_function_gen(funcsp, intermed_head);
     if (cparams.prm_cplusplus && funcsp->linkage == lk_inline)
         gen_endvirtual(funcsp);
+    XTDumpTab(funcsp);
     intermed_head = NULL;
     dag_rundown();
     oFree();

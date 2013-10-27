@@ -2261,7 +2261,6 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
 }
 static BOOL resolveToDeclaration(LEXEME * lex)
 {
-    BOOL isDeclaration = TRUE;
     marksym();
     lex = getsym();
     if (MATCHKW(lex, '{'))
@@ -2269,58 +2268,30 @@ static BOOL resolveToDeclaration(LEXEME * lex)
         backupsym(0);
         return FALSE;
     }
-    while (lex != NULL)
+    if (MATCHKW(lex, openpa))
     {
-        if (MATCHKW(lex, semicolon) || MATCHKW(lex, closepa))
+        BOOL sawClose = FALSE;
+        int level = 1;
+        lex = getsym();
+        while (level && lex != NULL && !MATCHKW(lex, semicolon))
+        {
+            if (MATCHKW(lex, openpa))
+            {
+                level++;
+            }
+            else if (MATCHKW(lex, closepa))
+            {
+                level--;
+            }
+            lex = getsym();
+        }
+        if (MATCHKW(lex, assign) || MATCHKW(lex, openpa) || MATCHKW(lex, openbr))
         {
             backupsym(0);
-            return isDeclaration;
+            return TRUE;
         }
-        if (MATCHKW(lex, openpa))
-        {
-            BOOL sawClose = FALSE;
-            int level = 1;
-            lex = getsym();
-            while (level && lex != NULL && !MATCHKW(lex, semicolon))
-            {
-                if (MATCHKW(lex, openpa))
-                {
-                    isDeclaration = FALSE;
-                    level++;
-                    if (sawClose)
-                    {
-                        backupsym(0);
-                        return TRUE;
-                        
-                    }
-                }
-                else if (MATCHKW(lex, closepa))
-                {
-                    sawClose = TRUE;
-                    level--;
-                }
-                else if (MATCHKW(lex, openbr))
-                {
-                    if (sawClose)
-                    {
-                        backupsym(0);
-                        return TRUE;
-                    }
-                }
-                lex = getsym();
-            }
-            if (MATCHKW(lex, assign) || MATCHKW(lex, openpa) || MATCHKW(lex, openbr))
-            {
-                backupsym(0);
-                return TRUE;
-            }
-            while (lex != NULL && !MATCHKW(lex, semicolon) && !MATCHKW(lex, comma) && !MATCHKW(lex, closepa))
-                lex = getsym();
-        }
-        else
-        {
-            lex = getsym();
-        }
+        backupsym(0);
+        return FALSE;
     }
     backupsym(0);
     return TRUE;
@@ -2581,18 +2552,22 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     lex = getsym(); /* past { */
     
     st = blockstmt->tail;
-    while (startOfType(lex))
+    if (!cparams.prm_cplusplus)
     {
-        STATEMENT *current = blockstmt->tail;
-        declareAndInitialize = FALSE;
-        lex = declare(lex, funcsp, NULL, sc_auto, lk_none, blockstmt, FALSE, FALSE, FALSE, ac_public);
-        markInitializers(current);
-        if (MATCHKW(lex, semicolon))
+        // have to defer so we can get expression like constructor calls
+        while (startOfType(lex))
         {
-            lex = getsym();
+            STATEMENT *current = blockstmt->tail;
+            declareAndInitialize = FALSE;
+            lex = declare(lex, funcsp, NULL, sc_auto, lk_none, blockstmt, FALSE, FALSE, FALSE, ac_public);
+            markInitializers(current);
+            if (MATCHKW(lex, semicolon))
+            {
+                lex = getsym();
+            }
+            else
+                break;
         }
-        else
-            break;
     }
     if (parent->type == kw_switch)
     {

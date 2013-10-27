@@ -711,7 +711,7 @@ void XTDumpTab(SYMBOL *funcsp)
                     {
                         if (!q->byStmt && q->exp->dest)
                         {
-                            if (equalnode(p->exp->v.t.thisptr->left, q->exp->v.t.thisptr->left))
+                            if (equalnode(p->exp->v.t.thisptr, q->exp->v.t.thisptr))
                                 break;
                         }
                         q = q->next;

@@ -460,6 +460,7 @@ STATEMENT *inlinestmt(STATEMENT *block)
             case st_try:
             case st_catch:
                 (*outptr)->lower = inlinestmt(block->lower);
+                (*outptr)->blockTail = inlinestmt(block->blockTail);
                 break;
             case st_return:
             case st_expr:

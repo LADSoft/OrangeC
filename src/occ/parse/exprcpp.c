@@ -509,11 +509,14 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             TYPE *ctype = *tp;
             SYMBOL *sp;
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
+            EXPRESSION *exp1;
             lex = getArgs(lex, funcsp, &funcparams, closepa);
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
-            *exp = varNode(en_auto, sp);
+            exp1 = *exp = varNode(en_auto, sp);
             callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE); 
+            callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE);
+            initInsert(&sp->dest, *tp, exp1, 0, TRUE);
         }
         else
         {

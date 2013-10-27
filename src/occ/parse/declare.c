@@ -3079,14 +3079,19 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 char *name;
                 if (consdest == CT_DEST)
                 {
+                    *tp = &stdvoid;
                     name = overloadNameTab[CI_DESTRUCTOR];
                 }
                 else
                 {
+                    TYPE *tp1 = Alloc(sizeof(TYPE));
+                    tp1->type = bt_pointer;
+                    tp1->size = getSize(bt_pointer);
+                    tp1->btp = *tp;
+                    *tp = tp1;
                     name = overloadNameTab[CI_CONSTRUCTOR];
                 }
                 *strSym = (*tp)->sp;
-                *tp = &stdvoid; // return val for a cons or dest
                 sp = makeID(storage_class, *tp, *spi, name);
                 sp->declcharpos = lex->charindex;
                 *spi = sp;

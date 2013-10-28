@@ -269,7 +269,7 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp)
     }
     return rv;
 }
-static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
+static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline)
 {
     SYMBOL *sp = basetype(*tp)->sp;
     if (!other || isarithmetic(other))
@@ -292,7 +292,7 @@ static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, 
             params->sp = cst;
             params->ascall = TRUE;
             /*
-            if (cons1->linkage == lk_inline)  
+            if (cons1->linkage == lk_inline && !noinline)  
             {
                 e1 = doinline(params, cons1);
             }
@@ -312,11 +312,11 @@ static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, 
     }
     return FALSE;
 }
-void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
+void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline)
 {
     if (cparams.prm_cplusplus && isstructured(*tp))
     {
-        if (!castToArithmeticInternal(integer, tp, exp, kw, other))
+        if (!castToArithmeticInternal(integer, tp, exp, kw, other, noinline))
         {
             // failed at conversion
             if (kw >= kw_new && kw <= compl)
@@ -344,7 +344,7 @@ void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, T
         }
     }
 }
-BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
+BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline)
 {
     if (cparams.prm_cplusplus && isstructured(*tp))
     {
@@ -368,7 +368,7 @@ BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
                 params->sp = cst;
                 params->ascall = TRUE;
                 /*
-                if (cons1->linkage == lk_inline)  
+                if (cons1->linkage == lk_inline && !noinline)  
                 {
                     e1 = doinline(params, cons1);
                 }
@@ -402,7 +402,7 @@ BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
     }
     return FALSE;
 }
-BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
+BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOL noinline)
 {
     if (isstructured(src))
     {
@@ -431,11 +431,11 @@ BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
                     insert(av, localNameSpace->syms);
                     params->returnEXP = ev;
                     params->returnSP = sp;
-                    callDestructor(*tp, &ev, NULL, TRUE);
+                    callDestructor(*tp, &ev, NULL, TRUE, noinline);
                     initInsert(&av->dest, *tp, exp, 0, TRUE);
                 }
                 /*
-                if (cons1->linkage == lk_inline)  
+                if (cons1->linkage == lk_inline && !noinline)  
                 {
                     e1 = doinline(params, cons1);
                 }
@@ -455,17 +455,17 @@ BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
         else if (isarithmetic(*tp))
         {
             TYPE *tp1 = src;
-            return castToArithmeticInternal(FALSE, &tp1, exp, (enum e_kw)-1, *tp);
+            return castToArithmeticInternal(FALSE, &tp1, exp, (enum e_kw)-1, *tp, noinline);
         }
         else if (ispointer(*tp) || basetype(*tp)->type == bt_memberptr)
         {
             TYPE *tp1 = src;
-            return castToPointer(&tp1, exp, (enum e_kw)-1, *tp);
+            return castToPointer(&tp1, exp, (enum e_kw)-1, *tp, noinline);
         }
     }
     return FALSE;   
 }
-LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
+LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOL defd = FALSE;
@@ -479,7 +479,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
             lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE);
-            *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL);
+            *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL, noinline);
             if (sp)
             {
                 EXPRESSION **e1 = exp;
@@ -514,14 +514,14 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
             exp1 = *exp = varNode(en_auto, sp);
-            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE); 
-            callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE);
+            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline); 
+            callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, noinline);
             initInsert(&sp->dest, *tp, exp1, 0, TRUE);
         }
         else
         {
             TYPE *throwaway;
-            lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE);
+            lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE, noinline);
             if (throwaway && (*tp)->type == bt_auto)
                 *tp = throwaway;
             if ((*exp)->type == en_func)
@@ -813,7 +813,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
         {
             if (needkw(&lex, openpa))
             {
-                lex = expression(lex, funcsp, NULL, oldType, oldExp, FALSE);
+                lex = expression(lex, funcsp, NULL, oldType, oldExp, FALSE, FALSE);
                 if (!needkw(&lex, closepa))
                 {
                     errskim(&lex, skim_closepa);
@@ -842,7 +842,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         }
         else
         {
-            lex = expression(lex, funcsp, NULL, tp, exp, FALSE);
+            lex = expression_no_check(lex, funcsp, NULL, tp, exp, FALSE, FALSE);
         }
         if (tp)
         {
@@ -883,7 +883,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     }
     return lex;
 }
-BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcparams)
+BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcparams, BOOL noinline)
 {
     SYMBOL *s2 = NULL, *s3;
     HASHREC **hrd, *hrs;
@@ -946,7 +946,7 @@ BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONC
     return FALSE;
 }
 BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
-                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args)
+                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args, BOOL noinline)
 {
     SYMBOL *s1 = NULL, *s2 = NULL, *s3;
     HASHREC **hrd, *hrs;
@@ -1144,7 +1144,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         *exp = intNode(en_func, 0);
         (*exp)->v.func = funcparams;
         *tp = s3->tp;
-        expression_arguments(NULL, funcsp, tp, exp);
+        expression_arguments(NULL, funcsp, tp, exp, noinline);
         if (s3->defaulted && kw == assign)
             createAssignment(s3->parentClass, s3);
         structSyms = l.next;
@@ -1153,7 +1153,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     structSyms = l.next;
     return FALSE;
 }
-LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global)
+LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline)
 {
     FUNCTIONCALL *placement = Alloc(sizeof(FUNCTIONCALL));
     FUNCTIONCALL *initializers = NULL;
@@ -1203,7 +1203,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 EXPRESSION *exp = NULL;
                 name = overloadNameTab[CI_NEWA];
                 lex = getsym();
-                lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE);
+                lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline);
                 if (!isint(tp1))
                 {
                     error(ERR_NEED_INTEGER_TYPE);
@@ -1213,7 +1213,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 while (MATCHKW(lex, openbr))
                 {
                     lex = getsym();
-                    lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE);
+                    lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline);
                     optimize_for_constants(&exp);
                     if (!isint(tp1))
                     {
@@ -1291,7 +1291,10 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         placement->functp = s1->tp;
         placement->ascall = TRUE;
         placement->fcall = varNode(en_pc, s1);
-        exp1 = doinline(placement, s1);
+        if (!noinline)
+            exp1 = doinline(placement, s1);
+        else
+            exp1 = NULL;
         if (!exp1)
         {
             exp1 = intNode(en_func, 0);
@@ -1310,7 +1313,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 *exp = val;
                 tpf = *tp;
-                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE);
+                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, noinline);
             }
         }
         else
@@ -1375,7 +1378,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 if (init->exp)
                 {
-                    *exp = convertInitToExpression(tp1, NULL, funcsp, init, base);
+                    *exp = convertInitToExpression(tp1, NULL, funcsp, init, base, noinline);
                 }
                 if (arrSize && !isstructured(*tp))
                 {
@@ -1406,7 +1409,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;
-                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE);
+                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, noinline);
                     if (*exp)
                     {
                         *exp = exprNode(en_void, *exp, exp1);
@@ -1426,7 +1429,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             // call default constructor
             *exp = val;
             tpf = *tp;
-            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE);
+            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, noinline);
         }
     }
     tpf = Alloc(sizeof(TYPE));
@@ -1448,7 +1451,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     }
     return lex;
 }
-LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global)
+LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline)
 {
     BOOL byArray = FALSE;
     SYMBOL *s1 = NULL;
@@ -1468,14 +1471,14 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         name = overloadNameTab[CI_DELETEA];
         exp1 = intNode(en_c_i, 0); // signal to the runtime to load the number of elems dynamically
     }
-    lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE);
+    lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE, noinline);
     if (!ispointer(*tp))
         error(ERR_POINTER_TYPE_EXPECTED);
     in = *exp;
     exp2 = *exp;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
-        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE);
+        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, noinline);
     }
     exp1 = exp2;
     if (!global)
@@ -1512,7 +1515,10 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         funcparams->functp = s1->tp;
         funcparams->ascall = TRUE;
         funcparams->fcall = varNode(en_pc, s1);
-        exp1 = doinline(funcparams, s1);
+        if (!noinline)
+            exp1 = doinline(funcparams, s1);
+        else
+            exp1 = NULL;
         if (!exp1)
         {
             exp1 = intNode(en_func, 0);
@@ -1526,8 +1532,251 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     *tp = &stdvoid;
     return lex;
 }
+BOOL isNoexcept(EXPRESSION *exp)
+{
+    return FALSE;
+}
+static BOOL noexceptStmt(STATEMENT *block);
+static BOOL noexceptExpression(EXPRESSION *node)
+{
+    FUNCTIONCALL *fp;
+    BOOL rv = TRUE;
+    if (node == 0)
+        return;
+    switch (node->type)
+    {
+        case en_auto:
+            break;
+        case en_const:
+            break;
+        case en_c_ll:
+        case en_c_ull:
+        case en_c_d:
+        case en_c_ld:
+        case en_c_f:
+        case en_c_dc:
+        case en_c_ldc:
+        case en_c_fc:
+        case en_c_di:
+        case en_c_ldi:
+        case en_c_fi:
+        case en_c_i:
+        case en_c_l:
+        case en_c_ui:
+        case en_c_ul:
+        case en_c_c:
+        case en_c_bool:
+        case en_c_uc:
+        case en_c_wc:
+        case en_c_u16:
+        case en_c_u32:        
+        case en_nullptr:
+        case en_memberptr:
+            break;
+        case en_global:
+        case en_label:
+        case en_pc:
+        case en_labcon:
+        case en_absolute:
+        case en_threadlocal:
+            break;
+        case en_l_sp:
+        case en_l_fp:
+        case en_bits:
+        case en_l_f:
+        case en_l_d:
+        case en_l_ld:
+        case en_l_fi:
+        case en_l_di:
+        case en_l_ldi:
+        case en_l_fc:
+        case en_l_dc:
+        case en_l_ldc:
+        case en_l_c:
+        case en_l_u16:
+        case en_l_u32:
+        case en_l_s:
+        case en_l_ul:
+        case en_l_l:
+        case en_l_p:
+        case en_l_ref:
+        case en_l_i:
+        case en_l_ui:
+        case en_l_uc:
+        case en_l_us:
+        case en_l_bool:
+        case en_l_bit:
+        case en_l_ll:
+            return noexceptExpression(node->left);
+        case en_uminus:
+        case en_compl:
+        case en_not:
+        case en_x_f:
+        case en_x_d:
+        case en_x_ld:
+        case en_x_fi:
+        case en_x_di:
+        case en_x_ldi:
+        case en_x_fc:
+        case en_x_dc:
+        case en_x_ldc:
+        case en_x_ll:
+        case en_x_ull:
+        case en_x_i:
+        case en_x_ui:
+        case en_x_c:
+        case en_x_u16:
+        case en_x_u32:
+        case en_x_wc:
+        case en_x_uc:
+        case en_x_bool:
+        case en_x_bit:
+        case en_x_s:
+        case en_x_us:
+        case en_x_l:
+        case en_x_ul:
+        case en_x_p:
+        case en_x_fp:
+        case en_x_sp:
+        case en_trapcall:
+        case en_shiftby:
+/*        case en_movebyref: */
+        case en_substack:
+        case en_alloca:
+        case en_loadstack:
+        case en_savestack:
+            return noexceptExpression(node->left);
+        case en_assign:
+            return noexceptExpression(node->right) && noexceptExpression(node->left);
+        case en_autoinc:
+        case en_autodec:
+            return noexceptExpression(node->left);
+        case en_add:
+        case en_sub:
+/*        case en_addcast: */
+        case en_lsh:
+        case en_arraylsh:
+        case en_rsh:
+        case en_rshd:
+        case en_void:
+        case en_voidnz:
+/*        case en_dvoid: */
+        case en_arraymul:
+        case en_arrayadd:
+        case en_arraydiv:
+        case en_structadd:
+        case en_mul:
+        case en_div:
+        case en_umul:
+        case en_udiv:
+        case en_umod:
+        case en_ursh:
+        case en_mod:
+        case en_and:
+        case en_or:
+        case en_xor:
+        case en_lor:
+        case en_land:
+        case en_eq:
+        case en_ne:
+        case en_gt:
+        case en_ge:
+        case en_lt:
+        case en_le:
+        case en_ugt:
+        case en_uge:
+        case en_ult:
+        case en_ule:
+        case en_cond:
+        case en_intcall:
+        case en_stackblock:
+        case en_blockassign:
+        case en_mp_compare:
+/*		case en_array: */
+            return noexceptExpression(node->right) && noexceptExpression(node->left);
+        case en_mp_as_bool:
+        case en_blockclear:
+        case en_argnopush:
+        case en_not_lvalue:
+            return noexceptExpression(node->left);
+        case en_thisref:
+            return noexceptExpression(node->left);
+        case en_atomic:
+            break;
+        case en_func:
+            fp = node->v.func;
+            {
+                SYMBOL *sp = fp->sp;
+                return sp->xcMode == xc_none || sp->xcMode == xc_dynamic && !sp->xc->xcDynamic;
+            }
+            break;
+        case en_stmt:
+            return noexceptStmt(node->v.stmt);
+        default:
+            diag("noexceptExpression");
+            break;
+    }
+    return TRUE;
+}
+static BOOL noexceptStmt(STATEMENT *block)
+{
+    BOOL rv = TRUE;
+    while (block != NULL)
+    {
+        switch (block->type)
+        {
+            case st__genword:
+                break;
+            case st_catch:
+            case st_try:
+                rv &= noexceptStmt(block->lower);
+                break;
+            case st_return:
+            case st_expr:
+            case st_declare:
+                rv &= noexceptExpression(block->select);
+                break;
+            case st_goto:
+            case st_label:
+                break;
+            case st_select:
+            case st_notselect:
+                rv &= noexceptExpression(block->select);
+                break;
+            case st_switch:
+                rv &= noexceptExpression(block->select);
+                rv &= noexceptStmt(block->lower);
+                break;
+            case st_block:
+                rv &= noexceptStmt(block->lower);
+                rv &= noexceptStmt(block->blockTail);
+                break;
+            case st_passthrough:
+                break;
+            case st_datapassthrough:
+                break;
+            case st_line:
+            case st_varstart:
+            case st_dbgblock:
+                break;
+            default:
+                diag("Invalid block type in noexceptStmt");
+                break;
+        }
+        block = block->next;
+    }
+    return rv;
+}
 LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
-    assert(0);
+    lex = getsym();
+    if (needkw(&lex, openpa))
+    {
+        lex = expression_no_check(lex, funcsp, NULL, tp, exp, FALSE, TRUE);
+        *exp = intNode(en_c_i, noexceptExpression(exp));
+        *tp = &stdbool;
+        
+        needkw(&lex, closepa);
+    }
     return lex;
 }

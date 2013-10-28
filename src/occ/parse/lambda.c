@@ -478,7 +478,7 @@ static void finishClass(void)
     }
     createCaller();
 }
-static EXPRESSION *createLambda(void)
+static EXPRESSION *createLambda(BOOL noinline)
 {
     EXPRESSION *rv = NULL, **cur = &rv;
     HASHREC *hr;
@@ -501,7 +501,7 @@ static EXPRESSION *createLambda(void)
     {
         INITIALIZER *init = NULL;
         EXPRESSION *exp = clsThs;
-        callDestructor(cls, &exp, NULL, TRUE);
+        callDestructor(cls, &exp, NULL, TRUE, noinline);
         initInsert(&init, cls->tp, exp, 0, TRUE);
         if (cls->storage_class != sc_auto)
         {
@@ -602,7 +602,7 @@ static EXPRESSION *createLambda(void)
                         params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                         params->arguments->tp = ctp;
                         params->arguments->exp = en;
-                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE))
+                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, noinline))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }
@@ -619,25 +619,6 @@ static EXPRESSION *createLambda(void)
                 diag("createLambda: no capture var");
             }
         }
-        /*
-        else if (sp->init)
-        {
-            en = convertInitToExpression(sp->tp, sp, NULL, sp->init, clsThs);
-            optimize_for_constants(&en);
-        }
-        else if (isstructured(sp->tp))
-        {
-            TYPE *ctp = sp->tp;
-            FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-            en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->offset));
-            params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
-            params->arguments->tp = ctp;
-            params->arguments->exp = en;
-            if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE))
-                errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, sp);
-            en = en1;
-        }
-        */
         if (en)
         {
             *cur = exprNode(en_void, en, NULL);
@@ -648,7 +629,7 @@ static EXPRESSION *createLambda(void)
     *cur = clsThs; // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp)
+LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
 {
     LAMBDA *self;
     SYMBOL *vpl, *ths;
@@ -893,7 +874,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     localNameSpace->syms = self->oldSyms;
     localNameSpace->tags = self->oldTags;
     finishClass();
-    *exp = createLambda();
+    *exp = createLambda(noinline);
     *tp = lambdas->cls->tp;
     lambdas = lambdas->next;
     if (lambdas)

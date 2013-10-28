@@ -1220,7 +1220,7 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
         if (sp->storage_class != sc_localstatic && sp->dest)
         {
             
-            EXPRESSION *iexp = convertInitToExpression(sp->dest->basetp, sp, NULL, sp->dest, NULL);
+            EXPRESSION *iexp = convertInitToExpression(sp->dest->basetp, sp, NULL, sp->dest, NULL, FALSE);
             if (iexp)
             {
                 optimize_for_constants(&iexp);
@@ -1237,7 +1237,7 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
         else if (sp->storage_class == sc_parameter && isstructured(sp->tp))
         {
             EXPRESSION *iexp = getVarNode(sp);
-            callDestructor(basetype(sp->tp)->sp, &iexp, NULL, TRUE);
+            callDestructor(basetype(sp->tp)->sp, &iexp, NULL, TRUE, FALSE);
             optimize_for_constants(&iexp);
             if (*exp)
             {
@@ -1292,7 +1292,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
     {
         EXPRESSION *exp;
         STATEMENT *st = stmtNode(NULL,b, st_expr);
-        exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr);
+        exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE);
         optimize_for_constants(&exp);
         st->select = exp;
     }
@@ -1305,7 +1305,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
         STATEMENT *st;
         if (member->init->exp)
         {
-            exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr);
+            exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE);
         }
         else
         {
@@ -1342,7 +1342,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE))
+            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }
         else if (matchesCopy(parentCons, TRUE))
@@ -1365,12 +1365,12 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE))
+            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }
         else
         {
-            if (!callConstructor(&ctype, &exp, NULL, FALSE, NULL, top, FALSE))
+            if (!callConstructor(&ctype, &exp, NULL, FALSE, NULL, top, FALSE, FALSE))
                 errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
         }
         st = stmtNode(NULL,b, st_expr);
@@ -1728,7 +1728,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
     params->arguments->tp = tp;
     params->arguments->exp = right;
-    AdjustParams(basetype(cons->tp)->syms->table[0], &params->arguments, FALSE);
+    AdjustParams(basetype(cons->tp)->syms->table[0], &params->arguments, FALSE, FALSE);
     params->thisptr = left;
     params->thistp = Alloc(sizeof(TYPE));
     params->thistp->type = bt_pointer;
@@ -1854,7 +1854,7 @@ static void genDestructorCall(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *base, int of
     {
         createDestructor(sp);
     }
-    callDestructor(sp, &exp, NULL, top);
+    callDestructor(sp, &exp, NULL, top, FALSE);
     st = stmtNode(NULL,b, st_expr);
     optimize_for_constants(&exp);
     st->select = exp;
@@ -1977,7 +1977,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     }
     
 }
-void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top)
+void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top, BOOL noinline)
 {
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     SYMBOL *dest1;
@@ -2009,7 +2009,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
         dest1->genreffed = TRUE;
     }
     /*
-    else if (dest1->linkage == lk_inline)
+    else if (dest1->linkage == lk_inline && !noinline)
     {
         EXPRESSION *e1;
         if (sp->vbaseEntries)
@@ -2047,7 +2047,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
 }
 BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                      BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
-                     BOOL maybeConversion)
+                     BOOL maybeConversion, BOOL noinline)
 {
     TYPE *stp = *tp;
     SYMBOL *sp = basetype(*tp)->sp;
@@ -2125,7 +2125,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 oparams->returnSP = sp;
             }
             /*
-            if (cons1->linkage == lk_inline)  
+            if (cons1->linkage == lk_inline && !noinline)  
             {
                 e1 = doinline(oparams, cons1);
             }
@@ -2155,7 +2155,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
-            AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE);
+            AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, noinline);
             params->functp = cons1->tp;
             params->sp = cons1;
             params->ascall = TRUE;
@@ -2188,7 +2188,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 e1 = *exp;
             }
             /*
-            else if (cons1->linkage == lk_inline)
+            else if (cons1->linkage == lk_inline && !noinline)
             {
                 if (sp->vbaseEntries)
                 {

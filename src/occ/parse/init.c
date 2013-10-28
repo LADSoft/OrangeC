@@ -310,7 +310,7 @@ static void dumpDynamicInitializers(void)
         EXPRESSION *exp = NULL;
         STATEMENT *stmt;
         stmt = stmtNode(NULL, NULL, st_expr);
-        exp = convertInitToExpression(dynamicInitializers->init->basetp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL);
+        exp = convertInitToExpression(dynamicInitializers->init->basetp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL, FALSE);
         optimize_for_constants(&exp);
         stmt->select = exp;
         stmt->next = st;
@@ -359,7 +359,7 @@ static void dumpTLSInitializers(void)
             EXPRESSION *exp;
             STATEMENT *stmt;
             stmt = stmtNode(NULL, NULL, st_expr);
-            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, NULL, TLSInitializers->init, NULL);
+            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, NULL, TLSInitializers->init, NULL, FALSE);
             optimize_for_constants(&exp);
             stmt->select = exp;
             stmt->next = st;
@@ -383,7 +383,7 @@ static void dumpDynamicDestructors(void)
     STATEMENT *st = NULL, **stp = &st;
     while (dynamicDestructors)
     {
-        EXPRESSION *exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, NULL, dynamicDestructors->init, NULL);
+        EXPRESSION *exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, NULL, dynamicDestructors->init, NULL, FALSE);
         *stp = stmtNode(NULL, NULL, st_expr);
         optimize_for_constants(&exp);
         (*stp)->select = exp;
@@ -429,7 +429,7 @@ static void dumpTLSDestructors(void)
         SetLinkerNames(funcsp, lk_none);
         while (TLSDestructors)
         {
-            EXPRESSION *exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, NULL, TLSDestructors->init, NULL);
+            EXPRESSION *exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, NULL, TLSDestructors->init, NULL, FALSE);
             *stp = stmtNode(NULL, NULL, st_expr);
             optimize_for_constants(&exp);
             (*stp)->select = exp;
@@ -993,7 +993,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         {
             if (cparams.prm_cplusplus && isarithmetic(itype) && isstructured(tp))
             {
-                castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype);
+                castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, FALSE);
             }
             if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
@@ -1109,7 +1109,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         {
             if (cparams.prm_cplusplus && isstructured(tp))
             {
-                castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+                castToPointer(&tp, &exp, (enum e_kw)-1, itype, FALSE);
             }
             if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
@@ -1167,7 +1167,7 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
             {
                 if (cparams.prm_cplusplus && isstructured(tp))
                 {
-                    castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+                    castToPointer(&tp, &exp, (enum e_kw)-1, itype, FALSE);
                 }
                 if (!comparetypes(itype, tp, TRUE))
                 {
@@ -1850,7 +1850,7 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
 {
     EXPRESSION *expr = NULL ;
     TYPE *tp = NULL;
-    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, FALSE);
+    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, FALSE, FALSE);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -1987,7 +1987,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         {
             // default constructor without param list
         }
-        callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion); 
+        callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE); 
         initInsert(&it, itype, exp, offset, TRUE);
         if (sc != sc_auto && sc != sc_member && !arrayMember)
         {
@@ -1998,7 +1998,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             *init = it;
         }
         exp = baseexp;
-        callDestructor(basetype(itype)->sp, &exp, NULL, TRUE);
+        callDestructor(basetype(itype)->sp, &exp, NULL, TRUE, FALSE);
         initInsert(&it, itype, exp, offset, TRUE);
         if (sc != sc_auto && sc != sc_member && !arrayMember)
         {
@@ -2017,7 +2017,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         {
             TYPE *tp1 = NULL;
             EXPRESSION *exp1 = NULL;
-            lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1);
+            lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, FALSE);
             if (!tp1)
                 error(ERR_EXPRESSION_SYNTAX);
             else if (!comparetypes(itype, tp1, TRUE))
@@ -2190,7 +2190,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         tn->size = n * s;
                         tn->btp = btp;
                     }
-                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE);
+                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE);
                     initInsert(push, tn, exp, last, TRUE);
                     push = &(*push)->next;
                     last += n * s;
@@ -2229,7 +2229,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     tn->size = n * s;
                     tn->btp = btp;
                 }
-                callDestructor(btp->sp, &exp, sz, TRUE);
+                callDestructor(btp->sp, &exp, sz, TRUE, FALSE);
                 initInsert(push, tn, exp, last, FALSE);
             }
             if (sc != sc_auto && sc != sc_member)
@@ -2307,7 +2307,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
             INITIALIZER *dest = NULL, *it ;
             EXPRESSION *expl = getVarNode(sp);
             initInsert(init, sp->tp, exp, offset, FALSE);
-            callDestructor(sp, &expl, NULL, TRUE);
+            callDestructor(sp, &expl, NULL, TRUE, FALSE);
             initInsert(&dest, sp->tp, expl, offset, TRUE);
             if (sp->storage_class != sc_auto && sp->storage_class != sc_member)
             {
@@ -2770,7 +2770,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
                 EXPRESSION *baseexp = getVarNode(sp);
                 EXPRESSION *exp = baseexp;
-                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE);
+                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE);
                 initInsert(&it, z, exp, 0, TRUE);
                 if (storage_class_in != sc_auto && storage_class_in != sc_member)
                 {
@@ -2781,7 +2781,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     sp->init = it;
                 }
                 exp = baseexp;
-                callDestructor(z->sp, &exp, sz, TRUE);
+                callDestructor(z->sp, &exp, sz, TRUE, FALSE);
                 initInsert(&init, z, exp, 0, TRUE);
                 if (storage_class_in != sc_auto && storage_class_in != sc_member)
                 {

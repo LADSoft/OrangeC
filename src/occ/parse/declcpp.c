@@ -1260,7 +1260,7 @@ LEXEME *handleStaticAssert(LEXEME *lex)
         char buf[256];
         TYPE *tp;
         EXPRESSION *expr=NULL, *expr2=NULL;
-        lex = expression_no_comma(lex, NULL, NULL, &tp, &expr);
+        lex = expression_no_comma(lex, NULL, NULL, &tp, &expr, FALSE);
         expr2 = Alloc(sizeof(EXPRESSION));
         expr2->type = en_x_bool;
         expr2->left = expr;

@@ -1768,7 +1768,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                 {
                     EXPRESSION *exp, *exp2;
     
-                    lex = expression_no_check(lex, NULL, NULL, &tn, &exp, FALSE);
+                    lex = expression_no_check(lex, NULL, NULL, &tn, &exp, FALSE, FALSE);
                     if (tn)
                     {
                         optimize_for_constants(&exp);
@@ -1828,7 +1828,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                 {
                     EXPRESSION *exp;
                     lex = getsym();
-                    lex = expression_no_check(lex, NULL, NULL, &tn, &exp, FALSE);
+                    lex = expression_no_check(lex, NULL, NULL, &tn, &exp, FALSE, FALSE);
                     if (tn)
                     {
                         optimize_for_constants(&exp);
@@ -2736,18 +2736,21 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
                 {
                     TYPE *tp = NULL;
                     lex = getsym();
-                    lex = get_type_id(lex, &tp, funcsp, FALSE);
-                    if (!tp)
+                    if (!MATCHKW(lex, closepa))
                     {
-                        error(ERR_TYPE_NAME_EXPECTED);
-                    }
-                    else
-                    {
-                        // this is reverse order but who cares?
-                        LIST *p = Alloc(sizeof(LIST));
-                        p->next = sp->xc->xcDynamic;
-                        p->data = tp;
-                        sp->xc->xcDynamic = p;
+                        lex = get_type_id(lex, &tp, funcsp, FALSE);
+                        if (!tp)
+                        {
+                            error(ERR_TYPE_NAME_EXPECTED);
+                        }
+                        else
+                        {
+                            // this is reverse order but who cares?
+                            LIST *p = Alloc(sizeof(LIST));
+                            p->next = sp->xc->xcDynamic;
+                            p->data = tp;
+                            sp->xc->xcDynamic = p;
+                        }
                     }
                 } while (MATCHKW(lex, comma));
                 needkw(&lex, closepa);
@@ -4267,7 +4270,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                     STATEMENT *st ;
                                     currentLineData(block, hold);
                                     st = stmtNode(hold, block, st_expr);
-                                    st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL);
+                                    st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE);
                                 }
                             }
                         }

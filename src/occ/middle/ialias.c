@@ -131,7 +131,7 @@ static void PrintTemps(BITINT *modifiedBy)
     if (modifiedBy)
     {
         oprintf(icdFile, "[");
-        for (i=1; i < cachedTempCount; i)
+        for (i=1; i < cachedTempCount; i++)
             if (isset(modifiedBy, i))
                 oprintf(icdFile, "T%d ", i);
         oprintf(icdFile, "]");

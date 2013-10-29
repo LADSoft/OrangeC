@@ -415,6 +415,9 @@ void WalkFlowgraph(BLOCK *b,
 				   int (*func)(enum e_fgtype type, BLOCK *parent, BLOCK *b), int fwd);
 
 
+							  /* iglobal.c */
+
+void LocalOptimization(void);
 
 							  /* iinvar.c */
 

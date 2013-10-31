@@ -1209,8 +1209,10 @@ void AliasUses(BITINT *bits, IMODE *im, BOOL rhs)
             {
                 ormap(bits, tempInfo[im->offset->v.sp->value.i]->modifiedBy);
                 if (im->mode == i_direct)
+                {
                     im = LookupLoadTemp(im, im);
-                setbit(bits, im->offset->v.sp->value.i);
+                    setbit(bits, im->offset->v.sp->value.i);
+                }
             }
             else if (im->mode == i_direct)
             {

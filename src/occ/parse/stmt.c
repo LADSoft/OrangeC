@@ -101,7 +101,7 @@ void FlushLineData(char *file, int lineno)
             break;
     }
 }
-STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex)
+STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex, int offset)
 {
     STATEMENT *rv = NULL;
     LINEDATA *ld = linesHead, **p = &ld;
@@ -109,7 +109,7 @@ STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex)
     char *file;
     if (!lex)
         return NULL;
-    lineno = lex->line;
+    lineno = lex->line + offset;
     file = lex->file;
     while (*p && (strcmp((*p)->file, file) || lineno >= (*p)->lineno))
     {
@@ -330,7 +330,7 @@ static LEXEME *statement_break(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     else
     {
         STATEMENT *st ;
-        currentLineData(parent, lex);
+        currentLineData(parent, lex, 0);
         thunkRetDestructors(&exp, breakableStatement->table, localNameSpace->syms);
         st = stmtNode(lex, parent, st_goto);
         st->label = breakableStatement->breaklabel;
@@ -427,7 +427,7 @@ static LEXEME *statement_continue(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent
     {
         STATEMENT *st;
         thunkRetDestructors(&exp, continuableStatement->table, localNameSpace->syms);
-        currentLineData(parent, lex);
+        currentLineData(parent, lex, 0);
         st = stmtNode(lex, parent, st_goto);
         st->label = continuableStatement->continuelabel;		
         st->destexp = exp;
@@ -472,7 +472,7 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     dostmt->next = parent;
     dostmt->type = kw_do;
     dostmt->table = localNameSpace->syms;
-    currentLineData(dostmt, lex);
+    currentLineData(dostmt, lex, 0);
     st = stmtNode(lex, dostmt, st_label);
     st->label = loopLabel;
     if (cparams.prm_cplusplus || cparams.prm_c99)
@@ -502,9 +502,9 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             else
                 lex = getsym();
-            currentLineData(dostmt, lex);
             st = stmtNode(lex, dostmt, st_label);
             st->label = dostmt->continuelabel;
+            currentLineData(dostmt, lex, 0);
             st = stmtNode(lex, dostmt, st_select);
             st->select = select;
             if (!dostmt->hasbreak && isselecttrue(st->select))
@@ -545,7 +545,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     forstmt->next = parent;
     forstmt->type = kw_for;
     forstmt->table = localNameSpace->syms;
-    currentLineData(forstmt, lex);
+    currentLineData(forstmt,lex,-1);
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
@@ -610,7 +610,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     EXPRESSION *rangeExp = varNode(en_auto, rangeSP);
                     deref(&stdpointer, &rangeExp);
                     needkw(&lex, closepa);
-                    forline = currentLineData(NULL, lex);
+                    forline = currentLineData(NULL, lex, 0);
                     while (castvalue(select))
                         select = select->left;
                     if (lvalue(select))
@@ -1149,7 +1149,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                 {
-                    forline = currentLineData(NULL, lex);
+                    forline = currentLineData(NULL, lex, 0);
                     lex = getsym();
                     if (init)
                     {
@@ -1239,7 +1239,7 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         {
             BOOL optimized = FALSE;
             STATEMENT *sti;
-            currentLineData(parent, lex);
+            currentLineData(parent, lex, 0);
             lex = getsym();
             st = stmtNode(lex, parent, st_notselect);
             st->label = ifbranch;
@@ -1281,13 +1281,13 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         sti->label = st1->label;
                     }
                 }
-                currentLineData(parent, lex);
                 st = stmtNode(lex, parent, st_label);
                 st->label = ifbranch;
                 if (!parent->nosemi && !parent->hassemi)
                     errorint(ERR_NEEDY, ';');
                 if (parent->nosemi && parent->hassemi)
                     error(ERR_MISPLACED_ELSE);
+                currentLineData(parent, lex, 0);
                 lex = getsym();
                 parent->needlabel = FALSE;
                 lex = statement(lex, funcsp, parent, TRUE);
@@ -1361,7 +1361,7 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     (void)funcsp;
     (void)parent;
     lex = getsym();
-    currentLineData(parent, lex);
+    currentLineData(parent, lex, 0);
     if (ISID(lex))
     {
         SYMBOL *spx = search(lex->value.s.a, labelSyms);
@@ -1617,7 +1617,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
         }
     }
-    currentLineData(parent, lex);
+    currentLineData(parent, lex, 0);
     thunkRetDestructors(&destexp, NULL, localNameSpace->syms);
     st = stmtNode(lex, parent, st_return);
     st->select = returnexp;
@@ -1757,7 +1757,7 @@ static LEXEME *statement_switch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         {
             STATEMENT *st1;
             lex = getsym();
-            currentLineData(switchstmt, lex);
+            currentLineData(switchstmt, lex, 0);
             st = stmtNode(lex, switchstmt, st_switch);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
@@ -1828,7 +1828,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
         else
         {
-            whileline = currentLineData(NULL, lex);
+            whileline = currentLineData(NULL, lex, 0);
             lex = getsym();
 //			st = stmtNode(lex, whilestmt, st_goto);
 //			st->label = whilestmt->continuelabel;
@@ -1910,7 +1910,7 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     TYPE *tp = NULL;
     (void)parent;
     lex = optimized_expression(lex, funcsp, NULL, &tp, &select, TRUE);
-    currentLineData(parent, lex);
+    currentLineData(parent, lex, 0);
     st = stmtNode(lex, parent, st_expr);
     st->select = select;
     if (!tp)
@@ -2163,7 +2163,7 @@ LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             lex = getsym();
             while (!MATCHKW(lex, end) && !MATCHKW(lex, eof))
             {
-                currentLineData(parent, lex);
+                currentLineData(parent, lex, 0);
                 lex = chosenAssembler->inlineAsm(lex, parent);
                 if (KW(lex) == semicolon)
                 {
@@ -2176,7 +2176,7 @@ LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
         else
         {
-            currentLineData(parent, lex);
+            currentLineData(parent, lex, 0);
             while (cparams.prm_assemble && lex && MATCHKW(lex, semicolon))
                 lex = SkipToNextLine();
             if (lex)
@@ -2213,7 +2213,7 @@ LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
          {
              while (!MATCHKW(lex, end) && !MATCHKW(lex, eof))
             {
-                currentLineData(parent, lex);
+                currentLineData(parent, lex, 0);
                 lex = getsym();
             }
             needkw(&lex, end);
@@ -2222,7 +2222,7 @@ LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
          else
          {
              /* problematic, ASM keyword without a block->  Skip to end of line... */
-            currentLineData(parent, lex);
+            currentLineData(parent, lex, 0);
             parent->hassemi = TRUE;
             while (*includes->lptr)
                 includes->lptr++;
@@ -2529,7 +2529,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     blockstmt->type = begin;
     blockstmt->needlabel = parent->needlabel;
     blockstmt->table = localNameSpace->syms;
-    currentLineData(blockstmt, lex);
+    currentLineData(blockstmt, lex, 0);
     AllocateLocalContext(blockstmt, funcsp);
     parent->needlabel = FALSE;
     if (first)
@@ -2578,7 +2578,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         /* kinda naive... */
             error(ERR_INITIALIZATION_MAY_BE_BYPASSED);
     }
-    currentLineData(blockstmt, lex);
+    currentLineData(blockstmt, lex, -1);
     blockstmt->nosemi = TRUE ; /* in case it is an empty body */
     while (lex && !MATCHKW(lex, end))
     {
@@ -2590,7 +2590,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     if (!lex)
         return lex;
     browse_blockend(lex->line);
-    currentLineData(blockstmt, lex);
+    currentLineData(blockstmt, lex, -!first);
     if (parent->type == begin || parent->type == kw_switch)
         parent->needlabel = blockstmt->needlabel;
     if (!blockstmt->hassemi && (!blockstmt->nosemi || blockstmt->lastcaseordefault))
@@ -2862,7 +2862,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     if (funcsp->xcMode != xc_unspecified)
         hasXCInfo = TRUE;
     FlushLineData(funcsp->declfile, funcsp->declline);
-    startStmt = currentLineData(NULL, lex);
+    startStmt = currentLineData(NULL, lex, 0);
     if (startStmt)
         funcsp->linedata = startStmt->lineData;
     funcsp->declaring = TRUE;

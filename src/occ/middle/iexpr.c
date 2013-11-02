@@ -2016,10 +2016,17 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_absolute:
         case en_label:
             node->v.sp->genreffed = TRUE;
-            ap1 = (IMODE *)Alloc(sizeof(IMODE));
-            ap1->offset = node;
-            ap1->mode = i_immed;
-            ap1->size = size;
+            if (node->v.sp->imaddress)
+            {
+               ap1 = node->v.sp->imaddress;
+            }
+            else
+            {
+                ap1 = (IMODE *)Alloc(sizeof(IMODE));
+                ap1->offset = node;
+                ap1->mode = i_immed;
+                ap1->size = size;
+            }
             ap2 = LookupImmedTemp(ap1, ap1);
             if (ap1 != ap2)
             {

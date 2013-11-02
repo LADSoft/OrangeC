@@ -152,7 +152,7 @@ enum e_node
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_literalclass
+        en_literalclass, en_this
 };
 /*      statement node descriptions     */
 

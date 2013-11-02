@@ -798,7 +798,7 @@ void XTDumpTab(SYMBOL *funcsp);
 void statement_ini(void);
 void InsertLineData(int lineno, int fileindex, char *fname, char *line);
 void FlushLineData(char *file, int lineno);
-STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex);
+STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex, int offset);
 STATEMENT *stmtNode(LEXEME *lex, BLOCKDATA *parent, enum e_stmt stype);
 int insertLabel(BLOCKDATA *parent);
 LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent);

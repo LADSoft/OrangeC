@@ -3347,7 +3347,7 @@ static void allocateVLA(LEXEME *lex, SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *bloc
             && sp->storage_class != sc_localstatic)
             error(ERR_VLA_BLOCK_SCOPE);	
     }
-    currentLineData(block, lex);	
+    currentLineData(block, lex,0);	
     if (sp->tp->sp)
     {
         *rptr = exprNode(en_void, NULL, NULL);
@@ -4272,7 +4272,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 if (sp->init)
                                 {
                                     STATEMENT *st ;
-                                    currentLineData(block, hold);
+                                    currentLineData(block, hold,0);
                                     st = stmtNode(hold, block, st_expr);
                                     st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE);
                                 }

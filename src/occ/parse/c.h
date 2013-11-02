@@ -151,7 +151,8 @@ enum e_node
         en_udiv, en_umod, en_ugt, en_uge, en_ule, en_ult, en_blockclear, en_stackblock, 
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
-        en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref
+        en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
+        en_literalclass
 };
 /*      statement node descriptions     */
 
@@ -201,6 +202,7 @@ enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_c, lk_cpp,
     lk_import, lk_export, lk_auto };
     
 enum e_ac { ac_private, ac_protected, ac_public, ac_none };
+
 typedef struct expr
 {
     struct expr *left, *right;
@@ -218,6 +220,8 @@ typedef struct expr
         struct _atomicData *ad;
         struct stmt *stmt;
         struct _imode_ *imode;
+        HASHTABLE *syms;
+                
         struct {
             struct expr *thisptr;
             struct type *tp;
@@ -236,6 +240,13 @@ typedef struct expr
     int rref:1;
     int dest:1; // for thisref
 } EXPRESSION;
+
+typedef struct
+{
+    char *name; // must be first as it will go in a hashtable
+    EXPRESSION *exp;
+    struct sym *sym;
+} CONSTEXPRSYM;
 
 typedef struct casedata
 {
@@ -463,6 +474,8 @@ typedef struct sym
         unsigned hasTry : 1; // function surrounded by try statement
         unsigned hasDest: 1; // class has a destructor that is called
         unsigned inCatch:1; // used inside a catch block
+        unsigned isConstructor:1; // is a constructor
+        unsigned isDestructor:1; // is  adestructor
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -531,6 +544,7 @@ typedef struct _memberInitializers
     struct _memberInitializers *next;
     char *name;
     SYMBOL *sp;
+    INITIALIZER *init;
     int line;
     char *file;
     struct lexeme *initData;

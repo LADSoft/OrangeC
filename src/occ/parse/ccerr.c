@@ -1456,6 +1456,7 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
         case en_alloca:
         case en_loadstack:
         case en_savestack:
+        case en_literalclass:
             assignmentUsages(node->left, FALSE);
             break;
         case en_assign:
@@ -1618,6 +1619,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+        case en_literalclass:
             rv |= checkDefaultExpression(node->left);
             break;
         case en_uminus:

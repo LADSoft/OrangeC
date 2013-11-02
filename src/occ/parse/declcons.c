@@ -48,7 +48,7 @@ static void createDestructor(SYMBOL *sp);
 
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype)
 {
-    if (sp->name == overloadNameTab[CI_CONSTRUCTOR])
+    if (sp->isConstructor)
     {
         if (!notype)
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
@@ -59,7 +59,7 @@ void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype)
         else if (isconst(sp->tp) || isvolatile(sp->tp))
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
     }
-    else if (sp->name == overloadNameTab[CI_DESTRUCTOR])
+    else if (sp->isDestructor)
     {
         if (!notype)
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
@@ -1251,16 +1251,6 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
         hr = hr->next;
     }
 }
-static MEMBERINITIALIZERS *getInit(MEMBERINITIALIZERS *init, SYMBOL *member)
-{
-    while (init)
-    {
-        if (init->sp == member)
-            return init;
-        init = init->next;
-    }
-    return NULL;
-}
 static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, 
                         SYMBOL *member, int offset, 
                         EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons)
@@ -1469,25 +1459,10 @@ static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths)
     nw->right = unshim(nw->right, ths);
     return nw;    
 }
-static void lookupInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
+void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
 {
     MEMBERINITIALIZERS *init = cons->memberInitializers;
-    HASHREC *hr = basetype(cls->tp)->syms->table[0];
-    while (hr)
-    {
-        SYMBOL *sp = (SYMBOL *)hr->p;
-        if (sp->storage_class == sc_member)
-        {
-            sp->lastInit = sp->init;
-            if (sp->init)
-            {
-                sp->init = Alloc(sizeof(*sp->init));
-                *sp->init = *sp->lastInit;
-                sp->init->exp = unshim(sp->init->exp, ths);
-            }
-        }
-        hr = hr->next;
-    }
+    HASHREC *hr;
     while (init)
     {
         LEXEME *lex;
@@ -1509,14 +1484,14 @@ static void lookupInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
                     if (MATCHKW(lex, closepa))
                     {
                         lex = getsym();
-                        init->sp->init = NULL;
+                        init->init = NULL;
                         if (isstructured(init->sp->tp))
                         {
-                            initInsert(&init->sp->init, NULL, NULL, init->sp->offset, FALSE);
+                            initInsert(&init->init, NULL, NULL, init->sp->offset, FALSE);
                         }
                         else
                         {
-                            initInsert(&init->sp->init, init->sp->tp, intNode(en_c_i,0), init->sp->offset, FALSE);
+                            initInsert(&init->init, init->sp->tp, intNode(en_c_i,0), init->sp->offset, FALSE);
                         }
                         done = TRUE;
                     }
@@ -1527,10 +1502,9 @@ static void lookupInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
                 }
                 if (!done)
                 {
-                    init->sp->init = NULL;
-                    lex = initType(lex, cons, NULL, sc_auto, &init->sp->init, &init->sp->dest, init->sp->tp, init->sp, FALSE);
-                    if (init->sp->init->exp)
-                        init->sp->init->exp = unshim(init->sp->init->exp, ths);
+                    INITIALIZER *dest = NULL;
+                    init->init = NULL;
+                    lex = initType(lex, cons, NULL, sc_auto, &init->init, &dest, init->sp->tp, init->sp, FALSE);
                 }
                 SetAlternateLex(NULL);
             }
@@ -1570,6 +1544,37 @@ static void lookupInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
         hr = hr->next;
     }
 }
+static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
+{
+    HASHREC *hr = basetype(cls->tp)->syms->table[0];
+    MEMBERINITIALIZERS *init = cons->memberInitializers;
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (sp->storage_class == sc_member)
+        {
+            sp->lastInit = sp->init;
+            if (sp->init)
+            {
+                sp->init = Alloc(sizeof(*sp->init));
+                *sp->init = *sp->lastInit;
+                sp->init->next = sp->lastInit;
+                sp->init->exp = unshim(sp->init->exp, ths);
+            }
+        }
+        hr = hr->next;
+    }
+    while (init)
+    {
+        if (init->init)
+        {
+            init->sp->init = init->init;
+            if (init->init->exp)
+                init->init->exp = unshim(init->init->exp, ths);
+        }
+        init = init->next;
+    }            
+}
 static void releaseInitializers(SYMBOL *cls)
 {
     HASHREC *hr = basetype(cls->tp)->syms->table[0];
@@ -1592,7 +1597,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
     deref(&stdpointer, &thisptr);
     deref(&stdpointer, &otherptr);
     if (parseInitializers)
-        lookupInitializers(sym, cons, thisptr);
+        allocInitializers(sym, cons, thisptr);
     if (sym->tp->type == bt_union)
     {
         genConsData(b, sym, cons->memberInitializers, sym, 0, thisptr, otherptr, cons);

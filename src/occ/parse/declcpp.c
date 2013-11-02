@@ -655,28 +655,6 @@ void deferredCompile(void)
             {
                 structSyms = structSyms->next;
             }
-            if (cur->constexpression)
-            {
-                if (cur->inlineFunc.stmt->type != st_block)
-                {
-                    error(ERR_CONSTANT_FUNCTION_EXPECTED);
-                }
-                else
-                {
-                    STATEMENT *st1 = cur->inlineFunc.stmt->lower;
-                    STATEMENT *st;
-                    while (st1->type == st_varstart)
-                        st1 = st1->next;
-                    st = st1->lower;
-                    while (st->type == st_line || st->type == st_dbgblock )
-                        st = st->next;
-                    if (st->type != st_return || !IsConstantExpression(st->select, TRUE))
-                    {
-                        st1->select = intNode(en_c_i, 0);
-                        errorat(ERR_CONSTANT_FUNCTION_EXPECTED, NULL, cur->declfile, cur->declline);
-                    }
-                }
-            }
             deferredBackfill = deferredBackfill->next;
         }
     }

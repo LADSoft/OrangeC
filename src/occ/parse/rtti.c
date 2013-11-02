@@ -395,6 +395,7 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_l_bool:
         case en_l_bit:
         case en_l_ll:
+        case en_literalclass:
             XCExpression(node->left, listPtr);
             break;
         case en_uminus:

@@ -328,6 +328,7 @@ static BOOL hasFloats(EXPRESSION *node)
         case en_argnopush:
         case en_not_lvalue:
         case en_thisref:
+        case en_literalclass:
             return hasFloats(node->left);
     }
     return (0);
@@ -1540,6 +1541,7 @@ int opt0(EXPRESSION **node)
         case en_x_ldi:
         case en_shiftby:
         case en_bits:
+        case en_literalclass:
             rv |= opt0(&((*node)->left));
             return rv ;
         case en_compl:
@@ -2901,6 +2903,7 @@ int fold_const(EXPRESSION *node)
         case en_loadstack:
         case en_savestack:
         case en_bits:
+        case en_literalclass:
             rv |= fold_const(node->left);
             break;
         case en_cond:
@@ -2968,7 +2971,10 @@ int fold_const(EXPRESSION *node)
             }
             break;
         case en_stmt:
-            if (node->v.stmt->type == st_block)
+            // constructor thunks
+            while (node->v.stmt && node->v.stmt->type == st_expr)
+                node->v.stmt = node->v.stmt->next;
+            if (node->v.stmt && node->v.stmt->type == st_block)
             {
                 STATEMENT *st = node->v.stmt->lower;
                 while (st->type == st_varstart)
@@ -2978,7 +2984,7 @@ int fold_const(EXPRESSION *node)
                     st = st->lower;
                     while (st->type == st_line || st->type == st_dbgblock)
                         st = st->next;
-                    if (st->type == st_expr)
+                    if (st->type == st_expr || st->type == st_return)
                     {
                         EXPRESSION *exp = st->select;
                         optimize_for_constants(&st->select);
@@ -3104,6 +3110,7 @@ int typedconsts(EXPRESSION *node1)
         case en_blockclear:
         case en_mp_as_bool:
         case en_thisref:
+        case en_literalclass:
             rv |= typedconsts(node1->left);
             break;
         case en_func:

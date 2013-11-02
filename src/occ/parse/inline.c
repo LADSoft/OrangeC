@@ -321,6 +321,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
         case en_loadstack:
         case en_savestack:
         case en_not_lvalue:
+        case en_literalclass:
             temp->left = inlineexpr(node->left, FALSE);
             break;
         case en_autoinc:
@@ -696,6 +697,7 @@ static BOOL sideEffects(EXPRESSION *node)
         case en_l_bit:
         case en_l_ll:
         case en_l_ull:
+        case en_literalclass:
             rv = sideEffects(node->left);
             break;
         case en_uminus:
@@ -928,6 +930,61 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     }
     return newExpression;
 }
+static BOOL IsEmptyBlocks(STATEMENT *block)
+{
+    BOOL rv = TRUE;
+    while (block != NULL && rv)
+    {
+        switch (block->type)
+        {
+            case st_line:
+            case st_varstart:
+            case st_dbgblock:
+                break;
+            case st__genword:
+            case st_try:
+            case st_catch:
+            case st_return:
+            case st_goto:
+            case st_expr:
+            case st_declare:
+            case st_select:
+            case st_notselect:
+            case st_switch:
+            case st_passthrough:
+            case st_datapassthrough:
+                rv = FALSE;
+                break;
+            case st_label:
+                break;
+            case st_block:
+                rv = IsEmptyBlocks(block->lower) && block->blockTail == NULL;
+                break;
+            default:
+                diag("Invalid block type in IsEmptyBlocks");
+                break;
+        }
+        block = block->next;
+    }
+    return rv;
+}
+BOOL IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
+{
+    STATEMENT *st;
+    if (!isfunction(params->functp))
+        return FALSE;
+    if (!params->sp->inlineFunc.stmt)
+        return FALSE;
+    st = params->sp->inlineFunc.stmt;
+    while (st && st->type == st_expr)
+    {
+        st = st->next;
+    }
+    if (!st)
+        return TRUE;
+    return TRUE || IsEmptyBlocks(st);
+    
+}
 EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
     static SYMBOL *curfunc;
@@ -959,14 +1016,23 @@ EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
         if (!IsConstantExpression(newExpression, FALSE))
         {
             newExpression = NULL;
+            error(ERR_CONSTANT_FUNCTION_EXPECTED);
+        }
+    }
+    else if (params->sp->retcount == 0)
+    {
+        optimize_for_constants(&newExpression);
+        if (!IsConstantExpression(newExpression, FALSE))
+        {
+            newExpression = NULL;
+            error(ERR_CONSTANT_FUNCTION_EXPECTED);
         }
     }
     else
     {
         newExpression = NULL;
+        error(ERR_CONSTANT_FUNCTION_EXPECTED);
     }
     FreeLocalContext(NULL, NULL);
-    if (!newExpression)
-        error(ERR_CONSTANT_FUNCTION_EXPECTED);
     return newExpression;
 }

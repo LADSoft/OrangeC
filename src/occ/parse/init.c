@@ -2539,6 +2539,7 @@ BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams)
         case en_alloca:
         case en_loadstack:
         case en_savestack:
+        case en_literalclass:
             rv = IsConstantExpression(node->left, allowParams);
             break;
         case en_assign:

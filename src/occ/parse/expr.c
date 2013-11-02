@@ -225,7 +225,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 funcparams->functp = funcparams->sp->tp;
                 *tp = funcparams->sp->tp;
                 if (cparams.prm_cplusplus 
-                    && ((*tp)->sp->storage_class == sc_virtual || (*tp)->sp->storage_class == sc_member) 
+                    && (basetype(*tp)->sp->storage_class == sc_virtual || basetype(*tp)->sp->storage_class == sc_member) 
                     && (ampersand || !MATCHKW(lex, openpa)))
                 {
                     EXPRESSION *exp1 = Alloc(sizeof(EXPRESSION));
@@ -341,6 +341,9 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
             if (rref && !isfunction(*tp))
                 *exp = exprNode(en_not_lvalue, *exp, 0);
         }
+
+        if (lvalue(*exp))
+            (*exp)->v.sp = sp; // catch for constexpr
         (*exp)->pragmas = stdpragmas;
         if (isvolatile(*tp))
             (*exp)->isvolatile = TRUE;
@@ -455,7 +458,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 SetLinkerNames(sp, lk_c);
                 if (sp->storage_class != sc_overloads)
                 {
-                    InsertSymbol(sp, sp->storage_class, FALSE);
+                    if (localNameSpace->syms || sp->storage_class != sc_auto)
+                        InsertSymbol(sp, sp->storage_class, FALSE);
                     *exp = varNode(sp->storage_class ==sc_auto ? en_auto : en_global, sp);
                 }
                 else
@@ -636,6 +640,85 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         else
         {
             SYMBOL *sp2 = NULL;
+            if ((*exp)->type == en_literalclass)
+            {
+                CONSTEXPRSYM *ces = (CONSTEXPRSYM *)search(lex->value.s.a, (*exp)->v.syms);
+                if (ces)
+                {
+                    lex = getsym();
+                    *exp = ces->exp;
+                    *tp = ces->sym->tp;
+                    return lex;
+                }
+                else 
+                {
+                    LIST l;
+                    l.next = structSyms;
+                    l.data = basetype(*tp)->sp;
+                    structSyms = &l;
+                    lex = id_expression(lex, funcsp, &sp2, NULL, NULL, FALSE, TRUE, NULL);
+                    structSyms = structSyms->next;
+                    if (!sp2)
+                    {
+                        membererror(lex->value.s.a, (*tp));
+                        lex = getsym();
+                        while (ISID(lex))
+                        {
+                            lex = getsym();
+                            if (!MATCHKW(lex, pointsto) && !MATCHKW(lex, dot))
+                                break;
+                            lex = getsym();
+                        }
+                        *exp = intNode(en_c_i, 0);
+                        *tp = &stdint;
+                        return lex;
+                    }
+                    lex = getsym();
+                    if (sp2->tp->type != bt_aggregate)
+                    {
+                        error(ERR_CONSTANT_FUNCTION_EXPECTED);
+                        *exp = intNode(en_c_i, 0);
+                        *tp = &stdint;
+                        return lex;
+                    }
+                    if (MATCHKW(lex, openpa))
+                    {
+                        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                        SYMBOL *match;
+                        TYPE *tp1 = NULL;
+                        EXPRESSION *exp1 = NULL;
+                        lex = getArgs(lex, funcsp, funcparams, closepa);
+                        funcparams->thisptr = intNode(en_c_i, 0);
+                        funcparams->thistp = Alloc(sizeof(TYPE));
+                        funcparams->thistp->type = bt_pointer;
+                        funcparams->thistp->size = getSize(bt_pointer);
+                        funcparams->thistp->btp = *tp;
+                        match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams,NULL,TRUE, FALSE);
+                        if (match)
+                        {
+                            funcparams->sp = match;
+                            *exp = substitute_params_for_function(funcparams, (*exp)->v.syms);
+                            optimize_for_constants(exp);
+                            *tp = basetype(match->tp)->btp;
+                            if (!match->constexpression || !IsConstantExpression(*exp, TRUE))
+                                error(ERR_CONSTANT_FUNCTION_EXPECTED);
+                        }
+                        else
+                        {
+                            *exp = intNode(en_c_i, 0);
+                            *tp = &stdint;
+                        }
+                        return lex;
+                    }
+                    else
+                    {
+                        needkw(&lex, openpa);
+                        *exp = intNode(en_c_i, 0);
+                        *tp = &stdint;
+                        return lex;
+                    }      
+                }   
+            }
             if (cparams.prm_cplusplus)
             {
                 LIST l;
@@ -740,6 +823,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         (*exp)->startbit = tpb->startbit;
                     }
                     deref(*tp, exp);
+                    (*exp)->v.sp = sp2; // caching the member symbol in the enode for constexpr handling
                     if (isatomic(basetp))
                     {
                         // note this won't work in C++ because of offset2...
@@ -747,6 +831,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         if (needsAtomicLockFromType(*tp))
                             (*exp)->lockOffset = basetp->size - ATOMIC_FLAG_SPACE - sp2->offset;
                     }
+                    
                 }
             }
         }
@@ -1576,6 +1661,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     INITLIST **lptr ;
     EXPRESSION *exp_in = *exp;
     BOOL operands = FALSE;
+    BOOL hasThisPtr = FALSE;
     if (exp_in->type != en_func || isfuncptr(*tp))
     {
         TYPE *tpx = *tp;
@@ -1598,6 +1684,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     }
     else {
         funcparams = exp_in->v.func;
+        hasThisPtr = funcparams->thisptr != NULL;
         if (structSyms)
         {
             SYMBOL *ss = (SYMBOL *)structSyms->data;
@@ -1708,7 +1795,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             else
             {
-                if (!structSyms && !ispointer(tp_cpp))
+                if (!structSyms && !ispointer(tp_cpp) && !hasThisPtr)
                     errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
                 operands = FALSE;
             }
@@ -2950,8 +3037,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 case en_threadlocal:
                 {
                     SYMBOL *sp = (*exp)->v.sp;
-                    if (sp->name == overloadNameTab[CI_CONSTRUCTOR] ||
-                            sp->name == overloadNameTab[CI_DESTRUCTOR])
+                    if (sp->isDestructor || sp->isDestructor)
                         error(ERR_CANNOT_TAKE_ADDRESS_OF_CONSTRUCTOR_OR_DESTRUCTOR);
                     break;
                 }

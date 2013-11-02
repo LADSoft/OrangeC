@@ -563,8 +563,7 @@ static BOOL validateAnonymousUnion(SYMBOL *parent, TYPE *unionType)
             SYMBOL *member = (SYMBOL *)newhr->p;
             if (cparams.prm_cplusplus && member->storage_class == sc_overloads)
             {
-                if (member->name != overloadNameTab[CI_CONSTRUCTOR] &&
-                    member->name != overloadNameTab[CI_DESTRUCTOR])
+                if (!member->isConstructor && !member->isDestructor)
                     if (strcmp(member->name, overloadNameTab[assign - kw_new + CI_NEW]))
                     {
                         error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
@@ -1939,6 +1938,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                     {
                         *consdest = CT_CONS;
                     }
+                    *notype = TRUE;
                     goto exit;
                 }
                 else if (destructor)
@@ -3585,7 +3585,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
             BOOL constexpression;
             BOOL defd = FALSE;
             BOOL notype = FALSE;
-            BOOL consdest = CT_NONE;
+            int consdest = CT_NONE;
             IncGlobalFlag(); /* in case we have to initialize a func level static */
             lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class_in, 
                                     &address, &blocked, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest);
@@ -3737,6 +3737,11 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                     {
                         SYMBOL *spi;
                         HASHREC **p;
+                        if (consdest != CT_NONE)
+                            if (consdest == CT_CONS)
+                                sp-> isConstructor = TRUE;
+                            else
+                                sp-> isDestructor = TRUE;
                         sp->parent = funcsp; /* function vars have a parent */
                         if (strSym && !strcmp(strSym->name, sp->name))
                             sp->name = overloadNameTab[CI_CONSTRUCTOR];
@@ -3746,7 +3751,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             sp->parentClass = structSyms->data;
                         sp->constexpression = constexpression;
                         sp->access = access;
-                        if (sp->constexpression)
+                        if (sp->constexpression && !sp->isDestructor && !sp->isConstructor)
                         {
                             TYPE *tpx = Alloc(sizeof(TYPE));
                             tpx->type = bt_const;
@@ -4137,8 +4142,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             else
                             {
                                 if (notype)
-                                    if (sp->name != overloadNameTab[CI_CONSTRUCTOR] &&
-                                            sp->name != overloadNameTab[CI_DESTRUCTOR])
+                                    if (!sp->isConstructor && !sp->isDestructor)
                                         error(ERR_MISSING_TYPE_SPECIFIER);
                             }
                             if( sp->constexpression)

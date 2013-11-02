@@ -2274,6 +2274,11 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             ap1 = gen_expr( funcsp, node->right, flags, size);
             rv = ap1;
             break;
+        case en_literalclass:
+            gen_void(node->left, funcsp);
+            ap1 = make_immed(size, 0);
+            rv = ap1;
+            break;
         case en_thisref:
             if (node->dest && node->v.t.thisptr->xcDest)
             {
@@ -2552,6 +2557,8 @@ int natural_size(EXPRESSION *node)
         case en_mp_compare:
         case en_mp_as_bool:
             return -ISZ_UINT;
+        case en_literalclass:
+            return - ISZ_UINT;
         case en_void:
         case en_cond:
             return natural_size(node->right);

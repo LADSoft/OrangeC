@@ -1643,8 +1643,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             error(ERR_RETURN_NO_VALUE);
         else
         {
-            if (cparams.prm_cplusplus && (funcsp->name == overloadNameTab[CI_CONSTRUCTOR]
-                                               || funcsp->name == overloadNameTab[CI_DESTRUCTOR]))
+            if (cparams.prm_cplusplus && (funcsp->isConstructor || funcsp->isDestructor))
             {
                 error(ERR_CONSTRUCTOR_HAS_RETURN);
             }
@@ -1896,6 +1895,7 @@ static void checkNoEffect(EXPRESSION *exp)
                 checkNoEffect(exp->right);
             case en_not_lvalue:
             case en_thisref:
+            case en_literalclass:
                 checkNoEffect(exp->left);
                 break;
             default:
@@ -2546,8 +2546,11 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             n++;
             hr = hr->next;
         }
-        if (cparams.prm_cplusplus && funcsp->name == overloadNameTab[CI_CONSTRUCTOR])
+        if (cparams.prm_cplusplus && funcsp->isConstructor)
+        {
+            ParseMemberInitializers(funcsp->parentClass, funcsp);
             thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, TRUE);
+        }
     }
     lex = getsym(); /* past { */
     

@@ -2638,7 +2638,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             if (!found1)
             {
                 if (args->arguments && !args->arguments->next // one arg
-                    && sp->name == overloadNameTab[CI_CONSTRUCTOR]) // conversion constructor
+                    && sp->isConstructor) // conversion constructor
                 {
                     errortype(ERR_CANNOT_CONVERT_TYPE, args->arguments->tp, sp->parentClass->tp);
                 }

@@ -465,6 +465,104 @@ BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOL noinline)
     }
     return FALSE;   
 }
+typedef struct _subslist
+{
+    struct _subslist *next;
+    EXPRESSION *exp;
+    SYMBOL *sym;
+} SUBSTITUTIONLIST;
+
+static EXPRESSION *substitute_vars(EXPRESSION *exp, SUBSTITUTIONLIST *match, HASHTABLE *syms)
+{
+    EXPRESSION *rv;
+    if (lvalue(exp))
+    {
+        if (exp->left->type == en_auto)
+        {
+            SYMBOL *sym = exp->left->v.sp;
+            while (match)
+            {
+                if (sym == match->sym)
+                {                
+                    return match->exp;
+                }
+                match = match->next;
+            }
+        }
+        else if (exp->v.sp)
+        {
+            HASHREC *hr = syms->table[0];
+            while (hr)
+            {
+                CONSTEXPRSYM *ces = (CONSTEXPRSYM *)hr->p;
+                if (ces->sym == exp->v.sp)
+                {
+                    return ces->exp;
+                }
+                hr = hr->next;
+            }
+        }
+    }
+    rv = Alloc(sizeof(EXPRESSION));
+    *rv = *exp;
+    if (exp->left)
+        rv->left = substitute_vars(exp->left, match, syms);
+    if (exp->right)
+        rv->right = substitute_vars(exp->right, match, syms);
+    return rv;
+}
+EXPRESSION *substitute_params_for_constexpr(EXPRESSION *exp, FUNCTIONCALL *funcparams, HASHTABLE *syms)
+{
+    HASHREC *hr = basetype(funcparams->sp->tp)->syms->table[0];
+    INITLIST *args = funcparams->arguments;
+    SUBSTITUTIONLIST *list=NULL, **plist = &list;
+    if (((SYMBOL *)hr->p)->thisPtr)
+        hr = hr->next;
+    // because we already did function matching to get the constructor,
+    // the worst that can happen here is that the specified arg list is shorter
+    // than the actual parameters list
+    while (hr && args)
+    {
+        *plist = Alloc(sizeof(SUBSTITUTIONLIST));
+        (*plist)->exp = args->exp;
+        (*plist)->sym = (SYMBOL *)hr->p;
+        plist = &(*plist)->next;
+        hr = hr->next;
+        args = args->next;
+    }
+    while (hr)
+    {
+        *plist = Alloc(sizeof(SUBSTITUTIONLIST));
+        (*plist)->exp = ((SYMBOL *)hr->p)->init->exp;
+        (*plist)->sym = (SYMBOL *)hr->p;
+        plist = &(*plist)->next;
+        hr = hr->next;
+    }
+    return substitute_vars(exp, list, syms);
+}
+STATEMENT *do_substitute_for_function(STATEMENT *block, FUNCTIONCALL *funcparams, HASHTABLE *syms)
+{
+    STATEMENT *rv = NULL , **prv = &rv;
+    while (block != NULL)
+    {
+        *prv = Alloc(sizeof(STATEMENT));
+        **prv = *block;
+        if (block->select)
+            (*prv)->select = substitute_params_for_constexpr(block->select, funcparams, syms);
+        if (block->lower)
+            (*prv)->lower = do_substitute_for_function(block->lower, funcparams, syms);
+        prv = &(*prv)->next;
+        block = block->next;
+    }
+    return rv;
+}
+EXPRESSION *substitute_params_for_function(FUNCTIONCALL *funcparams, HASHTABLE *syms)
+{
+    STATEMENT *st = do_substitute_for_function(funcparams->sp->inlineFunc.stmt, funcparams, syms);
+    EXPRESSION *exp = exprNode(en_stmt, 0, 0);
+    exp->v.stmt = st;
+    return exp;
+}
 LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
@@ -510,13 +608,59 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             SYMBOL *sp;
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
             EXPRESSION *exp1;
-            lex = getArgs(lex, funcsp, &funcparams, closepa);
+            lex = getArgs(lex, funcsp, funcparams, closepa);
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
             exp1 = *exp = varNode(en_auto, sp);
             callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline); 
-            callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, noinline);
-            initInsert(&sp->dest, *tp, exp1, 0, TRUE);
+            if (funcparams->sp->constexpression)
+            {
+                if (basetype(*tp)->sp->baseClasses)
+                {
+                    error(ERR_CONSTANT_FUNCTION_EXPECTED);
+                }
+                else
+                {
+                    MEMBERINITIALIZERS *init = funcparams->sp->memberInitializers;
+                    if (!IsEmptyFunction(funcparams, funcsp))
+                    {
+                        error(ERR_CONSTANT_FUNCTION_EXPECTED);
+                        *exp = intNode(en_c_i , 0);
+                    }
+                    else
+                    {
+                        *exp = exprNode(en_literalclass, *exp, NULL);
+                        (*exp)->v.syms = CreateHashTable(1);
+                        while (init)
+                        {
+                            if (init->sp->storage_class == sc_member)
+                            {
+                                if (!init->init->exp)
+                                {
+                                    diag("expression_func_type_cast: literal class not initialized");
+                                }
+                                else
+                                {
+                                    CONSTEXPRSYM *ces = Alloc(sizeof(CONSTEXPRSYM));
+                                    ces->name = init->sp->name;
+                                    ces->sym = init->sp;
+                                    ces->exp = substitute_params_for_constexpr(init->init->exp, funcparams, NULL);
+                                    optimize_for_constants(&ces->exp);
+                                    if (!IsConstantExpression(ces->exp, FALSE))
+                                        error(ERR_CONSTANT_EXPRESSION_EXPECTED);
+                                    insert(ces, (*exp)->v.syms);
+                                }
+                            }
+                            init = init->next;
+                        }     
+                    }           
+                }
+            }
+            else
+            {
+                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, noinline);
+                initInsert(&sp->dest, *tp, exp1, 0, TRUE);
+            }
         }
         else
         {
@@ -1607,6 +1751,7 @@ static BOOL noexceptExpression(EXPRESSION *node)
         case en_l_bool:
         case en_l_bit:
         case en_l_ll:
+        case en_literalclass:
             return noexceptExpression(node->left);
         case en_uminus:
         case en_compl:

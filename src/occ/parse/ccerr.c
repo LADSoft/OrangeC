@@ -300,7 +300,7 @@ static struct {
 {"'main' may not be declared as static", ERROR },
 {"'main' may not be declared as constexpr", ERROR },
 {"constexpr expression is not const", ERROR },
-{"constexpr function cannot evaluate to const", ERROR },
+{"constexpr function does not evaluate to const", ERROR },
 {"constexpr declaration requires initializer or function body", ERROR },
 {"Variable style constexpr declaration needs simple type", ERROR },
 {"Function returning reference must return a value", ERROR },

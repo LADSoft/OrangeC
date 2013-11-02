@@ -280,8 +280,6 @@ static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, 
         {
             FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
             EXPRESSION *e1;
-            
-            DerivedToBase(cst->parentClass->tp, *tp, exp);
             params->fcall = varNode(en_pc, cst);
             params->thisptr = *exp;
             params->thistp = Alloc(sizeof(TYPE));
@@ -291,21 +289,32 @@ static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, 
             params->functp = cst->tp;
             params->sp = cst;
             params->ascall = TRUE;
-            /*
-            if (cons1->linkage == lk_inline && !noinline)  
+            if ((*exp)->type == en_literalclass)
             {
-                e1 = doinline(params, cons1);
+                *exp = substitute_params_for_function(params, (*exp)->v.syms);
+                optimize_for_constants(exp);
+                if (!cst->constexpression || !IsConstantExpression(*exp, TRUE))
+                    error(ERR_CONSTANT_FUNCTION_EXPECTED);
             }
             else
-            */
             {
-                e1 = Alloc(sizeof(EXPRESSION));
-                e1->type = en_func;
-                e1->v.func = params;
-                cst->genreffed = TRUE;
+                DerivedToBase(cst->parentClass->tp, *tp, exp);
+                /*
+                if (cons1->linkage == lk_inline && !noinline)  
+                {
+                    e1 = doinline(params, cons1);
+                }
+                else
+                */
+                {
+                    e1 = Alloc(sizeof(EXPRESSION));
+                    e1->type = en_func;
+                    e1->v.func = params;
+                    cst->genreffed = TRUE;
+                }
+                *exp = e1;
+                cast(other, exp);
             }
-            *exp = e1;
-            cast(other, exp);
             *tp = basetype(cst->tp)->btp;
             return TRUE;
         }
@@ -489,7 +498,7 @@ static EXPRESSION *substitute_vars(EXPRESSION *exp, SUBSTITUTIONLIST *match, HAS
                 match = match->next;
             }
         }
-        else if (exp->v.sp)
+        else if (syms && exp->v.sp)
         {
             HASHREC *hr = syms->table[0];
             while (hr)
@@ -516,27 +525,30 @@ EXPRESSION *substitute_params_for_constexpr(EXPRESSION *exp, FUNCTIONCALL *funcp
     HASHREC *hr = basetype(funcparams->sp->tp)->syms->table[0];
     INITLIST *args = funcparams->arguments;
     SUBSTITUTIONLIST *list=NULL, **plist = &list;
-    if (((SYMBOL *)hr->p)->thisPtr)
-        hr = hr->next;
-    // because we already did function matching to get the constructor,
-    // the worst that can happen here is that the specified arg list is shorter
-    // than the actual parameters list
-    while (hr && args)
+    if (!funcparams->sp->castoperator)
     {
-        *plist = Alloc(sizeof(SUBSTITUTIONLIST));
-        (*plist)->exp = args->exp;
-        (*plist)->sym = (SYMBOL *)hr->p;
-        plist = &(*plist)->next;
-        hr = hr->next;
-        args = args->next;
-    }
-    while (hr)
-    {
-        *plist = Alloc(sizeof(SUBSTITUTIONLIST));
-        (*plist)->exp = ((SYMBOL *)hr->p)->init->exp;
-        (*plist)->sym = (SYMBOL *)hr->p;
-        plist = &(*plist)->next;
-        hr = hr->next;
+        if (((SYMBOL *)hr->p)->thisPtr)
+            hr = hr->next;
+        // because we already did function matching to get the constructor,
+        // the worst that can happen here is that the specified arg list is shorter
+        // than the actual parameters list
+        while (hr && args)
+        {
+            *plist = Alloc(sizeof(SUBSTITUTIONLIST));
+            (*plist)->exp = args->exp;
+            (*plist)->sym = (SYMBOL *)hr->p;
+            plist = &(*plist)->next;
+            hr = hr->next;
+            args = args->next;
+        }
+        while (hr)
+        {
+            *plist = Alloc(sizeof(SUBSTITUTIONLIST));
+            (*plist)->exp = ((SYMBOL *)hr->p)->init->exp;
+            (*plist)->sym = (SYMBOL *)hr->p;
+            plist = &(*plist)->next;
+            hr = hr->next;
+        }
     }
     return substitute_vars(exp, list, syms);
 }

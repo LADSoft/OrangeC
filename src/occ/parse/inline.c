@@ -321,6 +321,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
         case en_loadstack:
         case en_savestack:
         case en_not_lvalue:
+        case en_lvalue:
         case en_literalclass:
             temp->left = inlineexpr(node->left, FALSE);
             break;
@@ -733,6 +734,7 @@ static BOOL sideEffects(EXPRESSION *node)
         case en_shiftby:
 /*        case en_movebyref: */
         case en_not_lvalue:
+        case en_lvalue:
             rv = sideEffects(node->left);
             break;
         case en_substack:

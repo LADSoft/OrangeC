@@ -993,7 +993,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         {
             if (cparams.prm_cplusplus && isarithmetic(itype) && isstructured(tp))
             {
-                castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, FALSE);
+                castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, FALSE, TRUE);
             }
             if (isstructured(tp))
                 error(ERR_ILL_STRUCTURE_ASSIGNMENT);
@@ -1916,6 +1916,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     BOOL toomany = FALSE;
     BOOL needend = FALSE;
     BOOL assn = FALSE;
+    BOOL implicit = FALSE;
     allocate_desc(itype, offset, &desc, &cache);
     desc->stopgap = TRUE;
     if (MATCHKW(lex, assign))
@@ -1960,6 +1961,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             }
             else
             {
+                implicit = TRUE;
                 if (MATCHKW(lex, begin))
                 {
                     lex = getArgs(lex, funcsp, funcparams, end);
@@ -1974,7 +1976,6 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     funcparams->arguments = Alloc(sizeof(INITLIST));
                     funcparams->arguments->tp = tp1;
                     funcparams->arguments->exp = exp1;
-                    maybeConversion = FALSE;
                 }
             }
         }
@@ -1987,7 +1988,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         {
             // default constructor without param list
         }
-        callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE); 
+        callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, implicit); 
         initInsert(&it, itype, exp, offset, TRUE);
         if (sc != sc_auto && sc != sc_member && !arrayMember)
         {
@@ -2190,7 +2191,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         tn->size = n * s;
                         tn->btp = btp;
                     }
-                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE);
+                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, TRUE);
                     initInsert(push, tn, exp, last, TRUE);
                     push = &(*push)->next;
                     last += n * s;
@@ -2603,6 +2604,7 @@ BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams)
         case en_not_lvalue:
         case en_mp_as_bool:
         case en_thisref:
+        case en_lvalue:
             rv = IsConstantExpression(node->left, allowParams);
             break;
         case en_func:
@@ -2771,7 +2773,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
                 EXPRESSION *baseexp = getVarNode(sp);
                 EXPRESSION *exp = baseexp;
-                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE);
+                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, TRUE);
                 initInsert(&it, z, exp, 0, TRUE);
                 if (storage_class_in != sc_auto && storage_class_in != sc_member)
                 {

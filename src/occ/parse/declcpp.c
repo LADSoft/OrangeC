@@ -113,7 +113,7 @@ void dumpVTab(SYMBOL *sym)
     char buf[256];
     THUNK thunks[1000];
     SYMBOL *localsp;
-    SYMBOL *xtSym = RTTIDumpType(sym);
+    SYMBOL *xtSym = RTTIDumpType(sym->tp);
     int count = 0;
 
     dseg();
@@ -153,9 +153,12 @@ int classRefCount(SYMBOL *base, SYMBOL *derived)
         {
             if (lst->cls == base)
             {
-                return 1;
+                rv++;
             }
-            rv += classRefCount(base, lst->cls);
+            else
+            {
+                rv += classRefCount(base, lst->cls);
+            }
             lst = lst->next;
         }
     }

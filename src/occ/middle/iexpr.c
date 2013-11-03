@@ -1818,7 +1818,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
 /*        diag("null node in gen_expr.");*/
         return 0;
     }
-    while(node->type == en_not_lvalue)
+    while(node->type == en_not_lvalue || node->type == en_lvalue)
         node = node->left;
     lbarrier = doatomicFence(funcsp, node, node->left, 0);
     rbarrier = doatomicFence(funcsp, NULL, node->right, 0);
@@ -2515,6 +2515,7 @@ int natural_size(EXPRESSION *node)
         case en_stackblock:
         case en_blockclear:
         case en_not_lvalue:
+        case en_lvalue:
             return natural_size(node->left);
         case en_arrayadd:
         case en_structadd:

@@ -1255,6 +1255,7 @@ void putconst(EXPRESSION *offset, int color)
             putconst(offset->left, color);
             break;
         case en_not_lvalue:
+        case en_lvalue:
             putconst(offset->left, color);
             break;
         default:

@@ -1300,7 +1300,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                         EXPRESSION *dexp = thisptr;
                         funcparams->arguments = pinit;
                         p->exp = thisptr;
-                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline);
+                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE);
                         if (!isref(sym->tp))
                         {
                             sp->stackblock = TRUE;
@@ -1415,7 +1415,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                         arg->exp = p->exp;
                         arg->tp = p->tp;
                         funcparams->arguments = arg;
-                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, noinline);
+                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE);
                         p->exp=consexp;
                         if (p->exp->type == en_func)
                         {
@@ -1450,7 +1450,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                                 arg->tp = tpx2;
                                 funcparams->arguments = arg;
                                 ctype = sym->tp;
-                                callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, FALSE, noinline);
+                                callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, FALSE, noinline, TRUE);
                                 p->exp = consexp;
                                 callDestructor(basetype(tpx2)->sp, &destexp, NULL, TRUE, noinline);
                                 (*lptr)->dest = destexp;
@@ -1487,7 +1487,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                             arg->tp = basetype(p->tp);
                             funcparams->arguments = arg;
                             p->exp = consexp;
-                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline); 
+                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE); 
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL *spx = p->exp->v.func->sp;
@@ -3191,13 +3191,13 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
         case kw_dynamic_cast:
             oldType = NULL;
             lex = GetCastInfo(lex, funcsp, tp, &oldType, exp);
-            if (!doDynamicCast(tp, oldType, exp, funcsp))
+            if (!doDynamicCast(tp, oldType, exp, funcsp, noinline))
                 errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
             break;
         case kw_static_cast:
             oldType = NULL;
             lex = GetCastInfo(lex, funcsp, tp, &oldType, exp);
-            if (!doStaticCast(tp, oldType, exp, funcsp, TRUE))
+            if (!doStaticCast(tp, oldType, exp, funcsp, TRUE, noinline))
                 errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
             break;
         case kw_const_cast:
@@ -3247,7 +3247,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                 }
                 else
                 {
-                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline);
+                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (!lvalue(*exp))
@@ -3322,7 +3322,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 }                                       
                 else 
                 {
-                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline);
+                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp))
@@ -3357,7 +3357,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 {
                 }
                 else {
-                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline);
+                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp))
@@ -3400,7 +3400,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 }
                 else 
                 {
-                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline);
+                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp))
@@ -3442,7 +3442,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 {
                 }
                 else {
-                    castToArithmetic(TRUE, tp, exp, kw, NULL, noinline);
+                    castToArithmetic(TRUE, tp, exp, kw, NULL, noinline, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (iscomplex(*tp))
@@ -3484,7 +3484,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 }
                 else 
                 {
-                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline);
+                    castToArithmetic(FALSE, tp, exp, kw, NULL, noinline, TRUE);
                     if (kw == autodec && basetype(*tp)->type == bt_bool)
                         error(ERR_CANNOT_USE_BOOLEAN_HERE);
                     else if (isstructured(*tp))
@@ -3593,10 +3593,9 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                     }
                     else if (cparams.prm_cplusplus)
                     {
-                        if (!cppCast(throwaway, tp, exp, noinline))
-                            if (!doStaticCast(tp, throwaway, exp, funcsp, FALSE) 
-                                && !doReinterpretCast(tp, throwaway, exp, funcsp, FALSE))
-                                    errortype(ERR_CANNOT_CAST_TYPE, throwaway, *tp);
+                        if (!doStaticCast(tp, throwaway, exp, funcsp, FALSE, noinline) 
+                            && !doReinterpretCast(tp, throwaway, exp, funcsp, FALSE))
+                                errortype(ERR_CANNOT_CAST_TYPE, throwaway, *tp);
                     }
                     else
                         cast(*tp, exp);
@@ -3759,8 +3758,8 @@ static LEXEME *expression_times(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         }
         else 
         {
-            castToArithmetic(kw == mod, tp, exp, kw, tp1, noinline);
-            castToArithmetic(kw == mod, &tp1, &exp1, (enum e_kw)-1, *tp, noinline);
+            castToArithmetic(kw == mod, tp, exp, kw, tp1, noinline, TRUE);
+            castToArithmetic(kw == mod, &tp1, &exp1, (enum e_kw)-1, *tp, noinline, TRUE);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
             else if (isvoid(*tp) || isvoid(tp1))
@@ -3819,8 +3818,8 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
         else {
             if (!ispointer(*tp) && !ispointer(tp1))
             {
-                castToArithmetic(FALSE, tp, exp, kw, tp1, noinline);
-                castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline);
+                castToArithmetic(FALSE, tp, exp, kw, tp1, noinline, TRUE);
+                castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline, TRUE);
             }
             if (kw == plus && ispointer(*tp) && ispointer(tp1))
                 error(ERR_ILL_POINTER_ADDITION);
@@ -3910,8 +3909,8 @@ static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         {
         }
         else {
-            castToArithmetic(TRUE, tp, exp, kw, tp1, noinline);
-            castToArithmetic(TRUE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline);
+            castToArithmetic(TRUE, tp, exp, kw, tp1, noinline, TRUE);
+            castToArithmetic(TRUE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline, TRUE);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
             else if (isvoid(*tp) || isvoid(tp1))
@@ -3987,8 +3986,8 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
             else
             {
                 checkscope(*tp, tp1);
-                castToArithmetic(FALSE, tp, exp, kw, tp1, noinline);
-                castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline);
+                castToArithmetic(FALSE, tp, exp, kw, tp1, noinline, TRUE);
+                castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline, TRUE);
                 if (isstructured(*tp) || isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_OPERATION);
                 else if (isvoid(*tp) || isvoid(tp1))
@@ -4085,8 +4084,8 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
         else
         {
             checkscope(*tp, tp1);
-            castToArithmetic(FALSE, tp, exp, kw, tp1, noinline);
-            castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline);
+            castToArithmetic(FALSE, tp, exp, kw, tp1, noinline, TRUE);
+            castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline, TRUE);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
             else if (isvoid(*tp) || isvoid(tp1))
@@ -4203,8 +4202,8 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         {
             continue;
         }
-        castToArithmetic(kw != land && kw!= lor, tp, exp, kw, tp1, noinline);
-        castToArithmetic(kw != land && kw!= lor, &tp1, &exp1, (enum e_kw)-1, *tp, noinline);
+        castToArithmetic(kw != land && kw!= lor, tp, exp, kw, tp1, noinline, TRUE);
+        castToArithmetic(kw != land && kw!= lor, &tp1, &exp1, (enum e_kw)-1, *tp, noinline, TRUE);
         if (isstructured(*tp) || isstructured(tp1))
             error(ERR_ILL_STRUCTURE_OPERATION);
         else if (isvoid(*tp) || isvoid(tp1))
@@ -4271,7 +4270,7 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
     {
         TYPE *tph = NULL,*tpc = NULL;
         EXPRESSION *eph=NULL, *epc = NULL;
-        castToArithmetic(FALSE, tp, exp, (enum e_kw)-1, &stdint, noinline);
+        castToArithmetic(FALSE, tp, exp, (enum e_kw)-1, &stdint, noinline, TRUE);
         if (isstructured(*tp))
             error(ERR_ILL_STRUCTURE_OPERATION);
         else if (isvoid(*tp))
@@ -4436,7 +4435,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         {
             if (isarithmetic(*tp))
             {
-                castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline);
+                castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, noinline, TRUE);
             }
             else if (isstructured(tp1))
             {

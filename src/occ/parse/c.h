@@ -130,7 +130,7 @@ typedef struct
 enum e_node
 {
 
-    en_void, en_not_lvalue, en_argnopush, en_voidnz, en_shiftby, 
+    en_void, en_not_lvalue, en_lvalue, en_argnopush, en_voidnz, en_shiftby, 
     en_global, en_auto, en_labcon, en_absolute, en_pc, en_label, en_const, en_threadlocal,
     en_c_bit, en_c_bool, en_c_c, en_c_uc, en_c_wc, en_c_s, en_c_u16, en_c_us, en_c_i, en_c_ui, 
     en_c_u32, en_c_l, en_c_ul, en_c_ll, en_c_ull, en_c_f, en_c_d, en_c_ld,
@@ -152,7 +152,7 @@ enum e_node
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_literalclass, en_this
+        en_literalclass
 };
 /*      statement node descriptions     */
 
@@ -476,6 +476,7 @@ typedef struct sym
         unsigned inCatch:1; // used inside a catch block
         unsigned isConstructor:1; // is a constructor
         unsigned isDestructor:1; // is  adestructor
+        unsigned isExplicit:1; // explicit constructor or conversion function
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */

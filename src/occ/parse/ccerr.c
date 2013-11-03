@@ -466,6 +466,9 @@ static struct {
 {"Multiple return types specified", ERROR },
 {"Cannot place attribute specifiers here", ERROR },
 {"Cannot place attribute argument clause here", ERROR },
+{"Only constructors or conversion functions may be explicit", ERROR },
+{"Implicit use of explicit constructor or conversion function", ERROR },
+{"%s is not a defined class with virtual functions", ERROR },
 #endif
 } ;
 
@@ -1554,6 +1557,7 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
         case en_argnopush:
         case en_not_lvalue:
         case en_thisref:
+        case en_lvalue:
             assignmentUsages(node->left, FALSE);
             break;
         case en_atomic:
@@ -1754,6 +1758,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_argnopush:
         case en_not_lvalue:
         case en_thisref:
+        case en_lvalue:
             rv |= checkDefaultExpression(node->left);
             break;
         case en_atomic:

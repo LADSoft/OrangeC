@@ -602,7 +602,7 @@ static EXPRESSION *createLambda(BOOL noinline)
                         params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                         params->arguments->tp = ctp;
                         params->arguments->exp = en;
-                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, noinline))
+                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, noinline, TRUE))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }

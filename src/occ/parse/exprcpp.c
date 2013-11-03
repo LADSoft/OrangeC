@@ -269,7 +269,7 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp)
     }
     return rv;
 }
-static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline)
+static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline, BOOL implicit)
 {
     SYMBOL *sp = basetype(*tp)->sp;
     if (!other || isarithmetic(other))
@@ -280,6 +280,8 @@ static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, 
         {
             FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
             EXPRESSION *e1;
+            if (cst->isExplicit && implicit)
+                error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             params->fcall = varNode(en_pc, cst);
             params->thisptr = *exp;
             params->thistp = Alloc(sizeof(TYPE));
@@ -321,11 +323,11 @@ static BOOL castToArithmeticInternal(BOOL integer, TYPE **tp, EXPRESSION **exp, 
     }
     return FALSE;
 }
-void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline)
+void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline, BOOL implicit)
 {
     if (cparams.prm_cplusplus && isstructured(*tp))
     {
-        if (!castToArithmeticInternal(integer, tp, exp, kw, other, noinline))
+        if (!castToArithmeticInternal(integer, tp, exp, kw, other, noinline, implicit))
         {
             // failed at conversion
             if (kw >= kw_new && kw <= compl)
@@ -440,8 +442,8 @@ BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOL noinline)
                     insert(av, localNameSpace->syms);
                     params->returnEXP = ev;
                     params->returnSP = sp;
-                    callDestructor(*tp, &ev, NULL, TRUE, noinline);
-                    initInsert(&av->dest, *tp, exp, 0, TRUE);
+                    callDestructor(basetype(*tp)->sp, &ev, NULL, TRUE, noinline);
+                    initInsert(&av->dest, *tp, ev, 0, TRUE);
                 }
                 /*
                 if (cons1->linkage == lk_inline && !noinline)  
@@ -464,7 +466,7 @@ BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOL noinline)
         else if (isarithmetic(*tp))
         {
             TYPE *tp1 = src;
-            return castToArithmeticInternal(FALSE, &tp1, exp, (enum e_kw)-1, *tp, noinline);
+            return castToArithmeticInternal(FALSE, &tp1, exp, (enum e_kw)-1, *tp, noinline, FALSE);
         }
         else if (ispointer(*tp) || basetype(*tp)->type == bt_memberptr)
         {
@@ -624,7 +626,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
             exp1 = *exp = varNode(en_auto, sp);
-            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline); 
+            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, FALSE); 
             if (funcparams->sp->constexpression)
             {
                 if (basetype(*tp)->sp->baseClasses)
@@ -694,11 +696,77 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     }
     return lex;
 }
-BOOL doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp)
+BOOL doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp, BOOL noinline)
 {
+    if (ispointer(oldType) && ispointer(*newType) || isref(*newType))
+    {
+        TYPE *tpo = oldType; 
+        TYPE *tpn = *newType;
+        if (isref(*newType))
+        {
+            tpn  = basetype(*newType)->btp;
+        }
+        else
+        {
+            tpo = basetype(oldType)->btp;
+            tpn  = basetype(*newType)->btp;
+        }
+        if ((!isconst(tpo) || isconst(tpn)) && isstructured(tpo))
+        {
+            if (isstructured(tpn) || tpn->type == bt_void)
+            {
+                if (tpn->type == bt_void || classRefCount(basetype(tpn)->sp, basetype(tpo)->sp) != 1)
+                {
+                    // if we are going up in the class heirarchy that is the only time we really need to do
+                    // a dynamic cast
+                    SYMBOL *sp = gsearch("__dynamic_cast");
+                    if (sp)
+                    {
+                        EXPRESSION *exp1 = *exp;
+                        EXPRESSION *exp2;
+                        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                        INITLIST *arg1 = Alloc(sizeof(INITLIST));
+                        INITLIST *arg2 = Alloc(sizeof(INITLIST));
+                        INITLIST *arg3 = Alloc(sizeof(INITLIST));
+                        INITLIST *arg4 = Alloc(sizeof(INITLIST));
+                        SYMBOL *oldrtti = RTTIDumpType(tpo);
+                        SYMBOL *newrtti = tpn->type == bt_void ? NULL : RTTIDumpType(tpn);
+                        deref(&stdpointer, &exp1);
+                        sp = basetype(sp->tp)->syms->table[0]->p;
+                        arg1->next = arg2;
+                        arg2->next = arg3;
+                        arg3->next = arg4;
+                        arg1->exp = *exp;
+                        arg1->tp = &stdpointer;
+                        arg2->exp = exprNode(en_cond, *exp, exprNode(en_void, exp1, intNode(en_c_i, 0)));
+
+                        arg2->tp = &stdpointer;
+                        arg3->exp = oldrtti ? varNode(en_global, oldrtti) : intNode(en_c_i, 0);
+                        arg3->tp = &stdpointer;
+                        arg4->exp = newrtti ? varNode(en_global, newrtti) : intNode(en_c_i, 0);
+                        arg4->tp = &stdpointer;
+                        funcparams->arguments = arg1;
+                        funcparams->sp = sp;
+                        funcparams->functp = sp->tp;
+                        funcparams->fcall = varNode(en_pc, sp);
+                        funcparams->ascall = TRUE;
+                        *exp = exprNode(en_lvalue,0,0);
+                        (*exp)->left = exprNode(en_func, 0, 0);
+                        (*exp)->left->v.func = funcparams;
+                    }
+                    if (isref(*newType))
+                        *newType = tpn;
+                    if (!basetype(tpo)->sp->hasvtab || !basetype(tpo)->syms->table[0])
+                        errorsym(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, basetype(tpo)->sp);
+                    return TRUE;
+                }
+                return doStaticCast(newType, oldType, exp, funcsp, TRUE, noinline);
+            }
+        }
+    }
     return FALSE;
 }
-BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst)
+BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst, BOOL noinline)
 {
     // no change or stricter const qualification
     if (comparetypes(*newType, oldType, TRUE))
@@ -740,53 +808,20 @@ BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcs
         
     }
     // base to derived pointer or derived to base pointer
-    if (ispointer(*newType) && ispointer(oldType))
+    if (ispointer(*newType) && ispointer(oldType) || isref(*newType))
     {
-        TYPE *tpo = basetype(oldType)->btp;
-        TYPE *tpn = basetype(*newType)->btp;
-        if ((!checkconst || isconst(tpn) || !isconst(tpo)) && (isstructured(tpn) && isstructured(tpo)))
+        TYPE *tpo = oldType; 
+        TYPE *tpn = *newType;
+        if (isref(tpn))
         {
-            int n = classRefCount(tpn->sp, tpo->sp);
-            if (n == 1)
-            {
-                // derived to base
-                EXPRESSION *v = Alloc(sizeof(EXPRESSION));
-                v->type = en_c_i;
-                v = baseClassOffset(tpn->sp, tpo->sp, v);
-                optimize_for_constants(&v);
-                if (v->type == en_c_i) // check for no virtual base
-                {
-                    if (isAccessible(tpo->sp, tpo->sp, tpn->sp, funcsp, ac_public, FALSE))
-                    {
-                        *exp = exprNode(en_add, *exp, v);
-                        return TRUE;
-                    }
-                }
-            }
-            else if (!n && classRefCount(tpo->sp, tpn->sp) == 1)
-            {
-                // base to derived
-                EXPRESSION *v = Alloc(sizeof(EXPRESSION));
-                v->type = en_c_i;
-                v = baseClassOffset(tpo->sp, tpn->sp, v);
-                optimize_for_constants(&v);
-                if (v->type == en_c_i) // check for no virtual base
-                {
-                    if (isAccessible(tpn->sp, tpn->sp, tpo->sp, funcsp, ac_public, FALSE))
-                    {
-                        *exp = exprNode(en_sub, *exp, v);
-                        return TRUE;
-                    }
-                }
-            }
+            *newType = tpn = basetype(*newType)->btp;
         }
-    }
-    // base to derived reference or derived to base reference
-    if (isref(*newType))
-    {
-        TYPE *tpo = oldType;
-        TYPE *tpn = basetype(*newType)->btp;
-        if ((!checkconst || isconst(tpn) || !isconst(tpo)) && (isstructured(tpn) && isstructured(tpo)))
+        else
+        {
+            tpo = basetype(oldType)->btp;
+            tpn = basetype(*newType)->btp;
+        }
+        if ((!checkconst || !isconst(tpo) || isconst(tpn)) && (isstructured(tpn) && isstructured(tpo)))
         {
             int n = classRefCount(tpn->sp, tpo->sp);
             if (n == 1)
@@ -798,12 +833,8 @@ BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcs
                 optimize_for_constants(&v);
                 if (v->type == en_c_i) // check for no virtual base
                 {
-                    if (isAccessible(tpo->sp, tpo->sp, tpn->sp, funcsp, ac_public, FALSE))
-                    {
-                        *exp = exprNode(en_add, *exp, v);
-                        *newType = tpn;
-                        return TRUE;
-                    }
+                    *exp = exprNode(en_lvalue, exprNode(en_add, *exp, v), NULL);
+                    return TRUE;
                 }
             }
             else if (!n && classRefCount(tpo->sp, tpn->sp) == 1)
@@ -815,12 +846,8 @@ BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcs
                 optimize_for_constants(&v);
                 if (v->type == en_c_i) // check for no virtual base
                 {
-                    if (isAccessible(tpn->sp, tpn->sp, tpo->sp, funcsp, ac_public, FALSE))
-                    {
-                        *exp = exprNode(en_sub, *exp, v);
-                        *newType = tpn;
-                        return TRUE;
-                    }
+                    *exp = exprNode(en_lvalue, exprNode(en_sub, *exp, v), NULL);
+                    return TRUE;
                 }
             }
         }
@@ -842,6 +869,11 @@ BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcs
                 }
             }
         }
+    }
+    // class to anything via converwion func
+    if (isstructured(oldType))
+    {
+        return cppCast(oldType, newType, exp, noinline);
     }
     return FALSE;
     // e to T:  T t(e) for an invented temp t.
@@ -1471,7 +1503,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 *exp = val;
                 tpf = *tp;
-                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, noinline);
+                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, noinline, FALSE);
             }
         }
         else
@@ -1567,7 +1599,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;
-                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, noinline);
+                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE);
                     if (*exp)
                     {
                         *exp = exprNode(en_void, *exp, exp1);
@@ -1587,7 +1619,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             // call default constructor
             *exp = val;
             tpf = *tp;
-            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, noinline);
+            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE);
         }
     }
     tpf = Alloc(sizeof(TYPE));
@@ -1857,6 +1889,7 @@ static BOOL noexceptExpression(EXPRESSION *node)
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
+        case en_lvalue:
             return noexceptExpression(node->left);
         case en_thisref:
             return noexceptExpression(node->left);

@@ -811,7 +811,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             esp->stackblock = TRUE;
                                             funcparams->arguments = Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE);
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE, TRUE);
                                             fc->arguments->exp = consexp;                                                             
                                         }
                                         else
@@ -839,7 +839,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             esp->stackblock = TRUE;
                                             funcparams->arguments = Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE);
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE, TRUE);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -937,7 +937,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = eBegin;
-                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE);
+                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE);
                                 st->select = decl;
                                 declDest = declExp;
                                 callDestructor(declSP, &declDest, NULL, TRUE, FALSE);
@@ -980,7 +980,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = eBegin;
-                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE);
+                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE);
                                     st->select = decl;
                                     declDest = declExp;
                                     callDestructor(declSP, &declDest, NULL, TRUE, FALSE);
@@ -1013,7 +1013,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = st->select;
-                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE);
+                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE);
                                 st->select = decl;
                                 declDest = declExp;
                                 callDestructor(declSP, &declDest, NULL, TRUE, FALSE);
@@ -1483,6 +1483,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             deref(&stdpointer, &en);
             if (cparams.prm_cplusplus && isstructured(tp))
             {
+                BOOL implicit = FALSE;
                 if (MATCHKW(lex, begin))
                 {
                     INITIALIZER *init = NULL, *dest=NULL;
@@ -1534,8 +1535,9 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         funcparams->arguments->exp = exp1;
                         maybeConversion = FALSE;
                         returntype = tp1;
+                        implicit = TRUE;
                     }
-                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE); 
+                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, implicit); 
                     returnexp = en;
                 }
             
@@ -1897,6 +1899,7 @@ static void checkNoEffect(EXPRESSION *exp)
             case en_void:
                 checkNoEffect(exp->right);
             case en_not_lvalue:
+            case en_lvalue:
             case en_thisref:
             case en_literalclass:
                 checkNoEffect(exp->left);

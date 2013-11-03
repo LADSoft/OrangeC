@@ -134,7 +134,7 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
         sp = RTTIDumpType(basetype(tp)->btp);
         flags = XD_REF;
     }
-    else if (isstructured(tp))
+    else if (isstructured(tp) && !basetype(tp)->sp->trivialCons)
     {
         sp = search(overloadNameTab[CI_DESTRUCTOR], tp->syms);
         if (sp)
@@ -492,6 +492,7 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
+        case en_lvalue:
             XCExpression(node->left, listPtr);
             break;
         case en_thisref:

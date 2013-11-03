@@ -260,7 +260,7 @@ KEYWORD keywords[] = {
     { "dynamic_cast",12,  kw_dynamic_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "else", 4,  kw_else, 0, TT_CONTROL },
     { "enum", 4,  kw_enum, 0, TT_BASETYPE | TT_ENUM },
-    { "explicit", 8,  kw_explicit, KW_CPLUSPLUS, TT_UNKNOWN },
+    { "explicit", 8,  kw_explicit, KW_CPLUSPLUS, TT_STORAGE_CLASS },
     { "export", 6,  kw_export, KW_CPLUSPLUS, TT_UNKNOWN },
     { "extern", 6,  kw_extern, KW_ASSEMBLER, TT_STORAGE_CLASS },
     { "false", 5, kw_false, KW_CPLUSPLUS, TT_VAR },

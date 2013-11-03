@@ -850,6 +850,7 @@ BOOL lvalue(EXPRESSION *exp)
             exp = exp->left;
     switch (exp->type)
     {
+        case en_lvalue:
         case en_l_bit:
         case en_l_bool:
         case en_l_wc:
@@ -993,7 +994,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = ctype;
                         funcparams->arguments->exp = exp2;
-                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, noinline); 
+                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, noinline, FALSE); 
                         exp = expsym;
                     }
                     else
@@ -1069,7 +1070,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                                 funcparams->arguments = Alloc(sizeof(INITLIST));
                                 funcparams->arguments->tp = ctype;
                                 funcparams->arguments->exp = exp;
-                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE,noinline); 
+                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE,noinline, FALSE); 
                                 exp = expsym;
                             }
                             else

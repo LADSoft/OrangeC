@@ -1332,7 +1332,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE))
+            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }
         else if (matchesCopy(parentCons, TRUE))
@@ -1355,12 +1355,12 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE))
+            if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }
         else
         {
-            if (!callConstructor(&ctype, &exp, NULL, FALSE, NULL, top, FALSE, FALSE))
+            if (!callConstructor(&ctype, &exp, NULL, FALSE, NULL, top, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
         }
         st = stmtNode(NULL,b, st_expr);
@@ -2052,7 +2052,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
 }
 BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                      BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
-                     BOOL maybeConversion, BOOL noinline)
+                     BOOL maybeConversion, BOOL noinline, BOOL implicit)
 {
     TYPE *stp = *tp;
     SYMBOL *sp = basetype(*tp)->sp;
@@ -2107,6 +2107,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
         
     if (cons1)
     {
+        
         if (cons1->castoperator)
         {
             FUNCTIONCALL *oparams = Alloc(sizeof(FUNCTIONCALL));
@@ -2114,6 +2115,8 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
+            if (cons1->isExplicit && implicit)
+                error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             oparams->fcall = params->fcall;
             oparams->thisptr = params->arguments->exp;
             oparams->thistp = Alloc(sizeof(TYPE));
@@ -2160,6 +2163,8 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
+            if (cons1->isExplicit && implicit)
+                error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, noinline);
             params->functp = cons1->tp;
             params->sp = cons1;

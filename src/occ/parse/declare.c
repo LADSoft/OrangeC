@@ -78,7 +78,7 @@ static char *importFile;
 #define CT_DEST 2
 
 LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, enum e_sc *storage_class_in,
-                       ADDRESS *address, BOOL *blocked, BOOL *constexpression, TYPE **tp, 
+                       ADDRESS *address, BOOL *blocked, BOOL *isExplicit, BOOL *constexpression, TYPE **tp, 
                        enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 
 void declare_init(void)
@@ -1145,7 +1145,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     return lex;
 }
 static LEXEME *getStorageClass(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, 
-                               enum e_lk *linkage, ADDRESS *address, BOOL *blocked, enum e_ac access)
+                               enum e_lk *linkage, ADDRESS *address, BOOL *blocked, BOOL *isExplicit, enum e_ac access)
 {
     BOOL found = FALSE;
     enum e_sc oldsc;
@@ -1221,6 +1221,20 @@ static LEXEME *getStorageClass(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_c
                 else
                 {
                     *storage_class = sc_virtual;
+                }
+                lex = getsym();
+                break;
+            case kw_explicit:
+                if (*storage_class != sc_member)
+                {
+                    error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
+                }
+                else
+                {
+                    if (isExplicit)
+                        *isExplicit = TRUE;
+                    else
+                        error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
                 }
                 lex = getsym();
                 break;
@@ -2395,7 +2409,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 spi = NULL;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class,
-                       &address, &blocked, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+                       &address, &blocked, NULL, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
                 lex = getBeforeType(lex, funcsp, &tp1, &spi, NULL, NULL, storage_class, &linkage, &linkage2, &linkage3, FALSE, FALSE, FALSE);
@@ -2552,7 +2566,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOL notype = FALSE;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class,
-                       &address, &blocked, &constexpression,&tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+                       &address, &blocked, NULL, &constexpression,&tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
 
                 while (1)
                 {
@@ -3454,7 +3468,7 @@ static BOOL sameQuals(TYPE *tp1, TYPE *tp2)
     return TRUE;
 }
 static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, enum e_sc *storage_class_in,
-                       ADDRESS *address, BOOL *blocked, BOOL *constexpression, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, 
+                       ADDRESS *address, BOOL *blocked, BOOL *isExplicit, BOOL *constexpression, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, 
                        enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
     BOOL foundType = FALSE;
@@ -3474,7 +3488,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
         }
         else if (KWTYPE(lex, TT_STORAGE_CLASS))
         {
-            lex = getStorageClass(lex, funcsp, storage_class, linkage, address, blocked, access);
+            lex = getStorageClass(lex, funcsp, storage_class, linkage, address, blocked, isExplicit, access);
             if (*blocked)
                 break;
         }
@@ -3621,10 +3635,11 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
             BOOL constexpression;
             BOOL defd = FALSE;
             BOOL notype = FALSE;
+            BOOL isExplicit = FALSE;
             int consdest = CT_NONE;
             IncGlobalFlag(); /* in case we have to initialize a func level static */
             lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class_in, 
-                                    &address, &blocked, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest);
+                                    &address, &blocked, &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest);
             if (blocked)
             {
                 if (tp != NULL)
@@ -3787,6 +3802,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             sp->parentClass = structSyms->data;
                         sp->constexpression = constexpression;
                         sp->access = access;
+                        sp->isExplicit = isExplicit;
                         if (sp->constexpression && !sp->isDestructor && !sp->isConstructor)
                         {
                             TYPE *tpx = Alloc(sizeof(TYPE));
@@ -4325,6 +4341,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         sp->tp->used = TRUE;
                     }
+                    if (isExplicit && !sp->castoperator &&!sp->isConstructor)
+                        error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
                     if (!strcmp(sp->name, "main"))
                     {
                         // fixme don't check if in parent class...

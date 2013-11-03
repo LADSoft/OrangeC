@@ -114,7 +114,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
 void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top, BOOL noinline);
 BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                     BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
-                    BOOL maybeConversion, BOOL noinline);
+                    BOOL maybeConversion, BOOL noinline, BOOL implicit);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOL *linked);
 LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
@@ -164,12 +164,12 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp);
 EXPRESSION *substitute_params_for_function(FUNCTIONCALL *funcparams, HASHTABLE *syms);
 EXPRESSION *substitute_params_for_constexpr(EXPRESSION *exp, FUNCTIONCALL *funcparams, HASHTABLE *syms);
 LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline);
-BOOL doDynamicCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
-BOOL doStaticCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst);
+BOOL doDynamicCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL noinline);
+BOOL doStaticCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst, BOOL noinline);
 BOOL doConstCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
 BOOL doReinterpretCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOL checkconst);
 BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline);
-void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline);
+void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline, BOOL implicit);
 BOOL cppCast(TYPE *src, TYPE **dest, EXPRESSION **exp, BOOL noinline);
 LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp);
 LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);

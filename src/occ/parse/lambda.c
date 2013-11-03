@@ -814,6 +814,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             
             lex = getsym();
         }
+        ParseAttributeSpecifiers(&lex, funcsp, TRUE);
         if (MATCHKW(lex, pointsto))
         {
             lex = getsym();

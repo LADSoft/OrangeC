@@ -96,6 +96,7 @@ void displayLexeme(LEXEME *lex);
                               /* Declare.c */
 
 void ParseBuiltins(void);
+BOOL ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOL always);
 void declare_init(void);
 void checkOperatorArgs(SYMBOL *sp);
 SYMBOL *getCopyCons(SYMBOL *base, BOOL move);
@@ -115,7 +116,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
                     BOOL maybeConversion, BOOL noinline);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOL *linked);
-LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class);
+LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
 void InsertExtern(SYMBOL *sp);
 void InsertGlobal(SYMBOL *sp);
@@ -677,6 +678,7 @@ void *tAlloc(int size);
 void tFree(void);
 void *sAlloc(int size);
 void sFree(void);
+void templateFree(void);
 void IncGlobalFlag(void);
 void DecGlobalFlag(void);
 void SetGlobalFlag(int flag);

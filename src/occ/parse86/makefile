@@ -108,6 +108,7 @@ EXE_dependencies = \
     rtti.obj \
     stmt.obj \
     symtab.obj \
+    template.obj \
     types.obj \
     unmangle.obj
 

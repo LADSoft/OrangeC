@@ -789,6 +789,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc stor
             break;
     }
     lex = getsym();
+    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (ISID(lex))
     {
         charindex = lex->charindex;
@@ -1037,7 +1038,8 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     SYMBOL *strSym;
     *defd = FALSE;
     lex = getsym();
-    if (cparams.prm_cplusplus && (MATCHKW(lex, kw_class)  || MATCHKW(lex, kw_struct)))
+    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+   if (cparams.prm_cplusplus && (MATCHKW(lex, kw_class)  || MATCHKW(lex, kw_struct)))
     {
         scoped = TRUE;
         lex = getsym();
@@ -2075,6 +2077,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
     {
         TYPE *tpp;
         lex = getsym();
+        ParseAttributeSpecifiers(&lex, funcsp, TRUE);
         if (MATCHKW(lex, openbr))
         {
             if (*quals)
@@ -2160,7 +2163,7 @@ static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo)
     {
             
         /* two oldstyle declarations aren't compared */
-        if (!(spo || spo->oldstyle && sp->oldstyle || !spo->hasproto))
+        if ((spo && !spo->oldstyle && spo->hasproto) || !sp->oldstyle)
         {
             if (spo && isfunction(spo->tp))
             {
@@ -2353,6 +2356,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
     tp1->sp = sp;
     sp->tp = *tp = tp1;
     localNameSpace->syms = tp1->syms = CreateHashTable(1);
+    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (startOfType(lex))
     {
         sp->hasproto = TRUE;
@@ -2467,10 +2471,11 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 else if (isvoid)
                     voiderror = TRUE;
             }
-            if (!MATCHKW(lex, comma))
+            if (!MATCHKW(lex, comma) && (!cparams.prm_cplusplus || !MATCHKW(lex, ellipse)))
                 break;
             lex = getsym();
             pastfirst = TRUE;
+            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
         }
         if (!needkw(&lex, closepa))
         {
@@ -2714,6 +2719,23 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
             errskim(&lex, skim_closepa);
         }
         skip(&lex, closepa);
+    }
+    if (cparams.prm_cplusplus)
+    {
+        ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+        if (MATCHKW(lex, pointsto))
+        {
+            TYPE *tpx= NULL;
+            lex = getsym();
+            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+            lex  = get_type_id(lex, &tpx, funcsp, FALSE);
+            if (tpx)
+            {
+                if (sp->tp->btp->type != bt_auto)
+                    error(ERR_MULTIPLE_RETURN_TYPES_SPECIFIED);
+                sp->tp->btp = tpx;
+            }
+        }
     }
     localNameSpace->syms = locals;
     DecGlobalFlag();
@@ -3043,6 +3065,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             *spi = sp;
             lex = getsym();
         }
+        ParseAttributeSpecifiers(&lex, funcsp, TRUE);
         lex = getAfterType(lex, funcsp, tp, spi, storage_class, consdest);
     }
     else switch(KW(lex))
@@ -3166,6 +3189,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             break; 
         case star:
             lex = getsym();
+            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
             ptype = *tp;
             while (ptype && ptype->type != bt_pointer && xtype == bt_none)
             {
@@ -3203,6 +3227,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 ptype->btp = *tp;
                 *tp = ptype;
                 lex = getsym();
+                ParseAttributeSpecifiers(&lex, funcsp, TRUE);
                 lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
                 lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, 
                                     storage_class, linkage, linkage2, linkage3, asFriend, FALSE, beforeOnly);
@@ -3287,6 +3312,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         // an error occurred
         *tp = &stdint;
     }
+    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     return lex;
 }
 static EXPRESSION *vlaSetSizes(EXPRESSION ***rptr, EXPRESSION *vlanode,
@@ -3432,6 +3458,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
                        enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
     BOOL foundType = FALSE;
+    BOOL first = TRUE;
     *blocked = FALSE;
     *constexpression = FALSE;
     
@@ -3473,6 +3500,9 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
         }
+        if (ParseAttributeSpecifiers(&lex, funcsp, TRUE))
+            break;
+        first = FALSE;
     }
     return lex;
 }
@@ -3534,7 +3564,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
     SYMBOL *strSym = NULL;
     ADDRESS address = 0;
     TYPE *tp = NULL;
-    
+
+    BOOL hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (!MATCHKW(lex, semicolon))
     {
         if (MATCHKW(lex, kw_inline))
@@ -3548,6 +3579,9 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
             BOOL linked;
             if (storage_class_in == sc_member)
                 error(ERR_NAMESPACE_NO_STRUCT);   
+                
+            if (hasAttributes)
+                error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
             lex = getsym();
             lex = insertNamespace(lex, linkage, storage_class_in, &linked);
             if (linked)
@@ -3571,10 +3605,12 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
         else if (!asExpression && MATCHKW(lex, kw_using))
         {
             lex = getsym();
-            lex = insertUsing(lex, storage_class_in);
+            lex = insertUsing(lex, storage_class_in, hasAttributes);
         }
         else if (!asExpression && MATCHKW(lex, kw_static_assert))
         {
+            if (hasAttributes)
+                error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
             lex = getsym();
             lex = handleStaticAssert(lex);
         }
@@ -4009,6 +4045,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         else
                         {
+                            if (isfunction(sp->tp))		
+                                matchFunctionDeclaration(lex, sp, sp);
                             if (!asFriend || isfunction(sp->tp))
                             {
                                 if (sp->constexpression && sp->storage_class == sc_global)

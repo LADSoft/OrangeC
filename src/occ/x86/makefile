@@ -136,6 +136,7 @@ EXE_dependencies = \
     rtti$(OBJ) \
     stmt$(OBJ) \
     symtab$(OBJ) \
+    template$(OBJ) \
     types$(OBJ) \
     unmangle$(OBJ)\
     winsystem$(OBJ)

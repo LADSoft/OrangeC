@@ -179,6 +179,7 @@ static void markInitializers(STATEMENT *prev)
 static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION **exp, SYMBOL *funcsp, enum e_kw kw, BOOL *declaration)
 {
     TYPE *tp = NULL;
+    BOOL hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     (void)parent;
     if (startOfType(lex) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
     {
@@ -204,6 +205,8 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
     }
     else
     {
+        if (hasAttributes)
+            error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
 /*		BOOL openparen = MATCHKW(lex, openpa); */
         if (declaration)
             *declaration = FALSE;
@@ -2069,6 +2072,7 @@ LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, int labe
             STATEMENT *st;
             TYPE *tp = NULL;
             BLOCKDATA *catchstmt = Alloc(sizeof(BLOCKDATA));
+            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
             catchstmt->breaklabel = label;
             catchstmt->next = parent;
             catchstmt->defaultlabel = -1; /* no default */
@@ -2299,6 +2303,7 @@ static BOOL resolveToDeclaration(LEXEME * lex)
 static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
                          BOOL viacontrol)
 {
+    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (ISID(lex))
     {
         marksym();

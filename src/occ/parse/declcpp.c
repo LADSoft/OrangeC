@@ -794,6 +794,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         error(ERR_UNION_CANNOT_HAVE_BASE_CLASSES);
     do
     {
+        ParseAttributeSpecifiers(&lex, funcsp, TRUE);
         if (MATCHKW(lex,classsel) || ISID(lex))
         {
             bcsym = NULL;
@@ -864,7 +865,8 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 errskim(&lex, skim_end);
                 return lex;
         }
-        
+        if (!done)
+            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     } while (!done);
     lst = declsym->baseClasses;
     while (lst)
@@ -1494,7 +1496,7 @@ static void InsertTag(SYMBOL *sp, enum sc storage_class)
         table = globalNameSpace->tags ;
     insert(sp, table);
 }
-LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class)
+LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
 {
     SYMBOL *sp;
     if (MATCHKW(lex, kw_namespace))
@@ -1551,10 +1553,13 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class)
     }
     else
     {
+        if (hasAttributes)
+            error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
         if (ISID(lex))
         {
             marksym();
             lex = getsym();
+            ParseAttributeSpecifiers(&lex, NULL, TRUE);
             if (MATCHKW(lex, assign))
             {
                 TYPE *tp = NULL;
@@ -1597,4 +1602,143 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class)
         
     }
     return lex;
+}
+static void balancedAttributeParameter(LEXEME **lex)
+{
+    enum e_kw start = KW(*lex);
+    enum e_kw endp = -1;
+    *lex = getsym();
+    switch(start)
+    {
+        case openpa:
+            endp = closepa;
+            break;
+        case begin:
+            endp = end;
+            break;
+        case openbr:
+            endp = closebr;
+            break;
+        default:
+            break;
+    }
+    if (endp != -1)
+    {
+        while (*lex && !MATCHKW(*lex, endp))
+            balancedAttributeParameter(lex);
+        needkw(lex, endp);
+    }
+}
+BOOL ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOL always)
+{
+    BOOL rv = FALSE;
+    if (cparams.prm_cplusplus)
+    {
+        while (MATCHKW(*lex, kw_alignas) || MATCHKW(*lex, openbr))
+        {
+            if (MATCHKW(*lex, kw_alignas))
+            {
+                // we are parsing alignas but not doing anything with it at this time...
+                rv = TRUE;
+                *lex = getsym();
+                if (needkw(lex, openpa))
+                {
+                    int align = 1;
+                    if (startOfType(*lex))
+                    {
+                        TYPE *tp = NULL;
+                        *lex = get_type_id(*lex, &tp, funcsp, FALSE);
+                        if (!tp)
+                            error(ERR_TYPE_NAME_EXPECTED);
+                        else
+                            align = getAlign(sc_global, tp);
+                    }
+                    else
+                    {
+                        TYPE *tp = NULL;
+                        EXPRESSION *exp = NULL;
+                        
+                        *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, FALSE);       
+                        if (!tp || !isint(tp))
+                            error(ERR_NEED_INTEGER_TYPE);
+                        else if (!isintconst(exp))
+                            error(ERR_CONSTANT_VALUE_EXPECTED);
+                        align = exp->v.i;
+                    }
+                    needkw(lex, closepa);
+                }
+            }
+            else if (MATCHKW(*lex, openbr))
+            {
+                marksym();
+                *lex= getsym();
+                if (MATCHKW(*lex, openbr))
+                {
+                    rv = TRUE;
+                    *lex = getsym();
+                    if (!MATCHKW(*lex, closebr))
+                    {
+                        while (*lex) 
+                        {
+                            BOOL special = FALSE;
+                            if (!ISID(*lex))
+                            {
+                                *lex = getsym();
+                                error(ERR_IDENTIFIER_EXPECTED);
+                            }
+                            else
+                            {
+                                if (!strcmp((*lex)->value.s.a, "noreturn") || !strcmp((*lex)->value.s.a, "carries_dependency"))
+                                {
+                                    *lex = getsym();
+                                    special = TRUE;
+                                }
+                                else
+                                {
+                                    *lex = getsym();
+                                    if (MATCHKW(*lex, classsel))
+                                    {
+                                        *lex = getsym();
+                                        if (!ISID(*lex))
+                                            error(ERR_IDENTIFIER_EXPECTED);
+                                        *lex = getsym();
+                                    }
+                                }
+                            }
+                            if (MATCHKW(*lex, openpa))
+                            {
+                                if (special)
+                                    error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
+                                *lex = getsym();
+                                while (*lex && !MATCHKW(*lex, closepa))
+                                {
+                                    balancedAttributeParameter(lex);
+                                }
+                                needkw(lex, closepa);
+                            }
+                            if (MATCHKW(*lex, ellipse))
+                                *lex = getsym();
+                            if (!MATCHKW(*lex, comma))
+                                break;
+                            *lex = getsym();
+                        }
+                        if (needkw(lex, closebr))
+                            needkw(lex, closebr);
+                    }
+                    else
+                    {
+                        // empty
+                        *lex = getsym();
+                        needkw(lex, closebr);
+                    }
+                }
+                else
+                {
+                    *lex = backupsym(0);
+                    break;
+                }
+            }
+        }
+    }
+    return rv;
 }

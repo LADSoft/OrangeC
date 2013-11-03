@@ -1365,6 +1365,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                     error(ERR_NEED_INTEGER_TYPE);
                 }
                 needkw(&lex, closebr);
+                ParseAttributeSpecifiers(&lex, funcsp, TRUE);
                 arrSize = exp;
                 while (MATCHKW(lex, openbr))
                 {
@@ -1384,6 +1385,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         arrSize = exprNode(en_mul, arrSize, exp);
                     }
                     needkw(&lex, closebr);
+                    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
                 }
                 optimize_for_constants(&arrSize);
             }

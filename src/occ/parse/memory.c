@@ -39,6 +39,8 @@
 
 typedef unsigned DWORD;
 
+extern int inTemplate;
+
 static MEMBLK *freemem;
 static MEMBLK *freestdmem;
 static MEMBLK *globals;
@@ -47,9 +49,10 @@ static MEMBLK *locals;
 static MEMBLK *alias;
 static MEMBLK *temps;
 static MEMBLK *live;
+static MEMBLK *templates;
 
 static int globalFlag;
-static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak;
+static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak;
 
 #define MINALLOC (64 * 1024)
 #define MALIGN (4)
@@ -61,6 +64,7 @@ void mem_summary(void)
     printf("Memory used:\n");
     printf("\tGlobal Peak %dK\n", (globalPeak + 1023)/1024);
     printf("\tLocal peak %dK\n", (localPeak+1023)/1024);
+    printf("\tTemplate peak %dK\n", (templatePeak + 1023)/1024);
     printf("\tOptimizer peak %dK\n", (optPeak+ 1023)/1024);
     printf("\tTemporary peak %dK\n", (tempsPeak+ 1023)/1024);
     printf("\tAlias peak %dK\n", (aliasPeak + 1023)/1024);
@@ -180,7 +184,10 @@ void *Alloc( int size)
         return memAlloc(&locals, size);
     else
 #endif
-        return memAlloc(&globals, size);
+        if (inTemplate)
+            return memAlloc(&templates, size);
+        else
+            return memAlloc(&globals, size);
 }
 void *oAlloc(int size)
 {
@@ -213,6 +220,10 @@ void *sAlloc(int size)
 void sFree(void)
 {
     memFree(&live, &livePeak);
+}
+void templateFree(void)
+{
+    memFree(&templates, &templatePeak);
 }
 void IncGlobalFlag(void)
 {

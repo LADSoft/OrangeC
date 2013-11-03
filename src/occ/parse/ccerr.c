@@ -60,6 +60,7 @@ SYMBOL *theCurrentFunc;
 extern int preprocLine;
 extern char *preprocFile;
 extern LEXCONTEXT *context;
+extern BOOL inTemplate;
 
 static LIST *listErrors;
 int currentErrorLine;
@@ -462,6 +463,9 @@ static struct {
 {"Exception specifier of virtual function '%s' must be at least as restrictive as base class declarations", ERROR },
 {"Exception specifier of function '%s' must match earlier declarations", ERROR },
 {"Use of typeid requires '#include <typeinfo>'", ERROR },
+{"Multiple return types specified", ERROR },
+{"Cannot place attribute specifiers here", ERROR },
+{"Cannot place attribute argument clause here", ERROR },
 #endif
 } ;
 
@@ -514,12 +518,45 @@ static BOOL alwaysErr(int err)
             return FALSE;
     }
 }
+static BOOL ignoreErrInTemplate(int err)
+{
+    switch(err)
+    {
+        case ERR_NEED_CONSTANT_OR_ADDRESS:
+        case ERR_NEED_INTEGER_TYPE:
+        case ERR_NEED_INTEGER_EXPRESSION:
+        case ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION:
+        case ERR_STRUCT_MAY_NOT_CONTAIN_INCOMPLETE_STRUCT:
+        case ERR_ORIGINAL_TYPE_NOT_ENUMERATION:
+        case ERR_BIT_FIELD_INTEGER_TYPE:
+        case ERR_MEMBER_NAME_EXPECTED:
+        case ERR_POINTER_TO_STRUCTURE_EXPECTED:
+        case ERR_STRUCTURED_TYPE_EXPECTED:
+        case ERR_INCOMPATIBLE_TYPE_CONVERSION:
+        case ERR_TYPE_MISMATCH_IN_REDECLARATION:
+        case ERR_TWO_OPERANDS_SAME_TYPE:
+        case ERR_ARRAY_INDEX_INTEGER_TYPE:
+        case ERR_TYPE_MISMATCH_IN_ARGUMENT:
+        case ERR_NOT_AN_ALLOWED_TYPE:
+        case ERR_SWITCH_SELECTION_INTEGRAL:
+        case ERR_RETMISMATCH:
+        case ERR_CANNOT_CONVERT_TYPE:
+        case ERR_CANNOT_CAST_TYPE:
+        case ERR_NO_OVERLOAD_MATCH_FOUND:
+        case ERR_POINTER_TYPE_EXPECTED:
+        case ERR_NEED_TYPEINFO_H:
+            return TRUE;
+    }
+    return FALSE;
+}
 void printerr(int err, char *file, int line, ...)
 {
     char buf[256];
     char infunc[256];
     char *listerr;
     char nameb[265], *name = nameb;
+    if (inTemplate && ignoreErrInTemplate(err))
+        return;
     if (!file)
     {
 #ifndef CPREPROCESSOR

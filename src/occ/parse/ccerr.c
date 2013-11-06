@@ -60,7 +60,7 @@ SYMBOL *theCurrentFunc;
 extern int preprocLine;
 extern char *preprocFile;
 extern LEXCONTEXT *context;
-extern BOOL inTemplate;
+extern int templateNestingCount;
 
 static LIST *listErrors;
 int currentErrorLine;
@@ -468,7 +468,23 @@ static struct {
 {"Cannot place attribute argument clause here", ERROR },
 {"Only constructors or conversion functions may be explicit", ERROR },
 {"Implicit use of explicit constructor or conversion function", ERROR },
-{"%s is not a defined class with virtual functions", ERROR },
+{"class '%s' is not a defined class with virtual functions", ERROR },
+{"Template may not be declared in class defined within function scope", ERROR},
+{"Template must be declared at global scope or within a class", ERROR },
+{"Packed template parameter cannot have default" ,ERROR },
+{"'Class' template parameter missing default" ,ERROR },
+{"'Class' template parameter default must refer to type" ,ERROR },
+{"Template 'template' parameter missing default" ,ERROR },
+{"'Non-type' template paramer has invalid type", ERROR },
+{"Type mismatch in default for 'non-type' template paramater", ERROR },
+{"'%s' was not previously declared as a template", ERROR },
+{"'%s' was previously declared as a template", ERROR },
+{"Template args do not agree with previous declaration", ERROR },
+{"Missing default values in template declaration after '%s'", ERROR },
+{"Redefinition of default value for '%s' in template redeclaration", ERROR },
+{"'Template' template parameter must name a class", ERROR },
+{"Templates must be classes or functions", ERROR },
+{"Too many template parameter sets were specified", ERROR },
 #endif
 } ;
 
@@ -501,6 +517,10 @@ static char kwtosym(enum e_kw kw)
             return '=';
         case colon:
             return ':';
+        case lt:
+            return '<';
+        case gt:
+            return '>';
         default:
             return '?';
     }
@@ -521,7 +541,7 @@ static BOOL alwaysErr(int err)
             return FALSE;
     }
 }
-static BOOL ignoreErrInTemplate(int err)
+static BOOL ignoreErrtemplateNestingCount(int err)
 {
     switch(err)
     {
@@ -558,7 +578,7 @@ void printerr(int err, char *file, int line, ...)
     char infunc[256];
     char *listerr;
     char nameb[265], *name = nameb;
-    if (inTemplate && ignoreErrInTemplate(err))
+    if (templateNestingCount && ignoreErrtemplateNestingCount(err))
         return;
     if (!file)
     {
@@ -728,7 +748,10 @@ void errorsym(int err, SYMBOL *sym)
 #ifdef CPREPROCESSOR
     strcpy(buf, sym->name);
 #else
-    unmangle(buf, sym->errname);
+    if (sym->errname)
+        unmangle(buf, sym->errname);
+    else
+        strcpy(buf, sym->name);
 #endif
     printerr(err, preprocFile, preprocLine, buf);
 }

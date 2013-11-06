@@ -50,7 +50,6 @@ extern TYPE stdint;
 extern TYPE stdpointer;
 extern char infile[256];
 extern int total_errors;
-extern LIST *structSyms;
 extern TYPE stdvoid;
 extern int currentErrorLine;
 
@@ -645,10 +644,9 @@ void deferredCompile(void)
             cur->linkage = lk_inline;
             if (cur->parentClass)
             {
-                LIST *l = Alloc(sizeof(LIST));
-                l->data = cur->parentClass;
-                l->next = structSyms;
-                structSyms = l ;   
+                STRUCTSYM *l = Alloc(sizeof(LIST));
+                l->str = cur->parentClass;
+                addStructureDeclaration(l);
                 addedStrSym = TRUE;
             }
             lex = SetAlternateLex(cur->deferredCompile);
@@ -656,7 +654,7 @@ void deferredCompile(void)
             SetAlternateLex(NULL);
             if (addedStrSym)
             {
-                structSyms = structSyms->next;
+                dropStructureDeclaration();
             }
             deferredBackfill = deferredBackfill->next;
         }
@@ -672,10 +670,9 @@ void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp)
         BOOL addedStrSym  = FALSE;
         if (cur->parentClass)
         {
-            LIST *l = Alloc(sizeof(LIST));
-            l->data = cur->parentClass;
-            l->next = structSyms;
-            structSyms = l ;   
+            STRUCTSYM *l = Alloc(sizeof(LIST));
+            l->str = cur->parentClass;
+            addStructureDeclaration(l);
             addedStrSym = TRUE;
         }
         if (cur->storage_class == sc_overloads)
@@ -719,7 +716,7 @@ void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp)
         }
         if (addedStrSym)
         {
-            structSyms = structSyms->next;
+            dropStructureDeclaration();
         }
         hr = hr->next;
     }
@@ -928,7 +925,7 @@ void checkOperatorArgs(SYMBOL *sp)
         HASHREC *hr = basetype(sp->tp)->syms->table[0];
         if (!hr)
             return;
-        if (structSyms) // nonstatic member
+        if (getStructureDeclaration()) // nonstatic member
         {
             if (sp->operatorId == CI_CAST)
             {
@@ -1243,7 +1240,7 @@ LEXEME *handleStaticAssert(LEXEME *lex)
         char buf[256];
         TYPE *tp;
         EXPRESSION *expr=NULL, *expr2=NULL;
-        lex = expression_no_comma(lex, NULL, NULL, &tp, &expr, FALSE);
+        lex = expression_no_comma(lex, NULL, NULL, &tp, &expr, FALSE, FALSE);
         expr2 = Alloc(sizeof(EXPRESSION));
         expr2->type = en_x_bool;
         expr2->left = expr;
@@ -1487,9 +1484,9 @@ void unvisitUsingDirectives(NAMESPACEVALUES *v)
 static void InsertTag(SYMBOL *sp, enum sc storage_class)
 {
     HASHTABLE *table;
-    if (structSyms && (storage_class == sc_member || storage_class == sc_type))
+    SYMBOL *ssp = getStructureDeclaration();
+    if (ssp && (storage_class == sc_member || storage_class == sc_type))
     {
-        SYMBOL *ssp = (SYMBOL *)structSyms->data;
         table = ssp->tp->tags;
     }		
     else if (storage_class == sc_auto || storage_class == sc_register 

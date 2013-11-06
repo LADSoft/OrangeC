@@ -75,7 +75,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL) ;
+            while ((lex = declare(lex, NULL, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL) ;
         }
         includes->handle = handle;
         includes->lptr = p;

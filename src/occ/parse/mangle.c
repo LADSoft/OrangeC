@@ -280,6 +280,9 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
             case bt_void:
                 *in++ = 'v';
                 break;
+            case bt_templateparam:
+                *in++ = '+';
+                break;
             default:
                 diag("mangleType: unknown type");
                 break;
@@ -298,7 +301,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
         {
             if (sym->storage_class != sc_label && sym->storage_class != sc_parameter && sym->storage_class != sc_namespace &&
                 sym->storage_class != sc_namespacealias && sym->storage_class != sc_ulabel 
-                && (isfunction(sym->tp) || istype(sym->storage_class) || sym->parentNameSpace || sym->parentClass))
+                && (isfunction(sym->tp) || istype(sym) || sym->parentNameSpace || sym->parentClass))
                 linkage = lk_cpp;
             else
                 linkage = lk_c;

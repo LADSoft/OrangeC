@@ -66,11 +66,9 @@ extern TYPE std__func__;
 extern TYPE stdchar16tptr;
 extern TYPE stdchar32tptr;
 extern BOOL setjmp_used;
-extern LIST *structSyms;
 extern char *overloadNameTab[];
 extern char *overloadXlateTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
-extern LIST *structSyms;
 extern SYMBOL *enumSyms;
 extern LAMBDA *lambdas;
 /* lvaule */
@@ -186,10 +184,10 @@ void getThisType(SYMBOL *sym, TYPE **tp)
 EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp, BOOL toError)
 {
     EXPRESSION *en;
+    SYMBOL *enclosing = getStructureDeclaration();
     
-    if (structSyms) // lambdas will be caught by this too
+    if (enclosing) // lambdas will be caught by this too
     {
-        SYMBOL *enclosing;
         if (funcsp)
             en = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
         else
@@ -217,10 +215,6 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp, BOOL toError)
                 }
                   
             }
-        }
-        else
-        {
-            enclosing = (SYMBOL *)structSyms->data;
         }
         deref(&stdpointer, &en);
         if (enclosing != memberSym->parentClass)
@@ -581,7 +575,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOL defd = FALSE;
-    lex = getBasicType(lex, funcsp, tp, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
+    lex = getBasicType(lex, funcsp, tp, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))
@@ -1081,12 +1075,11 @@ BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONC
         return FALSE;
     if (isstructured(*tp))
     {
-        LIST l ;
-        l.data = (void *)basetype(*tp)->sp;
-        l.next = structSyms;
-        structSyms = &l;
+        STRUCTSYM l ;
+        l.str = (void *)basetype(*tp)->sp;
+        addStructureDeclaration(&l);
         s2 = classsearch(name, FALSE);
-        structSyms = l.next;
+        dropStructureDeclaration();
         funcparams->thistp = Alloc(sizeof(TYPE));
         funcparams->thistp->type = bt_pointer;
         funcparams->thistp->size = getSize(bt_pointer);
@@ -1141,7 +1134,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     FUNCTIONCALL *funcparams;
     char *name = overloadNameTab[kw - kw_new + CI_NEW];
     TYPE *tpx;
-    LIST l ;
+    STRUCTSYM l ;
     if (!*tp)
         return FALSE;
     if (!isstructured(*tp) && basetype(*tp)->type != bt_enum
@@ -1173,19 +1166,18 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
                s1 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
             break;
     }
-    l.next = structSyms;
+    dropStructureDeclaration();
     // next find some occurrance in the class or struct
     if (isstructured(*tp))
     {
-        l.data = (void *)basetype(*tp)->sp;
-        l.next = structSyms;
-        structSyms = &l;
+        l.str = (void *)basetype(*tp)->sp;
+        addStructureDeclaration(&l);
         s2 = classsearch(name, FALSE);
     }
     // quit if there are no matches because we will use the default...
     if (!s1 && !s2)
     {
-        structSyms = l.next;
+        dropStructureDeclaration();
         return FALSE;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
@@ -1335,10 +1327,10 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         expression_arguments(NULL, funcsp, tp, exp, noinline);
         if (s3->defaulted && kw == assign)
             createAssignment(s3->parentClass, s3);
-        structSyms = l.next;
+        dropStructureDeclaration();
         return TRUE;
     }
-    structSyms = l.next;
+    dropStructureDeclaration();
     return FALSE;
 }
 LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline)
@@ -1384,7 +1376,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             BOOL defd = FALSE;
             SYMBOL *sp = NULL;
             BOOL notype = FALSE;
-            lex = getBasicType(lex, funcsp, tp, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+            lex = getBasicType(lex, funcsp, tp, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;
@@ -1450,12 +1442,12 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     {
         if (isstructured(*tp))
         {
-            LIST l ;
-            l.data = (void *)basetype(*tp)->sp;
-            l.next = structSyms;
-            structSyms = &l;
+            STRUCTSYM l ;
+            
+            l.str = (void *)basetype(*tp)->sp;
+            addStructureDeclaration(&l);
             s1 = classsearch(name, FALSE);
-            structSyms = l.next;
+            dropStructureDeclaration();
         }
     }
     if (!s1)
@@ -1675,12 +1667,11 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     {
         if (isstructured(*tp))
         {
-            LIST l ;
-            l.data = (void *)basetype(*tp)->sp;
-            l.next = structSyms;
-            structSyms = &l;
+            STRUCTSYM l ;
+            l.str = (void *)basetype(*tp)->sp;
+            addStructureDeclaration(&l);
             s1 = classsearch(name, FALSE);
-            structSyms = l.next;
+            dropStructureDeclaration();
         }
     }
     if (!s1)

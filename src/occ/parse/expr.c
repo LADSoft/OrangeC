@@ -44,7 +44,7 @@ extern int stdpragmas;
 extern enum e_kw skim_closepa[], skim_end[];
 extern enum e_kw skim_closebr[];
 extern enum e_kw skim_semi[];
-extern TYPE stdpointer;
+extern TYPE stdpointer, stdnullpointer;
 extern TYPE stdint;
 extern TYPE stddouble;
 extern TYPE stdvoid;
@@ -65,7 +65,6 @@ extern TYPE std__func__;
 extern TYPE stdchar16tptr;
 extern TYPE stdchar32tptr;
 extern BOOL setjmp_used;
-extern LIST *structSyms;
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *localNameSpace;
 extern LAMBDA *lambdas;
@@ -74,8 +73,8 @@ extern LAMBDA *lambdas;
 /*-------------------------------------------------------------------------------------------------------------------------------- */
 static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp);
 static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline);
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline);
-static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline);
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams);
+static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams);
 
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right)
 {
@@ -525,7 +524,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         BOOL notype = FALSE;
         TYPE *tp1 = NULL;
         lex = getsym();
-        lex = getBasicType(lex, funcsp, &tp1, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+        lex = getBasicType(lex, funcsp, &tp1, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -577,7 +576,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             SYMBOL *sp = NULL;
             BOOL notype = FALSE;
             TYPE *tp1 = NULL;
-            lex = getBasicType(lex, funcsp, &tp1, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+            lex = getBasicType(lex, funcsp, &tp1, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -601,7 +600,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 {
                     lex = getsym();
                     tp1 = NULL;
-                    lex = getBasicType(lex, funcsp, &tp1, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+                    lex = getBasicType(lex, funcsp, &tp1, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
@@ -652,12 +651,11 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 }
                 else 
                 {
-                    LIST l;
-                    l.next = structSyms;
-                    l.data = basetype(*tp)->sp;
-                    structSyms = &l;
+                    STRUCTSYM l ;
+                    l.str = basetype(*tp)->sp;
+                    addStructureDeclaration(&l);
                     lex = id_expression(lex, funcsp, &sp2, NULL, NULL, FALSE, TRUE, NULL);
-                    structSyms = structSyms->next;
+                    dropStructureDeclaration();
                     if (!sp2)
                     {
                         membererror(lex->value.s.a, (*tp));
@@ -721,12 +719,11 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             }
             if (cparams.prm_cplusplus)
             {
-                LIST l;
-                l.next = structSyms;
-                l.data = basetype(*tp)->sp;
-                structSyms = &l;
+                STRUCTSYM l ;
+                l.str = basetype(*tp)->sp;
+                addStructureDeclaration(&l);
                 lex = id_expression(lex, funcsp, &sp2, NULL, NULL, FALSE, TRUE, NULL);
-                structSyms = structSyms->next;
+                dropStructureDeclaration();
             }
             else
             {
@@ -882,7 +879,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     }
     else
     {
-        lex = expression_comma(lex, funcsp, NULL, &tp2, &expr2, FALSE, noinline);
+        lex = expression_comma(lex, funcsp, NULL, &tp2, &expr2, FALSE, noinline, FALSE);
         if (tp2)
         {
             if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_openbr, openbr,
@@ -1155,7 +1152,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
         }
         else
         {
-            lex = expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, FALSE, FALSE);
+            lex = expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, FALSE, FALSE, FALSE);
             if (p->tp && isvoid(p->tp))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             optimize_for_constants(&p->exp);
@@ -1683,11 +1680,11 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             error(ERR_CALL_OF_NONFUNCTION);
     }
     else {
+        SYMBOL *ss = getStructureDeclaration();
         funcparams = exp_in->v.func;
         hasThisPtr = funcparams->thisptr != NULL;
-        if (structSyms)
+        if (ss)
         {
-            SYMBOL *ss = (SYMBOL *)structSyms->data;
             funcparams->functp = ss->tp;
         }
     }
@@ -1795,7 +1792,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             else
             {
-                if (!structSyms && !ispointer(tp_cpp) && !hasThisPtr)
+                if (!getStructureDeclaration() && !ispointer(tp_cpp) && !hasThisPtr)
                     errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, funcparams->sp);
                 operands = FALSE;
             }
@@ -1858,7 +1855,7 @@ static LEXEME *expression_alloca(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        lex = expression_comma(lex, funcsp, NULL, tp, exp, FALSE, noinline);
+        lex = expression_comma(lex, funcsp, NULL, tp, exp, FALSE, noinline, FALSE);
         if (*tp)
         {
             if (!isint(*tp))
@@ -1988,7 +1985,7 @@ static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     {
         TYPE *selectType = NULL;
         EXPRESSION *throwawayExpression = NULL;
-        lex = expression_assign(lex, funcsp, NULL, &selectType, &throwawayExpression, FALSE, noinline);
+        lex = expression_assign(lex, funcsp, NULL, &selectType, &throwawayExpression, FALSE, noinline, FALSE);
         if (MATCHKW(lex, comma))
         {
             BOOL dflt = FALSE;
@@ -2027,7 +2024,7 @@ static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 if (MATCHKW(lex, colon))
                 {
                     lex = getsym();
-                    lex = expression_assign(lex, funcsp, NULL, &next->type, &next->exp, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &next->type, &next->exp, FALSE, noinline, FALSE);
                     if (!next->type)
                     {
                         error(ERR_GENERIC_MISSING_EXPRESSION);
@@ -2248,14 +2245,14 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
     {
         if (kw == kw_atomic_kill_dependency)
         {
-            lex = expression_assign(lex, funcsp, NULL, tp, exp, FALSE, noinline);
+            lex = expression_assign(lex, funcsp, NULL, tp, exp, FALSE, noinline, FALSE);
             if (!*tp)
                 error(ERR_EXPRESSION_SYNTAX);
             needkw(&lex, closepa);
         }
         else if (kw == kw_atomic_var_init)
         {
-            lex = expression_assign(lex, funcsp, NULL, tp, exp, FALSE, noinline);
+            lex = expression_assign(lex, funcsp, NULL, tp, exp, FALSE, noinline, FALSE);
             if (!*tp)
                 error(ERR_EXPRESSION_SYNTAX);
             if (MATCHKW(lex, comma)) // atomic_init
@@ -2263,7 +2260,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                 TYPE *tp1;
                 EXPRESSION *exp1;
                 lex = getsym();
-                lex = expression_assign(lex, funcsp, NULL, &tp1, &exp1, FALSE, noinline);
+                lex = expression_assign(lex, funcsp, NULL, &tp1, &exp1, FALSE, noinline, FALSE);
                 if (*tp && tp1)
                 {
                     ATOMICDATA *d;
@@ -2309,7 +2306,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
             switch (kw)
             {
                 case kw_atomic_flag_test_set:
-                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->flg, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->flg, FALSE, noinline, FALSE);
                     if (tpf)
                     {
                         if (!ispointer(tpf))
@@ -2321,7 +2318,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline, FALSE);
                     }
                     else 
                     {
@@ -2331,7 +2328,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     d->atomicOp = ao_flag_set_test;
                     break;
                 case kw_atomic_flag_clear:
-                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->flg, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->flg, FALSE, noinline, FALSE);
                     if (tpf)
                     {
                         if (!ispointer(tpf))
@@ -2343,7 +2340,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline, FALSE);
                     }
                     else 
                     {
@@ -2354,12 +2351,12 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     *tp = &stdvoid;
                     break;
                 case kw_atomic_fence:
-                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline, FALSE);
                     d->atomicOp = ao_fence;
                     *tp = &stdvoid;
                     break;
                 case kw_atomic_load:
-                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline, FALSE);
                     if (tpf)
                         if (!ispointer(tpf))
                         {
@@ -2375,7 +2372,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
     
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL,&tpf, &d->memoryOrder1, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL,&tpf, &d->memoryOrder1, FALSE, noinline, FALSE);
                     }
                     else 
                     {
@@ -2385,7 +2382,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     d->atomicOp = ao_load;
                     break;
                 case kw_atomic_store:
-                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline, FALSE);
                     if (tpf)
                         if (!ispointer(tpf))
                         {
@@ -2401,7 +2398,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
     
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->value, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->value, FALSE, noinline, FALSE);
                         if (!comparetypes(tpf, *tp, FALSE))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
@@ -2414,7 +2411,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline, FALSE);
                     }
                     else 
                     {
@@ -2424,7 +2421,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     d->atomicOp = ao_store;
                     break;
                 case kw_atomic_modify:
-                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline, FALSE);
                     if (tpf)
                         if (!ispointer(tpf))
                         {
@@ -2457,7 +2454,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
     
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->value, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->value, FALSE, noinline, FALSE);
                         if (!comparetypes(tpf, *tp, FALSE))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
@@ -2470,7 +2467,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline, FALSE);
                     }
                     else 
                     {
@@ -2480,7 +2477,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     d->atomicOp = ao_modify;
                     break;
                 case kw_atomic_cmpswp:
-                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, FALSE, noinline, FALSE);
                     if (tpf)
                         if (!ispointer(tpf))
                         {
@@ -2495,7 +2492,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                         }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf1, &d->third, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf1, &d->third, FALSE, noinline, FALSE);
                         if (!comparetypes(tpf, tpf1, FALSE))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
@@ -2509,7 +2506,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
     
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->value, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->value, FALSE, noinline, FALSE);
                         if (!comparetypes(tpf, *tp, FALSE))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
@@ -2522,7 +2519,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, FALSE, noinline, FALSE);
                     }
                     else 
                     {
@@ -2531,7 +2528,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
                     }
                     if (needkw(&lex, comma))
                     {
-                        lex = expression_assign(lex, funcsp, NULL, &tpf1, &d->memoryOrder2, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, NULL, &tpf1, &d->memoryOrder2, FALSE, noinline, FALSE);
                     }
                     else 
                     {
@@ -2589,7 +2586,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     break;
                 case kw_nullptr:
                     *exp = intNode(en_nullptr, 0);
-                    *tp = &stdpointer;
+                    *tp = &stdnullpointer;
                     lex = getsym();
                     break;
                 case kw_this:
@@ -2622,7 +2619,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                             *tp = &stdint;
                         }
                     }
-                    else if (structSyms && funcsp->parentClass)
+                    else if (getStructureDeclaration() && funcsp->parentClass)
                     {
                         getThisType(funcsp, tp);
                         *exp = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
@@ -2660,7 +2657,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     return lex;
                 case openpa:
                     lex = getsym();
-                       lex = expression_comma(lex, funcsp, NULL, tp, exp, FALSE, noinline);
+                       lex = expression_comma(lex, funcsp, NULL, tp, exp, FALSE, noinline, FALSE);
                     if (!*tp)
                         error(ERR_EXPRESSION_SYNTAX);
                     needkw(&lex, closepa);
@@ -2939,7 +2936,7 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     {
         if (paren)
         {
-            lex = expression_comma(lex, funcsp, NULL, tp, exp, FALSE, FALSE);
+            lex = expression_comma(lex, funcsp, NULL, tp, exp, FALSE, FALSE, FALSE);
         }
         else
             lex = expression_unary(lex, funcsp, NULL, tp, exp, FALSE, FALSE);
@@ -3886,12 +3883,12 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
     }
     return lex;
 }
-static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
     lex = expression_add(lex, funcsp, atp, tp, exp, noinline);
     if (*tp == NULL)
         return lex;
-    while (MATCHKW(lex, rightshift) || MATCHKW(lex, leftshift))
+    while (MATCHKW(lex, rightshift) && !inTemplateParams || MATCHKW(lex, leftshift))
     {
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
@@ -3945,22 +3942,24 @@ static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
     }
     return lex;
 }
-static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
     BOOL done = FALSE;
-    lex = expression_shift(lex, funcsp, atp, tp, exp, noinline);
+    lex = expression_shift(lex, funcsp, atp, tp, exp, noinline, inTemplateParams);
     if (*tp == NULL)
         return lex;
     while (!done && lex)
     {	
         enum e_kw kw = KW(lex);
         enum e_node type ;
-        char *opname ;
+        char *opname = lex->kw->name;
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
         switch(kw)
         {
             case gt:
+                done = inTemplateParams;
+                break;
             case geq:
             case lt:
             case leq:
@@ -3973,7 +3972,7 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
         if (!done)
         {
             lex = getsym();
-            lex = expression_shift(lex, funcsp, NULL, &tp1, &exp1, noinline);
+            lex = expression_shift(lex, funcsp, NULL, &tp1, &exp1, noinline, inTemplateParams);
             if (!tp1)
             {
                 *tp = NULL;
@@ -4059,9 +4058,9 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
     }
     return lex;
 }
-static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    lex = expression_inequality(lex, funcsp, atp, tp, exp, noinline);
+    lex = expression_inequality(lex, funcsp, atp, tp, exp, noinline, inTemplateParams);
     if (*tp == NULL)
         return lex;
     while (MATCHKW(lex, eq) || MATCHKW(lex, neq))
@@ -4071,7 +4070,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
         EXPRESSION *exp1 = NULL;
         enum e_kw kw = KW(lex);
         lex = getsym();
-        lex = expression_inequality(lex, funcsp, NULL, &tp1, &exp1, noinline);
+        lex = expression_inequality(lex, funcsp, NULL, &tp1, &exp1, noinline, inTemplateParams);
         if (!tp1)
         {
             *tp = NULL;
@@ -4180,9 +4179,9 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
     return lex;
 }
 static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESSION **exp, enum e_kw kw, enum e_node type, 
-              LEXEME *(nextFunc)(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline), BOOL noinline)
+              LEXEME *(nextFunc)(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams), BOOL noinline, BOOL inTemplateParams)
 {
-    lex = (*nextFunc)(lex, funcsp, atp, tp, exp, noinline);
+    lex = (*nextFunc)(lex, funcsp, atp, tp, exp, noinline, inTemplateParams);
     if (*tp == NULL)
         return lex;
     while (MATCHKW(lex, kw))
@@ -4190,7 +4189,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
         lex = getsym();
-        lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, noinline);
+        lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, noinline, inTemplateParams);
         if (!tp1)
         {
             *tp = NULL;
@@ -4240,30 +4239,30 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
     }
     return lex;
 }
-static LEXEME *expression_and(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_and(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    return binop(lex, funcsp, atp, tp, exp, and, en_and, expression_equality, noinline);
+    return binop(lex, funcsp, atp, tp, exp, and, en_and, expression_equality, noinline, inTemplateParams);
 }
-static LEXEME *expression_xor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_xor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    return binop(lex, funcsp, atp, tp, exp, uparrow, en_xor, expression_and, noinline);
+    return binop(lex, funcsp, atp, tp, exp, uparrow, en_xor, expression_and, noinline, inTemplateParams);
 }
-static LEXEME *expression_or(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_or(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    return binop(lex, funcsp, atp, tp, exp, or, en_or, expression_xor, noinline);
+    return binop(lex, funcsp, atp, tp, exp, or, en_or, expression_xor, noinline, inTemplateParams);
 }
-static LEXEME *expression_land(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_land(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    return binop(lex, funcsp, atp, tp, exp, land, en_land, expression_or, noinline);
+    return binop(lex, funcsp, atp, tp, exp, land, en_land, expression_or, noinline, inTemplateParams);
 }
-static LEXEME *expression_lor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_lor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    return binop(lex, funcsp, atp, tp, exp, lor, en_lor, expression_land, noinline);
+    return binop(lex, funcsp, atp, tp, exp, lor, en_lor, expression_land, noinline, inTemplateParams);
 }
 
-static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    lex = expression_lor(lex, funcsp, atp, tp, exp, noinline);
+    lex = expression_lor(lex, funcsp, atp, tp, exp, noinline, inTemplateParams);
     if (*tp == NULL)
         return lex;
     if (MATCHKW(lex, hook))
@@ -4276,7 +4275,7 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
         else if (isvoid(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         lex = getsym();
-        lex = expression_comma(lex, funcsp, NULL, &tph, &eph, FALSE, noinline);
+        lex = expression_comma(lex, funcsp, NULL, &tph, &eph, FALSE, noinline, inTemplateParams);
         if (!tph)
         {
             *tp = NULL;
@@ -4284,7 +4283,7 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
         else if (MATCHKW(lex, colon))
         {
             lex = getsym();
-            lex = expression_hook(lex, funcsp, NULL, &tpc, &epc, noinline);
+            lex = expression_hook(lex, funcsp, NULL, &tpc, &epc, noinline, inTemplateParams);
             if (!tpc)
             {
                 *tp = NULL;
@@ -4320,13 +4319,13 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
     }
     return lex;
 }
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline)
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams)
 {
     BOOL done = FALSE;
     EXPRESSION *exp1=NULL;
     EXPRESSION *asndest = NULL;
     TYPE *tp2;
-    lex = expression_hook(lex, funcsp, atp, tp, exp, noinline);
+    lex = expression_hook(lex, funcsp, atp, tp, exp, noinline, inTemplateParams);
     if (*tp == NULL)
         return lex;
     while (!done && lex)
@@ -4382,7 +4381,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     else
                     {
                         lex = getsym();
-                        lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE, noinline);
+                        lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE, noinline, inTemplateParams);
                         if (!needkw(&lex, end))
                         {
                             errskim(&lex, skim_end);
@@ -4392,7 +4391,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 }
                 else
                 {
-                    lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE, noinline);
+                    lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE, noinline, inTemplateParams);
                 }
                 break;
             case asplus:
@@ -4400,10 +4399,10 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             case asand:
             case asor:
             case asxor:
-                lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE, noinline);
+                lex = expression_assign(lex, funcsp, *tp, &tp1, &exp1, FALSE, noinline, inTemplateParams);
                 break;
             default:
-                lex = expression_assign(lex, funcsp, NULL, &tp1, &exp1, FALSE, noinline);
+                lex = expression_assign(lex, funcsp, NULL, &tp1, &exp1, FALSE, noinline, inTemplateParams);
                 break;
         }
         if (!tp1)
@@ -4765,9 +4764,9 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     }
     return lex;
 }
-static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline)
+static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams)
 {
-    lex = expression_assign(lex, funcsp, atp, tp, exp, selector, noinline);
+    lex = expression_assign(lex, funcsp, atp, tp, exp, selector, noinline, inTemplateParams);
     if (*tp == NULL)
         return lex;
     while (MATCHKW(lex, comma))
@@ -4775,7 +4774,7 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         EXPRESSION *exp1=NULL;
         TYPE *tp1 = NULL;
         lex = getsym();
-        lex = expression_assign(lex, funcsp, atp, &tp1, &exp1, selector, noinline);
+        lex = expression_assign(lex, funcsp, atp, &tp1, &exp1, selector, noinline, inTemplateParams);
         if (!tp1)
         {
             break;
@@ -4794,23 +4793,23 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
     }
     return lex;
 }
-LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams)
 {
-    lex = expression_assign(lex, funcsp, atp, tp, exp, FALSE, noinline);
+    lex = expression_assign(lex, funcsp, atp, tp, exp, FALSE, noinline, inTemplateParams);
     assignmentUsages(*exp, FALSE);
     return lex;
 }
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
                    BOOL selector, BOOL noinline)
 {
-    lex = expression_comma(lex, funcsp, atp, tp, exp, selector, noinline);
+    lex = expression_comma(lex, funcsp, atp, tp, exp, selector, noinline, FALSE);
     return lex;
 }
 
 LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
                    BOOL selector, BOOL noinline)
 {
-    lex = expression_comma(lex, funcsp, atp, tp, exp, selector, noinline);
+    lex = expression_comma(lex, funcsp, atp, tp, exp, selector, noinline, FALSE);
     assignmentUsages(*exp, FALSE);
     return lex;
 }

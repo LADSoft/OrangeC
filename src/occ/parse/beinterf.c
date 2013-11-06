@@ -61,6 +61,10 @@ TYPE stdpointer =
 {
     bt_pointer, 4, &stdvoid
 };
+TYPE stdnullpointer = 
+{
+    bt_pointer, 4, &stdvoid
+};
 TYPE stdfloatcomplex =
 {
     bt_float_complex, 8
@@ -651,6 +655,8 @@ int init_backend(int *argc ,char **argv)
     rv = !chosenAssembler->init || (*chosenAssembler->init)(&cparams, chosenAssembler, chosenDebugger);
     if (rv ) {
         stdpointer.size = getSize(bt_pointer);
+        stdnullpointer.size = getSize(bt_pointer);
+        stdnullpointer.nullptrType = TRUE;
         stdfloatimaginary.size = stdfloat.size = getSize(bt_float);
         stddouble.size = stddoubleimaginary.size = getSize(bt_double);
         stdlongdouble.size = stdlongdoubleimaginary.size = getSize(bt_long_double);

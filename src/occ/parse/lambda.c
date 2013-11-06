@@ -41,7 +41,6 @@ extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern char *overloadNameTab[];
 extern TYPE stdpointer, stdvoid, stdauto;
 extern int nextLabel;
-extern LIST *structSyms;
 extern char infile[];
 
 LAMBDA *lambdas;
@@ -635,7 +634,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     SYMBOL *vpl, *ths;
     HASHREC *hrl;
     TYPE *ltp;
-    LIST ssl;
+    STRUCTSYM ssl;
     funcsp->noinline = TRUE;
     IncGlobalFlag();
     self = Alloc(sizeof(LAMBDA));
@@ -858,9 +857,9 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     injectThisPtr(lambdas->func, basetype(lambdas->func->tp)->syms);
     lambdas->func->tp->btp = self->functp;
     lambdas->func->linkage = lk_inline;
-    ssl.data= self->cls;
-    ssl.next = structSyms;
-    structSyms = &ssl;
+    ssl.str = self->cls;
+    ssl.tmpl = NULL;
+    addStructureDeclaration(&ssl);
     ths = makeID(sc_member, &stdpointer, NULL, "$this");
     lambda_insert(ths, lambdas);
     if (MATCHKW(lex, begin))
@@ -871,7 +870,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     {
         error(ERR_LAMBDA_FUNCTION_BODY_EXPECTED);
     }
-    structSyms = structSyms->next;
+    dropStructureDeclaration();
     localNameSpace->syms = self->oldSyms;
     localNameSpace->tags = self->oldTags;
     finishClass();

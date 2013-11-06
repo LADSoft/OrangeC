@@ -98,6 +98,10 @@ void displayLexeme(LEXEME *lex);
 void ParseBuiltins(void);
 BOOL ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOL always);
 void declare_init(void);
+void addStructureDeclaration(STRUCTSYM *decl);
+void addTemplateDeclaration(STRUCTSYM *decl);
+void dropStructureDeclaration(void);
+SYMBOL *getStructureDeclaration(void);
 void checkOperatorArgs(SYMBOL *sp);
 SYMBOL *getCopyCons(SYMBOL *base, BOOL move);
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype);
@@ -137,7 +141,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, enum e_sc storage_class);
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
-LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, 
+LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEARG *templateArgs, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
                     enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
@@ -147,7 +151,12 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMB
 void sizeQualifiers(TYPE *tp);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
-LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
+void templateInit(void);
+void TemplateGetDeferred(SYMBOL *sym);
+void TemplateRegisterDeferred(LEXEME *lex);
+TEMPLATEARG * TemplateMatching(LEXEME *lex, TEMPLATEARG *old, TEMPLATEARG *sym);
+LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access);
+LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEARG *templateArgs, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOL needsemi, BOOL asExpression, BOOL asfriend, enum e_ac access );
 
                                /* Expr.c */
@@ -190,8 +199,8 @@ void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp);
 void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline);
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline);
-LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline);
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams);
+LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams);
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
 				   BOOL selector, BOOL noinline);
 LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
@@ -256,7 +265,7 @@ void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
 
                                /* Help.c */
 
-BOOL istype(enum e_sc storageClass);
+BOOL istype(SYMBOL *sym);
 BOOL ismemberdata(SYMBOL *sp);
 BOOL startOfType(LEXEME *lex);
 TYPE *basetype(TYPE *tp);
@@ -642,6 +651,7 @@ int getChar(char **source, enum e_lexType *tp);
 SLCHAR *getString(char **source, enum e_lexType *tp);
 int getId(char **ptr , char *dest);
 LEXEME *SkipToNextLine(void);
+LEXEME *getGTSym(LEXEME *in);
 LEXEME *getsym(void);
 void marksym(void);
 LEXEME *backupsym(int rel);
@@ -678,7 +688,6 @@ void *tAlloc(int size);
 void tFree(void);
 void *sAlloc(int size);
 void sFree(void);
-void templateFree(void);
 void IncGlobalFlag(void);
 void DecGlobalFlag(void);
 void SetGlobalFlag(int flag);

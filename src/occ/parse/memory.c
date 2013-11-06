@@ -39,8 +39,6 @@
 
 typedef unsigned DWORD;
 
-extern int inTemplate;
-
 static MEMBLK *freemem;
 static MEMBLK *freestdmem;
 static MEMBLK *globals;
@@ -184,10 +182,7 @@ void *Alloc( int size)
         return memAlloc(&locals, size);
     else
 #endif
-        if (inTemplate)
-            return memAlloc(&templates, size);
-        else
-            return memAlloc(&globals, size);
+        return memAlloc(&globals, size);
 }
 void *oAlloc(int size)
 {
@@ -220,10 +215,6 @@ void *sAlloc(int size)
 void sFree(void)
 {
     memFree(&live, &livePeak);
-}
-void templateFree(void)
-{
-    memFree(&templates, &templatePeak);
 }
 void IncGlobalFlag(void)
 {

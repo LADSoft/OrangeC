@@ -598,7 +598,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                 {
-                    lex = expression_no_comma(lex, funcsp, NULL, &selectTP, &select, FALSE);
+                    lex = expression_no_comma(lex, funcsp, NULL, &selectTP, &select, FALSE, FALSE);
                 }
                 if (!selectTP)
                 {
@@ -1505,7 +1505,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         TYPE *tp1 = NULL;
                         enum e_lk linkage, linkage2, linkage3;
                         BOOL defd = FALSE;
-                        lex = getBasicType(lex, funcsp, &tp1, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL);
+                        lex = getBasicType(lex, funcsp, &tp1, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL);
                         if (!tp1 || !comparetypes(basetype(tp1), basetype(tp), TRUE))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
@@ -1998,7 +1998,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     {
         SYMBOL *sp = gsearch("_ThrowException");
         makeXCTab(funcsp);
-        lex = expression_assign(lex, funcsp, NULL, &tp, &exp, FALSE, FALSE);
+        lex = expression_assign(lex, funcsp, NULL, &tp, &exp, FALSE, FALSE, FALSE);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -2089,7 +2089,7 @@ LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, int labe
             }
             else
             {
-                lex = declare(lex, funcsp,&tp, sc_catchvar, lk_none, catchstmt , FALSE, TRUE,FALSE, ac_public);               
+                lex = declare(lex, funcsp,&tp, NULL, sc_catchvar, lk_none, catchstmt , FALSE, TRUE,FALSE, ac_public);               
             }
             if (needkw(&lex, closepa))
             {
@@ -2255,7 +2255,7 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
     BLOCKDATA block;
     (void)parent;
     declareAndInitialize = FALSE;
-    lex = declare(lex, funcsp, tp, sc_auto, lk_none, &block, FALSE, asExpression, FALSE, ac_public);
+    lex = declare(lex, funcsp, tp, NULL, sc_auto, lk_none, &block, FALSE, asExpression, FALSE, ac_public);
     memset(&block, 0, sizeof(BLOCKDATA));
     reverseAssign(block.head, exp);
     if (!*exp)
@@ -2418,7 +2418,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                 {
                     STATEMENT *current = parent->tail;
                     declareAndInitialize = FALSE;
-                    lex = declare(lex, funcsp, NULL, sc_auto, lk_none, parent, FALSE, FALSE, FALSE, ac_public);
+                    lex = declare(lex, funcsp, NULL, NULL, sc_auto, lk_none, parent, FALSE, FALSE, FALSE, ac_public);
                     markInitializers(current);
                     if (MATCHKW(lex, semicolon))
                     {
@@ -2570,7 +2570,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         {
             STATEMENT *current = blockstmt->tail;
             declareAndInitialize = FALSE;
-            lex = declare(lex, funcsp, NULL, sc_auto, lk_none, blockstmt, FALSE, FALSE, FALSE, ac_public);
+            lex = declare(lex, funcsp, NULL, NULL, sc_auto, lk_none, blockstmt, FALSE, FALSE, FALSE, ac_public);
             markInitializers(current);
             if (MATCHKW(lex, semicolon))
             {
@@ -2882,22 +2882,25 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     handleInlines(funcsp);
     checkUnlabeledReferences(block);
     checkGotoPastVLA(block->head, TRUE);
-    funcsp->inlineFunc.stmt = stmtNode(lex, NULL, st_block);
-    funcsp->inlineFunc.stmt->lower = block->head;
-    funcsp->inlineFunc.stmt->blockTail = block->blockTail;
-    funcsp->declaring = FALSE;
-    if (funcsp->linkage == lk_inline)
+    if (funcsp->storage_class != sc_template)
     {
-        InsertInline(funcsp);
-        if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)
-            funcsp->genreffed = TRUE;
+        funcsp->inlineFunc.stmt = stmtNode(lex, NULL, st_block);
+        funcsp->inlineFunc.stmt->lower = block->head;
+        funcsp->inlineFunc.stmt->blockTail = block->blockTail;
+        funcsp->declaring = FALSE;
+        if (funcsp->linkage == lk_inline)
+        {
+            InsertInline(funcsp);
+            if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)
+                funcsp->genreffed = TRUE;
+        }
+    #ifndef PARSER_ONLY
+        else
+        {
+            genfunc(funcsp);
+        }
+    #endif
     }
-#ifndef PARSER_ONLY
-    else
-    {
-        genfunc(funcsp);
-    }
-#endif
 #ifndef PARSER_ONLY
     localFree();
 #endif

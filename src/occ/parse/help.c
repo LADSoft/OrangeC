@@ -5,7 +5,7 @@
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
+    with or without modification, are permitted provided tthat the following 
     conditions are met:
     
     * Redistributions of source code must retain the above
@@ -57,9 +57,13 @@ extern TYPE stdchar32t;
 extern int nextLabel;
 extern SYMBOL *theCurrentFunc;
 
-BOOL istype(enum e_sc storageClass)
+BOOL istype(SYMBOL *sym)
 {
-    return storageClass == sc_type || storageClass == sc_typedef;
+    if (sym->storage_class == sc_templateparam)
+    {
+        return sym->tp->templateArg->type == kw_typename;
+    }
+    return sym->storage_class == sc_type || sym->storage_class == sc_typedef;
 }
 BOOL ismemberdata(SYMBOL *sp)
 {
@@ -75,7 +79,7 @@ BOOL startOfType(LEXEME *lex)
         nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
         if (cparams.prm_cplusplus)
             backupsym(0);
-        return sp && istype(sp->storage_class);
+        return sp && istype(sp);
     }
     else 
     {
@@ -142,6 +146,10 @@ BOOL isint(TYPE *tp)
         case bt_unsigned_long_long:
         case bt_wchar_t:
             return TRUE;
+        case bt_templateparam:
+            if (tp->templateArg->type == kw_int)
+                return isint(tp->templateArg->byNonType.tp);
+            return FALSE;
         default:
             if (tp->type == bt_enum && !cparams.prm_cplusplus)
                 return TRUE;
@@ -296,6 +304,10 @@ BOOL ispointer(TYPE *tp)
         case bt_pointer:
         case bt_seg:
             return TRUE;
+        case bt_templateparam:
+            if (tp->templateArg->type == kw_int)
+                return ispointer(tp->templateArg->byNonType.tp);
+            return FALSE;
         default:
             return FALSE;
     }
@@ -309,6 +321,10 @@ BOOL isref(TYPE *tp)
             return TRUE;
         case bt_rref:
             return TRUE;
+        case bt_templateparam:
+            if (tp->templateArg->type == kw_int)
+                return isref(tp->templateArg->byNonType.tp);
+            return FALSE;
         default:
             return FALSE;
     }
@@ -607,6 +623,7 @@ void deref(TYPE *tp, EXPRESSION **exp)
         case bt_func:
         case bt_ifunc:
         case bt_any:
+        case bt_templateparam:
             return;
         default:
             diag("deref error");
@@ -622,6 +639,7 @@ int sizeFromType(TYPE *tp)
     switch (tp->type == bt_enum ? tp->btp->type : tp->type)
     {
         case bt_void:
+        case bt_templateparam:
             rv = ISZ_UINT;
             break;
         case bt_bool:
@@ -797,6 +815,7 @@ void cast(TYPE *tp, EXPRESSION **exp)
             en = en_x_p;
             break;
         case bt_void:
+        case bt_templateparam:
             break;
         default:
             diag("cast error");

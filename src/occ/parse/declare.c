@@ -60,15 +60,16 @@ extern TYPE stdchar32tptr;
 extern char *overloadNameTab[];
 extern LEXCONTEXT *context;
 extern LAMBDA *lambdas;
-
+extern BOOL inTemplateBody;
+extern int templateNestingCount;
 #ifndef BORLAND
 extern int wcslen(short *);
 #endif
 
 LIST *externals, *globalCache;
-LIST *structSyms;
 char deferralBuf[100000];
 SYMBOL *enumSyms;
+STRUCTSYM *structSyms;
 
 static int unnamed_tag_id, unnamed_id, anonymous_id;
 static char *importFile;
@@ -77,7 +78,7 @@ static char *importFile;
 #define CT_CONS 1
 #define CT_DEST 2
 
-LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, enum e_sc *storage_class_in,
+LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, TEMPLATEARG *templateArgs, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOL *blocked, BOOL *isExplicit, BOOL *constexpression, TYPE **tp, 
                        enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 
@@ -143,13 +144,39 @@ SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
     }
     return sp;
 }
+void addStructureDeclaration(STRUCTSYM *decl)
+{
+    decl->next = structSyms;
+    decl->tmpl = NULL;
+    structSyms = decl;
+}
+void addTemplateDeclaration(STRUCTSYM *decl)
+{
+    decl->next = structSyms;
+    decl->str = NULL;
+    structSyms = decl;
+}
+void dropStructureDeclaration(void)
+{
+    structSyms = structSyms->next;
+}
+SYMBOL *getStructureDeclaration(void)
+{
+    STRUCTSYM *l = structSyms;
+    while (l && !l->str)
+        l = l->next;
+    if (l)
+        return l->str;
+    return NULL;
+}
 void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage)
 {
     HASHTABLE *table ;
-    if (structSyms && sp->parentClass == structSyms->data)
+    SYMBOL *ssp = getStructureDeclaration();
+
+    if (ssp && sp->parentClass == ssp)
     {
-        SYMBOL *ssp = (SYMBOL *)structSyms->data;
-          table = ssp->tp->syms;
+        table = sp->parentClass->tp->syms;
     }		
     else if (storage_class == sc_auto || storage_class == sc_register 
         || storage_class == sc_parameter || storage_class == sc_localstatic)
@@ -158,7 +185,7 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage)
         table = localNameSpace->syms;
     else
         table = globalNameSpace->syms ;
-    if (isfunction(sp->tp) && !istype(sp->storage_class))
+    if (isfunction(sp->tp) && !istype(sp))
     {
         char *name = sp->castoperator ? overloadNameTab[CI_CAST] : sp->name; 
         HASHREC **hr = LookupName(name, table);
@@ -218,7 +245,7 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
                 if (nsv)
                     hr = LookupName((*rsp)->name, nsv->tags);
                 else if (cparams.prm_cplusplus && storage_class == sc_member)
-                    hr = LookupName((*rsp)->name, ((SYMBOL *)structSyms->data)->tp->tags);
+                    hr = LookupName((*rsp)->name, getStructureDeclaration()->tp->tags);
                 else if (storage_class == sc_auto)
                     hr = LookupName((*rsp)->name, localNameSpace->tags);
                 else
@@ -259,8 +286,8 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
     }
     else if (cparams.prm_cplusplus && storage_class == sc_member)
     {
-        *table = ((SYMBOL *)structSyms->data)->tp->tags;
-        strSym = structSyms->data;
+        strSym = getStructureDeclaration();
+        *table = strSym->tp->tags;
     }
     else
     {
@@ -306,11 +333,13 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOL beforeOnly)
     BOOL notype = FALSE;
     *tp = NULL;
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
-    lex = getBasicType(lex, funcsp, tp, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+    lex = getBasicType(lex, funcsp, tp, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
     lex = getBeforeType(lex, funcsp, tp, &sp, NULL, NULL, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE, beforeOnly); /* fixme at file scope init */
     sizeQualifiers(*tp);
-    if (sp && !sp->anonymous)
+    if (notype)
+        *tp = NULL;
+    else if (sp && !sp->anonymous)
         error(ERR_TOO_MANY_IDENTIFIERS);
     return lex;
 }
@@ -343,12 +372,11 @@ SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp)
                     // ok found a pure function, look it up within top and
                     // check to see if it has been overrridden
                     SYMBOL *pq;
-                    LIST l;
-                    l.next = structSyms;
-                    l.data = (void *)top;
-                    structSyms = &l;
+                    STRUCTSYM l;
+                    l.str = (void *)top;
+                    addStructureDeclaration(&l);
                     pq = classsearch(pi->name, FALSE);
-                    structSyms = structSyms->next;
+                    dropStructureDeclaration();
                     if (pq)
                     {
                         HASHREC *hrq = pq->tp->syms->table[0];
@@ -422,7 +450,7 @@ static void calculateStructOffsets(SYMBOL *sp)
         SYMBOL *p = (SYMBOL *)hr->p;
         TYPE *tp = basetype(p->tp);
         if (p->storage_class != sc_static && p->storage_class != sc_external && p->storage_class != sc_overloads
-            && !istype(p->storage_class) && p != sp && p->parentClass == sp) 
+            && !istype(p) && p != sp && p->parentClass == sp) 
                     // not function, also not injected self or base class or static variable
         {
             int align ;
@@ -693,14 +721,13 @@ static void resolveAnonymousUnions(SYMBOL *sp)
 }
 static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac currentAccess)
 {
-    LIST *sl;
+    STRUCTSYM *sl;
     (void)funcsp;
     lex = getsym();
     sp->declaring = TRUE;
     sl = Alloc(sizeof(LIST));
-    sl->data = sp;
-    sl->next = structSyms;
-    structSyms = sl;
+    sl->str = sp;
+    addStructureDeclaration(sl);
     while (lex && KW(lex) != end)
     {
         switch(KW(lex))
@@ -725,14 +752,14 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
                 break;
             case kw_friend:
                 lex = getsym();
-                lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, TRUE, currentAccess);
+                lex = declare(lex, NULL, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, TRUE, currentAccess);
                 break;
             default:
-                lex = declare(lex, NULL, NULL, sc_member, lk_none, NULL, TRUE, FALSE, FALSE, currentAccess);
+                lex = declare(lex, NULL, NULL, NULL, sc_member, lk_none, NULL, TRUE, FALSE, FALSE, currentAccess);
                 break;
         }
     }
-    structSyms = structSyms->next;
+    dropStructureDeclaration();
     sp->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
     if (cparams.prm_cplusplus && sp->tp->syms)
@@ -760,7 +787,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     sp->declaring = FALSE;
     return lex;
 }
-static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_ac access, BOOL *defd)
+static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEARG *templateArgs, enum e_sc storage_class, enum e_ac access, BOOL *defd)
 {
     BOOL isfinal = FALSE;
     SYMBOL *injected = NULL;
@@ -825,7 +852,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc stor
         sp->declfile = lex->file;
         sp->declfilenum = lex->filenum;
         if (storage_class == sc_member)
-            sp->parentClass = (SYMBOL *)structSyms->data;
+            sp->parentClass = getStructureDeclaration();
         if (nsv)
             sp->parentNameSpace = nsv->name;
         sp->anonymous = charindex == -1;
@@ -833,6 +860,12 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc stor
         SetLinkerNames(sp, lk_cdecl);
         browse_variable(sp);
         insert(sp, table);
+        if (templateArgs)
+        {
+            sp->templateArgs = templateArgs;
+            sp->isTemplate = TRUE;
+            TemplateMatching(lex, NULL, templateArgs);
+        }
     }
     else if (type != sp->tp->type)
     {
@@ -841,6 +874,21 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc stor
     else if (access != sp->access && sp->tp->syms)
     {
         errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
+    }
+    else if (templateArgs && templateNestingCount == 1)
+    {
+        if (!sp->isTemplate)
+        {
+            errorsym(ERR_NOT_A_TEMPLATE, sp);
+        }
+        else
+        {
+            sp->templateArgs = TemplateMatching(lex, sp->templateArgs, templateArgs);
+        }
+    }
+    else if (sp->isTemplate)
+    {
+        errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
     }
     if (cparams.prm_cplusplus && KW(lex) == colon || KW(lex) == begin)
     {
@@ -869,8 +917,15 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc stor
     if (KW(lex) == begin)
     {
         sp->isfinal = isfinal;
+        if (templateArgs && templateNestingCount == 1)
+            inTemplateBody= TRUE;
         lex = structbody(lex, funcsp, sp, defaultAccess);
         *defd = TRUE;
+        if (templateArgs && templateNestingCount == 1)
+        {
+            inTemplateBody = FALSE;
+            TemplateGetDeferred(sp);
+        }
     }
     *tp = sp->tp;
     return lex;
@@ -1108,7 +1163,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         sp->declfile = lex->file;
         sp->declfilenum = lex->filenum;
         if (storage_class == sc_member)
-            sp->parentClass = (SYMBOL *)structSyms->data;
+            sp->parentClass = getStructureDeclaration();
         if (nsv)
             sp->parentNameSpace = nsv->name;
         sp->anonymous = charindex == -1;
@@ -1193,7 +1248,7 @@ static LEXEME *getStorageClass(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_c
                                 lex = getsym();
                                 while (lex && !MATCHKW(lex, end))
                                 {
-                                    lex = declare(lex, NULL, NULL, sc_global, *linkage, NULL, TRUE, FALSE, FALSE, ac_public) ;
+                                    lex = declare(lex, NULL, NULL, NULL, sc_global, *linkage, NULL, TRUE, FALSE, FALSE, ac_public) ;
                                 }
                                 needkw(&lex, end);
                                 return lex;
@@ -1447,13 +1502,13 @@ static LEXEME *nestedTypeSearch(LEXEME *lex, SYMBOL **sym)
 {
     *sym = NULL;
     lex = nestedSearch(lex, sym, NULL, NULL, NULL, FALSE);
-    if (!*sym || !istype((*sym)->storage_class))
+    if (!*sym || !istype((*sym)))
     {
         error(ERR_TYPE_NAME_EXPECTED);
     }
     return lex;
 }
-LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, 
+LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEARG *templateArgs, enum e_sc storage_class, 
                      enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3_in, 
                      enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
@@ -1758,7 +1813,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
             case kw_union:
                 if (foundsigned || foundunsigned || type != bt_none)
                     flagerror = TRUE;
-                lex = declstruct(lex, funcsp, &tn, storage_class, access, defd);
+                lex = declstruct(lex, funcsp, &tn, templateArgs, storage_class, access, defd);
                 goto exit;
             case kw_enum:
                 if (foundsigned || foundunsigned || type != bt_none)
@@ -1932,8 +1987,9 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
             SYMBOL *sp;
             BOOL destructor = FALSE;
             lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, FALSE);
-            if (sp && istype(sp->storage_class))
+            if (sp && istype(sp))
             {
+                SYMBOL *ssp = getStructureDeclaration();
                 tn = sp->tp;
                 foundsomething = TRUE;
                 lex = getsym();
@@ -1944,7 +2000,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_c
                 }
                 if (linkage2 != lk_none)
                     *linkage2_in = linkage2;
-                if (cparams.prm_cplusplus && MATCHKW(lex, openpa) && (strSym && (strSym->mainsym == sp->mainsym || strSym == sp->mainsym) || !strSym && storage_class == sc_member && structSyms && structSyms->data == sp->mainsym))
+                if (cparams.prm_cplusplus && MATCHKW(lex, openpa) && (strSym && (strSym->mainsym == sp->mainsym || strSym == sp->mainsym) || !strSym && storage_class == sc_member && ssp && ssp == sp->mainsym))
                 {
                     if (destructor)
                     {
@@ -2408,7 +2464,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOL notype = FALSE;
                 spi = NULL;
                 tp1 = NULL;
-                lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class,
+                lex = getStorageAndType(lex, funcsp, NULL, &storage_class, &storage_class,
                        &address, &blocked, NULL, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
@@ -2565,7 +2621,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOL defd = FALSE;
                 BOOL notype = FALSE;
                 tp1 = NULL;
-                lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class,
+                lex = getStorageAndType(lex, funcsp, NULL, &storage_class, &storage_class,
                        &address, &blocked, NULL, &constexpression,&tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
 
                 while (1)
@@ -3467,7 +3523,7 @@ static BOOL sameQuals(TYPE *tp1, TYPE *tp2)
     }
     return TRUE;
 }
-static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_class, enum e_sc *storage_class_in,
+static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, TEMPLATEARG *templateArgs, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOL *blocked, BOOL *isExplicit, BOOL *constexpression, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, 
                        enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
@@ -3498,7 +3554,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
             if (MATCHKW(lex, kw_atomic))
             {
                 foundType = TRUE;
-                lex = getBasicType(lex, funcsp, tp, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
+                lex = getBasicType(lex, funcsp, tp, templateArgs, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
             }
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
@@ -3510,7 +3566,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
         else
         {
             foundType = TRUE;
-            lex = getBasicType(lex, funcsp, tp, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
+            lex = getBasicType(lex, funcsp, tp, templateArgs, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
         }
@@ -3565,7 +3621,7 @@ void injectThisPtr(SYMBOL *sp, HASHTABLE *syms)
         *hr = hr1;
     }
 }
-LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_class, enum e_lk defaultLinkage, 
+LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, TEMPLATEARG *templateArgs, enum e_sc storage_class, enum e_lk defaultLinkage, 
                        BLOCKDATA *block, BOOL needsemi, BOOL asExpression, BOOL asFriend, enum e_ac access)
 {
     TYPE *btp;
@@ -3587,8 +3643,20 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
             linkage = lk_inline;
             lex = getsym();
         }
-            
-        if (!asExpression && MATCHKW(lex, kw_namespace))
+        if (!asExpression && MATCHKW(lex, kw_template))
+        {
+            if (funcsp)
+                if (storage_class == sc_member)
+                    error(ERR_TEMPLATE_NO_LOCAL_CLASS);
+                else
+                    error(ERR_TEMPLATE_GLOBAL_OR_CLASS_SCOPE);
+            if (hasAttributes)
+                error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
+                
+            lex = TemplateDeclaration(lex, funcsp, access);
+            needsemi = FALSE;
+        }            
+        else if (!asExpression && MATCHKW(lex, kw_namespace))
         {
             BOOL linked;
             if (storage_class_in == sc_member)
@@ -3604,7 +3672,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                 {
                     while (lex && !MATCHKW(lex, end))
                     {
-                        lex = declare(lex, NULL, NULL, storage_class, defaultLinkage, NULL, TRUE, FALSE, FALSE, access);
+                        lex = declare(lex, NULL, NULL, NULL, storage_class, defaultLinkage, NULL, TRUE, FALSE, FALSE, access);
                     }
                 }
                 needkw(&lex, end);
@@ -3638,7 +3706,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
             BOOL isExplicit = FALSE;
             int consdest = CT_NONE;
             IncGlobalFlag(); /* in case we have to initialize a func level static */
-            lex = getStorageAndType(lex, funcsp, &storage_class, &storage_class_in, 
+            lex = getStorageAndType(lex, funcsp, templateArgs, &storage_class, &storage_class_in, 
                                     &address, &blocked, &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest);
             if (blocked)
             {
@@ -3680,6 +3748,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                         storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest, FALSE);
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
+                    if (tprv && !notype)
+                        *tprv = tp1;
                     // if defining something outside its scope set the symbol tables
                     // to the original scope it lives in
                     if (nsv)
@@ -3695,10 +3765,9 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         else
                         {
-                            LIST *l = Alloc(sizeof(LIST));
-                            l->data = strSym;
-                            l->next = structSyms;
-                            structSyms = l ;   
+                            STRUCTSYM *l = Alloc(sizeof(LIST));
+                            l->str = strSym;
+                            addStructureDeclaration(l);
                         }
                     }
                     if (!incrementedStorageClass && tp1->type == bt_func)
@@ -3732,7 +3801,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 }
                                 if (strSym && strSym->tp->type != bt_enum)
                                 {
-                                    structSyms = structSyms->next;
+                                    dropStructureDeclaration();
                                 }
                                 break;
                             }
@@ -3759,14 +3828,14 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             sp->anonymous = TRUE;
                             SetLinkerNames(sp, lk_c);
                             sp->parent = funcsp; /* function vars have a parent */
-                            sp->parentClass = structSyms->data;
+                            sp->parentClass = getStructureDeclaration();
                             InsertSymbol(sp, sp->storage_class, linkage);
                         }
                         else
                         {
                             if (asFriend)
                             {
-                                SYMBOL *sym = (SYMBOL *)structSyms->data;
+                                SYMBOL *sym = getStructureDeclaration();
                                 LIST *l = Alloc(sizeof(LIST));
                                 l->data = (void *)tp1->sp;
                                 l->next = sym->friends;
@@ -3778,7 +3847,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             }
                             if (strSym && strSym->tp->type != bt_enum)
                             {
-                                structSyms = structSyms->next;
+                                dropStructureDeclaration();
                             }
                             break;
                         }
@@ -3786,8 +3855,23 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                     else
                         
                     {
+                        SYMBOL *ssp = NULL;
+                        STRUCTSYM *ss1;
                         SYMBOL *spi;
                         HASHREC **p;
+                        ss1 = structSyms;
+                        while (ss1 && !ss1->str)
+                            ss1 = ss1->next;
+                        if (ss1)
+                        {
+                            ss1 = ss1->next;
+                            while (ss1 && !ss1->str)
+                                ss1 = ss1->next;
+                            if (ss1)
+                                ssp = ss1->str;
+                        }
+                        if (templateArgs && templateNestingCount == 1)
+                            inTemplateBody = TRUE;
                         if (consdest != CT_NONE)
                             if (consdest == CT_CONS)
                                 sp-> isConstructor = TRUE;
@@ -3798,11 +3882,15 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             sp->name = overloadNameTab[CI_CONSTRUCTOR];
                         if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
-                        if (storage_class_in == sc_member && structSyms)
-                            sp->parentClass = structSyms->data;
+                        ssp = getStructureDeclaration();
+                        if (storage_class_in == sc_member && ssp)
+                            sp->parentClass = ssp;
+                        if (storage_class_in == sc_template)
+                             sp->isTemplate = TRUE;
                         sp->constexpression = constexpression;
                         sp->access = access;
                         sp->isExplicit = isExplicit;
+                        sp->templateArgs = templateArgs;
                         if (sp->constexpression && !sp->isDestructor && !sp->isConstructor)
                         {
                             TYPE *tpx = Alloc(sizeof(TYPE));
@@ -3812,8 +3900,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             tp1 = tpx;
                         }
                         sp->tp = tp1;
-                        if (tprv)
-                            *tprv = tp1;
                         sp->storage_class = storage_class;
                         sp->linkage = linkage;
                         sp->linkage2 = linkage2;
@@ -3842,7 +3928,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             sp->value.i= address;
                         if (sp->storage_class == sc_global && linkage == lk_inline)
                             sp->storage_class = sc_static;
-                        if ((!cparams.prm_cplusplus || !structSyms) && !istype(sp->storage_class) && sp->storage_class != sc_static &&
+                        if ((!cparams.prm_cplusplus || !getStructureDeclaration()) && !istype(sp) && sp->storage_class != sc_static &&
                             isfunction(basetype(tp1)) && !MATCHKW(lex, begin ))
                             sp->storage_class = sc_external;
                         if (isvoid(tp1))
@@ -3865,9 +3951,9 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         if (isstructured(tp1) && basetype(tp1)->sp->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
-                        if (structSyms && structSyms->next && strSym)
+                        if (ssp && strSym)
                         {
-                            if (strSym != structSyms->next->data && strSym->mainsym != structSyms->next->data)
+                            if (strSym != ssp && strSym->mainsym != ssp)
                             {
                                 errorsym(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, sp);
                             }
@@ -3883,8 +3969,9 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sp->name);
                         }
                         else {
-                            if (structSyms)
-                                p = LookupName(sp->name, ((SYMBOL *)(structSyms->data))->tp->syms);				
+                            ssp = getStructureDeclaration();
+                            if (ssp)
+                                p = LookupName(sp->name, ssp->tp->syms);				
                             else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external)
                                 p = LookupName(sp->name, localNameSpace->syms);
                             else
@@ -3937,6 +4024,19 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         if (spi)
                         {
+                            if (templateArgs && templateNestingCount == 1)
+                            {
+                                if (!spi->isTemplate)
+                                    errorsym(ERR_NOT_A_TEMPLATE, sp);
+                                else
+                                {
+                                    sp->templateArgs = spi->templateArgs = TemplateMatching(lex, spi->templateArgs, templateArgs);
+                                }
+                            }
+                            else if (spi->isTemplate)
+                            {
+                                errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+                            }
                             if (isfunction(spi->tp))		
                                 matchFunctionDeclaration(lex, sp, spi);
                             if (sp->parentClass)
@@ -3945,10 +4045,10 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 sp->parentClass = strSym;
                             if (sp->constexpression)
                                 spi->constexpression = TRUE;
-                            if (istype(spi->storage_class))
+                            if (istype(spi))
                             {
                                 if (cparams.prm_ansi || !comparetypes(sp->tp, (spi)->tp, TRUE) ||
-                                    !istype(sp->storage_class))
+                                    !istype(sp))
                                     preverrorsym(ERR_REDEFINITION_OF_TYPE, sp, spi->declfile, spi->declline);
                             }
                             else
@@ -3957,7 +4057,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 {
                                     preverrorsym(ERR_DUPLICATE_IDENTIFIER, sp, spi->declfile, spi->declline);
                                 }
-                                else if (!isfunction(sp->tp) && !isfunction(spi->tp) && !comparetypes(sp->tp, (spi)->tp, TRUE) || istype(sp->storage_class))
+                                else if (!isfunction(sp->tp) && !isfunction(spi->tp) && !comparetypes(sp->tp, (spi)->tp, TRUE) || istype(sp))
                                 {
                                     preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->declfile, spi->declline);
                                 }
@@ -4061,6 +4161,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         else
                         {
+                            if (templateArgs && templateNestingCount == 1)
+                                TemplateMatching(lex, NULL, templateArgs);
                             if (isfunction(sp->tp))		
                                 matchFunctionDeclaration(lex, sp, sp);
                             if (!asFriend || isfunction(sp->tp))
@@ -4075,7 +4177,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 else
                                 {
                                     InsertSymbol(sp, storage_class, linkage);
-                                    if (isfunction(sp->tp) && structSyms)
+                                    if (isfunction(sp->tp) && getStructureDeclaration())
                                     {
                                         InsertExtern(sp);
                                     }
@@ -4091,7 +4193,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         {
                             if (isfunction(sp->tp))
                             {
-                                SYMBOL *sym = (SYMBOL *)structSyms->data;
+                                SYMBOL *sym = getStructureDeclaration();
                                 LIST *l = Alloc(sizeof(LIST));
                                 l->data = (void *)sp;
                                 l->next = sym->friends;
@@ -4103,6 +4205,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                             if (isfunction(sp->tp) && (isconst(sp->tp) || isvolatile(sp->tp)))
                                 error(ERR_ONLY_MEMBER_CONST_VOLATILE);
                         }
+                        if (templateArgs && templateNestingCount == 1)
+                            inTemplateBody = FALSE;
                     }
                     if (sp)
                         if  (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]))
@@ -4169,6 +4273,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 SetLinkerNames(sp, lk_c);
                         }
                     }
+                    if (templateArgs && templateNestingCount == 1)
+                        inTemplateBody = TRUE;
                     if (lex)
                     {
                         if (linkage != lk_cdecl)
@@ -4343,6 +4449,11 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                     }
                     if (isExplicit && !sp->castoperator &&!sp->isConstructor)
                         error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
+                    if (templateArgs && templateNestingCount == 1)
+                    {
+                        inTemplateBody = FALSE;
+                        TemplateGetDeferred(sp);
+                    }
                     if (!strcmp(sp->name, "main"))
                     {
                         // fixme don't check if in parent class...
@@ -4374,9 +4485,9 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                     }
                     if (strSym && strSym->tp->type != bt_enum)
                     {
-                        structSyms = structSyms->next;
+                        dropStructureDeclaration();
                     }
-                } while (!asExpression && MATCHKW(lex, comma) && (lex = getsym()) != NULL);
+                } while (!asExpression && !templateArgs && MATCHKW(lex, comma) && (lex = getsym()) != NULL);
                 if (incrementedStorageClass)
                 {
                     DecGlobalFlag(); /* in case we have to initialize a func level static */
@@ -4391,5 +4502,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
         skip(&lex, semicolon);
     }
     deferredCompile();
+        
     return lex;
 }

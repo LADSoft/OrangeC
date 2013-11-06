@@ -167,7 +167,7 @@ enum e_stmt
 /* storage classes */
 enum e_sc
 {
-        sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, 
+        sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_template, sc_templateparam,
         sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_cast, sc_defunc, sc_label, sc_ulabel,
         sc_overloads, sc_constant, sc_enumconstant, sc_absolute,
         sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
@@ -193,7 +193,7 @@ enum e_bt
     bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_struct,
         bt_union, bt_func, bt_class, bt_ifunc, bt_any, bt_auto,
         bt_match_none, bt_ellipse, bt_memberptr, bt_cond,
-        bt_consplaceholder, bt_templateplaceholder, bt_string,
+        bt_consplaceholder, bt_templateparam, bt_string,
         /* last */
         bt_none
 };
@@ -283,12 +283,14 @@ typedef    struct type
         int anonymousbits:1; /* type is a bit type without a name */
         int scoped:1; /* c++ scoped enumeration */
         int fixed:1; /* c++ fixed enumeration */
+        int nullptrType:1; /* c++: std::nullptr */
         char bits; /* -1 for not a bit val, else bit field len */
         char startbit; /* start of bit field */
         struct sym *sp; /* pointer to a symbol which describes the type */
         /* local symbol tables */
         HASHTABLE *syms; /* Symbol table for structs & functions */
         HASHTABLE *tags; /* Symbol table for nested types*/
+        struct _templateArg *templateArg;
         int dbgindex; /* type index for debugger */
         int alignment; /* alignment pref for this structure/class/union   */
         EXPRESSION *esize; /* enode version of size */
@@ -477,6 +479,7 @@ typedef struct sym
         unsigned isConstructor:1; // is a constructor
         unsigned isDestructor:1; // is  adestructor
         unsigned isExplicit:1; // explicit constructor or conversion function
+        unsigned isTemplate:1; // is a template declaration
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -496,7 +499,9 @@ typedef struct sym
     struct _baseClass *baseClasses;
     struct _vbaseEntry *vbaseEntries;
     struct _vtabEntry *vtabEntries;
+    struct lexeme *deferredTemplateHeader ;
     struct lexeme *deferredCompile ;
+    struct _templateArgs *templateArgs;
     struct init * init, *lastInit, *dest;
     enum e_xc { xc_unspecified, xc_none, xc_all, xc_dynamic } xcMode;
     struct xcept
@@ -583,6 +588,34 @@ typedef struct _vbaseEntry
     unsigned pointerOffset;
     unsigned structOffset;
 } VBASEENTRY;
+
+typedef struct _templateArg
+{
+    struct _templateArg *next;
+    enum e_kw type;
+    BOOL packed;
+    SYMBOL *sym;
+    union {
+        struct {
+            struct _templateArg *args;
+            SYMBOL *dflt;
+        } byTemplate;
+        struct {
+            TYPE *dflt;
+        } byClass;
+        struct {
+            TYPE *tp;
+            EXPRESSION *dflt;
+        }byNonType;  
+    };
+} TEMPLATEARG;
+
+typedef struct _structSym
+{
+    struct _structSym *next;
+    SYMBOL *str;
+    TEMPLATEARG *tmpl;
+} STRUCTSYM;
 typedef struct initlist
 {
     struct initlist *next;
@@ -742,5 +775,6 @@ typedef struct _atomicData
     EXPRESSION *third;
     TYPE *tp;
 } ATOMICDATA;
+
 
 #define ATOMIC_FLAG_SPACE getSize(bt_int)

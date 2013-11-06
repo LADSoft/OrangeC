@@ -301,7 +301,7 @@ KEYWORD keywords[] = {
     { "static_cast",11,  kw_static_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "struct", 6,  kw_struct, 0, TT_BASETYPE | TT_STRUCT },
     { "switch", 6,  kw_switch, 0, TT_CONTROL },
-    { "template", 8,  kw_template, KW_CPLUSPLUS, TT_STORAGE_CLASS },
+    { "template", 8,  kw_template, KW_CPLUSPLUS, TT_CONTROL },
     { "this", 4,  kw_this, KW_CPLUSPLUS, TT_VAR },
     { "thread_local", 12,  kw_thread_local, KW_CPLUSPLUS, TT_LINKAGE },
     { "throw", 5,  kw_throw, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY },
@@ -1204,8 +1204,21 @@ LEXEME *SkipToNextLine(void)
     }
     return getsym();
 }
+LEXEME *getGTSym(LEXEME *in)
+{
+    static char greater[2] = ">";
+    static LEXEME lex;
+    enum e_kw kw;
+    char *pgreater = &greater;
+    kw = searchkw(&pgreater);
+    lex = *in;
+    lex.type = l_kw;
+    lex.kw = kw;
+    return &lex;
+}
 LEXEME *getsym(void)
 {
+    static LEXEME *last;
     LEXEME *lex;
     KEYWORD *kw ;
     enum e_lexType tp;
@@ -1236,6 +1249,8 @@ LEXEME *getsym(void)
         context->mark = lex;
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
+    TemplateRegisterDeferred(last);
+    last = NULL;
     do
     {
         contin = FALSE;
@@ -1340,7 +1355,7 @@ LEXEME *getsym(void)
             contin = TRUE;
         }
     } while (contin);
-    return lex;
+    return last = lex;
 }
 void marksym(void)
 {

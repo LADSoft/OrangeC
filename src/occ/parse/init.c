@@ -1850,7 +1850,7 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
 {
     EXPRESSION *expr = NULL ;
     TYPE *tp = NULL;
-    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, FALSE, FALSE);
+    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, FALSE, FALSE, FALSE);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -2018,7 +2018,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         {
             TYPE *tp1 = NULL;
             EXPRESSION *exp1 = NULL;
-            lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+            lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, FALSE, FALSE);
             if (!tp1)
                 error(ERR_EXPRESSION_SYNTAX);
             else if (!comparetypes(itype, tp1, TRUE))

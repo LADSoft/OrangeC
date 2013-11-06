@@ -423,7 +423,7 @@ static void debug_dumptypedefs(NAMESPACEVALUES *nameSpace)
                     debug_dumptypedefs(sp->nameSpaceValues);
                 }
                 else
-                    if (istype(sp->storage_class))
+                    if (istype(sp))
                            chosenDebugger->outputtypedef(sp);
                 h = h->next;
             }
@@ -447,6 +447,7 @@ void compile(void)
     preprocini(infile, inputFile);
     lexini();
     setglbdefs();
+    templateInit();
 #ifndef PARSER_ONLY
     outcodeini();
     conflictini();
@@ -491,7 +492,7 @@ void compile(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL) ;
+            while ((lex = declare(lex, NULL, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL) ;
         }
     }
 #ifdef PARSER_ONLY

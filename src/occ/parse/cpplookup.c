@@ -42,10 +42,10 @@ extern int nextLabel;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern HASHTABLE *labelSyms;
 extern TYPE stdint;
-extern LIST *structSyms;
 extern SYMBOL *enumSyms;
 extern char *overloadNameTab[];
 extern LAMBDA *lambdas;
+extern STRUCTSYM *structSyms;
 #ifndef CPREPROCESSOR
 extern ARCH_DEBUG *chosenDebugger;
 extern FILE *listFile;
@@ -415,7 +415,7 @@ static CLASSMATCH *classdata(char *name, SYMBOL *cls, BOOL isvirtual, BOOL tagsO
                     SYMBOL *sym = (SYMBOL *)p->syms->data;
                     if (sym)
                     {
-                        if (sym->storage_class == sc_static || istype(sym->storage_class) || sym->storage_class == sc_enumconstant)
+                        if (sym->storage_class == sc_static || istype(sym) || sym->storage_class == sc_enumconstant)
                             p->ishold = TRUE;
                     }
                 }
@@ -433,12 +433,40 @@ static CLASSMATCH *classdata(char *name, SYMBOL *cls, BOOL isvirtual, BOOL tagsO
     }
     return p;
 }
+SYMBOL *templatesearch(char *name, BOOL after)
+{
+    STRUCTSYM *ss = structSyms;
+    if (after)
+    {
+        while (ss && !ss->str)
+            ss = ss->next;
+         if (ss)
+             ss = ss->next;
+    }
+    while (ss)
+    {
+        if (ss->tmpl)
+        {
+            TEMPLATEARG *arg = ss->tmpl;
+            while (arg)
+            {
+                if (arg->sym && !strcmp(arg->sym->name, name))
+                    return arg->sym;
+                arg = arg->next;
+            }
+        }
+        else if (!after)
+            break;
+        ss = ss->next;
+    }
+    return NULL;
+}
 SYMBOL *classsearch(char *name, BOOL tagsOnly)
 {
     SYMBOL *rv = NULL;
-    if (structSyms)
+    SYMBOL *cls = getStructureDeclaration(), *base = cls;
+    if (cls)
     {
-        SYMBOL *cls = (SYMBOL *)structSyms->data;
         /* optimize for the case where the final class has what we need */
         while (cls)
         {
@@ -448,7 +476,7 @@ SYMBOL *classsearch(char *name, BOOL tagsOnly)
                 rv = search(name, cls->tp->tags);
             if (!rv && cls->baseClasses)
             {
-                CLASSMATCH *matches = classdata(name, (SYMBOL *)structSyms->data, FALSE, tagsOnly);
+                CLASSMATCH *matches = classdata(name, base, FALSE, tagsOnly);
                 if (matches && matches->syms)
                 {
                     if (!matches->syms->data)
@@ -471,6 +499,7 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOL tag
     SYMBOL *rv = NULL;
     if (!encloser && !ns)
     {
+        SYMBOL *ssp;
         rv = search(name, localNameSpace->syms);
         if (!rv)
             rv = search(name, localNameSpace->tags);
@@ -496,18 +525,27 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOL tag
                 if (lambdas->lthis)
                 {
                     rv = search(name, basetype(lambdas->lthis->tp)->btp->syms);
+                    if (rv)
+                        rv->throughClass = TRUE;
                 }
             }
             if (!rv)
+                rv = templatesearch(name, FALSE);
+            if (!rv)
+            {
                 rv = classsearch(name, tagsOnly);
-            if (rv)
-                rv->throughClass = TRUE;
+                if (rv)
+                    rv->throughClass = TRUE;
+            }
+            if (!rv)
+                rv = templatesearch(name, FALSE);
         }
         else
         {
             rv->throughClass = FALSE;
         }
-        if (!rv && (!structSyms || ((SYMBOL *)structSyms->data)->nameSpaceValues != globalNameSpace))
+        ssp = getStructureDeclaration();
+        if (!rv && (!ssp || ssp->nameSpaceValues != globalNameSpace))
         {
             rv = namespacesearch(name, globalNameSpace, FALSE, tagsOnly);
             if (rv)
@@ -535,6 +573,7 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOL tag
             }
         }
     }
+    return rv;
 }
 LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *destructor, BOOL tagsOnly)
 {
@@ -696,9 +735,10 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
                 *sym = tsearch(lex->value.s.a);
             else
             {
-                if (structSyms)
+                SYMBOL *ssp = getStructureDeclaration();
+                if (ssp)
                 {
-                    *sym = search(lex->value.s.a, ((SYMBOL *)structSyms->data)->tp->syms);
+                    *sym = search(lex->value.s.a, ssp->tp->syms);
                 }
                 if (*sym == NULL)
                     *sym = gsearch(lex->value.s.a);
@@ -733,7 +773,7 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
         if (buf[0])
         {
             if (!encloser && membersOnly)
-                encloser = (SYMBOL *)structSyms->data;
+                encloser = getStructureDeclaration();
             *sym = finishSearch(ov == CI_CAST ? overloadNameTab[CI_CAST] : buf, 
                                 encloser, ns, tagsOnly, throughClass);
         }
@@ -792,9 +832,11 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
     BASECLASS *lst;
     HASHREC *hr;
     enum e_ac consideredAccess = minAccess;
+    SYMBOL *ssp;
     if (!cparams.prm_cplusplus)
         return TRUE;
-    if (isFriend(currentBase, funcsp) || structSyms && isFriend(currentBase, (SYMBOL *)structSyms->data))
+    ssp = getStructureDeclaration();
+    if (isFriend(currentBase, funcsp) || ssp && isFriend(currentBase, ssp))
         consideredAccess = ac_private;
     if (!currentBase->tp->syms)
         return FALSE;
@@ -875,10 +917,11 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
 BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, BOOL asAddress)
 {
     if (sym->parentClass)
-        if (structSyms && sym->throughClass && ((SYMBOL *)structSyms->data == sym->parentClass || classRefCount(sym->parentClass, (SYMBOL *)structSyms->data)))
+    {
+        SYMBOL *ssp = getStructureDeclaration();
+        if (ssp && sym->throughClass && (ssp == sym->parentClass || classRefCount(sym->parentClass, ssp)))
         {
-            if (!isAccessible((SYMBOL *)structSyms->data, (SYMBOL *)structSyms->data,
-                              sym, funcsp, ac_protected, asAddress))
+            if (!isAccessible(ssp, ssp, sym, funcsp, ac_protected, asAddress))
                 return FALSE;
         }
         else
@@ -886,6 +929,7 @@ BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, BOOL asAddress)
             if (!isAccessible(sym->parentClass, sym->parentClass, sym, funcsp, ac_public, asAddress))
                 return FALSE;
         }
+    }
     return TRUE;    
 }
 BOOL checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp)
@@ -897,10 +941,10 @@ BOOL checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp)
             SYMBOL *sym = basetype(tp)->sp;
             if (sym->parentClass)
             {
-                if (structSyms && ((SYMBOL *)structSyms->data == sym->parentClass || classRefCount(sym->parentClass, (SYMBOL *)structSyms->data)))
+                SYMBOL *ssp = getStructureDeclaration();
+                if (ssp && (ssp == sym->parentClass || classRefCount(sym->parentClass, ssp)))
                 {
-                    if (!isAccessible((SYMBOL *)structSyms->data, (SYMBOL *)structSyms->data,
-                                      sym, funcsp, ac_protected, FALSE))
+                    if (!isAccessible(ssp, ssp, sym, funcsp, ac_protected, FALSE))
                     {
                         errorsym(ERR_CANNOT_ACCESS, tp->sp);		
                         return FALSE;

@@ -152,7 +152,7 @@ enum e_node
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_literalclass
+        en_literalclass, en_templateparam
 };
 /*      statement node descriptions     */
 
@@ -193,7 +193,7 @@ enum e_bt
     bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_struct,
         bt_union, bt_func, bt_class, bt_ifunc, bt_any, bt_auto,
         bt_match_none, bt_ellipse, bt_memberptr, bt_cond,
-        bt_consplaceholder, bt_templateparam, bt_string,
+        bt_consplaceholder, bt_templateparam, bt_templateselector, bt_string, 
         /* last */
         bt_none
 };
@@ -290,10 +290,11 @@ typedef    struct type
         /* local symbol tables */
         HASHTABLE *syms; /* Symbol table for structs & functions */
         HASHTABLE *tags; /* Symbol table for nested types*/
-        struct _templateArg *templateArg;
+        struct _templateParam *templateParam;
         int dbgindex; /* type index for debugger */
         int alignment; /* alignment pref for this structure/class/union   */
         EXPRESSION *esize; /* enode version of size */
+        struct type *etype; /* type of size field  when size isn't constant */
         int vlaindex; /* index into the vararray */
     } TYPE;
 typedef struct _linedata
@@ -480,6 +481,8 @@ typedef struct sym
         unsigned isDestructor:1; // is  adestructor
         unsigned isExplicit:1; // explicit constructor or conversion function
         unsigned isTemplate:1; // is a template declaration
+        unsigned specialized:1; // is a template specialization
+        unsigned instantiated:1; // is a template instantiation
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -501,7 +504,12 @@ typedef struct sym
     struct _vtabEntry *vtabEntries;
     struct lexeme *deferredTemplateHeader ;
     struct lexeme *deferredCompile ;
-    struct _templateArgs *templateArgs;
+    struct _templateParam *templateParams;
+    LIST *specializations;
+    LIST *instantiations;
+    LIST *templateSelector; // first element is the last valid sym found, second element is the template parameter sym
+                                // following elements are the list of pointers to names
+    struct sym *parentTemplate; // could be the parent of a specialization or an instantiation
     struct init * init, *lastInit, *dest;
     enum e_xc { xc_unspecified, xc_none, xc_all, xc_dynamic } xcMode;
     struct xcept
@@ -589,32 +597,48 @@ typedef struct _vbaseEntry
     unsigned structOffset;
 } VBASEENTRY;
 
-typedef struct _templateArg
+typedef struct _templateParam
 {
-    struct _templateArg *next;
+    struct _templateParam *next;
+        // kw_class = class or namespace
+        // kw_int = nontype
+        // kw_template = template parameter
+        // kw_new = specialization
+        // first in the list is always the specialization specifier
     enum e_kw type;
-    BOOL packed;
+    int packed:1;
+    int initialized:1;
     SYMBOL *sym;
     union {
+        // the dflt & val fields must be in the same place for each item
         struct {
-            struct _templateArg *args;
             SYMBOL *dflt;
+            SYMBOL *val;
+            SYMBOL *temp;
+            struct _templateParam *args;
         } byTemplate;
         struct {
             TYPE *dflt;
+            TYPE *val;
+            TYPE *temp;
         } byClass;
         struct {
-            TYPE *tp;
             EXPRESSION *dflt;
+            EXPRESSION *val;
+            EXPRESSION *temp;
+            TYPE *tp;
         }byNonType;  
+        struct {
+            struct _templateParam *types;
+        }bySpecialization;
     };
-} TEMPLATEARG;
+} TEMPLATEPARAM;
 
 typedef struct _structSym
 {
     struct _structSym *next;
     SYMBOL *str;
-    TEMPLATEARG *tmpl;
+    TEMPLATEPARAM *tmpl;
 } STRUCTSYM;
 typedef struct initlist
 {
@@ -636,8 +660,10 @@ typedef struct functioncall
     EXPRESSION *returnEXP;
     EXPRESSION *thisptr;
     TYPE *thistp;
+    struct _templateParam *templateParams;
     int novtab : 1;
     int ascall:1;
+    int astemplate:1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN      16384

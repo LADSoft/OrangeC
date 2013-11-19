@@ -281,7 +281,7 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
                 *in++ = 'v';
                 break;
             case bt_templateparam:
-                *in++ = '+';
+                in = getName(in, tp->templateParam->sym);
                 break;
             default:
                 diag("mangleType: unknown type");
@@ -290,6 +290,82 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
     }
     *in= 0;
     return in;
+}
+static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAM *params)
+{
+    BOOL bySpecial = FALSE;
+    if (!params->next)
+    {
+        params = params->bySpecialization.types;
+        bySpecial = TRUE;
+    }
+    buf = mangleClasses(buf, sym);
+    *buf++ = '#';
+    while (params)
+    {
+        switch(params->type)
+        {
+            case kw_typename:
+                if (bySpecial)
+                {
+                    buf = mangleType(buf, params->byClass.dflt, TRUE); 
+                }
+                else if (sym->instantiated)
+                {
+                    buf = mangleType(buf, params->byClass.val, TRUE); 
+                }
+                else
+                {
+                    buf = getName(buf, params->sym);
+                }
+                break;
+            case kw_template:
+                if (bySpecial)
+                {
+                    buf = mangleTemplate(buf, params->byTemplate.dflt, params->byTemplate.val->templateParams);
+                }
+                else if (sym->instantiated)
+                {
+                    buf = mangleTemplate(buf, params->byTemplate.val, params->byTemplate.val->templateParams);
+                }
+                else
+                {
+                    buf = getName(buf, params->sym);
+                }
+                break;
+            case kw_int:
+                buf = mangleType(buf, params->byNonType.tp, TRUE);
+                if (bySpecial || sym->instantiated)
+                {
+                    EXPRESSION *exp = sym->instantiated ? params->byNonType.val : params->byNonType.dflt;
+                    *buf++= '$';
+                    if (isintconst(exp))
+                    {
+                        sprintf(buf, "%d", exp->v.i);
+                    }
+                    else
+                    {
+                        while (lvalue(exp))
+                            exp = exp->left;
+                        switch (exp->type)
+                        {
+                            case en_pc:
+                            case en_global:
+                            case en_label:
+                                buf = getName(buf, exp->v.sp);
+                                break;
+                            default:
+                                break;
+                        }
+                    }                        
+                    *buf++= '$';
+                }
+                break;
+        }
+        params = params->next;
+    }
+    *buf++ = '#';
+    return buf;
 }
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
 {
@@ -345,7 +421,14 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
             strcpy(errbuf+1, sym->name);
             break;
         case lk_cpp:
-            p = mangleClasses(p, sym);
+            if (sym->isTemplate)
+            {
+                p = mangleTemplate(p, sym, sym->templateParams);
+            }
+            else
+            {
+                p = mangleClasses(p, sym);
+            }
             if (isfunction(sym->tp))
             {
                 *p++ = '$';

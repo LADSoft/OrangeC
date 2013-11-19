@@ -61,7 +61,7 @@ BOOL istype(SYMBOL *sym)
 {
     if (sym->storage_class == sc_templateparam)
     {
-        return sym->tp->templateArg->type == kw_typename;
+        return sym->tp->templateParam->type == kw_typename;
     }
     return sym->storage_class == sc_type || sym->storage_class == sc_typedef;
 }
@@ -147,8 +147,8 @@ BOOL isint(TYPE *tp)
         case bt_wchar_t:
             return TRUE;
         case bt_templateparam:
-            if (tp->templateArg->type == kw_int)
-                return isint(tp->templateArg->byNonType.tp);
+            if (tp->templateParam->type == kw_int)
+                return isint(tp->templateParam->byNonType.tp);
             return FALSE;
         default:
             if (tp->type == bt_enum && !cparams.prm_cplusplus)
@@ -305,8 +305,8 @@ BOOL ispointer(TYPE *tp)
         case bt_seg:
             return TRUE;
         case bt_templateparam:
-            if (tp->templateArg->type == kw_int)
-                return ispointer(tp->templateArg->byNonType.tp);
+            if (tp->templateParam->type == kw_int)
+                return ispointer(tp->templateParam->byNonType.tp);
             return FALSE;
         default:
             return FALSE;
@@ -322,8 +322,8 @@ BOOL isref(TYPE *tp)
         case bt_rref:
             return TRUE;
         case bt_templateparam:
-            if (tp->templateArg->type == kw_int)
-                return isref(tp->templateArg->byNonType.tp);
+            if (tp->templateParam->type == kw_int)
+                return isref(tp->templateParam->byNonType.tp);
             return FALSE;
         default:
             return FALSE;

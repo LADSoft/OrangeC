@@ -134,6 +134,7 @@ int allocVTabSpace(VTABENTRY *vtab, int offset);
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset);
 void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOL isvirtual, int offset);
 void deferredCompile(void);
+void backFillDeferredInitializersForFunction(SYMBOL *cur, SYMBOL *funcsp);
 void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp);
 void warnCPPWarnings(SYMBOL *sym, BOOL localClassWarnings);
 BOOL usesVTab(SYMBOL *sym);
@@ -141,11 +142,11 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, enum e_sc storage_class);
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
-LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEARG *templateArgs, enum e_sc storage_class, 
+LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
                     enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
-                      NAMESPACEVALUES **nsv, enum e_sc storage_class,
+                      NAMESPACEVALUES **nsv, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class,
 							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOL asFriend,
                         int consdest, BOOL beforeOnly);
 void sizeQualifiers(TYPE *tp);
@@ -154,9 +155,18 @@ void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
 void templateInit(void);
 void TemplateGetDeferred(SYMBOL *sym);
 void TemplateRegisterDeferred(LEXEME *lex);
-TEMPLATEARG * TemplateMatching(LEXEME *lex, TEMPLATEARG *old, TEMPLATEARG *sym);
-LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access);
-LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEARG *templateArgs, enum e_sc storage_class, enum e_lk defaultLinkage,
+SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAM *templateParams);
+SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp, TEMPLATEPARAM *templateParams);
+TEMPLATEPARAM * TemplateMatching(LEXEME *lex, TEMPLATEPARAM *old, TEMPLATEPARAM *sym, SYMBOL *sp);
+LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM **lst);
+BOOL TemplateIntroduceArgs(TEMPLATEPARAM *sym, TEMPLATEPARAM *args);
+SYMBOL *TemplateDeduceArgsFromType(SYMBOL *sym, TYPE *tp);
+SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args);
+SYMBOL *TemplateDeduceWithoutArgs(SYMBOL *sym);
+void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams, TYPE *atype);
+SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym);
+LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, BOOL isextern);
+LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOL needsemi, BOOL asExpression, BOOL asfriend, enum e_ac access );
 
                                /* Expr.c */
@@ -845,6 +855,7 @@ SYMBOL *lookupNonspecificCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp);
+SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOL toErr, 
                               BOOL maybeConversion);

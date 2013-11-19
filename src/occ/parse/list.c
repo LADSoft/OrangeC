@@ -54,7 +54,7 @@ void list_table(HASHTABLE *t, int j);
 
 static char *unmangledname(char *str)
 {
-    static char name[256];
+    static char name[1024];
     unmangle(name, str);
     return name;
 }

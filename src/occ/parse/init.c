@@ -56,6 +56,7 @@ extern TYPE stdvoid;
 extern TYPE stdpointer;
 extern int startlab, retlab;
 extern BOOL declareAndInitialize;
+extern int instantiatingTemplate;
 
 typedef struct _startups_
 {
@@ -84,6 +85,7 @@ static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
 static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
 static STARTUP *startupList, *rundownList;
 static LIST *symListHead, *symListTail;
+static LIST *templateListHead, *templateListTail;
 static HASHTABLE *aliasHash;
 static int inittag = 0;
 
@@ -93,6 +95,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
 void init_init(void)
 {
     symListHead = NULL;
+    templateListHead = NULL;
     startupList = rundownList = NULL;
     aliasHash = CreateHashTable(13);
     dynamicInitializers = TLSInitializers = NULL;
@@ -773,6 +776,75 @@ BOOL IsConstWithArr(TYPE *tp)
     }
     return isconst(tp);
 }
+static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
+{
+#ifndef PARSER_ONLY
+    if (sp->init)
+    {
+        if (sp->tp->array || isstructured(tp))
+        {
+            INITIALIZER *init = sp->init;
+            int pos = 0;
+            while (init)
+            {
+                if (pos != init->offset)
+                {
+                    if (pos > init->offset)
+                        diag("position error in dumpInitializers");
+                    else
+                        genstorage(init->offset - pos);
+                    pos = init->offset;
+                }
+                if (init->basetp && basetype(init->basetp)->hasbits)
+                {
+                    pos += dumpBits(&init);
+                }
+                else {
+                    if (init->basetp && init->exp)
+                    {
+                        int s = dumpInit(sp, init);
+                        if (s < init->basetp->size)
+                        {
+                            
+                            genstorage(init->basetp->size - s);
+                            s = init->basetp->size;
+                        }
+                            
+                        pos += s;
+                    }
+                    init = init->next;
+                }
+            }
+        }
+        else
+        {
+            int s = dumpInit(sp, sp->init);
+            if (s < sp->init->basetp->size)
+            {
+                
+                genstorage(sp->init->basetp->size - s);
+            }
+        }
+    }
+    else
+        genstorage(basetype(tp)->size);
+#endif
+}
+static void dumpTemplateInitializers()
+{
+#ifndef PARSER_ONLY
+    templateListTail = templateListHead;
+    dseg();
+    while(templateListTail)
+    {
+        SYMBOL *sp = (SYMBOL *)templateListTail->data;
+        gen_virtual(sp, TRUE);
+        dumpInitGroup(sp, sp->tp);
+        gen_endvirtual(sp);
+        templateListTail= templateListTail->next;
+    }
+#endif
+}
 void dumpInitializers(void)
 {
 #ifndef PARSER_ONLY
@@ -781,6 +853,7 @@ void dumpInitializers(void)
     int data = 0;
     int thread = 0;
     int *sizep;
+    dumpTemplateInitializers();
     dumpDynamicInitializers();
     dumpTLSInitializers();
     dumpDynamicDestructors();
@@ -835,55 +908,7 @@ void dumpInitializers(void)
                 put_label(sp->label);
             else
                 gen_strlab(sp);
-            if (sp->init)
-            {
-                if (sp->tp->array || isstructured(tp))
-                {
-                    INITIALIZER *init = sp->init;
-                    int pos = 0;
-                    while (init)
-                    {
-                        if (pos != init->offset)
-                        {
-                            if (pos > init->offset)
-                                diag("position error in dumpInitializers");
-                            else
-                                genstorage(init->offset - pos);
-                            pos = init->offset;
-                        }
-                        if (init->basetp && basetype(init->basetp)->hasbits)
-                        {
-                            pos += dumpBits(&init);
-                        }
-                        else {
-                            if (init->basetp && init->exp)
-                            {
-                                int s = dumpInit(sp, init);
-                                if (s < init->basetp->size)
-                                {
-                                    
-                                    genstorage(init->basetp->size - s);
-                                    s = init->basetp->size;
-                                }
-                                    
-                                pos += s;
-                            }
-                            init = init->next;
-                        }
-                    }
-                }
-                else
-                {
-                    int s = dumpInit(sp, sp->init);
-                    if (s < sp->init->basetp->size)
-                    {
-                        
-                        genstorage(sp->init->basetp->size - s);
-                    }
-                }
-            }
-            else
-                genstorage(basetype(tp)->size);
+            dumpInitGroup(sp, tp);
         }
         symListTail = symListTail->next;
     }
@@ -899,6 +924,19 @@ void insertInitSym(SYMBOL *sp)
             symListTail = symListTail->next = lst;
         else
             symListHead = symListTail = lst;
+        sp->indecltable = TRUE;
+    }
+}
+void insertTemplateData(SYMBOL *sp)
+{
+    if (!sp->indecltable)
+    {
+        LIST *lst = Alloc(sizeof(LIST));
+        lst->data = sp;
+        if (templateListHead)
+            templateListTail = templateListTail->next = lst;
+        else
+            templateListHead = templateListTail = lst;
         sp->indecltable = TRUE;
     }
 }
@@ -991,26 +1029,29 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         }
         else
         {
-            if (cparams.prm_cplusplus && isarithmetic(itype) && isstructured(tp))
+            if (itype->type != bt_templateparam)
             {
-                castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, FALSE, TRUE);
-            }
-            if (isstructured(tp))
-                error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-            else if (ispointer(tp))
-                error(ERR_NONPORTABLE_POINTER_CONVERSION);
-            else if (!isarithmetic(tp) || sc != sc_auto && sc != sc_register &&
-                     !isarithmeticconst(exp)&& !cparams.prm_cplusplus)
-                error(ERR_CONSTANT_VALUE_EXPECTED);
-            else 
-                checkscope(tp, itype);
-            if (!comparetypes(itype, tp, TRUE))
-            {
-                if (cparams.prm_cplusplus && basetype(tp)->type > bt_int)
-                    if (basetype(itype)->type < basetype(tp)->type)        
-                        error(ERR_INIT_NARROWING);
-                cast(itype, &exp);
-                optimize_for_constants(&exp);
+                if (cparams.prm_cplusplus && isarithmetic(itype) && isstructured(tp))
+                {
+                    castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, FALSE, TRUE);
+                }
+                if (isstructured(tp))
+                    error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+                else if (ispointer(tp))
+                    error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                else if (!isarithmetic(tp) || sc != sc_auto && sc != sc_register &&
+                         !isarithmeticconst(exp)&& !cparams.prm_cplusplus)
+                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                else 
+                    checkscope(tp, itype);
+                if (!comparetypes(itype, tp, TRUE))
+                {
+                    if (cparams.prm_cplusplus && basetype(tp)->type > bt_int)
+                        if (basetype(itype)->type < basetype(tp)->type)        
+                            error(ERR_INIT_NARROWING);
+                    cast(itype, &exp);
+                    optimize_for_constants(&exp);
+                }
             }
         }
     }
@@ -2372,6 +2413,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
         case bt_double_complex:
         case bt_long_double_complex:
         case bt_enum:
+        case bt_templateparam:
             return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init);
         case bt_lref:
         case bt_rref:
@@ -2883,7 +2925,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     {
         if (storage_class_in == sc_auto || storage_class_in == sc_register)
             sp = clonesym(sp);
-        insertInitSym(sp);
+        if (instantiatingTemplate)
+            insertTemplateData(sp);
+        else
+            insertInitSym(sp);
     }
     if (sp->init)
         declareAndInitialize = TRUE;

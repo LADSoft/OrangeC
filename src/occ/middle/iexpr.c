@@ -2576,6 +2576,8 @@ int natural_size(EXPRESSION *node)
             return natural_size(node->right);
         case en_const:
             return sizeFromType(node->v.sp->tp);
+        case en_templateparam: // may get this during the initial parsing of the template
+            return -ISZ_UINT;
         default:
             diag("natural size error.");
             break;

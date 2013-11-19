@@ -68,6 +68,7 @@ extern BOOL setjmp_used;
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *localNameSpace;
 extern LAMBDA *lambdas;
+extern int instantiatingTemplate;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -170,197 +171,247 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     sp = lambda_capture(sp, cmNone, FALSE);
                 break;
         }
-        switch (sp->storage_class)
-        {	
-            case sc_member:
-                if (cparams.prm_cplusplus && ampersand)
-                {
-                    *exp = getMemberPtr(sp, tp, funcsp);
-                }
-                else
-                {
-                    *exp = getMemberNode(sp, tp, funcsp);
-                }
-                break;
-            case sc_type:
-            case sc_typedef:
-                lex = backupsym(0);
-                *tp = NULL;
-                lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
-                return lex;
-            case sc_overloads:
-                if (!strcmp(sp->name, "setjmp") && sp->parentClass == NULL && sp->parentNameSpace == NULL)
-                    setjmp_used = TRUE;
-                hr = basetype(sp->tp)->syms->table[0];
-                funcparams = Alloc(sizeof(FUNCTIONCALL));
-                if (hr->next || cparams.prm_cplusplus)
-                {
-                    if (ampersand || !MATCHKW(lex, openpa))
+        if (instantiatingTemplate && sp->tp->type == bt_templateparam && sp->tp->templateParam->byNonType.val)
+        {
+            switch (sp->tp->templateParam->type)
+            {
+                case kw_typename:
+                    lex = backupsym(0);
+                    *tp = NULL;
+                    lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
+                    return lex;
+                case kw_template:
+                    break;
+                case kw_int:
+                    *exp = sp->tp->templateParam->byNonType.val;
+                    *tp = sp->tp->templateParam->byNonType.tp;
+                    return lex;
+            }
+        }
+        else
+        { 
+            if (sp->tp->type == bt_templateparam)
+                *exp = varNode(en_templateparam, sp);   
+            else switch (sp->storage_class)
+            {	
+                case sc_member:
+                    if (cparams.prm_cplusplus && ampersand)
                     {
-                        BOOL throughClass = sp->throughClass;
-                        sp = GetOverloadedFunction(tp, &funcparams->fcall, sp, NULL, atp,TRUE, FALSE);
-                        if (sp)
+                        *exp = getMemberPtr(sp, tp, funcsp);
+                    }
+                    else
+                    {
+                        *exp = getMemberNode(sp, tp, funcsp);
+                    }
+                    break;
+                case sc_type:
+                case sc_typedef:
+                    lex = backupsym(0);
+                    *tp = NULL;
+                    lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
+                    return lex;
+                case sc_overloads:
+                    if (!strcmp(sp->name, "setjmp") && sp->parentClass == NULL && sp->parentNameSpace == NULL)
+                        setjmp_used = TRUE;
+                    hr = basetype(sp->tp)->syms->table[0];
+                    funcparams = Alloc(sizeof(FUNCTIONCALL));
+                    if (cparams.prm_cplusplus && MATCHKW(lex, lt))
+                    {
+                        HASHREC *hr1 = hr;
+                        while (hr1)
                         {
-                            sp->throughClass = throughClass;
-                            if (!isExpressionAccessible(sp, funcsp, FALSE))
-                                errorsym(ERR_CANNOT_ACCESS, sp);		
+                             if (((SYMBOL *)hr1->p)->isTemplate)
+                                 break;
+                             hr1 = hr1->next;
+                        }
+                        if (hr1)
+                        {
+                            lex = GetTemplateArguments(lex, funcsp, &funcparams->templateParams);
+                            funcparams->astemplate = TRUE;
                         }
                     }
-                    funcparams->sp = sp;
-                }
-                else
-                {
-                    // we only get here for C language, sadly we have to do
-                    // argument based lookup in C++...
-                    funcparams->sp = (SYMBOL *)hr->p;
-                    funcparams->fcall = varNode(en_pc, funcparams->sp);
-//					if (((SYMBOL *)hr->p)->linkage2 == lk_import)
-//					{
-    //					*exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
-    //					deref(&stdpointer, exp);
-//						deref(&stdpointer, exp);
-//					}
-                }
-                funcparams->functp = funcparams->sp->tp;
-                *tp = funcparams->sp->tp;
-                if (cparams.prm_cplusplus 
-                    && (basetype(*tp)->sp->storage_class == sc_virtual || basetype(*tp)->sp->storage_class == sc_member) 
-                    && (ampersand || !MATCHKW(lex, openpa)))
-                {
-                    EXPRESSION *exp1 = Alloc(sizeof(EXPRESSION));
-                    exp1->type = en_memberptr;
-                    exp1->left = *exp;
-                    exp1->v.sp = funcparams->sp;
-                    *exp = exp1;
-                    getMemberPtr(sp, tp, funcsp);
-                }
-                else
-                {
-                    *exp = Alloc(sizeof(EXPRESSION));
-                    (*exp)->type = en_func;
-                    (*exp)->v.func = funcparams;
-                }
-                break;
-            case sc_catchvar:
-                makeXCTab(funcsp);
-                *exp = varNode(en_auto, funcsp->xc->xctab);
-                *exp = exprNode(en_add, *exp, intNode(en_c_i, (LLONG_TYPE)&(((struct _xctab *)0)->instance)));
-                deref(&stdpointer, exp);
-                break;
-            case sc_enumconstant:		
-                *exp = intNode(en_c_i, sp->value.i);
-                break;
-            case sc_constant:
-                *exp = varNode(en_const, sp);
-                break;
-            case sc_auto:
-            case sc_register:	/* register variables are treated as 
-                                 * auto variables in this compiler
-                                 * of course the usage restraints of the
-                                 * register keyword are enforced elsewhere
-                                 */
-                *exp = varNode(en_auto, sp);
-                break;
-            case sc_parameter:
-                *exp = varNode(en_auto, sp);
-                /* derefereance parameters which are declared as arrays */
-                if (basetype(sp->tp)->array)
+                    if (hr->next || cparams.prm_cplusplus)
+                    {
+                        if (ampersand || !MATCHKW(lex, openpa))
+                        {
+                            BOOL throughClass = sp->throughClass;
+                            SYMBOL *sp1 = GetOverloadedFunction(tp, &funcparams->fcall, sp, funcparams->templateParams ? funcparams : NULL, atp,TRUE, FALSE);
+                            if (sp1)
+                            {
+                                sp = sp1;
+                                sp->throughClass = throughClass;
+                                if (!isExpressionAccessible(sp, funcsp, FALSE))
+                                    errorsym(ERR_CANNOT_ACCESS, sp);		
+                            }
+                        }
+                        else
+                        {
+                            funcparams->ascall = TRUE;
+                        }
+                        funcparams->sp = sp;
+                    }
+                    else
+                    {
+                        // we only get here for C language, sadly we have to do
+                        // argument based lookup in C++...
+                        funcparams->sp = (SYMBOL *)hr->p;
+                        funcparams->fcall = varNode(en_pc, funcparams->sp);
+    //					if (((SYMBOL *)hr->p)->linkage2 == lk_import)
+    //					{
+        //					*exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
+        //					deref(&stdpointer, exp);
+    //						deref(&stdpointer, exp);
+    //					}
+                    }
+                    funcparams->functp = funcparams->sp->tp;
+                    *tp = funcparams->sp->tp;
+                    if (cparams.prm_cplusplus 
+                        && (basetype(*tp)->sp->storage_class == sc_virtual || basetype(*tp)->sp->storage_class == sc_member) 
+                        && (ampersand || !MATCHKW(lex, openpa)))
+                    {
+                        EXPRESSION *exp1 = Alloc(sizeof(EXPRESSION));
+                        exp1->type = en_memberptr;
+                        exp1->left = *exp;
+                        exp1->v.sp = funcparams->sp;
+                        *exp = exp1;
+                        getMemberPtr(sp, tp, funcsp);
+                    }
+                    else
+                    {
+                        *exp = Alloc(sizeof(EXPRESSION));
+                        (*exp)->type = en_func;
+                        (*exp)->v.func = funcparams;
+                    }
+                    break;
+                case sc_catchvar:
+                    makeXCTab(funcsp);
+                    *exp = varNode(en_auto, funcsp->xc->xctab);
+                    *exp = exprNode(en_add, *exp, intNode(en_c_i, (LLONG_TYPE)&(((struct _xctab *)0)->instance)));
                     deref(&stdpointer, exp);
-                break;
-            
-            case sc_localstatic:
-                if (funcsp && funcsp->linkage == lk_inline 
-                    && funcsp->storage_class == sc_global)
-                    errorsym(ERR_INLINE_CANNOT_REFER_TO_STATIC, sp);
-                if (sp->linkage3 == lk_threadlocal)
-                    *exp = varNode(en_threadlocal, sp);
-                else
-                    *exp = varNode(en_label, sp);
-                sp->used = TRUE;
-                break;
-            case sc_absolute:
-                *exp = varNode(en_absolute, sp);
-                break;				
-            case sc_static:
-                sp->used = TRUE;
-            case sc_global:
-            case sc_external:
-                if (sp->parentClass && !isExpressionAccessible(sp, funcsp, FALSE))
-                    errorsym(ERR_CANNOT_ACCESS, sp);		
-                if (sp->linkage3 == lk_threadlocal)
-                    *exp = varNode(en_threadlocal, sp);
-                else
-                    *exp = varNode(en_global, sp);
-                if (sp->linkage2 == lk_import)
-                {
-                    *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
-                    deref(&stdpointer, exp);
-                    deref(&stdpointer, exp);
-                }
-                break;
-            case sc_namespace:
-            case sc_namespacealias:
-                errorsym(ERR_INVALID_USE_OF_NAMESPACE, sp);
-                *exp = intNode(en_c_i, 1);
-                break;
-            default:
-                error(ERR_IDENTIFIER_EXPECTED);
-                *exp = intNode(en_c_i, 1);
-                break;
+                    break;
+                case sc_enumconstant:		
+                    *exp = intNode(en_c_i, sp->value.i);
+                    break;
+                case sc_constant:
+                    *exp = varNode(en_const, sp);
+                    break;
+                case sc_auto:
+                case sc_register:	/* register variables are treated as 
+                                     * auto variables in this compiler
+                                     * of course the usage restraints of the
+                                     * register keyword are enforced elsewhere
+                                     */
+                    *exp = varNode(en_auto, sp);
+                    break;
+                case sc_parameter:
+                    *exp = varNode(en_auto, sp);
+                    /* derefereance parameters which are declared as arrays */
+                    if (basetype(sp->tp)->array)
+                        deref(&stdpointer, exp);
+                    break;
+                
+                case sc_localstatic:
+                    if (funcsp && funcsp->linkage == lk_inline 
+                        && funcsp->storage_class == sc_global)
+                        errorsym(ERR_INLINE_CANNOT_REFER_TO_STATIC, sp);
+                    if (sp->linkage3 == lk_threadlocal)
+                        *exp = varNode(en_threadlocal, sp);
+                    else
+                        *exp = varNode(en_label, sp);
+                    sp->used = TRUE;
+                    break;
+                case sc_absolute:
+                    *exp = varNode(en_absolute, sp);
+                    break;				
+                case sc_static:
+                    sp->used = TRUE;
+                case sc_global:
+                case sc_external:
+                    if (sp->parentClass && !isExpressionAccessible(sp, funcsp, FALSE))
+                        errorsym(ERR_CANNOT_ACCESS, sp);		
+                    if (sp->linkage3 == lk_threadlocal)
+                        *exp = varNode(en_threadlocal, sp);
+                    else
+                        *exp = varNode(en_global, sp);
+                    if (sp->linkage2 == lk_import)
+                    {
+                        *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
+                        deref(&stdpointer, exp);
+                        deref(&stdpointer, exp);
+                    }
+                    break;
+                case sc_namespace:
+                case sc_namespacealias:
+                    errorsym(ERR_INVALID_USE_OF_NAMESPACE, sp);
+                    *exp = intNode(en_c_i, 1);
+                    break;
+                default:
+                    error(ERR_IDENTIFIER_EXPECTED);
+                    *exp = intNode(en_c_i, 1);
+                    break;
+            }
         }
         sp->tp->used = TRUE;
-        if (sp->tp->type == bt_any)
-            deref(&stdint, exp);
+        if (sp->isTemplate && istype(sp->tp))
+        {
+            lex = backupsym(0);
+            *tp = NULL;
+            lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
+        }
         else
         {
-            BOOL rref = FALSE;
-            if (isref(*tp))
+            if (sp->tp->type == bt_any)
+                deref(&stdint, exp);
+            else
             {
-                deref(*tp, exp);
-                if ((*tp)->type == bt_rref)
+                BOOL rref = FALSE;
+                if (isref(*tp))
                 {
-                    rref = TRUE;
+                    deref(*tp, exp);
+                    if ((*tp)->type == bt_rref)
+                    {
+                        rref = TRUE;
+                    }
+                    *tp = basetype(*tp)->btp;
                 }
-                *tp = basetype(*tp)->btp;
+                if (sp->storage_class != sc_overloads)
+                {
+                    if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && !isfunction(*tp) && 
+                        sp->storage_class != sc_constant && sp->storage_class != sc_enumconstant)
+                    {
+                        if (!(*tp)->array || (*tp)->vla || sp->storage_class == sc_parameter)
+                            if ((*tp)->vla)
+                                deref(&stdpointer, exp);
+                            else
+                                deref(*tp, exp);
+                        else if ((*tp)->array && inreg(*exp, TRUE))
+                            error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
+                    }
+                }
+                if (rref && !isfunction(*tp))
+                    *exp = exprNode(en_not_lvalue, *exp, 0);
             }
-            if (sp->storage_class != sc_overloads)
+    
+            if (lvalue(*exp))
+                (*exp)->v.sp = sp; // catch for constexpr
+            (*exp)->pragmas = stdpragmas;
+            if (isvolatile(*tp))
+                (*exp)->isvolatile = TRUE;
+            if (isrestrict(*tp))
+                (*exp)->isrestrict = TRUE;
+            if (isatomic(*tp))
             {
-                if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && !isfunction(*tp) && 
-                    sp->storage_class != sc_constant && sp->storage_class != sc_enumconstant)
-                {
-                    if (!(*tp)->array || (*tp)->vla || sp->storage_class == sc_parameter)
-                        if ((*tp)->vla)
-                            deref(&stdpointer, exp);
-                        else
-                            deref(*tp, exp);
-                    else if ((*tp)->array && inreg(*exp, TRUE))
-                        error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
-                }
+                (*exp)->isatomic = TRUE;
+                if (needsAtomicLockFromType(*tp))
+                    (*exp)->lockOffset = (*tp)->size - ATOMIC_FLAG_SPACE;
             }
-            if (rref && !isfunction(*tp))
-                *exp = exprNode(en_not_lvalue, *exp, 0);
+            if (strSym && funcparams)
+                funcparams->novtab = TRUE;
+            if (cparams.prm_cplusplus && sp->storage_class == sc_member)
+            {
+                qualifyForFunc(funcsp, tp);
+            }
         }
-
-        if (lvalue(*exp))
-            (*exp)->v.sp = sp; // catch for constexpr
-        (*exp)->pragmas = stdpragmas;
-        if (isvolatile(*tp))
-            (*exp)->isvolatile = TRUE;
-        if (isrestrict(*tp))
-            (*exp)->isrestrict = TRUE;
-        if (isatomic(*tp))
-        {
-            (*exp)->isatomic = TRUE;
-            if (needsAtomicLockFromType(*tp))
-                (*exp)->lockOffset = (*tp)->size - ATOMIC_FLAG_SPACE;
-        }
-        if (strSym && funcparams)
-            funcparams->novtab = TRUE;
-        if (cparams.prm_cplusplus && sp->storage_class == sc_member)
-        {
-            qualifyForFunc(funcsp, tp);
-        }
-        sp->tp->used = TRUE;
     }
     else
     {
@@ -1244,6 +1295,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
         if (!*lptr)
         {
             EXPRESSION *p = sym->init->exp;
+            optimize_for_constants(&p);
             *lptr = Alloc(sizeof(INITLIST));
             (*lptr)->exp = p;
             (*lptr)->tp = sym->tp;
@@ -3001,7 +3053,7 @@ static LEXEME *expression_alignof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
 {
     lex = getsym();
-    lex = expression_cast(lex, funcsp, NULL, tp, exp, TRUE, noinline);
+    lex = expression_cast(lex, funcsp, atp, tp, exp, TRUE, noinline);
     if (*tp)
     {
         TYPE *btp, *tp1;
@@ -3089,7 +3141,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 *exp = (*exp)->left;
             if (!lvalue(*exp))
             {
-                if (!btp->array && !btp->vla && !isstructured(btp) && basetype(btp)->type != bt_memberptr)
+                if (!btp->array && !btp->vla && !isstructured(btp) && basetype(btp)->type != bt_memberptr && basetype(btp)->type != bt_templateparam)
                     error(ERR_LVALUE);
             }
             else if (!isstructured(btp))
@@ -3247,7 +3299,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     castToArithmetic(FALSE, tp, exp, kw, NULL, noinline, TRUE);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
-                    else if (!lvalue(*exp))
+                    else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
                         error(ERR_LVALUE);
                     else
                     {
@@ -3496,7 +3548,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
                     else if (basetype(*tp)->scoped)
                         error(ERR_SCOPED_TYPE_MISMATCH);
-                    else if (!lvalue(*exp))
+                    else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
                         error(ERR_LVALUE);
                     else if (ispointer(*tp))
                     {
@@ -3952,12 +4004,13 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
     {	
         enum e_kw kw = KW(lex);
         enum e_node type ;
-        char *opname = lex->kw->name;
+        char *opname;
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
         switch(kw)
         {
             case gt:
+                opname = lex->kw->name;
                 done = inTemplateParams;
                 break;
             case geq:
@@ -4445,7 +4498,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1))
             error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && !lvalue(*exp))
+        else if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp))
             error(ERR_LVALUE);
         else switch(kw)
         {
@@ -4670,7 +4723,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             if ((*exp)->type == en_not_lvalue || (*exp)->type == en_func
                 || (*exp)->type == en_void || (*exp)->type == en_memberptr)
             {
-               error(ERR_LVALUE);
+                if (basetype(*tp)->type != bt_templateparam)
+                    error(ERR_LVALUE);
             }
             else if (exp1->type == en_memberptr)
             {

@@ -479,12 +479,19 @@ static struct {
 {"Type mismatch in default for 'non-type' template paramater", ERROR },
 {"'%s' was not previously declared as a template", ERROR },
 {"'%s' was previously declared as a template", ERROR },
-{"Template args do not agree with previous declaration", ERROR },
+{"Template parameters do not agree with previous declaration", ERROR },
 {"Missing default values in template declaration after '%s'", ERROR },
 {"Redefinition of default value for '%s' in template redeclaration", ERROR },
 {"'Template' template parameter must name a class", ERROR },
 {"Templates must be classes or functions", ERROR },
 {"Too many template parameter sets were specified", ERROR },
+{"Cannot partially specialize a function template", ERROR },
+{"Partial specialization missing parameter from template header", ERROR },
+{"Specialization of '%s' cannot be declared before primary template", ERROR },
+{"Too few arguments passed to template '%s'", ERROR },
+{"Too many arguments passed to template '%s'", ERROR },
+{"Incorrect arguments passed to template '%s'", ERROR },
+{"Cannot find a match for template '%s'", ERROR },
 #endif
 } ;
 
@@ -575,7 +582,7 @@ static BOOL ignoreErrtemplateNestingCount(int err)
 void printerr(int err, char *file, int line, ...)
 {
     char buf[256];
-    char infunc[256];
+    char infunc[1024];
     char *listerr;
     char nameb[265], *name = nameb;
     if (templateNestingCount && ignoreErrtemplateNestingCount(err))
@@ -682,7 +689,7 @@ void preverror(int err, char *name, char *origfile, int origline)
 #ifndef CPREPROCESSOR
 void preverrorsym(int err, SYMBOL *sp, char *origfile, int origline)
 {
-    char buf[512];
+    char buf[1024];
     unmangle(buf, sp->errname);
     if (origfile && origline)
         preverror(err, buf, origfile, origline);
@@ -744,7 +751,7 @@ void errorstr(int err, char *val)
 }
 void errorsym(int err, SYMBOL *sym)
 {
-    char buf[256];
+    char buf[1024];
 #ifdef CPREPROCESSOR
     strcpy(buf, sym->name);
 #else
@@ -758,14 +765,14 @@ void errorsym(int err, SYMBOL *sym)
 #ifndef CPREPROCESSOR
 void errorsym2(int err, SYMBOL *sym1, SYMBOL *sym2)
 {
-    char one[512], two[512];
+    char one[1024], two[1024];
     unmangle(one, sym1->errname);
     unmangle(two, sym2->errname);
     printerr(err, preprocFile, preprocLine, one, two);
 }
 void errorstrsym(int err, char *name, SYMBOL *sym2)
 {
-    char two[512];
+    char two[1024];
     unmangle(two, sym2->errname);
     printerr(err, preprocFile, preprocLine, name, two);
 }
@@ -795,8 +802,8 @@ void membererror(char *name, TYPE *tp1)
 }
 void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
 {
-    char argbuf[512];
-    char buf[512];
+    char argbuf[1024];
+    char buf[1024];
     if (declsp->anonymous)
         sprintf(argbuf,"%d",argnum);
     else
@@ -1606,6 +1613,7 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
             }
             break;
         case en_stmt:
+        case en_templateparam:
             break;
         default:
             diag("assignmentUsages");
@@ -1805,6 +1813,7 @@ static int checkDefaultExpression(EXPRESSION *node)
                 rv |= 2;
             break;
         case en_stmt:
+        case en_templateparam:
             break;
         default:
             diag("rv |= checkDefaultExpression");

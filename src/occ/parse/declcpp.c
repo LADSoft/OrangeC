@@ -661,64 +661,71 @@ void deferredCompile(void)
     }
     inFunc--;
 }
+void backFillDeferredInitializersForFunction(SYMBOL *cur, SYMBOL *funcsp)
+{
+    HASHREC *pr = basetype(cur->tp)->syms->table[0];
+    while (pr)
+    {
+        SYMBOL *cur1 = (SYMBOL *)pr->p;
+        if (cur1->storage_class != sc_parameter)
+            break;
+        if (cur1->deferredCompile)
+        {
+            // default for parameter
+            LEXEME *lex = SetAlternateLex(cur1->deferredCompile);
+            lex = initialize(lex, funcsp, cur1, sc_parameter, TRUE); /* also reserves space */
+            SetAlternateLex(NULL);
+        }
+            
+        pr = pr->next;
+    }
+}
 void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp)
 {
-    HASHREC *hr = basetype(declsym->tp)->syms->table[0];
-    while (hr)
+    if (!declsym->isTemplate)
     {
-        SYMBOL *cur = (SYMBOL *)hr->p;
-        BOOL addedStrSym  = FALSE;
-        if (cur->parentClass)
+        HASHREC *hr = basetype(declsym->tp)->syms->table[0];
+        while (hr)
         {
-            STRUCTSYM *l = Alloc(sizeof(LIST));
-            l->str = cur->parentClass;
-            addStructureDeclaration(l);
-            addedStrSym = TRUE;
-        }
-        if (cur->storage_class == sc_overloads)
-        {
-            HASHREC *hrf = cur->tp->syms->table[0];
-            while (hrf)
+            SYMBOL *cur = (SYMBOL *)hr->p;
+            BOOL addedStrSym  = FALSE;
+            if (cur->parentClass)
             {
-                cur = (SYMBOL *)hrf->p;
-                if (isfunction(cur->tp))
-                {
-                    HASHREC *pr = basetype(cur->tp)->syms->table[0];
-                    while (pr)
-                    {
-                        SYMBOL *cur1 = (SYMBOL *)pr->p;
-                        if (cur1->storage_class != sc_parameter)
-                            break;
-                        if (cur1->deferredCompile)
-                        {
-                            // default for parameter
-                            LEXEME *lex = SetAlternateLex(cur1->deferredCompile);
-                            lex = initialize(lex, funcsp, cur1, sc_parameter, TRUE); /* also reserves space */
-                            SetAlternateLex(NULL);
-                        }
-                            
-                        pr = pr->next;
-                    }
-                    if (cur->deferredCompile)
-                    {
-                        LIST *func = (LIST *)Alloc(sizeof(LIST));
-                        func->data = (void *)cur;
-                        func->next = deferredBackfill;
-                        deferredBackfill = func;
-                    }
-                }
-                hrf = hrf->next;
+                STRUCTSYM *l = Alloc(sizeof(LIST));
+                l->str = cur->parentClass;
+                addStructureDeclaration(l);
+                addedStrSym = TRUE;
             }
+            if (cur->storage_class == sc_overloads)
+            {
+                HASHREC *hrf = cur->tp->syms->table[0];
+                while (hrf)
+                {
+                    cur = (SYMBOL *)hrf->p;
+                    if (isfunction(cur->tp))
+                    {
+                        backFillDeferredInitializersForFunction(cur, funcsp);
+                        if (cur->deferredCompile)
+                        {
+                            LIST *func = (LIST *)Alloc(sizeof(LIST));
+                            func->data = (void *)cur;
+                            func->next = deferredBackfill;
+                            deferredBackfill = func;
+                        }
+                    }
+                    hrf = hrf->next;
+                }
+            }
+            else if (cur->deferredCompile)
+            {
+                // initializer
+            }
+            if (addedStrSym)
+            {
+                dropStructureDeclaration();
+            }
+            hr = hr->next;
         }
-        else if (cur->deferredCompile)
-        {
-            // initializer
-        }
-        if (addedStrSym)
-        {
-            dropStructureDeclaration();
-        }
-        hr = hr->next;
     }
 }
 void warnCPPWarnings(SYMBOL *sym, BOOL localClassWarnings)

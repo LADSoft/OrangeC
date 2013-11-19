@@ -103,7 +103,7 @@ void browse_init(void)
 
 void browse_startfunc(SYMBOL *func, int lineno)
 {
-    char name[256];
+    char name[1024];
     BROWSEINFO *bri;
     if (!cparams.prm_browse || !chosenDebugger || !chosenDebugger->browsedata)
         return ;
@@ -122,7 +122,7 @@ void browse_startfunc(SYMBOL *func, int lineno)
 
 void browse_endfunc(SYMBOL *func, int lineno)
 {
-    char name[256];
+    char name[1024];
     BROWSEINFO *bri;
     if (!cparams.prm_browse || !chosenDebugger || !chosenDebugger->browsedata)
         return ;
@@ -180,7 +180,7 @@ void browse_startfile(char *name, int index)
 
 void browse_variable(SYMBOL *var)
 {
-    char name[256];
+    char name[1024];
     BROWSEINFO *bri;
     if (!cparams.prm_browse || !chosenDebugger || !chosenDebugger->browsedata)
         return ;

@@ -324,6 +324,7 @@ static BOOL hasFloats(EXPRESSION *node)
         case en_cond:
             return hasFloats(node->right);
         case en_atomic:
+        case en_templateparam:
             return 0;
         case en_argnopush:
         case en_not_lvalue:
@@ -2481,6 +2482,10 @@ join_lor:
             rv |= opt0(&((*node)->v.ad->address));
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
+        case en_templateparam:
+            if ((*node)->v.sp->tp->templateParam->type == kw_int)
+                *node = (*node)->v.sp->tp->templateParam->byNonType.val;
+            break;
     }
     return rv;
 }
@@ -3000,6 +3005,11 @@ int fold_const(EXPRESSION *node)
                 }
             }
             break;
+        case en_templateparam:
+            if (node->v.sp->tp->templateParam->type == kw_int)
+                if (node->v.sp->tp->templateParam->byNonType.val)
+                    rv |= fold_const(node->v.sp->tp->templateParam->byNonType.val);
+            break;
     }
     return rv;
 }
@@ -3449,6 +3459,11 @@ int typedconsts(EXPRESSION *node1)
                 }
                 node1->type = en_c_ldc;
             }
+            break;
+        case en_templateparam:
+            if (node1->v.sp->tp->templateParam->type == kw_int)
+                if (node1->v.sp->tp->templateParam->byNonType.val)
+                    rv |= typedconsts(node1->v.sp->tp->templateParam->byNonType.val);
             break;
 /*#endif */
     }

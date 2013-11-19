@@ -211,13 +211,42 @@ static char *unmangptr(char *buf , char *name)
     }
     return name;
 }
-
+static char *unmangleTemplate(char *buf, char *name)
+{
+    *buf ++ = '<';
+    while (*name && *name != '#')
+    {
+        if (*name == '@')
+        {
+            name ++;
+            while (*name && *name != '#')
+                *buf++ = *name++;
+            if (*name)
+            {
+                name = unmangleTemplate(buf, name);
+            }
+        }
+        else
+        {
+            name = unmang1(buf, name);
+        }
+        buf += strlen(buf);
+        *buf++ = ',';
+    }
+    if (*name)
+        name++;
+    if (buf[-1] == ',')
+        buf--;
+    *buf++ = '>';
+    *buf = 0;
+    return name;
+}
 /* Argument unmangling for C++ */
 static char *unmang1(char *buf, char *name)
 {
     int v;
     int cvol = 0, cconst = 0;
-    char buf1[256],  *p, buf2[256], buf3[256];
+    char buf1[1024],  *p, buf2[1024], buf3[1024];
     while (*name == '_')
         name++;
     while (*name == 'x' ||  *name == 'y')
@@ -266,6 +295,11 @@ static char *unmang1(char *buf, char *name)
     else
     switch (*name++)
     {
+        case '#':
+            p = buf1;
+            name = unmangleTemplate(p, name);
+            strcpy(buf, buf1);
+            break;
         case '$':
             p = buf1;
             if (*name == 't')
@@ -564,9 +598,9 @@ char *unmangle(char *val, char *name)
         {
             while (*name)
             {
-                if (*name == '$')
+                if (*name == '$' || *name == '#')
                 {
-                    name = unmang1(buf, name+1);
+                    name = unmang1(buf, name+(*name == '$'));
                     buf += strlen(buf);
                 }
                 else if (*name == '@')
@@ -580,7 +614,7 @@ char *unmangle(char *val, char *name)
                     else
                     {
                         last = buf;
-                        while (*name && *name != '$' && *name != '@')
+                        while (*name && *name != '$' && *name != '@' && *name != '#')
                         {
                             if (*name == '#')
                                 name++;

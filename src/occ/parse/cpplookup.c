@@ -189,6 +189,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     NAMESPACEVALUES *nssym = globalNameSpace;
     SYMBOL *strSym = NULL;
     BOOL qualified = FALSE;
+    LIST *templateSelector = NULL, **last = &templateSelector;
     if (sym)
         *sym = NULL;
     marksym();
@@ -205,53 +206,78 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
         char buf[512];
         SYMBOL *sp;
         strcpy(buf, lex->value.s.a);
+        if (templateSelector)
+        {
+            *last = Alloc(sizeof(LIST));
+            (*last)->data = litlate(buf);
+            last = &(*last)->next;
+        }
         lex = getsym();
         if (!MATCHKW(lex, classsel))
         {
             lex = backupsym(1);
             break;
         }
-        if (!strSym)
+        if (!templateSelector)
         {
-            if (!qualified)
+            if (!strSym)
             {
-                sp = classsearch(buf, TRUE);
-                if (sp)
-                    *throughClass = TRUE;
+                if (!qualified)
+                {
+                    sp = classsearch(buf, TRUE);
+                    if (sp)
+                        *throughClass = TRUE;
+                }
+                else
+                {
+                    sp = NULL;
+                }
+                if (!sp && !qualified)
+                    sp = namespacesearch(buf, localNameSpace, qualified, TRUE);
+                if (!sp)
+                    sp = namespacesearch(buf, nssym, qualified, TRUE);
             }
             else
             {
-                sp = NULL;
+                sp = search(buf, strSym->tp->tags);
             }
-            if (!sp && !qualified)
-                sp = namespacesearch(buf, localNameSpace, qualified, TRUE);
-            if (!sp)
-                sp = namespacesearch(buf, nssym, qualified, TRUE);
-        }
-        else
-        {
-            sp = search(buf, strSym->tp->tags);
-        }
-        if (sp && (basetype(sp->tp)->type == bt_enum || isstructured(sp->tp)))
-        {
-            strSym = sp;
-            if (!qualified)
-                nssym = NULL;
-        }
-        else if (sp && (sp->storage_class == sc_namespace || sp->storage_class == sc_namespacealias))
-        {
-            nssym = sp->nameSpaceValues;                    
-        }
-        else
-        {
-            errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE , buf);
-            lex = backupsym(0);
-            break;
+            if (sp && (basetype(sp->tp)->type == bt_enum || isstructured(sp->tp)))
+            {
+                strSym = sp;
+                if (!qualified)
+                    nssym = NULL;
+            }
+            else if (sp && (sp->storage_class == sc_namespace || sp->storage_class == sc_namespacealias))
+            {
+                nssym = sp->nameSpaceValues;                    
+            }
+            else if (sp && sp->tp->type == bt_templateparam)
+            {
+                *last = Alloc(sizeof(LIST));
+                (*last)->data = strSym;
+                last = &(*last)->next;
+                *last = Alloc(sizeof(LIST));
+                (*last)->data = sp;
+                last = &(*last)->next;
+            }
+            else
+            {
+                errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE , buf);
+                lex = backupsym(0);
+                break;
+            }
         }
         qualified = TRUE;
         lex = getsym();
     }
-    if (qualified)
+    if (templateSelector)
+    {
+        TYPE *tp = Alloc(sizeof(TYPE));
+        tp->type = bt_templateselector;
+        *sym = makeID(sc_global, tp, NULL, AnonymousName());
+        (*sym)->templateSelector = templateSelector;
+    }
+    else if (qualified)
     {
         if (strSym && sym)
             *sym = strSym;
@@ -447,7 +473,7 @@ SYMBOL *templatesearch(char *name, BOOL after)
     {
         if (ss->tmpl)
         {
-            TEMPLATEARG *arg = ss->tmpl;
+            TEMPLATEPARAM *arg = ss->tmpl;
             while (arg)
             {
                 if (arg->sym && !strcmp(arg->sym->name, name))
@@ -1524,7 +1550,7 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                 int left=0, right=0;
                 int l=0,r=0;
                 int k=0;
-                INITLIST *args = funcparams->arguments;
+                INITLIST *args = funcparams ? funcparams->arguments : NULL;
                 HASHREC *hrl = basetype(spList[i]->tp)->syms->table[0];
                 HASHREC *hrr = basetype(spList[j]->tp)->syms->table[0];
                 for (k=0; k < argCount; k++)
@@ -1543,7 +1569,7 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                         seqr = &identity;
                         lenr = 1;
                     }
-                    if (k == 0 && funcparams->thisptr)
+                    if (k == 0 && funcparams && funcparams->thisptr)
                     {
                         TYPE *tpl, *tpr;
                         if (spList[i]->castoperator)
@@ -1570,7 +1596,7 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                                                     funcList ? funcList[j][k] : NULL,
                                                     lenl, lenr, FALSE);
                     }
-                    else if (k == 1 && funcparams->thisptr)
+                    else if (k == 1 && funcparams && funcparams->thisptr)
                     {
                         TYPE *tpl, *tpr;
                         if (spList[i]->castoperator)
@@ -1601,11 +1627,14 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                     {
                         TYPE *tpl = hrl ? ((SYMBOL *)hrl->p)->tp : NULL;
                         TYPE *tpr = hrr ? ((SYMBOL *)hrr->p)->tp : NULL;
-                        arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, 
+                        if (tpl && tpr)
+                            arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, 
                                                     args? args->tp:0, args?args->exp:0,
                                                     funcList ? funcList[i][k] : NULL, 
                                                     funcList ? funcList[j][k] : NULL,
                                                     lenl, lenr, FALSE);
+                        else
+                            arr[k] = 0;
                         if (hrl) hrl = hrl->next;
                         if (hrr) hrr = hrr->next;
                     }
@@ -2450,7 +2479,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
                 }
             }
         }
-        while (*hr && (a || hrt))
+        while (*hr && (a || hrt && *hrt))
         {
             SYMBOL *argsym = (SYMBOL *)(*hr)->p;
             if (argsym->constop)
@@ -2494,7 +2523,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
         if (*hr)
         {
             SYMBOL *sym = (SYMBOL *)(*hr)->p;
-            if (sym->init)
+            if (sym->init || sym->deferredCompile)
             {
                 return TRUE;
             }
@@ -2510,6 +2539,107 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
         }
         return a == NULL;
     }
+}
+static SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp)
+{
+    if (sym->isTemplate)
+    {
+        if (atp || args)
+        {
+            if (!TemplateIntroduceArgs(sym->templateParams, args->templateParams))
+                sym = NULL;
+            else if (atp)
+                sym = TemplateDeduceArgsFromType(sym, atp);
+            else if (args->ascall)
+                sym = TemplateDeduceArgsFromArgs(sym, args);
+            else
+                sym = TemplateDeduceWithoutArgs(sym);
+        }
+        else
+        {
+            sym = NULL;
+        }
+    }
+    return sym;
+}
+static void WeedTemplates(SYMBOL **table, int count, FUNCTIONCALL *args, TYPE *atp)
+{
+    int i;
+    for (i=0; i < count ;i++)
+        if (table[i] && !table[i]->isTemplate)
+            break;
+    if (i < count)
+    {
+        // one or more first class citizens, don't match templates
+        for (i=0; i < count ;i++)
+            if (table[i] && table[i]->isTemplate)
+                table[i] = NULL;
+    }
+    else
+    {
+        TemplatePartialOrdering(table, count, args, atp);
+    }
+}
+SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args)
+{
+    int n = 0, i;
+    SYMBOL *found1 = NULL, *found2 = NULL;
+    SYMBOL **spList;
+    HASHREC **hr = &sp->tp->syms->table;
+    while (*hr)
+    {
+        SYMBOL *sym = (SYMBOL *)(*hr)->p;
+        if (sym->isTemplate)
+            n++;
+        if (sym->isTemplate)
+        {
+            LIST *l = sym->specializations;
+            while (l)
+            {
+                n++;
+                l = l->next;
+            }
+        }
+        hr = &(*hr)->next;
+    }
+    spList = Alloc(sizeof(SYMBOL *) * n);
+    hr = &sp->tp->syms->table;
+    while (*hr)
+    {
+        SYMBOL *sym = (SYMBOL *)(*hr)->p;
+        if (sym->isTemplate)
+            spList[n++] = detemplate(sym, args, NULL);
+        if (sym->isTemplate)
+        {
+            LIST *l = sym->specializations;
+            while (l)
+            {
+                spList[n++] = detemplate(l->data, args, NULL);
+                l = l->next;
+            }
+        }
+                
+        hr = &(*hr)->next;
+    }
+    WeedTemplates(spList, n, args, NULL);
+    for (i=0; i < n && !found1; i++)
+    {
+        int j;
+        found1 = spList[i];
+        for (j=i+1; j < n && found1 && !found2; j++)
+        {
+            if (spList[j])
+            {
+                found2 = spList[j];
+            }
+        }
+    }
+    if (!found1 || found2)
+    {
+        errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
+        return NULL;
+    }
+    return found1;
 }
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOL toErr, 
@@ -2601,7 +2731,18 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 HASHREC **hr = ((SYMBOL *)lst2->data)->tp->syms->table;
                 while (*hr)
                 {
-                    n++;
+                    SYMBOL *sym = (SYMBOL *)(*hr)->p;
+                    if (!args || !args->astemplate || sym->isTemplate)
+                        n++;
+                    if (sym->isTemplate)
+                    {
+                        LIST *l = sym->specializations;
+                        while (l)
+                        {
+                            n++;
+                            l = l->next;
+                        }
+                    }
                     hr = &(*hr)->next;
                 }
                 lst2 = lst2->next;
@@ -2648,13 +2789,29 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                     HASHREC **hr = ((SYMBOL *)lst2->data)->tp->syms->table;
                     while (*hr)
                     {
-                        spList[n++] = (SYMBOL *)(*hr)->p;
+                        SYMBOL *sym = (SYMBOL *)(*hr)->p;
+                        if (!args || !args->astemplate || sym->isTemplate)
+                            spList[n++] = sym->isTemplate ? detemplate(sym, args, atp) : sym;
+                        if (sym->isTemplate)
+                        {
+                            LIST *l = sym->specializations;
+                            while (l)
+                            {
+                                spList[n++] = detemplate((SYMBOL *)l->data, args, atp);
+                                l = l->next;
+                            }
+                        }
+                                
                         hr = &(*hr)->next;
                     }
                     lst2 = lst2->next;
                 }
-                GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList);
-                SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
+                if (atp || args->ascall)
+                {
+                    GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList);
+                    SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
+                }
+                WeedTemplates(spList, n, args, atp);
                 for (i=0; i < n && !found1; i++)
                 {
                     int j;
@@ -2727,6 +2884,11 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             else if (found1->deleted)
             {
                 errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
+            }
+            else
+            {
+                if (found1->isTemplate)
+                    found1 = TemplateFunctionInstantiate(found1);
             }
         }
         if (!toErr && found2)

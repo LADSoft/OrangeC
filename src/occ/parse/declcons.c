@@ -186,10 +186,12 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
         funcs->parent = sp;
         funcs->tp->syms = CreateHashTable(1);
         insert(ovl, funcs->tp->syms);
+        ovl->overloadName = funcs;
     }
     else if (funcs->storage_class == sc_overloads)
     {
         insertOverload(ovl, funcs->tp->syms);
+        ovl->overloadName = funcs;
     }
     else 
     {
@@ -232,6 +234,7 @@ static BOOL hasConstFuncs(SYMBOL *sp, int type)
         params->thistp->type = bt_pointer;
         params->thistp->size = getSize(bt_pointer);
         params->thistp->btp = sp->tp;
+        params->ascall = TRUE;
         return !!GetOverloadedFunction(&tp, &params->fcall, ovl, params, NULL, FALSE, FALSE);
     }
     return FALSE;
@@ -486,6 +489,7 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOL move)
         funcparams.arguments = &arg;
         funcparams.thisptr = &exp;
         funcparams.thistp = &tpp;
+        funcparams.ascall = TRUE;
         return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE);
     }
     return NULL;
@@ -526,6 +530,7 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOL move)
         funcparams.arguments = &arg;
         funcparams.thisptr = &exp;
         funcparams.thistp = &tpt;
+        funcparams.ascall = TRUE;
         return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE);
     }
     return NULL;
@@ -1497,7 +1502,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     }
                     else
                     {
-                        lex = backupsym(0);
+                        lex = backupsym();
                     }
                 }
                 if (!done)
@@ -1739,6 +1744,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->thistp->type = bt_pointer;
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = base->tp;
+    params->ascall = TRUE;
     asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, NULL, TRUE, FALSE);
         
     if (asn1)
@@ -1962,6 +1968,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     arg4->exp = size;
     arg4->tp = &stdint;
     
+    params->ascall = TRUE;
     asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, NULL, TRUE, FALSE);
     if (!asn1)
     {
@@ -1998,6 +2005,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
     params->thistp->type = bt_pointer;
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
+    params->ascall = TRUE;
     dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
     if (dest1 && !isAccessible(against,sp, dest1, NULL, against == sp ? ac_public : ac_protected, FALSE))
     {
@@ -2102,6 +2110,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     params->thistp->type = bt_pointer;
     params->thistp->btp = sp->tp;
     params->thistp->size = getSize(bt_pointer);
+    params->ascall = TRUE;
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, 
                                   maybeConversion);
         
@@ -2187,6 +2196,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 params->thistp->type = bt_pointer;
                 params->thistp->size = getSize(bt_pointer);
                 params->thistp->btp = sp->tp;
+                params->ascall = TRUE;
                 dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
                 if (dest1 && !isAccessible(against,sp, dest1, NULL, against == sp ? ac_public : ac_protected, FALSE))
                 {

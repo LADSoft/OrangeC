@@ -167,7 +167,7 @@ enum e_stmt
 /* storage classes */
 enum e_sc
 {
-        sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_template, sc_templateparam,
+        sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
         sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_cast, sc_defunc, sc_label, sc_ulabel,
         sc_overloads, sc_constant, sc_enumconstant, sc_absolute,
         sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
@@ -442,6 +442,7 @@ typedef struct sym
         unsigned altered: 1;
         unsigned used: 1; /* value has been fetched */
         unsigned genreffed: 1; /* reffed in codegen */
+        unsigned gentemplate: 1; /* template instantiation or reference generated */
         unsigned allocaUsed: 1;
         unsigned oldstyle : 1; /* pointer to a names list if an old style function arg */
         unsigned spillVar : 1; /* backend allocator spill variable */
@@ -494,6 +495,7 @@ typedef struct sym
     /* Also name for CPP overload lists */
     /* also default for template parameters, is a TYP */
     char *importfile; /* import name */
+    struct sym *overloadName;
     struct sym *mainsym; /* pointer to the global version of a copied symbol */
     struct _memberInitializers *memberInitializers; /* initializers for constructor */
     STATEMENT *gotoTable; /* pointer to hashtable associated with goto or label */
@@ -507,7 +509,7 @@ typedef struct sym
     struct _templateParam *templateParams;
     LIST *specializations;
     LIST *instantiations;
-    LIST *templateSelector; // first element is the last valid sym found, second element is the template parameter sym
+    struct _templateSelector *templateSelector; // first element is the last valid sym found, second element is the template parameter sym
                                 // following elements are the list of pointers to names
     struct sym *parentTemplate; // could be the parent of a specialization or an instantiation
     struct init * init, *lastInit, *dest;
@@ -634,6 +636,17 @@ typedef struct _templateParam
     };
 } TEMPLATEPARAM;
 
+typedef struct _templateSelector
+{
+    struct _templateSelector *next;
+    union
+    {
+        SYMBOL *sym;
+        char *name;
+    } ;
+    TEMPLATEPARAM *templateParams;
+    int isTemplate : 1;
+} TEMPLATESELECTOR ;
 typedef struct _structSym
 {
     struct _structSym *next;
@@ -664,6 +677,7 @@ typedef struct functioncall
     int novtab : 1;
     int ascall:1;
     int astemplate:1;
+    int noobject:1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN      16384
@@ -748,7 +762,7 @@ typedef struct lexeme
 typedef struct lexContext {
     struct lexContext *next;
     LEXEME *cur;
-    LEXEME *mark;
+    LEXEME *last;
 } LEXCONTEXT ;
 
 

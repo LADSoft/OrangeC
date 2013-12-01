@@ -71,6 +71,7 @@ extern char *overloadXlateTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern SYMBOL *enumSyms;
 extern LAMBDA *lambdas;
+extern int currentErrorLine;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -181,13 +182,19 @@ void getThisType(SYMBOL *sym, TYPE **tp)
     (*tp)->btp = sym->parentClass->tp;
     qualifyForFunc(sym, tp);
 }
-EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp, BOOL toError)
+EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOOL toError)
 {
     EXPRESSION *en;
     SYMBOL *enclosing = getStructureDeclaration();
     
-    if (enclosing) // lambdas will be caught by this too
+    if (enclosing && (!funcsp || funcsp->storage_class != sc_global && funcsp->storage_class != sc_static)) // lambdas will be caught by this too
     {
+        if (strSym)
+        {
+            if (!comparetypes(strSym->tp, enclosing->tp, TRUE))
+                errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+            enclosing = strSym;
+        }
         if (funcsp)
             en = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
         else
@@ -227,7 +234,9 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp, BOOL toError)
             else if (!isExpressionAccessible(memberSym, funcsp, FALSE))
             {
                 if (toError)
+                {
                     errorsym(ERR_CANNOT_ACCESS, memberSym);
+                }
             }
             en = baseClassOffset(memberSym->parentClass, enclosing, en);
         }
@@ -240,14 +249,14 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *funcsp, BOOL toError)
     }
     return en;
 }
-EXPRESSION *getMemberNode(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp)
+EXPRESSION *getMemberNode(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *funcsp)
 {
-    EXPRESSION *en = getMemberBase(memberSym, funcsp, TRUE);
+    EXPRESSION *en = getMemberBase(memberSym, strSym, funcsp, TRUE);
     en = exprNode(en_add, en, intNode(en_c_i, memberSym->offset));
     *tp = memberSym->tp;
     return en;
 }
-EXPRESSION *getMemberPtr(SYMBOL *memberSym, TYPE **tp, SYMBOL *funcsp)
+EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *funcsp)
 {
     EXPRESSION *rv;
     TYPE *tpq = Alloc(sizeof(TYPE));
@@ -1018,7 +1027,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        if (startOfType(lex))
+        if (startOfType(lex, FALSE))
         {
             lex = get_type_id(lex, tp, funcsp, FALSE);
         }
@@ -1112,6 +1121,7 @@ BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONC
             hrs = hrs->next;
         }
     }
+    funcparams->ascall = TRUE;    
     s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, TRUE, FALSE);
     if (s3)
     {
@@ -1166,7 +1176,6 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
                s1 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
             break;
     }
-    dropStructureDeclaration();
     // next find some occurrance in the class or struct
     if (isstructured(*tp))
     {
@@ -1174,10 +1183,15 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         addStructureDeclaration(&l);
         s2 = classsearch(name, FALSE);
     }
+    else
+    {
+        l.str = NULL;
+    }
     // quit if there are no matches because we will use the default...
     if (!s1 && !s2)
     {
-        dropStructureDeclaration();
+        if (l.str)
+            dropStructureDeclaration();
         return FALSE;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
@@ -1213,6 +1227,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         }
     }
     funcparams = Alloc(sizeof(FUNCTIONCALL));
+    /*
     if (isstructured(*tp))
     {
         funcparams->thistp = Alloc(sizeof(TYPE));
@@ -1242,6 +1257,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         }
     }
     else
+        */
     {
         INITLIST *one = NULL, *two = NULL;
         if (*tp)
@@ -1315,9 +1331,19 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         case ovcl_comma:
             break;
     }
+    funcparams->ascall = TRUE;    
     s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, TRUE, FALSE);
     if (s3)
     {
+        if (s3->storage_class == sc_member || s3->storage_class == sc_virtual)
+        {
+            funcparams->arguments = funcparams->arguments->next;
+            funcparams->thistp = Alloc(sizeof(TYPE));
+            funcparams->thistp->type = bt_pointer;
+            funcparams->thistp->size = getSize(bt_pointer);
+            funcparams->thistp->btp = *tp;        
+            funcparams->thisptr = *exp;
+        }
         s3->throughClass = s3->parentClass != NULL;
         funcparams->sp = s3;
         funcparams->functp = s3->tp;
@@ -1327,10 +1353,12 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         expression_arguments(NULL, funcsp, tp, exp, noinline);
         if (s3->defaulted && kw == assign)
             createAssignment(s3->parentClass, s3);
-        dropStructureDeclaration();
+        if (l.str)
+            dropStructureDeclaration();
         return TRUE;
     }
-    dropStructureDeclaration();
+    if (l.str)
+        dropStructureDeclaration();
     return FALSE;
 }
 LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline)
@@ -1347,7 +1375,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
-        if (startOfType(lex))
+        if (startOfType(lex, FALSE))
         {
             // type in parenthesis
             lex = get_type_id(lex, tp, funcsp, FALSE);
@@ -1356,7 +1384,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         else
         {
             // placement new
-            lex = backupsym(1);
+            lex = backupsym();
             lex = getArgs(lex, funcsp, placement, closepa);
         }
     }
@@ -1455,6 +1483,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         s1 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
     }
     // should have always found something
+    placement->ascall = TRUE;    
     s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE);
     if (s1)
     {
@@ -1684,6 +1713,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     one->exp =exp1;
     one->tp = &stdpointer;
     funcparams->arguments = one;
+    funcparams->ascall = TRUE;
     s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, NULL, TRUE, FALSE);
     if (s1)
     {

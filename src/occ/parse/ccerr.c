@@ -62,8 +62,9 @@ extern char *preprocFile;
 extern LEXCONTEXT *context;
 extern int templateNestingCount;
 
-static LIST *listErrors;
 int currentErrorLine;
+
+static LIST *listErrors;
 static char *currentErrorFile;
 enum e_kw skim_end[] = { end, 0 };
 enum e_kw skim_closepa[] = { closepa, semicolon, end, 0 };
@@ -491,7 +492,16 @@ static struct {
 {"Too few arguments passed to template '%s'", ERROR },
 {"Too many arguments passed to template '%s'", ERROR },
 {"Incorrect arguments passed to template '%s'", ERROR },
-{"Cannot find a match for template '%s'", ERROR },
+{"Cannot instantiate template '%s' because it is not defined", ERROR },
+{"Cannot generate template specialization from '%s'", ERROR },
+{"Cannot use template '%s' without specifying specialization parameters", ERROR },
+{"Invalid template parameter", ERROR },
+{"Body has already been defined for function '%s'", ERROR },
+{"Invalid explicit specialization of '%s'", ERROR },
+{"Storage class 'extern' not allowed here", ERROR },
+{"Template '%s' is already instantiated", WARNING },
+{"Use . or -> to call '%s'", ERROR },
+{"Template argument must be a constant expression", ERROR },
 #endif
 } ;
 
@@ -543,6 +553,7 @@ static BOOL alwaysErr(int err)
         case ERR_CONSTANT_MUST_BE_INITIALIZED:
         case ERR_REF_MEMBER_MUST_INITIALIZE:
         case ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED:
+        case ERR_CANNOT_ACCESS:
             return TRUE;
         default:
             return FALSE;
@@ -592,8 +603,9 @@ void printerr(int err, char *file, int line, ...)
 #ifndef CPREPROCESSOR
         if (context)
         {
-            line = context->cur->line;
-            file = context->cur->file;
+            LEXEME *lex = context->cur ? context->cur->prev : context->last;
+            line = lex->line;
+            file = lex->file;
         }
         else
         {

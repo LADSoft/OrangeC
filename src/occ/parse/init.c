@@ -549,7 +549,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOL make_label)
     return lbl;
 #endif
 }
-static int dumpInit(SYMBOL *sp, INITIALIZER *init)
+int dumpInit(SYMBOL *sp, INITIALIZER *init)
 {
 #ifndef PARSER_ONLY
     TYPE *tp = basetype(init->basetp);
@@ -1979,7 +1979,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         if (assn || arrayMember)
         {
             // assignments or array members come here
-            if (startOfType(lex))
+            if (startOfType(lex, FALSE))
             {
                 TYPE *tp1 = NULL;
                 EXPRESSION *exp1;
@@ -2705,7 +2705,19 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (funcsp && funcsp->linkage == lk_inline && sp->storage_class == sc_static)
     {
-        errorsym(ERR_INLINE_NO_STATIC, sp);	
+        if (funcsp->isTemplate)
+        {
+            char buf[1024];
+            strcpy(buf, funcsp->decoratedName);
+            strcat(buf, "@");
+            strcat(buf, sp->name);
+            sp->decoratedName = litlate(buf);
+            sp->linkage = lk_inline;
+        }
+        else
+        {
+            errorsym(ERR_INLINE_NO_STATIC, sp);	
+        }
     }
     // check for attempt to use an undefined struct
     tp = basetype(sp->tp);
@@ -2923,12 +2935,21 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     if (sp->storage_class == sc_static || sp->storage_class == sc_global 
         || sp->storage_class == sc_localstatic)
     {
-        if (storage_class_in == sc_auto || storage_class_in == sc_register)
-            sp = clonesym(sp);
         if (instantiatingTemplate)
             insertTemplateData(sp);
-        else
-            insertInitSym(sp);
+        else {
+            SYMBOL *tmpl;
+            if (storage_class_in == sc_auto || storage_class_in == sc_register)
+                sp = clonesym(sp);
+            tmpl = sp;
+            while (tmpl)
+                if (tmpl->isTemplate)
+                    break;
+                else
+                    tmpl = tmpl->parentClass;
+            if (!tmpl)
+                insertInitSym(sp);
+        }       
     }
     if (sp->init)
         declareAndInitialize = TRUE;

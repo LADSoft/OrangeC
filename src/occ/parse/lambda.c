@@ -688,7 +688,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             }
             else
             {
-                lex = backupsym(1);
+                lex = backupsym();
             }
         }
         else if (MATCHKW(lex, and))
@@ -701,7 +701,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             }
             else
             {
-                lex = backupsym(1);
+                lex = backupsym();
             }
         }
         if (!MATCHKW(lex, comma) && !MATCHKW(lex, closebr))

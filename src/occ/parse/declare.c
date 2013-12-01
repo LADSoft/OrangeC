@@ -60,7 +60,7 @@ extern TYPE stdchar32tptr;
 extern char *overloadNameTab[];
 extern LEXCONTEXT *context;
 extern LAMBDA *lambdas;
-extern BOOL inTemplateBody;
+extern int inTemplateBody;
 extern int templateNestingCount;
 extern int instantiatingTemplate;
 #ifndef BORLAND
@@ -131,7 +131,7 @@ char *AnonymousName(void)
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
 {
     SYMBOL *sp = Alloc(sizeof(SYMBOL ));
-    LEXEME *lex = context->cur;
+    LEXEME *lex = context->cur ? context->cur->prev : context->last;
     sp->name = name;
     sp->storage_class = storage_class;
     sp->tp = tp;
@@ -206,11 +206,13 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage)
             insert(funcs, table);
             table = funcs->tp->syms = CreateHashTable(1);
             insert(sp, table);
+            sp->overloadName = funcs;
         }
         else if (cparams.prm_cplusplus && funcs->storage_class == sc_overloads)
         {
             table = funcs->tp->syms;
             insertOverload(sp, table);
+            sp->overloadName = funcs;
             if (sp->parent != funcs->parent || sp->parentNameSpace != funcs->parentNameSpace)
                 funcs->wasUsing = TRUE;
         }
@@ -233,7 +235,7 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
     *rsp = NULL;
     if (ISID(lex) || MATCHKW(lex, classsel))
     {
-        lex = nestedSearch(lex, rsp, &strSym, &nsv, NULL, TRUE);
+        lex = nestedSearch(lex, rsp, &strSym, &nsv, NULL, NULL, TRUE);
         if (*rsp)
         {
             lex = getsym();
@@ -341,7 +343,8 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOL beforeOnly)
     if (notype)
         *tp = NULL;
     else if (sp && !sp->anonymous)
-        error(ERR_TOO_MANY_IDENTIFIERS);
+        if (!sp->tp->type == bt_templateparam)
+            error(ERR_TOO_MANY_IDENTIFIERS);
     return lex;
 }
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp)
@@ -722,13 +725,12 @@ static void resolveAnonymousUnions(SYMBOL *sp)
 }
 static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac currentAccess)
 {
-    STRUCTSYM *sl;
+    STRUCTSYM sl;
     (void)funcsp;
     lex = getsym();
     sp->declaring = TRUE;
-    sl = Alloc(sizeof(LIST));
-    sl->str = sp;
-    addStructureDeclaration(sl);
+    sl.str = sp;
+    addStructureDeclaration(&sl);
     while (lex && KW(lex) != end)
     {
         switch(KW(lex))
@@ -788,10 +790,52 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     sp->declaring = FALSE;
     return lex;
 }
+LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, TEMPLATEPARAM *templateParams, enum e_ac defaultAccess, BOOL isfinal, BOOL *defd)
+{
+    SYMBOL *injected = NULL;
+    if (cparams.prm_cplusplus && KW(lex) == colon || KW(lex) == begin)
+    {
+        if (sp->tp->syms)
+        {
+            preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->declfile, sp->declline);
+        }
+        sp->tp->syms = CreateHashTable(1);
+        if (cparams.prm_cplusplus)
+        {
+            sp->tp->tags = CreateHashTable(1);
+            injected = clonesym(sp);
+            injected->mainsym = sp; // for constructor/destructor matching
+            insert(injected, sp->tp->tags); // inject self
+            injected->access = ac_public;
+        }
+    }
+    if (cparams.prm_cplusplus)
+        if  (KW(lex) == colon)
+        {
+            lex = baseClasses(lex, funcsp, sp, defaultAccess);
+            if (injected)
+                injected->baseClasses = sp->baseClasses;
+            if (!MATCHKW(lex, begin))
+                errorint(ERR_NEEDY, '{');
+        }
+    if (KW(lex) == begin)
+    {
+        sp->isfinal = isfinal;
+        if (templateParams && templateNestingCount == 1)
+            inTemplateBody++;
+        lex = structbody(lex, funcsp, sp, defaultAccess);
+        *defd = TRUE;
+        if (templateParams && templateNestingCount == 1)
+        {
+            inTemplateBody--;
+            TemplateGetDeferred(sp);
+        }
+    }
+    return lex;
+}
 static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *templateParams, enum e_sc storage_class, enum e_ac access, BOOL *defd)
 {
     BOOL isfinal = FALSE;
-    SYMBOL *injected = NULL;
     HASHTABLE *table;
     char *tagname ;
     enum e_bt type = bt_none;
@@ -861,16 +905,18 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
         sp->anonymous = charindex == -1;
         sp->access = access;
         SetLinkerNames(sp, lk_cdecl);
-        browse_variable(sp);
-        insert(sp, table);
-        if (templateParams)
+        if (templateParams && templateNestingCount == 1)
         {
             if (MATCHKW(lex, lt))
                 errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
             sp->templateParams = templateParams;
             sp->isTemplate = TRUE;
+            sp->parentTemplate = sp;
             TemplateMatching(lex, NULL, templateParams, sp);
+            SetLinkerNames(sp, lk_cdecl);
         }
+        browse_variable(sp);
+        insert(sp, table);
     }
     else if (type != sp->tp->type)
     {
@@ -882,6 +928,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
     }
     else if (templateParams && templateNestingCount == 1)
     {
+        // definition or declaration
         if (!sp->isTemplate)
         {
             errorsym(ERR_NOT_A_TEMPLATE, sp);
@@ -890,9 +937,14 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
         {
             if (templateParams && KW(lex) == lt)
             {
+                TYPE *tp;
                 TEMPLATEPARAM *origParams = sp->templateParams;
                 lex = GetTemplateArguments(lex, funcsp, &templateParams->bySpecialization.types);
                 sp = LookupSpecialization(sp, templateParams);
+                tp = Alloc(sizeof(TYPE));
+                *tp = *sp->tp;
+                sp->tp = tp;
+                sp->tp->syms = NULL;
                 sp->templateParams = TemplateMatching(lex, origParams, templateParams, sp);
             }
             else
@@ -902,49 +954,20 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
             SetLinkerNames(sp, lk_cdecl);
         }
     }
+    else if (templateParams && MATCHKW(lex, lt))
+    {
+        // instantiation
+        lex = GetTemplateArguments(lex, funcsp, &templateParams->bySpecialization.types);
+    }
     else if (sp->isTemplate)
     {
         errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
     }
-    if (cparams.prm_cplusplus && KW(lex) == colon || KW(lex) == begin)
-    {
-        if (sp->tp->syms)
-        {
-            preverrorsym(ERR_STRUCT_HAS_BODY, sp, sp->declfile, sp->declline);
-        }
-        sp->tp->syms = CreateHashTable(1);
-        if (cparams.prm_cplusplus)
-        {
-            sp->tp->tags = CreateHashTable(1);
-            injected = clonesym(sp);
-            injected->mainsym = sp; // for constructor/destructor matching
-            insert(injected, sp->tp->tags); // inject self
-            injected->access = ac_public;
-        }
-    }
-    if (cparams.prm_cplusplus)
-        if  (KW(lex) == colon)
-        {
-            lex = baseClasses(lex, funcsp, sp, defaultAccess);
-            if (injected)
-                injected->baseClasses = sp->baseClasses;
-            if (!MATCHKW(lex, begin))
-                errorint(ERR_NEEDY, '{');
-        }
-    if (KW(lex) == begin)
-    {
-        sp->isfinal = isfinal;
-        if (templateParams && templateNestingCount == 1)
-            inTemplateBody= TRUE;
-        lex = structbody(lex, funcsp, sp, defaultAccess);
-        *defd = TRUE;
-        if (templateParams && templateNestingCount == 1)
-        {
-            inTemplateBody = FALSE;
-            TemplateGetDeferred(sp);
-        }
-    }
+    lex = innerDeclStruct(lex, funcsp, sp, templateParams, defaultAccess, isfinal, defd);
     *tp = sp->tp;
+    if (!getStructureDeclaration())
+        deferredCompile();
+
     return lex;
 }
 static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi, 
@@ -1395,10 +1418,10 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOL allowstatic)
                 if (MATCHKW(lex, openpa))
                 {
                     // being used as  a type specifier not a qualifier
-                    lex = backupsym(1);
+                    lex = backupsym();
                     return lex;
                 }
-                lex = backupsym(1);
+                lex = backupsym();
                 tpn->type = bt_atomic;
                 break;
             case kw_volatile:
@@ -1518,7 +1541,7 @@ LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *lin
 static LEXEME *nestedTypeSearch(LEXEME *lex, SYMBOL **sym)
 {
     *sym = NULL;
-    lex = nestedSearch(lex, sym, NULL, NULL, NULL, FALSE);
+    lex = nestedSearch(lex, sym, NULL, NULL, NULL, NULL, FALSE);
     if (!*sym || !istype((*sym)))
     {
         error(ERR_TYPE_NAME_EXPECTED);
@@ -1930,7 +1953,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *temp
                 else if (ISID(lex) || MATCHKW(lex, classsel))
                 {
                     SYMBOL *sp;
-                    lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
+                    lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE);
                     if (!sp)
                         error(ERR_UNDEFINED_IDENTIFIER);
                     else
@@ -1995,6 +2018,8 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *temp
     if (!foundsomething)
     {
         type = bt_int;
+        if (MATCHKW(lex, kw_typename))
+            lex = getsym();
         if (iscomplex || imaginary)
             error(ERR_MISSING_TYPE_SPECIFIER);			
         else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, compl))
@@ -2003,53 +2028,126 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *temp
             SYMBOL *strSym = NULL;
             SYMBOL *sp;
             BOOL destructor = FALSE;
-            lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, FALSE);
+            LEXEME *placeholder = lex;
+            BOOL isTemplate = FALSE;
+            lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &isTemplate, FALSE);
             if (sp && istype(sp))
             {
                 SYMBOL *ssp = getStructureDeclaration();
-                if (sp->tp->type == bt_templateparam && sp->tp->templateParam->byClass.val)
-                {
-                    if (sp->tp->templateParam->type != kw_typename)
-                    {
-                        diag("getBasicType: expected typename template param");
-                        tn = sp->tp;
-                    }
-                    else
-                    {
-                        tn = sp->tp->templateParam->byClass.val;
-                        sp = basetype(tp)->sp;
-                    }
-                }
-                else
-                {
-                    tn = sp->tp;
-                }
                 foundsomething = TRUE;
                 lex = getsym();
-                lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3);	
-                if (linkage != lk_none)
+                if (sp->tp->type == bt_templateparam)
                 {
-                    *linkage_in = linkage;
-                }
-                if (linkage2 != lk_none)
-                    *linkage2_in = linkage2;
-                if (cparams.prm_cplusplus && sp && MATCHKW(lex, openpa) && (strSym && (strSym->mainsym == sp->mainsym || strSym == sp->mainsym) || !strSym && storage_class == sc_member && ssp && ssp == sp->mainsym))
-                {
-                    if (destructor)
+                    tn = NULL;
+                    if (sp->tp->templateParam->type == kw_typename)
                     {
-                        *consdest = CT_DEST;
+                        tn = sp->tp->templateParam->byClass.val;
+                        if (isTemplate)
+                        {
+                            if (MATCHKW(lex, lt))
+                            {
+                                // throwaway
+                                TEMPLATEPARAM *lst = NULL;
+                                lex = GetTemplateArguments(lex, funcsp, &lst);
+                            }
+                            errorsym(ERR_NOT_A_TEMPLATE, sp);
+                        }
+                    }
+                    else if (sp->tp->templateParam->type == kw_template)
+                    {
+                        if (MATCHKW(lex, lt))
+                        {
+                                
+                            TEMPLATEPARAM *lst = NULL;
+                            SYMBOL *sp1 = sp->tp->templateParam->byTemplate.val;
+                            lex = GetTemplateArguments(lex, funcsp, &lst);
+                            if (sp1)
+                            {
+                                sp1 = GetClassTemplate(sp1, lst);
+                                if (sp1)
+                                    sp1 = TemplateClassInstantiate(sp1, lst);
+                                tn = NULL;
+                                if (sp1)
+                                    tn = sp1->tp;
+                            }
+                        }
+                        else
+                        {
+                            tn = sp->tp;
+                        }
                     }
                     else
                     {
-                        *consdest = CT_CONS;
+                        diag("getBasicType: expected typename template param");
                     }
-                    *notype = TRUE;
-                    goto exit;
+                    if (!tn)
+                        tn = sp->tp;
                 }
-                else if (destructor)
+                else 
                 {
-                    error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
+                    lex = getQualifiers(lex, &quals, &linkage, &linkage2, &linkage3);	
+                    if (linkage != lk_none)
+                    {
+                        *linkage_in = linkage;
+                    }
+                    if (linkage2 != lk_none)
+                        *linkage2_in = linkage2;
+                    if (cparams.prm_cplusplus && sp && MATCHKW(lex, openpa) && (strSym && (strSym->mainsym == sp->mainsym || strSym == sp->mainsym) || !strSym && storage_class == sc_member && ssp && ssp == sp->mainsym))
+                    {
+                        if (destructor)
+                        {
+                            *consdest = CT_DEST;
+                        }
+                        else
+                        {
+                            *consdest = CT_CONS;
+                        }
+                        *notype = TRUE;
+                        goto exit;
+                    }
+                    else if (destructor)
+                    {
+                        error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
+                    }
+                    else if (sp->isTemplate)
+                    {
+                        if (!MATCHKW(lex, lt))
+                        {
+                            errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                        }
+                        else
+                        {
+                            TEMPLATEPARAM *lst = NULL;
+                            lex = GetTemplateArguments(lex, funcsp, &lst);
+                            sp = GetClassTemplate(sp, lst);
+                            if (sp)
+                                sp = TemplateClassInstantiate(sp, lst);
+                            tn = NULL;
+                        }
+                        if (sp)
+                            tn = sp->tp;
+                    }
+                    else
+                    {
+                        if (isTemplate)
+                        {
+                            if (MATCHKW(lex, lt))
+                            {
+                                // throwaway
+                                TEMPLATEPARAM *lst = NULL;
+                                lex = GetTemplateArguments(lex, funcsp, &lst);
+                            }
+                            errorsym(ERR_NOT_A_TEMPLATE, sp);
+                        }
+                        tn = sp->tp;
+                    }
                 }
+            }
+            else if (strSym && strSym->tp->type == bt_templateselector)
+            {
+                tn = strSym->tp;
+                foundsomething = TRUE;
+                lex = getsym();
             }
             else if (cparams.prm_cplusplus)
             {
@@ -2057,7 +2155,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *temp
                 {
                     error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
                 }
-                lex = backupsym(0);
+                lex = prevsym(placeholder);
             }
         }
         if (!foundsomething && (cparams.prm_c99 || cparams.prm_cplusplus))
@@ -2200,9 +2298,14 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
             {
                 if (!isint(tpc))
                     error(ERR_ARRAY_INDEX_INTEGER_TYPE);
-                else if (isintconst(constant) && constant->v.i <= 0)
+                else if (tpc->type != bt_templateparam && isintconst(constant) && constant->v.i <= 0)
                     error(ERR_ARRAY_INVALID_INDEX);
-                if (isarithmeticconst(constant))
+                if (tpc->type == bt_templateparam)
+                {
+                    tpp->size = basetype(tpp->btp)->size + basetype(tpp->btp)->arraySkew;
+                    tpp->esize = intNode(en_c_i, 1);
+                }
+                else if (isarithmeticconst(constant))
                 {
                     tpp->size = basetype(tpp->btp)->size + basetype(tpp->btp)->arraySkew;
                     tpp->size *= constant->v.i;
@@ -2442,7 +2545,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
     BOOL voiderror = FALSE;
     BOOL hasellipse = FALSE;
     HASHTABLE *locals = localNameSpace->syms;
-    marksym();
+    LEXEME *placeholder = lex;
     lex = getsym();
     IncGlobalFlag();
     if (sp)
@@ -2461,10 +2564,10 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
     sp->tp = *tp = tp1;
     localNameSpace->syms = tp1->syms = CreateHashTable(1);
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-    if (startOfType(lex))
+    if (startOfType(lex, TRUE))
     {
         sp->hasproto = TRUE;
-        while (startOfType(lex) || MATCHKW(lex, ellipse))
+        while (startOfType(lex, TRUE) || MATCHKW(lex, ellipse))
         {
             if (MATCHKW(lex, ellipse))
             {
@@ -2522,7 +2625,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 sizeQualifiers(tp1);
                 if (cparams.prm_cplusplus && MATCHKW(lex, assign))
                 {
-                    if (storage_class == sc_member || templateNestingCount != 0)
+                    if (storage_class == sc_member || templateNestingCount == 1)
                     {
                         lex = getDeferredData(lex, spi, FALSE);
                     }    
@@ -2532,7 +2635,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                         if (spi->init)
                             checkDefaultArguments(spi);
                     }
-                    if (isfuncptr(spi->tp) && lvalue(spi->init->exp))
+                    if (isfuncptr(spi->tp) && spi->init && lvalue(spi->init->exp))
                         error(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT);
                     if (sp->storage_class == sc_typedef)
                         error(ERR_NO_DEFAULT_ARGUMENT_IN_TYPEDEF);
@@ -2641,9 +2744,9 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
             errskim(&lex, skim_closepa);
             skip(&lex, closepa);
         }
-        if (startOfType(lex))
+        if (startOfType(lex, FALSE))
         {
-            while (startOfType(lex))
+            while (startOfType(lex, FALSE))
             {
                 ADDRESS address;
                 BOOL blocked;
@@ -2785,7 +2888,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
         {
             (*spin)->tp = (*tp) = (*tp)->btp;
             // constructor initialization
-            lex = backupsym(1);
+            lex = backupsym();
             // will do initialization later...
         }
         else
@@ -3185,7 +3288,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             if (beforeOnly)
                 break;
             /* in a parameter, open paren followed by a type is an  unnamed function */
-            if (storage_class == sc_parameter && startOfType(lex) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE) ))
+            if (storage_class == sc_parameter && startOfType(lex,FALSE) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE) ))
             {
                 TYPE *tp1;
                 if (!*spi)
@@ -3381,6 +3484,9 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             (*spi)->anonymous = TRUE;
             lex = getAfterType(lex, funcsp, tp, spi, templateParams, storage_class, consdest);
             break;
+        case gt:
+        case comma:
+            break;
         default:
             if (*tp && (isstructured(*tp) || (*tp)->type == bt_enum) && KW(lex) == semicolon)
             {
@@ -3573,7 +3679,8 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM *tem
     *blocked = FALSE;
     *constexpression = FALSE;
     
-    while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) || !foundType && startOfType(lex) || MATCHKW(lex, compl))
+    while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) 
+           || !foundType && startOfType(lex, TRUE)  || MATCHKW(lex, compl))
     {
         if (KWTYPE(lex, TT_DECLARE))
         {
@@ -3693,7 +3800,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, TEMPLATEPARAM *templat
                 isExtern = TRUE;
                 goto jointemplate;
             }
-            backupsym(1);
+            lex = backupsym();
         }
         if (!asExpression && MATCHKW(lex, kw_template))
         {
@@ -3706,7 +3813,7 @@ jointemplate:
             if (hasAttributes)
                 error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
                 
-            lex = TemplateDeclaration(lex, funcsp, access, isExtern);
+            lex = TemplateDeclaration(lex, funcsp, access, storage_class, isExtern);
             needsemi = FALSE;
         }            
         else if (!asExpression && MATCHKW(lex, kw_namespace))
@@ -3816,9 +3923,9 @@ jointemplate:
                         {
                             error(ERR_CANNOT_DEFINE_ENUMERATION_CONSTANT_HERE);
                         }
-                        else
+                        else if (strSym->tp->type != bt_templateselector)
                         {
-                            STRUCTSYM *l = Alloc(sizeof(LIST));
+                            STRUCTSYM *l = Alloc(sizeof(STRUCTSYM));
                             l->str = strSym;
                             addStructureDeclaration(l);
                         }
@@ -3852,7 +3959,7 @@ jointemplate:
                                 {
                                     globalNameSpace = oldGlobals;
                                 }
-                                if (strSym && strSym->tp->type != bt_enum)
+                                if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector)
                                 {
                                     dropStructureDeclaration();
                                 }
@@ -3898,7 +4005,7 @@ jointemplate:
                             {
                                 globalNameSpace = oldGlobals;
                             }
-                            if (strSym && strSym->tp->type != bt_enum)
+                            if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector)
                             {
                                 dropStructureDeclaration();
                             }
@@ -3910,8 +4017,8 @@ jointemplate:
                     {
                         SYMBOL *ssp = NULL;
                         STRUCTSYM *ss1;
-                        SYMBOL *spi;
                         HASHREC **p;
+                        SYMBOL *spi;
                         ss1 = structSyms;
                         while (ss1 && !ss1->str)
                             ss1 = ss1->next;
@@ -3924,7 +4031,7 @@ jointemplate:
                                 ssp = ss1->str;
                         }
                         if (templateParams && templateNestingCount == 1)
-                            inTemplateBody = TRUE;
+                            inTemplateBody++;
                         if (consdest != CT_NONE)
                             if (consdest == CT_CONS)
                                 sp-> isConstructor = TRUE;
@@ -3938,7 +4045,7 @@ jointemplate:
                         ssp = getStructureDeclaration();
                         if (storage_class_in == sc_member && ssp)
                             sp->parentClass = ssp;
-                        if (storage_class_in == sc_template)
+                        if (templateParams)
                              sp->isTemplate = TRUE;
                         sp->constexpression = constexpression;
                         sp->access = access;
@@ -4004,7 +4111,7 @@ jointemplate:
                         }
                         if (isstructured(tp1) && basetype(tp1)->sp->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
-                        if (ssp && strSym)
+                        if (ssp && strSym && strSym->tp->type != bt_templateselector)
                         {
                             if (strSym != ssp && strSym->mainsym != ssp)
                             {
@@ -4037,8 +4144,8 @@ jointemplate:
                             ConsDestDeclarationErrors(sp, notype);
                         if (spi && spi->storage_class == sc_overloads)
                         {
-                            SYMBOL *sym;
-                            if (templateParams)
+                            SYMBOL *sym = NULL;
+                            if (templateParams && !spi->parentClass)
                             {
                                 // a specialization
                                 // this may result in returning sp depending on what happens...
@@ -4046,7 +4153,7 @@ jointemplate:
                             }
                             else
                             {
-                                sym = searchOverloads(sp->decoratedName, spi->tp->syms);
+                                sym = searchOverloads(sp, spi->tp->syms);
                                 if (sym && cparams.prm_cplusplus)
                                     if (mismatchedOverloadLinkage(sp, spi->tp->syms))
                                     {
@@ -4078,7 +4185,7 @@ jointemplate:
                                 spi = NULL;
                             }
                         }
-                        else
+                        else if (!spi)
                         {
                             if (strSym && storage_class_in != sc_member)
                             {
@@ -4089,9 +4196,18 @@ jointemplate:
                         {
                             if (templateParams && templateNestingCount == 1)
                             {
-                                if (!spi->isTemplate)
+                                BOOL istemplate = FALSE;
+                                SYMBOL *spt = spi;
+                                while (spt && !istemplate)
+                                {
+                                    if (spt->isTemplate)
+                                        istemplate = TRUE;
+                                    else
+                                        spt = spt->parentClass;
+                                }
+                                if (!istemplate)
                                     errorsym(ERR_NOT_A_TEMPLATE, sp);
-                                else if (templateParams->bySpecialization.types)
+                                else if (templateParams->bySpecialization.types && spi->parentTemplate)
                                 {
                                     sp->templateParams = TemplateMatching(lex, spi->parentTemplate->templateParams, templateParams, sp);
                                 }
@@ -4120,9 +4236,9 @@ jointemplate:
                             }
                             else
                             {
-                                if (isfunction(spi->tp) && spi->inlineFunc.stmt)
+                                if (isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile))
                                 {
-                                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, sp, spi->declfile, spi->declline);
+                                    errorsym(ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION, sp);
                                 }
                                 else if (!isfunction(sp->tp) && !isfunction(spi->tp) && !comparetypes(sp->tp, (spi)->tp, TRUE) || istype(sp))
                                 {
@@ -4292,7 +4408,7 @@ jointemplate:
                                 error(ERR_ONLY_MEMBER_CONST_VOLATILE);
                         }
                         if (templateParams && templateNestingCount == 1)
-                            inTemplateBody = FALSE;
+                            inTemplateBody--;
                     }
                     if (sp)
                         if  (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]))
@@ -4360,7 +4476,7 @@ jointemplate:
                         }
                     }
                     if (templateParams && templateNestingCount == 1)
-                        inTemplateBody = TRUE;
+                        inTemplateBody++;
                     if (lex)
                     {
                         if (linkage != lk_cdecl)
@@ -4432,7 +4548,7 @@ jointemplate:
                                     }
                                     hr = hr->next;
                                 }
-                                if (storage_class_in == sc_member)
+                                if (storage_class_in == sc_member || templateNestingCount == 1)
                                 {
                                     lex = getDeferredData(lex, sp, TRUE);
                                 }    
@@ -4540,7 +4656,7 @@ jointemplate:
                         error(ERR_EXPLICIT_CONSTRUCTOR_OR_CONVERSION_FUNCTION);
                     if (templateParams && templateNestingCount == 1)
                     {
-                        inTemplateBody = FALSE;
+                        inTemplateBody--;
                         TemplateGetDeferred(sp);
                     }
                     if (!strcmp(sp->name, "main"))
@@ -4572,7 +4688,7 @@ jointemplate:
                     {
                         globalNameSpace = oldGlobals;
                     }
-                    if (strSym && strSym->tp->type != bt_enum)
+                    if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector)
                     {
                         dropStructureDeclaration();
                     }
@@ -4590,7 +4706,6 @@ jointemplate:
         errskim(&lex, skim_semi_declare);
         skip(&lex, semicolon);
     }
-    deferredCompile();
         
     return lex;
 }

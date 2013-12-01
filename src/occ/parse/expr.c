@@ -69,6 +69,7 @@ extern char *overloadNameTab[];
 extern NAMESPACEVALUES *localNameSpace;
 extern LAMBDA *lambdas;
 extern int instantiatingTemplate;
+extern int currentErrorLine;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -140,10 +141,10 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     SYMBOL *sp = NULL;
     SYMBOL *strSym = NULL;
     NAMESPACEVALUES *nsv = NULL;
-    marksym();
+    LEXEME *placeholder = lex;
     if (cparams.prm_cplusplus)
     {
-        lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, FALSE, idname);
+        lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, NULL, FALSE, FALSE, idname);
     }
     else
     {
@@ -176,9 +177,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
             switch (sp->tp->templateParam->type)
             {
                 case kw_typename:
-                    lex = backupsym(0);
-                    *tp = NULL;
-                    lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
+                    *tp = sp->tp->templateParam->byClass.val;
+                    *exp = varNode(en_templateparam, sp);   
                     return lex;
                 case kw_template:
                     break;
@@ -197,16 +197,16 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 case sc_member:
                     if (cparams.prm_cplusplus && ampersand)
                     {
-                        *exp = getMemberPtr(sp, tp, funcsp);
+                        *exp = getMemberPtr(sp, strSym, tp, funcsp);
                     }
                     else
                     {
-                        *exp = getMemberNode(sp, tp, funcsp);
+                        *exp = getMemberNode(sp, strSym, tp, funcsp);
                     }
                     break;
                 case sc_type:
                 case sc_typedef:
-                    lex = backupsym(0);
+                    lex = prevsym(placeholder);
                     *tp = NULL;
                     lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
                     return lex;
@@ -238,6 +238,21 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                             SYMBOL *sp1 = GetOverloadedFunction(tp, &funcparams->fcall, sp, funcparams->templateParams ? funcparams : NULL, atp,TRUE, FALSE);
                             if (sp1)
                             {
+                                SYMBOL *tpl = sp1;
+                                while (tpl)
+                                {
+                                    if (tpl->isTemplate)
+                                        break;
+                                    tpl = tpl->parentClass;
+                                }
+                                if (tpl && tpl->instantiated)
+                                {
+                                    if (!sp1->genreffed)
+                                    {
+                                        InsertInline(sp1);
+                                        sp1->genreffed = TRUE;
+                                    }
+                                }
                                 sp = sp1;
                                 sp->throughClass = throughClass;
                                 if (!isExpressionAccessible(sp, funcsp, FALSE))
@@ -246,6 +261,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         }
                         else
                         {
+                            funcparams->noobject = TRUE;
                             funcparams->ascall = TRUE;
                         }
                         funcparams->sp = sp;
@@ -274,7 +290,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         exp1->left = *exp;
                         exp1->v.sp = funcparams->sp;
                         *exp = exp1;
-                        getMemberPtr(sp, tp, funcsp);
+                        getMemberPtr(sp, strSym, tp, funcsp);
                     }
                     else
                     {
@@ -354,7 +370,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         sp->tp->used = TRUE;
         if (sp->isTemplate && istype(sp->tp))
         {
-            lex = backupsym(0);
+            lex = prevsym(placeholder);
             *tp = NULL;
             lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
         }
@@ -477,6 +493,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 (*tp)->sp = sp;
                 DecGlobalFlag();
                 funcparams = Alloc(sizeof(FUNCTIONCALL));
+                funcparams->ascall = TRUE;    
                  sym = GetOverloadedFunction(tp, &funcparams->fcall, sp, NULL, atp, TRUE, FALSE);
                  if (sym)
                  {
@@ -683,7 +700,13 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     }
     else
     {
-        if (!ISID(lex))
+        BOOL isTemplate = FALSE;
+        if (MATCHKW(lex, kw_template))
+        {
+            lex = getsym();
+            isTemplate = TRUE;
+        }
+        if (!ISID(lex) && !MATCHKW(lex, kw_operator))
         {
             error(ERR_IDENTIFIER_EXPECTED);
         }
@@ -705,7 +728,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     STRUCTSYM l ;
                     l.str = basetype(*tp)->sp;
                     addStructureDeclaration(&l);
-                    lex = id_expression(lex, funcsp, &sp2, NULL, NULL, FALSE, TRUE, NULL);
+                    lex = id_expression(lex, funcsp, &sp2, NULL, NULL, &isTemplate, FALSE, TRUE, NULL);
                     dropStructureDeclaration();
                     if (!sp2)
                     {
@@ -742,6 +765,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         funcparams->thistp->type = bt_pointer;
                         funcparams->thistp->size = getSize(bt_pointer);
                         funcparams->thistp->btp = *tp;
+                        funcparams->ascall = TRUE;    
                         match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams,NULL,TRUE, FALSE);
                         if (match)
                         {
@@ -773,7 +797,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 STRUCTSYM l ;
                 l.str = basetype(*tp)->sp;
                 addStructureDeclaration(&l);
-                lex = id_expression(lex, funcsp, &sp2, NULL, NULL, FALSE, TRUE, NULL);
+                lex = id_expression(lex, funcsp, &sp2, NULL, NULL, &isTemplate, FALSE, TRUE, NULL);
                 dropStructureDeclaration();
             }
             else
@@ -798,6 +822,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 TYPE *basetp = *tp;
                 SYMBOL *sp3 = sp2;
                 TYPE *typ2 = typein;
+                SYMBOL *tpl = sp2;
                 if (ispointer(typ2))
                     typ2 = basetype(typ2)->btp;
                 (*exp)->isatomic = FALSE;
@@ -812,6 +837,37 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 if (sp2->storage_class == sc_overloads)
                 {
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                    if (cparams.prm_cplusplus && MATCHKW(lex, lt))
+                    {
+                        HASHREC *hr1 = basetype(sp2->tp)->syms->table[0];
+                        BOOL isdest = ((SYMBOL *)hr1->p)->isDestructor;
+                        while (hr1)
+                        {
+                             if (((SYMBOL *)hr1->p)->isTemplate)
+                                 break;
+                             hr1 = hr1->next;
+                        }
+                        if (hr1)
+                        {
+                            lex = GetTemplateArguments(lex, funcsp, &funcparams->templateParams);
+                            funcparams->astemplate = TRUE;
+                        }
+                        else if (isdest && sp2->parentClass->isTemplate)
+                        {
+                            TEMPLATEPARAM *lst = NULL;
+                            lex = GetTemplateArguments(lex, funcsp, &lst);
+                            if (!exactMatchOnTemplateArgs(lst, sp2->parentClass->templateParams->bySpecialization.types))
+                                error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
+                        }
+                        else if (isTemplate)
+                        {
+                            errorsym(ERR_NOT_A_TEMPLATE, sp2);
+                        }
+                    }
+                    else if (isTemplate)
+                    {
+                        errorsym(ERR_NOT_A_TEMPLATE, sp2);
+                    }
                     funcparams->sp = sp2;
                     funcparams->thisptr = *exp;
                     funcparams->thistp = Alloc(sizeof(TYPE));
@@ -827,6 +883,47 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 else 
                 {
                     SYMBOL *sp3 = sp2->parentClass, *sp4 = basetype(typ2)->sp;
+                    if (sp2->isTemplate)
+                    {
+                        if (MATCHKW(lex, lt))
+                        {
+                            TEMPLATEPARAM *lst = NULL;
+                            SYMBOL *sp1 = sp2;
+                            lex = GetTemplateArguments(lex, funcsp, &lst);
+                            if (sp1)
+                            {
+                                sp1 = GetClassTemplate(sp1, lst);
+                                if (sp1)
+                                    sp1 = TemplateClassInstantiate(sp1, lst);
+                                if (sp1)
+                                    sp2 = sp1;
+                                else
+                                    errorsym(ERR_NO_TEMPLATE_MATCHES, sp2);
+                            }
+                        }
+                        else
+                        {
+                            errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp2);
+                        }
+                    }
+                    else if (isTemplate)
+                    {
+                        errorsym(ERR_NOT_A_TEMPLATE, sp2);
+                    }
+                    if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
+                    {
+                        SYMBOL *tpl = sp2;
+                        while (tpl)
+                        {
+                            if (tpl->isTemplate)
+                                break;
+                            tpl = tpl->parentClass;
+                        }
+                        if (tpl && tpl->instantiated)
+                        {
+                            TemplateDataInstantiate(sp2, FALSE, FALSE);
+                        }
+                    }
                     if (sp3 && sp3->mainsym)
                         sp3 = sp3->mainsym;
                     if (sp4 && sp4->mainsym)
@@ -839,7 +936,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     {
                         errorsym(ERR_CANNOT_ACCESS, sp2);
                     }
-                    if (sp2->storage_class == sc_static)
+                    if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
                     {
                         EXPRESSION *exp2 = varNode(en_global, sp2);
                         *exp = exprNode(en_void, *exp, exp2);
@@ -1460,7 +1557,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                         EXPRESSION *consexp = varNode(en_auto, esp);
                         EXPRESSION *destexp = consexp;
                         EXPRESSION *old = p->exp;
-                        esp->stackblock = TRUE;
+//                        esp->stackblock = TRUE;
                         arg->exp = p->exp;
                         arg->tp = p->tp;
                         funcparams->arguments = arg;
@@ -1753,7 +1850,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         if (!funcparams->thisptr && funcparams->sp->parentClass)
         {
             TYPE *tp = Alloc(sizeof(TYPE)), *tpx;
-            funcparams->thisptr = getMemberBase(funcparams->sp, funcsp, FALSE);
+            funcparams->thisptr = getMemberBase(funcparams->sp, NULL, funcsp, FALSE);
             funcparams->thistp = tp;
             tp->type = bt_pointer;
             tp->size = getSize(bt_pointer);
@@ -1781,11 +1878,14 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         {
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be added after we select a member function that needs it.
+            funcparams->ascall = TRUE;    
             sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE);
             if (sp)
             {
                 sp->throughClass = funcparams->sp->throughClass;
                 funcparams->sp = sp;
+                if (funcparams->noobject && (sp->storage_class == sc_member || sp->storage_class == sc_virtual))
+                    errorsym(ERR_USE_DOT_OR_POINTSTO_TO_CALL, sp);
             }
         }
         else
@@ -2984,7 +3084,7 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         paren = TRUE;
         lex = getsym();
     }
-    if (!paren || !startOfType(lex))
+    if (!paren || !startOfType(lex, FALSE))
     {
         if (paren)
         {
@@ -3582,7 +3682,8 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             lex = expression_noexcept(lex, funcsp, tp, exp);
             break;
         case classsel:
-            marksym();
+        {
+            LEXEME *placeholder = lex;
             lex = getsym();
             switch(KW(lex))
             {
@@ -3591,7 +3692,8 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                 case kw_delete:
                     return expression_delete(lex, funcsp, tp, exp, TRUE, noinline);
             }
-            backupsym(0);
+            lex = prevsym(placeholder);
+        }
             // fallthrough
         default:
             lex = expression_postfix(lex, funcsp, atp, tp, exp, ampersand, noinline);
@@ -3605,7 +3707,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
     if (MATCHKW(lex, openpa))
     {
         lex = getsym();
-        if (startOfType(lex))
+        if (startOfType(lex, FALSE))
         {
             lex = get_type_id(lex, tp, funcsp, FALSE);
             (*tp)->used = TRUE;
@@ -3652,7 +3754,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
         }
         else
         {
-            lex = backupsym(1);
+            lex = backupsym();
             lex = expression_unary(lex, funcsp, atp, tp, exp, ampersand, noinline);
         }
     }

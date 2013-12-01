@@ -309,7 +309,7 @@ KEYWORD keywords[] = {
     { "try", 3,  kw_try, KW_CPLUSPLUS, TT_CONTROL },
     { "typedef", 7,  kw_typedef, 0, TT_BASETYPE | TT_TYPEDEF | TT_STORAGE_CLASS },
     { "typeid", 6,  kw_typeid, KW_CPLUSPLUS, TT_UNKNOWN },
-    { "typename", 8,  kw_typename, KW_CPLUSPLUS, TT_BASETYPE | TT_TYPENAME },
+    { "typename", 8,  kw_typename, KW_CPLUSPLUS, TT_TYPENAME },
     { "typeof", 6,  kw_typeof, 0, TT_BASETYPE | TT_OPERATOR },
     { "union", 5,  kw_union, 0, TT_BASETYPE | TT_STRUCT },
     { "unsigned", 8,  kw_unsigned, 0, TT_BASETYPE | TT_INT | TT_BASE },
@@ -1200,7 +1200,7 @@ LEXEME *SkipToNextLine(void)
     {
         while (*includes->lptr)
             includes->lptr++;
-        context->cur = context->mark = NULL;
+        context->cur = NULL;
     }
     return getsym();
 }
@@ -1231,22 +1231,25 @@ LEXEME *getsym(void)
     LCHAR *strptr;
 
     if (context->cur)
-        if (context->cur->next)
-        {
-            return context->cur = context->cur->next;
-        }
-        else {
-            if (context->next)
-                return NULL;
-        }
+    {
+        LEXEME *rv;
+        rv = context->cur;
+        if (context->last == rv->prev)
+            TemplateRegisterDeferred(context->last);
+        context->last = rv;
+        context->cur = context->cur->next;
+        return rv;
+    }
+    else if (context->next)
+    {
+        return NULL;
+    }
     lex = &pool[nextFree];
-    lex->prev = context->cur;
+    lex->prev = context->last;
+    context->last = lex;
     lex->next = NULL;
-    context->cur = lex;
     if (lex->prev)
         lex->prev->next = lex;
-    else
-        context->mark = lex;
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
     TemplateRegisterDeferred(last);
@@ -1357,23 +1360,30 @@ LEXEME *getsym(void)
     } while (contin);
     return last = lex;
 }
-void marksym(void)
+LEXEME *prevsym(LEXEME *lex)
 {
-    context->mark = context->cur;
-}
-LEXEME *backupsym(int rel)
-{
-    if (rel == 0)
-        return context->cur = context->mark;
-    else {
-        while (rel && context->cur->prev)
-            rel--, context->cur = context->cur->prev;
-        if (rel)
-        {
-            diag("backupsym:  invalid rel");
-        }
-        return context->cur;
+    if (lex->next)
+    {
+        context->cur = lex->next;
+        if (context->cur->prev)
+            return context->cur->prev;
+        return context->last;
     }
+    return lex;
+}
+LEXEME *backupsym(void)
+{
+    if (context->cur)
+    {
+        context->cur = context->cur->prev;
+        if (!context->cur)
+            context->cur = context->last;
+    }
+    else
+    {
+        context->cur = context->last;
+    }
+    return context->cur->prev;
 }
 LEXEME *SetAlternateLex(LEXEME *lexList)
 {        
@@ -1382,8 +1392,9 @@ LEXEME *SetAlternateLex(LEXEME *lexList)
         LEXCONTEXT *newContext = Alloc(sizeof(LEXCONTEXT));
         newContext->next = context;
         context = newContext;
-        context->cur = context->mark = lexList;
-        return context->cur;
+        context->cur = lexList->next;
+        TemplateRegisterDeferred(lexList);
+        return lexList;
     }
     else
     {

@@ -757,8 +757,14 @@ void genfunc(SYMBOL *funcsp)
     IMODE *allocaAP = NULL;
     SYMBOL *oldCurrentFunc;
     EXPRESSION *funcexp = varNode(en_global, funcsp);
+    SYMBOL *tmpl = funcsp;
     if (total_errors)
         return;
+    while (tmpl)
+        if (tmpl->isTemplate)
+            break;
+        else
+            tmpl = tmpl->parentClass;
 //	//printf("%s\n", funcsp->name);
     contlab = breaklab =  - 1;
     structret_imode = 0 ;
@@ -777,7 +783,7 @@ void genfunc(SYMBOL *funcsp)
     gen_func(funcexp, 1);
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
-    if (cparams.prm_cplusplus && funcsp->linkage == lk_inline)
+    if (cparams.prm_cplusplus && (funcsp->linkage == lk_inline || tmpl))
         gen_virtual(funcsp, FALSE);
     else
     {
@@ -831,7 +837,7 @@ void genfunc(SYMBOL *funcsp)
     rewrite_icode(); /* Translate to machine code & dump */
     if (chosenAssembler->gen->post_function_gen)
         chosenAssembler->gen->post_function_gen(funcsp, intermed_head);
-    if (cparams.prm_cplusplus && funcsp->linkage == lk_inline)
+    if (cparams.prm_cplusplus && (funcsp->linkage == lk_inline || tmpl))
         gen_endvirtual(funcsp);
     XTDumpTab(funcsp);
     intermed_head = NULL;

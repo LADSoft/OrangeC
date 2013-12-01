@@ -44,6 +44,7 @@ extern TYPE stdpointer;
 extern int startlab, retlab;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
+static LIST *inlineDataHead, *inlineDataTail;
 
 static SYMBOL *inlinesp_list[MAX_INLINE_NESTING];
 static int inlinesp_count;
@@ -56,6 +57,7 @@ void inlineinit(void)
     namenumber = 0;
     inlineHead = NULL;
     inlineVTabHead = NULL;
+    inlineDataHead = NULL;
     vc1Thunks = CreateHashTable(1);
 }
 static void UndoPreviousCodegen(SYMBOL *sym)
@@ -80,6 +82,7 @@ void dumpInlines(void)
 #ifndef PARSER_ONLY
     BOOL done;
     LIST *vtabList;
+    LIST *dataList;
     cseg();
     do
     {
@@ -113,6 +116,22 @@ void dumpInlines(void)
         }
         vtabList = vtabList->next;
         
+    }
+    dataList = inlineDataHead;
+    while (dataList)
+    {
+        SYMBOL *sym = (SYMBOL *)dataList->data;
+        if (sym->genreffed)
+        {
+            sym->genreffed = FALSE;
+            gen_virtual(sym, TRUE);
+            if (sym->init)
+                dumpInit(sym, sym->init);
+            else
+                genstorage(basetype(sym->tp)->size);
+            gen_endvirtual(sym);
+        }
+        dataList = dataList->next;
     }
 #endif
 }
@@ -179,6 +198,15 @@ void InsertInline(SYMBOL *sp)
             inlineVTabTail = inlineVTabTail->next = temp;
         else
             inlineVTabHead = inlineVTabTail = temp;
+}
+void InsertInlineData(SYMBOL *sp)
+{
+    LIST *temp = Alloc(sizeof(LIST));
+    temp->data = sp;
+    if (inlineDataHead)
+        inlineDataTail = inlineDataTail->next = temp;
+    else
+        inlineDataHead = inlineDataTail = temp;
 }
 /*-------------------------------------------------------------------------*/
 

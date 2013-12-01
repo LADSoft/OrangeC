@@ -128,7 +128,7 @@ STATEMENT *stmtNode(LEXEME *lex, BLOCKDATA *parent, enum e_stmt stype)
 {
     STATEMENT *st = Alloc(sizeof(STATEMENT));
     if (!lex)
-        lex = context->cur;
+        lex = context->cur ? context->cur->prev : context->last;
     st->type = stype;
     st->charpos = 0;
     st->line = lex->line;
@@ -181,7 +181,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
     TYPE *tp = NULL;
     BOOL hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     (void)parent;
-    if (startOfType(lex) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
+    if (startOfType(lex,FALSE) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
     {
         if (declaration)
             *declaration = TRUE;
@@ -658,11 +658,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             memset(&fcb, 0, sizeof(fcb));
                             fcb.thistp = &thisTP;
                             fcb.thisptr = rangeExp;
+                            fcb.ascall = TRUE;
                             ctp = rangeSP->tp;
                             beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE);
                             memset(&fce, 0, sizeof(fce));
                             fce.thistp = &thisTP;
                             fce.thisptr = rangeExp;
+                            fce.ascall = TRUE;
                             ctp = rangeSP->tp;
                             endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE);
                             if (beginFunc && endFunc)
@@ -754,10 +756,12 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 args.tp = rangeSP->tp->btp;
                                 args.exp = rangeExp;
                                 fcb.arguments = &args;
+                                fcb.ascall = TRUE;
                                 ctp = rangeSP->tp;
                                 beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE);
                                 memset(&fce, 0, sizeof(fce));
                                 fce.arguments = &args;
+                                fce.ascall = TRUE;
                                 ctp = rangeSP->tp;
                                 endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE);
                                 if (beginFunc && endFunc)
@@ -1464,9 +1468,9 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             SYMBOL *sp = NULL;
             SYMBOL *strSym = NULL;
             NAMESPACEVALUES *nsv = NULL;
-            marksym();
-            lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, FALSE, FALSE, lex->value.s.a);
-            lex = backupsym(0);
+            LEXEME *placeholder = lex;
+            lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, NULL, FALSE, FALSE, lex->value.s.a);
+            lex = prevsym(placeholder);
             if (sp && isstructured(sp->tp))
                 tp = sp->tp;
         }
@@ -1500,7 +1504,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 {
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     TYPE *ctype = tp;
-                    if (startOfType(lex))
+                    if (startOfType(lex, FALSE))
                     {
                         TYPE *tp1 = NULL;
                         enum e_lk linkage, linkage2, linkage3;
@@ -2255,8 +2259,8 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
     BLOCKDATA block;
     (void)parent;
     declareAndInitialize = FALSE;
+    memset(&block, 0, sizeof(block));
     lex = declare(lex, funcsp, tp, NULL, sc_auto, lk_none, &block, FALSE, asExpression, FALSE, ac_public);
-    memset(&block, 0, sizeof(BLOCKDATA));
     reverseAssign(block.head, exp);
     if (!*exp)
     {
@@ -2268,11 +2272,11 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
 }
 static BOOL resolveToDeclaration(LEXEME * lex)
 {
-    marksym();
+    LEXEME *placeholder = lex;
     lex = getsym();
     if (MATCHKW(lex, '{'))
     {
-        backupsym(0);
+        prevsym(placeholder);
         return FALSE;
     }
     if (MATCHKW(lex, openpa))
@@ -2294,13 +2298,13 @@ static BOOL resolveToDeclaration(LEXEME * lex)
         }
         if (MATCHKW(lex, assign) || MATCHKW(lex, openpa) || MATCHKW(lex, openbr))
         {
-            backupsym(0);
+            prevsym(placeholder);
             return TRUE;
         }
-        backupsym(0);
+        prevsym(placeholder);
         return FALSE;
     }
-    backupsym(0);
+    prevsym(placeholder);
     return TRUE;
 }
 static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
@@ -2309,18 +2313,17 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (ISID(lex))
     {
-        marksym();
         lex = getsym();
         if (MATCHKW(lex, colon))
         {
-            lex = backupsym(0);
+            lex = backupsym();
             lex = statement_label(lex, funcsp, parent);
             parent->needlabel = FALSE;
             parent->nosemi = TRUE;
         }
         else
         {
-            lex = backupsym(0);
+            lex = backupsym();
         }
     }
     if (parent->needlabel && !MATCHKW(lex, kw_case) && !MATCHKW(lex, kw_default)
@@ -2404,7 +2407,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
             lex = statement_asm(lex, funcsp, parent);
             return lex;
         default:
-            if (startOfType(lex) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)) || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using))
+            if (startOfType(lex, FALSE) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)) || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using))
             {
                 if (!cparams.prm_c99 && !cparams.prm_cplusplus)
                 {
@@ -2414,7 +2417,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                 {
                     AllocateLocalContext(parent, funcsp);
                 }
-                while (startOfType(lex) || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using))
+                while (startOfType(lex, FALSE) || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using))
                 {
                     STATEMENT *current = parent->tail;
                     declareAndInitialize = FALSE;
@@ -2566,7 +2569,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     if (!cparams.prm_cplusplus)
     {
         // have to defer so we can get expression like constructor calls
-        while (startOfType(lex))
+        while (startOfType(lex, FALSE))
         {
             STATEMENT *current = blockstmt->tail;
             declareAndInitialize = FALSE;
@@ -2882,7 +2885,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     handleInlines(funcsp);
     checkUnlabeledReferences(block);
     checkGotoPastVLA(block->head, TRUE);
-    if (funcsp->storage_class != sc_template)
+    if (!funcsp->isTemplate || funcsp->instantiated)
     {
         funcsp->inlineFunc.stmt = stmtNode(lex, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = block->head;
@@ -2895,9 +2898,22 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
                 funcsp->genreffed = TRUE;
         }
     #ifndef PARSER_ONLY
-        else
+        else 
         {
-            genfunc(funcsp);
+            BOOL istemplate = FALSE;
+            SYMBOL *spt = funcsp;
+            while (spt && !istemplate)
+            {
+                if (spt->isTemplate)
+                    istemplate = TRUE;
+                else
+                    spt = spt->parentClass;
+            }
+            
+            if (!istemplate)
+            {
+                genfunc(funcsp);
+            }
         }
     #endif
     }

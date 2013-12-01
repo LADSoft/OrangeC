@@ -52,6 +52,7 @@ extern char infile[256];
 extern int total_errors;
 extern TYPE stdvoid;
 extern int currentErrorLine;
+extern int templateNestingCount;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -145,7 +146,7 @@ void dumpVTab(SYMBOL *sym)
 int classRefCount(SYMBOL *base, SYMBOL *derived)
 {
     int rv = base == derived;
-    if (!rv)
+    if (!rv && base && derived)
     {
         BASECLASS *lst = derived->baseClasses;
         while(lst)
@@ -633,26 +634,44 @@ void deferredCompile(void)
     if (inFunc)
         return;
     inFunc++;
-    if (!theCurrentFunc)
+//    if (!theCurrentFunc)
     {
         while (deferredBackfill)
         {
             LEXEME *lex;
-            SYMBOL *cur = (SYMBOL *)deferredBackfill->data;
-            BOOL addedStrSym = FALSE;
+            SYMBOL *cur = (SYMBOL *)deferredBackfill->data , *sp;
+            STRUCTSYM l,m,n;
+            int count = 0;
             // function body
             cur->linkage = lk_inline;
+            if (cur->templateParams)
+            {
+                n.tmpl = cur->templateParams;
+                addTemplateDeclaration(&n);
+                count++;
+            }
             if (cur->parentClass)
             {
-                STRUCTSYM *l = Alloc(sizeof(LIST));
-                l->str = cur->parentClass;
-                addStructureDeclaration(l);
-                addedStrSym = TRUE;
+                l.str = cur->parentClass;
+                addStructureDeclaration(&l);
+                count++;
+            }
+            sp = cur->parentClass;
+            while (sp)
+            {
+                if (sp->templateParams)
+                {
+                    STRUCTSYM *s = Alloc(sizeof(STRUCTSYM));
+                    s->tmpl = sp->templateParams;
+                    addTemplateDeclaration(s);
+                    count++;
+                }
+                sp = sp->parentClass;
             }
             lex = SetAlternateLex(cur->deferredCompile);
             lex = body(lex, cur);
             SetAlternateLex(NULL);
-            if (addedStrSym)
+            while (count--)
             {
                 dropStructureDeclaration();
             }
@@ -682,18 +701,18 @@ void backFillDeferredInitializersForFunction(SYMBOL *cur, SYMBOL *funcsp)
 }
 void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp)
 {
-    if (!declsym->isTemplate)
+    if (!templateNestingCount)
     {
         HASHREC *hr = basetype(declsym->tp)->syms->table[0];
         while (hr)
         {
             SYMBOL *cur = (SYMBOL *)hr->p;
             BOOL addedStrSym  = FALSE;
+            STRUCTSYM l;
             if (cur->parentClass)
             {
-                STRUCTSYM *l = Alloc(sizeof(LIST));
-                l->str = cur->parentClass;
-                addStructureDeclaration(l);
+                l.str = cur->parentClass;
+                addStructureDeclaration(&l);
                 addedStrSym = TRUE;
             }
             if (cur->storage_class == sc_overloads)
@@ -805,7 +824,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         if (MATCHKW(lex,classsel) || ISID(lex))
         {
             bcsym = NULL;
-            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, TRUE);
+            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, TRUE);
             if (bcsym)
             {
                 BASECLASS *t = declsym->baseClasses;
@@ -907,7 +926,7 @@ static BOOL classOrEnumParam(SYMBOL *param)
     if (isref(tp))
         tp = basetype(tp)->btp;
     tp = basetype(tp);
-    return isstructured(tp) || tp->type == bt_enum;
+    return isstructured(tp) || tp->type == bt_enum || tp->type == bt_templateparam || tp->type == bt_templateselector;
 }
 void checkOperatorArgs(SYMBOL *sp)
 {
@@ -1308,7 +1327,7 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
             {
                 char buf1[512];
                 strcpy(buf1, lex->value.s.a);
-                lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
+                lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE);
                 if (!sp)
                 {
                     errorstr(ERR_UNDEFINED_IDENTIFIER, buf1);
@@ -1517,7 +1536,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
             char buf1[512];
             HASHREC **hr;
             strcpy(buf1, lex->value.s.a);
-            lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
+            lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE);
             if (!sp)
             {
                 errorstr(ERR_UNDEFINED_IDENTIFIER, buf1);
@@ -1560,11 +1579,17 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
     }
     else
     {
+        BOOL isTypename = FALSE;
+        if (MATCHKW(lex, kw_typename))
+        {
+            isTypename = TRUE;
+            lex = getsym();
+        }
+
         if (hasAttributes)
             error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
-        if (ISID(lex))
+        if (!isTypename && ISID(lex))
         {
-            marksym();
             lex = getsym();
             ParseAttributeSpecifiers(&lex, NULL, TRUE);
             if (MATCHKW(lex, assign))
@@ -1577,10 +1602,10 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
             }
             else
             {
-                lex = backupsym(0);
+                lex = backupsym();
             }
         }
-        lex = nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
+        lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE);
         if (!sp)
         {
             error(ERR_IDENTIFIER_EXPECTED);
@@ -1596,13 +1621,17 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
                     InsertSymbol(sym, sc_external, sym->linkage);
                     hr = &(*hr)->next;
                 }
+                if (isTypename)
+                    error(ERR_TYPE_NAME_EXPECTED);
             }
             else
             {
-                if (sp->storage_class == sc_type)
+                if (isTypename && !istype(sp))
+                    error(ERR_TYPE_NAME_EXPECTED);
+                if (istype(sp))
                     InsertTag(sp, storage_class);
                 else
-                    InsertSymbol(sp, storage_class, sp->linkage);
+                    InsertSymbol(sp, storage_class, lk_cdecl);
             }
             lex = getsym();
         }
@@ -1651,7 +1680,7 @@ BOOL ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOL always)
                 if (needkw(lex, openpa))
                 {
                     int align = 1;
-                    if (startOfType(*lex))
+                    if (startOfType(*lex, FALSE))
                     {
                         TYPE *tp = NULL;
                         *lex = get_type_id(*lex, &tp, funcsp, FALSE);
@@ -1677,7 +1706,6 @@ BOOL ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOL always)
             }
             else if (MATCHKW(*lex, openbr))
             {
-                marksym();
                 *lex= getsym();
                 if (MATCHKW(*lex, openbr))
                 {
@@ -1741,7 +1769,7 @@ BOOL ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOL always)
                 }
                 else
                 {
-                    *lex = backupsym(0);
+                    *lex = backupsym();
                     break;
                 }
             }

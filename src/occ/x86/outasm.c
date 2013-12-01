@@ -1762,7 +1762,11 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOL doSign)
         case en_c_us:
         case en_c_wc:
             if (doSign)
+            {
+                if (offset->v.i == 0)
+                    break;
                 beputc('+');
+            }
             {
                 int n = offset->v.i;
 //				if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)

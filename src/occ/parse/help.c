@@ -61,7 +61,7 @@ BOOL istype(SYMBOL *sym)
 {
     if (sym->storage_class == sc_templateparam)
     {
-        return sym->tp->templateParam->type == kw_typename;
+        return sym->tp->templateParam->type == kw_typename || sym->tp->templateParam->type == kw_template;
     }
     return sym->storage_class == sc_type || sym->storage_class == sc_typedef;
 }
@@ -69,21 +69,22 @@ BOOL ismemberdata(SYMBOL *sp)
 {
     return (!isfunction(sp) && sp->storage_class == sc_member);
 }
-BOOL startOfType(LEXEME *lex)
+BOOL startOfType(LEXEME *lex, BOOL assumeType)
 {
     if (!lex)
         return FALSE;
     if (lex->type == l_id || MATCHKW(lex, classsel))
     {
-        SYMBOL *sp;
-        nestedSearch(lex, &sp, NULL, NULL, NULL, FALSE);
+        SYMBOL *sp, *strSym = NULL;
+        LEXEME *placeholder = lex;
+        nestedSearch(lex, &sp, &strSym, NULL, NULL, NULL, FALSE);
         if (cparams.prm_cplusplus)
-            backupsym(0);
-        return sp && istype(sp);
+            prevsym(placeholder);
+        return sp && istype(sp) || assumeType && strSym && strSym->tp->type == bt_templateselector;
     }
     else 
     {
-        return KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS);
+        return KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS | TT_TYPENAME);
     }
     
 }
@@ -624,6 +625,7 @@ void deref(TYPE *tp, EXPRESSION **exp)
         case bt_ifunc:
         case bt_any:
         case bt_templateparam:
+        case bt_templateselector:
             return;
         default:
             diag("deref error");
@@ -640,6 +642,7 @@ int sizeFromType(TYPE *tp)
     {
         case bt_void:
         case bt_templateparam:
+        case bt_templateselector:
             rv = ISZ_UINT;
             break;
         case bt_bool:
@@ -816,6 +819,7 @@ void cast(TYPE *tp, EXPRESSION **exp)
             break;
         case bt_void:
         case bt_templateparam:
+        case bt_templateselector:
             break;
         default:
             diag("cast error");

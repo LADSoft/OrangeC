@@ -268,20 +268,36 @@ SYMBOL *search(char *name, HASHTABLE *table)
     }
     return NULL;
 }
-SYMBOL *searchOverloads(char *name, HASHTABLE *table)
+SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
 {
-    HASHREC **p = GetHashLink(table, name);
-    int pl = strlen(name);
-    while (*p)
+    HASHREC *p = table->table[0];
+    while (p)
     {
-        char *q = ((SYMBOL *)(*p)->p)->decoratedName;
-        int ql = strlen(q);
-        if (pl <= ql)
+        SYMBOL *spp = (SYMBOL *)p->p;
+        HASHREC *tnew = basetype(sp->tp)->syms->table[0];
+        HASHREC *told = basetype(spp->tp)->syms->table[0];
+        while (tnew && told)
         {
-            if (!strcmp(q + ql - pl, name))
-                return (SYMBOL *)(*p)->p;
+            SYMBOL *snew = (SYMBOL *)tnew->p;
+            SYMBOL *sold = (SYMBOL *)told->p;
+            if (sold->thisPtr)
+            {
+                told = told->next;
+                sold = told->p;
+            }
+            if (snew->tp->type == bt_templateparam)
+            {
+                if (sold->tp->type != bt_templateparam || snew->tp->templateParam->type != sold->tp->templateParam->type)
+                    break;                    
+            }
+            else if (!comparetypes(sold->tp, snew->tp, TRUE))
+                break;
+            told = told->next;
+            tnew = tnew->next;
         }
-        p =  (HASHREC **)*p;
+        if (!told && !tnew)
+            return spp;
+        p = p->next;
     }
     return (0);
 }

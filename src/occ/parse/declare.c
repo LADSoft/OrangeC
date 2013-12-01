@@ -905,7 +905,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
         sp->anonymous = charindex == -1;
         sp->access = access;
         SetLinkerNames(sp, lk_cdecl);
-        if (templateParams && templateNestingCount == 1)
+        if (templateParams && templateNestingCount)
         {
             if (MATCHKW(lex, lt))
                 errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
@@ -926,7 +926,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
     {
         errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
     }
-    else if (templateParams && templateNestingCount == 1)
+    else if (templateParams && templateNestingCount)
     {
         // definition or declaration
         if (!sp->isTemplate)
@@ -4145,7 +4145,7 @@ jointemplate:
                         if (spi && spi->storage_class == sc_overloads)
                         {
                             SYMBOL *sym = NULL;
-                            if (templateParams && !spi->parentClass)
+                            if (templateParams)
                             {
                                 // a specialization
                                 // this may result in returning sp depending on what happens...
@@ -4194,7 +4194,7 @@ jointemplate:
                         }
                         if (spi)
                         {
-                            if (templateParams && templateNestingCount == 1)
+                            if (templateParams)
                             {
                                 BOOL istemplate = FALSE;
                                 SYMBOL *spt = spi;
@@ -4223,9 +4223,14 @@ jointemplate:
                             if (isfunction(spi->tp))		
                                 matchFunctionDeclaration(lex, sp, spi);
                             if (sp->parentClass)
-                                preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
+                            {
+                                if (!spi->isTemplate)
+                                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
+                            }
                             else
+                            {
                                 sp->parentClass = strSym;
+                            }
                             if (sp->constexpression)
                                 spi->constexpression = TRUE;
                             if (istype(spi))

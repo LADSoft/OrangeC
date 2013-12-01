@@ -1014,9 +1014,40 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
             HASHREC *hr1 = sym->tp->syms->table[0];
             while (hr1)
             {
-                if ((SYMBOL *)hr1->p == member)
+                SYMBOL *sym = (SYMBOL *)hr1->p;
+                if (sym == member)
                 {
                     break;
+                }
+                if (sym->isTemplate)
+                {
+                    LIST *l1 = sym->specializations;
+                    while (l1)
+                    {
+                        if (l1->data == member)
+                        {                    
+                            break;
+                        }
+                        l1 = l1->next;
+                    }
+                    if (l1)
+                    {
+                        break;
+                    }
+                l1 = sym->instantiations;
+                    while (l1)
+                    {
+                        if (l1->data == member)
+                        {                    
+                            break;
+                        }
+                        l1 = l1->next;
+                    }
+                    if (l1)
+                    {
+                        matched = TRUE;
+                        break;
+                    }
                 }
                 hr1 = hr1->next;
             }

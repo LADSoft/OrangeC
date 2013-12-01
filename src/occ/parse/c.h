@@ -757,6 +757,7 @@ typedef struct lexeme
     int filenum;
     KEYWORD *kw;
     SYMBOL *typequal;
+    int registered:1;
 } LEXEME;
 
 typedef struct lexContext {

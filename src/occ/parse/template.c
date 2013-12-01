@@ -84,34 +84,38 @@ void TemplateRegisterDeferred(LEXEME *lex)
 {
     if (lex && templateNestingCount)
     {
-        LEXEME *cur = globalAlloc(sizeof(LEXEME));
-        *cur = *lex;
-        cur->next = NULL;
-        if (inTemplateBody)
+        if (!lex->registered)
         {
-            if (currents->bodyHead)
+            LEXEME *cur = globalAlloc(sizeof(LEXEME));
+            *cur = *lex;
+            cur->next = NULL;
+            if (inTemplateBody)
             {
-                cur->prev = currents->bodyTail;
-                currents->bodyTail = currents->bodyTail->next = cur;
+                if (currents->bodyHead)
+                {
+                    cur->prev = currents->bodyTail;
+                    currents->bodyTail = currents->bodyTail->next = cur;
+                }
+                else
+                {
+                    cur->prev = NULL;
+                    currents->bodyHead = currents->bodyTail = cur;
+                }
             }
             else
             {
-                cur->prev = NULL;
-                currents->bodyHead = currents->bodyTail = cur;
+                if (currents->head)
+                {
+                    cur->prev = currents->tail;
+                    currents->tail = currents->tail->next = cur;
+                }
+                else
+                {
+                    cur->prev = NULL;
+                    currents->head = currents->tail = cur;
+                }
             }
-        }
-        else
-        {
-            if (currents->head)
-            {
-                cur->prev = currents->tail;
-                currents->tail = currents->tail->next = cur;
-            }
-            else
-            {
-                cur->prev = NULL;
-                currents->head = currents->tail = cur;
-            }
+            lex->registered = TRUE;
         }
     }
 }
@@ -502,6 +506,10 @@ static BOOL matchTemplatedType(TYPE *old, TYPE *sym, BOOL strict)
                         {
                             HASHREC *hro = old->syms->table[0];
                             HASHREC *hrs = sym->syms->table[0];
+                            if (((SYMBOL *)hro->p)->thisPtr)
+                                hro = hro->next;
+                            if (((SYMBOL *)hrs->p)->thisPtr)
+                                hrs = hrs->next;
                             while (hro && hrs)
                             {
                                 if (!matchTemplatedType(((SYMBOL *)hro->p)->tp, ((SYMBOL *)hrs->p)->tp, strict))

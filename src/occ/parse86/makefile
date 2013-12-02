@@ -57,10 +57,10 @@ LL = -DUSE_LONGLONG
 
 OBJECT=objectb55
 CC = bcc32 -c -v
-CCFLAGS = /c /v /I$(SRCPATH) /DPARSER_ONLY $(i386) $(LL) $(MSDOS) $(WIN32) /DBORLAND
+CCFLAGS = /I$(SRCPATH) /DPARSER_ONLY $(i386) $(LL) $(MSDOS) $(WIN32) /DBORLAND
 ASM = nasm -fobj
 LIB = tlib32
-LINK = ilink32 -Gn -Gi -v -m
+LINK = ilink32 -v -m -Gn -Gi
 SOURCE = ..\parse;..\preproc;..\middle
 
 SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..\..\sqlite3;..

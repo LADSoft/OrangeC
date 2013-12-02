@@ -250,6 +250,7 @@ static ARCH_CHARACTERISTICS architecture = {
     ISZ_ULONG,	/* size compatible to an integer */    
     ISZ_ULONG,	/* size compatible to an address */    
     8,				/* default packing level */
+    4,               /* alignment for memory operations, as provided by RTL */
     /* floating point characteristics not fully implemented */
     &aflt,      /* characteristics of 'float' keyword */
     &adbl,        /* characteristics of 'double' keyword */

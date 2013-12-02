@@ -1639,6 +1639,24 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
             EnableWindows(hwndDlg, wParam);
             SetFocus((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0,0));
             break;
+        case WM_USER:
+            pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
+            if (!pHdr->iSel)
+            {
+                HWND child = GetDlgItem(hwndDlg, IDC_COMBOFINDFIND);
+                SendMessage(child, WM_SAVEHISTORY, 0, 0);
+                SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
+            }
+            else
+            {
+                HWND child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEFIND);
+                SendMessage(child, WM_SAVEHISTORY, 0, 0);
+                SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
+                child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
+                SendMessage(child, WM_SAVEHISTORY, 0, 0);
+                SendMessage(child, WM_GETTEXT, 256, (LPARAM)replaceText);
+            }
+            break;
         case WM_COMMAND:
             pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
             // this is needed to handle the default behavior
@@ -1820,21 +1838,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     }
                     break;
                 case IDCANCEL:
-                    if (!pHdr->iSel)
-                    {
-                        HWND child = GetDlgItem(hwndDlg, IDC_COMBOFINDFIND);
-                        SendMessage(child, WM_SAVEHISTORY, 0, 0);
-                        SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
-                    }
-                    else
-                    {
-                        HWND child = GetDlgItem(hwndDlg, IDC_COMBOREPLACEFIND);
-                        SendMessage(child, WM_SAVEHISTORY, 0, 0);
-                        SendMessage(child, WM_GETTEXT, 256, (LPARAM)findText);
-                        child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
-                        SendMessage(child, WM_SAVEHISTORY, 0, 0);
-                        SendMessage(child, WM_GETTEXT, 256, (LPARAM)replaceText);
-                    }
+                    SendMessage(hwndDlg, WM_USER, 0, 0);
                     canceled = TRUE;
                     SendMessage(GetParent(hwndDlg), WM_COMMAND, IDCANCEL, 0);
                     break;
@@ -2081,6 +2085,8 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                     SetEvent(findEvent);
                     SetFocus((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0));
                     EndDialog(hwndDlg, 0);
+                    pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
+                    FindChildDlgProc(pHdr->hwndDisplay, WM_USER, 0, 0);
                     break;
                 case IDHELP:
                     ContextHelp(IDH_FIND_REPLACE_DIALOG);

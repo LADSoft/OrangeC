@@ -4911,7 +4911,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         int slen = strlen(funcname);
         int count = 0;
         if (p->selstartcharpos != p->selendcharpos)
+        {
             return INT_MAX;
+        }
         while (l >= 0)
         {
             if (funcname[0] == p->cd->text[l].ch)
@@ -4928,12 +4930,16 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             l--;
         }
         if (l < 0)
+        {
             return INT_MAX;
+        }
         l += slen;
         while (isspace(p->cd->text[l].ch) && l < p->selstartcharpos)
             l++;
         if (p->cd->text[l].ch != '(')
+        {
             return INT_MAX;
+        }
         l++;
         while (l < p->selstartcharpos)
         {
@@ -4964,7 +4970,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 } while (slen && l < p->selstartcharpos);				
             }
             else if (p->cd->text[l].ch == ')')
+            {
                 return INT_MAX;
+            }
             else
                 l++;
                 
@@ -5113,12 +5121,17 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             return ;
         if (ch == ',' || ch == '(')
         {
+            int parenLevel = 0;
             if (ch == ',')
                 curArg ++;
-            while (pos && p->cd->text[pos].ch != '(' && p->cd->text[pos].ch != ';')
+            while ((pos && p->cd->text[pos].ch != '(' || parenLevel) && p->cd->text[pos].ch != ';')
             {
                 if (p->cd->text[pos].ch == ',')
                     curArg++;
+                if (p->cd->text[pos].ch == ')')
+                    parenLevel++;
+                if (p->cd->text[pos].ch == '(')
+                    parenLevel--;
                 pos--;
             }
             if (!pos || p->cd->text[pos].ch != '(')
@@ -5615,8 +5628,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     p->cd->selecting = FALSE;
                     break;
                 }
-                p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                SendMessage(hwndShowFunc, WM_USER+3, 0, (LPARAM)p);
                 break;
             case WM_CHAR:
                 if (wParam >= ' ' && wParam < 256)

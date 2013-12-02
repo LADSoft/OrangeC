@@ -201,6 +201,12 @@
     <ClCompile Include="parse\lambda.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="parse\rtti.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parse\template.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parse\beinterf.h">
@@ -237,6 +243,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="x86\Cvinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\rtti.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

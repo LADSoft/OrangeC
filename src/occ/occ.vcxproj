@@ -126,8 +126,10 @@
     <ClCompile Include="parse\memory.c" />
     <ClCompile Include="parse\osutil.c" />
     <ClCompile Include="parse\output.c" />
+    <ClCompile Include="parse\rtti.c" />
     <ClCompile Include="parse\stmt.c" />
     <ClCompile Include="parse\symtab.c" />
+    <ClCompile Include="parse\template.c" />
     <ClCompile Include="parse\types.c" />
     <ClCompile Include="parse\unmangle.c" />
     <ClCompile Include="preproc\ppexpr.c" />
@@ -153,6 +155,7 @@
     <ClInclude Include="parse\compiler.h" />
     <ClInclude Include="parse\floating.h" />
     <ClInclude Include="parse\osutil.h" />
+    <ClInclude Include="parse\rtti.h" />
     <ClInclude Include="parse\WINMODE.h" />
     <ClInclude Include="x86\be.h" />
     <ClInclude Include="x86\Cvinfo.h" />

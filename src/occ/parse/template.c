@@ -1511,6 +1511,8 @@ static BOOL ValidArg(TYPE *tp)
             case bt_templateparam:
                 if (tp->templateParam->type != kw_typename)
                     return FALSE;
+                 if (tp->templateParam->byClass.val == NULL)
+                     return FALSE;
                  if (tp->templateParam->byClass.val->type == bt_void)
                      return FALSE;
                 return ValidArg(tp->templateParam->byClass.val);
@@ -1680,6 +1682,13 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
         TemplateDeduceFromArg(((SYMBOL *)(templateArgs->p))->tp, symArgs->tp, symArgs->exp);
         templateArgs = templateArgs->next;
         symArgs = symArgs->next;
+    }
+    params = sym->templateParams->next;
+    while (params)
+    {
+        if (!params->byClass.val)
+            params->byClass.val = params->byClass.dflt;
+        params = params->next;
     }
     if (ValidateArgsSpecified(sym->templateParams->next, sym, args->arguments))
     {

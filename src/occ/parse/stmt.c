@@ -1417,8 +1417,12 @@ static LEXEME *statement_label(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         if (spx->storage_class == sc_ulabel)
         {
             spx->storage_class = sc_label;
-            thunkGotoDestructors(&spx->gotoTable->destexp, spx->gotoTable->parent, parent);
-            thunkCatchCleanup(spx->gotoTable, spx->gotoTable->parent, parent);
+            // may come here from assembly language...
+            if (spx->gotoTable)
+            {
+                thunkGotoDestructors(&spx->gotoTable->destexp, spx->gotoTable->parent, parent);
+                thunkCatchCleanup(spx->gotoTable, spx->gotoTable->parent, parent);
+            }
         }
         else
         {
@@ -2320,6 +2324,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
             lex = statement_label(lex, funcsp, parent);
             parent->needlabel = FALSE;
             parent->nosemi = TRUE;
+            return lex;
         }
         else
         {

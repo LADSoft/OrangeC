@@ -1208,7 +1208,7 @@ LEXEME *getGTSym(LEXEME *in)
 {
     static char greater[2] = ">";
     static LEXEME lex;
-    enum e_kw kw;
+    KEYWORD *kw;
     char *pgreater = &greater;
     kw = searchkw(&pgreater);
     lex = *in;

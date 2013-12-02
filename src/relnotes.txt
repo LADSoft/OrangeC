@@ -1,6 +1,14 @@
 Release notes
 
-version 5.0.8:
+version 5.0.9:
+    ocide: fix problem where function prompt window would go away randomly
+    ocide: handle parenthesis when in function prompt window
+    ocide: save the text of find and replace more consistently
+    ocide: fix code completion for structures with bit fields (it was recently broken)
+    occ:   fix problem with two labels in a row generating errors
+    occ:   fix crash with forward declared labels in inline assembler
+
+version 5.0.8: 10/3/2013
     occ: fix problem where using a global's address but never its value in a function
          could crash the optimizer
     occ: fix C++ function-like operator to work

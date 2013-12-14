@@ -78,7 +78,7 @@ static void renameToTemps(SYMBOL *funcsp)
             SYMBOL *sp = (SYMBOL *)hr->p;
             TYPE *tp;
             /* needed for pointer aliasing */
-            if (!sp->imvalue && basetype(sp->tp)->type != bt_memberptr && !isstructured(sp->tp) && sp->tp->type != bt_ellipse && sp->tp->type != bt_aggregate)
+            if (!sp->imvalue && basetype(sp->tp)->type != bt_any && basetype(sp->tp)->type != bt_memberptr && !isstructured(sp->tp) && sp->tp->type != bt_ellipse && sp->tp->type != bt_aggregate)
             {
                 if (sp->storage_class != sc_auto && sp->storage_class !=
                     sc_register)

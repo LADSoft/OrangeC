@@ -78,6 +78,11 @@ static char *addParent(char *buf, SYMBOL *sp)
 }
 static char *RTTIGetDisplayName(char *buf, TYPE *tp)
 {
+    if (tp->type == bt_templateparam)
+    {
+        if (tp->templateParam && tp->templateParam->type == kw_typename && tp->templateParam->byClass.val)
+            tp = tp->templateParam->byClass.val;
+    }
     if (isconst(tp))
     {
         sprintf(buf, "%s ", "const");
@@ -106,6 +111,11 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
         *buf++ = '&';
         *buf = 0;
     }
+    else if (tp->type == bt_templateparam)
+    {
+        strcpy(buf, "*templateParam");
+        buf += strlen(buf);
+    }
     else
     {
         strcpy(buf, typeNames[tp->type]);
@@ -115,6 +125,11 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
 }
 static char *RTTIGetName(char *buf, TYPE *tp)
 {
+    if (tp->type == bt_templateparam)
+    {
+        if (tp->templateParam && tp->templateParam->type == kw_typename && tp->templateParam->byClass.val)
+            tp = tp->templateParam->byClass.val;
+    }
     mangledNamesCount = 0;
     strcpy(buf, "@$xt@");
     buf += strlen(buf);
@@ -323,7 +338,8 @@ typedef struct _xclist
         STATEMENT *stmt;
     } ;
     SYMBOL *xtSym;
-    char byStmt;
+    char byStmt:1;
+    char used:1;
 } XCLIST;
 static void XCStmt(STATEMENT *block, XCLIST ***listPtr);
 static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
@@ -590,7 +606,23 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
             LIST *p = funcsp->xc->xcDynamic;
             while (p)
             {
-                list[count++] = RTTIDumpType((TYPE *)p->data);
+                TYPE *tp = (TYPE *)p->data;
+                if (tp->type == bt_templateparam && tp->templateParam->packed)
+                {
+                    if (tp->templateParam->type == kw_typename)
+                    {
+                        TEMPLATEPARAM *pack = tp->templateParam->byPack.pack;
+                        while (pack)
+                        {
+                            list[count++] = RTTIDumpType((TYPE *)pack->byClass.val);
+                            pack = pack->next;
+                        }
+                    }
+                }
+                else
+                {
+                    list[count++] = RTTIDumpType((TYPE *)p->data);
+                }
                 p = p->next;
             }
         }
@@ -718,20 +750,44 @@ void XTDumpTab(SYMBOL *funcsp)
                         }
                         q = q->next;
                     }
+                    if (q)
+                        q->used = TRUE;
                     genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS  : 0));
                     genref(p->xtSym, 0);
-                    genint(evalofs(p->exp));
+                    genint(evalofs(p->exp->v.t.thisptr));
                     gen_labdifref(p->exp->v.t.thisptr->xcInit, funcsp->xc->xcInitLab);
                     if (!q)
                     {
-                        diag("XTDumpTab: expected destructor");
-                        gen_labdifref(funcsp->xc->xcDestLab, funcsp->xc->xcInitLab);
+                        if (p->exp->v.t.thisptr->xcDest)
+                        {
+                            gen_labdifref(p->exp->v.t.thisptr->xcDest, funcsp->xc->xcInitLab);
+                        }
+                        else
+                        {
+//                          diag("XTDumpTab: expected destructor");
+                            genaddress(0);
+                        }
                     }
                     else
                     {
                         gen_labdifref(p->exp->v.t.thisptr->xcDest, funcsp->xc->xcInitLab);
                     }
                 }
+            }
+            p = p->next;
+        }
+        // for arguments which are destructed
+        p = list;
+        while (p)
+        {
+            if (!p->byStmt && p->xtSym && p->exp->dest && !p->used)
+            {
+                p->used = TRUE;
+                genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS  : 0));
+                genref(p->xtSym, 0);
+                genint(evalofs(p->exp->v.t.thisptr));
+                gen_labdifref(funcsp->xc->xcInitLab, funcsp->xc->xcInitLab);
+                gen_labdifref(p->exp->v.t.thisptr->xcDest, funcsp->xc->xcInitLab);
             }
             p = p->next;
         }

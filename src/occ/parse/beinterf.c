@@ -49,6 +49,10 @@ TYPE stdvoid =
 {
     bt_void, 0
 } ;
+TYPE stdany =
+{
+    bt_any, 1
+} ;
 TYPE stdauto =
 {
     bt_auto, 0

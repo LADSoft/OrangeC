@@ -484,6 +484,7 @@ typedef struct sym
         unsigned isTemplate:1; // is a template declaration
         unsigned specialized:1; // is a template specialization
         unsigned instantiated:1; // is a template instantiation
+        unsigned packed:1; // is a variable for a pack expansion
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -608,9 +609,10 @@ typedef struct _templateParam
         // kw_new = specialization
         // first in the list is always the specialization specifier
     enum e_kw type;
+    int index:8;
     int packed:1;
     int initialized:1;
-    SYMBOL *sym;
+    SYMBOL *sym, *packsym;
     union {
         // the dflt & val fields must be in the same place for each item
         struct {
@@ -633,6 +635,12 @@ typedef struct _templateParam
         struct {
             struct _templateParam *types;
         }bySpecialization;
+        struct {
+            struct _templateParam *pack;
+        }byPack;
+        struct {
+            struct _templateParam *args;
+        }byDeferred;
     };
 } TEMPLATEPARAM;
 
@@ -661,6 +669,7 @@ typedef struct initlist
     EXPRESSION *dest;
     struct initlist *nested;
     int byRef : 1;
+    int packed: 1;
 } INITLIST;
 
 typedef struct functioncall
@@ -674,6 +683,7 @@ typedef struct functioncall
     EXPRESSION *thisptr;
     TYPE *thistp;
     struct _templateParam *templateParams;
+    int callLab;
     int novtab : 1;
     int ascall:1;
     int astemplate:1;

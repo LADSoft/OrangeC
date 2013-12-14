@@ -625,7 +625,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             SYMBOL *sp;
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
             EXPRESSION *exp1;
-            lex = getArgs(lex, funcsp, funcparams, closepa);
+            lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
             exp1 = *exp = varNode(en_auto, sp);
@@ -682,7 +682,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         else
         {
             TYPE *throwaway;
-            lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE, noinline);
+            lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE, noinline, FALSE);
             if (throwaway && (*tp)->type == bt_auto)
                 *tp = throwaway;
             if ((*exp)->type == en_func)
@@ -994,7 +994,7 @@ BOOL doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *
     return FALSE;
     // fixme nullptr conversion to nullptr
 }
-LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp)
+LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, BOOL packable)
 {
     lex = getsym();
     if (needkw(&lex, lt))
@@ -1004,7 +1004,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
         {
             if (needkw(&lex, openpa))
             {
-                lex = expression(lex, funcsp, NULL, oldType, oldExp, FALSE, FALSE);
+                lex = expression(lex, funcsp, NULL, oldType, oldExp, FALSE, FALSE, packable);
                 if (!needkw(&lex, closepa))
                 {
                     errskim(&lex, skim_closepa);
@@ -1022,7 +1022,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
         *oldType = &stdvoid;
     return lex;
 }
-LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
+LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL packable)
 {
     lex = getsym();
     if (needkw(&lex, openpa))
@@ -1361,7 +1361,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         dropStructureDeclaration();
     return FALSE;
 }
-LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline)
+LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline, BOOL packable)
 {
     FUNCTIONCALL *placement = Alloc(sizeof(FUNCTIONCALL));
     FUNCTIONCALL *initializers = NULL;
@@ -1385,7 +1385,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             // placement new
             lex = backupsym();
-            lex = getArgs(lex, funcsp, placement, closepa);
+            lex = getArgs(lex, funcsp, placement, closepa, TRUE);
         }
     }
     if (!*tp)
@@ -1411,7 +1411,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 EXPRESSION *exp = NULL;
                 name = overloadNameTab[CI_NEWA];
                 lex = getsym();
-                lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline);
+                lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline, packable);
                 if (!isint(tp1))
                 {
                     error(ERR_NEED_INTEGER_TYPE);
@@ -1422,7 +1422,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 while (MATCHKW(lex, openbr))
                 {
                     lex = getsym();
-                    lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline);
+                    lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline, packable);
                     optimize_for_constants(&exp);
                     if (!isint(tp1))
                     {
@@ -1519,7 +1519,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         if (isstructured(*tp))
         {
             initializers = Alloc(sizeof(FUNCTIONCALL));
-            lex = getArgs(lex, funcsp, initializers, closepa);
+            lex = getArgs(lex, funcsp, initializers, closepa, TRUE);
             if (s1)
             {
                 *exp = val;
@@ -1531,7 +1531,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             exp1 = NULL;
             initializers = Alloc(sizeof(FUNCTIONCALL));
-            lex = getArgs(lex, funcsp, initializers, closepa);
+            lex = getArgs(lex, funcsp, initializers, closepa, TRUE);
             if (initializers->arguments)
             {
                 if (!isarithmetic(initializers->arguments->tp) || initializers->arguments->next)
@@ -1682,7 +1682,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         name = overloadNameTab[CI_DELETEA];
         exp1 = intNode(en_c_i, 0); // signal to the runtime to load the number of elems dynamically
     }
-    lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE, noinline);
+    lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE, noinline, FALSE);
     if (!ispointer(*tp))
         error(ERR_POINTER_TYPE_EXPECTED);
     in = *exp;

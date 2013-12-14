@@ -53,6 +53,8 @@ extern int total_errors;
 extern TYPE stdvoid;
 extern int currentErrorLine;
 extern int templateNestingCount;
+extern int packIndex;
+extern int expandingParams;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -807,6 +809,38 @@ BOOL usesVTab(SYMBOL *sym)
     }
     return FALSE;
 }
+BASECLASS *innerBaseClass(SYMBOL *declsym, SYMBOL *bcsym, BOOL isvirtual, enum e_ac currentAccess)
+{
+    BASECLASS *bc;
+    BASECLASS *t = declsym->baseClasses;
+    while (t)
+    {
+        if (t->cls == bcsym)
+        {
+            errorsym(ERR_BASE_CLASS_INCLUDED_MORE_THAN_ONCE, bcsym);
+            break;
+        }
+        t = t->next;
+    }
+    if (basetype(bcsym->tp)->type == bt_union)
+        error(ERR_UNION_CANNOT_BE_BASE_CLASS);       
+    if (bcsym->isfinal)
+        errorsym(ERR_FINAL_BASE_CLASS, bcsym);
+    bc = Alloc(sizeof(BASECLASS));
+    bc->accessLevel = currentAccess;
+    bc->isvirtual = isvirtual;
+    bc->cls = bcsym;
+    // inject it in the class so we can look it up as a type later
+    //
+    if (!t)
+    {
+        SYMBOL *injected = clonesym(bcsym);
+        injected->parentClass = declsym;
+        injected->access = currentAccess;
+        insert(injected, declsym->tp->tags);
+    }
+    return bc;
+}
 LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defaultAccess)
 {
     struct _baseClass **bc = &declsym->baseClasses, *lst;
@@ -825,46 +859,78 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         {
             bcsym = NULL;
             lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, TRUE);
-            if (bcsym)
+            lex = getsym();
+            if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->packed)
             {
-                BASECLASS *t = declsym->baseClasses;
-                while (t)
+                if (bcsym->tp->templateParam->type != kw_typename)
+                    error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
+                else 
                 {
-                    if (t->cls == bcsym)
+                    TEMPLATEPARAM *templateParams = bcsym->tp->templateParam->byPack.pack;
+                    while (templateParams)
                     {
-                        errorsym(ERR_BASE_CLASS_INCLUDED_MORE_THAN_ONCE, bcsym);
-                        break;
+                        if (!isstructured(templateParams->byClass.val))
+                        {
+                            errorcurrent(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
+                        }
+                        else
+                        {
+                            *bc = innerBaseClass(declsym, templateParams->byClass.val->sp, isvirtual, currentAccess);
+                            if (*bc)
+                                bc = &(*bc)->next;
+                        }
+                        templateParams = templateParams->next;
                     }
-                    t = t->next;
                 }
-                if (basetype(bcsym->tp)->type == bt_union)
-                    error(ERR_UNION_CANNOT_BE_BASE_CLASS);       
-                if (bcsym->isfinal)
-                    errorsym(ERR_FINAL_BASE_CLASS, bcsym);
-                *bc = Alloc(sizeof(BASECLASS));
-                (*bc)->accessLevel = currentAccess;
-                (*bc)->isvirtual = isvirtual;
-                (*bc)->cls = bcsym;
-                bc = &(*bc)->next;
+                if (!MATCHKW(lex, ellipse))
+                    error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                else
+                    lex = getsym();
                 currentAccess = defaultAccess;
                 isvirtual = FALSE;
-                // inject it in the class so we can look it up as a type later
-                //
-                if (!t)
+                done = !MATCHKW(lex, comma);
+                if (!done)
+                    lex = getsym();
+            }
+            else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->packed)
+            {
+                if (bcsym->tp->templateParam->type != kw_typename)
+                    error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
+                else
                 {
-                    SYMBOL *injected = clonesym(bcsym);
-                    injected->parentClass = declsym;
-                    injected->access = currentAccess;
-                    insert(injected, declsym->tp->tags);
+                    TYPE *tp = bcsym->tp->templateParam->byClass.val;
+                    if (!tp || !isstructured(tp))
+                    {
+                        if (tp)
+                            error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
+                    }
+                    else
+                    {
+                        *bc = innerBaseClass(declsym, tp->sp, isvirtual, currentAccess);
+                        if (*bc)
+                            bc = &(*bc)->next;
+                        currentAccess = defaultAccess;
+                        isvirtual = FALSE;
+                    }
                 }
-                lex = getsym();
+                done = !MATCHKW(lex, comma);
+                if (!done)
+                    lex = getsym();
+            }
+            else if (bcsym && (istype(bcsym) && isstructured(bcsym->tp)))
+            {
+                *bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                if (*bc)
+                    bc = &(*bc)->next;
+                currentAccess = defaultAccess;
+                isvirtual = FALSE;
                 done = !MATCHKW(lex, comma);
                 if (!done)
                     lex = getsym();
             }
             else
             {
-                error(ERR_STRUCTURED_TYPE_EXPECTED);
+                error(ERR_CLASS_TYPE_EXPECTED);
                 done = TRUE;
             }
         }
@@ -919,6 +985,321 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         lst = lst->next;
     }
     return lex;    
+}
+static BOOL hasPackedTemplate(TYPE *tp)
+{
+    HASHREC *hr;
+    SYMBOL *sp;
+    
+    switch (tp->type)
+    {
+        case bt_typedef:
+            break;
+        case bt_aggregate:
+            hr = tp->syms->table[0];
+            sp = (SYMBOL *)hr->p;
+            tp = sp->tp;
+            /* fall through */
+        case bt_func:
+        case bt_ifunc:
+            if (hasPackedTemplate(tp->btp))
+                return TRUE;
+            if (tp->syms)
+            {
+                hr = tp->syms->table[0];
+                while (hr)
+                {
+                    sp = (SYMBOL *)hr->p;
+                    if (hasPackedTemplate(sp->tp))
+                        return TRUE;
+                    hr = hr->next;
+                }
+            }
+            break;
+        case bt_float_complex:
+            break;
+        case bt_double_complex:
+            break;
+        case bt_long_double_complex:
+            break;
+        case bt_float_imaginary:
+            break;
+        case bt_double_imaginary:
+            break;
+        case bt_long_double_imaginary:
+            break;
+        case bt_float:
+            break;
+        case bt_double:
+            break;
+        case bt_long_double:
+            break;
+        case bt_unsigned:
+        case bt_int:
+            break;
+        case bt_char16_t:
+            break;
+        case bt_char32_t:
+            break;
+        case bt_unsigned_long_long:
+        case bt_long_long:
+            break;
+        case bt_unsigned_long:
+        case bt_long:
+            break;
+        case bt_wchar_t:
+            break;
+        case bt_unsigned_short:
+        case bt_short:
+            break;
+        case bt_unsigned_char:
+        case bt_char:
+            break;
+        case bt_bool:
+            break;
+        case bt_bit:
+            break;
+        case bt_void:
+            break;
+        case bt_pointer:
+        case bt_memberptr:
+        case bt_const:
+        case bt_volatile:
+        case bt_lref:
+        case bt_rref:
+            return hasPackedTemplate(tp->btp);
+        case bt_seg:
+            break;
+        case bt_ellipse:
+            break;
+        case bt_any:
+            break;
+        case bt_class:
+            break;
+        case bt_struct:
+            break;
+        case bt_union:
+            break;
+        case bt_enum:
+            break;
+        case bt_templateparam:
+            return tp->templateParam->packed;
+        default:
+            diag("hasPackedTemplateParam: unknown type");
+            break;
+    }
+    return 0;
+}
+void checkPackedType(SYMBOL *sp)
+{
+    TYPE *tp = sp->tp;
+    if (!hasPackedTemplate(tp))
+    {
+        error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
+    }
+    else if (sp->storage_class != sc_parameter)
+    {
+        error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_PARAMETER);
+    }
+}
+BOOL hasPackedExpression(EXPRESSION *exp)
+{
+    if (!exp)
+        return FALSE;
+    if (hasPackedExpression(exp->left))
+        return TRUE;
+    if (hasPackedExpression(exp->right))
+        return TRUE;
+    if (exp->type == en_auto)
+        return exp->v.sp->packed;
+    return FALSE;
+}
+void checkPackedExpression(EXPRESSION *exp)
+{
+    if (!hasPackedExpression(exp))
+        error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_FUNCTION_PARAMETER);
+}
+void checkUnpackedExpression(EXPRESSION *exp)
+{
+    if (hasPackedExpression(exp))
+        error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+}
+static void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
+{
+    if (!packedExp)
+        return FALSE;
+    GatherPackedVars(count, arg, packedExp->left);
+    GatherPackedVars(count, arg, packedExp->right);
+    if (packedExp->type == en_auto && packedExp->v.sp->packed)
+    {
+        arg[(*count)++] = packedExp->v.sp;
+        NormalizePacked(packedExp->v.sp->tp);
+    }
+    return FALSE;
+    
+}
+int CountPacks(TEMPLATEPARAM *packs)
+{
+    int rv = 0;
+    while (packs)
+    {
+        rv ++;
+        packs = packs->next;
+    }
+    return rv;
+}
+INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, EXPRESSION *packedExp)
+{
+    int oldPack = packIndex;
+    int count = 0;
+    SYMBOL *arg[200];
+    GatherPackedVars(&count, arg, packedExp);
+    expandingParams++;
+    if (count)
+    {
+        int i;
+        int n = CountPacks(arg[0]->tp->templateParam->byPack.pack);
+        for (i=1; i < count; i++)
+        {
+            if (CountPacks(arg[i]->tp->templateParam->byPack.pack) != n)
+            {
+                error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+                break;
+            }
+        }
+        for (i=0; i < n; i++)
+        {
+            INITLIST *p = Alloc(sizeof(INITLIST));
+            LEXEME *lex = SetAlternateLex(start);
+            packIndex = i;
+            expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, FALSE, FALSE, FALSE, TRUE);
+            SetAlternateLex(NULL);
+            if (p->tp)
+            {
+                *lptr = p;
+                lptr = &(*lptr)->next;
+            }
+        }
+        packIndex = 0;
+    }
+    expandingParams--;
+    packIndex = oldPack;
+}
+void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAM *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list)
+{
+    int n = CountPacks(templatePack);
+    MEMBERINITIALIZERS *orig = *p;
+    *p = (*p)->next;
+    if (n)
+    {
+        int count = 0;
+        int i;
+        SYMBOL *arg[1000];
+        TEMPLATEPARAM *pack = templatePack;
+        while (pack)
+        {
+            if (!isstructured(pack->byClass.val))
+            {
+                error(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
+                return;
+            }
+            pack = pack->next;
+        }
+        while (list)
+        {
+            GatherPackedVars(&count, arg, list->exp);
+            list = list->next;
+        }
+        for (i=0; i < count; i++)
+        {
+            if (CountPacks(arg[i]->tp->templateParam->byPack.pack) != n)
+            {
+                error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+                break;
+            }
+        }
+        for (i=0; i < n; i++)
+        {
+            LEXEME *lex = SetAlternateLex(start);
+            MEMBERINITIALIZERS *mi = Alloc(sizeof(MEMBERINITIALIZERS));
+            TYPE *tp = templatePack->byClass.val;
+            BASECLASS *bc = cls->baseClasses;
+            int offset = 0;
+            *mi = *orig;
+            mi->sp = NULL;
+            packIndex = i;
+            mi->name = templatePack->byClass.val->sp->name;
+            while (bc)
+            {
+                if (!strcmp(bc->cls->name, mi->name))
+                {
+                    if (mi->sp)
+                    {
+                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, mi->sp, cls);
+                    }
+                    mi->sp = bc->cls;
+                    offset = bc->offset;
+                }
+                bc = bc->next;
+            }
+            if (mi->sp && mi->sp == tp->sp)
+            {
+                BOOL done = FALSE;
+                mi->sp->offset = offset;
+                if (MATCHKW(lex, openpa) && mi->sp->tp->sp->trivialCons)
+                {
+                    lex = getsym();
+                    if (MATCHKW(lex, closepa))
+                    {
+                        lex = getsym();
+                        mi->init = NULL;
+                        initInsert(&mi->init, NULL, NULL, mi->sp->offset, FALSE);
+                        done = TRUE;
+                    }
+                    else
+                    {
+                        lex = backupsym();
+                    }
+                }
+                if (!done)
+                {
+                    SYMBOL *sp = makeID(sc_member, mi->sp->tp, NULL, mi->sp->name);
+                    FUNCTIONCALL shim;
+                    INITIALIZER **xinit = &mi->init;
+                    mi->sp = sp;
+                    lex = SetAlternateLex(mi->initData);
+                    shim.arguments = NULL;
+                    lex = getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                    SetAlternateLex(NULL);
+                    while (shim.arguments)
+                    {
+                        *xinit = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                        (*xinit)->basetp = shim.arguments->tp;
+                        (*xinit)->exp = shim.arguments->exp;
+                        xinit = &(*xinit)->next;
+                        shim.arguments = shim.arguments->next;
+                    }                
+                }
+            }
+            else
+            {
+                mi->sp = NULL;
+            }
+            if (mi->sp)
+            {
+               mi->next = *p;
+               *p = mi;
+               p = &(*p)->next; 
+            }
+            else
+            {
+                errorstrsym(ERR_NOT_A_MEMBER_OR_BASE_CLASS, mi->name, cls);
+            }
+            SetAlternateLex(NULL);
+            templatePack = templatePack->next;
+        }
+        packIndex = 0;
+    }
 }
 static BOOL classOrEnumParam(SYMBOL *param)
 {
@@ -1684,10 +2065,48 @@ BOOL ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOL always)
                     {
                         TYPE *tp = NULL;
                         *lex = get_type_id(*lex, &tp, funcsp, FALSE);
+                        
                         if (!tp)
+                        {
                             error(ERR_TYPE_NAME_EXPECTED);
+                        }
+                        else if (tp->type == bt_templateparam)
+                        {
+                            if (tp->templateParam->type == kw_typename)
+                            {
+                                if (tp->templateParam->packed)
+                                {
+                                    TEMPLATEPARAM *packs = tp->templateParam->byPack.pack;
+                                    if (!MATCHKW(*lex, ellipse))
+                                    {
+                                        error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                                    }
+                                    else
+                                    {
+                                        *lex = getsym();
+                                    }
+                                    while (packs)
+                                    {
+                                        int v = getAlign(sc_global, packs->byClass.val);
+                                        if (v > align)
+                                            align = v;
+                                        packs = packs->next;
+                                    }
+                                }
+                                else
+                                {
+                                    // it will only get here while parsing the template...
+                                    // when generating the instance the class member will already be
+                                    // filled in so it will get to the below...
+                                    if (tp->templateParam->byClass.val)
+                                        align = getAlign(sc_global, tp->templateParam->byClass.val);
+                                }
+                            }
+                        }
                         else
+                        {
                             align = getAlign(sc_global, tp);
+                        }
                     }
                     else
                     {

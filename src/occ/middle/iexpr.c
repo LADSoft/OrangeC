@@ -1228,6 +1228,10 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             if (exp)
                 exp = getAddress(exp);
         }
+        else if (ep->type == en_auto)
+        {
+            exp = ep;
+        }
         else
         {
             exp = ep->left;
@@ -1334,11 +1338,22 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
             }
         }
         if (!cparams.prm_cplusplus && isstructured(a->tp))
+        {
             rv = push_stackblock(a->exp->left, funcsp, a->exp->size);
+        }
         else if (a->exp->type == en_stackblock)
+        {
             rv = push_stackblock(a->exp->left, funcsp, a->tp->size);
+        }
+        else if (isstructured(a->tp) && a->exp->type == en_thisref) // constructor
+        {
+            rv = a->tp->size;
+            gen_expr(funcsp, a->exp, F_NOVALUE, ISZ_ADDR);
+        }
         else
+        {
             rv = push_param(a->exp, funcsp);
+        }
         DumpIncDec(funcsp);
         push_nesting += rv;
         return rv;
@@ -1513,10 +1528,31 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     else
     {
         int n = 0;
-        genCdeclArgs(f->arguments, funcsp);
-        if (f->thisptr)
+        if (f->thisptr && f->thisptr->type == en_auto && f->thisptr->v.sp->stackblock)
         {
-            push_param(f->thisptr, funcsp);
+            EXPRESSION *exp = f->thisptr;
+            // constructor or other function creating a structure on the stack
+            int rv = exp->v.sp->tp->size;
+            if (rv % chosenAssembler->arch->stackalign)
+                rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
+            gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
+            exp->v.sp->imvalue = ap;
+            genCdeclArgs(f->arguments, funcsp);
+            ap3 = gen_expr(funcsp, exp, 0, ISZ_UINT );
+            ap = LookupLoadTemp(NULL, ap3);
+            if (ap != ap3)
+                gen_icode(i_assn, ap, ap3, NULL);
+            if (ap->size == ISZ_NONE)
+                ap->size = ISZ_ADDR;
+            gen_nodag(i_parm, 0, ap, 0);
+        }
+        else
+        {
+            genCdeclArgs(f->arguments, funcsp);
+            if (f->thisptr)
+            {
+                push_param(f->thisptr, funcsp);
+            }
         }
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
@@ -1528,6 +1564,8 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     if (f->fcall->type == en_imode)
     {
         ap = f->fcall->v.imode;
+        if (f->callLab)
+            gen_label(f->callLab);
         gosub = gen_igosub(node->type == en_intcall ? i_int : i_gosub, ap);
     }
     else
@@ -1552,6 +1590,8 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
                     type = i_fargosub;
 */
         }
+        if (f->callLab)
+            gen_label(f->callLab);
         gosub = gen_igosub(type, ap);
     }
     if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp))

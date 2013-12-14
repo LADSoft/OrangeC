@@ -119,6 +119,15 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *sym)
                     mylex = &(*mylex)->next;
                     lex = getsym();
                 }
+                if (MATCHKW(lex, ellipse))
+                {
+                    *mylex = Alloc(sizeof(*(*cur)->initData));
+                    **mylex = *lex;
+                    (*mylex)->prev = last;
+                    last = *mylex;
+                    mylex = &(*mylex)->next;
+                    lex = getsym();
+                }
             }
             else
             {
@@ -1365,8 +1374,42 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
         }
         else
         {
-            if (!callConstructor(&ctype, &exp, NULL, FALSE, NULL, top, FALSE, FALSE, FALSE))
-                errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+            if (mi && mi->sp)
+            {
+                while (mi)
+                {
+                    if (isstructured(mi->sp->tp) && mi->sp->tp->sp == member)
+                    {
+                        break;
+                    }
+                    mi = mi->next;
+                }
+            }
+            else
+            {
+                mi = NULL;
+            }
+            if (mi)
+            {
+                INITIALIZER *init = mi->init;
+                FUNCTIONCALL *funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                INITLIST **args = & funcparams->arguments;
+                while (init && init->exp)
+                {
+                    *args = (INITLIST *)Alloc(sizeof(INITLIST));
+                    (*args)->tp = init->basetp;
+                    (*args)->exp = init->exp;
+                    args = &(*args)->next;
+                    init = init->next;
+                }
+                if (!callConstructor(&ctype, &exp, funcparams, FALSE, NULL, top, FALSE, FALSE, FALSE))
+                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+            }
+            else
+            {
+                if (!callConstructor(&ctype, &exp, NULL, FALSE, NULL, top, FALSE, FALSE, FALSE))
+                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+            }
         }
         st = stmtNode(NULL,b, st_expr);
         optimize_for_constants(&exp);
@@ -1511,22 +1554,130 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     init->init = NULL;
                     lex = initType(lex, cons, NULL, sc_auto, &init->init, &dest, init->sp->tp, init->sp, FALSE);
                 }
+                if (lex && MATCHKW(lex, ellipse))
+                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                 SetAlternateLex(NULL);
             }
         }
         else
         {
-            while (bc)
+            SYMBOL *sp = classsearch(init->name, FALSE);
+            if (sp && sp->tp->type == bt_templateparam)
             {
-                if (!strcmp(bc->cls->name, init->name))
+                if (sp->tp->templateParam->type == kw_typename)
                 {
-                    if (init->sp)
+                    if (sp->tp->templateParam->packed)
                     {
-                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
+                        EXPRESSION *expPacked = NULL;
+                        MEMBERINITIALIZERS **p = &cons->memberInitializers;
+                        FUNCTIONCALL shim;
+                        while (*p && *p != init)
+                            p = &(*p)->init;
+                        lex = SetAlternateLex(init->initData);
+                        shim.arguments = NULL;
+                        lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                        if (!lex || !MATCHKW(lex, ellipse))
+                            error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                        SetAlternateLex(NULL);
+                        expandPackedMemberInitializers(cls, cons, sp->tp->templateParam->byPack.pack, p,
+                                                        init->initData, shim.arguments);
+                        init->sp = cls;
                     }
-                    init->sp = bc->cls;
+                    else if (isstructured(sp->tp->templateParam->byClass.val))
+                    {
+                        TYPE *tp = sp->tp->templateParam->byClass.val;
+                        int offset = 0;
+                        init->name = tp->sp->name;
+                        while (bc)
+                        {
+                            if (!strcmp(bc->cls->name, init->name))
+                            {
+                                if (init->sp)
+                                {
+                                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
+                                }
+                                init->sp = bc->cls;
+                                offset = bc->offset;
+                            }
+                            bc = bc->next;
+                        }
+                        if (init->sp && init->sp == tp->sp)
+                        {
+                            SYMBOL *sp = makeID(sc_member, init->sp->tp, NULL, init->sp->name);
+                            FUNCTIONCALL shim;
+                            INITIALIZER **xinit = &init->init;
+                            sp->offset = offset;
+                            init->sp = sp;
+                            lex = SetAlternateLex(init->initData);
+                            shim.arguments = NULL;
+                            lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                            if (lex && MATCHKW(lex, ellipse))
+                                error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                            SetAlternateLex(NULL);
+                            while (shim.arguments)
+                            {
+                                *xinit = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                                (*xinit)->basetp = shim.arguments->tp;
+                                (*xinit)->exp = shim.arguments->exp;
+                                xinit = &(*xinit)->next;
+                                shim.arguments = shim.arguments->next;
+                            }                
+                        }
+                        else
+                        {
+                            init->sp = NULL;
+                        }
+                    }
+                    else 
+                    {
+                        error(ERR_STRUCTURED_TYPE_EXPECTED_IN_TEMPLATE_PARAMETER);
+                    }
                 }
-                bc = bc->next;
+                else
+                {
+                    error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
+                }
+                
+            }
+            else
+            {
+                int offset = 0;
+                while (bc)
+                {
+                    if (!strcmp(bc->cls->name, init->name))
+                    {
+                        if (init->sp)
+                        {
+                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
+                        }
+                        init->sp = bc->cls;
+                        offset = bc->offset;
+                    }
+                    bc = bc->next;
+                }
+                if (init->sp)
+                {
+                    // have to make a *real* variable as a fudge...
+                    SYMBOL *sp = makeID(sc_member, init->sp->tp, NULL, init->sp->name);
+                    FUNCTIONCALL shim;
+                    INITIALIZER **xinit = &init->init;
+                    sp->offset = offset;
+                    init->sp = sp;
+                    lex = SetAlternateLex(init->initData);
+                    shim.arguments = NULL;
+                    lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                    if (lex && MATCHKW(lex, ellipse))
+                        error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                    SetAlternateLex(NULL);
+                    while (shim.arguments)
+                    {
+                        *xinit = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                        (*xinit)->basetp = shim.arguments->tp;
+                        (*xinit)->exp = shim.arguments->exp;
+                        xinit = &(*xinit)->next;
+                        shim.arguments = shim.arguments->next;
+                    }                
+                }
             }
         }
         if (!init->sp)

@@ -250,7 +250,12 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                         char tname[256];
                         *buf = 0;
                         tname[0] = 0;
-                        name = unmang1(tname, name, last);
+                        if (*name == 'e')
+                        {
+                            strcpy(tname, "...");
+                            name++;
+                        }
+                        name = unmang1(tname+strlen(tname), name, last);
                         if (*name == '$' && (name[1] == 'g' || name[1] == 'e' || isdigit(name[1])))
                         {
                             name++;

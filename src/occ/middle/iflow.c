@@ -48,6 +48,7 @@
 #include <string.h>
 #include "compiler.h"
 
+extern COMPILER_PARAMS cparams;
 extern int blockCount;
 extern QUAD *intermed_head, *intermed_tail;
 extern BLOCK *currentBlock;
@@ -328,6 +329,26 @@ void WalkFlowgraph(BLOCK *b,
     if (func(F_TREE, NULL, b))
         FGWalker(func, b, fwd);
 }
+// have to do this to make the rtti happy in the face of infinite blocks
+static void MoveLabelsToExit(BLOCK *b)
+{
+    QUAD *head = b->head;
+    while (head && head != b->tail)
+    {
+        QUAD *next = head->fwd;
+        if (head->dc.opcode == i_label)
+        {
+            QUAD *q = blockArray[exitBlock]->head;
+            head->fwd->back = head->back;
+            head->back->fwd = head->fwd;
+            q->fwd->back = head;
+            head->fwd = q->fwd;
+            q->fwd = head;
+            head->back = q;
+        }
+        head = next;
+    }
+}
 static void removeDeadBlocks(BRIGGS_SET *brs, BLOCK *back, BLOCK *b)
 {
     if (b->temp)
@@ -371,6 +392,8 @@ static void removeDeadBlocks(BRIGGS_SET *brs, BLOCK *back, BLOCK *b)
             }
             bl2 = bl2->next;
         }
+        if (cparams.prm_cplusplus)
+            MoveLabelsToExit(b);
         b->head->fwd = b->tail->fwd;
         b->tail->fwd->back = b->head;
         b->tail = b->head;
@@ -844,7 +867,7 @@ static void removeDeadBlock(BLOCK *b)
             while (q != p)
             {
                 if (p->dc.opcode != i_dbgblock && p->dc.opcode != i_dbgblockend 
-                    && p->dc.opcode != i_var && p->dc.opcode != i_func)
+                    && p->dc.opcode != i_var && p->dc.opcode != i_func && p->dc.opcode != i_label)
                 {
                     RemoveInstruction(p);
                 }

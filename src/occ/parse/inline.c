@@ -855,8 +855,8 @@ static void setExp(SYMBOL *sx, EXPRESSION *exp, STATEMENT ***stp)
     else
     {
         EXPRESSION *tnode = varNode(en_auto, anonymousVar(sc_auto, sx->tp));
-        deref(sx->tp, &tnode);
         sx->inlineFunc.stmt = (STATEMENT *)tnode;
+        deref(sx->tp, &tnode);
         tnode = exprNode(en_assign, tnode, exp);
         **stp = Alloc(sizeof(STATEMENT));
         memset(**stp, 0 , sizeof(STATEMENT));
@@ -915,7 +915,7 @@ void SetupVariables(SYMBOL *sp)
 
 EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
-    STATEMENT *stmt = NULL, **stp = &stmt;
+    STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
     EXPRESSION *newExpression;
     BOOL allocated = FALSE;
     if (!isfunction(params->functp))
@@ -932,7 +932,14 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
         allocated = TRUE;
         AllocateLocalContext(NULL, NULL);
     }
-    stmt = SetupArguments(params);
+    stmt1 = SetupArguments(params);
+    if (stmt1)
+    {
+        // this will kill the ret val but we don't care since we've modified params
+        stmt = Alloc(sizeof(STATEMENT));
+        stmt->type = st_block;
+        stmt->lower = stmt1;
+    }
     SetupVariables(params->sp);
 
     while (*stp)

@@ -268,34 +268,45 @@ SYMBOL *search(char *name, HASHTABLE *table)
     }
     return NULL;
 }
+SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
+{
+    HASHREC *tnew = basetype(snew->tp)->syms->table[0];
+    HASHREC *told = basetype(sold->tp)->syms->table[0];
+    while (tnew && told)
+    {
+        SYMBOL *snew = (SYMBOL *)tnew->p;
+        SYMBOL *sold = (SYMBOL *)told->p;
+        if (sold->thisPtr)
+        {
+            told = told->next;
+            if (!told)
+                break;
+            sold = told->p;
+        }
+        if (snew->tp->type == bt_templateparam)
+        {
+            if (sold->tp->type != bt_templateparam || snew->tp->templateParam->type != sold->tp->templateParam->type)
+                break;                    
+        }
+        else if (sold->tp->type == bt_any || snew->tp->type == bt_any) // packed template param
+            break;
+        else if (!comparetypes(sold->tp, snew->tp, TRUE))
+            break;
+        told = told->next;
+        tnew = tnew->next;
+    }
+    if (!told && !tnew)
+        return sold;
+    return NULL;
+}
 SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
 {
     HASHREC *p = table->table[0];
     while (p)
     {
         SYMBOL *spp = (SYMBOL *)p->p;
-        HASHREC *tnew = basetype(sp->tp)->syms->table[0];
-        HASHREC *told = basetype(spp->tp)->syms->table[0];
-        while (tnew && told)
-        {
-            SYMBOL *snew = (SYMBOL *)tnew->p;
-            SYMBOL *sold = (SYMBOL *)told->p;
-            if (sold->thisPtr)
-            {
-                told = told->next;
-                sold = told->p;
-            }
-            if (snew->tp->type == bt_templateparam)
-            {
-                if (sold->tp->type != bt_templateparam || snew->tp->templateParam->type != sold->tp->templateParam->type)
-                    break;                    
-            }
-            else if (!comparetypes(sold->tp, snew->tp, TRUE))
-                break;
-            told = told->next;
-            tnew = tnew->next;
-        }
-        if (!told && !tnew)
+        spp = matchOverload(sp, spp);
+        if (spp)
             return spp;
         p = p->next;
     }

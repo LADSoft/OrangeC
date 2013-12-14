@@ -3615,7 +3615,7 @@ LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
 {
     
     if (commaallowed)
-        lex = expression(lex, funcsp, atp, tp, expr, FALSE, FALSE);
+        lex = expression(lex, funcsp, atp, tp, expr, FALSE, FALSE, FALSE);
     else
         lex = expression_no_comma(lex, funcsp, atp, tp, expr, FALSE, FALSE);
     if (*tp)

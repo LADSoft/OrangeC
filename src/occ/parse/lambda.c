@@ -183,7 +183,7 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
         {
             if (sym->parent != lambdas->func)
             {
-                if (sym->storage_class != sc_auto)
+                if (sym->storage_class != sc_auto && sym->storage_class != sc_parameter)
                 {
                     error(ERR_MUST_CAPTURE_AUTO_VARIABLE);
                 }
@@ -756,11 +756,39 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         current = current->next;
                         
                     }
+                    lex = getsym();
                     if (sp)
-                        lambda_capture(sp, localMode, TRUE);
+                    {
+                        if (sp->packed)
+                        {
+                            if (!MATCHKW(lex, ellipse))
+                                error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                            else
+                                lex = getsym();
+                        }
+                        if (sp->packed)
+                        {
+                            int n;
+                            TEMPLATEPARAM * templateParam = sp->tp->templateParam->byPack.pack;
+                            HASHREC *hr;
+                            for (n=0; templateParam; templateParam = templateParam->next, n++);
+                            hr = funcsp->tp->syms->table[0];
+                            while (hr && hr->p != sp)
+                                hr = hr->next;
+                            while (hr && n)
+                            {
+                                lambda_capture((SYMBOL *)hr->p, localMode, TRUE);
+                                hr = hr->next;
+                                n--;
+                            }
+                        }
+                        else
+                        {
+                            lambda_capture(sp, localMode, TRUE);
+                        }
+                    }
                     else
                         errorstr(ERR_UNDEFINED_IDENTIFIER, lex->value.s.a);
-                    lex = getsym();
                 }
                 else
                 {

@@ -192,7 +192,7 @@ static void kill_dupgoto(BLOCK *b, QUAD *head)
     {
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend 
             && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
-            && !head->ignoreMe)
+            && head->dc.opcode != i_label && !head->ignoreMe)
             RemoveInstruction(head);
         head = head->fwd;
     }

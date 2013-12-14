@@ -46,6 +46,7 @@
 #define CPLUSPLUSERROR 32
 
 extern COMPILER_PARAMS cparams ;
+extern int instantiatingTemplate;
 
 #ifndef CPREPROCESSOR
 extern char infile[256];
@@ -502,6 +503,21 @@ static struct {
 {"Template '%s' is already instantiated", WARNING },
 {"Use . or -> to call '%s'", ERROR },
 {"Template argument must be a constant expression", ERROR },
+{"Pack ... specifier not allowed here", ERROR },
+{"Pack ... specifier on variable requires packed template parameter", ERROR },
+{"Pack ... specifier on expression requires packed function parameter", ERROR },
+{"Pack ... specifier must be used on function parameter", ERROR },
+{"Pack ... specifier must be used on function argument", ERROR },
+{"sizeof... argument must be a template parameter pack", ERROR },
+{"Multiple pack ... specifiers not same size", ERROR },
+{"Packed ... template parameter must be 'class' template parameter", ERROR },
+{"Packed ... template parameter expected to hold structured types", ERROR },
+{"'Class' template parameter expected to hold structured types", ERROR },
+{"Pack ... specifier required here", ERROR },
+{"'Class' template parameter expected", ERROR },
+{"Structured type expected", ERROR },
+{"Packed template paramater not allowed here", ERROR },
+{"In template instantiation started here", WARNING },
 #endif
 } ;
 
@@ -590,14 +606,14 @@ static BOOL ignoreErrtemplateNestingCount(int err)
     }
     return FALSE;
 }
-void printerr(int err, char *file, int line, ...)
+BOOL printerrinternal(int err, char *file, int line, va_list args)
 {
     char buf[256];
     char infunc[1024];
     char *listerr;
     char nameb[265], *name = nameb;
     if (templateNestingCount && ignoreErrtemplateNestingCount(err))
-        return;
+        return FALSE;
     if (!file)
     {
 #ifndef CPREPROCESSOR
@@ -621,20 +637,20 @@ void printerr(int err, char *file, int line, ...)
         name = fullqualify(nameb);
     }
     if (total_errors > cparams.prm_maxerr)
-        return;
+        return FALSE;
     if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, file) && 
         line == currentErrorLine)
-        return;
+        return FALSE;
     if (err >= sizeof(errors)/sizeof(errors[0]))
     {
         sprintf(buf, "Error %d", err);
     }
     else
     {
-        va_list arg;	
-        va_start(arg, line);
-        vsprintf(buf, errors[err].name, arg);
-        va_end(arg);
+//        va_list arg;	
+//        va_start(arg, line);
+        vsprintf(buf, errors[err].name, args);
+//        va_end(arg);
     }
     if ((errors[err].level & ERROR) || cparams.prm_ansi && (errors[err].level & ANSIERROR) 
         || cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR))
@@ -653,10 +669,10 @@ void printerr(int err, char *file, int line, ...)
     else
     {
         if (!cparams.prm_warning)
-            return;
+            return FALSE;
         if (errors[err].level & TRIVIALWARNING)
             if (!cparams.prm_extwarning)
-                return;
+                return FALSE;
         if (!cparams.prm_quiet)
             printf("Warning ");
 #ifndef CPREPROCESSOR
@@ -666,7 +682,7 @@ void printerr(int err, char *file, int line, ...)
         listerr = "WARNING";
     }
 #ifndef CPREPROCESSOR
-    if (theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS)
+    if (theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
     {
         strcpy(infunc, " in function ");
         unmangle(infunc + strlen(infunc), theCurrentFunc->errname);
@@ -683,6 +699,19 @@ void printerr(int err, char *file, int line, ...)
     if (total_errors == cparams.prm_maxerr)
         error(ERR_TOO_MANY_ERRORS);
 #endif
+    return TRUE;
+}
+void printerr(int err, char *file, int line, ...)
+{
+    BOOL canprint = FALSE;
+    va_list arg;	
+    va_start(arg, line);
+    canprint = printerrinternal(err,file,line,arg);
+    va_end(arg);
+    if (instantiatingTemplate && canprint)
+    {
+        printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, includes->fname, includes->line, NULL);
+    }
 }
 void pperror(int err, int data)
 {
@@ -710,6 +739,10 @@ void preverrorsym(int err, SYMBOL *sp, char *origfile, int origline)
 void errorat(int err, char *name, char *file, int line)
 {
     printerr(err, file, line, name);
+}
+void errorcurrent(int err)
+{
+    printerr(err, includes->fname, includes->line);
 }
 void getns(char *buf, SYMBOL *nssym)
 {

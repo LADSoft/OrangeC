@@ -210,7 +210,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
 /*		BOOL openparen = MATCHKW(lex, openpa); */
         if (declaration)
             *declaration = FALSE;
-        lex = expression(lex, funcsp, NULL, &tp, exp, kw != kw_for, FALSE);
+        lex = expression(lex, funcsp, NULL, &tp, exp, kw != kw_for, FALSE, FALSE);
         if (tp)
         {
             if (tp->type == bt_memberptr)
@@ -1523,7 +1523,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         else if (MATCHKW(lex, openpa))
                         {
                             // conversion constructor params
-                            lex = getArgs(lex, funcsp, funcparams, closepa);
+                            lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
                         }
                         else
                         {
@@ -2006,7 +2006,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     {
         SYMBOL *sp = gsearch("_ThrowException");
         makeXCTab(funcsp);
-        lex = expression_assign(lex, funcsp, NULL, &tp, &exp, FALSE, FALSE, FALSE);
+        lex = expression_assign(lex, funcsp, NULL, &tp, &exp, FALSE, FALSE, FALSE, FALSE);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -2658,21 +2658,6 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
             thunkDestructorTail(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
     }
-    if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto)
-    {
-        if (funcsp->linkage3 == lk_noreturn)
-            error(ERR_NORETURN);
-        else if (cparams.prm_c99 || cparams.prm_cplusplus)
-        {
-            if (!thunkmainret(funcsp, blockstmt))
-                if (isref(basetype(funcsp->tp)->btp))
-                    error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
-                else
-                    error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
-        }
-        else
-            error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
-    }
     needkw(&lex, end);
     if (first && cparams.prm_cplusplus)
     {
@@ -2715,6 +2700,21 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             st->select->v.func = funcparams;
         }
     }
+    if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->isConstructor)
+    {
+        if (funcsp->linkage3 == lk_noreturn)
+            error(ERR_NORETURN);
+        else if (cparams.prm_c99 || cparams.prm_cplusplus)
+        {
+            if (!thunkmainret(funcsp, blockstmt))
+                if (isref(basetype(funcsp->tp)->btp))
+                    error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
+                else
+                    error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+        }
+        else
+            error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+    }
     if (first)
     {
         if (thisptr)
@@ -2733,6 +2733,8 @@ void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param)
     param->parent = funcsp;
     if (tp->type == bt_void)
         return;
+    if (isstructured(tp))
+        hasXCInfo = TRUE;
     if (!ispointer(tp) && tp->size <= chosenAssembler->arch->parmwidth)
     {
         param->offset = *base + funcvaluesize(tp->size);

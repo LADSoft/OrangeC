@@ -39,6 +39,7 @@ void preverror(int err, char *name, char *origfile, int origline);
 void preverrorsym(int err, SYMBOL *sp, char *origfile, int origline);
 void errorat(int err, char *name, char *file, int line);
 void error(int err);
+void errorcurrent(int err);
 void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name);
 void errorint(int err, int val);
 void errorstr(int err, char *val);
@@ -103,6 +104,11 @@ void addTemplateDeclaration(STRUCTSYM *decl);
 void dropStructureDeclaration(void);
 SYMBOL *getStructureDeclaration(void);
 LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, TEMPLATEPARAM *templateParams, enum e_ac defaultAccess, BOOL isfinal, BOOL *defd);
+void checkPackedType(SYMBOL *sp);
+void checkPackedExpression(EXPRESSION *sp);
+void checkUnpackedExpression(EXPRESSION *sp);
+INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, EXPRESSION *packedExp);
+void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAM *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list);
 void checkOperatorArgs(SYMBOL *sp);
 SYMBOL *getCopyCons(SYMBOL *base, BOOL move);
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype);
@@ -153,6 +159,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMB
 void sizeQualifiers(TYPE *tp);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
+BOOL typeHasTemplateArg(TYPE *t);
 void templateInit(void);
 void TemplateGetDeferred(SYMBOL *sym);
 void TemplateRegisterDeferred(LEXEME *lex);
@@ -162,7 +169,9 @@ SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp, TEMPLATEPARA
 TEMPLATEPARAM * TemplateMatching(LEXEME *lex, TEMPLATEPARAM *old, TEMPLATEPARAM *sym, SYMBOL *sp);
 LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM **lst);
 BOOL TemplateIntroduceArgs(TEMPLATEPARAM *sym, TEMPLATEPARAM *args);
+SYMBOL *TemplateSynthesizeFunction(SYMBOL *sym);
 SYMBOL *TemplateDeduceArgsFromType(SYMBOL *sym, TYPE *tp);
+void NormalizePacked(TYPE *tpo);
 SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args);
 SYMBOL *TemplateDeduceWithoutArgs(SYMBOL *sym);
 void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams, TYPE *atype);
@@ -195,31 +204,32 @@ BOOL doReinterpretCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *
 BOOL castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline);
 void castToArithmetic(BOOL integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOL noinline, BOOL implicit);
 BOOL cppCast(TYPE *src, TYPE **dest, EXPRESSION **exp, BOOL noinline);
-LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp);
-LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
+LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, BOOL packed);
+LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL packed);
 BOOL insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcParams, BOOL noinline);
 BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
                         TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args, BOOL noinline);
-LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline);
+LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline, BOOL packed);
 LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline);
 LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
-LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline);
+LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline, BOOL packable);
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right);
 EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val);
 EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en);
 LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner);
-LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish);
+LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOL allowPack);
+LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOL allowPack);
 void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp);
 void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline);
-LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline);
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams);
+LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline, BOOL packable);
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams, BOOL packable);
 LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams);
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
 				   BOOL selector, BOOL noinline);
 LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
-			BOOL selector, BOOL noinline);
+			BOOL selector, BOOL noinline, BOOL packable);
 
                                /* Float.c */
 
@@ -841,9 +851,11 @@ void AllocateLocalContext(BLOCKDATA *parent, SYMBOL *sp);
 void FreeLocalContext(BLOCKDATA *parent, SYMBOL *sp);
 HASHREC **LookupName(char *name, HASHTABLE *table);
 SYMBOL *search(char *name, HASHTABLE *table);
+SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold);
 SYMBOL *searchOverloads(SYMBOL *sym, HASHTABLE *table);
 SYMBOL *gsearch(char *name);
 SYMBOL *tsearch(char *name);
+TEMPLATEPARAM *getTemplateStruct(char *name);
 LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, BOOL tagsOnly);
 SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOL qualified, BOOL tagsOnly);
 SYMBOL *templatesearch(char *name, TEMPLATEPARAM *arg);

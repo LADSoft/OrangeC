@@ -1560,7 +1560,7 @@ static BOOL designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **desc
                                 done = TRUE;
                         }
                         else
-                            error(ERR_STRUCTURED_TYPE_EXPECTED);
+                            error(ERR_CLASS_TYPE_EXPECTED);
                     }
                     else
                     {
@@ -1891,7 +1891,7 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
 {
     EXPRESSION *expr = NULL ;
     TYPE *tp = NULL;
-    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, FALSE, FALSE, FALSE);
+    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, FALSE, FALSE, FALSE, FALSE);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -2005,7 +2005,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 implicit = TRUE;
                 if (MATCHKW(lex, begin))
                 {
-                    lex = getArgs(lex, funcsp, funcparams, end);
+                    lex = getArgs(lex, funcsp, funcparams, end, TRUE);
                     maybeConversion = FALSE;
                 }
                 else
@@ -2023,7 +2023,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
         {
             // conversion constructor params
-            lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end);
+            lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end, TRUE);
         }
         else
         {

@@ -1,0 +1,46 @@
+#if !defined(__cplusplus)
+#error Must use C++ for typeinfo.h
+#endif
+
+#ifndef __TYPEINFO_H
+#define __TYPEINFO_H
+
+#ifndef __DEFS_H__
+#include <_defs.h>
+#endif
+
+class                   tpid;
+
+namespace std {
+
+_RTL_CLASS class type_info
+{
+
+public:
+
+        tpid          _RTL_DATA * tpp;
+
+private:
+                 _RTL_FUNC type_info(const type_info &);
+    type_info &  _RTL_FUNC operator=(const type_info &);
+
+public:
+    virtual      _RTL_FUNC ~type_info();
+
+    bool         _RTL_FUNC operator==(const type_info  &) const;
+    bool         _RTL_FUNC operator!=(const type_info  &) const;
+
+    bool         _RTL_FUNC before(const type_info  &) const;
+
+    const char * _RTL_FUNC name() const;
+
+protected:
+                 _RTL_FUNC type_info(tpid *_tpp) { tpp = _tpp; }
+};
+
+_RTL_CLASS class   bad_cast{};
+_RTL_CLASS class   bad_typeid{};
+
+} // std
+
+#endif

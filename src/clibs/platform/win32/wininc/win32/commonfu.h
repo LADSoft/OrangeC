@@ -511,6 +511,13 @@ extern VOID
 	       DWORD nNumberOfArguments,
 	       CONST DWORD *lpArguments
 	       );
+ 
+extern VOID
+ PASCAL WINBASEAPI RtlUnwind(
+           PVOID TargetFrame,
+           PVOID TargetIp,
+           PEXCEPTION_RECORD ExceptionRecord,
+           PVOID ReturnValue);
 
 extern LONG
  PASCAL WINBASEAPI UnhandledExceptionFilter(

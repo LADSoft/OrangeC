@@ -205,8 +205,6 @@ char * 		 _RTL_FUNC _strupr(char *);
     using std::bcopy;
     using std::bzero;
     using std::ffs;
-    using std::index;
-    using std::rindex;
     using std::strcasecmp;
     using std::strncasecmp;
 #endif /* __USING_CNAME__ */

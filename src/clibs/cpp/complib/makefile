@@ -35,49 +35,8 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-CC=occ
-CFLAGS = $(C_FLAGS)
+ASM_DEPENDENCIES = $(wildcard 386\*.nas)
+CPP_DEPENDENCIES = $(wildcard *.cpp)
 
-LINK=olink
-LINKFLAGS= -c+
+all: $(DEPENDENCIES)
 
-vpath %.o $(OBJECT) $(SYSOBJECT)
-vpath %.nas .\386\
-vpath %.l $(SYSOBJECT)
-
-ASM=oasm
-ASMFLAGS=
-
-LIB=olib
-LIBFLAGS=
-
-IMPLIB=oimplib
-IMPLIBFLAGS=
-
-%.o: %.cpp
-	$(CC) /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
-#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
-#	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $*
-
-%.o: %.c
-	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
-#	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
-#	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $*
-
-%.o: %.nas
-	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $^
-
-C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
-ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))
-CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
-
-DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_deps) $(ASM_deps) $(CPP_deps))
-
-define CALLDIR
-	$(MAKE) /C$(dir)
-endef
-
-define ALLDIRS
-alldirs:
-	$(foreach dir, $(DIRS), $(CALLDIR))
-endef

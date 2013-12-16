@@ -421,8 +421,6 @@ void _RTL_FUNC _seterrormode(int);
     using std::_rotr;
     using std::_lrotl;
     using std::_lrotr;
-    using std::_crotl;
-    using std::_crotr;
     using std::_searchenv;
     using std::_searchstr;
     using std::_splitpath;
@@ -436,7 +434,6 @@ void _RTL_FUNC _seterrormode(int);
     using std::ulltoa;
     using std::_ulltoa:
 #endif
-	using std::_ui64toa;
     using std::utoa;
     using std::_utoa;
     using std::perror;

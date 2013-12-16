@@ -37,7 +37,6 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 ASM_DEPENDENCIES = $(wildcard 386\*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
-EXCLUDE = varalloc.obj
 
 all: $(DEPENDENCIES)
 

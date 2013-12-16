@@ -37,10 +37,6 @@
 extern int _win32 ;
 static int *_xceptblkptr;
 /*static*/ PCONTEXT xxctxt;
-LONG (* ___cppxcept)(PEXCEPTION_RECORD p, void *record , CONTEXT *context, void *param ) ;
-
-LONG ___cppxceptionhandle(PEXCEPTION_RECORD p, void *record, CONTEXT *context, void *param) ;
-
 /*static*/ void regdump(char *text, PCONTEXT p)
 {
    char buf[1024] ;
@@ -68,8 +64,6 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT context, void
    int signum = -1,rv = 1;
    if (p->ExceptionFlags == 2) // unwinding
    		return 1 ;
-   if (___cppxcept)
-   	(*___cppxcept)(p,record,context,param) ; // won't return if it was a throw raise
    switch(p->ExceptionCode) {
 		case EXCEPTION_ACCESS_VIOLATION:
 		case EXCEPTION_DATATYPE_MISALIGNMENT:

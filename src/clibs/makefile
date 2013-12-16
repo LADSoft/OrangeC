@@ -39,7 +39,8 @@
 all: dll clib
 
 CLIBDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
-	threads TIME uio wc uchar
+	threads TIME uio wc uchar cpp\complib
+
 DIRS= $(CLIBDIRS) platform
 
 MAKEFILES := $(MAKEFILES) $(realpath maker.mak)
@@ -50,7 +51,7 @@ DOSOBJECT:=$(realpath object\dos)
 export DOSOBJECT
 WINOBJECT:=$(realpath object\windows)
 export WINOBJECT
-STDINCLUDE:=$(realpath stdinc)
+STDINCLUDE:=$(realpath stdinc);$(realpath cpp\stdinc)
 export STDINCLUDE
 
 define CLIB
@@ -114,6 +115,8 @@ ifdef DISTMAKE
 include $(DISTMAKE)
 
 DISTRIBUTE:
+	$(COPYDIR) cpp\stdinc\*. $(DISTINC)
+	$(COPYDIR) cpp\stdinc\*.h $(DISTINC)
 	$(COPYDIR) stdinc\*.h $(DISTINC)
 	$(COPYDIR) stdinc\sys\*.h $(DISTINC)\sys
 	$(COPYDIR) platform\win32\wininc\*.h $(DISTINC)

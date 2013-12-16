@@ -1,0 +1,75 @@
+#ifndef __STD_NEW
+#define __STD_NEW
+
+#ifndef  __DEFS_H__
+#include <_defs.h>
+#endif
+
+#include <malloc.h>
+#include <exception>
+
+namespace __dls {
+   extern const char _RTL_DATA *__dls_bad_alloc ;
+} ;
+
+namespace std {
+
+   _RTL_CLASS class bad_alloc : public exception     
+   { 
+      public:
+         _RTL_FUNC bad_alloc () throw () : exception( )
+            { ; }
+         _RTL_FUNC bad_alloc(const bad_alloc&) __NOTHROW
+            { ; }
+         _RTL_FUNC bad_alloc& operator=(const bad_alloc&) __NOTHROW
+            { return *this; }
+         _RTL_FUNC virtual ~bad_alloc ()  __NOTHROW;
+
+         _RTL_FUNC virtual const char * what () const  __NOTHROW
+         { 
+            return __dls::__dls_bad_alloc ;
+         }
+   };
+
+   struct nothrow_t {};
+
+   extern nothrow_t _RTL_DATA nothrow;
+} ;
+
+typedef void ( *new_handler) ();
+
+extern new_handler _RTL_FUNC set_new_handler( new_handler __p );
+
+void * _RTL_FUNC  operator new (size_t);
+void * _RTL_FUNC  operator new [] (size_t) ;
+
+void   _RTL_FUNC  operator delete (void *);
+void   _RTL_FUNC  operator delete[] (void *) ;
+
+inline void * _RTL_FUNC  operator new(size_t, void *ptr)
+ { return ptr; }
+inline void*  _RTL_FUNC operator new[] ( size_t, void* ptr)
+ { return ptr; }
+
+inline void * _RTL_FUNC operator new (size_t size, const std::nothrow_t &nt)
+{
+    size = size ? size : 1;
+    return malloc(size);
+}
+inline void * _RTL_FUNC operator new[] (size_t size, const std::nothrow_t &nt)
+{
+    void *rv = ::operator new (size + sizeof(size_t), nt);
+	if (rv)
+		rv = (void *)((char *)rv + sizeof(size_t));
+	return rv;
+}
+inline void _RTL_FUNC operator delete (void *v, const std::nothrow_t &nt)
+{
+   free(v) ;
+}
+inline void _RTL_FUNC operator delete[] (void *v, const std::nothrow_t &nt)
+{
+   ::operator delete ((void *)((char *)v - sizeof(size_t)),nt);  
+}
+
+#endif

@@ -199,7 +199,7 @@ void LinkManager::LoadFiles()
             ObjFile *file = ioBase->Read(infile, ObjIOBase::eAll, factory);
             if (!file)
             {
-                LinkError("Invalid object file " + **it);
+                LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in " + **it);
             }
             else
             {
@@ -286,7 +286,7 @@ void LinkManager::ScanLibraries()
                 ObjFile *file = (*it)->LoadSymbol(objNum, factory);
                 if (!file)
                 {
-                    LinkError("Invalid object file in library " + (*it)->GetName());
+                    LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + (*it)->GetName());
                 }
                 else
                 {

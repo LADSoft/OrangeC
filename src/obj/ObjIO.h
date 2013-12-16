@@ -73,6 +73,8 @@ public:
     void SetStartAddress(ObjFile *file, ObjExpression *address) { startFile = file, startAddress = address; }
     void SetAbsolute(bool flag) { absolute = flag; }
     bool GetAbsolute() const { return absolute; }
+    virtual std::string GetErrorQualifier() { return ""; }
+    
 protected:
     std::string name;
     ObjString translatorName;

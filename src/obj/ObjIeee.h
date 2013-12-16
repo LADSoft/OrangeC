@@ -42,13 +42,13 @@
 #include <fstream>
 #include <exception>
 #include <map>
+#include <sstream>
 #include "ObjIO.h"
 #include "ObjUtil.h"
 #include "ObjIndexManager.h"
 #include "ObjType.h"
 #include "ObjMemory.h"
 #include "ObjIEeeConstants.h"
-
 class ObjSymbol;
 class ObjSection;
 class ObjSourceFile;
@@ -93,8 +93,14 @@ protected:
     class SyntaxError : public std::domain_error
     {
         public:
-            SyntaxError() : std::domain_error("Syntax Error") {}
+            SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
+                                                         static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str()),
+                                        lineNo(lineno) {}
             virtual ~SyntaxError() { } ;
+            
+            int GetLineNo() const { return lineNo; }
+        private:
+             int lineNo;
         
     } ;
     void RenderMessageInternal(ObjByte *buf, va_list arg);
@@ -171,7 +177,7 @@ protected:
     {
         (void)buffer;
         (void)ParseType;
-        SyntaxError e;
+        SyntaxError e(lineno);
         DebugThrowHook();
         throw e;
         return false;
@@ -239,6 +245,7 @@ protected:
     ObjByte *ioBuffer;
     size_t ioBufferLen;
     size_t ioBufferPos;
+    int lineno;
 };
 class ObjIeeeAscii : public  ObjIOBase
 {
@@ -253,6 +260,7 @@ public:
         { sfile = fil; factory = Factory; file = File; return HandleWrite(); }
     virtual ObjFile *Read(FILE *fil, eParseType ParseType, ObjFactory *Factory) 
         { sfile = fil; factory = Factory; file = NULL; return HandleRead(ParseType); }
+    virtual std::string GetErrorQualifier() { return std::string ("in line ") + static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str(); }
     
 protected:
     class BadCS : public std::domain_error
@@ -265,8 +273,14 @@ protected:
     class SyntaxError : public std::domain_error
     {
         public:
-            SyntaxError() : std::domain_error("Syntax Error") {}
+            SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
+                                                         static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str()),
+                                        lineNo(lineno) {}
             virtual ~SyntaxError() { } ;
+            
+            int GetLineNo() const { return lineNo; }
+        private:
+             int lineNo;
         
     } ;
     struct ParseDataLT {
@@ -344,7 +358,7 @@ protected:
     {
         (void)buffer;
         (void)ParseType;
-        SyntaxError e;
+        SyntaxError e(lineno);
         DebugThrowHook();
         throw e;
         return false;
@@ -427,6 +441,7 @@ protected:
     char *ioBuffer;
     size_t ioBufferLen;
     size_t ioBufferPos;
+    int lineno;
     static char lineend[2];
 };
 class ObjIeee : public  ObjIeeeAscii

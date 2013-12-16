@@ -286,9 +286,11 @@ ObjFile *ObjIeeeAscii::HandleRead(eParseType ParseType)
     sections.clear();
     files.clear();
     currentDataSection = NULL;
+    lineno = 0;
     while (!done)
     {
         char inBuf[10000];
+        lineno++;
         getline(inBuf,sizeof(inBuf));
            GatherCS(inBuf);
         try

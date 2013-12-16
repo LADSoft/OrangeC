@@ -118,14 +118,14 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
 void createConstructorsForLambda(SYMBOL *sp);
 void createDefaultConstructors(SYMBOL *sp);
 void destructBlock(EXPRESSION **exp, HASHREC *hr);
-EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers);
+EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOL parseInitializers, BOOL doCopy);
 void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms);
 void createAssignment(SYMBOL *sym, SYMBOL *asnfunc);
 void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count);
-void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top, BOOL noinline);
+void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top, BOOL noinline, BOOL pointer);
 BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                     BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
-                    BOOL maybeConversion, BOOL noinline, BOOL implicit);
+                    BOOL maybeConversion, BOOL noinline, BOOL implicit, BOOL pointer);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOL *linked);
 LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
@@ -133,7 +133,7 @@ void InsertExtern(SYMBOL *sp);
 void InsertGlobal(SYMBOL *sp);
 char *AnonymousName(void);
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name);
-void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage);
+void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOL ignoreDups);
 LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOL braces);
 LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOL beforeOnly);
 int classRefCount(SYMBOL *base, SYMBOL *derived);
@@ -149,7 +149,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, enum e_sc storage_class);
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
-LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class, 
+LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
                     enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,

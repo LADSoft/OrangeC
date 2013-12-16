@@ -250,7 +250,25 @@ static BLOCKDATA *getCommonParent(BLOCKDATA *src, BLOCKDATA *dest)
     }
     return top;
 }
-static void thunkCatchCleanup(STATEMENT *st, BLOCKDATA *src, BLOCKDATA *dest)
+void makeXCTab(SYMBOL *funcsp)
+{
+    char name[512];
+    SYMBOL *sp; 
+    if (!funcsp->xc)
+    {
+        funcsp->xc = Alloc(sizeof(struct xcept));
+    }
+    if (!funcsp->xc->xctab)
+    {
+        sp = makeID(sc_auto, &stdXC, NULL, "$$xctab");
+        sp->decoratedName = sp->errname = sp->name;
+        sp->allocate = TRUE;
+        sp->used = sp->assigned = TRUE;
+        insert(sp, localNameSpace->syms);
+        funcsp->xc->xctab = sp;
+    }
+}
+static void thunkCatchCleanup(STATEMENT *st, SYMBOL *funcsp, BLOCKDATA *src, BLOCKDATA *dest)
 {
     BLOCKDATA *top = dest ? getCommonParent(src, dest) : NULL, *srch = src;
     while (srch != top)
@@ -262,11 +280,16 @@ static void thunkCatchCleanup(STATEMENT *st, BLOCKDATA *src, BLOCKDATA *dest)
             {
                 FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                 STATEMENT **find = &src->head;
+                INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
+                makeXCTab(funcsp);
                 sp = basetype(sp->tp)->syms->table[0]->p;
                 funcparams->ascall = TRUE;
                 funcparams->sp = sp;
                 funcparams->functp = sp->tp;
                 funcparams->fcall = varNode(en_pc, sp);
+                funcparams->arguments = arg1;
+                arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+                arg1->tp = &stdpointer;
                 while (*find && *find != st)
                     find = &(*find)->next;
                 if (*find == st)
@@ -338,7 +361,7 @@ static LEXEME *statement_break(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         st = stmtNode(lex, parent, st_goto);
         st->label = breakableStatement->breaklabel;
         st->destexp = exp;
-        thunkCatchCleanup(st, parent, breakableStatement);
+        thunkCatchCleanup(st, funcsp, parent, breakableStatement);
         parent->needlabel = TRUE;
         breakableStatement->needlabel = FALSE;
         breakableStatement->hasbreak = TRUE;
@@ -434,7 +457,7 @@ static LEXEME *statement_continue(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent
         st = stmtNode(lex, parent, st_goto);
         st->label = continuableStatement->continuelabel;		
         st->destexp = exp;
-        thunkCatchCleanup(st, parent, continuableStatement);
+        thunkCatchCleanup(st, funcsp, parent, continuableStatement);
         parent->needlabel = TRUE;
     }
     return getsym();
@@ -686,7 +709,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         insert(fcb.returnSP, localNameSpace->syms);
                                         exp = fcb.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE);
+                                        callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
                                         initInsert(&dest, iteratorType, exp, 0, TRUE);
                                         fcb.returnSP->dest = dest;
                                        
@@ -695,7 +718,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         insert(fce.returnSP, localNameSpace->syms);
                                         exp = fce.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE);
+                                        callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
                                         initInsert(&dest, iteratorType, exp, 0, TRUE);
                                         fce.returnSP->dest = dest;
                                     }
@@ -786,7 +809,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             insert(fcb.returnSP, localNameSpace->syms);
                                             exp = fcb.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE);
+                                            callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
                                             initInsert(&dest, iteratorType, exp, 0, TRUE);
                                             fcb.returnSP->dest = dest;
                                             
@@ -795,7 +818,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             insert(fce.returnSP, localNameSpace->syms);
                                             exp = fce.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE);
+                                            callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
                                             initInsert(&dest, iteratorType, exp, 0, TRUE);
                                             fce.returnSP->dest = dest;
                                         }
@@ -815,7 +838,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             esp->stackblock = TRUE;
                                             funcparams->arguments = Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE, TRUE);
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE, TRUE, FALSE);
                                             fc->arguments->exp = consexp;                                                             
                                         }
                                         else
@@ -843,7 +866,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             esp->stackblock = TRUE;
                                             funcparams->arguments = Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE, TRUE);
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, FALSE, TRUE, FALSE);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -941,10 +964,10 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = eBegin;
-                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE);
+                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE, FALSE);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE);
+                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
                             }
                             else if (isarray(selectTP))
                             {
@@ -984,10 +1007,10 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = eBegin;
-                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE);
+                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE, FALSE);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, &declDest, NULL, TRUE, FALSE);
+                                    callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star,
@@ -1017,10 +1040,10 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = st->select;
-                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE);
+                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE, FALSE);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE);
+                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
                             }
                         }
                         
@@ -1062,7 +1085,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     st->select->v.func->returnEXP = varNode(en_auto, st->select->v.func->returnSP);
                                     insert(st->select->v.func->returnSP, localNameSpace->syms);
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, &declDest, NULL, TRUE, FALSE);
+                                    callDestructor(st->select->v.func->returnSP, &declDest, NULL, TRUE, FALSE, FALSE);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -1391,7 +1414,7 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         else
         {
             thunkGotoDestructors(&st->destexp, block, spx->gotoTable->parent);
-            thunkCatchCleanup(st, block, spx->gotoTable->parent);
+            thunkCatchCleanup(st, funcsp, block, spx->gotoTable->parent);
         }
         st->label = spx->offset;
         lex = getsym();
@@ -1421,7 +1444,7 @@ static LEXEME *statement_label(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             if (spx->gotoTable)
             {
                 thunkGotoDestructors(&spx->gotoTable->destexp, spx->gotoTable->parent, parent);
-                thunkCatchCleanup(spx->gotoTable, spx->gotoTable->parent, parent);
+                thunkCatchCleanup(spx->gotoTable, funcsp, spx->gotoTable->parent, parent);
             }
         }
         else
@@ -1513,7 +1536,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         TYPE *tp1 = NULL;
                         enum e_lk linkage, linkage2, linkage3;
                         BOOL defd = FALSE;
-                        lex = getBasicType(lex, funcsp, &tp1, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL);
+                        lex = getBasicType(lex, funcsp, &tp1, NULL, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL);
                         if (!tp1 || !comparetypes(basetype(tp1), basetype(tp), TRUE))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
@@ -1545,7 +1568,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         returntype = tp1;
                         implicit = TRUE;
                     }
-                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, implicit); 
+                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, implicit, FALSE); 
                     returnexp = en;
                 }
             
@@ -1616,10 +1639,11 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             else
             {
-                if (returnexp->v.sp->storage_class == sc_auto)
-                {
-                    error(ERR_REF_RETURN_LOCAL);
-                }
+                if (returnexp->type == en_auto)
+                    if (returnexp->v.sp->storage_class == sc_auto)
+                    {
+                        error(ERR_REF_RETURN_LOCAL);
+                    }
             }
         }
         else if (returnexp->type == en_auto && 
@@ -1635,7 +1659,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st = stmtNode(lex, parent, st_return);
     st->select = returnexp;
     st->destexp = destexp;
-    thunkCatchCleanup(st, parent, NULL); // to top level
+    thunkCatchCleanup(st, funcsp, parent, NULL); // to top level
     // for infering the return type of lambda functions
     if (tp)
     {
@@ -1647,6 +1671,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     }
     if (returnexp && basetype(funcsp->tp)->btp->type != bt_auto)
     {
+        if (!tp) // some error...
+            tp = &stdint;
         if (tp->type == bt_void)
         {
             if (!cparams.prm_cplusplus || basetype(funcsp->tp)->btp->type != bt_void)
@@ -1977,24 +2003,6 @@ static LEXEME *asm_declare(LEXEME *lex)
     } while (lex && MATCHKW(lex, comma));
     return lex;
 }
-void makeXCTab(SYMBOL *funcsp)
-{
-    char name[512];
-    SYMBOL *sp; 
-    if (!funcsp->xc)
-    {
-        funcsp->xc = Alloc(sizeof(struct xcept));
-    }
-    if (!funcsp->xc->xctab)
-    {
-        sp = makeID(sc_auto, &stdXC, NULL, "$$xctab");
-        sp->decoratedName = sp->errname = sp->name;
-        sp->allocate = TRUE;
-        sp->used = sp->assigned = TRUE;
-        insert(sp, localNameSpace->syms);
-        funcsp->xc->xctab = sp;
-    }
-}
 LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
     TYPE *tp = NULL;
@@ -2039,7 +2047,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             arg4->exp = cons ? varNode(en_pc, cons) : 0;
             arg4->tp = &stdpointer;
             arg5->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
-            arg5->tp = &stdvoid;
+            arg5->tp = &stdpointer;
             params->arguments = arg1;
             params->ascall = TRUE;
             params->sp = sp;
@@ -2055,18 +2063,24 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         if (sp)
         {
             FUNCTIONCALL *parms = Alloc(sizeof(FUNCTIONCALL));
+            INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
+            makeXCTab(funcsp);
             sp = basetype(sp->tp)->syms->table[0]->p;
             parms->ascall = TRUE;
             parms->sp = sp;
             parms->functp = sp->tp;
             parms->fcall = varNode(en_pc, sp);
+            parms->arguments = arg1;
+            arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+            arg1->tp = &stdpointer;
             st->select = exprNode(en_func, NULL, NULL);
             st->select->v.func = parms;
         }
     }
     return lex;
 }
-LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, int label, int startlab, int endlab)
+LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
+                        int label, int startlab, int endlab)
 {
     BOOL last = FALSE;
     if (!MATCHKW(lex, kw_catch))
@@ -2565,7 +2579,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         if (cparams.prm_cplusplus && funcsp->isConstructor)
         {
             ParseMemberInitializers(funcsp->parentClass, funcsp);
-            thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, TRUE);
+            thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, TRUE, FALSE);
         }
     }
     lex = getsym(); /* past { */
@@ -2691,11 +2705,16 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         {
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
             STATEMENT *st = stmtNode(lex, blockstmt, st_expr);
+            INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
+            makeXCTab(funcsp);
             sp = basetype(sp->tp)->syms->table[0]->p;
             funcparams->ascall = TRUE;
             funcparams->sp = sp;
             funcparams->functp = sp->tp;
             funcparams->fcall = varNode(en_pc, sp);
+            funcparams->arguments = arg1;
+            arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+            arg1->tp = &stdpointer;
             st->select = exprNode(en_func, NULL, NULL);
             st->select->v.func = funcparams;
         }
@@ -2934,5 +2953,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     retlab = oldretlab;
     setjmp_used = oldsetjmp_used;
     functionHasAssembly = oldfunctionHasAssembly;
+    hasXCInfo = FALSE;
     return lex;
 }

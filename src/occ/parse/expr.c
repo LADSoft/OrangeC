@@ -507,14 +507,26 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
             SetLinkerNames(sp, lk_c);
             if (sp->storage_class != sc_overloads)
             {
-                InsertSymbol(sp, sp->storage_class, FALSE);
+                InsertSymbol(sp, sp->storage_class, FALSE, FALSE);
                 *exp = varNode(sp->storage_class ==sc_auto ? en_auto : en_global, sp);
             }
             else
             {
+                sp->tp = Alloc(sizeof(TYPE));
+                sp->tp->type = bt_func;
+                sp->tp->size = getSize(bt_pointer);
+                sp->tp->syms=CreateHashTable(1);
+                sp->tp->sp = sp;
+                sp->tp->btp = Alloc(sizeof(TYPE));
+                sp->oldstyle = TRUE;
+                sp->tp->btp->type = bt_int;
+                sp->tp->btp->size = getSize(bt_int);
                 funcparams = Alloc(sizeof(FUNCTIONCALL));
                 funcparams->sp = sp;
+                funcparams->functp = sp->tp;
+                funcparams->fcall = intNode(en_c_i, 0);
                 *exp = Alloc(sizeof(EXPRESSION));
+                *tp = sp->tp;
                 (*exp)->type = en_func;
                 (*exp)->v.func = funcparams;
             }
@@ -563,7 +575,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 if (sp->storage_class != sc_overloads)
                 {
                     if (localNameSpace->syms || sp->storage_class != sc_auto)
-                        InsertSymbol(sp, sp->storage_class, FALSE);
+                        InsertSymbol(sp, sp->storage_class, FALSE, FALSE);
                     *exp = varNode(sp->storage_class ==sc_auto ? en_auto : en_global, sp);
                 }
                 else
@@ -629,7 +641,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         BOOL notype = FALSE;
         TYPE *tp1 = NULL;
         lex = getsym();
-        lex = getBasicType(lex, funcsp, &tp1, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+        lex = getBasicType(lex, funcsp, &tp1, NULL, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -681,7 +693,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             SYMBOL *sp = NULL;
             BOOL notype = FALSE;
             TYPE *tp1 = NULL;
-            lex = getBasicType(lex, funcsp, &tp1, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+            lex = getBasicType(lex, funcsp, &tp1, NULL, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -705,7 +717,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 {
                     lex = getsym();
                     tp1 = NULL;
-                    lex = getBasicType(lex, funcsp, &tp1, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+                    lex = getBasicType(lex, funcsp, &tp1, NULL, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
@@ -1511,14 +1523,14 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                         EXPRESSION *dexp = thisptr;
                         funcparams->arguments = pinit;
                         p->exp = thisptr;
-                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE);
+                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE, FALSE);
                         if (!isref(sym->tp))
                         {
                             sp->stackblock = TRUE;
                         }
                         else
                         {
-                            callDestructor(stype->sp, &dexp, NULL, TRUE, noinline);
+                            callDestructor(stype->sp, &dexp, NULL, TRUE, noinline, FALSE);
                             if (dexp)
                                 p->dest = dexp;
                         }
@@ -1626,7 +1638,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                         arg->exp = p->exp;
                         arg->tp = p->tp;
                         funcparams->arguments = arg;
-                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE);
+                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE, FALSE);
                         p->exp=consexp;
                         if (p->exp->type == en_func)
                         {
@@ -1661,15 +1673,15 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                                 arg->tp = tpx2;
                                 funcparams->arguments = arg;
                                 ctype = sym->tp;
-                                callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, FALSE, noinline, TRUE);
+                                callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, FALSE, noinline, TRUE, FALSE);
                                 p->exp = consexp;
-                                callDestructor(basetype(tpx2)->sp, &destexp, NULL, TRUE, noinline);
+                                callDestructor(basetype(tpx2)->sp, &destexp, NULL, TRUE, noinline, FALSE);
                                 (*lptr)->dest = destexp;
                             }
                             else if (old->type == en_func && old->v.func->returnEXP)
                             {
                                 destexp = old->v.func->returnEXP;
-                                callDestructor(old->v.func->returnSP, &destexp, NULL, TRUE, noinline);
+                                callDestructor(old->v.func->returnSP, &destexp, NULL, TRUE, noinline, FALSE);
                                 (*lptr)->dest = destexp;
                             }
                         }
@@ -1698,7 +1710,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                             arg->tp = basetype(p->tp);
                             funcparams->arguments = arg;
                             p->exp = consexp;
-                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE); 
+                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, TRUE, FALSE); 
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL *spx = p->exp->v.func->sp;
@@ -1912,7 +1924,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     {
         SYMBOL *sp = NULL;
         // add in this ptr
-        if (!funcparams->thisptr && funcparams->sp->parentClass)
+        if (!funcparams->thisptr && funcparams->sp->parentClass && !isfuncptr(funcparams->sp->tp))
         {
             TYPE *tp = Alloc(sizeof(TYPE)), *tpx;
             funcparams->thisptr = getMemberBase(funcparams->sp, NULL, funcsp, FALSE);
@@ -1965,9 +1977,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             *tp = sp->tp;
             if (!isExpressionAccessible(sp, funcsp, FALSE))
                 errorsym(ERR_CANNOT_ACCESS, sp);		
-            if (funcsp && isconst(funcsp->tp))
+            if (funcsp && isconst(funcsp->tp)) // the fact it is const makes it a member
             {
-                if (!isconst(*tp))
+                if (!isconst(*tp) && funcparams->sp->parentClass == funcsp->parentClass)
                     errorsym(ERR_NON_CONST_FUNCTION_CALLED_FOR_CONST_OBJECT, funcparams->sp);
             }
             if (funcparams->thistp && isconst(basetype(funcparams->thistp)->btp))
@@ -2028,14 +2040,12 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                         if (exp->type == en_auto)
                         {
                             if (!funcparams->callLab)
-                                funcparams->callLab = beGetLabel;
-                            exp->xcDest = funcparams->callLab;
+                                funcparams->callLab = -1;
                         }
                         else if (exp->type == en_thisref)
                         {
                             if (!funcparams->callLab)
-                                funcparams->callLab = beGetLabel;
-                            exp->v.t.thisptr->xcDest = funcparams->callLab;
+                                funcparams->callLab = -1;
                         }
                     }
                     lptr = &(*lptr)->next;
@@ -2062,6 +2072,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 }
                 if (!funcparams->novtab && funcparams->sp && funcparams->sp->storage_class == sc_virtual)
                 {
+                    exp_in = funcparams->thisptr;
                     deref(&stdpointer, &exp_in);
                     exp_in = exprNode(en_add, exp_in, intNode(en_c_i, funcparams->sp->offset));
                     deref(&stdpointer, &exp_in);
@@ -2866,6 +2877,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     {
                         getThisType(funcsp, tp);
                         *exp = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
+                        deref(&stdpointer, exp);
                     }
                     else
                     {
@@ -4707,7 +4719,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             if (asndest)
             {
                 SYMBOL *sp = anonymousVar(sc_auto, tp1);
-                callDestructor(sp, &asndest, NULL, TRUE, noinline);
+                callDestructor(sp, &asndest, NULL, TRUE, noinline, FALSE);
                 initInsert(&sp->dest, tp1, asndest, 0, TRUE);
             }
             

@@ -925,7 +925,7 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM *arg)
             tp = NULL;
             sp = NULL;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
-            lex = getBasicType(lex, funcsp, &tp, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+            lex = getBasicType(lex, funcsp, &tp, NULL, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
             lex = getBeforeType(lex, funcsp, &tp, &sp, NULL, NULL, NULL, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE, FALSE); /* fixme at file scope init */
             sizeQualifiers(tp);
@@ -3171,7 +3171,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
         STRUCTSYM s;
         memset(&templateParams, 0, sizeof(templateParams));
         lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
-        lex = getBasicType(lex, funcsp, &tp, &templateParams, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+        lex = getBasicType(lex, funcsp, &tp, &strSym, &templateParams, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
         lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
         lex = getBeforeType(lex, funcsp, &tp, &sym, &strSym, &nsv, &templateParams, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE, FALSE);
         sizeQualifiers(tp);

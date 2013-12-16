@@ -103,20 +103,21 @@ void dumpInlines(void)
             }
             funcList = funcList->next;
         }
-    } while (!done);
-    startlab = retlab = 0;
-    vtabList = inlineVTabHead;
-    while (vtabList)
-    {
-        SYMBOL *sym = (SYMBOL *)vtabList->data;
-        if (sym->genreffed && hasVTab(sym))
+        startlab = retlab = 0;
+        vtabList = inlineVTabHead;
+        while (vtabList)
         {
-            sym->genreffed = FALSE;
-            dumpVTab(sym);
+            SYMBOL *sym = (SYMBOL *)vtabList->data;
+            if (sym->vtabsp->genreffed && hasVTab(sym))
+            {
+                sym->vtabsp->genreffed = FALSE;
+                dumpVTab(sym);
+                done = FALSE;
+            }
+            vtabList = vtabList->next;
+            
         }
-        vtabList = vtabList->next;
-        
-    }
+    } while (!done);
     dataList = inlineDataHead;
     while (dataList)
     {
@@ -867,6 +868,7 @@ static void setExp(SYMBOL *sx, EXPRESSION *exp, STATEMENT ***stp)
 }
 static STATEMENT *SetupArguments(FUNCTIONCALL *params)
 {
+        
     STATEMENT *st = NULL, **stp = &st;
     INITLIST *al = params->arguments;
     HASHREC *hr = params->sp->inlineFunc.syms->table[0];
@@ -965,6 +967,10 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     {
         FreeLocalContext(NULL, NULL);
     }
+    if (newExpression->type == en_stmt)
+        if (newExpression->v.stmt->type == st_block)
+            if (!newExpression->v.stmt->lower)
+                newExpression = intNode(en_c_i, 0); // noop if there is no body
     return newExpression;
 }
 static BOOL IsEmptyBlocks(STATEMENT *block)

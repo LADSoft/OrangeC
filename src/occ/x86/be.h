@@ -248,6 +248,8 @@ typedef struct dl
 #define EBP 5
 #define ESI 6
 #define EDI 7
+#define EIP 8
+
 #define AL 0
 #define CL 1
 #define DL 2

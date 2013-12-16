@@ -330,6 +330,8 @@ typedef struct stmt
     int endlabel;
     int breaklabel; // also the label at the end of the try block
     int altlabel;
+    int tryStart;
+    int tryEnd;
     int hasvla: 1;
     int hasdeclare: 1;
     int purelabel: 1;

@@ -61,6 +61,8 @@ extern int inlinesp_count;
 extern BLOCK *currentBlock;
 extern BLOCKLIST *blocktail;
 extern int catchLevel;
+extern EXPRESSION *xcexp;
+extern int consIndex;
 
 int calling_inline;
 
@@ -806,6 +808,15 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                 {
                     sp->genreffed = TRUE;
                     ap1 = make_ioffset(node);
+                    if (!store)
+                    {
+                        ap2 = LookupLoadTemp(NULL, ap1);
+                        if (ap2 != ap1)
+                        {
+                            gen_icode(i_assn, ap2, ap1, NULL);
+                            ap1 = ap2;
+                        }
+                    }
                     break;
                 }
             // fall through
@@ -1379,6 +1390,17 @@ static int genCdeclArgs(INITLIST *args, SYMBOL *funcsp)
     }
     return rv;
 }
+static void genCallLab(INITLIST *args, int callLab)
+{
+    if (args)
+    {
+        genCallLab(args->next, callLab);
+        if (args->exp->type == en_thisref)
+        {
+            args->exp->v.t.thisptr->xcDest = callLab;
+        }
+    }
+}
 static int genPascalArgs(INITLIST *args, SYMBOL *funcsp)
 {
     int rv = 0;
@@ -1431,24 +1453,30 @@ IMODE *gen_trapcall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
 {
     IMODE *rv;
+    /*
     STORETEMPHASH *holdst[DAGSIZE];
     STORETEMPHASH *holdld[DAGSIZE];
     STORETEMPHASH *holdim[DAGSIZE];
     CASTTEMPHASH *holdcast[DAGSIZE];
     DAGLIST *holdnv[DAGSIZE];
+    */
     (void)flags;
+    /*
     memcpy(holdst, storeHash, sizeof(storeHash));
     memcpy(holdld, loadHash, sizeof(loadHash));
     memcpy(holdnv, name_value_hash, sizeof(name_value_hash));
     memcpy(holdim, immedHash, sizeof(immedHash));
     memcpy(holdcast, castHash, sizeof(castHash));
+    */
     /* relies on stmt only being used for inlines */
     rv = genstmt(node->v.stmt, funcsp);	
+    /*
     memcpy(storeHash, holdst, sizeof(storeHash));
     memcpy(loadHash, holdld, sizeof(loadHash));
     memcpy(name_value_hash, holdnv, sizeof(name_value_hash));
     memcpy(immedHash, holdim, sizeof(immedHash));
     memcpy(castHash, holdcast, sizeof(castHash));
+    */
     if (node->left)
         rv = gen_expr( funcsp, node->left, 0, natural_size(node->left));
     return rv;
@@ -1481,6 +1509,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     {
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
+        
     if (chosenAssembler->gen->handleIntrins)
     {
         ap = chosenAssembler->gen->handleIntrins(node, flags &F_NOVALUE);
@@ -1554,6 +1583,11 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
                 push_param(f->thisptr, funcsp);
             }
         }
+        if (f->callLab == -1)
+        {
+            f->callLab = ++consIndex;
+            genCallLab(f->arguments, f->callLab);
+        }
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
             if (f->returnEXP)
@@ -1565,7 +1599,10 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     {
         ap = f->fcall->v.imode;
         if (f->callLab)
-            gen_label(f->callLab);
+        {
+            xcexp->right->v.i = f->callLab;
+            gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+        }
         gosub = gen_igosub(node->type == en_intcall ? i_int : i_gosub, ap);
     }
     else
@@ -1591,7 +1628,10 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 */
         }
         if (f->callLab)
-            gen_label(f->callLab);
+        {
+            xcexp->right->v.i = f->callLab;
+            gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
+        }
         gosub = gen_igosub(type, ap);
     }
     if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp))
@@ -2327,14 +2367,18 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = ap1;
             break;
         case en_thisref:
-            if (node->dest && node->v.t.thisptr->xcDest)
+            if (node->dest)
             {
-                gen_label(node->v.t.thisptr->xcDest);
+                node->v.t.thisptr->xcDest = ++consIndex;
+                xcexp->right->v.i = consIndex;
+                gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
             }
             ap1 = gen_expr( funcsp, node->left, flags, size);
-            if (!node->dest && node->v.t.thisptr->xcInit)
+            if (!node->dest)
             {
-                gen_label(node->v.t.thisptr->xcInit);
+                node->v.t.thisptr->xcInit = ++consIndex;
+                xcexp->right->v.i = consIndex;
+                gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
             }
             rv = ap1;
             break;

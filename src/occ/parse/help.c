@@ -77,7 +77,8 @@ BOOL startOfType(LEXEME *lex, BOOL assumeType)
     {
         SYMBOL *sp, *strSym = NULL;
         LEXEME *placeholder = lex;
-        nestedSearch(lex, &sp, &strSym, NULL, NULL, NULL, FALSE);
+        BOOL dest = FALSE;
+        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE);
         if (cparams.prm_cplusplus)
             prevsym(placeholder);
         return sp && istype(sp) || assumeType && strSym && strSym->tp->type == bt_templateselector;
@@ -523,7 +524,7 @@ SYMBOL *anonymousVar(enum e_sc storage_class, TYPE *tp)
     rv->name = AnonymousName();
     if (storage_class == sc_localstatic && !theCurrentFunc)
         storage_class = sc_static;
-    InsertSymbol(rv, storage_class, FALSE);
+    InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
     return rv;
 }
@@ -1017,7 +1018,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = ctype;
                         funcparams->arguments->exp = exp2;
-                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, noinline, FALSE); 
+                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, noinline, FALSE, FALSE); 
                         exp = expsym;
                     }
                     else
@@ -1093,7 +1094,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                                 funcparams->arguments = Alloc(sizeof(INITLIST));
                                 funcparams->arguments->tp = ctype;
                                 funcparams->arguments->exp = exp;
-                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE,noinline, FALSE); 
+                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE,noinline, FALSE, FALSE); 
                                 exp = expsym;
                             }
                             else
@@ -1185,6 +1186,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
 }
 BOOL assignDiscardsConst(TYPE *dest, TYPE *source)
 {
+    source = basetype(source);
+    dest = basetype(dest);
     if (!ispointer(source) || !ispointer(dest))
         return FALSE;
     while (TRUE)

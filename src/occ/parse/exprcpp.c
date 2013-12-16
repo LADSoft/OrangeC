@@ -445,7 +445,7 @@ BOOL cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOL noinline)
                     insert(av, localNameSpace->syms);
                     params->returnEXP = ev;
                     params->returnSP = sp;
-                    callDestructor(basetype(*tp)->sp, &ev, NULL, TRUE, noinline);
+                    callDestructor(basetype(*tp)->sp, &ev, NULL, TRUE, noinline, FALSE);
                     initInsert(&av->dest, *tp, ev, 0, TRUE);
                 }
                 /*
@@ -584,7 +584,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOL defd = FALSE;
-    lex = getBasicType(lex, funcsp, tp, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
+    lex = getBasicType(lex, funcsp, tp, NULL, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))
@@ -629,7 +629,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             sp = anonymousVar(sc_auto, *tp);
             insert(sp, localNameSpace->syms);
             exp1 = *exp = varNode(en_auto, sp);
-            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, FALSE); 
+            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, FALSE, FALSE); 
             if (funcparams->sp->constexpression)
             {
                 if (basetype(*tp)->sp->baseClasses)
@@ -675,7 +675,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             }
             else
             {
-                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, noinline);
+                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, noinline, FALSE);
                 initInsert(&sp->dest, *tp, exp1, 0, TRUE);
             }
         }
@@ -728,10 +728,10 @@ BOOL doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *func
                         EXPRESSION *exp1 = *exp;
                         EXPRESSION *exp2;
                         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                        INITLIST *arg1 = Alloc(sizeof(INITLIST));
-                        INITLIST *arg2 = Alloc(sizeof(INITLIST));
-                        INITLIST *arg3 = Alloc(sizeof(INITLIST));
-                        INITLIST *arg4 = Alloc(sizeof(INITLIST));
+                        INITLIST *arg1 = Alloc(sizeof(INITLIST)); // thisptr
+                        INITLIST *arg2 = Alloc(sizeof(INITLIST)); // excepttab from thisptr
+                        INITLIST *arg3 = Alloc(sizeof(INITLIST)); // oldxt
+                        INITLIST *arg4 = Alloc(sizeof(INITLIST)); // newxt
                         SYMBOL *oldrtti = RTTIDumpType(tpo);
                         SYMBOL *newrtti = tpn->type == bt_void ? NULL : RTTIDumpType(tpn);
                         deref(&stdpointer, &exp1);
@@ -775,7 +775,7 @@ BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcs
     if (comparetypes(*newType, oldType, TRUE))
         return TRUE;
     // conversion to or from void pointer
-    if (((isvoidptr(*newType) && ispointer(oldType))
+    if (((isvoidptr(*newType) && (ispointer(oldType) || isfunction(oldType)))
         || (isvoidptr(oldType)||(*exp)->type == en_nullptr) && ispointer(*newType)) 
         && (!checkconst || isconst(basetype(*newType)->btp) || !isconst(basetype(oldType)->btp)))
         return TRUE;
@@ -920,6 +920,12 @@ BOOL doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *
             return TRUE;
         }
     }
+    // function to int
+    if (isfunction(oldType) && isint(*newType))
+    {
+        cast(*newType, exp);
+        return TRUE;
+    }
     // one function pointer type to another
     if (isfuncptr(oldType) && isfuncptr(*newType))
     {
@@ -1043,7 +1049,17 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 
                 FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                 INITLIST *arg = Alloc(sizeof(INITLIST));
+                INITLIST *arg2 = Alloc(sizeof(INITLIST));
                 SYMBOL *rtti = RTTIDumpType(*tp);
+                SYMBOL *val;
+                TYPE *valtp = Alloc(sizeof(TYPE)); // space for the virtual pointer and a pointer to the class data
+                valtp->type = bt_pointer;
+                valtp->array = TRUE;
+                valtp->size = 2 * stdpointer.size;
+                valtp->btp = &stdpointer;
+                val = makeID(sc_auto, valtp, NULL, AnonymousName());
+                val->allocate = TRUE;
+                insert(val, localNameSpace->syms);
                 sp = basetype(sp->tp)->syms->table[0]->p;
                 funcparams->arguments = arg;
                 funcparams->sp = sp;
@@ -1051,7 +1067,10 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 funcparams->fcall = varNode(en_pc, sp);
                 funcparams->ascall = TRUE;
                 arg->tp = &stdpointer;
-                arg->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
+                arg->exp = varNode(en_auto, val);
+                arg->next = arg2;
+                arg2->tp = &stdpointer;
+                arg2->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
                 *exp = exprNode(en_func, 0, 0);
                 (*exp)->v.func = funcparams;
                 sp = gsearch("std");
@@ -1371,6 +1390,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     SYMBOL *s1 = NULL;
     EXPRESSION *val = NULL, *newfunc = NULL;
     int lbl = beGetLabel;
+    *exp = NULL;
+    *tp = NULL;
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
@@ -1404,7 +1425,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             BOOL defd = FALSE;
             SYMBOL *sp = NULL;
             BOOL notype = FALSE;
-            lex = getBasicType(lex, funcsp, tp, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+            lex = getBasicType(lex, funcsp, tp, NULL, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;
@@ -1524,7 +1545,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 *exp = val;
                 tpf = *tp;
-                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, noinline, FALSE);
+                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, noinline, FALSE, TRUE);
             }
         }
         else
@@ -1620,7 +1641,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;
-                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE);
+                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE, TRUE);
                     if (*exp)
                     {
                         *exp = exprNode(en_void, *exp, exp1);
@@ -1640,7 +1661,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             // call default constructor
             *exp = val;
             tpf = *tp;
-            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE);
+            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE, TRUE);
         }
     }
     tpf = Alloc(sizeof(TYPE));
@@ -1689,7 +1710,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     exp2 = *exp;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
-        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, noinline);
+        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, noinline, TRUE);
     }
     exp1 = exp2;
     if (!global)

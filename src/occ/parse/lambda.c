@@ -500,7 +500,7 @@ static EXPRESSION *createLambda(BOOL noinline)
     {
         INITIALIZER *init = NULL;
         EXPRESSION *exp = clsThs;
-        callDestructor(cls, &exp, NULL, TRUE, noinline);
+        callDestructor(cls, &exp, NULL, TRUE, noinline, FALSE);
         initInsert(&init, cls->tp, exp, 0, TRUE);
         if (cls->storage_class != sc_auto)
         {
@@ -601,7 +601,7 @@ static EXPRESSION *createLambda(BOOL noinline)
                         params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                         params->arguments->tp = ctp;
                         params->arguments->exp = en;
-                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, noinline, TRUE))
+                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, noinline, TRUE, FALSE))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }

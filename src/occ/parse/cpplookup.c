@@ -2243,6 +2243,7 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
 {
     BOOL lref;
     BOOL rref;
+    tpa = basetype(tpa);
     while (expa && expa->type == en_void)
         expa = expa->right;
     if (tpp->type != tpa->type && (tpp->type == bt_void || tpa->type == bt_void))

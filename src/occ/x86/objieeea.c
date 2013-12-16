@@ -932,7 +932,7 @@ void link_Publics(void)
     while (lf)
     {
         SYMBOL *sp = lf->data;
-        if (sp->storage_class == sc_global && sp->linkage != lk_inline)
+        if ((sp->storage_class == sc_global || (sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt) && sp->linkage != lk_inline)
         {
             link_putpub(sp, 'I');
         }
@@ -1057,7 +1057,7 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                 SYMBOL *sp = fixup->sym;
                 if ((xseg & 0xc0000000) || sp->storage_class == sc_global || sp->storage_class ==
                     sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads
-                    || sp->storage_class == sc_member && isfunction(sp->tp))
+                    || (sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)
                 {
                     if (rel)
                     {

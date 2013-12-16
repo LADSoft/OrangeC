@@ -4422,7 +4422,6 @@ void outcode_start_virtual_seg(SYMBOL *sp, int data)
         virtualLast = virtualLast->next = x;
     else
         virtualFirst = virtualLast = x;
-    outcode_func_init();
 }
 
 /*-------------------------------------------------------------------------*/

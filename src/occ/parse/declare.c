@@ -81,7 +81,7 @@ static char *importFile;
 #define CT_CONS 1
 #define CT_DEST 2
 
-LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM *templateParams, enum e_sc *storage_class, enum e_sc *storage_class_in,
+LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL **strSym, TEMPLATEPARAM *templateParams, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOL *blocked, BOOL *isExplicit, BOOL *constexpression, TYPE **tp, 
                        enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
 
@@ -172,7 +172,7 @@ SYMBOL *getStructureDeclaration(void)
         return l->str;
     return NULL;
 }
-void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage)
+void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOL allowDups)
 {
     HASHTABLE *table ;
     SYMBOL *ssp = getStructureDeclaration();
@@ -213,7 +213,8 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage)
         else if (cparams.prm_cplusplus && funcs->storage_class == sc_overloads)
         {
             table = funcs->tp->syms;
-            insertOverload(sp, table);
+            if (!allowDups || sp != search(sp->name, table))
+                insertOverload(sp, table);
             sp->overloadName = funcs;
             if (sp->parent != funcs->parent || sp->parentNameSpace != funcs->parentNameSpace)
                 funcs->wasUsing = TRUE;
@@ -223,7 +224,7 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage)
             errorsym(ERR_DUPLICATE_IDENTIFIER, sp);
         }
     }
-    else
+    else  if (!allowDups || sp != search(sp->name, table))
         insert(sp, table);
         
 }
@@ -338,7 +339,7 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOL beforeOnly)
     BOOL notype = FALSE;
     *tp = NULL;
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
-    lex = getBasicType(lex, funcsp, tp, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+    lex = getBasicType(lex, funcsp, tp, NULL, NULL, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
     lex = getBeforeType(lex, funcsp, tp, &sp, NULL, NULL, NULL, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE, beforeOnly); /* fixme at file scope init */
     sizeQualifiers(*tp);
@@ -597,26 +598,17 @@ static BOOL validateAnonymousUnion(SYMBOL *parent, TYPE *unionType)
             SYMBOL *member = (SYMBOL *)newhr->p;
             if (cparams.prm_cplusplus && member->storage_class == sc_overloads)
             {
-                if (!member->isConstructor && !member->isDestructor)
-                    if (strcmp(member->name, overloadNameTab[assign - kw_new + CI_NEW]))
+                HASHREC *hr = basetype(member->tp)->syms->table[0];
+                while (hr)
+                {
+                    if (!((SYMBOL *)hr->p)->defaulted)
                     {
                         error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
                         rv = FALSE;
-                    }   
-                    else
-                    {
-                        HASHREC *hr = basetype(member->tp)->syms->table[0];
-                        while (hr)
-                        {
-                            if (!((SYMBOL *)hr->p)->defaulted)
-                            {
-                                error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
-                                rv = FALSE;
-                                break;
-                            }
-                            hr = hr->next;
-                        }
-                    } 
+                        break;
+                    }
+                    hr = hr->next;
+                }
             }
             else if (cparams.prm_cplusplus && member->storage_class == sc_type || member->storage_class == sc_typedef)
             {
@@ -667,7 +659,7 @@ static void resolveAnonymousGlobalUnion(SYMBOL *sp)
             {
                 sym->storage_class = sc_localstatic;
                 sym->label = sp->label;
-                InsertSymbol(sym, sc_static, lk_c);
+                InsertSymbol(sym, sc_static, lk_c, FALSE);
             }
         }
         hr = hr->next;
@@ -779,6 +771,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
             InsertInline(sp);
             sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
+            sp->vtabsp->linkage = lk_inline;
             sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
         }
         warnCPPWarnings(sp, funcsp != NULL);
@@ -900,7 +893,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
         sp->declline = lex->line;
         sp->declfile = lex->file;
         sp->declfilenum = lex->filenum;
-        if (storage_class == sc_member)
+        if (storage_class == sc_member && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
             sp->parentClass = getStructureDeclaration();
         if (nsv)
             sp->parentNameSpace = nsv->name;
@@ -918,7 +911,8 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
             SetLinkerNames(sp, lk_cdecl);
         }
         browse_variable(sp);
-        insert(sp, table);
+        
+        insert(sp, cparams.prm_cplusplus && !sp->parentClass ? globalNameSpace->tags : table);
     }
     else if (type != sp->tp->type)
     {
@@ -1018,7 +1012,7 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
             if (cparams.prm_cplusplus)
             {
                 if (!sp->tp->scoped) // dump it into the parent table unless it is a C++ scoped enum
-                    InsertSymbol(sp, storage_class, FALSE);
+                    InsertSymbol(sp, storage_class, lk_c, FALSE);
             }
             else // in C dump it into the globals
             {
@@ -1550,7 +1544,7 @@ static LEXEME *nestedTypeSearch(LEXEME *lex, SYMBOL **sym)
     }
     return lex;
 }
-LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *templateParams, enum e_sc storage_class, 
+LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out, TEMPLATEPARAM *templateParams, enum e_sc storage_class, 
                      enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3_in, 
                      enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
@@ -2116,6 +2110,8 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *temp
                         {
                             *consdest = CT_CONS;
                         }
+                        if (strSym_out)
+                            *strSym_out = strSym;
                         *notype = TRUE;
                         goto exit;
                     }
@@ -2615,7 +2611,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOL notype = FALSE;
                 spi = NULL;
                 tp1 = NULL;
-                lex = getStorageAndType(lex, funcsp, NULL, &storage_class, &storage_class,
+                lex = getStorageAndType(lex, funcsp, NULL, NULL, &storage_class, &storage_class,
                        &address, &blocked, NULL, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
@@ -2781,7 +2777,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOL defd = FALSE;
                 BOOL notype = FALSE;
                 tp1 = NULL;
-                lex = getStorageAndType(lex, funcsp, NULL, &storage_class, &storage_class,
+                lex = getStorageAndType(lex, funcsp, NULL, NULL, &storage_class, &storage_class,
                        &address, &blocked, NULL, &constexpression,&tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
 
                 while (1)
@@ -3384,7 +3380,6 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                     *tp = tp1;
                     name = overloadNameTab[CI_CONSTRUCTOR];
                 }
-                *strSym = (*tp)->sp;
                 sp = makeID(storage_class, *tp, *spi, name);
                 sp->declcharpos = lex->charindex;
                 *spi = sp;
@@ -3723,7 +3718,7 @@ static BOOL sameQuals(TYPE *tp1, TYPE *tp2)
     }
     return TRUE;
 }
-static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM *templateParams, enum e_sc *storage_class, enum e_sc *storage_class_in,
+static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL ** strSym, TEMPLATEPARAM *templateParams, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOL *blocked, BOOL *isExplicit, BOOL *constexpression, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, 
                        enum e_lk *linkage3, enum e_ac access, BOOL *notype, BOOL *defd, int *consdest)
 {
@@ -3755,7 +3750,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM *tem
             if (MATCHKW(lex, kw_atomic))
             {
                 foundType = TRUE;
-                lex = getBasicType(lex, funcsp, tp, templateParams, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
+                lex = getBasicType(lex, funcsp, tp, strSym, templateParams, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
             }
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
@@ -3767,7 +3762,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM *tem
         else
         {
             foundType = TRUE;
-            lex = getBasicType(lex, funcsp, tp, templateParams, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
+            lex = getBasicType(lex, funcsp, tp, strSym, templateParams, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest);
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
         }
@@ -3919,7 +3914,7 @@ jointemplate:
             BOOL isExplicit = FALSE;
             int consdest = CT_NONE;
             IncGlobalFlag(); /* in case we have to initialize a func level static */
-            lex = getStorageAndType(lex, funcsp, templateParams, &storage_class, &storage_class_in, 
+            lex = getStorageAndType(lex, funcsp, &strSym, templateParams, &storage_class, &storage_class_in, 
                                     &address, &blocked, &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest);
             if (blocked)
             {
@@ -4030,7 +4025,7 @@ jointemplate:
                             sp->access = access;
                             SetLinkerNames(sp, lk_c);
                             sp->parent = funcsp; /* function vars have a parent */
-                            InsertSymbol(sp, sp->storage_class, linkage);
+                            InsertSymbol(sp, sp->storage_class, linkage, FALSE);
                             if (storage_class != sc_static)
                             {
                                 error(ERR_GLOBAL_ANONYMOUS_UNION_NOT_STATIC);
@@ -4044,7 +4039,7 @@ jointemplate:
                             SetLinkerNames(sp, lk_c);
                             sp->parent = funcsp; /* function vars have a parent */
                             sp->parentClass = getStructureDeclaration();
-                            InsertSymbol(sp, sp->storage_class, linkage);
+                            InsertSymbol(sp, sp->storage_class, linkage, FALSE);
                         }
                         else
                         {
@@ -4187,7 +4182,7 @@ jointemplate:
                         }
                         else {
                             ssp = getStructureDeclaration();
-                            if (ssp)
+                            if (ssp && ssp->tp->syms)
                                 p = LookupName(sp->name, ssp->tp->syms);				
                             else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external)
                                 p = LookupName(sp->name, localNameSpace->syms);
@@ -4433,13 +4428,13 @@ jointemplate:
                                     sp->storage_class = sc_static;
                                 if (sp->storage_class == sc_external)
                                 {
-                                    InsertSymbol(sp, sp->storage_class, linkage);
+                                    InsertSymbol(sp, sp->storage_class, linkage, FALSE);
                                     if (!sp->isTemplate)
                                         InsertExtern(sp);
                                 }
                                 else
                                 {
-                                    InsertSymbol(sp, storage_class, linkage);
+                                    InsertSymbol(sp, storage_class, linkage, FALSE);
                                     if (isfunction(sp->tp) && getStructureDeclaration())
                                     {
                                         if (!sp->isTemplate)

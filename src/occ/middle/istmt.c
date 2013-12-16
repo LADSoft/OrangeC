@@ -45,7 +45,8 @@
 #include <limits.h>
 #include <stdlib.h>
 #include "compiler.h"
-
+#include "rtti.h"
+ 
 extern BLOCK *currentBlock;
 extern BLOCK **blockArray;
 extern int blockMax;
@@ -73,6 +74,8 @@ extern BLOCK **blockArray;
 extern int maxBlocks, maxTemps;
 extern int retlab, startlab;
 
+int consIndex;
+EXPRESSION *xcexp;
 int catchLevel;
 int tempCount;
 int optflags = ~0;
@@ -80,6 +83,7 @@ static LIST *mpthunklist;
 
 static int breaklab;
 static int contlab;
+static int tryStart, tryEnd;
 
 IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp);
 
@@ -331,17 +335,27 @@ void genselect(STATEMENT *stmt, SYMBOL *funcsp, BOOL jmptrue)
     }
 }
 /*-------------------------------------------------------------------------*/
-static void gen_try(SYMBOL *funcsp, int startLab, int endLab, int transferLab, STATEMENT *lower)
+static void gen_try(SYMBOL *funcsp, STATEMENT *stmt, int startLab, int endLab, int transferLab, STATEMENT *lower)
 {
     gen_label(startLab);
+    stmt->tryStart = ++consIndex;
+    xcexp->right->v.i = consIndex;
+    gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
     genstmt(lower, funcsp);
+    stmt->tryEnd = ++consIndex;
+    xcexp->right->v.i = consIndex;
+    gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
     gen_label(endLab);
     /* not using gen_igoto because it will make a new block */
     gen_icode(i_goto, NULL, NULL, NULL);
     intermed_tail->dc.v.label = transferLab;
+    tryStart = stmt->tryStart;
+    tryEnd = stmt->tryEnd;
 }
-static void gen_catch(SYMBOL *funcsp, int startLab, int transferLab, STATEMENT *lower)
+static void gen_catch(SYMBOL *funcsp, STATEMENT *stmt, int startLab, int transferLab, STATEMENT *lower)
 {
+    int oldtryStart = tryStart;
+    int oldtryEnd = tryEnd;
     gen_label(startLab);
     currentBlock->alwayslive = TRUE;
     intermed_tail->alwayslive = TRUE;
@@ -351,6 +365,10 @@ static void gen_catch(SYMBOL *funcsp, int startLab, int transferLab, STATEMENT *
     /* not using gen_igoto because it will make a new block */
     gen_icode(i_goto, NULL, NULL, NULL);
     intermed_tail->dc.v.label = transferLab;
+    tryStart = oldtryStart;
+    tryEnd = oldtryEnd;
+    stmt->tryStart = tryStart;
+    stmt->tryEnd = tryEnd;
 }
 void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE *allocaAP)
 /*
@@ -517,14 +535,14 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
                 gen_igoto(i_asmcond, (int)stmt->label);
                 break;
             case st_try:
-                gen_try(funcsp, stmt->label, stmt->endlabel, stmt->breaklabel, stmt->lower);
+                gen_try(funcsp, stmt, stmt->label, stmt->endlabel, stmt->breaklabel, stmt->lower);
                 break;
             case st_catch:
             {
                 STATEMENT *last;
                 while (stmt && stmt->type == st_catch)
                 {
-                    gen_catch(funcsp, stmt->altlabel, stmt->breaklabel, stmt->lower);
+                    gen_catch(funcsp, stmt, stmt->altlabel, stmt->breaklabel, stmt->lower);
                     last = stmt;
                     stmt = stmt->next;
                 }
@@ -772,11 +790,24 @@ void genfunc(SYMBOL *funcsp)
     blockCount = 0;
     blockMax = 0;
     exitBlock = 0;
+    consIndex = 0;
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();
 
-
+    if (funcsp->xc && funcsp->xc->xctab)
+    {
+        EXPRESSION *exp;
+        xcexp = varNode(en_auto, funcsp->xc->xctab);
+        xcexp = exprNode(en_add, xcexp, intNode(en_c_i, (LLONG_TYPE)&(((struct _xctab *)0)->funcIndex)));
+        deref(&stdpointer, &xcexp);
+        exp = intNode(en_c_i, 0);
+        xcexp = exprNode(en_assign, xcexp, exp);
+    }
+    else
+    {
+        xcexp = NULL;
+    }
     /*      firstlabel = nextLabel;*/
     cseg();
     gen_line(funcsp->linedata);
@@ -787,7 +818,7 @@ void genfunc(SYMBOL *funcsp)
         gen_virtual(funcsp, FALSE);
     else
     {
-        if (funcsp->storage_class == sc_global)
+        if (funcsp->storage_class == sc_global || (funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual) && funcsp->inlineFunc.stmt)
                 globaldef(funcsp);
         else
             localdef(funcsp);
@@ -800,12 +831,12 @@ void genfunc(SYMBOL *funcsp)
 /*	        gen_icode(i_loadcontext, 0,0,0); */
     }
     gen_icode(i_prologue,0,0,0);
+    gen_label(startlab);
     if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)
     {
-        gen_label(funcsp->xc->xcInitLab);
         gen_expr(funcsp, funcsp->xc->xcInitializeFunc, F_NOVALUE, ISZ_UINT);
+        gen_label(funcsp->xc->xcInitLab);
     }
-    gen_label(startlab);
 /*    if (funcsp->loadds && funcsp->farproc) */
 /*	        gen_icode(i_loadcontext, 0,0,0); */
     AllocateLocalContext(NULL, funcsp);

@@ -359,6 +359,28 @@ static void CalculateTransparent(void)
             }
             andmap(tail->transparent, tempBytes);
         }
+        /*
+        else if (tail->ans && !(tail->temps & TEMP_ANS))
+        {
+            switch (head->ans->offset->type)
+            {
+                case en_global:
+                case en_pc:
+                case en_auto:
+                case en_threadlocal:
+                {
+                    IMODE *lt = GetLoadTemp(head->ans);
+                    if (lt)
+                    {
+                        int n = lt->offset->v.sp->value.i;
+                        if (tempInfo[n]->terms)
+                            andmap(tail->transparent, tempInfo[n]->terms);
+                        clearbit(tail->transparent, n); 
+                    }
+                }
+            }
+        }
+        */
         head = tail->back;
         while (head && !head->OCP)
         {
@@ -375,7 +397,7 @@ static void CalculateTransparent(void)
                             AliasUses(tempInfo[n]->uses, head->dc.left, TRUE);
                             AliasUses(tempInfo[n]->uses, head->dc.right,TRUE);
                         }                    
-                    }                            
+                    }
                 }
             }
             head = head->back;

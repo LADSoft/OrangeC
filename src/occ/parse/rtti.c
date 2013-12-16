@@ -116,6 +116,11 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
         strcpy(buf, "*templateParam");
         buf += strlen(buf);
     }
+    else if (tp->type == bt_any)
+    {
+        strcpy(buf, "any");
+        buf += strlen(buf);
+    }
     else
     {
         strcpy(buf, typeNames[tp->type]);
@@ -137,7 +142,7 @@ static char *RTTIGetName(char *buf, TYPE *tp)
 }
 static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
 {
-    char name[512], *p;
+    char name[1024], *p;
     SYMBOL *sp = NULL;
     if (ispointer(tp))
     {
@@ -733,8 +738,8 @@ void XTDumpTab(SYMBOL *funcsp)
                     genaddress(0);
                 }
                 gen_labref(p->stmt->altlabel);
-                gen_labdifref(p->stmt->label, funcsp->xc->xcInitLab);
-                gen_labdifref(p->stmt->endlabel, funcsp->xc->xcInitLab);
+                genint(p->stmt->tryStart);
+                genint(p->stmt->tryEnd);
             }
             else
             {
@@ -755,23 +760,8 @@ void XTDumpTab(SYMBOL *funcsp)
                     genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS  : 0));
                     genref(p->xtSym, 0);
                     genint(evalofs(p->exp->v.t.thisptr));
-                    gen_labdifref(p->exp->v.t.thisptr->xcInit, funcsp->xc->xcInitLab);
-                    if (!q)
-                    {
-                        if (p->exp->v.t.thisptr->xcDest)
-                        {
-                            gen_labdifref(p->exp->v.t.thisptr->xcDest, funcsp->xc->xcInitLab);
-                        }
-                        else
-                        {
-//                          diag("XTDumpTab: expected destructor");
-                            genaddress(0);
-                        }
-                    }
-                    else
-                    {
-                        gen_labdifref(p->exp->v.t.thisptr->xcDest, funcsp->xc->xcInitLab);
-                    }
+                    genint(p->exp->v.t.thisptr->xcInit);
+                    genint(p->exp->v.t.thisptr->xcDest);
                 }
             }
             p = p->next;
@@ -786,8 +776,8 @@ void XTDumpTab(SYMBOL *funcsp)
                 genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS  : 0));
                 genref(p->xtSym, 0);
                 genint(evalofs(p->exp->v.t.thisptr));
-                gen_labdifref(funcsp->xc->xcInitLab, funcsp->xc->xcInitLab);
-                gen_labdifref(p->exp->v.t.thisptr->xcDest, funcsp->xc->xcInitLab);
+                genint(0);
+                genint(p->exp->v.t.thisptr->xcDest);
             }
             p = p->next;
         }

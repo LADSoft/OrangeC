@@ -39,19 +39,19 @@
 #define XD_ARRAY   0x40
 #define XD_POINTER 0x80
 #define XD_REF     0x100
-#define XD_CL_PRIMARY 0x200
-#define XD_CL_BASE    0x400
-#define XD_CL_VIRTUAL 0x800
-#define XD_CL_ENCLOSED 0x1000
-#define XD_CL_BASETYPE 0x2000
-#define XD_CL_VTAB 0x4000
-#define XD_CL_TRYBLOCK 0x8000
-#define XD_CL_CONST    0x10000
-#define XD_CL_BYREF	   0x20000
+#define XD_CL_PRIMARY 0x400
+#define XD_CL_BASE    0x800
+#define XD_CL_VIRTUAL 0x1000
+#define XD_CL_ENCLOSED 0x2000
+#define XD_CL_BASETYPE 0x4000
+#define XD_CL_VTAB 0x8000
+#define XD_CL_TRYBLOCK 0x10000
+#define XD_CL_CONST    0x20000
+#define XD_CL_BYREF	   0x40000
 #define XD_CM_SYM (XD_CL_PRIMARY | XD_CL_BASE | XD_CL_ENCLOSED | XD_CL_VIRTUAL)
-#define XD_THIS     0x40000
-#define XD_VARARRAY	0x8000
-#define XD_INUSE 0x100000
+#define XD_THIS     0x80000
+#define XD_VARARRAY	0x100000
+#define XD_INUSE 0x200000
 #define VTAB_XT_OFFS  12  /* VTAB offset - pointer to exception data offset */
 
 
@@ -62,7 +62,7 @@ typedef struct _rttiArray
 typedef struct _rttiStruct
 {
     int flags;
-    struct _classxcpt *xt;
+    struct _rtti *xt;
     int offset;
 } RTTISTRUCT;
 typedef struct _rtti
@@ -96,10 +96,10 @@ typedef struct
 } XCEPTHEAD;
 
 // things in xcept block
-typedef struct
+typedef struct _xcept
 {
     int flags; // can be XD_CL_PRIMARY or XD_CL_TRYBLOCK
-    struct _classxcpt *xt;
+    struct _rtti *xt;
     union
     {
         
@@ -117,21 +117,21 @@ typedef struct _xctab
 {
     struct _xctab *next; /* link to next exception higher function */
     void *_xceptfunc; /* windows exception handler */
-    int sig; /* signature to show this is a valid block */
     int esp; /* esp at start of try block; code gen generates for this, don't
         move*/
     int ebp; /* ebp of this function */
-    int xceptBaseEIP; /* EIP offsets in the table are based from,
-     * e.g. right after the __InitExceptBlock call */
     XCEPTHEAD *xceptBlock; /* pointer to the function's xception block */
+    int funcIndex; /* index of constructors/destructors, roughly follows EIP */
     // things beyond this are used by throw()
     int flags; /* reserved */
     int eip; /* eip this function where the catch occurred */
     void *instance; /* instance pointer to thrown class */
+    void *baseinstance; /* instance pointer to orig version of thrown class */
+    void *cons; /* constructor */
+    int elems; /* number of array elements thrown */
     RTTI *thrownxt; /* xt that was thrown */
     XCEPT *thisxt; /* pointer to this XT table list in case of throws
         through nested tries */
-	void *copycons; /* copy constructor */
 } XCTAB;
 
 // FS:[4] - 4

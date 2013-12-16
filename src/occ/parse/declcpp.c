@@ -90,12 +90,14 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                     thunks[count].func = vf->func;
                     thunks[count].name = localsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
                     localsp->decoratedName = localsp->errname = localsp->name;
+                    localsp->genreffed = TRUE;
                     genref(localsp, 0);
                     count++;
                 }
                 else
                 {
                     genref(vf->func, 0);
+                    vf->func->genreffed = TRUE;
                 }
                 vf = vf->next;
             }
@@ -169,9 +171,7 @@ int classRefCount(SYMBOL *base, SYMBOL *derived)
 static BOOL vfMatch(SYMBOL *sym, SYMBOL *oldFunc, SYMBOL *newFunc)
 {
     BOOL rv = FALSE;
-    char *p = strrchr(oldFunc->decoratedName, '@');
-    char *q = strrchr(newFunc->decoratedName, '@');
-    rv = !strcmp(p, q);
+    rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc, newFunc);
     if (rv)
     {
         if (!comparetypes(oldFunc->tp->btp, newFunc->tp->btp, TRUE))
@@ -1888,7 +1888,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES *v)
         t = t->next;
     }
 }
-static void InsertTag(SYMBOL *sp, enum sc storage_class)
+static void InsertTag(SYMBOL *sp, enum sc storage_class, BOOL allowDups)
 {
     HASHTABLE *table;
     SYMBOL *ssp = getStructureDeclaration();
@@ -1901,7 +1901,8 @@ static void InsertTag(SYMBOL *sp, enum sc storage_class)
         table = localNameSpace->tags;
     else
         table = globalNameSpace->tags ;
-    insert(sp, table);
+    if (!allowDups || sp != search(sp->name, table))
+        insert(sp, table);
 }
 LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
 {
@@ -1999,7 +2000,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
                 while (*hr)
                 {
                     SYMBOL *sym = (SYMBOL *)(*hr)->p;
-                    InsertSymbol(sym, sc_external, sym->linkage);
+                    InsertSymbol(sym, sc_external, sym->linkage, TRUE);
                     hr = &(*hr)->next;
                 }
                 if (isTypename)
@@ -2010,9 +2011,9 @@ LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttributes)
                 if (isTypename && !istype(sp))
                     error(ERR_TYPE_NAME_EXPECTED);
                 if (istype(sp))
-                    InsertTag(sp, storage_class);
+                    InsertTag(sp, storage_class, TRUE);
                 else
-                    InsertSymbol(sp, storage_class, lk_cdecl);
+                    InsertSymbol(sp, storage_class, lk_cdecl, TRUE);
             }
             lex = getsym();
         }

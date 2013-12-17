@@ -222,18 +222,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     funcparams = Alloc(sizeof(FUNCTIONCALL));
                     if (cparams.prm_cplusplus && MATCHKW(lex, lt))
                     {
-                        HASHREC *hr1 = hr;
-                        while (hr1)
-                        {
-                             if (((SYMBOL *)hr1->p)->isTemplate)
-                                 break;
-                             hr1 = hr1->next;
-                        }
-                        if (hr1)
-                        {
-                            lex = GetTemplateArguments(lex, funcsp, &funcparams->templateParams);
-                            funcparams->astemplate = TRUE;
-                        }
+                        lex = GetTemplateArguments(lex, funcsp, &funcparams->templateParams);
+                        funcparams->astemplate = TRUE;
                     }
                     if (hr->next || cparams.prm_cplusplus)
                     {

@@ -47,6 +47,7 @@ extern char *overloadNameTab[];
 extern LAMBDA *lambdas;
 extern STRUCTSYM *structSyms;
 extern int currentErrorLine;
+extern int templateNestingCount;
 #ifndef CPREPROCESSOR
 extern ARCH_DEBUG *chosenDebugger;
 extern FILE *listFile;
@@ -1001,8 +1002,19 @@ static BOOL isFriend(SYMBOL *cls, SYMBOL *frnd)
         LIST *l = cls->friends;
         while (l)
         {
-            if ((SYMBOL *)l->data == frnd)
+            SYMBOL *sym = (SYMBOL *)l->data;
+            if (sym == frnd)
                 return TRUE;
+            if (sym->isTemplate)
+            {
+                LIST *instants = sym->instantiations;
+                while (instants)
+                {
+                    if ((SYMBOL *)instants->data == frnd)
+                        return TRUE;
+                    instants = instants->next;
+                }
+            }
             l = l->next;
         }
     }
@@ -2827,10 +2839,15 @@ static SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp)
 }
 static void WeedTemplates(SYMBOL **table, int count, FUNCTIONCALL *args, TYPE *atp)
 {
-    int i;
-    for (i=0; i < count ;i++)
-        if (table[i] && !table[i]->isTemplate)
-            break;
+    int i = count;
+    if (!args->astemplate)
+        for (i=0; i < count ;i++)
+            if (table[i] && !table[i]->isTemplate)
+                break;
+    else
+        for (i=0; i < count ;i++)
+            if (table[i] && !table[i]->isTemplate)
+                table[i] = NULL;
     if (i < count)
     {
         // one or more first class citizens, don't match templates
@@ -2898,7 +2915,8 @@ SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args)
     }
     if (!found1 || found2)
     {
-        errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
+        if (!templateNestingCount)
+            errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
         return NULL;
     }
     return found1;

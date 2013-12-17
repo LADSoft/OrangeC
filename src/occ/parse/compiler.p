@@ -179,6 +179,7 @@ SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAM *args);
 void TemplateDataInstantiate(SYMBOL *sym, BOOL warning, BOOL isExtern);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOL warning, BOOL isExtern);
 SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAM *args);
+void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAM *templateParams, BOOL isExtern);
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOL isextern);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOL needsemi, BOOL asExpression, BOOL asfriend, enum e_ac access );

@@ -83,7 +83,8 @@ void TemplateGetDeferred(SYMBOL *sym)
     if (currents)
     {
         sym->deferredTemplateHeader = currents->head;
-        sym->deferredCompile = currents->bodyHead;
+        if (currents->bodyHead)
+            sym->deferredCompile = currents->bodyHead;
     }
 }
 void TemplateRegisterDeferred(LEXEME *lex)
@@ -401,9 +402,12 @@ void getPackedArgs(TEMPLATEPARAM **packs, int *count , TEMPLATEPARAM *args)
             else
             {
                 TYPE *tp = args->byClass.dflt;
-                if (tp->type == bt_templateparam && tp->templateParam->packed)
+                if (tp)
                 {
-                    packs[(*count)++] = tp->templateParam;
+                    if (tp->type == bt_templateparam && tp->templateParam->packed)
+                    {
+                        packs[(*count)++] = tp->templateParam;
+                    }
                 }
             }
         }
@@ -2831,15 +2835,22 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOL warning, BOOL isExtern)
     LEXEME *lex;
     SYMBOL *push;
     int pushCount ;
+    BOOL found = FALSE;
     while (instants)
     {
         if (TemplateInstantiationMatch(instants->data, sym) && matchOverload(sym, instants->data))
         {
+            /*
             if (warning)
             {
                 errorsym(ERR_TEMPLATE_ALREADY_INSTANTIATED, instants->data);
             }
-            return (SYMBOL *)instants->data;
+            */
+            sym = (SYMBOL *)instants->data;
+            if (sym->linkage == lk_inline || isExtern)
+                return sym;
+            found = TRUE;
+            break;
         }
         instants = instants->next;
     }
@@ -2856,20 +2867,15 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOL warning, BOOL isExtern)
     instants = Alloc(sizeof(LIST));
     instants->data = sym;
     instants->next = sym->parentTemplate->instantiations;
-    sym->parentTemplate->instantiations = instants;    
     sym->instantiated = TRUE;
+    sym->parentTemplate->instantiations = instants;    
     SetLinkerNames(sym, lk_cdecl);
     sym->gentemplate = TRUE;
-    if (isExtern)
-    {
-        insertOverload(sym, sym->overloadName->tp->syms);
-        sym->storage_class = sc_external;
-        InsertExtern(sym);
-    }
-    else
+    if (!isExtern)
     {
         lex = sym->deferredCompile;
-        insertOverload(sym, sym->overloadName->tp->syms);
+        if (!found)
+            insertOverload(sym, sym->overloadName->tp->syms);
         if (lex)
         {
             STRUCTSYM s;
@@ -3085,6 +3091,70 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAM *args)
     }
     return found1;
 }
+void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAM *templateParams, BOOL isExtern)
+{
+    SYMBOL *sym = *sp;
+    SYMBOL *spi, *ssp;
+    HASHREC **p = NULL;
+    if (nsv)
+    {
+        LIST *rvl = tablesearchone(sym->name, nsv, FALSE);
+        if (rvl)
+            spi = (SYMBOL *)rvl->data;
+        else
+            errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sym->name);
+    }
+    else {
+        ssp = getStructureDeclaration();
+        if (ssp)
+            p = LookupName(sym->name, ssp->tp->syms);
+        if (!p)
+            p = LookupName(sym->name, globalNameSpace->syms);
+        if (p)
+        {
+            spi = (SYMBOL *)(*p)->p;
+        }
+    }
+    if (spi)
+    {
+        if (spi->storage_class == sc_overloads)
+        {
+            FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+            SYMBOL *instance;
+            HASHREC *hr = basetype(tp)->syms->table[0];
+            INITLIST **init = &funcparams->arguments;
+            funcparams->templateParams = templateParams->bySpecialization.types;
+            funcparams->ascall = TRUE;
+            if (templateParams->bySpecialization.types)
+                funcparams->astemplate = TRUE;
+            if (((SYMBOL *)hr->p)->thisPtr)
+                hr = hr->next;
+            while (hr)
+            {
+                *init = Alloc(sizeof(INITLIST));
+                (*init)->tp = ((SYMBOL *)hr->p)->tp;
+                hr = hr->next;
+            }
+            instance = GetOverloadedTemplate(spi, funcparams);
+            if (instance)
+            {
+                    
+                instance = TemplateFunctionInstantiate(instance, TRUE, isExtern);
+                if (!comparetypes(sym->tp, instance->tp, TRUE))
+                    preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, instance, sym->declfile, sym->declline);
+                *sp = instance;
+            }
+            else if (!templateNestingCount)
+            {
+                errorsym(ERR_NOT_A_TEMPLATE, sym);
+            }
+        }
+        else
+        {
+            errorsym(ERR_NOT_A_TEMPLATE, sym);
+        }
+    }
+}
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOL isExtern)
 {
     lex = getsym();
@@ -3118,7 +3188,14 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
             ta->next = NULL;
             lex = TemplateHeader(lex, funcsp, &ta->next); 
         }
-        if (lex)
+        if (MATCHKW(lex, kw_friend))
+        {
+            lex = getsym();
+            templateNestingCount++;
+            lex = declare(lex, NULL, NULL, ta, sc_global, lk_none, NULL, TRUE, FALSE, TRUE, access);
+            templateNestingCount--;
+        }
+        else if (lex)
         {
             templateNestingCount++;
             lex = declare(lex, funcsp, &tp, ta, storage_class, lk_none, NULL, TRUE, FALSE, FALSE, access);
@@ -3187,64 +3264,14 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
         }
         else if (isfunction(tp))
         {
-            SYMBOL *spi, *ssp;
-            HASHREC **p = NULL;
-            if (nsv)
+            SYMBOL *sp = sym;
+            DoInstantiateTemplateFunction(tp, &sp, nsv, strSym, &templateParams, isExtern);
+            sym = sp;
+            if (isExtern)
             {
-                LIST *rvl = tablesearchone(sym->name, nsv, FALSE);
-                if (rvl)
-                    spi = (SYMBOL *)rvl->data;
-                else
-                    errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sym->name);
-            }
-            else {
-                ssp = getStructureDeclaration();
-                if (ssp)
-                    p = LookupName(sym->name, ssp->tp->syms);				
-                else
-                    p = LookupName(sym->name, globalNameSpace->syms);
-                if (p)
-                {
-                    spi = (SYMBOL *)(*p)->p;
-                }
-            }
-            if (spi)
-            {
-                if (spi->storage_class == sc_overloads)
-                {
-                    FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                    SYMBOL *instance;
-                    HASHREC *hr = basetype(tp)->syms->table[0];
-                    INITLIST **init = &funcparams->arguments;
-                    funcparams->templateParams = templateParams.bySpecialization.types;
-                    funcparams->ascall = TRUE;
-                    if (templateParams.bySpecialization.types)
-                        funcparams->astemplate = TRUE;
-                    if (((SYMBOL *)hr->p)->thisPtr)
-                        hr = hr->next;
-                    while (hr)
-                    {
-                        *init = Alloc(sizeof(INITLIST));
-                        (*init)->tp = ((SYMBOL *)hr->p)->tp;
-                        hr = hr->next;
-                    }
-                    instance = GetOverloadedTemplate(spi, funcparams);
-                    if (instance)
-                    {
-                            
-                        TemplateFunctionInstantiate(instance, TRUE, isExtern);
-                        if (!comparetypes(sym->tp, instance->tp, TRUE))
-                            preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, instance, sym->declfile, sym->declline);
-                    }
-                    else
-                    {
-                        errorsym(ERR_NOT_A_TEMPLATE, sym);
-                    }
-                }
-                else
-                {
-                    errorsym(ERR_NOT_A_TEMPLATE, sym);
-                }
+                insertOverload(sym, sym->overloadName->tp->syms);
+                sym->storage_class = sc_external;
+                InsertExtern(sym);
             }
         }
         else if (isstructured(tp))

@@ -184,7 +184,7 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOL a
     else if (storage_class == sc_auto || storage_class == sc_register 
         || storage_class == sc_parameter || storage_class == sc_localstatic)
         table = localNameSpace->syms;
-    else if (cparams.prm_cplusplus && isfunction(sp->tp) && theCurrentFunc)
+    else if (cparams.prm_cplusplus && isfunction(sp->tp) && theCurrentFunc && !getStructureDeclaration())
         table = localNameSpace->syms;
     else
         table = globalNameSpace->syms ;
@@ -918,10 +918,6 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
     {
         errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
     }
-    else if (access != sp->access && sp->tp->syms)
-    {
-        errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
-    }
     else if (templateParams && templateNestingCount)
     {
         // definition or declaration
@@ -950,14 +946,36 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM 
             SetLinkerNames(sp, lk_cdecl);
         }
     }
-    else if (templateParams && MATCHKW(lex, lt))
+    else if (MATCHKW(lex, lt))
     {
-        // instantiation
-        lex = GetTemplateArguments(lex, funcsp, &templateParams->bySpecialization.types);
+        if (templateParams)
+        {
+            // instantiation
+            lex = GetTemplateArguments(lex, funcsp, &templateParams->bySpecialization.types);
+        }
+        else if (sp->isTemplate)
+        {
+            if ( (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
+            {
+                errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+            }
+            else
+            {        
+                TEMPLATEPARAM *lst = NULL;
+                lex = GetTemplateArguments(lex, funcsp, &lst);
+                sp = GetClassTemplate(sp, lst);
+                if (sp)
+                    sp = TemplateClassInstantiate(sp, lst);
+            }
+        }
     }
-    else if (sp->isTemplate)
+    else if (sp->isTemplate && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
     {
         errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+    }
+    if (access != sp->access && sp->tp->syms && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
+    {
+        errorsym(ERR_CANNOT_REDEFINE_ACCESS_FOR, sp);
     }
     lex = innerDeclStruct(lex, funcsp, sp, templateParams, defaultAccess, isfinal, defd);
     *tp = sp->tp;
@@ -3197,6 +3215,19 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                     lex = GetTemplateArguments(lex, funcsp, &templateParams->bySpecialization.types);
                     lex = getAfterType(lex, funcsp, tp, sp, templateParams, storage_class, consdest);
                 }
+                else
+                {
+                    TEMPLATEPARAM *lst = Alloc(sizeof(TEMPLATEPARAM));
+                    lst->type = kw_new;
+                    lex = GetTemplateArguments(lex, funcsp, &lst->bySpecialization.types);
+                    lex = getAfterType(lex, funcsp, tp, sp, lst, storage_class, consdest);
+                    if (isfunction(*tp))
+                    {
+                        DoInstantiateTemplateFunction(*tp, sp, NULL, NULL, lst, TRUE);
+                        if (!(*sp)->templateParams)
+                            (*sp)->templateParams = lst;
+                    }
+                }
                 break;
             default:
                 break;
@@ -4100,7 +4131,8 @@ jointemplate:
                         sp->constexpression = constexpression;
                         sp->access = access;
                         sp->isExplicit = isExplicit;
-                        sp->templateParams = templateParams;
+                        if (!sp->templateParams)
+                            sp->templateParams = templateParams;
                         if (sp->constexpression && !sp->isDestructor && !sp->isConstructor)
                         {
                             TYPE *tpx = Alloc(sizeof(TYPE));
@@ -4111,7 +4143,8 @@ jointemplate:
                         }
                         sp->tp = tp1;
                         sp->storage_class = storage_class;
-                        sp->linkage = linkage;
+                        if (!sp->instantiated)
+                            sp->linkage = linkage;
                         sp->linkage2 = linkage2;
                         sp->linkage3 = linkage3;
                         if (linkage2 == lk_import)
@@ -4181,16 +4214,24 @@ jointemplate:
                                 errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sp->name);
                         }
                         else {
-                            ssp = getStructureDeclaration();
-                            if (ssp && ssp->tp->syms)
-                                p = LookupName(sp->name, ssp->tp->syms);				
-                            else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external)
-                                p = LookupName(sp->name, localNameSpace->syms);
-                            else
-                                p = LookupName(sp->name, globalNameSpace->syms);
-                            if (p)
+                            if (isfunction(sp->tp) && sp->instantiated)
                             {
-                                spi = (SYMBOL *)(*p)->p;
+                                // may happen if a template function was declared at a lower level
+                                spi = sp;
+                            }
+                            else
+                            {
+                                ssp = getStructureDeclaration();
+                                if (ssp && ssp->tp->syms && (strSym || !asFriend))
+                                    p = LookupName(sp->name, ssp->tp->syms);				
+                                else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external)
+                                    p = LookupName(sp->name, localNameSpace->syms);
+                                else
+                                    p = LookupName(sp->name, globalNameSpace->syms);
+                                if (p)
+                                {
+                                    spi = (SYMBOL *)(*p)->p;
+                                }
                             }
                         }
                             ConsDestDeclarationErrors(sp, notype);
@@ -4244,31 +4285,22 @@ jointemplate:
                                 errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sp->name);
                             }
                         }
+                        if (spi && templateParams && !spi->isTemplate)
+                            spi = NULL;
                         if (spi)
                         {
                             if (templateParams)
                             {
-                                BOOL istemplate = FALSE;
-                                SYMBOL *spt = spi;
-                                while (spt && !istemplate)
+                                if (templateParams->bySpecialization.types && spi->parentTemplate)
                                 {
-                                    if (spt->isTemplate)
-                                        istemplate = TRUE;
-                                    else
-                                        spt = spt->parentClass;
-                                }
-                                if (!istemplate)
-                                    errorsym(ERR_NOT_A_TEMPLATE, sp);
-                                else if (templateParams->bySpecialization.types && spi->parentTemplate)
-                                {
-                                    sp->templateParams = TemplateMatching(lex, spi->parentTemplate->templateParams, templateParams, sp);
+                                    spi->templateParams = TemplateMatching(lex, spi->parentTemplate->templateParams, templateParams, spi);
                                 }
                                 else
                                 {
-                                    sp->templateParams = TemplateMatching(lex, spi->templateParams, templateParams, sp);
+                                    spi->templateParams = TemplateMatching(lex, spi->templateParams, templateParams, spi);
                                 }
                             }
-                            else if (spi->isTemplate)
+                            else if (spi->isTemplate && !spi->instantiated && !templateNestingCount)
                             {
                                 errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
                             }
@@ -4293,7 +4325,7 @@ jointemplate:
                             }
                             else
                             {
-                                if (isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile))
+                                if (isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile) && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
                                 {
                                     errorsym(ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION, sp);
                                 }
@@ -4442,7 +4474,7 @@ jointemplate:
                                     }
                                 }
                             }
-                            else if (asFriend && !sp->anonymous)
+                            else if (asFriend && !sp->anonymous && !isfunction(sp->tp) && !templateNestingCount)
                             {
                                 error(ERR_DECLARATOR_NOT_ALLOWED_HERE);
                             }

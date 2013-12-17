@@ -285,8 +285,13 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
         }
         if (snew->tp->type == bt_templateparam)
         {
-            if (sold->tp->type != bt_templateparam || snew->tp->templateParam->type != sold->tp->templateParam->type)
-                break;                    
+            if (sold->tp->type != bt_templateparam || 
+                snew->tp->templateParam->type != sold->tp->templateParam->type ||
+                snew->tp->templateParam->type != kw_typename ||
+                !snew->tp->templateParam->byClass.dflt || !sold->tp->templateParam->byClass.dflt ||
+                !comparetypes(sold->tp->templateParam->byClass.dflt, snew->tp->templateParam->byClass.dflt, TRUE))
+                
+                    break;                    
         }
         else if (sold->tp->type == bt_any || snew->tp->type == bt_any) // packed template param
             break;

@@ -41,6 +41,8 @@
 extern INCLUDES *includes;
 static char *cppbuiltin = "void * operator new(unsigned size); "
     "void * operator new[](unsigned size); " 
+    "void * operator new(unsigned size, void *ptr); " 
+    "void * operator new[](unsigned size, void *ptr); " 
     "void   operator delete  (void *); " 
 	"void   operator delete[](void *); "
     "void * __dynamic_cast(void *, void *, void *, void *); " 
@@ -75,7 +77,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL) ;
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL) ;
         }
         includes->handle = handle;
         includes->lptr = p;

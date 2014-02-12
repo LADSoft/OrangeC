@@ -113,6 +113,7 @@ KEYWORD keywords[] = {
     { "]", 1,  closebr, 0, TT_BINARY | TT_POINTER },
     { "^", 1,  uparrow, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR },
     { "^=", 2,  asxor, 0, TT_ASSIGN | TT_OPERATOR },
+    /*
     { "_A0", 3,  kw_A0, KW_NONANSI | KW_68K, TT_VAR },
     { "_A1", 3,  kw_A1, KW_NONANSI | KW_68K, TT_VAR  },
     { "_A2", 3,  kw_A2, KW_NONANSI | KW_68K, TT_VAR  },
@@ -121,6 +122,7 @@ KEYWORD keywords[] = {
     { "_A5", 3,  kw_A5, KW_NONANSI | KW_68K, TT_VAR  },
     { "_A6", 3,  kw_A6, KW_NONANSI | KW_68K, TT_VAR  },
     { "_A7", 3,  kw_A7, KW_NONANSI | KW_68K, TT_VAR  },
+    */
     { "_Alignas", 8,  kw_alignas, KW_C1X, TT_CONTROL },
     { "_Alignof", 8,  kw_alignof, KW_C1X, TT_UNARY | TT_OPERATOR },
     { "_Atomic", 7,  kw_atomic, KW_C1X, TT_POINTERQUAL | TT_TYPEQUAL | TT_BASETYPE },
@@ -135,6 +137,7 @@ KEYWORD keywords[] = {
     { "_CR7", 4,  kw_cr7, KW_NONANSI | KW_386, TT_VAR  },
     { "_CS", 3,  kw_A8, KW_NONANSI | KW_386, TT_VAR  },
     { "_Complex", 8,  kw__Complex, 0, TT_BASETYPE | TT_COMPLEX },
+    /*
     { "_D0", 3,  kw_D0, KW_NONANSI | KW_68K, TT_VAR  },
     { "_D1", 3,  kw_D1, KW_NONANSI | KW_68K, TT_VAR  },
     { "_D2", 3,  kw_D2, KW_NONANSI | KW_68K, TT_VAR  },
@@ -143,6 +146,7 @@ KEYWORD keywords[] = {
     { "_D5", 3,  kw_D5, KW_NONANSI | KW_68K, TT_VAR  },
     { "_D6", 3,  kw_D6, KW_NONANSI | KW_68K, TT_VAR  },
     { "_D7", 3,  kw_D7, KW_NONANSI | KW_68K, TT_VAR  },
+    */
     { "_DR0", 4,  kw_dr0, KW_NONANSI | KW_386, TT_VAR  },
     { "_DR1", 4,  kw_dr1, KW_NONANSI | KW_386, TT_VAR  },
     { "_DR2", 4,  kw_dr2, KW_NONANSI | KW_386, TT_VAR  },
@@ -274,7 +278,7 @@ KEYWORD keywords[] = {
     { "inline", 6,  kw_inline, KW_C99 | KW_CPLUSPLUS, TT_LINKAGE },
     { "int", 3,  kw_int, 0, TT_BASETYPE | TT_INT | TT_BASE },
     { "long", 4,  kw_long, 0, TT_BASETYPE | TT_INT },
-    { "mutable", 7,  kw_mutable, KW_CPLUSPLUS, 0},
+    { "mutable", 7,  kw_mutable, KW_CPLUSPLUS, TT_STORAGE_CLASS},
     { "namespace", 9,  kw_namespace, KW_CPLUSPLUS, TT_STORAGE_CLASS },
 //	{ "near", 4,  kw__near, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
     { "new", 3,  kw_new, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY },
@@ -317,7 +321,7 @@ KEYWORD keywords[] = {
     { "virtual", 7,  kw_virtual, KW_CPLUSPLUS, TT_STORAGE_CLASS },
     { "void", 4,  kw_void, 0, TT_BASETYPE | TT_VOID },
     { "volatile", 8,  kw_volatile, 0, TT_TYPEQUAL | TT_POINTERQUAL },
-    { "wchar_t", 7,  kw_wchar_t, KW_CPLUSPLUS, TT_BASETYPE },
+    { "wchar_t", 7,  kw_wchar_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT },
     { "while", 5,  kw_while, 0, TT_CONTROL },
     { "xor", 3,  uparrow, KW_CPLUSPLUS, TT_BINARY | TT_OPERATOR },
     { "xor_eq", 6,  asxor, KW_CPLUSPLUS, TT_ASSIGN | TT_OPERATOR },
@@ -1252,6 +1256,7 @@ LEXEME *getsym(void)
         lex->prev->next = lex;
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
+    lex->registered = FALSE;
     TemplateRegisterDeferred(last);
     last = NULL;
     do
@@ -1365,9 +1370,10 @@ LEXEME *prevsym(LEXEME *lex)
     if (lex->next)
     {
         context->cur = lex->next;
-        if (context->cur->prev)
-            return context->cur->prev;
-        return context->last;
+    }
+    else
+    {
+        context->cur = NULL;
     }
     return lex;
 }
@@ -1393,6 +1399,7 @@ LEXEME *SetAlternateLex(LEXEME *lexList)
         newContext->next = context;
         context = newContext;
         context->cur = lexList->next;
+        context->last = lexList;
         TemplateRegisterDeferred(lexList);
         return lexList;
     }

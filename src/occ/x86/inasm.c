@@ -752,6 +752,7 @@ static int inasm_structsize(void)
         {
         case bt_char:
         case bt_unsigned_char:
+        case bt_signed_char:
             return ISZ_UCHAR;
         case bt_bool:
             return ISZ_BOOL;

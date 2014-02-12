@@ -306,6 +306,9 @@ time_t _RTL_FUNC time(time_t *);
 inline void _RTL_FUNC randomize(void) { srand((unsigned) time(NULL)); }
 inline int _RTL_FUNC random(int num) { return ((rand()*(num))/(RAND_MAX+1)); }
 
+inline int max(int a, int b) { return (((a) > (b)) ? (a) : (b)); }
+inline int min(int a, int b) { return (((a) < (b)) ? (a) : (b)); }
+
 /* must include the C++ header to get min and max defs */
 #else /* __cplusplus */
 

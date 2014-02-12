@@ -779,7 +779,7 @@ void genfunc(SYMBOL *funcsp)
     if (total_errors)
         return;
     while (tmpl)
-        if (tmpl->isTemplate)
+        if (tmpl->templateLevel)
             break;
         else
             tmpl = tmpl->parentClass;

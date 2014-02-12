@@ -1006,7 +1006,7 @@ void doinclude(void)
         pperror(ERR_INCL_FILE_NAME, 0);
         return;
     }
-
+    
     if (inc->sys_inc)
         inc->handle = SrchPth(name, sys_searchpath, "r", TRUE) ;
     if (inc->handle == NULL && includes) 

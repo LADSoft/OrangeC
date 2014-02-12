@@ -48,10 +48,14 @@ extern LAMBDA *lambdas;
 extern STRUCTSYM *structSyms;
 extern int currentErrorLine;
 extern int templateNestingCount;
+extern int total_errors;
 #ifndef CPREPROCESSOR
 extern ARCH_DEBUG *chosenDebugger;
 extern FILE *listFile;
 #endif
+extern int noSpecializationError;
+extern int instantiatingTemplate;
+extern INCLUDES *includes;
 
 HASHTABLE *CreateHashTable(int size);
 #define F_WITHCONS 1
@@ -194,6 +198,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     TEMPLATESELECTOR *templateSelector = NULL, **last = &templateSelector;
     LEXEME *placeholder = lex, *finalPos;
     BOOL hasTemplate = FALSE;
+    TYPE *dependentType = NULL;
     if (sym)
         *sym = NULL;
     if (ns) *ns = NULL;
@@ -213,14 +218,14 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
         lex = getsym();
         if (templateSelector)
         {
-            *last = Alloc(sizeof(LIST));
+            *last = Alloc(sizeof(TEMPLATESELECTOR));
             (*last)->name = litlate(buf);
             if (hasTemplate)
             {
                 (*last)->isTemplate = TRUE;
                 if (MATCHKW(lex, lt))
                 {
-                    (*last)->templateParams = GetTemplateArguments(lex, NULL, &(*last)->templateParams);
+                    lex = GetTemplateArguments(lex, NULL, &(*last)->templateParams);
                 }
                 else if (MATCHKW(lex,classsel))
                 {
@@ -235,12 +240,48 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
         }
         else
         {
+            BOOL hasTemplateArgs = FALSE;
             TEMPLATEPARAM *current = NULL;
+            SYMBOL *currentsp = NULL;
+            LEXEME *cur = lex;
+            int level = -1;
+            if (MATCHKW(lex, lt))
+            {
+                while (lex && (!MATCHKW(lex, gt) || level) && !MATCHKW(lex, semicolon))
+                {
+                    if (MATCHKW(lex, lt))
+                    {
+                        lex = getsym();
+                        level ++;
+                    }
+                    else if (MATCHKW(lex, gt))
+                    {
+                        lex = getsym();
+                        level --;
+                    }
+                    else if (MATCHKW(lex, rightshift))
+                    {
+                        level -- ;
+                        lex = getGTSym(lex);
+                    }
+                    else
+                    {
+                        lex = getsym();
+                    }
+                }
+                if (lex && MATCHKW(lex, gt))
+                    lex = getsym();
+            }
+            if (!lex || !MATCHKW(lex, classsel))
+                break;
+            if (cur != lex)
+                lex = prevsym(cur);
+                            
             if (!strSym)
             {
                 if (!qualified)
                 {
-                    sp = classsearch(buf, TRUE);
+                    sp = classsearch(buf, FALSE);
                     if (sp && sp->tp->type == bt_templateparam)
                     {
                         if (sp->tp->templateParam->packed)
@@ -253,7 +294,10 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                             if (params->type == kw_typename)
                             {
                                 if (params->byClass.val)
+                                {
                                     sp = params->byClass.val->sp;
+                                    dependentType = params->byClass.val;
+                                }
                             }
                             else if (params->type == kw_template)
                             {
@@ -270,10 +314,23 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 {
                     sp = NULL;
                 }
-                if (!sp && !qualified)
-                    sp = namespacesearch(buf, localNameSpace, qualified, TRUE);
                 if (!sp)
-                    sp = namespacesearch(buf, nssym, qualified, TRUE);
+                {
+                    if (!qualified)
+                        sp = namespacesearch(buf, localNameSpace, qualified, FALSE);
+                    if (!sp)
+                    {
+                        sp = namespacesearch(buf, nssym, qualified, FALSE);
+                    }
+                }
+                if (sp && sp->tp->type == bt_typedef)
+                {
+                    if (isstructured(sp->tp))
+                    {
+                        sp = basetype(sp->tp)->sp;
+                        *throughClass = TRUE;
+                    }
+                }
             }
             else
             {
@@ -281,33 +338,43 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             }
             if (sp)
             {
-                if (sp->isTemplate)
+                if (sp->templateLevel && (!sp->instantiated || MATCHKW(lex, lt)))
                 {
+                    hasTemplateArgs = TRUE;
                     if (MATCHKW(lex, lt))
                     {
                         lex = GetTemplateArguments(lex, NULL, &current);
                     }
                     else if (MATCHKW(lex, classsel))
                     {
-                        errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);  
+                        currentsp = sp;
+                        if (!noSpecializationError && !instantiatingTemplate)
+                            errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
                     }
                 }
-                else if (hasTemplate && (sp->tp->type != bt_templateparam || sp->tp->templateParam->type != kw_template))
+                else if (hasTemplate && (basetype(sp->tp)->type != bt_templateparam || basetype(sp->tp)->templateParam->type != kw_template))
                 {
                     errorsym(ERR_NOT_A_TEMPLATE, sp);
                 }
             }
-            if (!MATCHKW(lex, classsel))
-                break;
-            if (current)
+            if (hasTemplateArgs)
             {
-                sp = GetClassTemplate(sp, current);
-                if (sp)
-                    sp = TemplateClassInstantiate(sp, current);
+                if (currentsp)
+                {
+                    sp = currentsp;
+                }
+                else
+                {
+                    sp = GetClassTemplate(sp, current);
+                    if (sp)
+                        sp = TemplateClassInstantiate(sp, current, FALSE);
+                }
             }
+            if (sp)
+                PerformDeferredInitialization (sp->tp, NULL);
             lex = getsym();
             finalPos = lex;
-            if (sp && (basetype(sp->tp)->type == bt_enum || isstructured(sp->tp)))
+            if (sp && isstructured(sp->tp))
             {
                 strSym = sp;
                 if (!qualified)
@@ -319,16 +386,19 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             }
             else if (sp && sp->tp->type == bt_templateparam)
             {
-                *last = Alloc(sizeof(LIST));
+                *last = Alloc(sizeof(TEMPLATESELECTOR));
                 (*last)->sym = strSym;
                 last = &(*last)->next;
-                *last = Alloc(sizeof(LIST));
+                *last = Alloc(sizeof(TEMPLATESELECTOR));
                 (*last)->sym = sp;
                 last = &(*last)->next;
             }
             else
             {
-                errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE , buf);
+                if (dependentType)
+                    errortype(ERR_DEPENDENT_TYPE_NOT_A_CLASS_OR_STRUCT, dependentType, NULL);
+                else
+                    errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE , buf);
                 lex = prevsym(placeholder);
                 break;
             }
@@ -365,172 +435,38 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     }
     return lex;
 }
-typedef struct _vlist
-{
-    struct _vlist *next;
-    SYMBOL *data;
-    BOOL isvirtual;
-} VLIST;
-typedef struct _classmatch
-{
-    LIST *syms;
-    LIST *cls; // cls->data is a VLIST
-    BOOL ishold;
-} CLASSMATCH;
-static CLASSMATCH *subobjMerge(SYMBOL *cls, BOOL isvirtual, CLASSMATCH *p, CLASSMATCH *q)
-{
-    LIST *lst2;
-    lst2 = p->cls;
-    while (lst2)
-    {
-        VLIST *lst3 = (VLIST *)lst2->data;
-        SYMBOL *cur = (SYMBOL *)lst3->data;
-        if (!p->ishold && !lst3->isvirtual)
-        {
-            VLIST *inCls = Alloc(sizeof(VLIST));
-            inCls->next = lst2->data;
-            lst2->data = inCls;
-            inCls->data = cls;
-            inCls->isvirtual = isvirtual;
-        }
-        lst2 = lst2->next;
-    }
-    lst2 = q->cls;
-    while (lst2)
-    {
-        LIST *listx = lst2;
-        VLIST *lst3 = (VLIST *)lst2->data;
-        SYMBOL *cur = (SYMBOL *)lst3->data;
-        if (!p->ishold && !lst3->isvirtual)
-        {
-            VLIST *inCls = Alloc(sizeof(VLIST));
-            inCls->next = lst2->data;
-            lst2->data = inCls;
-            inCls->data = cls;
-            inCls->isvirtual = isvirtual;
-        }
-        lst2 = lst2->next;
-        
-        listx->next = p->cls;
-        p->cls = listx;
-    }
-    return p;
-}
-BOOL singlebase(SYMBOL *base, SYMBOL *of)
-{
-    BASECLASS *baseClasses = of->baseClasses;
-    while (baseClasses)
-    {
-        if (base == baseClasses->cls || singlebase(base, baseClasses->cls))
-            return TRUE;
-        baseClasses = baseClasses->next;
-    }
-    return FALSE;
-}
-static BOOL isbase(LIST *base, LIST *of)
-{
-    while (base)
-    {
-        LIST *lst2 = of;
-        while (lst2)
-        {
-            SYMBOL *sbase = (SYMBOL *)base->data;
-            SYMBOL *sof = (SYMBOL *)lst2->data;
-            if (singlebase(sbase, sof))
-                break;
-            lst2 = lst2->next;
-        }
-        if (!lst2)
-            return FALSE;
-        base = base->next;
-    }
-    return TRUE;
-}
-static BOOL classisbase(CLASSMATCH *base, CLASSMATCH *of)
-{
-    LIST *lst1, *lst2;
-    lst1 = base->cls;
-    while (lst1)
-    {
-        lst2 = of->cls;
-        while (lst2)
-        {
-            if (isbase((LIST *)lst1->data, (LIST *)lst2->data))
-                return TRUE;
-            lst2 = lst2->next;
-        }
-        lst1 = lst1->next;
-    }
-    return FALSE;
-}
-static CLASSMATCH *classmerge(SYMBOL *cls, BOOL isvirtual, CLASSMATCH *p, CLASSMATCH *q)
-{
-    if (p->syms == NULL && p->cls == NULL)
-        return q;
-    if (q->syms == NULL && q->cls == NULL)
-        return p;
-    if (classisbase(p, q))
-        return q;
-    if (classisbase(q, p))
-        return p;
-    if (p->syms->data != q->syms->data || p->syms->data == NULL || q->syms->data == NULL)
-    {
-        p->syms->data = NULL;
-    }
-    p = subobjMerge(cls, isvirtual, p, q);
-    return p;        
-}
-static CLASSMATCH *classdata(char *name, SYMBOL *cls, BOOL isvirtual, BOOL tagsOnly)
+static SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOL isvirtual, BOOL tagsOnly)
 {
     SYMBOL *rv = NULL;
-    CLASSMATCH *p = NULL;
     if (!tagsOnly)
         rv = search(name, cls->tp->syms);
     if (!rv)
         rv = search(name, cls->tp->tags);
     if (rv)
     {
-        VLIST *inCls = Alloc(sizeof(VLIST));
-        p = Alloc(sizeof(CLASSMATCH));
-        inCls->data = (void *)cls;
-        inCls->isvirtual = isvirtual;
-        p->syms = Alloc(sizeof(LIST));
-        p->syms->data = (void *)rv;
-        p->cls = Alloc(sizeof(LIST));
-        p->cls->data = (void *)inCls;
+        rv->temp = isvirtual;
+        if (!last || (last == rv || rv->mainsym && rv->mainsym == last->mainsym) && (isvirtual && isvirtual == last->temp || 
+                                                                                     ismember(rv)))
+        {
+        }
+        else
+        {
+            rv = (SYMBOL *)-1;
+        }
     }
     else
     {
         BASECLASS *lst = cls->baseClasses;
-        p = Alloc(sizeof(CLASSMATCH));
+        rv = last;
         while (lst)
         {
-            CLASSMATCH *q = classdata(name, lst->cls, lst->isvirtual, tagsOnly);
-            p = classmerge(cls, lst->isvirtual, p, q);
-            if (p->syms)
-            {
-                if (!p->ishold && !p->syms->next)
-                {
-                    SYMBOL *sym = (SYMBOL *)p->syms->data;
-                    if (sym)
-                    {
-                        if (sym->storage_class == sc_static || istype(sym) || sym->storage_class == sc_enumconstant)
-                            p->ishold = TRUE;
-                    }
-                }
-                if (!p->ishold && !lst->isvirtual && p->syms->data)
-                {
-                    LIST *lst2 = (LIST *)Alloc(sizeof(LIST));
-                    lst2->next = p->syms;
-                    p->syms = lst2;
-                    lst2->data = (void *)cls;
-                }
-                p->ishold |= lst->isvirtual;
-            }
+            rv = classdata(name, lst->cls, rv, isvirtual | lst->isvirtual, tagsOnly);
+            if (rv == (SYMBOL *)-1)
+                break;
             lst = lst->next;
         }
     }
-    return p;
+    return rv;
 }
 SYMBOL *templatesearch(char *name, TEMPLATEPARAM *arg)
 {
@@ -564,7 +500,7 @@ TEMPLATEPARAM *getTemplateStruct(char *name)
 SYMBOL *classsearch(char *name, BOOL tagsOnly)
 {
     SYMBOL *rv = NULL;
-    SYMBOL *cls = getStructureDeclaration(), *base = cls;
+    SYMBOL *cls = getStructureDeclaration();
     STRUCTSYM *s = structSyms;
     while (s && s->tmpl && !rv)
     {
@@ -582,17 +518,12 @@ SYMBOL *classsearch(char *name, BOOL tagsOnly)
                 rv = search(name, cls->tp->tags);
             if (!rv && cls->baseClasses)
             {
-                CLASSMATCH *matches = classdata(name, base, FALSE, tagsOnly);
-                if (matches && matches->syms)
+                rv = classdata(name, cls, NULL, FALSE, tagsOnly);
+                if (rv == (SYMBOL *)-1)
                 {
-                    if (!matches->syms->data)
-                    {
-                        errorstr(ERR_AMBIGUOUS_MEMBER_DEFINITION, name);
-                        break;
-                    }
-                    while (matches->syms && matches->syms->next)
-                        matches->syms = matches->syms->next;
-                    rv = matches->syms->data;
+                    rv = NULL;
+                    errorstr(ERR_AMBIGUOUS_MEMBER_DEFINITION, name);
+                    break;
                 }
             }
             if (!rv && cls->templateParams)
@@ -686,7 +617,8 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOL tag
     }
     return rv;
 }
-LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *destructor, BOOL *isTemplate, BOOL tagsOnly)
+LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, 
+                     BOOL *destructor, BOOL *isTemplate, BOOL tagsOnly)
 {
     SYMBOL *encloser = NULL;
     NAMESPACEVALUES *ns = NULL;
@@ -744,14 +676,14 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
             *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass);
         }
     }
-    else if (destructor)
+    else if (destructor && *destructor)
     {
         *destructor = FALSE;
         error(ERR_CANNOT_USE_DESTRUCTOR_HERE);
     }
     if (*sym && hasTemplate)
     {
-        if (!(*sym)->isTemplate && ((*sym)->tp->type != bt_templateparam || (*sym)->tp->templateParam->type != kw_template) && (*sym)->tp->type != bt_templateselector)
+        if (!(*sym)->templateLevel && ((*sym)->tp->type != bt_templateparam || (*sym)->tp->templateParam->type != kw_template) && (*sym)->tp->type != bt_templateselector)
         {
             if ((*sym)->storage_class == sc_overloads)
             {
@@ -759,7 +691,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
                 while (hr)
                 {
                     SYMBOL *sp = (SYMBOL *)hr->p;
-                    if (sp->isTemplate)
+                    if (sp->templateLevel)
                         break;
                     hr = hr->next;
                 }
@@ -951,7 +883,7 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
                     while (hr)
                     {
                         SYMBOL *sp = (SYMBOL *)hr->p;
-                        if (sp->isTemplate)
+                        if (sp->templateLevel)
                             break;
                         hr = hr->next;
                     }
@@ -1005,7 +937,7 @@ static BOOL isFriend(SYMBOL *cls, SYMBOL *frnd)
             SYMBOL *sym = (SYMBOL *)l->data;
             if (sym == frnd)
                 return TRUE;
-            if (sym->isTemplate)
+            if (sym->templateLevel)
             {
                 LIST *instants = sym->instantiations;
                 while (instants)
@@ -1031,9 +963,15 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
     enum e_ac consideredAccess = minAccess;
     SYMBOL *ssp;
     BOOL matched;
+    TYPE *tp;
     if (!cparams.prm_cplusplus)
         return TRUE;
     ssp = getStructureDeclaration();
+    if (ssp)
+    {
+        if (ssp == member)
+            return TRUE;
+    }
     if (isFriend(currentBase, funcsp) || ssp && isFriend(currentBase, ssp))
         consideredAccess = ac_private;
     if (!currentBase->tp->syms)
@@ -1043,7 +981,7 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
     while (hr)
     {
         SYMBOL *sym = (SYMBOL *)hr->p;
-        if (sym == member)
+        if (sym == member || sym == member->mainsym)
         {
             matched = TRUE;
             break;
@@ -1054,37 +992,21 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
             while (hr1)
             {
                 SYMBOL *sym = (SYMBOL *)hr1->p;
-                if (sym == member)
+                if (sym == member || sym == member->mainsym)
                 {
                     break;
                 }
-                else if (sym->isTemplate)
+                else if (sym->instantiations)
                 {
-                    LIST *l1 = sym->specializations;
-                    while (l1)
+                    LIST *lst = sym->instantiations;
+                    while (lst)
                     {
-                        if (l1->data == member)
-                        {                    
+                        if (lst->data == member)
                             break;
-                        }
-                        l1 = l1->next;
+                        lst = lst->next;
                     }
-                    if (l1)
+                    if (lst)
                     {
-                        break;
-                    }
-                l1 = sym->instantiations;
-                    while (l1)
-                    {
-                        if (l1->data == member)
-                        {                    
-                            break;
-                        }
-                        l1 = l1->next;
-                    }
-                    if (l1)
-                    {
-                        matched = TRUE;
                         break;
                     }
                 }
@@ -1092,50 +1014,33 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
             }
             if (hr1)
             {
-                hr = hr1;
                 matched = TRUE;
                 break;
             }
         }
         hr = hr->next;
     }
-    if (!hr)
+    if (!matched)
     {
         hr = currentBase->tp->tags->table[0];
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            if (sym == member)
+            if (sym == member || sym == member->mainsym)
             {
                 matched = TRUE;
                 break;
             }
-            else if (sym->isTemplate)
+            else if (sym->instantiations)
             {
-                LIST *l1 = sym->specializations;
-                while (l1)
+                LIST *lst = sym->instantiations;
+                while (lst)
                 {
-                    if (l1->data == member)
-                    {                    
+                    if (lst->data == member)
                         break;
-                    }
-                    l1 = l1->next;
+                    lst = lst->next;
                 }
-                if (l1)
-                {
-                    matched = TRUE;
-                    break;
-                }
-                l1 = sym->instantiations;
-                while (l1)
-                {
-                    if (l1->data == member)
-                    {                    
-                        break;
-                    }
-                    l1 = l1->next;
-                }
-                if (l1)
+                if (lst)
                 {
                     matched = TRUE;
                     break;
@@ -1170,9 +1075,9 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
     while (lst)
     {
         if (lst->accessLevel == ac_private)
-            consideredAccess = ac_none;
+            consideredAccess = ac_public;
         else if (lst->accessLevel == ac_protected && minAccess == ac_public)
-            consideredAccess = ac_none;
+            consideredAccess = ac_public;
         else
             consideredAccess = minAccess;
         // we have to go through the base classes even if we know that a normal
@@ -1183,12 +1088,19 @@ BOOL isAccessible(SYMBOL *derived, SYMBOL *currentBase,
     }
     return FALSE;
 }
-BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, BOOL asAddress)
+BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOL asAddress)
 {
     if (sym->parentClass)
     {
         SYMBOL *ssp = getStructureDeclaration();
-        if (ssp && sym->throughClass && (ssp == sym->parentClass || classRefCount(sym->parentClass, ssp)))
+        BOOL throughClass = sym->throughClass;
+        if (exp)
+        {
+            if (exp->type == en_l_p && exp->left->type == en_auto && exp->left->v.sp->thisPtr)
+                throughClass = TRUE;
+        }
+        
+        if (ssp && throughClass && (ssp == sym->parentClass || classRefCount(sym->parentClass, ssp)))
         {
             if (!isAccessible(ssp, ssp, sym, funcsp, ac_protected, asAddress))
                 return FALSE;
@@ -1841,6 +1753,7 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                                                     funcList ? funcList[j][k] : NULL,
                                                     lenl, lenr, FALSE);
                     }
+                    /*
                     else if (k == 1 && funcparams && funcparams->thisptr)
                     {
                         TYPE *tpl, *tpr;
@@ -1868,6 +1781,7 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                                                     funcList ? funcList[j][k] : NULL,
                                                     lenl, lenr, FALSE);
                     }
+                    */
                     else
                     {
                         TYPE *tpl = hrl ? ((SYMBOL *)hrl->p)->tp : NULL;
@@ -1882,6 +1796,7 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                             arr[k] = 0;
                         if (hrl) hrl = hrl->next;
                         if (hrr) hrr = hrr->next;
+                        if (args) args = args->next;
                     }
                     l += lenl;
                     r += lenr;
@@ -2089,6 +2004,10 @@ static SYMBOL *getUserConversion(int flags,
                             seq3[n2+n3++] = CV_USER;
                             getSingleConversion(tpp, basetype(basetype(th->tp)->btp)->sp->tp, &exp, &n3, seq3+n2, NULL);
                         }
+                        else
+                        {
+                            seq3[n2++] = CV_NONE;
+                        }
                     }
                 }
                 for (j=0; j < n2+n3; j++)
@@ -2165,7 +2084,7 @@ static void getQualConversion(TYPE *tpp, TYPE *tpa, int *n, enum e_cvsrn *seq)
     BOOL hasconst = TRUE, hasvol = TRUE;
     BOOL sameconst = TRUE, samevol = TRUE;
     BOOL first = TRUE;
-    while (tpa && tpp && tpa->type == bt_pointer && tpp->type == bt_pointer)
+    while (tpa && tpp && ispointer(tpa) && ispointer(tpp))
     {
         if (isconst(tpp) != isconst(tpa))
         {
@@ -2219,7 +2138,7 @@ static void getPointerConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *exp, int *n,
             seq[(*n)++] = CV_ARRAYTOPOINTER;
         if (isfunction(basetype(tpa)->btp))
             seq[(*n)++] = CV_FUNCTIONTOPOINTER;
-        if (basetype(tpp)->btp->type == bt_void)
+        if (basetype(basetype(tpp)->btp)->type == bt_void)
         {
             seq[(*n)++] = CV_POINTERCONVERSION;
         }
@@ -2263,7 +2182,7 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
          seq[(*n)++] = CV_NONE;
          return;
     }
-    lref = expa && (lvalue(expa) && (expa->left->type != en_l_ref || !expa->left->rref));
+    lref = expa && (lvalue(expa) && (expa->left->type != en_l_ref || !expa->left->rref) || isarithmeticconst(expa)) ;
     rref = expa && (expa->type == en_l_ref && expa->left->rref || !lvalue(expa) && !isarithmeticconst(expa) && (!isstructured(tpa) || !ismem(expa)) );
     if (expa && expa->type == en_func)
     {
@@ -2300,9 +2219,9 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
     {
         TYPE *tppp = basetype(tpp)->btp;
         lref |= expa && isstructured(tppp) && expa->type != en_not_lvalue;
-        if (isconst(tppp) != isconst(tpa)
-            || isvolatile(tppp) != isvolatile(tpa))
-            seq[(*n)++] = CV_QUALS;
+        if (isconst(tpa) && !isconst(tppp)
+            || isvolatile(tpa) && !isvolatile(tppp))
+            seq[(*n)++] = CV_NONE;
         if (lref && tppp->type == bt_rref)
             seq[(*n)++] = CV_LVALUETORVALUE;
         if (tpp->type == bt_rref && lref && !isfunction(tpa))
@@ -2310,10 +2229,13 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
             // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
             seq[(*n)++] = CV_NONE;
         }
-        else if (tpp->type == bt_lref && rref && (!isconst(tppp) || isvolatile(tppp)))
+        else if (tpp->type == bt_lref && rref)
         {
             // rvalue to lvalue ref not allowed unless the lvalue is a function
-            seq[(*n)++] = CV_NONE;
+            if (isconst(tppp) && !isvolatile(tppp))
+                seq[(*n)++] = CV_QUALS;
+            else
+                seq[(*n)++] = CV_LVALUETORVALUE;//CV_NONE;
         }
         tpa = basetype(tpa);
         if (isstructured(tpa))
@@ -2343,7 +2265,7 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
         }
         else if (isstructured(tppp))
         {
-            seq[(*n)++] = CV_NONE;
+            getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, userFunc);
         }
         else
         {
@@ -2543,7 +2465,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
                 if (ismemberdata(member))
                 {
                     getSingleConversion(member->tp, a->tp, a->exp, n, seq, userFunc); 
-                    if (*n > 3)
+                    if (*n > 4)
                         break;
                     a = a->next;
                 }
@@ -2597,7 +2519,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
         while (a)
         {
             getSingleConversion(btp, a->tp, a->exp, n, seq, userFunc);                
-            if (*n > 3)
+            if (*n > 4)
                 break;
             if (--x < 0) // too many items...
             {
@@ -2646,7 +2568,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
         m1 = m;
         while (m1 && seq[m1-1] == CV_IDENTITY)
             m1--;
-        if (m1 > 3)
+        if (m1 > 4)
         {
             return FALSE;
         }
@@ -2666,7 +2588,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
         m1 = m;
         while (m1 && seq[m1-1] == CV_IDENTITY)
             m1--;
-        if (m1 > 3)
+        if (m1 > 4)
         {
             return FALSE;
         }
@@ -2682,7 +2604,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
     {
         if (f)
         {
-            if ((f->thistp || a && a->tp) && (sp->storage_class == sc_member || sp->storage_class == sc_virtual))
+            if ((f->thistp || a && a->tp) && ismember(sp))
             {
                 // nonstatic function
                 TYPE *argtp = sp->tp;
@@ -2717,7 +2639,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
                     m1 = m;
                     while (m1 && seq[m1-1] == CV_IDENTITY)
                         m1--;
-                    if (m1 > 3)
+                    if (m1 > 4)
                     {
                         return FALSE;
                     }
@@ -2732,7 +2654,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
         }
         else
         {
-            if (sp->storage_class == sc_member || sp->storage_class == sc_virtual)
+            if (ismember(sp))
             {
                 TYPE *argtp = sp->parentClass->tp;
                 if (!argtp)
@@ -2778,7 +2700,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
                 m1 = m;
                 while (m1 && seq[m1-1] == CV_IDENTITY)
                     m1--;
-                if (m1 > 3)
+                if (m1 > 4)
                 {
                     return FALSE;
                 }
@@ -2817,7 +2739,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *p
 }
 static SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp)
 {
-    if (sym->isTemplate)
+    if (sym->templateLevel)
     {
         if (atp || args)
         {
@@ -2840,24 +2762,28 @@ static SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp)
 static void WeedTemplates(SYMBOL **table, int count, FUNCTIONCALL *args, TYPE *atp)
 {
     int i = count;
-    if (!args->astemplate)
+    if (atp || !args->astemplate)
+    {
         for (i=0; i < count ;i++)
-            if (table[i] && !table[i]->isTemplate)
+            if (table[i] && !table[i]->templateLevel)
                 break;
+    }
     else
+    {
         for (i=0; i < count ;i++)
-            if (table[i] && !table[i]->isTemplate)
+            if (table[i] && !table[i]->templateLevel)
                 table[i] = NULL;
+    }
     if (i < count)
     {
         // one or more first class citizens, don't match templates
         for (i=0; i < count ;i++)
-            if (table[i] && table[i]->isTemplate)
+            if (table[i] && table[i]->templateLevel)
                 table[i] = NULL;
     }
     else
     {
-        TemplatePartialOrdering(table, count, args, atp);
+        TemplatePartialOrdering(table, count, args, atp, FALSE);
     }
 }
 SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args)
@@ -2869,16 +2795,8 @@ SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args)
     while (*hr)
     {
         SYMBOL *sym = (SYMBOL *)(*hr)->p;
-        if (sym->isTemplate && !sym->instantiated)
-        {
-            LIST *l = sym->specializations;
+        if (sym->templateLevel && !sym->instantiated)
             n++;
-            while (l)
-            {
-                n++;
-                l = l->next;
-            }
-        }
         hr = &(*hr)->next;
     }
     spList = Alloc(sizeof(SYMBOL *) * n);
@@ -2887,17 +2805,8 @@ SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args)
     while (*hr)
     {
         SYMBOL *sym = (SYMBOL *)(*hr)->p;
-        if (sym->isTemplate && !sym->instantiated)
-        {
-            LIST *l = sym->specializations;
+        if (sym->templateLevel && !sym->instantiated)
             spList[n++] = detemplate(sym, args, NULL);
-            while (l)
-            {
-                spList[n++] = detemplate(l->data, args, NULL);
-                l = l->next;
-            }
-        }
-                
         hr = &(*hr)->next;
     }
     WeedTemplates(spList, n, args, NULL);
@@ -3012,17 +2921,8 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 while (*hr)
                 {
                     SYMBOL *sym = (SYMBOL *)(*hr)->p;
-                    if ((!args || !args->astemplate || sym->isTemplate) && !sym->instantiated)
+                    if (!args || !args->astemplate || sym->templateLevel && !sym->instantiated)
                         n++;
-                    if (sym->isTemplate && !sym->instantiated)
-                    {
-                        LIST *l = sym->specializations;
-                        while (l)
-                        {
-                            n++;
-                            l = l->next;
-                        }
-                    }
                     hr = &(*hr)->next;
                 }
                 lst2 = lst2->next;
@@ -3055,7 +2955,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         argCount++;
                         hr = &(*hr)->next;
                     }
-                    if (*hr && (((SYMBOL *)(*hr)->p)->storage_class == sc_member || ((SYMBOL *)(*hr)->p)->storage_class == sc_virtual))
+                    if (*hr && ismember(((SYMBOL *)(*hr)->p)))
                         argCount++;
                 }
                 spList = (SYMBOL **)Alloc(sizeof(SYMBOL *) * n);
@@ -3070,35 +2970,18 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                     while (*hr)
                     {
                         SYMBOL *sym = (SYMBOL *)(*hr)->p;
-                        if ((!args || !args->astemplate || sym->isTemplate) && !sym->instantiated)
+                        if ((!args || !args->astemplate || sym->templateLevel && !sym->instantiated))
                         {
-                            if (sym->isTemplate)
+                            if (sym->templateLevel)
                             {
-                                spList[n++] = detemplate(sym, args, atp) ;
+                                if (!sym->instantiated)
+                                    spList[n++] = detemplate(sym, args, atp) ;
                             }
                             else
                             {
                                 spList[n++] = sym;
                             }
                         }
-                        if (sym->isTemplate && !sym->instantiated)
-                        {
-                            LIST *l = sym->specializations;
-                            while (l)
-                            {
-                                sym = (SYMBOL *)l->data;
-                                if (sym->isTemplate)
-                                {
-                                    spList[n++] = detemplate(sym, args, atp) ;
-                                }
-                                else
-                                {
-                                    spList[n++] = sym;
-                                }
-                                l = l->next;
-                            }
-                        }
-                                
                         hr = &(*hr)->next;
                     }
                     lst2 = lst2->next;
@@ -3135,10 +3018,14 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         {
             if (!found1)
             {
-                if (args->arguments && !args->arguments->next // one arg
-                    && sp->isConstructor) // conversion constructor
+                if (args && args->arguments && !args->arguments->next // one arg
+                    && sp && sp->isConstructor) // conversion constructor
                 {
                     errortype(ERR_CANNOT_CONVERT_TYPE, args->arguments->tp, sp->parentClass->tp);
+                }
+                else if (!sp)
+                {
+                    errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
                 }
                 else
                 {
@@ -3182,9 +3069,9 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             {
                 errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
             }
-            else
+            if (found1)
             {
-                if (found1->isTemplate)
+                if (found1->templateLevel)
                     found1 = TemplateFunctionInstantiate(found1, FALSE, FALSE);
             }
         }

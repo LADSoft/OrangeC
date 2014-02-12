@@ -510,12 +510,16 @@ typedef enum _GET_FILEEX_INFO_LEVELS {
           (DWORD)((((back) << 8) & 0xFF000000) | (fore)) 
 #define MAKEWPARAM(l, h)   ((WPARAM) MAKELONG(l, h)) 
 
+#ifndef NOMINMAX
+
 #ifndef max
 #define max(a, b)  (((a) > (b)) ? (a) : (b)) 
 #endif
 
 #ifndef min
 #define min(a, b)  (((a) < (b)) ? (a) : (b)) 
+#endif
+
 #endif
 
 #define PALETTEINDEX(i) \

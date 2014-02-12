@@ -144,6 +144,9 @@ void put_ty(TYPE *tp)
         case bt_char32_t:
             fprintf(listFile, "Char32_t");
             break;
+        case bt_signed_char:
+            fprintf(listFile, "Signed Char");
+            break;
         case bt_unsigned_char:
             fprintf(listFile, "Unsigned Char");
             break;

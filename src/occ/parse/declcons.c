@@ -70,7 +70,7 @@ void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype)
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
     }
 }
-MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *sym)
+MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL *sym)
 {
     LEXEME *lex = *lex2;
     MEMBERINITIALIZERS *first = NULL, **cur = &first, *last = NULL ;
@@ -80,16 +80,73 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *sym)
     {
         if (ISID(lex))
         {
+            LEXEME **mylex;
+            char name[ 1024];
             *cur = Alloc(sizeof(MEMBERINITIALIZERS));
-            (*cur)->name = litlate(lex->value.s.a);
             (*cur)->line = lex->line;
             (*cur)->file = lex->file;
+            mylex = &(*cur)->initData;
+            strcpy(name, lex->value.s.a);
             lex = getsym();
+            while (MATCHKW(lex, classsel))
+            {
+                strcat(name, "::");
+                lex = getsym();
+                if (!ISID(lex))
+                {
+                    error(ERR_IDENTIFIER_EXPECTED);
+                    break;
+                }
+                strcat(name, lex->value.s.a);
+                lex = getsym();
+            }
+            (*cur)->name = litlate(name);
+            if (MATCHKW(lex, lt))
+            {
+                int paren = 0;
+                *mylex = Alloc(sizeof(*(*cur)->initData));
+                **mylex = *lex;
+                (*mylex)->prev = last;
+                last = *mylex;
+                mylex = &(*mylex)->next;
+                lex = getsym();
+                while (lex && (!MATCHKW(lex, gt) || paren))
+                {
+                    if (MATCHKW(lex, lt))
+                        paren++;
+                    if (MATCHKW(lex, gt) || MATCHKW(lex, rightshift))
+                        paren--;
+                    if (lex->type == l_id)
+                        lex->value.s.a = litlate(lex->value.s.a);
+                    *mylex = Alloc(sizeof(*(*cur)->initData));
+                    if (MATCHKW(lex, rightshift))
+                    {
+                        lex = getGTSym(lex);
+                        **mylex = *lex;
+                    }
+                    else
+                    {
+                        **mylex = *lex;
+                        lex = getsym();
+                    }
+                    (*mylex)->prev = last;
+                    last = *mylex;
+                    mylex = &(*mylex)->next;
+                }
+                if (MATCHKW(lex, gt))
+                {
+                    *mylex = Alloc(sizeof(*(*cur)->initData));
+                    **mylex = *lex;
+                    (*mylex)->prev = last;
+                    last = *mylex;
+                    mylex = &(*mylex)->next;
+                    lex = getsym();
+                }
+            }
             if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
                 enum e_kw open = KW(lex), close = open == openpa ? closepa : end;
                 int paren = 0;
-                LEXEME **mylex = &(*cur)->initData;
                 *mylex = Alloc(sizeof(*(*cur)->initData));
                 **mylex = *lex;
                 (*mylex)->prev = last;
@@ -161,7 +218,7 @@ void SetParams(SYMBOL *cons)
         if (base % chosenAssembler->arch->parmwidth)
             base += chosenAssembler->arch->parmwidth - base % chosenAssembler->arch->parmwidth;
     }
-    if (cons->storage_class == sc_member || cons->storage_class == sc_virtual)
+    if (ismember(cons))
     {
         // handle 'this' pointer
         assignParam(cons, &base, (SYMBOL *)params->p);
@@ -221,8 +278,12 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_DESTRUCTOR]);
-    sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);        
+    if (sp->vbaseEntries)
+    {
+        sp1= makeID(sc_parameter, &stdint, NULL, AnonymousName());
+        insert(sp1, tp->syms);
+    }
     return insertFunc(sp, func);
 }
 static BOOL hasConstFuncs(SYMBOL *sp, int type)
@@ -712,7 +773,7 @@ static BOOL isDefaultDeleted(SYMBOL *sp)
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
-        if (sp1->storage_class == sc_member)
+        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
         {
             if (isref(sp1->tp))
                 if (!sp1->init)
@@ -806,7 +867,7 @@ static BOOL isCopyConstructorDeleted(SYMBOL *sp)
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
-        if (sp1->storage_class == sc_member)
+        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
         {
             if (basetype(sp1->tp)->type == bt_rref)
                 return TRUE;
@@ -884,7 +945,7 @@ static BOOL isCopyAssignmentDeleted(SYMBOL *sp)
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
-        if (sp1->storage_class == sc_member)
+        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
         {
             if (isref(sp1->tp))
                 return TRUE;
@@ -951,7 +1012,7 @@ static BOOL isMoveConstructorDeleted(SYMBOL *sp)
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
-        if (sp1->storage_class == sc_member)
+        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
         {
             if (basetype(sp1->tp)->type == bt_rref)
                 return TRUE;
@@ -1029,7 +1090,7 @@ static BOOL isMoveAssignmentDeleted(SYMBOL *sp)
     {
         SYMBOL *sp1 = (SYMBOL *)hr->p;
         TYPE *m;
-        if (sp1->storage_class == sc_member)
+        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
         {
             if (isref(sp1->tp))
                 return TRUE;
@@ -1156,7 +1217,7 @@ void createDefaultConstructors(SYMBOL *sp)
                 while (p)
                 {
                     SYMBOL *pcls = (SYMBOL *)p->p;
-                    if (pcls->storage_class == sc_member)
+                    if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable)
                     {
                         if (isstructured(pcls->tp))
                         {
@@ -1508,6 +1569,48 @@ static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths)
     nw->right = unshim(nw->right, ths);
     return nw;    
 }
+SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, int *offset)
+{
+    int n = 0;
+    char str[1024];
+    char *clslst[100];
+    char *p = str, *c;
+    SYMBOL *sp = NULL;
+    int vcount = 0, ccount = 0;
+    strcpy(str, name);
+    while (c = strstr(p, "::"))
+    {
+        clslst[n++] = p;
+        p = c;
+        *p = 0;
+        p += 2;
+    }
+    clslst[n++] = p;
+        
+    while (bc)
+    {
+        SYMBOL *parent = bc->cls;
+        int i;
+        for (i=n-1;i >=0 && parent; i--, parent = parent->parentClass)
+            if (strcmp(parent->name, clslst[i]))
+                break;
+        if (i < 0)
+        {
+            if (bc->isvirtual)
+                vcount++;
+            else
+                ccount++;
+            sp = bc->cls;
+            *offset = bc->offset;
+        }
+        bc = bc->next;
+    }
+    if (ccount && vcount || ccount > 1)
+    {
+        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp, cls);
+    }
+    return sp;
+}
 void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
 {
     MEMBERINITIALIZERS *init = cons->memberInitializers;
@@ -1519,7 +1622,19 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
         init->sp = search(init->name, basetype(cls->tp)->syms);
         if (init->sp)
         {
-            if (init->sp->storage_class != sc_member)
+            if (init->sp->storage_class == sc_typedef)
+            {
+                TYPE *tp = basetype(init->sp->tp);
+                if (isstructured(tp))
+                {
+                    init->name = basetype(tp)->sp->name;
+                    init->sp = search(init->name, basetype(cls->tp)->syms);
+                }
+            }
+        }
+        if (init->sp)
+        {
+            if (init->sp->storage_class != sc_member && init->sp->storage_class != sc_mutable)
             {
                 errorsym(ERR_NEED_NONSTATIC_MEMBER, init->sp);
             }
@@ -1527,6 +1642,19 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             {
                 BOOL done = FALSE;
                 lex = SetAlternateLex(init->initData);
+                if (MATCHKW(lex, lt))
+                {
+                    TEMPLATEPARAM *lst = NULL;
+                    lex = GetTemplateArguments(lex, cons, &lst);
+                    if (init->sp->templateLevel)
+                    {
+                        init->sp = TemplateClassInstantiate(init->sp, lst, FALSE);
+                    }
+                    else
+                    {
+                        errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                    }
+                }
                 if (MATCHKW(lex, openpa) && (!isstructured(init->sp->tp) || init->sp->tp->sp->trivialCons))
                 {
                     lex = getsym();
@@ -1588,19 +1716,24 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     {
                         TYPE *tp = sp->tp->templateParam->byClass.val;
                         int offset = 0;
+                        int vcount =0, ccount = 0;
                         init->name = tp->sp->name;
                         while (bc)
                         {
                             if (!strcmp(bc->cls->name, init->name))
                             {
-                                if (init->sp)
-                                {
-                                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
-                                }
+                                if (bc->isvirtual)
+                                    vcount++;
+                                else
+                                    ccount++;
                                 init->sp = bc->cls;
                                 offset = bc->offset;
                             }
                             bc = bc->next;
+                        }
+                        if (ccount && vcount || ccount > 1)
+                        {
+                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
                         }
                         if (init->sp && init->sp == tp->sp)
                         {
@@ -1643,28 +1776,31 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             else
             {
                 int offset = 0;
-                while (bc)
-                {
-                    if (!strcmp(bc->cls->name, init->name))
-                    {
-                        if (init->sp)
-                        {
-                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
-                        }
-                        init->sp = bc->cls;
-                        offset = bc->offset;
-                    }
-                    bc = bc->next;
-                }
+                init->sp = findClassName(init->name, cls, bc, &offset);
                 if (init->sp)
                 {
                     // have to make a *real* variable as a fudge...
-                    SYMBOL *sp = makeID(sc_member, init->sp->tp, NULL, init->sp->name);
+                    SYMBOL *sp;
                     FUNCTIONCALL shim;
-                    INITIALIZER **xinit = &init->init;
+                    INITIALIZER **xinit;
+                    lex = SetAlternateLex(init->initData);
+                    if (MATCHKW(lex, lt))
+                    {
+                        TEMPLATEPARAM *lst = NULL;
+                        lex = GetTemplateArguments(lex, cons, &lst);
+                        if (init->sp->templateLevel)
+                        {
+                            init->sp = TemplateClassInstantiate(init->sp, lst, FALSE);
+                        }
+                        else
+                        {
+                            errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                        }
+                    }
+                    sp = makeID(sc_member, init->sp->tp, NULL, init->sp->name);
+                    xinit = &init->init;
                     sp->offset = offset;
                     init->sp = sp;
-                    lex = SetAlternateLex(init->initData);
                     shim.arguments = NULL;
                     lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
                     if (lex && MATCHKW(lex, ellipse))
@@ -1687,19 +1823,6 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
         }
         init = init->next;
     }
-    hr = basetype(cls->tp)->syms->table[0];
-    while (hr)
-    {
-        SYMBOL *sp = (SYMBOL *)hr->p;
-        if (!sp->init)
-        {
-            if (isref(sp->tp))
-                errorsym(ERR_REF_MEMBER_MUST_INITIALIZE, sp);
-            else if (isconst(sp->tp))
-                errorsym(ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED, sp);
-        }
-        hr = hr->next;
-    }
 }
 static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
 {
@@ -1708,7 +1831,7 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        if (sp->storage_class == sc_member)
+        if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
         {
             sp->lastInit = sp->init;
             if (sp->init)
@@ -1731,6 +1854,19 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
         }
         init = init->next;
     }            
+    hr = basetype(cls->tp)->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (!sp->init && ismember(sp))
+        {
+            if (isref(sp->tp))
+                errorsym(ERR_REF_MEMBER_MUST_INITIALIZE, sp);
+            else if (isconst(sp->tp))
+                errorsym(ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED, sp);
+        }
+        hr = hr->next;
+    }
 }
 static void releaseInitializers(SYMBOL *cls)
 {
@@ -1738,7 +1874,7 @@ static void releaseInitializers(SYMBOL *cls)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        if (sp->storage_class == sc_member)
+        if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
             sp->init = sp->lastInit;
         hr = hr->next;
     }
@@ -1796,7 +1932,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            if (sp->storage_class == sc_member && sp->tp->type != bt_aggregate)
+            if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
             {
                 if (isstructured(sp->tp))
                 {
@@ -1971,7 +2107,7 @@ static void thunkAssignments(BLOCKDATA *b, SYMBOL *sym, SYMBOL *asnfunc, HASHTAB
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            if (sp->storage_class == sc_member && sp->tp->type != bt_aggregate)
+            if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
             {
                 if (isstructured(sp->tp))
                 {
@@ -2029,7 +2165,7 @@ static void undoVars(BLOCKDATA *b, HASHREC *vars, EXPRESSION *base)
 	{
 		SYMBOL *s = (SYMBOL *)vars->p;
 		undoVars(b, vars->next, base);
-		if (s->storage_class == sc_member && isstructured(s->tp))
+		if ((s->storage_class == sc_member || s->storage_class == sc_mutable) && isstructured(s->tp))
 			genDestructorCall(b, (SYMBOL *)basetype(s->tp)->sp, base, s->offset, TRUE);
 	}
 }
@@ -2053,13 +2189,12 @@ void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms
     undoBases(b, sp->baseClasses, thisptr);
     if (vbe)
     {
-        SYMBOL *sp = makeID(sc_parameter, &stdint, NULL, "__$$desttop");
+        SYMBOL *sp = (SYMBOL *)syms->table[0]->next->p;
         EXPRESSION *val = varNode(en_auto, sp);
         int lbl = beGetLabel;
         STATEMENT *st;
         sp->decoratedName = sp->errname = sp->name;
         sp->offset = chosenAssembler->arch->retblocksize + getSize(bt_pointer);
-        insert(sp, localNameSpace->syms);
         deref(&stdint, &val);
         st = stmtNode(NULL,b, st_notselect);
         optimize_for_constants(&val);
@@ -2151,6 +2286,10 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
     SYMBOL *against = top ? sp : sp->parentClass;
     TYPE *tp = NULL, *stp = sp->tp;
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    
+    // if it isn't already defined get out, there will be an error from somewhere else..
+    if (!basetype(sp->tp)->syms || !dest)
+        return;
     if (!*exp)
     {
         diag("callDestructor: no this pointer");
@@ -2161,54 +2300,63 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
     params->ascall = TRUE;
+    if (dest->parentClass->vbaseEntries)
+    {
+        params->arguments = Alloc(sizeof(INITLIST));
+        params->arguments->tp = &stdint;
+        params->arguments->exp = intNode(en_c_i, top);
+    }
     dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
-    if (dest1 && !isAccessible(against,sp, dest1, NULL, against == sp ? ac_public : ac_protected, FALSE))
+    if (dest1)
     {
-        errorsym(ERR_CANNOT_ACCESS, dest1);
-    }
-    if (dest1 && dest1->defaulted && !dest1->inlineFunc.stmt)
-        createDestructor(sp);
-    params->functp = dest1->tp;
-    params->sp = dest1;
-    params->ascall = TRUE;
-    if (arrayElms)
-    {
-        makeArrayConsDest(&stp, exp, NULL, dest1, arrayElms);
-        //dest1->genreffed = TRUE;
-    }
-    else if (dest1->linkage == lk_inline && !noinline)
-    {
-        EXPRESSION *e1;
-        if (sp->vbaseEntries)
+        if (dest1 && !isAccessible(against,sp, dest1, NULL, against == sp ? ac_public : ac_protected, FALSE))
         {
-            INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
-            x->tp = (TYPE *)Alloc(sizeof(TYPE));
-            x->tp->type = bt_int;
-            x->tp->size = getSize(bt_int);
-            x->exp = intNode(en_c_i, top);
-            p = &params->arguments;
-            while (*p) p = &(*p)->next;
-            *p = x;
+            errorsym(ERR_CANNOT_ACCESS, dest1);
         }
-        e1 = doinline(params, dest1);
-        if (e1)
-            *exp = e1;
-    }
-    else
-    {
-        *exp = Alloc(sizeof(EXPRESSION));
-        (*exp)->type = en_func;
-        (*exp)->v.func = params;
-        //dest1->genreffed = TRUE;
-    }
-    if (*exp && !pointer)
-    {
-        *exp = exprNode(en_thisref, *exp, NULL);
-        (*exp)->dest = TRUE;
-        (*exp)->v.t.thisptr = params->thisptr;
-        (*exp)->v.t.tp = sp->tp;
-        sp->hasDest = TRUE;
-        hasXCInfo = TRUE;
+        if (dest1 && dest1->defaulted && !dest1->inlineFunc.stmt)
+            createDestructor(sp);
+        params->functp = dest1->tp;
+        params->sp = dest1;
+        params->ascall = TRUE;
+        if (arrayElms)
+        {
+            makeArrayConsDest(&stp, exp, NULL, dest1, arrayElms);
+            //dest1->genreffed = TRUE;
+        }
+        else if (dest1->linkage == lk_inline && !noinline)
+        {
+            EXPRESSION *e1;
+            if (sp->vbaseEntries)
+            {
+                INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
+                x->tp = (TYPE *)Alloc(sizeof(TYPE));
+                x->tp->type = bt_int;
+                x->tp->size = getSize(bt_int);
+                x->exp = intNode(en_c_i, top);
+                p = &params->arguments;
+                while (*p) p = &(*p)->next;
+                *p = x;
+            }
+            e1 = doinline(params, dest1);
+            if (e1)
+                *exp = e1;
+        }
+        else
+        {
+            *exp = Alloc(sizeof(EXPRESSION));
+            (*exp)->type = en_func;
+            (*exp)->v.func = params;
+            //dest1->genreffed = TRUE;
+        }
+        if (*exp && !pointer)
+        {
+            *exp = exprNode(en_thisref, *exp, NULL);
+            (*exp)->dest = TRUE;
+            (*exp)->v.t.thisptr = params->thisptr;
+            (*exp)->v.t.tp = sp->tp;
+            sp->hasDest = TRUE;
+            hasXCInfo = TRUE;
+        }
     }
 }
 BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 

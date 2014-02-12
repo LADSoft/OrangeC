@@ -272,6 +272,10 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
 {
     HASHREC *tnew = basetype(snew->tp)->syms->table[0];
     HASHREC *told = basetype(sold->tp)->syms->table[0];
+    if (snew->templateLevel != sold->templateLevel)
+        return FALSE;
+    if (isconst(snew->tp) != isconst(sold->tp))
+        return FALSE;
     while (tnew && told)
     {
         SYMBOL *snew = (SYMBOL *)tnew->p;
@@ -283,20 +287,39 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
                 break;
             sold = told->p;
         }
+        if (snew->thisPtr)
+        {
+            tnew = tnew->next;
+            if (!tnew)
+                break;
+            snew = tnew->p;
+        }
         if (snew->tp->type == bt_templateparam)
         {
             if (sold->tp->type != bt_templateparam || 
                 snew->tp->templateParam->type != sold->tp->templateParam->type ||
                 snew->tp->templateParam->type != kw_typename ||
-                !snew->tp->templateParam->byClass.dflt || !sold->tp->templateParam->byClass.dflt ||
-                !comparetypes(sold->tp->templateParam->byClass.dflt, snew->tp->templateParam->byClass.dflt, TRUE))
+                (snew->tp->templateParam->byClass.dflt || sold->tp->templateParam->byClass.dflt) &&
+                (!snew->tp->templateParam->byClass.dflt || !sold->tp->templateParam->byClass.dflt ||
+                !comparetypes(sold->tp->templateParam->byClass.dflt, snew->tp->templateParam->byClass.dflt, TRUE)))
                 
                     break;                    
         }
         else if (sold->tp->type == bt_any || snew->tp->type == bt_any) // packed template param
             break;
-        else if (!comparetypes(sold->tp, snew->tp, TRUE))
+        else if (!comparetypes(sold->tp, snew->tp, TRUE) || basetype(sold->tp)->type != basetype(snew->tp)->type)
             break;
+        else 
+        {
+            TYPE *tps = sold->tp;
+            TYPE *tpn = snew->tp;
+            if (isref(tps))
+                tps = basetype(tps)->btp;
+            if (isref(tpn))
+                tpn = basetype(tpn)->btp;
+            if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                break;                
+        }
         told = told->next;
         tnew = tnew->next;
     }
@@ -333,30 +356,37 @@ SYMBOL *tsearch(char *name)
 }
 void insert(SYMBOL *in, HASHTABLE *table)
 {
-#ifdef PARSER_ONLY
-    if (table != defsyms && table != kwhash && table != labelSyms && table != ccHash)
-        ccSetSymbol(in);
-#endif
-    if (cparams.prm_extwarning)
-        if (in->storage_class == sc_parameter || in->storage_class == sc_auto ||
-            in->storage_class == sc_register)
-        {
-            SYMBOL *sp;
-            if ((sp = gsearch(in->name)) != NULL)
-                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, 
-                         sp->declfile, sp->declline);
-        }
-#if defined (PARSER_ONLY)
-    if (AddName(in, table) && table != ccHash)
-#else
-    if (AddName(in, table))
-#endif
+    if (table)
     {
-#if defined(CPREPROCESSOR) || defined(PARSER_ONLY)
-        pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
-#else
-        preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
+#ifdef PARSER_ONLY
+        if (table != defsyms && table != kwhash && table != labelSyms && table != ccHash)
+            ccSetSymbol(in);
 #endif
+        if (cparams.prm_extwarning)
+            if (in->storage_class == sc_parameter || in->storage_class == sc_auto ||
+                in->storage_class == sc_register)
+            {
+                SYMBOL *sp;
+                if ((sp = gsearch(in->name)) != NULL)
+                    preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, 
+                             sp->declfile, sp->declline);
+            }
+#if defined (PARSER_ONLY)
+        if (AddName(in, table) && table != ccHash)
+#else
+        if (AddName(in, table))
+#endif
+        {
+#if defined(CPREPROCESSOR) || defined(PARSER_ONLY)
+            pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
+#else
+            preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
+#endif
+        }
+    }
+    else
+    {
+        diag("insert: cannot insert");
     }
 }
 

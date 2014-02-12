@@ -47,6 +47,7 @@ extern char *tn_long;
 extern char *tn_longlong;
 extern char *tn_short;
 extern char *tn_unsigned;
+extern char *tn_signed;
 extern char *tn_ellipse;
 extern char *tn_floatimaginary;
 extern char *tn_doubleimaginary;
@@ -188,6 +189,47 @@ BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         return TRUE;
     }
     return FALSE;
+}
+BOOL matchingCharTypes(TYPE *typ1, TYPE *typ2)
+{
+    if (isref(typ1))
+        typ1 = basetype(typ1)->btp;
+    if (isref(typ2))
+        typ2 = basetype(typ2)->btp;
+        
+    while (ispointer(typ1) && ispointer(typ2))
+    {
+        typ1 = basetype(typ1)->btp;
+        typ2 = basetype(typ2)->btp;
+    }
+    typ1 = basetype(typ1);
+    typ2 = basetype(typ2);
+    if (typ1->type == bt_char)
+    {
+        if (cparams.prm_charisunsigned)
+        {
+            if (typ2->type == bt_unsigned_char)
+                return TRUE;
+        }
+        else
+        {
+            if (typ2->type == bt_signed_char)
+                return TRUE;
+        }
+    }
+    else if (typ2->type == bt_char)
+    {   
+        if (cparams.prm_charisunsigned)
+        {
+            if (typ1->type == bt_unsigned_char)
+                return TRUE;
+        }
+        else
+        {
+            if (typ1->type == bt_signed_char)
+                return TRUE;
+        }
+    }
 }
 static char *putpointer(char *p, TYPE *tp)
 {
@@ -351,6 +393,11 @@ TYPE *typenum(char *buf, TYPE *tp)
             buf = buf + strlen(buf);
         case bt_short:
             strcpy(buf, tn_short);
+            break;
+        case bt_signed_char:
+            strcpy(buf, tn_signed);
+            buf = buf + strlen(buf);
+            strcpy(buf, tn_char);
             break;
         case bt_unsigned_char:
             strcpy(buf, tn_unsigned);

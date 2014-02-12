@@ -57,6 +57,19 @@ extern TYPE stdchar32t;
 extern int nextLabel;
 extern SYMBOL *theCurrentFunc;
 
+// well this is really only nonstatic data members...
+BOOL ismember(SYMBOL *sym)
+{
+    switch (sym->storage_class)
+    {
+        case sc_member:
+        case sc_mutable:
+        case sc_virtual:
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
 BOOL istype(SYMBOL *sym)
 {
     if (sym->storage_class == sc_templateparam)
@@ -67,7 +80,7 @@ BOOL istype(SYMBOL *sym)
 }
 BOOL ismemberdata(SYMBOL *sp)
 {
-    return (!isfunction(sp) && sp->storage_class == sc_member);
+    return !isfunction(sp) && ismember(sp);
 }
 BOOL startOfType(LEXEME *lex, BOOL assumeType)
 {
@@ -142,6 +155,7 @@ BOOL isint(TYPE *tp)
         case bt_unsigned_short:
         case bt_char:
         case bt_unsigned_char:
+        case bt_signed_char:
         case bt_long:
         case bt_unsigned_long:
         case bt_long_long:
@@ -339,7 +353,7 @@ BOOL isvoidptr(TYPE *tp)
 BOOL isfunction(TYPE *tp)
 {
     tp = basetype(tp);
-    return tp->type == bt_func || tp->type == bt_ifunc;
+    return tp && (tp->type == bt_func || tp->type == bt_ifunc);
 }
 BOOL isfuncptr(TYPE *tp)
 {
@@ -549,6 +563,12 @@ void deref(TYPE *tp, EXPRESSION **exp)
             en = en_l_bool;
             break;
         case bt_char:
+            if (cparams.prm_charisunsigned)
+                en = en_l_uc;
+            else
+                en = en_l_c;
+            break;
+        case bt_signed_char:
             en = en_l_c;
             break;
         case bt_char16_t:
@@ -650,6 +670,12 @@ int sizeFromType(TYPE *tp)
             rv = ISZ_BOOL;
             break;
         case bt_char:
+            if (cparams.prm_charisunsigned)
+                rv = ISZ_UCHAR;
+            else
+                rv = - ISZ_UCHAR;
+            break;
+        case bt_signed_char:
             rv = -ISZ_UCHAR;
             break;
         case bt_char16_t:
@@ -750,6 +776,12 @@ void cast(TYPE *tp, EXPRESSION **exp)
             en = en_x_bool;
             break;
         case bt_char:
+            if (cparams.prm_charisunsigned)
+                en = en_x_uc;
+            else
+                en = en_x_c;
+            break;
+        case bt_signed_char:
             en = en_x_c;
             break;
         case bt_unsigned_char:

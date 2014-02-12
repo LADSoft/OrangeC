@@ -46,6 +46,7 @@ extern char anonymousNameSpaceName[512];
     char *tn_longlong = "long long";
     char *tn_short = "short ";
     char *tn_unsigned = "unsigned ";
+    char *tn_signed = "signed ";
     char *tn_ellipse = "...";
     char *tn_float = "float";
     char *tn_double = "double";
@@ -443,6 +444,12 @@ static char *unmang1(char *buf, char *name, char *last)
             strcpy(buf, tn_char32_t);
             buf += strlen(buf);
             break;
+        case 'S':
+            strcpy(buf, tn_signed);
+            buf = buf + 7;
+            if (*name++ == 'c')
+                strcpy(buf, tn_char);
+            break;
         case 'u':
             strcpy(buf, "unsigned ");
             buf = buf + 9;
@@ -707,6 +714,8 @@ char *unmangle(char *val, char *name)
                     }
                     *buf++ = ':';
                     *buf++ = ':';
+                    if (*name != '$')
+                        last = buf;
                 }
                 else
                 {

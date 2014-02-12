@@ -231,7 +231,7 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOO
                 if (toError)
                     errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->parentClass, enclosing);
             }
-            else if (!isExpressionAccessible(memberSym, funcsp, FALSE))
+            else if (!isExpressionAccessible(memberSym, funcsp, en, FALSE))
             {
                 if (toError)
                 {
@@ -266,7 +266,7 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *f
     *tp = tpq;
     rv = varNode(en_memberptr, memberSym);
     rv->isfunc = TRUE;
-    if (!isExpressionAccessible(memberSym, funcsp, TRUE))
+    if (!isExpressionAccessible(memberSym, funcsp, NULL, TRUE))
     {
         errorsym(ERR_CANNOT_ACCESS, memberSym);
     }
@@ -584,7 +584,8 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOL defd = FALSE;
-    lex = getBasicType(lex, funcsp, tp, NULL, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL);
+    *tp = NULL;
+    lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL, FALSE);
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))
@@ -606,15 +607,14 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         }
         else
         {
-            *exp = intNode(en_c_i, 0);
-            needkw(&lex, openpa);
+            errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);
             errskim(&lex, skim_semi);
         }
     }
     else if (!cparams.prm_cplusplus)
     {
         *exp = intNode(en_c_i, 0);
-        needkw(&lex, begin);
+        errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);
         errskim(&lex, skim_semi);
     }
     else
@@ -625,12 +625,13 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             SYMBOL *sp;
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
             EXPRESSION *exp1;
+            PerformDeferredInitialization(ctype, funcsp);
             lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
-            sp = anonymousVar(sc_auto, *tp);
+            sp = anonymousVar(sc_auto, (*tp)->sp->tp);
             insert(sp, localNameSpace->syms);
             exp1 = *exp = varNode(en_auto, sp);
             callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, FALSE, FALSE); 
-            if (funcparams->sp->constexpression)
+            if (funcparams->sp && funcparams->sp->constexpression)
             {
                 if (basetype(*tp)->sp->baseClasses)
                 {
@@ -650,7 +651,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                         (*exp)->v.syms = CreateHashTable(1);
                         while (init)
                         {
-                            if (init->sp->storage_class == sc_member)
+                            if (init->sp->storage_class == sc_member || init->sp->storage_class == sc_mutable)
                             {
                                 if (!init->init->exp)
                                 {
@@ -682,19 +683,29 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         else
         {
             TYPE *throwaway;
-            lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, FALSE, noinline, FALSE);
-            if (throwaway && (*tp)->type == bt_auto)
-                *tp = throwaway;
-            if ((*exp)->type == en_func)
-                *exp = (*exp)->v.func->fcall;
-            if (throwaway)
-                if (isvoid(throwaway) && !isvoid(*tp))
-                    error(ERR_NOT_AN_ALLOWED_TYPE);
-                else if ((isstructured(throwaway) && !isvoid(*tp) || basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
-                          && !comparetypes(throwaway, *tp, TRUE))
-                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                else
-                    cast(*tp, exp);
+            needkw(&lex, openpa);
+            if (MATCHKW(lex, closepa))
+            {
+                // constructor with no args gets a value of zero...
+                *exp = intNode(en_c_i, 0);
+            }
+            else
+            {
+                lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, NULL, FALSE, noinline, FALSE);
+                if (throwaway && (*tp)->type == bt_auto)
+                    *tp = throwaway;
+                if ((*exp)->type == en_func)
+                    *exp = (*exp)->v.func->fcall;
+                if (throwaway)
+                    if (isvoid(throwaway) && !isvoid(*tp))
+                        error(ERR_NOT_AN_ALLOWED_TYPE);
+                    else if ((isstructured(throwaway) && !isvoid(*tp) || basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
+                              && !comparetypes(throwaway, *tp, TRUE))
+                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                    else
+                        cast(*tp, exp);
+            }
+            needkw(&lex, closepa);
         }
     }
     return lex;
@@ -1354,7 +1365,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, TRUE, FALSE);
     if (s3)
     {
-        if (s3->storage_class == sc_member || s3->storage_class == sc_virtual)
+        if (ismember(s3))
         {
             funcparams->arguments = funcparams->arguments->next;
             funcparams->thistp = Alloc(sizeof(TYPE));
@@ -1425,7 +1436,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             BOOL defd = FALSE;
             SYMBOL *sp = NULL;
             BOOL notype = FALSE;
-            lex = getBasicType(lex, funcsp, tp, NULL, NULL, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
+            lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, FALSE);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;
@@ -1703,7 +1714,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         name = overloadNameTab[CI_DELETEA];
         exp1 = intNode(en_c_i, 0); // signal to the runtime to load the number of elems dynamically
     }
-    lex = expression_cast(lex, funcsp, NULL, tp, exp, FALSE, noinline, FALSE);
+    lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, FALSE, noinline, FALSE);
     if (!ispointer(*tp))
         error(ERR_POINTER_TYPE_EXPECTED);
     in = *exp;

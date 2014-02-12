@@ -49,6 +49,7 @@ extern int stdpragmas;
 extern ARCH_ASM *chosenAssembler;
 extern TYPE stdvoid;
 extern BOOL initializingGlobalVar;
+extern int total_errors;
 
 static EXPRESSION *asidehead,  **asidetail;
 ULLONG_TYPE reint(EXPRESSION *node);
@@ -460,6 +461,12 @@ LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value)
     switch (size)
     {
         case bt_char:
+            if (cparams.prm_charisunsigned)
+                bits = 8;
+            else
+                bits = 7;
+            break;
+        case bt_signed_char:
             bits = 7;
             break;
         case bt_unsigned_char:
@@ -1559,14 +1566,18 @@ int opt0(EXPRESSION **node)
             return rv ;
 
         case en_uminus:
-            rv = opt0(&(ep->left));
+            rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
+                *node = intNode(en_c_i, -ep->left->v.i);
                 rv = TRUE;
-                ep->type = ep->left->type;
-                ep->v.i =  - ep->left->v.i;
-                ep->v.i = reint(ep);
-                ep->unionoffset = ep->left->unionoffset;
+            }
+            else if (isfloatconst(ep->left))
+            {
+                *node = intNode(en_c_d, 0);
+                (*node)->v.f = ep->left->v.f;
+                (*node)->v.f.sign ^= 1;                
+                rv = TRUE;
             }
             else if (ep->left->type == en_c_d || ep->left->type ==
                 en_c_f || ep->left->type == en_c_ld ||
@@ -1577,6 +1588,7 @@ int opt0(EXPRESSION **node)
                 ep->type = ep->left->type;
                 ep->v.f =  ep->left->v.f;
                 ep->v.f.sign ^= 1;
+                *node = ep;
             }
             else if (ep->left->type == en_c_dc || ep->left->type ==
                 en_c_fc || ep->left->type == en_c_ldc)
@@ -1587,6 +1599,7 @@ int opt0(EXPRESSION **node)
                 ep->v.c.r.sign ^= 1;
                 ep->v.c.i =  ep->left->v.c.i;
                 ep->v.c.i.sign ^= 1;
+                *node = ep;
             }
             return rv ;
         case en_structadd:
@@ -3617,7 +3630,7 @@ LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, FALSE, FALSE, FALSE);
     else
-        lex = expression_no_comma(lex, funcsp, atp, tp, expr, FALSE, FALSE);
+        lex = expression_no_comma(lex, funcsp, atp, tp, expr, NULL, FALSE, FALSE);
     if (*tp)
     {
         optimize_for_constants(expr);

@@ -41,6 +41,7 @@ void errorat(int err, char *name, char *file, int line);
 void error(int err);
 void errorcurrent(int err);
 void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name);
+void errorNotMember(SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name);
 void errorint(int err, int val);
 void errorstr(int err, char *val);
 void errorsym(int err, SYMBOL *sym);
@@ -103,16 +104,16 @@ void addStructureDeclaration(STRUCTSYM *decl);
 void addTemplateDeclaration(STRUCTSYM *decl);
 void dropStructureDeclaration(void);
 SYMBOL *getStructureDeclaration(void);
-LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, TEMPLATEPARAM *templateParams, enum e_ac defaultAccess, BOOL isfinal, BOOL *defd);
+LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOL isTemplate, enum e_ac defaultAccess, BOOL isfinal, BOOL *defd);
 void checkPackedType(SYMBOL *sp);
 void checkPackedExpression(EXPRESSION *sp);
 void checkUnpackedExpression(EXPRESSION *sp);
 INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, EXPRESSION *packedExp);
 void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAM *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list);
-void checkOperatorArgs(SYMBOL *sp);
+void checkOperatorArgs(SYMBOL *sp, BOOL asFriend);
 SYMBOL *getCopyCons(SYMBOL *base, BOOL move);
 void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype);
-MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *sp);
+MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sp);
 void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons);
 SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
 void createConstructorsForLambda(SYMBOL *sp);
@@ -127,7 +128,7 @@ BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
                     BOOL maybeConversion, BOOL noinline, BOOL implicit, BOOL pointer);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOL *linked);
-LEXEME *insertUsing(LEXEME *lex, enum e_sc storage_class, BOOL hasAttribs);
+LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
 void InsertExtern(SYMBOL *sp);
 void InsertGlobal(SYMBOL *sp);
@@ -143,17 +144,18 @@ void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOL isvirtual, int o
 void deferredCompile(void);
 void backFillDeferredInitializersForFunction(SYMBOL *cur, SYMBOL *funcsp);
 void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp);
+TYPE * PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp);
 void warnCPPWarnings(SYMBOL *sym, BOOL localClassWarnings);
 BOOL usesVTab(SYMBOL *sym);
 LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defaultAccess);
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
-LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, enum e_sc storage_class);
+LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, BOOL inTemplate, enum e_sc storage_class);
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
-LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class, 
+LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BOOL isTemplate, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
-                    enum e_ac access, BOOL *notype, BOOL *defd, int *consdest);
+                    enum e_ac access, BOOL *notype, BOOL *defd, int *consdest, BOOL isTypedef);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
-                      NAMESPACEVALUES **nsv, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class,
+                      NAMESPACEVALUES **nsv, BOOL isTemplate, enum e_sc storage_class,
 							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOL asFriend,
                         int consdest, BOOL beforeOnly);
 void sizeQualifiers(TYPE *tp);
@@ -162,27 +164,32 @@ void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
 BOOL typeHasTemplateArg(TYPE *t);
 void templateInit(void);
 void TemplateGetDeferred(SYMBOL *sym);
+TEMPLATEPARAM *TemplateGetParams(SYMBOL *sym);
 void TemplateRegisterDeferred(LEXEME *lex);
 BOOL exactMatchOnTemplateArgs(TEMPLATEPARAM *old, TEMPLATEPARAM *sym);
 SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAM *templateParams);
 SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp, TEMPLATEPARAM *templateParams);
-TEMPLATEPARAM * TemplateMatching(LEXEME *lex, TEMPLATEPARAM *old, TEMPLATEPARAM *sym, SYMBOL *sp);
+TEMPLATEPARAM * TemplateMatching(LEXEME *lex, TEMPLATEPARAM *old, TEMPLATEPARAM *sym, SYMBOL *sp, BOOL definition);
 LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAM **lst);
 BOOL TemplateIntroduceArgs(TEMPLATEPARAM *sym, TEMPLATEPARAM *args);
+TYPE *SynthesizeType(TYPE *tp, BOOL alt);
 SYMBOL *TemplateSynthesizeFunction(SYMBOL *sym);
 SYMBOL *TemplateDeduceArgsFromType(SYMBOL *sym, TYPE *tp);
 void NormalizePacked(TYPE *tpo);
 SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args);
 SYMBOL *TemplateDeduceWithoutArgs(SYMBOL *sym);
-void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams, TYPE *atype);
-SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAM *args);
+void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams, TYPE *atype, BOOL byClass);
+SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAM *args, BOOL isExtern);
+SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAM *args, BOOL isExtern);
 void TemplateDataInstantiate(SYMBOL *sym, BOOL warning, BOOL isExtern);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOL warning, BOOL isExtern);
 SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAM *args);
 void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAM *templateParams, BOOL isExtern);
+void DoDefaultSpecialization(SYMBOL *sp2);
+TEMPLATEPARAM *getCurrentSpecialization(SYMBOL *sp);
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOL isextern);
-LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, TEMPLATEPARAM *TEMPLATEPARAMs, enum e_sc storage_class, enum e_lk defaultLinkage,
-					   BLOCKDATA *parent, BOOL needsemi, BOOL asExpression, BOOL asfriend, enum e_ac access );
+LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
+					   BLOCKDATA *parent, BOOL needsemi, BOOL asExpression, BOOL asfriend, BOOL isTemplate, enum e_ac access );
 
                                /* Expr.c */
 
@@ -213,7 +220,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
 LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline, BOOL packed);
 LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL global, BOOL noinline);
 LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
-LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline, BOOL packable);
+LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable);
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right);
 EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val);
@@ -224,12 +231,12 @@ LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcpar
 void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp);
 void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline);
-LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL ampersand, BOOL noinline, BOOL packable);
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL selector, BOOL noinline, BOOL inTemplateParams, BOOL packable);
-LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL inTemplateParams);
+LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable);
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL selector, BOOL noinline, BOOL inTemplateParams, BOOL packable);
+LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams);
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
 				   BOOL selector, BOOL noinline);
-LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
+LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp,
 			BOOL selector, BOOL noinline, BOOL packable);
 
                                /* Float.c */
@@ -290,7 +297,7 @@ int FPFToLongDouble(unsigned char *dest, FPF *src);
 void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
 
                                /* Help.c */
-
+BOOL ismember(SYMBOL *sym);
 BOOL istype(SYMBOL *sym);
 BOOL ismemberdata(SYMBOL *sp);
 BOOL startOfType(LEXEME *lex, BOOL assumeType);
@@ -867,7 +874,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
 LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
 LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *isTemplate, BOOL tagsOnly, BOOL membersOnly, char *name);
 BOOL isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOL asAddress);
-BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, BOOL asAddress);
+BOOL isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOL asAddress);
 BOOL checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);
 SYMBOL *LookupSym(char *name);
 SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp);
@@ -886,6 +893,7 @@ void insertOverload(SYMBOL *in, HASHTABLE *table);
 
 BOOL checktypeassign(TYPE *typ1, TYPE *typ2);
 BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact);
+BOOL matchingCharTypes(TYPE *typ1, TYPE *typ2);
 void typenumptr(char *buf, TYPE *tp);
 TYPE *typenum(char *buf, TYPE *tp);
 void typeToString(char *buf, TYPE *typ);

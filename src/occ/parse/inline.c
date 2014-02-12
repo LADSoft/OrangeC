@@ -42,6 +42,7 @@ extern TYPE stdint;
 extern NAMESPACEVALUES *localNameSpace;
 extern TYPE stdpointer;
 extern int startlab, retlab;
+extern int total_errors;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
 static LIST *inlineDataHead, *inlineDataTail;
@@ -80,59 +81,62 @@ static void UndoPreviousCodegen(SYMBOL *sym)
 void dumpInlines(void)
 {
 #ifndef PARSER_ONLY
-    BOOL done;
-    LIST *vtabList;
-    LIST *dataList;
-    cseg();
-    do
+    if (!total_errors)
     {
-        LIST *funcList = inlineHead;
-        done = TRUE;
-        while (funcList)
+        BOOL done;
+        LIST *vtabList;
+        LIST *dataList;
+        cseg();
+        do
         {
-            SYMBOL *sym = (SYMBOL *)funcList->data;
-            if (sym->genreffed && sym->inlineFunc.stmt && !sym->didinline)
+            LIST *funcList = inlineHead;
+            done = TRUE;
+            while (funcList)
+            {
+                SYMBOL *sym = (SYMBOL *)funcList->data;
+                if (sym->genreffed && sym->inlineFunc.stmt && !sym->didinline)
+                {
+                    sym->genreffed = FALSE;
+                    UndoPreviousCodegen(sym);
+                    startlab = nextLabel++;
+                    retlab = nextLabel++;
+                    genfunc(sym);
+                    sym->didinline = TRUE;
+                    done = FALSE;
+                }
+                funcList = funcList->next;
+            }
+            startlab = retlab = 0;
+            vtabList = inlineVTabHead;
+            while (vtabList)
+            {
+                SYMBOL *sym = (SYMBOL *)vtabList->data;
+                if (sym->vtabsp->genreffed && hasVTab(sym))
+                {
+                    sym->vtabsp->genreffed = FALSE;
+                    dumpVTab(sym);
+                    done = FALSE;
+                }
+                vtabList = vtabList->next;
+                
+            }
+        } while (!done);
+        dataList = inlineDataHead;
+        while (dataList)
+        {
+            SYMBOL *sym = (SYMBOL *)dataList->data;
+            if (sym->genreffed)
             {
                 sym->genreffed = FALSE;
-                UndoPreviousCodegen(sym);
-                startlab = nextLabel++;
-                retlab = nextLabel++;
-                genfunc(sym);
-                sym->didinline = TRUE;
-                done = FALSE;
+                gen_virtual(sym, TRUE);
+                if (sym->init)
+                    dumpInit(sym, sym->init);
+                else
+                    genstorage(basetype(sym->tp)->size);
+                gen_endvirtual(sym);
             }
-            funcList = funcList->next;
+            dataList = dataList->next;
         }
-        startlab = retlab = 0;
-        vtabList = inlineVTabHead;
-        while (vtabList)
-        {
-            SYMBOL *sym = (SYMBOL *)vtabList->data;
-            if (sym->vtabsp->genreffed && hasVTab(sym))
-            {
-                sym->vtabsp->genreffed = FALSE;
-                dumpVTab(sym);
-                done = FALSE;
-            }
-            vtabList = vtabList->next;
-            
-        }
-    } while (!done);
-    dataList = inlineDataHead;
-    while (dataList)
-    {
-        SYMBOL *sym = (SYMBOL *)dataList->data;
-        if (sym->genreffed)
-        {
-            sym->genreffed = FALSE;
-            gen_virtual(sym, TRUE);
-            if (sym->init)
-                dumpInit(sym, sym->init);
-            else
-                genstorage(basetype(sym->tp)->size);
-            gen_endvirtual(sym);
-        }
-        dataList = dataList->next;
     }
 #endif
 }
@@ -872,7 +876,7 @@ static STATEMENT *SetupArguments(FUNCTIONCALL *params)
     STATEMENT *st = NULL, **stp = &st;
     INITLIST *al = params->arguments;
     HASHREC *hr = params->sp->inlineFunc.syms->table[0];
-    if (params->sp->storage_class == sc_member || params->sp->storage_class == sc_virtual)
+    if (ismember(params->sp))
     {
         SYMBOL *sx = (SYMBOL *)hr->p;
         setExp(sx, params->thisptr, &stp);
@@ -928,7 +932,12 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
         return NULL;
     if (!params->sp->inlineFunc.syms)
         return NULL;
-
+    if (!params->sp->inlineFunc.stmt)
+    {
+        // recursive...
+        params->sp->linkage = lk_cdecl;
+        return NULL;
+    }
     if (!localNameSpace->syms)
     {
         allocated = TRUE;

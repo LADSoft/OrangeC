@@ -138,7 +138,7 @@ static struct {
 {"Bit field must be an integer type", ERROR },
 {"Bit field too large", ERROR },
 {"Bit field must contain at least one bit", ERROR },
-{"'%s' is not a member of '%s'", ERROR },
+{"%s", ERROR }, //"'%s' is not a member of '%s'", ERROR },
 {"Pointer to structure required to left of '%s'", ERROR},
 {"Structure required to left of '%s'", ERROR },
 {"Storage class '%s' not allowed here", ERROR },
@@ -292,7 +292,7 @@ static struct {
 {"Namespace '%s' not previously declared as inline", ERROR },
 {"Expected namespace name", ERROR },
 {"Cyclic using directive", TRIVIALWARNING },
-{"'%s'", ERROR },
+{"%s", ERROR },
 {"Creating temporary for variable of type '%s'", TRIVIALWARNING },
 {"Type name expected", ERROR },
 {"Ambiguity between '%s' and '%s'", ERROR },
@@ -308,7 +308,7 @@ static struct {
 {"Variable style constexpr declaration needs simple type", ERROR },
 {"Function returning reference must return a value", ERROR },
 {"Qualified name not allowed here", ERROR },
-{"'%s'", ERROR },
+{"%s", ERROR },
 {"Qualifier '%s' is not a class or namespace", ERROR },
 {"Linkage mismatch in overload of function '%s'", ERROR },
 {"Overload of '%s' differs only in return type", ERROR },
@@ -372,7 +372,7 @@ static struct {
 {"Mismatched thread_local storage class specifier", ERROR },
 {"Qualifiers not allowed with atomic type specifier", WARNING },
 {"Function or array not allowed as atomic type", ERROR },
-{"Redeclaration of '%s' ouside its class not allowed", ERROR },
+{"Redeclaration of '%s' outside its class not allowed", ERROR },
 {"Definition of type '%s' not allowed here", ERROR },
 {"Pointers and arrays cannot be friends", ERROR },
 {"Declarator not allowed here", ERROR },
@@ -486,7 +486,6 @@ static struct {
 {"Redefinition of default value for '%s' in template redeclaration", ERROR },
 {"'Template' template parameter must name a class", ERROR },
 {"Templates must be classes or functions", ERROR },
-{"Too many template parameter sets were specified", ERROR },
 {"Cannot partially specialize a function template", ERROR },
 {"Partial specialization missing parameter from template header", ERROR },
 {"Specialization of '%s' cannot be declared before primary template", ERROR },
@@ -518,6 +517,10 @@ static struct {
 {"Structured type expected", ERROR },
 {"Packed template paramater not allowed here", ERROR },
 {"In template instantiation started here", WARNING },
+{"Invalid use of type '%s'", ERROR },
+{"Requires template<> header", ERROR },
+{"Mutable member '%s' must be non-const", ERROR },
+{"Dependendent type '%s' not a class or structured type", ERROR },
 #endif
 } ;
 
@@ -608,7 +611,7 @@ static BOOL ignoreErrtemplateNestingCount(int err)
 }
 BOOL printerrinternal(int err, char *file, int line, va_list args)
 {
-    char buf[256];
+    char buf[2048];
     char infunc[1024];
     char *listerr;
     char nameb[265], *name = nameb;
@@ -701,7 +704,7 @@ BOOL printerrinternal(int err, char *file, int line, va_list args)
 #endif
     return TRUE;
 }
-void printerr(int err, char *file, int line, ...)
+int printerr(int err, char *file, int line, ...)
 {
     BOOL canprint = FALSE;
     va_list arg;	
@@ -712,6 +715,7 @@ void printerr(int err, char *file, int line, ...)
     {
         printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, includes->fname, includes->line, NULL);
     }
+    return canprint;
 }
 void pperror(int err, int data)
 {
@@ -723,9 +727,9 @@ void pperrorstr(int err, char *str)
 }
 void preverror(int err, char *name, char *origfile, int origline)
 {
-    printerr(err, preprocFile, preprocLine, name);
-    if (origfile && origline)
-        printerr(ERR_PREVIOUS, origfile, origline, name);
+    if (printerr(err, preprocFile, preprocLine, name))
+        if (origfile && origline)
+            printerr(ERR_PREVIOUS, origfile, origline, name);
 }
 #ifndef CPREPROCESSOR
 void preverrorsym(int err, SYMBOL *sp, char *origfile, int origline)
@@ -769,7 +773,7 @@ void getcls(char *buf, SYMBOL *clssym)
 }
 void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
 {
-    char buf[512];
+    char buf[1024];
     sprintf(buf, "'%s' is not a member of '", name);
     if (strSym)
     {
@@ -780,7 +784,13 @@ void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
         getns(buf, nsv->name);
     }
     strcat(buf, "'");
+    if (strSym && !strSym->tp->syms)
+        strcat(buf, " because the type is not defined");
     printerr(err, preprocFile, preprocLine, buf);
+}
+void errorNotMember( SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
+{
+    errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
 }
 void error(int err)
 {
@@ -838,12 +848,6 @@ void errorabstract(int error, SYMBOL *sp)
     {
         errorsym2(ERR_ABSTRACT_BECAUSE, sp, sp1);
     }
-}
-void membererror(char *name, TYPE *tp1)
-{
-    char tpb[256];
-    typeToString(tpb, basetype(tp1));
-    printerr(tp1->size? ERR_MEMBER_NAME_EXPECTED : ERR_MEMBER_NAME_EXPECTED_NOT_DEFINED, preprocFile, preprocLine, name, tpb);
 }
 void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
 {
@@ -1391,7 +1395,7 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                     if (sp->storage_class == sc_global || sp->storage_class == sc_static
                         || sp->storage_class == sc_localstatic)
                         /* void will be caught earlier */
-                        if (!isfunction(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp))
+                        if (!isfunction(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) && sp->tp->type != bt_any)
                             errorsym(ERR_UNSIZED, sp);
                 }
             }
@@ -1674,7 +1678,8 @@ static int checkDefaultExpression(EXPRESSION *node)
     switch (node->type)
     {
         case en_auto:
-            rv = TRUE;
+            if (!node->v.sp->anonymous)
+                rv = TRUE;
             break;
         case en_const:
             break;

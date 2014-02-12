@@ -1,6 +1,10 @@
 Release notes
 
-version 5.0.9:
+version 5.0.10:
+    occ:   inlining functions that took the address of parameters was broken
+    occ:    fixed bug with optimizing of inlined functions generating incorrect code
+
+version 5.0.9: 12/1/2013
     ocide: fix problem where function prompt window would go away randomly
     ocide: handle parenthesis when in function prompt window
     ocide: save the text of find and replace more consistently

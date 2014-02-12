@@ -2367,14 +2367,14 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = ap1;
             break;
         case en_thisref:
-            if (node->dest)
+            if (node->dest && xcexp)
             {
                 node->v.t.thisptr->xcDest = ++consIndex;
                 xcexp->right->v.i = consIndex;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
             }
             ap1 = gen_expr( funcsp, node->left, flags, size);
-            if (!node->dest)
+            if (!node->dest && xcexp)
             {
                 node->v.t.thisptr->xcInit = ++consIndex;
                 xcexp->right->v.i = consIndex;
@@ -2456,6 +2456,8 @@ int natural_size(EXPRESSION *node)
             return natural_size(node->left);
         case en_func:
         case en_intcall:
+            if (!node->v.func->functp || !isfunction(node->v.func->functp))
+                return 0;
             if (isstructured(basetype(node->v.func->functp)->btp) || basetype(node->v.func->functp)->btp->type == bt_memberptr)
                 return 0;
             else if (node->v.func->ascall)

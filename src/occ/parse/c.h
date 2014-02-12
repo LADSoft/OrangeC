@@ -168,7 +168,7 @@ enum e_stmt
 enum e_sc
 {
         sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
-        sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_cast, sc_defunc, sc_label, sc_ulabel,
+        sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_mutable, sc_cast, sc_defunc, sc_label, sc_ulabel,
         sc_overloads, sc_constant, sc_enumconstant, sc_absolute,
         sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
            sc_memberreg, sc_namespace, sc_namespacealias, sc_temp, sc_virtual
@@ -181,7 +181,7 @@ enum e_bt
      * basic types, type comparisons (LOSTCONV) depends on the ordering,
      * and the debug info has a table indexed by type
      */
-    bt_bit, bt_bool, bt_char, bt_unsigned_char, bt_short, bt_char16_t, bt_unsigned_short, 
+    bt_bit, bt_bool, bt_signed_char, bt_char, bt_unsigned_char, bt_short, bt_char16_t, bt_unsigned_short, 
     bt_wchar_t, bt_enum, bt_int, bt_char32_t, bt_unsigned, bt_long, bt_unsigned_long, bt_long_long,
         bt_unsigned_long_long, bt_float, bt_double, bt_long_double, bt_float_imaginary,
         bt_double_imaginary, bt_long_double_imaginary, bt_float_complex, 
@@ -483,10 +483,11 @@ typedef struct sym
         unsigned isConstructor:1; // is a constructor
         unsigned isDestructor:1; // is  adestructor
         unsigned isExplicit:1; // explicit constructor or conversion function
-        unsigned isTemplate:1; // is a template declaration
-        unsigned specialized:1; // is a template specialization
-        unsigned instantiated:1; // is a template instantiation
-        unsigned packed:1; // is a variable for a pack expansion
+        unsigned specialized:1; // is a template specialization        
+        unsigned packed:1; // packed template param instance
+        unsigned instantiated:1; // instantiated template
+        unsigned performedDeferred : 1; // structured type has deferred compilation done already
+        unsigned temp : 1; // temporary boolean...
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int nextid; /* ID to use for nextage purposes (binary output) */
@@ -510,6 +511,7 @@ typedef struct sym
     struct lexeme *deferredTemplateHeader ;
     struct lexeme *deferredCompile ;
     struct _templateParam *templateParams;
+    int templateLevel;
     LIST *specializations;
     LIST *instantiations;
     struct _templateSelector *templateSelector; // first element is the last valid sym found, second element is the template parameter sym
@@ -620,22 +622,26 @@ typedef struct _templateParam
         struct {
             SYMBOL *dflt;
             SYMBOL *val;
+            struct lexeme *txtdflt;
             SYMBOL *temp;
             struct _templateParam *args;
         } byTemplate;
         struct {
             TYPE *dflt;
             TYPE *val;
+            struct lexeme *txtdflt;
             TYPE *temp;
         } byClass;
         struct {
             EXPRESSION *dflt;
             EXPRESSION *val;
+            struct lexeme *txtdflt;
             EXPRESSION *temp;
             TYPE *tp;
         }byNonType;  
         struct {
             struct _templateParam *types;
+            struct _templateParam *next;
         }bySpecialization;
         struct {
             struct _templateParam *pack;

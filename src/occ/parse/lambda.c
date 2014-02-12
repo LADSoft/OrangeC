@@ -813,7 +813,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     {
         TYPE *tpx = &stdvoid;
         HASHREC *hr;
-        lex = getFunctionParams(lex, NULL, &self->func, &tpx, sc_auto);
+        lex = getFunctionParams(lex, NULL, &self->func, &tpx, FALSE, sc_auto);
         self->funcargs = self->func->tp->syms->table[0];
         hr = self->func->tp->syms->table[0];
         while (hr)

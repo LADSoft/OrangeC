@@ -86,7 +86,7 @@ static char *mangleClasses(char *in, SYMBOL *sp)
         in = mangleNameSpaces(in, sp->parentNameSpace);
     if (sp->castoperator)
         strcat(in, "@");
-    else if (sp->isTemplate)
+    else if (sp->templateLevel)
     {
         *in++ = '@';
         mangleTemplate(in, sp, sp->templateParams);
@@ -98,7 +98,7 @@ static char *mangleClasses(char *in, SYMBOL *sp)
 static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAM *params)
 {
     BOOL bySpecial = FALSE;
-    if (sym->instantiated && !sym->isTemplate || params->bySpecialization.types)
+    if (sym->instantiated && !sym->templateLevel || params && params->bySpecialization.types)
     {
         params = params->bySpecialization.types;
         bySpecial = TRUE;
@@ -145,7 +145,7 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAM *params)
             case kw_template:
                 if (params->packed)
                     *buf++ = 'e';
-                if (bySpecial && params->byTemplate.val)
+                if (bySpecial && params->byTemplate.dflt && params->byTemplate.val)
                 {
                     buf = mangleTemplate(buf, params->byTemplate.dflt, params->byTemplate.val->templateParams);
                 }
@@ -233,7 +233,7 @@ static char *getName(char *in, SYMBOL *sp)
     p = mangleClasses(buf, sp->parentClass);
     if (p != buf)
         *p++ = '@';
-    if (sp->isTemplate)
+    if (sp->templateLevel)
     {
         p = mangleTemplate(p, sp, sp->templateParams);
     }
@@ -277,10 +277,13 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
     {
         if (ispointer(tp) || isref(tp))
         {
-            if (isconst(basetype(tp)->btp))
-                *in++ = 'x';
-            if (isvolatile(basetype(tp)->btp))
-                *in++ = 'y';
+            if (basetype(tp)->btp)
+            {
+                if (isconst(basetype(tp)->btp))
+                    *in++ = 'x';
+                if (isvolatile(basetype(tp)->btp))
+                    *in++ = 'y';
+            }
         }
         if (isfunction(tp))
         {
@@ -320,7 +323,7 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
                 if (isfunction(tp->btp))
                 {
                     *in++ = 'q';
-                    hr = tp->btp->syms->table[0];
+                    hr = basetype(tp->btp)->syms->table[0];
                     while (hr)
                     {
                         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -334,7 +337,7 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
                 else
                 {
                     *in++ = '$';
-                    in = mangleType (in, tp->btp, TRUE);
+                    in = mangleType (in, basetype(tp)->btp, TRUE);
                 }
                 break;
             case bt_enum:
@@ -376,6 +379,10 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
             case bt_unsigned_char:
                 *in++ = 'u';
             case bt_char:
+                *in++ = 'c';
+                break;
+            case bt_signed_char:
+                *in++ = 'S';
                 *in++ = 'c';
                 break;
             case bt_wchar_t:
@@ -434,6 +441,20 @@ char *mangleType (char *in, TYPE *tp, BOOL first)
                 in = getName(in, tp->templateParam->sym);
                 break;
             case bt_templateselector:
+            {
+                TEMPLATESELECTOR *s = tp->sp->templateSelector;
+                s = s->next;
+                strcpy(nm, s->sym->name);
+                s = s->next ;
+                while (s)
+                {
+                    strcat(nm , "@");
+                    strcat(nm , s->name);
+                    s= s->next;
+                }
+                sprintf(in, "%d%s", strlen(nm), nm);
+                in += strlen(in);
+            }
                 break;
             default:
                 diag("mangleType: unknown type");
@@ -499,7 +520,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
         case lk_cpp:
             p = mangleClasses(p, sym->parentClass);
             *p++ = '@';
-            if (sym->isTemplate)
+            if (sym->templateLevel)
             {
                 p = mangleTemplate(p, sym, sym->templateParams);
             }
@@ -513,19 +534,29 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
                 *p++ = '$';
                 if (sym->castoperator)
                 {
+                    int tmplCount = 0;
                     *p++ = 'o';
                     p = mangleType(p, basetype(sym->tp)->btp, TRUE); // cast operators get their cast type in the name
                     *p++ = '$';
                     p = mangleType(p, sym->tp, TRUE); // add the $qv
-                    while (*--p != '$') ;
+                    while (*--p != '$' || tmplCount) 
+                        if (*p == '~')
+                            tmplCount++;
+                        else if (*p == '#')
+                            tmplCount--;
                     p[1] = 0;
                 }
                 else
                 {
                     p = mangleType(p, sym->tp, TRUE); // otherwise functions get their parameter list in the name
-                    if (!sym->isTemplate)
+                    if (!sym->templateLevel)
                     {
-                        while (*--p != '$') ;
+                        int tmplCount = 0;
+                        while (*--p != '$' || tmplCount) 
+                            if (*p == '~')
+                                tmplCount++;
+                            else if (*p == '#')
+                                tmplCount--;
                         p[1] = 0;
                     }
                 }            

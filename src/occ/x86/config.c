@@ -173,6 +173,7 @@ static ARCH_DEFINES defines[] = {
     {"__386__","1",TRUE,TRUE },
     {"__i386__","1",TRUE,TRUE },
     {"_i386_","1",TRUE,TRUE },
+    {"__i386","1",TRUE,TRUE },
     {0 },
 };
 static ARCH_SIZING sizes = {

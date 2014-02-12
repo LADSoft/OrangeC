@@ -141,6 +141,10 @@ TYPE stdchar32tptr =
 {
     bt_pointer, 0, &stdchar32t
 };
+TYPE stdsignedchar = 
+{
+    bt_char, 1,
+};
 TYPE stdunsignedchar = 
 {
     bt_unsigned_char, 1,
@@ -481,6 +485,7 @@ static int basesize(ARCH_SIZING *p, TYPE *tp)
             return 0;
         case bt_char:
         case bt_unsigned_char:
+        case bt_signed_char:
             return p->a_char;
         case bt_bool:
             return p->a_bool;
@@ -672,6 +677,7 @@ int init_backend(int *argc ,char **argv)
         stdconst.size = stdunsigned.size = stdint.size = getSize(bt_unsigned);        
         stdstring.size = getSize(bt_pointer);
         stdchar.size = getSize(bt_char);
+        stdsignedchar.size = getSize(bt_unsigned_char);
         stdunsignedchar.size = getSize(bt_unsigned_char);
         stdshort.size = getSize(bt_short);
         stdunsignedshort.size = getSize(bt_unsigned_short);

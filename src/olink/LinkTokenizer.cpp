@@ -349,7 +349,7 @@ bool LinkTokenizer::GetAdd(LinkExpression **exp, bool canUsePC)
             LinkExpression *right = NULL;
             if (!GetAdd(&right, canUsePC))
             {
-                if (right)
+                
                     delete right;
                 return false;
             }
@@ -376,7 +376,7 @@ bool LinkTokenizer::GetMul(LinkExpression **exp, bool canUsePC)
             LinkExpression *right = NULL;
             if (!GetAdd(&right, canUsePC))
             {
-                if (right)
+                
                     delete right;
                 return false;
             }
@@ -394,7 +394,7 @@ bool LinkTokenizer::GetExpression(LinkExpression **exp, bool canUsePC)
     *exp = NULL;
     if (!GetMul(exp, canUsePC))
     {
-        if (*exp)
+        
             delete *exp;
         *exp = NULL;
         return false;

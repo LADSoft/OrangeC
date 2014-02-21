@@ -64,7 +64,7 @@ public:
         Definition(const std::string &Name, std::string &Value, DefinitionArgList *List, bool Permanent)
             : Symbol(Name), value(Value), argList(List), undefined(false), permanent(Permanent), varargs(false),
             caseInsensitive(false) { }
-        virtual ~Definition() { if (argList) delete argList;  }
+        virtual ~Definition() { delete argList;  }
         bool HasVarArgs() const { return varargs; }
         void SetHasVarArgs() { varargs = true; }
         int GetArgCount() { if (!argList) return 0; else return argList->size(); }

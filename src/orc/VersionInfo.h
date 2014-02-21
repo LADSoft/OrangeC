@@ -58,6 +58,7 @@ public:
     int GetType() const { return type; }
     virtual void WriteRes(ResFile &resFile) = 0;
     virtual bool ReadRC(RCFile &rcFile) = 0;
+	virtual ~InternalVerInfo() {}
 private:
     int type;
 };

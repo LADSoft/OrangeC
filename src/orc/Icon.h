@@ -57,7 +57,7 @@ public:
     Icon(const ResourceInfo &info, const ResourceId &id)
         : Resource(eIcon, id, info),
         colors(0), planes(0), bits(0), data(NULL) { }
-    virtual ~Icon() { if (data) delete data; }
+    virtual ~Icon() { delete data; }
     bool ReadBin(ResourceData *rd);
     virtual void WriteRes(ResFile &resFile);
     virtual bool ReadRC(RCFile &rcFile) { return true; }
@@ -72,8 +72,7 @@ public:
     void SetBits(const unsigned Bits) { bits = Bits; }
     unsigned GetBits() const { return bits; }
     void SetData(ResourceData *rdata) {
-        if (data)
-            delete data;
+        delete data;
         data = rdata;
     }
     ResourceData *GetData() const { return data; }

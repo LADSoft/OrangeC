@@ -51,12 +51,12 @@ class GenericResource : public Resource
 public:
     GenericResource(const ResourceId &type, const ResourceId &Id, const ResourceInfo &info)
         : Resource(type, Id, info), data(NULL) { }
-    virtual ~GenericResource() { if (data) delete data; }
+    virtual ~GenericResource() {  delete data; }
     virtual void WriteRes(ResFile &resFile);
     virtual bool ReadRC(RCFile &rcFile);
     
     void SetData(ResourceData *rdata) {
-        if (data)
+       
             delete data;
         data = rdata;
     }

@@ -15,7 +15,7 @@ public:
     static int CharSpan(const char *);
     static int Span(const char *);
     static int ToUpper(int val);
-    static std::string ToUpper(std::string val);
+    static std::string ToUpper(const std::string& val);
 private:
     static int alpha[];
     static int alnum[];

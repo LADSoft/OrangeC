@@ -37,6 +37,8 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+#define _CRT_SECURE_NO_WARNINGS  
+
 #include "MakeMain.h"
 #include "Include.h"
 #include "Maker.h"

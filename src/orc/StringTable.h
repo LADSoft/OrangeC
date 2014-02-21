@@ -58,7 +58,7 @@ public:
     static void Reset() { stringTables.clear(); }
 protected:
     StringTable(int Id, const ResourceInfo &info);
-    void Add(int id, std::wstring val);
+    void Add(int id, const std::wstring& val);
     static StringTable *Lookup(ResFile &resFile, int id);
 private:
     int tblNum;

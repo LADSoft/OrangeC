@@ -235,8 +235,8 @@ bool xmlNode::Read(std::fstream &stream, char v)
         {
             stream.putback(t);
             xmlAttrib *attrib = new xmlAttrib();
-            if (!attrib)
-                return false;
+            //if (!attrib)
+            //    return false;
             if (!attrib->Read(stream))
             {
                 delete attrib;
@@ -332,8 +332,8 @@ bool xmlNode::Read(std::fstream &stream, char v)
                 else
                 {	
                     xmlNode *node = new xmlNode();
-                    if (!node)
-                        return false;
+                    //if (!node)
+                    //    return false;
                     if (!node->Read(stream, t))
                     {
                         delete node;

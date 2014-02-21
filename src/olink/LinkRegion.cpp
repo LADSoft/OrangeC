@@ -56,19 +56,19 @@
 LinkRegion::~LinkRegion()
 {
     for (std::vector<NamedSection *>:: iterator it =
-         nowData.begin(); it != nowData.end(); it++)
+         nowData.begin(); it != nowData.end(); ++it)
     {
         NamedSection *n = (*it);
         delete n;
     }
     for (std::vector<NamedSection *>:: iterator it =
-         normalData.begin(); it != normalData.end(); it++)
+         normalData.begin(); it != normalData.end(); ++it)
     {
         NamedSection *n = (*it);
         delete n;
     }
     for (std::vector<NamedSection *>:: iterator it =
-         postponeData.begin(); it != postponeData.end(); it++)
+         postponeData.begin(); it != postponeData.end(); ++it)
     {
         NamedSection *n = (*it);
         delete n;
@@ -532,7 +532,7 @@ ObjInt LinkRegion::ArrangeSections()
 }
 ObjInt LinkRegion::PlaceRegion(LinkAttribs &partitionAttribs, ObjInt base)
 {
-    int alignAdjust;
+    int alignAdjust = 0; // FIXME 
     if (!attribs.GetVirtualOffsetSpecified())
         if (partitionAttribs.GetVirtualOffsetSpecified())
             attribs.SetVirtualOffset(new LinkExpression(partitionAttribs.GetVirtualOffset() + base - partitionAttribs.GetAddress()));

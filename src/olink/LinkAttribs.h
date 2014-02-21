@@ -53,30 +53,30 @@ class LinkAttribs
         ObjInt GetAddress()
             { if (address) return address->Eval(0); else return 0; }
         void SetAddress(LinkExpression * Address)
-            { if (address) delete address; address = Address; }
+            {  delete address; address = Address; }
         ObjInt GetAlign()
             { if (align) return align->Eval(0); else return 1; }
         void SetAlign(LinkExpression * Align) 
-            { if (align) delete align; align = Align; }
+            {  delete align; align = Align; }
         ObjInt GetMaxSize()
             { if (maxSize) return maxSize->Eval(0); else return 0; }
         void SetMaxSize(LinkExpression * Size) 
-            { if (maxSize) delete maxSize; maxSize = Size; }
+            {  delete maxSize; maxSize = Size; }
         ObjInt GetSize()
             { if (size) return size->Eval(0); else return 0; }
         void SetSize(LinkExpression * Size) 
-            { if (size) delete size; size = Size; }
+            {  delete size; size = Size; }
         ObjInt GetRoundSize()
             { if (roundSize) return roundSize->Eval(0); else return 0; }
         void SetRoundSize(LinkExpression * RoundSize) 
-            { if (roundSize) delete roundSize; roundSize = RoundSize; }
+            { delete roundSize; roundSize = RoundSize; }
         ObjInt GetVirtualOffset()
             { if (virtualOffset) return virtualOffset->Eval(0); else return 0; }
         void SetVirtualOffset(LinkExpression * VirtualOffset) 
-            { if (virtualOffset) delete virtualOffset; virtualOffset = VirtualOffset; }
+            {  delete virtualOffset; virtualOffset = VirtualOffset; }
         ObjInt GetFill() { if (fill) return fill->Eval(0); else return 0; }
         void SetFill(LinkExpression *Fill)
-            { if (fill) delete fill; fill = Fill; }
+            { delete fill; fill = Fill; }
         bool GetAddressSpecified() { return address != NULL; }
         bool GetVirtualOffsetSpecified() { return virtualOffset != NULL; }
         bool GetHasFill() { return fill != NULL; }

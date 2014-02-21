@@ -234,11 +234,11 @@ void LinkMap::Publics(std::fstream &stream)
     }
     stream << std::endl << "Publics By Name" << std::endl << std::endl;
     for (std::set<MapSymbolData, linkltcomparebyname>::iterator it 
-             = byName.begin(); it != byName.end(); it++)
+             = byName.begin(); it != byName.end(); ++it)
         ShowSymbol(stream, (*it));
     stream << std::endl << "Publics By Value" << std::endl << std::endl;
     for (std::set<MapSymbolData, linkltcomparebyvalue>::iterator it 
-             = byValue.begin(); it != byValue.end(); it++)
+             = byValue.begin(); it != byValue.end(); ++it)
         ShowSymbol(stream, (*it));
 }
 void LinkMap::WriteMap()

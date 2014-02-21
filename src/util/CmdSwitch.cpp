@@ -37,6 +37,8 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <windows.h>
 #include "CmdSwitch.h"
 #include "Utils.h"
@@ -154,8 +156,8 @@ int CmdSwitchDefine::Parse(const char *data)
         return -1;
     }
     define *newDefine = new define;
-    if (!newDefine)
-        return -1;
+//	if (!newDefine) // new return not NULL or exception!
+//        return -1;
     newDefine->name = name;
     if (*data == '=')
     {
@@ -248,7 +250,7 @@ char * CmdSwitchFile::GetStr(char *data)
             memcpy(name, p + 1, len - 2);
             name[len-2] = 0;
             char *env = getenv(name);
-            delete name;
+            delete[] name;
             if (env)
             {
                 int len2 = strlen(env);

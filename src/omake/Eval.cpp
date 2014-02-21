@@ -248,7 +248,7 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         }
         else if (name[0] == '%') // empty
         {
-            return "";
+            return ""; //FIXME ! return bool
         }
         else if (name[0] == '<') // first prereq of first rule
         {
@@ -540,7 +540,7 @@ size_t Eval::FindPercent(const std::string &name, size_t pos)
     while (true)
     {
         pos = name.find_first_of('%', pos);
-        if (pos == std::string::npos || pos == 0 || name[pos-1] != '\\' || pos > 1 && name[pos-2] == '\\')
+        if (pos == std::string::npos || pos == 0 || name[pos-1] != '\\' || pos > 1 && name[pos-2] == '\\') //  Priority of the '&&' operation is higher than that of the '||' operation
             return pos;
         pos++;
     }
@@ -1253,7 +1253,6 @@ std::string Eval::condIf(const std::string &arglist)
 
 std::string Eval::condOr(const std::string &arglist)
 {
-    std::string rv;
     std::string left;
     std::string right = arglist;
     size_t n = right.find_first_of(',');
@@ -1273,7 +1272,6 @@ std::string Eval::condOr(const std::string &arglist)
 
 std::string Eval::condAnd(const std::string &arglist)
 {
-    std::string rv;
     std::string left;
     std::string right = arglist;
     size_t n = right.find_first_of(',');

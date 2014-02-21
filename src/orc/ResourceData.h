@@ -54,14 +54,13 @@ public:
     {
         SetData(rdata, len);
     }
-    ~ResourceData() { if (data) delete data; }
+    ~ResourceData() { delete data; }
     
     size_t GetLen() const { return len; }
     const unsigned char *GetData() const { return data; }
     void SetData(const unsigned char *rdata, size_t rlen)
     {
-        if (data)
-            delete data;
+        delete data;
         len = rlen;
         data = new unsigned char[len];
         memcpy(data, rdata, len);

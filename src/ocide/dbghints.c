@@ -432,7 +432,7 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
             case eLong: case eULong:
             case eChar32T:
             case eLongLong: case eULongLong:
-                sprintf(buf, "%Ld(%Lx)", info->ival);
+                sprintf(buf, "%Ld(%Lx)", info->ival, info->ival);
                 break;
             case eFloat: case eImaginary:
             case eDouble: case eImaginaryDouble:

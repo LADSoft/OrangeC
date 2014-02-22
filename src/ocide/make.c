@@ -101,7 +101,6 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
         AddSymbolTable(pj, FALSE);
         if (pj->type == PJ_FILE)
         {
-            int i;
             char *p;
             p = Lookup("OUTPUTFILE", pj, NULL);
             if (p)
@@ -138,10 +137,8 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
         {
             struct _propsData data;
             SETTING *pages[100];
-            int i;
-            char *p;
             memset(&data, 0, sizeof(data));
-            data.prototype = pages;
+            data.prototype = pages;//FIXME?
             SelectRules(pj, &data);
             if (data.protocount)
             {
@@ -580,7 +577,6 @@ void Maker(PROJECTITEM *pj, BOOL clean)
 }
 void dbgRebuildMainThread(int cmd)
 {
-    int i;
     cmd &= 0xffff;
     if (!activeProject)
     {

@@ -52,7 +52,7 @@ int IsPEFile(char *filename)
     long pos;
     if (!fil)
         return 0;
-    memset(buf, 64, 0);
+    memset(buf, 64, 0); ////FIXME memset !!!
     fread(buf, 64, 1, fil);
     pos = *(int*)(buf + 0x3c);
     fseek(fil, pos, SEEK_SET);
@@ -128,7 +128,7 @@ int FindExitProcessAddress(HANDLE hProcess, int imagebase)
 }
 //-------------------------------------------------------------------------
 
-int FindLSCRTLExitAddress(HANDLE hProcess, int imagebase)
+int FindLSCRTLExitAddress(HANDLE hProcess, int imagebase) //FIXME see FindExitProcessAddress
 {
     struct pe_import_dir_struct PEImport;
     int dir_address;

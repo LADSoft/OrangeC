@@ -46,7 +46,7 @@
 #include "ObjTypes.h"
 #include "LibDictionary.h"
 #include "LibFiles.h"
-typedef unsigned DWORD;
+typedef unsigned DWORD; //FIXME - re-define DWORD ?
 
 class ObjSymbol;
 class ObjFile;

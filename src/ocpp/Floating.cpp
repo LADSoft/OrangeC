@@ -1116,7 +1116,7 @@ void FPF::Truncate(int bits, int maxexp, int minexp)
                 for (i = (bits + 15)/16; i < INTERNAL_FPF_PRECISION; i++)
                 {
                     if (mantissa[i])
-                        rounding ++;
+                        rounding ++; //FIXME rounding is bool !
                     mantissa[i] = 0;
                 }
                 if (rounding)

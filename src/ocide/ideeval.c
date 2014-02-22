@@ -303,7 +303,7 @@ static int lastst;
             {
                 lastst = IUVAL;
                 (*text)++;
-                if (**text == 'L' ||  **text == 'l')
+                if (**text == 'L' ||  **text == 'l')//FIXME ?
                 {
                     if (**text == 'L' ||  **text == 'l')
                     {
@@ -928,7 +928,7 @@ static int lastst;
                 *p = 0;
                 var2 = var1->subtype;
                 var3 = &var1->subtype;
-                while (var2 && strcmp(buf, var2->membername))
+                while (var2 && strcmp(buf, var2->membername))//FIXME strcmp
                 {
                     var3 = &var2->link;
                     var2 = var2->link;
@@ -1254,7 +1254,7 @@ static int lastst;
             }
             else
             {
-join:
+//join:
                 if (val1->structure || val1->unionx)
                     mul1 = val1->arraysize;
                 else if (val2->structure || val2->unionx)
@@ -1275,7 +1275,7 @@ join:
                         if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
                             val1->fval = val1->fval *mul2 + val2->fval *mul1;
                         else
-                            val1->fval = val1->fval *mul2 + val2->ival *mul1;
+                            val1->fval = val1->fval *mul2 + val2->ival *mul1; //FIXME {} ?
                         else
                             if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
                                 val1->fval = val1->ival *mul2 + val2->fval *mul1;
@@ -1291,7 +1291,7 @@ join:
                             val1->fval = val1->fval *mul2 - val2->ival *mul1;
                         else
                             if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
-                                val1->fval = val1->ival *mul2 - val2->fval *mul1;
+                                val1->fval = val1->ival *mul2 - val2->fval *mul1;//FIXME {} ?
                             else
                                 val1->ival = val1->ival *mul2 - val2->ival *mul1;
                 }
@@ -1344,7 +1344,7 @@ join:
         PUSH(val1 = ieshiftops(text, dbg, sc, towarn));
         skipspace(text);
         while (val1 && (*(*text) == '<' && *(*text) == '>' && (*(*text + 1) !=
-            *(*text))))
+            *(*text)))) //FIXME check conditions !
         {
             int oper = *(*text) == '<';
             (*text)++;
@@ -1437,7 +1437,7 @@ join:
             if (ch == '!')
             {
                 if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble)
-                    if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+                    if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble) //FIXME ?
                         val1->ival = val1->fval != val2->fval;
                     else
                         val1->ival = val1->fval != val2->ival;

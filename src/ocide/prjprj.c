@@ -146,15 +146,15 @@ static int ParseNewProjectData(HWND hwnd)
                 case BT_WINDOWS:
                 default:
                     if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".exe"))
-                       strcat(newName, ".exe");
+                       strcat(newName, ".exe");//FIXME stricmp check !!!
                     break;
                 case BT_DLL:
                     if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".dll"))
-                       strcat(newName, ".exe");
+                       strcat(newName, ".exe");//FIXME stricmp check !!!
                     break;
                 case BT_LIBRARY:
                     if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".lib"))
-                       strcat(newName, ".exe");
+                       strcat(newName, ".exe");//FIXME stricmp check !!!
                     break;
             }
         }
@@ -283,7 +283,7 @@ long APIENTRY NewProjectProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
             }
             else if (((LPNMHDR)lParam)->code == LVN_KEYDOWN)
             {
-                switch (((LPNMLVKEYDOWN)lParam)->wVKey)
+                switch (((LPNMLVKEYDOWN)lParam)->wVKey) //FIXME switch ?
                 {
                     if (GetKeyState(VK_CONTROL) & 0x80000000)
                     {
@@ -388,11 +388,9 @@ void ProjectNewProject(void)
             p = calloc(1, sizeof(PROJECTITEM));
             if (p)
             {
-                PROJECTITEM **ins = &workArea->children, *temp;
+                PROJECTITEM **ins = &workArea->children;
                 HTREEITEM pos = TVI_FIRST;
-                char num[32];
                 int imagetype;
-                SETTING *set;
                 strcpy( p->displayName, newTitle);
                 strcpy( p->realName, newName);
                 p->expanded = TRUE;
@@ -435,7 +433,6 @@ void ProjectExistingProject(void)
                                "Open existing project"))
         {
             PROJECTITEM *p = workArea->children;
-            char buf[MAX_PATH];
             char *q;
             q = stristr(ofn.lpstrFile,".cpj");
             if (q)
@@ -448,7 +445,7 @@ void ProjectExistingProject(void)
             p = calloc(1, sizeof(PROJECTITEM));
             if (p)
             {
-                PROJECTITEM **ins = &workArea->children, *temp;
+                PROJECTITEM **ins = &workArea->children;
                 HTREEITEM pos = TVI_FIRST;
                 strcpy(p->realName, ofn.lpstrFile);
                 q = strrchr(p->realName, '\\');
@@ -502,7 +499,7 @@ void SaveAllProjects(PROJECTITEM *workArea, BOOL always)
 }
 void LoadProject(char *name)
 {
-    PROJECTITEM *p = calloc(1, sizeof(PROJECTITEM)), **ins;
+    PROJECTITEM *p = calloc(1, sizeof(PROJECTITEM)), **ins;//FIXME uninit
     if (p)
     {
         strcpy(p->realName, name);
@@ -529,8 +526,6 @@ void LoadProject(char *name)
 
 void IndirectProjectWindow(DWINFO *info)
 {
-    DWORD handle;
-    MSG msg;
     dmgrHideWindow(DID_TABWND, FALSE);
     LoadWorkArea(info->dwName, TRUE);
 }

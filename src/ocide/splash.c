@@ -75,7 +75,6 @@ static unsigned char *SplashScreen_LoadBmp(HINSTANCE hInstance, LPSTR
     HGLOBAL hGlobal;
     HGLOBAL hGlobalRet = NULL;
     LPVOID lpBuffer = NULL;
-    LPVOID lpbits;
     LPBITMAPFILEHEADER lpbfh;
     LPBITMAPINFOHEADER lpbih;
     hResource = FindResource(hInstance, lpszResource, "SPLASH");
@@ -175,7 +174,6 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
     LPARAM lParam)
 {
     LPSPLASH2 lpSplash2;
-    CREATESTRUCT *lpCreateStruct;
     switch (msg)
     {
         case WM_PAINT:
@@ -253,7 +251,6 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
 /******************************************************************************/
 static VOID SplashScreen_Thread(LPSPLASH lpSplash)
 {
-    HGLOBAL hGlobal;
     LPBYTE lpBuffer;
     WNDCLASSEX wcx;
     BOOL bReg;
@@ -323,7 +320,7 @@ static VOID SplashScreen_Thread(LPSPLASH lpSplash)
 
                 dwStyles = 0;
 
-                if (lpSplash->bAbout)
+                if (lpSplash->bAbout) //FIXME  ?
                     dwStyles = WS_POPUP | WS_DLGFRAME;
                 else
                     dwStyles = WS_POPUP | WS_DLGFRAME;
@@ -373,7 +370,7 @@ VOID WINAPI SplashScreen(LPSPLASH lpSplash)
     {
         memcpy(lpSplash_t, lpSplash, sizeof(SPLASH));
 
-        hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)
+        hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) //FIXME Use _beginthreadex/_endthreadex functions instead of CreateThread/ExitThread functions
             SplashScreen_Thread, (LPVOID)lpSplash_t, 0, &dwTid);
 
         if (lpSplash->bWait && hThread != NULL)

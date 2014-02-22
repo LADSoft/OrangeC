@@ -366,7 +366,7 @@ void MemDoPaint(HWND hwnd, int focussed)
         TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, charbuf, strlen(charbuf));
     }
 
-    SelectObject(dc, oldFont);
+    SelectObject(dc, oldFont);//FIXME oldFont ?
 
     EndPaint(hwnd, &ps);
 }
@@ -788,7 +788,7 @@ LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             hwndMemInternal[0] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_VISIBLE + WS_BORDER,
                                           r.left, r.top, r.right - r.left, r.bottom - r.top,
                                           hwnd, 0, hInstance, 0);
-            hwndMemInternal[1] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER,
+            hwndMemInternal[1] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER, //FIXME ? 1-3 the same
                                           r.left, r.top, r.right - r.left, r.bottom - r.top,
                                           hwnd, 0, hInstance, 0);
             hwndMemInternal[2] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER,

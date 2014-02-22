@@ -261,7 +261,6 @@ void EditRenameFile(char *oldName, char *newName)
 int ApplyBreakAddress(char *module, int linenum)
 {
     char nmodule[260];
-    int i;
     nmodule[0] = 0;
     TagBreakpoint(module, linenum);
     if (linenum)
@@ -391,7 +390,6 @@ static void backup(char *name)
     char newname[256], buffer[512];
     char *s;
     HANDLE in, out;
-    int size;
     BY_HANDLE_FILE_INFORMATION info;
     strcpy(newname, name);
     s = strrchr(newname, '.');
@@ -432,7 +430,6 @@ int SaveFile(HWND hwnd, DWINFO *info)
 {
     char *buf = GetEditData(GetDlgItem(hwnd, ID_EDITCHILD));
     FILE *out;
-    int l, i;
 
     if (PropGetBool(NULL, "BACKUP_FILES"))
         backup(info->dwName);
@@ -550,7 +547,6 @@ void drawParams(DWINFO *info, HWND hwnd)
     int mod = SendMessage(info->dwHandle, EM_GETMODIFY, 0, 0);
     int maxLines = SendMessage(info->dwHandle, EM_GETLINECOUNT, 0, 0) + 1; 
     int textSize = SendMessage(info->dwHandle, EM_GETSIZE, 0, 0);
-    EDITDATA *dt ;
     CHARRANGE a;
     SendMessage(info->dwHandle, EM_GETSEL, (WPARAM) &sel, 0);
     SendMessage(GetDlgItem(hwnd, ID_EDITCHILD), EM_EXGETSEL, 0, (LPARAM) &a);
@@ -867,7 +863,6 @@ void InstallForParse(HWND hwnd)
 {
     if (PropGetInt(NULL, "CODE_COMPLETION") != 0)
     {
-        int i;
         DWINFO *info = (DWINFO *)GetWindowLong(hwnd, 0);
         char *name = info->dwName;
         int len = strlen(name);
@@ -938,22 +933,15 @@ void ScanParse(void)
 LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    DWORD threadhand;
     LRESULT rv;
     DWINFO *ptr,  *ptr1;
     EDITDATA *ed;
     OPENFILENAME ofn;
     HDC dc;
-    HPEN hpen, oldpen;
     RECT r;
-    HBRUSH graybrush;
-    LOGBRUSH lbrush;
     PAINTSTRUCT paint;
     LPCREATESTRUCT createStruct;
-    int childheight;
     int startpos, endpos, flag, i;
-    HWND win;
-    FILETIME time;
     NMHDR *nm;
     CHARRANGE s;
     char buf[256];
@@ -1516,8 +1504,7 @@ void RegisterDrawWindow(void)
 
 HWND openfile(DWINFO *newInfo, int newwindow, int visible)
 {
-    HWND rv, last ;
-    int i;
+    HWND rv ;
     void *extra = newInfo == (DWINFO *)-1 ? newInfo : NULL ;
     MSG msg;
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
@@ -1566,7 +1553,6 @@ HWND openfile(DWINFO *newInfo, int newwindow, int visible)
 
 HWND CreateDrawWindow(DWINFO *baseinfo, int visible)
 {
-    int i;
     static DWINFO temp;
     OPENFILENAME ofn;
 

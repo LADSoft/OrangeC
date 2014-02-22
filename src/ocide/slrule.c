@@ -89,7 +89,7 @@ SETTING *LoadItem(struct xmlNode *node, int version, BOOL debug)
         }
         attribs = attribs->next;
     }
-    if (!type || debug && !stricmp(type, "DEBUG") || !debug && !stricmp(type, "RELEASE"))
+    if (!type || debug && !stricmp(type, "DEBUG") || !debug && !stricmp(type, "RELEASE")) //FIXME && ||
     {
         SETTING *rv = calloc(1, sizeof(SETTING));
         attribs = node->attribs;
@@ -394,9 +394,8 @@ PROFILE *LoadRule(char *fileName)
     int version=0;
     FILE *in;
     struct xmlNode *root;
-    struct xmlNode *nodes,  *children;
+    struct xmlNode *nodes;
     struct xmlAttr *attribs;
-    char buf[256],  *p; 
     in = fopen(fileName, "r");
     if (!in)
     {

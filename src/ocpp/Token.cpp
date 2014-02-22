@@ -255,7 +255,7 @@ const FPF *NumericToken::GetFloat() const
 }
 bool NumericToken::Start(const std::string &line)
 {
-    return isdigit(line[0]) || line[0] == '.' && isdigit(line[1]);
+    return isdigit(line[0]) || line[0] == '.' && isdigit(line[1]); //FIXME && and ||
 }
 int NumericToken::Radix36(char c)
 {
@@ -661,8 +661,7 @@ const Token *Tokenizer::Next()
 {
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0,n);
-    if (currentToken)
-        delete currentToken;
+    delete currentToken;
     if (line.size() == 0)
         currentToken = new EndToken;
     else if (NumericToken::Start(line))

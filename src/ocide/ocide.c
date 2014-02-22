@@ -215,7 +215,6 @@ void ProjSetup(char select, char *string)
 
 void WorkAreaSetup(char select, char *string)
 {
-    DWORD hand;
     bCmdLineWS = TRUE;
     strcpy(szNewWS, string);
     abspath(szNewWS, 0);
@@ -511,25 +510,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     int maxed;
     LRESULT rv;
     static int timerid;
-    int sel;
     CLIENTCREATESTRUCT csx;
     static DEBUG_EVENT *dbe;
     static int initted;
     HWND win;
-    int mf_state, x_state;
+    int  x_state;
     RECT rs, rf;
-    RECT rp, rt;
-    POINT pt;
     int parts[10], i;
-    LPTOOLTIPTEXT lpt;
     char *name;
     char module[256];
     int linenum;
-    HDWP deferstruct;
     char buf[256];
-    int colorfg, colorbg;
     DRAWITEMSTRUCT *di;
-    HBRUSH hbr;
     NMHDR *h;
     switch (iMessage)
     {
@@ -537,7 +529,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             h = (NMHDR*)lParam;
             switch (h->code)
             {
-                char *text;
                 case TABN_SELECTED:
                 {
                     LSTABNOTIFY *p = (LSTABNOTIFY *)h;
@@ -592,7 +583,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             // first activation, init all the windows
             if (!initted)
             {
-                DWORD hand;
                 HFONT font;
                 initted = TRUE;
                 CreateStackWindow();
@@ -1605,10 +1595,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     char buf[260], buf2[260], *p;
     HWND hwnd;
     HANDLE hsub;
-    DWORD val;
     MSG msg;
-    RECT r;
-    DWORD hand;
     WINDOWPLACEMENT wp;
     lpszCmdLine = GetCommandLineA();
     threadMain = GetCurrentThreadId();

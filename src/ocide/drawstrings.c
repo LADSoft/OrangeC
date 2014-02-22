@@ -296,7 +296,7 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         {
                             char id[256];
                         case 1:
-                            FormatVersionString(id, strings->string, strings->length);
+                            FormatVersionString(id, strings->string, strings->length);//FIXME id
                             plvdi->item.pszText = id;
                             break;
                         }
@@ -416,7 +416,6 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 AccSubclassEditWnd(hwnd, stringTableData->gd.editWindow);
                 switch(stringTableData->gd.selectedColumn)
                 {
-                    RECT r;
                     char buf[256];
                     case 0:
                         buf[0] = 0;
@@ -465,7 +464,7 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                 else
                                 {
                                     int len;
-                                    char *p = ParseVersionString(buf, &len);
+                                    char *p = ParseVersionString(buf, &len); //FIXME ?
                                     strings->length = StringAsciiToWChar(&strings->string, p, len);
                                     ResGetStringItemName(strings->id, p);
                                 }
@@ -545,7 +544,6 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterStringTableDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

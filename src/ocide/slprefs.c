@@ -172,7 +172,7 @@ void RestoreFindflags(struct xmlNode *node, int version)
                 index = atoi(attribs->value);
             attribs = attribs->next;
         }
-        if (index != -1 && fflags != -1 && rflags != -1)
+        if (index != -1 && fflags != -1 && rflags != -1) //FIXME fflags/rflags?
         {
             findflags[index] = fflags;
             replaceflags[index] = rflags;
@@ -231,7 +231,7 @@ int RestorePreferences(void)
     struct xmlNode *root;
     struct xmlNode *nodes,  *children;
     struct xmlAttr *attribs;
-    char buf[256],  *p; 
+    char  *p; 
     char name[256];
     if (!generalProject.profiles)
         generalProject.profiles = calloc(1, sizeof(PROFILE));

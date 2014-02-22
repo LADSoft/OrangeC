@@ -154,7 +154,7 @@ BOOL expectid(char *buf)
 BOOL expectstring(char *buf, char **in, BOOL angle)
 {
     skipspace();
-    if (**in == '"' || angle && **in == '<')
+    if (**in == '"' || angle && **in == '<')//FIXME && and ||
     {
         char s = *(*in)++;
         if (s == '<')
@@ -516,7 +516,7 @@ BOOL getline(void)
             while (rvc && isspace((unsigned char)includes->inputline[rvc - 1]))
                 rvc--;
 
-            if (!rvc || !commentlevel && includes->inputline[rvc - 1] != '\\')
+            if (!rvc || !commentlevel && includes->inputline[rvc - 1] != '\\')//FIXME && and ||
                 break;
             if (commentlevel)
                 includes->inputline[rvc++] = ' ';
@@ -573,7 +573,7 @@ BOOL getline(void)
 
         while (*includes->lptr != '\n' && isspace((unsigned char)*includes->lptr))
             includes->lptr++;
-        if (includes->lptr[0] == '#' || cparams.prm_trigraph && (includes->lptr[0] == '%' && includes->lptr[1] == ':'))
+        if (includes->lptr[0] == '#' || cparams.prm_trigraph && (includes->lptr[0] == '%' && includes->lptr[1] == ':'))//FIXME && and ||
         {
             if (cparams.prm_trigraph)
                 stripdigraph(includes->lptr);
@@ -716,6 +716,7 @@ void dopragma(void)
     BOOL sflag;
     int val;
     char name[SYMBOL_NAME_LEN];
+
     if (includes->ifskip)
         return;
     lineToCpp();
@@ -736,9 +737,9 @@ void dopragma(void)
             return ;
         skipspace();
         defid(name, &includes->lptr);
-        if (!strncmp(name, "ON", 2))
+        if (!strncmp(name, "ON", 2)) //FIXME - check strcmp result!
             on = 1;
-        else if (strncmp(name, "OFF", 3))
+        else if (strncmp(name, "OFF", 3))//FIXME - check strcmp result!
             return ;
         if (on)
             stdpragmas |= val;
@@ -1086,7 +1087,7 @@ void glbdefine(char *name, char *value, BOOL permanent)
 }
 void glbUndefine(char *name)
 {
-        DEFSTRUCT *hr;
+        DEFSTRUCT *hr; // FIXME - uninit value
         if (search(name, defsyms) == NULL)
         {
             IncGlobalFlag();
@@ -1211,7 +1212,7 @@ void dodefine(void)
         } else
             includes->lptr[j] = includes->lptr[i];
     p = strlen(includes->lptr);
-    for (i=0; i < p && isspace((unsigned char)includes->lptr[i]); i++) ;
+    for (i=0; i < p && isspace((unsigned char)includes->lptr[i]); i++) ; //FIXME ; ?
         if (i[includes->lptr] == REPLACED_TOKENIZING)
             pperror(ERR_PP_INV_DEFINITION, 0);
     for (i = p-1; i >=0 && isspace((unsigned char)includes->lptr[i]); i--) ;
@@ -1231,7 +1232,7 @@ void dodefine(void)
             int i;
             char *p, *q;
             for (i = 0; i < def->argcount - 1 && same; i++)
-                if (strcmp(def->args[i], hr->args[i]))
+                if (strcmp(def->args[i], hr->args[i]))//FIXME - check strcmp result!
                     same = FALSE;
             p = def->string;
             q = hr->string;
@@ -1310,11 +1311,11 @@ int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, un
 {
     unsigned char *q;
     static unsigned char NULLTOKEN[] = { TOKENIZING_PLACEHOLDER, 0 };
-    int i, p, r;
+    int  p, r;
     int val;
     int stringizing = FALSE;
     q = end;
-    while (*q >=0 && isspace((unsigned char)*q)) q++;
+    while (*q >=0 && isspace((unsigned char)*q)) q++; //*q unsigned >= 0 always
     if (*q == REPLACED_TOKENIZING)
     {
         if (text[0] == 0)
@@ -1325,7 +1326,7 @@ int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, un
     else
     {
         q = begin-1;
-        while (q > macro && *q >= 0 && isspace((unsigned char)*q)) q--;
+        while (q > macro && *q >= 0 && isspace((unsigned char)*q)) q--; //*q unsigned >= 0 always
         if (*q == REPLACED_TOKENIZING)
         {
             if (text[0] == 0)
@@ -1658,7 +1659,7 @@ int ppNumber(char *start, char *pos)
         // backtrack through all characters that could possibly be part of the number
         while (pos >= start &&
                issymchar(*pos) || *pos == '.' ||
-               (*pos == '-' || *pos == '+') && (pos[-1] == 'e' || pos[-1] == 'E' || pos[-1] == 'p' || pos[-1] == 'P'))
+               (*pos == '-' || *pos == '+') && (pos[-1] == 'e' || pos[-1] == 'E' || pos[-1] == 'p' || pos[-1] == 'P'))//FIXME && and ||
         {
             if (*pos == '-' || *pos == '+') pos--;
             pos--;
@@ -1670,7 +1671,7 @@ int ppNumber(char *start, char *pos)
             while (pos < x && (* pos != '.' || isdigit(pos[-1]) || !isdigit(pos[1]))) pos++;
         }
         // if we didn't get back where we started we have a number
-        return pos < x && (sixteensexp || pos[0] != '0' || pos[1] != 'x' && pos[1] != 'X') ;
+        return pos < x && (sixteensexp || pos[0] != '0' || pos[1] != 'x' && pos[1] != 'X') ; //FIXME sixteensexp is FALSE always ?
     }
     return FALSE;
 }
@@ -1728,12 +1729,12 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     p = q;
                     if (sp->argcount > 1)
                     {
-                        int lm, ln = strlen(name);
+                        int ln = strlen(name);
                         do
                         {
                             unsigned char *nm = macro;
                             int nestedparen = 0, nestedstring = 0;
-                            insize = 0;
+                            insize = 0;//FIXME ?
                             while (isspace((unsigned char)*p)) p++;
                             while (*p && (((*p != ',' &&  *p != ')') ||
                                 nestedparen || nestedstring) &&  *p != '\n'))
@@ -1756,7 +1757,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                                 nm--;
                             *nm = 0;
                             args[count] = litlate(macro);
-                            insize = 0;
+                            insize = 0; //FIXME
                             size = strlen(macro) ;
                             rv = replacesegment(macro, macro + size, &insize, totallen,0);
                             if (rv <-MACRO_REPLACE_SIZE) {
@@ -1967,7 +1968,7 @@ void popif(void)
     if (includes->ifs)
     {
         includes->ifskip = includes->ifs->iflevel;
-        includes->elsetaken = includes->ifs->elsetaken;
+        includes->elsetaken = includes->ifs->elsetaken; //FIXME BOOL<->short
         includes->ifs = includes->ifs->next;
     }
     else

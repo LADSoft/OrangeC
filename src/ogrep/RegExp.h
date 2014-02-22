@@ -40,7 +40,7 @@
 #ifndef REGEXP_H
 #define REGEXP_H
 
-typedef unsigned char BYTE;
+typedef unsigned char BYTE; //FIXME - redifine BYTE
 
 #include <deque>
 #include <ctype.h>

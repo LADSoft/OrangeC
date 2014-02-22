@@ -132,7 +132,7 @@ int ppFile::StripComment(char *line)
             while (s - count > line && *(s - count - 1) == '\\')
                 count++;
             if (!(count &1))
-                instr = false;
+                instr = false; // FIXME instr is not bool!
         }
         *s++ =  *e++;
     }

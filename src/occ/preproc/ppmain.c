@@ -142,7 +142,7 @@ void bool_setup(char select, char *string)
  * activation routine (callback) for boolean command line arguments
  */
 {
-    char bool = (char)string;
+    char bool = (char)string; //FIXME *string to char ? bool name ?
     if (select == '9')
         cparams.prm_c99 = bool;
     if (select == 'A')
@@ -179,17 +179,17 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    if (p[2] == 'x' || p[2] == 'x')
+                    if (p[2] == 'x' || p[2] == 'x') //FIXME
                     {
-                        if (p[3] == 'x' || p[3] == 'x')
+                        if (p[3] == 'x' || p[3] == 'x') //FIXME
                             cparams.prm_cplusplus = TRUE;
                     }
                 }
                 else
                 {
-                    if (p[2] == '+' || p[2] == '+')
+                    if (p[2] == '+' || p[2] == '+') //FIXME
                     {
-                        if (p[3] == '+' || p[3] == '+')
+                        if (p[3] == '+' || p[3] == '+') //FIXME
                             cparams.prm_cplusplus = TRUE;
                     }
                 }

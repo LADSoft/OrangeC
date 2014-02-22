@@ -112,10 +112,10 @@ int printerr(char *buf, int errnum, void *data)
             sprintf(buf, "Inserted '%c'", expectlist[(int)data]);
             break;
         case ERR_NEEDCHAR:
-            sprintf(buf, "Expected '%c'", (char)data);
+            sprintf(buf, "Expected '%c'", (char)data); //FIXME ?
             break;
         case ERR_ILLCHAR:
-            sprintf(buf, "Illegal character '%c'", (char)data);
+            sprintf(buf, "Illegal character '%c'", (char)data);//FIXME ?
             break;
         case ERR_NEEDCONST:
             sprintf(buf, "Constant value expected");

@@ -334,7 +334,6 @@ void ChangeImageColorCount(IMAGEDATA *res, int colors)
 {
     HBITMAP hbmTemp;
     HDC hdcTemp;
-    HBITMAP hbmOld;
 
     /* create a temporary dc */
     hdcTemp = CreateCompatibleDC(res->hdcImage);
@@ -577,7 +576,6 @@ RUBBER *CreateRubberBand(IMAGEDATA *res, int type, int filltype, POINT pt)
     LOGBRUSH lbrush;
     HPEN pen;
     HBRUSH brush;
-    int bits;
     if (!rv)
         return NULL;
     

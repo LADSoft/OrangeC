@@ -350,8 +350,6 @@ void AppendExtension(OPENFILENAME *ofn)
 int OpenFileDialogWithCancel(OPENFILENAME *ofn, char *name, HWND handle, int new, int
     multiple, char *filter, char *title)
 {
-    char cwd[256];
-    HFILE xhandle;
     szTitle = title;
     setofndata(ofn, name, handle, filter);
     if (!new)
@@ -393,7 +391,6 @@ int OpenFileDialog(OPENFILENAME *ofn, char *name, HWND handle, int new, int
 int SaveFileDialog(OPENFILENAME *ofn, char *name, HWND handle, int saveas, char
     *filter, char *title)
 {
-    char cwd[256];
     szTitle = title;
     setofndata(ofn, name, handle, filter);
     if (saveas)

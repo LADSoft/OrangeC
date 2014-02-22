@@ -932,8 +932,6 @@ void internalError(int a)
 void ccinit(int argc, char *argv[])
 {
     char buffer[260];
-    char *p;
-    int rv;
     strcpy(copyright, COPYRIGHT);
     strcpy(version, STRING_VERSION);
 
@@ -950,7 +948,7 @@ void ccinit(int argc, char *argv[])
         usage(argv[0]);
 #endif
 #ifdef MICROSOFT
-    GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
+    GetModuleFileNameA(NULL, buffer, sizeof(buffer));  //FIXME NULL as int   
 #else
     strcpy(buffer, argv[0]);
 #endif

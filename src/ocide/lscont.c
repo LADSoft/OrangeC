@@ -52,8 +52,7 @@ static HCURSOR mcurs;
 LRESULT CALLBACK ContainerProc(HWND hwnd, UINT iMessage, WPARAM
     wParam, LPARAM lParam)
 {
-    CCW_params *ptr,  *ptr1;
-    LRESULT rv;
+    CCW_params *ptr;
     RECT r;
     HDC dc;
     PAINTSTRUCT ps;

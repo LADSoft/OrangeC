@@ -45,8 +45,8 @@
 
 ppCond::~ppCond()
 {
-    if (current)
-        delete current;
+    
+    delete current;
     while (skipList.size())
     {
         current = skipList.front();
@@ -257,9 +257,9 @@ void ppCond::HandleDef(std::string &line, bool Else, bool negate, int lineno)
     {
         Errors::Error("Identifier expected");
         if (Else)
-            HandleElif(false,"");
-        else
-            HandleIf(false,"", lineno);
+            HandleElif(false,""); // FIXME 1st arg is bool!
+         else
+            HandleIf(false,"", lineno);// FIXME 1st arg is bool!
     }
     else
     {
@@ -290,9 +290,9 @@ void ppCond::HandleIdn(std::string &line, bool Else, bool negate, bool caseSensi
     {
         Errors::Error("Syntax error in string comparison directive");
         if (Else)
-            HandleElif(false, "");
+            HandleElif(false, ""); // FIXME 1st arg is bool!
         else
-            HandleIf(false,"", lineno);
+            HandleIf(false,"", lineno);// FIXME 1st arg is bool!
     }
     else
     {
@@ -394,7 +394,7 @@ void ppCond::HandleCtx(std::string &line, bool Else, bool negate, int lineno)
     define->Process(line);
     Tokenizer tk(line, NULL);
     const Token *t = tk.Next();
-    int v = false;
+    int v = false; // FIXME
     if (t->IsIdentifier())
     {
         v = ctx.Matches(t->GetId());

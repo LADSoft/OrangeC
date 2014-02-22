@@ -51,12 +51,12 @@ class MessageTable : public Resource
 public:
     MessageTable(const ResourceId &Id, const ResourceInfo &info)
         : Resource(eMessageTable, Id, info), data(NULL) { }
-    virtual ~MessageTable() { if (data) delete data; }
+    virtual ~MessageTable() {  delete data; }
     virtual void WriteRes(ResFile &resFile);
     virtual bool ReadRC(RCFile &rcFile);
     
     void SetData(ResourceData *rdata) {
-        if (data)
+        
             delete data;
         data = rdata;
     }

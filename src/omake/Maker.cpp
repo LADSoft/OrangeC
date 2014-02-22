@@ -368,7 +368,7 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
     if (!ruleList)
     {
         ruleList = new RuleList(target);
-        if (ruleList)
+//        if (ruleList)
         {
             *RuleContainer::Instance() += ruleList;
             ruleList->SetTargetPatternStem(stem);
@@ -377,7 +377,7 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
     std::string orderPrereq;
     std::string prereq;
     Command *commands = NULL;
-    for (RuleList::iterator it = l->begin(); it != l->end(); it++)
+    for (RuleList::iterator it = l->begin(); it != l->end(); ++it)
     {
         if (!commands)
             commands = (*it)->GetCommands();
@@ -401,7 +401,7 @@ void Maker::EnterSpecificRule(RuleList *l, const std::string &stem,
         }
     }
     Rule *rule = new Rule(target, prereq, orderPrereq, commands, "<implicitbuild>", 1);
-    if (rule)
+//    if (rule)
         ruleList->InsertFirst(rule);
     if (!outerMost)
     {
@@ -420,11 +420,11 @@ void Maker::EnterDefaultRule(const std::string &goal, RuleList *dflt)
         for (RuleList::iterator it = dflt->begin(); !commands && it != dflt->end(); ++it)
             commands = (*it)->GetCommands();
         RuleList *ruleList = new RuleList(goal);
-        if (ruleList)
+//        if (ruleList)
         {
             *RuleContainer::Instance() += ruleList;
             Rule *rule = new Rule(goal, "", "", commands, "<implicitbuild>", 1);
-            if (rule)
+//            if (rule)
                 ruleList->Add(rule);
         }
     }
@@ -477,7 +477,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
              it != matchedRules.end();)
         {
             std::list<RuleList *>::iterator it1 = it;
-            it++;
+            ++it;
             if ((*it1)->GetTarget() == "%")
                 if (!(*it1)->GetDoubleColon())
                     matchedRules.erase(it1);
@@ -487,7 +487,7 @@ bool Maker::SearchImplicitRules(const std::string &goal, const std::string &pref
          it != matchedRules.end();)
     {
         std::list<RuleList *>::iterator it1 = it;
-        it++;
+        ++it;
         if (!(*it1)->HasCommands())
             matchedRules.erase(it1);
     }
@@ -593,10 +593,10 @@ void Maker::EnterSuffixTerminals()
                 if (!ruleList)
                 {
                     ruleList = new RuleList(target);
-                    if (ruleList)
+                    //if (ruleList)
                     {
                         Rule *rule = new Rule(target, "", "", NULL, "<implicitbuild>", 1);
-                        if (rule)
+                        //if (rule)
                             ruleList->Add(rule);
                     }
                 }
@@ -622,7 +622,7 @@ void Maker::GetEnvironment(Environment &env)
 }
 void Maker::DeleteOne(Depends *depend)
 {
-    for (Depends::iterator it = depend->begin(); it != depend->end(); it++)
+    for (Depends::iterator it = depend->begin(); it != depend->end(); ++it)
     {
         DeleteOne(*it);
     }
@@ -638,7 +638,7 @@ int Maker::RunOne(Depends *depend, Environment &env, bool keepGoing)
     Eval::PushruleStack(rl);
     bool stop = false;
     bool cantbuild = false;
-    for (Depends::iterator it = depend->begin(); it != depend->end(); it++)
+    for (Depends::iterator it = depend->begin(); it != depend->end(); ++it)
     {
 //		if (!(*it)->GetOrdered())
         {
@@ -702,7 +702,7 @@ int Maker::RunOne(Depends *depend, Environment &env, bool keepGoing)
 }
 void Maker::CancelOne(Depends *depend)
 {
-    for (Depends::iterator it = depend->begin(); it != depend->end(); it++)
+    for (Depends::iterator it = depend->begin(); it != depend->end(); ++it)
     {
         CancelOne(*it);
     }
@@ -727,7 +727,7 @@ void Maker::CancelOne(Depends *depend)
 }
 int Maker::RunCommands(bool keepGoing)
 {
-    int rv =0 ;
+    int rv =0 ; //FIXME rv start value!!!
     bool stop = false;
     Environment env;
     GetEnvironment(env);

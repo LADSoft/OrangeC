@@ -65,7 +65,8 @@ public:
             marks.pop_front(); 
             while ((skipList.size() + (current != NULL)) > n)
             {
-                HandleEndIf(std::string(""));
+				std::string s(""); 
+                HandleEndIf(s);
             }
         }
     }

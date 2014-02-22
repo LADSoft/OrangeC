@@ -586,7 +586,7 @@ void NumericToken::Parse(std::string &line)
 }
 bool KeywordToken::Start(const std::string &line)
 {
-    return ispunct(line[0]);
+    return ispunct(line[0]) != 0;
 }
 void KeywordToken::Parse(std::string &line)
 {

@@ -121,7 +121,7 @@ void ResFile::WriteString(const std::wstring &str)
 bool ResFile::Write(const std::string &name)
 {
     stream = new std::fstream(name.c_str(), std::ios::out | std::ios::binary);
-    if (stream != NULL)
+    //if (stream != NULL)
     {
         for (std::deque<Resource *>::iterator it = resources.begin(); it != resources.end(); ++it)
         {

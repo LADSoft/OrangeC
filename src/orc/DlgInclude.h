@@ -51,11 +51,10 @@ class DlgInclude : public Resource
 public:
     DlgInclude(const ResourceId &Id, const ResourceInfo &info)
         : Resource(eDlgInclude, Id, info), data(NULL) { }
-    virtual ~DlgInclude() { if (data) delete data; }
+    virtual ~DlgInclude() { delete data; }
     virtual void WriteRes(ResFile &resFile);
     virtual bool ReadRC(RCFile &rcFile);
     void SetData(ResourceData *rdata) {
-        if (data)
             delete data;
         data = rdata;
     }

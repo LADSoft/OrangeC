@@ -69,16 +69,10 @@ LinkAttribs &LinkAttribs::operator =(const LinkAttribs &Attribs)
 }
 LinkAttribs::~LinkAttribs()
 {
-    if (address)
         delete address;
-    if (align)
         delete align;
-    if (maxSize)
         delete maxSize;
-    if (roundSize)
         delete roundSize;
-    if (virtualOffset)
         delete virtualOffset;
-    if (fill)
         delete fill;
 }

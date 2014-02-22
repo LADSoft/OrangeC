@@ -78,7 +78,7 @@ public:
     ~SwitchConfig() ;
 
     bool Validate();
-    bool ReadConfigFile(const std::string file);
+    bool ReadConfigFile(const std::string& file);
     static void AddDefine(LinkManager &linker, const std::string &name, const std::string &value)
     { ConfigData::AddDefine(linker, name, value); }
     virtual int Parse(const char *data);

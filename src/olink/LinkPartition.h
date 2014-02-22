@@ -93,8 +93,8 @@ class LinkPartitionSpecifier
         LinkPartitionSpecifier(LinkExpressionSymbol *Symbol) : partition(NULL), symbol(Symbol) {}
         ~LinkPartitionSpecifier()
         {
-            if (partition) delete partition;
-            if (symbol) delete symbol;
+            delete partition;
+            delete symbol;
         }
         LinkPartition *GetPartition() { return partition; }
         LinkExpressionSymbol *GetSymbol() { return symbol; }
@@ -110,8 +110,8 @@ class LinkOverlaySpecifier
         LinkOverlaySpecifier(LinkExpressionSymbol *Symbol) : overlay(NULL), symbol(Symbol) {}
         ~LinkOverlaySpecifier()
         {
-            if (overlay) delete overlay;
-            if (symbol) delete symbol;
+            delete overlay;
+            delete symbol;
         }
         LinkOverlay *GetOverlay() { return overlay; }
         LinkExpressionSymbol *GetSymbol() { return symbol; }

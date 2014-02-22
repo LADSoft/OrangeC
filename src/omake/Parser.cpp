@@ -165,7 +165,7 @@ void UnTab(std::string value)
 }
 size_t Parser::UnfetteredChar(const std::string &line, char ch) const
 {
-    bool charInWord = 0;
+    bool charInWord = 0; //FIXME bool = 0 ?
     for (int i=0; i < line.size(); i++)
     {
         if (line[i] == ' ')
@@ -414,7 +414,6 @@ bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, 
          v = VariableContainer::Instance()->Lookup(ls);
     if (v)
     {
-        std::string ls;
         if (v->GetFlavor() == Variable::f_simple)
         {
             Eval r(rs, false);

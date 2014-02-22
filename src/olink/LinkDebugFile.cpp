@@ -180,7 +180,7 @@ LinkDebugFile::~LinkDebugFile()
 }
 int LinkDebugFile::Begin(void)
 {
-    int rv = true;
+    int rv = true; //FIXME!
     if (!SQLiteExec("BEGIN"))
     {
         rv = false;
@@ -189,7 +189,7 @@ int LinkDebugFile::Begin(void)
 }
 int LinkDebugFile::End(void )
 {
-    int rv = true;
+    int rv = true;//FIXME!
     if (!SQLiteExec("END"))
     {
         rv = false;
@@ -199,7 +199,7 @@ int LinkDebugFile::End(void )
 int LinkDebugFile::SQLiteExec( char *str)
 {
     char *zErrMsg  = 0;
-    int rv = false;
+    int rv = false;//FIXME!
     int rc = sqlite3_exec(dbPointer, str, 0, 0, &zErrMsg);
     if( rc!=SQLITE_OK )
     {
@@ -214,7 +214,7 @@ int LinkDebugFile::SQLiteExec( char *str)
 }
 int LinkDebugFile::CreateTables(void)
 {
-    int rv = true;
+    int rv = true;//FIXME!
     if (!SQLiteExec(pragmas))
     {
         rv = false;
@@ -227,7 +227,7 @@ int LinkDebugFile::CreateTables(void)
 }
 int LinkDebugFile::CreateIndexes(void)
 {
-    int rv = true;
+    int rv = true;//FIXME!
     if (!SQLiteExec(indexes))
     {
         rv = false;
@@ -236,7 +236,7 @@ int LinkDebugFile::CreateIndexes(void)
 }
 int LinkDebugFile::DBOpen(char *name)
 {
-    int rv = false;
+    int rv = false;//FIXME!
     dbPointer = NULL;
     unlink(name);
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK)
@@ -592,7 +592,7 @@ bool LinkDebugFile::WriteGlobalsTable()
     for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         int index = (*it)->GetIndex();
-        ObjString name = (*it)->GetName();
+        //ObjString name = (*it)->GetName();
         index = publicMap[index];
         int address = GetSectionBase((*it)->GetOffset());
         address += (*it)->GetOffset()->EvalNoModify(0);
@@ -613,7 +613,7 @@ bool LinkDebugFile::WriteGlobalsTable()
     for (ObjFile::SymbolIterator it = file->LocalBegin(); it != file->LocalEnd(); ++it)
     {
         int index = (*it)->GetIndex();
-        ObjString name = (*it)->GetName();
+        //ObjString name = (*it)->GetName();
         index = localMap[index];
         int address = GetSectionBase((*it)->GetOffset());
         address += (*it)->GetOffset()->EvalNoModify(0);

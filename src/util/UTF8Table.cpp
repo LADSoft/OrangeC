@@ -1142,7 +1142,7 @@ static bool Match(int *table, int size, int val)
 {
     int top = size;
     int bottom = -1;
-    int v;
+//    int v;
     while (top - bottom > 1)
     {
         int mid = (top + bottom) / 2;

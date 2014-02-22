@@ -147,14 +147,14 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
     if (info->outofscope || info->outofscopereg)
         sprintf(buf, "out of scope");
     else if (info->constant)
-        sprintf(buf, "POINTER: %p", info->address);
+        sprintf(buf, "POINTER: %p", info->address);//FIXME address is int
     else if (info->structure)
     {
-        sprintf(buf, "STRUCTURE: %p", info->address);
+        sprintf(buf, "STRUCTURE: %p", info->address);//FIXME address is int
     }
     else if (info->unionx)
     {
-        sprintf(buf, "UNION: %p", info->address);
+        sprintf(buf, "UNION: %p", info->address);//FIXME address is int
     }
     else if (info->pointer)
     {
@@ -163,9 +163,9 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
         {
             info->editable = TRUE;
             if (onevalue)
-                sprintf(buf, "0x%p ", val);
+                sprintf(buf, "0x%p ", val);//FIXME address is int
             else
-                sprintf(buf, "POINTER: %p ", val);
+                sprintf(buf, "POINTER: %p ", val);//FIXME address is int
             GetStringValue(info, buf + strlen(buf), 32, val);
         }
         else
@@ -184,7 +184,7 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
             if (signedtype)
                 sprintf(buf, "0x%x", v);
             else
-                sprintf(buf, "0x%x", v);
+                sprintf(buf, "0x%x", v); //FIXME both the same ?
             else
                 if (signedtype)
                     sprintf(buf, "%d(0x%x)", v, v);
@@ -194,7 +194,7 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
     }
     else if (info->array)
     {
-        sprintf(buf, "ARRAY: %p ", info->address);
+        sprintf(buf, "ARRAY: %p ", info->address);//FIXME address is int
         GetStringValue(info, buf + strlen(buf), 32, info->address);
     }
     else
@@ -212,7 +212,7 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
                         if (signedtype)
                             sprintf(buf, "0x%Lx", v);
                         else
-                            sprintf(buf, "0x%Lx", v);
+                            sprintf(buf, "0x%Lx", v); //FIXME ?
                         else
                             if (signedtype)
                                 sprintf(buf, "%Ld(0x%Lx)", v, v);
@@ -232,7 +232,7 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
                     if (signedtype)
                         sprintf(buf, "0x%x", (int)v);
                     else
-                        sprintf(buf, "0x%x", (int)v);
+                        sprintf(buf, "0x%x", (int)v); //FIXME ?
                     else
                         if (signedtype)
                             sprintf(buf, "%d(0x%x)", (int)v, (int)v);
@@ -597,7 +597,7 @@ void ChangeData(VARINFO *info, char *text, int page)
         {
             if (text[0] == '0' && text[1] == 'x')
                 sscanf(text + 2, "%Lx", &value);
-            else if (text[strlen(text) - 1] &0xDF == 'H')
+            else if (text[strlen(text) - 1] & 0xDF == 'H')  //FIXME ?
                 sscanf(text, "%Lx", &value);
             else
                 sscanf(text, "%Ld", &value);

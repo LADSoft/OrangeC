@@ -110,7 +110,7 @@ bool ppMacro::GetLine(std::string &line, int &lineno)
 bool ppMacro::HandleRep(std::string &line)
 {
     define.Process(line);
-    int n = expr.Eval(line);
+    int n = expr.Eval(line);//FIXME PPINT <-> int
     int level = 1;
     MacroData *p = NULL;
     if (n < 0)
@@ -154,8 +154,7 @@ bool ppMacro::HandleRep(std::string &line)
     include.SetInProc("");
     if (level != 0)
     {
-        if (p)
-            delete p;
+        delete p;
     }
     else
     {
@@ -400,7 +399,7 @@ bool ppMacro::HandleRotate(std::string &line)
     else
     {
         define.Process(line);
-        int n = expr.Eval(line);
+        int n = expr.Eval(line);//FIXME PPINT <-> int
         if (n < 0)
         {
             n = - n;

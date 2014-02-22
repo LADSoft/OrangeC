@@ -48,7 +48,7 @@ class LinkExpressionSymbol
     public:
         LinkExpressionSymbol(const ObjString &Name, LinkExpression *Value) :
             name(Name), value(Value) {}
-        ~LinkExpressionSymbol() { if (value) delete value; }
+        ~LinkExpressionSymbol() { delete value; }
         ObjString &GetName() { return name; }
         LinkExpression* GetValue() { return value; }
         void SetValue(LinkExpression *v) { value = v; }
@@ -78,8 +78,8 @@ class LinkExpression
         LinkExpression(const LinkExpression &exp);
         ~LinkExpression() 
         {
-            if (left) delete left;
-            if (right) delete right;
+            delete left;
+             delete right;
         }
         eOperator GetOperator() { return op; }
         LinkExpression *GetLeft() { return left; }

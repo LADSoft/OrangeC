@@ -201,7 +201,7 @@ void masm(void) {
     if ( asm_file_cnt() > 0 ) {
         for( i = 0; i < asm_file_cnt(); i++ ) {
             fn_split( asm_file(i) );
-            sprintf( "/t /Ml %s %s,%s,%s,NUL",
+            sprintf( args, "/t /Ml %s %s,%s,%s,NUL",
                 get_option(OPT_DEBUG) ? "/Zi" : "",
                 asm_file(i),
                 fn_temp( ".obj" ),
@@ -446,7 +446,7 @@ void tlink(void) {
         if ( get_dosex() != OPT_PMODE )
             fprintf( stderr, "TLINK use only with PMODE!\n" );
         fp = response( RESPONSE );
-        fprintf( fp, "/3/c/d%s ", 
+        fprintf( fp, "/3/c/d%s%s", 
             get_option(OPT_MAPFILE) ? "/m/l/s" : "/x",
             get_option(OPT_DEBUG) ? "/v" : ""
         );

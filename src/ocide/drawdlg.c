@@ -412,7 +412,7 @@ void drawdlginit(void)
         ExtendedMessageBox("Error",0,"Invalid XML in ctl.props");
         if (root)
             xmlFree(root);
-        return 0;
+        return;
     }
     children = root->children;
     while (children)
@@ -648,7 +648,7 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
             char buf[512];
             switch (db->ctlType)
             {
-                int v, i;
+                int v;
                 struct ctlField *field;
                 case iYESNO:
                     v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
@@ -676,8 +676,6 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
             switch (db->ctlType)
             {
                 int v;
-                POINT pt;
-                HWND h;
                 case iYESNO:
                 case iNEGYESNO:
                 case iCombo:
@@ -1398,7 +1396,6 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static RECT lastSizeRect;
     RECT r1, client;
     struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
-    struct ctlDB *db;
    
     switch (iMessage)
     {
@@ -3182,7 +3179,6 @@ static void WriteClipboardData(struct resRes *dlgData, struct clipboardBuffer *b
 LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    RECT r;
     LPCREATESTRUCT createStruct;
     struct resRes *dlgData;
     struct dlgUndo *undo;
@@ -3436,7 +3432,6 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterDlgDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

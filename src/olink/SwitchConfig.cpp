@@ -114,7 +114,7 @@ bool ConfigData::VisitNode(xmlNode &node, xmlNode *child, void *userData)
     if (*child == "Define")
     {
         currentDefine = new CmdSwitchDefine::define;
-        if (currentDefine)
+        //if (currentDefine)
         {
             defines.push_back(currentDefine);
             child->Visit(*this);
@@ -181,7 +181,7 @@ int SwitchConfig::Parse(const char *data)
     }
     return strlen(data);
 }
-bool SwitchConfig::ReadConfigFile(const std::string file)
+bool SwitchConfig::ReadConfigFile(const std::string& file)
 {
     std::fstream in(file.c_str(), std::ios::in);
     if (in != NULL)
@@ -334,7 +334,7 @@ bool SwitchConfig::VisitNode(xmlNode &node, xmlNode *child, void *userData)
         if (*child == "Switch")
         {
             ConfigData *config = new ConfigData(child);
-            if (config)
+            //if (config)
             {
                 configData.push_back(config);
             }

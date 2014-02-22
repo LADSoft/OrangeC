@@ -363,7 +363,6 @@ static void LookupDependentRules(struct _propsData *data, char *name)
     BUILDRULE *br = buildRules;
     while (br)
     {
-        char buf[256];
         if (br->profiles->debugSettings->select && !strcmp(name, br->profiles->debugSettings->select))
         {
             data->prototype[data->protocount++] = br->profiles;
@@ -449,6 +448,7 @@ BUILDRULE *SelectRules(PROJECTITEM *item, struct _propsData *data)
         }
         p = p->next;
     }
+	//FIXME return
 }
 static void CullBasicRules(PROJECTITEM *item, struct _propsData *data, int first)
 {
@@ -555,7 +555,6 @@ static void ParseFont(LOGFONT *lf, char *text)
     int size = sizeof(*lf);
     while (size)
     {
-        char **n;
         *p++ = strtoul(text, &text, 10);
         size--;
     }
@@ -971,7 +970,7 @@ static BOOL GetNewProfileName(HWND hwndCombo)
             }
         }
     }
-    return rv;
+    return rv;//FIXME
 }
 static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
@@ -1025,7 +1024,6 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 NM_TREEVIEW *nm;
                 TV_ITEM xx ;
                 LPNMCUSTOMDRAW cd;
-                SETTING *st;
                 case LVN_ITEMCHANGING:
                     return TRUE; // disable selection
                 case NM_CUSTOMDRAW:
@@ -1081,7 +1079,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                         else if (n == addProfileIndex)
                         {
                             char *name;
-                            if (!(name = GetNewProfileName(hwnd)))
+                            if (!(name = GetNewProfileName(hwnd))) //FIXME BOOL char
                             {
                                 int count = 0;
                                 if (strcmp(currentProfileName, sysProfileName))
@@ -1505,8 +1503,6 @@ static LRESULT CALLBACK ColorWndProc(HWND hwnd, UINT iMessage,
         ContextHelp(IDH_CHOOSE_COLOR_DIALOG);
     else switch(iMessage)
     {
-        RECT r;
-        HBRUSH brush;
         CHOOSECOLOR c;
         case WM_LBUTTONUP:
             SendMessage(hwnd, WM_COMMAND, IDC_AUXBUTTON, 0);
@@ -1567,8 +1563,6 @@ static LRESULT CALLBACK FontWndProc(HWND hwnd, UINT iMessage,
         ContextHelp(IDH_CHOOSE_FONT_DIALOG);
     else switch(iMessage)
     {
-        HFONT hFont;
-        LOGFONT lf;
         NONCLIENTMETRICS NonClientMetrics;
         case WM_CREATE:
             ptr = CreateButtonWnd(hwnd, TRUE, FALSE);
@@ -1944,7 +1938,6 @@ SETTING *PropSearchProtos(PROJECTITEM *item, char *id, SETTING **value)
     SETTING *arr[100];
     struct _propsData data;
     SETTING *setting ;
-    int i;
     PropGetPrototype(item, &data, arr);
     EnterCriticalSection(&propsMutex);
     *value = NULL;

@@ -108,7 +108,7 @@ public:
         : ppStart(PPStart), preData(NULL), lineno(0),
         include(fullName, Trigraph, extensions, FileName, &define, ctx, isunsignedchar, C89,
                   SrchPth, SysSrchPth, PPStart == '%'), 
-            define(extensions, &include, ctx, macro, C89, PPStart == '%'), 
+            define(extensions, &include, ctx, macro, C89, PPStart == '%'), //ctx, macro ? //FIXME The uninitialized class member 'ctx'. 'macro' is used to initialize the 'define' member. Remember that members are initialized in the order of their declarations inside a class
             macro(include, define), ctx(define)
         { InitHash(); Errors::SetInclude(&include); macro.SetPreProcessor(this); }
         

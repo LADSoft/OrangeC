@@ -366,7 +366,6 @@ void ImportProject(BOOL ctg)
                     if (workArea)
                     {
                         PROJECTITEM *p = workArea->children;
-                        char buf[MAX_PATH];
                         q = strrchr(ofn.lpstrFile, '.');
                         if (q)
                             *q = 0;
@@ -378,7 +377,7 @@ void ImportProject(BOOL ctg)
                         p = calloc(1, sizeof(PROJECTITEM));
                         if (p)
                         {
-                            PROJECTITEM **ins = &workArea->children, *temp;
+                            PROJECTITEM **ins = &workArea->children;
                             HTREEITEM pos = TVI_FIRST;
                             strcpy(p->realName, ofn.lpstrFile);
                             strcpy(p->displayName, ofn.lpstrFileTitle);
@@ -418,8 +417,6 @@ void ImportProject(BOOL ctg)
 LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    LRESULT rv;
-    RECT r;
     NMHDR nm;
     switch (iMessage)
     {

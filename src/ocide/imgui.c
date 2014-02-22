@@ -474,7 +474,6 @@ LRESULT CALLBACK toolProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SendMessage(hwnd, TB_GETITEMRECT, i , (LPARAM)&r2);
             if (IntersectRect(&r2, &r1, &r2))
             {
-                char buf[256];
                 int n = i < MAX_COLORS/ 2 ? i * 2 : (i - MAX_COLORS/2) * 2 + 1;
                 LRESULT rv = CallWindowProc(toolbarHookProc,hwnd, iMessage, wParam, lParam);
                 CHOOSECOLOR c;
@@ -521,7 +520,6 @@ LRESULT CALLBACK toolScreenProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SendMessage(hwnd, TB_GETITEMRECT, i , (LPARAM)&r2);
             if (IntersectRect(&r2, &r1, &r2))
             {
-                char buf[256];
                 if (i ==0)
                 {
                     if (iMessage == WM_LBUTTONDBLCLK)
@@ -545,7 +543,6 @@ LRESULT CALLBACK  ScreenColorWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 {
     PAINTSTRUCT paint;
     HDC dc;
-    RECT rf, rs;
     TBBUTTON buttons[40]; 
     int i;
     LPNMTBCUSTOMDRAW lptcd;
@@ -661,7 +658,6 @@ LRESULT CALLBACK  Color2WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 {
     PAINTSTRUCT paint;
     HDC dc;
-    RECT rf, rs;
     TBBUTTON buttons[40]; 
     int i;
     LPNMTBCUSTOMDRAW lptcd;
@@ -809,9 +805,8 @@ LRESULT CALLBACK  ColorWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 {
     PAINTSTRUCT paint;
     HDC dc;
-    RECT rf, rs;
+    RECT rf;
     TBBUTTON buttons[1]; 
-    int i;
     LPNMTBCUSTOMDRAW lptcd;
     IMGDATA *p;
     switch(iMessage)
@@ -1861,7 +1856,6 @@ static void buttonUp(HWND hwnd, IMGDATA *p, int right, int x, int y)
 }
 static void mouseMove(HWND hwnd, IMGDATA*p, int x, int y)
 {
-    char buf[256];
     POINT pt;
     pt.x = (x + p->showX)/p->zoom;
     pt.y = (y + p->showY)/p->zoom;
@@ -3134,7 +3128,7 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 {
     PAINTSTRUCT paint;
     HDC dc;
-    RECT rf, rs;
+    RECT rf, rs; //FIXME rf is uninit!
     int parts[4], i;
     IMGDATA *p;
     HFONT tabNormalFont;
@@ -3242,7 +3236,6 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             TEXTMETRIC tm;
             int x;
             int y;
-            HRESULT hr;
             size_t cch;
             LOGFONT *lf;
             HFONT font;

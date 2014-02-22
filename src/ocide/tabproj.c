@@ -96,14 +96,13 @@ LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static int selected, sizingbottom;
     static HIMAGELIST tabIml;
     static int ilProj, ilRes;
-    RECT r,  *pr;
+    RECT r;
     TC_ITEM tie;
     NMHDR *h;
     DRAWITEMSTRUCT *dr;
     HFONT font;
     HBITMAP hbmp;
     HDC hMemDC;
-    HDWP deferstruct;
     PAINTSTRUCT paint;
     HDC dc;
     switch (iMessage)

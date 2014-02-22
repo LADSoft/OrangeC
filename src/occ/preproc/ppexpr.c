@@ -124,7 +124,7 @@ int getsch(int bytes, char **source) /* return an in-quote character */
                 if (i != 'x')
                 {
                     if (n <= 0x20 || n >= 0x7f && n <= 0x9f ||
-                        n >=0xd800 && n<= 0xdfff)
+                        n >=0xd800 && n<= 0xdfff) //FIXME && and ||
                         pperror(ERR_INVCONST, 0);
                 }
                 return n;

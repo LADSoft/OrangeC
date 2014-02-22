@@ -37,6 +37,9 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+
+#define _CRT_SECURE_NO_WARNINGS  
+
 #include "os.h"
 #include <windows.h>
 #include <direct.h>
@@ -83,9 +86,9 @@ int OS::Spawn(const std::string &command, Environment &environ)
     }
     n++;
     char *env = new char[n];
-    if (env)
+//    if (env)
     {
-        memset(env, 0, sizeof(env));
+        memset(env, 0, sizeof(char)*n); // !!!
         char *p = env;
         for (Environment::iterator it = environ.begin(); it != environ.end(); ++it)
         {
@@ -98,10 +101,10 @@ int OS::Spawn(const std::string &command, Environment &environ)
         }
         *p++ = '\0';
     }
-    else
-    {
-        return -1;
-    }
+//    else
+//    {
+//        return -1;
+//    }
     if (CreateProcess(NULL, (char *)cmd.c_str(), NULL, NULL, true, 0, env,
                       NULL, &startup, &pi))
     {
@@ -150,7 +153,7 @@ std::string OS::SpawnWithRedirect(const std::string &command)
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         char *buffer = new char[1024 * 1024];
-        if (buffer)
+//        if (buffer)
         {
             DWORD readlen;
             ReadFile(pipeRead,buffer, 1024 * 1024, &readlen, NULL);

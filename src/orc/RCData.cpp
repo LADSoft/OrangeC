@@ -107,7 +107,7 @@ bool RCData::ReadRC(RCFile &rcFile)
                         p[i] = t->GetString()[i];
                     ResourceData *rd = new ResourceData((unsigned char *)p, n * sizeof(WORD));
                     data.push_back(rd);
-                    delete p;
+                    delete[] p;
                     concatwide = true;
                 }
                 else

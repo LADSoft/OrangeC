@@ -37,6 +37,9 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "ppDefine.h"
 #include "Token.h"
 #include "Preprocessor.h"
@@ -177,7 +180,7 @@ void ppDefine::DoAssign(std::string &line, bool caseInsensitive)
         name = next->GetId();
         std::string line = tk.GetString();
         Process(line);
-        int n = expr.Eval(line);
+        int n = expr.Eval(line);//FIXME PPINT <-> int
         failed = line.find_first_not_of(" \t\v\r\n") != std::string::npos;
         if (!failed)
         {
@@ -237,8 +240,9 @@ void ppDefine::DoDefine(std::string &line, bool caseInsensitive)
         if (tk.GetString().c_str()[0] == '(') // yes it HAS to be the first character, no spaces
                                   // or other characters allowed
         {
+			// FIXME ?
             next = tk.Next(); // get '('
-            next = tk.Next(); // past '('
+            next = tk.Next(); // past '(' 
             if (!next->IsIdentifier() && next->GetKeyword() != closepa)
             {
                 failed = true;
@@ -330,7 +334,7 @@ std::string ppDefine::defid(const std::string &macroname, int &i, int &j)
  * Get an identifier during macro replacement
  */
 {
-    char name[2048];
+//    char name[2048];
     bool inctx = false;
     bool quoted = false;
     if (asmpp && j >= 2 && macroname[j-1] == '$')
@@ -427,7 +431,7 @@ int ppDefine::Stringize(std::string &macro, int begin, int end, const std::strin
     while (begin != 0 && isspace(macro[begin-1]))
         begin--;
     if (begin != 0 && (macro[begin-1] == '#' 
-                           || begin > 1 && macro[begin-2] == '%' && macro[begin-1] == ':') ) 
+                           || begin > 1 && macro[begin-2] == '%' && macro[begin-1] == ':') )  //FIXME && and ||
     {
         if (macro[begin-1] == '#')
             begin--;
@@ -855,7 +859,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                 }
                 else if (n == 0)
                 {
-                    if (line[n+1] == '$' && n < line.size()-2 && IsSymbolStartChar(line.c_str() + n+2))
+                    if (line[n+1] == '$' && n < line.size()-2 && IsSymbolStartChar(line.c_str() + n+2)) //FIXME n < line.size()-2
                     {
                         int n1 = ctx.GetTopId();
                         if (n1 != -1)
@@ -902,7 +906,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                             if (val == 0)
                             {
                                 char buf[256];
-                                sprintf(buf,"%d", args->size());
+                                sprintf(buf,"%d", (int)args->size());
                                 line.replace(n, n1-n, buf);
                                 n = n1 -1;
                             }
@@ -925,7 +929,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                                 else
                                 {
                                     line.replace(n, n1-n, (*args)[val]);
-                                    n += strlen((*args)[val].c_str()) - (n1 - n) - 1;
+                                    n += strlen((*args)[val].c_str()) - (n1 - n) - 1; //FIXME strlen is var.length()
                                 }
                             }
                         }

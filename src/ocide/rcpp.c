@@ -245,8 +245,7 @@ static int pragerror(int errno)
 int dopragma(void)
 {
     char buf[40],  *p = buf;
-    STARTUPS *a;
-    int val = 0, sflag;
+    int val = 0;
     if (ifskip)
         return incldepth == 0;
         cantnewline = TRUE;
@@ -553,6 +552,7 @@ int undef2(void)
             *p = (*p)->next;
         }
     }
+	//FIXME return ?
 }
 
 

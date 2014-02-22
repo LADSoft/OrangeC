@@ -442,10 +442,9 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     int i;
-    RECT rs,  *rt;
+    RECT rs;
     NM_TREEVIEW *nm;
     DWINFO info;
-    char buf[256];
     LPNMTVKEYDOWN key;
     PROJECTITEM *data;
     TVHITTESTINFO hittest;
@@ -617,7 +616,6 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_COMMAND:
             switch (LOWORD(wParam))
             {
-                DWORD id;
             case IDM_IMPORT_CWS:
                 ImportProject(FALSE);
                 break;

@@ -383,7 +383,7 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
                             sprintf(regs[i].ptrs.col2Text, "%f", val);
                             if (!memcmp(regs[i].currentdataptr,
-                                regs[i].olddataptr, 10))
+                                regs[i].olddataptr, 10)) // FIXME check memcmp !!!
                                 regs[i].ptrs.col2Color = 0;
                             else
                                 regs[i].ptrs.col2Color = 0xff;

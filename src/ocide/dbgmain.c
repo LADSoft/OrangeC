@@ -131,7 +131,7 @@ int initiateDebug(int stopimmediately)
         ReleaseSymbolTables();
         free(exe);
         free(args);
-        CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)StartDebug, 
+        CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)StartDebug, //FIXME Use _beginthreadex/_endthreadex functions instead of CreateThread/ExitThread functions
             (LPVOID)cmd, 0, &debugThreadID));
 
         ReleaseSymbolTables();
@@ -592,7 +592,7 @@ void abortDebug(void)
     DWORD threadhand;
     if (!abortEvent)
         abortEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)abortDebugThread, 
+    CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)abortDebugThread, //FIXME Use _beginthreadex/_endthreadex functions instead of CreateThread/ExitThread functions
         (LPVOID)0, 0, &threadhand));
     WaitForSingleObject(abortEvent, INFINITE);
 }
@@ -637,7 +637,7 @@ void TranslateFilename(char * szFilename)
 BOOL GetFileNameOfDLL(HMODULE hpsapiLib, HANDLE hProcess, DWORD base, DWORD nameBase, BOOL fUnicode, char *outName)
 {
     BOOL found = FALSE;
-    char name[MAX_PATH * sizeof(MAX_PATH)];
+    char name[MAX_PATH * sizeof(MAX_PATH)];//FIXME sizeof MACRO
     if (nameBase)
     {
             DWORD len;
@@ -722,7 +722,7 @@ void __stdcall StartDebug(char *cmd)
     SelectInfoWindow(ERR_DEBUG_WINDOW);
     // Loop until told to stop.
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-    while (TRUE == bContinue)
+    while (TRUE == bContinue) //FIXME =true?
     {
         // Pause until a debug event notification happens.
         bContinue = WaitForDebugEvent(&stDE, 500);

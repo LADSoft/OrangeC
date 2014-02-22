@@ -50,7 +50,6 @@ static char *szBlankClassName = "ladSoftBlankWindow";
 static LRESULT CALLBACK BlankWindowWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
 {
-    RECT r;
     PAINTSTRUCT ps;
     HDC dc;
     CCW_params *ptr;

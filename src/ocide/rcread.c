@@ -105,7 +105,7 @@ char *rcStrdup(char *s)
 }
 void rcFree(void *p)
 {
-    return HeapFree(memHeap, 0, p);
+    return HeapFree(memHeap, 0, p);//FIXME
 }
 #define GetByte(fil) fgetc(fil)
 
@@ -224,10 +224,9 @@ BITMAP_ *RCLoadBitmap(char *fileName)
 {
     BITMAP_ *bd;
     FILE *fil;
-    char *real_fileName;
     char buf[256];
     BYTE *headerData, *pixelData;
-    int i, size;
+    int size;
     int pixelOffs;
 
     fil = MySearchPath(fileName, rcSearchPath, "rb");
@@ -303,7 +302,6 @@ CURSOR *RCLoadCursor(char *fileName)
     for (i = 0; i < count; i++)
     {
         int t;
-        BYTE *data;
         cursors[i].width = GetByte(fil);
         cursors[i].height = GetByte(fil);
         cursors[i].colorcount = GetByte(fil);
@@ -489,6 +487,7 @@ FONT *RCLoadFont(char *fileName)
     fd->data = data;
     fd->device = rcStrdup(device);
     fd->face = rcStrdup(face);
+	//FIXME return ?
 }
 static void CreateFontResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
 {
@@ -533,7 +532,6 @@ ICON *RCLoadIcon(char *fileName)
     for (i = 0; i < count; i++)
     {
         int t;
-        BYTE *data;
         icons[i].width = GetByte(fil);
         icons[i].height = GetByte(fil);
         icons[i].colorcount = GetByte(fil);
@@ -803,9 +801,8 @@ static void ReadQuotedResID(IDENT *id)
         *p = 0;
         strcpy(nbuf, lastid);
         defcheck(buf);
-        if (strcmp(nbuf, buf))
+        if (strcmp(nbuf, buf))//FIXME buf is WCHAR !!!
         {
-            int rv;
             cantnewline = TRUE;
             p = --lptr;
             lptr = buf;
@@ -912,7 +909,7 @@ static void ReadMemflags(CHARACTERISTICS *info)
 
 static int ReadString(WCHAR **string)
 {
-    int rv;
+    int rv; 	//FIXME uninit! 
     if (lastst == sconst)
     {
         rv = StringAsciiToWChar(string, laststr, laststrlen);
@@ -1675,10 +1672,6 @@ static void ParseRC(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     ReadMemflags(info);
     if (lastst == sconst)
     {
-        char buf[260];
-        FILE *fil;
-        int size;
-
         ReadFileName();
         need_eol();
         CreateUserFileResource(cd, id, (IDENT *)RESTYPE_RCDATA, info, laststr);
@@ -1922,7 +1915,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                     {
                         getsym();
                         (*cur1)->charset = ReadExp();
-                    } if (lastst != comma)
+                    } if (lastst != comma) //FIXME else ?
                         break;
                     getsym();
                     cur1 = &(*cur1)->next;
@@ -2172,13 +2165,12 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
     while (*curs && (stricmp((*curs)->name, "__NEXT_CONTROL_ID")
         && stricmp((*curs)->name, "__NEXT_MENU_ID")
         && stricmp((*curs)->name, "__NEXT_RESOURCE_ID")
-        && stricmp((*curs)->name, "__NEXT_STRING_ID")))
+        && stricmp((*curs)->name, "__NEXT_STRING_ID"))) //FIXME stricmp check !!!
     {
         curs = &(*curs)->xref;
     }
     if (*curs)
-    {
-        LIST *lcurs;   
+    { 
         LIST **begin = curs;
         // ok found something, try to get the values
         while (!done && *curs)
@@ -2209,7 +2201,7 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
             }
             done = TRUE;
         }
-        *begin = *curs;
+        *begin = *curs;//FIXME
         /*
         // have to look for the endif
         // this isn't perfect, if the user inserted lines
@@ -2254,7 +2246,6 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
 RESOURCE_DATA *ReadResources(char *fileName)
 {
     COMPILEDATA cd;
-    char *cmd;
     rcIdFile = NULL;
     memset(&cd, 0, sizeof(cd));
     cd.resourcesTail = &cd.resources;

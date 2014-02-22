@@ -37,6 +37,8 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <windows.h>
@@ -115,7 +117,8 @@ std::string Utils::FullPath(const std::string &path, const std::string &name)
     if (path.size())
     {
         std::string fpath=path;
-        if (path.c_str()[strlen(path.c_str())-1] != '\\')
+//        if (path.c_str()[strlen(path.c_str())-1] != '\\')
+        if (path.c_str()[path.length()-1] != '\\')
         {
             fpath += std::string("\\");
         }

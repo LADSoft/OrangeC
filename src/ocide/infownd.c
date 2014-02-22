@@ -179,9 +179,8 @@ void TextToClipBoard(HWND hwnd, char *text)
 
 void BumpToEditor(HWND hwnd)
 {
-    HWND wnd;
     DWINFO info;
-    char name[256], title[256], buffer[256],  *t, *q;
+    char   buffer[256],  *t, *q;
     int lineno;
     int start;
     SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
@@ -264,10 +263,10 @@ LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     int pos, chars, line, i;
     LRESULT rv;
     POINTL point;
-    HBRUSH bk;
-    RECT r;
+
+
     CHARRANGE s;
-    NMHDR *h;
+
     switch (iMessage)
     {
         case WM_CREATE:
@@ -426,17 +425,12 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static HWND hsubwnds[4]; // build, debug, find1, find2
     static HFONT tabNormalFont, textFont;
     CHARFORMAT cfm;
-    TC_ITEM tie;
     NMHDR *h;
-    DRAWITEMSTRUCT *dr;
-    MEASUREITEMSTRUCT *mr;
-    HFONT font;
-    RECT r, r1,  *pr;
+    RECT r;
     CHARRANGE s;
     HDC dc ;
     PAINTSTRUCT ps;
     HPEN pen;
-    int clr;
     int i;
     static int colors[4];
     static int forecolor;
@@ -454,7 +448,6 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             h = (NMHDR*)lParam;
             switch (h->code)
             {
-                char *text;
                 case TABN_SELECTED:
                 {
                     LSTABNOTIFY *p = (LSTABNOTIFY *)h;

@@ -49,7 +49,7 @@
 
 LinkPartition::~LinkPartition()
 {
-    for (OverlayIterator it = overlays.begin(); it != overlays.end(); it++)
+    for (OverlayIterator it = overlays.begin(); it != overlays.end(); ++it)
     {
         LinkOverlaySpecifier *s = *it;
         delete s;

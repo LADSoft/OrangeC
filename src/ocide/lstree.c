@@ -78,8 +78,6 @@ typedef struct
 LRESULT CALLBACK extEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    LRESULT rv;
-    RECT r;
     switch (iMessage)
     {
         case WM_CHAR:
@@ -96,7 +94,6 @@ int LoadItemText(HWND hwnd, HTREEITEM htreeItem, char *buf, int indent)
 {
     TV_ITEM item;
     TCData *td;
-    int size;
     memset(&item, 0, sizeof(item));
     item.hItem = htreeItem;
     item.mask = TVIF_PARAM;
@@ -180,8 +177,6 @@ LRESULT CALLBACK extTreeWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     TV_HITTESTINFO tvh;
     TV_ITEM item;
     NM_TREEVIEW x;
-    HDC dc;
-    PAINTSTRUCT ps;
     switch (iMessage)
     {
         case WM_NOTIFY:
@@ -296,7 +291,7 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
     HD_LAYOUT hdl;
     WINDOWPOS wp;
     COLUMNINFO *ptr;
-    RECT r, r1,  *rp;
+    RECT r,  *rp;
     HD_ITEM hie;
     TCHeader *h;
     HD_NOTIFY *n;
@@ -309,7 +304,6 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
     TREEINFO *treeinfo;
     PAINTSTRUCT ps;
     HDC dc;
-    POINT pos;
     NM_TREEVIEW *ntv;
     if (iMessage >= TV_FIRST && iMessage < TV_FIRST + 100)
     {

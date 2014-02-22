@@ -62,8 +62,8 @@ typedef unsigned BITINT;
 
 typedef unsigned long ADDRESS;
 typedef unsigned LCHAR;
-typedef unsigned char BOOL;
-typedef unsigned char BYTE;
+typedef unsigned char BOOL; //FIXME re-define BOOL
+typedef unsigned char BYTE;//FIXME re-define BYTE
 
 #include <stdio.h>
 #include <ctype.h>

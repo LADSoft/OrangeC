@@ -82,7 +82,7 @@ int rcMain::Run(int argc, char *argv[])
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1)
+    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1) //FIXME Priority of the '&&' operation is higher than that of the '||' operation
     {
         Utils::usage(argv[0], usageText);
     }
@@ -117,7 +117,8 @@ int rcMain::Run(int argc, char *argv[])
             CmdSwitchDefine::define *v = Defines.GetValue(i);
             pp.Define(v->name, v->value, false);
         }
-        pp.Define("RC_INVOKED", std::string(""), false);
+		std::string s("");
+        pp.Define("RC_INVOKED", s, false);
         std::string outName;
         if (OutputFile.GetValue().size() != 0)
             outName = OutputFile.GetValue();

@@ -238,7 +238,7 @@ LCHAR *wlitlate(LCHAR *name)
     LCHAR *p = name;
     int count;
     LCHAR *rv;
-    count = wcslen(name);
+    count = wcslen(name); //FIXME LCHAR and wchar_t
     while (*p)
         p++, count++;
     IncGlobalFlag();

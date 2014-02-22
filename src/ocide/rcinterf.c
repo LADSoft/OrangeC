@@ -873,11 +873,9 @@ LRESULT CALLBACK NewResourceProc(HWND hWnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     POINT pt = { 5, 5};
-    struct nrpe *xx;
     switch (iMessage)
     {
         int i;
-        HWND htemp;
         case WM_INITDIALOG:
             CenterWindow(hWnd);
             for (i=0; i < sizeof(AddNames)/sizeof(AddNames[0]); i++)
@@ -942,7 +940,7 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
                 PostMessage(hWnd, WM_COMMAND, ID_NEW, 0);
             }
         }
-        else if (p->type == PJ_RES || p->type >= PJ_RESMENU && p->type < PJ_RESMENU + 100)
+        else if (p->type == PJ_RES || p->type >= PJ_RESMENU && p->type < PJ_RESMENU + 100) 	//FIXME && and ||
         {
             struct resRes *d = (struct resRes *) p;
             char *newItem = NULL;
@@ -1067,7 +1065,7 @@ void NavigateToResource(PROJECTITEM *file)
 }
 void ResAddItem(PROJECTITEM *file)
 {
-    if (file->type != PJ_FILE || strlen(file->realName) >= 3 && !stricmp(file->realName + strlen(file->realName) -3, ".rc"))
+    if (file->type != PJ_FILE || strlen(file->realName) >= 3 && !stricmp(file->realName + strlen(file->realName) -3, ".rc")) //FIXME && and ||
     {
         char buf[256];
         PROJECTITEM *parent = file->parent;
@@ -1407,7 +1405,6 @@ static VERSIONINFO *ResNewVersionInfo(PROJECTITEM *data)
     struct variable *string;
     struct variable *var;
     char name[256], *p;
-    char fileName[MAX_PATH];
     while (data->type != PJ_PROJ)
     {
         data = data->parent;
@@ -1969,8 +1966,6 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 static LRESULT CALLBACK extEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    LRESULT rv;
-    RECT r;
     NMHDR nm;
     switch (iMessage)
     {

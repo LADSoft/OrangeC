@@ -251,7 +251,7 @@ void TagRemoveAll(int type)
         l = l->next;
     }
 }
-int TagAnyBreakpoints(void)
+int TagAnyBreakpoints(void) //FIXME see HasBrekpoints!
 {
     struct tagfile *l = tagFileList;
     while (l)
@@ -786,7 +786,6 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
 {
     static HFONT font;
     LPMEASUREITEMSTRUCT mi;
-    LPDRAWITEMSTRUCT di;
     LV_COLUMN lvC;
     LV_ITEM item;
     RECT r;
@@ -877,7 +876,7 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     item.iSubItem = 0;
                     item.mask = LVIF_PARAM | LVIF_TEXT;
                     item.lParam = (LPARAM)t;
-                    item.pszText = buf;
+                    item.pszText = buf; //FIXME buf is auto !
                     ListView_InsertItem(hwndlb, &item);
                     t = t->next;
                 }

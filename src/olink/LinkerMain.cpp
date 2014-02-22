@@ -130,7 +130,7 @@ void LinkerMain::AddFile(LinkManager &linker, std::string &name)
 }
 void LinkerMain::AddFiles(LinkManager &linker, CmdFiles &files)
 {
-    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); it++)
+    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
         AddFile(linker, (*(*it)));
 }
 void LinkerMain::SetDefines(LinkManager &linker)
@@ -184,7 +184,7 @@ int LinkerMain::Run(int argc, char **argv)
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1)
+    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1) //FIXME && ||
     {
         Utils::usage(argv[0], usageText);
     }

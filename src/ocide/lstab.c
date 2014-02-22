@@ -348,7 +348,7 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
             break;
         if (!bottom)
         {
-            int xfirst, yfirst, ymid;
+            int xfirst, yfirst;
             MyDrawEdge(hDc, ptr, x, y - TOPBORDER, x + size.x + RIGHTBORDER + rightInset - ROUNDWIDTH, y - TOPBORDER, -1);
             xfirst = x - RIGHTBORDER;
             yfirst = y + (ptr->fontHeight + TOPBORDER)/2;
@@ -372,7 +372,7 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
         }
         else
         {
-            int xfirst, yfirst, ymid;
+            int xfirst, yfirst;
             MyDrawEdge(hDc, ptr, x, ptr->fontHeight + TOPBORDER + BOTTOMBORDER, x + size.x + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight + TOPBORDER + BOTTOMBORDER,1);
             xfirst = x - RIGHTBORDER;
             yfirst = (ptr->fontHeight + TOPBORDER + BOTTOMBORDER)/2;
@@ -522,7 +522,7 @@ struct _singleTab *ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lPa
 }
 void SelectTab(struct _tabStruct *ptr, LPARAM lParam)
 {
-    struct _singleTab *tabs = ptr->active.head, *cur;
+    struct _singleTab *tabs = ptr->active.head;
     while (tabs)
     {
         if (lParam == tabs->lParam)
@@ -765,7 +765,6 @@ static int tabimageof(char *name)
 static void DrawMenuItem(HDC hDC, struct ttrack *pTrack, int index, BOOL highlighted)
 {
     MENUITEMINFO info;
-    int sz;
     int oldbk, oldtx;
     RECT r;
     int row,col;
@@ -790,7 +789,6 @@ static void DrawMenuItem(HDC hDC, struct ttrack *pTrack, int index, BOOL highlig
         info.cch++;
         if (GetMenuItemInfo(pTrack->menu, index, TRUE, &info))
         {
-            POINT sz;
             if (highlighted)
             {
                 HPEN pen = CreatePen(PS_SOLID,0, RetrieveSysColor(COLOR_HIGHLIGHT));
@@ -939,7 +937,6 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
             pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
             {
                 POINT pt;
-                int row, col;
                 if (InMenuWnd(hwnd))
                 {
                     MENUITEMINFO info;
@@ -1024,7 +1021,6 @@ static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int 
     for (i=0; i < itemCount; i++)
     {
         MENUITEMINFO info;
-        int sz;
         memset(&info, 0, sizeof(info));
         info.cbSize = sizeof(info);
         info.fMask = MIIM_STRING;

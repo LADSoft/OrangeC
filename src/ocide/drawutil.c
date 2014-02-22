@@ -573,9 +573,6 @@ long APIENTRY FileChangeProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
             }
             if (wParam == IDC_FILELIST)
             {
-                NMITEMACTIVATE *ia;
-                LV_ITEM item;
-                int state;
                 if (((LPNMHDR)lParam)->code == LVN_GETDISPINFO)
                 {
                     LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;

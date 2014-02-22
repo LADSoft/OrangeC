@@ -73,11 +73,12 @@ public:
     static bool Start(const std::string &line) { return false; }
     void SetChars(const std::string str) { chars = str; }
     std::string GetChars() const { return chars; }
+	virtual ~Token() {}
 protected:
     virtual void Parse(std::string &line) {}
 private:
     std::string chars;
-} ;
+};
 inline bool operator ==(const Token &tk, char *id) { return tk.GetId() == id; }
 class StringToken : public Token
 {
@@ -194,8 +195,8 @@ class Tokenizer
 public:
     Tokenizer(const std::string &Line, const KeywordHash *Table) : line(Line), keywordTable(Table),
         currentToken(NULL), caseInsensitive(false) { }
-    virtual ~Tokenizer() { if (currentToken) delete currentToken; }
-    void Reset(const std::string &Line) { line = Line; if (currentToken) delete currentToken; currentToken = NULL; }
+    virtual ~Tokenizer() {  delete currentToken; }
+    void Reset(const std::string &Line) { line = Line; delete currentToken; currentToken = NULL; }
     const Token *Next() ;
     std::string &GetString() { return line; }
     static void SetUnsigned(bool flag) { CharacterToken::SetUnsigned(flag); }

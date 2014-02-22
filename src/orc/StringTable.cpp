@@ -95,7 +95,7 @@ bool StringTable::ReadRC(RCFile &rcFile)
     return true;
 }
 
-void StringTable::Add(int id, std::wstring val)
+void StringTable::Add(int id, const std::wstring& val)
 {
     int errid = id;
     id &= 15;
@@ -114,7 +114,7 @@ StringTable *StringTable::Lookup(ResFile &resFile, int id)
     else
     {	
         StringTable *rv = new StringTable(id, currentInfo);
-        if (rv)
+        //if (rv)
             resFile.Add(rv);
         return rv;
     }

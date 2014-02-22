@@ -118,7 +118,7 @@ HASHREC **LookupHash(char *key, HASHREC **table, int size)
         {
             if (!strcmp(q->key, key))
                 return (p);
-            p =  *p;
+            p =  *p; //FIXME?
             q = q->link;
         }
     }
@@ -136,7 +136,7 @@ SYM *basesearch(char *na, TABLE *table, int checkaccess)
     p = ((SYM **)LookupHash(na, defhash, HASHTABLESIZE));
     if (p)
     {
-        p =  *p;
+        p =  *p;//FIXME
     }
     return (SYM*)p;
 }

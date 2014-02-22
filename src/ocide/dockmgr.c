@@ -326,7 +326,7 @@ void dmgrInit(HINSTANCE hInstance, HWND frame, HWND client, int count)
         wc.hInstance = hInstance;
         wc.hIcon = LoadIcon(0, IDI_APPLICATION);
         wc.hCursor = 0; 
-        wc.hbrBackground ;
+        wc.hbrBackground ;  //FIXME ?
         wc.lpszMenuName = 0;
         wc.lpszClassName = szFocusClassName;
         RegisterClass(&wc);
@@ -398,7 +398,7 @@ void AddDockableToolbarWindow(CCW_params *p)
         CCD_params *ccd = calloc(sizeof(CCD_params), 1);
         if (!ccd)
         {
-            free(ccd);
+            free(ccd); //FIXME ccd is NULL!
         }
         else
         {
@@ -2654,8 +2654,8 @@ int adjustforbadplacement(int id, CCD_params *d)
 void SaveDocksToRegistry(void)
 {
     int i;
-    CCW_params p[20];
-    CCD_params d[20];
+//    CCW_params p[20];
+//    CCD_params d[20];
     char regname[256];
     char iobuf[512];
     int len;

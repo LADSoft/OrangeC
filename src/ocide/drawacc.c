@@ -245,7 +245,7 @@ static void PopulateItem(HWND hwnd, ACCELERATOR *accelerators, int items)
         }
         else
         {
-            sprintf(key, "\"%c\"", accelerators->skey);
+            sprintf(key, "\"%c\"", accelerators->skey); //FIXME WCHAR and char ?
         }
     }
     memset(&item, 0, sizeof(LV_ITEM));
@@ -685,7 +685,6 @@ char *GetVKName(int val)
 {
     int top = sizeof(vkList) / sizeof(vkList[0]);
     int bottom =  - 1;
-    int v;
     while (top - bottom > 1)
     {
         int mid = (top + bottom) / 2;
@@ -947,7 +946,6 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_HANDLEDBLCLICK:
         {
             ACCELERATOR *accelerator;
-            RECT r;
             acceleratorData = (struct resRes *)GetWindowLong(hwnd, 0);
             if (acceleratorData->gd.editWindow)
             {
@@ -1043,7 +1041,6 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             acceleratorData = (struct resRes *)GetWindowLong(hwnd, 0);
             if (acceleratorData->gd.bDragging)
             {
-                HWND wnd;
                 POINT pt;
                 GetClientRect(hwnd, &r);
                 pt.x = (long)(short)LOWORD(lParam);
@@ -1292,7 +1289,6 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterAcceleratorDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

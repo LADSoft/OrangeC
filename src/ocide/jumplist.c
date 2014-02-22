@@ -139,7 +139,7 @@ FILE *LoadJumpSymbols(void)
     if (workArea)
     {
         PROJECTITEM *pj = workArea->children;
-        FILE *fil;
+
         if (!PropGetBool(NULL, "BROWSE_INFORMATION") || defaultWorkArea || !pj || jumpSymbols)
             return 0;
         jumpListTail = &jumpList;
@@ -330,7 +330,7 @@ void SetJumplistPos(HWND hwnd, int linepos)
     char name[256];
     char *p, *q=name;
     PROJECTITEM *pj;
-    int lineno;
+
     if (!PropGetBool(NULL, "BROWSE_INFORMATION") || defaultWorkArea || !workArea)
         return;
     p = (char *)SendMessage(hwnd, WM_FILENAME, 0, 0);
@@ -513,7 +513,7 @@ LRESULT CALLBACK ValueComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 LRESULT CALLBACK JumpListProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    RECT r, r1,  *pr;
+    RECT r;
     POINT pt;
     HWND editWnd;
     HFONT xfont;
@@ -599,7 +599,6 @@ LRESULT CALLBACK JumpListProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void CreateJumpListWindow(void)
 {
-    RECT r;
     if (hwndJumpList)
         return ;
     hwndJumpList = CreateWindow(szJumpListClassName, "", WS_CHILD,

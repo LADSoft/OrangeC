@@ -137,7 +137,7 @@ int * GetLineTable(char *name, int line, int *lc)
     {
         DEBUG_INFO *dbg = activeProcess->dbg_info;
         DLL_INFO *dll = activeProcess->dll_info;
-        int *rv;
+        int *rv; //FIXME rv init ?
         if (dbg)
             rv = GetLineTableInternal(dbg, name, line, lc);
         if (!rv)
@@ -622,8 +622,7 @@ void FreeVarInfo(VARINFO *info)
     {
         VARINFO *chain = info->link;
         FreeVarInfo(info->subtype);
-        if (info->vararraylisttofree)
-            free(info->vararraylisttofree);
+        free(info->vararraylisttofree);
         free(info);
         info = chain;
     }

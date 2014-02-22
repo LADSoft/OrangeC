@@ -200,7 +200,7 @@ void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName)
         int length = fil.tellg();
         fil.seekg(0);
         char *buf = new char[length + 2];
-        if (buf)
+        //if (buf)
         {
             buf[0] = 0;
             buf[length+1] = 0;
@@ -263,7 +263,7 @@ int GrepMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (showHelp.GetValue() || argc >= 2 && !strcmp(argv[1], "?"))
+    if (showHelp.GetValue() || argc >= 2 && !strcmp(argv[1], "?")) //FIXME && and ||
     {
         Utils::banner(argv[0]);
         Utils::usage(argv[0], helpText);

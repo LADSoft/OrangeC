@@ -320,7 +320,6 @@ static struct menuBitmap {
 BOOL CALLBACK WindowChangeEnumProc(HWND window, LPARAM param)
 {
     HWND hwndLV = (HWND)param;
-    MENUITEMINFO mi;
     LV_ITEM item;
     char buf[256];
     int v;
@@ -512,7 +511,6 @@ void CreateMenuBitmaps(void)
 void InsertBitmapsInMenu(HMENU hMenu)
 {
     int i;
-    MENUITEMINFO mi;
     for (i=0; i < sizeof(MenuBitmaps)/ sizeof(struct menuBitmap); i++)
     {
         MENUITEMINFO info;

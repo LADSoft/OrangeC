@@ -124,7 +124,6 @@ void ExternalToolsToMenu(void)
     TOOL *curTools = tools;
     int base, base1;
     MENUITEMINFO mi;
-    char buf[256];
     int i, currentOffset;
     HMENU *hMRUSubMenu;
     int maxed;
@@ -452,8 +451,6 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {	static int oldCount;
     static TOOL **oldOrder;
-    
-    char buf[3];
     switch (iMessage)
     {
         case WM_NOTIFY:

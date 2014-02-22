@@ -128,7 +128,7 @@ bool Accelerators::ReadRC(RCFile &rcFile)
     rcFile.NeedBegin();
     while (rcFile.IsString() || rcFile.IsNumber())
     {
-        int done;
+        //int done;
         Key key;
         key.ReadRC(rcFile);
         keys.push_back(key);

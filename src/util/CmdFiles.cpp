@@ -164,7 +164,7 @@ bool CmdFiles::AddFromPath(const std::string &name, const std::string &path)
         }
         std::string internalName = name.substr(x, name.size());
         size_t n = 0;
-        size_t m = 0;
+        //size_t m = 0;
         bool done = false;
         while (!done)
         {

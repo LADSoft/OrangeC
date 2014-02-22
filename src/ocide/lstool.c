@@ -244,7 +244,6 @@ static void CopyButtons(CCW_params *ptr)
 
 int GetToolBarData(HWND hwnd, char *horiz, char *vert)
 {
-    char hbuf[512], vbuf[512];
     CCW_params *ptr = (CCW_params*)GetWindowLong(hwnd, 0);
     FormatToolBar(horiz, ptr->u.tb.hWnd);
     FormatToolBar(vert, ptr->u.tb.vWnd);
@@ -280,10 +279,8 @@ static void ResizeContainer(CCW_params *ptr)
 static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
 {
-    TBBUTTON button;
     LPTOOLTIPTEXT lpt;
     HBITMAP bmp;
-    TBNOTIFY *tb;
     RECT r;
     PAINTSTRUCT ps;
     HDC dc;
@@ -585,8 +582,6 @@ HWND CreateToolBarWindow(int id, HWND notify, HWND parent, int width, int
     CCW_params *p = calloc(sizeof(CCW_params), 1);
     if (p)
     {
-        HWND hwnd;
-        RECT r1, r2;
         p->type = LSTOOLBAR;
         p->id = id;
         p->vertical = vertical;

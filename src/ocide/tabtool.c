@@ -91,14 +91,13 @@ LRESULT CALLBACK PropsTabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static int selected, sizingbottom;
     static HIMAGELIST tabIml;
     static int ilProps, ilToolbox;
-    RECT r,  *pr;
+    RECT r;
     TC_ITEM tie;
     NMHDR *h;
     DRAWITEMSTRUCT *dr;
     HFONT font;
     HBITMAP hbmp;
     HDC hMemDC;
-    HDWP deferstruct;
     PAINTSTRUCT paint;
     HDC dc;
     switch (iMessage)

@@ -59,7 +59,7 @@ public:
     ObjMemory(ObjExpression *Expression, ObjInt Size) : data(NULL), fill(0), enumerated(false), debugTags(NULL),
             fixup(Expression), size(Size) {}
     ObjMemory(ObjInt Size, ObjInt Fill) : data(NULL), fixup(NULL), size(Size), fill(Fill), enumerated(true), debugTags(NULL) { }
-    virtual ~ObjMemory() { if (debugTags) delete debugTags; };
+    virtual ~ObjMemory() { delete debugTags; };
     
     ObjInt GetSize() { return size; }
     ObjByte GetFill() { return fill; }

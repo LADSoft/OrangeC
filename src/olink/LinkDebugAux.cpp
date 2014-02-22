@@ -5,7 +5,7 @@ int LinkerColumnsWithNameVirtualTable::id;
 LinkerColumnsWithNameVirtualTable::LinkerColumnsWithNameVirtualTable(std::vector<sqlite3_int64> &Data, std::vector<ObjString *> &Names, int Columns, bool primary)
     : data(Data), names(Names),  columns(Columns) , rows(names.size())
 {
-    char buf[1000], vname[32];
+    char buf[1000];
     sprintf(buf, "lkwnvt%d",id++);
     name = buf;
     strcpy(buf,"CREATE TABLE x(");
@@ -15,7 +15,7 @@ LinkerColumnsWithNameVirtualTable::LinkerColumnsWithNameVirtualTable(std::vector
         prikey = " PRIMARY KEY";
     for (int i=0; i < columns-1; i++)
     {
-        sprintf(buf+strlen(buf), "v%d INTEGER%s,", i,prikey, ch);
+        sprintf(buf+strlen(buf), "v%d INTEGER%s,", i,prikey, ch); //FIXME!
         prikey = "";
     }
     sprintf(buf+strlen(buf), "v%d VARCHAR(260))", columns-1);

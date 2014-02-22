@@ -424,7 +424,6 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             fatal("internal error");
             break;
     }
-    return 0;
 }
 static void WriteExp(FILE *outputFile, EXPRESSION *exp)
 {
@@ -852,14 +851,14 @@ static void WriteVersion(FILE *outputFile, RESOURCE *res)
                 strings = var->u.string.strings;
                 while (strings)
                 {
-                    fprintf(outputFile, "\t\t\t\VALUE ");
+                    fprintf(outputFile, "\t\t\tVALUE ");
                     WriteWString(outputFile, strings->key, wcslen(strings->key));
                     fprintf(outputFile, ", ");
                     WriteWString(outputFile, strings->value, strings->length);
                     fprintf(outputFile, "\n");
                     strings = strings->next;
                 }
-                fprintf(outputFile, "\t\t\END\n");
+                fprintf(outputFile, "\t\tEND\n");
                 fprintf(outputFile, "\tEND\n");
                 break;
             case VERINFO_VAR:
@@ -1494,7 +1493,7 @@ static void WriteDefines(FILE *outputFile, RESOURCE_DATA *select)
 void WriteResources(char *fileName, RESOURCE_DATA *select)
 {
     RESOURCE *res = select->resources;
-    if (setjmp(&errjump))
+    if (setjmp(&errjump))//FIXME arg 
         return;
     while (res)
     {

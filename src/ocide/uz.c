@@ -39,6 +39,8 @@
 */
 #include <setjmp.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 unsigned CRCtab[256];
 unsigned currentcrc;
@@ -175,7 +177,7 @@ void ExpandTables(unsigned short *dest2, unsigned short *dest, unsigned char
     {
         sum += intermed_tab[i];
         sum <<= 1;
-        intermed_tab_2[i + 1] = sum;
+        intermed_tab_2[i + 1] = sum; //FIXME - check array size !!!
     }
     if (sum)
     {
@@ -234,7 +236,6 @@ void ExpandTables(unsigned short *dest2, unsigned short *dest, unsigned char
                 sum -= 8;
                 for (j = 0; j < sum; j++)
                 {
-                    unsigned val;
                     if (*xdest == 0)
                     {
                         *xdest = ~xlen;

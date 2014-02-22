@@ -80,7 +80,7 @@ int ppMain::Run(int argc, char *argv[])
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1)
+    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1) //FIXME && and ||
     {
         Utils::usage(argv[0], usageText);
     }
@@ -201,7 +201,7 @@ int ppMain::Run(int argc, char *argv[])
                                     else
                                     {
                                         ppExpr e(false, NULL);
-                                        value = e.Eval(working.substr(npos));
+                                        value = e.Eval(working.substr(npos)); //FIXME PPINT <-> int 
                                         pp.Assign(name, value, caseInsensitive);
                                     }
                                 }

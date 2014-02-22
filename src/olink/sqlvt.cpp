@@ -204,7 +204,7 @@ int SQL3VirtualTable::iRowid(void *userCursor, sqlite_int64 *pRowid)
 IntegerColumnsVirtualTable::IntegerColumnsVirtualTable(std::vector<sqlite3_int64> &Data, int Columns, bool primary) : 
     data(Data), columns(Columns) , rows(Data.size()/ Columns)
 {
-    char buf[1000], vname[32];
+    char buf[1000];
     sprintf(buf, "icvt%d",id++);
     name = buf;
     strcpy(buf,"CREATE TABLE x(");

@@ -2541,14 +2541,6 @@ extern unsigned int  PASCAL WINBASEAPI DragQueryFileW(HDROP, unsigned int, LPCWS
 
 extern HICON  PASCAL WINBASEAPI ExtractAssociatedIconW(HINSTANCE, LPCWSTR, WORD *);
 
-extern HICON  PASCAL WINBASEAPI ExtractIconW(HINSTANCE, const LPCWSTR, unsigned int);
-
-extern HINSTANCE  PASCAL WINBASEAPI FindExecutableW(const LPCWSTR, const LPCWSTR, LPCWSTR);
-
-extern int  PASCAL WINBASEAPI ShellAboutW(HWND, const LPCWSTR, const LPCWSTR, HICON);
-
-extern HINSTANCE  PASCAL WINBASEAPI ShellExecuteW(HWND, const LPCWSTR, const LPCWSTR, LPCWSTR, const LPCWSTR, int);
-
 /* end of stuff from shellapi.h in old Cygnus headers */
 /* -------------------------------------------------- */
 /* From ddeml.h in old Cygnus headers */

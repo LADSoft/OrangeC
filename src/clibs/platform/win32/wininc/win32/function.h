@@ -422,10 +422,6 @@
 #define StartService  StartServiceW
 #define DragQueryFile DragQueryFileW
 #define ExtractAssociatedIcon ExtractAssociatedIconW
-#define ExtractIcon ExtractIconW
-#define FindExecutable FindExecutableW
-#define ShellAbout ShellAboutW
-#define ShellExecute ShellExecuteW
 #define DdeCreateStringHandle DdeCreateStringHandleW
 #define DdeInitialize DdeInitializeW
 #define DdeQueryString DdeQueryStringW
@@ -821,10 +817,6 @@
 #define OpenSCManager  OpenSCManagerA
 #define DragQueryFile DragQueryFileA
 #define ExtractAssociatedIcon ExtractAssociatedIconA
-#define ExtractIcon ExtractIconA
-#define FindExecutable FindExecutableA
-#define ShellAbout ShellAboutA
-#define ShellExecute ShellExecuteA
 #define DdeCreateStringHandle DdeCreateStringHandleA
 #define DdeInitialize DdeInitializeA
 #define DdeQueryString DdeQueryStringA

@@ -1549,7 +1549,7 @@ VOID WINAPI OnSelChanged(HWND hwndDlg);
 LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                                   lParam)
 {
-    HWND hwndParent;
+    static HWND hwndParent;
     DLGHDR *pHdr;
     switch (iMessage)
     {

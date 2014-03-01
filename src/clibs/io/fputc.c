@@ -107,11 +107,11 @@ int _RTL_FUNC _fputc(int c, FILE *stream)
 }
 #undef putc
 #undef putchar
-int _RTL_FUNC putc(int c, FILE *stream)
+int _RTL_FUNC putc(const int c, FILE *stream)
 {
     return fputc(c,stream);
 }
-int _RTL_FUNC putchar(int c)
+int _RTL_FUNC putchar(const int c)
 {
     return fputc(c,stdout);
 }

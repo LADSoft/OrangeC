@@ -2090,6 +2090,10 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
                     sp1->mainsym = sym;
                     sp1->access = access;
                     InsertSymbol(sp1, storage_class, sp1->linkage, TRUE);
+                    if (sp1->storage_class == sc_external)
+                    {
+                        InsertExtern(sp1);
+                    }
                     sp1->parentClass = ssp1;
                     hr = &(*hr)->next;
                 }

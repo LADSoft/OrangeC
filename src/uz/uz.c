@@ -159,8 +159,8 @@ UINT16 inflate_tab_6[64] ;
 UINT8  inflate_tab_7[0x13] ; /* #19 bytes */
 UINT16 inflate_tab_8[0x116] ; /* #278 bytes */
 
-UINT16 intermed_tab_1[16];
-UINT16 intermed_tab_2[16];
+UINT16 intermed_tab_1[17];
+UINT16 intermed_tab_2[17];
 UINT16 intermed_tab_3[0x140]; /* #320 bytes */
 
 SINT32 if1_count, if2_count ;
@@ -390,7 +390,7 @@ UINT32 fancymove(SINT16 b, SINT16 *tab, SINT32 *count)
     return b ;
 }
 
-UINT32 consulttabs1(void)
+UINT32 getCopyLengthOrChar(void)
 {
     SINT16 b = (accum & 0xff) ;
     SINT32 count,shift ;
@@ -412,7 +412,7 @@ UINT32 consulttabs1(void)
     return b ;
 }
 
-UINT32 consulttabs2(void)
+UINT32 getCopyOffset(void)
 {
     SINT16 b = (accum & 0xff) ;
     SINT32 count,shift ;
@@ -544,7 +544,7 @@ UINT32 consulttabs2(void)
         ExpandTables(inflate_tab_6,inflate_tab_4,inflate_tab_2,if2_count) ;
     
         while (1) /* do */ /* Block Inflate loop running on fixed or dynamic tabs */ {
-            vala = consulttabs1() ;
+            vala = getCopyLengthOrChar() ;
             if (!(vala & 0xFF00)) /* then */{
                 outputQueue[outputPos++] = vala & 0xFF ;
                 FlushQueue(0) ;
@@ -552,7 +552,7 @@ UINT32 consulttabs2(void)
                 if (vala == 0x100)
                 break ;
                 vala -= 0xFE ;
-                b = consulttabs2() ;
+                b = getCopyOffset() ;
                 src = outputQueue + outputPos - 1 - b ;
                 for (ia=0 ; ia < vala ; ia++) {
                     outputQueue[outputPos++] = *src++ ;

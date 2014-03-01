@@ -38,7 +38,7 @@ $(NAME).exe: $(EXE_dependencies)
 	$(MYLINK) $(LINKFLAGS)  @&&|
 c0x32.obj $(addprefix $(OBJECT)\,$(EXE_dependencies)),ocpp.exe,ocpp.map, cw32.lib import32.lib
 |
-	$(PEPATCH) $(NAME).exe
+#	$(PEPATCH) $(NAME).exe
 
 DISTRIBUTE:
 	copy $(RELEASEPATH)\ocpp.exe $(DISTBIN)

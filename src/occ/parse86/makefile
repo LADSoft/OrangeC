@@ -119,7 +119,7 @@ occpr.exe: $(EXE_dependencies) $(BACKEND_FILES)
 	$(LINK) $(LINKFLAGS)  @&&|
 c0x32.obj $(addprefix $(OBJECT)\,$(EXE_dependencies) $(BACKEND_FILES)),occpr.exe,occ.map, cw32.lib import32.lib
 |
-	$(PEPATCH) occpr.exe
+#	$(PEPATCH) occpr.exe
 
 
 DISTRIBUTE:

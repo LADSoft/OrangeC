@@ -54,7 +54,7 @@ class ppFile : public InputFile
 public:
     ppFile(bool fullname, bool Trigraph, bool extended, const std::string &Name, ppDefine *define, ppCtx &Ctx, bool isunsignedchar, bool c89, bool asmpp) : 
         InputFile(fullname, Name), trigraphs(Trigraph), extendedComment(extended),
-        cond(define, Ctx, isunsignedchar, c89, extended, asmpp), ctx(Ctx) { }
+        cond(isunsignedchar, c89, extended, asmpp), ctx(Ctx) { cond.SetParams(define, &ctx); }
     virtual ~ppFile() { }
     virtual bool GetLine(std::string &line);
     bool Check(int token, const std::string &line, int lineno)

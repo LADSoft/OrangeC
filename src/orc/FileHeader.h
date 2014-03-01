@@ -52,6 +52,6 @@ public:
         : Resource(eFileHeader, ResourceId(0), ResourceInfo(0)) { }
     virtual ~FileHeader() { }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile) { return true; } // doesn't exist in RC file
+    virtual void ReadRC(RCFile &rcFile) { } // doesn't exist in RC file
 };
 #endif

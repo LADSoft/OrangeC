@@ -49,7 +49,7 @@ void GenericResource::WriteRes(ResFile &resFile)
         data->WriteRes(resFile); 
     resFile.Release(); 
 }
-bool GenericResource::ReadRC(RCFile &rcFile)
+void GenericResource::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags((resInfo.GetFlags() & ~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
@@ -57,5 +57,4 @@ bool GenericResource::ReadRC(RCFile &rcFile)
     rd->ReadRC(rcFile);
     data = rd;
     rcFile.NeedEol();
-    return true;
 }

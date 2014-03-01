@@ -50,9 +50,15 @@ class ppCtx;
 class ppCond
 {
 public:
-    ppCond(ppDefine *Define, ppCtx &Ctx, bool isunsignedchar, bool C89, bool Extensions, bool AsmPP) : current(NULL), 
-            define(Define), c89(C89), expr(isunsignedchar, Define), extensions(Extensions), ctx(Ctx), asmpp(AsmPP) { };
+    ppCond(bool isunsignedchar, bool C89, bool Extensions, bool AsmPP) : current(NULL), 
+            define(NULL), c89(C89), expr(isunsignedchar), extensions(Extensions), ctx(NULL), asmpp(AsmPP) { };
     ~ppCond();
+	void SetParams(ppDefine *Define, ppCtx *Ctx)
+	{
+		define = Define;
+		ctx = Ctx;
+		expr.SetParams(Define); 
+	}
     bool Check(int token, const std::string &line, int lineno);
     void CheckErrors() ;
     bool Skipping() { return current && current->skipping; }
@@ -102,7 +108,7 @@ private:
     ppExpr expr;
     bool c89;
     bool extensions;
-    ppCtx &ctx;
+    ppCtx *ctx;
     bool asmpp;
 };
 

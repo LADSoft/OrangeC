@@ -397,7 +397,7 @@ void ppCond::HandleCtx(std::string &line, bool Else, bool negate, int lineno)
     int v = false;
     if (t->IsIdentifier())
     {
-        v = ctx.Matches(t->GetId());
+        v = ctx->Matches(t->GetId());
         if (negate)
             v = !v;
     }

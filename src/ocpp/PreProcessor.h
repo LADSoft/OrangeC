@@ -106,11 +106,11 @@ public:
     PreProcessor(const std::string &FileName, const std::string &SrchPth, const std::string &SysSrchPth,
                  bool fullName, bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool extensions) 
         : ppStart(PPStart), preData(NULL), lineno(0),
-        include(fullName, Trigraph, extensions, FileName, &define, ctx, isunsignedchar, C89,
-                  SrchPth, SysSrchPth, PPStart == '%'), 
-            define(extensions, &include, ctx, macro, C89, PPStart == '%'), //ctx, macro ? //FIXME The uninitialized class member 'ctx'. 'macro' is used to initialize the 'define' member. Remember that members are initialized in the order of their declarations inside a class
+        include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%'), 
+            define(extensions, &include, C89, PPStart == '%'), 
             macro(include, define), ctx(define)
-        { InitHash(); Errors::SetInclude(&include); macro.SetPreProcessor(this); }
+        { InitHash(); Errors::SetInclude(&include); macro.SetPreProcessor(this); 
+				include.SetParams(FileName, &define, &ctx); define.SetParams(&ctx, &macro); }
         
     void InitHash();
     bool GetLine(std::string &line);
@@ -128,12 +128,12 @@ public:
     bool GetPreLine(std::string &line) ;
 private:
     char ppStart;
-    ppDefine define;
     ppCtx ctx;
+    ppMacro macro;
     ppInclude include;
+    ppDefine define;
     ppError ppErr;
     ppPragma pragma;
-    ppMacro macro;
     KeywordHash hash;
     int lineno;
     std::string *preData;

@@ -90,7 +90,7 @@ public:
     virtual ~Resource () { }
 
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile) { return true; }
+    virtual void ReadRC(RCFile &rcFile) { }
 
     void SetResInfo(const ResourceInfo &info) { resInfo = info; }
     ResourceInfo GetResInfo() const { return resInfo; }	

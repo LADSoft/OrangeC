@@ -53,7 +53,7 @@ public:
         : Resource(eDlgInclude, Id, info), data(NULL) { }
     virtual ~DlgInclude() { delete data; }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     void SetData(ResourceData *rdata) {
             delete data;
         data = rdata;

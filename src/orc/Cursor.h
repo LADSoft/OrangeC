@@ -72,7 +72,7 @@ public:
         : Resource(eGroupCursor, Id, info) { }
     virtual ~GroupCursor() { }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     
     void Add(Cursor *Cursor) { cursors.push_back(Cursor); }
     typedef std::deque<Cursor *>::iterator iterator;

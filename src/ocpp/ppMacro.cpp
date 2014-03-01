@@ -44,8 +44,9 @@
 #include <limits.h>
 
 ppMacro::ppMacro(ppInclude &Include, ppDefine &Define) :
-        include(Include), expr(false, &define), define(Define), nextMacro(1) 
+        include(Include), expr(false), define(Define), nextMacro(1) 
 {
+	expr.SetParams(&define);
 }
 ppMacro::~ppMacro()
 {

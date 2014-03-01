@@ -57,7 +57,7 @@ public:
     InternalVerInfo(int Type) : type(Type) { }
     int GetType() const { return type; }
     virtual void WriteRes(ResFile &resFile) = 0;
-    virtual bool ReadRC(RCFile &rcFile) = 0;
+    virtual void ReadRC(RCFile &rcFile) = 0;
 	virtual ~InternalVerInfo() {}
 private:
     int type;
@@ -74,7 +74,7 @@ public:
     };
     StringVerInfo(std::wstring Language) : InternalVerInfo(String), language(Language) { }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     std::wstring GetLanguage() const { return language; }
     void Add(std::wstring key, std::wstring value) { strings.push_back(Info(key, value)); }
     typedef std::deque<Info>::iterator iterator;
@@ -103,7 +103,7 @@ public:
     };
     VarVerInfo() : InternalVerInfo(Var) { }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     typedef std::deque<Info>::iterator iterator;
     iterator begin() { return info.begin(); }
     iterator end() { return info.end(); }
@@ -122,7 +122,7 @@ public:
         fileDateMS(0), fileDateLS(0) { }
     virtual ~VersionInfo();
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     
     void SetFixed(bool flag) { fixed = flag; }
     bool GetFixed() const { return fixed; }

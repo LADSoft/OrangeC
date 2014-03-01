@@ -228,7 +228,7 @@ bool MenuItem::ReadRCInternal(RCFile &rcFile, bool ex)
     
     return rv;
 }
-bool MenuItem::ReadRC(RCFile &rcFile, MenuItemList &list, bool ex)
+void MenuItem::ReadRC(RCFile &rcFile, MenuItemList &list, bool ex)
 {
     rcFile.NeedBegin();
     bool done = false;
@@ -242,7 +242,6 @@ bool MenuItem::ReadRC(RCFile &rcFile, MenuItemList &list, bool ex)
             delete item;
     }
     rcFile.NeedEnd();
-    return true;
 }
 Menu::~Menu()
 {
@@ -271,10 +270,9 @@ void Menu::WriteRes(ResFile &resFile)
         (*it)->WriteRes(resFile, extended, !--count);
     resFile.Release();
 }
-bool Menu::ReadRC(RCFile &rcFile)
+void Menu::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, true);
     MenuItem::ReadRC(rcFile, menuItems, extended);
-    return true;
 }

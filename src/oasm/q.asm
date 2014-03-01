@@ -1,4 +1,8 @@
-;File q.c
+%include "q.asi"
+%define AA 4
+%define BB 6
+%if BB == 6
+;File q.
 ;Compiler version 4.2.4
     SECTION code align=2 CLASS=CODE USE32
     SECTION data align=8 CLASS=DATA USE32
@@ -12,7 +16,6 @@ SECTION code
 [GLOBAL	_main]
 _main:
 ; Line 2:	main(struct aa *v)
-
     PUSH	EBP
     MOV	EBP,ESP
 L_1:
@@ -56,3 +59,4 @@ _bb	RESB	04H
 SECTION code
 SECTION const
 
+%endif

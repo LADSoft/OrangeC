@@ -200,7 +200,7 @@ int ppMain::Run(int argc, char *argv[])
                                     }
                                     else
                                     {
-                                        ppExpr e(false, NULL);
+                                        ppExpr e(false);
                                         value = e.Eval(working.substr(npos));
                                         pp.Assign(name, value, caseInsensitive);
                                     }

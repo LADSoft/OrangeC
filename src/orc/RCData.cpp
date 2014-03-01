@@ -61,7 +61,7 @@ void RCData::WriteRes(ResFile &resFile)
     }
     resFile.Release();
 }
-bool RCData::ReadRC(RCFile &rcFile)
+void RCData::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags((resInfo.GetFlags() & ~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
@@ -72,7 +72,6 @@ bool RCData::ReadRC(RCFile &rcFile)
         ResourceData *rd = new ResourceData;
         rd->ReadRC(rcFile);
         data.push_back(rd);
-        return true;
     }
     else
     {
@@ -130,5 +129,4 @@ bool RCData::ReadRC(RCFile &rcFile)
         }
         rcFile.NeedEnd();
     }
-    return true;
 }

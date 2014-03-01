@@ -9,13 +9,12 @@ LinkerColumnsWithNameVirtualTable::LinkerColumnsWithNameVirtualTable(std::vector
     sprintf(buf, "lkwnvt%d",id++);
     name = buf;
     strcpy(buf,"CREATE TABLE x(");
-    int ch = ',';
     char *prikey = "";
     if (primary)
         prikey = " PRIMARY KEY";
     for (int i=0; i < columns-1; i++)
     {
-        sprintf(buf+strlen(buf), "v%d INTEGER%s,", i,prikey, ch); //FIXME!
+        sprintf(buf+strlen(buf), "v%d INTEGER%s,", i,prikey);
         prikey = "";
     }
     sprintf(buf+strlen(buf), "v%d VARCHAR(260))", columns-1);

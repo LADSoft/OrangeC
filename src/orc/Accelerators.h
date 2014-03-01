@@ -70,7 +70,7 @@ public:
         : Resource(eAccelerators, Id, info) { }
     virtual ~Accelerators() { }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     
     typedef std::deque<Key>::iterator iterator;
     iterator begin() { return keys.begin(); }

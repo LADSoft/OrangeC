@@ -82,7 +82,7 @@ int rcMain::Run(int argc, char *argv[])
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1) //FIXME Priority of the '&&' operation is higher than that of the '||' operation
+    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
     {
         Utils::usage(argv[0], usageText);
     }

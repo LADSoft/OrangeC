@@ -51,8 +51,8 @@
 
 static const int ellipses = 100;
 
-ppDefine::ppDefine(bool UseExtensions, ppInclude *Include, ppCtx &Ctx, ppMacro &Macro, bool C89, bool Asmpp) : 
-        expr(false, NULL), include(Include), c89(C89), ctx(Ctx), macro(Macro), asmpp(Asmpp) 
+ppDefine::ppDefine(bool UseExtensions, ppInclude *Include, bool C89, bool Asmpp) : 
+        expr(false), include(Include), c89(C89), asmpp(Asmpp), ctx(NULL), macro(NULL)
 { 
     SetDefaults(); 
     InitHash(); 
@@ -227,7 +227,7 @@ void ppDefine::DoDefine(std::string &line, bool caseInsensitive)
     else
     {
         int n1;
-        if (inctx && (n1 = ctx.GetTopId()) != -1)
+        if (inctx && (n1 = ctx->GetTopId()) != -1)
         {
             char buf[256];
             sprintf(buf, "..@%d$", n1);
@@ -374,7 +374,7 @@ std::string ppDefine::defid(const std::string &macroname, int &i, int &j)
     }
     if (inctx)
     {
-        int n1 = ctx.GetTopId();
+        int n1 = ctx->GetTopId();
         if (n1 != -1)
         {
             i -= 2 + quoted;
@@ -842,7 +842,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                 }
                 else if (line[n+1] == '%')
                 {
-                    int n1 = macro.GetMacroId();
+                    int n1 =macro->GetMacroId();
                     if (n1 != -1)
                     {
                         char buf[256];
@@ -860,7 +860,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                 {
                     if (line[n+1] == '$' && n < line.size()-2 && IsSymbolStartChar(line.c_str() + n+2))
                     {
-                        int n1 = ctx.GetTopId();
+                        int n1 = ctx->GetTopId();
                         if (n1 != -1)
                         {
                             char buf[256];
@@ -894,14 +894,14 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                         char *c;
                         int val = strtoul(line.c_str() + n1, &c, 10);
                         n1 = c - line.c_str();
-                        if (macro.GetMacroId() == -1)
+                        if (macro->GetMacroId() == -1)
                         {
                             Errors::Error("Macro evaluator used outside macro invocation");
                             break;
                         }
                         else
                         {
-                            std::vector<std::string> *args = macro.GetMacroArgs();
+                            std::vector<std::string> *args = macro->GetMacroArgs();
                             if (val == 0)
                             {
                                 char buf[256];
@@ -914,7 +914,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                                 val--;
                                 if (val >= args->size())
                                 {
-                                    if (val > macro.GetMacroMax())
+                                    if (val > macro->GetMacroMax())
                                     {
                                         Errors::Error("Macro argument evaluator out of range");
                                         break;
@@ -953,9 +953,9 @@ void ppDefine::ReplaceAsmMacros(std::string &line)
         }
         bool rv;
         if (n1 == line.size())
-            rv = macro.Invoke(line.substr(n,n1-n), std::string(""));
+            rv = macro->Invoke(line.substr(n,n1-n), std::string(""));
         else
-            rv = macro.Invoke(line.substr(n, n1-n), line.substr(n1));
+            rv = macro->Invoke(line.substr(n, n1-n), line.substr(n1));
         if (rv)
         {
             line.erase(n, line.size()-n);

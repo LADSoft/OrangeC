@@ -75,7 +75,7 @@ void StringTable::WriteRes(ResFile &resFile)
     }
     resFile.Release();
 }
-bool StringTable::ReadRC(RCFile &rcFile)
+void StringTable::ReadRC(RCFile &rcFile)
 {
     currentInfo = resInfo;
     currentInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
@@ -92,7 +92,6 @@ bool StringTable::ReadRC(RCFile &rcFile)
         rcFile.NeedEol();
     }
     rcFile.NeedEnd();
-    return true;
 }
 
 void StringTable::Add(int id, const std::wstring& val)

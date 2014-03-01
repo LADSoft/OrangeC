@@ -90,9 +90,14 @@ public:
         DefinitionArgList* argList;
     };
 public:
-    ppDefine(bool UseExtensions, ppInclude *Include, ppCtx &Ctx, ppMacro &Macro, bool C89, bool Asmpp);
+    ppDefine(bool UseExtensions, ppInclude *Include, bool C89, bool Asmpp);
     ~ppDefine() {  }
     
+	void SetParams(ppCtx *Ctx, ppMacro *Macro)
+	{
+		ctx = Ctx;
+		macro = Macro;
+	}
     bool Check(int token, std::string &line);
     Definition *Define(const std::string &name, std::string &value, DefinitionArgList *args, bool permanent, bool varargs, bool errors, bool caseInsensitive);
     void Undefine(const std::string &name, bool forever);
@@ -145,8 +150,8 @@ private:
     KeywordHash defTokens;
     bool c89;
     ppExpr expr;
-    ppCtx &ctx;
-    ppMacro &macro;
+    ppCtx *ctx;
+    ppMacro *macro;
     bool asmpp;
 } ;
 #endif

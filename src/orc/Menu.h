@@ -69,7 +69,7 @@ public:
     MenuItem() : type(0), state(0), id(0), popup(NULL), helpIndex(0) { }
     virtual ~MenuItem();
     void WriteRes(ResFile &resFile, bool ex, bool last);
-    static bool ReadRC(RCFile &rcFile, MenuItemList &list, bool ex);
+    static void ReadRC(RCFile &rcFile, MenuItemList &list, bool ex);
     void SetType(unsigned Type)  { type = Type; } 
     unsigned GetType() const { return type; }
     void SetState(unsigned State)  { state = State; } 
@@ -104,7 +104,7 @@ public:
         : Resource(eMenu, Id, info), helpIndex(0), extended(Ext) { }
     virtual ~Menu();
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     void SetHelpIndex(int HelpIndex) { helpIndex = HelpIndex; }
     int GetHelpIndex() const { return helpIndex; }
     void SetExtended(bool flag) { extended = flag; }

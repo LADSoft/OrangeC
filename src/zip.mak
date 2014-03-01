@@ -46,7 +46,7 @@ DISTRIBUTE:
 	-del $(DISTEXE)
 	-del $(DISTSRC)
 	$(ZIP) -r0 a $(DISTEXE) orangec\bin\*.exe orangec\bin\*.app orangec\bin\*.spc orangec\bin\*.dll orangec\bin\*.cfg orangec\lib\*.* orangec\include\*.* orangec\examples\*.* orangec\doc\*.* orangec\license\*.* 
-	$(ZIP) a $(DISTEXE) orangec\lib\* orangec\include\* orangec\examples\* orangec\doc\* orangec\license\*
+   	$(ZIP) a $(DISTEXE) orangec\lib\* orangec\include\* orangec\examples\* orangec\doc\* orangec\license\*
 	$(ZIP) d $(DISTEXE) doc\tools.htm
 	$(ZIP) a $(DISTEXE) orangec\rule\*.rul orangec\help\*.* orangec\addon\*.*
 	$(ZIP) a $(DISTEXE) orangec\license.txt orangec\readme.txt orangec\relnotes.txt

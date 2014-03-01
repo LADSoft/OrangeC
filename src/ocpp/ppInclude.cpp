@@ -111,7 +111,7 @@ void ppInclude::pushFile(const std::string &name)
             files.push_front(current);
             current = NULL;
         }
-        current = new ppFile(fullname, trigraphs, extendedComment, name, define, ctx, unsignedchar, c89, asmpp);
+        current = new ppFile(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp);
         if (current)
             if (!current->Open())
             {

@@ -53,7 +53,7 @@ public:
     StringTable(const ResourceInfo &info);
     virtual ~StringTable() { }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
 
     static void Reset() { stringTables.clear(); }
 protected:

@@ -248,7 +248,8 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         }
         else if (name[0] == '%') // empty
         {
-            return ""; //FIXME ! return bool
+            rv = "";
+            found = false;
         }
         else if (name[0] == '<') // first prereq of first rule
         {

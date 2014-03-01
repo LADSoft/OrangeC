@@ -97,10 +97,10 @@ unsigned RCFile::GetTokenId()
 }
 bool RCFile::IsNumber() 
 {
-    bool rv = GetToken() && (GetToken()->IsNumeric() || GetToken()->IsKeyword() && ( // FIXME Priority of the '&&' operation is higher than that of the '||' operation
+    bool rv = GetToken() && (GetToken()->IsNumeric() || (GetToken()->IsKeyword() && (
         GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
         GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::not ||
-        GetToken()->GetKeyword() == Lexer::compl)||GetToken()->GetKeyword() == Lexer::comma);
+        GetToken()->GetKeyword() == Lexer::compl)||GetToken()->GetKeyword() == Lexer::comma));
     return rv;
 }
 unsigned RCFile::GetNumber()
@@ -205,11 +205,11 @@ std::string RCFile::GetFileName()
 Resource *RCFile::GetRes()
 {
     int type;
-    int val = 0; // FIXME
+    int val = 0;
     std::wstring name;
     ResourceId id;
     bool done = false;
-    Resource *rv = nullptr;
+    Resource *rv = NULL;
     while (!done && !AtEof())
     {
         done= true;

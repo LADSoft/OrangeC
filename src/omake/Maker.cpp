@@ -727,7 +727,7 @@ void Maker::CancelOne(Depends *depend)
 }
 int Maker::RunCommands(bool keepGoing)
 {
-    int rv =0 ; //FIXME rv start value!!!
+    int rv =0 ;
     bool stop = false;
     Environment env;
     GetEnvironment(env);

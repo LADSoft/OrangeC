@@ -54,16 +54,16 @@ public:
     virtual ~LinkDebugFile();
     bool CreateOutput();
 protected:
-    int Begin(void);
-    int End(void );
-    int SQLiteExec( char *str);
-    int CreateTables(void);
-    int CreateIndexes(void);
-    int DBOpen(char *name);
+    bool Begin(void);
+    bool End(void );
+    bool SQLiteExec( char *str);
+	bool CreateTables(void);
+    bool CreateIndexes(void);
+    bool DBOpen(char *name);
     bool WriteFileNames();
     bool WriteLineNumbers();
     int GetSQLNameId(ObjString name);
-    int WriteNamesTable();
+    bool WriteNamesTable();
     bool WriteVariableTypes();
     bool WriteVariableNames();
     ObjInt GetSectionBase(ObjExpression *e);

@@ -58,9 +58,9 @@ public:
         : Resource(eIcon, id, info),
         colors(0), planes(0), bits(0), data(NULL) { }
     virtual ~Icon() { delete data; }
-    bool ReadBin(ResourceData *rd);
+    void ReadBin(ResourceData *rd);
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile) { return true; }
+    virtual void ReadRC(RCFile &rcFile) { }
     unsigned GetIndex() const { return GetId().GetId(); }
     void SetSize(const Point &Size) { size = Size; }
     Point GetSize() const { return size; }
@@ -93,7 +93,7 @@ public:
         : Resource(eGroupIcon, Id, info) { }
     virtual ~GroupIcon() { }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     
     void Add(Icon *icon) { icons.push_back(icon); }
     

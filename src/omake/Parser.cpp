@@ -165,7 +165,7 @@ void UnTab(std::string value)
 }
 size_t Parser::UnfetteredChar(const std::string &line, char ch) const
 {
-    bool charInWord = 0; //FIXME bool = 0 ?
+    int charInWord = 0;
     for (int i=0; i < line.size(); i++)
     {
         if (line[i] == ' ')

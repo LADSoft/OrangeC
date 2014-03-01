@@ -121,7 +121,7 @@ void Accelerators::WriteRes(ResFile &resFile)
     }
     resFile.Release();
 }
-bool Accelerators::ReadRC(RCFile &rcFile)
+void Accelerators::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags( (resInfo.GetFlags() &~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, true);
@@ -134,6 +134,5 @@ bool Accelerators::ReadRC(RCFile &rcFile)
         keys.push_back(key);
     }
     rcFile.NeedEnd();
-    return true;
 }
     

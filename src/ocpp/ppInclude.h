@@ -53,16 +53,22 @@ class ppCtx;
 class ppInclude
 {
 public:
-    ppInclude(bool Fullname, bool Trigraph, bool extended, const std::string &Name, ppDefine *Define,  ppCtx &Ctx,
+    ppInclude(bool Fullname, bool Trigraph, bool extended, 
               bool isunsignedchar, bool C89, const std::string &SrchPth, const std::string &SysSrchPth, bool Asmpp) : 
-        define(Define), unsignedchar(isunsignedchar), c89(C89), trigraphs(Trigraph), asmpp(Asmpp),
-        extendedComment(extended || !C89), fullname(Fullname), current(NULL), expr(unsignedchar, define),
-        srchPath(SrchPth), sysSrchPath(SysSrchPth), ctx(Ctx)
+        unsignedchar(isunsignedchar), c89(C89), trigraphs(Trigraph), asmpp(Asmpp), define(NULL), ctx(NULL),
+        extendedComment(extended || !C89), fullname(Fullname), current(NULL), expr(unsignedchar),
+        srchPath(SrchPth), sysSrchPath(SysSrchPth)
         {
-            pushFile(Name);
         }
               
     ~ppInclude() ;
+	void SetParams(const std::string &Name, ppDefine *Define, ppCtx *Ctx)
+	{
+		define = Define;
+		ctx = Ctx;
+		expr.SetParams(define);
+        pushFile(Name);
+	}
     bool Check(int token, const std::string &line);
     int GetLineNo() 
     { 
@@ -109,7 +115,7 @@ private:
     bool fullname;
     ppExpr expr;
     std::string srchPath, sysSrchPath;
-    ppCtx &ctx;
+    ppCtx *ctx;
     std::string inProc;
     bool asmpp;
 } ;

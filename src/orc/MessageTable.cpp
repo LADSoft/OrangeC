@@ -49,7 +49,7 @@ void MessageTable::WriteRes(ResFile &resFile)
         data->WriteRes(resFile); 
     resFile.Release(); 
 }
-bool MessageTable::ReadRC(RCFile &rcFile)
+void MessageTable::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
@@ -57,5 +57,4 @@ bool MessageTable::ReadRC(RCFile &rcFile)
     rd->ReadRC(rcFile);
     data = rd;
     rcFile.NeedEol();
-    return true;
 }

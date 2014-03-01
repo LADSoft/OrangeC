@@ -56,7 +56,7 @@ public:
     Font(const ResourceId &Id, const ResourceInfo &info);
     virtual ~Font() {  delete data; }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     void SetData(ResourceData *rdata) {
        
             delete data;

@@ -250,7 +250,7 @@ void Control::ReadGeneric(RCFile &rcFile, bool extended)
     }
 }
                            
-bool Control::ReadRC(RCFile &rcFile, bool extended)
+void Control::ReadRC(RCFile &rcFile, bool extended)
 {
     switch (rcFile.GetTokenId())
     {
@@ -315,7 +315,6 @@ bool Control::ReadRC(RCFile &rcFile, bool extended)
             break;
     }
     rcFile.NeedEol();
-    return true;
 }
 Dialog::~Dialog()
 {
@@ -457,7 +456,7 @@ void Dialog::ReadSettings(RCFile &rcFile)
     if (hasfont)
         style |= DS_SETFONT;
 }
-bool Dialog::ReadRC(RCFile &rcFile)
+void Dialog::ReadRC(RCFile &rcFile)
 {
     if (extended)
     {
@@ -483,5 +482,4 @@ bool Dialog::ReadRC(RCFile &rcFile)
         c->ReadRC(rcFile, extended);
     }
     rcFile.NeedEnd();
-    return true;
 }

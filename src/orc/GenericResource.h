@@ -53,7 +53,7 @@ public:
         : Resource(type, Id, info), data(NULL) { }
     virtual ~GenericResource() {  delete data; }
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     
     void SetData(ResourceData *rdata) {
        

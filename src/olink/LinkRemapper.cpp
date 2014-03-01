@@ -409,9 +409,9 @@ ObjInt LinkRemapper::MapType(ObjFile *file, ObjType *type)
         }
         case ObjType::eArray:
         case ObjType::eVla:
-            sprintf(name, "A%d;%d;%d;%d", type->GetSize(),
+            sprintf(name, "A%d;%d;%d;%d;%d", type->GetSize(),
                     type->GetBaseType() ? GetTypeIndex(type->GetBaseType()) : 0, GetTypeIndex(type->GetIndexType()),
-                    type->GetBase(), type->GetTop()); //FIXME
+                    type->GetBase(), type->GetTop());
             break;
         case ObjType::eTypeDef:
             sprintf(name, "T%d;%d;%s", type->GetSize(),

@@ -55,7 +55,7 @@ void Bitmap::WriteRes(ResFile &resFile)
         data->WriteRes(resFile); 
     resFile.Release(); 
 }
-bool Bitmap::ReadRC(RCFile &rcFile)
+void Bitmap::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags( (resInfo.GetFlags() &~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
@@ -91,5 +91,4 @@ bool Bitmap::ReadRC(RCFile &rcFile)
         delete rd;
     }
     rcFile.NeedEol();
-    return true;
 }

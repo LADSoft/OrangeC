@@ -56,9 +56,14 @@ enum kw
 class ppExpr
 {
 public:
-    ppExpr(bool isunsignedchar, ppDefine *Define) : 
-        unsignedchar(isunsignedchar), define(Define) { InitHash(); }
+    ppExpr(bool isunsignedchar) : define(NULL),
+        unsignedchar(isunsignedchar) { InitHash(); }
     ~ppExpr() { }
+
+	void SetParams(ppDefine *Define)
+	{
+		define = Define;
+	}
     PPINT Eval(std::string &line);
     std::string GetString() { return tokenizer->GetString(); }
     void SetDefine (ppDefine *Define) { define = Define; }

@@ -178,28 +178,28 @@ char *LinkDebugFile::indexes =
 LinkDebugFile::~LinkDebugFile()
 {
 }
-int LinkDebugFile::Begin(void)
+bool LinkDebugFile::Begin(void)
 {
-    int rv = true; //FIXME!
+    bool rv = true; 
     if (!SQLiteExec("BEGIN"))
     {
         rv = false;
     }
     return rv;
 }
-int LinkDebugFile::End(void )
+bool LinkDebugFile::End(void )
 {
-    int rv = true;//FIXME!
+    bool rv = true;
     if (!SQLiteExec("END"))
     {
         rv = false;
     }
     return rv;
 }
-int LinkDebugFile::SQLiteExec( char *str)
+bool LinkDebugFile::SQLiteExec( char *str)
 {
     char *zErrMsg  = 0;
-    int rv = false;//FIXME!
+    bool rv = false;
     int rc = sqlite3_exec(dbPointer, str, 0, 0, &zErrMsg);
     if( rc!=SQLITE_OK )
     {
@@ -212,9 +212,9 @@ int LinkDebugFile::SQLiteExec( char *str)
     }
     return rv;
 }
-int LinkDebugFile::CreateTables(void)
+bool LinkDebugFile::CreateTables(void)
 {
-    int rv = true;//FIXME!
+    bool rv = true;
     if (!SQLiteExec(pragmas))
     {
         rv = false;
@@ -225,18 +225,18 @@ int LinkDebugFile::CreateTables(void)
     }
     return rv;
 }
-int LinkDebugFile::CreateIndexes(void)
+bool LinkDebugFile::CreateIndexes(void)
 {
-    int rv = true;//FIXME!
+    bool rv = true;
     if (!SQLiteExec(indexes))
     {
         rv = false;
     }
     return rv;
 }
-int LinkDebugFile::DBOpen(char *name)
+bool LinkDebugFile::DBOpen(char *name)
 {
-    int rv = false;//FIXME!
+    bool rv = false;
     dbPointer = NULL;
     unlink(name);
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK)
@@ -341,7 +341,7 @@ int LinkDebugFile::GetSQLNameId(ObjString name)
     names[name] = nameList.size();
     return nameList.size();
 }
-int LinkDebugFile::WriteNamesTable()
+bool LinkDebugFile::WriteNamesTable()
 {
     std::vector<sqlite3_int64> v;
     for (int i=0; i < nameList.size(); i++)
@@ -358,7 +358,7 @@ int LinkDebugFile::WriteNamesTable()
         delete s;
     }
     nameList.clear();
-    return 0;
+    return true;
 }
 bool LinkDebugFile::WriteVariableTypes()
 {

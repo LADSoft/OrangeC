@@ -61,7 +61,7 @@ public:
     Control() : id(0), style(0), exStyle(0), helpIndex(0), data(NULL) { }
     ~Control();
     void WriteRes(ResFile &resFile, bool ex, bool last);
-    bool ReadRC(RCFile &rcFile, bool extended);
+    void ReadRC(RCFile &rcFile, bool extended);
     void SetId(int Id) { id = Id; }
     int GetId() const { return id; }
     void SetStyle(int Style) { style = Style; }
@@ -107,7 +107,7 @@ public:
             extended(Extended), weight(0), italics(0), helpIndex(0) { }
     virtual ~Dialog();
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
 
     void SetStyle(int Style) { style = Style; }
     int GetStyle() const { return style; }

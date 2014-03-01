@@ -55,7 +55,7 @@ void Font::WriteRes(ResFile &resFile)
         data->WriteRes(resFile); 
     resFile.Release(); 
 }
-bool Font::ReadRC(RCFile &rcFile)
+void Font::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
@@ -73,6 +73,5 @@ bool Font::ReadRC(RCFile &rcFile)
     }
 */
     data = rd;
-    return true;
 }
 

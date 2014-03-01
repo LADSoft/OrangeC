@@ -54,7 +54,7 @@ public:
         : Resource(eRCData, Id, info) { }
     virtual ~RCData();
     virtual void WriteRes(ResFile &resFile);
-    virtual bool ReadRC(RCFile &rcFile);
+    virtual void ReadRC(RCFile &rcFile);
     
     void Add(ResourceData *rdata) { data.push_back(rdata); }
     

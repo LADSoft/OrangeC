@@ -553,7 +553,7 @@ ObjInt LinkRegion::ArrangeSections()
 }
 ObjInt LinkRegion::PlaceRegion(LinkAttribs &partitionAttribs, ObjInt base)
 {
-    int alignAdjust = 0; // FIXME 
+    int alignAdjust = 0;
     if (!attribs.GetVirtualOffsetSpecified())
         if (partitionAttribs.GetVirtualOffsetSpecified())
             attribs.SetVirtualOffset(new LinkExpression(partitionAttribs.GetVirtualOffset() + base - partitionAttribs.GetAddress()));

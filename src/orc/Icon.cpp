@@ -44,7 +44,7 @@
 #include <exception>
 
 int Icon::nextIconIndex;
-bool Icon::ReadBin(ResourceData *rd)
+void Icon::ReadBin(ResourceData *rd)
 {
     Point pt;
     pt.x = rd->GetByte();
@@ -67,7 +67,6 @@ bool Icon::ReadBin(ResourceData *rd)
     if (rd->PastEnd() || offset + bytes > rd->GetLen())
         throw new std::runtime_error("Icon file too short");
     // borland resets the size in the bitmapinfo header, but apparently sets it wrong...
-	return true; // FIXME
 }
 void Icon::WriteRes(ResFile &resFile) 
 { 
@@ -107,7 +106,7 @@ void GroupIcon::WriteRes(ResFile &resFile)
     }
     resFile.Release();
 }
-bool GroupIcon::ReadRC(RCFile &rcFile)
+void GroupIcon::ReadRC(RCFile &rcFile)
 {
     resInfo.ReadRC(rcFile, false);
     ResourceData *rd = new ResourceData;
@@ -128,6 +127,5 @@ bool GroupIcon::ReadRC(RCFile &rcFile)
     }
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     delete rd;
-	return true; // FIXME
 }
     

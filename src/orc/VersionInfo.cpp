@@ -82,7 +82,7 @@ void StringVerInfo::WriteRes(ResFile &resFile)
     resFile.WriteWord(pos2 - pos);
     resFile.SetPos(pos2);
 }
-bool StringVerInfo::ReadRC(RCFile &rcFile)
+void StringVerInfo::ReadRC(RCFile &rcFile)
 {
     rcFile.NeedBegin();
     while (rcFile.GetToken()->GetKeyword() == Lexer::VALUE)
@@ -97,7 +97,6 @@ bool StringVerInfo::ReadRC(RCFile &rcFile)
         Add(key, value);
     }
     rcFile.NeedEnd();
-    return true;
 }
 VarVerInfo::Info::Info(const Info &Old)
 {
@@ -136,7 +135,7 @@ void VarVerInfo::WriteRes(ResFile &resFile)
     resFile.WriteWord(pos1 - pos);
     resFile.SetPos(pos1);
 }
-bool VarVerInfo::ReadRC(RCFile &rcFile)
+void VarVerInfo::ReadRC(RCFile &rcFile)
 {
     while (rcFile.GetToken()->GetKeyword() == Lexer::VALUE)
     {
@@ -154,7 +153,6 @@ bool VarVerInfo::ReadRC(RCFile &rcFile)
         info.push_back(v);
     }
     rcFile.NeedEol();
-    return true;
 }
 VersionInfo::~VersionInfo()
 {
@@ -208,7 +206,7 @@ void VersionInfo::WriteRes(ResFile &resFile)
     resFile.SetPos(pos1);
     resFile.Release();
 }
-bool VersionInfo::ReadRC(RCFile &rcFile)
+void VersionInfo::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags(ResourceInfo::Pure | ResourceInfo::Moveable);
     bool done = false;
@@ -330,5 +328,4 @@ bool VersionInfo::ReadRC(RCFile &rcFile)
 
     }
     rcFile.NeedEnd();
-    return true;
 }

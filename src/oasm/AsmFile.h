@@ -71,7 +71,7 @@ class AsmFile
 {
 public:
     AsmFile(PreProcessor &pp, bool CaseInsensitive, Listing &List) : preProcessor(pp), caseInsensitive(CaseInsensitive),
-        lexer(pp), expr(false, NULL), asmexpr(NULL), startSection(NULL), startupLabel(NULL), startupSection(NULL), inAbsolute(false),
+        lexer(pp), expr(false), asmexpr(NULL), startSection(NULL), startupLabel(NULL), startupSection(NULL), inAbsolute(false),
         currentSection(NULL), currentLabel(NULL), listing(List) { parser = InstructionParser::GetInstance(); lexer.SetAsmFile(this); lexer.NextToken(); }
     virtual ~AsmFile();
 

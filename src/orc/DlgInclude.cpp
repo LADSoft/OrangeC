@@ -50,7 +50,7 @@ void DlgInclude::WriteRes(ResFile &resFile)
         data->WriteRes(resFile); 
     resFile.Release(); 
 }
-bool DlgInclude::ReadRC(RCFile &rcFile)
+void DlgInclude::ReadRC(RCFile &rcFile)
 {
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
@@ -59,5 +59,4 @@ bool DlgInclude::ReadRC(RCFile &rcFile)
     std::wstring wname = rcFile.GetString();
     std::string name = rcFile.CvtString(wname);
     data = new ResourceData((unsigned char *)name.c_str(), name.size() + 1);
-    return true;
 }

@@ -95,7 +95,7 @@ void GroupCursor::WriteRes(ResFile &resFile)
      }
     resFile.Release();
 }
-bool GroupCursor::ReadRC(RCFile &rcFile)
+void GroupCursor::ReadRC(RCFile &rcFile)
 {
     resInfo.ReadRC(rcFile, false);
     ResourceData *rd = new ResourceData;
@@ -116,5 +116,4 @@ bool GroupCursor::ReadRC(RCFile &rcFile)
     }
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     delete rd;
-    return true;
 }

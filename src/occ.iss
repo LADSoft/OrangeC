@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.0.7.1
+AppVerName=Orange C Version 5.0.10.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -18,7 +18,7 @@ LicenseFile=License.txt
 ;BackColor=clRed
 ;BackColor2=clAqua
 ;WindowVisible= yes
-AppCopyright=Copyright(C) LADSoft 1994-2013, All Rights Reserved.
+AppCopyright=Copyright(C) LADSoft 1994-2014, All Rights Reserved.
 WizardSmallImageFile=ladsoft1.bmp
 WizardImageFile=ladsoftl.bmp
 WizardImageBackColor=clAqua

@@ -165,7 +165,6 @@ char *LinkDebugFile::tables=
 char *LinkDebugFile::indexes = 
 {
     "CREATE INDEX LNIndex ON LineNumbers(fileid,line);"
-    "CREATE INDEX ALIndex ON LineNumberAliases(fileid,alias);"
     "CREATE INDEX TNIndex1 ON TypeNames(symbolId);"
     "CREATE INDEX TNIndex2 ON TypeNames(typeId);"
     "CREATE INDEX FDIndex ON Fields(typeId);"

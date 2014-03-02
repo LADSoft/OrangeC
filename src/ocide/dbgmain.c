@@ -284,7 +284,6 @@ static void DeleteProcess(DWORD procId)
             *bp = (*bp)->next;
             free(q);
         }
-        
         (*process) = (*process)->next;
         CloseHandle(v->hProcess);
         FreeDebugInfo(v->dbg_info);
@@ -697,7 +696,7 @@ void __stdcall StartDebug(char *cmd)
 
     stStartInfo.cb = sizeof(STARTUPINFO);
 
-    bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NEW_PROCESS_GROUP | 
+    bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NEW_PROCESS_GROUP |
             DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS |
             (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE ? CREATE_NEW_CONSOLE : 0), NULL, 
             pwd,  &stStartInfo, &stProcessInfo);
@@ -1193,7 +1192,7 @@ void __stdcall StartDebug(char *cmd)
             }
         }
         // Pass on to the operating system.
-        if (bContinue)
+//        if (bContinue)
             ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
 
     }

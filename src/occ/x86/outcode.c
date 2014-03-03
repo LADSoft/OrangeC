@@ -4551,7 +4551,7 @@ int asmrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
                 val = resolveoffset(ins, data->offset, &resolved);
                 ins->resolved = resolved;
                 #ifdef FULLVERSION
-                    if (resolved &!val)
+                    if (resolved &!val)//FIXME!
                         return 1;
                 #endif 
             }
@@ -4583,7 +4583,7 @@ int asmrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
             else
             {
                 if (data->sreg == ESP || data->sreg == data->preg && data->sreg
-                    == EBP)
+                    == EBP)//FIXME && ||
                     return 0;
                 if (data->preg != EBP)
                 {

@@ -506,6 +506,7 @@ static SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, B
             }
         }
     }
+	//FIXME return 
 }
 LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOL *destructor, BOOL tagsOnly)
 {
@@ -1211,7 +1212,7 @@ static BOOL getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, enum e_cv
             else 
             {
                 getSingleConversion(argtp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, 
-                                    &m, seq);
+                                    &m, seq); //FIXME check hrt!
                 if (a)
                     a = a->next;
                 else if (hrt)
@@ -1287,9 +1288,9 @@ static int icsBetter(int count, enum e_cvsrn *arr1, enum e_cvsrn *arr2,
             x1 = arr1[i];
         if (x2 != CV_ELLIPSIS)
             x2 = arr2[i];
-        if (x1 == CV_NONE || x1 == CV_PAD && x2 == CV_ELLIPSIS)
+        if (x1 == CV_NONE || x1 == CV_PAD && x2 == CV_ELLIPSIS)//FIXME && ||
             rv |= TN1;
-        if (x2 == CV_NONE || x2 == CV_PAD && x1 == CV_ELLIPSIS)
+        if (x2 == CV_NONE || x2 == CV_PAD && x1 == CV_ELLIPSIS)//FIXME && ||
             rv |= TN2;
         if (x1 != x2)
         {
@@ -1322,7 +1323,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         SYMBOL *found1 = NULL, *found2 = NULL;
         if (args || atp)
         {
-            if (!sp->tp || !sp->wasUsing && !sp->parentClass)
+            if (!sp->tp || !sp->wasUsing && !sp->parentClass)//FIXME && ||
             {
                     // ok the sym is a valid candidate for argument search
                 if (args)

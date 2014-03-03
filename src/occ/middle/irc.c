@@ -808,7 +808,7 @@ static void Build(BLOCK *b)
             if (head->temps == (TEMP_ANS | TEMP_LEFT))
             {
                 if (head->ans->mode == i_direct && head->dc.left->mode == i_direct && !head->ans->bits && !head->dc.left->bits && !head->dc.left->retval && !head->dc.left->bits)
-                {
+                {//FIXME head->ans->bits twice
                     int u = head->ans->offset->v.sp->value.i;
                     int v = head->dc.left->offset->v.sp->value.i;
                     if (tempInfo[u]->regClass && (tempInfo[u]->regClass == tempInfo[v]->regClass ||
@@ -1265,7 +1265,7 @@ static BOOL Coalesce(void)
         clearbit(workingMoves, sel);
         clearbit(tempInfo[u]->workingMoves, sel);
         clearbit(tempInfo[v]->workingMoves, sel);
-        if (tempInfo[v]->precolored || !tempInfo[u]->precolored && tempInfo[u]->spilled)
+        if (tempInfo[v]->precolored || !tempInfo[u]->precolored && tempInfo[u]->spilled)//FIXME && ||
         {
             int n = u;
             u = v;
@@ -1330,7 +1330,7 @@ static void FreezeMoves( int u)
                     {
                         int u, v ;
                         int n = instructionList[j]->ans->offset->v.sp->value.i;
-                        if (findPartition(n) == u)
+                        if (findPartition(n) == u) //FIXME u uninit
                         {
                             u = instructionList[j]->ans->offset->v.sp->value.i;
                             v = instructionList[j]->dc.left->offset->v.sp->value.i;

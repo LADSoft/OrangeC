@@ -16471,7 +16471,7 @@ bool x86Parser::Opcode78(x86Operand &operand)
 bool x86Parser::Opcode79(x86Operand &operand)
 {
 	bool rv;
-	return rv;
+	return rv;//FIXME rv undef
 }
 Coding x86Parser::OpcodeCodings80_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8},

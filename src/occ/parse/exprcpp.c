@@ -311,7 +311,7 @@ BOOL doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcs
     // conversion to or from void pointer
     if (((isvoidptr(*newType) && ispointer(oldType))
         || (isvoidptr(oldType)||(*exp)->type == en_nullptr) && ispointer(*newType)) 
-        && (!checkconst || isconst(basetype(*newType)->btp) || !isconst(basetype(oldType)->btp)))
+        && (!checkconst || isconst(basetype(*newType)->btp) || !isconst(basetype(oldType)->btp)))//FIXME && ||
         return TRUE;
     // conversion to void (discards type)
     if (isvoid(*newType))
@@ -507,9 +507,9 @@ BOOL doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *
         {
             SYMBOL *spo = basetype(tpo)->sp;
             SYMBOL *spn = basetype(tpn)->sp;
-            if (!isstructured(tpo) || !spo->hasvtab && !spo->accessspecified && !spo->baseClasses)
+            if (!isstructured(tpo) || !spo->hasvtab && !spo->accessspecified && !spo->baseClasses)//FIXME && ||
             {
-                if (!isstructured(tpn) || !spn->hasvtab && !spn->accessspecified && !spn->baseClasses)
+                if (!isstructured(tpn) || !spn->hasvtab && !spn->accessspecified && !spn->baseClasses)//FIXME && ||
                 {
                     // new alignment has to be the same or more restrictive than old
                     if (basetype(tpn)->alignment >= basetype(tpo)->alignment)
@@ -546,9 +546,9 @@ BOOL doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *
             {
                 SYMBOL *spo = basetype(tpo)->sp;
                 SYMBOL *spn = basetype(tpn)->sp;
-                if (!isstructured(tpo) || !spo->hasvtab && !spo->accessspecified && !spo->baseClasses)
+                if (!isstructured(tpo) || !spo->hasvtab && !spo->accessspecified && !spo->baseClasses)//FIXME && ||
                 {
-                    if (!isstructured(tpn) || !spn->hasvtab && !spn->accessspecified && !spn->baseClasses)
+                    if (!isstructured(tpn) || !spn->hasvtab && !spn->accessspecified && !spn->baseClasses)//FIXME && ||
                     {
                         // new alignment has to be the same or more restrictive than old
                         if (basetype(tpn)->alignment >= basetype(tpo)->alignment)
@@ -606,7 +606,7 @@ BOOL insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     char *name = overloadNameTab[kw - kw_new + CI_NEW];
     TYPE *tpx;
     if (!isstructured(*tp) && basetype(*tp)->type != bt_enum
-        && (!tp1 || !isstructured(tp1) && basetype(tp1)->type != bt_enum))
+        && (!tp1 || !isstructured(tp1) && basetype(tp1)->type != bt_enum))//FIXME && ||
         return FALSE;
         
     // first find some occurrance either in the locals or in the extant global namespace
@@ -948,7 +948,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             if (!isstructured(*tp) || (*tp)->sp->trivialCons)
             {
                 INITIALIZER *init = NULL, *dest = NULL;
-                EXPRESSION *base = exp1;
+                EXPRESSION *base = exp1;//FIXME exp1 un=init!
                 lex = initType(lex, funcsp, 0, sc_member, &init, &dest, *tp, NULL, FALSE);
                 // dest is lost for these purposes
                 *exp = convertInitToExpression(*tp, NULL, init, base);

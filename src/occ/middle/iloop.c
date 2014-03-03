@@ -686,8 +686,8 @@ static void CalculateInductionCandidates(LOOP *l)
                     case i_sub:
                         if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                         {
-                            if (head->dc.left->mode == i_immed || (head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
-                                if (head->dc.right->mode == i_immed || (head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
+                            if (head->dc.left->mode == i_immed || (head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)//FIXME && ||
+                                if (head->dc.right->mode == i_immed || (head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)//FIXME && ||
                                 {
                                     if (head->ans->size < ISZ_FLOAT && head->dc.left->size < ISZ_FLOAT && head->dc.right->size < ISZ_FLOAT)
                                     {
@@ -703,7 +703,7 @@ static void CalculateInductionCandidates(LOOP *l)
                     case i_assn:
                         if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                         {
-                            if (head->dc.left->mode == i_immed || (head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
+                            if (head->dc.left->mode == i_immed || (head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)//FIXME && ||
                             {
                                 if (head->ans->size < ISZ_FLOAT && head->dc.left->size < ISZ_FLOAT)
                                 {

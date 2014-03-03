@@ -502,8 +502,8 @@ static BOOL MatchesMem(IMODE *one, IMODE *two)
 }
 static BOOL twomem(IMODE *left, IMODE *right)
 {
-    if (left->mode == i_ind || left->mode == i_direct && left->offset->type != en_tempref)
-        if (right->mode == i_ind || right->mode == i_direct && right->offset->type != en_tempref)
+    if (left->mode == i_ind || left->mode == i_direct && left->offset->type != en_tempref)//FIXME && ||
+        if (right->mode == i_ind || right->mode == i_direct && right->offset->type != en_tempref)//FIXME && ||
             return TRUE;
     return FALSE;
 }

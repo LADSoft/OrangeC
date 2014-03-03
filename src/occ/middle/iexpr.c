@@ -231,7 +231,7 @@ IMODE *LookupLoadTemp(IMODE *dest, IMODE *source)
     if ((source->mode != i_immed)
         && (source->offset->type != en_tempref || source->mode == i_ind))
     {
-        if (source->bits || source->size >= ISZ_FLOAT && !chosenAssembler->arch->hasFloatRegs)
+        if (source->bits || source->size >= ISZ_FLOAT && !chosenAssembler->arch->hasFloatRegs)//FIXME && ||
         {
             source = tempreg(source->size , FALSE);
         }
@@ -1900,7 +1900,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_threadlocal:
             rv = make_ioffset(node);
             ap2 = LookupLoadTemp(ap1, ap1);
-            if (ap1 != ap2)
+            if (ap1 != ap2) //FIXME ap1 uninit
                 gen_icode(i_assn, ap2, ap1, NULL);
             rv = ap2;
             break;

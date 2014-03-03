@@ -188,7 +188,7 @@ BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     }
     if (typ1->type == typ2->type && (isstructured(typ1) || exact && typ1->type == bt_enum))
         return typ1->sp == typ2->sp;
-    if (typ1->type == typ2->type || !exact && isarithmetic(typ2) && isarithmetic(typ1))
+    if (typ1->type == typ2->type || !exact && isarithmetic(typ2) && isarithmetic(typ1))//FIXME && ||
         return TRUE;
     if (isfunction(typ1) && isfunction(typ2) && 
         typ1->sp->linkage == typ2->sp->linkage)

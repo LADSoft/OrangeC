@@ -357,7 +357,7 @@ int ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
         }
         sqlite3_finalize(handle);
     }
-    
+    //FIXME return 
 }
 static int ccSelectIdFromNameTable( sqlite3_stmt **shndl, char *name, char *tabname, sqlite3_int64 *id, HASHREC *table)
 {

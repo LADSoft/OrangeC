@@ -193,7 +193,7 @@ static void GatherGlobals(void)
                         if (!(head->temps & TEMP_ANS) || head->dc.opcode == i_clrblock || head->dc.opcode == i_assnblock ||
                             (head->temps & TEMP_ANS) && (head->ans->mode == i_ind
                                                          /*|| tempInfo[head->ans->offset->v.sp->value.i]->liveAcrossBlock */
-                                                         || head->ans->offset->v.sp->pushedtotemp))
+                                                         || head->ans->offset->v.sp->pushedtotemp))//FIXME && ||
                         {
                             EnterGlobal(head);
                         }
@@ -206,7 +206,7 @@ static void GatherGlobals(void)
                     // because sometimes this algorithm will move them.  The parms are to optimize
                     // statements associated with parameter pushes...  and the jxx are like variable assignments that affect
                     // the uses set but are transparent to everything...
-                    else if (head->dc.opcode == i_gosub || head->dc.opcode == i_parm || head->dc.opcode == i_goto || head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)
+                    else if (head->dc.opcode == i_gosub || head->dc.opcode == i_parm || head->dc.opcode == i_goto || head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)//FIXME && ||
                     {
                         EnterGlobal(head);
                     }

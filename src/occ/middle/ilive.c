@@ -585,7 +585,7 @@ void removeDead(BLOCK *b)
                         {
                             changed = TRUE;
                             RemoveInstruction(head);
-                            if (head->dc.opcode == i_coswitch || head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)
+                            if (head->dc.opcode == i_coswitch || head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)//FIXME && ||
                             {
                                 BLOCKLIST *bl = head->block->succ->next;
                                 head->block->succ->next = NULL;

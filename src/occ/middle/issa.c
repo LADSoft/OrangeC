@@ -651,7 +651,7 @@ static void CoalesceTemps(LOOP *l, BOOL all)
         LOOP *t = (LOOP *)p->data;
         if (t->type == LT_BLOCK)
         {
-            if (!all || t->entry->blocknum && !t->entry->critical)
+            if (!all || t->entry->blocknum && !t->entry->critical)//FIXME && ||
             {
                 BOOL done = all;
                 BLOCKLIST *bl;

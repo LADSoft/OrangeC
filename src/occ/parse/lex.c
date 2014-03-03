@@ -505,7 +505,7 @@ int getChar(char **source, enum e_lexType *tp)
     if (*p == '\'')
     {
         int i ;
-        do p++; while (*p == MACRO_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER); //FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
         i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
         if (i == INT_MIN)
         {
@@ -533,11 +533,11 @@ int getChar(char **source, enum e_lexType *tp)
                     error(ERR_UNTERM_CHAR_CONSTANT);
                 }
                 else
-                    do p++; while (*p == MACRO_PLACEHOLDER);
+                    do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
             }
         }
         else
-            do p++; while (*p == MACRO_PLACEHOLDER);
+            do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
         *tp = v;
         *source = p;
         return i;
@@ -557,34 +557,34 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
     if (*p == 'L')
     {
         v = l_wstr;
-        do p++; while (*p == MACRO_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
     }
     else if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
         if (*p == 'u')
         {
             v = l_ustr;
-            do p++; while (*p == MACRO_PLACEHOLDER);
+            do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
             if (*p == '8')
             {
                 v = l_u8str;
-                do p++; while (*p == MACRO_PLACEHOLDER);
+                do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
             }
         }
         else if (*p == 'U')
         {
             v = l_Ustr;
-            do p++; while (*p == MACRO_PLACEHOLDER);
+            do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
         }
     }
     if (cparams.prm_cplusplus && *p == 'R')
     {
         raw = TRUE;
-        do p++; while (*p == MACRO_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
     }
     if (*p == '"')
     {
-        do p++; while (*p == MACRO_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
         if (raw)
         {
             // fixme utf8 raw strings...
@@ -599,7 +599,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
                 if (*p)
                 {
                     st[0] = *p;
-                    do p++; while (*p == MACRO_PLACEHOLDER);
+                    do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
                 }
                 else if (getstring(st, 1, includes->handle))
                 {
@@ -644,7 +644,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
                 if (*p)
                 {
                     st[0] = *p;
-                    do p++; while (*p == MACRO_PLACEHOLDER);
+                    do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
                 }
                 else if (getstring(st, 1, includes->handle))
                 {
@@ -694,7 +694,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             }
             *dest = 0;
             found = TRUE;
-            while (isspace(*p) || *p == MACRO_PLACEHOLDER)
+            while (isspace(*p) || *p == MACRO_PLACEHOLDER)//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
                 p++;
             *source = p;
         }
@@ -737,7 +737,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
                         }
                         else
                         {
-                            *dest++ = 0xf0 + ((i >> 18 & 0x7));
+                            *dest++ = 0xf0 + ((i >> 18 & 0x7)); //FIXME (i>>18)?
                             *dest++ = 0x80 + ((i >> 12) & 0x3f);
                             *dest++ = 0x80 + ((i >> 6) & 0x3f);
                             *dest++ = 0x80 + (i & 0x3f);
@@ -761,9 +761,9 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             if (*p != '"')
                 error(ERR_UNTERM_STRING_CONSTANT);
             else
-                do p++; while (*p == MACRO_PLACEHOLDER);
+                do p++; while (*p == MACRO_PLACEHOLDER);//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
             found = TRUE;
-            while (isspace(*p) || *p == MACRO_PLACEHOLDER)
+            while (isspace(*p) || *p == MACRO_PLACEHOLDER)//FIXME MACRO_PLACEHOLDER is unsigned char, *p - signed!
                 p++;
             *source = p;
         }
@@ -913,7 +913,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
         radix = 16;
         (*ptr)++;
     }
-    while (radix36(**ptr) < radix || cparams.prm_assemble && radix36(**ptr) < 16)
+    while (radix36(**ptr) < radix || cparams.prm_assemble && radix36(**ptr) < 16)//FIXME && ||
     {
         *p++ = **ptr;
         (*ptr)++;
@@ -1177,7 +1177,7 @@ int getId(char **ptr , char *dest)
             else
                 break;
             if (n <= 0x20 || n >= 0x7f && n <= 0x9f ||
-                n >=0xd800 && n<= 0xdfff)
+                n >=0xd800 && n<= 0xdfff)//FIXME && ||
                 pperror(ERR_INVCONST, 0);
         }
         *dest++ = *(*ptr)++;

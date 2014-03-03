@@ -234,7 +234,7 @@ void ScanForInvariants(BLOCK *b)
                     else if (head->dc.right && head->dc.right->mode != i_immed)
                         canMove = FALSE;
                     if (canMove)
-                        if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting && (!pbr || pbr->preWalk != b->preWalk && pbr->nesting == b->nesting))
+                        if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting && (!pbr || pbr->preWalk != b->preWalk && pbr->nesting == b->nesting))//FIXME && ||
                             MoveExpression(b, head, pbl, pbr);
                 }
                 else if (head->dc.opcode == i_assn && head->dc.left->mode == i_immed)

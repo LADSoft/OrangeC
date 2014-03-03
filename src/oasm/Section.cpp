@@ -251,7 +251,7 @@ bool Section::SwapSectionIntoPlace(ObjExpression *t)
     ObjExpression *left = t->GetLeft();
     ObjExpression *right = t->GetRight();
     if (t->GetOperator() == ObjExpression::eSub || t->GetOperator() == ObjExpression::eDiv
-            || left && !right)
+            || left && !right)//FIXME || &&
     {
         return SwapSectionIntoPlace(left);
     }

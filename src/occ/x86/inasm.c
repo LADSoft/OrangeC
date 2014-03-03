@@ -842,7 +842,7 @@ static AMODE *inasm_mem(void)
                             inasm_err(ERR_INVALID_INDEX_MODE);
                             return 0;
                         }
-                        reg2 = rg;
+                        reg2 = rg;//FIXME rg uninit!
                         inasm_getsym();
                         getscale(&scale);
                         if (scale ==  - 1)
@@ -1038,7 +1038,7 @@ static AMODE *inasm_amode(int nosegreg)
                         {
                             inasm_getsym();
                             if (!lex || lex->type != l_i && lex->type != l_ui || 
-                                lex->value.i < 0 || lex->value.i > 7)
+                                lex->value.i < 0 || lex->value.i > 7)//FIXME && ||
                             {
                                 inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
                                 return 0;
@@ -1363,7 +1363,7 @@ static OCODE *ope_bit(void)
         return 0;
     if (ap2->mode != am_immed && ap2->mode != am_dreg)
         return (OCODE*) - 1;
-    if (ap1->length == ISZ_UCHAR || ap2->mode == am_dreg && ap2->length == ISZ_UCHAR)
+    if (ap1->length == ISZ_UCHAR || ap2->mode == am_dreg && ap2->length == ISZ_UCHAR)//FIXME && ||
         return (OCODE*) - 2;
     return make_ocode(ap1, ap2, 0);
 }
@@ -1745,7 +1745,7 @@ static OCODE *ope_shift(void)
 static OCODE *ope_ret(void)
 {
     AMODE *ap1;
-    if (!lex || lex->type != l_i && lex->type != l_ui)
+    if (!lex || lex->type != l_i && lex->type != l_ui)//FIXME && ||
         return make_ocode(0, 0, 0);
     ap1 = inasm_amode(TRUE);
     return make_ocode(ap1, 0, 0);

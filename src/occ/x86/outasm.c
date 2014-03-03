@@ -3059,7 +3059,7 @@ void oa_put_extern(SYMBOL *sp, int code)
 void oa_put_impfunc(SYMBOL *sp, char *file)
 {
     if (cparams.prm_asmfile) {
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm) //FIXME then else
         {
             bePrintf( "\timport %s %s\n", sp->decoratedName, file);
         }

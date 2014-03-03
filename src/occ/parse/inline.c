@@ -503,7 +503,7 @@ static void inlineResetReturn(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode
         exp = exprNode(en_assign, retnode, exp);
     }
     block->type = st_expr;
-    block->select = exp;
+    block->select = exp;//FIXME exp uninit
 }
 static EXPRESSION *newReturn(TYPE *tp)
 {

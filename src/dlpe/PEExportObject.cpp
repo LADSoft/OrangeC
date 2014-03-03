@@ -118,7 +118,7 @@ void PEExportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     }
     initSize = (size +=	4 * count);
     data = new unsigned char[initSize];
-    memset(data, 0, sizeof(data));
+    memset(data, 0, initSize);
     Header *header = (Header *)data;
 
     header->time = time(0);

@@ -393,7 +393,7 @@ LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems)
         {
             if (suffix)
             {
-                if (strcmp(lex->suffix, suffix))
+                if (strcmp(lex->suffix, suffix))//FIXME strcmp!
                     error(ERR_LITERAL_SUFFIX_MISMATCH);
             }
             else

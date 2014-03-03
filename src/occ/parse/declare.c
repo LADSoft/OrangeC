@@ -614,7 +614,7 @@ static void resolveAnonymousUnions(SYMBOL *sp)
                 if (!newhr->next)
                 {
                     newhr->next = next;
-                    member = &newhr;
+                    member = &newhr;//FIXME Pointer to local variable 'newhr' is stored outside the scope of this variable. Such a pointer will become invalid
                     break;
                 }
                 newhr = newhr->next;
@@ -1156,7 +1156,7 @@ static LEXEME *getStorageClass(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_c
                 lex = getsym();
                 break;
             case kw_static:
-                if (*storage_class == sc_parameter || !cparams.prm_cplusplus && *storage_class == sc_member)
+                if (*storage_class == sc_parameter || !cparams.prm_cplusplus && *storage_class == sc_member)//FIXME && ||
                     errorstr(ERR_INVALID_STORAGE_CLASS, lex->kw->name);
                 else if (*storage_class == sc_auto)
                     *storage_class = sc_localstatic;
@@ -1217,7 +1217,7 @@ static LEXEME *getStorageClass(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage_c
 }
 static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOL allowstatic)
 {
-    while (KWTYPE(lex, TT_TYPEQUAL)|| allowstatic && MATCHKW(lex, kw_static))
+    while (KWTYPE(lex, TT_TYPEQUAL)|| allowstatic && MATCHKW(lex, kw_static))//FIXME && ||
     {
         TYPE *tpn;
         TYPE *tpl;
@@ -2072,7 +2072,7 @@ static void matchFunctionDeclaration(SYMBOL *sp, SYMBOL *spo)
         HASHREC *hro1, *hr1;
         if (!comparetypes(spo->tp->btp, sp->tp->btp, TRUE))
         {
-            preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
+            preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);//FIXME && ||
         }
         else
         {
@@ -2869,7 +2869,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
                 lex = getBeforeType(lex, funcsp, &ptype, spi, strSym, nsv, 
                                     storage_class, linkage, linkage2, linkage3, asFriend, FALSE);
-                if (!ptype || !ispointer(ptype) && !isfunction(ptype) && basetype(ptype)->type != bt_memberptr)
+                if (!ptype || !ispointer(ptype) && !isfunction(ptype) && basetype(ptype)->type != bt_memberptr)//FIXME && ||
                 {
                     // if here is not a potential pointer to func
                     if (!ptype)
@@ -3031,7 +3031,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         if (isfunction(ptype))
         {
             if (ptype->btp->type == bt_func || ptype->btp->type == bt_pointer &&
-                ptype->btp->array)
+                ptype->btp->array)//FIXME && ||
                 error(ERR_FUNCTION_NO_RETURN_FUNCTION_ARRAY);
         }
         if (*spi)
@@ -3111,7 +3111,7 @@ static void allocateVLA(SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *block,
         rptr = &(*rptr)->right;
         result->left = exprNode(en_blockassign, varNode(en_auto, sp),
                            varNode(en_auto, sp->tp->sp));
-        result->left->size = sp->tp->size = sp->tp->sp->tp->size;
+        result->left->size = sp->tp->size = sp->tp->sp->tp->size; //FIXME ?
     }
     else
     {
@@ -3192,11 +3192,11 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, enum e_sc *storage
     *blocked = FALSE;
     *constexpression = FALSE;
     
-    while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) || !foundType && startOfType(lex) || MATCHKW(lex, compl))
+    while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) || !foundType && startOfType(lex) || MATCHKW(lex, compl))//FIXME && ||
     {
         if (KWTYPE(lex, TT_DECLARE))
         {
-            if (MATCHKW(lex, kw_constexpr))
+            if (MATCHKW(lex, kw_constexpr))//FIXME  Recurring check. The 'lex' condition was already verified in line 3197
             {
                 *constexpression = TRUE;
             }
@@ -3449,7 +3449,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         
                     {
                         SYMBOL *spi;
-                        HASHREC **p;
+                        HASHREC **p; //FIXME ! p uninit!
                         if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
                         if (storage_class_in == sc_member && structSyms)
@@ -3497,7 +3497,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                         }
                         if (isatomic(tp1))
                         {
-                            if (isfunction(tp1) || ispointer(tp1) && basetype(tp1)->array)
+                            if (isfunction(tp1) || ispointer(tp1) && basetype(tp1)->array)//FIXME && ||
                                 error(ERR_ATOMIC_NO_FUNCTION_OR_ARRAY);
                         }
                         if (isstructured(tp1) && basetype(tp1)->sp->isabstract)
@@ -3523,7 +3523,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                 spi = (SYMBOL *)(*p)->p;
                             }
                         }
-                        if (strSym && !p)
+                        if (strSym && !p) //FIXME p uninit!
                         {
                             errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, sp->name);
                         }
@@ -3896,7 +3896,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_clas
                                     else if (MATCHKW(lex, kw_default))
                                     {
                                         sp->defaulted = TRUE;
-                                        // fixme add more
+                                        // fixme add more //FIXME strcmp!!!
                                         if (strcmp(sp->name,overloadNameTab[CI_CONSTRUCTOR]) &&
                                             strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]) &&
                                             strcmp(sp->name, overloadNameTab[assign - kw_new + CI_NEW])) // this is meant to be a copy cons but is too loose

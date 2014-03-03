@@ -424,7 +424,7 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOL move)
     TYPE *tpx = NULL;
     EXPRESSION *epx = NULL;
     memset(&funcparams, 0, sizeof(funcparams));
-    memset(&arg, 0, sizeof(exp));
+    memset(&arg, 0, sizeof(arg)); //FIXME - please check diff!
     memset(&exp, 0, sizeof(exp));
     exp.type = en_auto;
     exp.v.sp = base;
@@ -953,6 +953,7 @@ static BOOL conditionallyDeleteDefaultConstructor(SYMBOL *func)
         }
         hr = hr->next;
     }
+	//FIXME return
 }
 static BOOL conditionallyDeleteCopyConstructor(SYMBOL *func, BOOL move)
 {

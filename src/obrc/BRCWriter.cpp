@@ -111,7 +111,7 @@ BRCWriter::~BRCWriter()
 }
 int BRCWriter::Begin(void)
 {
-    int rv = true;
+    int rv = true;//FIXME !!
     if (!SQLiteExec("BEGIN"))
     {
         rv = false;

@@ -629,7 +629,7 @@ static void RewriteAdd(BLOCK *b, int tnum)
     }
     while (gather && (!b || gather->im->mode == i_immed ||
                  !variantThisLoop(b, gather->im->offset->v.sp->value.i)
-                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))
+                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))//FIXME && ||
     {
         if (!gather->genned)
         {
@@ -710,7 +710,7 @@ static IMODE *RewriteDistributed(BLOCK *b, int size, IMODE *im, QUAD *ia,
     int flagsr;
     while (gather && (!b || gather->im->mode == i_immed ||
                  !variantThisLoop(b, gather->im->offset->v.sp->value.i)
-                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))
+                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))//FIXME && ||
     {
         if (!gather->genned)
         {
@@ -761,7 +761,7 @@ static void RewriteMul(BLOCK *b, int tnum)
         // should be a branch of some sort at ia....
         while (current && (!b || current->im->mode == i_immed ||
                      !variantThisLoop(b, current->im->offset->v.sp->value.i)
-                     &&usedThisLoop(b, current->im->offset->v.sp->value.i)))
+                     &&usedThisLoop(b, current->im->offset->v.sp->value.i)))//FIXME && ||
         {
             if (!current->genned && !current->distrib)
             {
@@ -789,7 +789,7 @@ static void RewriteMul(BLOCK *b, int tnum)
         tempInfo[tnum]->expression.lastName = left;
         while (gather && (!b || gather->im->mode == i_immed ||
                      !variantThisLoop(b, gather->im->offset->v.sp->value.i)
-                     &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))
+                     &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))//FIXME && ||
         {
             if (gather->distrib && !gather->genned)
             {

@@ -221,7 +221,7 @@ void put_ty(TYPE *tp)
         case bt_struct:
             fprintf(listFile, "struct ");
             ucont: if (tp->sp == 0)
-                fprintf(listFile, tn_unnamed);
+                fprintf(listFile, tn_unnamed);//FIXME "%s" ?
             else
                 fprintf(listFile, "%s ", unmangledname(tp->sp->name));
             break;

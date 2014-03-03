@@ -43,22 +43,22 @@ void displayLexeme(LEXEME *lex)
             switch(lex->type)
             {
                 case l_i:
-                    printf("int constant: %d\n", lex->value.i);
+                    printf("int constant: %d\n", lex->value.i);//FIXME format!
                     break;
                 case l_ui:
-                    printf("unsigned int constant: %d\n", lex->value.i);
+                    printf("unsigned int constant: %d\n", lex->value.i);//FIXME format!
                     break;
                 case l_l:
-                    printf("long constant: %d\n", lex->value.i);
+                    printf("long constant: %d\n", lex->value.i);//FIXME format!
                     break;
                 case l_ul:
-                    printf("unsigned long constant: %d\n", lex->value.i);
+                    printf("unsigned long constant: %d\n", lex->value.i);//FIXME format!
                     break;
                 case l_ll:
-                    printf("long long constant: %d\n", lex->value.i);
+                    printf("long long constant: %d\n", lex->value.i);//FIXME format!
                     break;
                 case l_ull:
-                    printf("unsigned long long constant: %d\n", lex->value.i);
+                    printf("unsigned long long constant: %d\n", lex->value.i);//FIXME format!
                     break;
                 case l_f:
                     FPFToString(buf, &lex->value.f);
@@ -81,7 +81,7 @@ void displayLexeme(LEXEME *lex)
                     w = lex->value.s.w;
                     while (*w)
                         fputc(*w++, stdout);
-                    fputc('\n', stdout);
+                    fputc('\n', stdout);//FIXME format!
                     break;
                 case l_achr:
                     printf("ascii char: ");

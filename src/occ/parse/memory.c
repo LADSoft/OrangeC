@@ -37,7 +37,7 @@
 */
 #include "compiler.h"
 
-typedef unsigned DWORD;
+typedef unsigned DWORD;//FIXME redefined DWORD
 
 static MEMBLK *freemem;
 static MEMBLK *freestdmem;

@@ -977,7 +977,7 @@ void func_axdx(enum e_op func, AMODE *apal, AMODE *apah, AMODE *apll, AMODE *apl
     }
     if (apal->mode == am_dreg)
     {
-        BOOL overlap = (apll->mode == am_indisp && apll->preg == apal->preg) ||
+        BOOL overlap = (apll->mode == am_indisp && apll->preg == apal->preg) ||//FIXME && ||
                 apll->mode == am_indispscale && (apll->preg == apal->preg || apll->sreg == apal->preg);
         if (overlap)
         {
@@ -3055,7 +3055,7 @@ void asm_assn(QUAD *q)               /* assignment */
     }
     else
         diag("asm_assn: unknown opcode");
-    if (sza == szl || q->dc.left->mode == i_immed && szl < ISZ_FLOAT)
+    if (sza == szl || q->dc.left->mode == i_immed && szl < ISZ_FLOAT)//FIXME && ||
     {
         if (q->ans->size >= ISZ_CFLOAT)
         {

@@ -262,7 +262,7 @@ void ccNewFile(char *fileName, BOOL main)
 void ccSetFileLine(char *filename, int lineno)
 {
     filename = fullqualify(filename);
-    if (strcmp(filename, lastFile->name))
+    if (strcmp(filename, lastFile->name)) //FIXME strcmp!
     {
         lastFile = (LINEINCLUDES *)search(filename, ccHash);
     }

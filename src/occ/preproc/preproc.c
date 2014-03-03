@@ -934,7 +934,7 @@ void Compile_Pragma(void)
         pperror(ERR_NEEDY, ')');
     else
         includes->lptr++;
-    includes->lptr = buf;
+    includes->lptr = buf; //FIXME buf is local!!!
     skipspace();
     dopragma();
     skipspace();

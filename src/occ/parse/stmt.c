@@ -94,7 +94,7 @@ void FlushLineData(char *file, int lineno)
 {
     while (linesHead)
     {
-        if (strcmp(file, linesHead->file) || linesHead->lineno < lineno)
+        if (strcmp(file, linesHead->file) || linesHead->lineno < lineno)//FIXME strcmp
             linesHead = linesHead->next;
         else
             break;
@@ -104,7 +104,7 @@ STATEMENT *currentLineData(BLOCKDATA *parent, char *file, int lineno)
 {
     STATEMENT *rv = NULL;
     LINEDATA *ld = linesHead, **p = &ld;
-    while (*p && (strcmp((*p)->file, file) || lineno >= (*p)->lineno))
+    while (*p && (strcmp((*p)->file, file) || lineno >= (*p)->lineno))//FIXME strcmp
     {
         p = &(*p)->next;
     }
@@ -209,7 +209,7 @@ static LEXEME *statement_break(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     (void)lex;
     (void)funcsp;
     (void)parent;
-    while (breakableStatement && breakableStatement->type == begin)
+    while (breakableStatement && breakableStatement->type == begin) //FIXME  The values of different enum types are compared: ->type == begin
         breakableStatement = breakableStatement->next;
     if (!breakableStatement)
         error(ERR_BREAK_NO_LOOP);
@@ -233,7 +233,7 @@ static LEXEME *statement_case(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     EXPRESSION *exp = NULL;
     BLOCKDATA *switchstmt = parent;
     lex = getsym();
-    while (switchstmt && switchstmt->type != kw_switch)
+    while (switchstmt && switchstmt->type != kw_switch)//FIXME  The values of different enum types are compared: ->type == kw_switch
     {
         switchstmt = switchstmt->next;
     }
@@ -267,7 +267,7 @@ static LEXEME *statement_case(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             if ((*cases)->val == val)
             {
                 char buf[256];
-                sprintf(buf, "%d", val);
+                sprintf(buf, "%d", val); //FIXME - check format!!!
                 preverror(ERR_DUPLICATE_CASE, buf, (*cases)->file, (*cases)->line);
                 break;
             }
@@ -299,7 +299,7 @@ static LEXEME *statement_continue(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent
     BLOCKDATA *continuableStatement = parent;
     (void)lex;
     (void)funcsp;
-    while (continuableStatement && (continuableStatement->type == kw_switch || continuableStatement->type == begin))
+    while (continuableStatement && (continuableStatement->type == kw_switch || continuableStatement->type == begin))//FIXME  The values of different enum types are compared: ->type == begin
         continuableStatement = continuableStatement->next;
     if (!continuableStatement)
         error(ERR_CONTINUE_NO_LOOP);
@@ -318,7 +318,7 @@ static LEXEME *statement_default(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     BLOCKDATA *defaultableStatement = parent;
     (void)lex;
     (void)funcsp;
-    while (defaultableStatement && defaultableStatement->type != kw_switch)
+    while (defaultableStatement && defaultableStatement->type != kw_switch)//FIXME  The values of different enum types are compared: ->type == kw_switch
         defaultableStatement = defaultableStatement->next;
     lex = getsym();
     if (!defaultableStatement)
@@ -1492,7 +1492,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         else
             break;
     }
-    if (parent->type == kw_switch)
+    if (parent->type == kw_switch)//FIXME  The values of different enum types are compared: ->type == kw_switch
     {
         if (st != blockstmt.tail)
         /* kinda naive... */
@@ -1509,7 +1509,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     }
     browse_blockend(errorline);
     currentLineData(&blockstmt, errorfile, errorline-!first);
-    if (parent->type == begin || parent->type == kw_switch)
+    if (parent->type == begin || parent->type == kw_switch)//FIXME  The values of different enum types are compared: ->type == begin
         parent->needlabel = blockstmt.needlabel;
     if (!blockstmt.hassemi && (!blockstmt.nosemi || blockstmt.lastcaseordefault))
     {

@@ -83,7 +83,7 @@ void PEFixupObject::Setup(ObjInt &endVa, ObjInt &endPhys)
             initSize += 2;
         size = initSize;
         data = new unsigned char[initSize];
-        memset(data, 0, sizeof(data));
+        memset(data, 0, initSize);
         // we relied on the set implementation to sort the fixups...
         int curSize = 0;
         Block *block = (Block *)data;

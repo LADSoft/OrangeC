@@ -100,7 +100,7 @@ bool dlLeMain::GetMode()
 }
 void dlLeMain::ReadValues()
 {
-    for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); it++)
+    for (ObjFile::SymbolIterator it = file->DefinitionBegin(); it != file->DefinitionEnd(); ++it)
     {
         ObjDefinitionSymbol *p = (ObjDefinitionSymbol *)*it;
         if (p->GetName() == "STACKSIZE")

@@ -177,7 +177,7 @@ void Instruction::Optimize(int pc, bool last)
         {
             AsmExprNode *expr = (*it)->GetExpr();
             expr = AsmExpr::Eval(expr, pc);
-            if ((*it)->GetExpr()->IsAbsolute() || (*it)->IsRel() && expr->GetType() == AsmExprNode::IVAL)
+            if ((*it)->GetExpr()->IsAbsolute() || (*it)->IsRel() && expr->GetType() == AsmExprNode::IVAL)//FIXME || &&
             {
                 int n = (*it)->GetSize() * 8;
                 int p = (*it)->GetInsOffs();

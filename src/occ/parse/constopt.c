@@ -1625,7 +1625,7 @@ int opt0(EXPRESSION **node)
                     if (ep->type == en_sub)
                     {
                         *node = ep->right;
-                        ep->right->v.f =  ep->right->v.f;
+                        ep->right->v.f =  ep->right->v.f; //FIXME !!! NOW!
                         ep->right->v.f.sign ^= 1 ;
 
                     }

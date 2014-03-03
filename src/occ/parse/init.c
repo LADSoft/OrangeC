@@ -532,6 +532,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOL make_label)
     }
     return lbl;
 #endif
+	//FIXME return
 }
 static int dumpInit(SYMBOL *sp, INITIALIZER *init)
 {
@@ -961,7 +962,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         else if (ispointer(tp))
             error(ERR_NONPORTABLE_POINTER_CONVERSION);
         else if (!isarithmetic(tp) || sc != sc_auto && sc != sc_register &&
-                 !isarithmeticconst(exp)&& !cparams.prm_cplusplus)
+                 !isarithmeticconst(exp)&& !cparams.prm_cplusplus)//FIXME && ||
             error(ERR_CONSTANT_VALUE_EXPECTED);
         else 
             checkscope(tp, itype);
@@ -1038,7 +1039,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         needend = TRUE;
         lex = getsym();
     }
-    if (!lex || lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr)
+    if (!lex || lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr)//FIXME && ||
     {
         lex = optimized_expression(lex, funcsp, itype, &tp, &exp, FALSE);
         if (!tp)
@@ -1444,7 +1445,7 @@ static BOOL designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **desc
                     if (isstructured((*desc)->tp))
                     {
                         HASHREC *hr2 = basetype((*desc)->tp)->syms->table[0];
-                        while (hr2 && strcmp(((SYMBOL *)(hr2->p))->name, (*lex)->value.s.a))
+                        while (hr2 && strcmp(((SYMBOL *)(hr2->p))->name, (*lex)->value.s.a))//FIXME strcmp
                         {
                             hr2 = hr2->next;
                         }
@@ -1976,7 +1977,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         c99 |= designator(&lex, funcsp, &desc, &cache);
         tp2 = nexttp(desc);
         
-        while (tp2 && (isarray(tp2) || isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons)))
+        while (tp2 && (isarray(tp2) || isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons)))//FIXME && ||
         {
             if (MATCHKW(lex, begin))
             {
@@ -2522,7 +2523,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
-    else if (MATCHKW(lex, assign) || cparams.prm_cplusplus && (MATCHKW(lex, openpa) || storage_class_in == sc_member && MATCHKW(lex, begin)))
+    else if (MATCHKW(lex, assign) || cparams.prm_cplusplus && (MATCHKW(lex, openpa) || storage_class_in == sc_member && MATCHKW(lex, begin)))//FIXME && ||
     {
         INITIALIZER **init;
         sp->assigned = TRUE;

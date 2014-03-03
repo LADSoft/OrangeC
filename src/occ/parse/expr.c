@@ -670,7 +670,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         }
         else if (isvoid(tp2) || isvoid(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if (basetype(tp2)->type == bt_memberptr || basetype(tp2)->type == bt_memberptr)
+        else if (basetype(tp2)->type == bt_memberptr || basetype(tp2)->type == bt_memberptr) //FIXME - || the same!
             error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
         else if (basetype(tp2)->scoped || basetype(*tp)->scoped)
             error(ERR_SCOPED_TYPE_MISMATCH);
@@ -3469,7 +3469,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         }
         if (cparams.prm_cplusplus 
             && insertOperatorFunc(kw == en_lor || kw == en_land ? ovcl_binary_numericptr : ovcl_binary_int, kw,
-                               funcsp, tp, exp, tp1, exp1))
+                               funcsp, tp, exp, tp1, exp1)) //FIXME kw == end_lor, en_land
         {
             continue;
         }

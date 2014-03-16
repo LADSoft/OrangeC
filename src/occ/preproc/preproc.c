@@ -146,7 +146,7 @@ void skipspace(void)
     while (isspace((unsigned char)*includes->lptr) || *includes->lptr == MACRO_PLACEHOLDER)
         includes->lptr++;
 }
-BOOL expectid(char *buf)
+BOOLEAN expectid(char *buf)
 {
     if (isstartchar((unsigned char)*includes->lptr))
     {
@@ -156,10 +156,10 @@ BOOL expectid(char *buf)
     pperror(ERR_IDENTIFIER_EXPECTED, 0);
     return FALSE;
 }
-BOOL expectstring(char *buf, char **in, BOOL angle)
+BOOLEAN expectstring(char *buf, char **in, BOOLEAN angle)
 {
     skipspace();
-    if (**in == '"' || angle && **in == '<')
+    if (**in == '"' || (angle && **in == '<'))
     {
         char s = *(*in)++;
         if (s == '<')
@@ -214,7 +214,7 @@ LLONG_TYPE strtoll(char *s, char **e, int radix)
     return rv;
 }
 #endif
-PPINT expectnum(BOOL *uns)
+PPINT expectnum(BOOLEAN *uns)
 {
 #ifdef USE_LONGLONG
     LLONG_TYPE rv = strtoll(includes->lptr, &includes->lptr, 0);
@@ -460,14 +460,14 @@ int getstring(char *s, int len, FILE *file)
     }
 }
 void ccCloseFile(FILE *);
-BOOL getline(void)
+BOOLEAN getline(void)
 /*
  * Read in a line, preprocess it, and dump it to the list and preproc files
  * Also strip comments and alter trigraphs
  */
 {
-    BOOL rv, prepping;
-    BOOL prepped = FALSE;
+    BOOLEAN rv, prepping;
+    BOOLEAN prepped = FALSE;
     int rvc;
     do
     {
@@ -519,7 +519,7 @@ BOOL getline(void)
             while (rvc && isspace((unsigned char)includes->inputline[rvc - 1]))
                 rvc--;
 
-            if (!rvc || !commentlevel && includes->inputline[rvc - 1] != '\\')
+            if (!rvc || (!commentlevel && includes->inputline[rvc - 1] != '\\'))
                 break;
             if (commentlevel)
                 includes->inputline[rvc++] = ' ';
@@ -576,7 +576,7 @@ BOOL getline(void)
 
         while (*includes->lptr != '\n' && isspace((unsigned char)*includes->lptr))
             includes->lptr++;
-        if (includes->lptr[0] == '#' || cparams.prm_trigraph && (includes->lptr[0] == '%' && includes->lptr[1] == ':'))
+        if (includes->lptr[0] == '#' || (cparams.prm_trigraph && (includes->lptr[0] == '%' && includes->lptr[1] == ':')))
         {
             if (cparams.prm_trigraph)
                 stripdigraph(includes->lptr);
@@ -718,9 +718,10 @@ static void pragerror(int error)
 void dopragma(void)
 {
     char buf[40],  *p = buf;
-    BOOL sflag;
+    BOOLEAN sflag;
     int val;
     char name[SYMBOL_NAME_LEN];
+
     if (includes->ifskip)
         return;
     lineToCpp();
@@ -741,9 +742,9 @@ void dopragma(void)
             return ;
         skipspace();
         defid(name, &includes->lptr);
-        if (!strncmp(name, "ON", 2))
+        if (!strncmp(name, "ON", 2) != 0)
             on = 1;
-        else if (strncmp(name, "OFF", 3))
+        else if (strncmp(name, "OFF", 3) != 0)
             return ;
         if (on)
             stdpragmas |= val;
@@ -908,6 +909,7 @@ void Compile_Pragma(void)
 {
     /* fixme, save context */
     char buf[MACRO_REPLACE_SIZE],  *q = buf;
+    unsigned char *last;
     skipspace();
     if (*includes->lptr != '(')
         pperror(ERR_NEEDY, '(');
@@ -938,10 +940,12 @@ void Compile_Pragma(void)
         pperror(ERR_NEEDY, ')');
     else
         includes->lptr++;
+    last = includes->lptr;
     includes->lptr = buf;
     skipspace();
     dopragma();
     skipspace();
+    includes->lptr = last;
 }
 #endif
 /*-------------------------------------------------------------------------*/
@@ -1074,7 +1078,7 @@ void doinclude(void)
 
 /*-------------------------------------------------------------------------*/
 
-void glbdefine(char *name, char *value, BOOL permanent)
+void glbdefine(char *name, char *value, BOOLEAN permanent)
 {
     DEFSTRUCT *def;
     if ((DEFSTRUCT *)search(name, defsyms) != 0)
@@ -1092,13 +1096,13 @@ void glbdefine(char *name, char *value, BOOL permanent)
 void glbUndefine(char *name)
 {
         DEFSTRUCT *hr;
-        if (search(name, defsyms) == NULL)
+        hr = (DEFSTRUCT *)search(name, defsyms);
+        if (hr == NULL)
         {
             IncGlobalFlag();
             hr = (DEFSTRUCT *)Alloc(sizeof(DEFSTRUCT));
             hr->name = litlate(name);
             hr->string = "";
-            hr->permanent = TRUE;
             insert((SYMBOL *)hr, defsyms);
             DecGlobalFlag();
         }
@@ -1157,7 +1161,7 @@ void dodefine(void)
     def->file = includes->fname;
     if (*includes->lptr == '(')
     {
-        BOOL gotcomma=FALSE,nullargs=TRUE;
+        BOOLEAN gotcomma=FALSE,nullargs=TRUE;
         includes->lptr++;
         skipspace();
         while (isstartchar((unsigned char)*includes->lptr))
@@ -1218,7 +1222,7 @@ void dodefine(void)
         } else
             includes->lptr[j] = includes->lptr[i];
     p = strlen(includes->lptr);
-    for (i=0; i < p && isspace((unsigned char)includes->lptr[i]); i++) ;
+    for (i=0; i < p && isspace((unsigned char)includes->lptr[i]); i++)
         if (i[includes->lptr] == REPLACED_TOKENIZING)
             pperror(ERR_PP_INV_DEFINITION, 0);
     for (i = p-1; i >=0 && isspace((unsigned char)includes->lptr[i]); i--) ;
@@ -1230,7 +1234,7 @@ void dodefine(void)
     def->string = ps;
     if (hr)
     {
-        BOOL same = TRUE;
+        BOOLEAN same = TRUE;
         if (def->argcount != hr->argcount)
             same = FALSE;
         else
@@ -1238,7 +1242,7 @@ void dodefine(void)
             int i;
             char *p, *q;
             for (i = 0; i < def->argcount - 1 && same; i++)
-                if (strcmp(def->args[i], hr->args[i]))
+                if (strcmp(def->args[i], hr->args[i]) == 0)
                     same = FALSE;
             p = def->string;
             q = hr->string;
@@ -1315,11 +1319,11 @@ int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, un
 {
     unsigned char *q;
     static unsigned char NULLTOKEN[] = { TOKENIZING_PLACEHOLDER, 0 };
-    int i, p, r;
+    int  p, r;
     int val;
     int stringizing = FALSE;
     q = end;
-    while (*q >=0 && isspace((unsigned char)*q)) q++;
+    while (*q >=0 && isspace((unsigned char)*q)) q++; //*q unsigned >= 0 always
     if (*q == REPLACED_TOKENIZING)
     {
         if (text[0] == 0)
@@ -1330,7 +1334,7 @@ int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, un
     else
     {
         q = begin-1;
-        while (q > macro && *q >= 0 && isspace((unsigned char)*q)) q--;
+        while (q > macro && *q >= 0 && isspace((unsigned char)*q)) q--; //*q unsigned >= 0 always
         if (*q == REPLACED_TOKENIZING)
         {
             if (text[0] == 0)
@@ -1665,14 +1669,13 @@ void SetupAlreadyReplaced(unsigned char *macro)
 // E+ e+ P+ p+
 int ppNumber(char *start, char *pos)
 {
-    BOOL sixteensexp = FALSE;
     char *x = pos;
     if (*pos == '+' || *pos == '-' || isdigit(*pos)) // we would get here with the first alpha char following the number
     {
         // backtrack through all characters that could possibly be part of the number
         while (pos >= start &&
-               issymchar(*pos) || *pos == '.' ||
-               (*pos == '-' || *pos == '+') && (pos[-1] == 'e' || pos[-1] == 'E' || pos[-1] == 'p' || pos[-1] == 'P'))
+               (issymchar(*pos) || *pos == '.' ||
+               (*pos == '-' || *pos == '+') && (pos[-1] == 'e' || pos[-1] == 'E' || pos[-1] == 'p' || pos[-1] == 'P')))
         {
             if (*pos == '-' || *pos == '+') pos--;
             pos--;
@@ -1684,7 +1687,7 @@ int ppNumber(char *start, char *pos)
             while (pos < x && (* pos != '.' || isdigit(pos[-1]) || !isdigit(pos[1]))) pos++;
         }
         // if we didn't get back where we started we have a number
-        return pos < x && (sixteensexp || pos[0] != '0' || pos[1] != 'x' && pos[1] != 'X') ;
+        return pos < x && (pos[0] != '0' || (pos[1] != 'x' && pos[1] != 'X')) ;
     }
     return FALSE;
 }
@@ -1693,7 +1696,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
     unsigned char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
     unsigned char macro[MACRO_REPLACE_SIZE],varargs[4096];
     unsigned char name[256];
-    BOOL waiting = FALSE;
+    BOOLEAN waiting = FALSE;
     int rv;
     int size;
     unsigned char *p,  *q;
@@ -1742,12 +1745,11 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     p = q;
                     if (sp->argcount > 1)
                     {
-                        int lm, ln = strlen(name);
+                        int ln = strlen(name);
                         do
                         {
                             unsigned char *nm = macro;
                             int nestedparen = 0, nestedstring = 0;
-                            insize = 0;
                             while (isspace((unsigned char)*p)) p++;
                             while (*p && (((*p != ',' &&  *p != ')') ||
                                 nestedparen || nestedstring) &&  *p != '\n'))
@@ -1925,7 +1927,7 @@ static void repdefines(char *lptr)
     {
         if (!strncmp(lptr, defkw, 7))
         {
-            BOOL needend = FALSE;
+            BOOLEAN needend = FALSE;
             lptr += 7;
             while (isspace((unsigned char)*lptr))
                 lptr++;
@@ -2011,7 +2013,7 @@ void ansieol(void)
 
 /*-------------------------------------------------------------------------*/
 
-void doifdef(BOOL flag)
+void doifdef(BOOLEAN flag)
 /* Handle IFDEF */
 {
     DEFSTRUCT *hr;

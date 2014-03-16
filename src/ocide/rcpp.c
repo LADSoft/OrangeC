@@ -245,8 +245,7 @@ static int pragerror(int errno)
 int dopragma(void)
 {
     char buf[40],  *p = buf;
-    STARTUPS *a;
-    int val = 0, sflag;
+    int val = 0;
     if (ifskip)
         return incldepth == 0;
         cantnewline = TRUE;
@@ -541,7 +540,7 @@ int doundef(void)
 
 //-------------------------------------------------------------------------
 
-int undef2(void)
+void undef2(void)
 {
     if (lastst != ident)
         generror(ERR_IDEXPECT, 0);

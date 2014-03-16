@@ -141,7 +141,7 @@ int RetrieveInstanceFile(DWINFO *info)
     }
     return rv;
 }
-int PASCAL msThread(void *aa)
+int msThread(void *aa)
 {
     HANDLE hMailSlot = (HANDLE)aa;
     InitializeCriticalSection(&critical);
@@ -195,8 +195,7 @@ int StartInstanceComms(void)
         return FALSE; 
     } 
     ghMailSlot = hMailSlot;
-     CloseHandle(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)msThread, 
-                             (LPVOID)hMailSlot, 0, &id));
+    _beginthread((BEGINTHREAD_FUNC)msThread, 0, (LPVOID)hMailSlot);
     
     return TRUE; 
 }

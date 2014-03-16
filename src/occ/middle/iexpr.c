@@ -2,7 +2,7 @@
     Software License Agreement (BSD License)
     
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
-    All rights reserved.
+    All rights reserved.f
     
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
@@ -126,17 +126,17 @@ IMODE *LookupExpression(enum e_op op, int size, IMODE *left, IMODE *right)
     head.dc.right = right;
     head.dc.opcode = op;
     if (!left->bits && (!right || !right->bits))
-        ap = (IMODE *)LookupNVHash((BYTE *)&head, DAGCOMPARE, name_value_hash);
+        ap = (IMODE *)LookupNVHash((UBYTE *)&head, DAGCOMPARE, name_value_hash);
     if (!ap)
     {	
-        BOOL vol = FALSE;
-        BOOL rest = FALSE;
+        BOOLEAN vol = FALSE;
+        BOOLEAN rest = FALSE;
         int pragmas = 0;
          ap = tempreg(size, 0);
         gen_icode(op, ap, left, right);
         if (!left->offset->unionoffset && (!right || !right->offset->unionoffset))
             if (!left->bits && (!right || !right->bits))
-                ReplaceHash((QUAD *)ap, (BYTE *)intermed_tail, DAGCOMPARE, name_value_hash);
+                ReplaceHash((QUAD *)ap, (UBYTE *)intermed_tail, DAGCOMPARE, name_value_hash);
         if (left->offset)
             if (right && right->offset)
             {
@@ -172,7 +172,7 @@ IMODE *LookupExpression(enum e_op op, int size, IMODE *left, IMODE *right)
 }
 IMODE *GetStoreTemp(IMODE *dest)
 {
-    int hash = dhash((BYTE *)&dest, sizeof(dest));
+    int hash = dhash((UBYTE *)&dest, sizeof(dest));
     STORETEMPHASH *sh = storeHash[hash];
     while (sh)
     {
@@ -186,7 +186,7 @@ IMODE *GetStoreTemp(IMODE *dest)
 }
 IMODE *GetLoadTemp(IMODE *dest)
 {
-    int hash = dhash((BYTE *)&dest, sizeof(dest));
+    int hash = dhash((UBYTE *)&dest, sizeof(dest));
     STORETEMPHASH *sh = loadHash[hash];
     while (sh)
     {
@@ -204,7 +204,7 @@ IMODE *LookupStoreTemp(IMODE *dest, IMODE *src)
     {
         if (!dest->bits)
         {
-            int hash = dhash((BYTE *)&dest, sizeof(dest));
+            int hash = dhash((UBYTE *)&dest, sizeof(dest));
             STORETEMPHASH *sh = storeHash[hash];
             while (sh)
             {
@@ -233,13 +233,13 @@ IMODE *LookupLoadTemp(IMODE *dest, IMODE *source)
     if ((source->mode != i_immed)
         && (source->offset->type != en_tempref || source->mode == i_ind))
     {
-        if (source->bits || source->size >= ISZ_FLOAT && !chosenAssembler->arch->hasFloatRegs)
+        if (source->bits || (source->size >= ISZ_FLOAT && !chosenAssembler->arch->hasFloatRegs))
         {
             source = tempreg(source->size , FALSE);
         }
         else
         {
-            int hash = dhash((BYTE *)&source, sizeof(source));
+            int hash = dhash((UBYTE *)&source, sizeof(source));
             STORETEMPHASH *sh = loadHash[hash];
             while (sh)
             {
@@ -653,7 +653,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
             siz1 = ISZ_ADDR;
             break;
         case en_l_bool:
-            siz1 = ISZ_BOOL;
+            siz1 = ISZ_BOOLEAN;
             break;
         case en_l_uc:
             siz1 = ISZ_UCHAR;
@@ -1929,7 +1929,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             goto castjoin;
         case en_x_bool:
             ctype = en_c_bool;
-            siz1 = ISZ_BOOL;
+            siz1 = ISZ_BOOLEAN;
             goto castjoin;
         case en_x_bit:
             siz1 = ISZ_BIT;
@@ -2554,7 +2554,7 @@ int natural_size(EXPRESSION *node)
         case en_x_ldc:
             return ISZ_CLDOUBLE;
         case en_c_bool:
-            return ISZ_BOOL;
+            return ISZ_BOOLEAN;
         case en_c_ull:
         case en_l_ull:
         case en_x_ull:
@@ -2588,7 +2588,7 @@ int natural_size(EXPRESSION *node)
             return ISZ_SEG;
         case en_l_bool:
         case en_x_bool:
-            return ISZ_BOOL;
+            return ISZ_BOOLEAN;
         case en_l_bit:
         case en_x_bit:
             return ISZ_BIT;

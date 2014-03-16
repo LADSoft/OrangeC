@@ -66,7 +66,7 @@
 extern FILE *icdFile;
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM *chosenAssembler; 
-extern BOOL setjmp_used;
+extern BOOLEAN setjmp_used;
 
 extern int walkPostorder, walkPreorder;
 
@@ -111,7 +111,7 @@ static void copymap(BITINT *dest, BITINT *source)
 {
     memcpy(dest, source, ((termCount + BITINTBITS-1) / BITINTBITS) * sizeof(BITINT) );
 }
-static BOOL samemap(BITINT *dest, BITINT *source)
+static BOOLEAN samemap(BITINT *dest, BITINT *source)
 {
     BITINT *olddest = dest;
     BITINT *oldsrc = source;
@@ -132,14 +132,14 @@ static void complementmap(BITINT *dest)
     for (i=0; i < n; i++)
         *dest++ ^= (BITINT)-1;
 }
-static void setmap(BITINT *dest , BOOL val)
+static void setmap(BITINT *dest , BOOLEAN val)
 {
     int i;
     int v = val ? 0xff : 0;
     int n = (termCount  + BITINTBITS-1)/BITINTBITS * sizeof(BITINT);
     memset(dest, v, n);
 }
-static BOOL AnySet(BITINT *map)
+static BOOLEAN AnySet(BITINT *map)
 {
     int n = termCount/BITINTBITS;
     int i;
@@ -191,22 +191,17 @@ static void GatherGlobals(void)
                     else if (head->ans)
                     {
                         if (!(head->temps & TEMP_ANS) || head->dc.opcode == i_clrblock || head->dc.opcode == i_assnblock ||
-                            (head->temps & TEMP_ANS) && (head->ans->mode == i_ind
-                                                         /*|| tempInfo[head->ans->offset->v.sp->value.i]->liveAcrossBlock */
-                                                         || head->ans->offset->v.sp->pushedtotemp))
+                            ((head->temps & TEMP_ANS) && (head->ans->mode == i_ind
+                                                         || head->ans->offset->v.sp->pushedtotemp)))
                         {
                             EnterGlobal(head);
                         }
                     }
-//					else if (head->temps)
-//					{
-//						EnterGlobal(head);
-//					}
                     // the gosub is for UIVs, the goto is to allow a convenient point to gather loop invariants
                     // because sometimes this algorithm will move them.  The parms are to optimize
                     // statements associated with parameter pushes...  and the jxx are like variable assignments that affect
                     // the uses set but are transparent to everything...
-                    else if (head->dc.opcode == i_gosub || head->dc.opcode == i_parm || head->dc.opcode == i_goto || head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)
+                    else if (head->dc.opcode == i_gosub || head->dc.opcode == i_parm || head->dc.opcode == i_goto || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge))
                     {
                         EnterGlobal(head);
                     }
@@ -265,7 +260,7 @@ static void CalculateUses(void)
         tail = tail->back;
     while (tail)
     {
-        BOOL first = TRUE;
+        BOOLEAN first = TRUE;
         head = tail;
         setmap(head->uses, FALSE);
         while (head && (first || !head->OCP))
@@ -487,7 +482,7 @@ static QUAD *Last(QUAD *tail)
 static void CalculateDSafe(void)
 {
     int i;
-    BOOL changed;
+    BOOLEAN changed;
     do
     {
         changed = FALSE;
@@ -543,7 +538,7 @@ static void CalculateDSafe(void)
 static void CalculateEarliest(void)
 {
     int i;
-    BOOL changed;
+    BOOLEAN changed;
     setmap(blockArray[0]->head->earliest, TRUE);
     do
     {
@@ -609,7 +604,7 @@ static void CalculateEarliest(void)
 static void CalculateDelay(void)
 {
     int i;
-    BOOL changed;
+    BOOLEAN changed;
     do
     {
         changed = FALSE;
@@ -728,7 +723,7 @@ static void CalculateLatest(void)
 static void CalculateIsolated(void)
 {
     int i;
-    BOOL changed;
+    BOOLEAN changed;
     for (i=0; i < blocks; i++)
         setmap(reverseOrder[i]->head->isolated, TRUE);
     do
@@ -895,7 +890,7 @@ static void HandleOCP(QUAD *after, int tn)
         QUAD *tail = after;
         QUAD *ins = Alloc(sizeof(QUAD));
         QUAD *bans;
-        BOOL a = FALSE, l = FALSE;
+        BOOLEAN a = FALSE, l = FALSE;
         if (after->dc.opcode != i_block && after->dc.opcode != i_label)
         {
             QUAD *beforea, *beforel = NULL;
@@ -969,7 +964,7 @@ static void HandleOCP(QUAD *after, int tn)
             ins->block->tail = bans;
     }
 }
-static IMODE *GetROVar(IMODE *oldvar, IMODE *newvar, BOOL mov)
+static IMODE *GetROVar(IMODE *oldvar, IMODE *newvar, BOOLEAN mov)
 {
     if (oldvar->mode == i_ind)
     {

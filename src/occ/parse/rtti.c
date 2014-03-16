@@ -179,7 +179,7 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
         genbyte(*p);
     genbyte(0);
 }
-static void DumpEnclosedStructs(TYPE *tp, BOOL genXT)
+static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
 {
     SYMBOL *sym = basetype(tp)->sp;
     HASHREC *hr;
@@ -676,7 +676,7 @@ static int evalofs(EXPRESSION *exp)
             return 0;
     }
 }
-static BOOL throughThis(EXPRESSION *exp)
+static BOOLEAN throughThis(EXPRESSION *exp)
 {
     switch(exp->type)
     {

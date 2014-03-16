@@ -52,7 +52,7 @@ int IsPEFile(char *filename)
     long pos;
     if (!fil)
         return 0;
-    memset(buf, 64, 0);
+    memset(buf, 0, sizeof(buf));
     fread(buf, 64, 1, fil);
     pos = *(int*)(buf + 0x3c);
     fseek(fil, pos, SEEK_SET);
@@ -73,62 +73,6 @@ int GetEntryPoint(void)
 //-------------------------------------------------------------------------
 
 int FindExitProcessAddress(HANDLE hProcess, int imagebase)
-{
-    struct pe_import_dir_struct PEImport;
-    int dir_address;
-
-    base = imagebase;
-    ReadProcessMemory(hProcess, (LPVOID)(imagebase + 0x3c), (LPVOID)
-        &dir_address, 4, 0);
-
-    ReadProcessMemory(hProcess, (LPVOID)(imagebase + dir_address), (LPVOID)
-        &PEHead, sizeof(struct pe_header_struct), 0);
-    dir_address = PEHead.import_rva;
-    if (dir_address == 0)
-        return 0;
-    do
-    {
-        ReadProcessMemory(hProcess, (LPVOID)(imagebase + dir_address), (LPVOID)
-            &PEImport, sizeof(struct pe_import_dir_struct), 0);
-        if (PEImport.dllName)
-        {
-            char buf[256];
-            ReadProcessMemory(hProcess, (LPVOID)(imagebase + PEImport.dllName),
-                (LPVOID)buf, 256, 0);
-            if (!xstricmpz(buf, "KERNEL32.DLL"))
-            {
-                int namepos = PEImport.thunkPos2 + imagebase;
-                int addrpos = PEImport.thunkPos + imagebase;
-                do
-                {
-                    int nametext;
-                    ReadProcessMemory(hProcess, (LPVOID)namepos, buf, 4, 0);
-                    nametext = *(int*)buf + imagebase;
-                    if (nametext == 0)
-                        return 0;
-                    ReadProcessMemory(hProcess, (LPVOID)nametext, buf, 256, 0);
-                    if (!strcmp(buf + 2, "ExitProcess"))
-                    {
-                        ReadProcessMemory(hProcess, (LPVOID)addrpos, buf, 4, 0);
-                        return *(int*)buf;
-                    } namepos += 4;
-                    addrpos += 4;
-                }
-                while (TRUE);
-
-            }
-            dir_address += sizeof(struct pe_import_dir_struct);
-        }
-
-    }
-    while (PEImport.dllName)
-        ;
-
-    return 0;
-}
-//-------------------------------------------------------------------------
-
-int FindLSCRTLExitAddress(HANDLE hProcess, int imagebase)
 {
     struct pe_import_dir_struct PEImport;
     int dir_address;

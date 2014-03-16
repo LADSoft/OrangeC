@@ -38,16 +38,16 @@
 #include "compiler.h"
 #include "rtti.h"
 extern ARCH_ASM *chosenAssembler;
-extern BOOL hasXCInfo;
+extern BOOLEAN hasXCInfo;
 
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern TYPE stdpointer, stdint;
 
-static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPRESSION *thisptr, EXPRESSION *other, BOOL move, BOOL isconst);
+static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst);
 static void createDestructor(SYMBOL *sp);
 
-void ConsDestDeclarationErrors(SYMBOL *sp, BOOL notype)
+void ConsDestDeclarationErrors(SYMBOL *sp, BOOLEAN notype)
 {
     if (sp->isConstructor)
     {
@@ -286,7 +286,7 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     }
     return insertFunc(sp, func);
 }
-static BOOL hasConstFuncs(SYMBOL *sp, int type)
+static BOOLEAN hasConstFuncs(SYMBOL *sp, int type)
 {
     TYPE *tp = NULL;
     EXPRESSION *exp = NULL;
@@ -310,7 +310,7 @@ static BOOL hasConstFuncs(SYMBOL *sp, int type)
     }
     return FALSE;
 }
-static BOOL constCopyConstructor(SYMBOL *sp)
+static BOOLEAN constCopyConstructor(SYMBOL *sp)
 {
     VBASEENTRY *e;
     BASECLASS *b;
@@ -341,7 +341,7 @@ static BOOL constCopyConstructor(SYMBOL *sp)
     
     return TRUE;
 }
-static SYMBOL *declareConstructor(SYMBOL *sp, BOOL deflt, BOOL move)
+static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
 {
     SYMBOL *func, *sp1;
     TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
@@ -378,7 +378,7 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOL deflt, BOOL move)
     }
     return insertFunc(sp, func);
 }
-static BOOL constAssignmentOp(SYMBOL *sp)
+static BOOLEAN constAssignmentOp(SYMBOL *sp)
 {
     VBASEENTRY *e;
     BASECLASS *b;
@@ -409,7 +409,7 @@ static BOOL constAssignmentOp(SYMBOL *sp)
     
     return TRUE;
 }
-static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOL move)
+static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
 {
     SYMBOL *func, *sp1;
     TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
@@ -441,7 +441,7 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOL move)
     *tpx = *basetype(sp->tp);
     return insertFunc(sp, func);
 }
-static BOOL matchesDefaultConstructor(SYMBOL *sp)
+static BOOLEAN matchesDefaultConstructor(SYMBOL *sp)
 {
     HASHREC *hr = basetype(sp->tp)->syms->table[0]->next;
     if (hr)
@@ -452,7 +452,7 @@ static BOOL matchesDefaultConstructor(SYMBOL *sp)
     }
     return FALSE;
 }
-static BOOL matchesCopy(SYMBOL *sp, BOOL move)
+static BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
 {
     HASHREC *hr = basetype(sp->tp)->syms->table[0]->next;
     if (hr)
@@ -471,7 +471,7 @@ static BOOL matchesCopy(SYMBOL *sp, BOOL move)
     }
     return FALSE;
 }
-static BOOL hasCopy(SYMBOL *func, BOOL move)
+static BOOLEAN hasCopy(SYMBOL *func, BOOLEAN move)
 {
     HASHREC *hr = basetype(func->tp)->syms->table[0];
     while (hr)
@@ -483,7 +483,7 @@ static BOOL hasCopy(SYMBOL *func, BOOL move)
     }
     return FALSE;
 }
-static BOOL checkDest(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
+static BOOLEAN checkDest(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
 {
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], syms);
 
@@ -497,7 +497,7 @@ static BOOL checkDest(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
     }
     return FALSE;
 }
-static BOOL checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
+static BOOLEAN checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
 {
     SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], syms);
     if (cons)
@@ -525,7 +525,7 @@ static BOOL checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
     }
     return FALSE;
 }
-SYMBOL *getCopyCons(SYMBOL *base, BOOL move)
+SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
 {
     SYMBOL *ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(base->tp)->syms);
     if (ovl)
@@ -565,7 +565,7 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOL move)
     }
     return NULL;
 }
-static SYMBOL *GetCopyAssign(SYMBOL *base, BOOL move)
+static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
 {
     SYMBOL *ovl = search(overloadNameTab[assign - kw_new + CI_NEW ], basetype(base->tp)->syms);
     if (ovl)
@@ -606,7 +606,7 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOL move)
     }
     return NULL;
 }
-BOOL hasVTab(SYMBOL *sp)
+BOOLEAN hasVTab(SYMBOL *sp)
 {
     VTABENTRY *vt = sp->vtabEntries;
     while( vt)
@@ -617,7 +617,7 @@ BOOL hasVTab(SYMBOL *sp)
     }
     return FALSE;
 }
-static BOOL hasTrivialCopy(SYMBOL *sp, BOOL move)
+static BOOLEAN hasTrivialCopy(SYMBOL *sp, BOOLEAN move)
 {
     HASHREC *hr;
     SYMBOL *dflt;
@@ -650,7 +650,7 @@ static BOOL hasTrivialCopy(SYMBOL *sp, BOOL move)
     }
     return TRUE;
 }
-static BOOL hasTrivialAssign(SYMBOL *sp, BOOL move)
+static BOOLEAN hasTrivialAssign(SYMBOL *sp, BOOLEAN move)
 {
     HASHREC *hr;
     SYMBOL *dflt;
@@ -683,7 +683,7 @@ static BOOL hasTrivialAssign(SYMBOL *sp, BOOL move)
     }
     return TRUE;
 }
-static BOOL checkCopyCons(SYMBOL *sp, SYMBOL *base, enum e_ac access)
+static BOOLEAN checkCopyCons(SYMBOL *sp, SYMBOL *base, enum e_ac access)
 {
     SYMBOL *dflt = getCopyCons(base, FALSE);
     if (dflt)
@@ -695,7 +695,7 @@ static BOOL checkCopyCons(SYMBOL *sp, SYMBOL *base, enum e_ac access)
     }
     return FALSE;
 }
-static BOOL checkCopyAssign(SYMBOL *sp, SYMBOL *base, enum e_ac access)
+static BOOLEAN checkCopyAssign(SYMBOL *sp, SYMBOL *base, enum e_ac access)
 {
     SYMBOL *dflt = GetCopyAssign(base, FALSE);
     if (dflt)
@@ -707,7 +707,7 @@ static BOOL checkCopyAssign(SYMBOL *sp, SYMBOL *base, enum e_ac access)
     }
     return FALSE;
 }
-static BOOL checkMoveCons(SYMBOL *sp, SYMBOL *base, enum e_ac access)
+static BOOLEAN checkMoveCons(SYMBOL *sp, SYMBOL *base, enum e_ac access)
 {
     SYMBOL *dflt = getCopyCons(base, TRUE);
     if (dflt)
@@ -719,7 +719,7 @@ static BOOL checkMoveCons(SYMBOL *sp, SYMBOL *base, enum e_ac access)
     }
     return FALSE;
 }
-static BOOL checkMoveAssign(SYMBOL *sp, SYMBOL *base, enum e_ac access)
+static BOOLEAN checkMoveAssign(SYMBOL *sp, SYMBOL *base, enum e_ac access)
 {
     SYMBOL *dflt = GetCopyAssign(base, TRUE);
     if (dflt)
@@ -736,14 +736,14 @@ static BOOL checkMoveAssign(SYMBOL *sp, SYMBOL *base, enum e_ac access)
     }
     return FALSE;
 }
-static BOOL isDefaultDeleted(SYMBOL *sp)
+static BOOLEAN isDefaultDeleted(SYMBOL *sp)
 {
     HASHREC *hr;
     BASECLASS *base;
     VBASEENTRY *vbase;
     if (basetype(sp->tp)->type == bt_union)
     {
-        BOOL allconst = TRUE;
+        BOOLEAN allconst = TRUE;
         hr = basetype(sp->tp)->syms->table[0];
         while (hr)
         {
@@ -835,7 +835,7 @@ static BOOL isDefaultDeleted(SYMBOL *sp)
     }
     return FALSE;
 }
-static BOOL isCopyConstructorDeleted(SYMBOL *sp)
+static BOOLEAN isCopyConstructorDeleted(SYMBOL *sp)
 {
     HASHREC *hr;
     BASECLASS *base;
@@ -913,7 +913,7 @@ static BOOL isCopyConstructorDeleted(SYMBOL *sp)
     return FALSE;
     
 }
-static BOOL isCopyAssignmentDeleted(SYMBOL *sp)
+static BOOLEAN isCopyAssignmentDeleted(SYMBOL *sp)
 {
     HASHREC *hr;
     BASECLASS *base;
@@ -980,7 +980,7 @@ static BOOL isCopyAssignmentDeleted(SYMBOL *sp)
     return FALSE;
     
 }
-static BOOL isMoveConstructorDeleted(SYMBOL *sp)
+static BOOLEAN isMoveConstructorDeleted(SYMBOL *sp)
 {
     HASHREC *hr;
     BASECLASS *base;
@@ -1058,7 +1058,7 @@ static BOOL isMoveConstructorDeleted(SYMBOL *sp)
     return FALSE;
     
 }
-static BOOL isMoveAssignmentDeleted(SYMBOL *sp)
+static BOOLEAN isMoveAssignmentDeleted(SYMBOL *sp)
 {
     HASHREC *hr;
     BASECLASS *base;
@@ -1125,7 +1125,7 @@ static BOOL isMoveAssignmentDeleted(SYMBOL *sp)
     return FALSE;
     
 }
-static BOOL conditionallyDeleteDefaultConstructor(SYMBOL *func)
+static void conditionallyDeleteDefaultConstructor(SYMBOL *func)
 {
     HASHREC *hr = basetype(func->tp)->syms->table[0];
     while (hr)
@@ -1141,7 +1141,7 @@ static BOOL conditionallyDeleteDefaultConstructor(SYMBOL *func)
         hr = hr->next;
     }
 }
-static BOOL conditionallyDeleteCopyConstructor(SYMBOL *func, BOOL move)
+static BOOLEAN conditionallyDeleteCopyConstructor(SYMBOL *func, BOOLEAN move)
 {
     HASHREC *hr = basetype(func->tp)->syms->table[0];
     while (hr)
@@ -1156,7 +1156,7 @@ static BOOL conditionallyDeleteCopyConstructor(SYMBOL *func, BOOL move)
     }
     return FALSE;
 }
-static BOOL conditionallyDeleteCopyAssignment(SYMBOL *func, BOOL move)
+static BOOLEAN conditionallyDeleteCopyAssignment(SYMBOL *func, BOOLEAN move)
 {
     HASHREC *hr = basetype(func->tp)->syms->table[0];
     while (hr)
@@ -1269,7 +1269,7 @@ void createDefaultConstructors(SYMBOL *sp)
     if (!dest && !hasCopy(cons,FALSE ) && !hasCopy(cons,TRUE) &&
         !hasCopy(asgn, FALSE) && (!asgn || !hasCopy(asgn, TRUE)))
     {
-        BOOL b = isMoveConstructorDeleted(sp);
+        BOOLEAN b = isMoveConstructorDeleted(sp);
         SYMBOL *newcons;
         if (!b)
         {
@@ -1329,7 +1329,7 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
 }
 static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, 
                         SYMBOL *member, int offset, 
-                        EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOL doCopy)
+                        EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
     if (doCopy && (matchesCopy(parentCons, FALSE) || matchesCopy(parentCons, TRUE)))
     {
@@ -1363,7 +1363,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
         st->select = exp;
     }
 }
-static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOL top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOL doCopy)
+static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOLEAN top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
     if (member->init)
     {
@@ -1547,7 +1547,7 @@ static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr)
         st->select = first;
     }
 }
-static void doVirtualBases(BLOCK *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBASEENTRY *vbe, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOL doCopy)
+static void doVirtualBases(BLOCK *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBASEENTRY *vbe, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
 	if (vbe)
 	{
@@ -1640,7 +1640,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             }
             else
             {
-                BOOL done = FALSE;
+                BOOLEAN done = FALSE;
                 lex = SetAlternateLex(init->initData);
                 if (MATCHKW(lex, lt))
                 {
@@ -1880,7 +1880,7 @@ static void releaseInitializers(SYMBOL *cls)
     }
 }
 EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, 
-                                 BOOL parseInitializers, BOOL doCopy)
+                                 BOOLEAN parseInitializers, BOOLEAN doCopy)
 {
     BASECLASS *bc;
     HASHREC *hr = syms->table[0];
@@ -1972,7 +1972,7 @@ static void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
     localNameSpace->syms = syms;
 }
 static void asnVirtualBases(BLOCKDATA *b, SYMBOL *sp, VBASEENTRY *vbe, 
-                            EXPRESSION *thisptr, EXPRESSION *other, BOOL move, BOOL isconst)
+                            EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst)
 {
 	if (vbe)
 	{
@@ -2002,7 +2002,7 @@ static void genAsnData(BLOCKDATA *b, SYMBOL *cls, SYMBOL *member, int offset, EX
     optimize_for_constants(&left);
     st->select = left;
 }
-static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPRESSION *thisptr, EXPRESSION *other, BOOL move, BOOL isconst)
+static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst)
 {
     EXPRESSION *exp = NULL;
     STATEMENT *st;
@@ -2074,7 +2074,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     optimize_for_constants(&exp);
     st->select = exp;
 }
-static void thunkAssignments(BLOCKDATA *b, SYMBOL *sym, SYMBOL *asnfunc, HASHTABLE *syms, BOOL move, BOOL isconst)
+static void thunkAssignments(BLOCKDATA *b, SYMBOL *sym, SYMBOL *asnfunc, HASHTABLE *syms, BOOLEAN move, BOOLEAN isconst)
 {
     HASHREC *hr = syms->table[0];
     EXPRESSION *thisptr = varNode(en_auto, (SYMBOL *)hr->p);
@@ -2129,8 +2129,8 @@ void createAssignment(SYMBOL *sym, SYMBOL *asnfunc)
     // that can be defaulted...
     HASHTABLE *syms;
     BLOCKDATA b;
-    BOOL move = basetype(((SYMBOL *)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp)->type == bt_rref;
-    BOOL isConst = isconst(((SYMBOL *)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp);
+    BOOLEAN move = basetype(((SYMBOL *)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp)->type == bt_rref;
+    BOOLEAN isConst = isconst(((SYMBOL *)basetype(asnfunc->tp)->syms->table[0]->next->p)->tp);
     memset(&b, 0, sizeof(BLOCKDATA));
     b.type = begin;
     syms = localNameSpace->syms;
@@ -2142,7 +2142,7 @@ void createAssignment(SYMBOL *sym, SYMBOL *asnfunc)
     InsertInline(asnfunc);
     localNameSpace->syms = syms;
 }
-static void genDestructorCall(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *base, int offset, BOOL top)
+static void genDestructorCall(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *base, int offset, BOOLEAN top)
 {
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     EXPRESSION *exp = base ;
@@ -2279,7 +2279,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     }
     
 }
-void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL top, BOOL noinline, BOOL pointer)
+void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, BOOLEAN noinline, BOOLEAN pointer)
 {
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     SYMBOL *dest1;
@@ -2359,9 +2359,9 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOL to
         }
     }
 }
-BOOL callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
-                     BOOL checkcopy, EXPRESSION *arrayElms, BOOL top, 
-                     BOOL maybeConversion, BOOL noinline, BOOL implicit, BOOL pointer)
+BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
+                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
+                     BOOLEAN maybeConversion, BOOLEAN noinline, BOOLEAN implicit, BOOLEAN pointer)
 {
     TYPE *stp = *tp;
     SYMBOL *sp = basetype(*tp)->sp;

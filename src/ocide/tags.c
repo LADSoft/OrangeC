@@ -104,7 +104,7 @@ int IsTagged(char *module, int line)
     }
     return  - 1;
 }
-int HasBreakpoints(void)
+int TagAnyBreakpoints(void)
 {
     struct tagfile *l = tagFileList;
     while (l)
@@ -250,17 +250,6 @@ void TagRemoveAll(int type)
         } InvalidateByName(l->name);
         l = l->next;
     }
-}
-int TagAnyBreakpoints(void)
-{
-    struct tagfile *l = tagFileList;
-    while (l)
-    {
-        if (l->tagArray[TAG_BP])
-            return TRUE;
-        l = l->next;
-    }
-    return FALSE;
 }
 // used after BP are restored from data file
 void TagRegenBreakPoints(void)
@@ -786,7 +775,6 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
 {
     static HFONT font;
     LPMEASUREITEMSTRUCT mi;
-    LPDRAWITEMSTRUCT di;
     LV_COLUMN lvC;
     LV_ITEM item;
     RECT r;
@@ -877,7 +865,7 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     item.iSubItem = 0;
                     item.mask = LVIF_PARAM | LVIF_TEXT;
                     item.lParam = (LPARAM)t;
-                    item.pszText = buf;
+                    item.pszText = strdup(buf);
                     ListView_InsertItem(hwndlb, &item);
                     t = t->next;
                 }

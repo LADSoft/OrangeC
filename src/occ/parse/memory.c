@@ -37,8 +37,6 @@
 */
 #include "compiler.h"
 
-typedef unsigned DWORD;
-
 static MEMBLK *freemem;
 static MEMBLK *freestdmem;
 static MEMBLK *globals;
@@ -241,13 +239,9 @@ char *litlate(char *name)
 }
 LCHAR *wlitlate(LCHAR *name)
 {
-#ifndef BORLAND
-    extern int wcslen(short *);
-#endif
     LCHAR *p = name;
-    int count;
+    int count=0;
     LCHAR *rv;
-    count = wcslen(name);
     while (*p)
         p++, count++;
     IncGlobalFlag();

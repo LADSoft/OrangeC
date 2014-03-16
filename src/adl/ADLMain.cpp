@@ -41,7 +41,7 @@
 #include "Utils.h"
 #include "XML.h"
 #include "ADLMain.h"
-#include "Parser.h"
+#include "Loader.h"
 #include "GenParser.h"
 #include <fstream>
 

@@ -64,6 +64,7 @@ static void InsertImgProperties(HWND lv, struct resRes *data);
 static void GetImgPropText(char *buf, HWND lv, struct resRes *data, int row);
 static HWND ImgPropStartEdit(HWND lv, int row, struct resRes *data);
 static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+// callbacks to populate the properties window for this resource editor
 struct propertyFuncs imgFuncs = 
 { 
     InsertImgProperties,
@@ -121,7 +122,7 @@ static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
         char buf1[256];
         SendMessage(editWnd, WM_GETTEXT, sizeof(buf), (LPARAM)buf);
         GetImgPropText(buf1, lv, data, row);
-        if (strcmp(buf, buf1))
+        if (strcmp(buf, buf1) != 0)
         {
             switch(row)
             {
@@ -188,10 +189,9 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
     if (res->saveColors < 8)
     {
         // must be two...
-        HDC cdc;
+        HDC cdc = CreateCompatibleDC(res->hdcImage);
         SetDIBits(cdc, hbmMono, 0, res->height, 
                   DIBBits, pbi, DIB_RGB_COLORS);
-        cdc = CreateCompatibleDC(res->hdcImage);
         hbmpImage = SelectObject(cdc, hbmMono);
         BitBlt(res->hdcImage, 0, 0, res->width, res->height, cdc, 0, 0, SRCCOPY);
         hbmpImage = SelectObject(cdc, hbmpImage);
@@ -219,8 +219,7 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
                 res->height * ((((DWORD)res->width + 31) & 0xffffffe0) >> 3);
         pbi->bmiHeader.biClrImportant = 0;
         pbi->bmiHeader.biClrUsed = 0;
-        memcpy(pbi->bmiColors, &monoBmpColorTable[0],
-                colorTableBytes);
+        memcpy(pbi->bmiColors, &monoBmpColorTable[0], sizeof(monoBmpColorTable));
 
         /* move the bits into the and mask */
         hbmpImage = SelectObject(res->hdcAndMask, hbmMono);
@@ -265,7 +264,6 @@ void SaveImage(IMAGEDATA *res)
     LPBYTE lpBits,lpBPtr;
     HBITMAP hbmMono;
     HBITMAP hbmpImage;
-    BITMAPINFOHEADER bih;
     
     if (!res->imageDirty)
         return;
@@ -604,7 +602,6 @@ static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, in
     int imageCount = imageData->resource->u.cursor->count;
     int i;
     LPBITMAPINFO lpBitmapInfo;
-    int filePos;
     int resType;
     int colorTableBytes;
     IMAGEDATA *id, *head =0, **tail = &head;
@@ -671,7 +668,6 @@ static IMAGEDATA *LoadIconImage(HWND hwndParent, struct resRes * imageData, int 
     int imageCount = imageData->resource->u.icon->count;
     int i;
     LPBITMAPINFO lpBitmapInfo;
-    int filePos;
     int resType;
     int colorTableBytes;
     IMAGEDATA *id, *head =0, **tail = &head;
@@ -758,8 +754,6 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     RECT r;
-    PAINTSTRUCT paint;
-    HDC dc;
     LPCREATESTRUCT createStruct;
     struct resRes *imageData;
     switch (iMessage)
@@ -855,7 +849,6 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterImageDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

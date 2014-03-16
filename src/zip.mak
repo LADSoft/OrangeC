@@ -56,4 +56,4 @@ DISTRIBUTE:
 	$(ZIP) a $(DISTSRC) orangec\src\ocide\fonts\ttf-bitstream-vera-1.10\*.* orangec\src\ocide\res\*.* orangec\src\ocide\rule\*.rul orangec\src\ocide\rule\*.props
 	$(ZIP) a $(DISTSRC) orangec\src\*.exe orangec\src\*.iss orangec\src\*.bmp orangec\src\config.bat orangec\src\ocidehld.bat
 	$(ZIP) a $(DISTSRC) orangec\src\license.txt orangec\src\relnotes.txt orangec\src\clibs\repobj.bat
-	iscc /Focc$(VERNAME) /O\orangec\dist orangec\src\occ.iss
+	"\program files (x86)\inno setup 5\iscc" /Focc$(VERNAME) /O\orangec\dist orangec\src\occ.iss

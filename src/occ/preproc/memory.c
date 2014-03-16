@@ -236,9 +236,8 @@ char *litlate(char *name)
 LCHAR *wlitlate(LCHAR *name)
 {
     LCHAR *p = name;
-    int count;
+    int count=0;
     LCHAR *rv;
-    count = wcslen(name);
     while (*p)
         p++, count++;
     IncGlobalFlag();

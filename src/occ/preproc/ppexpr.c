@@ -41,7 +41,7 @@
 extern INCLUDES *includes;
 extern COMPILER_PARAMS cparams;
 
-static PPINT iecommaop(BOOL *uns);
+static PPINT iecommaop(BOOLEAN *uns);
 
 int getsch(int bytes, char **source) /* return an in-quote character */
 {
@@ -116,7 +116,7 @@ int getsch(int bytes, char **source) /* return an in-quote character */
                 /* we sign extend or truncate */
                 if (bytes == 1)
                     if (cparams.prm_charisunsigned)
-                        n = (int)(BYTE)n;
+                        n = (int)(UBYTE)n;
                     else
                         n = (int)(char)n;
                 if (bytes == 2 && i == 'x')
@@ -124,7 +124,7 @@ int getsch(int bytes, char **source) /* return an in-quote character */
                 if (i != 'x')
                 {
                     if (n <= 0x20 || n >= 0x7f && n <= 0x9f ||
-                        n >=0xd800 && n<= 0xdfff)
+                        (n >=0xd800 && n<= 0xdfff))
                         pperror(ERR_INVCONST, 0);
                 }
                 return n;
@@ -133,7 +133,7 @@ int getsch(int bytes, char **source) /* return an in-quote character */
             return (char)i;
     }
 }
-static PPINT ieprimary(BOOL *uns)   
+static PPINT ieprimary(BOOLEAN *uns)   
 /*
  * Primary integer
  *    id
@@ -200,7 +200,7 @@ static PPINT ieprimary(BOOL *uns)
  *   ~unary
  *   primary
  */
-static PPINT ieunary(BOOL *uns)
+static PPINT ieunary(BOOLEAN *uns)
 {
    PPINT temp;
    skipspace();
@@ -228,13 +228,13 @@ static PPINT ieunary(BOOL *uns)
     skipspace();
     return(temp);
 }
-static PPINT iemultops(BOOL *uns)
+static PPINT iemultops(BOOLEAN *uns)
 /* Multiply ops */
 {
    PPINT val1 = ieunary(uns),val2;
     while (ILP[0] == '*' || ILP[0] == '/' || ILP[0] == '%') {
         char type = *ILP++;
-        BOOL uns1;
+        BOOLEAN uns1;
         val2 = ieunary(&uns1);
         *uns = *uns | uns1;
         switch(type) {
@@ -268,13 +268,13 @@ static PPINT iemultops(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ieaddops(BOOL *uns)
+static PPINT ieaddops(BOOLEAN *uns)
 /* Add ops */
 {
    PPINT val1 = iemultops(uns),val2;
     while (ILP[0] == '+' && ILP[1] != '+' || ILP[0] == '-' && ILP[1] != '-')	{
         char type = ILP[0];
-        BOOL uns1;
+        BOOLEAN uns1;
         ILP++;
         val2 = iemultops(&uns1);
         *uns = *uns | uns1;
@@ -286,13 +286,13 @@ static PPINT ieaddops(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ieshiftops(BOOL *uns)
+static PPINT ieshiftops(BOOLEAN *uns)
 /* Shift ops */
 {
    PPINT val1 = ieaddops(uns), val2;
     while (ILP[0] == '<' && ILP[1] == '<' || ILP[0] == '>' && ILP[1] == '>') {
         int type = ILP[0];
-        BOOL uns1;
+        BOOLEAN uns1;
         ILP += 2;
         val2 = ieaddops(&uns1);
         if (type == '<')
@@ -303,13 +303,13 @@ static PPINT ieshiftops(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ierelation(BOOL *uns)
+static PPINT ierelation(BOOLEAN *uns)
 /* non-eq relations */
 {
    PPINT val1 = ieshiftops(uns), val2;
     while (ILP[0] == '<' && ILP[1] != '<' || ILP[0] == '>' && ILP[1] != '>') {
-        BOOL eq = FALSE;
-        BOOL uns1;
+        BOOLEAN eq = FALSE;
+        BOOLEAN uns1;
         int type = ILP[0];
         ILP++;
         if (*ILP == '=')
@@ -349,12 +349,12 @@ static PPINT ierelation(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ieequalops(BOOL *uns)
+static PPINT ieequalops(BOOLEAN *uns)
 /* eq relations */
 {
    PPINT val1 = ierelation(uns),val2;
     while ((ILP[0] == '=' || ILP[0] == '!') && ILP[1] == '=') {
-        BOOL uns1;
+        BOOLEAN uns1;
         char type =ILP[0];
         ILP += 2;
         val2 = ierelation(&uns1);
@@ -367,12 +367,12 @@ static PPINT ieequalops(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ieandop(BOOL *uns)
+static PPINT ieandop(BOOLEAN *uns)
 /* and op */
 {
    PPINT val1 = ieequalops(uns),val2;
     while (ILP[0] == '&' && ILP[1] != '&') {
-        BOOL uns1;
+        BOOLEAN uns1;
         ILP +=1;
         val2 = ieequalops(&uns1);
         *uns = *uns | uns1;
@@ -381,12 +381,12 @@ static PPINT ieandop(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT iexorop(BOOL *uns)
+static PPINT iexorop(BOOLEAN *uns)
 /* xor op */
 {
    PPINT val1 = ieandop(&uns),val2;
     while (ILP[0] == '^') {
-        BOOL uns1;
+        BOOLEAN uns1;
         ILP ++;
         val2 = ieandop(&uns1);
         *uns = *uns | uns1;
@@ -395,12 +395,12 @@ static PPINT iexorop(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ieorop(BOOL *uns)
+static PPINT ieorop(BOOLEAN *uns)
 /* or op */
 {
    PPINT val1 = iexorop(uns),val2;
     while (ILP[0] == '|' && ILP[1] != '|') {
-        BOOL uns1;
+        BOOLEAN uns1;
         ILP ++;
         val2 = iexorop(&uns1);
         *uns = *uns | uns1;
@@ -409,7 +409,7 @@ static PPINT ieorop(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ielandop(BOOL *uns)
+static PPINT ielandop(BOOLEAN *uns)
 /* logical and op */
 {
    PPINT val1 = ieorop(uns),val2;
@@ -422,7 +422,7 @@ static PPINT ielandop(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT ielorop(BOOL *uns)
+static PPINT ielorop(BOOLEAN *uns)
 /* logical or op */
 {
    PPINT val1 = ielandop(uns),val2;
@@ -435,12 +435,12 @@ static PPINT ielorop(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT iecondop(BOOL *uns)
+static PPINT iecondop(BOOLEAN *uns)
 /* Hook op */
 {
    PPINT val1 = ielorop(uns),val2, val3;
         if (*ILP == '?') {
-            BOOL uns1, uns2;
+            BOOLEAN uns1, uns2;
             ILP ++;
             val2 = iecommaop(&uns1);
             if (*ILP != ':')
@@ -456,12 +456,12 @@ static PPINT iecondop(BOOL *uns)
     skipspace();
     return(val1);
 }
-static PPINT iecommaop(BOOL *uns)
+static PPINT iecommaop(BOOLEAN *uns)
 /* Hook op */
 {
    PPINT val1 = iecondop(uns);
         while (*ILP == ',') {
-            BOOL throwaway;
+            BOOLEAN throwaway;
             ILP ++;
             iecondop(&throwaway);
         }
@@ -471,7 +471,7 @@ static PPINT iecommaop(BOOL *uns)
 PPINT ppexpr(void)
 /* Integer expressions */
 {
-    BOOL uns;
+    BOOLEAN uns;
     skipspace();
     return iecommaop(&uns);
 }

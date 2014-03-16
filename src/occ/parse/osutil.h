@@ -59,7 +59,7 @@
     typedef struct
     {
         char id;
-        BYTE mode;
+        UBYTE mode;
         void(*routine)(char, char*);
     } CMDLIST;
 

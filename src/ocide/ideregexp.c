@@ -515,12 +515,13 @@ RE_CONTEXT *context;
     }
     free(context);
 }
+
 RE_CONTEXT *re_init(param, flags, word)
 char *param;
 int flags;
 char *word;
 {
-    int i;
+    
     RE_CONTEXT *context = calloc(1, sizeof(RE_CONTEXT));
     if (!context)
         return NULL;
@@ -692,7 +693,7 @@ char *string;
     while (*context->current)
     {
         switch((*context->current)->type)
-        {	int n;
+        {	
             case M_CHAR:
                 if (!matchesRange(context, &string))
                     return -1;

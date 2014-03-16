@@ -111,17 +111,17 @@ bool ppMacro::GetLine(std::string &line, int &lineno)
 bool ppMacro::HandleRep(std::string &line)
 {
     define.Process(line);
-    int n = expr.Eval(line);
+    PPINT n = expr.Eval(line);
     int level = 1;
     MacroData *p = NULL;
-    if (n < 0)
+    if (n < 0 || n > INT_MAX)
     {
-        Errors::Error("Negative range in %rep expression");
+        Errors::Error("Invalid range in %rep expression");
     }
     else if (n > 0)
     {
         p = new MacroData;
-        p-> repsLeft = n;
+        p-> repsLeft = (int)n;
         p->offset = 0;
         p->id = -1;
         p->begline = 0;
@@ -155,8 +155,7 @@ bool ppMacro::HandleRep(std::string &line)
     include.SetInProc("");
     if (level != 0)
     {
-        if (p)
-            delete p;
+        delete p;
     }
     else
     {
@@ -401,7 +400,12 @@ bool ppMacro::HandleRotate(std::string &line)
     else
     {
         define.Process(line);
-        int n = expr.Eval(line);
+        PPINT m = expr.Eval(line);
+        if (m < INT_MIN || m > INT_MAX)
+        {
+            Errors::Error("Invalid rotation count");
+        }
+        int n = (int)m;
         if (n < 0)
         {
             n = - n;

@@ -50,7 +50,7 @@ class OutFile
 {
 public:
     OutFile() : data(0), size(0), startSeg(0), startOffs(0), stackSeg(0), stackOffs(0) { }	
-    virtual ~OutFile() { if (data) delete data; }
+    virtual ~OutFile() {  delete data; }
     virtual bool ReadSections(ObjFile *file, ObjExpression *start) = 0;
     virtual bool Write(std::fstream &stream) = 0;
 protected:

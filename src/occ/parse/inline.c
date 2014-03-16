@@ -83,7 +83,7 @@ void dumpInlines(void)
 #ifndef PARSER_ONLY
     if (!total_errors)
     {
-        BOOL done;
+        BOOLEAN done;
         LIST *vtabList;
         LIST *dataList;
         cseg();
@@ -215,7 +215,7 @@ void InsertInlineData(SYMBOL *sp)
 }
 /*-------------------------------------------------------------------------*/
 
-EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
+EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
 {
     /*
      * routine takes an enode tree and replaces it with a copy of itself.
@@ -310,7 +310,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOL *fromlval)
             else
             */
             {
-                BOOL lval = FALSE;
+                BOOLEAN lval = FALSE;
                 temp->left = inlineexpr(temp->left, &lval);
                 if (lval)
                     temp = temp->left;
@@ -543,6 +543,7 @@ static void inlineResetReturn(STATEMENT *block, TYPE *rettp, EXPRESSION *retnode
     if (isstructured(rettp))
     {
         diag("structure in inlineResetReturn");
+        exp = intNode(en_c_i, 0);
     }
     else
     {
@@ -662,9 +663,9 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
 }
 
 /*-------------------------------------------------------------------------*/
-static BOOL sideEffects(EXPRESSION *node)
+static BOOLEAN sideEffects(EXPRESSION *node)
 {
-    BOOL rv = FALSE;
+    BOOLEAN rv = FALSE;
     if (node == 0)
         return rv;
     switch (node->type)
@@ -923,7 +924,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
     STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
     EXPRESSION *newExpression;
-    BOOL allocated = FALSE;
+    BOOLEAN allocated = FALSE;
     if (!isfunction(params->functp))
         return NULL;
     if (params->sp->linkage != lk_inline)
@@ -982,9 +983,9 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
                 newExpression = intNode(en_c_i, 0); // noop if there is no body
     return newExpression;
 }
-static BOOL IsEmptyBlocks(STATEMENT *block)
+static BOOLEAN IsEmptyBlocks(STATEMENT *block)
 {
-    BOOL rv = TRUE;
+    BOOLEAN rv = TRUE;
     while (block != NULL && rv)
     {
         switch (block->type)
@@ -1020,7 +1021,7 @@ static BOOL IsEmptyBlocks(STATEMENT *block)
     }
     return rv;
 }
-BOOL IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
+BOOLEAN IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
     STATEMENT *st;
     if (!isfunction(params->functp))
@@ -1042,7 +1043,7 @@ EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
     static SYMBOL *curfunc;
     STATEMENT *stmt = NULL, **stp = &stmt;
     EXPRESSION *newExpression;
-    BOOL allocated = FALSE;
+    BOOLEAN allocated = FALSE;
     if (!isfunction(params->functp))
         return NULL;
     if (!params->sp->inlineFunc.syms)

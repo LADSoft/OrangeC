@@ -43,7 +43,7 @@
 #include "..\..\version.h" 
 
 #ifdef MICROSOFT
-char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
+char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
 
@@ -72,7 +72,7 @@ char version[256];
 char copyright[256];
 LIST *clist = 0;
 
-static BOOL has_output_file;
+static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
 static jmp_buf ctrlcreturn;
 static char **set_searchpath = &prm_searchpath;
@@ -295,7 +295,7 @@ FILE *SrchPth2(char *name, char *path, char *attrib)
 
 /*-------------------------------------------------------------------------*/
 
-FILE *SrchPth(char *name, char *path, char *attrib, BOOL sys)
+FILE *SrchPth(char *name, char *path, char *attrib, BOOLEAN sys)
 {
     FILE *rv = SrchPth2(name, path, attrib);
     char buf[265],  *p;
@@ -314,7 +314,7 @@ FILE *SrchPth(char *name, char *path, char *attrib, BOOL sys)
 }
 
 extern CMDLIST *ArgList;
-/*int parseParam(int bool, char *string); */
+/*int parseParam(int BOOLEAN, char *string); */
 
 static int use_case; /* Gets set for case sensitivity */
 
@@ -349,7 +349,7 @@ static int cmatch(char t1, char t2)
  *  the arguments, then dispatches to the action routine if so.
  */
 /* Callbacks of the form
- *   void boolcallback( char selectchar, int value)
+ *   void BOOLEANcallback( char selectchar, int value)
  *   void switchcallback( char selectchar, int value)  ;; value always true
  *   void stringcallback( char selectchar, char *string)
  */
@@ -409,10 +409,10 @@ static int scan_args(char *string, int index, char *arg)
  * Main parse routine.  Scans for '-', then scan for arguments and
  * delete from the argv[] array if so.
  */
-BOOL parse_args(int *argc, char *argv[], BOOL case_sensitive)
+BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
 {
     int pos = 0;
-    BOOL retval = TRUE;
+    BOOLEAN retval = TRUE;
     use_case = case_sensitive;
 
     while (++pos <  *argc)
@@ -422,7 +422,7 @@ BOOL parse_args(int *argc, char *argv[], BOOL case_sensitive)
         {
             int argmode;
             int index = 1;
-            BOOL done = FALSE;
+            BOOLEAN done = FALSE;
             do
             {
                 /* Scan the present arg */
@@ -932,8 +932,6 @@ void internalError(int a)
 void ccinit(int argc, char *argv[])
 {
     char buffer[260];
-    char *p;
-    int rv;
     strcpy(copyright, COPYRIGHT);
     strcpy(version, STRING_VERSION);
 
@@ -950,7 +948,7 @@ void ccinit(int argc, char *argv[])
         usage(argv[0]);
 #endif
 #ifdef MICROSOFT
-    GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
+    GetModuleFileNameA(NULL, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
 #endif

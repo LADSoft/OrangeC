@@ -58,7 +58,7 @@ extern int nextLabel;
 extern SYMBOL *theCurrentFunc;
 
 // well this is really only nonstatic data members...
-BOOL ismember(SYMBOL *sym)
+BOOLEAN ismember(SYMBOL *sym)
 {
     switch (sym->storage_class)
     {
@@ -70,7 +70,7 @@ BOOL ismember(SYMBOL *sym)
             return FALSE;
     }
 }
-BOOL istype(SYMBOL *sym)
+BOOLEAN istype(SYMBOL *sym)
 {
     if (sym->storage_class == sc_templateparam)
     {
@@ -78,11 +78,11 @@ BOOL istype(SYMBOL *sym)
     }
     return sym->storage_class == sc_type || sym->storage_class == sc_typedef;
 }
-BOOL ismemberdata(SYMBOL *sp)
+BOOLEAN ismemberdata(SYMBOL *sp)
 {
     return !isfunction(sp) && ismember(sp);
 }
-BOOL startOfType(LEXEME *lex, BOOL assumeType)
+BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
 {
     if (!lex)
         return FALSE;
@@ -90,7 +90,7 @@ BOOL startOfType(LEXEME *lex, BOOL assumeType)
     {
         SYMBOL *sp, *strSym = NULL;
         LEXEME *placeholder = lex;
-        BOOL dest = FALSE;
+        BOOLEAN dest = FALSE;
         nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE);
         if (cparams.prm_cplusplus)
             prevsym(placeholder);
@@ -125,7 +125,7 @@ TYPE *basetype(TYPE *tp)
     while (tp);
     return NULL;
 }
-BOOL isunsigned(TYPE *tp)
+BOOLEAN isunsigned(TYPE *tp)
 {
     tp = basetype(tp);
     switch (tp->type)
@@ -141,7 +141,7 @@ BOOL isunsigned(TYPE *tp)
             return FALSE;
     }	
 }
-BOOL isint(TYPE *tp)
+BOOLEAN isint(TYPE *tp)
 {
     tp = basetype(tp);
     switch(tp->type)
@@ -173,7 +173,7 @@ BOOL isint(TYPE *tp)
             return FALSE;
     }
 }
-BOOL isfloat(TYPE *tp)
+BOOLEAN isfloat(TYPE *tp)
 {
     tp = basetype(tp);
     switch (tp->type)
@@ -186,7 +186,7 @@ BOOL isfloat(TYPE *tp)
             return FALSE;
     }
 }
-BOOL iscomplex(TYPE *tp)
+BOOLEAN iscomplex(TYPE *tp)
 {
     tp = basetype(tp);
     switch (tp->type)
@@ -199,7 +199,7 @@ BOOL iscomplex(TYPE *tp)
             return FALSE;
     }
 }
-BOOL isimaginary(TYPE *tp)
+BOOLEAN isimaginary(TYPE *tp)
 {
     tp = basetype(tp);
     switch (tp->type)
@@ -212,12 +212,12 @@ BOOL isimaginary(TYPE *tp)
             return FALSE;
     }
 }
-BOOL isarithmetic(TYPE *tp)
+BOOLEAN isarithmetic(TYPE *tp)
 {
     tp = basetype(tp);
     return isint(tp) || isfloat(tp) || iscomplex(tp) || isimaginary(tp);
 }
-BOOL isconst(TYPE *tp)
+BOOLEAN isconst(TYPE *tp)
 {
     while (TRUE)
     {
@@ -239,7 +239,7 @@ BOOL isconst(TYPE *tp)
         }
     }
 }
-BOOL isvolatile(TYPE *tp)
+BOOLEAN isvolatile(TYPE *tp)
 {
     while (TRUE)
     {
@@ -261,7 +261,7 @@ BOOL isvolatile(TYPE *tp)
         }
     }
 }
-BOOL isrestrict(TYPE *tp)
+BOOLEAN isrestrict(TYPE *tp)
 {
     while (TRUE)
     {
@@ -283,7 +283,7 @@ BOOL isrestrict(TYPE *tp)
         }
     }
 }
-BOOL isatomic(TYPE *tp)
+BOOLEAN isatomic(TYPE *tp)
 {
     while (tp)
     {
@@ -306,12 +306,12 @@ BOOL isatomic(TYPE *tp)
     }
     return FALSE;
 }
-BOOL isvoid(TYPE *tp)
+BOOLEAN isvoid(TYPE *tp)
 {
     tp = basetype(tp);
     return tp->type == bt_void;
 }
-BOOL ispointer(TYPE *tp)
+BOOLEAN ispointer(TYPE *tp)
 {
     tp = basetype(tp);
     switch(tp->type)
@@ -328,7 +328,7 @@ BOOL ispointer(TYPE *tp)
             return FALSE;
     }
 }
-BOOL isref(TYPE *tp)
+BOOLEAN isref(TYPE *tp)
 {
     tp = basetype(tp);
     switch(tp->type)
@@ -345,32 +345,32 @@ BOOL isref(TYPE *tp)
             return FALSE;
     }
 }
-BOOL isvoidptr(TYPE *tp)
+BOOLEAN isvoidptr(TYPE *tp)
 {
     tp = basetype(tp);
     return ispointer(tp) && isvoid(tp->btp);
 }
-BOOL isfunction(TYPE *tp)
+BOOLEAN isfunction(TYPE *tp)
 {
     tp = basetype(tp);
     return tp && (tp->type == bt_func || tp->type == bt_ifunc);
 }
-BOOL isfuncptr(TYPE *tp)
+BOOLEAN isfuncptr(TYPE *tp)
 {
     tp = basetype(tp);
     return ispointer(tp) && tp->btp && isfunction(tp->btp);
 }
-BOOL isarray(TYPE *tp)
+BOOLEAN isarray(TYPE *tp)
 {
     tp = basetype(tp);
     return ispointer(tp) && tp->array;		
 }
-BOOL isunion(TYPE *tp)
+BOOLEAN isunion(TYPE *tp)
 {
     tp = basetype(tp);
     return tp->type == bt_union;
 }
-BOOL isstructured(TYPE *tp)
+BOOLEAN isstructured(TYPE *tp)
 {
     tp = basetype(tp);
     switch(tp->type)
@@ -386,7 +386,7 @@ BOOL isstructured(TYPE *tp)
 SYMBOL *getFunctionSP(TYPE **tp)
 {
     TYPE *btp = basetype(*tp);
-    BOOL pointer = ispointer(btp);
+    BOOLEAN pointer = ispointer(btp);
     if (pointer)
     {
         btp = basetype(btp)->btp;
@@ -425,7 +425,7 @@ LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems)
         {
             if (suffix)
             {
-                if (strcmp(lex->suffix, suffix))
+                if (strcmp(lex->suffix, suffix) != 0)
                     error(ERR_LITERAL_SUFFIX_MISMATCH);
             }
             else
@@ -465,7 +465,7 @@ LEXEME *concatStrings(LEXEME *lex, EXPRESSION **expr, enum e_lexType *tp, int *e
     *tp = data->strtype;
     return lex;
 }
-BOOL isintconst(EXPRESSION *exp)
+BOOLEAN isintconst(EXPRESSION *exp)
 {
     switch (exp->type)
     {
@@ -490,7 +490,7 @@ BOOL isintconst(EXPRESSION *exp)
             return FALSE;
     }
 }
-BOOL isfloatconst(EXPRESSION *exp)
+BOOLEAN isfloatconst(EXPRESSION *exp)
 {
     switch(exp->type)
     {
@@ -502,7 +502,7 @@ BOOL isfloatconst(EXPRESSION *exp)
             return FALSE;
     }
 }
-BOOL isimaginaryconst(EXPRESSION *exp)
+BOOLEAN isimaginaryconst(EXPRESSION *exp)
 {
     switch(exp->type)
     {
@@ -514,7 +514,7 @@ BOOL isimaginaryconst(EXPRESSION *exp)
             return FALSE;
     }
 }
-BOOL iscomplexconst(EXPRESSION *exp)
+BOOLEAN iscomplexconst(EXPRESSION *exp)
 {
     switch(exp->type)
     {
@@ -545,7 +545,7 @@ SYMBOL *anonymousVar(enum e_sc storage_class, TYPE *tp)
 void deref(TYPE *tp, EXPRESSION **exp)
 {
     enum e_node en = en_l_i;
-    BOOL rref = FALSE;
+    BOOLEAN rref = FALSE;
     tp = basetype(tp);
     switch ((tp->type == bt_enum && tp->btp ) ? tp->btp->type : tp->type)
     {
@@ -667,7 +667,7 @@ int sizeFromType(TYPE *tp)
             rv = ISZ_UINT;
             break;
         case bt_bool:
-            rv = ISZ_BOOL;
+            rv = ISZ_BOOLEAN;
             break;
         case bt_char:
             if (cparams.prm_charisunsigned)
@@ -860,7 +860,7 @@ void cast(TYPE *tp, EXPRESSION **exp)
     }
     *exp = exprNode(en, *exp, NULL);
 }
-BOOL castvalue(EXPRESSION *exp)
+BOOLEAN castvalue(EXPRESSION *exp)
 {
     switch (exp->type)
     {
@@ -894,12 +894,12 @@ BOOL castvalue(EXPRESSION *exp)
             return FALSE;
     }
 }
-BOOL xvalue(EXPRESSION *exp)
+BOOLEAN xvalue(EXPRESSION *exp)
 {
     // fixme...
     return FALSE;
 }
-BOOL lvalue(EXPRESSION *exp)
+BOOLEAN lvalue(EXPRESSION *exp)
 {
     if (!cparams.prm_ansi)
         while (castvalue(exp))
@@ -939,7 +939,7 @@ BOOL lvalue(EXPRESSION *exp)
             return FALSE;
     }
 }
-EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOL noinline)
+EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN noinline)
 {
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
@@ -1216,7 +1216,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
     }
     return rv;
 }
-BOOL assignDiscardsConst(TYPE *dest, TYPE *source)
+BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
 {
     source = basetype(source);
     dest = basetype(dest);
@@ -1224,9 +1224,9 @@ BOOL assignDiscardsConst(TYPE *dest, TYPE *source)
         return FALSE;
     while (TRUE)
     {
-        BOOL destc = FALSE;
-        BOOL sourcc = FALSE;
-        BOOL done = FALSE;
+        BOOLEAN destc = FALSE;
+        BOOLEAN sourcc = FALSE;
+        BOOLEAN done = FALSE;
         while (!done)
         {
             switch(dest->type)
@@ -1270,17 +1270,17 @@ BOOL assignDiscardsConst(TYPE *dest, TYPE *source)
         source = source->btp;
     }
 }
-BOOL isconstzero(TYPE *tp, EXPRESSION *exp)
+BOOLEAN isconstzero(TYPE *tp, EXPRESSION *exp)
 {
     (void)tp;
     return (isintconst(exp) && exp->v.i == 0);
 }
-BOOL isarithmeticconst(EXPRESSION *exp)
+BOOLEAN isarithmeticconst(EXPRESSION *exp)
 {
     return isintconst(exp) || isfloatconst(exp) || isimaginaryconst(exp) ||
         iscomplexconst(exp);
 }
-BOOL isconstaddress(EXPRESSION *exp)
+BOOLEAN isconstaddress(EXPRESSION *exp)
 {
     switch(exp->type)
     {
@@ -1337,7 +1337,7 @@ static TYPE *inttype(enum e_bt t1)
             return &stdunsignedlonglong;
        }
 }
-TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOL minimizeInt, TYPE *atp)
+TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLEAN minimizeInt, TYPE *atp)
 /*
  * compare two types and determine if they are compatible for purposes
  * of the current operation.  Return an appropriate type.  Also checks for

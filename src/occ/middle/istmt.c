@@ -65,7 +65,7 @@ extern int blockCount, exitBlock;
 extern int nextLabel;
 extern int total_errors;
 extern TEMP_INFO **tempInfo;
-extern BOOL functionHasAssembly;
+extern BOOLEAN functionHasAssembly;
 extern TYPE stddouble;
 #ifdef DUMP_GCSE_INFO
     extern FILE *icdFile;
@@ -317,7 +317,7 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
     breaklab = oldbreak;
 }
 
-void genselect(STATEMENT *stmt, SYMBOL *funcsp, BOOL jmptrue)
+void genselect(STATEMENT *stmt, SYMBOL *funcsp, BOOLEAN jmptrue)
 {
     if (stmt->altlabel)
     {

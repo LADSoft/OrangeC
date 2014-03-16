@@ -43,6 +43,7 @@
 #include "lsctrl.h"
 #include "progress.h"
 
+#define BEGINTHREAD_FUNC void (*)(void *)
 #define BROWSE_VERSION 2
 
 #pragma pack(1)

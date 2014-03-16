@@ -123,7 +123,7 @@ static int accesses;
 #define PUSH(t) {tempStack[tempStackcount++] = t; setbit(stackedTemps, t); }
 #define POP()  (tempStackcount == 0 ? -1 : tempStack[--tempStackcount]	)
 
-static const BYTE bitCounts[256] = 
+static const UBYTE bitCounts[256] = 
 {
     0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 
     1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
@@ -521,7 +521,7 @@ void SqueezeInit(void)
     {
         if (tempInfo[i]->doGlobal && !tempInfo[i]->precolored)
         {
-            BYTE regs[MAX_INTERNAL_REGS];
+            UBYTE regs[MAX_INTERNAL_REGS];
             int j;
             int k,n;
             BITINT *confl = tempInfo[i]->conflicts;
@@ -641,7 +641,7 @@ static void InitClasses(void)
             tempInfo[i]->doGlobal = FALSE;
     }
 }
-static void CountInstructions(BOOL first)
+static void CountInstructions(BOOLEAN first)
 {
     QUAD *head = intermed_head;
     int i;
@@ -713,7 +713,7 @@ static void CountInstructions(BOOL first)
 }
 void Adjacent(int n);
 void Adjacent1(int n);
-static BOOL BriggsCoalesceInit(int u, int v, int n)
+static BOOLEAN BriggsCoalesceInit(int u, int v, int n)
 {
     int k = 0;
     int i, t;
@@ -744,7 +744,7 @@ static BOOL BriggsCoalesceInit(int u, int v, int n)
         return FALSE;
     }
 }
-static BOOL GeorgeCoalesceInit(int u, int v, int n)
+static BOOLEAN GeorgeCoalesceInit(int u, int v, int n)
 {
     /*u is precolored, v is not */
     int k = 0, i, t;
@@ -807,7 +807,7 @@ static void Build(BLOCK *b)
         {
             if (head->temps == (TEMP_ANS | TEMP_LEFT))
             {
-                if (head->ans->mode == i_direct && head->dc.left->mode == i_direct && !head->ans->bits && !head->dc.left->bits && !head->dc.left->retval && !head->dc.left->bits)
+                if (head->ans->mode == i_direct && head->dc.left->mode == i_direct && !head->ans->bits && !head->dc.left->bits && !head->dc.left->retval)
                 {
                     int u = head->ans->offset->v.sp->value.i;
                     int v = head->dc.left->offset->v.sp->value.i;
@@ -925,7 +925,7 @@ static BITARRAY *NodeMoves(int n, int index)
     }
     return NULL;
 }
-static BOOL MoveRelated(int n, int index)
+static BOOLEAN MoveRelated(int n, int index)
 {
     BITARRAY *data = NodeMoves(n, index);
     if (data)
@@ -1056,7 +1056,7 @@ static void AddWorkList(int u)
 static int Combine(int u, int v)
 {
     int i, t;
-    BOOL losingHiDegreeNode;
+    BOOLEAN losingHiDegreeNode;
     BITARRAY *tu, *tv;
     if (!tempInfo[v]->precolored && !tempInfo[u]->precolored)
         if (tempInfo[v]->neighbors > tempInfo[u]->neighbors)
@@ -1167,7 +1167,7 @@ static int Combine(int u, int v)
     }
     return u;
 }
-static BOOL AllOK(int u, int v)
+static BOOLEAN AllOK(int u, int v)
 {
     int i,t;
     if (tempInfo[u]->enode->v.sp->imvalue->retval)
@@ -1182,7 +1182,7 @@ static BOOL AllOK(int u, int v)
                             return FALSE;
     return TRUE;
 }
-static BOOL Conservative(int u, int v)
+static BOOLEAN Conservative(int u, int v)
 {
     int i, t, k= 0;
     Adjacent1(u);
@@ -1198,7 +1198,7 @@ static BOOL Conservative(int u, int v)
     }
     return k < tempInfo[u]->regClass->regCount && k < tempInfo[v]->regClass->regCount;
 }
-static BOOL conflictsWithSameColor(int u, int v)
+static BOOLEAN conflictsWithSameColor(int u, int v)
 {
     if (tempInfo[u]->precolored)
     {
@@ -1218,7 +1218,7 @@ static BOOL conflictsWithSameColor(int u, int v)
     }	
     return FALSE;
 }
-static BOOL inBothRegClasses(int u, int v)
+static BOOLEAN inBothRegClasses(int u, int v)
 {
     if (tempInfo[u]->precolored)
     {
@@ -1231,7 +1231,7 @@ static BOOL inBothRegClasses(int u, int v)
     }
     return TRUE;
 }
-static BOOL Coalesce(void)
+static BOOLEAN Coalesce(void)
 {
     int i;
     int sel = -1;
@@ -1265,7 +1265,7 @@ static BOOL Coalesce(void)
         clearbit(workingMoves, sel);
         clearbit(tempInfo[u]->workingMoves, sel);
         clearbit(tempInfo[v]->workingMoves, sel);
-        if (tempInfo[v]->precolored || !tempInfo[u]->precolored && tempInfo[u]->spilled)
+        if (tempInfo[v]->precolored || (!tempInfo[u]->precolored && tempInfo[u]->spilled))
         {
             int n = u;
             u = v;
@@ -1328,16 +1328,14 @@ static void FreezeMoves( int u)
                 {
                     if (isset(nm, j))
                     {
-                        int u, v ;
+                        int v ;
                         int n = instructionList[j]->ans->offset->v.sp->value.i;
                         if (findPartition(n) == u)
                         {
-                            u = instructionList[j]->ans->offset->v.sp->value.i;
                             v = instructionList[j]->dc.left->offset->v.sp->value.i;
                         }
                         else
                         {
-                            u = instructionList[j]->dc.left->offset->v.sp->value.i;
                             v = instructionList[j]->ans->offset->v.sp->value.i;
                         }
                         if (v != -1)
@@ -1403,7 +1401,7 @@ static void SelectSpill(void)
     int m = -1;
     unsigned priority = UINT_MAX;
     int i;
-    BOOL printing = FALSE;
+    BOOLEAN printing = FALSE;
     for (i=0; i < spillWorklist->top; i++)
     {
         int s = spillWorklist->data[i];
@@ -1442,7 +1440,7 @@ static void AssignColors(void)
     int n;
     int i,j;
     int m;
-    BYTE *order = chosenAssembler->arch->regOrder;
+    UBYTE *order = chosenAssembler->arch->regOrder;
     int count = *order++;
 //	for (m = 0; m <= count; m++)
     {
@@ -1452,7 +1450,7 @@ static void AssignColors(void)
             n = tempStack[pos];
             if (n != -1)// && (count == m || tempInfo[n]->size == order[m]))
             {
-                BOOL regs[MAX_INTERNAL_REGS];
+                BOOLEAN regs[MAX_INTERNAL_REGS];
                 BITINT *confl = tempInfo[n]->conflicts;
                 ARCH_REGCLASS *cls = tempInfo[n]->regClass;
                 tempStack[pos] = -1;
@@ -1671,7 +1669,7 @@ static void SpillCoalesce(BRIGGS_SET *C, BRIGGS_SET *S)
                             QUAD *head = instructionList[k];
                             if (head)
                             {
-                                BOOL test ;
+                                BOOLEAN test ;
                                 int a = head->ans->offset->v.sp->value.i;
                                 int b = head->dc.left->offset->v.sp->value.i;
                                 if (sizeFromISZ(tempInfo[a]->size) == sizeFromISZ(tempInfo[b]->size)
@@ -1837,7 +1835,7 @@ static unsigned lscost(int size)
         case ISZ_UCHAR:
         case -ISZ_UCHAR:
             return p->a_char;
-        case ISZ_BOOL:
+        case ISZ_BOOLEAN:
             return p->a_bool;
         case ISZ_USHORT:
         case -ISZ_USHORT:
@@ -2103,7 +2101,7 @@ void Precolor(void)
 // temp should have the same address
 void AllocateRegisters(QUAD *head)
 {
-    BOOL first = TRUE;
+    BOOLEAN first = TRUE;
     int firstSpill = TRUE;
     int spills = 0;
     int passes = 0;

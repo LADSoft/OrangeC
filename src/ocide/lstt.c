@@ -201,9 +201,7 @@ static LRESULT CALLBACK TTIPWndProc(HWND hwnd, UINT iMessage,
     RECT r;
     PAINTSTRUCT ps;
     TTIP *ptr;
-    TRACKMOUSEEVENT tracker;
     TOOLTIPTEXT notify;
-    POINT mouse;
     LRESULT rv;
     switch(iMessage)
     {

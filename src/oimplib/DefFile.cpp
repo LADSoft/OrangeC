@@ -166,7 +166,7 @@ bool DefFile::Read()
 bool DefFile::Write()
 {
     stream = new std::fstream(fileName.c_str(), std::ios::out);
-    if (stream != NULL)
+    //if (stream != NULL)
     {
         WriteName();
         WriteLibrary();

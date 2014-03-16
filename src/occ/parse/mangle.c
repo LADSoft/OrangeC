@@ -97,7 +97,7 @@ static char *mangleClasses(char *in, SYMBOL *sp)
 }
 static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAM *params)
 {
-    BOOL bySpecial = FALSE;
+    BOOLEAN bySpecial = FALSE;
     if (sym->instantiated && !sym->templateLevel || params && params->bySpecialization.types)
     {
         params = params->bySpecialization.types;
@@ -259,7 +259,7 @@ static char *getName(char *in, SYMBOL *sp)
     in += strlen(in);
     return in;
 }
-char *mangleType (char *in, TYPE *tp, BOOL first)
+char *mangleType (char *in, TYPE *tp, BOOLEAN first)
 {
     char nm[512];
     int i;

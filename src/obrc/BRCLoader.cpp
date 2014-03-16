@@ -63,7 +63,7 @@ BlockData::~BlockData()
 }
 BRCLoader::~BRCLoader()
 {
-    for (Symbols::iterator it = syms.begin(); it != syms.end(); it++)
+    for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
     {
         SymData *s = it->second;
         delete s;
@@ -218,7 +218,7 @@ void BRCLoader::EndBlock(int line)
         b->end = line;
         int i;
         for (std::map<std::string, BrowseData *>::iterator it = b->syms.begin();
-             it != b->syms.end(); it++)
+             it != b->syms.end(); ++it)
         {
             InsertSymData(it->first, it->second);
         }
@@ -229,7 +229,7 @@ void BRCLoader::ParseData(ObjFile &f)
 {
     unsigned char *p;
     blocks.clear();
-    for (ObjFile::BrowseInfoIterator it = f.BrowseInfoBegin(); it != f.BrowseInfoEnd(); it++)
+    for (ObjFile::BrowseInfoIterator it = f.BrowseInfoBegin(); it != f.BrowseInfoEnd(); ++it)
     {
         ObjBrowseInfo *p = *it;
         switch(p->GetType())
@@ -264,7 +264,7 @@ void BRCLoader::ParseData(ObjFile &f)
 void BRCLoader::LoadSourceFiles(ObjFile &fil)
 {
     indexMap.clear();
-    for (ObjFile::SourceFileIterator it = fil.SourceFileBegin(); it != fil.SourceFileEnd(); it++)
+    for (ObjFile::SourceFileIterator it = fil.SourceFileBegin(); it != fil.SourceFileEnd(); ++it)
     {
         int index;
         std::map<std::string, int>::iterator it1 = nameMap.find((*it)->GetName());

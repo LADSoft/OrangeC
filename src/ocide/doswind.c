@@ -76,7 +76,7 @@ void FreeEnv(LPTCH env)
     FreeEnvironmentStrings(env);
     SetEnvironmentVariable("PATH", oldPath);
 }
-DWORD CALLBACK DosWindowThread(void *xx)
+DWORD DosWindowThread(void *xx)
 {
     struct _varData *vdata = (struct _varData *)xx;
     char *xcmd = GetCmd();
@@ -244,6 +244,6 @@ void DosWindow(char *path, char *exec, char *args, char *rvTitle, char *rvBody)
             vdata->rvTitle = strdup(rvTitle);
         if (rvBody)
             vdata->rvBody = strdup(rvBody);
-        CloseHandle(CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)DosWindowThread, (VOID *)vdata, 0, &id));
+        _beginthread((BEGINTHREAD_FUNC)DosWindowThread, 0, (LPVOID)vdata);
     }    
 }

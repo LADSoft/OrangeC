@@ -74,6 +74,7 @@ static void InsertAccProperties(HWND lv, struct resRes *data);
 void GetAccPropText(char *buf, HWND lv, struct resRes *data, int row);
 HWND AccPropStartEdit(HWND lv, int row, struct resRes *data);
 void AccPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+// callbacks to populate the properties window for this resource editor
 struct propertyFuncs accFuncs = 
 { 
     InsertAccProperties,
@@ -241,11 +242,11 @@ static void PopulateItem(HWND hwnd, ACCELERATOR *accelerators, int items)
     {
         if (accelerators->skey < 0x20)
         {
-            sprintf(key, "\"^%c\"", accelerators->skey + 0x40);
+            sprintf(key, "\"^%c\"", (int)(char)accelerators->skey + 0x40);
         }
         else
         {
-            sprintf(key, "\"%c\"", accelerators->skey);
+            sprintf(key, "\"%c\"", (int)(char)accelerators->skey);
         }
     }
     memset(&item, 0, sizeof(LV_ITEM));
@@ -685,7 +686,6 @@ char *GetVKName(int val)
 {
     int top = sizeof(vkList) / sizeof(vkList[0]);
     int bottom =  - 1;
-    int v;
     while (top - bottom > 1)
     {
         int mid = (top + bottom) / 2;
@@ -947,7 +947,6 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_HANDLEDBLCLICK:
         {
             ACCELERATOR *accelerator;
-            RECT r;
             acceleratorData = (struct resRes *)GetWindowLong(hwnd, 0);
             if (acceleratorData->gd.editWindow)
             {
@@ -1043,7 +1042,6 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             acceleratorData = (struct resRes *)GetWindowLong(hwnd, 0);
             if (acceleratorData->gd.bDragging)
             {
-                HWND wnd;
                 POINT pt;
                 GetClientRect(hwnd, &r);
                 pt.x = (long)(short)LOWORD(lParam);
@@ -1292,7 +1290,6 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterAcceleratorDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

@@ -166,7 +166,7 @@ void option( char *opt ) {
         return;
     }
 
-    if ( (opt[1] == '?' || opt[1] == 'h' || opt[1] == '?') && opt[2] == '\0' )
+    if ( (opt[1] == '?' || opt[1] == 'h') && opt[2] == '\0' )
         help();
 
     if (   opt[1] == 'D' 

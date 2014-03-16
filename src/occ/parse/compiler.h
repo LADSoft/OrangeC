@@ -51,10 +51,12 @@
     #define ULLONG_TYPE unsigned long long
     #define LLONG_TYPE long long
 #endif
+    #define LLONG_FORMAT_SPECIFIER "%lld"
 #else 
     #define ULLONG_TYPE unsigned long 
     #define LLONG_TYPE long
     #define ULLONG_MAX ULONG_MAX
+    #define LLONG_FORMAT_SPECIFIER "%ld"
 #endif 
 
 typedef unsigned BITINT;
@@ -62,8 +64,8 @@ typedef unsigned BITINT;
 
 typedef unsigned long ADDRESS;
 typedef unsigned LCHAR;
-typedef unsigned char BOOL;
-typedef unsigned char BYTE;
+typedef unsigned char BOOLEAN;
+typedef unsigned char UBYTE;
 
 #include <stdio.h>
 #include <ctype.h>

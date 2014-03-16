@@ -45,8 +45,8 @@
 
 ppCond::~ppCond()
 {
-    if (current)
-        delete current;
+    
+    delete current;
     while (skipList.size())
     {
         current = skipList.front();
@@ -164,7 +164,7 @@ bool ppCond::Check(int token, const std::string &line, int lineno)
     }
     return true;
 }
-void ppCond::HandleIf(int val, const std::string &line, int lineno)
+void ppCond::HandleIf(bool val, const std::string &line, int lineno)
 {
     skip *old = current;
     if (current)
@@ -181,7 +181,7 @@ void ppCond::HandleIf(int val, const std::string &line, int lineno)
         current->takeElse = true;
     }
 }	
-void ppCond::HandleElif(int val, const std::string &line)
+void ppCond::HandleElif(bool val, const std::string &line)
 {
     ansieol(line);
     if (!current || current->elseSeen)
@@ -258,12 +258,12 @@ void ppCond::HandleDef(std::string &line, bool Else, bool negate, int lineno)
         Errors::Error("Identifier expected");
         if (Else)
             HandleElif(false,"");
-        else
+         else
             HandleIf(false,"", lineno);
     }
     else
     {
-        int v = !!define->Lookup(t->GetId());
+        bool v = !!define->Lookup(t->GetId());
         if (asmpp && !v)
         {
             std::string one = UTF8::ToUpper(t->GetId());
@@ -341,7 +341,7 @@ void ppCond::HandleIdn(std::string &line, bool Else, bool negate, bool caseSensi
             if (pos == line.size() || pos1 == line1.size())
                 break;
         }
-        int v = !z && pos == line.size() && pos1 == line1.size();
+        bool v = !z && pos == line.size() && pos1 == line1.size();
         if (negate)
             v = !v;
         if (Else)
@@ -355,7 +355,7 @@ void ppCond::HandleId(std::string &line, bool Else, bool negate, int lineno)
     define->Process(line);
     Tokenizer tk(line, NULL);
     const Token *t = tk.Next();
-    int v = t->IsIdentifier();
+    bool v = t->IsIdentifier();
     if (negate)
         v = !v;
     if (Else)
@@ -368,7 +368,7 @@ void ppCond::HandleNum(std::string &line, bool Else, bool negate, int lineno)
     define->Process(line);
     Tokenizer tk(line, NULL);
     const Token *t = tk.Next();
-    int v = t->IsNumeric();
+    bool v = t->IsNumeric();
     if (negate)
         v = !v;
     if (Else)
@@ -381,7 +381,7 @@ void ppCond::HandleStr(std::string &line, bool Else, bool negate, int lineno)
     define->Process(line);
     Tokenizer tk(line, NULL);
     const Token *t = tk.Next();
-    int v = t->IsString();
+    bool v = t->IsString();
     if (negate)
         v = !v;
     if (Else)
@@ -394,7 +394,7 @@ void ppCond::HandleCtx(std::string &line, bool Else, bool negate, int lineno)
     define->Process(line);
     Tokenizer tk(line, NULL);
     const Token *t = tk.Next();
-    int v = false;
+    bool v = false;
     if (t->IsIdentifier())
     {
         v = ctx->Matches(t->GetId());

@@ -101,7 +101,6 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
         AddSymbolTable(pj, FALSE);
         if (pj->type == PJ_FILE)
         {
-            int i;
             char *p;
             p = Lookup("OUTPUTFILE", pj, NULL);
             if (p)
@@ -137,9 +136,7 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
         if (pj->type == PJ_FILE)
         {
             struct _propsData data;
-            SETTING *pages[100];
-            int i;
-            char *p;
+            SETTING *pages = calloc(sizeof(SETTING),1);
             memset(&data, 0, sizeof(data));
             data.prototype = pages;
             SelectRules(pj, &data);
@@ -160,6 +157,7 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
                     }
                 }
             }
+            free(pages);
             if (first)
             {
                 RemoveSymbolTable();
@@ -526,7 +524,7 @@ static BOOL BuildModified(PROJECTITEM *pj)
     ReleaseSemaphore(makeSem, 1, NULL);
     return rv;
 }
-static DWORD __stdcall MakerThread(void *p)
+static DWORD MakerThread(void *p)
 {
     PROJECTITEM *pj = (PROJECTITEM *)p;
     PROJECTITEM *deps = (PROJECTITEM *)internalDepends;
@@ -575,12 +573,10 @@ void Maker(PROJECTITEM *pj, BOOL clean)
     ResSaveAll();
     SaveAllProjects(workArea, FALSE);
     pj->clean |= clean;
-    CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)MakerThread, 
-        (LPVOID)pj, 0, &threadhand));
+    _beginthread((BEGINTHREAD_FUNC)MakerThread, 0, (LPVOID)pj);
 }
 void dbgRebuildMainThread(int cmd)
 {
-    int i;
     cmd &= 0xffff;
     if (!activeProject)
     {
@@ -611,6 +607,5 @@ void dbgRebuildMainThread(int cmd)
 void dbgRebuildMain(int cmd)
 {
     DWORD threadhand;
-    CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)
-        dbgRebuildMainThread, (LPVOID)cmd, 0, &threadhand));
+    _beginthread((BEGINTHREAD_FUNC)dbgRebuildMainThread, 0, (LPVOID)cmd);
 }

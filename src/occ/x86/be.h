@@ -216,14 +216,14 @@ struct ocode
     int address;
     int size;
     int blocknum;
-    BYTE outbuf[16];
+    UBYTE outbuf[16];
     char diag;
     char noopt;
     char resolved;
-    BYTE addroffset;
-    BYTE outlen;
-    BYTE branched;
-    BYTE resobyte;
+    UBYTE addroffset;
+    UBYTE outlen;
+    UBYTE branched;
+    UBYTE resobyte;
 };
 
 /* Used for fixup gen */
@@ -382,7 +382,7 @@ typedef struct emitlist
     struct emitlist *next;
     int filled, lastfilled;
     int address;
-    BYTE data[65536];
+    UBYTE data[65536];
     FIXUP *fixups,  *lastfixup;
 } EMIT_LIST;
 

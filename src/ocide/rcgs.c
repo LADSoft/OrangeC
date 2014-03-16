@@ -271,7 +271,7 @@ int getline(int listflag)
  * Also strip comments and alter trigraphs
  */
 {
-    int rv, rvc, i, prepping, temp;
+    int rv, rvc, prepping, temp;
     static int inpreprocess;
     char ibuf[4096], xbuf[4096],  *xptr;
     char *ptr = ibuf;
@@ -285,7 +285,7 @@ int getline(int listflag)
         rv = FALSE;
         prepping = FALSE;
         rvc = 0;
-        add: 
+//        add: 
         while (rvc + 131 < 4096 && !rv)
         {
             ++lineno;
@@ -755,7 +755,8 @@ int getsym2(void)
 {
     register int i, j, k;
     int size;
-    swlp: switch (lastch)
+//swlp: 
+	switch (lastch)
     {
         case '+':
             getch();

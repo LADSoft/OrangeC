@@ -46,7 +46,6 @@
 #include "ObjTypes.h"
 #include "LibDictionary.h"
 #include "LibFiles.h"
-typedef unsigned DWORD;
 
 class ObjSymbol;
 class ObjFile;
@@ -81,14 +80,14 @@ class LibManager
         struct LibHeader
         {
             enum { LIB_SIG = 0x4442494c };
-            DWORD sig;
-            DWORD filesInModule;
-            DWORD offsetsOffset;
-            DWORD namesOffset;
-            DWORD filesOffset;
-            DWORD dictionaryOffset;
-            DWORD dictionaryBlocks;
-            DWORD reserved;
+            unsigned sig;
+            unsigned filesInModule;
+            unsigned offsetsOffset;
+            unsigned namesOffset;
+            unsigned filesOffset;
+            unsigned dictionaryOffset;
+            unsigned dictionaryBlocks;
+            unsigned reserved;
         } ;
         void InitHeader();
         void WriteHeader() { fseek(stream, 0, SEEK_SET); fwrite((char *)&header, sizeof(header), 1, stream); }

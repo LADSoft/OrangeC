@@ -48,7 +48,7 @@
 extern int stdpragmas;
 extern ARCH_ASM *chosenAssembler;
 extern TYPE stdvoid;
-extern BOOL initializingGlobalVar;
+extern BOOLEAN initializingGlobalVar;
 extern int total_errors;
 
 static EXPRESSION *asidehead,  **asidetail;
@@ -171,7 +171,7 @@ static int maxcomplextype(EXPRESSION *ep1, EXPRESSION *ep2)
         return en_c_dc;
     return en_c_fc;
 }
-static BOOL hasFloats(EXPRESSION *node)
+static BOOLEAN hasFloats(EXPRESSION *node)
 /*
  * Go through a node and see if it will be promoted to type FLOAT
  */
@@ -502,7 +502,7 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
         case ISZ_U32:
             bits = getSize(bt_char32_t) * 8;
             break;
-        case ISZ_BOOL:
+        case ISZ_BOOLEAN:
             bits = 1;
             break ;
         case -ISZ_UCHAR:
@@ -611,7 +611,7 @@ FPF refloat(EXPRESSION *node)
             rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_WCHAR,node->v.i));
             break;
         case en_c_bool:
-            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_BOOL,node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_BOOLEAN,node->v.i));
             break;
         case en_c_ull:
             rv = CastToFloat(ISZ_LDOUBLE,IntToFloat(&temp,ISZ_ULONGLONG,node->v.i));
@@ -675,7 +675,7 @@ ULLONG_TYPE reint(EXPRESSION *node)
             rv = CastToInt(ISZ_U32, node->v.i);
             break;
         case en_c_bool:
-            rv = CastToInt(ISZ_BOOL, node->v.i);
+            rv = CastToInt(ISZ_BOOLEAN, node->v.i);
             break;
         case en_c_ull:
             rv = CastToInt(ISZ_ULONGLONG, node->v.i);
@@ -1642,13 +1642,10 @@ int opt0(EXPRESSION **node)
                 {
                     if (ep->type == en_sub)
                     {
-                        *node = ep->right;
-                        ep->right->v.f =  ep->right->v.f;
                         ep->right->v.f.sign ^= 1 ;
 
                     }
-                    else
-                         *node = ep->right;
+                    *node = ep->right;
                 }
                 else
                     dooper(node, mode);
@@ -3218,7 +3215,7 @@ int typedconsts(EXPRESSION *node1)
                              || node1->left->v.c.i.type != IFPF_IS_ZERO;
                 else
                 {
-                    node1->v.i = CastToInt(ISZ_BOOL,!!reint(node1->left));
+                    node1->v.i = CastToInt(ISZ_BOOLEAN,!!reint(node1->left));
                     node1->unionoffset = node1->left->unionoffset;
                 }
                 node1->type = en_c_bool;
@@ -3624,7 +3621,7 @@ void optimize_for_constants(EXPRESSION **expr)
     }
     rebalance(*expr);
 }
-LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **expr, BOOL commaallowed)
+LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **expr, BOOLEAN commaallowed)
 {
     
     if (commaallowed)

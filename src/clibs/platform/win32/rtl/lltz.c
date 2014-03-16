@@ -90,7 +90,7 @@ static int parsetz(char *str)
       if (str[0] == ',')
       {
          str++;
-         // FIXME: now parse DST start/end fields
+         // fixme: now parse DST start/end fields
       }
    } else {
       _daylight = 0 ;

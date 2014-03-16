@@ -66,11 +66,11 @@ MYLIB = \orangec\bin\olib
 else
 OBJECT=objectb55
 OBJ=.obj
-MYCC = bcc32 -c -v
 MYCCFLAGS = /I$(SRCPATH) $(i386) $(LL) $(MSDOS) $(WIN32) /DBORLAND /DMICROSOFT
+MYCC = c:\bcc55\bin\bcc32 -c -v
 MYASM = nasm -fobj
-MYLIB = tlib32
-MYLINK = ilink32 -Gn -Gi -v -m
+MYLIB = c:\bcc55\bin\tlib32
+MYLINK = c:\bcc55\bin\ilink32 -Gn -Gi -v -m
 endif
 SOURCE = ..\parse;..\preproc;..\middle
 

@@ -364,7 +364,7 @@ int sizeFromISZ(int isz)
         case ISZ_UCHAR:
         case -ISZ_UCHAR:
             return p->a_char;
-        case ISZ_BOOL:
+        case ISZ_BOOLEAN:
             return p->a_bool;
         case ISZ_USHORT:
         case -ISZ_USHORT:

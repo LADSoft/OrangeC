@@ -145,15 +145,15 @@ static int ParseNewProjectData(HWND hwnd)
                 case BT_CONSOLE:
                 case BT_WINDOWS:
                 default:
-                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".exe"))
+                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".exe") != 0)
                        strcat(newName, ".exe");
                     break;
                 case BT_DLL:
-                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".dll"))
+                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".dll") != 0)
                        strcat(newName, ".exe");
                     break;
                 case BT_LIBRARY:
-                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".lib"))
+                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".lib") != 0)
                        strcat(newName, ".exe");
                     break;
             }
@@ -285,18 +285,20 @@ long APIENTRY NewProjectProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
             {
                 switch (((LPNMLVKEYDOWN)lParam)->wVKey)
                 {
-                    if (GetKeyState(VK_CONTROL) & 0x80000000)
-                    {
-                        HWND hwndLV = GetDlgItem(hwnd, IDC_LVNEWPROJECT);
-                        ListView_SetSelectionMark(hwndLV, -1);
-                    }
-                    else
-                    {
-                        HWND hwndLV = GetDlgItem(hwnd, IDC_LVNEWPROJECT);
-                        int i = ListView_GetSelectionMark(hwndLV);
-                        ListView_SetSelectionMark(hwndLV, i);
-                        ListView_SetItemState(hwndLV, i, LVIS_SELECTED, LVIS_SELECTED);
-                    }
+                    case VK_INSERT:
+                        if (GetKeyState(VK_CONTROL) & 0x80000000)
+                        {
+                            HWND hwndLV = GetDlgItem(hwnd, IDC_LVNEWPROJECT);
+                            ListView_SetSelectionMark(hwndLV, -1);
+                        }
+                        else
+                        {
+                            HWND hwndLV = GetDlgItem(hwnd, IDC_LVNEWPROJECT);
+                            int i = ListView_GetSelectionMark(hwndLV);
+                            ListView_SetSelectionMark(hwndLV, i);
+                            ListView_SetItemState(hwndLV, i, LVIS_SELECTED, LVIS_SELECTED);
+                        }
+                        break;
                 }
             }
             return 0;
@@ -358,19 +360,22 @@ void PropagateAllProjectTypes(void)
     {
         SETTING *s;
         char *rls = NULL;
-        currentProfileName = sysProfileName;
+        free(currentProfileName);
+        currentProfileName = strdup(sysProfileName);
         s = PropFind(GetSettings(pj->profiles), "__PROJECTTYPE");
         if (s)
         {
             rls = s->value;
-            currentProfileName = m;
+            free(currentProfileName);
+            currentProfileName = strdup(m);
             SetProjectType(pj, atoi(rls));
             MarkChanged(pj, FALSE);
         }
         pj = pj->next;
     }
     profileDebugMode = n;
-    currentProfileName = m;
+    free(currentProfileName);
+    currentProfileName = strdup(m);
 }
 void ProjectNewProject(void)
 {
@@ -388,11 +393,9 @@ void ProjectNewProject(void)
             p = calloc(1, sizeof(PROJECTITEM));
             if (p)
             {
-                PROJECTITEM **ins = &workArea->children, *temp;
+                PROJECTITEM **ins = &workArea->children;
                 HTREEITEM pos = TVI_FIRST;
-                char num[32];
                 int imagetype;
-                SETTING *set;
                 strcpy( p->displayName, newTitle);
                 strcpy( p->realName, newName);
                 p->expanded = TRUE;
@@ -435,7 +438,6 @@ void ProjectExistingProject(void)
                                "Open existing project"))
         {
             PROJECTITEM *p = workArea->children;
-            char buf[MAX_PATH];
             char *q;
             q = stristr(ofn.lpstrFile,".cpj");
             if (q)
@@ -448,7 +450,7 @@ void ProjectExistingProject(void)
             p = calloc(1, sizeof(PROJECTITEM));
             if (p)
             {
-                PROJECTITEM **ins = &workArea->children, *temp;
+                PROJECTITEM **ins = &workArea->children;
                 HTREEITEM pos = TVI_FIRST;
                 strcpy(p->realName, ofn.lpstrFile);
                 q = strrchr(p->realName, '\\');
@@ -502,7 +504,7 @@ void SaveAllProjects(PROJECTITEM *workArea, BOOL always)
 }
 void LoadProject(char *name)
 {
-    PROJECTITEM *p = calloc(1, sizeof(PROJECTITEM)), **ins;
+    PROJECTITEM *p = calloc(1, sizeof(PROJECTITEM)), **ins = NULL;
     if (p)
     {
         strcpy(p->realName, name);
@@ -529,8 +531,6 @@ void LoadProject(char *name)
 
 void IndirectProjectWindow(DWINFO *info)
 {
-    DWORD handle;
-    MSG msg;
     dmgrHideWindow(DID_TABWND, FALSE);
     LoadWorkArea(info->dwName, TRUE);
 }

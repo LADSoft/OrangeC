@@ -303,7 +303,7 @@ static long APIENTRY NewWorkAreaProc(HWND hwnd, UINT message, WPARAM wParam, LPA
                         *p = 0;
                     if (strlen(bf) < strlen(newName))
                     {
-                        if (strlen(bf) == 0 || !stricmp(newName + strlen(newName) - strlen(bf), bf));
+                        if (strlen(bf) == 0 || !stricmp(newName + strlen(newName) - strlen(bf), bf))
                         {
                             changeIt = strlen(bf);
                             if (newName[strlen(newName) - changeIt -1] != '\\')

@@ -441,8 +441,8 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
     {
         while (t->ch && (t->Color & 0xf) == C_COMMENT && xchars > 0)
             t++, xchars--;
-        if (xchars > 0 && (t == buf || !keysym(t[ - 1].ch) && (keysym(t->ch) ||
-            t->ch == preproc)))
+        if (xchars > 0 && (t == buf || (!keysym(t[ - 1].ch) && (keysym(t->ch) ||
+            t->ch == preproc))))
         {
             int len;
             KEYLIST *p = matchkeyword(sr, size, preproc, t, &len, type ==
@@ -474,7 +474,7 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
             int len;
             if (highlightText[0] && 
                 !pcmp(buf + start + i, highlightText, preproc, &len, !highlightCaseSensitive, FALSE)
-                && (!highlightWholeWord || (i == buf || !isalnum(buf[i-1].ch)) && !isalnum(buf[i+len].ch)))
+                && (!highlightWholeWord || (i == buf || (!isalnum(buf[i-1].ch)) && !isalnum(buf[i+len].ch))))
             {
                 Colorize(buf, start + i, len,  (C_HIGHLIGHT << 4) + C_TEXT, FALSE);
                 i += len - 1;
@@ -503,9 +503,9 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
                             binflg = oc == '0' && (ch == 'b' || ch == 'B');
                             if (hexflg || binflg)
                                 ch = buf [start + ++i].ch;
-                            while (ch == '.' || !binflg && isdigit(ch) || binflg && (ch == '0' || ch == '1')
-                                || hexflg && (isxdigit(ch) || ch =='p' || ch == 'P') ||
-                                  !hexflg && (ch == 'e' || ch== 'E'))
+                            while (ch == '.' || (!binflg && isdigit(ch)) || (binflg && (ch == '0' || ch == '1'))
+                                || (hexflg && (isxdigit(ch) || ch =='p' || ch == 'P')) ||
+                                  (!hexflg && (ch == 'e' || ch== 'E')))
                             {
                                     i++;
                                     if (!hexflg && ch >= 'A' || hexflg && (ch =='p' || ch == 'P'))
@@ -1107,11 +1107,9 @@ void ClientArea(HWND hwnd, EDITDATA *p, RECT *r)
 int posfromchar(HWND hwnd, EDITDATA *p, POINTL *point, int pos)
 {
     char buf[256],  *x = buf;
-    SIZE size;
     RECT r;
-    HDC dc;
     int spos = p->textshowncharpos, xcol;
-    int i = 0, j;
+    int i = 0;
     point->x = point->y = 0;
     if (spos > pos)
         return 0;
@@ -1498,7 +1496,6 @@ void TrackVScroll(HWND hwnd, EDITDATA *p, int end)
 void TrackHScroll(HWND hwnd, EDITDATA *p, int end)
 {
     SCROLLINFO si;
-    int count;
     memset(&si, 0, sizeof(si));
     si.cbSize = sizeof(si);
     si.fMask = SIF_TRACKPOS;
@@ -1563,8 +1560,8 @@ void Replace(HWND hwnd, EDITDATA *p, char *s, int lens)
 {
     UNDO *u = 0;
     int i, temp, changed;
-    char *buf,  *s1;
-    int len = 0, linepos;
+    char  *s1;
+    int len = 0;
 
     i = p->selendcharpos - p->selstartcharpos;
     changed = lens - i;
@@ -1775,8 +1772,6 @@ void insertchar(HWND hwnd, EDITDATA *p, int ch)
 void insertcrtabs(HWND hwnd, EDITDATA *p);
 void insertcr(HWND hwnd, EDITDATA *p, BOOL tabs)
 {
-    RECT r, update;
-    int totallines;
     int temp;
     drawline(hwnd, p, p->selstartcharpos);
     if (p->selstartcharpos > p->selendcharpos)
@@ -2108,7 +2103,7 @@ void InsertBeginTabs(HWND hwnd, EDITDATA *p)
 void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
 {
     int pos, n;
-    int solpos, eospos;
+    int eospos;
     int lsolpos, leospos;
     int oldinsert = p->cd->inserting;
     if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_RC)
@@ -2171,7 +2166,6 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
 
 void SelectIndent(HWND hwnd, EDITDATA *p, int insert)
 {
-    int oldSel;
     int olds = p->selstartcharpos;
     int olde = p->selendcharpos;
     int start = p->selstartcharpos;
@@ -2571,7 +2565,7 @@ int FindParenMatchBackward(HWND hwnd, EDITDATA *p, int dec)
     int level = 1;
     int s = p->selstartcharpos;
     int quotechar = 0;
-    if (s != p->selendcharpos || s == p->cd->textlen && !dec)
+    if (s != p->selendcharpos || (s == p->cd->textlen && !dec))
         return FALSE;
     if (dec && s)
         s--;
@@ -2612,7 +2606,7 @@ int FindParenMatchForward(HWND hwnd, EDITDATA *p, int dec)
     int level = 1;
     int s = p->selstartcharpos;
     int quotechar = 0;
-    if (s != p->selendcharpos || s == p->cd->textlen && !dec)
+    if (s != p->selendcharpos || (s == p->cd->textlen && !dec))
         return FALSE;
     if (dec && s)
         s--;
@@ -2861,10 +2855,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
      **********************************************************************/
     void upline(HWND hwnd, EDITDATA *p, int lines)
     {
-        RECT r;
         int ilines = lines;
-        int curline;
-        int pos, oldsel;
+        int pos;
         int col, index = 0;
         pos = p->selendcharpos;
         //   oldsel = pos ;
@@ -3523,8 +3515,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         {
             UNDO *u ;
             int oldinsert = p->cd->inserting;
-            int start, end;
-            char *s;
+            int start;
             int x = p->cd->redopos;
             if (x == p->cd->undohead)
             {
@@ -3723,9 +3714,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     int doredo(HWND hwnd, EDITDATA *p)
     {
         int rv = 1;
-        int start, end;
-        char *s;
-        char buf[512];
+        int start;
         if (SendMessage(hwnd, EM_CANREDO, 0, 0))
         {
             int oldinsert = p->cd->inserting;
@@ -4045,8 +4034,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             info->creation = creation;
             SetLastError(0);
             p->cd->colorizing++;
-            CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)
-                colorizeThread, (void*)info, 0, &hand));
+            _beginthread((BEGINTHREAD_FUNC)colorizeThread, 0, (LPVOID)info);
         }
     }
     struct llist 
@@ -4065,16 +4053,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         static int selected;
         PAINTSTRUCT ps;
         HDC dc;
-        char buf2[256], buf3[256];
+        char buf2[256];
         EDITDATA *p ;
-        int rv;
         DRAWITEMSTRUCT *lpdis;
         MEASUREITEMSTRUCT *lpmis;
         TEXTMETRIC tm;
         HFONT font;
         RECT r;
-        LOGFONT lf;
-        LPCOMPAREITEMSTRUCT lpcis;
         int fg, bg;
         int i = selected;
         HPEN pen;
@@ -4231,9 +4216,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     if (!stricmp(buf, buf2))
                     {
                         temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected+1, 0);
-                        if (temp != LB_ERR)
+                        if ((int)temp != LB_ERR)
                         {
-                            if (strnicmp(temp, buf2, strlen(buf2)))
+                            if (strnicmp(temp, buf2, strlen(buf2)) != 0)
                                 PostMessage(hwnd, WM_CLOSE, 0, 0);
                         }
                         else
@@ -4283,7 +4268,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         if (len && selected != LB_ERR)
                         {
                             EDITDATA *p = (EDITDATA *)GetWindowLong(parent, 0);
-                            int count, i;
+                            int count;
                             begin_inserted = TRUE;
                             insertautoundo(parent, p, UNDO_AUTOBEGIN);
                             doundo(parent, p);
@@ -4420,21 +4405,21 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 do
                 {
                     temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, i, 0);
-                    if (temp != LB_ERR)
+                    if ((int)temp != LB_ERR)
                         if (!strnicmp(temp, (char *)lParam, strlen((char *)lParam)))
                         {
                             SendMessage(hwndLB, LB_SETCURSEL, i, 0);
                             return i;
                         }
                     i++;
-                } while (temp != LB_ERR);
+                } while ((int)temp != LB_ERR);
                 if (wParam != -1)
                 {
                     for (i=0; i <= wParam; i++)
                     {
                         buf2[0] = 0;
                         temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                        if (temp != LB_ERR)
+                        if ((int)temp != LB_ERR)
                             if (!strnicmp(temp, (char *)lParam, strlen((char *)lParam)))
                             {
                                 SendMessage(hwndLB, LB_SETCURSEL, i, 0);
@@ -4760,7 +4745,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         {
             int mid = (top + bottom) / 2;
             char trans[256];
-            p = trans;
+            p = &trans[0];
             strcpy(trans, table[mid].text);
             while (*p)
                 *p++ = tolower(*p);
@@ -4989,14 +4974,12 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         static HFONT normal, bold, oldfont;
         int offset;
         int oldbk, oldfg;
-        EDITDATA *p;
         LOGFONT lf;
-        TEXTMETRIC t;
         PAINTSTRUCT ps;
-        HPEN pen, oldpen;
+        HPEN pen;
         HBRUSH brush;
         HDC dc;
-        SIZE size1, size2, size3;
+        SIZE size1, size2;
         RECT r;
         switch(iMessage)
         {
@@ -5219,15 +5202,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     {
         CREATESTRUCT *lpCreate;
         static char buffer[1024];
-        char face[256];
         EDITDATA *p;
         DWINFO *x;
         int stop;
-        char *data,  *buf;
         LRESULT rv;
-        int i, linecount, start, end, line, chars;
+        int i, start, end;
         TOOLTIPTEXT *lpnhead;
-        int offset, l;
+        int l;
         DEBUG_INFO *dbg;
         VARINFO *var;
         NMHDR nm;
@@ -5238,7 +5219,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         TEXTMETRIC t;
         INTERNAL_CHAR *ic;
         POINTL pt;
-        TOOLINFO t1;
         LOGFONT lf;
         CHARRANGE *ci;
         switch (iMessage)
@@ -5303,7 +5283,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                                 int flags;
                                 if (ccLookupType(buffer, name, info->dwName, lineno, & flags))
                                 {
-                                    if (strncmp(buffer, "(*)", 3))
+                                    if (strncmp(buffer, "(*)", 3) != 0)
                                     {
                                         strcat(buffer, " ");
                                         strcat(buffer, name);
@@ -6199,7 +6179,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             case EM_POSFROMCHAR:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 {
-                    int x, y;
                     posfromchar(hwnd, p, (POINTL*)wParam, lParam);
                     return 0;
                 }
@@ -6431,7 +6410,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     void RegisterXeditWindow(void)
     {
         WNDCLASS wc;
-        int anon;
         memset(&wc, 0, sizeof(wc));
         wc.lpfnWndProc = &exeditProc;
         wc.lpszClassName = "XEDIT";

@@ -272,7 +272,7 @@ static struct {
 {"Type mismatch in return statement", WARNING },
 {"Returning address of a local variable", WARNING },
 {"Expression has no effect", WARNING },
-{"Unexpected block end marker", ERROR }, /* FIXME */
+{"Unexpected block end marker", ERROR }, /* fixme */
 {"Unreachable code", TRIVIALWARNING },
 {"Ansi forbids omission of semicolon", ERROR },
 {"Pointer or reference to reference is not allowed", ERROR },
@@ -561,7 +561,7 @@ static char kwtosym(enum e_kw kw)
             return '?';
     }
 };
-static BOOL alwaysErr(int err)
+static BOOLEAN alwaysErr(int err)
 {
     switch (err)
     {
@@ -578,7 +578,7 @@ static BOOL alwaysErr(int err)
             return FALSE;
     }
 }
-static BOOL ignoreErrtemplateNestingCount(int err)
+static BOOLEAN ignoreErrtemplateNestingCount(int err)
 {
     switch(err)
     {
@@ -609,7 +609,7 @@ static BOOL ignoreErrtemplateNestingCount(int err)
     }
     return FALSE;
 }
-BOOL printerrinternal(int err, char *file, int line, va_list args)
+BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
 {
     char buf[2048];
     char infunc[1024];
@@ -655,8 +655,8 @@ BOOL printerrinternal(int err, char *file, int line, va_list args)
         vsprintf(buf, errors[err].name, args);
 //        va_end(arg);
     }
-    if ((errors[err].level & ERROR) || cparams.prm_ansi && (errors[err].level & ANSIERROR) 
-        || cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR))
+    if ((errors[err].level & ERROR) || (cparams.prm_ansi && (errors[err].level & ANSIERROR)) 
+        || (cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR)))
     {
         if (!cparams.prm_quiet)
             printf("Error   ");
@@ -706,7 +706,7 @@ BOOL printerrinternal(int err, char *file, int line, va_list args)
 }
 int printerr(int err, char *file, int line, ...)
 {
-    BOOL canprint = FALSE;
+    BOOLEAN canprint = FALSE;
     va_list arg;	
     va_start(arg, line);
     canprint = printerrinternal(err,file,line,arg);
@@ -951,7 +951,7 @@ void skip(LEXEME **lex, enum e_kw kw)
     if (MATCHKW(*lex, kw))
         *lex = getsym();
 }
-BOOL needkw(LEXEME **lex, enum e_kw kw)
+BOOLEAN needkw(LEXEME **lex, enum e_kw kw)
 {
     if (MATCHKW(*lex, kw))
     {
@@ -1023,7 +1023,7 @@ void AddErrorToList(char *tag, char *str)
         listErrors = l;	
     }
 }
-static BOOL hasGoto(STATEMENT *stmt)
+static BOOLEAN hasGoto(STATEMENT *stmt)
 {
     while (stmt)
     {
@@ -1060,7 +1060,7 @@ static BOOL hasGoto(STATEMENT *stmt)
     }
     return FALSE;
 }
-static BOOL findVLAs(STATEMENT *stmt)
+static BOOLEAN findVLAs(STATEMENT *stmt)
 {
     while (stmt)
     {
@@ -1228,7 +1228,7 @@ static void declError(VLASHIM *gotoShim, VLASHIM *errShim)
     currentErrorLine = 0;
     specerror(ERR_GOTO_BYPASSES_INITIALIZATION, buf, gotoShim->file, gotoShim->line);
 }
-void checkGotoPastVLA(STATEMENT *stmt, BOOL first)
+void checkGotoPastVLA(STATEMENT *stmt, BOOLEAN first)
 {
     
     if (hasGoto(stmt) && findVLAs(stmt))
@@ -1244,7 +1244,7 @@ void checkGotoPastVLA(STATEMENT *stmt, BOOL first)
             if (gotop->type == v_goto)
             {
                 VLASHIM *lblp = vlaList, *temp;
-                BOOL after = FALSE;
+                BOOLEAN after = FALSE;
                 while (lblp)
                 {
                     if (lblp == gotop)
@@ -1433,7 +1433,7 @@ static SYMBOL *getAssignSP(EXPRESSION *exp)
         
     }
 }
-static void assignmentAssign(EXPRESSION *left, BOOL assign)
+static void assignmentAssign(EXPRESSION *left, BOOLEAN assign)
 {
     while (castvalue(left))
     {
@@ -1457,7 +1457,7 @@ static void assignmentAssign(EXPRESSION *left, BOOL assign)
         }
     }
 }
-void assignmentUsages(EXPRESSION *node, BOOL first)
+void assignmentUsages(EXPRESSION *node, BOOLEAN first)
 {
     FUNCTIONCALL *fp;
     if (node == 0)
@@ -1672,7 +1672,7 @@ void assignmentUsages(EXPRESSION *node, BOOL first)
 static int checkDefaultExpression(EXPRESSION *node)
 {
     FUNCTIONCALL *fp;
-    BOOL rv = FALSE;
+    BOOLEAN rv = FALSE;
     if (node == 0)
         return 0;
     switch (node->type)

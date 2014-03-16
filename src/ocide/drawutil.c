@@ -573,9 +573,6 @@ long APIENTRY FileChangeProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
             }
             if (wParam == IDC_FILELIST)
             {
-                NMITEMACTIVATE *ia;
-                LV_ITEM item;
-                int state;
                 if (((LPNMHDR)lParam)->code == LVN_GETDISPINFO)
                 {
                     LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;
@@ -643,7 +640,7 @@ long APIENTRY FileChangeProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 
 //-------------------------------------------------------------------------
 
-void PASCAL CheckEditWindowChangedThread(void *aa)
+void CheckEditWindowChangedThread(void *aa)
 {
     static int sem;
     if (!sem)
@@ -659,8 +656,7 @@ void PASCAL CheckEditWindowChangedThread(void *aa)
 void CheckEditWindowChanged(void)
 {
     DWORD threadhand;
-    CloseHandle(CreateThread(0,0,(LPTHREAD_START_ROUTINE)CheckEditWindowChangedThread,
-                             (LPVOID)NULL,0,&threadhand)) ;
+    _beginthread((BEGINTHREAD_FUNC)CheckEditWindowChangedThread, 0, NULL);
 }
 
 //-------------------------------------------------------------------------

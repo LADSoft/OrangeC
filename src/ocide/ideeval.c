@@ -305,6 +305,7 @@ static int lastst;
                 (*text)++;
                 if (**text == 'L' ||  **text == 'l')
                 {
+                    (*text)++;
                     if (**text == 'L' ||  **text == 'l')
                     {
                         (*text)++;
@@ -928,7 +929,7 @@ static int lastst;
                 *p = 0;
                 var2 = var1->subtype;
                 var3 = &var1->subtype;
-                while (var2 && strcmp(buf, var2->membername))
+                while (var2 && strcmp(buf, var2->membername) != 0)
                 {
                     var3 = &var2->link;
                     var2 = var2->link;
@@ -1254,7 +1255,7 @@ static int lastst;
             }
             else
             {
-join:
+//join:
                 if (val1->structure || val1->unionx)
                     mul1 = val1->arraysize;
                 else if (val2->structure || val2->unionx)
@@ -1272,28 +1273,36 @@ join:
                 if (ch == '+')
                 {
                     if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble)
+                    {
                         if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
                             val1->fval = val1->fval *mul2 + val2->fval *mul1;
                         else
                             val1->fval = val1->fval *mul2 + val2->ival *mul1;
+                    }
+                    else
+                    {
+                        if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+                            val1->fval = val1->ival *mul2 + val2->fval *mul1;
                         else
-                            if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
-                                val1->fval = val1->ival *mul2 + val2->fval *mul1;
-                            else
-                                val1->ival = val1->ival *mul2 + val2->ival *mul1;
+                            val1->ival = val1->ival *mul2 + val2->ival *mul1;
+                    }
                 }
                 else
                 {
                     if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble)
+                    {
                         if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
                             val1->fval = val1->fval *mul2 - val2->fval *mul1;
                         else
                             val1->fval = val1->fval *mul2 - val2->ival *mul1;
+                    }
+                    else
+                    {
+                        if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+                            val1->fval = val1->ival *mul2 - val2->fval *mul1;
                         else
-                            if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
-                                val1->fval = val1->ival *mul2 - val2->fval *mul1;
-                            else
-                                val1->ival = val1->ival *mul2 - val2->ival *mul1;
+                            val1->ival = val1->ival *mul2 - val2->ival *mul1;
+                    }
                 }
                 truncateconst(val1, val2);
             }
@@ -1343,7 +1352,7 @@ join:
         VARINFO *val1,  *val2;
         PUSH(val1 = ieshiftops(text, dbg, sc, towarn));
         skipspace(text);
-        while (val1 && (*(*text) == '<' && *(*text) == '>' && (*(*text + 1) !=
+        while (val1 && ((*(*text) == '<' || *(*text) == '>') && (*(*text + 1) !=
             *(*text))))
         {
             int oper = *(*text) == '<';
@@ -1437,15 +1446,19 @@ join:
             if (ch == '!')
             {
                 if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble)
+                {
                     if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
                         val1->ival = val1->fval != val2->fval;
                     else
                         val1->ival = val1->fval != val2->ival;
+                }
+                else
+                {
+                    if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+                        val1->ival = val1->ival != val2->fval;
                     else
-                        if (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
-                            val1->ival = val1->ival != val2->fval;
-                        else
-                            val1->ival = val1->ival != val2->ival;
+                        val1->ival = val1->ival != val2->ival;
+                }
             }
             else
             {

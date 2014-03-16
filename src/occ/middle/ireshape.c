@@ -95,7 +95,7 @@ void DumpInvariants(void)
     }
 }
 #endif
-BOOL variantThisLoop(BLOCK *b, int tnum)
+BOOLEAN variantThisLoop(BLOCK *b, int tnum)
 {
     if (tempInfo[tnum]->instructionDefines)
     {
@@ -105,7 +105,7 @@ BOOL variantThisLoop(BLOCK *b, int tnum)
     }
     return FALSE;
 }
-static BOOL usedThisLoop(BLOCK *b, int tnum)
+static BOOLEAN usedThisLoop(BLOCK *b, int tnum)
 {
     INSTRUCTIONLIST *l = tempInfo[tnum]->instructionUses;
     LOOP *parent = b->loopParent;
@@ -118,11 +118,11 @@ static BOOL usedThisLoop(BLOCK *b, int tnum)
     }
     return FALSE;
 }
-static BOOL inductionThisLoop(BLOCK *b, int tnum)
+static BOOLEAN inductionThisLoop(BLOCK *b, int tnum)
 {
     return tempInfo[tnum]->inductionLoop && variantThisLoop(b, tnum);
 }
-BOOL matchesop(enum i_ops one, enum i_ops two)
+BOOLEAN matchesop(enum i_ops one, enum i_ops two)
 {
     if (one == two)
         return TRUE;
@@ -165,7 +165,7 @@ static RESHAPE_LIST *InsertExpression(IMODE *im, RESHAPE_EXPRESSION *expr, QUAD 
     *test = list;
     return list;
 }
-static BOOL GatherExpression(int tx, RESHAPE_EXPRESSION *expr, int flags)
+static BOOLEAN GatherExpression(int tx, RESHAPE_EXPRESSION *expr, int flags)
 {
     QUAD *ins = tempInfo[tx]->instructionDefines;
     if (ins && matchesop(ins->dc.opcode, expr->op))
@@ -337,7 +337,7 @@ static void DistributeMultiplies(RESHAPE_EXPRESSION *re, RESHAPE_LIST *rl, int t
 }
 static void ApplyDistribution(void)
 {
-    BOOL done = FALSE;
+    BOOLEAN done = FALSE;
     while (!done)
     {
         int i;
@@ -387,12 +387,12 @@ static void ApplyDistribution(void)
             done = TRUE;
     }
 }
-void ReplaceHashReshape(QUAD *rv, BYTE *key, int size, DAGLIST **table)
+void ReplaceHashReshape(QUAD *rv, UBYTE *key, int size, DAGLIST **table)
 {
     int hashval = dhash(key, size);
     DAGLIST *newDag;
     newDag = tAlloc(sizeof(DAGLIST));
-    newDag->rv = (BYTE *)rv;
+    newDag->rv = (UBYTE *)rv;
     newDag->key = key;
     newDag->next =  table[hashval];
        table[hashval] = newDag;
@@ -401,7 +401,7 @@ static void replaceIM(IMODE **iml, IMODE *im)
 {
     if ((*iml)->mode == i_immed)
         return;
-    ReplaceHashReshape((QUAD *)im, (BYTE *)&(*iml)->offset->v.sp->imvalue, sizeof(IMODE *), name_hash);
+    ReplaceHashReshape((QUAD *)im, (UBYTE *)&(*iml)->offset->v.sp->imvalue, sizeof(IMODE *), name_hash);
     if ((*iml)->mode == i_direct)
         *iml = im;
     else
@@ -448,7 +448,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK *b, QUAD *insertBefore, IMOD
     {
         int tnum = (*iml)->offset->v.sp->value.i;
         QUAD *def = tempInfo[tnum]->instructionDefines;
-        IMODE *im = (IMODE *)LookupNVHash((BYTE *)&(*iml)->offset->v.sp->imvalue, sizeof(IMODE *), name_hash);
+        IMODE *im = (IMODE *)LookupNVHash((UBYTE *)&(*iml)->offset->v.sp->imvalue, sizeof(IMODE *), name_hash);
         if (im)
         {
             replaceIM(iml, im);
@@ -465,14 +465,14 @@ static void CopyExpressionTree(enum i_ops op, BLOCK *b, QUAD *insertBefore, IMOD
             CopyExpressionTree(op, b, insertBefore, &newIns->dc.left, &newIns->dc.right);
             InsertInstruction(insertBefore->back, newIns);
             replaceIM(iml, newIns->ans);
-            ReplaceHashReshape((QUAD *)newIns->ans, (BYTE *)newIns, DAGCOMPARE, ins_hash);
+            ReplaceHashReshape((QUAD *)newIns->ans, (UBYTE *)newIns, DAGCOMPARE, ins_hash);
         }
     }
     if ((*imr) && (*imr)->offset->type == en_tempref)
     {
         int tnum = (*imr)->offset->v.sp->value.i;
         QUAD *def = tempInfo[tnum]->instructionDefines;
-        IMODE *im = (IMODE *)LookupNVHash((BYTE *)&(*imr)->offset->v.sp->imvalue, sizeof(IMODE *), name_hash);
+        IMODE *im = (IMODE *)LookupNVHash((UBYTE *)&(*imr)->offset->v.sp->imvalue, sizeof(IMODE *), name_hash);
         if (im)
         {
             replaceIM(imr, im);
@@ -489,7 +489,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK *b, QUAD *insertBefore, IMOD
             CopyExpressionTree(op, b, insertBefore, &newIns->dc.left, &newIns->dc.right);
             InsertInstruction(insertBefore->back, newIns);
             replaceIM(imr, newIns->ans);
-            ReplaceHashReshape((QUAD *)newIns->ans, (BYTE *)newIns, DAGCOMPARE, ins_hash);
+            ReplaceHashReshape((QUAD *)newIns->ans, (UBYTE *)newIns, DAGCOMPARE, ins_hash);
         }
     }
 }
@@ -522,7 +522,7 @@ static IMODE * InsertAddInstruction(BLOCK *b, int size, QUAD *insertBefore,
     ins->dc.opcode = flagsr & RF_NEG ? i_sub : i_add;
     ins->dc.left = iml;
     ins->dc.right = imr;
-    imrv = (IMODE *)LookupNVHash((BYTE *)ins, DAGCOMPARE, ins_hash);
+    imrv = (IMODE *)LookupNVHash((UBYTE *)ins, DAGCOMPARE, ins_hash);
     if (imrv)
         return imrv;
     else
@@ -537,7 +537,7 @@ static IMODE * InsertAddInstruction(BLOCK *b, int size, QUAD *insertBefore,
             InsertInstruction(insertBefore->back, insn2);
         }
         InsertInstruction(insertBefore->back, ins);
-        ReplaceHashReshape((QUAD *)ins->ans, (BYTE *)ins, DAGCOMPARE, ins_hash);
+        ReplaceHashReshape((QUAD *)ins->ans, (UBYTE *)ins, DAGCOMPARE, ins_hash);
         return ins->ans;
     }
     
@@ -578,7 +578,7 @@ static IMODE * InsertMulInstruction(BLOCK *b, int size, QUAD *insertBefore,
     ins->dc.opcode = flagsr & RF_SHIFT ? i_lsl : i_mul;
     ins->dc.left = iml;
     ins->dc.right = imr;
-    imrv = (IMODE *)LookupNVHash((BYTE *)ins, DAGCOMPARE, ins_hash);
+    imrv = (IMODE *)LookupNVHash((UBYTE *)ins, DAGCOMPARE, ins_hash);
     if (imrv)
         return imrv;
     else
@@ -589,7 +589,7 @@ static IMODE * InsertMulInstruction(BLOCK *b, int size, QUAD *insertBefore,
             InsertInstruction(insertBefore->back, insn);
         }
         InsertInstruction(insertBefore->back, ins);
-        ReplaceHashReshape((QUAD *)ins->ans, (BYTE *)ins, DAGCOMPARE, ins_hash);
+        ReplaceHashReshape((QUAD *)ins->ans, (UBYTE *)ins, DAGCOMPARE, ins_hash);
         return ins->ans;
     }
     
@@ -628,8 +628,8 @@ static void RewriteAdd(BLOCK *b, int tnum)
         ia = beforeJmp(ia, FALSE);
     }
     while (gather && (!b || gather->im->mode == i_immed ||
-                 !variantThisLoop(b, gather->im->offset->v.sp->value.i)
-                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))
+                 (!variantThisLoop(b, gather->im->offset->v.sp->value.i)
+                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i))))
     {
         if (!gather->genned)
         {
@@ -677,7 +677,7 @@ static void RewriteAdd(BLOCK *b, int tnum)
     }
     tempInfo[tnum]->expression.lastName = left;
     if (left)
-        ReplaceHashReshape((QUAD *)left, (BYTE *)&tempInfo[tnum]->enode->v.sp->imvalue, sizeof(IMODE *), name_hash);
+        ReplaceHashReshape((QUAD *)left, (UBYTE *)&tempInfo[tnum]->enode->v.sp->imvalue, sizeof(IMODE *), name_hash);
     ia = tempInfo[tnum]->instructionDefines;
     if (ia && left) // && !inductionThisLoop(ia->block, tnum))
     {
@@ -709,8 +709,8 @@ static IMODE *RewriteDistributed(BLOCK *b, int size, IMODE *im, QUAD *ia,
     RESHAPE_LIST *gather= distrib;
     int flagsr;
     while (gather && (!b || gather->im->mode == i_immed ||
-                 !variantThisLoop(b, gather->im->offset->v.sp->value.i)
-                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))
+                 (!variantThisLoop(b, gather->im->offset->v.sp->value.i)
+                 &&usedThisLoop(b, gather->im->offset->v.sp->value.i))))
     {
         if (!gather->genned)
         {
@@ -760,8 +760,8 @@ static void RewriteMul(BLOCK *b, int tnum)
         }
         // should be a branch of some sort at ia....
         while (current && (!b || current->im->mode == i_immed ||
-                     !variantThisLoop(b, current->im->offset->v.sp->value.i)
-                     &&usedThisLoop(b, current->im->offset->v.sp->value.i)))
+                     (!variantThisLoop(b, current->im->offset->v.sp->value.i)
+                     &&usedThisLoop(b, current->im->offset->v.sp->value.i))))
         {
             if (!current->genned && !current->distrib)
             {
@@ -788,8 +788,8 @@ static void RewriteMul(BLOCK *b, int tnum)
         }
         tempInfo[tnum]->expression.lastName = left;
         while (gather && (!b || gather->im->mode == i_immed ||
-                     !variantThisLoop(b, gather->im->offset->v.sp->value.i)
-                     &&usedThisLoop(b, gather->im->offset->v.sp->value.i)))
+                     (!variantThisLoop(b, gather->im->offset->v.sp->value.i)
+                     &&usedThisLoop(b, gather->im->offset->v.sp->value.i))))
         {
             if (gather->distrib && !gather->genned)
             {
@@ -812,7 +812,7 @@ static void RewriteMul(BLOCK *b, int tnum)
             gather = gather->next;			
         }
         if (left)
-            ReplaceHashReshape((QUAD *)left, (BYTE *)&tempInfo[tnum]->enode->v.sp->imvalue, sizeof(IMODE *), name_hash);
+            ReplaceHashReshape((QUAD *)left, (UBYTE *)&tempInfo[tnum]->enode->v.sp->imvalue, sizeof(IMODE *), name_hash);
         ia = tempInfo[tnum]->instructionDefines;
         if (ia && left) // && !inductionThisLoop(ia->block, tnum))
         {

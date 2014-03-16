@@ -147,14 +147,14 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
     if (info->outofscope || info->outofscopereg)
         sprintf(buf, "out of scope");
     else if (info->constant)
-        sprintf(buf, "POINTER: %p", info->address);
+        sprintf(buf, "POINTER: %x", info->address);
     else if (info->structure)
     {
-        sprintf(buf, "STRUCTURE: %p", info->address);
+        sprintf(buf, "STRUCTURE: %x", info->address);
     }
     else if (info->unionx)
     {
-        sprintf(buf, "UNION: %p", info->address);
+        sprintf(buf, "UNION: %x", info->address);
     }
     else if (info->pointer)
     {
@@ -163,9 +163,9 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
         {
             info->editable = TRUE;
             if (onevalue)
-                sprintf(buf, "0x%p ", val);
+                sprintf(buf, "0x%x ", val);
             else
-                sprintf(buf, "POINTER: %p ", val);
+                sprintf(buf, "POINTER: %x ", val);
             GetStringValue(info, buf + strlen(buf), 32, val);
         }
         else
@@ -181,20 +181,17 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
         int signedtype;
         int v = HintBf(info, &signedtype);
         if (onevalue)
+            sprintf(buf, "0x%x", v);
+        else
             if (signedtype)
-                sprintf(buf, "0x%x", v);
+                sprintf(buf, "%d(0x%x)", v, v);
             else
-                sprintf(buf, "0x%x", v);
-            else
-                if (signedtype)
-                    sprintf(buf, "%d(0x%x)", v, v);
-                else
-                    sprintf(buf, "%u(0x%x)", v, v);
+                sprintf(buf, "%u(0x%x)", v, v);
         info->editable = TRUE;
     }
     else if (info->array)
     {
-        sprintf(buf, "ARRAY: %p ", info->address);
+        sprintf(buf, "ARRAY: %x ", info->address);
         GetStringValue(info, buf + strlen(buf), 32, info->address);
     }
     else
@@ -209,15 +206,12 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
             case eULongLong:
                     v = *(LLONG_TYPE*)buf1;
                     if (onevalue)
+                        sprintf(buf, "0x%Lx", v);
+                    else
                         if (signedtype)
-                            sprintf(buf, "0x%Lx", v);
+                            sprintf(buf, "%Ld(0x%Lx)", v, v);
                         else
-                            sprintf(buf, "0x%Lx", v);
-                        else
-                            if (signedtype)
-                                sprintf(buf, "%Ld(0x%Lx)", v, v);
-                            else
-                                sprintf(buf, "%Ld(0x%Lx)", v, v);
+                            sprintf(buf, "%Ld(0x%Lx)", v, v);
                     break;
             default:
                 sprintf(buf, "unknown type");
@@ -229,15 +223,12 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
             case eULong:
                 v = *(int*)buf1;
                 if (onevalue)
+                    sprintf(buf, "0x%x", (int)v);
+                else
                     if (signedtype)
-                        sprintf(buf, "0x%x", (int)v);
+                        sprintf(buf, "%d(0x%x)", (int)v, (int)v);
                     else
-                        sprintf(buf, "0x%x", (int)v);
-                    else
-                        if (signedtype)
-                            sprintf(buf, "%d(0x%x)", (int)v, (int)v);
-                        else
-                            sprintf(buf, "%u(0x%x)", (int)v, (int)v);
+                        sprintf(buf, "%u(0x%x)", (int)v, (int)v);
                 break;
             case eBool:
                 if (buf1[0])
@@ -597,7 +588,7 @@ void ChangeData(VARINFO *info, char *text, int page)
         {
             if (text[0] == '0' && text[1] == 'x')
                 sscanf(text + 2, "%Lx", &value);
-            else if (text[strlen(text) - 1] &0xDF == 'H')
+            else if ((text[strlen(text) - 1] & 0xDF) == 'H')
                 sscanf(text, "%Lx", &value);
             else
                 sscanf(text, "%Ld", &value);

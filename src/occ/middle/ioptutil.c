@@ -181,7 +181,7 @@ BITARRAY *aallocbit(int size)
     rv->count = size;
     return rv;
 }
-BOOL isset(BITARRAY *arr, int bit)
+BOOLEAN isset(BITARRAY *arr, int bit)
 {
     if (bit >= arr->count)
         diag("isset: overflow");

@@ -334,7 +334,7 @@ KEYWORD keywords[] = {
 };
 
 #define TABSIZE (sizeof(keywords)/ sizeof(keywords[0]))
-static BOOL kwmatches(KEYWORD *kw);
+static BOOLEAN kwmatches(KEYWORD *kw);
 void lexini(void)
 /*
  * create a keyword hash table
@@ -388,7 +388,7 @@ static KEYWORD *binarySearch(char *name)
     return  &keywords[bottom];
 }
 #endif
-static BOOL kwmatches(KEYWORD *kw)
+static BOOLEAN kwmatches(KEYWORD *kw)
 {
     if (cparams.prm_assemble)
         return !!(kw->matchFlags & KW_ASSEMBLER);
@@ -432,7 +432,7 @@ KEYWORD *searchkw(char **p)
         {
             if (len == kw->len)
             {
-                BOOL count = 0;
+                BOOLEAN count = 0;
                 if (kw->matchFlags & (KW_C99 | KW_C1X))
                 {
                     if (cparams.prm_c99 && (kw->matchFlags & KW_C99))
@@ -497,7 +497,7 @@ KEYWORD *searchkw(char **p)
 int getChar(char **source, enum e_lexType *tp)
 {
     enum e_lexType v = l_achr;
-    char *p = *source;
+    unsigned char *p = (unsigned char *)*source;
     if (*p == 'L')
     {
         v = l_wchr;
@@ -519,7 +519,7 @@ int getChar(char **source, enum e_lexType *tp)
     if (*p == '\'')
     {
         int i ;
-        do p++; while (*p == MACRO_PLACEHOLDER);
+        do p++; while (*p == MACRO_PLACEHOLDER); 
         i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
         if (i == INT_MIN)
         {
@@ -560,13 +560,13 @@ int getChar(char **source, enum e_lexType *tp)
 }
 SLCHAR *getString(char **source, enum e_lexType *tp)
 {
-    BOOL raw = FALSE;
-    BOOL found = FALSE;
-    char *p = *source;
+    BOOLEAN raw = FALSE;
+    BOOLEAN found = FALSE;
+    unsigned char *p = (unsigned char *)*source;
     LCHAR data[32768], *dest = data;
     int len = sizeof(data)/sizeof(data[0]);
     int count = 0;
-    BOOL errored = FALSE;
+    BOOLEAN errored = FALSE;
     enum e_lexType v = l_astr;
     if (*p == 'L')
     {
@@ -607,7 +607,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             LCHAR *qpos = 0;
             int lineno = includes->line;
             char st[2];
-            BOOL err = FALSE;
+            BOOLEAN err = FALSE;
             while (TRUE)
             {
                 if (*p)
@@ -750,7 +750,8 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
                         }
                         else
                         {
-                            *dest++ = 0xf0 + ((i >> 18 & 0x7));
+                            //fixme (i>>18)? - I think this is correct because of the way UTF-8 conversions work
+                            *dest++ = 0xf0 + ((i >> 18 & 0x7)); 
                             *dest++ = 0x80 + ((i >> 12) & 0x3f);
                             *dest++ = 0x80 + ((i >> 6) & 0x3f);
                             *dest++ = 0x80 + (i & 0x3f);
@@ -873,7 +874,7 @@ static int getfrac(int radix, char **ptr, FPF *rval)
  */
 static int getexp(char **ptr)
 {
-    BOOL neg = FALSE;
+    BOOLEAN neg = FALSE;
     int ival;
     if (**ptr == '-')
     {
@@ -903,8 +904,8 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     int radix = 10;
     int floatradix = 0;
     int frac = 0;
-    BOOL hasdot = FALSE;
-    BOOL floating = FALSE;
+    BOOLEAN hasdot = FALSE;
+    BOOLEAN floating = FALSE;
     enum e_lexType lastst ;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
         return  INT_MIN;
@@ -926,7 +927,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
         radix = 16;
         (*ptr)++;
     }
-    while (radix36(**ptr) < radix || cparams.prm_assemble && radix36(**ptr) < 16)
+    while (radix36(**ptr) < radix || (cparams.prm_assemble && radix36(**ptr) < 16))
     {
         *p++ = **ptr;
         (*ptr)++;
@@ -1190,7 +1191,7 @@ int getId(char **ptr , char *dest)
             else
                 break;
             if (n <= 0x20 || n >= 0x7f && n <= 0x9f ||
-                n >=0xd800 && n<= 0xdfff)
+                (n >=0xd800 && n<= 0xdfff))
                 pperror(ERR_INVCONST, 0);
         }
         *dest++ = *(*ptr)++;
@@ -1226,7 +1227,7 @@ LEXEME *getsym(void)
     LEXEME *lex;
     KEYWORD *kw ;
     enum e_lexType tp;
-    BOOL contin ;
+    BOOLEAN contin ;
     FPF rval;
     LLONG_TYPE ival;
     static char buf[2048];

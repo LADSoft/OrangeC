@@ -74,7 +74,7 @@ void LibFiles::ReadOffsets(FILE *stream, int count)
     assert(count == files.size());
     for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
     {
-        DWORD ofs;
+        unsigned ofs;
         fread(&ofs, 4, 1, stream);
         (*it)->offset = ofs;
     }

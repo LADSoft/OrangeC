@@ -363,7 +363,7 @@ static IMODE *StrengthConstant(QUAD *head, IMODE * im1, IMODE *im2, int size)
     }
     if (ins->dc.opcode != i_assn)
     {
-        rv = (IMODE *)LookupNVHash((BYTE *)&q1, DAGCOMPARE, ins_hash);
+        rv = (IMODE *)LookupNVHash((UBYTE *)&q1, DAGCOMPARE, ins_hash);
         if (rv)
         {
             int n = rv->offset->v.sp->value.i;
@@ -373,7 +373,7 @@ static IMODE *StrengthConstant(QUAD *head, IMODE * im1, IMODE *im2, int size)
         {
             QUAD *q2 = Alloc(sizeof(QUAD));
             *q2 = q1;
-            ReplaceHashReshape((QUAD *)ins->ans, (BYTE *)q2, DAGCOMPARE, ins_hash);
+            ReplaceHashReshape((QUAD *)ins->ans, (UBYTE *)q2, DAGCOMPARE, ins_hash);
             tempInfo[ins->ans->offset->v.sp->value.i]->preSSATemp = ins->ans->offset->v.sp->value.i;
         }
     }	

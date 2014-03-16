@@ -55,8 +55,8 @@ public:
     bool write();
 
 protected:
-    int Begin(void);
-    int End(void );
+    bool Begin(void);
+    bool End(void );
     static int NullCallback(void *NotUsed, int argc, char **argv, char **azColName);
     static int VersionCallback(void *NotUsed, int argc, char **argv, char **azColName);
     int SQLiteExec( char *str);

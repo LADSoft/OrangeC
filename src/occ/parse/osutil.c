@@ -50,7 +50,7 @@
 #endif 
 
 #ifdef MICROSOFT
-char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
+char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
 extern COMPILER_PARAMS cparams ;
@@ -73,7 +73,7 @@ char copyright[256];
 LIST *clist = 0;
 int showBanner = TRUE;
 
-static BOOL has_output_file;
+static BOOLEAN has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
 static jmp_buf ctrlcreturn;
 static char **set_searchpath = &prm_searchpath;
@@ -300,7 +300,7 @@ FILE *SrchPth2(char *name, char *path, char *attrib)
 
 /*-------------------------------------------------------------------------*/
 
-FILE *SrchPth(char *name, char *path, char *attrib, BOOL sys)
+FILE *SrchPth(char *name, char *path, char *attrib, BOOLEAN sys)
 {
     FILE *rv = SrchPth2(name, path, attrib);
     char buf[265],  *p;
@@ -414,11 +414,11 @@ static int scan_args(char *string, int index, char *arg)
  * Main parse routine.  Scans for '-', then scan for arguments and
  * delete from the argv[] array if so.
  */
-BOOL parse_args(int *argc, char *argv[], BOOL case_sensitive)
+BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive)
 {
 
     int pos = 0;
-    BOOL retval = TRUE;
+    BOOLEAN retval = TRUE;
     use_case = case_sensitive;
 
     while (++pos <  *argc)
@@ -434,7 +434,7 @@ BOOL parse_args(int *argc, char *argv[], BOOL case_sensitive)
             {
                 int argmode;
                 int index = 1;
-                BOOL done = FALSE;
+                BOOLEAN done = FALSE;
                 do
                 {
                     /* Scan the present arg */

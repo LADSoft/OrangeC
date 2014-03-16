@@ -59,8 +59,8 @@ BRIGGS_SET *globalVars;
 static BRIGGS_SET *visited ;
 static BRIGGS_SET *worklist ;
 static BRIGGS_SET *livelist ;
-static BOOL hasPhi ;
-QUAD *beforeJmp(QUAD *I, BOOL before)
+static BOOLEAN hasPhi ;
+QUAD *beforeJmp(QUAD *I, BOOLEAN before)
 {
     QUAD *start = I;
     while (I->dc.opcode != i_block)
@@ -228,7 +228,7 @@ static void liveOut()
     tail = 0;
     while (head != tail)
     {
-        BOOL changed = FALSE;
+        BOOLEAN changed = FALSE;
         unsigned n = workList[tail];
         BLOCK *b = blockArray[n];
         BLOCKLIST *bl = b->succ;
@@ -525,7 +525,7 @@ void removeDead(BLOCK *b)
     int j,k;
     QUAD *tail;
     BLOCKLIST *bl;
-    BOOL done = FALSE;
+    BOOLEAN done = FALSE;
     if (b == blockArray[0])
     {
         int i;
@@ -569,7 +569,7 @@ void removeDead(BLOCK *b)
     if (b == blockArray[0])
     {
         QUAD *head = intermed_head;
-        BOOL changed = FALSE;
+        BOOLEAN changed = FALSE;
         int i;
         /*
         for (i=0; i < blockCount; i++)
@@ -593,7 +593,7 @@ void removeDead(BLOCK *b)
                         {
                             changed = TRUE;
                             RemoveInstruction(head);
-                            if (head->dc.opcode == i_coswitch || head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)
+                            if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge))
                             {
                                 BLOCKLIST *bl = head->block->succ->next;
                                 head->block->succ->next = NULL;

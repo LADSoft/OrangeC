@@ -159,7 +159,7 @@ int equalimode(IMODE *ap1, IMODE *ap2)
 
 /*-------------------------------------------------------------------------*/
 
-short dhash(BYTE *str, int len)
+short dhash(UBYTE *str, int len)
 /*
  * hashing for dag nodes
  */
@@ -176,7 +176,7 @@ short dhash(BYTE *str, int len)
 
 /*-------------------------------------------------------------------------*/
 
-QUAD *LookupNVHash(BYTE *key, int size, DAGLIST **table)
+QUAD *LookupNVHash(UBYTE *key, int size, DAGLIST **table)
 {
     int hashval = dhash(key, size);
     DAGLIST *list = table[hashval];
@@ -191,7 +191,7 @@ QUAD *LookupNVHash(BYTE *key, int size, DAGLIST **table)
 
 /*-------------------------------------------------------------------------*/
 
-DAGLIST *ReplaceHash(QUAD *rv, BYTE *key, int size, DAGLIST **table)
+DAGLIST *ReplaceHash(QUAD *rv, UBYTE *key, int size, DAGLIST **table)
 {
     int hashval = dhash(key, size);
     DAGLIST **list = &table[hashval],  **flist = list;
@@ -200,13 +200,13 @@ DAGLIST *ReplaceHash(QUAD *rv, BYTE *key, int size, DAGLIST **table)
     {
         if ((*list)->key && !memcmp(key, (*list)->key, size))
         {
-            (*list)->rv = (BYTE *)rv;
+            (*list)->rv = (UBYTE *)rv;
             return *list;
         }
         list =  *(DAGLIST ***)list;
     }
     newDag = oAlloc(sizeof(DAGLIST));
-    newDag->rv = (BYTE *)rv;
+    newDag->rv = (UBYTE *)rv;
     newDag->key = key;
     newDag->next =  *flist;
     *flist = newDag;
@@ -312,13 +312,13 @@ int ToQuadConst(IMODE **im)
             /* might get address constants here*/
             return 0;
         }
-        rv = LookupNVHash((BYTE *)&temp, DAGCOMPARE, ins_hash);
+        rv = LookupNVHash((UBYTE *)&temp, DAGCOMPARE, ins_hash);
         if (!rv) {
             rv = Alloc(sizeof(QUAD));
             *rv = temp ;
             rv->ans = tempreg(ISZ_NONE,0);
             add_intermed(rv);
-            ReplaceHash(rv, (BYTE *)rv, DAGCOMPARE, ins_hash);
+            ReplaceHash(rv, (UBYTE *)rv, DAGCOMPARE, ins_hash);
             wasgoto = FALSE;
         } 
         *im = (IMODE *)rv ;
@@ -327,7 +327,7 @@ int ToQuadConst(IMODE **im)
     return 0;
 }
 #endif
-BOOL usesAddress(IMODE *im)
+BOOLEAN usesAddress(IMODE *im)
 {
     if (im->offset)
     {
@@ -410,7 +410,7 @@ static QUAD * add_dag(QUAD *newQuad)
     */
 
     /* Transform the quad structure members from imodes to quads */
-    node = LookupNVHash((BYTE *)&newQuad->dc.left, sizeof(void*), name_hash);
+    node = LookupNVHash((UBYTE *)&newQuad->dc.left, sizeof(void*), name_hash);
     if (node)
     {
         if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->v.sp->storeTemp)
@@ -427,7 +427,7 @@ static QUAD * add_dag(QUAD *newQuad)
 /*		if (!ToQuadConst(&newQuad->dc.left))*/
             newQuad->livein |= IM_LIVELEFT;
     }
-    node = LookupNVHash((BYTE *)&newQuad->dc.right, sizeof(void*), name_hash);
+    node = LookupNVHash((UBYTE *)&newQuad->dc.right, sizeof(void*), name_hash);
     if (node)
     {
         if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed)
@@ -449,7 +449,7 @@ static QUAD * add_dag(QUAD *newQuad)
 /*    ConstantFold(newQuad); */
     
     /* Now replace the CSE or enter it into the table */
-    node = LookupNVHash((BYTE *)newQuad, DAGCOMPARE, ins_hash);
+    node = LookupNVHash((UBYTE *)newQuad, DAGCOMPARE, ins_hash);
     if (!node || newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size || node->ans->bits != newQuad->ans->bits)
     {
         if (cparams.prm_optimize)
@@ -467,7 +467,7 @@ static QUAD * add_dag(QUAD *newQuad)
                         || (!(newQuad->livein & IM_LIVERIGHT) || newQuad->dc.right->mode != i_immed))
                     {
                         if (newQuad->dc.opcode != i_assn || (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size))
-                            ReplaceHash(newQuad, (BYTE *)newQuad, DAGCOMPARE, ins_hash);
+                            ReplaceHash(newQuad, (UBYTE *)newQuad, DAGCOMPARE, ins_hash);
                     }
         }
         /* convert back to a quad structure and generate code */
@@ -497,7 +497,7 @@ static QUAD * add_dag(QUAD *newQuad)
                 || node->dc.opcode == i_icon || node->dc.opcode
             == i_fcon || node->dc.opcode == i_imcon || node->dc.opcode == i_cxcon))
         {
-            ReplaceHash(node, (BYTE *)&newQuad->ans, sizeof(IMODE*), name_hash);
+            ReplaceHash(node, (UBYTE *)&newQuad->ans, sizeof(IMODE*), name_hash);
         }
     }
 #else

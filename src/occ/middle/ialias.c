@@ -73,7 +73,7 @@ extern LOOP **loopArray;
 
 int cachedTempCount;
 BITINT *uivBytes;
-static BOOL changed;
+static BOOLEAN changed;
 static ALIASLIST *parmList;
 
 
@@ -233,7 +233,7 @@ static ALIASNAME *LookupMem(IMODE *im)
     }
     return *p;
 }
-static BOOL samebase(ALIASNAME *nm1, ALIASNAME *nm2)
+static BOOLEAN samebase(ALIASNAME *nm1, ALIASNAME *nm2)
 {
     IMODE *im1, *im2;
     if (nm1->byUIV)
@@ -492,7 +492,7 @@ static void Createaddresses(void)
         head = head->fwd;
     }	
 }
-static BOOL IntersectsUIV(ALIASLIST *list)
+static BOOLEAN IntersectsUIV(ALIASLIST *list)
 {
     while (list)
     {
@@ -508,7 +508,7 @@ static void HandlePhi(QUAD *head)
     {
         struct _phiblock *pb = head->dc.v.phi->temps;
         ALIASLIST *l = NULL;
-        BOOL xchanged = changed;
+        BOOLEAN xchanged = changed;
         while (pb)
         {
             AliasUnion(&l, tempInfo[pb->Tn]->pointsto);
@@ -558,7 +558,7 @@ static void HandleAssn(QUAD *head)
         // temp, ind
         ALIASLIST *result = NULL;
         ALIASLIST *addr = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
-        BOOL xchanged = changed;
+        BOOLEAN xchanged = changed;
         while (addr)
         {
             if (addr->address->name->byUIV)
@@ -628,7 +628,7 @@ static void HandleAssn(QUAD *head)
                 ALIASNAME *an = LookupMem(head->dc.left);
                 ALIASADDRESS *aa;
                 ALIASLIST *addr;
-                BOOL xchanged = changed;
+                BOOLEAN xchanged = changed;
                 an = LookupAliasName(an, 0);
                 aa = LookupAddress(an, 0);
                 AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, aa->pointsto);
@@ -763,7 +763,7 @@ static void Infer(IMODE *ans, IMODE *reg, ALIASLIST *pointsto)
         ALIASLIST *result = NULL;
         int c = InferOffset(reg);
         int l = InferStride(reg);
-        BOOL xchanged = changed;
+        BOOLEAN xchanged = changed;
         while (pointsto)
         {
             ALIASADDRESS *addr = LookupAddress(pointsto->address->name, pointsto->address->offset + c);
@@ -790,7 +790,7 @@ static void HandleAdd(QUAD *head)
                     // C + R
                     ALIASLIST *scan = tempInfo[head->dc.right->offset->v.sp->value.i]->pointsto;
                     ALIASLIST *result = NULL;
-                    BOOL xchanged = changed;
+                    BOOLEAN xchanged = changed;
                     while (scan)
                     {
                         ALIASADDRESS *addr = LookupAddress(scan->address->name, scan->address->offset + head->dc.left->offset->v.i);
@@ -848,7 +848,7 @@ static void HandleAdd(QUAD *head)
                     int c = head->dc.opcode == i_add ? head->dc.right->offset->v.i : -head->dc.right->offset->v.i;
                     ALIASLIST *scan = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
                     ALIASLIST *result = NULL;
-                    BOOL xchanged = changed;
+                    BOOLEAN xchanged = changed;
                     while (scan)
                     {
                         ALIASADDRESS *addr = LookupAddress(scan->address->name, scan->address->offset + c);
@@ -1038,7 +1038,7 @@ static void AliasesOneBlock(BLOCK *b)
 }
 static void GatherAliases(LOOP *lp)
 {
-    BOOL xchanged = changed;
+    BOOLEAN xchanged = changed;
     do
     {
         LIST *lt = lp->contains;
@@ -1199,7 +1199,7 @@ void AliasGosub(QUAD *tail, BITINT *parms, BITINT *bits, int n)
     }
     
 }
-void AliasUses(BITINT *bits, IMODE *im, BOOL rhs)
+void AliasUses(BITINT *bits, IMODE *im, BOOLEAN rhs)
 {
     if (im)
     {
@@ -1259,7 +1259,7 @@ void AliasUses(BITINT *bits, IMODE *im, BOOL rhs)
 static void ScanUIVs(void)
 {
     int n = (tempCount + BITINTBITS-1)/BITINTBITS;
-    BOOL done = FALSE;
+    BOOLEAN done = FALSE;
     ALIASLIST *al = parmList;
     int i;
     ResetProcessed();

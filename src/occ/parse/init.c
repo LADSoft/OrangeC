@@ -55,7 +55,7 @@ extern TYPE stdint;
 extern TYPE stdvoid;
 extern TYPE stdpointer;
 extern int startlab, retlab;
-extern BOOL declareAndInitialize;
+extern BOOLEAN declareAndInitialize;
 extern int instantiatingTemplate;
 extern int total_errors;
 extern int templateNestingCount;
@@ -81,7 +81,7 @@ typedef struct _dyninit_
     INITIALIZER *init;
 } DYNAMIC_INITIALIZER;
 
-BOOL initializingGlobalVar ;
+BOOLEAN initializingGlobalVar ;
 
 static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
 static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
@@ -92,7 +92,7 @@ static HASHTABLE *aliasHash;
 static int inittag = 0;
 
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
-                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOL arrayMember);
+                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember);
 
 void init_init(void)
 {
@@ -144,7 +144,7 @@ void dumpStartups(void)
     }
 #endif
 }
-void insertStartup(BOOL startupFlag, char *name, int prio)
+void insertStartup(BOOLEAN startupFlag, char *name, int prio)
 {
     STARTUP *startup ;
     
@@ -454,10 +454,10 @@ static void dumpTLSDestructors(void)
     }
 #endif
 }
-int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOL make_label)
+int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
 {
-#ifndef PARSER_ONLY
     int lbl = 0;
+#ifndef PARSER_ONLY
     int vbase = 0, ofs;
     EXPRESSION expx, *exp = &expx;
     if (make_label)
@@ -549,8 +549,8 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOL make_label)
             }
         }
     }
-    return lbl;
 #endif
+    return lbl;
 }
 int dumpInit(SYMBOL *sp, INITIALIZER *init)
 {
@@ -767,7 +767,7 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
 #endif
     return rv;
 }
-BOOL IsConstWithArr(TYPE *tp)
+BOOLEAN IsConstWithArr(TYPE *tp)
 {
     tp = basetype(tp);
     while (tp->array)
@@ -948,7 +948,7 @@ void insertTemplateData(SYMBOL *sp)
     }
 }
 INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp, 
-                               int offset, BOOL noassign)
+                               int offset, BOOLEAN noassign)
 {
     INITIALIZER *pos1 = Alloc(sizeof(INITIALIZER));
 
@@ -965,7 +965,7 @@ static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
 {
     TYPE *tp;
     EXPRESSION *exp;
-    BOOL needend = FALSE;
+    BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
         needend = TRUE;
@@ -1016,7 +1016,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
 {
     TYPE *tp = NULL;
     EXPRESSION *exp = NULL;
-    BOOL needend = FALSE;
+    BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
         needend = TRUE;
@@ -1046,8 +1046,8 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
                 else if (ispointer(tp))
                     error(ERR_NONPORTABLE_POINTER_CONVERSION);
-                else if (!isarithmetic(tp) && basetype(tp)->type != bt_enum || sc != sc_auto && sc != sc_register &&
-                         !isarithmeticconst(exp)&& !cparams.prm_cplusplus)
+                else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum) || (sc != sc_auto && sc != sc_register &&
+                         !isarithmeticconst(exp)&& !cparams.prm_cplusplus))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
                 else 
                     checkscope(tp, itype);
@@ -1125,7 +1125,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
 {
     TYPE *tp;
     EXPRESSION *exp;
-    BOOL needend = FALSE;
+    BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
         needend = TRUE;
@@ -1137,7 +1137,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
     }
     else
     {
-        if (!lex || lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr)
+        if (!lex || (lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr))
         {
             lex = optimized_expression(lex, funcsp, itype, &tp, &exp, FALSE);
             if (!tp)
@@ -1209,7 +1209,7 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
 {
     TYPE *tp = NULL;
     EXPRESSION *exp = NULL;
-    BOOL needend = FALSE;
+    BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
         needend = TRUE;
@@ -1408,7 +1408,7 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
 {
     TYPE *tp;
     EXPRESSION *exp;
-    BOOL needend = FALSE;
+    BOOLEAN needend = FALSE;
     (void)sc;
     if (MATCHKW(lex, begin))
     {
@@ -1544,12 +1544,12 @@ static enum e_bt str_candidate(LEXEME *lex, TYPE *tp)
         }
     return 0;
 }
-static BOOL designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **cache)
+static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **cache)
 {
 
     if (MATCHKW(*lex, openbr) || MATCHKW(*lex, dot))
     {
-        BOOL done = FALSE;
+        BOOLEAN done = FALSE;
         unwrap_desc(desc, cache);
         (*desc)->reloffset = 0;
         while (!done && (MATCHKW(*lex, openbr) || MATCHKW(*lex, dot)))
@@ -1598,7 +1598,7 @@ static BOOL designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **desc
                     if (isstructured((*desc)->tp))
                     {
                         HASHREC *hr2 = basetype((*desc)->tp)->syms->table[0];
-                        while (hr2 && strcmp(((SYMBOL *)(hr2->p))->name, (*lex)->value.s.a))
+                        while (hr2 && strcmp(((SYMBOL *)(hr2->p))->name, (*lex)->value.s.a) != 0)
                         {
                             hr2 = hr2->next;
                         }
@@ -1633,7 +1633,7 @@ static BOOL designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **desc
     }
     return FALSE;
 }
-static BOOL atend(AGGREGATE_DESCRIPTOR *desc)
+static BOOLEAN atend(AGGREGATE_DESCRIPTOR *desc)
 {
     if (isstructured(desc->tp))
             return !desc->hr;
@@ -1747,7 +1747,7 @@ static INITIALIZER *sort_aggregate_initializers(INITIALIZER *data)
 {
     INITIALIZER **left = &data, **right;
     int items = 1;
-    BOOL sortit = FALSE;
+    BOOLEAN sortit = FALSE;
     int offsetLeft;
     if (!data)
         return data;
@@ -2004,15 +2004,15 @@ EXPRESSION *getVarNode(SYMBOL *sp)
     return exp;
 }
 static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *base, int offset,
-                                     enum e_sc sc, TYPE *itype, INITIALIZER **init, INITIALIZER **dest, BOOL arrayMember)
+                                     enum e_sc sc, TYPE *itype, INITIALIZER **init, INITIALIZER **dest, BOOLEAN arrayMember)
 {
     INITIALIZER *data = NULL, **next=&data;
     AGGREGATE_DESCRIPTOR *desc= NULL, *cache = NULL;
-    BOOL c99 = FALSE;
-    BOOL toomany = FALSE;
-    BOOL needend = FALSE;
-    BOOL assn = FALSE;
-    BOOL implicit = FALSE;
+    BOOLEAN c99 = FALSE;
+    BOOLEAN toomany = FALSE;
+    BOOLEAN needend = FALSE;
+    BOOLEAN assn = FALSE;
+    BOOLEAN implicit = FALSE;
     allocate_desc(itype, offset, &desc, &cache);
     desc->stopgap = TRUE;
     if (MATCHKW(lex, assign))
@@ -2028,8 +2028,8 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         EXPRESSION *baseexp,*exp;
         TYPE *ctype = itype;
         INITIALIZER *it = NULL;
-        BOOL maybeConversion = TRUE;
-        BOOL isconversion;
+        BOOLEAN maybeConversion = TRUE;
+        BOOLEAN isconversion;
         exp = baseexp= exprNode(en_add, getVarNode(base), intNode(en_c_i, offset));
         if (assn || arrayMember)
         {
@@ -2150,12 +2150,12 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     {
         while (lex)
         {
-            BOOL gotcomma = FALSE;
+            BOOLEAN gotcomma = FALSE;
             TYPE *tp2;
             c99 |= designator(&lex, funcsp, &desc, &cache);
             tp2 = nexttp(desc);
             
-            while (tp2 && (isarray(tp2) || isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons)))
+            while (tp2 && (isarray(tp2) || (isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons))))
             {
                 if (MATCHKW(lex, begin))
                 {
@@ -2359,7 +2359,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
 {
     TYPE *tp;
     EXPRESSION *exp;
-    BOOL needend = FALSE;
+    BOOLEAN needend = FALSE;
     if (MATCHKW(lex, begin))
     {
         needend = TRUE;
@@ -2437,7 +2437,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
  * for the aggregate and any sub-aggregates with a single call of the function
  */
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
-                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOL arrayMember)
+                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember)
 {
     TYPE *tp = basetype(itype);
     switch(tp->type)
@@ -2524,9 +2524,9 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
     }
     return lex;
 }
-BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams)
+BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
 {
-    BOOL rv = FALSE;
+    BOOLEAN rv = FALSE;
     if (node == 0)
         return rv;
     switch (node->type)
@@ -2719,7 +2719,7 @@ BOOL IsConstantExpression(EXPRESSION *node, BOOL allowParams)
     }
     return rv;
 }
-static BOOL hasData(TYPE *tp)
+static BOOLEAN hasData(TYPE *tp)
 {
     HASHREC *hr = basetype(tp)->syms->table[0];
     while (hr)
@@ -2730,7 +2730,7 @@ static BOOL hasData(TYPE *tp)
     }
     return FALSE;
 }
-LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOL asExpression)
+LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression)
 {
     TYPE *tp;
     inittag = 0;
@@ -2788,7 +2788,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
-    else if (MATCHKW(lex, assign) || cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin)))
+    else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))))
     {
         INITIALIZER **init;
         sp->assigned = TRUE;

@@ -887,10 +887,10 @@ unsigned AsmFile::GetTokenId()
 }
 bool AsmFile::IsNumber() 
 {
-    bool rv = GetToken() && (GetToken()->IsNumeric() || GetToken()->IsKeyword() && (
+    bool rv = GetToken() && (GetToken()->IsNumeric() || (GetToken()->IsKeyword() && (
         GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
         GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::not ||
-        GetToken()->GetKeyword() == Lexer::compl));
+        GetToken()->GetKeyword() == Lexer::compl)));
     return rv;
 }
 unsigned AsmFile::GetValue()

@@ -51,7 +51,7 @@
 #define STRINGIZE(x) #x
 
 
-int ccLoadIdsFromNameTable(char *tabname, HASHREC *table);
+void ccLoadIdsFromNameTable(char *tabname, HASHREC *table);
 
 typedef struct _symid
 {
@@ -321,7 +321,7 @@ int ccDBDeleteForFile(sqlite3_int64 id)
     }
     return rv;
 }
-int ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
+void ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
 {
     static char *query = "SELECT name, id FROM %s";
     int rc = SQLITE_OK;
@@ -332,7 +332,7 @@ int ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
     rc = sqlite3_prepare_v2(dbPointer, qbuf, strlen(qbuf)+1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
-        BOOL done = FALSE;
+        BOOLEAN done = FALSE;
         while (!done)
         {
             switch(rc = sqlite3_step(handle))
@@ -357,7 +357,6 @@ int ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
         }
         sqlite3_finalize(handle);
     }
-    
 }
 static int ccSelectIdFromNameTable( sqlite3_stmt **shndl, char *name, char *tabname, sqlite3_int64 *id, HASHREC *table)
 {

@@ -78,8 +78,8 @@ public:
     }
 protected:
     ppCond(const ppCond &);
-    void HandleIf(int val, const std::string &line, int lineno);
-    void HandleElif(int val, const std::string &line);
+    void HandleIf(bool val, const std::string &line, int lineno);
+    void HandleElif(bool val, const std::string &line);
     void HandleElse(std::string &line);
     void HandleEndIf(std::string &line);
     void HandleDef(std::string &line, bool Else, bool negate, int lineno);

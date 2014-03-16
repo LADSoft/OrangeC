@@ -120,7 +120,7 @@ static void setFloatZero(QUAD *d)
     if (d->temps & TEMP_ANS)
         tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
 }
-static void ReassignCompare(QUAD *d, int yes, BOOL reflow)
+static void ReassignCompare(QUAD *d, int yes, BOOLEAN reflow)
 {
     if (d->block->dead)
     {
@@ -339,7 +339,7 @@ QUAD *ReCast(int size, QUAD *in, QUAD *newMode)
     return in;
 }
 /*-------------------------------------------------------------------------*/
-void ConstantFold(QUAD *d, BOOL reflow)
+void ConstantFold(QUAD *d, BOOLEAN reflow)
 {
     int index; /*, shift; */
     int shift;
@@ -1208,7 +1208,7 @@ void ConstantFold(QUAD *d, BOOL reflow)
             break;
     }
 }
-static BOOL eval(QUAD *q)
+static BOOLEAN eval(QUAD *q)
 {
     int tnum;
     int rv = FALSE;
@@ -1427,9 +1427,9 @@ static void pushBlock(BLOCK *block, BLOCK *source)
             blockWorkHead = blockWorkTail = l1;
     }
 }
-static BOOL evalBranch(QUAD *I, BLOCK *b)
+static BOOLEAN evalBranch(QUAD *I, BLOCK *b)
 {
-    BOOL found = FALSE;
+    BOOLEAN found = FALSE;
     if (I->dc.left && I->dc.right)
     {
         QUAD qn ;
@@ -1546,7 +1546,7 @@ static BOOL evalBranch(QUAD *I, BLOCK *b)
     }
     return found;
 }
-static BOOL emulInstruction(QUAD *head, BLOCK *b)
+static BOOLEAN emulInstruction(QUAD *head, BLOCK *b)
 {
     if (((head->temps & TEMP_ANS) || head->dc.opcode == i_phi)
          && head->dc.opcode != i_coswitch)
@@ -1598,7 +1598,7 @@ static BOOL emulInstruction(QUAD *head, BLOCK *b)
 static void emulBlock(BLOCK *b)
 {
     QUAD *head = b->head->fwd;
-    BOOL br = FALSE;
+    BOOLEAN br = FALSE;
     while (head && (head->ignoreMe || head->dc.opcode == i_label))
         head = head->fwd;
     while (head->dc.opcode == i_phi)

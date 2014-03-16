@@ -162,8 +162,7 @@ void ccDBVacuum(sqlite3 *db)
     if (db)
     {
         vacuuming = TRUE;
-       
-        CloseHandle(CreateThread(NULL, 0, dbVacuum, (LPVOID)db, 0, NULL));
+        _beginthread((BEGINTHREAD_FUNC)dbVacuum, 0, (LPVOID)db);       
     }
 }
 void ccDBSetDB(sqlite3 *xdb)
@@ -1029,7 +1028,7 @@ void StartCodeCompletionServer()
         n = rand() * (__int64)GetCurrentProcessId();
         sprintf(pipeName, "%Ld", n);
         started = TRUE;
-        serverThread = CreateThread(NULL, 0, Start, NULL, 0, 0);
+        serverThread = (HANDLE)_beginthreadex(NULL, 0, Start, NULL, 0, NULL);
     }
 }
 static char *GetFileData(char *filname, int *size)
@@ -1092,7 +1091,7 @@ static char *GetFileData(char *filname, int *size)
     }
     return rv;
 }
-static DWORD __stdcall serverProc(void *b)
+static DWORD serverProc(void *b)
 {
     HANDLE myPipe = (HANDLE )b;
     DWORD n;
@@ -1135,7 +1134,7 @@ static DWORD __stdcall Start(void *aa)
                     TRUE : (GetLastError() == ERROR_PIPE_CONNECTED); 
               if (fConnected) 
               { 
-                 CloseHandle(CreateThread(NULL, 0, serverProc, serverPipe, 0, 0));
+                 _beginthread((BEGINTHREAD_FUNC)serverProc, 0, (LPVOID)serverPipe);
                } 
               else 
                  CloseHandle(serverPipe); 

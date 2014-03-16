@@ -58,22 +58,22 @@ extern TYPE stdXC;
 extern int currentErrorLine;
 extern int total_errors;
 
-BOOL hasXCInfo;
+BOOLEAN hasXCInfo;
 int startlab, retlab;
 int nextLabel;
-BOOL setjmp_used;
-BOOL functionHasAssembly;
-BOOL declareAndInitialize;
+BOOLEAN setjmp_used;
+BOOLEAN functionHasAssembly;
+BOOLEAN declareAndInitialize;
 
 static int bodyCount;
 static LINEDATA *linesHead, *linesTail;
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
-                           BLOCKDATA *parent, BOOL asExpression);
-static BOOL resolveToDeclaration(LEXEME *lex);
+                           BLOCKDATA *parent, BOOLEAN asExpression);
+static BOOLEAN resolveToDeclaration(LEXEME *lex);
 static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
-                           BOOL viacontrol);
+                           BOOLEAN viacontrol);
 static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,   
-                        BOOL first);
+                        BOOLEAN first);
 void statement_ini()
 {
     nextLabel = 1;
@@ -99,7 +99,7 @@ void FlushLineData(char *file, int lineno)
 {
     while (linesHead)
     {
-        if (strcmp(file, linesHead->file) || linesHead->lineno < lineno)
+        if (strcmp(file, linesHead->file) != 0 || linesHead->lineno < lineno)
             linesHead = linesHead->next;
         else
             break;
@@ -115,7 +115,7 @@ STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex, int offset)
         return NULL;
     lineno = lex->line + offset;
     file = lex->file;
-    while (*p && (strcmp((*p)->file, file) || lineno >= (*p)->lineno))
+    while (*p && (strcmp((*p)->file, file) != 0 || lineno >= (*p)->lineno))
     {
         p = &(*p)->next;
     }
@@ -155,13 +155,13 @@ static void AddBlock(LEXEME *lex, BLOCKDATA *parent, BLOCKDATA *newbl)
     st->blockTail = newbl->blockTail;
     st->lower = newbl->head;
 }
-static BOOL isselecttrue(EXPRESSION *exp)
+static BOOLEAN isselecttrue(EXPRESSION *exp)
 {
     if (isintconst(exp))
         return !!exp->v.i;
     return FALSE;
 }
-static BOOL isselectfalse(EXPRESSION *exp)
+static BOOLEAN isselectfalse(EXPRESSION *exp)
 {
     if (isintconst(exp))
         return !exp->v.i;
@@ -180,10 +180,10 @@ static void markInitializers(STATEMENT *prev)
         }
     }
 }
-static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION **exp, SYMBOL *funcsp, enum e_kw kw, BOOL *declaration)
+static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION **exp, SYMBOL *funcsp, enum e_kw kw, BOOLEAN *declaration)
 {
     TYPE *tp = NULL;
-    BOOL hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    BOOLEAN hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     (void)parent;
     if (startOfType(lex,FALSE) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
     {
@@ -211,7 +211,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
     {
         if (hasAttributes)
             error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
-/*		BOOL openparen = MATCHKW(lex, openpa); */
+/*		BOOLEAN openparen = MATCHKW(lex, openpa); */
         if (declaration)
             *declaration = FALSE;
         lex = expression(lex, funcsp, NULL, &tp, exp, kw != kw_for, FALSE, FALSE);
@@ -418,7 +418,7 @@ static LEXEME *statement_case(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             if ((*cases)->val == val)
             {
                 char buf[256];
-                sprintf(buf, "%d", val);
+                sprintf(buf, LLONG_FORMAT_SPECIFIER, val);
                 preverror(ERR_DUPLICATE_CASE, buf, (*cases)->file, (*cases)->line);
                 break;
             }
@@ -583,7 +583,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
-        BOOL declaration = FALSE;
+        BOOLEAN declaration = FALSE;
         lex = getsym();
         if (!MATCHKW(lex, semicolon))
         {
@@ -1260,8 +1260,8 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     STATEMENT *st, *st1, *st2 ;
     EXPRESSION *select=NULL;
     int addedBlock = 0;
-    BOOL needlabelif;
-    BOOL needlabelelse = FALSE;
+    BOOLEAN needlabelif;
+    BOOLEAN needlabelelse = FALSE;
     int ifbranch = nextLabel++;
     lex = getsym();
     if (MATCHKW(lex, openpa))
@@ -1275,7 +1275,7 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         lex = selection_expression(lex, parent, &select, funcsp, kw_if, NULL);
         if (MATCHKW(lex, closepa))
         {
-            BOOL optimized = FALSE;
+            BOOLEAN optimized = FALSE;
             STATEMENT *sti;
             currentLineData(parent, lex, 0);
             lex = getsym();
@@ -1560,7 +1560,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         {
             SYMBOL *sp = anonymousVar(sc_parameter, &stdpointer);
             EXPRESSION *en = varNode(en_auto, sp);
-            BOOL maybeConversion = TRUE;
+            BOOLEAN maybeConversion = TRUE;
             sp->offset = chosenAssembler->arch->retblocksize;
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 
@@ -1569,7 +1569,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             deref(&stdpointer, &en);
             if (cparams.prm_cplusplus && isstructured(tp))
             {
-                BOOL implicit = FALSE;
+                BOOLEAN implicit = FALSE;
                 if (MATCHKW(lex, begin))
                 {
                     INITIALIZER *init = NULL, *dest=NULL;
@@ -1590,7 +1590,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     {
                         TYPE *tp1 = NULL;
                         enum e_lk linkage, linkage2, linkage3;
-                        BOOL defd = FALSE;
+                        BOOLEAN defd = FALSE;
                         lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL, FALSE);
                         if (!tp1 || !comparetypes(basetype(tp1), basetype(tp), TRUE))
                         {
@@ -1646,7 +1646,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
         else
         {
-            BOOL needend = FALSE;
+            BOOLEAN needend = FALSE;
             if (MATCHKW(lex, begin))
             {
                 needend = TRUE;
@@ -1872,7 +1872,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     STATEMENT *st;
     STATEMENT *whileline;
     EXPRESSION *select = NULL;
-    BOOL addedBlock = FALSE;
+    BOOLEAN addedBlock = FALSE;
     int loopLabel = nextLabel++;
     whilestmt->breaklabel = beGetLabel;
     whilestmt->continuelabel = beGetLabel;
@@ -2114,7 +2114,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
                         int label, int startlab, int endlab)
 {
-    BOOL last = FALSE;
+    BOOLEAN last = FALSE;
     if (!MATCHKW(lex, kw_catch))
     {
         error(ERR_EXPECTED_CATCH_CLAUSE);
@@ -2304,7 +2304,7 @@ static void reverseAssign(STATEMENT *current, EXPRESSION **exp)
             *exp = current->select;
     }
 }
-static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BLOCKDATA *parent, BOOL asExpression)
+static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BLOCKDATA *parent, BOOLEAN asExpression)
 {
     BLOCKDATA block;
     (void)parent;
@@ -2320,7 +2320,7 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
         
     return lex;
 }
-static BOOL resolveToDeclaration(LEXEME * lex)
+static BOOLEAN resolveToDeclaration(LEXEME * lex)
 {
     LEXEME *placeholder = lex;
     lex = getsym();
@@ -2354,7 +2354,7 @@ static BOOL resolveToDeclaration(LEXEME * lex)
     }
     if (MATCHKW(lex, openpa))
     {
-        BOOL sawClose = FALSE;
+        BOOLEAN sawClose = FALSE;
         int level = 1;
         lex = getsym();
         while (level && lex != NULL && !MATCHKW(lex, semicolon))
@@ -2381,7 +2381,7 @@ static BOOL resolveToDeclaration(LEXEME * lex)
     return TRUE;
 }
 static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
-                         BOOL viacontrol)
+                         BOOLEAN viacontrol)
 {
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
     if (ISID(lex))
@@ -2525,7 +2525,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
         parent->hassemi = FALSE;
     return lex;
 }
-static BOOL thunkmainret(SYMBOL *funcsp, BLOCKDATA *parent)
+static BOOLEAN thunkmainret(SYMBOL *funcsp, BLOCKDATA *parent)
 {
     if (!strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace)
     {
@@ -2602,7 +2602,7 @@ static void insertXCInfo(SYMBOL *funcsp)
 }
 static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, 
                         BLOCKDATA *parent,   
-                        BOOL first)
+                        BOOLEAN first)
 {
     BLOCKDATA *blockstmt = Alloc(sizeof(BLOCKDATA))  ;
     int pragmas = stdpragmas;
@@ -2685,7 +2685,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     st = blockstmt->head;
     if (st)
     {
-        BOOL hasvla = FALSE;
+        BOOLEAN hasvla = FALSE;
         while (st)
         {
             hasvla |= st->hasvla;
@@ -2966,9 +2966,9 @@ static void handleInlines(SYMBOL *funcsp)
 LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
 {
     int oldstartlab = startlab, oldretlab = retlab;
-    BOOL oldsetjmp_used = setjmp_used;
-    BOOL oldfunctionHasAssembly = functionHasAssembly;
-    BOOL oldDeclareAndInitialize = declareAndInitialize;
+    BOOLEAN oldsetjmp_used = setjmp_used;
+    BOOLEAN oldfunctionHasAssembly = functionHasAssembly;
+    BOOLEAN oldDeclareAndInitialize = declareAndInitialize;
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA *block = Alloc(sizeof(BLOCKDATA)) ;
     STATEMENT *startStmt;
@@ -3012,7 +3012,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     #ifndef PARSER_ONLY
         else 
         {
-            BOOL isTemplate = FALSE;
+            BOOLEAN isTemplate = FALSE;
             SYMBOL *spt = funcsp;
             while (spt && !isTemplate)
             {

@@ -40,7 +40,7 @@
 #ifndef GenParser_h
 #define Genparser_h
 
-#include "Parser.h"
+#include "Loader.h"
 #include <deque>
 #include <map>
 #include <string>

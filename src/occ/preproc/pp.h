@@ -68,7 +68,7 @@ typedef struct ifstruct
 {
     struct ifstruct *next; /* next */
     short iflevel;
-    short elsetaken;
+    BOOLEAN elsetaken;
     int line;
 } IFSTRUCT;
 
@@ -81,12 +81,12 @@ typedef struct _includes_
     int		current;
     int 	ifskip;
     int		skiplevel;
-    BOOL	elsetaken;
+    BOOLEAN	elsetaken;
     char	*data;
     unsigned char *lptr;
     int		pos;
     int		sysflags;
-    BOOL	sys_inc;
+    BOOLEAN	sys_inc;
     IFSTRUCT *ifs;
     char 	*ibufPtr;
     int		inputlen;

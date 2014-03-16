@@ -237,7 +237,7 @@ void ccSetSymbol(SYMBOL *sp)
     newItem->data = sp;
     symList = newItem;
 }
-void ccNewFile(char *fileName, BOOL main)
+void ccNewFile(char *fileName, BOOLEAN main)
 {
     LINEINCLUDES *l = Alloc(sizeof(LINEINCLUDES));
     sqlite3_int64 id;
@@ -262,7 +262,7 @@ void ccNewFile(char *fileName, BOOL main)
 void ccSetFileLine(char *filename, int lineno)
 {
     filename = fullqualify(filename);
-    if (strcmp(filename, lastFile->name))
+    if (strcmp(filename, lastFile->name) != 0)
     {
         lastFile = (LINEINCLUDES *)search(filename, ccHash);
     }

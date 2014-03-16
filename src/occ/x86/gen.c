@@ -167,7 +167,7 @@ AMODE *aimmedt(long i, int size)
 }
 
 /*-------------------------------------------------------------------------*/
-BOOL isauto(EXPRESSION *ep)
+BOOLEAN isauto(EXPRESSION *ep)
 {
     if (ep->type == en_auto)
         return TRUE;
@@ -422,7 +422,7 @@ void floatLoad(AMODE *ap, int sz, int okind)
             gen_codes(op_fld, sz, ap, 0);
         }
 }
-BOOL sameTemp(QUAD *head);
+BOOLEAN sameTemp(QUAD *head);
 void float_gen(QUAD *q, AMODE *apll, AMODE *aprl, int op, int rop, int pop, int prop)
 {
     if (sameTemp(q))
@@ -434,7 +434,7 @@ void float_gen(QUAD *q, AMODE *apll, AMODE *aprl, int op, int rop, int pop, int 
     }
     else
     {
-        BOOL doleft = FALSE;
+        BOOLEAN doleft = FALSE;
         if (apll->mode != am_freg && aprl->mode != am_freg)
         {
             floatLoad(apll, q->dc.left->size, FALSE);
@@ -539,7 +539,7 @@ int beRegFromTemp(QUAD *q, IMODE *im)
 {
     return beRegFromTempInd(q, im, 0);
 }
-BOOL sameTemp(QUAD *head)
+BOOLEAN sameTemp(QUAD *head)
 {
     if  ((head->temps & (TEMP_LEFT | TEMP_RIGHT)) == (TEMP_LEFT | TEMP_RIGHT))
     {
@@ -946,9 +946,9 @@ void liveQualify(AMODE *reg, AMODE *left, AMODE *right)
         }
     }
 }
-BOOL overlaps(AMODE *apal, AMODE *apah, AMODE* apll, AMODE *aplh)
+BOOLEAN overlaps(AMODE *apal, AMODE *apah, AMODE* apll, AMODE *aplh)
 {
-    BOOL overlap = FALSE;
+    BOOLEAN overlap = FALSE;
     if (apll->mode == am_dreg || apll->mode == am_indisp || apll->mode == am_indispscale)
         overlap = overlap || apll->preg == apal->preg || apll->preg == apah->preg;
     if (apll->mode == am_dreg)
@@ -978,8 +978,8 @@ void func_axdx(enum e_op func, AMODE *apal, AMODE *apah, AMODE *apll, AMODE *apl
     }
     if (apal->mode == am_dreg)
     {
-        BOOL overlap = (apll->mode == am_indisp && apll->preg == apal->preg) ||
-                apll->mode == am_indispscale && (apll->preg == apal->preg || apll->sreg == apal->preg);
+        BOOLEAN overlap = (apll->mode == am_indisp && apll->preg == apal->preg) ||
+                (apll->mode == am_indispscale && (apll->preg == apal->preg || apll->sreg == apal->preg));
         if (overlap)
         {
             if (func == op_add || func == op_sub)
@@ -1047,7 +1047,7 @@ void gen_lshift(enum e_op op, AMODE *aph, AMODE *apl, AMODE *n)
     if (apl->mode != am_dreg || aph->mode != am_dreg)
     {
         int reg = -1;
-        BOOL pushed = FALSE;
+        BOOLEAN pushed = FALSE;
         if (!(apl->liveRegs & (1 << EAX)))
         {
             reg = EAX;
@@ -1100,8 +1100,8 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
     IMODE *left = q->dc.left;
     IMODE *right = q->dc.right;
     AMODE *apll, *aplh, *aprl, *aprh, *apal, *apah;
-    BOOL assign = FALSE;
-    BOOL stacked = FALSE;
+    BOOLEAN assign = FALSE;
+    BOOLEAN stacked = FALSE;
     AMODE *altreg;
     if (left->mode == i_immed && left->size < ISZ_FLOAT)
     {
@@ -1545,7 +1545,7 @@ static void gen_shift(QUAD *q, enum e_op op, AMODE *apal, AMODE *apll, AMODE *ap
             }
             else
             {
-                BOOL pushed = FALSE;
+                BOOLEAN pushed = FALSE;
                 if (apll->mode != am_dreg || live(apal->liveRegs, apll->preg))
                 {
                     pushed = TRUE;
@@ -1579,7 +1579,7 @@ static void gen_shift(QUAD *q, enum e_op op, AMODE *apal, AMODE *apll, AMODE *ap
             }
             else
             {
-                BOOL pushed = FALSE;
+                BOOLEAN pushed = FALSE;
                 if (apll->mode != am_dreg || live(apal->liveRegs, apll->preg))
                 {
                     pushed = TRUE;
@@ -1774,7 +1774,7 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
             case ISZ_UCHAR:
                 do_movzx(ISZ_UINT, ISZ_UCHAR, switch_apl, switch_apl);
                 break;
-            case ISZ_BOOL:
+            case ISZ_BOOLEAN:
                 gen_codes(op_and, ISZ_UINT, switch_apl, aimmed(1));
                 break;
             case -ISZ_UCHAR:
@@ -2024,7 +2024,7 @@ void asm_parm(QUAD *q)               /* push a parameter*/
                         i &= 0xff;
                         i |= i & 0x80 ? 0xffffff00U : 0;
                         break;
-                    case ISZ_BOOL:
+                    case ISZ_BOOLEAN:
                         i &= 1;
                         break ;
                 }
@@ -2102,7 +2102,7 @@ void asm_parm(QUAD *q)               /* push a parameter*/
                         case ISZ_UCHAR:
                             do_movzx(ISZ_UINT, ISZ_UCHAR, pal, pal);
                             break;
-                        case ISZ_BOOL:
+                        case ISZ_BOOLEAN:
                             gen_codes(op_and, ISZ_UINT, pal, aimmed(1));
                             break;
                         case -ISZ_UCHAR:
@@ -3056,7 +3056,7 @@ void asm_assn(QUAD *q)               /* assignment */
     }
     else
         diag("asm_assn: unknown opcode");
-    if (sza == szl || q->dc.left->mode == i_immed && szl < ISZ_FLOAT)
+    if (sza == szl || (q->dc.left->mode == i_immed && szl < ISZ_FLOAT))
     {
         if (q->ans->size >= ISZ_CFLOAT)
         {
@@ -3140,7 +3140,7 @@ void asm_assn(QUAD *q)               /* assignment */
         if (q->dc.left->size == ISZ_ADDR)
             if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
                 goto addrupjn;
-        if (q->ans->size == ISZ_BOOL)
+        if (q->ans->size == ISZ_BOOLEAN)
             
         {
             int ulbl = beGetLabel;
@@ -3480,7 +3480,7 @@ addrdnjn:
                         pushlevel += 4;
                         switch(q->dc.left->size)
                         {
-                            case ISZ_BOOL:
+                            case ISZ_BOOLEAN:
                                 gen_codes(op_mov, ISZ_UINT, ap, apl);
                                 gen_codes(op_and, ISZ_UINT, ap, aimmed(1));
                                 break;
@@ -3547,7 +3547,7 @@ addrupjn:
             {
                 switch(q->dc.left->size)
                 {
-                    case ISZ_BOOL:
+                    case ISZ_BOOLEAN:
                         if (ap->preg <= EBX)
                         {
                             gen_codes(op_mov, ISZ_UCHAR, ap, apl);

@@ -90,7 +90,7 @@ static void rvColor(IMODE *ip)
     }
     else if (ip->size == ISZ_USHORT || ip->size == -ISZ_USHORT || ip->size == ISZ_U16)
         tempInfo[n]->color = R_AX;
-    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_BOOL)
+    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_BOOLEAN)
         tempInfo[n]->color = R_AL;
     else		
         tempInfo[n]->color = R_EAX;
@@ -158,7 +158,7 @@ void precolor(QUAD *head)			/* precolor an instruction */
             head->precolored |= TEMP_RIGHT;
             switch (tempInfo[tr]->size)
             {
-                case ISZ_BOOL:
+                case ISZ_BOOLEAN:
                 case ISZ_UCHAR:
                 case -ISZ_UCHAR:
                     tempInfo[tr]->color = R_CL;
@@ -186,7 +186,7 @@ void precolor(QUAD *head)			/* precolor an instruction */
     if (head->dc.right && head->dc.right->retval)
         rvColor(head->dc.right);				
 }
-static BOOL hasbp(EXPRESSION *expr)
+static BOOLEAN hasbp(EXPRESSION *expr)
 {
     if (!expr)
         return FALSE;
@@ -445,7 +445,7 @@ void ProcessInd(EXPRESSION **ofs1, EXPRESSION **ofs2, EXPRESSION **ofs3, int *sc
     } while ((ofs4 != *ofs1 || ofs5 != *ofs2));
 }
 // relies on constant offsets being calculated the same way every time
-static BOOL MatchesConst(EXPRESSION *one, EXPRESSION *two)
+static BOOLEAN MatchesConst(EXPRESSION *one, EXPRESSION *two)
 {
     if (one == two)
         return TRUE;
@@ -471,7 +471,7 @@ static BOOL MatchesConst(EXPRESSION *one, EXPRESSION *two)
             return FALSE;		
     }
 }
-static BOOL MatchesMem(IMODE *one, IMODE *two)
+static BOOLEAN MatchesMem(IMODE *one, IMODE *two)
 {
     if (one == two)
         return TRUE;
@@ -498,10 +498,10 @@ static BOOL MatchesMem(IMODE *one, IMODE *two)
     }
     return FALSE;
 }
-static BOOL twomem(IMODE *left, IMODE *right)
+static BOOLEAN twomem(IMODE *left, IMODE *right)
 {
-    if (left->mode == i_ind || left->mode == i_direct && left->offset->type != en_tempref)
-        if (right->mode == i_ind || right->mode == i_direct && right->offset->type != en_tempref)
+    if (left->mode == i_ind || (left->mode == i_direct && left->offset->type != en_tempref))
+        if (right->mode == i_ind || (right->mode == i_direct && right->offset->type != en_tempref))
             return TRUE;
     return FALSE;
 }
@@ -858,7 +858,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
 int examine_icode(QUAD *head)
 {
     BLOCK *b = NULL;
-    BOOL changed = FALSE;
+    BOOLEAN changed = FALSE;
     QUAD *insert;
     QUAD *hold = head;
     uses_substack = FALSE;
@@ -1139,7 +1139,7 @@ int examine_icode(QUAD *head)
                  * ftol or ftoll as necessary
                  */
                 if (head->dc.left->size >= ISZ_FLOAT && head->ans->size < ISZ_FLOAT 
-                    && (head->ans->size > ISZ_BOOL || head->ans->size < 0))
+                    && (head->ans->size > ISZ_BOOLEAN || head->ans->size < 0))
                 {
                     if (head->dc.left->size >= ISZ_IFLOAT && head->dc.left->size <= ISZ_ILDOUBLE)
                     {

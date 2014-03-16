@@ -468,7 +468,7 @@ void omfImports(void)
 
 /*-------------------------------------------------------------------------*/
 
-BOOL isbaseconst(TYPE *tp)
+BOOLEAN isbaseconst(TYPE *tp)
 {
     TYPE *tp1 = tp;
     while (TRUE)
@@ -482,7 +482,7 @@ BOOL isbaseconst(TYPE *tp)
     }
     return isconst(tp1);
 }
-BOOL isbasevolatile(TYPE *tp)
+BOOLEAN isbasevolatile(TYPE *tp)
 {
     TYPE *tp1 = tp;
     while (TRUE)
@@ -1046,7 +1046,7 @@ void omfEmitLineInfo(void)
 //    omfSourceFile((char *)includedFiles->data, 1);
 //    omfLineNumbers(0);
     for (q = 1, l = includedFiles; l; l = l->next)
-/*    if (l->hascode) // FIXME*/
+/*    if (l->hascode) // fixme*/
     {
         omfSourceFile((char *)l->data, q++);
         omfLineNumbers(l->data);

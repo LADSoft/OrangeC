@@ -470,7 +470,6 @@ LRESULT CALLBACK CustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     static BOOL start;
-    char buf[3];
     switch (iMessage)
     {
         case WM_NOTIFY:
@@ -584,10 +583,8 @@ void RedrawToolBar(void)
     HWND win;
     BOOL mf_state;
     BOOL x_state;
-    int i;
     win = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
-    mf_state = FALSE;
-    mf_state = !!SendMessage(win, EM_CANUNDO, 0, 0);
+    mf_state = !!SendMessage(win, EM_CANUNDO, 0, 0); 
     SendMessage(hwndToolEdit, TB_ENABLEBUTTON, IDM_UNDO, MAKELONG
         (mf_state, 0));
     mf_state = !!SendMessage(win, EM_CANREDO, 0, 0);
@@ -680,7 +677,7 @@ void RedrawToolBar(void)
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_RUNNODEBUG, MAKELONG
         (mf_state, 0));
     
-    mf_state = uState == atBreakpoint || uState == atException || uState == notDebugging && !making && activeProject;
+    mf_state = uState == atBreakpoint || uState == atException || (uState == notDebugging && !making && activeProject);
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_RUN, MAKELONG
         (mf_state, 0));
     mf_state = (uState == atBreakpoint || uState == atException);
@@ -697,7 +694,7 @@ void RedrawToolBar(void)
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_STOPDEBUGGING, MAKELONG
         (mf_state, 0));
 
-    mf_state = HasBreakpoints();
+    mf_state = TagAnyBreakpoints();
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_REMOVEALLBREAKPOINTS, MAKELONG
         (mf_state, 0));
 

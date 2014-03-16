@@ -180,12 +180,17 @@ void ppDefine::DoAssign(std::string &line, bool caseInsensitive)
         name = next->GetId();
         std::string line = tk.GetString();
         Process(line);
-        int n = expr.Eval(line);
+        PPINT n = expr.Eval(line);
+        if (n < INT_MIN || n >= UINT_MAX)
+        {
+            Errors::Error("%assign does not support long long");
+            n = 0;
+        }
         failed = line.find_first_not_of(" \t\v\r\n") != std::string::npos;
         if (!failed)
         {
             std::strstream aa;
-            aa << n;
+            aa << (int)n;
             std::string value;
             aa >> value;
             Define(name, value, NULL, false, false, false, caseInsensitive);
@@ -240,8 +245,9 @@ void ppDefine::DoDefine(std::string &line, bool caseInsensitive)
         if (tk.GetString().c_str()[0] == '(') // yes it HAS to be the first character, no spaces
                                   // or other characters allowed
         {
+			// the below is ok because the first one gets the '(' and the next one gets the next token
             next = tk.Next(); // get '('
-            next = tk.Next(); // past '('
+            next = tk.Next(); // past '(' 
             if (!next->IsIdentifier() && next->GetKeyword() != closepa)
             {
                 failed = true;
@@ -333,7 +339,7 @@ std::string ppDefine::defid(const std::string &macroname, int &i, int &j)
  * Get an identifier during macro replacement
  */
 {
-    char name[2048];
+//    char name[2048];
     bool inctx = false;
     bool quoted = false;
     if (asmpp && j >= 2 && macroname[j-1] == '$')
@@ -430,7 +436,7 @@ int ppDefine::Stringize(std::string &macro, int begin, int end, const std::strin
     while (begin != 0 && isspace(macro[begin-1]))
         begin--;
     if (begin != 0 && (macro[begin-1] == '#' 
-                           || begin > 1 && macro[begin-2] == '%' && macro[begin-1] == ':') ) 
+                           || (begin > 1 && macro[begin-2] == '%' && macro[begin-1] == ':')) )
     {
         if (macro[begin-1] == '#')
             begin--;
@@ -858,7 +864,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                 }
                 else if (n == 0)
                 {
-                    if (line[n+1] == '$' && n < line.size()-2 && IsSymbolStartChar(line.c_str() + n+2))
+                    if ((n < line.size()-2) && line[n+1] == '$' && IsSymbolStartChar(line.c_str() + n+2))
                     {
                         int n1 = ctx->GetTopId();
                         if (n1 != -1)
@@ -876,7 +882,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                         found = true;
                     }					
                 }
-                if (!found && (isdigit(line[n+1]) || line[n+1] == '+' || line[n+1] == '-'))
+                if (!found && (n < line.size()-1) &&  (isdigit(line[n+1]) || line[n+1] == '+' || line[n+1] == '-'))
                 {
                     int mode = 0;
                     int n1 = n + 1;
@@ -884,51 +890,54 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
                         mode = 1, n1++;
                     else if (line[n1] == '-')
                         mode = -1, n1++;
-                    if (!isdigit(line[n1]))
+                    if (n1 < line.size())
                     {
-                        Errors::Error("Invalid macro argument evaluator");
-                        break;
-                    }
-                    else
-                    {
-                        char *c;
-                        int val = strtoul(line.c_str() + n1, &c, 10);
-                        n1 = c - line.c_str();
-                        if (macro->GetMacroId() == -1)
+                        if (!isdigit(line[n1]))
                         {
-                            Errors::Error("Macro evaluator used outside macro invocation");
+                            Errors::Error("Invalid macro argument evaluator");
                             break;
                         }
                         else
                         {
-                            std::vector<std::string> *args = macro->GetMacroArgs();
-                            if (val == 0)
+                            char *c;
+                            int val = strtoul(line.c_str() + n1, &c, 10);
+                            n1 = c - line.c_str();
+                            if (macro->GetMacroId() == -1)
                             {
-                                char buf[256];
-                                sprintf(buf,"%d", args->size());
-                                line.replace(n, n1-n, buf);
-                                n = n1 -1;
+                                Errors::Error("Macro evaluator used outside macro invocation");
+                                break;
                             }
                             else
                             {
-                                val--;
-                                if (val >= args->size())
+                                std::vector<std::string> *args = macro->GetMacroArgs();
+                                if (val == 0)
                                 {
-                                    if (val > macro->GetMacroMax())
-                                    {
-                                        Errors::Error("Macro argument evaluator out of range");
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        line.erase(n, n1-n);
-                                        n--;
-                                    }
+                                    char buf[256];
+                                    sprintf(buf,"%d", (int)args->size());
+                                    line.replace(n, n1-n, buf);
+                                    n = n1 -1;
                                 }
                                 else
                                 {
-                                    line.replace(n, n1-n, (*args)[val]);
-                                    n += strlen((*args)[val].c_str()) - (n1 - n) - 1;
+                                    val--;
+                                    if (val >= args->size())
+                                    {
+                                        if (val > macro->GetMacroMax())
+                                        {
+                                            Errors::Error("Macro argument evaluator out of range");
+                                            break;
+                                        }
+                                        else
+                                        {
+                                            line.erase(n, n1-n);
+                                            n--;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        line.replace(n, n1-n, (*args)[val]);
+                                        n += (*args)[val].length() - (n1 - n) - 1;
+                                    }
                                 }
                             }
                         }

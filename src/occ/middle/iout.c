@@ -1279,7 +1279,7 @@ void putlen(int l)
         case ISZ_NONE:
             oprintf(icdFile, ".N");
             break;
-        case ISZ_BOOL:
+        case ISZ_BOOLEAN:
             oprintf(icdFile, ".BOOL");
             break;
         case ISZ_ADDR:
@@ -1908,7 +1908,7 @@ int genstring(STRING *str)
 {
     int size = 1;
     int i;
-    BOOL instring = FALSE;
+    BOOLEAN instring = FALSE;
     gentype = nogen;
     for (i=0; i < str->size; i++)
     {

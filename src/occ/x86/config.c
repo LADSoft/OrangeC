@@ -274,7 +274,7 @@ static ARCH_CHARACTERISTICS architecture = {
     0,             /* optimizations we don't want */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */
-    ABM_USESIZE,  /* bool is determined by sizing above */
+    ABM_USESIZE,  /* BOOLEAN is determined by sizing above */
     ARM_FUNCTIONSCOPE, /* register allocation across entire function */
     8,            /* number of bits in a MAU.  values other than 8 not supported */
     FALSE,        /* little endian */
@@ -468,7 +468,7 @@ static int parse_codegen(int mode, char *string)
     }
     return 1; /* eat one char */
 }
-void SetUsesESP(BOOL yes)
+void SetUsesESP(BOOLEAN yes)
 {
     int whichway = 0;
     if (yes && !usingEsp)

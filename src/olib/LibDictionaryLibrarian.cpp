@@ -111,8 +111,8 @@ void LibDictionary::CreateDictionary(LibFiles &files)
                 blockCount = primes[i];
                 break;
             }
-        if (data)
-            delete [] data;
+        
+        delete [] data;
         data = new DICTPAGE[blockCount];
         memset(data, 0, blockCount * sizeof(DICTPAGE));
         int i = 0;

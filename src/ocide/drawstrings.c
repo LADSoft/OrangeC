@@ -294,11 +294,11 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         strings = (STRINGS *)plvdi->item.lParam;
                         switch (plvdi->item.iSubItem)
                         {
-                            char id[256];
-                        case 1:
-                            FormatVersionString(id, strings->string, strings->length);
-                            plvdi->item.pszText = id;
-                            break;
+                            char *id = (char *)LocalAlloc(0, 256);
+                            case 1:
+                                FormatVersionString(id, strings->string, strings->length);
+                                plvdi->item.pszText = id;
+                                break;
                         }
                         break;
                     }
@@ -416,7 +416,6 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 AccSubclassEditWnd(hwnd, stringTableData->gd.editWindow);
                 switch(stringTableData->gd.selectedColumn)
                 {
-                    RECT r;
                     char buf[256];
                     case 0:
                         buf[0] = 0;
@@ -545,7 +544,6 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterStringTableDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

@@ -51,9 +51,9 @@ extern BITINT bittab[BITINTBITS];
 extern BLOCK **blockArray;
 extern QUAD *intermed_head;
 extern int tempCount;
-extern BOOL setjmp_used;
+extern BOOLEAN setjmp_used;
 extern int exitBlock;
-extern BOOL functionHasAssembly;
+extern BOOLEAN functionHasAssembly;
 
 TEMP_INFO **tempInfo;
 int tempSize;

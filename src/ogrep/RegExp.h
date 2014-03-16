@@ -40,7 +40,7 @@
 #ifndef REGEXP_H
 #define REGEXP_H
 
-typedef unsigned char BYTE;
+typedef unsigned char UBYTE;
 
 #include <deque>
 #include <ctype.h>
@@ -68,7 +68,7 @@ public:
         M_START = 145,
         M_END =   146
     };
-    RegExpMatch(BYTE ch, bool caseSensitive = true) : matchStart(false), matchEnd(false), matchRange(-1), rl(-1), rh(-1), invalid(false)
+    RegExpMatch(UBYTE ch, bool caseSensitive = true) : matchStart(false), matchEnd(false), matchRange(-1), rl(-1), rh(-1), invalid(false)
     { memset(matches, 0, sizeof(matches)); SetChar(ch, caseSensitive); }
     RegExpMatch(bool all = false) : matchStart(false), matchEnd(false), matchRange(-1), rl(-1), rh(-1), invalid(false)
     {
@@ -82,7 +82,7 @@ public:
     { memset(matches, 0, sizeof(matches)); SetChar(type, caseSensitive); }
     ~RegExpMatch() { }
     
-    void SetChar (BYTE ch, bool caseSensitive)
+    void SetChar (UBYTE ch, bool caseSensitive)
     {
         SetBit(ch);
         if (!caseSensitive)
@@ -91,7 +91,7 @@ public:
             else
                 SetBit(toupper(ch));
     }
-    void SetRange(BYTE n, BYTE m, bool caseSensitive)
+    void SetRange(UBYTE n, UBYTE m, bool caseSensitive)
     {
         for (int i=n; i < m; i++) SetChar(i, caseSensitive);
     }
@@ -120,7 +120,7 @@ public:
 protected:
     void SetBit(int n) { matches[n/8] |= 1 << (n & 7); }
     void SetBits(int n, int m) { for (int i=n; i < m; i++) SetBit(i); }
-    bool IsSet(const BYTE *m, int n) const { return !!(m[n/8] & (1 << (n & 7))); }
+    bool IsSet(const UBYTE *m, int n) const { return !!(m[n/8] & (1 << (n & 7))); }
     bool IsSet(int n) const { return !!(matches[n/8] & (1 << (n & 7))); }
     int MatchOne(RegExpContext &context, const char *str);
     bool MatchRange(RegExpContext &context ,const char *str);
@@ -128,10 +128,10 @@ private:
     bool matchStart;
     bool matchEnd;
     int  matchRange;
-    BYTE matches[256/8];
+    UBYTE matches[256/8];
     int rl, rh;
     bool invalid;
-    static BYTE wordChars[256/8];
+    static UBYTE wordChars[256/8];
     static bool initted;
 } ;
 

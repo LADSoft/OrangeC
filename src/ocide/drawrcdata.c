@@ -140,7 +140,7 @@ static void PopulateItem(HWND hwnd, RCDATA *rcData, int items)
     item.iSubItem = 0;
     item.mask = LVIF_PARAM | LVIF_TEXT;
     item.lParam = (LPARAM)rcData;
-    item.pszText = key;
+    item.pszText = key;//fixme
     ListView_InsertItem(hwnd, &item);
     item.iSubItem = 1;
     item.mask = LVIF_PARAM;
@@ -359,9 +359,7 @@ void FormatAsciiString(char *buf, char *string, int len)
 }
 static void rcDataSet(struct resRes *rcDataData, RCDATA *rcData, char *text)
 {
-    WCHAR buf[256];
     char *string;
-    int len;
     ResGetHeap(workArea, rcDataData);
     switch (rcData->type)
     {
@@ -596,7 +594,6 @@ LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_HANDLEDBLCLICK:
         {
             RCDATA *rcData;
-            RECT r;
             rcDataData = (struct resRes *)GetWindowLong(hwnd, 0);
             if (rcDataData->gd.editWindow)
             {
@@ -683,7 +680,6 @@ LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             rcDataData = (struct resRes *)GetWindowLong(hwnd, 0);
             if (rcDataData->gd.bDragging)
             {
-                HWND wnd;
                 POINT pt;
                 GetClientRect(hwnd, &r);
                 pt.x = (long)(short)LOWORD(lParam);

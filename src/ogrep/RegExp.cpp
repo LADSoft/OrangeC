@@ -40,7 +40,7 @@
 #include "RegExp.h"
 #include <limits.h>
 
-BYTE RegExpMatch::wordChars[256/8];
+UBYTE RegExpMatch::wordChars[256/8];
 bool RegExpMatch::initted;
 
 void RegExpMatch::Init(bool caseSensitive)
@@ -153,7 +153,7 @@ const char * RegExpMatch::SetClass(const char *name)
 void RegExpMatch::SetSet(const char **p, bool caseSensitive)
 {
     bool not = false;
-    BYTE last[256/8];
+    UBYTE last[256/8];
     const char *str = *p;
     memcpy(last, matches, sizeof(last));
     memset(matches, 0, sizeof(matches));

@@ -241,7 +241,6 @@ static void SetId(struct resRes *data, EXPRESSION *exp, int id, CONTROL *ctls)
 }
 void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ctls)
 {
-    SYM *sp;
     WCHAR name[512], *p = name;
     char xx[256],*q;
     int id = GetId(*exp);
@@ -317,7 +316,6 @@ void SetResourceProperties(void *data, struct propertyFuncs *funcs)
 }
 static int CustomDraw(HWND hwnd, LPNMLVCUSTOMDRAW draw)
 {
-    HWND hwndLV;
     switch(draw->nmcd.dwDrawStage)
     {
         POINT pt;
@@ -365,7 +363,6 @@ void PropsWndClearEditBox(MSG *msg)
 LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    int i;
     NM_TREEVIEW *nm;
     RECT rs;
     LVHITTESTINFO_x hittest;

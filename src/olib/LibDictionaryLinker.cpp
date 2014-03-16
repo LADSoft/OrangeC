@@ -88,7 +88,7 @@ ObjInt LibDictionary::Lookup(FILE *stream, ObjInt dictionaryOffset, ObjInt dicti
         else {
             ObjByte *pos = &thispage.bytes[thispage.f.htab[bucket_x]*2];
             if (!casecmp((char *)pos+1, name.c_str(), *(unsigned char *)pos)) {
-                int namehash;
+                //int namehash;
                 unsigned char *dataoffset = pos + 1 + *pos;
                 if ((1 + *pos) & 1)
                     dataoffset++;
@@ -111,11 +111,11 @@ ObjInt LibDictionary::Lookup(FILE *stream, ObjInt dictionaryOffset, ObjInt dicti
 }
 int LibDictionary::ROTL(int x, int by)
 {
-    return ((x << by) || (x >> (16 - by))) & 0xffff;
+    return ((x << by) | (x >> (16 - by))) & 0xffff;
 }
 int LibDictionary::ROTR(int x, int by)
 {
-    return ((x >> by) || (x << (16 - by))) & 0xffff;
+    return ((x >> by) | (x << (16 - by))) & 0xffff;
 }
 #define max(x, y)  (((x)>(y)) ? (x) : (y))
 void LibDictionary::ComputeHash(const char * name)

@@ -112,7 +112,7 @@ void ppInclude::pushFile(const std::string &name)
             current = NULL;
         }
         current = new ppFile(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp);
-        if (current)
+        //if (current)
             if (!current->Open())
             {
                 Errors::Error(std::string("Could not open ") + name + " for input");

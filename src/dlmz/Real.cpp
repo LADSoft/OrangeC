@@ -49,7 +49,7 @@ bool Real::ReadSections(ObjFile *file, ObjExpression *start)
     int base = GetFirstSeg(start);
     startOffs = start->Eval(0);
     startSeg = base >> 16;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); it++)
+    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         if ((*it)->GetName() == ".stack")
         {
@@ -65,7 +65,7 @@ bool Real::ReadSections(ObjFile *file, ObjExpression *start)
     }
     data = new unsigned char[size];
     int ofs = 0;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); it++)
+    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         if ((*it)->GetName() != ".stack")
         {

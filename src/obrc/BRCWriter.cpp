@@ -109,18 +109,18 @@ char *BRCWriter::deletion =
 BRCWriter::~BRCWriter()
 {
 }
-int BRCWriter::Begin(void)
+bool BRCWriter::Begin(void)
 {
-    int rv = true;
+    bool rv = true;
     if (!SQLiteExec("BEGIN"))
     {
         rv = false;
     }
     return rv;
 }
-int BRCWriter::End(void )
+bool BRCWriter::End(void )
 {
-    int rv = true;
+    bool rv = true;
     if (!SQLiteExec("COMMIT"))
     {
         rv = false;
@@ -496,13 +496,14 @@ bool BRCWriter::write()
     if (ok)
     {
         ok = false;
-        Begin();
-        if (WriteFileList())
-            if (WriteDictionary(syms))
-                if (WriteLineData(syms))
-                    if (WriteJumpTable(syms))
-                        ok = true;
-        End();
+        if (Begin())
+            if (WriteFileList())
+                if (WriteDictionary(syms))
+                    if (WriteLineData(syms))
+                        if (WriteJumpTable(syms))
+                            ok = true;
+        if (!End())
+            ok = false;
     }
     if (dbPointer)
         sqlite3_close(dbPointer);

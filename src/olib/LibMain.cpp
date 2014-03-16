@@ -149,7 +149,7 @@ int LibMain::Run(int argc, char **argv)
     // setup
     ObjString outputFile = argv[1];
     size_t n = outputFile.find_last_of('.');
-    if (n == std::string::npos || n != outputFile.size()-1 && outputFile[n+1] != 'l')
+    if (n == std::string::npos || (n != outputFile.size()-1 && outputFile[n+1] != 'l'))
     {
         outputFile += ".l";
     }

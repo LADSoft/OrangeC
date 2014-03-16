@@ -188,7 +188,7 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
     int start=-1;
     char segment[1024];
     char *orgsearch = search;
-    char *orgpos = pos;
+    int orgpos = pos;
     
     while (pos != -1 && *search && !canceled)
     {
@@ -288,7 +288,7 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
                 int l = getSegment(segment, &search);
                 if (flags &F_MATCHCASE)
                 {
-                    if (strncmp(buf + pos, segment, l))
+                    if (strncmp(buf + pos, segment, l) != 0)
                     {
                         search = orgsearch;
                         pos = orgpos;
@@ -302,7 +302,7 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
                 }
                 else
                 {
-                    if (strncmp(buf + pos, segment, l))
+                    if (strnicmp(buf + pos, segment, l) != 0)
                     {
                         search = orgsearch;
                         pos = orgpos;
@@ -426,11 +426,9 @@ static void SendToOutput(char *fname, int flags, char *start, char *end)
 static int xfind(char *fname, char *search, int flags, char *buf, int *len, CHARRANGE *pos, 
                  RE_CONTEXT *context)
 {
-    int i;
     *len = strlen(search);
     while (!canceled)
     {
-        int rv;
         if (flags & F_REGULAR)
         {
             rex_matches(context, flags, buf, pos, len);
@@ -742,8 +740,7 @@ void EndFind(void)
     {
         SendMessage(currentWindow->dwHandle, EM_HIDESELECTION, 0,0);
         currentWindow = NULL;
-        if (currentBuffer)
-            free(currentBuffer);
+        free(currentBuffer);
         currentBuffer = NULL;
         while (opened)
         {
@@ -1136,7 +1133,7 @@ int FindStringFromToolbar(char *search)
         search = last;
     if (!*search)
         return 0;
-    if (!findFromTB || strcmp(search, last))
+    if (!findFromTB || strcmp(search, last) != 0)
     {
         EndFind();
         if (ptr)
@@ -1180,7 +1177,7 @@ static int FindStringFromFiles(int mode, int flags, char *search, char *specifie
     else
     {
         static char last[256];
-        if (strcmp(search, last))
+        if (strcmp(search, last) != 0)
         {
             EndFind();
             if (ptr)
@@ -1253,7 +1250,6 @@ static void GetReplaceText(char *dest, char *replace, char *dta, int len, int fl
 static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *pos, int flags, char *search, char *replace, RE_CONTEXT *context)
 {
     BOOL val;
-    CHARRANGE find;
     int len = 0;
     val = xfind(ptr->dwName, search, flags, buf, &len, pos, context);
     if (val >= 0)
@@ -1303,7 +1299,6 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
 {
     RE_CONTEXT *context = getREContext(search, flags);
     DWINFO *ptr = currentWindow, *lastPtr = 0;
-    int len;
     char *buf = currentBuffer;
     BOOL replaced = FALSE;
     BOOL needsUpdate = FALSE;
@@ -1404,7 +1399,7 @@ static void EnableWindows(HWND hwnd, BOOL state)
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKREPLACECASE), state);
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKREPLACERECURSIVE), state);
 }
-DWORD CALLBACK DoFindNext(void *p)
+DWORD DoFindNext(void *p)
 {
     HWND hwndDlg = p;
     FindResetWindows();
@@ -1428,7 +1423,7 @@ DWORD CALLBACK DoFindNext(void *p)
     }
     infindorreplace = FALSE;
 }
-DWORD CALLBACK DoReplaceNext(void *p)
+DWORD DoReplaceNext(void *p)
 {
     HWND hwndDlg = p;
     PostMessage(hwndDlg, WM_ENABLEFIND, FALSE ,0);
@@ -1867,7 +1862,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                         findFromTB = FALSE;
                         EndFind();
                     }
-                    CloseHandle(CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)DoFindNext, hwndDlg, 0, &id));
+                    _beginthread((BEGINTHREAD_FUNC)DoFindNext, 0, (LPVOID)hwndDlg);
                 }
                     break;
                 case IDC_REPLACENEXT:
@@ -1881,7 +1876,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     replaceflags[replacemode] &= ~F_REPLACEALL;
                     GetBrowsePath(hwndDlg, IDC_COMBOREPLACEPATH);
                     xGetFileType(hwndDlg, IDC_COMBOREPLACETYPE);
-                    CloseHandle(CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)DoReplaceNext, hwndDlg, 0, &id));
+                    _beginthread((BEGINTHREAD_FUNC)DoReplaceNext, 0, (LPVOID)hwndDlg);
                 }
                     break;
                 case IDC_REPLACEALL:
@@ -1900,7 +1895,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     replaceflags[replacemode] |= F_REPLACEALL;
                     GetBrowsePath(hwndDlg, IDC_COMBOREPLACEPATH);
                     xGetFileType(hwndDlg, IDC_COMBOREPLACETYPE);
-                    CloseHandle(CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)DoReplaceNext, hwndDlg, 0, &id));
+                    _beginthread((BEGINTHREAD_FUNC)DoReplaceNext, 0, (LPVOID)hwndDlg);
                 }
                     break;
             }
@@ -1969,8 +1964,6 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
 {
     DLGHDR *pHdr;
     TC_ITEM tie;
-    HWND hwndButton;
-    RECT rcButton;
     int i;
     switch (iMessage)
     {

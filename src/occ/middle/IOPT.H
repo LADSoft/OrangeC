@@ -45,7 +45,7 @@
 /* the int types can be negative, which means 'signed' vs 'unsigned' */
 #define ISZ_NONE 0
 #define ISZ_BIT 1
-#define ISZ_BOOL 2
+#define ISZ_BOOLEAN 2
 #define ISZ_UCHAR 3
 #define ISZ_USHORT 4
 #define ISZ_WCHAR 5
@@ -83,7 +83,7 @@ BITARRAY *allocbit(int size);
 BITARRAY *tallocbit(int size);
 BITARRAY *sallocbit(int size);
 BITARRAY *aallocbit(int size);
-BOOL isset(BITARRAY *arr, int bit);
+BOOLEAN isset(BITARRAY *arr, int bit);
 void setbit(BITARRAY *arr, int bit);
 void clearbit(BITARRAY *arr, int bit);
 void bitarrayClear(BITARRAY *arr, int count);
@@ -137,7 +137,7 @@ typedef struct _limit_uses
 	struct _limit_uses *next;
 	int order;
 	QUAD *ins;
-	BYTE gosubLevel;
+	UBYTE gosubLevel;
 	int ansmode:1;
 } LIMIT_USES;
 typedef struct _pressure {
@@ -235,7 +235,7 @@ typedef struct _aliasAddress
 	struct _aliaslist *pointsto;
 	int offset;
     BITINT *modifiedBy;
-	BOOL processed;
+	BOOLEAN processed;
 } ALIASADDRESS;
 
 typedef struct _aliaslist
@@ -289,7 +289,7 @@ typedef struct
 	NORMLIST *currentNormal;
 	int strengthRename;
 	struct _regclass *regClass;
-	BOOL ptUIV;
+	BOOLEAN ptUIV;
 	enum { P_UNKNOWN, P_PTR, P_REAL } ptrMode;
 	int preSSATemp;
 	int postSSATemp;
@@ -402,8 +402,8 @@ typedef struct _comgo
 typedef struct _daglist
 {
     struct _daglist *next;
-    BYTE *key;
-    BYTE *rv;
+    UBYTE *key;
+    UBYTE *rv;
 } DAGLIST;
 
 typedef struct _list2

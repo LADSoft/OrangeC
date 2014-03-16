@@ -75,7 +75,6 @@ static unsigned char *SplashScreen_LoadBmp(HINSTANCE hInstance, LPSTR
     HGLOBAL hGlobal;
     HGLOBAL hGlobalRet = NULL;
     LPVOID lpBuffer = NULL;
-    LPVOID lpbits;
     LPBITMAPFILEHEADER lpbfh;
     LPBITMAPINFOHEADER lpbih;
     hResource = FindResource(hInstance, lpszResource, "SPLASH");
@@ -175,7 +174,6 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
     LPARAM lParam)
 {
     LPSPLASH2 lpSplash2;
-    CREATESTRUCT *lpCreateStruct;
     switch (msg)
     {
         case WM_PAINT:
@@ -251,9 +249,8 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
 }
 
 /******************************************************************************/
-static VOID SplashScreen_Thread(LPSPLASH lpSplash)
+static VOID __stdcall SplashScreen_Thread(LPSPLASH lpSplash)
 {
-    HGLOBAL hGlobal;
     LPBYTE lpBuffer;
     WNDCLASSEX wcx;
     BOOL bReg;
@@ -321,12 +318,7 @@ static VOID SplashScreen_Thread(LPSPLASH lpSplash)
                 if (lpSplash->bTopmost)
                     dwExStyles |= WS_EX_TOPMOST;
 
-                dwStyles = 0;
-
-                if (lpSplash->bAbout)
-                    dwStyles = WS_POPUP | WS_DLGFRAME;
-                else
-                    dwStyles = WS_POPUP | WS_DLGFRAME;
+                dwStyles = WS_POPUP | WS_DLGFRAME;
 
                 lpSplash2 = GlobalAlloc(GPTR, sizeof(SPLASH2));
                 if (lpSplash2 != NULL)
@@ -372,9 +364,8 @@ VOID WINAPI SplashScreen(LPSPLASH lpSplash)
     if (lpSplash_t != NULL)
     {
         memcpy(lpSplash_t, lpSplash, sizeof(SPLASH));
-
-        hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)
-            SplashScreen_Thread, (LPVOID)lpSplash_t, 0, &dwTid);
+        
+        hThread = (HANDLE)_beginthreadex(NULL, 0, (LPTHREAD_START_ROUTINE)SplashScreen_Thread, (LPVOID)lpSplash_t, 0, &dwTid);
 
         if (lpSplash->bWait && hThread != NULL)
             WaitForSingleObject(hThread, INFINITE);

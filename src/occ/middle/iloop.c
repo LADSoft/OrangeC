@@ -448,7 +448,7 @@ void BuildLoopTree(void)
     BLOCK *b;
     int i;
     QUAD *tail;
-    BOOL skip = FALSE;
+    BOOLEAN skip = FALSE;
     /* this is padded, but, in a really really complex program it could get to be too small
      */
     loopArray = oAlloc(sizeof(LOOP *) * blockCount * 4);
@@ -511,7 +511,7 @@ void BuildLoopTree(void)
     if (loopCount >= blockCount * 4)
         fatal("internal error");
 }
-BOOL isAncestor(LOOP *l1, LOOP *l2)
+BOOLEAN isAncestor(LOOP *l1, LOOP *l2)
 {
     if (l1 == l2)
         return FALSE;
@@ -538,7 +538,7 @@ static LOOP *nearestAncestor(LOOP *l1, LOOP *l2)
     return l1;
 }
 /* if loop we are interested in encloses loop variable is modified in */
-static BOOL isInvariant(int tnum, LOOP *l)
+static BOOLEAN isInvariant(int tnum, LOOP *l)
 {
     LOOP *varl = tempInfo[tnum]->variantLoop;
     while (varl)
@@ -693,8 +693,8 @@ static void CalculateInductionCandidates(LOOP *l)
                     case i_sub:
                         if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                         {
-                            if (head->dc.left->mode == i_immed || (head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
-                                if (head->dc.right->mode == i_immed || (head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
+                            if (head->dc.left->mode == i_immed || ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct))
+                                if (head->dc.right->mode == i_immed || ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct))
                                 {
                                     if (head->ans->size < ISZ_FLOAT && head->dc.left->size < ISZ_FLOAT && head->dc.right->size < ISZ_FLOAT)
                                     {
@@ -710,7 +710,7 @@ static void CalculateInductionCandidates(LOOP *l)
                     case i_assn:
                         if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
                         {
-                            if (head->dc.left->mode == i_immed || (head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
+                            if (head->dc.left->mode == i_immed || ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct))
                             {
                                 if (head->ans->size < ISZ_FLOAT && head->dc.left->size < ISZ_FLOAT)
                                 {

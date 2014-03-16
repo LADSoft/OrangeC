@@ -64,7 +64,7 @@ public:
       } f;
     };
     BRCDictionary(Symbols &p) : symbols(p), blockCount(0), data(NULL) { }
-    ~BRCDictionary() { if (data) delete [] data; }
+    ~BRCDictionary() {  delete [] data; }
     ObjInt Lookup(std::fstream &stream, ObjInt dictOffset, ObjInt dictPages, const ObjString &str);
     void Write(std::fstream &stream);
     void CreateDictionary(void);

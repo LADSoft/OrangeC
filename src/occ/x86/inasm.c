@@ -755,7 +755,7 @@ static int inasm_structsize(void)
         case bt_signed_char:
             return ISZ_UCHAR;
         case bt_bool:
-            return ISZ_BOOL;
+            return ISZ_BOOLEAN;
         case bt_short:
         case bt_unsigned_short:
     case bt_char16_t:
@@ -794,14 +794,14 @@ static int inasm_structsize(void)
 static AMODE *inasm_mem(void)
 {
     int reg1 =  - 1, reg2 =  - 1, scale = 0, seg = 0;
-    BOOL subtract = FALSE;
+    BOOLEAN subtract = FALSE;
     EXPRESSION *node = 0;
     AMODE *rv;
     int gotident = FALSE; /*, autonode = FALSE;*/
     inasm_getsym();
     while (TRUE)
     {
-        int rg;
+        int rg = -1;
         if (regimage)
             rg = regimage->regnum;
         if (lex)
@@ -979,7 +979,7 @@ static AMODE *inasm_amode(int nosegreg)
 {
     AMODE *rv = beLocalAlloc(sizeof(AMODE));
     int sz = 0, seg = 0;
-    BOOL done = FALSE;
+    BOOLEAN done = FALSE;
     lastsym = 0;
     inasm_txsym();
     if (lex)
@@ -1038,7 +1038,7 @@ static AMODE *inasm_amode(int nosegreg)
                         if (MATCHKW(lex, openpa))
                         {
                             inasm_getsym();
-                            if (!lex || lex->type != l_i && lex->type != l_ui || 
+                            if (!lex || (lex->type != l_i && lex->type != l_ui) || 
                                 lex->value.i < 0 || lex->value.i > 7)
                             {
                                 inasm_err(ERR_ILLEGAL_ADDRESS_MODE);
@@ -1364,7 +1364,7 @@ static OCODE *ope_bit(void)
         return 0;
     if (ap2->mode != am_immed && ap2->mode != am_dreg)
         return (OCODE*) - 1;
-    if (ap1->length == ISZ_UCHAR || ap2->mode == am_dreg && ap2->length == ISZ_UCHAR)
+    if (ap1->length == ISZ_UCHAR || (ap2->mode == am_dreg && ap2->length == ISZ_UCHAR))
         return (OCODE*) - 2;
     return make_ocode(ap1, ap2, 0);
 }
@@ -1746,7 +1746,7 @@ static OCODE *ope_shift(void)
 static OCODE *ope_ret(void)
 {
     AMODE *ap1;
-    if (!lex || lex->type != l_i && lex->type != l_ui)
+    if (!lex || (lex->type != l_i && lex->type != l_ui))
         return make_ocode(0, 0, 0);
     ap1 = inasm_amode(TRUE);
     return make_ocode(ap1, 0, 0);

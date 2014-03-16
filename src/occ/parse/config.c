@@ -180,7 +180,7 @@ static ARCH_CHARACTERISTICS architecture = {
     0,             /* optimizations we don't want */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */
-    ABM_USESIZE,  /* bool is determined by sizing above */
+    ABM_USESIZE,  /* BOOLEAN is determined by sizing above */
     ARM_FUNCTIONSCOPE, /* register allocation across entire function */
     8,            /* number of bits in a MAU.  values other than 8 not supported */
     FALSE,        /* little endian */
@@ -207,7 +207,7 @@ static void rvColor(IMODE *ip)
     }
     else if (ip->size == ISZ_USHORT || ip->size == -ISZ_USHORT || ip->size == ISZ_U16)
         tempInfo[n]->color = R_AX;
-    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_BOOL)
+    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_BOOLEAN)
         tempInfo[n]->color = R_AL;
     else		
         tempInfo[n]->color = R_EAX;
@@ -275,7 +275,7 @@ void PreColor(QUAD *head)			/* precolor an instruction */
             head->precolored |= TEMP_RIGHT;
             switch (tempInfo[tr]->size)
             {
-                case ISZ_BOOL:
+                case ISZ_BOOLEAN:
                 case ISZ_UCHAR:
                 case -ISZ_UCHAR:
                     tempInfo[tr]->color = R_CL;
@@ -335,7 +335,7 @@ int PostGCSE(QUAD *head)
         head = head->fwd;
     }
 }
-static BOOL hasbp(EXPRESSION *expr)
+static BOOLEAN hasbp(EXPRESSION *expr)
 {
     if (!expr)
         return FALSE;
@@ -554,9 +554,9 @@ void ProcessInd(EXPRESSION **ofs1, EXPRESSION **ofs2, EXPRESSION **ofs3, int *sc
         ProcessOneInd(*ofs2, ofs1, ofs2, ofs3, scale);
     } while ((ofs4 != *ofs1 || ofs5 != *ofs2) && !*ofs2 && !*ofs3);
 }
-static BOOL LookupMem(QUAD *q, IMODE **im)
+static BOOLEAN LookupMem(QUAD *q, IMODE **im)
 {
-    BOOL rv = FALSE;
+    BOOLEAN rv = FALSE;
     if ((*im)->mode == i_direct && (*im)->offset->type == en_tempref)
     {
         QUAD *tail = q->back;
@@ -585,7 +585,7 @@ static BOOL LookupMem(QUAD *q, IMODE **im)
     return rv;
 }
 // relies on constant offsets being calculated the same way every time
-static BOOL MatchesConst(EXPRESSION *one, EXPRESSION *two)
+static BOOLEAN MatchesConst(EXPRESSION *one, EXPRESSION *two)
 {
     if (one == two)
         return TRUE;
@@ -611,7 +611,7 @@ static BOOL MatchesConst(EXPRESSION *one, EXPRESSION *two)
             return FALSE;		
     }
 }
-static BOOL MatchesMem(IMODE *one, IMODE *two)
+static BOOLEAN MatchesMem(IMODE *one, IMODE *two)
 {
     if (one == two)
         return TRUE;
@@ -634,7 +634,7 @@ static BOOL MatchesMem(IMODE *one, IMODE *two)
     }
     return FALSE;
 }
-static BOOL HandleAssn(QUAD *ins, BRIGGS_SET *globalVars)
+static BOOLEAN HandleAssn(QUAD *ins, BRIGGS_SET *globalVars)
 {
     if (ins->temps & (TEMP_LEFT|TEMP_RIGHT))
     {

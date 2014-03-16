@@ -80,7 +80,7 @@ int ppMain::Run(int argc, char *argv[])
         if (!internalConfig.Parse(configName.c_str()))
             Utils::fatal("Corrupt configuration file");
     }
-    if (!SwitchParser.Parse(&argc, argv) || argc == 1 && File.GetCount() <= 1)
+    if (!SwitchParser.Parse(&argc, argv) || (argc == 1 && File.GetCount() <= 1))
     {
         Utils::usage(argv[0], usageText);
     }
@@ -174,7 +174,7 @@ int ppMain::Run(int argc, char *argv[])
                         if (isAssign)
                         {
                             std::string name;
-                            int value = 0;
+                            PPINT value = 0;
                             npos = working.find_first_not_of(" \t\r\b\v", npos+6 + (caseInsensitive ? 1 : 0));
                             if (npos == std::string::npos || !IsSymbolStartChar(working.c_str() + npos))
                             {
@@ -202,7 +202,9 @@ int ppMain::Run(int argc, char *argv[])
                                     {
                                         ppExpr e(false);
                                         value = e.Eval(working.substr(npos));
-                                        pp.Assign(name, value, caseInsensitive);
+                                        if (value < INT_MIN || value >= UINT_MAX)
+                                            Errors::Error("ocpp does not support long longs in command line definitions");
+                                        pp.Assign(name, (int)value, caseInsensitive);
                                     }
                                 }
                             }

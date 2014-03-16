@@ -292,7 +292,6 @@ void FormatVersionString(char *buf, WCHAR *string, int len)
 static void PopulateVersion(HWND hwnd, struct resRes *versionData)
 {
     int index;
-    LV_ITEM item;
     char buf[256];
     VERSIONINFO *version = versionData->resource->u.versioninfo;
     struct variable *var;
@@ -1055,7 +1054,6 @@ LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterVersionDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

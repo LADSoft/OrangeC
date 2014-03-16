@@ -51,8 +51,8 @@
 typedef struct
 {
     TCData ptrs;
-    int *olddataptr;
-    int *currentdataptr;
+    BYTE *olddataptr;
+    BYTE *currentdataptr;
     HTREEITEM hTreeItem;
     enum
     {
@@ -333,7 +333,7 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     if (regs[i].flags &floating)
                     {
                         float val;
-                        int pos = regs[i].currentdataptr;
+                        BYTE *pos = regs[i].currentdataptr;
                         sscanf(buf, "%f", &val);
                         *(long double*)pos = val;
                         sprintf(regs[i].ptrs.col2Text, "%f", (double)val);
@@ -341,13 +341,13 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     else
                     {
                         if (buf[0] == '0' && buf[1] == 'x')
-                            sscanf(buf + 2, "%x", regs[i].currentdataptr);
+                            sscanf(buf + 2, "%x", (int *)regs[i].currentdataptr);
                         else if ((buf[strlen(buf) - 1] &0xDF) == 'H')
-                            sscanf(buf, "%x", regs[i].currentdataptr);
+                            sscanf(buf, "%x", (int *)regs[i].currentdataptr);
                         else
-                            sscanf(buf, "%d", regs[i].currentdataptr);
+                            sscanf(buf, "%d", (int *)regs[i].currentdataptr);
                         sprintf(regs[i].ptrs.col2Text, "0x%08x", 
-                            *regs[i].currentdataptr);
+                            *(int *)regs[i].currentdataptr);
                     }
                     regs[i].ptrs.col2Color = 0xff;
                 }
@@ -378,12 +378,12 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         if (regs[i].flags &floating)
                         {
                             double val;
-                            int pos = regs[i].currentdataptr;
+                            BYTE *pos = regs[i].currentdataptr;
                             val = *(long double*)pos;
 
                             sprintf(regs[i].ptrs.col2Text, "%f", val);
                             if (!memcmp(regs[i].currentdataptr,
-                                regs[i].olddataptr, 10))
+                                regs[i].olddataptr, sizeof(long double)))
                                 regs[i].ptrs.col2Color = 0;
                             else
                                 regs[i].ptrs.col2Color = 0xff;
@@ -391,8 +391,8 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         else
                         {
                             sprintf(regs[i].ptrs.col2Text, "0x%08x", 
-                                *regs[i].currentdataptr);
-                            if (*regs[i].currentdataptr ==  *regs[i].olddataptr)
+                                *(int *)regs[i].currentdataptr);
+                            if (*(int *)regs[i].currentdataptr ==  *(int *)regs[i].olddataptr)
                                 regs[i].ptrs.col2Color = 0;
                             else
                                 regs[i].ptrs.col2Color = 0xff;

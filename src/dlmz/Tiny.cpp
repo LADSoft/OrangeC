@@ -49,7 +49,7 @@ bool Tiny::ReadSections(ObjFile *file, ObjExpression *start)
         Utils::fatal("Start address for tiny program must be 0100h");
     int count = 0;
     ObjSection *sect;
-    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); it++)
+    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         sect = *it;
         size = (*it)->GetOffset()->Eval(0) + (*it)->GetSize()->Eval(0);

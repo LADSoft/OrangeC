@@ -62,7 +62,7 @@ public:
       } f;
     };
     LibDictionary(bool CaseSensitive = true) :blockCount(0), data(NULL), caseSensitive(CaseSensitive) { }
-    ~LibDictionary() { if (data) delete [] data; }
+    ~LibDictionary() { delete [] data; }
     ObjInt Lookup(FILE *stream, ObjInt dictOffset, ObjInt dictPages, const ObjString &str);
     void Write(FILE *stream);
     void CreateDictionary(LibFiles &files);

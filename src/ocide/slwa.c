@@ -319,7 +319,6 @@ void RestoreDocks(struct xmlNode *node, int version)
 void RestoreHistory(struct xmlNode *node, int version)
 {
     int count = 0;
-    char buf[256];
     char **histitem = 0;
     struct xmlAttr *attribs = node->attribs;
     struct xmlNode *children = node->children;
@@ -606,7 +605,7 @@ void RestoreFileBrowse(struct xmlNode *node, int version, PROJECTITEM *wa)
 void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
 {
     struct tagfile *l,  **ls = &tagFileList, *lprev = NULL;
-    struct tag *t,  **ts, *tprev = NULL;
+    struct tag **ts, *tprev = NULL;
     struct xmlAttr *attribs = node->attribs;
     struct xmlNode *children = node->children;
     int tagid =  - 1;
@@ -904,7 +903,8 @@ void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
     } 
     if (selected)
     {
-        currentProfileName = LookupProfileName(selected);
+        free(currentProfileName);
+        currentProfileName = strdup(LookupProfileName(selected));
     }
     node = node->children;
     while (node)
@@ -934,9 +934,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
     FILE *in;
     char activeName[MAX_PATH];
     struct xmlNode *root;
-    struct xmlNode *nodes,  *children;
-    struct xmlAttr *attribs;
-    char buf[256],  *p; 
+    struct xmlNode *nodes;
     activeName[0] = 0;
     in = fopen(name, "r");
     if (!in)
@@ -1054,11 +1052,15 @@ PROJECTITEM *RestoreWorkArea(char *name)
         PROJECTITEM *project = wa->children;
         while (project)
         {
-            if (!strnicmp(project->displayName, activeName, strlen(activeName)))
+            int n = strlen(activeName);
+            if (n <= strlen(project->displayName))
             {
-                if (project->displayName[strlen(activeName)] == '.')
-                    activeProject = project;
-                break;
+                if (!strnicmp(project->displayName, activeName, n))
+                {
+                    if (project->displayName[n] == '.')
+                        activeProject = project;
+                    break;
+                }
             }
             project = project->next;
         }
@@ -1083,7 +1085,7 @@ void onehistsave(FILE *out, char **hist, char *name)
 
 //-------------------------------------------------------------------------
 
-int SaveHistory(FILE *out)
+void SaveHistory(FILE *out)
 {
     onehistsave(out, findhist, "FIND");
     onehistsave(out, findbrowsehist, "BFINDPATH");
@@ -1108,7 +1110,7 @@ void SaveChangeLn(FILE *out, PROJECTITEM *wa)
             fprintf(out, "\t\t<FILE NAME=\"%s\">\n", relpath(list->name, wa->realName));
             while (data)
             {
-                fprintf(out, "\t\t\t<LINE NUM=\"%d\" DELTA=\"%d\"\/>\n", data
+                fprintf(out, "\t\t\t<LINE NUM=\"%d\" DELTA=\"%d\"/>\n", data
                     ->lineno, data->delta);
                 data = data->next;
             } fprintf(out, "\t\t</FILE>\n");
@@ -1300,7 +1302,6 @@ void SaveProjectNames(FILE *out, PROJECTITEM *wa)
 void SaveWorkArea(PROJECTITEM *wa)
 {
     FILE *out;
-    char buf[256],  *p;
     int i;
     PROFILENAMELIST *pf;
     
@@ -1314,7 +1315,7 @@ void SaveWorkArea(PROJECTITEM *wa)
     }
     fprintf(out, "<CC386WORKAREA>\n");
     fprintf(out, "\t<VERSION ID=\"%d\"/>\n", WSPVERS);
-    fprintf(out, "\t<FLAGS EXPANDED=\"%d\" DEBUGVIEW=\"%d\"/>\n", wa->expanded, wa->dbgview);
+    fprintf(out, "\t<FLAGS EXPANDED=\"%d\" DEBUGVIEW=\"%d\"/>\n", wa->expanded ? 1 : 0, wa->dbgview);
     fprintf(out, "\t<PROFILELIST SELECTED=\"%s\" TYPE=\"%s\">\n", currentProfileName,
             profileDebugMode ? "DEBUG" : "RELEASE");
     fprintf(out, "\t\t<NAME VALUE=\"%s\"/>\n", sysProfileName);

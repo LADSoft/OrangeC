@@ -340,7 +340,7 @@ typedef struct stmt
 typedef struct blockdata
 {
     struct blockdata *next;
-    enum e_stmt type;
+    enum e_kw type;
     CASEDATA *cases;
     STATEMENT *head, *tail;
     STATEMENT *blockTail;
@@ -537,8 +537,8 @@ typedef struct __lambda
 {
     struct __lambda *prev, *next;
     enum e_cm { cmNone, cmValue, cmRef, cmThis } captureMode;
-    BOOL isMutable;
-    BOOL captureThis;
+    BOOLEAN isMutable;
+    BOOLEAN captureThis;
     HASHTABLE *captured;
     SYMBOL *cls;
     SYMBOL *func;
@@ -576,7 +576,7 @@ typedef struct _baseClass
     struct _baseClass *next;
     SYMBOL *cls;
     enum e_ac accessLevel;
-    BOOL isvirtual;
+    BOOLEAN isvirtual;
     unsigned offset;
 } BASECLASS;
 typedef struct _virtualFunc
@@ -592,14 +592,14 @@ typedef struct _vtabEntry
     SYMBOL *cls;
     unsigned dataOffset;
     unsigned vtabOffset;
-    BOOL isvirtual;
-    BOOL isdead;
+    BOOLEAN isvirtual;
+    BOOLEAN isdead;
 } VTABENTRY;
 typedef struct _vbaseEntry
 {
     struct _vbaseEntry *next;
     SYMBOL *cls;
-    BOOL alloc;
+    BOOLEAN alloc;
     unsigned pointerOffset;
     unsigned structOffset;
 } VBASEENTRY;

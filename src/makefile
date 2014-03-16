@@ -48,7 +48,7 @@ export CPPMAKE
 DISTMAKE:=$(realpath .\dist.mak)
 export DISTMAKE
 
-ZIP:=7z -tzip 
+ZIP:="c:\program files (x86)\7-zip\7z" -tzip 
 export ZIP
 
 OBJECT:=$(realpath object)

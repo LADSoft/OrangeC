@@ -124,8 +124,8 @@ class Parser: public xmlVisitor
 {
 public:
     Parser() { }
-    virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-    virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+    virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+    virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
 
     void DumpDB();
     std::string processorName;
@@ -165,112 +165,112 @@ private:
     class ProcessorParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     } ;
     class CodingParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingParamParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingNumberParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingNumberInstanceParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingStatevarsParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingStatevarsInstanceParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingStateParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingStateWhenParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingRegisterParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingRegisterInstanceParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingDoubleRegParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingAddressParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingOpcodeParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingOpcodeOperandParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
     class CodingPrefixParser : public xmlVisitor
     {
     public:
-        virtual bool VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData);
-        virtual bool VisitNode(const xmlNode &node, const xmlNode *child, void *userData);
+        virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
+        virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);
     
     };
 };

@@ -36,14 +36,14 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 all:
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip bin\*.* bin\*
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip doc\tools.htm
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip examples\*.* examples\*
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip include\*.* include\*
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip lib\*.* lib\*
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip license\*.* license\*
-	7z -r -tzip -x@src\dosxclude.lst a src\doszip addon\hx.*
-	7z -tzip a src\doszip LICENSE.TXT
-	7z -tzip a src\doszip readme.txt
-	7z -tzip a src\doszip relnotes.txt
-#	7z -r -tzip -x@src\dosxclude.lst a src\doszip rule\*.* rule\*
+	$(ZIP) -r -x@src\dosxclude.lst a src\doszip bin\*.* bin\*
+	$(ZIP) -r -x@src\dosxclude.lst a src\doszip doc\tools.htm
+	$(ZIP) -r -x@src\dosxclude.lst a src\doszip examples\*.* examples\*
+	$(ZIP) -r -x@src\dosxclude.lst a src\doszip include\*.* include\*
+	$(ZIP) -r -x@src\dosxclude.lst a src\doszip lib\*.* lib\*
+	$(ZIP) -r -x@src\dosxclude.lst a src\doszip license\*.* license\*
+	$(ZIP) -r -x@src\dosxclude.lst a src\doszip addon\hx.*
+	$(ZIP) a src\doszip LICENSE.TXT
+	$(ZIP) a src\doszip readme.txt
+	$(ZIP) a src\doszip relnotes.txt
+#	$(ZIP) -r -x@src\dosxclude.lst a src\doszip rule\*.* rule\*

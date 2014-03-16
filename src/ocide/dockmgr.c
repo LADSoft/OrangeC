@@ -326,7 +326,7 @@ void dmgrInit(HINSTANCE hInstance, HWND frame, HWND client, int count)
         wc.hInstance = hInstance;
         wc.hIcon = LoadIcon(0, IDI_APPLICATION);
         wc.hCursor = 0; 
-        wc.hbrBackground ;
+        wc.hbrBackground = 0;
         wc.lpszMenuName = 0;
         wc.lpszClassName = szFocusClassName;
         RegisterClass(&wc);
@@ -396,11 +396,7 @@ void AddDockableToolbarWindow(CCW_params *p)
     if (currentWindows < max)
     {
         CCD_params *ccd = calloc(sizeof(CCD_params), 1);
-        if (!ccd)
-        {
-            free(ccd);
-        }
-        else
+        if (ccd)
         {
             RECT r;
             GetWindowRect(p->hwnd, &r);
@@ -2654,8 +2650,8 @@ int adjustforbadplacement(int id, CCD_params *d)
 void SaveDocksToRegistry(void)
 {
     int i;
-    CCW_params p[20];
-    CCD_params d[20];
+//    CCW_params p[20];
+//    CCD_params d[20];
     char regname[256];
     char iobuf[512];
     int len;

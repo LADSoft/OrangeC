@@ -244,7 +244,7 @@ static int GenProjDepends(FILE *out, PROJECTITEM *pj, PROJECTITEM *fi, int pos)
     }
     return pos;
 }
-static int GenFileDepends(FILE *out, PROJECTITEM *pj)
+static void GenFileDepends(FILE *out, PROJECTITEM *pj)
 {
     switch (pj->type)
     {
@@ -313,7 +313,7 @@ static int GenFileDepends(FILE *out, PROJECTITEM *pj)
         case PJ_PROJ:
         {
             char *outFile = Lookup("OUTPUTFILE",pj, NULL);
-            char buf[MAX_PATH], *rp;
+            char *rp;
             rp = nodotslash(relpathmake(outFile, pj->realName));
             fprintf(out, "%s: ", rp);
             GenProjDepends(out, pj, pj->children, 0);
@@ -357,7 +357,7 @@ static void GenCustomBuildDepends(FILE *out, PROJECTITEM *pj)
         LoadPath(root, path, "__ASMINCLUDES");
         while (deps[0])
         {
-            char buf[MAX_PATH], *rp;
+            char buf[MAX_PATH];
             deps = GetNextFile(buf, deps);
             if (i > 60)
             {
@@ -495,7 +495,7 @@ static void FreeNVPs(PROJECTITEM *pj)
         }
     }
 }
-static DWORD __stdcall genMake(PROJECTITEM *l)
+static DWORD genMake(PROJECTITEM *l)
 {
     FILE *out;
     OPENFILENAME ofn;
@@ -539,6 +539,5 @@ static DWORD __stdcall genMake(PROJECTITEM *l)
 void genMakeFile(PROJECTITEM *l)
 {
     DWORD threadhand;
-    CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)genMake, (LPVOID)l,
-        0, &threadhand));
+    _beginthread((BEGINTHREAD_FUNC)genMake, 0, (LPVOID)l);
 }

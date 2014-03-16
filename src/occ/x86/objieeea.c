@@ -324,7 +324,7 @@ void link_Files(void)
 {
     if (cparams.prm_browse || cparams.prm_debug)
     {
-        BOOL start = TRUE;
+        BOOLEAN start = TRUE;
         BROWSEFILE *files = browseFiles;
         while (files)
         {
@@ -801,7 +801,7 @@ void link_Imports(void)
 }
 
 //-------------------------------------------------------------------------
-BOOL isbasevolatile(TYPE *tp)
+BOOLEAN isbasevolatile(TYPE *tp)
 {
     TYPE *tp1 = tp;
     while (TRUE)

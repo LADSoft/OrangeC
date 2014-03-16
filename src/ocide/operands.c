@@ -1177,7 +1177,7 @@ static void RegisterSymbol(OPERAND *record)
             AddSymbol(record, SY_INTR);
             break;
         case OM_SHIFT:
-            if ((!record->flags &OMF_CL) && (record->address != 1))
+            if (!(record->flags &OMF_CL) && (record->address != 1))
                 AddSymbol(record, SY_SHIFT);
             break;
         case OM_RETURN:

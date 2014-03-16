@@ -276,8 +276,6 @@ VOID FAR PASCAL ChangeBitmapColorDC(HDC hdcBM, LPBITMAP lpBM, COLORREF rgbOld,
 #define TTRANS(x) (((x) * 4)/10)
 void Tint(HBITMAP hBmpSrc, COLORREF dest)
 {
-    HDC hDC, hdcMem;
-    HBITMAP hOldBmp;
     BITMAP bmBits;
     int i;
     int bbase = TBASE(dest & 0xff);
@@ -305,8 +303,6 @@ void Tint(HBITMAP hBmpSrc, COLORREF dest)
 }
 void ConvertToGray(HBITMAP hBmpSrc) // assumes a 32-bit bitmap
 {
-    HDC hDC, hdcMem;
-    HBITMAP hOldBmp;
     BITMAP bmBits;
     int i;
     GetObject(hBmpSrc, sizeof(BITMAP), (LPSTR) &bmBits);
@@ -350,7 +346,7 @@ HBITMAP ConvertToTransparent(HBITMAP hBmpSrc, DWORD color)
                     bmiNew.bmiHeader.biPlanes = 1;
                     bmiNew.bmiHeader.biBitCount = 32;         // four 8-bit components 
                     bmiNew.bmiHeader.biCompression = BI_RGB;
-                    bmiNew.bmiHeader.biSizeImage = bmBits.bmWidth, bmBits.bmHeight * 4;
+                    bmiNew.bmiHeader.biSizeImage = bmBits.bmWidth * bmBits.bmHeight * 4;
                 
                     hnewBmp = CreateDIBSection(hdcMem32, &bmiNew, DIB_RGB_COLORS, &pvBitsNew, NULL, 0x0);
                     SelectObject(hdcMem32, hnewBmp);

@@ -130,9 +130,9 @@ static void nokeep(int tnum)
             nokeep(i->dc.right->offset->v.sp->value.i);
     }
 }
-static BOOL IsAncestor(BLOCK *b1, BLOCK *b2)
+static BOOLEAN IsAncestor(BLOCK *b1, BLOCK *b2)
 {
-    BOOL rv = FALSE;
+    BOOLEAN rv = FALSE;
     if (b1)
     {
         LOOP *lb1 = b1->loopParent;
@@ -219,7 +219,7 @@ void ScanForInvariants(BLOCK *b)
                 tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = b;
                 if (head->temps & (TEMP_LEFT | TEMP_RIGHT))
                 {
-                    BOOL canMove = TRUE;
+                    BOOLEAN canMove = TRUE;
                     BLOCK *pbl = NULL, *pbr = NULL;
                     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
                     {
@@ -234,7 +234,7 @@ void ScanForInvariants(BLOCK *b)
                     else if (head->dc.right && head->dc.right->mode != i_immed)
                         canMove = FALSE;
                     if (canMove)
-                        if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting && (!pbr || pbr->preWalk != b->preWalk && pbr->nesting == b->nesting))
+                        if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting && (!pbr || (pbr->preWalk != b->preWalk && pbr->nesting == b->nesting)))
                             MoveExpression(b, head, pbl, pbr);
                 }
                 else if (head->dc.opcode == i_assn && head->dc.left->mode == i_immed)

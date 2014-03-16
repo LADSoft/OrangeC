@@ -17,7 +17,6 @@ void CopyText(HWND hwnd);                                         /* STATIC */
 void DoDisassembly(HDC dc, RECT *r);
 LRESULT CALLBACK gotoProc2(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void doPaint(HWND hwnd);
 LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 void RegisterASMWindow(void);
@@ -131,7 +130,7 @@ void databp(HWND hwnd);
 
                               /* Dbgmain.c */
 
-void __stdcall StartDebug(char *cmd); /* PROTOTYPE */
+void StartDebug(char *cmd); /* PROTOTYPE */
 void RunProgram(PROJECTITEM *plist);
 int initiateDebug(int stopimmediately);
 BOOL CALLBACK topenumfunc(HWND wnd, LPARAM value);
@@ -182,7 +181,6 @@ void abortDebugThread(void);
 void abortDebug(void);
 void TranslateFilename(char * szFilename);
 BOOL GetFileNameOfDLL(HMODULE hpsapiLib, HANDLE hProcess, DWORD base, DWORD nameBase, BOOL fUnicode, char *name);
-void __stdcall StartDebug(char *cmd);
 
                               /* Dialog.c */
 
@@ -280,7 +278,7 @@ int RestorePlacementFromRegistry(WINDOWPLACEMENT *wp);
 char *GetCmd(void);
 LPTCH GetEnv(void);                                               /* STATIC */
 void FreeEnv(LPTCH env);
-DWORD CALLBACK DosWindowThread(void *xx);
+DWORD DosWindowThread(void *xx);
 void DosWindow(char *path, char *exec, char *args, char *rvTitle, char *rvBody);
 
                               /* Dumpwnd.c */
@@ -298,7 +296,117 @@ LRESULT CALLBACK DumpProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 void RegisterDumpWindow(void);
 HWND CreateDumpWindow(void);
 
-                              /* Editor.c */
+
+/* Protogen Version 3.0.1.6Saturday March 15, 2014  20:19:04 */
+
+                              /* Drawacc.c */
+
+HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data); /* PROTOTYPE */
+void InsertAccProperties(HWND lv, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void GetAccPropText(char *buf, HWND lv, struct resRes *data, int row); /* PROTOTYPE */
+HWND AccPropStartEdit(HWND lv, int row, struct resRes *data); /* PROTOTYPE */
+void AccPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data); /* PROTOTYPE */
+HWND PropGetHWNDCombobox(HWND parent); /* PROTOTYPE */
+HWND PropGetHWNDNumeric(HWND parent); /* PROTOTYPE */
+HWND PropGetHWNDText(HWND parent); /* PROTOTYPE */
+void InsertAccProperties(HWND lv, struct resRes *data);           /* STATIC */
+void GetAccPropText(char *buf, HWND lv, struct resRes *data, int row);
+HWND AccPropStartEdit(HWND lv, int row, struct resRes *data);
+void AccPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+void PopulateKeys(HWND hwnd, struct resRes *acceleratorData);     /* STATIC */
+void AccSetMoved(int type, struct resRes *acceleratorData, int from, int to);/* STATIC */
+void AccDoUndo(struct resRes *acceleratorData);                   /* STATIC */
+LRESULT CALLBACK EditorSubclassProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void AccSubclassEditWnd(HWND parent, HWND hwnd);
+void AccInsert(struct resRes *acceleratorData, int index);        /* STATIC */
+void AccDelete(struct resRes *acceleratorData, int index);        /* STATIC */
+LRESULT CALLBACK AccSetKeyProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
+char *GetVKName(int val);
+void AccSetKey(struct resRes *acceleratorData, int val);          /* STATIC */
+LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void RegisterAcceleratorDrawWindow(void);
+void CreateAcceleratorDrawWindow(struct resRes *info);
+
+                              /* Drawdlg.c */
+
+void InsertCtlProperties(HWND lv, struct ctlData *data); /* PROTOTYPE *//* STATIC */
+void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row); /* PROTOTYPE *//* STATIC */
+HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data); /* PROTOTYPE *//* STATIC */
+void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data); /* PROTOTYPE *//* STATIC */
+void InsertDlgProperties(HWND lv, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row); /* PROTOTYPE */
+HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data); /* PROTOTYPE */
+void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data); /* PROTOTYPE */
+HRESULT PASCAL SetWindowTheme(
+  HWND hwnd,
+  LPCWSTR pszSubAppName,
+  LPCWSTR pszSubIdList
+); /* PROTOTYPE */
+HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data); /* PROTOTYPE */
+BOOL CALLBACK RemoveWindow(HWND hwnd, LPARAM lParam); /* PROTOTYPE *//* STATIC */
+HWND PropGetHWNDCombobox(HWND parent); /* PROTOTYPE */
+HWND PropGetHWNDNumeric(HWND parent); /* PROTOTYPE */
+HWND PropGetHWNDText(HWND parent); /* PROTOTYPE */
+void LoadCtlFields(struct ctlDB *dbEntry, struct xmlNode *node);  /* STATIC */
+void LoadCtlDb(struct xmlNode *control);                          /* STATIC */
+void drawdlginit(void);
+void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row);/* STATIC */
+HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data);    /* STATIC */
+void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data);/* STATIC */
+void InsertCtlProperties(HWND lv, struct ctlData *data);          /* STATIC */
+HFONT MakeFont(HDC hDC, WCHAR *font, int pointsize, int weight, int italic);/* STATIC */
+void GetBaseUnits(HWND hwnd, struct resRes *dlgData, LPSIZE base);/* STATIC */
+void ConvertToPixels(RECT *r, LPSIZE base);                       /* STATIC */
+void ConvertToDlgUnits(RECT *r, LPSIZE base);                     /* STATIC */
+HWND CreateDlgWindow(HWND hwnd, struct resRes * dlgData);         /* STATIC */
+void ShowOrHideScrollBars(HWND hwnd, struct resRes *dlgData);     /* STATIC */
+void DrawRect(HDC dc, RECT *r);                                   /* STATIC */
+void UndoGroupStart(struct resRes *dlgData);                      /* STATIC */
+void UndoGroupEnd(struct resRes *dlgData);                        /* STATIC */
+BOOL CALLBACK UndoDeleteOne(HWND hwnd, LPARAM lParam);            /* STATIC */
+void UndoDeleteActive(struct resRes *dlgData);                    /* STATIC */
+BOOL CALLBACK UndoMoveOne(HWND hwnd, LPARAM lParam);              /* STATIC */
+void UndoMoveActive(struct resRes *dlgData);                      /* STATIC */
+void UndoReorder(struct resRes *dlgData);                         /* STATIC */
+void CleanChildSpace(HWND hwnd, HWND parent);                     /* STATIC */
+BOOL CALLBACK RemoveWindow(HWND hwnd, LPARAM lParam);             /* STATIC */
+void DlgUndoOne(struct resRes *dlgData);                          /* STATIC */
+BOOL CALLBACK ActivateSizing(HWND child, LPARAM param);           /* STATIC */
+void DlgDoUndo(struct resRes *dlgData);                           /* STATIC */
+LRESULT CALLBACK DlgControlInputRedirProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+BOOL CALLBACK HookAllChildren(HWND child, LPARAM old);            /* STATIC */
+void CreateControls(HWND hwnd, struct resRes *dlgData);           /* STATIC */
+BOOL CALLBACK SelectChildren(HWND child, LPARAM param);           /* STATIC */
+BOOL CALLBACK MoveChildren(HWND child, LPARAM param);             /* STATIC */
+BOOL CALLBACK MoveChildrenCommit(HWND child, LPARAM param);       /* STATIC */
+BOOL InsertNewControl(struct resRes *dlgData, int type, POINT at);/* STATIC */
+BOOL CALLBACK DeleteActiveControls(HWND hwnd, LPARAM lParam);     /* STATIC */
+void DrawGrid(HWND hwnd, HDC hDC, struct resRes *dlgData, BOOL show, int spacing, RECT *clip);/* STATIC */
+BOOL CALLBACK RemoveAllWindows(HWND hwnd, LPARAM lParam);         /* STATIC */
+void SetAltMode(int mode, struct resRes *dlgData);                /* STATIC */
+void DrawColoredRect(HDC hDC, int color, WCHAR *text, LPSIZE base, LPRECT r);/* STATIC */
+void DrawAltMode(HWND hwnd, HDC hDC, struct resRes* dlgData);     /* STATIC */
+void ClickAltMode(HWND hwnd, struct resRes* dlgData);             /* STATIC */
+void InsertDlgProperties(HWND lv, struct resRes *data);           /* STATIC */
+void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row);
+HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data);
+void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void StreamActiveControlsFromClipboard(struct resRes *dlgData);   /* STATIC */
+BOOL CALLBACK StreamToClipboard(HWND hwnd, LPARAM lParam);        /* STATIC */
+void WriteClipboardData(struct resRes *dlgData, struct clipboardBuffer *b);/* STATIC */
+LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void RegisterDlgDrawWindow(void);
+void CreateDlgDrawWindow(struct resRes *info);
+
+                             /* Drawedit.c */
 
 void recolorize(DWINFO *ptr); /* PROTOTYPE */
 void AsyncOpenFile(DWINFO *newInfo); /* PROTOTYPE */
@@ -309,24 +417,13 @@ int xstricmp(char *str1, char *str2);
 char *stristr(char *str1, char *str2);
 void ResetEditTitles(void );
 void rehighlight(char *text, int whole, int casesensitive);
+BOOL CALLBACK doSysMenu(HWND hwnd, LPARAM hide);
+void doMaximize(void);
 void ApplyEditorSettings(void);
 void InvalidateByName(char *name);
 DWINFO *GetFileInfo(char *name);
 void EditRenameFile(char *oldName, char *newName);
 int ApplyBreakAddress(char *module, int linenum);
-int FileAttributes(char *name);                                   /* STATIC */
-LRESULT CALLBACK lvProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam);
-int CreateFileSaveData(HWND hwnd, int changed);                   /* STATIC */
-void SetOKText(HWND hwnd, char *text);                            /* STATIC */
-void ParseFileSaveData(HWND hwnd, BOOL changed);                  /* STATIC */
-long APIENTRY FileSaveProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
-    lParam);
-long APIENTRY FileChangeProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
-    lParam);
-void PASCAL CheckEditWindowChangedThread(void *aa);
-void CheckEditWindowChanged(void);
-int QuerySaveAll(void);
 void SaveDrawAll(void);
 int AnyModified(void);
 void CloseAll(void);
@@ -334,12 +431,13 @@ void RedrawAllBreakpoints(void);
 char *GetEditData(HWND hwnd);
 void FreeEditData(char *buf);
 int SetEditData(HWND hwnd, char *buf, BOOL savepos);
-void backup(char *name);
+void backup(char *name);                                          /* STATIC */
 int SaveFile(HWND hwnd, DWINFO *info);
 int LoadFile(HWND hwnd, DWINFO *info, BOOL savepos);
 void SetTitle(HWND hwnd);
 void drawParams(DWINFO *info, HWND hwnd);
 void eraseParams(HWND hwnd);
+int GetLog10(int val);                                            /* STATIC */
 int PaintBreakpoints(HWND hwnd, HDC dc, PAINTSTRUCT *paint, RECT *rcl);
 LRESULT CALLBACK gotoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
@@ -348,13 +446,131 @@ void asyncLoadFile(DWINFO *ptr);
 DWORD MsgWait(HANDLE event, DWORD timeout);
 void installparse(char *name, BOOL remove);                       /* STATIC */
 void InstallForParse(HWND hwnd);
+void InstallAllForParse(void);
 void deleteParseData(char *name);                                 /* STATIC */
-void ScanParse(void);                                             /* STATIC */
+void ScanParse(void);
 LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 void RegisterDrawWindow(void);
 HWND openfile(DWINFO *newInfo, int newwindow, int visible);
 HWND CreateDrawWindow(DWINFO *baseinfo, int visible);
+
+                             /* Drawimage.c */
+
+void InsertImgProperties(HWND lv, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void GetImgPropText(char *buf, HWND lv, struct resRes *data, int row); /* PROTOTYPE *//* STATIC */
+HWND ImgPropStartEdit(HWND lv, int row, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void InsertImgProperties(HWND lv, struct resRes *data);           /* STATIC */
+void GetImgPropText(char *buf, HWND lv, struct resRes *data, int row);/* STATIC */
+HWND ImgPropStartEdit(HWND lv, int row, struct resRes *data);     /* STATIC */
+void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);/* STATIC */
+int validDIB(
+    LPBITMAPINFO DIB,
+    DWORD DIBSize,
+    int bitmap);                                                  /* STATIC */
+LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void RegisterImageDrawWindow(void);
+void CreateImageDrawWindow(struct resRes *info);
+
+                             /* Drawmenu.c */
+
+HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data); /* PROTOTYPE */
+void InsertMenuProperties(HWND lv, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void GetMenuPropText(char *buf, HWND lv, struct resRes *data, int row); /* PROTOTYPE *//* STATIC */
+HWND MenuPropStartEdit(HWND lv, int row, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void InsertMenuItemProperties(HWND lv, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row); /* PROTOTYPE *//* STATIC */
+HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data); /* PROTOTYPE *//* STATIC */
+void InsertMenuProperties(HWND lv, struct resRes *data);          /* STATIC */
+void GetMenuPropText(char *buf, HWND lv, struct resRes *data, int row);
+HWND MenuPropStartEdit(HWND lv, int row, struct resRes *data);
+void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+void InsertMenuItemProperties(HWND lv, struct resRes *data);      /* STATIC */
+void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row);
+HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes *data);
+void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
+void DoUndo(struct resRes * menuData);                            /* STATIC */
+void SelectSubmenu(HWND hwnd, struct resRes *menuData, POINT mouse, BOOL openEditor);/* STATIC */
+int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse);
+void InsertDelete(HWND hwnd, struct resRes * menuData, int code);
+LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void RegisterMenuDrawWindow(void);
+void CreateMenuDrawWindow(struct resRes *info);
+
+                            /* Drawrcdata.c */
+
+HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data); /* PROTOTYPE */
+HWND PropGetHWNDCombobox(HWND parent); /* PROTOTYPE */
+HWND PropGetHWNDNumeric(HWND parent); /* PROTOTYPE */
+HWND PropGetHWNDText(HWND parent); /* PROTOTYPE */
+void PopulateRows(HWND hwnd, struct resRes *rcDataData);          /* STATIC */
+void rcDataSetMoved(int type, struct resRes *rcDataData, int from, int to);/* STATIC */
+void rcDataDoUndo(struct resRes *rcDataData);                     /* STATIC */
+void rcDataInsert(struct resRes *rcDataData, int index);          /* STATIC */
+void rcDataDelete(struct resRes *rcDataData, int index);          /* STATIC */
+void FormatAsciiString(char *buf, char *string, int len);
+LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void RegisterRCDataDrawWindow(void);
+void CreateRCDataDrawWindow(struct resRes *info);
+
+                            /* Drawstrings.c */
+
+HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data); /* PROTOTYPE */
+void PopulateStrings(HWND hwnd, struct resRes *stringTableData);  /* STATIC */
+void StringTableSetInserted(struct resRes *stringTableData, int at);/* STATIC */
+void StringTableInsert(struct resRes *stringTableData, int index);/* STATIC */
+void StringTableDelete(struct resRes *stringTableData, int index);/* STATIC */
+void StringTableUndo(HWND hwnd, struct resRes *stringTableData);  /* STATIC */
+LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void RegisterStringTableDrawWindow(void);
+void CreateStringTableDrawWindow(struct resRes *info);
+
+                             /* Drawutil.c */
+
+int FileAttributes(char *name);
+void GetFileList(HWND hwndLV, PROJECTITEM *pj, int *items, BOOL changed);
+void GetSecondaryFileList(HWND hwndLV, int *items, BOOL changed);
+int CreateFileSaveData(HWND hwnd, int changed);                   /* STATIC */
+void SetOKText(HWND hwnd, char *text);                            /* STATIC */
+void ParseFileSaveData(HWND hwnd, BOOL changed);                  /* STATIC */
+long APIENTRY FileSaveProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
+    lParam);
+long APIENTRY FileChangeProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
+    lParam);
+void CheckEditWindowChangedThread(void *aa);
+void CheckEditWindowChanged(void);
+int QuerySaveAll(void);
+
+                            /* Drawversion.c */
+
+LRESULT CALLBACK EditorSubclassProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam); /* PROTOTYPE */
+HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data); /* PROTOTYPE */
+void SetItem(struct resRes *versionData, int index, char *key, char *value);/* STATIC */
+char *ParseVersionString(char *string, int *returnedLength);
+void FormatVersionString(char *buf, WCHAR *string, int len);
+void PopulateVersion(HWND hwnd, struct resRes *versionData);      /* STATIC */
+void DeleteKeys(struct keypair *keys);                            /* STATIC */
+int CALLBACK sortFunc(LPARAM left, LPARAM right, LPARAM id);      /* STATIC */
+void Renumber(HWND hwnd);                                         /* STATIC */
+void VersInsertItem(struct resRes * versionData, int index, char *key, char *value);/* STATIC */
+void VersDeleteItem(HWND hwnd, int index);                        /* STATIC */
+void VersInsert(struct resRes *versionData);                      /* STATIC */
+void VersDelete(struct resRes *versionData);                      /* STATIC */
+void DoUndoChanged(struct resRes *versionData, DWORD low, DWORD high);/* STATIC */
+void VersChanged(struct resRes *versionData, char *buf);          /* STATIC */
+void VersUndo(struct resRes *versionData);                        /* STATIC */
+LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void RegisterVersionDrawWindow(void);
+void CreateVersionDrawWindow(struct resRes *info);
 
                               /* Effect.c */
 
@@ -446,7 +662,7 @@ VARINFO *EvalExpr(DEBUG_INFO **dbg, SCOPE*sc,
 
 LRESULT CALLBACK lvProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam); /* PROTOTYPE */
-DWORD __stdcall RunExternalToolThread(void *p);
+DWORD RunExternalToolThread(void *p);
 void RunExternalTool(int id);
 void ExternalToolsToMenu(void);
 void ExternalToolsToProfile(void);
@@ -495,8 +711,8 @@ DWORD BrowseForFile(HWND hwnd, LPSTR pszDisplayName, LPSTR pszPath, UINT cchPath
 void findInit(void);
 void EndFind(void);
 int FindStringFromToolbar(char *search);
-DWORD CALLBACK DoFindNext(void *p);
-DWORD CALLBACK DoReplaceNext(void *p);
+DWORD DoFindNext(void *p);
+DWORD DoReplaceNext(void *p);
 void OpenFindDialog(void);
 void OpenReplaceDialog(void);
 void OpenFindInFilesDialog(void);
@@ -540,7 +756,7 @@ void RegisterHistoryComboWindow(void);
 int SendFileName(char *msg);
 void PassFilesToInstance(void);
 int RetrieveInstanceFile(DWINFO *info);
-int PASCAL msThread(void *aa);
+int msThread(void *aa);
 int StartInstanceComms(void);
 void StopInstanceComms(void);
 
@@ -821,6 +1037,7 @@ void CreateProjectWindow(void);
 
                                /* Props.c */
 
+char *LookupProfileName(char *name);
 void InsertSetting(PROJECTITEM *pf, SETTING *set);
 SETTING **GetSettingsAddress(PROJECTITEM *pf);
 SETTING *GetSettings(PROFILE *pf);
@@ -830,7 +1047,7 @@ BOOL MatchesExt(char *name, char *exts);                          /* STATIC */
 BOOL MatchesExtExt(char *source, char *exts);                     /* STATIC */
 int SortRules(const void *left, const void *right);               /* STATIC */
 void EvalDependentRules(SETTING *depends, PROJECTITEM *item, struct _propsData *data);
-BUILDRULE *SelectRules(PROJECTITEM *item, struct _propsData *data);
+void SelectRules(PROJECTITEM *item, struct _propsData *data);
 void CullBasicRules(PROJECTITEM *item, struct _propsData *data, BOOL first);/* STATIC */
 void GetActiveRules(PROJECTITEM *item, struct _propsData *data);  /* STATIC */
 void PropGetPrototype(PROJECTITEM *item, struct _propsData *data, SETTING **arr);/* STATIC */
@@ -869,6 +1086,43 @@ BOOL PropGetBool(PROJECTITEM *item, char *id);
 int PropGetInt(PROJECTITEM *item, char *id);
 void PropGetString(PROJECTITEM *item, char *id, char *string, int len);
 COLORREF PropGetColor(PROJECTITEM *item, char *id);
+
+                             /* Rcinterf.c */
+
+void CreateNewResourceFile(PROJECTITEM *data, char *name, int flag);
+void ResShowSubTree(PROJECTITEM *file);
+struct resDir *FindResDir(struct resData *data, int type);
+void ResCreateSubTree(struct resData *data);
+void ResFreeSubTree(struct resData *data);
+struct resData *ResLoad(char *name);
+void ResRewriteTitle(struct resRes *res, BOOL dirty);
+void ResSetDirty(struct resRes *res);
+void ResSetClean(struct resRes *res);
+void ResSave(char *name, struct resData *data);
+HANDLE ResGetHeap(PROJECTITEM *pj, struct resRes *data);
+BOOL ResSaveCurrent(PROJECTITEM *pj, struct resRes *res);
+PROJECTITEM *GetResData(PROJECTITEM *cur);
+void ResSaveAll(void);
+void ResOpen(PROJECTITEM *file);
+void HandleDblClick(HTREEITEM item, BOOL err);
+LRESULT CALLBACK NewResourceProc(HWND hWnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+void HandleRightClick(HWND hWnd, HTREEITEM item);
+void ResFree(PROJECTITEM *file, BOOL toSave);
+void ResReload(PROJECTITEM *pj);
+void NavigateToResource(PROJECTITEM *file);
+void ResAddItem(PROJECTITEM *file);
+void ResDeleteItem(PROJECTITEM *data);
+void ResDeleteAllItems(void);
+int ResChangeId(char *name, int id);
+char *ResAddNewDef(char *name, int id);
+WCHAR *WStrDup(WCHAR *s);
+void ResSetTreeName(struct resRes *data, char *buf);
+PROJECTITEM *GetResProjectFile(HTREEITEM sel);
+void ResRename(void);
+void ResDoneRenaming(void);
+void RegisterResourceWindow(void);
+void CreateResourceWindow(void);
 
                               /* Regwnd.c */
 
@@ -938,7 +1192,7 @@ void RestoreToolBars(struct xmlNode *node, int version);
 void RestoreProjectNames(struct xmlNode *node, int version, PROJECTITEM *wa);
 PROJECTITEM *RestoreWorkArea(char *name);
 void onehistsave(FILE *out, char **hist, char *name);
-int SaveHistory(FILE *out);
+void SaveHistory(FILE *out);
 void SaveChangeLn(FILE *out, PROJECTITEM *wa);
 void SaveFileBrowse(FILE *out, PROJECTITEM *wa);
 void saveonetag(FILE *out, int tag, PROJECTITEM *wa);
@@ -1011,7 +1265,6 @@ void CreateTabWindow(void);
 
 int oldline(struct tagfile *, int, int); /* PROTOTYPE */
 int IsTagged(char *module, int line);
-int HasBreakpoints(void);
 int Tag(int type, char *name, int drawnLineno, int charpos, void *extra, int
     freeextra, int alwaysadd);
 void TagRemoveAll(int type);

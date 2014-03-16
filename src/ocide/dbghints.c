@@ -61,7 +61,7 @@ unsigned bitmask[] =
 int ReadValue(int address, void *val, int size, VARINFO *var)
 {
     int len;
-    if (address < 0x1000 && var->thread && var->thread)
+    if (address < 0x1000 && var->thread)
     {
         CONTEXT *regs = &var->thread->regs;
         // register
@@ -445,17 +445,17 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
                 sprintf(buf, "%f + %f * I", (double)info->fval,(double)info->fvali) ;
                 break;
             default:
-                sprintf(buf,"%p", info->address);
+                sprintf(buf,"%x", info->address);
                 break;
         }
     }
     else if (info->structure)
     {
-        sprintf(buf, "STRUCTURE: %p", info->address);
+        sprintf(buf, "STRUCTURE: %x", info->address); 
     }
     else if (info->unionx)
     {
-        sprintf(buf, "UNION: %p", info->address);
+        sprintf(buf, "UNION: %x", info->address);
     }
     else if (info->pointer)
     {
@@ -463,12 +463,12 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
         char buf2[256],  *p;
         if (info->derefaddress != -1)
         {
-            sprintf(buf, "POINTER: %p ", info->derefaddress);
+            sprintf(buf, "POINTER: %x ", info->derefaddress);
             GetStringValue(info, buf + strlen(buf), 32, info->derefaddress);
         }
         else if (ReadValue(info->address, &val, 4, info))
         {
-            sprintf(buf, "POINTER: %p ", val);
+            sprintf(buf, "POINTER: %x ", val);
             GetStringValue(info, buf + strlen(buf), 32, val);
         }
         else
@@ -487,7 +487,7 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
     }
     else if (info->array)
     {
-        sprintf(buf, "ARRAY: %p ", info->address);
+        sprintf(buf, "ARRAY: %x ", info->address);
         GetStringValue(info, buf + strlen(buf), 32, info->address);
     }
     else

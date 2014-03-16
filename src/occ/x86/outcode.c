@@ -59,11 +59,11 @@ VIRTUAL_LIST *virtualFirst, *virtualLast;
 static LABEL **labelbuf;
 static int lastIncludeNum;
 /*char segregs[] = "CSDSESFSGSSS";*/
-static BYTE segoverxlattab[] = 
+static UBYTE segoverxlattab[] = 
 {
     0x3e, 0x2e, 0x3e, 0x26, 0x64, 0x65, 0x36
 };
-static BYTE segtab[] = 
+static UBYTE segtab[] = 
 {
     0x18, 0x8, 0x18, 0x0, 0x20, 0x28, 0x10
 };
@@ -4155,7 +4155,7 @@ void emit(int seg, void *data, int len)
             tab->last = tab->last->next = beGlobalAlloc(sizeof(EMIT_LIST));
             tab->last->address = address;
         }
-        memcpy(tab->last->data + tab->last->filled, (BYTE *)data + ofs, size);
+        memcpy(tab->last->data + tab->last->filled, (UBYTE *)data + ofs, size);
         tab->last->filled += size;
         len -= size;
         ofs += size;
@@ -4222,7 +4222,7 @@ void gen_threadlocal_fixup(int seg, int address, SYMBOL *tls, SYMBOL *base)
 void outcode_dump_muldivval(void)
 {
     MULDIV *v = muldivlink;
-    BYTE buf[10];
+    UBYTE buf[10];
     while (v)
     {
         oa_align(8);
@@ -4322,7 +4322,7 @@ void outcode_genstorage(int len)
 
 void outcode_genfloat(FPF *val)
 {
-    BYTE buf[4];
+    UBYTE buf[4];
     FPFToFloat(buf, val);
     emit(oa_currentSeg, buf, 4);
 }
@@ -4331,7 +4331,7 @@ void outcode_genfloat(FPF *val)
 
 void outcode_gendouble(FPF *val)
 {
-    BYTE buf[8];
+    UBYTE buf[8];
     FPFToDouble(buf, val);
     emit(oa_currentSeg, buf, 8);
 }
@@ -4340,7 +4340,7 @@ void outcode_gendouble(FPF *val)
 
 void outcode_genlongdouble(FPF *val)
 {
-    BYTE buf[10];
+    UBYTE buf[10];
     FPFToLongDouble(buf, val);
     emit(oa_currentSeg, buf, 10);
 }
@@ -4513,10 +4513,10 @@ int resolveoffset(OCODE *ins, EXPRESSION *n, int *resolved)
 
 /*-------------------------------------------------------------------------*/
 
-int asmrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
+int asmrm(int reg, OCODE *ins, AMODE *data, UBYTE **p)
 {
     int resolved = 1, val;
-    BYTE *rm;
+    UBYTE *rm;
     if (data->mode == am_dreg)
     {
         reg |= 0xc0 + data->preg;
@@ -4546,7 +4546,7 @@ int asmrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
                 val = resolveoffset(ins, data->offset, &resolved);
                 ins->resolved = resolved;
                 #ifdef FULLVERSION
-                    if (resolved &!val)
+                    if (resolved &&!val)
                         return 1;
                 #endif 
             }
@@ -4577,8 +4577,8 @@ int asmrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
             }
             else
             {
-                if (data->sreg == ESP || data->sreg == data->preg && data->sreg
-                    == EBP)
+                if (data->sreg == ESP || (data->sreg == data->preg && data->sreg
+                    == EBP))
                     return 0;
                 if (data->preg != EBP)
                 {
@@ -4642,7 +4642,7 @@ int asmrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
 
 /*-------------------------------------------------------------------------*/
 
-int asmfrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
+int asmfrm(int reg, OCODE *ins, AMODE *data, UBYTE **p)
 {
     reg &= 0x38;
     if (data->mode == am_freg)
@@ -4660,7 +4660,7 @@ int asmfrm(int reg, OCODE *ins, AMODE *data, BYTE **p)
  *	buffer somewhere. If the opcode length is greater than one, what
  *	happens?
  */
-int AOP0(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP0(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper1)
         return 0;
@@ -4677,13 +4677,13 @@ int AOP0(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  word reg, bits 0-2 of opcode = reg num
  */
-int AOP1(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP1(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
-    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
         return 0;
     if (data->oper1->mode != am_dreg)
         return 0;
@@ -4697,7 +4697,7 @@ int AOP1(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  word acc,reg... reg = bits 0-2 of opcode
  */
-int AOP2(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP2(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper3 || !data->oper2)
         return 0;
@@ -4705,7 +4705,7 @@ int AOP2(OPCODE *descript, OCODE *data, BYTE **p)
         return 0;
     if (data->oper1->mode != am_dreg || data->oper2->mode != am_dreg)
         return 0;
-    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
         return 0;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -4721,7 +4721,7 @@ int AOP2(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  one arg, seg goes in b3-4 of opcode
  */
-int AOP3(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP3(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -4747,7 +4747,7 @@ int AOP3(OPCODE *descript, OCODE *data, BYTE **p)
  *  either combo of a reg & rm... bit 1 of opcode set if reg is dest
  *  bit 0 set if size = word
  */
-int AOP4(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP4(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int temp = 0, reg;
     AMODE *rm;
@@ -4755,7 +4755,7 @@ int AOP4(OPCODE *descript, OCODE *data, BYTE **p)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         temp |= 1;
     if (data->oper2->mode == am_dreg)
     {
@@ -4779,14 +4779,14 @@ int AOP4(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  use only rm, bit 0 = size (exception : jmp/call)
  */
-int AOP5(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP5(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val = descript->ocvalue;
     if (data->oper2)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -4799,7 +4799,7 @@ int AOP5(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit 1 set if size = 1, bit 4 set if size = cl, otherwise follow rm with
  *  a count byte
  */
-int AOP6(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP6(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -4807,7 +4807,7 @@ int AOP6(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
     val = (descript->ocvalue &~1);
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper2->mode == am_immed)
     {
@@ -4827,7 +4827,7 @@ int AOP6(OPCODE *descript, OCODE *data, BYTE **p)
         }
     }
     else if (data->oper2->mode == am_dreg && (data->oper2->length == ISZ_UCHAR || data
-        ->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOL)
+        ->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOLEAN)
               && data->oper2->preg == ECX)
     {
         val |= 0x12;
@@ -4848,7 +4848,7 @@ int AOP6(OPCODE *descript, OCODE *data, BYTE **p)
  * 
  *  bit 0 = size
  */
-int AOP7(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP7(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     AMODE *rm;
@@ -4872,7 +4872,7 @@ int AOP7(OPCODE *descript, OCODE *data, BYTE **p)
     }
     else
         return 0;
-    if (len != ISZ_UCHAR && len !=  - ISZ_UCHAR && len != ISZ_BOOL)
+    if (len != ISZ_UCHAR && len !=  - ISZ_UCHAR && len != ISZ_BOOLEAN)
         val |= 1;
 
     if (len == ISZ_USHORT || len ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
@@ -4884,13 +4884,13 @@ int AOP7(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  word regrm, reg = dest.
  */
-int AOP8(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP8(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper3 || !data->oper2)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
-    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
         return 0;
     if (data->oper1->mode != am_dreg)
         return 0;
@@ -4904,7 +4904,7 @@ int AOP8(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  interrupts (imm byte)
  */
-int AOP9(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP9(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -4925,7 +4925,7 @@ int AOP9(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  short relative branches
  */
-int AOP10(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP10(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -4946,7 +4946,7 @@ int AOP10(OPCODE *descript, OCODE *data, BYTE **p)
  *  RM, IMMEDIATE
  *  bit 0 = size
  */
-int AOP11(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP11(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, word = FALSE, resolved = 1;
     if (data->oper3)
@@ -4956,7 +4956,7 @@ int AOP11(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper2->mode != am_immed)
         return 0;
     val = descript->ocvalue;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
     {
@@ -4996,7 +4996,7 @@ int AOP11(OPCODE *descript, OCODE *data, BYTE **p)
  *  ACC,immediate
  *  bit 0 = size
  */
-int AOP12(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP12(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, word = FALSE, resolved = 1;
     if (data->oper3)
@@ -5008,7 +5008,7 @@ int AOP12(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper2->mode != am_immed)
         return 0;
     val = descript->ocvalue;
-    if (data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
 
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
@@ -5041,7 +5041,7 @@ int AOP12(OPCODE *descript, OCODE *data, BYTE **p)
  *  mem,acc
  *  bit 0 = size
  */
-int AOP13(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP13(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, resolved = 1;
     if (data->oper3)
@@ -5053,7 +5053,7 @@ int AOP13(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper1->mode != am_direct)
         return 0;
     val = descript->ocvalue;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -5072,7 +5072,7 @@ int AOP13(OPCODE *descript, OCODE *data, BYTE **p)
  *  b1 = 0, treat as normal RM/IMM (aop11)
  *  else b01=11 means sign-extend byte to word
  */
-int AOP14(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP14(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5086,12 +5086,12 @@ int AOP14(OPCODE *descript, OCODE *data, BYTE **p)
     /* want to use AOP12 for embedding some values but we can't call it directly */
     if (data->oper1->mode == am_dreg && data->oper1->preg == EAX && data->oper2
         ->mode == am_immed && (data->oper1->length == ISZ_UCHAR || data->oper1->length 
-        ==  - 1  || data->oper1->length == ISZ_BOOL
+        ==  - 1  || data->oper1->length == ISZ_BOOLEAN
         || data->oper2->length == ISZ_USHORT || data->oper2->length ==  - ISZ_USHORT ||
         data->oper2->length == ISZ_U16 ||
          data->oper2->offset->v.i >= 128 || data->oper2->offset->v.i <  - 128))
         return 0;
-    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
         return AOP11(descript, data, p);
     if (data->oper2->offset->v.i <  - 128 || data->oper2->offset->v.i > 127)
         return AOP11(descript, data, p);
@@ -5110,7 +5110,7 @@ int AOP14(OPCODE *descript, OCODE *data, BYTE **p)
  *  acc,imm
  *  b3 of opcode = size
  */
-int AOP15(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP15(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, word = FALSE;
     if (data->oper3)
@@ -5122,7 +5122,7 @@ int AOP15(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper2->mode != am_immed)
         return 0;
     val = descript->ocvalue;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 8;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
     {
@@ -5150,7 +5150,7 @@ int AOP15(OPCODE *descript, OCODE *data, BYTE **p)
  *  seg,regrm or regrm,seg
  *  b1 set if seg is dest
  */
-int AOP16(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP16(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     int reg;
@@ -5180,7 +5180,7 @@ int AOP16(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  returns which pop the stack
  */
-int AOP17(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP17(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -5197,7 +5197,7 @@ int AOP17(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  far branch or call
  */
-int AOP18(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP18(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper1 && data->oper2)
     {
@@ -5219,7 +5219,7 @@ int AOP18(OPCODE *descript, OCODE *data, BYTE **p)
  *  imm,rm... imm is six bits and fills the low three bits of the
  *  opcode and the reg field
  */
-int AOP19(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP19(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper3)
         return 0;
@@ -5235,7 +5235,7 @@ int AOP19(OPCODE *descript, OCODE *data, BYTE **p)
  *  long relative branch
  *   (the parser fills in the 0f starter)
  */
-int AOP20(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP20(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -5256,7 +5256,7 @@ int AOP20(OPCODE *descript, OCODE *data, BYTE **p)
  * 	acc,dx (in instructions)
  * 	bit 0 = size
  */
-int AOP21(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP21(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5268,7 +5268,7 @@ int AOP21(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper1->mode != am_dreg || data->oper1->preg != EAX)
         return 0;
     val = descript->ocvalue;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -5280,7 +5280,7 @@ int AOP21(OPCODE *descript, OCODE *data, BYTE **p)
  *  dx,acc (out_)
  *  bit 0 = size
  */
-int AOP22(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP22(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5292,7 +5292,7 @@ int AOP22(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper2->mode != am_dreg || data->oper2->preg != EAX)
         return 0;
     val = descript->ocvalue;
-    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOL)
+    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper2->length == ISZ_USHORT || data->oper2->length ==  - ISZ_USHORT || data->oper2->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -5304,7 +5304,7 @@ int AOP22(OPCODE *descript, OCODE *data, BYTE **p)
  *  port,acc or acc,port
  *  b0 =size, b1 = 1 if port is dest
  */
-int AOP23(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP23(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, val1, len;
     if (data->oper3)
@@ -5330,7 +5330,7 @@ int AOP23(OPCODE *descript, OCODE *data, BYTE **p)
         val1 = data->oper2->offset->v.i;
         len = data->oper1->length;
     }
-    if (len != ISZ_UCHAR && len !=  - ISZ_UCHAR && len != ISZ_BOOL)
+    if (len != ISZ_UCHAR && len !=  - ISZ_UCHAR && len != ISZ_BOOLEAN)
         val |= 1;
     if (len == ISZ_USHORT || len ==  - ISZ_USHORT || len == ISZ_U16)
         *(*p)++ = 0x66;
@@ -5343,7 +5343,7 @@ int AOP23(OPCODE *descript, OCODE *data, BYTE **p)
  *  acc,mem
  *  bit 0 = size
  */
-int AOP24(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP24(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, resolved = 1;
     if (data->oper3)
@@ -5355,7 +5355,7 @@ int AOP24(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper2->mode != am_direct)
         return 0;
     val = descript->ocvalue;
-    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOL)
+    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper2->length == ISZ_USHORT || data->oper2->length ==  - ISZ_USHORT || data->oper2->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -5376,7 +5376,7 @@ int AOP24(OPCODE *descript, OCODE *data, BYTE **p)
  *  we were about due for a departure from the standard...
  *  anyway the op is sign-extended if it is byte size
  */
-int AOP25(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP25(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, resolved = TRUE, xval;
     if (data->oper2)
@@ -5431,7 +5431,7 @@ int AOP25(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  enter command, we have a word then a byte
  */
-int AOP26(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP26(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper3)
         return 0;
@@ -5450,7 +5450,7 @@ int AOP26(OPCODE *descript, OCODE *data, BYTE **p)
  *  stringu/w/d, pushaw,pushfw, etc
  *  explicit byte sizing handled elsewhere (aop0)
  */
-int AOP27(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP27(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper1)
         return 0;
@@ -5463,7 +5463,7 @@ int AOP27(OPCODE *descript, OCODE *data, BYTE **p)
  *  rm,reg (test instruction)
  *  bit 0 = size
  */
-int AOP28(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP28(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int temp = 0, reg;
     AMODE *rm;
@@ -5471,7 +5471,7 @@ int AOP28(OPCODE *descript, OCODE *data, BYTE **p)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         temp |= 1;
     if (data->oper2->mode == am_dreg)
     {
@@ -5494,7 +5494,7 @@ int AOP28(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  rm, size don't care
  */
-int AOP29(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP29(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
@@ -5510,7 +5510,7 @@ int AOP29(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit 0 & 4 set if uses uses 1
  *  else nothing set
  */
-int AOP30(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP30(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5520,10 +5520,10 @@ int AOP30(OPCODE *descript, OCODE *data, BYTE **p)
     val = descript->ocvalue &0xffec;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper2->mode == am_dreg && data->oper2->preg == ECX && (data->oper2
-        ->length == ISZ_UCHAR || data->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOL))
+        ->length == ISZ_UCHAR || data->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOLEAN))
     {
 
         *(*p)++ = val;
@@ -5553,7 +5553,7 @@ int AOP30(OPCODE *descript, OCODE *data, BYTE **p)
  *  reg,rm,imm or reg,imm (imul)
  *  bit 1 = set if immed = signed byte
  */
-int AOP31(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP31(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, xval, byte = FALSE;
     if (data->oper1->mode != am_dreg)
@@ -5615,7 +5615,7 @@ int AOP31(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit 1 = set if spc reg is the dest
  *  bit 0 & 2 define the special reg
  */
-int AOP32(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP32(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val, reg;
     AMODE *rm;
@@ -5656,18 +5656,18 @@ int AOP32(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit 0 = set if using CL for count
  * 
  */
-int AOP33(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP33(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2->mode != am_dreg)
         return 0;
-    if (data->oper2->length == ISZ_UCHAR || data->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOL)
+    if (data->oper2->length == ISZ_UCHAR || data->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOLEAN)
         return 0;
     val = descript->ocvalue;
     if (data->oper2->length == ISZ_USHORT || data->oper2->length ==  - ISZ_USHORT || data->oper2->length == ISZ_U16)
         *(*p)++ = 0x66;
     if (data->oper3->mode == am_dreg && data->oper3->preg == ECX && (data
-        ->oper3->length == ISZ_UCHAR || data->oper3->length ==  - ISZ_UCHAR || data->oper3->length == ISZ_BOOL))
+        ->oper3->length == ISZ_UCHAR || data->oper3->length ==  - ISZ_UCHAR || data->oper3->length == ISZ_BOOLEAN))
     {
         *(*p)++ = val | 1;
         return asmrm(data->oper2->preg << 3, data, data->oper1, p);
@@ -5687,14 +5687,14 @@ int AOP33(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  push & pop rm
  */
-int AOP34(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP34(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
-    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
         return 0;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -5708,7 +5708,7 @@ int AOP34(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit two of opcode set if size is qword
  *  bit 3 of mod/rm set if last ch = 'p'
  */
-int AOP35(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP35(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
@@ -5724,7 +5724,7 @@ int AOP35(OPCODE *descript, OCODE *data, BYTE **p)
  *  fmathp
  *  sti),st(0) or nothing
  */
-int AOP36(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP36(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5752,7 +5752,7 @@ int AOP36(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit 3 of mod/rm gets flipped if reg & al &6 & bit 5 of mod/rm set
  *  
  */
-int AOP37(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP37(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     int reg;
@@ -5789,7 +5789,7 @@ int AOP37(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  far RM
  */
-int AOP38(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP38(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
@@ -5807,7 +5807,7 @@ int AOP38(OPCODE *descript, OCODE *data, BYTE **p)
  *  regrm with reg source
  *  bit 0 = size
  */
-int AOP40(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP40(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5817,7 +5817,7 @@ int AOP40(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper2->mode != am_dreg)
         return 0;
     val = descript->ocvalue;
-    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOL)
+    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOLEAN)
         val |= 1;
     if ((data->oper2->length == ISZ_USHORT || data->oper2->length ==  - ISZ_USHORT || data->oper2->length == ISZ_U16) && !(descript
         ->ocflags &OCAlwaysword))
@@ -5830,9 +5830,9 @@ int AOP40(OPCODE *descript, OCODE *data, BYTE **p)
  *  word regrm with reg  source
  *  bug: lets arpl [bx],eax through
  */
-int AOP39(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP39(OPCODE *descript, OCODE *data, UBYTE **p)
 {
-    if (data->oper2->length == ISZ_UCHAR || data->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOL)
+    if (data->oper2->length == ISZ_UCHAR || data->oper2->length ==  - ISZ_UCHAR || data->oper2->length == ISZ_BOOLEAN)
         return 0;
     return AOP40(descript, data, p);
 }
@@ -5840,7 +5840,7 @@ int AOP39(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  rm,immediate
  */
-int AOP41(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP41(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5862,7 +5862,7 @@ int AOP41(OPCODE *descript, OCODE *data, BYTE **p)
  *  regrm with reg dest & forced strictness (MOVZX & MOVSX)
  *  bit 0 of opcode set if size is word
  */
-int AOP42(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP42(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper3)
@@ -5871,10 +5871,10 @@ int AOP42(OPCODE *descript, OCODE *data, BYTE **p)
         return 0;
     if (data->oper1->mode != am_dreg)
         return 0;
-    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
         return 0;
     val = descript->ocvalue;
-    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOL)
+    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOLEAN)
         val |= 1;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
@@ -5885,7 +5885,7 @@ int AOP42(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  forced opsize prefix
  */
-int AOP43(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP43(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     *(*p)++ = 0x66;
     return AOP0(descript, data, p);
@@ -5894,7 +5894,7 @@ int AOP43(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  unused
  */
-int AOP44(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP44(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -5912,14 +5912,14 @@ int AOP44(OPCODE *descript, OCODE *data, BYTE **p)
  *  any regrm with reg source
  *  same as aop40
  */
-int AOP45(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP45(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     return AOP40(descript, data, p);
 }
 
 /*-------------------------------------------------------------------------*/
 
-int AOP46(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP46(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper1->mode == am_dreg || data->oper1->mode == am_freg)
         return 0;
@@ -5929,7 +5929,7 @@ int AOP46(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  ax reg only
  */
-int AOP47(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP47(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -5949,7 +5949,7 @@ int AOP47(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  bswap, 32-bit reg to bits 0-3 of opcode
  */
-int AOP48(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP48(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -5970,7 +5970,7 @@ int AOP48(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit 5 of modrm set if tbyte
  *  bit 3 of modrm gets cleared if not tbyte && bit 4 set
  */
-int AOP50(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP50(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
@@ -6012,7 +6012,7 @@ int AOP50(OPCODE *descript, OCODE *data, BYTE **p)
  *  fst
  *  same as next but no tbyte
  */
-int AOP49(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP49(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper1->mode != am_freg && (data->oper1->length == ISZ_LDOUBLE || data->oper1->length == ISZ_ILDOUBLE))
         return 0;
@@ -6024,7 +6024,7 @@ int AOP49(OPCODE *descript, OCODE *data, BYTE **p)
  *  fbld/fbstp
  *  tbyte ptr mem
  */
-int AOP51(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP51(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
@@ -6045,7 +6045,7 @@ int AOP51(OPCODE *descript, OCODE *data, BYTE **p)
  *  bit 3 of modrm gets cleared if not qword & bit 4 is set
  *  bit 5 or modrm set if qword
  */
-int AOP52(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP52(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
@@ -6073,7 +6073,7 @@ int AOP52(OPCODE *descript, OCODE *data, BYTE **p)
  *  fist
  *  same as above but no qword mode
  */
-int AOP53(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP53(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper1->length == ISZ_DOUBLE || data->oper1->length == ISZ_IDOUBLE)
         return 0;
@@ -6084,7 +6084,7 @@ int AOP53(OPCODE *descript, OCODE *data, BYTE **p)
  *  freg
  *  reg put in mod/rm byte
  */
-int AOP54(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP54(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper2)
         return 0;
@@ -6098,7 +6098,7 @@ int AOP54(OPCODE *descript, OCODE *data, BYTE **p)
 /* 
  *  same as above, deault to reg 1 if no args
  */
-int AOP55(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP55(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (!data->oper1)
     {
@@ -6115,12 +6115,12 @@ int AOP55(OPCODE *descript, OCODE *data, BYTE **p)
  *  word or dword arg
  *  bit two gets set if word
  */
-int AOP56(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP56(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2)
         return 0;
-    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
         return 0;
     if (data->oper1->mode == am_freg)
         return 0;
@@ -6133,7 +6133,7 @@ int AOP56(OPCODE *descript, OCODE *data, BYTE **p)
 
 /*-------------------------------------------------------------------------*/
 
-int AOP57(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP57(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     if (data->oper1)
         return 0;
@@ -6144,7 +6144,7 @@ int AOP57(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * cmps	byte ptr [edi],byte ptr [esi]
  */
-int AOP58(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP58(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper1->mode != am_indisp || data->oper2->mode != am_indisp)
@@ -6154,7 +6154,7 @@ int AOP58(OPCODE *descript, OCODE *data, BYTE **p)
     val = descript->ocvalue;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     *(*p)++ = val;
     return 1;
@@ -6163,7 +6163,7 @@ int AOP58(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * ins	byte ptr [edi],dx
  */
-int AOP59(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP59(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper1->mode != am_indisp || data->oper1->preg != ESI)
@@ -6173,7 +6173,7 @@ int AOP59(OPCODE *descript, OCODE *data, BYTE **p)
     val = descript->ocvalue;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     *(*p)++ = val;
     return 1;
@@ -6182,7 +6182,7 @@ int AOP59(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * lods	byte ptr [esi]
  */
-int AOP60(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP60(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper1->mode != am_indisp || data->oper1->preg != ESI)
@@ -6190,7 +6190,7 @@ int AOP60(OPCODE *descript, OCODE *data, BYTE **p)
     val = descript->ocvalue;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     *(*p)++ = val;
     return 1;
@@ -6199,7 +6199,7 @@ int AOP60(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * movs	byte ptr [edi],byte ptr [esi]
  */
-int AOP61(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP61(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     return AOP58(descript, data, p);
 }
@@ -6207,7 +6207,7 @@ int AOP61(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * outs	dx,byte ptr [esi]
  */
-int AOP62(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP62(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper2->mode != am_indisp || data->oper2->preg != EDI)
@@ -6217,7 +6217,7 @@ int AOP62(OPCODE *descript, OCODE *data, BYTE **p)
     val = descript->ocvalue;
     if (data->oper2->length == ISZ_USHORT  || data->oper2->length ==  - ISZ_USHORT || data->oper2->length == ISZ_U16)
         *(*p)++ = 0x66;
-    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOL)
+    if (data->oper2->length != ISZ_UCHAR && data->oper2->length !=  - ISZ_UCHAR && data->oper2->length != ISZ_BOOLEAN)
         val |= 1;
     *(*p)++ = val;
     return 1;
@@ -6226,7 +6226,7 @@ int AOP62(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * scas	byte ptr [edi]
  */
-int AOP63(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP63(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     if (data->oper1->mode != am_indisp || data->oper1->preg != EDI)
@@ -6234,7 +6234,7 @@ int AOP63(OPCODE *descript, OCODE *data, BYTE **p)
     val = descript->ocvalue;
     if (data->oper1->length == ISZ_USHORT || data->oper1->length ==  - ISZ_USHORT || data->oper1->length == ISZ_U16)
         *(*p)++ = 0x66;
-    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOL)
+    if (data->oper1->length != ISZ_UCHAR && data->oper1->length !=  - ISZ_UCHAR && data->oper1->length != ISZ_BOOLEAN)
         val |= 1;
     *(*p)++ = val;
     return 1;
@@ -6243,7 +6243,7 @@ int AOP63(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * stos	byte ptr [edi] 
  */
-int AOP64(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP64(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     return AOP63(descript, data, p);
 }
@@ -6251,7 +6251,7 @@ int AOP64(OPCODE *descript, OCODE *data, BYTE **p)
 /*
  * word reg, lower 3 bits
  */
-int AOP65(OPCODE *descript, OCODE *data, BYTE **p)
+int AOP65(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
     int resolved = 1;
@@ -6263,7 +6263,7 @@ int AOP65(OPCODE *descript, OCODE *data, BYTE **p)
     if (data->oper1->mode != am_dreg)
         return 0;
     val = resolveoffset(data, data->oper2->offset, &resolved);
-    if (resolved && data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOL)
+    if (resolved && data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
     {
         *(*p)++ = 0xb0 + data->oper1->preg;
         *(*p)++ = val;
@@ -6290,7 +6290,7 @@ int AOP65(OPCODE *descript, OCODE *data, BYTE **p)
 }
 /*-------------------------------------------------------------------------*/
 
-int(*genfunctab[])(OPCODE *descript, OCODE *data, BYTE **p) = 
+int(*genfunctab[])(OPCODE *descript, OCODE *data, UBYTE **p) = 
 {
     AOP0, AOP1, AOP2, AOP3, AOP4, AOP5, AOP6, AOP7, AOP8, AOP9, AOP10, AOP11,
         AOP12, AOP13, AOP14, AOP15, AOP16, AOP17, AOP18, AOP19, AOP20, AOP21,
@@ -6305,7 +6305,7 @@ int outcode_AssembleIns(OCODE *ins, int address)
     ins->resolved = TRUE;
     if (ins->opcode >= op_aaa)
     {
-        BYTE *p;
+        UBYTE *p;
         OPCODE *descript = oplst[ins->opcode].data;
         int found = FALSE;
         p = ins->outbuf;

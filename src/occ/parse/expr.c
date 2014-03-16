@@ -64,7 +64,7 @@ extern TYPE stdwidechar;
 extern TYPE std__func__;
 extern TYPE stdchar16tptr;
 extern TYPE stdchar32tptr;
-extern BOOL setjmp_used;
+extern BOOLEAN setjmp_used;
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *localNameSpace;
 extern LAMBDA *lambdas;
@@ -78,9 +78,9 @@ int packIndex;
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
 static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp);
-static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable);
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL selector, BOOL noinline, BOOL inTemplateParams, BOOL packable);
-static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL selector, BOOL noinline, BOOL inTemplateParams, BOOL packable);
+static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN ampersand, BOOLEAN noinline, BOOLEAN packable);
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN selector, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable);
+static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN selector, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable);
 
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right)
 {
@@ -97,7 +97,7 @@ EXPRESSION *varNode(enum e_node type, SYMBOL *sp)
     rv->v.sp = sp;
     return rv;	
 }
-static BOOL inreg(EXPRESSION *exp, BOOL first)
+static BOOLEAN inreg(EXPRESSION *exp, BOOLEAN first)
 {
     while (castvalue(exp))
         exp = exp->left;
@@ -138,7 +138,7 @@ void checkauto(TYPE *tp1)
         tp1->size = getSize(bt_int);
     }
 }
-static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable)
+static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN ampersand, BOOLEAN noinline, BOOLEAN packable)
 {
     char idname[512];
     FUNCTIONCALL *funcparams = NULL;
@@ -236,7 +236,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     {
                         if (ampersand || !MATCHKW(lex, openpa))
                         {
-                            BOOL throughClass = sp->throughClass;
+                            BOOLEAN throughClass = sp->throughClass;
                             SYMBOL *sp1 = GetOverloadedFunction(tp, &funcparams->fcall, sp, funcparams->templateParams ? funcparams : NULL, atp,TRUE, FALSE);
                             if (sp1)
                             {
@@ -419,7 +419,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 deref(&stdint, exp);
             else
             {
-                BOOL rref = FALSE;
+                BOOLEAN rref = FALSE;
                 if (isref(*tp))
                 {
                     deref(*tp, exp);
@@ -596,11 +596,11 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     sp->allocate = TRUE;
     return lex;
 }
-static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline)
+static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline)
 {
     TYPE *typein = *tp;
-    BOOL points = FALSE;
-    BOOL thisptr = (*exp)->type == en_auto && (*exp)->v.sp->thisPtr;
+    BOOLEAN points = FALSE;
+    BOOLEAN thisptr = (*exp)->type == en_auto && (*exp)->v.sp->thisPtr;
     char *tokenName = lex->kw->name;
     (void)funcsp;
     if (MATCHKW(lex, pointsto))
@@ -641,9 +641,9 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     {
         // direct destructor or psuedo-destructor
         enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
-        BOOL defd = FALSE;
+        BOOLEAN defd = FALSE;
         SYMBOL *sp = NULL;
-        BOOL notype = FALSE;
+        BOOLEAN notype = FALSE;
         TYPE *tp1 = NULL;
         lex = getsym();
         lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, FALSE);
@@ -694,9 +694,9 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         {
             // possible psuedo destructor with selector
             enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
-            BOOL defd = FALSE;
+            BOOLEAN defd = FALSE;
             SYMBOL *sp = NULL;
-            BOOL notype = FALSE;
+            BOOLEAN notype = FALSE;
             TYPE *tp1 = NULL;
             lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, FALSE);
             if (!tp1)
@@ -754,7 +754,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     }
     else
     {
-        BOOL isTemplate = FALSE;
+        BOOLEAN isTemplate = FALSE;
         if (MATCHKW(lex, kw_template))
         {
             lex = getsym();
@@ -894,7 +894,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     if (cparams.prm_cplusplus && MATCHKW(lex, lt))
                     {
                         HASHREC *hr1 = basetype(sp2->tp)->syms->table[0];
-                        BOOL isdest = ((SYMBOL *)hr1->p)->isDestructor;
+                        BOOLEAN isdest = ((SYMBOL *)hr1->p)->isDestructor;
                         while (hr1)
                         {
                              if (((SYMBOL *)hr1->p)->templateLevel)
@@ -1074,7 +1074,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     }
     return lex;
 }
-static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL packable)
+static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline, BOOLEAN packable)
 {
     TYPE *tp2;
     EXPRESSION *expr2 = NULL;
@@ -1104,7 +1104,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             }
             else if (isvoid(tp2) || isvoid(*tp))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
-            else if (basetype(tp2)->type == bt_memberptr || basetype(tp2)->type == bt_memberptr)
+            else if (basetype(tp2)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
             else if (basetype(tp2)->scoped || basetype(*tp)->scoped)
                 error(ERR_SCOPED_TYPE_MISMATCH);
@@ -1192,10 +1192,10 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
     HASHREC *hr = basetype(params->functp)->syms->table[0];
     INITLIST *list = params->arguments;
-    BOOL matching = TRUE;
-    BOOL tooshort = FALSE;
-    BOOL toolong = FALSE;
-    BOOL noproto = params->sp ? params->sp->oldstyle : FALSE;
+    BOOLEAN matching = TRUE;
+    BOOLEAN tooshort = FALSE;
+    BOOLEAN toolong = FALSE;
+    BOOLEAN noproto = params->sp ? params->sp->oldstyle : FALSE;
     int argnum = 0;
  
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
@@ -1358,7 +1358,7 @@ join:
     else if (tooshort)
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
 }
-static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enum e_kw finish, BOOL allowNesting, BOOL allowPack, BOOL toErr)
+static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enum e_kw finish, BOOLEAN allowNesting, BOOLEAN allowPack, BOOLEAN toErr)
 {
     *lptr = NULL;
     lex = getsym(); /* past ( */
@@ -1426,7 +1426,7 @@ LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner)
 {
     lex = getInitInternal(lex, funcsp, owner, end, FALSE, TRUE, TRUE);
 }
-LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOL allowPack)
+LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack)
 {
     LEXEME *rv;
     int old = packIndex;
@@ -1435,7 +1435,7 @@ LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw
     packIndex = old;
     return rv;
 }
-LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOL allowPack)
+LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack)
 {
     return getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, FALSE);
 }
@@ -1480,7 +1480,7 @@ void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp)
         }
     }
 }
-void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
+void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinline)
 {
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
         hr = hr->next;
@@ -1500,7 +1500,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
         p = *lptr;
         if (cparams.prm_cplusplus)
         {
-            BOOL done = FALSE;
+            BOOLEAN done = FALSE;
             if (!p->tp)
             {
                 // initlist
@@ -1665,7 +1665,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
                         p->exp=consexp;
                         if (p->exp->type == en_func)
                         {
-                            BOOL ref = FALSE;
+                            BOOLEAN ref = FALSE;
                             SYMBOL *spx = p->exp->v.func->sp;
                             TYPE *tpx = basetype(spx->tp);
                             TYPE *tpx1, *tpx2;
@@ -1902,15 +1902,15 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOL operands, BOOL noinline)
         lptr = &(*lptr)->next;
     }
 }
-LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
 {
     TYPE *tp_cpp = *tp;
     EXPRESSION *exp_cpp = *exp;
     FUNCTIONCALL *funcparams;
     INITLIST **lptr ;
     EXPRESSION *exp_in = *exp;
-    BOOL operands = FALSE;
-    BOOL hasThisPtr = FALSE;
+    BOOLEAN operands = FALSE;
+    BOOLEAN hasThisPtr = FALSE;
     if (exp_in->type != en_func || isfuncptr(*tp))
     {
         TYPE *tpx = *tp;
@@ -2132,7 +2132,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     }
     return lex;
 }
-static LEXEME *expression_alloca(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_alloca(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
 {
     lex = getsym();
     if (needkw(&lex, openpa))
@@ -2165,7 +2165,7 @@ static LEXEME *expression_alloca(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
 }
 static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
-    BOOL wide;
+    BOOLEAN wide;
     int elems = 0;
     STRING *data;
     (void)funcsp;
@@ -2253,7 +2253,7 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     (*tp)->size = (elems + 1) * (*tp)->btp->size;
     return lex;	
 }
-static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
 {
     lex = getsym();
     if (!needkw(&lex, openpa))
@@ -2270,7 +2270,7 @@ static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         lex = expression_assign(lex, funcsp, NULL, &selectType, &throwawayExpression, NULL, FALSE, noinline, FALSE, FALSE);
         if (MATCHKW(lex, comma))
         {
-            BOOL dflt = FALSE;
+            BOOLEAN dflt = FALSE;
             struct genericHold
             {
                 struct genericHold *next;
@@ -2378,7 +2378,7 @@ static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     }
     return lex;
 }
-static BOOL getSuffixedChar(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
+static BOOLEAN getSuffixedChar(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
     char name[512];
     enum e_bt tpb = (*tp)->type;
@@ -2417,7 +2417,7 @@ static BOOL getSuffixedChar(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION *
     errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, lex->suffix);
     return FALSE;
 }
-static BOOL getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
+static BOOLEAN getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
 {
     char name[512];
     enum e_bt tpb;
@@ -2519,7 +2519,7 @@ static BOOL getSuffixedNumber(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION
     errorstr(ERR_COULD_NOT_FIND_A_MATCH_FOR_LITERAL_SUFFIX, lex->suffix);
     return FALSE;
 }
-static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
 {
     enum e_kw kw = KW(lex);
     lex = getsym();
@@ -2848,7 +2848,7 @@ static LEXEME *expression_atomic_func(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EX
     }
     return lex;
 }
-static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable)
+static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN ampersand, BOOLEAN noinline, BOOLEAN packable)
 {
     switch(lex ? lex->type : l_none)
     {
@@ -3320,7 +3320,7 @@ static LEXEME *expression_alignof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
        *tp = &stdint;
     return lex;
 }
-static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL packable)
+static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline, BOOLEAN packable)
 {
     lex = getsym();
     lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, TRUE, noinline, packable);
@@ -3372,7 +3372,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             if (!sp->label)
             {
                 TYPE *tp, *tpb, *tpn,**tpnp = &tpn;
-                BOOL done = FALSE;
+                BOOLEAN done = FALSE;
                 sp->label = nextLabel++;
                 IncGlobalFlag();
                 sp = clonesym(sp);
@@ -3440,7 +3440,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
     }
     return lex;
 }
-static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOL noinline, BOOL packable)
+static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline, BOOLEAN packable)
 {
 /*vla */
     lex = getsym();
@@ -3498,11 +3498,11 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
     }
     return lex;
 }
-static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable)
+static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN ampersand, BOOLEAN noinline, BOOLEAN packable)
 {
     TYPE *oldType;
-    BOOL done = FALSE;
-    BOOL localMutable = FALSE;
+    BOOLEAN done = FALSE;
+    BOOLEAN localMutable = FALSE;
     if (KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS))
     {
         lex = expression_func_type_cast(lex, funcsp, tp, exp, noinline);
@@ -3601,7 +3601,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                         }
                         if (basetype(*tp)->type == bt_bool)
                         {
-                            /* autoinc of a bool sets it true.  autodec not allowed
+                            /* autoinc of a BOOLEAN sets it true.  autodec not allowed
                              * these aren't spelled out in the C99 standard, we are
                              * following the C++ standard here
                              */
@@ -3629,9 +3629,9 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 */
     return lex;
 }
-LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable)
+LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN ampersand, BOOLEAN noinline, BOOLEAN packable)
 {
-    BOOL localMutable = FALSE;
+    BOOLEAN localMutable = FALSE;
     enum e_kw kw= KW(lex);
     /* note some of the math ops are speced to do integer promotions
      * if being stored, the proposed place to store them is not known, so e.g.
@@ -3882,7 +3882,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
     }
     return lex;
 }
-LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL ampersand, BOOL noinline, BOOL packable)
+LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN ampersand, BOOLEAN noinline, BOOLEAN packable)
 {
     TYPE *throwaway;
     if (MATCHKW(lex, openpa))
@@ -3945,14 +3945,14 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
     }
     return lex;
 } 
-static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL packable)
+static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN packable)
 {
     lex = expression_cast(lex, funcsp, atp, tp, exp, ismutable, FALSE, noinline, packable);
     if (*tp == NULL)
         return lex;
     while (MATCHKW(lex, dotstar) || MATCHKW(lex, pointstar))
     {
-        BOOL points = FALSE;
+        BOOLEAN points = FALSE;
         enum e_kw kw = KW(lex);
         enum e_node type ;
         TYPE *tp1 = NULL;
@@ -4065,7 +4065,7 @@ static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
     }
     return lex;
 }
-static LEXEME *expression_times(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL packable)
+static LEXEME *expression_times(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN packable)
 {
     lex = expression_pm(lex, funcsp, atp, tp, exp, ismutable, noinline, packable);
     if (*tp == NULL)
@@ -4124,7 +4124,7 @@ static LEXEME *expression_times(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
     return lex;
 }
 
-static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL packable)
+static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN packable)
 {
 /* fixme add vlas */
     lex = expression_times(lex, funcsp, atp, tp, exp, ismutable, noinline, packable);
@@ -4218,7 +4218,7 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
     }
     return lex;
 }
-static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     lex = expression_add(lex, funcsp, atp, tp, exp, ismutable, noinline, packable);
     if (*tp == NULL)
@@ -4277,9 +4277,9 @@ static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
     }
     return lex;
 }
-static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
-    BOOL done = FALSE;
+    BOOLEAN done = FALSE;
     lex = expression_shift(lex, funcsp, atp, tp, exp, ismutable, noinline, inTemplateParams, packable);
     if (*tp == NULL)
         return lex;
@@ -4394,14 +4394,14 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
     }
     return lex;
 }
-static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     lex = expression_inequality(lex, funcsp, atp, tp, exp, ismutable, noinline, inTemplateParams, packable);
     if (*tp == NULL)
         return lex;
     while (MATCHKW(lex, eq) || MATCHKW(lex, neq))
     {
-        BOOL done = FALSE;
+        BOOLEAN done = FALSE;
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
         enum e_kw kw = KW(lex);
@@ -4515,8 +4515,8 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
     return lex;
 }
 static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESSION **exp, enum e_kw kw, enum e_node type, 
-              LEXEME *(nextFunc)(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable), 
-              BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+              LEXEME *(nextFunc)(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable), 
+              BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     lex = (*nextFunc)(lex, funcsp, atp, tp, exp, ismutable, noinline, inTemplateParams, packable);
     if (*tp == NULL)
@@ -4533,7 +4533,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
             break;
         }
         if (cparams.prm_cplusplus 
-            && insertOperatorFunc(kw == en_lor || kw == en_land ? ovcl_binary_numericptr : ovcl_binary_int, kw,
+            && insertOperatorFunc(kw == lor || kw == land ? ovcl_binary_numericptr : ovcl_binary_int, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, noinline))
         {
             continue;
@@ -4576,28 +4576,28 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
     }
     return lex;
 }
-static LEXEME *expression_and(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_and(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     return binop(lex, funcsp, atp, tp, exp, and, en_and, expression_equality, ismutable, noinline, inTemplateParams, packable);
 }
-static LEXEME *expression_xor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_xor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     return binop(lex, funcsp, atp, tp, exp, uparrow, en_xor, expression_and, ismutable, noinline, inTemplateParams, packable);
 }
-static LEXEME *expression_or(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_or(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     return binop(lex, funcsp, atp, tp, exp, or, en_or, expression_xor, ismutable, noinline, inTemplateParams, packable);
 }
-static LEXEME *expression_land(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_land(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     return binop(lex, funcsp, atp, tp, exp, land, en_land, expression_or, ismutable, noinline, inTemplateParams, packable);
 }
-static LEXEME *expression_lor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_lor(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     return binop(lex, funcsp, atp, tp, exp, lor, en_lor, expression_land, ismutable, noinline, inTemplateParams, packable);
 }
 
-static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     lex = expression_lor(lex, funcsp, atp, tp, exp, ismutable, noinline, inTemplateParams, packable);
     if (*tp == NULL)
@@ -4656,12 +4656,12 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
     }
     return lex;
 }
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL selector, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN selector, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
-    BOOL done = FALSE;
+    BOOLEAN done = FALSE;
     EXPRESSION *exp1=NULL;
     EXPRESSION *asndest = NULL;
-    BOOL localMutable = FALSE;
+    BOOLEAN localMutable = FALSE;
     TYPE *tp2;
     lex = expression_hook(lex, funcsp, atp, tp, exp, &localMutable, noinline, inTemplateParams, packable);
     if (*tp == NULL)
@@ -4869,7 +4869,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     {
                         if (!comparetypes(*tp, tp1, TRUE))
                         {
-                            BOOL found = FALSE;
+                            BOOLEAN found = FALSE;
                             if (ispointer(tp1))
                             {
                                 TYPE *tpo = basetype(basetype(tp1)->btp);
@@ -5132,7 +5132,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     }
     return lex;
 }
-static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL selector, BOOL noinline, BOOL inTemplateParams, BOOL packable)
+static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN selector, BOOLEAN noinline, BOOLEAN inTemplateParams, BOOLEAN packable)
 {
     lex = expression_assign(lex, funcsp, atp, tp, exp, ismutable, selector, noinline, inTemplateParams, packable);
     if (*tp == NULL)
@@ -5161,21 +5161,21 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
     }
     return lex;
 }
-LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL *ismutable, BOOL noinline, BOOL inTemplateParams)
+LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, BOOLEAN noinline, BOOLEAN inTemplateParams)
 {
     lex = expression_assign(lex, funcsp, atp, tp, exp, ismutable, FALSE, noinline, inTemplateParams, FALSE);
     assignmentUsages(*exp, FALSE);
     return lex;
 }
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
-                   BOOL selector, BOOL noinline)
+                   BOOLEAN selector, BOOLEAN noinline)
 {
     lex = expression_comma(lex, funcsp, atp, tp, exp, NULL, selector, noinline, FALSE, FALSE);
     return lex;
 }
 
 LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
-                   BOOL selector, BOOL noinline, BOOL packable)
+                   BOOLEAN selector, BOOLEAN noinline, BOOLEAN packable)
 {
     lex = expression_comma(lex, funcsp, atp, tp, exp, NULL, selector, noinline, FALSE, packable);
     assignmentUsages(*exp, FALSE);

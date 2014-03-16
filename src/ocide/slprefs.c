@@ -159,23 +159,23 @@ void RestoreFindflags(struct xmlNode *node, int version)
     while (children)
     {
         int index = -1;
-        int fflags = -1;
-        int rflags = -1;
+        int findFlags = -1;
+        int replaceFlags = -1;
         attribs = children->attribs;
         while (attribs)
         {
             if (IsAttrib(attribs, "INDEX"))
                 index = atoi(attribs->value);
             else if (IsAttrib(attribs, "FIND"))
-                index = atoi(attribs->value);
+                findFlags = atoi(attribs->value);
             else if (IsAttrib(attribs, "REPLACE"))
-                index = atoi(attribs->value);
+                replaceFlags = atoi(attribs->value);
             attribs = attribs->next;
         }
-        if (index != -1 && fflags != -1 && rflags != -1)
+        if (index != -1 && findFlags != -1 && replaceFlags != -1) 
         {
-            findflags[index] = fflags;
-            replaceflags[index] = rflags;
+            findflags[index] = findFlags;
+            replaceflags[index] = replaceFlags;
         }
         children = children->next;
     }
@@ -231,7 +231,7 @@ int RestorePreferences(void)
     struct xmlNode *root;
     struct xmlNode *nodes,  *children;
     struct xmlAttr *attribs;
-    char buf[256],  *p; 
+    char  *p; 
     char name[256];
     if (!generalProject.profiles)
         generalProject.profiles = calloc(1, sizeof(PROFILE));

@@ -47,39 +47,39 @@
 typedef struct {
     int  prm_maxerr;        /* number of errors at which the compiler stops*/
     int prm_stackalign;		/* stack alignment */
-    BOOL prm_optimize;
-    BOOL prm_quiet;         /* no warnings/errors on console */
-    BOOL prm_warning;       /* display warnings */
-    BOOL prm_extwarning;    /* display extended warnings */
-    BOOL prm_diag;          /* display diagnostics/ memory usage */
-    BOOL prm_ansi;          /* use ansi restrictions */
-    BOOL prm_cmangle;       /* add underscore to names */
-    BOOL prm_c99;           /* C99 mode */
-    BOOL prm_c1x;           /* C1x mode */
-    BOOL prm_cplusplus;     /* C++ mode */
-    BOOL prm_xcept;         /* generate RTTI in C++ mode */
-    BOOL prm_icdfile;       /* dump intermediate code peep list to file */
-    BOOL prm_asmfile;       /* assembly language output */
-    BOOL prm_compileonly;   /* don't run postprocess routines */
-    BOOL prm_debug;         /* generate debug info */
-    BOOL prm_listfile;      /* generate list file */
-    BOOL prm_cppfile;       /* generate preprocessor file */
-    BOOL prm_errfile;       /* generate error file */
-    BOOL prm_browse;        /* generate browse information */
-    BOOL prm_trigraph;      /* parse trigraphs */
-    BOOL prm_oldfor;        /* old C++ for scoping */
-    BOOL prm_stackcheck;    /* generate stack check code */
-    BOOL prm_profiler;      /* generate profiler insets */
-    BOOL prm_mergestrings;  /* merge strings and other constants */
-    BOOL prm_revbits;       /* use reverse of the default bit ordering */
-    BOOL prm_lines;         /* put line info into assembly files */
-    BOOL prm_bss;           /* Use a BSS */
-    BOOL prm_intrinsic;     /* look for intrinsics */
-    BOOL prm_smartframes;   /* omit frame pointer initialization as possible */
-    BOOL prm_farkeyword;    /* honor the 'far' and 'near' keywords */
-    BOOL prm_linkreg;       /* use a frame pointer */
-    BOOL prm_charisunsigned; /* char type is unsigned */
-    BOOL prm_assemble;		/* do assembler mode */
+    BOOLEAN prm_optimize;
+    BOOLEAN prm_quiet;         /* no warnings/errors on console */
+    BOOLEAN prm_warning;       /* display warnings */
+    BOOLEAN prm_extwarning;    /* display extended warnings */
+    BOOLEAN prm_diag;          /* display diagnostics/ memory usage */
+    BOOLEAN prm_ansi;          /* use ansi restrictions */
+    BOOLEAN prm_cmangle;       /* add underscore to names */
+    BOOLEAN prm_c99;           /* C99 mode */
+    BOOLEAN prm_c1x;           /* C1x mode */
+    BOOLEAN prm_cplusplus;     /* C++ mode */
+    BOOLEAN prm_xcept;         /* generate RTTI in C++ mode */
+    BOOLEAN prm_icdfile;       /* dump intermediate code peep list to file */
+    BOOLEAN prm_asmfile;       /* assembly language output */
+    BOOLEAN prm_compileonly;   /* don't run postprocess routines */
+    BOOLEAN prm_debug;         /* generate debug info */
+    BOOLEAN prm_listfile;      /* generate list file */
+    BOOLEAN prm_cppfile;       /* generate preprocessor file */
+    BOOLEAN prm_errfile;       /* generate error file */
+    BOOLEAN prm_browse;        /* generate browse information */
+    BOOLEAN prm_trigraph;      /* parse trigraphs */
+    BOOLEAN prm_oldfor;        /* old C++ for scoping */
+    BOOLEAN prm_stackcheck;    /* generate stack check code */
+    BOOLEAN prm_profiler;      /* generate profiler insets */
+    BOOLEAN prm_mergestrings;  /* merge strings and other constants */
+    BOOLEAN prm_revbits;       /* use reverse of the default bit ordering */
+    BOOLEAN prm_lines;         /* put line info into assembly files */
+    BOOLEAN prm_bss;           /* Use a BSS */
+    BOOLEAN prm_intrinsic;     /* look for intrinsics */
+    BOOLEAN prm_smartframes;   /* omit frame pointer initialization as possible */
+    BOOLEAN prm_farkeyword;    /* honor the 'far' and 'near' keywords */
+    BOOLEAN prm_linkreg;       /* use a frame pointer */
+    BOOLEAN prm_charisunsigned; /* char type is unsigned */
+    BOOLEAN prm_assemble;		/* do assembler mode */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */
@@ -182,14 +182,14 @@ typedef struct {
     ARCH_REGVERTEX *regRoot;	/* defines the register tree */
     ARCH_REGCLASS **regClasses; /* defines register class, based on size */
     ARCH_SIZING *regCosts;		/* defines register costs */
-    BYTE *regOrder;				/* register allocation order */
+    UBYTE *regOrder;				/* register allocation order */
     ARCH_PEEP *peephole_defs;   /* defines peephole information */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
     char hasFloatRegs;			/* true if has floating point registers */
 #define AFM_SIGNEDZERO 1
     char floatmode;             /* floating point modes, not honored currently */
-#define ABM_USESIZE    0        /* bool is determined by sizing above */
+#define ABM_USESIZE    0        /* BOOLEAN is determined by sizing above */
 #define ABM_GLOBALBITS 1        /* global bools become global bits */
 #define ABM_LOCALBITS  2        /* all bools outside a struct definition become global bits */
     char boolmode;              /* boolean mode */

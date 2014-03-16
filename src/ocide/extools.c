@@ -66,7 +66,7 @@ typedef struct _tool
 static TOOL *tools;
 static BOOL start;
 
-DWORD __stdcall RunExternalToolThread(void *p)
+DWORD RunExternalToolThread(void *p)
 {
     int i;
     int id = (int)p;
@@ -117,14 +117,13 @@ DWORD __stdcall RunExternalToolThread(void *p)
 }
 void RunExternalTool(int id)
 {
-      CloseHandle(CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)RunExternalToolThread, (VOID *)id, 0, &id));
+      _beginthread((BEGINTHREAD_FUNC)RunExternalToolThread, 0, (LPVOID)id);
 }
 void ExternalToolsToMenu(void)
 {
     TOOL *curTools = tools;
     int base, base1;
     MENUITEMINFO mi;
-    char buf[256];
     int i, currentOffset;
     HMENU *hMRUSubMenu;
     int maxed;
@@ -452,8 +451,6 @@ LRESULT CALLBACK ExToolsCustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {	static int oldCount;
     static TOOL **oldOrder;
-    
-    char buf[3];
     switch (iMessage)
     {
         case WM_NOTIFY:

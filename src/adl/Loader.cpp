@@ -37,7 +37,7 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
-#include "Parser.h"
+#include "Loader.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -144,12 +144,12 @@ struct StateVar
     std::string name;
     std::string init;
 };
-bool Parser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     // shouldn't be any attribs
     return true;
 }
-bool Parser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     if (child->GetName() == "Processor")
     {
@@ -163,7 +163,7 @@ bool Parser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData
     }
     return true;
 }
-bool Parser::ProcessorParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::ProcessorParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Parser *parser = (Parser *)userData;
     if (attrib->GetName() == "Name" )
@@ -172,15 +172,15 @@ bool Parser::ProcessorParser::VisitAttrib(const xmlNode &node, const xmlAttrib *
     }
     return true;
 }
-bool Parser::ProcessorParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::ProcessorParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     return true;
 }
-bool Parser::CodingParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     Parser *parser = (Parser *)userData;
     if (child->GetName() == "Param")
@@ -254,7 +254,7 @@ bool Parser::CodingParser::VisitNode(const xmlNode &node, const xmlNode *child, 
     }
     return true;
 }
-bool Parser::CodingParamParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingParamParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Param *x = (Param *)userData;
     if (attrib->GetName() == "Name" )
@@ -267,11 +267,11 @@ bool Parser::CodingParamParser::VisitAttrib(const xmlNode &node, const xmlAttrib
     }
     return true;
 }
-bool Parser::CodingParamParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingParamParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingNumberParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingNumberParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Number *number = (Number *)userData;
     if (attrib->GetName() == "Name" )
@@ -284,7 +284,7 @@ bool Parser::CodingNumberParser::VisitAttrib(const xmlNode &node, const xmlAttri
     }
     return true;
 }
-bool Parser::CodingNumberParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingNumberParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     if (child->GetName() == "Instance")
     {
@@ -293,7 +293,7 @@ bool Parser::CodingNumberParser::VisitNode(const xmlNode &node, const xmlNode *c
     }
     return true;
 }
-bool Parser::CodingNumberInstanceParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingNumberInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Number *number = (Number *)userData;
     if (attrib->GetName() == "Value" )
@@ -306,15 +306,15 @@ bool Parser::CodingNumberInstanceParser::VisitAttrib(const xmlNode &node, const 
     }
     return true;
 }
-bool Parser::CodingNumberInstanceParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingNumberInstanceParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingStatevarsParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingStatevarsParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     return false;
 }
-bool Parser::CodingStatevarsParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingStatevarsParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     StateVar *r = (StateVar *)userData;
     if (child->GetName() == "Instance")
@@ -327,7 +327,7 @@ bool Parser::CodingStatevarsParser::VisitNode(const xmlNode &node, const xmlNode
     }
     return true;
 }
-bool Parser::CodingStatevarsInstanceParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingStatevarsInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     StateVar *r = (StateVar *)userData;
     if (attrib->GetName() == "Name" )
@@ -340,11 +340,11 @@ bool Parser::CodingStatevarsInstanceParser::VisitAttrib(const xmlNode &node, con
     }
     return true;
 }
-bool Parser::CodingStatevarsInstanceParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingStatevarsInstanceParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingStateParser ::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingStateParser ::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     State *s = (State *)userData;
     if (attrib->GetName() == "Name" )
@@ -353,7 +353,7 @@ bool Parser::CodingStateParser ::VisitAttrib(const xmlNode &node, const xmlAttri
     }	
     return true;
 }
-bool Parser::CodingStateParser ::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingStateParser ::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     State *s = (State *)userData;
     if (child->GetName()=="When")
@@ -365,7 +365,7 @@ bool Parser::CodingStateParser ::VisitNode(const xmlNode &node, const xmlNode *c
     }
     return true;
 }
-bool Parser::CodingStateWhenParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingStateWhenParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Param *p = (Param *)userData;
     if (attrib->GetName() == "Cond" )
@@ -378,11 +378,11 @@ bool Parser::CodingStateWhenParser::VisitAttrib(const xmlNode &node, const xmlAt
     }
     return true;
 }
-bool Parser::CodingStateWhenParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingStateWhenParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingRegisterParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingRegisterParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     RegData *r = (RegData *)userData;
     if (attrib->GetName() == "Class" )
@@ -391,7 +391,7 @@ bool Parser::CodingRegisterParser::VisitAttrib(const xmlNode &node, const xmlAtt
     }
     return true;
 }
-bool Parser::CodingRegisterParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingRegisterParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     RegData * r = (RegData *)userData;
     if (child->GetName() == "Instance")
@@ -407,7 +407,7 @@ bool Parser::CodingRegisterParser::VisitNode(const xmlNode &node, const xmlNode 
     }
     return true;
 }
-bool Parser::CodingRegisterInstanceParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingRegisterInstanceParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     RegData * r = (RegData *)userData;
     if (attrib->GetName() == "Name" )
@@ -424,22 +424,22 @@ bool Parser::CodingRegisterInstanceParser::VisitAttrib(const xmlNode &node, cons
     }
     return true;
 }
-bool Parser::CodingRegisterInstanceParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingRegisterInstanceParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingDoubleRegParser ::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingDoubleRegParser ::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     if (attrib->GetName() == "Name" )
     {
     }
     return true;
 }
-bool Parser::CodingDoubleRegParser ::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingDoubleRegParser ::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingAddressParser ::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingAddressParser ::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Address *r = (Address *)userData;
     if (attrib->GetName() == "Name" )
@@ -461,11 +461,11 @@ bool Parser::CodingAddressParser ::VisitAttrib(const xmlNode &node, const xmlAtt
     return true;
 
 }
-bool Parser::CodingAddressParser ::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingAddressParser ::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingOpcodeParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingOpcodeParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Opcode *r = (Opcode *) userData;
     if (attrib->GetName() == "Name" )
@@ -482,7 +482,7 @@ bool Parser::CodingOpcodeParser::VisitAttrib(const xmlNode &node, const xmlAttri
     }
     return true;
 }
-bool Parser::CodingOpcodeParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingOpcodeParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     Opcode *opcodes = (Opcode *)userData;
     if (child->GetName() == "Operands")
@@ -493,7 +493,7 @@ bool Parser::CodingOpcodeParser::VisitNode(const xmlNode &node, const xmlNode *c
         opcodes->operands.push_back(o);
     }
 }
-bool Parser::CodingOpcodeOperandParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingOpcodeOperandParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Operand *operand = (Operand *)userData;
     if (attrib->GetName() == "Name" )
@@ -510,11 +510,11 @@ bool Parser::CodingOpcodeOperandParser::VisitAttrib(const xmlNode &node, const x
     }
     return true;
 }
-bool Parser::CodingOpcodeOperandParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingOpcodeOperandParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }
-bool Parser::CodingPrefixParser::VisitAttrib(const xmlNode &node, const xmlAttrib *attrib, void *userData)
+bool Parser::CodingPrefixParser::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
 {
     Prefix *prefix = (Prefix *)userData;
     if (attrib->GetName() == "Name")
@@ -527,7 +527,7 @@ bool Parser::CodingPrefixParser::VisitAttrib(const xmlNode &node, const xmlAttri
     }
     return true;
 }
-bool Parser::CodingPrefixParser::VisitNode(const xmlNode &node, const xmlNode *child, void *userData)
+bool Parser::CodingPrefixParser::VisitNode(xmlNode &node, xmlNode *child, void *userData)
 {
     return true;
 }

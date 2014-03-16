@@ -140,7 +140,7 @@ static void printerr(int err, char *file, int line, ...)
         vsprintf(buf, errors[err].name, arg);
         va_end(arg);
     }
-    if ((errors[err].level & ERROR) || cparams.prm_ansi && (errors[err].level & ANSIERROR))
+    if ((errors[err].level & ERROR) || (cparams.prm_ansi && (errors[err].level & ANSIERROR)))
     {
         if (!cparams.prm_quiet)
             printf("Error   ");

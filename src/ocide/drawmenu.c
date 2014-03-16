@@ -79,8 +79,8 @@ static void InsertMenuProperties(HWND lv, struct resRes *data);
 static void GetMenuPropText(char *buf, HWND lv, struct resRes *data, int row);
 static HWND MenuPropStartEdit(HWND lv, int row, struct resRes *data);
 static void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data);
-struct propertyFuncs menuFuncs = 
-{ 
+// callbacks to populate the properties window for this resource editor
+static struct propertyFuncs menuFuncs = { 
     InsertMenuProperties,
     GetMenuPropText,
     MenuPropStartEdit,
@@ -618,7 +618,7 @@ static void SelectItem(struct resRes *menuData, MENUITEM *orig, MENUITEM *select
         m.cbSize = sizeof(NONCLIENTMETRICS);
         SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS),&m, NULL);
         font = CreateFontIndirect(&m.lfMenuFont);
-        StringWToA(buf, selected->text);
+        StringWToA(buf, selected->text, wcslen(selected->text));
         menuData->gd.editWindow = CreateWindow("edit", "", WS_VISIBLE |
             WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER | ES_AUTOHSCROLL,
             x,y,width,height, menuData->activeHwnd, (HMENU)ID_EDIT,
@@ -706,10 +706,8 @@ static BOOL SelectFromTopRow(HDC hDC, struct resRes *menuData,
 }
 static void SelectSubmenu(HWND hwnd, struct resRes *menuData, POINT mouse, BOOL openEditor)
 {
-    RECT r1;
     NONCLIENTMETRICS m;
     HFONT font;
-    SIZE sz;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
     m.cbSize = sizeof(NONCLIENTMETRICS);
@@ -836,10 +834,8 @@ static int HitTestFromTopRow(HDC hDC, struct resRes *menuData,MENUITEM *items, i
 int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse)
 {
     int rv;
-    RECT r1;
     NONCLIENTMETRICS m;
     HFONT font;
-    SIZE sz;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
     m.cbSize = sizeof(NONCLIENTMETRICS);
@@ -1016,10 +1012,8 @@ static int InsertDeleteFromTopRow(HDC hDC, struct resRes *menuData,
 }
 void InsertDelete(HWND hwnd, struct resRes * menuData, int code)
 {
-    RECT r1;
     NONCLIENTMETRICS m;
     HFONT font;
-    SIZE sz;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
     m.cbSize = sizeof(NONCLIENTMETRICS);
@@ -1231,7 +1225,6 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         {
                             char buf[256];
                             char buf2[256];
-                            WCHAR *q;
                             UndoChange(menuData, menuData->gd.selectedMenu);
                             buf[GetWindowText(menuData->gd.editWindow, buf, sizeof(buf))] = 0;
                             StringWToA(buf2, menuData->gd.selectedMenu->text, wcslen(menuData->gd.selectedMenu->text));
@@ -1372,7 +1365,6 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 void RegisterMenuDrawWindow(void)
 {
-    HBITMAP bitmap;
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;

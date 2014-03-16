@@ -213,7 +213,7 @@ void bool_setup(char select, char *string)
  * activation routine (callback) for boolean command line arguments
  */
 {
-    char v = (char)string;
+    BOOLEAN v = (BOOLEAN)string;
     if (select == '1')
         cparams.prm_c99 = cparams.prm_c1x = v;
     if (select == '9')
@@ -262,9 +262,9 @@ void bool_setup(char select, char *string)
 }
 void optimize_setup(char select, char *string)
 {
-    BOOL v = TRUE;
+    BOOLEAN v = TRUE;
     (void)select;
-    if (!*string || *string == '+' && string[1] == '\0')
+    if (!*string || (*string == '+' && string[1] == '\0'))
     {
         cparams.prm_optimize = TRUE;
         cparams.prm_debug = FALSE;
@@ -329,57 +329,57 @@ void codegen_setup(char select, char *string)
  * activation for code-gen type command line arguments
  */
 {
-    char bool = TRUE;
+    char v = TRUE;
     (void) select;
     while (*string)
     {
         switch (*string)
         {
             /*               case 'f':*/
-            /*                  cparams.prm_smartframes = bool ;*/
+            /*                  cparams.prm_smartframes = BOOLEAN ;*/
             /*                  break ;*/
             case 'u':
-                cparams.prm_charisunsigned = bool;
+                cparams.prm_charisunsigned = v;
                 break; 
             case 'd':
-                cparams.prm_diag = bool;
+                cparams.prm_diag = v;
                 break;
             case 'r':
-                cparams.prm_revbits = bool;
+                cparams.prm_revbits = v;
                 break;
             case 'b':
-                cparams.prm_bss = bool;
+                cparams.prm_bss = v;
                 break;
             case 'l':
-                cparams.prm_lines = bool;
+                cparams.prm_lines = v;
                 break;
             case 'm':
-                cparams.prm_cmangle = bool;
+                cparams.prm_cmangle = v;
                 break;
                 #ifndef i386
 /*                case 'R':*/
-/*                    cparams.prm_linkreg = bool;*/
+/*                    cparams.prm_linkreg = v;*/
 /*                    break;*/
                 #endif 
             case 'S':
-                cparams.prm_stackcheck = bool;
+                cparams.prm_stackcheck = v;
                 break;
             case 'O':
-                cparams.prm_oldfor = bool;
+                cparams.prm_oldfor = v;
                 break;
             case 'Z':
-                cparams.prm_profiler = bool;
+                cparams.prm_profiler = v;
                 break;
             case '-':
-                bool = FALSE;
+                v = FALSE;
                 break;
             case '+':
-                bool = TRUE;
+                v = TRUE;
                 break;
             default:
                 if (chosenAssembler->parse_codegen)
                 {
-                    switch(chosenAssembler->parse_codegen(bool,string)) {
+                    switch(chosenAssembler->parse_codegen(v,string)) {
                         case 1:
                             break;
                         case 2:
@@ -536,7 +536,7 @@ int main(int argc, char *argv[])
 {
     char buffer[256];
     char *p;
-    BOOL multipleFiles = FALSE;
+    BOOLEAN multipleFiles = FALSE;
     int rv;
     srand(time(0));
 
@@ -597,17 +597,17 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if (p[2] == 'x' || p[2] == 'x')
+                if (p[2] == 'x' || p[2] == 'X')
                 {
-                    if (p[3] == 'x' || p[3] == 'x')
+                    if (p[3] == 'x' || p[3] == 'X')
                         cparams.prm_cplusplus = TRUE;
                 }
             }
             else
             {
-                if (p[2] == '+' || p[2] == '+')
+                if (p[2] == '+')
                 {
-                    if (p[3] == '+' || p[3] == '+')
+                    if (p[3] == '+')
                         cparams.prm_cplusplus = TRUE;
                 }
             }

@@ -43,7 +43,7 @@ LINKFLAGS=-v -c -m -Gn -Gi /V5.1 /Lc:\bcc55\lib;c:\bcc55\lib\psdk;$(OBJECT)
 LIB=\bcc55\bin\tlib
 LIBFLAGS=/P1024
 
-TASM=tasm32
+TASM=\bcc55\bin\tasm32
 
 ASM=nasm
 ASMFLAGS = -fobj

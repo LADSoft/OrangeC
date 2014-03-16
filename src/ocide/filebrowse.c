@@ -291,7 +291,6 @@ void FileBrowseMenu(int x, int y, HWND hwndToolbar)
     
         for (j=0; j < i;)
         {
-            char name[MAX_PATH];
             FILEBROWSE *cur = ordered[j];
             HMENU internalPop = CreatePopupMenu();
             for ( ;j < i && cur->info == ordered[j]->info; j++)

@@ -42,7 +42,7 @@
 
 int _RTL_FUNC _dos_setdrive(int drive, int *nd)
 {
-// FIXME - figure out how many drives.
+// fixme - figure out how many drives.
     char buf[5],*a,equals[256];
     buf[0] = '=' ;
     buf[1] = drive + '@' ;

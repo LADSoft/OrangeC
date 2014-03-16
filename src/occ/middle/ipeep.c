@@ -53,7 +53,7 @@ extern int exitBlock;
 extern BITINT bittab[BITINTBITS];
 extern QUAD *intermed_head;
 extern SYMBOL *theCurrentFunc;
-extern BOOL functionHasAssembly;
+extern BOOLEAN functionHasAssembly;
 
 static BITINT *occursInAbnormal;
 
@@ -392,14 +392,14 @@ static int peep_assn(BLOCK *b, QUAD *head)
 }
 /*-------------------------------------------------------------------------*/
 
-static BOOL peep(BLOCK *b, BOOL branches)
+static BOOLEAN peep(BLOCK *b, BOOLEAN branches)
 /*
  * ICODE peep main routine
  */
 {
     QUAD *head = b->head;
     BLOCKLIST *bl;
-    BOOL changed = FALSE;
+    BOOLEAN changed = FALSE;
     if (b->visiteddfst)
         return changed;
     b->visiteddfst = TRUE;
@@ -474,10 +474,10 @@ static void scan_abnormal(void)
         }
     }
 }
-void peep_icode(BOOL branches)
+void peep_icode(BOOLEAN branches)
 {
     int i;
-    BOOL changed;
+    BOOLEAN changed;
     golist = oAlloc(sizeof(QUAD*)*(nextLabel - firstLabel));
     scan_gotos(intermed_head);
     scan_abnormal();

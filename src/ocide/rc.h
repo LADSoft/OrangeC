@@ -545,3 +545,4 @@ typedef struct
     int nextResourceId;
 } RESOURCE_DATA;
 
+#include "rc.p"

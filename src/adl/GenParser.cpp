@@ -38,7 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "GenParser.h"
-#include "Parser.h"
+#include "Loader.h"
 #include "TokenNode.h"
 #include "Utils.h"
 #include <ctype.h>
@@ -899,7 +899,6 @@ bool GenParser::GenerateOpcodes()
         }
         (*file) << "bool "<<className<<"::Opcode"<<(*it)->id<<"(" << operandClassName << " &operand)" << std::endl;
         (*file) << "{" << std::endl;
-        (*file) << "\tbool rv;" << std::endl;
         for (std::map<std::string, std::string> :: iterator it1 = (*it)->values.begin();
              it1 != (*it)->values.end(); ++ it1)
         {
@@ -908,7 +907,7 @@ bool GenParser::GenerateOpcodes()
         }
         if ((*it)->tokenRoot->branches.size())
         {
-            (*file) << "\trv = ParseOperands(tokenBranches" << (*it)->tokenRoot->id << ", operand);" << std::endl;
+            (*file) << "\tbool rv = ParseOperands(tokenBranches" << (*it)->tokenRoot->id << ", operand);" << std::endl;
         }
         if ((*it)->name != "" && (*it)->cclass != "")
         {
@@ -916,7 +915,14 @@ bool GenParser::GenerateOpcodes()
             if (op)
             {
                 if ((*it)->operands.size())
+                {
                     (*file) << "\tif (!rv)" << std::endl;
+                }
+                else
+                {
+                    (*file) << "\tbool rv;" << std::endl;
+                }
+                    
                 (*file) << "\t{" << std::endl;
                 (*file) << "\t\trv = Opcode" << op->id << "(operand);" << std::endl;
                 (*file) << "\t}" << std::endl;
@@ -926,6 +932,11 @@ bool GenParser::GenerateOpcodes()
                 std::cout << "Undefined opcode class '" << (*it)->cclass <<
                                "' in definition of opcode '" << (*it)->name << "'";
             }
+        }
+        else
+        {
+            if (!(*it)->operands.size())
+                (*file) << "\tbool rv = true;" << std::endl;
         }
         (*file) << "\treturn rv;" << std::endl;
         (*file) << "}" << std::endl;

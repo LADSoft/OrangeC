@@ -51,7 +51,7 @@ class dlHexMain
     struct Section
     {
         Section(ObjInt Address = 0, ObjInt Size = 0) : address(Address), size(Size), data(NULL) { }
-        ~Section() { if (data) delete data; }
+        ~Section() {  delete data; }
         ObjInt address;
         ObjInt size;
         char *data;

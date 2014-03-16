@@ -131,8 +131,7 @@ int initiateDebug(int stopimmediately)
         ReleaseSymbolTables();
         free(exe);
         free(args);
-        CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)StartDebug, 
-            (LPVOID)cmd, 0, &debugThreadID));
+        _beginthread((BEGINTHREAD_FUNC)StartDebug,0, (LPVOID)cmd);
 
         ReleaseSymbolTables();
 
@@ -591,8 +590,7 @@ void abortDebug(void)
     DWORD threadhand;
     if (!abortEvent)
         abortEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    CloseHandle(CreateThread(0, 0, (LPTHREAD_START_ROUTINE)abortDebugThread, 
-        (LPVOID)0, 0, &threadhand));
+    _beginthread((BEGINTHREAD_FUNC)abortDebugThread, 0, NULL);
     WaitForSingleObject(abortEvent, INFINITE);
 }
 
@@ -636,7 +634,7 @@ void TranslateFilename(char * szFilename)
 BOOL GetFileNameOfDLL(HMODULE hpsapiLib, HANDLE hProcess, DWORD base, DWORD nameBase, BOOL fUnicode, char *outName)
 {
     BOOL found = FALSE;
-    char name[MAX_PATH * sizeof(MAX_PATH)];
+    char name[MAX_PATH *sizeof(int)];
     if (nameBase)
     {
             DWORD len;
@@ -672,7 +670,7 @@ BOOL GetFileNameOfDLL(HMODULE hpsapiLib, HANDLE hProcess, DWORD base, DWORD name
 }
 //-------------------------------------------------------------------------
 
-void __stdcall StartDebug(char *cmd)
+void StartDebug(char *cmd)
 {
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;
@@ -721,7 +719,7 @@ void __stdcall StartDebug(char *cmd)
     SelectInfoWindow(ERR_DEBUG_WINDOW);
     // Loop until told to stop.
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-    while (TRUE == bContinue)
+    while (bContinue)
     {
         // Pause until a debug event notification happens.
         bContinue = WaitForDebugEvent(&stDE, 500);

@@ -105,7 +105,7 @@ char *rcStrdup(char *s)
 }
 void rcFree(void *p)
 {
-    return HeapFree(memHeap, 0, p);
+    return HeapFree(memHeap, 0, p);//fixme
 }
 #define GetByte(fil) fgetc(fil)
 
@@ -224,10 +224,9 @@ BITMAP_ *RCLoadBitmap(char *fileName)
 {
     BITMAP_ *bd;
     FILE *fil;
-    char *real_fileName;
     char buf[256];
     BYTE *headerData, *pixelData;
-    int i, size;
+    int size;
     int pixelOffs;
 
     fil = MySearchPath(fileName, rcSearchPath, "rb");
@@ -303,7 +302,6 @@ CURSOR *RCLoadCursor(char *fileName)
     for (i = 0; i < count; i++)
     {
         int t;
-        BYTE *data;
         cursors[i].width = GetByte(fil);
         cursors[i].height = GetByte(fil);
         cursors[i].colorcount = GetByte(fil);
@@ -489,6 +487,7 @@ FONT *RCLoadFont(char *fileName)
     fd->data = data;
     fd->device = rcStrdup(device);
     fd->face = rcStrdup(face);
+    return fd;
 }
 static void CreateFontResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
 {
@@ -533,7 +532,6 @@ ICON *RCLoadIcon(char *fileName)
     for (i = 0; i < count; i++)
     {
         int t;
-        BYTE *data;
         icons[i].width = GetByte(fil);
         icons[i].height = GetByte(fil);
         icons[i].colorcount = GetByte(fil);
@@ -794,18 +792,17 @@ static void ReadQuotedResID(IDENT *id)
     else if (lastst == ident)
     {
         WCHAR buf[2048], *p = buf;
-        char nbuf[2048];
+        WCHAR nbuf[2048];
         EXPRESSION *expr = NULL;
         char *idp = lastid;
         while (*idp)
             *p++ = *idp++;
         *p++ = '\n';
         *p = 0;
-        strcpy(nbuf, lastid);
+        strcpy(nbuf, buf);
         defcheck(buf);
-        if (strcmp(nbuf, buf))
+        if (wcscmp(nbuf, buf) != 0)
         {
-            int rv;
             cantnewline = TRUE;
             p = --lptr;
             lptr = buf;
@@ -912,7 +909,7 @@ static void ReadMemflags(CHARACTERISTICS *info)
 
 static int ReadString(WCHAR **string)
 {
-    int rv;
+    int rv = 0;
     if (lastst == sconst)
     {
         rv = StringAsciiToWChar(string, laststr, laststrlen);
@@ -1575,7 +1572,7 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                         getsym();
                         skip_comma();
                 }
-                if (is_number(lastst))
+                if (is_number())
                     m->id = ReadExp();
                 skip_comma();
                 if (!extended)
@@ -1607,7 +1604,7 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                     getsym();
                     skip_comma();
                 }
-                if (is_number(lastst))
+                if (is_number())
                 {
                     m->id = ReadExp();
                     skip_comma();
@@ -1675,10 +1672,6 @@ static void ParseRC(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     ReadMemflags(info);
     if (lastst == sconst)
     {
-        char buf[260];
-        FILE *fil;
-        int size;
-
         ReadFileName();
         need_eol();
         CreateUserFileResource(cd, id, (IDENT *)RESTYPE_RCDATA, info, laststr);
@@ -1922,8 +1915,11 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                     {
                         getsym();
                         (*cur1)->charset = ReadExp();
-                    } if (lastst != comma)
+                    }
+                    else 
+                    {
                         break;
+                    }
                     getsym();
                     cur1 = &(*cur1)->next;
                 }
@@ -2170,15 +2166,14 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
     // we are going to search for our special id #defines in any order
     // in case the user went happily editing them
     while (*curs && (stricmp((*curs)->name, "__NEXT_CONTROL_ID")
-        && stricmp((*curs)->name, "__NEXT_MENU_ID")
-        && stricmp((*curs)->name, "__NEXT_RESOURCE_ID")
-        && stricmp((*curs)->name, "__NEXT_STRING_ID")))
+        && stricmp((*curs)->name, "__NEXT_MENU_ID") != 0
+        && stricmp((*curs)->name, "__NEXT_RESOURCE_ID") != 0
+        && stricmp((*curs)->name, "__NEXT_STRING_ID") != 0))
     {
         curs = &(*curs)->xref;
     }
     if (*curs)
-    {
-        LIST *lcurs;   
+    { 
         LIST **begin = curs;
         // ok found something, try to get the values
         while (!done && *curs)
@@ -2209,27 +2204,6 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
             }
             done = TRUE;
         }
-        *begin = *curs;
-        /*
-        // have to look for the endif
-        // this isn't perfect, if the user inserted lines
-        // we can't find the endif, in that case don't delete anything from
-        // the file
-        lcurs = (*curs)->lines;
-        while (lcurs)
-        {
-            if (!stricmp(lcurs, "#endif\n"))
-            {
-                // ok found the endif, delete all the above from the file
-                // and delete the endif from the lines
-                *begin = *curs;                
-                (*curs)->lines->next = lcurs->next;
-                break;
-                
-            }
-            lcurs = lcurs->next;
-        }
-        */
         
     }    
     // now if something was unspecified try to recover
@@ -2254,7 +2228,6 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
 RESOURCE_DATA *ReadResources(char *fileName)
 {
     COMPILEDATA cd;
-    char *cmd;
     rcIdFile = NULL;
     memset(&cd, 0, sizeof(cd));
     cd.resourcesTail = &cd.resources;

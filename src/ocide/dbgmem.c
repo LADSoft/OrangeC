@@ -280,7 +280,7 @@ void MemDoPaint(HWND hwnd, int focussed)
     lines = (rect.bottom - rect.top)/ 16;
     chars = (rect.right/8 - 10) / 4; 
     dc = BeginPaint(hwnd, &ps);
-    SelectObject(dc, MemFont);
+    oldFont = SelectObject(dc, MemFont);
     for (i = 0; i < lines; i++)
     {
         int j;
@@ -785,10 +785,11 @@ LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SendMessage(hwndTabCtrl, WM_SETFONT, (WPARAM)tabNormalFont, 0);
             r.top += 26;
             r.bottom -= 25;
+            // we want the next four to all be the same size since they are overlapping windows inside the memory window
             hwndMemInternal[0] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_VISIBLE + WS_BORDER,
                                           r.left, r.top, r.right - r.left, r.bottom - r.top,
                                           hwnd, 0, hInstance, 0);
-            hwndMemInternal[1] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER,
+            hwndMemInternal[1] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER, 
                                           r.left, r.top, r.right - r.left, r.bottom - r.top,
                                           hwnd, 0, hInstance, 0);
             hwndMemInternal[2] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER,

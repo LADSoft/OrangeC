@@ -69,7 +69,7 @@ extern char *tn_char32_t;
 
 TYPE *typenum(char *buf, TYPE *tp);
 
-BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
+BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
 {
     if (typ1->type == bt_any || typ2->type == bt_any)
         return TRUE;
@@ -172,7 +172,7 @@ BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     }
     if (typ1->type == typ2->type && (isstructured(typ1) || exact && typ1->type == bt_enum))
         return typ1->sp == typ2->sp;
-    if (typ1->type == typ2->type || !exact && isarithmetic(typ2) && isarithmetic(typ1))
+    if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
         return TRUE;
     if (isfunction(typ1) && isfunction(typ2) && 
         typ1->sp->linkage == typ2->sp->linkage)
@@ -190,7 +190,7 @@ BOOL comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     }
     return FALSE;
 }
-BOOL matchingCharTypes(TYPE *typ1, TYPE *typ2)
+BOOLEAN matchingCharTypes(TYPE *typ1, TYPE *typ2)
 {
     if (isref(typ1))
         typ1 = basetype(typ1)->btp;

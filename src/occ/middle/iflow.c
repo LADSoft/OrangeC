@@ -761,7 +761,7 @@ static void Dominators(void)
     }
     tFree();
 }
-BOOL dominatedby(BLOCK *src, BLOCK *ancestor)
+BOOLEAN dominatedby(BLOCK *src, BLOCK *ancestor)
 {
     int idom = src->idom;
     while (idom > 0)
@@ -1139,7 +1139,7 @@ void unlinkBlock(BLOCK *succ, BLOCK *pred)
         removeDeadBlock(succ);
     }
 }
-void doms_only(BOOL always)
+void doms_only(BOOLEAN always)
 {
     int dfsCount = 0;
     int i;

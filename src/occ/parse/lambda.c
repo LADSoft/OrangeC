@@ -125,7 +125,7 @@ static TYPE *lambda_type(TYPE *tp, enum e_cm mode)
     }
     return tp;
 }
-SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
+SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOLEAN isExplicit)
 {
     if (lambdas)
     {
@@ -135,7 +135,7 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOL isExplicit)
             {
                 if (lambdas->captureThis)
                 {
-                    BOOL errorflg = FALSE;
+                    BOOLEAN errorflg = FALSE;
                     LAMBDA *check = lambdas;
                     // have to try to replicate the symbol into the current context
                     while (check && !error)
@@ -477,7 +477,7 @@ static void finishClass(void)
     }
     createCaller();
 }
-static EXPRESSION *createLambda(BOOL noinline)
+static EXPRESSION *createLambda(BOOLEAN noinline)
 {
     EXPRESSION *rv = NULL, **cur = &rv;
     HASHREC *hr;
@@ -628,7 +628,7 @@ static EXPRESSION *createLambda(BOOL noinline)
     *cur = clsThs; // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOL noinline)
+LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
 {
     LAMBDA *self;
     SYMBOL *vpl, *ths;

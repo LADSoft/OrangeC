@@ -534,7 +534,7 @@ ASMNAME oplst[] =
     }
     , 
     {
-        "cmpxchg8b", op_cmp, 0, &popn_cmpxchg8b // FIXME, the inline assembler is broke
+        "cmpxchg8b", op_cmp, 0, &popn_cmpxchg8b // fixme, the inline assembler is broke
     }
     , 
     {
@@ -1723,7 +1723,7 @@ void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putconst(int sz, EXPRESSION *offset, BOOL doSign)
+void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
 /*
  *      put a constant to the outputFile file.
  */
@@ -1846,7 +1846,7 @@ void oa_putlen(int l)
     if (l < 0)
         l =  - l;
     switch(l) {
-        case ISZ_BOOL:
+        case ISZ_BOOLEAN:
         case ISZ_UCHAR:
         case ISZ_USHORT:
         case ISZ_UINT:
@@ -1889,7 +1889,7 @@ void putsizedreg(char *string, int reg, int size)
         size =  - size;
     if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR|| size == ISZ_U32)
         bePrintf( string, longregs[reg]);
-    else if (size == ISZ_BOOL || size == ISZ_UCHAR)
+    else if (size == ISZ_BOOLEAN || size == ISZ_UCHAR)
     {
         bePrintf( string, byteregs[reg]);
     }
@@ -1941,7 +1941,7 @@ void pointersize(int size)
         case ISZ_USHORT:
             bePrintf( "WORD ");
             break;
-        case ISZ_BOOL:
+        case ISZ_BOOLEAN:
         case ISZ_UCHAR:
             bePrintf( "BYTE ");
             break;
@@ -2285,7 +2285,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                 if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
                     || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
                 {
-                    BYTE dta[4];
+                    UBYTE dta[4];
                     int i;
                     FPFToFloat(dta, val);
                     bePrintf("\tDB\t");
@@ -2303,7 +2303,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                 if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
                     || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
                 {
-                    BYTE dta[8];
+                    UBYTE dta[8];
                     int i;
                     FPFToDouble(dta, val);
                     bePrintf("\tDB\t");
@@ -2321,7 +2321,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                 if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
                     || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
                 {
-                    BYTE dta[10];
+                    UBYTE dta[10];
                     int i;
                     FPFToLongDouble(dta, val);
                     bePrintf("\tDB\t");
@@ -2363,7 +2363,7 @@ int oa_genstring(LCHAR *str, int len)
  * Generate a string literal
  */
 {
-    BOOL instring = FALSE;
+    BOOLEAN instring = FALSE;
     if (cparams.prm_asmfile)
     {
         int nlen = len;
@@ -2906,7 +2906,7 @@ void dump_muldivval(void)
                 if (muldivlink->floatvalue.type == IFPF_IS_INFINITY
                     || muldivlink->floatvalue.type == IFPF_IS_NAN)
                 {
-                    BYTE data[12];
+                    UBYTE data[12];
                     int len = 0;
                     int i;
                     switch(muldivlink->size)
@@ -3086,17 +3086,14 @@ void oa_put_extern(SYMBOL *sp, int code)
 
 void oa_put_impfunc(SYMBOL *sp, char *file)
 {
-    if (cparams.prm_asmfile) {
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-        {
-            bePrintf( "\timport %s %s\n", sp->decoratedName, file);
-        }
-        else
-        {
-            bePrintf( "\timport %s %s\n", sp->decoratedName, file);
-        }
-    } else
+    if (cparams.prm_asmfile) 
+    {
+        bePrintf( "\timport %s %s\n", sp->decoratedName, file);
+    } 
+    else
+    {
         omf_put_impfunc(sp, file);
+    }
 }
 
 /*-------------------------------------------------------------------------*/

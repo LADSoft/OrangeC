@@ -1520,6 +1520,14 @@ static void gen_div(QUAD *q, enum e_op op)               /* unsigned division */
         {
             divby = make_muldivval(aprl);
         }
+        if (op == op_div)
+        {
+            gen_code(op_mov, makedreg(EDX), aimmed(0));
+        }
+        else
+        {
+            gen_code(op_cdq, 0, 0);
+        }
         gen_codes(op, q->ans->size, divby, 0);
     }
 }

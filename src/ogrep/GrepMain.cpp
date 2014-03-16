@@ -43,6 +43,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <Stdio.h>
 CmdSwitchParser GrepMain::SwitchParser;
 
 CmdSwitchBool GrepMain::recurseDirs(SwitchParser, 'd');
@@ -221,12 +222,17 @@ void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName)
                 bool matched = true;
                 while (matched)
                 {
+                    char *p = NULL;
                     matched = regexp.Match(str-buf, length, buf);
                     if (matched)
+                    {
                         FindLine(fileName, matchCount, matchLine, &matchPos, buf +regexp.GetStart(), true);
+                        p = strchr((char *)buf + regexp.GetEnd(), '\n');
+                    }
                     else
+                    {
                         FindLine(fileName, matchCount, matchLine, &matchPos, str + strlen(str), false);
-                    char *p = strchr((char *)buf + regexp.GetEnd(), '\n');
+                    }
                     if (!p)
                         p = str + strlen(str);
                     else

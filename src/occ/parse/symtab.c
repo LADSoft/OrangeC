@@ -330,13 +330,20 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
 SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
 {
     HASHREC *p = table->table[0];
-    while (p)
+    if (cparams.prm_cplusplus)
     {
-        SYMBOL *spp = (SYMBOL *)p->p;
-        spp = matchOverload(sp, spp);
-        if (spp)
-            return spp;
-        p = p->next;
+        while (p)
+        {
+            SYMBOL *spp = (SYMBOL *)p->p;
+            spp = matchOverload(sp, spp);
+            if (spp)
+                return spp;
+            p = p->next;
+        }
+    }
+    else
+    { 
+        return (SYMBOL *)p->p;
     }
     return (0);
 }

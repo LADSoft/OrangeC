@@ -1574,7 +1574,7 @@ int opt0(EXPRESSION **node)
             }
             else if (isfloatconst(ep->left))
             {
-                *node = intNode(en_c_d, 0);
+                *node = intNode(ep->left->type, 0);
                 (*node)->v.f = ep->left->v.f;
                 (*node)->v.f.sign ^= 1;                
                 rv = TRUE;

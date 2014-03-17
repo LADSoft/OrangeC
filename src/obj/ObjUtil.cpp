@@ -84,22 +84,6 @@ ObjString ObjUtil::ToDecimal(ObjInt value, int width)
     }
     return buf;
 }
-ObjInt ObjUtil::FromHex(const char *data, int *pos, int width)
-{
-    return FromInt(data, pos, width, 16);
-}
-ObjInt ObjUtil::FromDecimal(const char *data, int *pos, int width)
-{
-    return FromInt(data, pos, width, 10);
-}
-ObjInt ObjUtil::FromBinary(const char *data, int *pos, int width)
-{
-    return FromInt(data, pos, width, 2);
-}
-ObjInt ObjUtil::FromOctal(const char *data, int *pos, int width)
-{
-    return FromInt(data, pos, width, 8);
-}
 ObjInt ObjUtil::FromInt(const char *data, int *pos, int width, int radix)
 {
     int n = 0;

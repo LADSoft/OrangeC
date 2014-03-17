@@ -47,10 +47,22 @@ class ObjUtil
 public:
     static ObjString ToHex(ObjInt value, int width = 0);
     static ObjString ToDecimal(ObjInt value, int width = 0);
-    static ObjInt FromHex(const char *data, int *pos = NULL, int width = 0);
-    static ObjInt FromDecimal(const char *data, int *pos = NULL, int width = 0);
-    static ObjInt FromOctal(const char *data, int *pos = NULL, int width = 0);
-    static ObjInt FromBinary(const char *data, int *pos = NULL, int width = 0);
+    static ObjInt ObjUtil::FromHex(const char *data, int *pos=NULL, int width=0)
+    {
+        return FromInt(data, pos, width, 16);
+    }
+    static ObjInt ObjUtil::FromDecimal(const char *data, int *pos=NULL, int width=0)
+    {
+        return FromInt(data, pos, width, 10);
+    }
+    static ObjInt ObjUtil::FromBinary(const char *data, int *pos=NULL, int width=0)
+    {
+        return FromInt(data, pos, width, 2);
+    }
+    static ObjInt ObjUtil::FromOctal(const char *data, int *pos=NULL, int width=0)
+    {
+        return FromInt(data, pos, width, 8);
+    }
 private:
     static ObjInt ObjUtil::FromInt(const char *data, int *pos, int width, int radix);
 };

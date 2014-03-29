@@ -466,7 +466,8 @@ bool LinkDebugFile::WriteVariableTypes()
     for (int i=0; i < n.size(); i++)
     {
         ObjString *s = n[i];
-        delete s;
+        if (s != &empty)
+            delete s;
     }
     v.clear();
     for (ObjFile::TypeIterator it = file->TypeBegin(); it != file->TypeEnd(); ++it)
@@ -754,7 +755,6 @@ bool LinkDebugFile::WriteTypeNamesTable()
 bool LinkDebugFile::CreateOutput()
 {
     bool ok = DBOpen((char *)outputFile.c_str());
-
     if (ok)
     {
         ok = false;
@@ -763,7 +763,7 @@ bool LinkDebugFile::CreateOutput()
             if (WriteLineNumbers())
                 if (WriteVariableTypes())
                     if (WriteVariableNames())
-                        if (WriteGlobalsTable())
+                       if (WriteGlobalsTable())
                             if (WriteAutosTable())
                                 if (WriteTypeNamesTable())
                                     if (WriteNamesTable())

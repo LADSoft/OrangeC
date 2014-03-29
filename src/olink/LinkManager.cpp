@@ -212,7 +212,6 @@ void LinkManager::LoadFiles()
                 MergePublics(file, true);
             }
             fclose(infile);
-            delete infile;
         }		
         else
         {

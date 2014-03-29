@@ -30,9 +30,6 @@
     <ClCompile Include="LinkerMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LinkerMem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="LinkExpression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

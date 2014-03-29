@@ -91,7 +91,6 @@
     <ClCompile Include="LinkDebugAux.cpp" />
     <ClCompile Include="LinkDebugFile.cpp" />
     <ClCompile Include="LinkerMain.cpp" />
-    <ClCompile Include="LinkerMem.cpp" />
     <ClCompile Include="LinkExpression.cpp" />
     <ClCompile Include="LinkManager.cpp" />
     <ClCompile Include="LinkMap.cpp" />

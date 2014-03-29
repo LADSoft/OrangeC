@@ -24,7 +24,7 @@ int winsystem(const char *cmd)
     stStartInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE) ;
     stStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE) ;
 
-    bRet = CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, 0, NULL, 
+    bRet = CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, 
             NULL,  &stStartInfo, &stProcessInfo);
     if (!bRet)
     {

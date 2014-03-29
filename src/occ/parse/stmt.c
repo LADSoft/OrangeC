@@ -2727,6 +2727,21 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
             thunkDestructorTail(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
     }
+    if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->isConstructor)
+    {
+        if (funcsp->linkage3 == lk_noreturn)
+            error(ERR_NORETURN);
+        else if (cparams.prm_c99 || cparams.prm_cplusplus)
+        {
+            if (!thunkmainret(funcsp, blockstmt))
+                if (isref(basetype(funcsp->tp)->btp))
+                    error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
+                else
+                    error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+        }
+        else
+            error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+    }
     needkw(&lex, end);
     if (first && cparams.prm_cplusplus)
     {
@@ -2773,21 +2788,6 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             st->select = exprNode(en_func, NULL, NULL);
             st->select->v.func = funcparams;
         }
-    }
-    if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->isConstructor)
-    {
-        if (funcsp->linkage3 == lk_noreturn)
-            error(ERR_NORETURN);
-        else if (cparams.prm_c99 || cparams.prm_cplusplus)
-        {
-            if (!thunkmainret(funcsp, blockstmt))
-                if (isref(basetype(funcsp->tp)->btp))
-                    error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
-                else
-                    error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
-        }
-        else
-            error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
     }
     if (first)
     {

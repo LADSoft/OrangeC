@@ -216,7 +216,7 @@ static struct {
 {"Dangerous pointer conversion", ERROR },
 {"String constant may not be used as initializer here", ERROR },
 {"Lvalue required", ERROR },
-{"Pointer to object required", ERROR },
+{"Invalid indirection", ERROR },
 {"'%s' used without prior assignment", WARNING },
 {"Possible incorrect assignment", WARNING },
 {"Ansi forbids automatic conversion from void in assignment", ERROR },

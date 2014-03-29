@@ -141,7 +141,7 @@ SETTING **GetSettingsAddress(PROJECTITEM *pj)
         PROFILE *p = pj->profiles;
         while (p)
         {
-            if (!p->name || p->name == currentProfileName)
+            if (!p->name || !strcmp(p->name,currentProfileName))
                 break;
             p = p->next;
         }
@@ -178,7 +178,7 @@ SETTING *GetSettings(PROFILE *pf)
             PROFILE *p = pf;
             while (p)
             {
-                if (!p->name || p->name == currentProfileName)
+                if (!p->name || !strcmp(p->name, currentProfileName))
                     break;
                 p = p->next;
             }
@@ -214,7 +214,7 @@ LRESULT CALLBACK SelectProfileDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             while (pf)
             {
                 count++;
-                if (pf->name == currentProfileName)
+                if (!strcmp(pf->name,currentProfileName))
                     selected = count;
                 SendMessage(hProfileCombo, CB_ADDSTRING, 0, (LPARAM)pf->name);
                     
@@ -1085,7 +1085,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                             if (!GetNewProfileName(hwnd, name))
                             {
                                 int count = 0;
-                                if (strcmp(currentProfileName, sysProfileName))
+                                if (strcmp(currentProfileName, sysProfileName) != 0)
                                 {
                                     PROFILENAMELIST *pf = profileNames;
                                     count++;
@@ -1345,7 +1345,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 count++;
                 while (pf)
                 {
-                    if (pf->name == currentProfileName)
+                    if (!strcmp(pf->name,currentProfileName))
                         selected = count;
                     SendMessage(hProfileCombo, CB_ADDSTRING, 0, (LPARAM)pf->name);
                         

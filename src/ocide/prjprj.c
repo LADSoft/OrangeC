@@ -360,22 +360,19 @@ void PropagateAllProjectTypes(void)
     {
         SETTING *s;
         char *rls = NULL;
-        free(currentProfileName);
-        currentProfileName = strdup(sysProfileName);
+        currentProfileName = sysProfileName;
         s = PropFind(GetSettings(pj->profiles), "__PROJECTTYPE");
         if (s)
         {
             rls = s->value;
-            free(currentProfileName);
-            currentProfileName = strdup(m);
+            currentProfileName = m;
             SetProjectType(pj, atoi(rls));
             MarkChanged(pj, FALSE);
         }
         pj = pj->next;
     }
     profileDebugMode = n;
-    free(currentProfileName);
-    currentProfileName = strdup(m);
+    currentProfileName = m;
 }
 void ProjectNewProject(void)
 {

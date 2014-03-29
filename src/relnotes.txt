@@ -1,9 +1,26 @@
 Release notes
 
-version 5.0.10:
-    occ:   inlining functions that took the address of parameters was broken
+version 5.0.10: 3/29/14
+    misc:   various code cleanup and improvements suggested by Kirill Joss
+    misc:   include dlea allocator in most C++ apps (borland compile only)  this helps speed it up
+    occ:    inlining functions that took the address of parameters was broken
     occ:    fixed bug with optimizing of inlined functions generating incorrect code
-
+    occ:    fix so that external references will show up in the output file when included with a C++ using directive
+    occ:    fix bug where debug info of arrays was wrong
+    occ:    fix basic types in debug information
+    occ:    fix bug in register allocation that may speed up the compile
+    occ:    fix problem with generating DOUBLE sized constants for negative FLOAT constants
+    occ:    fix some error messages
+    ogrep:  fix crash under some circumstances
+    olib:   fix bug that caused libraries to be generated incorrectly, this will probably also speed up links
+    olink:  fix bug where a debug info table that didn't exist was referenced
+    ocide: fix find dialog to not crash when invoked
+    ocide:  after debugging, a build would not work (said file in relative format)
+    ocide:  show types in watch window correctly
+    clibs:  fix fputc and friends to match const correctness in headers
+    clibs:  remove some shellapi stuff from the main windows headers
+    build:  remove all references to PEPATCH
+        
 version 5.0.9: 12/1/2013
     ocide: fix problem where function prompt window would go away randomly
     ocide: handle parenthesis when in function prompt window

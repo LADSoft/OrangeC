@@ -148,11 +148,11 @@ PROJECTITEM *AddFile(PROJECTITEM *data, char *name, BOOL automatic)
         p = name;
     if (data->type == PJ_PROJ && automatic)
     {
-        if (!strnicmp(szInstallPath, name, strlen(szInstallPath)))
-        {
-            return NULL;
-        }
-        else
+//        if (!strnicmp(szInstallPath, name, strlen(szInstallPath)))
+//        {
+//            return NULL;
+//        }
+//        else
         {
             int i;
             for (i = 0; i < sizeof(extensionMap)/sizeof(extensionMap[0]); i++)

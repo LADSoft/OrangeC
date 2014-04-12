@@ -100,6 +100,7 @@ public:
     InstructionParser *GetParser() { return parser; }
     unsigned GetValue();
     ObjSection *GetSectionByName(std::string &name);
+    Section *GetCurrentSection() { return currentSection; }
 protected:
     void NeedSection();
     void DoPreProcess(int id);

@@ -711,8 +711,8 @@ void AsmFile::SectionDirective()
         Section *section = new Section(name, sections.size());
         sections[name] = section;
         numericSections.push_back(section);
-        currentSection = section;
         section->Parse(this);
+        currentSection = section;
     }
     else
     {

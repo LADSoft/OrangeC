@@ -83,6 +83,11 @@ void Section::Parse(AsmFile *fil)
         }
         else if (fil->GetKeyword() == Lexer::VIRTUAL)
         {
+            Section *old = fil->GetCurrentSection();
+            if (!old)
+                throw new std::runtime_error("Virtual section must be enclosed in other section");
+            align = old->align;
+            memcpy(beValues, old->beValues, sizeof(beValues));
             isVirtual = true;
             fil->NextToken();
         }

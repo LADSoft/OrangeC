@@ -464,8 +464,10 @@ static SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOLEAN isvirtua
     if (rv)
     {
         rv->temp = isvirtual;
-        if (!last || (last == rv || rv->mainsym && rv->mainsym == last->mainsym) && (isvirtual && isvirtual == last->temp || 
-                                                                                     ismember(rv)))
+        if (!last || (last == rv || rv->mainsym && rv->mainsym == last->mainsym) && ((isvirtual && isvirtual == last->temp || 
+                                                                                     ismember(rv)) 
+            || (last->storage_class == sc_type && rv->storage_class == sc_type ||last->storage_class == sc_typedef && rv->storage_class == sc_typedef) 
+            && (last->parentClass == rv->parentClass) || last->parentClass->mainsym == rv->parentClass->mainsym))
         {
         }
         else
@@ -685,10 +687,16 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
     {
         if (encloser && encloser->tp->type == bt_templateselector)
         {
-            LIST *l = encloser->templateSelector;
+            TEMPLATESELECTOR *l = encloser->templateSelector;
             while (l->next)
                 l = l->next;
-            *sym = makeID(sc_type, encloser->tp, NULL, (char *)l->data);
+            if (*destructor)
+            {
+                l->next = Alloc(sizeof(TEMPLATESELECTOR));
+                l->next->name = l->sym->name;
+                l = l->next;
+            }
+            *sym = makeID(sc_type, encloser->tp, NULL, l->name);
         }
         else
         {

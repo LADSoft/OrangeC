@@ -1368,13 +1368,16 @@ LEXEME *getsym(void)
 }
 LEXEME *prevsym(LEXEME *lex)
 {
-    if (lex->next)
+    if (lex)
     {
-        context->cur = lex->next;
-    }
-    else
-    {
-        context->cur = NULL;
+        if (lex->next)
+        {
+            context->cur = lex->next;
+        }
+        else
+        {
+            context->cur = NULL;
+        }
     }
     return lex;
 }

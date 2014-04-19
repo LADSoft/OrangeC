@@ -2189,6 +2189,22 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     {
                         tn = sp->tp;
                     }
+                    if (tpx->sp->templateSelector->next->next && !strcmp(tpx->sp->templateSelector->next->sym->name, tpx->sp->templateSelector->next->next->name))
+                    {
+                        if (destructor)
+                        {
+                            *consdest = CT_DEST;
+                        }
+                        else
+                        {
+                            *consdest = CT_CONS;
+                        }
+                        if (strSym_out)
+                            *strSym_out = tpx->sp->templateSelector->next->sym;
+                        tn = tpx->sp->templateSelector->next->sym->tp;
+                        *notype = TRUE;
+                        goto exit;
+                    }
                 }
                 else 
                 {
@@ -3995,41 +4011,44 @@ static BOOLEAN mismatchedOverloadLinkage(SYMBOL *sp, HASHTABLE *table)
 }
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms)
 {
-    HASHREC **hr = &syms->table[0];
-    SYMBOL *ths;
-    TYPE *type, *tpx;
-    if (*hr && ((SYMBOL *)(*hr)->p)->thisPtr)
-        return;
-    type = tpx = Alloc(sizeof(TYPE));
-    tpx->type = bt_pointer;
-    tpx->size = getSize(bt_pointer);
-    if (isconst(sp->tp))
+    if (syms)
     {
-        tpx = tpx->btp = Alloc(sizeof(TYPE));
-        tpx->type = bt_const;
-        tpx->size = basetype(sp->parentClass->tp)->size;
-    }
-    if (isvolatile(sp->tp))
-    {
-        tpx = tpx->btp = Alloc(sizeof(TYPE));
-        tpx->type = bt_volatile;
-        tpx->size = basetype(sp->parentClass->tp)->size;
-    }
-    tpx->btp = basetype(sp->parentClass->tp);
-    ths = makeID(sc_parameter, type, NULL, "__$$this");   
-    ths->thisPtr = TRUE;
-    ths->used = TRUE;
-    SetLinkerNames(ths, lk_cdecl);
-//    if ((*hr) && ((SYMBOL *)(*hr)->p)->tp->type == bt_void)
-//    {
-//        (*hr)->p = ths;
-//    }
-//    else
-    {
-        HASHREC *hr1 = Alloc(sizeof(HASHREC));
-        hr1->p = ths;
-        hr1->next = *hr;
-        *hr = hr1;
+        HASHREC **hr = &syms->table[0];
+        SYMBOL *ths;
+        TYPE *type, *tpx;
+        if (*hr && ((SYMBOL *)(*hr)->p)->thisPtr)
+            return;
+        type = tpx = Alloc(sizeof(TYPE));
+        tpx->type = bt_pointer;
+        tpx->size = getSize(bt_pointer);
+        if (isconst(sp->tp))
+        {
+            tpx = tpx->btp = Alloc(sizeof(TYPE));
+            tpx->type = bt_const;
+            tpx->size = basetype(sp->parentClass->tp)->size;
+        }
+        if (isvolatile(sp->tp))
+        {
+            tpx = tpx->btp = Alloc(sizeof(TYPE));
+            tpx->type = bt_volatile;
+            tpx->size = basetype(sp->parentClass->tp)->size;
+        }
+        tpx->btp = basetype(sp->parentClass->tp);
+        ths = makeID(sc_parameter, type, NULL, "__$$this");   
+        ths->thisPtr = TRUE;
+        ths->used = TRUE;
+        SetLinkerNames(ths, lk_cdecl);
+    //    if ((*hr) && ((SYMBOL *)(*hr)->p)->tp->type == bt_void)
+    //    {
+    //        (*hr)->p = ths;
+    //    }
+    //    else
+        {
+            HASHREC *hr1 = Alloc(sizeof(HASHREC));
+            hr1->p = ths;
+            hr1->next = *hr;
+            *hr = hr1;
+        }
     }
 }
 static BOOLEAN hasTemplateParent(SYMBOL *sp)

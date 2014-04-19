@@ -1318,7 +1318,7 @@ TYPE *SynthesizeType(TYPE *tp, BOOLEAN alt)
                 }
                 else
                 {
-                    if (tp->templateParam->p->type != kw_typename)
+                    if (ts->tp->templateParam->p->type != kw_typename)
                     {
                         return &stdany;
                     }
@@ -1382,11 +1382,15 @@ TYPE *SynthesizeType(TYPE *tp, BOOLEAN alt)
             case bt_func:
             case bt_ifunc:
             {
+                TYPE *func;
                 HASHREC *hr = tp->syms->table[0], **store;
-                SynthesizeQuals(&last, &qual, &lastQual);
                 *last = Alloc(sizeof(TYPE));
                 **last = *tp;
                 (*last)->syms = CreateHashTable(1);
+                func = *last;
+                SynthesizeQuals(&last, &qual, &lastQual);
+                if (*last)
+                    last = &(*last)->btp;
                 while (hr)
                 {
                     SYMBOL *sp = (SYMBOL *)hr->p;
@@ -1425,19 +1429,18 @@ TYPE *SynthesizeType(TYPE *tp, BOOLEAN alt)
                                 SYMBOL *clone = clonesym(sp);
                                 clone->tp = SynthesizeType(&stdany, alt);
                                 clone->tp->templateParam = sp->tp->templateParam;
-                                insert(clone, (*last)->syms);
+                                insert(clone, func->syms);
                             }
                         }
                     }
                     else
                     {
                         SYMBOL *clone = clonesym(sp);
-                        insert(clone, (*last)->syms);
+                        insert(clone, func->syms);
                         clone->tp = SynthesizeType(clone->tp, alt);
                     }
                     hr = hr->next;
                 }
-                last = &(*last)->btp;
                 tp = tp->btp;
                 break;
             }

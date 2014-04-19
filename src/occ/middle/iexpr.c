@@ -799,11 +799,13 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                     ap1 = make_ioffset(node);
                     break;
                 }
+                // fall through
             case en_label:
             case en_global:
             case en_pc:
             
                 sp = node->left->v.sp;
+                if (!sp->stackblock)
 //    			if (!isstructured(sp->tp))
                 {
                     sp->genreffed = TRUE;
@@ -1358,8 +1360,23 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
         }
         else if (isstructured(a->tp) && a->exp->type == en_thisref) // constructor
         {
-            rv = a->tp->size;
-            gen_expr(funcsp, a->exp, F_NOVALUE, ISZ_ADDR);
+            EXPRESSION *ths = a->exp->v.t.thisptr;
+            if (ths && ths->type == en_auto && ths->v.sp->stackblock)
+            {
+                IMODE *ap;
+                // constructor or other function creating a structure on the stack
+                rv = ths->v.sp->tp->size;
+                if (rv % chosenAssembler->arch->stackalign)
+                    rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
+                gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
+                ths->v.sp->imvalue = ap;
+                gen_expr(funcsp, a->exp, 0, ISZ_UINT );
+            }
+            else
+            {
+                gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
+                rv = a->tp->size;
+            }
         }
         else
         {

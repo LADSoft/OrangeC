@@ -290,7 +290,7 @@ typedef    struct type
         /* local symbol tables */
         HASHTABLE *syms; /* Symbol table for structs & functions */
         HASHTABLE *tags; /* Symbol table for nested types*/
-        struct _templateParam *templateParam;
+        struct _templateParamList *templateParam;
         int dbgindex; /* type index for debugger */
         int alignment; /* alignment pref for this structure/class/union   */
         EXPRESSION *esize; /* enode version of size */
@@ -510,7 +510,7 @@ typedef struct sym
     struct _vtabEntry *vtabEntries;
     struct lexeme *deferredTemplateHeader ;
     struct lexeme *deferredCompile ;
-    struct _templateParam *templateParams;
+    struct _templateParamList *templateParams;
     int templateLevel;
     LIST *specializations;
     LIST *instantiations;
@@ -606,7 +606,6 @@ typedef struct _vbaseEntry
 
 typedef struct _templateParam
 {
-    struct _templateParam *next;
         // kw_class = class or namespace
         // kw_int = nontype
         // kw_template = template parameter
@@ -624,7 +623,7 @@ typedef struct _templateParam
             SYMBOL *val;
             struct lexeme *txtdflt;
             SYMBOL *temp;
-            struct _templateParam *args;
+            struct _templateParamList *args;
         } byTemplate;
         struct {
             TYPE *dflt;
@@ -640,17 +639,23 @@ typedef struct _templateParam
             TYPE *tp;
         }byNonType;  
         struct {
-            struct _templateParam *types;
-            struct _templateParam *next;
+            struct _templateParamList *types;
+            struct _templateParamList *next;
         }bySpecialization;
         struct {
-            struct _templateParam *pack;
+            struct _templateParamList *pack;
         }byPack;
         struct {
-            struct _templateParam *args;
+            struct _templateParamList *args;
         }byDeferred;
     };
 } TEMPLATEPARAM;
+
+typedef struct _templateParamList
+{
+    struct _templateParamList *next;
+    TEMPLATEPARAM *p;
+} TEMPLATEPARAMLIST;
 
 typedef struct _templateSelector
 {
@@ -660,14 +665,14 @@ typedef struct _templateSelector
         SYMBOL *sym;
         char *name;
     } ;
-    TEMPLATEPARAM *templateParams;
+    TEMPLATEPARAMLIST *templateParams;
     int isTemplate : 1;
 } TEMPLATESELECTOR ;
 typedef struct _structSym
 {
     struct _structSym *next;
     SYMBOL *str;
-    TEMPLATEPARAM *tmpl;
+    TEMPLATEPARAMLIST *tmpl;
 } STRUCTSYM;
 typedef struct initlist
 {
@@ -690,7 +695,7 @@ typedef struct functioncall
     EXPRESSION *returnEXP;
     EXPRESSION *thisptr;
     TYPE *thistp;
-    struct _templateParam *templateParams;
+    TEMPLATEPARAMLIST *templateParams;
     int callLab;
     int novtab : 1;
     int ascall:1;

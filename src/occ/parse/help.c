@@ -74,7 +74,7 @@ BOOLEAN istype(SYMBOL *sym)
 {
     if (sym->storage_class == sc_templateparam)
     {
-        return sym->tp->templateParam->type == kw_typename || sym->tp->templateParam->type == kw_template;
+        return sym->tp->templateParam->p->type == kw_typename || sym->tp->templateParam->p->type == kw_template;
     }
     return sym->storage_class == sc_type || sym->storage_class == sc_typedef;
 }
@@ -163,8 +163,8 @@ BOOLEAN isint(TYPE *tp)
         case bt_wchar_t:
             return TRUE;
         case bt_templateparam:
-            if (tp->templateParam->type == kw_int)
-                return isint(tp->templateParam->byNonType.tp);
+            if (tp->templateParam->p->type == kw_int)
+                return isint(tp->templateParam->p->byNonType.tp);
             return FALSE;
         default:
             if (tp->type == bt_enum && !cparams.prm_cplusplus)
@@ -321,8 +321,8 @@ BOOLEAN ispointer(TYPE *tp)
         case bt_seg:
             return TRUE;
         case bt_templateparam:
-            if (tp->templateParam->type == kw_int)
-                return ispointer(tp->templateParam->byNonType.tp);
+            if (tp->templateParam->p->type == kw_int)
+                return ispointer(tp->templateParam->p->byNonType.tp);
             return FALSE;
         default:
             return FALSE;
@@ -338,8 +338,8 @@ BOOLEAN isref(TYPE *tp)
         case bt_rref:
             return TRUE;
         case bt_templateparam:
-            if (tp->templateParam->type == kw_int)
-                return isref(tp->templateParam->byNonType.tp);
+            if (tp->templateParam->p->type == kw_int)
+                return isref(tp->templateParam->p->byNonType.tp);
             return FALSE;
         default:
             return FALSE;
@@ -538,6 +538,7 @@ SYMBOL *anonymousVar(enum e_sc storage_class, TYPE *tp)
     rv->name = AnonymousName();
     if (storage_class == sc_localstatic && !theCurrentFunc)
         storage_class = sc_static;
+    tp->size = basetype(tp)->size;
     InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
     return rv;
@@ -851,6 +852,7 @@ void cast(TYPE *tp, EXPRESSION **exp)
             en = en_x_p;
             break;
         case bt_void:
+            return;
         case bt_templateparam:
         case bt_templateselector:
             break;

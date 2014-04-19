@@ -69,6 +69,26 @@ extern char *tn_char32_t;
 
 TYPE *typenum(char *buf, TYPE *tp);
 
+static TYPE *replaceTemplateSelector (TYPE *tp)
+{
+    if (tp->type == bt_templateselector && tp->sp->templateSelector->next->isTemplate)
+    {
+        SYMBOL *sp2 = tp->sp->templateSelector->next->sym;
+        if (sp2)
+        {
+            SYMBOL *sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams);
+            if (sp1)
+            {
+                sp1 = search(tp->sp->templateSelector->next->next->name, sp1->tp->syms);
+                if (sp1)
+                {
+                    tp = sp1->tp;
+                }
+            }
+        }
+    }
+    return tp;
+}
 BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
 {
     if (typ1->type == bt_any || typ2->type == bt_any)
@@ -77,6 +97,8 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         typ1 = basetype(typ1);
     if (typ2->type == bt_typedef)
         typ2 = basetype(typ2);
+    typ1 = replaceTemplateSelector(typ1);
+    typ2 = replaceTemplateSelector(typ2);
     if (isref(typ1))
         typ1 = basetype(typ1)->btp;
     if (isref(typ2))

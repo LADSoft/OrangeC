@@ -785,6 +785,9 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
     // no change or stricter const qualification
     if (comparetypes(*newType, oldType, TRUE))
         return TRUE;
+    // conversion from NULL to pointer
+    if (ispointer(*newType) && isint(oldType)&& isconstzero(oldType, *exp) )
+        return TRUE;
     // conversion to or from void pointer
     if (((isvoidptr(*newType) && (ispointer(oldType) || isfunction(oldType)))
         || ((isvoidptr(oldType)||(*exp)->type == en_nullptr) && ispointer(*newType)) 

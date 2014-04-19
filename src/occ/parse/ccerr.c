@@ -57,13 +57,14 @@ extern NAMESPACEVALUES *globalNameSpace;
 extern INCLUDES *includes;
 #endif
 
-SYMBOL *theCurrentFunc;
 extern int preprocLine;
 extern char *preprocFile;
 extern LEXCONTEXT *context;
 extern int templateNestingCount;
+extern LIST *externals;
 
 int currentErrorLine;
+SYMBOL *theCurrentFunc;
 
 static LIST *listErrors;
 static char *currentErrorFile;
@@ -97,7 +98,7 @@ static struct {
 {"Expected integer expression", ERROR },
 {"Identifier expected", ERROR},
 {"Multiple declaration of '%s'", ERROR },
-{"Undefined identifier '%s'", ERROR },
+{"Undefined symbol '%s'", ERROR },
 {"Too many identififiers in type", ERROR },
 {"Unexpected end of file", ERROR },
 {"File not terminated with End Of Line character", TRIVIALWARNING},
@@ -1388,15 +1389,31 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                 }
                 else
                 {
-                    currentErrorLine = 0;
-                    if (sp->storage_class == sc_static && !sp->used)
-                        errorsym(ERR_UNUSED_STATIC, sp);
-                    currentErrorLine = 0;
-                    if (sp->storage_class == sc_global || sp->storage_class == sc_static
-                        || sp->storage_class == sc_localstatic)
-                        /* void will be caught earlier */
-                        if (!isfunction(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) && sp->tp->type != bt_any)
-                            errorsym(ERR_UNSIZED, sp);
+                    if (sp->storage_class == sc_overloads)
+                    {
+                        HASHREC *hr = sp->tp->syms->table[0];
+                        while (hr)
+                        {
+                            SYMBOL *sp = hr->p;
+                            if (sp->linkage == lk_inline && !sp->inlineFunc.stmt && !sp->templateLevel)
+                            {
+                                errorsym(ERR_UNDEFINED_IDENTIFIER, sp);
+                            }
+                            hr = hr->next;
+                        }
+                    }
+                    else
+                    {
+                        currentErrorLine = 0;
+                        if (sp->storage_class == sc_static && !sp->used)
+                            errorsym(ERR_UNUSED_STATIC, sp);
+                        currentErrorLine = 0;
+                        if (sp->storage_class == sc_global || sp->storage_class == sc_static
+                            || sp->storage_class == sc_localstatic)
+                            /* void will be caught earlier */
+                            if (!isfunction(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) && sp->tp->type != bt_any)
+                                errorsym(ERR_UNSIZED, sp);
+                    }
                 }
             }
             hr = hr->next;

@@ -282,6 +282,7 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     if (sp->vbaseEntries)
     {
         sp1= makeID(sc_parameter, &stdint, NULL, AnonymousName());
+        sp1->isDestructor = TRUE;
         insert(sp1, tp->syms);
     }
     return insertFunc(sp, func);
@@ -351,6 +352,7 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_CONSTRUCTOR]);
+    func->isConstructor = TRUE;
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);        
     tp->syms->table[0] = (HASHREC *)Alloc(sizeof(HASHREC));
@@ -1644,7 +1646,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 lex = SetAlternateLex(init->initData);
                 if (MATCHKW(lex, lt))
                 {
-                    TEMPLATEPARAM *lst = NULL;
+                    TEMPLATEPARAMLIST *lst = NULL;
                     lex = GetTemplateArguments(lex, cons, &lst);
                     if (init->sp->templateLevel)
                     {
@@ -1693,9 +1695,9 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             SYMBOL *sp = classsearch(init->name, FALSE);
             if (sp && sp->tp->type == bt_templateparam)
             {
-                if (sp->tp->templateParam->type == kw_typename)
+                if (sp->tp->templateParam->p->type == kw_typename)
                 {
-                    if (sp->tp->templateParam->packed)
+                    if (sp->tp->templateParam->p->packed)
                     {
                         EXPRESSION *expPacked = NULL;
                         MEMBERINITIALIZERS **p = &cons->memberInitializers;
@@ -1708,13 +1710,13 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         if (!lex || !MATCHKW(lex, ellipse))
                             error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                         SetAlternateLex(NULL);
-                        expandPackedMemberInitializers(cls, cons, sp->tp->templateParam->byPack.pack, p,
+                        expandPackedMemberInitializers(cls, cons, sp->tp->templateParam->p->byPack.pack, p,
                                                         init->initData, shim.arguments);
                         init->sp = cls;
                     }
-                    else if (isstructured(sp->tp->templateParam->byClass.val))
+                    else if (isstructured(sp->tp->templateParam->p->byClass.val))
                     {
-                        TYPE *tp = sp->tp->templateParam->byClass.val;
+                        TYPE *tp = sp->tp->templateParam->p->byClass.val;
                         int offset = 0;
                         int vcount =0, ccount = 0;
                         init->name = tp->sp->name;
@@ -1786,7 +1788,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     lex = SetAlternateLex(init->initData);
                     if (MATCHKW(lex, lt))
                     {
-                        TEMPLATEPARAM *lst = NULL;
+                        TEMPLATEPARAMLIST *lst = NULL;
                         lex = GetTemplateArguments(lex, cons, &lst);
                         if (init->sp->templateLevel)
                         {

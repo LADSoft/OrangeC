@@ -69,7 +69,6 @@ static int bodyCount;
 static LINEDATA *linesHead, *linesTail;
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
                            BLOCKDATA *parent, BOOLEAN asExpression);
-static BOOLEAN resolveToDeclaration(LEXEME *lex);
 static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
                            BOOLEAN viacontrol);
 static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,   
@@ -2320,7 +2319,7 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
         
     return lex;
 }
-static BOOLEAN resolveToDeclaration(LEXEME * lex)
+BOOLEAN resolveToDeclaration(LEXEME * lex)
 {
     LEXEME *placeholder = lex;
     lex = getsym();

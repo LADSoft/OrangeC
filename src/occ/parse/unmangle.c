@@ -205,6 +205,14 @@ static char *unmangptr(char *buf , char *name, char *last)
     { 
         char basetp[256];
         int l;
+        if (cconst)
+        {
+            strcat(buf, tn_const);
+        }
+        if (cvol)
+        {
+            strcat(buf , tn_volatile);
+        }
         name = unmang1(basetp, name, last);
         l = strlen(basetp);
         memmove(buf + l, buf, strlen(buf)+1);
@@ -324,6 +332,14 @@ static char *unmang1(char *buf, char *name, char *last)
             cconst++;
         name++;
     }
+    if (*name != 'p' && *name != 'P')
+    {
+        if (cconst)
+            strcat(buf, tn_const);
+        if (cvol)
+            strcat(buf, tn_volatile);
+    }
+        
     start: if (isdigit(*name))
     {
         v =  *name++ - '0';

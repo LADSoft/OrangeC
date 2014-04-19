@@ -80,8 +80,8 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
 {
     if (tp->type == bt_templateparam)
     {
-        if (tp->templateParam && tp->templateParam->type == kw_typename && tp->templateParam->byClass.val)
-            tp = tp->templateParam->byClass.val;
+        if (tp->templateParam && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val)
+            tp = tp->templateParam->p->byClass.val;
     }
     if (isconst(tp))
     {
@@ -132,8 +132,8 @@ static char *RTTIGetName(char *buf, TYPE *tp)
 {
     if (tp->type == bt_templateparam)
     {
-        if (tp->templateParam && tp->templateParam->type == kw_typename && tp->templateParam->byClass.val)
-            tp = tp->templateParam->byClass.val;
+        if (tp->templateParam && tp->templateParam->p->type == kw_typename && tp->templateParam->p->byClass.val)
+            tp = tp->templateParam->p->byClass.val;
     }
     mangledNamesCount = 0;
     strcpy(buf, "@$xt@");
@@ -612,14 +612,14 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
             while (p)
             {
                 TYPE *tp = (TYPE *)p->data;
-                if (tp->type == bt_templateparam && tp->templateParam->packed)
+                if (tp->type == bt_templateparam && tp->templateParam->p->packed)
                 {
-                    if (tp->templateParam->type == kw_typename)
+                    if (tp->templateParam->p->type == kw_typename)
                     {
-                        TEMPLATEPARAM *pack = tp->templateParam->byPack.pack;
+                        TEMPLATEPARAMLIST *pack = tp->templateParam->p->byPack.pack;
                         while (pack)
                         {
-                            list[count++] = RTTIDumpType((TYPE *)pack->byClass.val);
+                            list[count++] = RTTIDumpType((TYPE *)pack->p->byClass.val);
                             pack = pack->next;
                         }
                     }

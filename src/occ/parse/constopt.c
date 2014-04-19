@@ -2493,8 +2493,8 @@ join_lor:
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
         case en_templateparam:
-            if ((*node)->v.sp->tp->templateParam->type == kw_int)
-                *node = (*node)->v.sp->tp->templateParam->byNonType.val;
+            if ((*node)->v.sp->tp->templateParam->p->type == kw_int)
+                *node = (*node)->v.sp->tp->templateParam->p->byNonType.val;
             break;
     }
     return rv;
@@ -3016,9 +3016,9 @@ int fold_const(EXPRESSION *node)
             }
             break;
         case en_templateparam:
-            if (node->v.sp->tp->templateParam->type == kw_int)
-                if (node->v.sp->tp->templateParam->byNonType.val)
-                    rv |= fold_const(node->v.sp->tp->templateParam->byNonType.val);
+            if (node->v.sp->tp->templateParam->p->type == kw_int)
+                if (node->v.sp->tp->templateParam->p->byNonType.val)
+                    rv |= fold_const(node->v.sp->tp->templateParam->p->byNonType.val);
             break;
     }
     return rv;
@@ -3471,9 +3471,9 @@ int typedconsts(EXPRESSION *node1)
             }
             break;
         case en_templateparam:
-            if (node1->v.sp->tp->templateParam->type == kw_int)
-                if (node1->v.sp->tp->templateParam->byNonType.val)
-                    rv |= typedconsts(node1->v.sp->tp->templateParam->byNonType.val);
+            if (node1->v.sp->tp->templateParam->p->type == kw_int)
+                if (node1->v.sp->tp->templateParam->p->byNonType.val)
+                    rv |= typedconsts(node1->v.sp->tp->templateParam->p->byNonType.val);
             break;
 /*#endif */
     }

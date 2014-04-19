@@ -297,11 +297,11 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
         if (snew->tp->type == bt_templateparam)
         {
             if (sold->tp->type != bt_templateparam || 
-                snew->tp->templateParam->type != sold->tp->templateParam->type ||
-                snew->tp->templateParam->type != kw_typename ||
-                (snew->tp->templateParam->byClass.dflt || sold->tp->templateParam->byClass.dflt) &&
-                (!snew->tp->templateParam->byClass.dflt || !sold->tp->templateParam->byClass.dflt ||
-                !comparetypes(sold->tp->templateParam->byClass.dflt, snew->tp->templateParam->byClass.dflt, TRUE)))
+                snew->tp->templateParam->p->type != sold->tp->templateParam->p->type ||
+                snew->tp->templateParam->p->type != kw_typename ||
+                (snew->tp->templateParam->p->byClass.dflt || sold->tp->templateParam->p->byClass.dflt) &&
+                (!snew->tp->templateParam->p->byClass.dflt || !sold->tp->templateParam->p->byClass.dflt ||
+                !comparetypes(sold->tp->templateParam->p->byClass.dflt, snew->tp->templateParam->p->byClass.dflt, TRUE)))
                 
                     break;                    
         }

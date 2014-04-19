@@ -769,7 +769,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         if (sp->packed)
                         {
                             int n;
-                            TEMPLATEPARAM * templateParam = sp->tp->templateParam->byPack.pack;
+                            TEMPLATEPARAMLIST * templateParam = sp->tp->templateParam->p->byPack.pack;
                             HASHREC *hr;
                             for (n=0; templateParam; templateParam = templateParam->next, n++);
                             hr = funcsp->tp->syms->table[0];

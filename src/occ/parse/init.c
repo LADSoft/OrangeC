@@ -1053,7 +1053,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                     checkscope(tp, itype);
                 if (!comparetypes(itype, tp, TRUE))
                 {
-                    if (cparams.prm_cplusplus && basetype(tp)->type > bt_int)
+                    if (cparams.prm_cplusplus && needend && basetype(tp)->type > bt_int)
                         if (basetype(itype)->type < basetype(tp)->type)        
                             error(ERR_INIT_NARROWING);
                     cast(itype, &exp);
@@ -1390,7 +1390,7 @@ static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, enum e_sc sc)
     }
     else
     {
-        if (referenceTypeError(tp, exp) != exp->type)
+        if (!templateNestingCount && referenceTypeError(tp, exp) != exp->type)
         {
             if (!isarithmeticconst(exp))
                 errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
@@ -2086,7 +2086,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         }
         callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, implicit, FALSE); 
         initInsert(&it, itype, exp, offset, TRUE);
-        if (sc != sc_auto && sc != sc_member && sc != sc_mutable && !arrayMember)
+        if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
         {
             insertDynamicInitializer(base, it);
         }
@@ -2097,7 +2097,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         exp = baseexp;
         callDestructor(basetype(itype)->sp, &exp, NULL, TRUE, FALSE, FALSE);
         initInsert(&it, itype, exp, offset, TRUE);
-        if (sc != sc_auto && sc != sc_member && sc != sc_mutable && !arrayMember)
+        if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
         {
             insertDynamicDestructor(base, it);
         }
@@ -2124,7 +2124,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             {
                 INITIALIZER *it = NULL;
                 initInsert(&it, itype, exp1, offset, FALSE);
-                if (sc != sc_auto && sc != sc_member && sc != sc_mutable && !arrayMember)
+                if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
                 {
                     insertDynamicInitializer(base, it);
                 }
@@ -2301,7 +2301,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     last += s;
                 }
             }
-            if (sc != sc_auto && sc != sc_member && sc != sc_mutable)
+            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
             {
                 *init = NULL;
                 insertDynamicInitializer(base, first);
@@ -2329,7 +2329,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 callDestructor(btp->sp, &exp, sz, TRUE, FALSE, FALSE);
                 initInsert(push, tn, exp, last, FALSE);
             }
-            if (sc != sc_auto && sc != sc_member && sc != sc_mutable)
+            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
             {
                 insertDynamicDestructor(base, first);
                 *dest = NULL;
@@ -2406,7 +2406,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
             initInsert(init, sp->tp, exp, offset, FALSE);
             callDestructor(sp, &expl, NULL, TRUE, FALSE, FALSE);
             initInsert(&dest, sp->tp, expl, offset, TRUE);
-            if (sp->storage_class != sc_auto && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
+            if (sp->storage_class != sc_auto && sp->storage_class != sc_parameter && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
             {
                 insertDynamicDestructor(sp, dest);
             }
@@ -2880,7 +2880,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 EXPRESSION *exp = baseexp;
                 callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, TRUE, FALSE);
                 initInsert(&it, z, exp, 0, TRUE);
-                if (storage_class_in != sc_auto && storage_class_in != sc_member && storage_class_in != sc_mutable)
+                if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member && storage_class_in != sc_mutable)
                 {
                     insertDynamicInitializer(sp, it);
                 }
@@ -2891,7 +2891,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 exp = baseexp;
                 callDestructor(z->sp, &exp, sz, TRUE, FALSE, FALSE);
                 initInsert(&init, z, exp, 0, TRUE);
-                if (storage_class_in != sc_auto && storage_class_in != sc_member && storage_class_in != sc_mutable)
+                if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member && storage_class_in != sc_mutable)
                 {
                     insertDynamicDestructor(sp, init);
                 }

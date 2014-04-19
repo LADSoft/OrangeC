@@ -717,6 +717,7 @@ void backFillDeferredInitializersForFunction(SYMBOL *cur, SYMBOL *funcsp)
             LEXEME *lex = SetAlternateLex(cur1->deferredCompile);
             lex = initialize(lex, funcsp, cur1, sc_parameter, TRUE); /* also reserves space */
             SetAlternateLex(NULL);
+            cur1->deferredCompile = NULL;
         }
             
         pr = pr->next;
@@ -920,7 +921,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
             lex = getsym();
             if (bcsym && bcsym->templateLevel)
             {
-                TEMPLATEPARAM *lst = NULL;
+                TEMPLATEPARAMLIST *lst = NULL;
                 if (MATCHKW(lex, lt))
                 {
                     lex = GetTemplateArguments(lex, funcsp, &lst);
@@ -929,26 +930,26 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                         bcsym = TemplateClassInstantiate(bcsym, lst, FALSE);
                 }
             }
-            if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->packed)
+            if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->p->packed)
             {
-                if (bcsym->tp->templateParam->type != kw_typename)
+                if (bcsym->tp->templateParam->p->type != kw_typename)
                     error(ERR_NEED_PACKED_TEMPLATE_OF_TYPE_CLASS);
                 else 
                 {
-                    TEMPLATEPARAM *templateParams = bcsym->tp->templateParam->byPack.pack;
+                    TEMPLATEPARAMLIST *templateParams = bcsym->tp->templateParam->p->byPack.pack;
                     while (templateParams)
                     {
-                        if (!isstructured(templateParams->byClass.val))
+                        if (!isstructured(templateParams->p->byClass.val))
                         {
                             errorcurrent(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
                         }
                         else
                         {
-                            *bc = innerBaseClass(declsym, templateParams->byClass.val->sp, isvirtual, currentAccess);
+                            *bc = innerBaseClass(declsym, templateParams->p->byClass.val->sp, isvirtual, currentAccess);
                             if (*bc)
                                 bc = &(*bc)->next;
                         }
-                        templateParams = templateParams->next;
+                        templateParams =  templateParams->next;
                     }
                 }
                 if (!MATCHKW(lex, ellipse))
@@ -961,13 +962,13 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 if (!done)
                     lex = getsym();
             }
-            else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->packed)
+            else if (bcsym && bcsym->tp->templateParam && !bcsym->tp->templateParam->p->packed)
             {
-                if (bcsym->tp->templateParam->type != kw_typename)
+                if (bcsym->tp->templateParam->p->type != kw_typename)
                     error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                 else
                 {
-                    TYPE *tp = bcsym->tp->templateParam->byClass.val;
+                    TYPE *tp = bcsym->tp->templateParam->p->byClass.val;
                     if (!tp || !isstructured(tp))
                     {
                         if (tp)
@@ -1153,7 +1154,7 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
         case bt_enum:
             break;
         case bt_templateparam:
-            return tp->templateParam->packed;
+            return tp->templateParam->p->packed;
         default:
             diag("hasPackedTemplateParam: unknown type");
             break;
@@ -1208,7 +1209,7 @@ static void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
     return FALSE;
     
 }
-int CountPacks(TEMPLATEPARAM *packs)
+int CountPacks(TEMPLATEPARAMLIST *packs)
 {
     int rv = 0;
     while (packs)
@@ -1228,10 +1229,10 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
     if (count)
     {
         int i;
-        int n = CountPacks(arg[0]->tp->templateParam->byPack.pack);
+        int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
         for (i=1; i < count; i++)
         {
-            if (CountPacks(arg[i]->tp->templateParam->byPack.pack) != n)
+            if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
             {
                 error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
                 break;
@@ -1256,7 +1257,7 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
     packIndex = oldPack;
     return lptr;
 }
-void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAM *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list)
+void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLIST *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list)
 {
     int n = CountPacks(templatePack);
     MEMBERINITIALIZERS *orig = *p;
@@ -1266,10 +1267,10 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAM *
         int count = 0;
         int i;
         SYMBOL *arg[1000];
-        TEMPLATEPARAM *pack = templatePack;
+        TEMPLATEPARAMLIST *pack = templatePack;
         while (pack)
         {
-            if (!isstructured(pack->byClass.val))
+            if (!isstructured(pack->p->byClass.val))
             {
                 error(ERR_STRUCTURED_TYPE_EXPECTED_IN_PACKED_TEMPLATE_PARAMETER);
                 return;
@@ -1283,7 +1284,7 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAM *
         }
         for (i=0; i < count; i++)
         {
-            if (CountPacks(arg[i]->tp->templateParam->byPack.pack) != n)
+            if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
             {
                 error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
                 break;
@@ -1293,14 +1294,14 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAM *
         {
             LEXEME *lex = SetAlternateLex(start);
             MEMBERINITIALIZERS *mi = Alloc(sizeof(MEMBERINITIALIZERS));
-            TYPE *tp = templatePack->byClass.val;
+            TYPE *tp = templatePack->p->byClass.val;
             BASECLASS *bc = cls->baseClasses;
             int offset = 0;
             int vcount = 0, ccount = 0;
             *mi = *orig;
             mi->sp = NULL;
             packIndex = i;
-            mi->name = templatePack->byClass.val->sp->name;
+            mi->name = templatePack->p->byClass.val->sp->name;
             while (bc)
             {
                 if (!strcmp(bc->cls->name, mi->name))
@@ -2179,11 +2180,11 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
                         }
                         else if (tp->type == bt_templateparam)
                         {
-                            if (tp->templateParam->type == kw_typename)
+                            if (tp->templateParam->p->type == kw_typename)
                             {
-                                if (tp->templateParam->packed)
+                                if (tp->templateParam->p->packed)
                                 {
-                                    TEMPLATEPARAM *packs = tp->templateParam->byPack.pack;
+                                    TEMPLATEPARAMLIST *packs = tp->templateParam->p->byPack.pack;
                                     if (!MATCHKW(*lex, ellipse))
                                     {
                                         error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
@@ -2194,7 +2195,7 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
                                     }
                                     while (packs)
                                     {
-                                        int v = getAlign(sc_global, packs->byClass.val);
+                                        int v = getAlign(sc_global, packs->p->byClass.val);
                                         if (v > align)
                                             align = v;
                                         packs = packs->next;
@@ -2205,8 +2206,8 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
                                     // it will only get here while parsing the template...
                                     // when generating the instance the class member will already be
                                     // filled in so it will get to the below...
-                                    if (tp->templateParam->byClass.val)
-                                        align = getAlign(sc_global, tp->templateParam->byClass.val);
+                                    if (tp->templateParam->p->byClass.val)
+                                        align = getAlign(sc_global, tp->templateParam->p->byClass.val);
                                 }
                             }
                         }

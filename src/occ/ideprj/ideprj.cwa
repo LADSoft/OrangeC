@@ -39,6 +39,10 @@
 		<FILE NAME="occ.exe" CLEAN="0"/>
 	</PROJECTS>
 	<EDITWINDOWS>
+		<WINDOW NAME="..\preproc\ccerr.c" TITLE="ccerr.c" X="0" Y="0" WIDTH="790" HEIGHT="250" LINENO="1" COPYID="1"/>
+		<WINDOW NAME="..\parse\osutil.c" TITLE="osutil.c" X="52" Y="52" WIDTH="790" HEIGHT="250" LINENO="957" COPYID="1"/>
+		<WINDOW NAME="..\parse\ccmain.c" TITLE="ccmain.c" X="78" Y="78" WIDTH="790" HEIGHT="250" LINENO="539" COPYID="1"/>
+		<ACTIVE NAME="c:\orangec\src\occ\parse\ccmain.c" TITLE="ccmain.c"/>
 	</EDITWINDOWS>
 	<HISTORY TYPE="FIND">
 		<HISTITEM VALUE="getcodecomp"/>
@@ -70,15 +74,15 @@
 	<HISTORY TYPE="MEMORY">
 	</HISTORY>
 	<TAG ID="0">
-		<FILE NAME="..\parse\osutil.c">
-			<TAGITEM LINENO="947" CP="0" ENABLED="1"/>
-		</FILE>
 	</TAG>
 	<TAG ID="3">
 	</TAG>
 	<CHANGELN>
 	</CHANGELN>
 	<FILEBROWSE>
+		<FILE NAME="..\parse\ccmain.c" LINE="536"/>
+		<FILE NAME="..\parse\osutil.c" LINE="949"/>
+		<FILE NAME="..\preproc\ccerr.c" LINE="1"/>
 	</FILEBROWSE>
 	<PROPERTIES>
 	</PROPERTIES>

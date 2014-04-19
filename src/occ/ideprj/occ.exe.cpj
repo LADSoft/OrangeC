@@ -4,44 +4,21 @@
 	<TARGET TITLE="occ">
 		<PROPERTIES>
 			<PROFILE NAME="WIN32" TYPE="DEBUG">
-				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
-				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
 				<PROP ID="__DEBUG_ARGUMENTS">/DUSE_LONGLONG /I..\parse;..\preproc;..\middle /9 /c ..\parse\ccmain.c</PROP>
+				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
+				<PROP ID="__INCLUDE">..\parse;..\preproc;..\middle;..\x86</PROP>
 			</PROFILE>
 			<PROFILE NAME="WIN32" TYPE="RELEASE">
-				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
 				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
-			</PROFILE>
-			<PROFILE NAME="WIN32" TYPE="DEBUG">
-				<PROP ID="__INCLUDE">..\parse;..\preproc;..\middle;..\x86</PROP>
+				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
 			</PROFILE>
 		</PROPERTIES>
 		<FILES>
 			<FOLDER TITLE="Include Files">
-				<FILE NAME="..\x86\be.h" TITLE="be.h" CLEAN="0"/>
-				<FILE NAME="..\parse\beinterf.h" TITLE="beinterf.h" CLEAN="0"/>
-				<FILE NAME="..\parse\BROWSE.h" TITLE="BROWSE.h" CLEAN="0"/>
-				<FILE NAME="..\parse\c.h" TITLE="c.h" CLEAN="0"/>
-				<FILE NAME="..\parse\ccerr.h" TITLE="ccerr.h" CLEAN="0"/>
-				<FILE NAME="..\parse\compiler.h" TITLE="compiler.h" CLEAN="0"/>
-				<FILE NAME="..\parse\compiler.p" TITLE="compiler.p" CLEAN="0"/>
-				<FILE NAME="..\x86\Cvinfo.h" TITLE="Cvinfo.h" CLEAN="0"/>
-				<FILE NAME="..\parse\floating.h" TITLE="floating.h" CLEAN="0"/>
-				<FILE NAME="..\middle\IEXPR.h" TITLE="IEXPR.h" CLEAN="0"/>
-				<FILE NAME="..\middle\IOPT.H" TITLE="IOPT.H" CLEAN="0"/>
-				<FILE NAME="..\parse\osutil.h" TITLE="osutil.h" CLEAN="0"/>
-				<FILE NAME="..\x86\others.h" TITLE="others.h" CLEAN="0"/>
-				<FILE NAME="..\parse\PEHeader.h" TITLE="PEHeader.h" CLEAN="0"/>
-				<FILE NAME="..\preproc\pp.h" TITLE="pp.h" CLEAN="0"/>
-				<FILE NAME="..\x86\r.h" TITLE="r.h" CLEAN="0"/>
-				<FILE NAME="..\parse\regs.h" TITLE="regs.h" CLEAN="0"/>
-				<FILE NAME="..\x86\WINMODE.H" TITLE="WINMODE.H" CLEAN="0"/>
-				<FILE NAME="..\parse\WINMODE.h" TITLE="WINMODE.h" CLEAN="0"/>
-				<FILE NAME="..\x86\x86regs.h" TITLE="x86regs.h" CLEAN="0"/>
 			</FOLDER>
 			<FOLDER TITLE="Source Files">
 				<FILE NAME="..\parse\beinterf.c" TITLE="beinterf.c" CLEAN="0"/>
-				<FILE NAME="..\parse\BROWSE.c" TITLE="BROWSE.c" CLEAN="0"/>
+				<FILE NAME="..\parse\browse.c" TITLE="browse.c" CLEAN="0"/>
 				<FILE NAME="..\parse\ccerr.c" TITLE="ccerr.c" CLEAN="0"/>
 				<FILE NAME="..\parse\ccmain.c" TITLE="ccmain.c" CLEAN="0"/>
 				<FILE NAME="..\x86\config.c" TITLE="config.c" CLEAN="0"/>
@@ -59,11 +36,11 @@
 				<FILE NAME="..\x86\gen.c" TITLE="gen.c" CLEAN="0"/>
 				<FILE NAME="..\parse\help.c" TITLE="help.c" CLEAN="0"/>
 				<FILE NAME="..\middle\ialias.c" TITLE="ialias.c" CLEAN="0"/>
-				<FILE NAME="..\middle\IBLOCK.c" TITLE="IBLOCK.c" CLEAN="0"/>
+				<FILE NAME="..\middle\iblock.c" TITLE="iblock.c" CLEAN="0"/>
 				<FILE NAME="..\middle\iconfl.c" TITLE="iconfl.c" CLEAN="0"/>
-				<FILE NAME="..\middle\ICONST.c" TITLE="ICONST.c" CLEAN="0"/>
-				<FILE NAME="..\middle\IEXPR.c" TITLE="IEXPR.c" CLEAN="0"/>
-				<FILE NAME="..\middle\IFLOW.c" TITLE="IFLOW.c" CLEAN="0"/>
+				<FILE NAME="..\middle\iconst.c" TITLE="iconst.c" CLEAN="0"/>
+				<FILE NAME="..\middle\iexpr.c" TITLE="iexpr.c" CLEAN="0"/>
+				<FILE NAME="..\middle\iflow.c" TITLE="iflow.c" CLEAN="0"/>
 				<FILE NAME="..\middle\iinvar.c" TITLE="iinvar.c" CLEAN="0"/>
 				<FILE NAME="..\middle\ilazy.c" TITLE="ilazy.c" CLEAN="0"/>
 				<FILE NAME="..\middle\ilive.c" TITLE="ilive.c" CLEAN="0"/>
@@ -71,20 +48,20 @@
 				<FILE NAME="..\middle\iloop.c" TITLE="iloop.c" CLEAN="0"/>
 				<FILE NAME="..\x86\inasm.c" TITLE="inasm.c" CLEAN="0"/>
 				<FILE NAME="..\parse\init.c" TITLE="init.c" CLEAN="0"/>
-				<FILE NAME="..\parse\INLINE.c" TITLE="INLINE.c" CLEAN="0"/>
+				<FILE NAME="..\parse\inline.c" TITLE="inline.c" CLEAN="0"/>
 				<FILE NAME="..\x86\invoke.c" TITLE="invoke.c" CLEAN="0"/>
 				<FILE NAME="..\middle\ioptutil.c" TITLE="ioptutil.c" CLEAN="0"/>
 				<FILE NAME="..\middle\iout.c" TITLE="iout.c" CLEAN="0"/>
-				<FILE NAME="..\middle\IPEEP.c" TITLE="IPEEP.c" CLEAN="0"/>
+				<FILE NAME="..\middle\ipeep.c" TITLE="ipeep.c" CLEAN="0"/>
 				<FILE NAME="..\middle\irc.c" TITLE="irc.c" CLEAN="0"/>
 				<FILE NAME="..\middle\ireshape.c" TITLE="ireshape.c" CLEAN="0"/>
 				<FILE NAME="..\middle\irewrite.c" TITLE="irewrite.c" CLEAN="0"/>
 				<FILE NAME="..\middle\issa.c" TITLE="issa.c" CLEAN="0"/>
-				<FILE NAME="..\middle\ISTMT.c" TITLE="ISTMT.c" CLEAN="0"/>
+				<FILE NAME="..\middle\istmt.c" TITLE="istmt.c" CLEAN="0"/>
 				<FILE NAME="..\middle\istren.c" TITLE="istren.c" CLEAN="0"/>
 				<FILE NAME="..\parse\lambda.c" TITLE="lambda.c" CLEAN="0"/>
 				<FILE NAME="..\parse\lex.c" TITLE="lex.c" CLEAN="0"/>
-				<FILE NAME="..\parse\LIST.c" TITLE="LIST.c" CLEAN="0"/>
+				<FILE NAME="..\parse\list.c" TITLE="list.c" CLEAN="0"/>
 				<FILE NAME="..\parse\mangle.c" TITLE="mangle.c" CLEAN="0"/>
 				<FILE NAME="..\parse\memory.c" TITLE="memory.c" CLEAN="0"/>
 				<FILE NAME="..\x86\objieeea.c" TITLE="objieeea.c" CLEAN="0"/>
@@ -94,7 +71,7 @@
 				<FILE NAME="..\parse\output.c" TITLE="output.c" CLEAN="0"/>
 				<FILE NAME="..\x86\peep.c" TITLE="peep.c" CLEAN="0"/>
 				<FILE NAME="..\preproc\ppexpr.c" TITLE="ppexpr.c" CLEAN="0"/>
-				<FILE NAME="..\preproc\PREPROC.c" TITLE="PREPROC.c" CLEAN="0"/>
+				<FILE NAME="..\preproc\preproc.c" TITLE="preproc.c" CLEAN="0"/>
 				<FILE NAME="..\x86\rewrite.c" TITLE="rewrite.c" CLEAN="0"/>
 				<FILE NAME="..\parse\rtti.c" TITLE="rtti.c" CLEAN="0"/>
 				<FILE NAME="..\parse\stmt.c" TITLE="stmt.c" CLEAN="0"/>

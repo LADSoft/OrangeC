@@ -48,9 +48,12 @@ static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
 static LIST *inlineDataHead, *inlineDataTail;
 
 static SYMBOL *inlinesp_list[MAX_INLINE_NESTING];
+
 static int inlinesp_count;
 static HASHTABLE *vc1Thunks;
 
+static FUNCTIONCALL *function_list[MAX_INLINE_NESTING];
+static int function_list_count;
 static int namenumber;
 
 void inlineinit(void)
@@ -232,6 +235,8 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
+        case en_thisshim:
+            break;
         case en_c_ll:
         case en_c_ull:
         case en_c_d:
@@ -270,6 +275,24 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
                 temp = inlineexpr(temp, fromlval);
                 if (fromlval)
                     *fromlval = TRUE;
+                else if (lvalue(temp))
+                    temp = temp->left;
+            }
+            else if (temp->v.sp->structuredReturn)
+            {
+                SYMBOL *sp = temp->v.sp;
+                int n = function_list_count;
+                while (sp && sp->structuredReturn && --n >= 0)
+                {
+                    sp = function_list[n]->returnSP;
+                }
+                if (n >= 0 && sp)
+                {
+                    temp = function_list[n]->returnEXP;
+                    temp = inlineexpr(temp, fromlval);
+                    if (fromlval)
+                        *fromlval = TRUE;
+                }
             }
             break;
         case en_l_sp:
@@ -432,7 +455,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
                     }
                 }
             }
-            if (fp->sp->linkage == lk_inline && i >= inlinesp_count)
+            if (fp->sp->linkage == lk_inline && !fp->sp->noinline && i >= inlinesp_count)
             {
                 if (inlinesp_count >= MAX_INLINE_NESTING)
                 {
@@ -440,10 +463,12 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
                 }
                 else
                 {
+                    EXPRESSION *temp1;
                     inlinesp_list[inlinesp_count++] = fp->sp;
-                    temp->v.func = doinline(fp, NULL); /* discarding our allocation */
+                    temp1 = doinline(fp, NULL); /* discarding our allocation */
                     inlinesp_count--;
-                    
+                    if (temp1)
+                        temp = temp1;
                 }
             }
             if (temp->v.func == NULL)
@@ -559,7 +584,7 @@ static EXPRESSION *newReturn(TYPE *tp)
     EXPRESSION *exp ;
     if (!isstructured(tp) && !isvoid(tp))
     {
-        exp = varNode(en_auto, anonymousVar(sc_auto, tp));
+        exp = anonymousVar(sc_auto, tp);
         deref(tp, &exp);
     }
     else
@@ -626,7 +651,8 @@ static EXPRESSION *scanReturn(STATEMENT *block, TYPE *rettp)
                 break;
             case st_return:
                 rv = block->select;
-                cast(rettp, &rv);
+                if (!isstructured(rettp))
+                    cast(rettp, &rv);
                 block->type = st_expr;
                 block->select = rv;
                 return rv;
@@ -844,6 +870,8 @@ static BOOLEAN sideEffects(EXPRESSION *node)
         case en_stmt:
             rv = TRUE;
             break;
+        case en_thisshim:
+            break;
         default:
             diag("sideEffects");
             break;
@@ -860,12 +888,11 @@ static void setExp(SYMBOL *sx, EXPRESSION *exp, STATEMENT ***stp)
     }
     else
     {
-        EXPRESSION *tnode = varNode(en_auto, anonymousVar(sc_auto, sx->tp));
+        EXPRESSION *tnode = anonymousVar(sc_auto, sx->tp);
+        deref(sx->tp, &tnode);            
         sx->inlineFunc.stmt = (STATEMENT *)tnode;
-        deref(sx->tp, &tnode);
         tnode = exprNode(en_assign, tnode, exp);
         **stp = Alloc(sizeof(STATEMENT));
-        memset(**stp, 0 , sizeof(STATEMENT));
         (**stp)->type = st_expr;
         (**stp)->select = tnode;
         *stp = &(**stp)->next;
@@ -908,8 +935,7 @@ void SetupVariables(SYMBOL *sp)
             SYMBOL *sx = (SYMBOL *)hr->p;
             if (sx->storage_class == sc_auto)
             {
-                SYMBOL *sxnew = anonymousVar(sc_auto, sx->tp);
-                EXPRESSION *ev = varNode(en_auto, sxnew);
+                EXPRESSION *ev = anonymousVar(sc_auto, sx->tp);
                 deref(sx->tp, &ev);
                 sx->inlineFunc.stmt = (STATEMENT *)ev;
             }
@@ -925,11 +951,15 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
     EXPRESSION *newExpression;
     BOOLEAN allocated = FALSE;
+    if (function_list_count >= MAX_INLINE_NESTING)
+        return NULL;
     if (!isfunction(params->functp))
         return NULL;
     if (params->sp->linkage != lk_inline)
         return NULL;
     if (params->sp->noinline)
+        return NULL;
+    if (params->noinline)
         return NULL;
     if (!params->sp->inlineFunc.syms)
         return NULL;
@@ -953,7 +983,8 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
         stmt->lower = stmt1;
     }
     SetupVariables(params->sp);
-
+    function_list[function_list_count++] = params;
+    
     while (*stp)
         stp = &(*stp)->next;
     *stp = inlinestmt(params->sp->inlineFunc.stmt);
@@ -967,7 +998,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
          */
         scanReturn(stmt, basetype(params->sp->tp)->btp);
     }
-    else
+    else if (params->sp->retcount)
     {
         newExpression->left = newReturn(basetype(params->sp->tp)->btp);
         reduceReturns(stmt, params->sp->tp->btp, newExpression->left);
@@ -977,10 +1008,19 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     {
         FreeLocalContext(NULL, NULL);
     }
+    function_list_count--;
     if (newExpression->type == en_stmt)
         if (newExpression->v.stmt->type == st_block)
             if (!newExpression->v.stmt->lower)
                 newExpression = intNode(en_c_i, 0); // noop if there is no body
+    if (newExpression->type == en_stmt)
+    {
+        newExpression->left = intNode(en_c_i, 0);
+        if (isstructured(basetype(params->sp->tp)->btp))
+            cast(&stdpointer, &newExpression->left);
+        else
+            cast(basetype(basetype(params->sp->tp)->btp), &newExpression->left);
+    }
     return newExpression;
 }
 static BOOLEAN IsEmptyBlocks(STATEMENT *block)
@@ -989,7 +1029,7 @@ static BOOLEAN IsEmptyBlocks(STATEMENT *block)
     while (block != NULL && rv)
     {
         switch (block->type)
-        {
+        {        
             case st_line:
             case st_varstart:
             case st_dbgblock:

@@ -272,8 +272,8 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
 {
     HASHREC *tnew = basetype(snew->tp)->syms->table[0];
     HASHREC *told = basetype(sold->tp)->syms->table[0];
-    if (snew->templateLevel != sold->templateLevel)
-        return FALSE;
+//    if (snew->templateLevel != sold->templateLevel)
+//        return FALSE;
     if (isconst(snew->tp) != isconst(sold->tp))
         return FALSE;
     while (tnew && told)

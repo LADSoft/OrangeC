@@ -56,7 +56,7 @@ extern INCLUDES *includes;
 int endline;
 LEXCONTEXT *context;
 
-static LEXEME pool[MAX_LOOKBACK];
+static LEXEME *pool;
 static ULLONG_TYPE llminus1;
 static int nextFree;
 #ifdef KW_HASH
@@ -353,6 +353,7 @@ void lexini(void)
     llminus1--;
     context = Alloc(sizeof(LEXCONTEXT));
     nextFree = 0;
+    pool = Alloc (sizeof (LEXEME) * MAX_LOOKBACK);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -777,7 +778,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             else
                 do p++; while (*p == MACRO_PLACEHOLDER);
             found = TRUE;
-            while (isspace(*p) || *p == MACRO_PLACEHOLDER)
+            while (*p == MACRO_PLACEHOLDER)
                 p++;
             *source = p;
         }

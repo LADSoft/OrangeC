@@ -1161,6 +1161,24 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             {
                 castToPointer(&tp, &exp, (enum e_kw)-1, itype, FALSE);
             }
+            if (isfuncptr(itype) && tp->type == bt_aggregate)
+            {
+                HASHREC *hrp = basetype(basetype(itype)->btp)->syms->table[0];
+                FUNCTIONCALL fpargs;
+                INITLIST **args = &fpargs.arguments;
+                memset(&fpargs, 0, sizeof(fpargs));
+                while (hrp)
+                {
+                    *args = Alloc(sizeof(INITLIST));
+                    (*args)->tp = ((SYMBOL *)hrp->p)->tp;
+                    if (isref((*args)->tp))
+                        (*args)->tp = basetype((*args)->tp)->btp;
+                    args = &(*args)->next;
+                    hrp = hrp->next;
+                }
+                fpargs.ascall = TRUE;
+                GetOverloadedFunction(&tp, &exp, tp->sp, &fpargs, NULL, TRUE, FALSE); 
+            }
             if (tp->type == bt_memberptr)
             {
                 if (exp->type == en_memberptr)
@@ -1368,8 +1386,7 @@ enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp)
 }
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val)
 {
-    SYMBOL *var = anonymousVar(sc_auto, tp);
-    EXPRESSION *rv = varNode(en_auto, var);
+    EXPRESSION *rv = anonymousVar(sc_auto, tp);
     tp = basetype(tp)->btp;
     if (val)
     {
@@ -1390,7 +1407,7 @@ static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, enum e_sc sc)
     }
     else
     {
-        if (!templateNestingCount && referenceTypeError(tp, exp) != exp->type)
+        if (!templateNestingCount && referenceTypeError(tp, exp) != exp->type && (!isstructured(basetype(tp)->btp) || exp->type != en_lvalue))
         {
             if (!isarithmeticconst(exp))
                 errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
@@ -1443,7 +1460,7 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                         exp = exp->left;
                         while (castvalue(exp))
                             exp = exp->left;
-                        if (referenceTypeError(itype, exp) != exp->type)
+                        if (referenceTypeError(itype, exp) != exp->type && (!isstructured(basetype(itype)->btp) || exp->type != en_lvalue))
                             errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
                         if (lvalue(exp))
                             exp = exp->left;
@@ -1945,7 +1962,7 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
 {
     EXPRESSION *expr = NULL ;
     TYPE *tp = NULL;
-    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, NULL, FALSE, FALSE, FALSE, FALSE);
+    lex = expression_assign(lex, funcsp, NULL, &tp, &expr, NULL, 0);
     if (!tp || !lex)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -1960,7 +1977,7 @@ static LEXEME *initialize_auto_struct(LEXEME *lex, SYMBOL *funcsp, int offset,
     }
     return lex;
 }
-EXPRESSION *getVarNode(SYMBOL *sp)
+EXPRESSION *getThisNode(SYMBOL *sp)
 {
     EXPRESSION *exp;
     switch (sp->storage_class)
@@ -1968,7 +1985,7 @@ EXPRESSION *getVarNode(SYMBOL *sp)
         case sc_member:
         case sc_mutable:
             exp = exprNode(en_add, varNode(en_thisshim, NULL), intNode(en_c_i, sp->offset));
-            break;            
+            break;
         case sc_auto:
         case sc_parameter:
         case sc_register:	/* register variables are treated as 
@@ -1997,7 +2014,7 @@ EXPRESSION *getVarNode(SYMBOL *sp)
                 exp = varNode(en_global, sp);
             break;
         default:
-            diag("getVarNode: unknown storage class");
+            diag("getThisNode: unknown storage class");
             exp = intNode(en_c_i, 0);
             break;
     }
@@ -2030,7 +2047,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         INITIALIZER *it = NULL;
         BOOLEAN maybeConversion = TRUE;
         BOOLEAN isconversion;
-        exp = baseexp= exprNode(en_add, getVarNode(base), intNode(en_c_i, offset));
+        exp = baseexp= exprNode(en_add, getThisNode(base), intNode(en_c_i, offset));
         if (assn || arrayMember)
         {
             // assignments or array members come here
@@ -2114,7 +2131,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         {
             TYPE *tp1 = NULL;
             EXPRESSION *exp1 = NULL;
-            lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, FALSE, FALSE);
+            lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, 0);
             if (!tp1)
                 error(ERR_EXPRESSION_SYNTAX);
             else if (!comparetypes(itype, tp1, TRUE))
@@ -2275,9 +2292,9 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     TYPE *ctype = btp, *tn = btp;
                     EXPRESSION *exp ;
                     if (last)
-                        exp = exprNode(en_add, getVarNode(base), intNode(en_c_i, last));
+                        exp = exprNode(en_add, getThisNode(base), intNode(en_c_i, last));
                     else
-                        exp = getVarNode(base);
+                        exp = getThisNode(base);
                     if (n > 1)
                     {
                         sz = intNode(en_c_i, n);
@@ -2316,7 +2333,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 EXPRESSION *exp;
                 EXPRESSION *sz = NULL;
                 TYPE *tn = btp;
-                exp = getVarNode(base);
+                exp = getThisNode(base);
                 if (n > 1)
                 {
                     sz = intNode(en_c_i, n);
@@ -2402,7 +2419,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
         {
 
             INITIALIZER *dest = NULL, *it ;
-            EXPRESSION *expl = getVarNode(sp);
+            EXPRESSION *expl = getThisNode(sp);
             initInsert(init, sp->tp, exp, offset, FALSE);
             callDestructor(sp, &expl, NULL, TRUE, FALSE, FALSE);
             initInsert(&dest, sp->tp, expl, offset, TRUE);
@@ -2519,7 +2536,8 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
                 }
             /* fallthrough */
         default:
-            errortype(ERR_CANNOT_INITIALIZE, tp, NULL);
+            if (!templateNestingCount)
+                errortype(ERR_CANNOT_INITIALIZE, tp, NULL);
             break;
     }
     return lex;
@@ -2582,6 +2600,7 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_l_dc:
         case en_l_ldc:
         case en_l_c:
+        case en_l_wc:
         case en_l_u16:
         case en_l_u32:
         case en_l_s:
@@ -2780,7 +2799,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     tp = basetype(sp->tp);
     if (ispointer(tp) && tp->array || isref(tp))
         tp = basetype(basetype(tp)->btp);
-    if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !tp->syms)
+    if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !isref(sp->tp) && !tp->syms)
     {
         if (MATCHKW(lex, assign))
             errskim(&lex, skim_semi);
@@ -2876,7 +2895,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 int n = sp->tp->size/(z->size + z->arraySkew);
                 TYPE *ctype = z;
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
-                EXPRESSION *baseexp = getVarNode(sp);
+                EXPRESSION *baseexp = getThisNode(sp);
                 EXPRESSION *exp = baseexp;
                 callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, TRUE, FALSE);
                 initInsert(&it, z, exp, 0, TRUE);
@@ -2967,7 +2986,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             if (!asExpression)
                 errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
         }
-        else if (isintconst(sp->init->exp) && isint(sp->tp) && !sp->parentClass)
+        else if (isintconst(sp->init->exp) && isint(sp->tp))
             {
                 sp->value.i = sp->init->exp->v.i ;
                 sp->storage_class = sc_constant;

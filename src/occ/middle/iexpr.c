@@ -63,6 +63,7 @@ extern BLOCKLIST *blocktail;
 extern int catchLevel;
 extern EXPRESSION *xcexp;
 extern int consIndex;
+extern LIST *temporarySymbols;
 
 int calling_inline;
 
@@ -105,6 +106,20 @@ void iexpr_func_init(void)
     memset(immedHash, 0 , sizeof(immedHash));
     memset(castHash, 0, sizeof(castHash));
     incdecList = NULL;
+}
+static void cacheTempSymbol(SYMBOL *sp)
+{
+    if (sp->anonymous && !sp->stackblock)
+    {
+        if (sp->allocate && !sp->inAllocTable)
+        {
+            LIST *lst = Alloc(sizeof(LIST));
+            lst->data = sp;
+            lst->next = temporarySymbols;
+            temporarySymbols = lst;
+            sp->inAllocTable = TRUE;
+        }
+    }
 }
 void DumpIncDec(SYMBOL *funcsp)
 {
@@ -792,6 +807,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                 break;
             case en_auto:
                 sp = node->left->v.sp;
+                cacheTempSymbol(sp);
                 if (catchLevel)
                     sp->inCatch = TRUE;
                 if (!sp->imaddress && catchLevel)
@@ -892,7 +908,7 @@ IMODE *gen_asrhd(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op)
         gen_icode(i_assn, ap2, ap3, NULL);
     DumpIncDec(funcsp);
     gen_icgoto(i_jge, lab, ap, make_immed(ap->size,0));
-    gen_icode(i_add, ap, ap, make_immed(ISZ_NONE, n));
+    gen_icode(i_add, ap, ap, make_immed(ISZ_UINT, n));
     gen_label(lab);
     gen_icode(op, ap, ap, ap2);
     return ap;
@@ -1039,7 +1055,7 @@ IMODE *gen_moveblock(EXPRESSION *node, SYMBOL *funcsp)
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
         gen_icode(i_assn, ap2, ap3, NULL);
-    gen_icode(i_assnblock, make_immed(ISZ_NONE,node->size), ap1, ap2);
+    gen_icode(i_assnblock, make_immed(ISZ_UINT,node->size), ap1, ap2);
     return (ap1);
 }
 IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
@@ -1050,7 +1066,7 @@ IMODE *gen_clearblock(EXPRESSION *node, SYMBOL *funcsp)
     IMODE *ap1, *ap3, *ap4, *ap5;
     if (node->size)
     {
-        ap4 = make_immed(ISZ_NONE,node->size);
+        ap4 = make_immed(ISZ_UINT,node->size);
     }
     else if (node->right)
     {
@@ -1324,7 +1340,7 @@ static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
                 gen_icode(i_assn, ap, ap3, NULL);
             break;
     }
-    gen_nodag(i_parmblock, 0, ap, make_immed(ISZ_NONE,sz));
+    gen_nodag(i_parmblock, 0, ap, make_immed(ISZ_UINT,sz));
     if (sz % chosenAssembler->arch->stackalign)
         sz = sz + chosenAssembler->arch->stackalign - sz % chosenAssembler->arch->stackalign;
     return sz;
@@ -1464,7 +1480,7 @@ IMODE *gen_trapcall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     /* trap call */
     (void)funcsp;
     (void)flags;
-    gen_igosub(i_trap, make_immed(ISZ_NONE,node->v.i));
+    gen_igosub(i_trap, make_immed(ISZ_UINT,node->v.i));
     return 0;
 }
 IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
@@ -1559,7 +1575,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             adjust += n;
             push_nesting += n;
             // make an instruction for adjustment.
-            gen_icode(i_substack, NULL, make_immed(ISZ_NONE, n), NULL);
+            gen_icode(i_substack, NULL, make_immed(ISZ_UINT, n), NULL);
         }
     }
     if(f->sp->linkage == lk_pascal)
@@ -1615,7 +1631,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     if (f->fcall->type == en_imode)
     {
         ap = f->fcall->v.imode;
-        if (f->callLab)
+        if (f->callLab && xcexp)
         {
             xcexp->right->v.i = f->callLab;
             gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
@@ -1644,7 +1660,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
                     type = i_fargosub;
 */
         }
-        if (f->callLab)
+        if (f->callLab && xcexp)
         {
             xcexp->right->v.i = f->callLab;
             gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
@@ -2108,6 +2124,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 rv = node->v.sp->imvalue;
                 break;
             }
+            cacheTempSymbol(node->v.sp);
+            // fallthrough
         case en_pc:
         case en_global:
         case en_absolute:
@@ -2397,7 +2415,15 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 xcexp->right->v.i = consIndex;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
             }
-            rv = ap1;
+            if (node->left->type == en_stmt)
+            {
+                rv = tempreg(ISZ_ADDR, 0);
+                rv->retval = TRUE;
+            }
+            else
+            {  
+                rv = ap1; 
+            }
             break;
         case en_structadd:
             rv = gen_binary( funcsp, node,flags,ISZ_ADDR,/*i_struct*/ i_add);
@@ -2466,9 +2492,15 @@ int natural_size(EXPRESSION *node)
 {
     int siz0, siz1;
     if (node == 0)
+    {
+        if (!strcmp(theCurrentFunc->name, "_M_do_put_bool"))
+            printf("hi");
         return 0;
+    }
     switch (node->type)
     {
+        case en_thisshim:
+            return ISZ_ADDR;
         case en_stmt:
             return natural_size(node->left);
         case en_func:
@@ -2476,7 +2508,7 @@ int natural_size(EXPRESSION *node)
             if (!node->v.func->functp || !isfunction(node->v.func->functp))
                 return 0;
             if (isstructured(basetype(node->v.func->functp)->btp) || basetype(node->v.func->functp)->btp->type == bt_memberptr)
-                return 0;
+                return ISZ_ADDR;
             else if (node->v.func->ascall)
                 return sizeFromType(basetype(node->v.func->functp)->btp);
             else
@@ -2671,6 +2703,7 @@ int natural_size(EXPRESSION *node)
         case en_literalclass:
             return - ISZ_UINT;
         case en_void:
+            return natural_size(node->right);
         case en_cond:
             return natural_size(node->right);
         case en_atomic:

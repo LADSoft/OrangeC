@@ -59,7 +59,7 @@ static BLOCKLIST *blockWorkHead, *blockWorkTail;
 #ifdef XXXXX
 IMODE *intconst(LLONG_TYPE val)
 {
-    return make_immed(ISZ_NONE,val);
+    return make_immed(ISZ_UINT,val);
 }
 #endif
 
@@ -72,7 +72,7 @@ void badconst(void)
 
 static void ReassignMulDiv(QUAD *d, enum i_ops op, LLONG_TYPE val, int fromleft)
 {
-    IMODE *ip = make_immed(ISZ_NONE,val);
+    IMODE *ip = make_immed(ISZ_UINT,val);
     if (fromleft) {
         d->dc.left = d->dc.right;
         d->temps |= (d->temps & TEMP_RIGHT) ? TEMP_LEFT : 0;
@@ -85,7 +85,7 @@ static void ReassignMulDiv(QUAD *d, enum i_ops op, LLONG_TYPE val, int fromleft)
 }
 static void ReassignInt(QUAD *d, LLONG_TYPE val)
 {
-    IMODE *ip = make_immed(ISZ_NONE,val);
+    IMODE *ip = make_immed(ISZ_UINT,val);
     d->dc.left = ip ;
     d->dc.right = 0;
     d->dc.opcode = i_assn;
@@ -98,7 +98,7 @@ static void ReassignInt(QUAD *d, LLONG_TYPE val)
 }
 static void ReassignFloat(QUAD *d, FPF val)
 {
-    IMODE *ip = make_fimmed(ISZ_NONE, val);
+    IMODE *ip = make_fimmed(ISZ_LDOUBLE, val);
     d->dc.left = ip ;
     d->dc.right = 0;
     d->dc.opcode = i_assn;
@@ -112,7 +112,7 @@ static void setFloatZero(QUAD *d)
     FPF val;
     memset(&val, 0, sizeof(val));
     val.type = IFPF_IS_ZERO;
-    ip = make_fimmed(ISZ_NONE, val);
+    ip = make_fimmed(ISZ_LDOUBLE, val);
     d->dc.left = ip ;
     d->dc.right = 0;
     d->dc.opcode = i_assn;
@@ -314,7 +314,7 @@ QUAD *ReCast(int size, QUAD *in, QUAD *newMode)
                 memset(&newMode->dc,0,sizeof(newMode->dc));
                 newMode->dc.opcode = i_icon;
                 newMode->dc.v.i = i;
-                newMode->ans = make_immed(ISZ_NONE,i);
+                newMode->ans = make_immed(ISZ_UINT,i);
                 return newMode;
             }
         } else if (size >= ISZ_FLOAT) {
@@ -330,7 +330,7 @@ QUAD *ReCast(int size, QUAD *in, QUAD *newMode)
                 memset(&newMode->dc,0,sizeof(newMode->dc));
                 newMode->dc.opcode = i_fcon;
                 newMode->dc.v.f = f;
-                newMode->ans = make_fimmed(ISZ_NONE, f);
+                newMode->ans = make_fimmed(ISZ_LDOUBLE, f);
                 return newMode;
             }
         } else

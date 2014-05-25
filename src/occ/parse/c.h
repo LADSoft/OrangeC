@@ -167,7 +167,7 @@ enum e_stmt
 /* storage classes */
 enum e_sc
 {
-        sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
+        sc_none, sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
         sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_mutable, sc_cast, sc_defunc, sc_label, sc_ulabel,
         sc_overloads, sc_constant, sc_enumconstant, sc_absolute,
         sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
@@ -202,6 +202,13 @@ enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_c, lk_cpp,
     lk_import, lk_export, lk_auto };
     
 enum e_ac { ac_private, ac_protected, ac_public, ac_none };
+
+#define _F_AMPERSAND 1
+#define _F_NOINLINE 2
+#define _F_PACKABLE 4
+#define _F_SELECTOR 8
+#define _F_INTEMPLATEPARAMS 16
+#define _F_INRETURN 32
 
 typedef struct expr
 {
@@ -284,6 +291,9 @@ typedef    struct type
         int scoped:1; /* c++ scoped enumeration */
         int fixed:1; /* c++ fixed enumeration */
         int nullptrType:1; /* c++: std::nullptr */
+        int templateTop : 1;
+        int templateConst : 1;
+        int templateVol : 1;
         char bits; /* -1 for not a bit val, else bit field len */
         char startbit; /* start of bit field */
         struct sym *sp; /* pointer to a symbol which describes the type */
@@ -399,7 +409,7 @@ typedef struct sym
     struct sym *parentClass;
     struct sym *parentNameSpace;
     struct sym *vtabsp;
-    NAMESPACEVALUES *nameSpaceValues;
+    NAMESPACEVALUES *nameSpaceValues; /* for a namespace SP */
     LINEDATA *linedata;
     enum e_sc storage_class; /* storage class */
     enum e_lk linkage; /* cdecl, pascal, stdcall, inline */
@@ -422,6 +432,7 @@ typedef struct sym
     unsigned intagtable: 1; /* it is in a tag table */
     unsigned dontlist: 1; /* it is a system include, don't put in list file */
     unsigned allocate: 1; /* variable is used, allocate space for it */
+    unsigned inAllocTable: 1; /* auto temp var is in the allocation table already */
     unsigned indecltable: 1; /* global already in dump table */
     unsigned spaceallocated: 1; /* space has been allocated */
     unsigned regmode: 2; /* 0 = pure var, 1 = addr in reg, 2 = value in reg*/
@@ -457,6 +468,7 @@ typedef struct sym
         unsigned wasUsing : 1; /* came to this symbol table as a result of 'using' */
         unsigned redeclared : 1; /* symbol was declared more than once */
         unsigned thisPtr: 1; /*is a this pointer*/
+        unsigned structuredReturn: 1; /* is a pointer to a structure's structure pointer address for returning a value */
         unsigned constop:1; /* a constructor 'top' parameter */
         unsigned castoperator:1; /* a cast operator */
         unsigned deleted : 1; /* function was deleted */
@@ -479,6 +491,7 @@ typedef struct sym
         unsigned didinline :1; // already genned an inline func for this symbol
         unsigned hasTry : 1; // function surrounded by try statement
         unsigned hasDest: 1; // class has a destructor that is called
+        unsigned pureDest: 1; // destructor is pure
         unsigned inCatch:1; // used inside a catch block
         unsigned isConstructor:1; // is a constructor
         unsigned isDestructor:1; // is  adestructor
@@ -511,6 +524,7 @@ typedef struct sym
     struct lexeme *deferredTemplateHeader ;
     struct lexeme *deferredCompile ;
     struct _templateParamList *templateParams;
+    struct sym * templateNameSpace;
     int templateLevel;
     LIST *specializations;
     LIST *instantiations;
@@ -604,6 +618,7 @@ typedef struct _vbaseEntry
     unsigned structOffset;
 } VBASEENTRY;
 
+
 typedef struct _templateParam
 {
         // kw_class = class or namespace
@@ -616,6 +631,7 @@ typedef struct _templateParam
     int packed:1;
     int initialized:1;
     SYMBOL *sym, *packsym;
+    void *hold; /* value held during partial template ordering */
     union {
         // the dflt & val fields must be in the same place for each item
         struct {
@@ -668,6 +684,9 @@ typedef struct _templateSelector
     TEMPLATEPARAMLIST *templateParams;
     int isTemplate : 1;
 } TEMPLATESELECTOR ;
+
+
+
 typedef struct _structSym
 {
     struct _structSym *next;
@@ -701,6 +720,7 @@ typedef struct functioncall
     int ascall:1;
     int astemplate:1;
     int noobject:1;
+    int noinline:1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN      16384
@@ -789,6 +809,14 @@ typedef struct lexContext {
     LEXEME *last;
 } LEXCONTEXT ;
 
+struct templateListData
+{
+    TEMPLATEPARAMLIST *args; // list of templateparam lists
+    TEMPLATEPARAMLIST **ptail, **plast;
+    LEXEME *head, *tail;
+    LEXEME *bodyHead, *bodyTail;
+    SYMBOL *sym;
+} ;
 
 typedef struct _string
 {

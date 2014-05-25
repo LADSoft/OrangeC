@@ -77,7 +77,7 @@ extern int has_double;
 extern SYMBOL *theCurrentFunc;
 
 int maxAddr = 0;
-
+LIST *temporarySymbols;
 
 typedef struct _spill_
 {
@@ -324,11 +324,20 @@ void AllocateStackSpace(SYMBOL *funcsp)
     int oldauto, max;
     int i;
     HASHTABLE *syms = funcsp->inlineFunc.syms;
+    LIST **temps = &temporarySymbols;
     while (syms)
     {
         if (syms->blockLevel >= maxlvl)
             maxlvl = syms->blockLevel + 1;
         syms = syms->next;
+    }
+    
+    while (*temps)
+    {
+        SYMBOL *sym = (SYMBOL *)(*temps)->data;
+        if (sym->value.i >= maxlvl)
+            maxlvl = sym->value.i + 1;
+        temps = &(*temps)->next;
     }
     lc_maxauto = max = oldauto = 0;
     
@@ -347,7 +356,7 @@ void AllocateStackSpace(SYMBOL *funcsp)
                     SYMBOL *sp = (SYMBOL *)hr->p;
                     if (!sp->regmode && (sp->storage_class == sc_auto 
                                          || sp->storage_class == sc_register)
-                                         && sp->allocate)
+                                         && sp->allocate && !sp->anonymous)
                     {
                         int val, align = getAlign(sc_auto, sp->tp);
                         lc_maxauto += sp->tp->size;
@@ -363,6 +372,27 @@ void AllocateStackSpace(SYMBOL *funcsp)
             }
             oldauto = max;
             syms = syms->next;
+        }
+        temps = &temporarySymbols;
+        while (*temps)
+        {
+            SYMBOL *sp = (SYMBOL *)(*temps)->data;
+            if (sp->value.i == i)
+            {
+                int val, align = getAlign(sc_auto, sp->tp);
+                lc_maxauto += sp->tp->size;
+                val = lc_maxauto % align;
+                if (val != 0)
+                    lc_maxauto += align - val;
+                sp->offset =  - lc_maxauto;					
+                if (lc_maxauto > max)
+                    max = lc_maxauto;
+                *temps = (*temps)->next;
+            }
+            else
+            {
+                temps = &(*temps)->next;
+            }
         }
     }
     lc_maxauto = max;
@@ -396,8 +426,8 @@ void FillInPrologue(QUAD *head, SYMBOL *funcsp)
     {
         head = head->fwd;
     }
-    head->dc.left = ip = make_immed(ISZ_NONE,regmask);
-    head->dc.right = ip1 = make_immed(ISZ_NONE,lc_maxauto);
+    head->dc.left = ip = make_immed(ISZ_UINT,regmask);
+    head->dc.right = ip1 = make_immed(ISZ_UINT,lc_maxauto);
     while (head && head->dc.opcode != i_epilogue)
     {
         head = head->fwd;
@@ -411,8 +441,8 @@ void FillInPrologue(QUAD *head, SYMBOL *funcsp)
 static EXPRESSION *spillVar( enum e_sc storage_class, TYPE *tp)
 {
     extern int unnamed_id;
-    SYMBOL *sp = anonymousVar(storage_class, tp);
-    EXPRESSION *rv = varNode(en_auto, sp);
+    EXPRESSION *rv = anonymousVar(storage_class, tp);
+    SYMBOL *sp = rv->v.sp;
     deref(tp, &rv);
     sp->spillVar = TRUE;
     return rv;

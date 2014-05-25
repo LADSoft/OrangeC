@@ -55,6 +55,7 @@ extern int currentErrorLine;
 extern int templateNestingCount;
 extern int packIndex;
 extern int expandingParams;
+extern int dontRegisterTemplate;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -149,8 +150,8 @@ void dumpVTab(SYMBOL *sym)
 }
 void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *ccount)
 {
-    if (base == derived)
-        *ccount++;
+    if (base == derived || base && derived && sameTemplate(base->tp, derived->tp))
+        (*ccount)++;
     else
     {
         if (base && derived)
@@ -648,6 +649,51 @@ void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOLEAN isvirtual, in
         }
     }    
 }
+void deferredCompileOne(SYMBOL *cur)
+{
+    SYMBOL *sp;
+    LEXEME *lex;
+    STRUCTSYM l,m, n;
+    int count = 0;
+    // function body
+    if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams))
+    {
+        cur->linkage = lk_inline;
+        if (cur->templateParams)
+        {
+            n.tmpl = cur->templateParams;
+            addTemplateDeclaration(&n);
+            count++;
+        }
+        if (cur->parentClass)
+        {
+            l.str = cur->parentClass;
+            addStructureDeclaration(&l);
+            count++;
+        }
+        sp = cur->parentClass;
+        while (sp)
+        {
+            if (sp->templateParams)
+            {
+                STRUCTSYM *s = Alloc(sizeof(STRUCTSYM));
+                s->tmpl = sp->templateParams;
+                addTemplateDeclaration(s);
+                count++;
+            }
+            sp = sp->parentClass;
+        }
+        dontRegisterTemplate++;
+        lex = SetAlternateLex(cur->deferredCompile);
+        lex = body(lex, cur);
+        SetAlternateLex(NULL);
+        dontRegisterTemplate--;
+        while (count--)
+        {
+            dropStructureDeclaration();
+        }
+    }
+}
 void deferredCompile(void)
 {
     static int inFunc;
@@ -658,46 +704,8 @@ void deferredCompile(void)
     {
         while (deferredBackfill)
         {
-            LEXEME *lex;
-            SYMBOL *cur = (SYMBOL *)deferredBackfill->data , *sp;
-            STRUCTSYM l,m,n;
-            int count = 0;
-            // function body
-            if (!cur->inlineFunc.stmt && !cur->templateLevel)
-            {
-                cur->linkage = lk_inline;
-                if (cur->templateParams)
-                {
-                    n.tmpl = cur->templateParams;
-                    addTemplateDeclaration(&n);
-                    count++;
-                }
-                if (cur->parentClass)
-                {
-                    l.str = cur->parentClass;
-                    addStructureDeclaration(&l);
-                    count++;
-                }
-                sp = cur->parentClass;
-                while (sp)
-                {
-                    if (sp->templateParams)
-                    {
-                        STRUCTSYM *s = Alloc(sizeof(STRUCTSYM));
-                        s->tmpl = sp->templateParams;
-                        addTemplateDeclaration(s);
-                        count++;
-                    }
-                    sp = sp->parentClass;
-                }
-                lex = SetAlternateLex(cur->deferredCompile);
-                lex = body(lex, cur);
-                SetAlternateLex(NULL);
-                while (count--)
-                {
-                    dropStructureDeclaration();
-                }
-            }
+            SYMBOL *cur = (SYMBOL *)deferredBackfill->data;
+            deferredCompileOne(cur);
             deferredBackfill = deferredBackfill->next;
         }
     }
@@ -780,9 +788,9 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
         if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_inline))
         {
             donesomething = TRUE;
-            sp = TemplateClassInstantiate(sp, NULL, FALSE);
+            sp = TemplateClassInstantiate(sp, NULL, FALSE, sc_global);
         }
-        if (sp && donesomething)
+        if (sp && (donesomething || basetype(tp) != sp->tp))
         {
             TYPE *tpr = sp->tp;
             TYPE *tpx;
@@ -917,7 +925,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         if (MATCHKW(lex,classsel) || ISID(lex))
         {
             bcsym = NULL;
-            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, TRUE);
+            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, TRUE, sc_global);
             lex = getsym();
             if (bcsym && bcsym->templateLevel)
             {
@@ -925,9 +933,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 if (MATCHKW(lex, lt))
                 {
                     lex = GetTemplateArguments(lex, funcsp, &lst);
-                    bcsym = GetClassTemplate(bcsym, lst);
-                    if (bcsym)
-                        bcsym = TemplateClassInstantiate(bcsym, lst, FALSE);
+                    bcsym = GetClassTemplate(bcsym, lst, FALSE, sc_global);
                 }
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->p->packed)
@@ -1243,7 +1249,7 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
             INITLIST *p = Alloc(sizeof(INITLIST));
             LEXEME *lex = SetAlternateLex(start);
             packIndex = i;
-            expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, FALSE, FALSE, FALSE, TRUE);
+            expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE);
             SetAlternateLex(NULL);
             if (p->tp)
             {
@@ -1730,7 +1736,7 @@ LEXEME *handleStaticAssert(LEXEME *lex)
         char buf[256];
         TYPE *tp;
         EXPRESSION *expr=NULL, *expr2=NULL;
-        lex = expression_no_comma(lex, NULL, NULL, &tp, &expr, NULL, FALSE, FALSE);
+        lex = expression_no_comma(lex, NULL, NULL, &tp, &expr, NULL, 0);
         expr2 = Alloc(sizeof(EXPRESSION));
         expr2->type = en_x_bool;
         expr2->left = expr;
@@ -1791,7 +1797,7 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
             {
                 char buf1[512];
                 strcpy(buf1, lex->value.s.a);
-                lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE);
+                lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global);
                 if (!sp)
                 {
                     errorstr(ERR_UNDEFINED_IDENTIFIER, buf1);
@@ -1929,7 +1935,7 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
     {
         sp->parentNameSpace = nameSpaceList->data;
     }
-    
+    sp->value.i++;
     list = Alloc(sizeof(LIST));
     list->next = globalNameSpace->childNameSpaces;
     list->data = sp;
@@ -2001,7 +2007,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
             char buf1[512];
             HASHREC **hr;
             strcpy(buf1, lex->value.s.a);
-            lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE);
+            lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global);
             if (!sp)
             {
                 errorstr(ERR_UNDEFINED_IDENTIFIER, buf1);
@@ -2070,7 +2076,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
                 lex = backupsym();
             }
         }
-        lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE);
+        lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global);
         if (!sp)
         {
             error(ERR_IDENTIFIER_EXPECTED);

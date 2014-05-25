@@ -39,6 +39,7 @@
 #include "rtti.h"
 extern ARCH_ASM *chosenAssembler;
 extern BOOLEAN hasXCInfo;
+extern int templateNestingCount;
 
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
@@ -239,6 +240,7 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
     ovl->linkage = lk_inline;
     ovl->defaulted = TRUE;
     ovl->access = ac_public;
+    ovl->templateLevel = templateNestingCount;
     if (!ovl->decoratedName)
         SetLinkerNames(ovl, lk_cdecl);
     if (!funcs)
@@ -270,22 +272,63 @@ SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl)
 }
 static SYMBOL *declareDestructor(SYMBOL *sp)
 {
+    SYMBOL *rv;
     SYMBOL *func, *sp1;
     TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
     TYPE *tp1;
+    VBASEENTRY *e;
+    BASECLASS *b;
+    HASHREC *hr;
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_DESTRUCTOR]);
     tp->syms = CreateHashTable(1);        
+    sp1 = makeID(sc_parameter, tp->btp, NULL, AnonymousName());
+    insert(sp1, tp->syms);
     if (sp->vbaseEntries)
     {
         sp1= makeID(sc_parameter, &stdint, NULL, AnonymousName());
         sp1->isDestructor = TRUE;
         insert(sp1, tp->syms);
     }
-    return insertFunc(sp, func);
+    rv = insertFunc(sp, func);
+    b = sp->baseClasses;
+    while (b)
+    {
+        if (!b->cls->pureDest)
+            break;
+        b = b->next;
+    }
+    if (!b)
+    {
+        e = sp->vbaseEntries;
+        while (e)
+        {
+            if (!e->cls->pureDest)
+                break;
+            e = e->next;
+        }
+        if (!e)
+        {
+            hr = basetype(sp->tp)->syms->table[0];
+            while (hr)
+            {
+                SYMBOL *cls = (SYMBOL *)hr->p;
+                TYPE *tp = cls->tp;
+                while (isarray(tp))
+                    tp = basetype(tp)->btp;
+                if (isstructured(tp) && !basetype(tp)->sp->pureDest)
+                    break;
+                hr = hr->next;
+            }
+            if (!hr)
+                sp->pureDest = TRUE;
+        }
+    }
+    
+    return rv;
 }
 static BOOLEAN hasConstFuncs(SYMBOL *sp, int type)
 {
@@ -542,6 +585,7 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
         memset(&arg, 0, sizeof(arg));
         memset(&exp, 0, sizeof(exp));
         memset(&exp1, 0, sizeof(exp1));
+        memset(&tpp, 0, sizeof(tpp));
         if (move)
         {
             exp.type = en_auto;
@@ -1204,7 +1248,7 @@ void createDefaultConstructors(SYMBOL *sp)
     {
         SYMBOL *newcons;
         // first see if the default constructor could be trivial
-        if (!hasVTab(sp) && sp->vbaseEntries == NULL)
+        if (!hasVTab(sp) && sp->vbaseEntries == NULL && !dest)
         {
             BASECLASS *base = sp->baseClasses;
             while (base)
@@ -1298,7 +1342,7 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
         if (sp->storage_class != sc_localstatic && sp->dest)
         {
             
-            EXPRESSION *iexp = convertInitToExpression(sp->dest->basetp, sp, NULL, sp->dest, NULL, FALSE);
+            EXPRESSION *iexp = sp->dest->exp; 
             if (iexp)
             {
                 optimize_for_constants(&iexp);
@@ -1314,7 +1358,8 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
         }
         else if (sp->storage_class == sc_parameter && isstructured(sp->tp))
         {
-            EXPRESSION *iexp = getVarNode(sp);
+            EXPRESSION *iexp = getThisNode(sp);
+            iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
             callDestructor(basetype(sp->tp)->sp, &iexp, NULL, TRUE, FALSE, FALSE);
             optimize_for_constants(&iexp);
             if (*exp)
@@ -1337,7 +1382,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
     {
         thisptr = exprNode(en_add, thisptr, intNode(en_c_i, offset));
         otherptr = exprNode(en_add, otherptr, intNode(en_c_i, offset));
-        if (isstructured(member->tp))
+        if (isstructured(member->tp) || isarray(member->tp))
         {
             EXPRESSION *exp = exprNode(en_blockassign, thisptr,otherptr);
             STATEMENT *st = stmtNode(NULL,b, st_expr);
@@ -1558,9 +1603,65 @@ static void doVirtualBases(BLOCK *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBASEEN
     		genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, FALSE, thisptr, otherptr, parentCons, doCopy);
 	}
 }
+static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths);
+static STATEMENT * unshimstmt(STATEMENT *block, EXPRESSION *ths)
+{
+    STATEMENT *rv = NULL , **last = &rv;
+    while (block != NULL)
+    {
+        *last = Alloc(sizeof(STATEMENT));
+        **last = *block;
+        block = *last;
+        last = &(*last)->next;
+        switch (block->type)
+        {
+            case st__genword:
+                break;
+            case st_try:
+            case st_catch:
+                block->lower = unshimstmt(block->lower, ths);
+                block->blockTail = unshimstmt(block->blockTail, ths);
+                break;
+            case st_return:
+            case st_expr:
+            case st_declare:
+                block->select = unshim(block->select, ths);
+                break;
+            case st_goto:
+            case st_label:
+                break;
+            case st_select:
+            case st_notselect:
+                block->select = unshim(block->select, ths);
+                break;
+            case st_switch:
+                block->select = unshim(block->select, ths);
+                block->lower = unshimstmt(block->lower, ths);
+                break;
+            case st_block:
+                block->lower = unshimstmt(block->lower, ths);
+                block->blockTail = unshimstmt(block->blockTail, ths);
+                break;
+            case st_passthrough:
+                break;
+            case st_datapassthrough:
+                break;
+            case st_line:
+            case st_varstart:
+            case st_dbgblock:
+                break;
+            default:
+                diag("Invalid block type in unshimstmt");
+                break;
+        }
+        block = block->next;
+    }
+    return rv;
+}
+
 static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths)
 {
-    EXPRESSION *nw;
+    EXPRESSION *nw = NULL;
     if (!exp)
         return exp;
     if (exp->type == en_thisshim)
@@ -1569,6 +1670,10 @@ static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths)
     *nw = *exp;
     nw->left = unshim(nw->left, ths);
     nw->right = unshim(nw->right, ths);
+    if (nw->type == en_stmt)
+    {
+        nw->v.stmt = unshimstmt(nw->v.stmt, ths);
+    }
     return nw;    
 }
 SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, int *offset)
@@ -1650,14 +1755,14 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     lex = GetTemplateArguments(lex, cons, &lst);
                     if (init->sp->templateLevel)
                     {
-                        init->sp = TemplateClassInstantiate(init->sp, lst, FALSE);
+                        init->sp = TemplateClassInstantiate(init->sp, lst, FALSE, sc_global);
                     }
                     else
                     {
                         errorsym(ERR_NOT_A_TEMPLATE, init->sp);
                     }
                 }
-                if (MATCHKW(lex, openpa) && (!isstructured(init->sp->tp) || init->sp->tp->sp->trivialCons))
+                if (MATCHKW(lex, openpa) && (!isstructured(init->sp->tp) || basetype(init->sp->tp)->sp->trivialCons))
                 {
                     lex = getsym();
                     if (MATCHKW(lex, closepa))
@@ -1792,7 +1897,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         lex = GetTemplateArguments(lex, cons, &lst);
                         if (init->sp->templateLevel)
                         {
-                            init->sp = TemplateClassInstantiate(init->sp, lst, FALSE);
+                            init->sp = TemplateClassInstantiate(init->sp, lst, FALSE, sc_global);
                         }
                         else
                         {
@@ -1840,7 +1945,6 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
             {
                 sp->init = Alloc(sizeof(*sp->init));
                 *sp->init = *sp->lastInit;
-                sp->init->next = sp->lastInit;
                 sp->init->exp = unshim(sp->init->exp, ths);
             }
         }
@@ -1855,7 +1959,7 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
                 init->init->exp = unshim(init->init->exp, ths);
         }
         init = init->next;
-    }            
+    }
     hr = basetype(cls->tp)->syms->table[0];
     while (hr)
     {
@@ -1870,7 +1974,7 @@ static void allocInitializers(SYMBOL *cls, SYMBOL *cons, EXPRESSION *ths)
         hr = hr->next;
     }
 }
-static void releaseInitializers(SYMBOL *cls)
+static void releaseInitializers(SYMBOL *cls, SYMBOL *cons)
 {
     HASHREC *hr = basetype(cls->tp)->syms->table[0];
     while (hr)
@@ -1949,7 +2053,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
         }
     }
     if (parseInitializers)
-        releaseInitializers(sym);
+        releaseInitializers(sym, cons);
     return thisptr;
 }
 static void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
@@ -1989,7 +2093,7 @@ static void genAsnData(BLOCKDATA *b, SYMBOL *cls, SYMBOL *member, int offset, EX
     EXPRESSION *right = exprNode(en_add, other, intNode(en_c_i, offset));
     STATEMENT *st;
     (void)cls;
-    if (isstructured(member->tp))
+    if (isstructured(member->tp) || isarray(member->tp))
     {
         left = exprNode(en_blockassign, left, right);
         left->size = member->tp->size;
@@ -2060,16 +2164,12 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
         params->functp = asn1->tp;
         params->sp = asn1;
         params->ascall = TRUE;
-        if (asn1->linkage == lk_inline)
+        params->noinline = asn1->noinline;
+        exp = doinline(params, NULL);
+        if (!exp)
         {
-            exp = doinline(params, asn1);
-        }
-        else
-        {
-            exp = Alloc(sizeof(EXPRESSION));
-            exp->type = en_func;
+            exp = varNode(en_func, NULL);
             exp->v.func = params;
-            //asn1->genreffed = TRUE;
         }
     }
     st = stmtNode(NULL,b, st_expr);
@@ -2271,8 +2371,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
         params->functp = asn1->tp;
         params->sp = asn1;
         params->ascall = TRUE;
-        *exp = Alloc(sizeof(EXPRESSION));
-        (*exp)->type = en_func;
+        *exp = varNode(en_func, NULL);
         (*exp)->v.func = params;
         //asn1->genreffed = TRUE;
         //if (cons)
@@ -2325,9 +2424,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN
             makeArrayConsDest(&stp, exp, NULL, dest1, arrayElms);
             //dest1->genreffed = TRUE;
         }
-        else if (dest1->linkage == lk_inline && !noinline)
-        {
-            EXPRESSION *e1;
+        else {
             if (sp->vbaseEntries)
             {
                 INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
@@ -2339,16 +2436,13 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN
                 while (*p) p = &(*p)->next;
                 *p = x;
             }
-            e1 = doinline(params, dest1);
-            if (e1)
-                *exp = e1;
-        }
-        else
-        {
-            *exp = Alloc(sizeof(EXPRESSION));
-            (*exp)->type = en_func;
-            (*exp)->v.func = params;
-            //dest1->genreffed = TRUE;
+            params->noinline = dest1->noinline || noinline;
+            *exp = doinline(params, NULL);
+            if (!*exp)
+            {
+                *exp = varNode(en_func, NULL);
+                (*exp)->v.func = params;
+            }
         }
         if (*exp && !pointer)
         {
@@ -2357,7 +2451,8 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
             sp->hasDest = TRUE;
-            hasXCInfo = TRUE;
+            if (!sp->pureDest)
+               hasXCInfo = TRUE;
         }
     }
 }
@@ -2371,39 +2466,6 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
     SYMBOL *cons1;
     EXPRESSION *e1 = NULL, *e2 = NULL;
-    /*
-    if (checkcopy)
-    {
-        SYMBOL *copy = getCopyCons(sp, TRUE);
-        SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
-        dest = (SYMBOL *)basetype(dest->tp)->syms->table[0]->p;
-        if (!copy || !isAccessible(sp,sp, copy, NULL, ac_protected, FALSE) || copy->deleted)
-        {
-            errorsym(ERR_CANNOT_ACCESS, copy);
-        }
-        if (!dest || !isAccessible(sp,sp, dest, NULL, ac_protected, FALSE) || dest->deleted)
-        {
-            errorsym(ERR_CANNOT_ACCESS, dest);
-        }
-    }
-    */
-    /*
-    if (params && params->arguments && !params->arguments->next &&
-        params->arguments->exp->type == en_func)
-    {
-        // might be a function returning the primary type, in which case we can elide
-        // the constructor and just call the function with an appropriate
-        if (params->arguments->exp->v.func->returnSP && 
-            basetype(params->arguments->exp->v.func->returnSP->tp)->sp == sp)
-        {
-            EXPRESSION *e1 = params->arguments->exp;
-            params = e1->v.func;
-            params->returnEXP = *exp;
-            *exp = e1;
-            return TRUE;
-        }
-    }
-    */
     if (!params)
     {
         params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -2444,28 +2506,13 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 oparams->returnEXP = *exp;
                 oparams->returnSP = sp;
             }
-            if (cons1->linkage == lk_inline && !noinline)  
+            oparams->noinline = cons1->noinline | noinline;
+            e1 = doinline(oparams, NULL);
+            if (!e1)
             {
-                e1 = doinline(oparams, cons1);
-            }
-            else
-            {
-                e1 = Alloc(sizeof(EXPRESSION));
-                e1->type = en_func;
+                e1 = varNode(en_func, NULL);
                 e1->v.func = oparams;
-                //cons1->genreffed = TRUE;
             }
-            /*
-            if (!isref(basetype(cons1->tp)->btp))
-            {
-                cons1 = NULL;
-            }
-            else
-            {
-                e1 = exprNode(en_blockassign, *exp, e1);
-                e1->size = sp->tp->size;
-            }
-            */
         }
         else 
         {
@@ -2508,8 +2555,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 makeArrayConsDest(&stp, exp, cons1, dest1, arrayElms);
                 e1 = *exp;
             }
-            else if (cons1->linkage == lk_inline && !noinline)
-            {
+            else {
                 if (sp->vbaseEntries)
                 {
                     INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
@@ -2521,14 +2567,13 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     while (*p) p = &(*p)->next;
                     *p = x;
                 }
-                e1 = doinline(params, cons1);
-            }
-            else
-            {
-                e1 = Alloc(sizeof(EXPRESSION));
-                e1->type = en_func;
-                e1->v.func = params;
-                //cons1->genreffed = TRUE;
+                params->noinline = cons1->noinline | noinline;
+                e1 = doinline(params, NULL);
+                if (!e1)
+                {
+                    e1 = varNode(en_func, NULL);
+                    e1->v.func = params;
+                }
             }
         }
         *exp = e1;
@@ -2537,7 +2582,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             *exp = exprNode(en_thisref, *exp, NULL);
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
-            hasXCInfo = TRUE;
+            //hasXCInfo = TRUE;
         }
         
         return TRUE;

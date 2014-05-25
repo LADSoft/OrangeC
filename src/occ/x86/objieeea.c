@@ -708,6 +708,7 @@ void link_types()
                     ad = ad->next;
                 }
             }
+            v = v->next;
         }
         while (dbgTypeDefs)
         {
@@ -985,6 +986,7 @@ void link_Autos(void)
                     ad = ad->next;
                 }
             }
+            v = v->next;
         }
         emit_cs(FALSE);
     }    

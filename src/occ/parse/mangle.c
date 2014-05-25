@@ -82,11 +82,9 @@ static char *mangleClasses(char *in, SYMBOL *sp)
         return in;
     if (sp->parentClass)
         in = mangleClasses(in, sp->parentClass);
-    else
-        in = mangleNameSpaces(in, sp->parentNameSpace);
     if (sp->castoperator)
         strcat(in, "@");
-    else if (sp->templateLevel)
+    else if (sp->templateLevel && sp->templateParams)
     {
         *in++ = '@';
         mangleTemplate(in, sp, sp->templateParams);
@@ -178,6 +176,7 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
                         }
                         else
                         {
+                            buf[0] = 0;
                             while (lvalue(exp))
                                 exp = exp->left;
                             switch (exp->type)
@@ -228,33 +227,40 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 }
 static char *getName(char *in, SYMBOL *sp)
 {
-    int i;
-    char buf[512], *p;
-    p = mangleClasses(buf, sp->parentClass);
-    if (p != buf)
-        *p++ = '@';
-    if (sp->templateLevel)
+    if (!sp)
     {
-        p = mangleTemplate(p, sp, sp->templateParams);
+        strcpy(in, "????");
     }
     else
     {
-        strcpy(p, sp->name);
-    }
-    for (i=0; i < mangledNamesCount; i++)
-        if (!strcmp(buf, mangledNames[i]))
-            break;
-    if (i < mangledNamesCount)
-    {
-        sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
-    }
-    else
-    {
-        if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
-            strcpy(mangledNames[mangledNamesCount++], buf);
-        if (isdigit(in[-1]))
-            *in++ = '_';
-        sprintf(in, "%d%s", strlen(buf), buf);
+        int i;
+        char buf[512], *p;
+        p = mangleClasses(buf, sp->parentClass);
+        if (p != buf)
+            *p++ = '@';
+        if (sp->templateLevel && sp->templateParams)
+        {
+            p = mangleTemplate(p, sp, sp->templateParams);
+        }
+        else
+        {
+            strcpy(p, sp->name);
+        }
+        for (i=0; i < mangledNamesCount; i++)
+            if (!strcmp(buf, mangledNames[i]))
+                break;
+        if (i < mangledNamesCount)
+        {
+            sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
+        }
+        else
+        {
+            if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
+                strcpy(mangledNames[mangledNamesCount++], buf);
+            if (isdigit(in[-1]))
+                *in++ = '_';
+            sprintf(in, "%d%s", strlen(buf), buf);
+        }
     }
     in += strlen(in);
     return in;
@@ -518,9 +524,10 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
             strcpy(errbuf+1, sym->name);
             break;
         case lk_cpp:
+            p = mangleNameSpaces(p, sym->parentNameSpace);
             p = mangleClasses(p, sym->parentClass);
             *p++ = '@';
-            if (sym->templateLevel)
+            if (sym->templateLevel && sym->templateParams)
             {
                 p = mangleTemplate(p, sym, sym->templateParams);
             }
@@ -539,7 +546,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
                     p = mangleType(p, basetype(sym->tp)->btp, TRUE); // cast operators get their cast type in the name
                     *p++ = '$';
                     p = mangleType(p, sym->tp, TRUE); // add the $qv
-                    while (*--p != '$' || tmplCount) 
+                    while (p > errbuf && (*--p != '$' || tmplCount)) 
                         if (*p == '~')
                             tmplCount++;
                         else if (*p == '#')
@@ -552,7 +559,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
                     if (!sym->templateLevel)
                     {
                         int tmplCount = 0;
-                        while (*--p != '$' || tmplCount) 
+                        while (p > errbuf && (*--p != '$' || tmplCount)) 
                             if (*p == '~')
                                 tmplCount++;
                             else if (*p == '#')

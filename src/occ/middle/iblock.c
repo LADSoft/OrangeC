@@ -316,7 +316,7 @@ int ToQuadConst(IMODE **im)
         if (!rv) {
             rv = Alloc(sizeof(QUAD));
             *rv = temp ;
-            rv->ans = tempreg(ISZ_NONE,0);
+            rv->ans = tempreg(ISZ_UINT,0);
             add_intermed(rv);
             ReplaceHash(rv, (UBYTE *)rv, DAGCOMPARE, ins_hash);
             wasgoto = FALSE;
@@ -603,7 +603,7 @@ QUAD * gen_icode(enum e_op op, IMODE *res, IMODE *left, IMODE *right)
  */
 {
     QUAD *newQuad;
-    if (right && right->mode == i_immed && right->size == ISZ_NONE)
+    if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
         right->size = left->size;
     switch (op)
     {
@@ -704,7 +704,7 @@ void gen_icgoto(int op, long label, IMODE *left, IMODE *right)
  */
 {
     QUAD *newQuad;
-    if (right && right->mode == i_immed && right->size == ISZ_NONE)
+    if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
         right->size = left->size;
 
     newQuad = (QUAD *)Alloc(sizeof(QUAD));

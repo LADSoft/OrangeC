@@ -73,6 +73,7 @@ extern TYPE stddouble;
 extern BLOCK **blockArray;
 extern int maxBlocks, maxTemps;
 extern int retlab, startlab;
+extern LIST *temporarySymbols;
 
 int consIndex;
 EXPRESSION *xcexp;
@@ -162,7 +163,7 @@ void gen_genword(STATEMENT *stmt, SYMBOL *funcsp)
  */
 {
     (void)funcsp;
-    gen_icode(i_genword, 0, make_immed(ISZ_NONE,(int)stmt->select), 0);
+    gen_icode(i_genword, 0, make_immed(ISZ_UINT,(int)stmt->select), 0);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -307,12 +308,12 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
             doatomicFence(funcsp, stmt->select, barrier);
         }
     }
-    gen_icode2(i_coswitch, make_immed(ISZ_NONE,cs.count), ap, make_immed(ISZ_NONE,cs.top - cs.bottom), stmt->label);
+    gen_icode2(i_coswitch, make_immed(ISZ_UINT,cs.count), ap, make_immed(ISZ_UINT,cs.top - cs.bottom), stmt->label);
     gather_cases(stmt->cases,&cs);
     qsort(cs.ptrs, cs.count, sizeof(cs.ptrs[0]), gcs_compare);
     for (i = 0; i < cs.count; i++)
     {
-        gen_icode2(i_swbranch,0,make_immed(ISZ_NONE,cs.ptrs[i].id),0,cs.ptrs[i].label);
+        gen_icode2(i_swbranch,0,make_immed(ISZ_UINT,cs.ptrs[i].id),0,cs.ptrs[i].label);
     }
     breaklab = oldbreak;
 }
@@ -384,11 +385,12 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         if (basetype(funcsp->tp)->btp && (isstructured(basetype(funcsp->tp)->btp) ||
                                           basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
         {
-            SYMBOL *sp = anonymousVar(sc_parameter, &stdpointer);
-            EXPRESSION *en = varNode(en_auto, sp);
+            EXPRESSION *en = anonymousVar(sc_parameter, &stdpointer);
+            SYMBOL *sp = en->v.sp;
             gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
             DumpIncDec(funcsp);
             sp->offset = chosenAssembler->arch->retblocksize;
+            sp->allocate = FALSE;
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 
                     ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
@@ -430,6 +432,10 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         ap1->retval = TRUE;
         gen_icode(i_assn, ap1, ap, 0);
     }
+    if (stmt && stmt->destexp)
+    {
+        gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
+    }
     /* create the return or a branch to the return
      * return is put at end of function...
      */
@@ -459,10 +465,10 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
                     gen_icode(i_unloadcontext,0,0,0);
 */
                 gen_icode(i_popcontext, 0,0,0);
-                gen_icode(i_rett, 0, make_immed(ISZ_NONE,funcsp->linkage == lk_interrupt), 0);
+                gen_icode(i_rett, 0, make_immed(ISZ_UINT,funcsp->linkage == lk_interrupt), 0);
             } else
             {
-                gen_icode(i_ret, 0, make_immed(ISZ_NONE,retsize), 0);
+                gen_icode(i_ret, 0, make_immed(ISZ_UINT,retsize), 0);
             }
         }
     }
@@ -505,10 +511,7 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
     IMODE *rv = NULL;
     while (stmt != 0)
     {
-        if (stmt->destexp)
-        {
-            gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
-        }
+        STATEMENT *last = stmt;
         switch (stmt->type)
         {
             case st_varstart:
@@ -582,6 +585,10 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
             default:
                 diag("unknown statement.");
                 break;
+        }
+        if (last->type != st_return && last->destexp)
+        {
+            gen_expr(funcsp, last->destexp, F_NOVALUE, ISZ_ADDR);
         }
         stmt = stmt->next;
     }
@@ -784,6 +791,7 @@ void genfunc(SYMBOL *funcsp)
         else
             tmpl = tmpl->parentClass;
 //	//printf("%s\n", funcsp->name);
+    temporarySymbols = NULL;
     contlab = breaklab =  - 1;
     structret_imode = 0 ;
     tempCount = 0;
@@ -842,7 +850,7 @@ void genfunc(SYMBOL *funcsp)
     AllocateLocalContext(NULL, funcsp);
     if (funcsp->allocaUsed)
     {
-            EXPRESSION *allocaExp = varNode(en_auto, anonymousVar(sc_auto, &stdpointer));
+            EXPRESSION *allocaExp = anonymousVar(sc_auto, &stdpointer);
             allocaAP = gen_expr(funcsp, allocaExp, 0, ISZ_ADDR);
             gen_icode(i_savestack, 0, allocaAP, 0);
     }

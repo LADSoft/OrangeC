@@ -76,7 +76,7 @@ static TYPE *replaceTemplateSelector (TYPE *tp)
         SYMBOL *sp2 = tp->sp->templateSelector->next->sym;
         if (sp2)
         {
-            SYMBOL *sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams);
+            SYMBOL *sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams, FALSE, sc_none);
             if (sp1)
             {
                 sp1 = search(tp->sp->templateSelector->next->next->name, sp1->tp->syms);

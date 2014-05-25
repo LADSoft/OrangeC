@@ -303,7 +303,7 @@ static IMODE *StrengthConstant(QUAD *head, IMODE * im1, IMODE *im2, int size)
     if (im1->mode ==  i_immed && isintconst(im1->offset))
         if (im2->mode == i_immed && isintconst(im2->offset))
         {
-            return make_immed(ISZ_NONE, im1->offset->v.i * im2->offset->v.i);
+            return make_immed(ISZ_UINT, im1->offset->v.i * im2->offset->v.i);
         }
     if (im2->offset && im2->offset->type == en_tempref && im2->mode == i_direct)
         while (TRUE)

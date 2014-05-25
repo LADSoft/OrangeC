@@ -56,6 +56,8 @@ extern TYPE stdchar16t;
 extern TYPE stdchar32t;
 extern int nextLabel;
 extern SYMBOL *theCurrentFunc;
+extern NAMESPACEVALUES *localNameSpace;
+extern int inDefaultParam;
 
 // well this is really only nonstatic data members...
 BOOLEAN ismember(SYMBOL *sym)
@@ -91,7 +93,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         SYMBOL *sp, *strSym = NULL;
         LEXEME *placeholder = lex;
         BOOLEAN dest = FALSE;
-        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE);
+        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global);
         if (cparams.prm_cplusplus)
             prevsym(placeholder);
         return sp && istype(sp) || assumeType && strSym && strSym->tp->type == bt_templateselector;
@@ -217,10 +219,15 @@ BOOLEAN isarithmetic(TYPE *tp)
     tp = basetype(tp);
     return isint(tp) || isfloat(tp) || iscomplex(tp) || isimaginary(tp);
 }
-BOOLEAN isconst(TYPE *tp)
+BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
 {
     while (TRUE)
     {
+        if (useTemplate)
+        {
+            if (tp->templateConst)
+                return TRUE;
+        }
         switch(tp->type)
         {
             case bt_restrict:
@@ -238,6 +245,10 @@ BOOLEAN isconst(TYPE *tp)
                 return FALSE;
         }
     }
+}
+BOOLEAN isconst(TYPE *tp)
+{
+    return isconstraw(tp, FALSE);
 }
 BOOLEAN isvolatile(TYPE *tp)
 {
@@ -526,22 +537,31 @@ BOOLEAN iscomplexconst(EXPRESSION *exp)
             return FALSE;
     }
 }
-SYMBOL *anonymousVar(enum e_sc storage_class, TYPE *tp)
+EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
 {
+    static int anonct = 1;
+    char buf[256];
     SYMBOL *rv = (SYMBOL *)Alloc(sizeof(SYMBOL));
+//    if ((storage_class == sc_localstatic || storage_class == sc_auto) && !theCurrentFunc)
+//    {
+//        storage_class = sc_static;
+//        insertInitSym(rv);
+//    }
     rv->storage_class = storage_class;
     rv->tp = tp;
     rv->anonymous = TRUE;
     rv->allocate = TRUE;
     rv->assigned = TRUE;
     rv->used = TRUE;
-    rv->name = AnonymousName();
-    if (storage_class == sc_localstatic && !theCurrentFunc)
-        storage_class = sc_static;
+    if (theCurrentFunc)
+        rv->value.i = theCurrentFunc->value.i;
+    sprintf(buf,"$anontemp%d", anonct++);
+    rv->name = litlate(buf);
     tp->size = basetype(tp)->size;
-    InsertSymbol(rv, storage_class, FALSE, FALSE);
+    if (theCurrentFunc && !inDefaultParam)
+        InsertSymbol(rv, storage_class, FALSE, FALSE);
     SetLinkerNames(rv, lk_none);
-    return rv;
+    return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : storage_class == sc_localstatic ? en_label : en_global, rv);
 }
 void deref(TYPE *tp, EXPRESSION **exp)
 {
@@ -1022,8 +1042,11 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             if (init->noassign)
             {
                 exp = init->exp;
+                if (exp->type == en_thisref)
+                    exp = exp->left;
                 if (thisptr && exp->type == en_func)
                     exp->v.func->thisptr = init->offset ? exprNode(en_add, expsym, intNode(en_c_i, init->offset)) : expsym;
+                exp = init->exp;
             }
             else if (!init->exp)
             {
@@ -1081,8 +1104,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                             error(ERR_C99_NON_CONSTANT_INITIALIZATION);
                         if (!sp)
                         {
-                            sp = anonymousVar(sc_auto, init->basetp);
-                            expsym = varNode(en_auto, sp);
+                            expsym = anonymousVar(sc_auto, init->basetp);
+                            sp = expsym->v.sp;
                         }
                         if (!isstructured(btp) || btp->sp->trivialCons)
                         {
@@ -1113,11 +1136,12 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         /* constant expression */
                         SYMBOL *spc ;
                         IncGlobalFlag();
-                        spc = anonymousVar(sc_localstatic, init->basetp);
+                        exp = anonymousVar(sc_localstatic, init->basetp);
+                        spc = exp->v.sp;
                         spc->init = init ;
                         insertInitSym(spc);
+                        insert(spc, localNameSpace->syms);
                         DecGlobalFlag();
-                        exp = varNode(en_label, spc);
                         spc->label =nextLabel++;
                         if (expsym)
                         {
@@ -1204,7 +1228,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
         init = init->next;
     }
-    if (isstructured(tp) && (!cparams.prm_cplusplus || !basetype(tp)->sp->trivialCons))
+    if (isstructured(tp) && !cparams.prm_cplusplus)
     {
         if (*pos)
         {

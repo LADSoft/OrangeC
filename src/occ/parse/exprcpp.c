@@ -235,6 +235,7 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOO
             {
                 if (toError)
                 {
+                    isExpressionAccessible(memberSym, funcsp, en, FALSE);
                     errorsym(ERR_CANNOT_ACCESS, memberSym);
                 }
             }
@@ -304,17 +305,13 @@ static BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION *
             else
             {
                 DerivedToBase(cst->parentClass->tp, *tp, exp);
-                /*
-                if (cons1->linkage == lk_inline && !noinline)  
                 {
-                    e1 = doinline(params, cons1);
-                }
-                else
-                */
-                {
-                    e1 = Alloc(sizeof(EXPRESSION));
-                    e1->type = en_func;
-                    e1->v.func = params;
+                    e1 = doinline(params, NULL);
+                    if (!e1)
+                    {
+                        e1 = varNode(en_func, NULL);
+                        e1->v.func = params;
+                    }
                     cst->genreffed = TRUE;
                 }
                 *exp = e1;
@@ -381,19 +378,13 @@ BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BO
                 params->functp = cst->tp;
                 params->sp = cst;
                 params->ascall = TRUE;
-                /*
-                if (cons1->linkage == lk_inline && !noinline)  
+                e1 = doinline(params, NULL);
+                if (!e1)
                 {
-                    e1 = doinline(params, cons1);
-                }
-                else
-                */
-                {
-                    e1 = Alloc(sizeof(EXPRESSION));
-                    e1->type = en_func;
+                    e1 = varNode(en_func, NULL);
                     e1->v.func = params;
-                    cst->genreffed = TRUE;
                 }
+                cst->genreffed = TRUE;
                 *exp = e1;
                 if (ispointer(other))
                 {
@@ -440,27 +431,20 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
                 params->ascall = TRUE;
                 if (isstructured(*tp))
                 {
-                    SYMBOL *av = anonymousVar(sc_auto, *tp);
-                    EXPRESSION *ev = varNode(en_auto, av);
-                    insert(av, localNameSpace->syms);
+                    EXPRESSION *ev = anonymousVar(sc_auto, *tp);
+                    SYMBOL *av = ev->v.sp;
                     params->returnEXP = ev;
                     params->returnSP = sp;
                     callDestructor(basetype(*tp)->sp, &ev, NULL, TRUE, noinline, FALSE);
                     initInsert(&av->dest, *tp, ev, 0, TRUE);
                 }
-                /*
-                if (cons1->linkage == lk_inline && !noinline)  
+                e1 = doinline(params, NULL);
+                if (!e1)
                 {
-                    e1 = doinline(params, cons1);
-                }
-                else
-                */
-                {
-                    e1 = Alloc(sizeof(EXPRESSION));
-                    e1->type = en_func;
+                    e1 = varNode(en_func, NULL);
                     e1->v.func = params;
-                    cst->genreffed = TRUE;
                 }
+                cst->genreffed = TRUE;
                 *exp = e1;
                 DerivedToBase(*tp, basetype(cst)->btp, exp);
                 return TRUE;
@@ -580,7 +564,7 @@ EXPRESSION *substitute_params_for_function(FUNCTIONCALL *funcparams, HASHTABLE *
     exp->v.stmt = st;
     return exp;
 }
-LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
+LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags)
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOLEAN defd = FALSE;
@@ -592,10 +576,9 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         {
             INITIALIZER *init = NULL, *dest=NULL;
             SYMBOL *sp = NULL;
-            sp = anonymousVar(sc_auto, *tp);
-            insert(sp, localNameSpace->syms);
+            sp = anonymousVar(sc_auto, *tp)->v.sp;
             lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE);
-            *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL, noinline);
+            *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL, flags & _F_NOINLINE);
             if (sp)
             {
                 EXPRESSION **e1 = exp;
@@ -621,16 +604,15 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     {
         if (isstructured(*tp))
         {
-            TYPE *ctype = *tp;
             SYMBOL *sp;
+            TYPE *ctype = *tp;
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
             EXPRESSION *exp1;
             PerformDeferredInitialization(ctype, funcsp);
             lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
-            sp = anonymousVar(sc_auto, (*tp)->sp->tp);
-            insert(sp, localNameSpace->syms);
-            exp1 = *exp = varNode(en_auto, sp);
-            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, noinline, FALSE, FALSE); 
+            exp1 = *exp = anonymousVar(sc_auto, (*tp)->sp->tp);
+            sp = exp1->v.sp;
+            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, flags & _F_NOINLINE, FALSE, FALSE); 
             if (funcparams->sp && funcparams->sp->constexpression)
             {
                 if (basetype(*tp)->sp->baseClasses)
@@ -676,7 +658,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             }
             else
             {
-                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, noinline, FALSE);
+                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, flags & _F_NOINLINE, FALSE);
                 initInsert(&sp->dest, *tp, exp1, 0, TRUE);
             }
         }
@@ -691,7 +673,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             }
             else
             {
-                lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, NULL, FALSE, noinline, FALSE);
+                lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, NULL, flags);
                 if (throwaway && (*tp)->type == bt_auto)
                     *tp = throwaway;
                 if ((*exp)->type == en_func)
@@ -727,9 +709,9 @@ BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *f
         }
         if ((!isconst(tpo) || isconst(tpn)) && isstructured(tpo))
         {
-            if (isstructured(tpn) || tpn->type == bt_void)
+            if (isstructured(tpn) || basetype(tpn)->type == bt_void)
             {
-                if (tpn->type == bt_void || classRefCount(basetype(tpn)->sp, basetype(tpo)->sp) != 1)
+                if (basetype(tpn)->type == bt_void || classRefCount(basetype(tpn)->sp, basetype(tpo)->sp) != 1)
                 {
                     // if we are going up in the class heirarchy that is the only time we really need to do
                     // a dynamic cast
@@ -744,7 +726,7 @@ BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *f
                         INITLIST *arg3 = Alloc(sizeof(INITLIST)); // oldxt
                         INITLIST *arg4 = Alloc(sizeof(INITLIST)); // newxt
                         SYMBOL *oldrtti = RTTIDumpType(tpo);
-                        SYMBOL *newrtti = tpn->type == bt_void ? NULL : RTTIDumpType(tpn);
+                        SYMBOL *newrtti = basetype(tpn)->type == bt_void ? NULL : RTTIDumpType(tpn);
                         deref(&stdpointer, &exp1);
                         sp = basetype(sp->tp)->syms->table[0]->p;
                         arg1->next = arg2;
@@ -840,13 +822,13 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
         }
         if ((!checkconst || !isconst(tpo) || isconst(tpn)) && (isstructured(tpn) && isstructured(tpo)))
         {
-            int n = classRefCount(tpn->sp, tpo->sp);
+            int n = classRefCount(basetype(tpn)->sp, basetype(tpo)->sp);
             if (n == 1)
             {
                 // derived to base
                 EXPRESSION *v = Alloc(sizeof(EXPRESSION));
                 v->type = en_c_i;
-                v = baseClassOffset(tpn->sp, tpo->sp, v);
+                v = baseClassOffset(basetype(tpn)->sp, basetype(tpo)->sp, v);
                 optimize_for_constants(&v);
                 if (v->type == en_c_i) // check for no virtual base
                 {
@@ -854,12 +836,12 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
                     return TRUE;
                 }
             }
-            else if (!n && classRefCount(tpo->sp, tpn->sp) == 1)
+            else if (!n && classRefCount(basetype(tpo)->sp, basetype(tpn)->sp) == 1)
             {
                 // base to derived
                 EXPRESSION *v = Alloc(sizeof(EXPRESSION));
                 v->type = en_c_i;
-                v = baseClassOffset(tpo->sp, tpn->sp, v);
+                v = baseClassOffset(basetype(tpo)->sp, basetype(tpn)->sp, v);
                 optimize_for_constants(&v);
                 if (v->type == en_c_i) // check for no virtual base
                 {
@@ -1014,7 +996,7 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
     return FALSE;
     // fixme nullptr conversion to nullptr
 }
-LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, BOOLEAN packable)
+LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, BOOLEAN packed)
 {
     lex = getsym();
     if (needkw(&lex, lt))
@@ -1024,7 +1006,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
         {
             if (needkw(&lex, openpa))
             {
-                lex = expression(lex, funcsp, NULL, oldType, oldExp, FALSE, FALSE, packable);
+                lex = expression(lex, funcsp, NULL, oldType, oldExp, packed ? _F_PACKABLE : 0);
                 if (!needkw(&lex, closepa))
                 {
                     errskim(&lex, skim_closepa);
@@ -1042,7 +1024,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
         *oldType = &stdvoid;
     return lex;
 }
-LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN packable)
+LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags)
 {
     lex = getsym();
     if (needkw(&lex, openpa))
@@ -1053,7 +1035,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         }
         else
         {
-            lex = expression_no_check(lex, funcsp, NULL, tp, exp, FALSE, FALSE);
+            lex = expression_no_check(lex, funcsp, NULL, tp, exp, 0);
         }
         if (tp)
         {
@@ -1158,6 +1140,8 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
     s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, TRUE, FALSE);
     if (s3)
     {
+        if (!isExpressionAccessible(s3, funcsp, funcparams->thisptr, FALSE))
+            errorsym(ERR_CANNOT_ACCESS, s3);		
         s3->throughClass = s3->parentClass != NULL;
         funcparams->sp = s3;
         funcparams->functp = s3->tp;
@@ -1383,7 +1367,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         *exp = intNode(en_func, 0);
         (*exp)->v.func = funcparams;
         *tp = s3->tp;
-        expression_arguments(NULL, funcsp, tp, exp, noinline);
+        expression_arguments(NULL, funcsp, tp, exp, noinline ? _F_NOINLINE : 0);
         if (s3->defaulted && kw == assign)
             createAssignment(s3->parentClass, s3);
         if (l.str)
@@ -1394,7 +1378,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         dropStructureDeclaration();
     return FALSE;
 }
-LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, BOOLEAN noinline, BOOLEAN packable)
+LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, int flags)
 {
     FUNCTIONCALL *placement = Alloc(sizeof(FUNCTIONCALL));
     FUNCTIONCALL *initializers = NULL;
@@ -1446,7 +1430,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 EXPRESSION *exp = NULL;
                 name = overloadNameTab[CI_NEWA];
                 lex = getsym();
-                lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline, packable);
+                lex = expression(lex, funcsp, NULL, &tp1, &exp, flags);
                 if (!isint(tp1))
                 {
                     error(ERR_NEED_INTEGER_TYPE);
@@ -1457,7 +1441,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 while (MATCHKW(lex, openbr))
                 {
                     lex = getsym();
-                    lex = expression(lex, funcsp, NULL, &tp1, &exp, FALSE, noinline, packable);
+                    lex = expression(lex, funcsp, NULL, &tp1, &exp, flags);
                     optimize_for_constants(&exp);
                     if (!isint(tp1))
                     {
@@ -1522,8 +1506,9 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE);
     if (s1)
     {
-        SYMBOL *sp = anonymousVar(sc_auto, &stdpointer);
-        val = varNode(en_auto, sp);
+        SYMBOL *sp;
+        val = anonymousVar(sc_auto, &stdpointer);
+        sp = val->v.sp;
         sp->decoratedName = sp->errname = sp->name;
         if (localNameSpace->syms)
             insert(sp, localNameSpace->syms);
@@ -1537,15 +1522,9 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         placement->functp = s1->tp;
         placement->ascall = TRUE;
         placement->fcall = varNode(en_pc, s1);
-        if (!noinline)
-            exp1 = doinline(placement, s1);
-        else
-            exp1 = NULL;
-        if (!exp1)
-        {
-            exp1 = intNode(en_func, 0);
-            exp1->v.func = placement;
-        }
+        placement->noinline = (flags & _F_NOINLINE) | s1->noinline; 
+        exp1 = intNode(en_func, 0);
+        exp1->v.func = placement;
         newfunc = exp1;
     }
     if (KW(lex) == openpa)
@@ -1559,7 +1538,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 *exp = val;
                 tpf = *tp;
-                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, noinline, FALSE, TRUE);
+                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, flags & _F_NOINLINE, FALSE, TRUE);
             }
         }
         else
@@ -1602,8 +1581,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             SYMBOL *sp = NULL;
             if (isstructured(*tp))
             {
-                sp = anonymousVar(sc_localstatic, *tp);
-//                insert(sp, localNameSpace->syms);
+                sp = anonymousVar(sc_localstatic, *tp)->v.sp;
             }
             if (arrSize)
             {
@@ -1624,7 +1602,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 if (init->exp)
                 {
-                    *exp = convertInitToExpression(tp1, NULL, funcsp, init, base, noinline);
+                    *exp = convertInitToExpression(tp1, NULL, funcsp, init, base, flags & _F_NOINLINE);
                 }
                 if (arrSize && !isstructured(*tp))
                 {
@@ -1655,7 +1633,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;
-                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE, TRUE);
+                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, flags & _F_NOINLINE, FALSE, TRUE);
                     if (*exp)
                     {
                         *exp = exprNode(en_void, *exp, exp1);
@@ -1675,7 +1653,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             // call default constructor
             *exp = val;
             tpf = *tp;
-            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, noinline, FALSE, TRUE);
+            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, flags & _F_NOINLINE, FALSE, TRUE);
         }
     }
     tpf = Alloc(sizeof(TYPE));
@@ -1697,7 +1675,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     }
     return lex;
 }
-LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, BOOLEAN noinline)
+LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, int flags)
 {
     BOOLEAN byArray = FALSE;
     SYMBOL *s1 = NULL;
@@ -1717,14 +1695,14 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         name = overloadNameTab[CI_DELETEA];
         exp1 = intNode(en_c_i, 0); // signal to the runtime to load the number of elems dynamically
     }
-    lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, FALSE, noinline, FALSE);
+    lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
     if (!ispointer(*tp))
         error(ERR_POINTER_TYPE_EXPECTED);
     in = *exp;
     exp2 = *exp;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
-        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, noinline, TRUE);
+        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, flags & _F_NOINLINE, TRUE);
     }
     exp1 = exp2;
     if (!global)
@@ -1761,15 +1739,9 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         funcparams->functp = s1->tp;
         funcparams->ascall = TRUE;
         funcparams->fcall = varNode(en_pc, s1);
-        if (!noinline)
-            exp1 = doinline(funcparams, s1);
-        else
-            exp1 = NULL;
-        if (!exp1)
-        {
-            exp1 = intNode(en_func, 0);
-            exp1->v.func = funcparams;
-        }
+        funcparams->noinline =  (flags & _F_NOINLINE) | s1->noinline; 
+        exp1 = intNode(en_func, 0);
+        exp1->v.func = funcparams;
         exp1 = exprNode(en_void, *exp, exp1);
         exp1 = exprNode(en_voidnz, exprNode(en_void, in, exp1), intNode(en_c_i, 0));
         *exp = exp1;
@@ -2020,7 +1992,7 @@ LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION *
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        lex = expression_no_check(lex, funcsp, NULL, tp, exp, FALSE, TRUE);
+        lex = expression_no_check(lex, funcsp, NULL, tp, exp, _F_NOINLINE);
         *exp = intNode(en_c_i, noexceptExpression(exp));
         *tp = &stdbool;
         

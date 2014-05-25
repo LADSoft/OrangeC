@@ -89,14 +89,14 @@ extern char anonymousNameSpaceName[512];
 #define IT_SIZE (sizeof(cpp_funcname_tab)/sizeof(char *))
 
 static char *unmangcpptype(char *buf, char *name, char *last);
-static char *unmang1(char *buf, char *name, char *last);
+char *unmang1(char *buf, char *name, char *last);
 
 #define MAX_MANGLE_NAME_COUNT 36
 static int manglenamecount =  - 1;
 static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 
-static char *unmang_intrins(char *buf, char *name, char *last)
+char *unmang_intrins(char *buf, char *name, char *last)
 {
     char cur[512],  *p = cur,  *q;
     int i;
@@ -317,7 +317,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
     return name;
 }
 /* Argument unmangling for C++ */
-static char *unmang1(char *buf, char *name, char *last)
+char *unmang1(char *buf, char *name, char *last)
 {
     int v;
     int cvol = 0, cconst = 0;
@@ -347,6 +347,7 @@ static char *unmang1(char *buf, char *name, char *last)
             v = v * 10+ *name++ - '0';
         if (name[0] == '#')
         {
+            char *s = buf;
             char *newname = unmangTemplate(buf, name, last);
             if (newname - name < v)
             {
@@ -361,6 +362,8 @@ static char *unmang1(char *buf, char *name, char *last)
             {
                 name = newname;
             }
+            if (manglenamecount < MAX_MANGLE_NAME_COUNT)
+                strcpy(manglenames[manglenamecount++], s);
         }
         else
         {
@@ -730,7 +733,7 @@ char *unmangle(char *val, char *name)
                     }
                     *buf++ = ':';
                     *buf++ = ':';
-                    if (*name != '$')
+                    if (*name != '$' && (*name != '#' || name[1] != '$'))
                         last = buf;
                 }
                 else

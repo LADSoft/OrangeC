@@ -3625,9 +3625,9 @@ LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
 {
     
     if (commaallowed)
-        lex = expression(lex, funcsp, atp, tp, expr, FALSE, FALSE, FALSE);
+        lex = expression(lex, funcsp, atp, tp, expr, 0);
     else
-        lex = expression_no_comma(lex, funcsp, atp, tp, expr, NULL, FALSE, FALSE);
+        lex = expression_no_comma(lex, funcsp, atp, tp, expr, NULL, 0);
     if (*tp)
     {
         optimize_for_constants(expr);

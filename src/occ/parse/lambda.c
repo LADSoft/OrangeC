@@ -628,7 +628,7 @@ static EXPRESSION *createLambda(BOOLEAN noinline)
     *cur = clsThs; // this expression will be used in copy constructors, or discarded if unneeded
     return rv;
 }
-LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
+LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags)
 {
     LAMBDA *self;
     SYMBOL *vpl, *ths;
@@ -902,7 +902,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     localNameSpace->syms = self->oldSyms;
     localNameSpace->tags = self->oldTags;
     finishClass();
-    *exp = createLambda(noinline);
+    *exp = createLambda(flags & _F_NOINLINE);
     *tp = lambdas->cls->tp;
     lambdas = lambdas->next;
     if (lambdas)

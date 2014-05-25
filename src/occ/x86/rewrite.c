@@ -1143,7 +1143,7 @@ int examine_icode(QUAD *head)
                 {
                     if (head->dc.left->size >= ISZ_IFLOAT && head->dc.left->size <= ISZ_ILDOUBLE)
                     {
-                        head->dc.left = make_immed(ISZ_NONE,0);
+                        head->dc.left = make_immed(ISZ_LDOUBLE,0);
                     }
                     else
                     {

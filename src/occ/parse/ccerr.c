@@ -775,7 +775,25 @@ void getcls(char *buf, SYMBOL *clssym)
 void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
 {
     char buf[1024];
-    sprintf(buf, "'%s' is not a member of '", name);
+    char unopped[256];
+    char *last = "typename";
+    if (*name == '$')
+    {
+        *unopped = 0;
+        if (name[1] == 'b' || name[1] == 'o')
+        {
+            unmang_intrins(unopped, name, last);
+        }
+        else
+        {
+            unmang1(unopped, name+1, last);
+        }
+    }
+    else
+    {
+        strcpy(unopped, name);
+    }
+    sprintf(buf, "'%s' is not a member of '", unopped);
     if (strSym)
     {
         getcls(buf, strSym);
@@ -1530,6 +1548,7 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_l_dc:
         case en_l_ldc:
         case en_l_c:
+        case en_l_wc:
         case en_l_u16:
         case en_l_u32:
         case en_l_s:
@@ -1743,6 +1762,7 @@ static int checkDefaultExpression(EXPRESSION *node)
         case en_l_dc:
         case en_l_ldc:
         case en_l_c:
+        case en_l_wc:
         case en_l_u16:
         case en_l_u32:
         case en_l_s:

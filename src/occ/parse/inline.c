@@ -51,6 +51,7 @@ static SYMBOL *inlinesp_list[MAX_INLINE_NESTING];
 
 static int inlinesp_count;
 static HASHTABLE *vc1Thunks;
+static HASHTABLE *didInlines;
 
 static FUNCTIONCALL *function_list[MAX_INLINE_NESTING];
 static int function_list_count;
@@ -63,6 +64,29 @@ void inlineinit(void)
     inlineVTabHead = NULL;
     inlineDataHead = NULL;
     vc1Thunks = CreateHashTable(1);
+    didInlines = CreateHashTable(32);
+}
+static BOOLEAN inSearch(SYMBOL *sp)
+{
+    HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
+    while (*hr)
+    {
+        SYMBOL *sym = (SYMBOL *)(*hr)->p;
+        if (!strcmp(sym->decoratedName, sp->decoratedName))
+            return TRUE;
+        hr = &(*hr)->next;
+    }
+    return FALSE;
+}
+static void inInsert(SYMBOL *sp)
+{
+    // assumes the symbol isn't already there...
+    HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
+    HASHREC *added = Alloc(sizeof(HASHREC));
+    
+    added->p = sp;
+    added->next = *hr;
+    *hr = added;
 }
 static void UndoPreviousCodegen(SYMBOL *sym)
 {
@@ -97,15 +121,19 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL *sym = (SYMBOL *)funcList->data;
-                if (sym->genreffed && sym->inlineFunc.stmt && !sym->didinline)
+                if (sym->genreffed && sym->inlineFunc.stmt)
                 {
-                    sym->genreffed = FALSE;
-                    UndoPreviousCodegen(sym);
-                    startlab = nextLabel++;
-                    retlab = nextLabel++;
-                    genfunc(sym);
+                    if (!sym->didinline && !inSearch(sym))
+                    {
+                        inInsert(sym);
+                        sym->genreffed = FALSE;
+                        UndoPreviousCodegen(sym);
+                        startlab = nextLabel++;
+                        retlab = nextLabel++;
+                        genfunc(sym);
+                        done = FALSE;
+                    }
                     sym->didinline = TRUE;
-                    done = FALSE;
                 }
                 funcList = funcList->next;
             }
@@ -966,7 +994,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!params->sp->inlineFunc.stmt)
     {
         // recursive...
-        params->sp->linkage = lk_cdecl;
+//        params->sp->linkage = lk_cdecl;
         return NULL;
     }
     if (!localNameSpace->syms)

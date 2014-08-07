@@ -577,7 +577,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             INITIALIZER *init = NULL, *dest=NULL;
             SYMBOL *sp = NULL;
             sp = anonymousVar(sc_auto, *tp)->v.sp;
-            lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE);
+            lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE, flags);
             *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL, flags & _F_NOINLINE);
             if (sp)
             {
@@ -612,7 +612,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
             exp1 = *exp = anonymousVar(sc_auto, (*tp)->sp->tp);
             sp = exp1->v.sp;
-            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, flags & _F_NOINLINE, FALSE, FALSE); 
+            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, flags & (_F_NOINLINE | _F_INARGS), FALSE, FALSE); 
             if (funcparams->sp && funcparams->sp->constexpression)
             {
                 if (basetype(*tp)->sp->baseClasses)
@@ -673,19 +673,33 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             }
             else
             {
-                lex = expression_unary(lex, funcsp, NULL, &throwaway, exp, NULL, flags);
+                lex = expression_no_comma(lex, funcsp, NULL, &throwaway, exp, NULL, flags);
                 if (throwaway && (*tp)->type == bt_auto)
                     *tp = throwaway;
                 if ((*exp)->type == en_func)
                     *exp = (*exp)->v.func->fcall;
                 if (throwaway)
                     if (isvoid(throwaway) && !isvoid(*tp))
+                    {
                         error(ERR_NOT_AN_ALLOWED_TYPE);
-                    else if ((isstructured(throwaway) && !isvoid(*tp) || basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
+                    }
+                    else if (isstructured(throwaway))
+                    {
+                        if (!isvoid(*tp))
+                        {
+                            if (!cparams.prm_cplusplus || !cppCast(throwaway, tp, exp, flags & _F_NOINLINE))
+                                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        }
+                    }
+                    else if ((basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
                               && !comparetypes(throwaway, *tp, TRUE))
+                    {
                         error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                    }
                     else
+                    {
                         cast(*tp, exp);
+                    }
             }
             needkw(&lex, closepa);
         }
@@ -1137,7 +1151,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         }
     }
     funcparams->ascall = TRUE;    
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, TRUE, FALSE);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE);
     if (s3)
     {
         if (!isExpressionAccessible(s3, funcsp, funcparams->thisptr, FALSE))
@@ -1184,6 +1198,10 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         case ovcl_binary_numeric:
         case ovcl_binary_int:
         case ovcl_comma:
+        case ovcl_assign_any:
+        case ovcl_assign_numericptr:
+        case ovcl_assign_numeric:
+        case ovcl_assign_int:
             s1 = search(name, localNameSpace->syms);
             if (!s1)
                 s1 = namespacesearch(name, localNameSpace, FALSE, FALSE);
@@ -1349,9 +1367,11 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
             break;
     }
     funcparams->ascall = TRUE;    
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, TRUE, FALSE);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE);
     if (s3)
     {
+        if (!isExpressionAccessible(s3, funcsp, funcparams->thisptr, FALSE))
+            errorsym(ERR_CANNOT_ACCESS, s3);		
         if (ismember(s3))
         {
             funcparams->arguments = funcparams->arguments->next;
@@ -1538,7 +1558,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 *exp = val;
                 tpf = *tp;
-                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, flags & _F_NOINLINE, FALSE, TRUE);
+                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, flags & (_F_NOINLINE | _F_INARGS), FALSE, TRUE);
             }
         }
         else
@@ -1591,7 +1611,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 tp1->type = bt_pointer;
                 tp1->btp = *tp;
             }
-            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp1, sp, FALSE);
+            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp1, sp, FALSE, 0);
             if (!isstructured(*tp) && !arrSize)
             {
                 if (!init || init->next || init->basetp && isstructured(init->basetp))
@@ -1633,7 +1653,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;
-                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, flags & _F_NOINLINE, FALSE, TRUE);
+                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, flags & (_F_NOINLINE | _F_INARGS), FALSE, TRUE);
                     if (*exp)
                     {
                         *exp = exprNode(en_void, *exp, exp1);
@@ -1653,7 +1673,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             // call default constructor
             *exp = val;
             tpf = *tp;
-            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, flags & _F_NOINLINE, FALSE, TRUE);
+            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, flags & (_F_NOINLINE | _F_INARGS), FALSE, TRUE);
         }
     }
     tpf = Alloc(sizeof(TYPE));
@@ -1811,6 +1831,7 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_l_dc:
         case en_l_ldc:
         case en_l_c:
+        case en_l_wc:
         case en_l_u16:
         case en_l_u32:
         case en_l_s:
@@ -1825,6 +1846,7 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_l_bool:
         case en_l_bit:
         case en_l_ll:
+        case en_l_ull:
         case en_literalclass:
             return noexceptExpression(node->left);
         case en_uminus:

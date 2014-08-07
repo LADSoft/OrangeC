@@ -91,6 +91,7 @@ typedef struct _includes_
     char 	*ibufPtr;
     int		inputlen;
     char	*fname;
+    int     typed_id;
     char inputline[MACRO_REPLACE_SIZE];
     char inputbuffer[32768];
 } INCLUDES;

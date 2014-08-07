@@ -69,6 +69,7 @@ extern int packIndex;
 #ifndef BORLAND
 extern int wcslen(short *);
 #endif
+extern int inTemplateSpecialization;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -86,7 +87,7 @@ static char *importFile;
 #define CT_CONS 1
 #define CT_DEST 2
 
-LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL **strSym, BOOLEAN inTemplate, enum e_sc *storage_class, enum e_sc *storage_class_in,
+LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL **strSym, BOOLEAN inTemplate, BOOLEAN assumeType, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOLEAN *blocked, BOOLEAN *isExplicit, BOOLEAN *constexpression, TYPE **tp, 
                        enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest);
 
@@ -137,6 +138,32 @@ char *AnonymousName(void)
 {
     char buf[256];
     sprintf(buf,"Anonymous++Identifier %d", unnamed_id++);
+    return litlate(buf);
+}
+char *AnonymousTypeName(void)
+{
+    char buf[512], *p, *q;
+    strcpy(buf,"__anontype_");
+    p = strrchr(includes->fname, '\\');
+    if (p)
+        p++;
+    else
+        p = includes->fname;
+    q = buf + strlen(buf);
+    while (*p)
+    {
+        if (isalnum(*p))
+        {
+            *q++ = *p++;
+        }
+        else
+        {
+            *q++ = '_';
+            p++;
+        }
+    }
+    *q = 0;
+    sprintf(buf+strlen(buf),"_%d", ++includes->typed_id);
     return litlate(buf);
 }
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
@@ -800,8 +827,29 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     }
     dropStructureDeclaration();
     FinishStruct(sp, funcsp);
-    if (cparams.prm_cplusplus && sp->tp->syms)
+    if (cparams.prm_cplusplus && sp->tp->syms && !templateNestingCount)
     {
+        SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+        if (!cons)
+        {
+            HASHREC *hr = basetype(sp->tp)->syms->table[0];
+            while (hr)
+            {
+                SYMBOL *sp = (SYMBOL *)hr->p;
+                if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
+                {
+                    if (isref(sp->tp))
+                    {
+                        errorsym(ERR_REF_CLASS_NO_CONSTRUCTORS, sp);
+                    }
+                    else if (isconst(sp->tp))
+                    {
+                        errorsym(ERR_CONST_CLASS_NO_CONSTRUCTORS, sp);
+                    }
+                }
+                hr = hr->next;
+            }
+        }
         createDefaultConstructors(sp);
     }
     resolveAnonymousUnions(sp);
@@ -922,7 +970,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     {
         if (!MATCHKW(lex, begin) && !MATCHKW(lex, colon))
             errorint(ERR_NEEDY, '{');
-        tagname = AnonymousName();
+        tagname = AnonymousTypeName();
         charindex = -1;
     }
     
@@ -989,7 +1037,9 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
                 TYPE *tp;
                 TEMPLATEPARAMLIST *origParams = sp->templateParams;
                 TEMPLATEPARAMLIST *templateParams = TemplateGetParams(sp);
+                inTemplateSpecialization++;
                 lex = GetTemplateArguments(lex, funcsp, &templateParams->p->bySpecialization.types);
+                inTemplateSpecialization--;
                 sp = LookupSpecialization(sp, templateParams);
                 tp = Alloc(sizeof(TYPE));
                 *tp = *sp->tp;
@@ -1225,7 +1275,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         noname = TRUE;
         if (!MATCHKW(lex, begin) && !MATCHKW(lex, classsel))
             errorint(ERR_NEEDY, '{');
-        tagname = AnonymousName();
+        tagname = AnonymousTypeName();
         charindex = -1;
     }
     
@@ -2123,9 +2173,9 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
             {
                 SYMBOL *ssp = getStructureDeclaration();
                 TYPE *tpx = basetype(sp->tp);        
+                lex = getsym();
                 
                 foundsomething = TRUE;
-                lex = getsym();
                 if (tpx->type == bt_templateparam)
                 {
                     tn = NULL;
@@ -2225,11 +2275,11 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     {
                         TEMPLATEPARAMLIST *lst = NULL;
                         if (MATCHKW(lex, lt))
-                        {
+                       {
                             if (sp->parentTemplate)
                                 sp = sp->parentTemplate;
                             lex = GetTemplateArguments(lex, funcsp, &lst);
-                            sp = GetClassTemplate(sp, lst, FALSE, storage_class);
+                            sp = GetClassTemplate(sp, lst, isTypedef && getStructureDeclaration(), storage_class);
                         }
                         else
                         {
@@ -2464,7 +2514,8 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
                 if (!isint(tpc))
                     error(ERR_ARRAY_INDEX_INTEGER_TYPE);
                 else if (tpc->type != bt_templateparam && isintconst(constant) && constant->v.i <= 0)
-                    error(ERR_ARRAY_INVALID_INDEX);
+                    if (!templateNestingCount)
+                        error(ERR_ARRAY_INVALID_INDEX);
                 if (tpc->type == bt_templateparam)
                 {
                     tpp->size = basetype(tpp->btp)->size + basetype(tpp->btp)->arraySkew;
@@ -2557,7 +2608,7 @@ static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo)
                         {
                             SYMBOL *spo1 = (SYMBOL *)hro1->p;
                             SYMBOL *sp1 = (SYMBOL *)hr1->p;                    
-                            if (!comparetypes(spo1->tp, sp1->tp, TRUE))
+                            if (!comparetypes(spo1->tp, sp1->tp, TRUE) && !sameTemplate(spo1->tp, sp1->tp))
                             {
                                 break;
                             }
@@ -2772,7 +2823,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOLEAN notype = FALSE;
                 spi = NULL;
                 tp1 = NULL;
-                lex = getStorageAndType(lex, funcsp, NULL, FALSE, &storage_class, &storage_class,
+                lex = getStorageAndType(lex, funcsp, NULL, FALSE, TRUE, &storage_class, &storage_class,
                        &address, &blocked, NULL, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
@@ -2811,7 +2862,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                     else
                     {
                         inDefaultParam++;
-                        lex = initialize(lex, funcsp, spi, sc_parameter, TRUE); /* also reserves space */
+                        lex = initialize(lex, funcsp, spi, sc_parameter, TRUE, _F_NOINLINE); /* also reserves space */
                         if (spi->init)
                             checkDefaultArguments(spi);
                         inDefaultParam--;
@@ -2951,7 +3002,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOLEAN defd = FALSE;
                 BOOLEAN notype = FALSE;
                 tp1 = NULL;
-                lex = getStorageAndType(lex, funcsp, NULL, NULL, &storage_class, &storage_class,
+                lex = getStorageAndType(lex, funcsp, NULL, FALSE, FALSE, &storage_class, &storage_class,
                        &address, &blocked, NULL, &constexpression,&tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL);
 
                 while (1)
@@ -3342,7 +3393,7 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                             && (*sp)->tp->type != bt_bool)
                             error(ERR_ANSI_INT_BIT);
                     }
-                    else if (!isint((*sp)->tp))
+                    else if (!isint((*sp)->tp) && basetype((*sp)->tp)->type != bt_enum)
                         error(ERR_BIT_FIELD_INTEGER_TYPE);
                     lex = getsym();
                     lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp, FALSE);
@@ -3588,6 +3639,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             else if (cparams.prm_cplusplus && consdest)
             {
                 // constructor or destructor name
+                STRUCTSYM s;
                 char *name;
                 if (consdest == CT_DEST)
                 {
@@ -3606,7 +3658,14 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 sp = makeID(storage_class, *tp, *spi, name);
                 sp->declcharpos = lex->charindex;
                 *spi = sp;
+                if (*strSym)
+                {
+                    s.str = *strSym;
+                    addStructureDeclaration(&s);
+                }
                 lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                if (*strSym)
+                    dropStructureDeclaration();
             }
             else
             {
@@ -3951,7 +4010,7 @@ static BOOLEAN sameQuals(TYPE *tp1, TYPE *tp2)
     }
     return TRUE;
 }
-static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL ** strSym, BOOLEAN inTemplate, enum e_sc *storage_class, enum e_sc *storage_class_in,
+static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL ** strSym, BOOLEAN inTemplate, BOOLEAN assumeType, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOLEAN *blocked, BOOLEAN *isExplicit, BOOLEAN *constexpression, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, 
                        enum e_lk *linkage3, enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest)
 {
@@ -3961,7 +4020,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL ** strSym, 
     *constexpression = FALSE;
     
     while (KWTYPE(lex, TT_STORAGE_CLASS | TT_POINTERQUAL | TT_LINKAGE | TT_DECLARE) 
-           || (!foundType && startOfType(lex, TRUE))  || MATCHKW(lex, compl) || (*storage_class == sc_typedef && !foundType))
+           || (!foundType && startOfType(lex, assumeType))  || MATCHKW(lex, compl) || (*storage_class == sc_typedef && !foundType))
     {
         if (KWTYPE(lex, TT_DECLARE))
         {
@@ -4167,7 +4226,7 @@ jointemplate:
             BOOLEAN isExplicit = FALSE;
             int consdest = CT_NONE;
             IncGlobalFlag(); /* in case we have to initialize a func level static */
-            lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, &storage_class, &storage_class_in, 
+            lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, FALSE, &storage_class, &storage_class_in, 
                                     &address, &blocked, &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd, &consdest);
             if (blocked)
             {
@@ -4197,6 +4256,7 @@ jointemplate:
                 }
                 do
                 {
+                    BOOLEAN isTemplatedCast = FALSE;
                     TYPE *tp1 = tp;
                     NAMESPACEVALUES *oldGlobals;
                     BOOLEAN promotedToTemplate = FALSE;
@@ -4209,13 +4269,31 @@ jointemplate:
                           tp->size = getSize(tp->type);
                     }
                     sp = NULL;
+                    if (tp->type == bt_templateselector)
+                    {
+                        // have to special case a templated cast operator
+                        TEMPLATESELECTOR *l = tp->sp->templateSelector;
+                        while (l-> next)
+                            l = l->next;
+                        if (!strcmp(l->name, overloadNameTab[CI_CAST]))
+                        {
+                            strSym = tp->sp->templateSelector->next->sym;
+                            while (!MATCHKW(lex, kw_operator))
+                                lex = lex->prev;
+                            notype = TRUE;
+                            tp = tp1 = Alloc(sizeof(TYPE));
+                            tp->type = bt_int;
+                            tp->size = getSize(tp->type);
+                            isTemplatedCast = TRUE;
+                        }
+                    }
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate,
                                         storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest, FALSE);
                     inTemplateType = FALSE;
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
-                    if (tprv && (!notype || consdest) )
+                    if (tprv && (!notype || consdest || isTemplatedCast) )
                         *tprv = tp1;
                     // if defining something outside its scope set the symbol tables
                     // to the original scope it lives in
@@ -4416,8 +4494,6 @@ jointemplate:
                         }
                         if (storage_class == sc_absolute)
                             sp->value.i= address;
-                        if (sp->storage_class == sc_global && linkage == lk_inline)
-                            sp->storage_class = sc_static;
                         if ((!cparams.prm_cplusplus || !getStructureDeclaration()) && !istype(sp) && sp->storage_class != sc_static &&
                             isfunction(basetype(tp1)) && !MATCHKW(lex, begin ))
                             sp->storage_class = sc_external;
@@ -4445,6 +4521,30 @@ jointemplate:
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                         if (storage_class == sc_mutable && isconst(tp))
                             errorsym(ERR_MUTABLE_NON_CONST, sp);
+                        if (sp->isConstructor)
+                        {
+                            HASHREC *hr = sp->tp->syms->table[0];
+                            SYMBOL *sp1 = (SYMBOL *)hr->p;
+                            SYMBOL *sp2 = NULL;
+                            if (hr->next)
+                                sp2= (SYMBOL *)(hr->next)->p;
+                            if (isstructured(sp1->tp) && (!sp2 || sp2->init))
+                            {
+                                SYMBOL *sp3 = basetype(sp1->tp)->sp;
+                                if (sp3 == sp->parentClass || sameTemplate(sp3, sp->parentClass))
+                                {
+                                    // this is an error because it can become a recursive
+                                    // constructor, we fix it before generating the error
+                                    // to refrain from propagating further errors.
+                                    TYPE *tpx = Alloc(sizeof(TYPE));
+                                    tpx->type == bt_lref;
+                                    tpx->size = getSize(bt_pointer);
+                                    tpx->btp = sp1->tp;
+                                    sp1->tp = tpx;
+                                    errorsym(ERR_CONSTRUCTOR_NOT_ALLOWED, sp);
+                                }                                
+                            }
+                        }
                         if (ssp && strSym && strSym->tp->type != bt_templateselector)
                         {
                             if (strSym != ssp && strSym->mainsym != ssp)
@@ -4452,8 +4552,7 @@ jointemplate:
                                 errorsym(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, sp);
                             }
                         }
-
-                        spi = NULL;                               
+                        spi = NULL;
                         if (nsv)
                         {
                             LIST *rvl = tablesearchone(sp->name, nsv, FALSE);
@@ -4496,11 +4595,13 @@ jointemplate:
                                 }
                                 else if (sym && !comparetypes(basetype(sp->tp)->btp, basetype((sym)->tp)->btp, TRUE))
                                 {
-                                    if (!inTemplate)
+/*                                    if (!inTemplate)
                                     {
                                         errorsym(ERR_OVERLOAD_DIFFERS_ONLY_IN_RETURN_TYPE, sp);
                                     }
-                                    else if (!sameTemplate(basetype(sym->tp)->btp, basetype(sp->tp->btp)))
+                                    else
+*/ 
+                                    if (!sameTemplate(basetype(sym->tp)->btp, basetype(sp->tp->btp)))
                                     {
                                         sym = NULL;
                                     }
@@ -4517,6 +4618,8 @@ jointemplate:
                                         sym = spi;
                                     spi = NULL;
                                 }
+                            if (sym && sym->templateLevel != sp->templateLevel)
+                                sym = NULL;
                             if (sym)
                                 spi = sym;
                             else
@@ -4545,6 +4648,8 @@ jointemplate:
                                 errorNotMember(strSym, nsv, sp->name);
                             }
                         }
+                        if ((!spi || spi->storage_class != sc_member && spi->storage_class != sc_mutable) && sp->storage_class == sc_global && linkage == lk_inline)
+                            sp->storage_class = sc_static;
                         if (spi)
                         {
                             if (inTemplate)
@@ -5039,7 +5144,7 @@ jointemplate:
                                     sp->storage_class = sc_static;                                
                                 else if (!sp->label)
                                     sp->label = nextLabel++;
-                            lex = initialize(lex, funcsp, sp, storage_class_in, asExpression); /* also reserves space */
+                            lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
                             if (sp->storage_class == sc_auto || sp->storage_class == sc_register)
                             {
                                 if (sp->init)

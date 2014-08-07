@@ -117,6 +117,10 @@ include $(DISTMAKE)
 DISTRIBUTE:
 	$(COPYDIR) cpp\stdinc\*. $(DISTINC)
 	$(COPYDIR) cpp\stdinc\*.h $(DISTINC)
+	$(COPYDIR) cpp\sgiinc\*. $(DISTINC)
+	$(COPYDIR) cpp\sgiinc\*.h $(DISTINC)
+	$(COPYDIR) cpp\sgiinc\stl\*. $(DISTINC)\stl
+	$(COPYDIR) cpp\sgiinc\stl\*.h $(DISTINC)\stl
 	$(COPYDIR) stdinc\*.h $(DISTINC)
 	$(COPYDIR) stdinc\sys\*.h $(DISTINC)\sys
 	$(COPYDIR) platform\win32\wininc\*.h $(DISTINC)

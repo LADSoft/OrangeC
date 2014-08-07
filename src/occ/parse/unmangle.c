@@ -72,7 +72,7 @@ extern char anonymousNameSpaceName[512];
             "$bshl", "$bshr", "$bmod", "$bequ", "$bneq", "$blt", "$bleq", 
             "$bgt", "$bgeq", "$basn", "$basadd", "$bassub", "$basmul", 
             "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand", "$basor", 
-            "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bpstar", 
+            "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bstar", 
             "$barrow", "$bcomma", "$blor", "$bland", "$bnot", "$bor", "$band", "$bxor", 
             "$bcpl", "$bnwa", "$bdla", "$blit"
 
@@ -225,7 +225,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
     if (*name == '#')
     {
         name++;
-        if (*name == '$' && name[1] == 'b' || name[1] == 'o')
+        if (*name == '$' && (name[1] == 'b' || name[1] == 'o'))
         {
             buf[0] = 0;
             name = unmang_intrins(buf, name, last);
@@ -268,8 +268,13 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                         if (*name == '$' && (name[1] == 'g' || name[1] == 'e' || isdigit(name[1])))
                         {
                             name++;
-                            if (isdigit(*name))
+                            if (isdigit(*name) || *name == '_')
                             {
+                                if (*name == '_')
+                                {
+                                    *buf++ = '-';
+                                    name++;
+                                }
                                 while (*name && *name != '$')
                                     *buf++ = *name++;
                             }
@@ -426,7 +431,7 @@ char *unmang1(char *buf, char *name, char *last)
             *p = 0;
             while (*name && (*name != '$' || name[1] == 'q' || name[1] == 't'))
             {
-                if (name[0] == 'q'||name[1] == 'q')
+                if (name[0] == '$'&&name[1] == 'q')
                 {
                     strcpy(p, "(*)");
                     p += 3;

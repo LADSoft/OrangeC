@@ -45,7 +45,7 @@ extern SYMBOL *theCurrentFunc;
             "$bshl", "$bshr", "$bmod", "$bequ", "$bneq", "$blt", "$bleq", 
             "$bgt", "$bgeq", "$basn", "$basadd", "$bassub", "$basmul", 
             "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand", "$basor", 
-            "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bpstar", 
+            "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bstar", 
             "$barrow", "$bcomma", "$blor", "$bland", "$bnot", "$bor", "$band", "$bxor", 
             "$bcpl", "$bnwa", "$bdla", "$blit"
 
@@ -137,7 +137,14 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
                 }
                 else
                 {
-                    buf = getName(buf, params->p->sym);
+                    if (params->p->byClass.dflt)
+                    {
+                        buf = mangleType(buf, params->p->byClass.dflt, TRUE); 
+                    }
+                    else
+                    {
+                        buf = getName(buf, params->p->sym);
+                    }
                 }
                 break;
             case kw_template:
@@ -173,6 +180,8 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
                         if (isintconst(exp))
                         {
                             sprintf(buf, "%d", exp->v.i);
+                            if (buf[0] == '-')
+                                buf[0] = '_';
                         }
                         else
                         {
@@ -225,6 +234,26 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
     *buf = 0;
     return buf;
 }
+static char *lookupName(char *in, char *name)
+{
+    int i;
+    for (i=0; i < mangledNamesCount; i++)
+        if (!strcmp(name, mangledNames[i]))
+            break;
+    if (i < mangledNamesCount)
+    {
+        sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
+    }
+    else
+    {
+        if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
+            strcpy(mangledNames[mangledNamesCount++], name);                    
+        if (isdigit(in[-1]))
+            *in++ = '_';
+        sprintf(in, "%d%s", strlen(name), name);
+    }
+    return in;
+}
 static char *getName(char *in, SYMBOL *sp)
 {
     if (!sp)
@@ -246,21 +275,7 @@ static char *getName(char *in, SYMBOL *sp)
         {
             strcpy(p, sp->name);
         }
-        for (i=0; i < mangledNamesCount; i++)
-            if (!strcmp(buf, mangledNames[i]))
-                break;
-        if (i < mangledNamesCount)
-        {
-            sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
-        }
-        else
-        {
-            if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
-                strcpy(mangledNames[mangledNamesCount++], buf);
-            if (isdigit(in[-1]))
-                *in++ = '_';
-            sprintf(in, "%d%s", strlen(buf), buf);
-        }
+        in = lookupName(in, buf);
     }
     in += strlen(in);
     return in;
@@ -353,8 +368,8 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 in = getName(in, tp->sp);
                 break;
             case bt_bool:
-                strcpy(in, "4bool");
-                in += 5;
+                in = lookupName(in, "bool");
+                in += strlen(in);
                 break;
             case bt_unsigned_short:
                 *in++ = 'u';
@@ -461,6 +476,9 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 sprintf(in, "%d%s", strlen(nm), nm);
                 in += strlen(in);
             }
+                break;
+            case bt_aggregate:
+                in = getName(in, tp->sp);
                 break;
             default:
                 diag("mangleType: unknown type");

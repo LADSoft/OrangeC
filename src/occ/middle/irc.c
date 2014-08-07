@@ -445,6 +445,7 @@ static EXPRESSION *spillVar( enum e_sc storage_class, TYPE *tp)
     SYMBOL *sp = rv->v.sp;
     deref(tp, &rv);
     sp->spillVar = TRUE;
+    sp->anonymous = FALSE;
     return rv;
 }
 static void GetSpillVar(int i)

@@ -37,8 +37,15 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 all: files
 
-DIRS= util obj obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-    oimplib omake orc ocl ocide occ\x86 occ\preproc occ\parse86 help dos
+# comment this out for github release as it requires CC386
+# WITHCC386 = 1
+
+DIRS = util obj obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
+    oimplib omake orc ocl ocide occ\x86 occ\preproc occ\parse86 help
+
+ifdef WITHCC386
+DIRS := $(DIRS) dos
+endif
 
 SYSINCLIDE=c:\bc5\include
 export SYSINCLUDE
@@ -141,6 +148,8 @@ DISTRIBUTE:
 	-del /Q $(DISTINC)
 	-mkdir $(DISTINC)\sys
 	-del /Q $(DISTINC)\sys
+	-mkdir $(DISTINC)\stl
+	-del /Q $(DISTINC)\stl
 	-mkdir $(DISTINCWIN)
 	-del /Q $(DISTINCWIN)
 	-mkdir $(DISTLIB)
@@ -163,6 +172,8 @@ DISTRIBUTE:
 	-del /Q $(DISTDOC)\occ
 	-mkdir $(DISTDOC)\ogrep
 	-del /Q $(DISTDOC)\ogrep
+	-mkdir $(DISTDOC)\olink
+	-del /Q $(DISTDOC)\olink
 	-mkdir $(DISTDOC)\omake
 	-del /Q $(DISTDOC)\omake
 	-mkdir $(DISTLIC)
@@ -195,6 +206,7 @@ DISTRIBUTE:
 	$(COPYDIR) doc\oasm\*.* $(DISTDOC)\oasm
 	$(COPYDIR) doc\occ\*.* $(DISTDOC)\occ
 	$(COPYDIR) doc\ogrep\*.* $(DISTDOC)\ogrep
+	$(COPYDIR) doc\olink\*.* $(DISTDOC)\olink
 	$(COPYDIR) doc\omake\*.* $(DISTDOC)\omake
 	copy license.txt $(DISTROOT)
 	copy readme.txt $(DISTROOT)
@@ -207,10 +219,11 @@ ifdef BUILDENV
 	$(MAKE) /Cclibs DISTRIBUTE /DBUILDENV
 else
 	$(MAKE) /Cclibs DISTRIBUTE
-# commented out because this is incomplete - you need to build DFLAT with CC386
-#	$(MAKE) /C..\ -f$(realpath .\doszip.mak)
-#	$(MAKE) /Cdos\install -fmakefile.le
+ifdef WITHCC386
+	$(MAKE) /C..\ -f$(realpath .\doszip.mak)
+	$(MAKE) /Cdos\install -fmakefile.le
 	$(MAKE) /Cc:\ -f$(realpath .\zip.mak)
+endif
 endif
 
 endef

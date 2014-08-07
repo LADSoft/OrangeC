@@ -56,6 +56,7 @@ extern int templateNestingCount;
 extern int packIndex;
 extern int expandingParams;
 extern int dontRegisterTemplate;
+extern int inTemplateSpecialization;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -187,7 +188,7 @@ int classRefCount(SYMBOL *base, SYMBOL *derived)
 static BOOLEAN vfMatch(SYMBOL *sym, SYMBOL *oldFunc, SYMBOL *newFunc)
 {
     BOOLEAN rv = FALSE;
-    rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc, newFunc);
+    rv = !strcmp(oldFunc->name, newFunc->name) && matchOverload(oldFunc->tp, newFunc->tp);
     if (rv)
     {
         if (!comparetypes(basetype(oldFunc->tp)->btp, basetype(newFunc->tp)->btp, TRUE))
@@ -685,6 +686,7 @@ void deferredCompileOne(SYMBOL *cur)
         }
         dontRegisterTemplate++;
         lex = SetAlternateLex(cur->deferredCompile);
+        cur->deferredCompile = NULL;
         lex = body(lex, cur);
         SetAlternateLex(NULL);
         dontRegisterTemplate--;
@@ -723,7 +725,7 @@ void backFillDeferredInitializersForFunction(SYMBOL *cur, SYMBOL *funcsp)
         {
             // default for parameter
             LEXEME *lex = SetAlternateLex(cur1->deferredCompile);
-            lex = initialize(lex, funcsp, cur1, sc_parameter, TRUE); /* also reserves space */
+            lex = initialize(lex, funcsp, cur1, sc_parameter, TRUE, _F_NOINLINE); /* also reserves space */
             SetAlternateLex(NULL);
             cur1->deferredCompile = NULL;
         }
@@ -785,9 +787,21 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
     {
         SYMBOL *sp = basetype(tp)->sp;
         BOOLEAN donesomething = FALSE;
-        if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_inline))
+        if (!templateNestingCount && sp->templateLevel && (!sp->instantiated || sp->linkage != lk_inline))
         {
+            TEMPLATEPARAMLIST *dest, *src;
             donesomething = TRUE;
+            dest = sp->templateParams->next;
+            src = sp->parentTemplate->templateParams->next;
+            while (dest && src)
+            {
+                if (dest->p->sym && strcmp(dest->p->sym->name, src->p->sym->name) != 0)
+                {
+                    dest->p->sym->name = src->p->sym->name;
+                }
+                dest = dest->next;
+                src = src->next;
+            }
             sp = TemplateClassInstantiate(sp, NULL, FALSE, sc_global);
         }
         if (sp && (donesomething || basetype(tp) != sp->tp))
@@ -932,7 +946,9 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                 TEMPLATEPARAMLIST *lst = NULL;
                 if (MATCHKW(lex, lt))
                 {
+                    inTemplateSpecialization++;
                     lex = GetTemplateArguments(lex, funcsp, &lst);
+                    inTemplateSpecialization--;
                     bcsym = GetClassTemplate(bcsym, lst, FALSE, sc_global);
                 }
             }
@@ -1563,6 +1579,16 @@ void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend)
                 case minus:
                 case star:
                 case and:
+                case asplus:
+                case asminus:
+                case astimes:
+                case asdivide:
+                case asmod:
+                case asleftshift:
+                case asrightshift:
+                case asand:
+                case asor:
+                case asxor:
                     // needs one or two arguments, one being class type
                     sym = (SYMBOL *)hr->p;
                     if (sym->tp->type == bt_void || (hr->next && hr->next->next))

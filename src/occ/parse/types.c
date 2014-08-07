@@ -126,7 +126,7 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
                 typ1 = typ1->btp;
                 typ2 = typ2->btp;				
             }
-            if ((exact == 1) && (isconst(typ2) && !isconst(typ1) || isvolatile(typ2) && !isvolatile(typ1)))
+            if (exact == 1 && (isconst(typ2) && !isconst(typ1) || isvolatile(typ2) && !isvolatile(typ1)))
                 return FALSE;
             return comparetypes(typ1, typ2, TRUE);
         }
@@ -143,27 +143,12 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         typ1 = basetype(typ1);
         typ2 = basetype(typ2);
         if (ispointer(typ1))
-            typ1 = basetype(typ1->btp);
+            typ1 = basetype(typ1)->btp;
         if (ispointer(typ2))
-            typ2 = basetype(typ2->btp);
+            typ2 = basetype(typ2)->btp;
         if (!comparetypes(typ1->btp, typ2->btp, exact))
             return FALSE;
-        hr1 = typ1->syms->table[0];
-        hr2 = typ2->syms->table[0];
-        if (hr1 && ((SYMBOL *)hr1->p)->thisPtr)
-            hr1 = hr1->next;
-        if (hr2 && ((SYMBOL *)hr2->p)->thisPtr)
-            hr2 = hr2->next;
-        while (hr1 && hr2)
-        {
-            SYMBOL *sp1 = (SYMBOL *)hr1->p;
-            SYMBOL *sp2 = (SYMBOL *)hr2->p;
-            if (!comparetypes(sp1->tp, sp2->tp, exact))
-                return FALSE;
-            hr1 = hr1->next;
-            hr2 = hr2->next;
-        }
-        if (hr1 || hr2)
+        if (!matchOverload(typ1, typ2))
             return FALSE;
         return TRUE;
     }

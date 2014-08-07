@@ -232,7 +232,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
     }
     if (!tp)
         error(ERR_EXPRESSION_SYNTAX);
-    else if (kw == kw_switch && !isint(tp))
+    else if (kw == kw_switch && !isint(tp) && basetype(tp)->type != bt_enum)
         error(ERR_SWITCH_SELECTION_INTEGRAL);
     else if (kw != kw_for && isstructured(tp))
     {
@@ -1572,7 +1572,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     INITIALIZER *init = NULL, *dest=NULL;
                     SYMBOL *sp = NULL;
                     sp = anonymousVar(sc_localstatic, tp)->v.sp;
-                    lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, tp, sp, FALSE);
+                    lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, tp, sp, FALSE, 0);
                     returnexp = convertInitToExpression(tp, NULL, funcsp, init, en, FALSE);
                     returntype = tp;
                     if (sp)
@@ -1588,7 +1588,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         enum e_lk linkage, linkage2, linkage3;
                         BOOLEAN defd = FALSE;
                         lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL, FALSE);
-                        if (!tp1 || !comparetypes(basetype(tp1), basetype(tp), TRUE))
+                        if (!tp1 || !comparetypes(basetype(tp1), basetype(tp), TRUE) && !sameTemplate(tp1, tp))
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                             errskim(&lex, skim_semi);
@@ -1604,6 +1604,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             // default constructor without param list
                             errorsym(ERR_IMPROPER_USE_OF_TYPEDEF, basetype(tp)->sp);
                         }
+                        ctype = tp1;
                         returntype = tp1;
                         callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, implicit, FALSE); 
                         returnexp = en;
@@ -1613,13 +1614,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         // shortcut for conversion from single expression
                         EXPRESSION *exp1 = NULL;
                         TYPE *tp1 = NULL;
-                        TEMPLATEPARAMLIST *tpl = basetype(tp)->sp->templateParams;
-                        while (tpl)
-                        {
-                            if (tpl->p->byClass.dflt)
-                                tpl->p->byClass.val = tpl->p->byClass.dflt;
-                            tpl = tpl->next;
-                        }
                         lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, _F_INRETURN);
                         if (tp1)
                         {
@@ -1643,7 +1637,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         }
                     }
                 }
-            
             }
             else
             {
@@ -1683,6 +1676,14 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
             }
             returntype = tp;
+            if (cparams.prm_cplusplus && isstructured(returntype))
+            {
+                TYPE *tp1 = basetype(funcsp->tp)->btp; 
+                if (isref(tp1))
+                    tp1 = basetype(tp1)->btp;
+                if (cppCast(returntype, &tp1, &returnexp, 0))
+                    returntype = tp = basetype(funcsp->tp)->btp;
+            }            
         }
         if (isref(basetype(funcsp->tp)->btp))
         {
@@ -1767,7 +1768,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             if (!isintconst(returnexp) || !isconstzero(basetype(funcsp->tp)->btp, returnexp))
                                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
                         }
-                        else
+                        else if (returnexp->type != en_func || returnexp->v.func->fcall->type != en_l_p)
                             error(ERR_NONPORTABLE_POINTER_CONVERSION);
                     }
                     else if (ispointer(tp))
@@ -1967,6 +1968,8 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 }
 static void checkNoEffect(EXPRESSION *exp)
 {
+    if (exp->noexprerr)
+        return;
         switch(exp->type)
         {
             case en_func:
@@ -1978,9 +1981,8 @@ static void checkNoEffect(EXPRESSION *exp)
             case en_stmt:
             case en_atomic:
             case en_voidnz:
-                break;
             case en_void:
-                checkNoEffect(exp->right);
+                break;                
             case en_not_lvalue:
             case en_lvalue:
             case en_thisref:
@@ -2999,6 +3001,8 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA *block = Alloc(sizeof(BLOCKDATA)) ;
     STATEMENT *startStmt;
+    int aa=0x12345678;
+    SYMBOL *spt = funcsp;
     if (bodyCount++ == 0)
         hasXCInfo = FALSE;
     localNameSpace->syms = NULL;

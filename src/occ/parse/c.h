@@ -209,7 +209,7 @@ enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 #define _F_SELECTOR 8
 #define _F_INTEMPLATEPARAMS 16
 #define _F_INRETURN 32
-
+#define _F_INARGS 64
 typedef struct expr
 {
     struct expr *left, *right;
@@ -246,6 +246,7 @@ typedef struct expr
     int isfunc:1;
     int rref:1;
     int dest:1; // for thisref
+    int noexprerr: 1;
 } EXPRESSION;
 
 typedef struct

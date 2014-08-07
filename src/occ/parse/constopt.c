@@ -3009,6 +3009,7 @@ int fold_const(EXPRESSION *node)
                         if (IsConstantExpression(exp, TRUE))
                         {
                             *node = *st->select;
+                            node->noexprerr = TRUE;
                             rv = TRUE;
                         }
                     }

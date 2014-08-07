@@ -517,9 +517,9 @@ BOOLEAN IsConstWithArr(TYPE *tp);
 enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp);
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val);
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
-				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember);
+				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
 BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams);
-LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst);
+LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst, int flags);
 
                               /* Inline.c */
 
@@ -859,11 +859,12 @@ LEXEME *body (LEXEME *lex, SYMBOL *funcsp);
 void syminit(void);
 BOOLEAN singlebase(SYMBOL *base, SYMBOL *of);
 HASHTABLE *CreateHashTable(int size);
+HASHREC **GetHashLink(HASHTABLE *t, char *string);
 void AllocateLocalContext(BLOCKDATA *parent, SYMBOL *sp);
 void FreeLocalContext(BLOCKDATA *parent, SYMBOL *sp);
 HASHREC **LookupName(char *name, HASHTABLE *table);
 SYMBOL *search(char *name, HASHTABLE *table);
-SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold);
+BOOLEAN matchOverload(TYPE *tnew, TYPE *told);
 SYMBOL *searchOverloads(SYMBOL *sym, HASHTABLE *table);
 SYMBOL *gsearch(char *name);
 SYMBOL *tsearch(char *name);

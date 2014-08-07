@@ -40,6 +40,7 @@
 extern ARCH_ASM *chosenAssembler;
 extern BOOLEAN hasXCInfo;
 extern int templateNestingCount;
+extern SYMBOL *theCurrentFunc;
 
 extern char *overloadNameTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
@@ -104,19 +105,23 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL 
             (*cur)->name = litlate(name);
             if (MATCHKW(lex, lt))
             {
-                int paren = 0;
+                int paren = 0, tmpl = 0;
                 *mylex = Alloc(sizeof(*(*cur)->initData));
                 **mylex = *lex;
                 (*mylex)->prev = last;
                 last = *mylex;
                 mylex = &(*mylex)->next;
                 lex = getsym();
-                while (lex && (!MATCHKW(lex, gt) || paren))
+                while (lex && (!MATCHKW(lex, gt) || paren || tmpl))
                 {
-                    if (MATCHKW(lex, lt))
+                    if (MATCHKW(lex, openpa))
                         paren++;
-                    if (MATCHKW(lex, gt) || MATCHKW(lex, rightshift))
+                    if (MATCHKW(lex, closepa))
                         paren--;
+                    if (!paren && MATCHKW(lex, lt))
+                        tmpl++;
+                    if (!paren && (MATCHKW(lex, gt) || MATCHKW(lex, rightshift)))
+                        tmpl--;
                     if (lex->type == l_id)
                         lex->value.s.a = litlate(lex->value.s.a);
                     *mylex = Alloc(sizeof(*(*cur)->initData));
@@ -337,6 +342,15 @@ static BOOLEAN hasConstFuncs(SYMBOL *sp, int type)
     SYMBOL *ovl = search(overloadNameTab[type], basetype(sp->tp)->syms);
     if (ovl)
     {
+        HASHREC *hr = ovl->tp->syms->table[0];
+        while (hr)
+        {
+            SYMBOL *func = hr->p;
+            if (isconst(func->tp))
+                return TRUE;
+            hr = hr->next;
+        }
+        /*
         FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
         params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
         params->arguments->tp = (TYPE *)Alloc(sizeof(TYPE));
@@ -351,6 +365,7 @@ static BOOLEAN hasConstFuncs(SYMBOL *sp, int type)
         params->thistp->btp = sp->tp;
         params->ascall = TRUE;
         return !!GetOverloadedFunction(&tp, &params->fcall, ovl, params, NULL, FALSE, FALSE);
+        */
     }
     return FALSE;
 }
@@ -509,7 +524,7 @@ static BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
             {
                 TYPE *tp  = basetype(arg1->tp)->btp;
                 if (isstructured(tp))
-                    if (basetype(tp)->sp == sp->parentClass)
+                    if (basetype(tp)->sp == sp->parentClass || sameTemplate(tp, sp->parentClass->tp))
                         return TRUE;
             }
         }
@@ -1519,6 +1534,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
                 if (!callConstructor(&ctype, &exp, NULL, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
+            matchesCopy(parentCons, FALSE);
         }
         st = stmtNode(NULL,b, st_expr);
         optimize_for_constants(&exp);
@@ -1788,7 +1804,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 {
                     INITIALIZER *dest = NULL;
                     init->init = NULL;
-                    lex = initType(lex, cons, NULL, sc_auto, &init->init, &dest, init->sp->tp, init->sp, FALSE);
+                    lex = initType(lex, cons, NULL, sc_auto, &init->init, &dest, init->sp->tp, init->sp, FALSE, 0);
                 }
                 if (lex && MATCHKW(lex, ellipse))
                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -2025,6 +2041,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
             st = stmtNode(NULL,b, st_label);
             st->label = lbl;
         }
+        AllocateLocalContext(NULL, cons);
         bc = sym->baseClasses;
         while (bc)
         {
@@ -2051,6 +2068,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
             }
             hr = hr->next;
         }
+        FreeLocalContext(NULL, cons);
     }
     if (parseInitializers)
         releaseInitializers(sym, cons);
@@ -2286,6 +2304,8 @@ void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms
 {
     EXPRESSION *thisptr;
     VBASEENTRY *vbe = sp->vbaseEntries;    
+    if (templateNestingCount)
+        return;
     thisptr = varNode(en_auto, (SYMBOL *)syms->table[0]->p);
     undoVars(b, basetype(sp->tp)->syms->table[0], thisptr);
     undoBases(b, sp->baseClasses, thisptr);
@@ -2410,7 +2430,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN
     dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
     if (dest1)
     {
-        if (dest1 && !isAccessible(against,sp, dest1, NULL, against == sp ? ac_public : ac_protected, FALSE))
+        if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
         {
             errorsym(ERR_CANNOT_ACCESS, dest1);
         }
@@ -2461,11 +2481,16 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                      BOOLEAN maybeConversion, BOOLEAN noinline, BOOLEAN implicit, BOOLEAN pointer)
 {
     TYPE *stp = *tp;
-    SYMBOL *sp = basetype(*tp)->sp;
-    SYMBOL *against = top ? sp : sp->parentClass;
-    SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+    SYMBOL *sp;
+    SYMBOL *against;
+    SYMBOL *cons;
     SYMBOL *cons1;
     EXPRESSION *e1 = NULL, *e2 = NULL;
+    PerformDeferredInitialization(stp, NULL);
+    sp = basetype(*tp)->sp;
+    against = top ? sp : sp->parentClass;
+    cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+
     if (!params)
     {
         params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -2506,7 +2531,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 oparams->returnEXP = *exp;
                 oparams->returnSP = sp;
             }
-            oparams->noinline = cons1->noinline | noinline;
+            oparams->noinline = cons1->noinline || noinline;
             e1 = doinline(oparams, NULL);
             if (!e1)
             {
@@ -2516,7 +2541,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
         }
         else 
         {
-            if (!isAccessible(against,sp, cons1, NULL, against == sp ? ac_public : ac_protected, FALSE))
+            if (!isAccessible(against,sp, cons1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
@@ -2546,7 +2571,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 params->thistp->btp = sp->tp;
                 params->ascall = TRUE;
                 dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
-                if (dest1 && !isAccessible(against,sp, dest1, NULL, against == sp ? ac_public : ac_protected, FALSE))
+                if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
                 {
                     errorsym(ERR_CANNOT_ACCESS, dest1);
                 }
@@ -2567,7 +2592,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                     while (*p) p = &(*p)->next;
                     *p = x;
                 }
-                params->noinline = cons1->noinline | noinline;
+                params->noinline = cons1->noinline || noinline;
                 e1 = doinline(params, NULL);
                 if (!e1)
                 {

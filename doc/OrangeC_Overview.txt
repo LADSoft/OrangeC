@@ -1,0 +1,217 @@
+1. Introduction
+
+OrangeC was written partly with the intention of being a platform for cross-compiling C language code to
+other architectures and operating systems.   Some of the features that make this possible are:
+
+	-	Modular compiler which defers code generation until the last minute.
+	-	A generic compiler backend interface allows customization of the code generation as well as various
+		other architecture-specific compiler parameters
+	-	An ADL (architecture description language) was used to specify assembler code generation, and it 
+		is planned to expand it to allow specifying the compiler code generation as well
+	-	The tools are mostly generic in nature, and share a common set of modules for dealing with
+		object files
+	-	A linker specification file tells the linker how to interpret command line switches to target
+		a specific operating system file format or ROM image format
+	-	Other linker specification files are used to specify memory layouts, in a way that is generic
+		enough to be used to create either the layout to be used for a specific operating system or
+		a ROM image file for embedded systems.
+	-	the linker is generic, a post link program (downloader) is chosen to perform the final 
+		translation to the target file format
+
+That said, the current releases of OrangeC target the x86 and DOS/WIN32.  It is also possible to generate
+ROM images with this system, if one is careful about how the RTL is used.
+
+2. Distributed programs
+
+With the exception of the database package (SQLITE3) and parts of the run-time library associated
+with MSDOS, the programs in this package form new work.  (although most of the run time library is
+inherited from a previous project, CC386).
+
+The programs in this package are as follows:
+
+	-	OCC - C compiler
+	-	OASM - assembler
+	-	OBRC - browse compiler (used by IDE, enabled by compiler output files)
+	-	OCIDE - Integrated development environment
+	-	OCL	- Shell program for running compiler, assembler, linker, etc...  the compiler also has much
+		of this functionality built in
+	-	OCPP - standalone preprocessor (there are two versions of this, one using the same code as in
+		the compiler, and the other written in C++)
+	-	OCCPR - code completion compiler (used by IDE, generated off main compiler sources)
+	-	OGREP - generic grep utility
+	-	OIMPLIB - WIN32 import librarian
+	- 	OLIB - generic librarian
+	-	OLINK - generic linker
+	-	OMAKE - gnu style make utility
+	-	ORC - win32 resource compiler
+	- 	DLHEX - platform dependent image creator - hex files
+	-	DLLE - platform dependent image creator - 32 bit DOS binaries (LE FORMAT)
+	-	DLMZ - platform dependent image creator - 16 bit DOS binaries (somewhat limited in scope)
+	-	DLPE - platform dependent image creator - WIN32 binaries
+	-   DLPM - platform dependent image creator - 32 bit DOS binaries (home grown version)
+
+Additional directories include:
+
+	- 	ADL - architecture description language compiler
+	-	CLIBS - the C runtime library source code and standard headers
+	-	EXAMPLES - simple example code
+	-	EXEFMT - an include directory for format specific header files
+	-	HELP - the source and compiled code for the IDE help files
+	-	OBJ - the source code for the object file format handlers (used by everything except C compiler)
+
+3.  Object file format
+
+	The object file format is a touched-up form of the ASCII version of IEEE-695.   
+This is the preferred format because it is human readable without a dump program.  
+
+	Some tests were performed  with a binary version of the format but it didn't really enhance the 
+performance.   
+
+	The OBJ directory has generic routines to deal with this file format that are used by everything 
+except the compiler. The compiler currently has hand-rolled code to deal with this file format.
+
+3.  C Compiler
+
+	The C compiler is written in four parts:  the preprocessor (occ\preproc), the front end(occ\parser), 
+the intermediate language and optimizer (occ\middle) and the code generator (occ\x86).   Additional
+compiles of code based on the compiler source code exist in the occ\preproc directory (for the shipping 
+version of the standalone preprocessor) and the occ\parse86 directory (for the code completion compiler).
+
+There is a set of structures that define the code generator in unique increments, as well as define
+various architecture specific constants such as integer sizes.   This will eventually be targeted by
+the architecture description language.
+ 
+Also, there is a somewhat sophisticated peephole optimizer implemented to clean up various artifacts.
+
+4. Preprocessor
+
+	there are two preprocessors, one in the ocpp directory and one in the occ\preproc directory.  The
+one in the occ\preproc directory is essentially the same preprocessor as in CC386, and is the one favored
+by the distribution.   This preprocessor was heavily vetted by a contributor.
+
+5. Assembler
+
+	The assembler (oasm) is similar in style to NASM, although no attempt has been made to make 
+it 100% compatible with NASM.   The unique featue of oasm is that the code generation code was 
+generated by the ADL compiler, with an architectural description file (oasm\x86.adl) as input.
+
+6. Linker
+
+	The linker (olink) takes as input various object files, as well as accepting platform specific files
+that can be used in an arbitrary way to create the output.  The primary output of the linker is another
+object file, which can be in either relative format (useful for further linking) or in absolute format
+(useful for final image generation).  The linker can also generate an ODX file for use in symbolic 
+debugging.
+
+	It is possible to define the values of externals on the linker command line the same way that
+symbols are defined on the command line for the compiler or assembler; for example if an image
+may be built for different addresses this could possibly be controlled entirely with command line switches.
+
+	The linker can take a linker specification (.spc) file to tell the linker exactly how to organize
+the input object files to create the output image file.
+
+	The file olink\app is an additional linker configuration file which associates the /T linker 
+switch with creation of a target image file.   It associates the switch parameter with various 
+externals,  a specification file, and a 'downloader' which is responsible for creating the final 
+target image.   
+
+	Each downloader has an associated specification file that tells how to lay out the code for use with
+the downloader.   The linker typically calls the downloader as a post-link step when the /T switch
+is used.
+
+
+7. Librarians
+
+	olib and oimplib are very similar, they both can create libraries.   oimplib is specifically used for
+win32 development, related to dll import libraries.   There is nothing remarkable about these programs
+other than that some of the code is shared with the linker (since the linker reads libraries).
+
+8.  Make utilities
+
+	omake is a make utility inspired by GNU MAKE.   It is very similar to GNU MAKE in spirit and 
+functionality, so much so that the gnu documentation could be used to learn it.  However, no 
+attempt has been made to make it 100% compatible with GNU MAKE.
+
+9.	File search
+
+	ogrep is a generic grep utility.  There is nothing really remarkable about it.
+
+10.	Resource compiler
+
+	orc is the win32 resource compiler.  It is reasonably compatible with the microsoft win32 resource
+compiler.
+
+11.	Downloaders
+
+	Downloaders came about following a comment in the IEEE695 specification which talked about the
+possibility of a post link tool that would take generic linker output and transform it into an
+operating-system specific image.
+
+	A downloader generally has an associated specification file, which is used to guide the linker in
+terms of how to create a generic output file that has suitable augmentation that it may be used to 
+generate an operating system-specific file.  Once the linker generates such a file, the downloader 
+then transforms it into the target file format.
+
+	Downloaders can take arbitrary command line switches that are configured through the linker
+configuration file, and the linker can optionally pass files specified on its own command line to the
+downloader (for example .RES files are specified on the linker command line for WIN32 images.
+But they aren't processed by the linker, they are processed by DLPE).
+
+the built in downloaders are as follows:
+
+	- 	DLHEX - platform dependent image creator - hex files (ROM IMAGES)
+	-	DLLE - platform dependent image creator - 32 bit DOS binaries (LE FORMAT)
+	-	DLMZ - platform dependent image creator - 16 bit DOS binaries (somewhat limited in scope)
+	-	DLPE - platform dependent image creator - WIN32 binaries
+	-   DLPM - platform dependent image creator - 32 bit DOS binaries (home grown version)
+
+	The default specification file for DLHEX is very simple, in many cases a more complex one 
+may need to be  created as a project-specific file but this can be overridden on the linker command 
+line.
+
+12. IDE
+
+	ocide is a very simple IDE.   it supports building and debugging projects.   With helper programs
+OBRC and OCCPR various navigation enhancements are enabled.   The navigation enhancements include
+browsing, code completion, and debugging, and work via lookups from SQLITE databases generated 
+by other tools.
+
+	One of the interesting things about the IDE is the make system - compiler and linker properties (for
+example) are stored as 'macros' and then the build steps essentially do macro lookups to get the
+parameters to use when running compilers and linkers.   The default properties and related build steps
+are stored in xml files that are part of the distribution, but, changes to the properties are stored in
+the project files.  Adding a new tool becomes a matter of creating the tool, then generating an xml
+configuration file to associate the tool with a source file extension.  This configuration file
+also specifies any optional parameters the tool can utilize.   Just formatting a configuration file
+properly and adding it to the correct place in the distribution is enough to enable the associated tool
+as a build tool, and show properties for that tool.
+
+	One thing about the IDE - historically there hasn't been a lot of interest in it and there may be
+some minor bugs.
+	
+13. Browse compiler
+	
+	obrc is the browse compiler used by the IDE.   It takes as input the .cbr files generated by the
+the compiler, and generates the .OBR file used by the IDE.
+
+
+14.	Code Completion compiler
+
+	occpr (occ\parse86) is the code completion compiler used by the IDE.   It takes as input one or more
+C language source files, and maintains the project .ODS file.
+
+15.	Compiler shell
+
+	ocl is a compiler shell.   It generally sequences calling the compiler, assembler, linker, etc...
+A contributor originally designed it as an adjunct to CC386 because at the time CC386 didn't invoke the
+assembler, linker, etc...  its other strong point is that it allows fine-tuned control over which MSDOS
+extender is used in the image file.   It has been kept up to date and became a part of the Orange C
+compiler package.
+
+16. Run Time Library
+
+	clibs, the runtime library, is mostly work that was generated during the development of CC386.  At
+some point, the same contributor that vetted the preprocessor went to a lot of effort to vet the 
+runtime library and it should be fairly close to the standard at this point.   Parts of the 
+runtime library related to MSDOS(notably the dos extenders) are work that was performed by 
+other authors.

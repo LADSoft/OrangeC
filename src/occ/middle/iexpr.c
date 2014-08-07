@@ -1225,6 +1225,8 @@ static EXPRESSION *getAddress(EXPRESSION *exp)
 static EXPRESSION *getFunc(EXPRESSION *exp)
 {
     EXPRESSION *rv = NULL;
+    if (exp->type == en_thisref)
+        exp = exp->left;
     if (exp->type == en_add)
     {
         rv = getFunc(exp->left);
@@ -1292,6 +1294,14 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
     {
         switch (ep->type)
         {
+            case en_void:
+                while (ep->type == en_void)
+                {
+                    gen_expr( funcsp, ep->left, 0, ISZ_UINT);
+                    ep = ep->right;
+                }
+                push_param(ep, funcsp);
+                break;
             case en_argnopush:
                 gen_expr( funcsp, ep->left, 0, ISZ_UINT);
                 break;

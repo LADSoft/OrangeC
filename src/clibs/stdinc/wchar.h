@@ -69,7 +69,7 @@ extern "C" {
 
 #ifndef _MBSTATE_T_DEFINED
 #define _MBSTATE_T_DEFINED
-typedef struct
+typedef struct __mbstate_t
 {
   size_t left;
   wint_t value;

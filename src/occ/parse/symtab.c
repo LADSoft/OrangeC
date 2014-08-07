@@ -44,6 +44,7 @@ extern ARCH_DEBUG *chosenDebugger;
 extern FILE *listFile;
 extern INCLUDES *includes;
 #endif
+
 NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 HASHTABLE *labelSyms;
 
@@ -177,7 +178,7 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp)
 }
 #endif
 /* SYMBOL tab hash function */
-static HASHREC **GetHashLink(HASHTABLE *t, char *string)
+HASHREC **GetHashLink(HASHTABLE *t, char *string)
 {
     unsigned i;
     if ( t->size == 1)
@@ -268,31 +269,31 @@ SYMBOL *search(char *name, HASHTABLE *table)
     }
     return NULL;
 }
-SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
+BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
 {
-    HASHREC *tnew = basetype(snew->tp)->syms->table[0];
-    HASHREC *told = basetype(sold->tp)->syms->table[0];
+    HASHREC *hnew = basetype(tnew)->syms->table[0];
+    HASHREC *hold = basetype(told)->syms->table[0];
 //    if (snew->templateLevel != sold->templateLevel)
 //        return FALSE;
-    if (isconst(snew->tp) != isconst(sold->tp))
+    if (isconst(tnew) != isconst(told))
         return FALSE;
-    while (tnew && told)
+    while (hnew && hold)
     {
-        SYMBOL *snew = (SYMBOL *)tnew->p;
-        SYMBOL *sold = (SYMBOL *)told->p;
+        SYMBOL *snew = (SYMBOL *)hnew->p;
+        SYMBOL *sold = (SYMBOL *)hold->p;
         if (sold->thisPtr)
         {
-            told = told->next;
-            if (!told)
+            hold = hold->next;
+            if (!hold)
                 break;
-            sold = told->p;
+            sold = hold->p;
         }
         if (snew->thisPtr)
         {
-            tnew = tnew->next;
-            if (!tnew)
+            hnew = hnew->next;
+            if (!hnew)
                 break;
-            snew = tnew->p;
+            snew = hnew->p;
         }
         if (snew->tp->type == bt_templateparam)
         {
@@ -307,7 +308,7 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
         }
         else if (sold->tp->type == bt_any || snew->tp->type == bt_any) // packed template param
             break;
-        else if (!comparetypes(sold->tp, snew->tp, TRUE) || basetype(sold->tp)->type != basetype(snew->tp)->type)
+        else if (!comparetypes(sold->tp, snew->tp, TRUE) && !sameTemplate(sold->tp, snew->tp) || basetype(sold->tp)->type != basetype(snew->tp)->type)
             break;
         else 
         {
@@ -320,11 +321,11 @@ SYMBOL *matchOverload(SYMBOL *snew, SYMBOL *sold)
             if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                 break;                
         }
-        told = told->next;
-        tnew = tnew->next;
+        hold = hold->next;
+        hnew = hnew->next;
     }
-    if (!told && !tnew)
-        return sold;
+    if (!hold && !hnew)
+        return TRUE;
     return NULL;
 }
 SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
@@ -335,8 +336,7 @@ SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
         while (p)
         {
             SYMBOL *spp = (SYMBOL *)p->p;
-            spp = matchOverload(sp, spp);
-            if (spp)
+            if (matchOverload(sp->tp, spp->tp))
                 return spp;
             p = p->next;
         }
@@ -413,6 +413,7 @@ void insertOverload(SYMBOL *in, HASHTABLE *table)
 #ifdef CPREPROCESSOR
         pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
 #else
+        SetLinkerNames(in, lk_cdecl);
     preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
 #endif
     }

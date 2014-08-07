@@ -281,8 +281,8 @@ static struct {
 {"Reference variable '%s' must be initialized", ERROR },
 {"Reference initialization requires Lvalue", ERROR },
 {"Reference initialization of type '%s' requires Lvalue of type '%s'", ERROR},
-{"Reference variable '%s' in a class with no constructors", ERROR },
-{"Reference variable '%s' not initialized in class constructor", ERROR },
+{"Reference member '%s' in a class without constructors", ERROR },
+{"Reference member '%s' not initialized in class constructor", ERROR },
 {"Qualified reference variable not allowed", WARNING },
 {"Attempt to return reference to local variable", ERROR },
 {"Cannot convert '%s' to '%s'", ERROR },
@@ -419,8 +419,8 @@ static struct {
 {"Cannot find a default constructor for class '%s'", ERROR },
 {"'%s' is not a member of '%s', because the type is not defined", ERROR },
 {"Destructor for '%s' must have empty parameter list", ERROR },
-{"Reference member '%s' is not intialized", ERROR },
-{"Constant member '%s' is not intialized", ERROR },
+{"Reference member '%s' is not initialized in class constructor", ERROR },
+{"Constant member '%s' is not initialized in class constructor", ERROR },
 {"Improper use of typedef '%s'", ERROR },
 {"Return type is implicit for 'operator %s'", ERROR },
 {"Invalid Psuedo-Destructor", ERROR},
@@ -521,7 +521,10 @@ static struct {
 {"Invalid use of type '%s'", ERROR },
 {"Requires template<> header", ERROR },
 {"Mutable member '%s' must be non-const", ERROR },
-{"Dependendent type '%s' not a class or structured type", ERROR },
+{"Dependent type '%s' not a class or structured type", ERROR },
+{"Dependent type '%s' is not defined in structured type '%s'", ERROR },
+{"Constructor '%s' is not allowed", ERROR },
+{"Constant member '%s' in a class without constructors", ERROR },
 #endif
 } ;
 
@@ -574,6 +577,8 @@ static BOOLEAN alwaysErr(int err)
         case ERR_REF_MEMBER_MUST_INITIALIZE:
         case ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED:
         case ERR_CANNOT_ACCESS:
+        case ERR_REF_CLASS_NO_CONSTRUCTORS:
+        case ERR_CONST_CLASS_NO_CONSTRUCTORS:
             return TRUE;
         default:
             return FALSE;
@@ -796,7 +801,8 @@ void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
     sprintf(buf, "'%s' is not a member of '", unopped);
     if (strSym)
     {
-        getcls(buf, strSym);
+        typeToString(buf + strlen(buf), strSym->tp);
+//        getcls(buf, strSym);
     }    
     else if (nsv)
     {
@@ -829,10 +835,11 @@ void errorsym(int err, SYMBOL *sym)
 #ifdef CPREPROCESSOR
     strcpy(buf, sym->name);
 #else
-    if (sym->errname)
-        unmangle(buf, sym->errname);
-    else
-        strcpy(buf, sym->name);
+    if (!sym->errname)
+    {
+        SetLinkerNames(sym, lk_cdecl);
+    }
+    unmangle(buf, sym->errname);
 #endif
     printerr(err, preprocFile, preprocLine, buf);
 }
@@ -850,6 +857,13 @@ void errorstrsym(int err, char *name, SYMBOL *sym2)
     unmangle(two, sym2->errname);
     printerr(err, preprocFile, preprocLine, name, two);
 }
+void errorstringtype(int err, char *str, TYPE *tp1)
+{
+    char tpb1[256];
+    typeToString(tpb1, tp1);
+    printerr(err, preprocFile, preprocLine, str, tpb1);
+}
+                                                   
 void errortype (int err, TYPE *tp1, TYPE *tp2)
 {
     char tpb1[256], tpb2[256];

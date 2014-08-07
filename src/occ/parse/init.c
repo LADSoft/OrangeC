@@ -92,7 +92,7 @@ static HASHTABLE *aliasHash;
 static int inittag = 0;
 
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
-                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember);
+                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
 
 void init_init(void)
 {
@@ -1421,18 +1421,24 @@ static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, enum e_sc sc)
     }
     return exp;
 }
-static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, TYPE *itype, INITIALIZER **init)
+static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, TYPE *itype, INITIALIZER **init, int flags)
 {
     TYPE *tp;
     EXPRESSION *exp;
     BOOLEAN needend = FALSE;
+    TYPE *tpi = itype;
+    STRUCTSYM s;
     (void)sc;
     if (MATCHKW(lex, begin))
     {
         needend = TRUE;
         lex = getsym();
     }
-    lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+    lex = expression_no_comma(lex, funcsp, NULL, &tp, &exp, NULL, flags);
+    if (tp)
+    {
+        optimize_for_constants(exp);
+    }
     if (!tp)
         error(ERR_EXPRESSION_SYNTAX);
     if (tp)
@@ -2021,7 +2027,7 @@ EXPRESSION *getThisNode(SYMBOL *sp)
     return exp;
 }
 static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *base, int offset,
-                                     enum e_sc sc, TYPE *itype, INITIALIZER **init, INITIALIZER **dest, BOOLEAN arrayMember)
+                                     enum e_sc sc, TYPE *itype, INITIALIZER **init, INITIALIZER **dest, BOOLEAN arrayMember, int flags)
 {
     INITIALIZER *data = NULL, **next=&data;
     AGGREGATE_DESCRIPTOR *desc= NULL, *cache = NULL;
@@ -2101,7 +2107,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         {
             // default constructor without param list
         }
-        callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, implicit, FALSE); 
+        callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, (flags & _F_NOINLINE), implicit, FALSE); 
         initInsert(&it, itype, exp, offset, TRUE);
         if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
         {
@@ -2207,7 +2213,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             else
             {
                 lex = initType(lex, funcsp, desc->offset + desc->reloffset,
-                               sc, next, dest, nexttp(desc), base, isarray(itype));
+                               sc, next, dest, nexttp(desc), base, isarray(itype), flags);
             }
             increment_desc(&desc, &cache);
             while (*next)
@@ -2304,7 +2310,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         tn->size = n * s;
                         tn->btp = btp;
                     }
-                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, TRUE, FALSE);
+                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, (flags & _F_NOINLINE), TRUE, FALSE);
                     initInsert(push, tn, exp, last, TRUE);
                     push = &(*push)->next;
                     last += n * s;
@@ -2454,7 +2460,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
  * for the aggregate and any sub-aggregates with a single call of the function
  */
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
-                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember)
+                 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags)
 {
     TYPE *tp = basetype(itype);
     switch(tp->type)
@@ -2491,7 +2497,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
             return initialize_arithmetic_type(lex, funcsp, offset, sc, tp, init);
         case bt_lref:
         case bt_rref:
-            return initialize_reference_type(lex, funcsp, offset, sc, tp, init);
+            return initialize_reference_type(lex, funcsp, offset, sc, tp, init, flags);
         case bt_pointer:
             if (tp->array)
             {
@@ -2502,7 +2508,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
                     return lex;
                 }
                 else
-                    return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember);
+                    return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
             }
             else
             {
@@ -2523,7 +2529,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
                     lex = getsym();
                     if (MATCHKW(lex, begin))
                     {
-                        return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember);
+                        return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
                     }
                     else
                     {
@@ -2532,7 +2538,7 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
                 }
                 else
                 {
-                    return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember);
+                    return initialize_aggregate_type(lex, funcsp, sp, offset, sc, tp, init, dest, arrayMember, flags);
                 }
             /* fallthrough */
         default:
@@ -2749,7 +2755,7 @@ static BOOLEAN hasData(TYPE *tp)
     }
     return FALSE;
 }
-LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression)
+LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags)
 {
     TYPE *tp;
     inittag = 0;
@@ -2801,10 +2807,14 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         tp = basetype(basetype(tp)->btp);
     if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !isref(sp->tp) && !tp->syms)
     {
-        if (MATCHKW(lex, assign))
-            errskim(&lex, skim_semi);
-        if (!templateNestingCount)
-            errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
+        tp = PerformDeferredInitialization(tp, funcsp);
+        if (!tp->syms)
+        {
+            if (MATCHKW(lex, assign))
+                errskim(&lex, skim_semi);
+            if (!templateNestingCount)
+                errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
+        }
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
     else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))))
@@ -2845,7 +2855,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             {
                 if (MATCHKW(lex, assign) && !isstructured(sp->tp))
                     lex = getsym(); /* past = */
-                lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE);
+                lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE, flags);
                 /* set up an end tag */
                 if (sp->init)
                 {
@@ -2867,7 +2877,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         if (isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)
         {
             // default constructor without (), or array of structures without an initialization list
-            lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE);
+            lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE, flags);
             /* set up an end tag */
             if (sp->init)
             {
@@ -2897,7 +2907,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
                 EXPRESSION *baseexp = getThisNode(sp);
                 EXPRESSION *exp = baseexp;
-                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, TRUE, FALSE);
+                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, (flags & _F_NOINLINE), TRUE, FALSE);
                 initInsert(&it, z, exp, 0, TRUE);
                 if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member && storage_class_in != sc_mutable)
                 {
@@ -2977,7 +2987,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
                 {
                     if (!isstructured(tp) || !cparams.prm_cplusplus || basetype(tp)->sp->trivialCons && hasData(tp))
-                        errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                       errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
                 }
             }
         }

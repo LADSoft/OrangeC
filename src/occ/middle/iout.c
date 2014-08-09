@@ -1423,8 +1423,8 @@ void putamode(QUAD *q, IMODE *ap)
     if (ap->mode == i_ind)
         putlen(ap->ptrsize);
     putlen(ap->size);
-    if (q)
-        oprintf(icdFile,"[0x%x]", q->liveRegs);
+//    if (q)
+//        oprintf(icdFile,"[0x%x]", q->liveRegs);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1435,6 +1435,8 @@ void put_code(QUAD *q)
  */
 {
     (*oplst[q->dc.opcode])(q);
+    oputc('\n', icdFile);
+        /*
     if (!icdFile)
         return;
     oprintf(icdFile,"\t$%d$", q->temps);
@@ -1482,6 +1484,7 @@ void put_code(QUAD *q)
             oprintf(icdFile,"%02x ", q->RO[i]);
         oputc('\n', icdFile);
     }
+    */
 }
 
 /*

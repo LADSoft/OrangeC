@@ -1223,9 +1223,9 @@ void flows_and_doms(void)
     basicFlowInfo();
     gather_flowgraph();
     doms_only(TRUE);
-    if (icdFile)
-    {
-        fprintf(icdFile, "; Flowgraph dump");
-        dump_flowgraph();
-    }
+//    if (icdFile)
+//    {
+//        fprintf(icdFile, "; Flowgraph dump");
+//        dump_flowgraph();
+//    }
 }

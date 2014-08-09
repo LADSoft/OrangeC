@@ -477,11 +477,11 @@ void BuildLoopTree(void)
     bl.block = blockArray[exitBlock];
     FindBody(&bl, blockArray[0], LT_ROOT);
     CalculateLoopedBlocks(loopArray[loopCount-1]);
-    if (cparams.prm_icdfile)
-    {
-        fprintf(icdFile, "; loop dump\n");
-        dump_loops();
-    }
+ //   if (cparams.prm_icdfile)
+ //   {
+ //       fprintf(icdFile, "; loop dump\n");
+ //       dump_loops();
+ //   }
     tail = intermed_tail;
     b = tail->block;
     while (tail)

@@ -353,7 +353,7 @@ int pcmp(INTERNAL_CHAR *s, char *t, int preproc, int *retlen, int
     caseinsensitive, int bykey)
 {
     *retlen = 0;
-    while (*t && s->ch)
+    while (*t && s->ch && (!bykey || keysym(s->ch)))
     {
         int val = s->ch;
         int ch = *t;
@@ -377,7 +377,7 @@ int pcmp(INTERNAL_CHAR *s, char *t, int preproc, int *retlen, int
         }
     }
     if (*t)
-        return 1;
+        return -1;
     return bykey && keysym(s->ch) ;
 }
 
@@ -390,10 +390,15 @@ KEYLIST *matchkeyword(KEYLIST *table, int tabsize, int preproc, INTERNAL_CHAR
     int top = tabsize;
     int bottom =  - 1;
     int v;
+    if (t[0].ch == 'c')
+    if (t[1].ch == 'h')
+    if (t[2].ch == 'a')
+    if (t[3].ch == 'r')
+        printf("hi");
     while (top - bottom > 1)
     {
         int mid = (top + bottom) / 2;
-        v = pcmp(t, table[mid].text, preproc, retlen, insensitive, TRUE);
+        v = pcmp(t, table[mid].text, preproc, retlen, insensitive, t->ch != '#');
         if (v < 0)
         {
             top = mid;
@@ -405,7 +410,7 @@ KEYLIST *matchkeyword(KEYLIST *table, int tabsize, int preproc, INTERNAL_CHAR
     }
     if (bottom ==  - 1)
         return 0;
-    v = pcmp(t, table[bottom].text, preproc, retlen, insensitive, TRUE);
+    v = pcmp(t, table[bottom].text, preproc, retlen, insensitive, t->ch != '#');
     if (v)
         return 0;
     return  &table[bottom];

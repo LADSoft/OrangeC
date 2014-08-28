@@ -140,7 +140,7 @@ int imageof(PROJECTITEM *data, char *name)
         return IL_FILES;
     if (!xstricmpz(name, ".asm"))
         return IL_ASM;
-    if (!xstricmpz(name, ".c") || !xstricmpz(name, ".cpp"))
+    if (!xstricmpz(name, ".c") || !xstricmpz(name, ".cpp") || !xstricmpz(name, ".cxx"))
         return IL_C;
     if (!xstricmpz(name, ".rc") || !xstricmpz(name, ".bmp") 
             || !xstricmpz(name, ".cur") || !xstricmpz(name, ".ico"))

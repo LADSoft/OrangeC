@@ -801,6 +801,7 @@ void recolorize(DWINFO *ptr)
     int language = LANGUAGE_NONE;
     if (stristr(ptr->dwName, ".c") == ptr->dwName + strlen(ptr->dwName) - 2 ||
         stristr(ptr->dwName, ".cpp") == ptr->dwName + strlen(ptr->dwName) - 4 
+        || stristr(ptr->dwName, ".cxx") == ptr->dwName + strlen(ptr->dwName) - 4 
         || stristr(ptr->dwName, ".h") == ptr->dwName + strlen(ptr->dwName) - 2)
         language = LANGUAGE_C;
     else if (stristr(ptr->dwName, ".asm") == ptr->dwName + strlen(ptr->dwName) 

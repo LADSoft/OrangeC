@@ -1571,7 +1571,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 }
                 SendDlgItemMessage(hwndDlg, IDC_ICONFINDOPTIONS, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->findOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
                 SendDlgItemMessage(hwndDlg, IDC_ICONFINDOUTPUT, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->findOffs & 4) ? pHdr->minusBmp : pHdr->plusBmp));
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.h");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.h");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.asm;*.nas");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.def;*.rc");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.txt");
@@ -1609,7 +1609,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 }
                     
                 SendDlgItemMessage(hwndDlg, IDC_ICONREPLACEOPTIONS, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->replaceOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.h");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.h");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.def;*.rc");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.*");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_SETCURSEL, replaceext, 0);

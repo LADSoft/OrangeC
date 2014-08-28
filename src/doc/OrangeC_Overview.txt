@@ -1041,3 +1041,27 @@ CMPSWP
 
 It is beyond the scope of this document to go into how these work.
 
+3.5 Backend interface
+
+The backend interface is a set of structures and functions that defines the target architecture and 
+the context of the compile well enough that the rest of the compiler can reasonably target the architecture.
+Functions accessible in the target architecture are accessed through a dispatch table in one of the
+structures.  The backend interface performs the following general functions:
+
+	- supply command line 'usage' text
+	- supply stubs for target-specific command line arguments
+	- supply target-specific preprocessor definitions that should be defined before the compile
+	- supply sizes and alignments for the various built-in types
+	- supply a list of which built-in types don't get natively read/written atomically
+	- set up parameters for the floating point emulation
+	- supply parameter offsets (big endian mode) and minimum paramater size
+	- specify stack paramaters and minimum stack frame for function call parameters
+	- support multiple assemblers
+	- add additional code generation parameters
+	- supply an interface for debug information to be passed into the backend
+	- supply the dispatch table interface
+	- supply functions to be called during intermediate code optimization
+	- supply functions for things like the assemblely language preamble
+	- supply functions to be called to output data and labels
+	- supply functions to be called to convert intermediate code to assembly language code
+	

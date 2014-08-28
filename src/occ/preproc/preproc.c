@@ -178,7 +178,7 @@ BOOLEAN expectstring(char *buf, char **in, BOOLEAN angle)
         
 }
 #ifdef BORLAND
-LLONG_TYPE strtoll(char *s, char **e, int radix)
+LLONG_TYPE strtoll(unsigned char *s, char **e, int radix)
 {
     LLONG_TYPE rv = 0;
     *e = s;
@@ -1667,9 +1667,9 @@ void SetupAlreadyReplaced(unsigned char *macro)
 // a preprocessing number starts with a digit or '.' followed by a digit, then
 // has any number of alphanumeric charactors or any of the sequences
 // E+ e+ P+ p+
-int ppNumber(char *start, char *pos)
+int ppNumber(unsigned char *start, unsigned char *pos)
 {
-    char *x = pos;
+    unsigned char *x = pos;
     if (*pos == '+' || *pos == '-' || isdigit(*pos)) // we would get here with the first alpha char following the number
     {
         // backtrack through all characters that could possibly be part of the number

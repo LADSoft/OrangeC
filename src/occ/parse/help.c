@@ -82,7 +82,7 @@ BOOLEAN istype(SYMBOL *sym)
 }
 BOOLEAN ismemberdata(SYMBOL *sp)
 {
-    return !isfunction(sp) && ismember(sp);
+    return !isfunction(sp->tp) && ismember(sp);
 }
 BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
 {
@@ -221,12 +221,17 @@ BOOLEAN isarithmetic(TYPE *tp)
 }
 BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
 {
-    while (TRUE)
+	BOOLEAN done = FALSE;
+	BOOLEAN rv = FALSE;
+    while (!done)
     {
         if (useTemplate)
         {
             if (tp->templateConst)
-                return TRUE;
+			{
+				rv = TRUE;
+				done = TRUE;
+			}
         }
         switch(tp->type)
         {
@@ -240,11 +245,15 @@ BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
                 tp = tp->btp;
                 break;
             case bt_const:
-                return TRUE;
+				rv = TRUE;
+				done = TRUE;
+				break;
             default:
-                return FALSE;
+				done = TRUE;
+				break;
         }
     }
+	return rv;
 }
 BOOLEAN isconst(TYPE *tp)
 {

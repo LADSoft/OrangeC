@@ -87,6 +87,10 @@ bool ConfigData::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)
         {
             mapMode = atoi(attrib->GetValue().c_str());
         }
+        else if (*attrib == "DebugPassThrough")
+        {
+            debugPassThrough = atoi(attrib->GetValue().c_str());
+        }
     }
     else if (node == "Define")
     {
@@ -251,6 +255,22 @@ bool SwitchConfig::GetRelFile()
         }
     }
     return rel;
+}
+bool SwitchConfig::GetDebugPassThrough()
+{
+    bool passThrough = false;
+    for (std::vector<ConfigData *>::iterator it = configData.begin(); it != configData.end(); ++it)
+    {
+        if ((*it)->selected)
+        {
+            if ((*it)->debugPassThrough)
+            {
+                passThrough = true;
+                break;
+            }
+        }
+    }
+    return passThrough;
 }
 int SwitchConfig::GetMapMode()
 {

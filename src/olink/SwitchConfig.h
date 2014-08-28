@@ -52,7 +52,8 @@ class ConfigData : public xmlVisitor
 {
     friend class SwitchConfig;
 public:
-    ConfigData(xmlNode *node) : selected(false), currentDefine(NULL), relFile(false), mapMode(0)
+    ConfigData(xmlNode *node) : selected(false), currentDefine(NULL), relFile(false), mapMode(0),
+        debugPassThrough(false)
         { node->Visit(*this); }
     virtual ~ConfigData();
     void parse(const xmlNode *node);
@@ -69,6 +70,7 @@ public:
     CmdSwitchDefine::define *currentDefine;
     bool selected;
     bool relFile;
+    bool debugPassThrough;
     int mapMode;
 };
 class SwitchConfig : public xmlVisitor, public CmdSwitchString
@@ -84,9 +86,11 @@ public:
     virtual int Parse(const char *data);
     void SetDefines(LinkManager &linker);
     bool GetRelFile();
+    bool GetDebugPassThrough();
     int GetMapMode();
     bool InterceptFile(const std::string &file);
-    int RunApp(const std::string &path, const std::string &file, const std::string &debugFile);
+    int RunApp(const std::string &path, const std::string &file, 
+               const std::string &debugFile);
     std::string GetSpecFile();
     virtual bool VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData);
     virtual bool VisitNode(xmlNode &node, xmlNode *child, void *userData);

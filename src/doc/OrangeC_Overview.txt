@@ -308,6 +308,13 @@ gets a little tricky.  This file is also used by the compiler.
 
 'ccerr.c' is an abbreviated version of the compiler error file that holds routines for displaying errors.
 
+The main structure to be aware of in the preprocessor is the INCLUDES typedef.  It holds the current state
+of the preprocessor, as well as the progress through each file.  When the preprocessor or compiler starts,
+an instance of this structure is made to hold the main source file.   As each #include directive is
+encountered, another instance of this structure is created and pushed on the front of a linked list of
+these structures.  When the compiler is done parsing the file, it is closed and its INCLUDES structure
+is popped off the front of the linked list.
+
 3.2.2 Parser source code layout
 
 the parser files are found in src\occ\parse.
@@ -461,6 +468,42 @@ various other things.
 used in generating function names during error generation.  It is also copied into the linker directory, 
 so that problems related to C++ function names can be stated in source code format.
 
+The main structures to be aware of in the parser are the LEXEME structure, the HASHTABLE and HASHREC
+structures, the SYMBOL and TYPE structures, the STATEMENT and EXPRESSION structures, the BLOCKDATA
+structure, the INITIALIZER structure, the STRUCTSYM structure, and the FUNCTIONCALL and INITLIST 
+structures.  There are a lot of other structures for more specialized operations, but these are the
+backbones of the parser and are used all the time throughout.
+
+As a brief summary, types are created in the TYPE structure as part of the declaration process.  Almost
+immediately, a SYMBOL structure is created for the declaration and the TYPE is stored in it.  The symbol
+is then stored in a HASHTABLE; HASHREC is basically the contents of each bucket of the hashtable.  each
+HASHREC holds a SYMBOL and the pointer to the next HASHREC.  The HASHREC nodes are arranged in a linked 
+list which represents the conflicts for that bucket.   For things that only have one bucket, the HASHREC 
+nodes are usually ordered in the order they were created, and can be traversed as a linked list by 
+getting the first element of the single bucket.
+
+During the declaration of the symbol, it may turn out the declaration is for a function or structure.  Then,
+each parameter or structure member is parsed as a nested declaration (through recursion) and the results 
+end up in the HASHTABLE associated with the TYPE that is associated with the higher-level declaration's SYMBOL.
+
+If the declaration turns out to be for a function with a function body, a BLOCKDATA structure is created.
+BLOCKDATA structures aren't permanent, they are simply used to track the progress of compiling the current
+(source level) block of code.   A BLOCKDATA structure will eventually get a STATEMENT tree through the
+parsing process... and nodes in the STATEMENT tree will sometimes get EXPRESSION TREES.  Sometimes,
+EXPRESSION trees will have a function call nested in them, then the expression node associated with the 
+function call will get a FUNCTIONCALL structure.   The FUNCTIONCALL structure holds some TYPE and
+SYMBOL structures that may be used in processing the function call.  It will also hold a linked list of 
+INITLIST structures, each of which has a TYPE and EXPRESSION structure that describes the argument 
+that needs to be pushed.
+
+The top level STATEMENT structure for the function will be placed in the SYMBOL structure for the declaration
+of the function where it can be retrieved later.
+
+If the symbol being declared isn't a function, it may have an initializer.   The initializer will be parsed
+and placed in an INITIALIZER structure and will then be associated with the symbol.   It might later be 
+processed during creation of initialized data sections or dynamic startup routines in the case of C++.   
+Or it might be utilized more directly when generating a function body.
+
 3.2.3 Intermediate code generation and optimization
 
 intermediate code generation and optimization may be found in the src\occ\middle directory
@@ -486,7 +529,8 @@ for expressions or branches or block start and end tags or labels.   the code ge
 and result in a doubly-linked list of intermediate code line structures, on a per function basis.
 
 eventually 'iout.c' is called to generate the intermediate code (.icd file) and call the backend to
-generate actual machine code.
+generate actual machine code.  It is 'iout.c' that uses the dispatch table provided by the backend, to
+call specific backend functions related to code generation.
 
 'ilocal.c' handles basic housekeeping such as the list of temporaries used, converts local variables
 into temporaries, and so forth.
@@ -529,6 +573,25 @@ part of the expression will be evaluated outside the loop.
 into a sequence of adds done with each iteration of the loop
 
 'irc.c'  is the register allocator
+
+The main structures in the intermediate code are QUAD, IMODE, PHIDATA, TEMPINFO, BLOCKLIST, and BLOCK.
+
+as the intermediate code is generated, BLOCK structures are created.   These are not the same as source
+level blocks; basically an intermediate code block is made any time a change is made in the control flow,
+e.g. at branch locations and targets.   The BLOCK structures are originally in the order they were
+created, but eventually end up being organized in a tree of BLOCKLIST structures.   The blocklist tree
+is used for various optimizations.
+
+As blocks are parsed, each instruction ends up in a QUAD structure, and the variables and constants related
+to the instruction are placed in IMODE structures.  The IMODE structures are placed into the QUAD
+structures, and the QUAD structures are placed in a single linked list, which will eventually end up in
+the function declaration's SYMBOL structure.   the BLOCK structures get pointers to the first and last
+instructions being parsed for the related block.  
+
+Finally, the TEMPINFO structure holds a lot of optimizer-related information for each temporary variable
+that is passed through the intermediate code generator.  And the PHIDATA structure is used while the
+code is in SSA format, which is an alternate representation useful in some optimizations.  It basically
+holds all the aliases a single variable may have when a block is entered.
 
 3.2.4 Backend
 
@@ -594,6 +657,13 @@ output file.
 Once any necessary output files are created, the frontend then calls into 'invoke.c' which does things
 like invoke the resource compiler and assembler (when files of those formats are specified on the command
 line) then the linker is invoked with all the files resulting from the other steps.
+
+The main structures in the x86 backend are AMODE and OCODE.   For each function, a linked list of OCODE
+structures is created.  Each OCODE structure holds an instruction or label.  Operands to an instruction
+are in the AMODE structure and are stored in the related OCODE structure.
+
+At the end of code generation, the OCODE statements are traversed.  Either an assembly language file will
+be created, or the instructions will be assembled into memory, for later dumping to an object file.
 
 3.3 Maintenance issues
 

@@ -180,6 +180,8 @@ int _RTL_FUNC __nancompare(long double __x, long double __y, int type);
 #define islessgreater(x,y) __nancompare((x),(y),-3)
 #define isunordered(x,y) __nancompare((x),(y),0)
 
+#endif
+
 float _RTL_FUNC acosf  (float __x);
 float _RTL_FUNC asinf  (float __x);
 float _RTL_FUNC atan2f (float __y, float __x);
@@ -203,7 +205,6 @@ float _RTL_FUNC sqrtf  (float __x);
 float _RTL_FUNC tanhf  (float __x);
 float _RTL_FUNC tanf   (float __x);
 
-#endif
 
 
 double      _RTL_FUNC acos  (double __x);

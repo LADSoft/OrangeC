@@ -572,12 +572,15 @@ void LinkManager::CreateOutputFile()
             }
             if (completeLink)
             {
-                ioBase->SetDebugInfoFlag(false);
                 ioBase->SetAbsolute(true);
-                if (debugFile.size())
-                {
-                    LinkDebugFile df(debugFile, file);
-                    df.CreateOutput();
+                if (!debugPassThrough)
+                {                    
+                    ioBase->SetDebugInfoFlag(false);
+                    if (debugFile.size())
+                    {
+                        LinkDebugFile df(debugFile, file);
+                        df.CreateOutput();
+                    }
                 }
             }
             else

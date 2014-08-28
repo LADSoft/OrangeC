@@ -225,7 +225,9 @@ int LinkerMain::Run(int argc, char **argv)
     ObjFactory fact1(&im2);
     if (DebugInfo.GetValue())
         debugFile = Utils::QualifiedFile(outputFile.c_str(), ".odx");
-    LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), outputFile, !RelFile.GetValue() && !TargetConfig.GetRelFile(), debugFile);
+    LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), 
+                       outputFile, !RelFile.GetValue() && !TargetConfig.GetRelFile(), 
+                       TargetConfig.GetDebugPassThrough(), debugFile);
     linker.SetLibPath(LibPath.GetValue());
     linker.SetIndexManager(&im1);
     linker.SetFactory(&fact1);

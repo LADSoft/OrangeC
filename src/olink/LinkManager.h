@@ -92,10 +92,11 @@ class LinkManager
     typedef std::vector<ObjFile *> FileData;
     public:
         LinkManager(ObjString &Specification, bool CaseSensitive, const ObjString &OutputFile = "", 
-                        bool CompleteLink = false, ObjString DebugFile = "") :
+                        bool CompleteLink = false, bool DebugPassThrough = false, ObjString DebugFile = "") :
                         specification(Specification), outputFile(OutputFile), specName(Specification),
                         factory(NULL), indexManager(NULL), completeLink(CompleteLink),
-                        ioBase(NULL), caseSensitive(CaseSensitive), debugFile(DebugFile) { }
+                        ioBase(NULL), caseSensitive(CaseSensitive), debugPassThrough(DebugPassThrough), 
+                        debugFile(DebugFile) { }
             
         ~LinkManager();
 
@@ -179,6 +180,7 @@ class LinkManager
         ObjString debugFile;
         bool completeLink;
         bool caseSensitive;
+        bool debugPassThrough;
         static int errors;
         static int warnings;
 };

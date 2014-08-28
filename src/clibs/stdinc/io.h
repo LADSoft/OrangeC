@@ -208,7 +208,10 @@ int _RTL_FUNC _write(int, const void *, unsigned int);
         using std::_get_osfhandle;
         using std::_open_osfhandle;
     using std::ftime;
-    using std::_nfile;
+#ifndef _USING_NFILE
+#define _USING_NFILE
+    using std::_nfile ;
+#endif
     using std::_finddata_t;
         using std::_access;
         using std::_chmod;

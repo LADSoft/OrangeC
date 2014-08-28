@@ -15,7 +15,7 @@
 #include <hash_map>
 #include <locale>
 #include <locale.h>             // C locale header file.
-#include <stl_threads.h>
+#include <stl\_threads.h>
 
 __STL_BEGIN_NAMESPACE
 

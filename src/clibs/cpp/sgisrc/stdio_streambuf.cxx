@@ -12,7 +12,7 @@
  */ 
 
 #include <stdio_streambuf>
-#include <stl_config.h>
+#include <stl\_config.h>
 #include <stdio.h>
 #ifdef __unix
 #include <sys/types.h>

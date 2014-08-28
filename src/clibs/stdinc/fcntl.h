@@ -101,6 +101,26 @@ extern int _RTL_DATA _fmode;
 #define O_DENYREAD  0x30
 #define O_DENYNONE  0x40
 
+#define	F_DUPFD		0		/* duplicate file descriptor */
+#define	F_GETFD		1		/* get file descriptor flags */
+#define	F_SETFD		2		/* set file descriptor flags */
+#define	F_GETFL		3		/* get file status flags */
+#define	F_SETFL		4		/* set file status flags */
+#define	F_GETOWN	5		/* get SIGIO/SIGURG proc/pgrp */
+#define F_SETOWN	6		/* set SIGIO/SIGURG proc/pgrp */
+#define	F_GETLK		7		/* get record locking information */
+#define	F_SETLK		8		/* set record locking information */
+#define	F_SETLKW	9		/* F_SETLK; wait if blocked */
+
+/* file descriptor flags (F_GETFD, F_SETFD) */
+#define	FD_CLOEXEC	1		/* close-on-exec flag */
+
+/* record locking flags (F_GETLK, F_SETLK, F_SETLKW) */
+#define	F_RDLCK		1		/* shared or read lock */
+#define	F_UNLCK		2		/* unlock */
+#define	F_WRLCK		3		/* exclusive or write lock */
+
+int fcntl(int, int, ...);
 #ifdef __cplusplus
 } ;
 } ;
@@ -112,4 +132,5 @@ extern int _RTL_DATA _fmode;
 #define __FCNTL_H_USING_LIST
 using std::_pipe ;
 using std::_fmode ;
+using std::fcntl;
 #endif

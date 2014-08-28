@@ -144,14 +144,15 @@ struct  _exceptionl
 #define HUGE_VALL            0x1P+16384L
 #define _LHUGE_VAL  HUGE_VALL
 
+int _RTL_FUNC __fpclassifyf(float __x);
+int _RTL_FUNC __fpclassify(double __x);
+int _RTL_FUNC __fpclassifyl(long double __x);
+
 #if  __STDC_VERSION__ >= 199901L
 float _RTL_FUNC nanf(const char *tagp);
 double _RTL_FUNC nan(const char *tagp);
 long double _RTL_FUNC nanl(const char *tagp);
 
-int _RTL_FUNC __fpclassifyf(float __x);
-int _RTL_FUNC __fpclassify(double __x);
-int _RTL_FUNC __fpclassifyl(long double __x);
 int _RTL_FUNC __signbitf(float __x);
 int _RTL_FUNC __signbit(double __x);
 int _RTL_FUNC __signbitl(long double __x);
@@ -252,6 +253,8 @@ long double _RTL_FUNC sinl   (long double __x);
 long double _RTL_FUNC sqrtl  (long double __x);
 long double _RTL_FUNC tanhl  (long double __x);
 long double _RTL_FUNC tanl   (long double __x);
+
+double      _RTL_FUNC _copysign(double __x, double __y);
 
 #if  __STDC_VERSION__ >= 199901L
 
@@ -449,10 +452,10 @@ long double  _RTL_FUNC ynl(int, long double);
 #endif /* math.h */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__MATH_H_USING_LIST)
 #define __MATH_H_USING_LIST
-#if  __STDC_VERSION__ >= 199901L
         using std::__fpclassifyf;
         using std::__fpclassify;
         using std::__fpclassifyl;
+#if  __STDC_VERSION__ >= 199901L
         using std::__signbitf;
         using std::__signbit;
         using std::__signbitl;
@@ -523,6 +526,7 @@ long double  _RTL_FUNC ynl(int, long double);
         using std::sqrtl;
         using std::tanhl;
         using std::tanl;
+        using std::_copysign;
 #if  __STDC_VERSION__ >= 199901L
 
         using std::acoshf;

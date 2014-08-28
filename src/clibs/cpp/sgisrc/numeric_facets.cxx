@@ -18,6 +18,11 @@
 #include <limits.h>
 #include <math.h>               /* Needed for HUGE_VAL macro */
 
+#ifdef __ORANGEC__
+#define _MSC_VER 1
+#define _WINDOWS
+#endif
+
 #if defined(_MSC_VER)
 #include <float.h>
 #elif defined(__GNUC__) && !defined(__sun__)
@@ -654,7 +659,7 @@ double string_to_double(const char * s) {
 
   // Skip leading whitespace, if any.
   const ctype<char>& ct = use_facet<ctype<char> >(locale::classic());
-  while (c = *s++, ct.is(ctype_base::space, char(c)))
+  while ((c = *s++, ct.is(ctype_base::space, char(c))))
     ;
 
   /* process sign */
@@ -710,14 +715,14 @@ double string_to_double(const char * s) {
       negate_exp = 1;
       c = *s++;
     }
-    if (c -= '0', c < 10) {
+    if ((c -= '0', c < 10)) {
       do {
         if (e <= 340) 
           e = e * 10 + (int)c;
         else break;
         c = *s++;
       }
-      while (c -= '0', c < 10);
+      while ((c -= '0', c < 10));
       if (negate_exp) {
         e = -e;
       }
@@ -765,7 +770,7 @@ long double string_to_long_double(const char * s) {
   char digits[max_digits];
 
   const ctype<char>& ct = use_facet<ctype<char> >(locale::classic());
-  while (c = *s++, ct.is(ctype_base::space, char(c)))
+  while ((c = *s++, ct.is(ctype_base::space, char(c))))
     ;
 
     /* process sign */
@@ -821,14 +826,14 @@ long double string_to_long_double(const char * s) {
       negate_exp = 1;
       c = *s++;
     }
-    if (c -= '0', c < 10) {
+    if ((c -= '0', c < 10)) {
       do {
         if (e <= 340) 
           e = e * 10 + c;
         else break;
         c = *s++;
       }
-      while (c -= '0', c < 10);
+      while ((c -= '0', c < 10));
       if (negate_exp) {
         e = -e;
       }
@@ -1034,6 +1039,21 @@ namespace {
   inline bool is_inf(double x)        { return isinf(x); }
   inline bool is_neg_inf(double x)    { return isinf(x) < 0; }
   inline bool is_neg_nan(double x)    { return copysign(1., x) < 0; } 
+#elif defined(__ORANGEC__)
+  inline bool is_nan_or_inf(double x) { 
+    int fclass = __fpclassify(x); 
+    return fclass == FP_NAN || fclass == FP_INFINITE;
+  }
+  inline bool is_inf(double x) {
+    return __fpclassify(x) == FP_INFINITE; 
+  }
+  inline bool is_neg_inf(double x)    { 
+    return is_inf(x) && _copysign(1., x) < 0; 
+  }
+  inline bool is_neg_nan(double x)    { 
+    return __fpclassify(x) == FP_NAN && _copysign(1., x) < 0; 
+  }
+  
 #elif defined(_MSC_VER) && defined(_WINDOWS)
   inline bool is_nan_or_inf(double x) { return !_finite(x); }
   inline bool is_inf(double x) {

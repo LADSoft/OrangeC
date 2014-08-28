@@ -54,6 +54,7 @@ typedef int    ptrdiff_t;
 
 #ifndef _SIZE_T
 #define _SIZE_T
+#define _USING_STDDEF_SIZE_T
 typedef unsigned size_t;
 typedef int ssize_t;
 #endif
@@ -94,8 +95,10 @@ typedef unsigned int wint_t;
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STDDEF_H_USING_LIST)
 #define __STDDEF_H_USING_LIST
 using std::ptrdiff_t ;
+#ifdef _USING_STDDEF_SIZE_T
 using std::size_t ;
 using std::ssize_t ;
+#endif
 using std::wint_t;
 using std::wctype_t ;
 #endif

@@ -1565,7 +1565,6 @@ class rope : public _Rope_base<_CharT,_Alloc> {
               return _S_new_RopeLeaf(__buf, __size, __a);
             }
             __STL_UNWIND(_RopeRep::__STL_FREE_STRING(__buf, __size, __a))
-            return NULL;
         }
             
 

@@ -24,7 +24,7 @@ __STL_BEGIN_NAMESPACE
 
 class ctype_base {
 public:
-  enum mask {
+  enum mask : int {
     space   = _Locale_SPACE,
     print   = _Locale_PRINT,
     cntrl   = _Locale_CNTRL,

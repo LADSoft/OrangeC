@@ -102,7 +102,6 @@ typedef unsigned short wchar_t;
 #define S_ISVTX 	0001000
 
 #ifdef __cplusplus
-namespace std {
 extern "C" {
 #endif
 
@@ -116,9 +115,9 @@ struct  stat
     gid_t   st_gid;
     dev_t   st_rdev;
     off_t   st_size;
-    time_t  st_atime;
-    time_t  st_mtime;
-    time_t  st_ctime;
+    _TIME_T st_atime;
+    _TIME_T st_mtime;
+    _TIME_T st_ctime;
 };
 
 
@@ -172,17 +171,8 @@ int  _RTL_FUNC  stat(const char *__path, struct stat  *__statbuf);
 
 #ifdef __cplusplus
 } ;
-} ;
 #endif
 
 #pragma pack()
 
 #endif  /* __STAT_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STAT_H_USING_LIST)
-#define __STAT_H_USING_LIST
-using std::stat ;
-using std::_stat ;
-using std::fstat ;
-using std::_fstat ;
-using std::_wstat ;
-#endif

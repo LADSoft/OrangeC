@@ -90,6 +90,11 @@ typedef __int32_t wchar_t;
 #include <ctype.h>
 #endif
 
+#if defined( __ORANGEC__ )
+#include <wchar.h>
+#include <ctype.h>
+#endif
+
 #if defined(__sun__)
 #include <wchar.h>
 #include <ctype.h>

@@ -11,9 +11,9 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */ 
 
-#include <stl_config.h>
-#include <stl_locale.h>
-#include <stl_collate.h>
+#include <stl\_config.h>
+#include <stl\_locale.h>
+#include <stl\_collate.h>
 #include <c_locale.h>
 #include <algorithm>
 #include <vector>

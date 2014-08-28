@@ -14,6 +14,13 @@
 
 
 #include <fstream>
+
+#ifdef __ORANGEC__
+#define __unix
+#define _SC_PAGESIZE 30
+extern "C" int sysconf(int);
+#endif
+
 #ifdef __unix
 #  include <sys/types.h>
 #  include <sys/stat.h>         // For stat
@@ -569,7 +576,7 @@ void* _Filebuf_base::_M_mmap(streamoff offset, streamoff len) {
 
 void _Filebuf_base::_M_unmap(void* base, streamoff len) {
 # ifdef __unix
-  munmap((caddr_t) base, len);
+  munmap(base, len);
 # elif _MSC_VER
   UnmapViewOfFile((LPCVOID)base);
   CloseHandle((HANDLE)_M_hFileMappingObject);

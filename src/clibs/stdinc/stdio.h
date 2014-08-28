@@ -54,9 +54,15 @@ namespace std {
 extern "C" {
 #endif
 
-typedef struct {
+//  this isn't the way people usually implement fpos_t...
+typedef struct __fpos_t {
     long pos;
     int mbstate[2];
+#ifdef __cplusplus
+    __fpos_t() : pos(0) { mbstate[0] = mbstate[1] = 0; }
+    __fpos_t(long Pos) : pos(Pos) { mbstate[0] = mbstate[1] = 0; }
+    operator int() { return pos; }
+#endif
 } fpos_t;
 
 #define FILTOK	0x444c
@@ -371,7 +377,10 @@ int _RTL_FUNC _setmaxstdio(int);
     using std::_fputc;
     using std::FILE;
     using std::fpos_t;
+#ifndef _USING_NFILE
+#define _USING_NFILE
     using std::_nfile ;
+#endif
     using std::__stdin ;
     using std::__stdout ;
     using std::__stderr ;

@@ -11,9 +11,9 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */ 
 
-#include <stl_config.h>
-#include <stl_locale.h>
-#include <stl_codecvt.h>
+#include <stl\_config.h>
+#include <stl\_locale.h>
+#include <stl\_codecvt.h>
 #include <algorithm>
 
 __STL_BEGIN_NAMESPACE

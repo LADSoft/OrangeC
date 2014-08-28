@@ -11,8 +11,8 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */ 
 
-#include <stl_config.h>
-#include <stl_range_errors.h>
+#include <stl\_config.h>
+#include <stl\_range_errors.h>
 #include <stdexcept>
 
 #if defined(__STL_THROW_RANGE_ERRORS) && \

@@ -297,8 +297,12 @@ void      _RTL_FUNC perror(const char *__s);
 #if defined(__cplusplus)
 
 #ifndef  _TIME_T
-#define  _TIME_T
 typedef long time_t;
+#ifdef __cplusplus
+#  define _TIME_T std::time_t
+#else
+#  define _TIME_T time_t
+#endif /* __cplusplus */
 #endif
 
 time_t _RTL_FUNC time(time_t *);

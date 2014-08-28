@@ -11,10 +11,10 @@
  * purpose.  It is provided "as is" without express or implied warranty.
  */ 
 
-#include <stl_config.h>
-#include <stl_locale.h>
-#include <stl_ctype.h>
-#include <stl_threads.h>
+#include <stl\_config.h>
+#include <stl\_locale.h>
+#include <stl\_ctype.h>
+#include <stl\_threads.h>
 
 __STL_BEGIN_NAMESPACE
 

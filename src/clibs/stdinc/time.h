@@ -51,8 +51,12 @@ extern "C" {
 #endif
 
 #ifndef  _TIME_T
-#define  _TIME_T
 typedef long time_t;
+#ifdef __cplusplus
+#  define _TIME_T std::time_t
+#else
+#  define _TIME_T time_t
+#endif /* __cplusplus */
 #endif
 
 #ifndef  _CLOCK_T

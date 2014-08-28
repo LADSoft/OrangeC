@@ -40,6 +40,9 @@ template class basic_iostream<wchar_t>;
 //      the stream objects by calling the init() member function.
 
 
+#ifdef __ORANGEC__
+#define _MSC_VER 1
+#endif
 
 #if _MSC_VER
 

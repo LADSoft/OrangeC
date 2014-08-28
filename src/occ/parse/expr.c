@@ -380,7 +380,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     sp->used = TRUE;
                 case sc_global:
                 case sc_external:
-                    if (sp->parentClass && !isExpressionAccessible(sp, funcsp, NULL, FALSE))
+                    if (sp->parentClass && !isExpressionAccessible(NULL, sp, funcsp, NULL, FALSE))
                         errorsym(ERR_CANNOT_ACCESS, sp);		
                     if (sp->linkage3 == lk_threadlocal)
                         *exp = varNode(en_threadlocal, sp);
@@ -550,12 +550,12 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 DecGlobalFlag();
                 funcparams = Alloc(sizeof(FUNCTIONCALL));
                 funcparams->ascall = TRUE;    
-                 sym = GetOverloadedFunction(tp, &funcparams->fcall, sp, NULL, atp, TRUE, FALSE);
+                 sym = GetOverloadedFunction(tp, &funcparams->fcall, sp, NULL, atp, TRUE, FALSE, TRUE);
                  if (sym)
                  {
                      sym->throughClass = sp->throughClass;
                      sp = sym;
-                    if (!isExpressionAccessible(sp, funcsp, NULL, FALSE))
+                    if (!isExpressionAccessible(NULL, sp, funcsp, NULL, FALSE))
                         errorsym(ERR_CANNOT_ACCESS, sp);		
                  }
                 funcparams->sp = sp;
@@ -822,7 +822,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         funcparams->thistp->size = getSize(bt_pointer);
                         funcparams->thistp->btp = *tp;
                         funcparams->ascall = TRUE;    
-                        match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams,NULL,TRUE, FALSE);
+                        match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams,NULL,TRUE, FALSE, TRUE);
                         if (match)
                         {
                             funcparams->sp = match;
@@ -2164,7 +2164,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be added after we select a member function that needs it.
             funcparams->ascall = TRUE;    
-            sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE);
+            sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE);
             if (sp)
             {
                 sp->throughClass = funcparams->sp->throughClass;
@@ -2208,13 +2208,22 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         else
         {
             operands = !ismember(funcparams->sp) && funcparams->thisptr;
-            if (!isExpressionAccessible(funcparams->sp, funcsp, funcparams->thisptr, FALSE))
+            if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, funcparams->sp, funcsp, funcparams->thisptr, FALSE))
                 errorsym(ERR_CANNOT_ACCESS, funcparams->sp);		
         }
         if (sp)
         {
+            BOOLEAN test;
             *tp = sp->tp;
-            if (!isExpressionAccessible(sp, funcsp, funcparams->thisptr, FALSE))
+            if (hasThisPtr)
+            {
+                test = isAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, basetype(basetype(funcparams->thistp)->btp)->sp, sp, funcsp, ac_protected, FALSE );
+            }
+            else
+            {
+                test = isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, sp, funcsp, funcparams->thisptr, FALSE);
+            }
+            if (!test)
                 errorsym(ERR_CANNOT_ACCESS, sp);		
             if (ismember(funcparams->sp))
             {
@@ -3782,28 +3791,28 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
         case kw_dynamic_cast:
             oldType = NULL;
             lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
-            if (!doDynamicCast(tp, oldType, exp, funcsp, flags & _F_NOINLINE))
+            if (*tp && !doDynamicCast(tp, oldType, exp, funcsp, flags & _F_NOINLINE))
                 if (!typeHasTemplateArg(*tp))
                     errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
             break;
         case kw_static_cast:
             oldType = NULL;
             lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
-            if (!doStaticCast(tp, oldType, exp, funcsp, TRUE, flags & _F_NOINLINE))
+            if (*tp && !doStaticCast(tp, oldType, exp, funcsp, TRUE, flags & _F_NOINLINE))
                 if (!typeHasTemplateArg(*tp))
                     errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
             break;
         case kw_const_cast:
             oldType = NULL;
             lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
-            if (!doConstCast(tp, oldType, exp, funcsp))
+            if (*tp && !doConstCast(tp, oldType, exp, funcsp))
                 if (!typeHasTemplateArg(*tp))
                     errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
             break;
         case kw_reinterpret_cast:
             oldType = NULL;
             lex = GetCastInfo(lex, funcsp, tp, &oldType, exp, (flags & _F_PACKABLE));
-            if (!doReinterpretCast(tp, oldType, exp, funcsp, TRUE))
+            if (*tp && !doReinterpretCast(tp, oldType, exp, funcsp, TRUE))
                 if (!typeHasTemplateArg(*tp))
                     errortype(ERR_CANNOT_CAST_TYPE, oldType, *tp);
             break;
@@ -5084,7 +5093,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 hrp = hrp->next;
             }
             fpargs.ascall = TRUE;
-            GetOverloadedFunction(&tp1, &exp1, tp1->sp, &fpargs, NULL, TRUE, FALSE); 
+            GetOverloadedFunction(&tp1, &exp1, tp1->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
         }
         if (isconstraw(*tp, TRUE) && !localMutable)
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
@@ -5219,7 +5228,9 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                                 {
                                     if (!isvoidptr(*tp) || !ispointer(tp1))
                                         if (!isTemplatedPointer(*tp))
+                                        {
                                             errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                                        }
                                 }
                                 else if (!isvoidptr(*tp) && !isvoidptr(tp1))
                                 {

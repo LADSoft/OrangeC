@@ -782,6 +782,16 @@ void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
     char buf[1024];
     char unopped[256];
     char *last = "typename";
+    char lastb[512];
+    if (strSym)
+    {
+        unmangle(lastb, strSym->decoratedName);
+        last = strrchr(lastb, ':');
+        if (last)
+            last++;
+        else
+            last = lastb;        
+    }
     if (*name == '$')
     {
         *unopped = 0;
@@ -1680,7 +1690,9 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_blockassign:
         case en_mp_compare:
 /*		case en_array: */
+            assignmentUsages(node->left, FALSE);
             assignmentUsages(node->right, FALSE);
+            break;
         case en_mp_as_bool:
         case en_blockclear:
         case en_argnopush:

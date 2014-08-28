@@ -622,7 +622,7 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
         funcparams.thisptr = &exp;
         funcparams.thistp = &tpp;
         funcparams.ascall = TRUE;
-        return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE);
+        return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE, FALSE);
     }
     return NULL;
 }
@@ -663,7 +663,7 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
         funcparams.thisptr = &exp;
         funcparams.thistp = &tpt;
         funcparams.ascall = TRUE;
-        return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE);
+        return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE, FALSE);
     }
     return NULL;
 }
@@ -1692,7 +1692,7 @@ static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths)
     }
     return nw;    
 }
-SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, int *offset)
+SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase, int *offset)
 {
     int n = 0;
     char str[1024];
@@ -1719,14 +1719,26 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, int *offset)
                 break;
         if (i < 0)
         {
-            if (bc->isvirtual)
-                vcount++;
-            else
-                ccount++;
+            ccount++;
             sp = bc->cls;
             *offset = bc->offset;
         }
         bc = bc->next;
+    }
+    while (vbase)
+    {
+        SYMBOL *parent = vbase->cls;
+        int i;
+        for (i=n-1;i >=0 && parent; i--, parent = parent->parentClass)
+            if (strcmp(parent->name, clslst[i]))
+                break;
+        if (i < 0)
+        {
+            vcount++;
+            sp = vbase->cls;
+            *offset = vbase->structOffset;
+        }
+        vbase = vbase->next;
     }
     if (ccount && vcount || ccount > 1)
     {
@@ -1742,6 +1754,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
     {
         LEXEME *lex;
         BASECLASS *bc = cls->baseClasses;
+        VBASEENTRY *vbase = cls->vbaseEntries;
         init->sp = search(init->name, basetype(cls->tp)->syms);
         if (init->sp)
         {
@@ -1899,7 +1912,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             else
             {
                 int offset = 0;
-                init->sp = findClassName(init->name, cls, bc, &offset);
+                init->sp = findClassName(init->name, cls, bc, vbase, &offset);
                 if (init->sp)
                 {
                     // have to make a *real* variable as a fudge...
@@ -2028,7 +2041,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
             STATEMENT *st;
             sp->constop = TRUE;
             sp->decoratedName = sp->errname = sp->name;
-            sp->offset = chosenAssembler->arch->retblocksize + cons->paramSize;
+            sp->offset = chosenAssembler->arch->retblocksize + cons->paramSize + getSize(bt_pointer);
             insert(sp, localNameSpace->syms);
     
             deref(&stdint, &val);
@@ -2160,7 +2173,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = base->tp;
     params->ascall = TRUE;
-    asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, NULL, TRUE, FALSE);
+    asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, NULL, TRUE, FALSE, TRUE);
         
     if (asn1)
     {
@@ -2381,7 +2394,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     arg4->tp = &stdint;
     
     params->ascall = TRUE;
-    asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, NULL, TRUE, FALSE);
+    asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, NULL, TRUE, FALSE, TRUE);
     if (!asn1)
     {
         diag("makeArrayConsDest: Can't call array iterator");
@@ -2421,13 +2434,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
     params->ascall = TRUE;
-    if (dest->parentClass->vbaseEntries)
-    {
-        params->arguments = Alloc(sizeof(INITLIST));
-        params->arguments->tp = &stdint;
-        params->arguments->exp = intNode(en_c_i, top);
-    }
-    dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
+    dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE);
     if (dest1)
     {
         if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
@@ -2502,7 +2509,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     params->thistp->size = getSize(bt_pointer);
     params->ascall = TRUE;
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, 
-                                  maybeConversion);
+                                  maybeConversion, TRUE);
         
     if (cons1)
     {
@@ -2570,7 +2577,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 params->thistp->size = getSize(bt_pointer);
                 params->thistp->btp = sp->tp;
                 params->ascall = TRUE;
-                dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE);
+                dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE);
                 if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
                 {
                     errorsym(ERR_CANNOT_ACCESS, dest1);

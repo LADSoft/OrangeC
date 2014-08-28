@@ -501,6 +501,7 @@ typedef struct sym
         unsigned packed:1; // packed template param instance
         unsigned instantiated:1; // instantiated template
         unsigned performedDeferred : 1; // structured type has deferred compilation done already
+        unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
         unsigned temp : 1; // temporary boolean...
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
@@ -515,6 +516,7 @@ typedef struct sym
     char *importfile; /* import name */
     struct sym *overloadName;
     struct sym *mainsym; /* pointer to the global version of a copied symbol */
+    struct sym *maintemplate; /* pointer to the global version of a copied symbol */
     struct _memberInitializers *memberInitializers; /* initializers for constructor */
     STATEMENT *gotoTable; /* pointer to hashtable associated with goto or label */
     /* these fields depend on storage_class */
@@ -525,7 +527,7 @@ typedef struct sym
     struct lexeme *deferredTemplateHeader ;
     struct lexeme *deferredCompile ;
     struct _templateParamList *templateParams;
-    struct sym * templateNameSpace;
+    LIST *templateNameSpace;
     int templateLevel;
     LIST *specializations;
     LIST *instantiations;

@@ -104,21 +104,6 @@ char *unmang_intrins(char *buf, char *name, char *last)
     while (*name != '@' &&  *name != '$' &&  *name)
         *p++ = *name++;
     *p = 0;
-    if (cur[1] == 'o')
-    {
-        p = cur;
-        strcpy(buf, "operator ");
-        buf += strlen(buf);
-        p = unmang1(buf, p + 2, last);
-        buf += strlen(buf);
-        if (p[0] == '$')
-        {
-            unmang1(buf, p +1, last);
-            buf += strlen(buf);
-        }
-    }
-    else
-    {
         for (i = 0; i < IT_SIZE; i++)
             if (!strcmp(cur, cpp_funcname_tab[i]))
                 break;
@@ -135,8 +120,7 @@ char *unmang_intrins(char *buf, char *name, char *last)
                         if (*name == '$')
                         {
                             buf += strlen(buf);
-                            name = unmang1(buf, name+1, last);
-                            strcat(buf, "()");
+                            name = unmang1(buf, name+2, last);
                         }
                         break;
                     case 1: // delete
@@ -158,7 +142,6 @@ char *unmang_intrins(char *buf, char *name, char *last)
                 strcat(buf, xlate_tab[i]);
             }
         }
-    }
     return name;
 
 }
@@ -429,18 +412,26 @@ char *unmang1(char *buf, char *name, char *last)
             p = buf1;
             *p++ = '(';
             *p = 0;
-            while (*name && (*name != '$' || name[1] == 'q' || name[1] == 't'))
+            if (*name == 'v')
             {
-                if (name[0] == '$'&&name[1] == 'q')
+                // special case for func with void argument
+                name++;
+            }
+            else
+            {
+                while (*name && (*name != '$' || name[1] == 'q' || name[1] == 't'))
                 {
-                    strcpy(p, "(*)");
-                    p += 3;
+                    if (name[0] == '$'&&name[1] == 'q')
+                    {
+                        strcpy(p, "(*)");
+                        p += 3;
+                    }
+                    name = unmang1(p, name, last);
+                    p += strlen(p);
+                    *p++ = ',';
+                    *p++ = ' ';
+                    *p = 0;
                 }
-                name = unmang1(p, name, last);
-                p += strlen(p);
-                *p++ = ',';
-                *p++ = ' ';
-                *p = 0;
             }
             if (*name == '$')
                 name++;

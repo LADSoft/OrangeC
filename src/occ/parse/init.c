@@ -1177,7 +1177,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                     hrp = hrp->next;
                 }
                 fpargs.ascall = TRUE;
-                GetOverloadedFunction(&tp, &exp, tp->sp, &fpargs, NULL, TRUE, FALSE); 
+                GetOverloadedFunction(&tp, &exp, tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
             }
             if (tp->type == bt_memberptr)
             {
@@ -2046,87 +2046,90 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     if (cparams.prm_cplusplus && isstructured(itype) && (!basetype(itype)->sp->trivialCons || 
              arrayMember))
     {
-        // initialization via constructor
-        FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-        EXPRESSION *baseexp,*exp;
-        TYPE *ctype = itype;
-        INITIALIZER *it = NULL;
-        BOOLEAN maybeConversion = TRUE;
-        BOOLEAN isconversion;
-        exp = baseexp= exprNode(en_add, getThisNode(base), intNode(en_c_i, offset));
-        if (assn || arrayMember)
+        if (base->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {
-            // assignments or array members come here
-            if (startOfType(lex, FALSE))
+            // initialization via constructor
+            FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+            EXPRESSION *baseexp,*exp;
+            TYPE *ctype = itype;
+            INITIALIZER *it = NULL;
+            BOOLEAN maybeConversion = TRUE;
+            BOOLEAN isconversion;
+            exp = baseexp= exprNode(en_add, getThisNode(base), intNode(en_c_i, offset));
+            if (assn || arrayMember)
             {
-                TYPE *tp1 = NULL;
-                EXPRESSION *exp1;
-                lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
-                if (tp1->type == bt_auto)
-                    tp1 = itype;
-                if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), TRUE))
+                // assignments or array members come here
+                if (startOfType(lex, FALSE))
                 {
-                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                    errskim(&lex, skim_semi);
-                    return lex;
+                    TYPE *tp1 = NULL;
+                    EXPRESSION *exp1;
+                    lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+                    if (tp1->type == bt_auto)
+                        tp1 = itype;
+                    if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), TRUE))
+                    {
+                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        errskim(&lex, skim_semi);
+                        return lex;
+                    }
+                    else
+                    {
+                        funcparams->arguments = Alloc(sizeof(INITLIST));
+                        funcparams->arguments->tp = tp1;
+                        funcparams->arguments->exp = exp1;
+                        maybeConversion = FALSE;
+                    }
                 }
                 else
                 {
-                    funcparams->arguments = Alloc(sizeof(INITLIST));
-                    funcparams->arguments->tp = tp1;
-                    funcparams->arguments->exp = exp1;
-                    maybeConversion = FALSE;
+                    implicit = TRUE;
+                    if (MATCHKW(lex, begin))
+                    {
+                        lex = getArgs(lex, funcsp, funcparams, end, TRUE);
+                        maybeConversion = FALSE;
+                    }
+                    else
+                    {
+                        // shortcut for conversion from single expression
+                        EXPRESSION *exp1 = NULL;
+                        TYPE *tp1 = NULL;
+                        lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+                        funcparams->arguments = Alloc(sizeof(INITLIST));
+                        funcparams->arguments->tp = tp1;
+                        funcparams->arguments->exp = exp1;
+                    }
                 }
+            }
+            else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
+            {
+                // conversion constructor params
+                lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end, TRUE);
             }
             else
             {
-                implicit = TRUE;
-                if (MATCHKW(lex, begin))
-                {
-                    lex = getArgs(lex, funcsp, funcparams, end, TRUE);
-                    maybeConversion = FALSE;
-                }
-                else
-                {
-                    // shortcut for conversion from single expression
-                    EXPRESSION *exp1 = NULL;
-                    TYPE *tp1 = NULL;
-                    lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
-                    funcparams->arguments = Alloc(sizeof(INITLIST));
-                    funcparams->arguments->tp = tp1;
-                    funcparams->arguments->exp = exp1;
-                }
+                // default constructor without param list
             }
-        }
-        else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
-        {
-            // conversion constructor params
-            lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end, TRUE);
-        }
-        else
-        {
-            // default constructor without param list
-        }
-        callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, (flags & _F_NOINLINE), implicit, FALSE); 
-        initInsert(&it, itype, exp, offset, TRUE);
-        if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
-        {
-            insertDynamicInitializer(base, it);
-        }
-        else
-        {
-            *init = it;
-        }
-        exp = baseexp;
-        callDestructor(basetype(itype)->sp, &exp, NULL, TRUE, FALSE, FALSE);
-        initInsert(&it, itype, exp, offset, TRUE);
-        if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
-        {
-            insertDynamicDestructor(base, it);
-        }
-        else
-        {
-            *dest = it;
+            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, (flags & _F_NOINLINE), implicit, FALSE); 
+            initInsert(&it, itype, exp, offset, TRUE);
+            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
+            {
+                insertDynamicInitializer(base, it);
+            }
+            else
+            {
+                *init = it;
+            }
+            exp = baseexp;
+            callDestructor(basetype(itype)->sp, &exp, NULL, TRUE, FALSE, FALSE);
+            initInsert(&it, itype, exp, offset, TRUE);
+            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
+            {
+                insertDynamicDestructor(base, it);
+            }
+            else
+            {
+                *dest = it;
+            }
         }
         return lex;
     }

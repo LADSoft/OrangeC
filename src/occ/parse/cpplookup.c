@@ -59,6 +59,8 @@ extern INCLUDES *includes;
 extern BOOLEAN inTemplateType;
 extern LIST *nameSpaceList;
 
+#define DEBUG
+
 HASHTABLE *CreateHashTable(int size);
 #define F_WITHCONS 1
 #define F_INTEGER 2
@@ -252,7 +254,8 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             int level = -1;
             if (MATCHKW(lex, lt))
             {
-                while (lex && (!MATCHKW(lex, gt) || level) && !MATCHKW(lex, semicolon))
+                BOOLEAN done = FALSE;
+                while (lex && !done && !MATCHKW(lex, semicolon))
                 {
                     if (MATCHKW(lex, lt))
                     {
@@ -262,11 +265,13 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                     else if (MATCHKW(lex, gt))
                     {
                         lex = getsym();
-                        level --;
+                        if (level -- == 0)
+                            done = TRUE;
                     }
                     else if (MATCHKW(lex, rightshift))
                     {
-                        level -- ;
+                        if (level -- == 0) 
+                            done = TRUE;
                         lex = getGTSym(lex);
                     }
                     else
@@ -274,8 +279,6 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         lex = getsym();
                     }
                 }
-                if (lex && MATCHKW(lex, gt))
-                    lex = getsym();
             }
             if (!lex || !MATCHKW(lex, classsel))
                 break;
@@ -555,7 +558,8 @@ SYMBOL *classsearch(char *name, BOOLEAN tagsOnly)
                     errorstr(ERR_AMBIGUOUS_MEMBER_DEFINITION, name);
                     break;
                 }
-            }            if (!rv && cls->templateParams)
+            }
+            if (!rv && cls->templateParams)
                 rv = templatesearch(name, cls->templateParams);
             cls = cls->parentClass;
         }
@@ -975,20 +979,21 @@ SYMBOL *LookupSym(char *name)
 }
 static BOOLEAN isFriend(SYMBOL *cls, SYMBOL *frnd)
 {
-    if (frnd)
+    if (cls && frnd)
     {
+        BASECLASS *bases;
         LIST *l = cls->friends;
         while (l)
         {
             SYMBOL *sym = (SYMBOL *)l->data;
-            if (sym == frnd)
+            if (sym == frnd || sym == frnd->parentTemplate)
                 return TRUE;
             if (sym->templateLevel)
             {
                 LIST *instants = sym->instantiations;
                 while (instants)
                 {
-                    if ((SYMBOL *)instants->data == frnd)
+                    if ((SYMBOL *)instants->data == frnd || (SYMBOL *)instants->data == frnd->parentTemplate)
                         return TRUE;
                     instants = instants->next;
                 }
@@ -1002,14 +1007,14 @@ static BOOLEAN isFriend(SYMBOL *cls, SYMBOL *frnd)
 // time the access wouldn't work.  If the symbol is found it is accessible.
 static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase, 
                                  SYMBOL *member, SYMBOL *funcsp, 
-                                 enum e_ac minAccess, int level, BOOLEAN asAddress)
+                                 enum e_ac minAccess, int level, 
+                                 BOOLEAN asAddress, BOOLEAN friendly)
 {
     BASECLASS *lst;
     HASHREC *hr;
     SYMBOL *ssp;
     BOOLEAN matched;
     TYPE *tp;
-    BOOLEAN friendly = FALSE;
     if (!cparams.prm_cplusplus)
         return TRUE;
     ssp = getStructureDeclaration();
@@ -1018,7 +1023,7 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
         if (ssp == member)
             return TRUE;
     }
-    if (isFriend(currentBase, funcsp) || ssp && isFriend(currentBase, ssp))
+    if (isFriend(derived, funcsp) || funcsp && isFriend(derived, funcsp->parentClass) || isFriend(derived, ssp))
         friendly = TRUE;
     if (!currentBase->tp->syms)
         return FALSE;
@@ -1105,12 +1110,12 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
     {
         // we have to go through the base classes even if we know that a normal
         // lookup wouldn't work, so we can check their friends lists...
-        if (lst->cls == member)
+        if (lst->cls == member || sameTemplate(lst->cls->tp, member->tp))
         {
             SYMBOL *sym = lst->cls;
             return level <= 1 && (minAccess < ac_public || sym->access == ac_public) || sym->access >= minAccess;
         }
-        if (isAccessibleInternal(derived, lst->cls, member, funcsp, level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none : minAccess, level+1, asAddress))
+        if (isAccessibleInternal(derived, lst->cls, member, funcsp, level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none : minAccess, level+1, asAddress, friendly))
             return TRUE;
         lst = lst->next;
     }
@@ -1120,9 +1125,9 @@ BOOLEAN isAccessible(SYMBOL *derived, SYMBOL *currentBase,
                                  SYMBOL *member, SYMBOL *funcsp, 
                                  enum e_ac minAccess, BOOLEAN asAddress)
 {
-    return isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress);
+    return isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress, FALSE);
 }
-BOOLEAN isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOLEAN asAddress)
+BOOLEAN isExpressionAccessible(SYMBOL *derived, SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOLEAN asAddress)
 {
     if (sym->parentClass)
     {
@@ -1130,7 +1135,6 @@ BOOLEAN isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOO
         BOOLEAN throughClass = sym->throughClass;
         if (exp)
         {
-//            if (exp->type == en_l_p && exp->left->type == en_auto && exp->left->v.sp->thisPtr)
                 throughClass = TRUE;
         }
         
@@ -1141,7 +1145,7 @@ BOOLEAN isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOO
         }
         else
         {
-            if (!isAccessible(sym->parentClass, sym->parentClass, sym, funcsp, ac_public, asAddress))
+            if (!isAccessible(derived ? derived : sym->parentClass, sym->parentClass, sym, funcsp, ac_public, asAddress))
                 return FALSE;
         }
     }
@@ -1951,7 +1955,8 @@ static LIST *GetMemberConstructors(LIST *gather, SYMBOL *sp)
     return gather;
 }
 static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, enum e_cvsrn *seq, 
-                                SYMBOL *candidate, SYMBOL **userFunc);
+                                SYMBOL *candidate, SYMBOL **userFunc, BOOLEAN allowUser);
+static SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp);
 static SYMBOL *getUserConversion(int flags,
                           TYPE *tpp, TYPE *tpa, EXPRESSION *expa,
                               int *n, enum e_cvsrn *seq, SYMBOL *candidate_in, SYMBOL **userFunc)
@@ -1994,6 +1999,14 @@ static SYMBOL *getUserConversion(int flags,
             memset(&args, 0, sizeof(args));
             memset(&thistp, 0, sizeof(thistp));
             memset(&exp, 0, sizeof(exp));
+            funcparams.arguments = &args;
+            args.tp = tpa;
+            funcparams.ascall = TRUE;
+            funcparams.thisptr = expa;
+            funcparams.thistp = &thistp;
+            thistp.btp = tpa;
+            thistp.type = bt_pointer;
+            thistp.size = getSize(bt_pointer);
             while (lst2)
             {
                 HASHREC **hr = ((SYMBOL *)lst2->data)->tp->syms->table;
@@ -2014,7 +2027,15 @@ static SYMBOL *getUserConversion(int flags,
                 HASHREC **hr = ((SYMBOL *)lst2->data)->tp->syms->table;
                 while (*hr)
                 {
-                    spList[i++] = (SYMBOL *)(*hr)->p;
+                    SYMBOL *sym = (SYMBOL *)(*hr)->p;
+                    if (sym->templateLevel && sym->templateParams)
+                    {
+                        spList[i++] = detemplate(sym, &funcparams, NULL) ;
+                    }
+                    else
+                    {
+                        spList[i++] = sym;
+                    }
                     hr = &(*hr)->next;
                 }
                 lst2 = lst2->next;
@@ -2024,100 +2045,96 @@ static SYMBOL *getUserConversion(int flags,
             for (i=0; i < funcs; i++)
             {
                 SYMBOL *candidate = spList[i];
-                int j;
-                int n3 = 0, n2 = 0, m1;
-                enum e_cvsrn seq3[50];
-                if (candidate->castoperator)
+                if (candidate)
                 {
-                    TYPE *tpc = basetype(candidate->tp)->btp;
-                    if (isref(tpc))
-                        tpc = basetype(tpc)->btp;
-                    if ((flags & F_INTEGER) && !isint(tpc)
-                        || (flags & F_POINTER) && !ispointer(tpc) && basetype(tpc)->type != bt_memberptr
-                        || (flags & F_ARITHMETIC) && !isarithmetic(tpc)
-                        || (flags & F_STRUCTURE) && !isstructured(tpc))
+                    int j;
+                    int n3 = 0, n2 = 0, m1;
+                    enum e_cvsrn seq3[50];
+                    if (candidate->castoperator)
                     {
-                        seq3[n2++] = CV_NONE;
-                        seq3[n2+n3++] = CV_NONE;
+                        TYPE *tpc = basetype(candidate->tp)->btp;
+                        if (isref(tpc))
+                            tpc = basetype(tpc)->btp;
+                        if ((flags & F_INTEGER) && !isint(tpc)
+                            || (flags & F_POINTER) && !ispointer(tpc) && basetype(tpc)->type != bt_memberptr
+                            || (flags & F_ARITHMETIC) && !isarithmetic(tpc)
+                            || (flags & F_STRUCTURE) && !isstructured(tpc))
+                        {
+                            seq3[n2++] = CV_NONE;
+                            seq3[n2+n3++] = CV_NONE;
+                        }
+                        else
+                        {
+                            HASHREC *args = basetype(candidate->tp)->syms->table[0];
+                            BOOLEAN lref = FALSE;
+                            TYPE *tpn = basetype(candidate->tp)->btp;
+                            if (isref(tpn))
+                            {
+                                if (basetype(tpn)->type == bt_lref)
+                                    lref = TRUE;
+                            }
+                            thistp.btp = tpa;
+                            thistp.type = bt_pointer;
+                            thistp.size = getSize(bt_pointer);
+                            getSingleConversion(((SYMBOL *)args->p)->tp, &thistp, &exp, &n2, seq3, candidate, NULL, TRUE);
+                            seq3[n2+ n3++] = CV_USER;
+                            getSingleConversion(tpp, basetype(candidate->tp)->btp, lref ? NULL : &exp, &n3, seq3 + n2, candidate, NULL, TRUE);
+                        }
                     }
                     else
                     {
                         HASHREC *args = basetype(candidate->tp)->syms->table[0];
-                        BOOLEAN lref = FALSE;
-                        TYPE *tpn = basetype(candidate->tp)->btp;
-                        if (isref(tpn))
+                        if (args)
                         {
-                            if (basetype(tpn)->type == bt_lref)
-                                lref = TRUE;
-                        }
-                        thistp.btp = tpa;
-                        thistp.type = bt_pointer;
-                        thistp.size = getSize(bt_pointer);
-                        getSingleConversion(((SYMBOL *)args->p)->tp, &thistp, &exp, &n2, seq3, candidate, NULL);
-                        seq3[n2+ n3++] = CV_USER;
-                        getSingleConversion(tpp, basetype(candidate->tp)->btp, lref ? NULL : &exp, &n3, seq3 + n2, candidate, NULL);
-                    }
-                }
-                else
-                {
-                    HASHREC *args = basetype(candidate->tp)->syms->table[0];
-                    if (args)
-                    {
-                        if (candidate_in->isConstructor && candidate_in->parentClass == candidate->parentClass)
-                        {
-                            seq3[n2++] = CV_NONE;
-                        }
-                        else
-                        {
-                            SYMBOL *first, *next=NULL;
-                            SYMBOL *th = (SYMBOL *)args->p;
-                            args = args->next;
-                            first = (SYMBOL *)args->p;
-                            if (args->next)
-                                next = (SYMBOL *) args->next->p;
-                            if (!next || next->init)
-                            {
-                                getSingleConversion(first->tp, tpa, expa, &n2, seq3, candidate, &exp);
-                                if (n2 && seq3[n2-1] == CV_IDENTITY)
-                                {
-                                    n2--;
-                                }
-                                seq3[n2+n3++] = CV_USER;
-                                getSingleConversion(tpp, basetype(basetype(th->tp)->btp)->sp->tp, &exp, &n3, seq3+n2, candidate, NULL);
-                            }
-                            else
+                            if (candidate_in->isConstructor && candidate_in->parentClass == candidate->parentClass)
                             {
                                 seq3[n2++] = CV_NONE;
                             }
+                            else
+                            {
+                                SYMBOL *first, *next=NULL;
+                                SYMBOL *th = (SYMBOL *)args->p;
+                                args = args->next;
+                                first = (SYMBOL *)args->p;
+                                if (args->next)
+                                    next = (SYMBOL *) args->next->p;
+                                if (!next || next->init)
+                                {
+                                    getSingleConversion(first->tp, tpa, expa, &n2, seq3, candidate, &exp, TRUE);
+                                    if (n2 && seq3[n2-1] == CV_IDENTITY)
+                                    {
+                                        n2--;
+                                    }
+                                    seq3[n2+n3++] = CV_USER;
+                                    getSingleConversion(tpp, basetype(basetype(th->tp)->btp)->sp->tp, &exp, &n3, seq3+n2, candidate, NULL, TRUE);
+                                }
+                                else
+                                {
+                                    seq3[n2++] = CV_NONE;
+                                }
+                            }
                         }
                     }
-                }
-                for (j=0; j < n2+n3; j++)
-                    if (seq3[j] == CV_NONE)
-                        break;
-                m1 = n2+n3;
-                while (m1 && seq3[m1-1] == CV_IDENTITY)
-                    m1--;
-                if (j >= n2+n3 && m1 <= 4)
-                {
-                    lenList[i] = Alloc(sizeof(int) * 2);
-                    icsList[i] = Alloc(sizeof(enum e_cvsrn) * (n2 + n3));
-                    lenList[i][0] = n2;
-                    lenList[i][1] = n3;
-                    memcpy(&icsList[i][0], seq3, (n2 + n3) * sizeof(enum e_cvsrn));
-                }
-                else
-                {
-                    spList[i] = NULL;
+                    for (j=0; j < n2+n3; j++)
+                        if (seq3[j] == CV_NONE)
+                            break;
+                    m1 = n2+n3;
+                    while (m1 && seq3[m1-1] == CV_IDENTITY)
+                        m1--;
+                    if (j >= n2+n3 && m1 <= 4)
+                    {
+                        lenList[i] = Alloc(sizeof(int) * 2);
+                        icsList[i] = Alloc(sizeof(enum e_cvsrn) * (n2 + n3));
+                        lenList[i][0] = n2;
+                        lenList[i][1] = n3;
+                        memcpy(&icsList[i][0], seq3, (n2 + n3) * sizeof(enum e_cvsrn));
+                    }
+                    else
+                    {
+                        spList[i] = NULL;
+                    }
                 }
             }
-            funcparams.arguments = &args;
-            args.tp = tpa;
-            funcparams.thisptr = expa;
-            funcparams.thistp = &thistp;
-            thistp.btp = tpa;
-            thistp.type = bt_pointer;
-            thistp.size = getSize(bt_pointer);
             SelectBestFunc(spList, icsList, lenList, &funcparams, 2, funcs, NULL);
             found1 = found2 = NULL;
             
@@ -2228,6 +2245,7 @@ static void getPointerConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *exp, int *n,
         if (basetype(basetype(tpp)->btp)->type == bt_void)
         {
             seq[(*n)++] = CV_POINTERCONVERSION;
+            return;
         }
         else if (isstructured(basetype(tpp)->btp) && isstructured(basetype(tpa)->btp))
         {
@@ -2260,6 +2278,7 @@ static void getPointerConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *exp, int *n,
 }
 BOOLEAN sameTemplate(TYPE *P, TYPE *A)
 {
+    BOOLEAN PLd, PAd;
     TEMPLATEPARAMLIST *PL, *PA;
     if (!P || !A)
         return FALSE;
@@ -2280,13 +2299,29 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
         return TRUE;
     PL= P->sp->templateParams;
     PA = A->sp->templateParams;
-    if (!PL->p->bySpecialization.types != !PA->p->bySpecialization.types)
+    if (!PL || !PA) // errors
         return FALSE;
+    if (P->sp->specialized != A->sp->specialized)
+        return FALSE;
+    PLd = PAd = FALSE;
     if (PL->p->bySpecialization.types)
     {
         PL = PL->p->bySpecialization.types;
-        PA = PA->p->bySpecialization.types;
+        PLd = TRUE;
     }    
+    else
+    {
+        PL = PL->next;
+    }
+    if (PA->p->bySpecialization.types)
+    {
+        PA = PA->p->bySpecialization.types;
+        PAd = TRUE;
+    }    
+    else
+    {
+        PA = PA->next;
+    }
     if (PL && PA)
     {
         while (PL && PA)
@@ -2299,20 +2334,40 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
             {
                 if (PL->p->type == kw_typename)
                 {
-                    if ((PL->p->byClass.val || PA->p->byClass.val) && !templatecomparetypes(PL->p->byClass.val, PA->p->byClass.val, TRUE))
+                    TYPE *pl = PL->p->byClass.val && !PL->p->byClass.dflt ? PL->p->byClass.val : PL->p->byClass.dflt;
+                    TYPE *pa = PA->p->byClass.val && !PL->p->byClass.dflt ? PA->p->byClass.val : PA->p->byClass.dflt;
+                    if (!pl || !pa)
                         break;
+                    if (!templatecomparetypes(pl, pa, TRUE))
+                    {
+                        if (isref(pl))
+                            pl = basetype(pl)->btp;
+                        if (isref(pa))
+                            pa = basetype(pa)->btp;
+                        while (ispointer(pl) && ispointer(pa))
+                        {
+                            pl = basetype(pl)->btp;
+                            pa = basetype(pa)->btp;
+                        }
+                        if (!sameTemplate(pl, pa))
+                            break;
+                    }
                 }
                 else if (PL->p->type == kw_template)
                 {
-                    if ((PL->p->byTemplate.val || PA->p->byTemplate.val) && !exactMatchOnTemplateParams(PL->p->byTemplate.args, PA->p->byTemplate.args))
+                    TYPE *plt = PL->p->byTemplate.val && !PL->p->byTemplate.dflt ? PL->p->byTemplate.val : PL->p->byTemplate.dflt;
+                    TYPE *pat = PA->p->byTemplate.val && !PL->p->byTemplate.dflt ? PA->p->byTemplate.val : PA->p->byTemplate.dflt;
+                    if ((plt || pat) && !exactMatchOnTemplateParams(PL->p->byTemplate.args, PA->p->byTemplate.args))
                         break;
                 }
                 else if (PL->p->type == kw_int)
                 {
+                    TYPE *plt = PL->p->byNonType.val && !PL->p->byNonType.dflt ? PL->p->byNonType.val : PL->p->byNonType.dflt;
+                    TYPE *pat = PA->p->byNonType.val && !PL->p->byNonType.dflt ? PA->p->byNonType.val : PA->p->byNonType.dflt;
                     if (!templatecomparetypes(PL->p->byNonType.tp, PA->p->byNonType.tp, TRUE))
                         break;
 #ifndef PARSER_ONLY
-                    if ((PL->p->byNonType.val || PA->p->byNonType.val) && !equalnode(PL->p->byNonType.val, PA->p->byNonType.val))
+                    if ((plt || pat) && !equalnode(plt, pat))
                         break;
 #endif
                 }
@@ -2325,7 +2380,7 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
     return FALSE;
 }
 static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
-                                enum e_cvsrn *seq, SYMBOL *candidate, SYMBOL **userFunc)
+                                enum e_cvsrn *seq, SYMBOL *candidate, SYMBOL **userFunc, BOOLEAN allowUser)
 {
     BOOLEAN lref;
     BOOLEAN rref;
@@ -2405,7 +2460,10 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                     }
                     else
                     {
-                        getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+                        if (allowUser)
+                            getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+                        else
+                            seq[(*n)++] = CV_NONE;
                     }
                 }
                 else
@@ -2415,16 +2473,25 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             }
             else
             {
-                getUserConversion(0, tpp, tpa, expa, n, seq, candidate, userFunc);
+                if (allowUser)
+                    getUserConversion(0, tpp, tpa, expa, n, seq, candidate, userFunc);
+                else
+                    seq[(*n)++] = CV_NONE;
             }
         }
         else if (isstructured(tppp))
         {
-            getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+            if (allowUser)
+                getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+            else
+                seq[(*n)++] = CV_NONE;
         }
         else
         {
-            getSingleConversion(tppp, tpa, expa, n, seq, candidate, userFunc);
+            if (allowUser)
+                getSingleConversion(tppp, tpa, expa, n, seq, candidate, userFunc, allowUser);
+            else
+                seq[(*n)++] = CV_NONE;
         }
     }
     else
@@ -2443,23 +2510,32 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 }
                 else
                 {
-                    getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+                    if (allowUser)
+                        getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+                    else
+                        seq[(*n)++] = CV_NONE;
                 }
             }
             else
             {
-                getUserConversion(0, tpp, tpa, expa, n, seq, candidate, userFunc);
+                if (allowUser)
+                    getUserConversion(0, tpp, tpa, expa, n, seq, candidate, userFunc);
+                else
+                    seq[(*n)++] = CV_NONE;
             }
         }
         else if (isstructured(tpp))
         {
-            getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+            if (allowUser)
+                getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+            else
+                seq[(*n)++] = CV_NONE;
         }
         else if (isfuncptr(tpp))
         {
-            tpp = basetype(tpp->btp);
+            tpp = basetype(tpp)->btp;
             if (isfuncptr(tpa))
-                tpa = basetype(tpa->btp);
+                tpa = basetype(tpa)->btp;
             if (comparetypes(tpp, tpa, TRUE))
             {
                 seq[(*n)++] = CV_IDENTITY;
@@ -2514,7 +2590,10 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                         }
                         else
                         {
-                            getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+                            if (allowUser)
+                                getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+                            else
+                                seq[(*n)++] = CV_NONE;
                         }
                     }
                     else
@@ -2623,7 +2702,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
                 SYMBOL *member = (SYMBOL *)structSyms->p;
                 if (ismemberdata(member))
                 {
-                    getSingleConversion(member->tp, a->tp, a->exp, n, seq, candidate, userFunc); 
+                    getSingleConversion(member->tp, a->tp, a->exp, n, seq, candidate, userFunc, TRUE); 
                     if (*n > 4)
                         break;
                     a = a->next;
@@ -2660,7 +2739,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
                 funcparams.thistp = &thistp;
                 funcparams.thisptr = &exp;
                 funcparams.ascall = TRUE;
-                cons = GetOverloadedFunction(&ctype, &expp, cons, & funcparams, NULL, FALSE, TRUE);
+                cons = GetOverloadedFunction(&ctype, &expp, cons, & funcparams, NULL, FALSE, TRUE, TRUE);
                 if (!cons)    
                 {
                     seq[(*n)++] = CV_NONE;
@@ -2677,7 +2756,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
         x = tp->size / btp->size;
         while (a)
         {
-            getSingleConversion(btp, a->tp, a->exp, n, seq, candidate, userFunc);                
+            getSingleConversion(btp, a->tp, a->exp, n, seq, candidate, userFunc, TRUE);
             if (*n > 4)
                 break;
             if (--x < 0) // too many items...
@@ -2694,7 +2773,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
         if (a && a->next)
             seq[(*n)++] = CV_NONE;
         else if (a)
-            getSingleConversion(tp, a ? a->tp : tpp, a ? a->exp : NULL, n, seq, candidate, userFunc);                
+            getSingleConversion(tp, a ? a->tp : tpp, a ? a->exp : NULL, n, seq, candidate, userFunc, TRUE);
     }
 }
 static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *parent, enum e_cvsrn arr[], int *sizes, int count, SYMBOL **userFunc)
@@ -2727,7 +2806,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
         memset(&tpx, 0, sizeof(tpx));
         m = 0;
         getSingleConversion(parent->tp, basetype(sp->tp)->btp, NULL,
-                                    &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+                                    &m, seq, sp, userFunc ? &userFunc[n] : NULL, FALSE);
         m1 = m;
         while (m1 && seq[m1-1] == CV_IDENTITY)
             m1--;
@@ -2747,7 +2826,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
         tpx.size = getSize(bt_pointer);
         tpx.btp = f->arguments->tp;
         m = 0;
-        getSingleConversion(tpp, &tpx, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+        getSingleConversion(tpp, &tpx, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL, TRUE);
         m1 = m;
         while (m1 && seq[m1-1] == CV_IDENTITY)
             m1--;
@@ -2799,7 +2878,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                         tpx.btp = f->arguments->tp;
                     }
                     m = 0;
-                    getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+                    getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL, TRUE);
                     m1 = m;
                     while (m1 && seq[m1-1] == CV_IDENTITY)
                         m1--;
@@ -2828,7 +2907,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                 else if (a || hrt)
                 {
                     getSingleConversion(argtp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, 
-                                        &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+                                        &m, seq, sp, userFunc ? &userFunc[n] : NULL, TRUE);
                     if (a)
                         a = a->next;
                     else if (hrt)
@@ -2874,10 +2953,10 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                             hrp = hrp->next;
                         }
                         fpargs.ascall = TRUE;
-                        GetOverloadedFunction(&a->tp, &a->exp, a->tp->sp, &fpargs, NULL, TRUE, FALSE); 
+                        GetOverloadedFunction(&a->tp, &a->exp, a->tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
                     }
                     getSingleConversion(basetype(argsym->tp), a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
-                                    sp, userFunc ? &userFunc[n] : NULL);
+                                    sp, userFunc ? &userFunc[n] : NULL, TRUE);
                 }
                 m1 = m;
                 while (m1 && seq[m1-1] == CV_IDENTITY)
@@ -3065,7 +3144,7 @@ static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUN
             int i;
             SYMBOL *sym = (SYMBOL *)(*hr)->p;
             for (i=0; i < n; i++)
-                if (spFilterList[i] == sym)
+                if (spFilterList[i] == sym || spFilterList[i]->mainsym == sym || spFilterList[i] == sym->mainsym)
                     break;
             
             if (i >= n && (!args || !args->astemplate || sym->templateLevel) && !sym->instantiated)
@@ -3094,7 +3173,7 @@ static void doNames(SYMBOL *sym)
 }
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOLEAN toErr, 
-                              BOOLEAN maybeConversion)
+                              BOOLEAN maybeConversion, BOOLEAN toInstantiate)
 {
     STRUCTSYM s;
     s.tmpl = 0;
@@ -3265,8 +3344,11 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         }
                     }
                 }
-                if (toErr && !found1 && !templateNestingCount)
+#ifdef DEBUG
+                // this block to aid in debugging unfound functions...
+                if (toErr && (!found1 || found1 && found2) && !templateNestingCount)
                 {
+                    memset(spFilterList, 0, sizeof(SYMBOL *) * n);
                     n = insertFuncs(spList, spFilterList, gather, args, atp);
                     if (atp || args->ascall)
                     {
@@ -3275,6 +3357,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                     }
                     WeedTemplates(spList, n, args, atp);
                 }
+#endif
             }
             else
             {
@@ -3360,7 +3443,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                             found1->instantiated = TRUE;
                         }
                     }
-                    if (found1->deferredCompile && !found1->inlineFunc.stmt)
+                    if (toInstantiate && found1->deferredCompile && !found1->inlineFunc.stmt)
                     {
                         deferredCompileOne(found1);
                     }

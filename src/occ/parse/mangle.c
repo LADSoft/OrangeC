@@ -131,7 +131,7 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
                 {
                     buf = mangleType(buf, params->p->byClass.dflt, TRUE); 
                 }
-                else if (sym->instantiated)
+                else if (sym->instantiated && params->p->byClass.val)
                 {
                     buf = mangleType(buf, params->p->byClass.val, TRUE); 
                 }
@@ -516,8 +516,8 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
         if (cparams.prm_cplusplus)
             linkage = lk_cpp;
         else
-            linkage = lk_c;
-                
+            linkage = lk_c;                
+        
     switch (linkage)
     {
         case lk_auto:

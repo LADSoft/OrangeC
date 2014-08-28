@@ -769,7 +769,7 @@ void FinishStruct(SYMBOL *sp, SYMBOL *funcsp)
 {
     sp->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
-    if (cparams.prm_cplusplus && sp->tp->syms)
+    if (cparams.prm_cplusplus)
     {
         calculateStructAbstractness(sp, sp);
         calculateVirtualBaseOffsets(sp, sp, FALSE, 0);
@@ -862,11 +862,14 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
 }
 LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTemplate, enum e_ac defaultAccess, BOOLEAN isfinal, BOOLEAN *defd)
 {
+    BOOLEAN hasBody = (cparams.prm_cplusplus && KW(lex) == colon) || KW(lex) == begin;
     SYMBOL *injected = NULL;
+    if (templateNestingCount && nameSpaceList)
+        SetTemplateNamespace(sp);
     if (sp->structAlign == 0)
         sp->structAlign = 1;
     structLevel++;
-    if (cparams.prm_cplusplus && KW(lex) == colon || KW(lex) == begin)
+    if (hasBody)
     {
         if (sp->tp->syms)
         {
@@ -907,7 +910,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
         noSpecializationError--;
         TemplateGetDeferred(sp);
     }
-    if (!templateNestingCount)
+    if (!templateNestingCount && hasBody)
     {
         if (sp->tp->syms && !sp->performedDeferred)
         {
@@ -1260,7 +1263,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     *defd = FALSE;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-   if (cparams.prm_cplusplus && (MATCHKW(lex, kw_class)  || MATCHKW(lex, kw_struct)))
+    if (cparams.prm_cplusplus && (MATCHKW(lex, kw_class)  || MATCHKW(lex, kw_struct)))
     {
         scoped = TRUE;
         lex = getsym();
@@ -2174,7 +2177,6 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                 SYMBOL *ssp = getStructureDeclaration();
                 TYPE *tpx = basetype(sp->tp);        
                 lex = getsym();
-                
                 foundsomething = TRUE;
                 if (tpx->type == bt_templateparam)
                 {
@@ -2184,6 +2186,16 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                         if (tpx->templateParam->p->type == kw_typename)
                         {
                             tn = tpx->templateParam->p->byClass.val;
+                            if (*tp && tn)
+                            {
+                                // should only be const vol specifiers
+                                TYPE *tpy = *tp;
+                                while(tpy->btp)
+                                    tpy = tpy->btp;
+                                tpy->btp = tpx;
+                                tn = SynthesizeType(*tp, tpx->templateParam, FALSE);
+                                *tp = NULL;
+                            }
                             if (inTemplate)
                             {
                                 if (MATCHKW(lex, lt))
@@ -2283,7 +2295,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                         }
                         else
                         {
-                            if (!noSpecializationError && !instantiatingTemplate && (!sp->mainsym || sp->mainsym != strSym))
+                            if (!noSpecializationError && !instantiatingTemplate && (!sp->mainsym || sp->mainsym != strSym && sp->mainsym != ssp))
                                 errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
                         }
                         tn = NULL;
@@ -2581,68 +2593,66 @@ BOOLEAN intcmp(TYPE *t1, TYPE *t2)
 static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo)
 {
     HASHREC *hro;
-    
-    if ((sp->storage_class != sc_member && sp->storage_class != sc_mutable) || sp->templateLevel)
+
+    /* two oldstyle declarations aren't compared */
+    if ((spo && !spo->oldstyle && spo->hasproto) || !sp->oldstyle)
     {
-            
-        /* two oldstyle declarations aren't compared */
-        if ((spo && !spo->oldstyle && spo->hasproto) || !sp->oldstyle)
+        if (spo && isfunction(spo->tp))
         {
-            if (spo && isfunction(spo->tp))
+            HASHREC *hro1, *hr1;
+            if (!comparetypes(basetype(spo->tp)->btp, basetype(sp->tp)->btp, TRUE) && !sameTemplate(basetype(spo->tp)->btp, basetype(sp->tp)->btp))
             {
-                HASHREC *hro1, *hr1;
-                if (!comparetypes(basetype(spo->tp)->btp, basetype(sp->tp)->btp, TRUE) && !sameTemplate(basetype(spo->tp)->btp, basetype(sp->tp)->btp))
+                
+                preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
+            }
+            else
+            {
+                hro1 = basetype(spo->tp)->syms->table[0];
+                hr1 = basetype(sp->tp)->syms->table[0];
+                if (hro1 && ((SYMBOL *)(hro1->p))->thisPtr)
+                    hro1 = hro1->next;
+                if (hro1 && hr1 && ((SYMBOL *)(hro1->p))->tp)
                 {
-                    
-                    preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
-                }
-                else
-                {
-                    hro1 = basetype(spo->tp)->syms->table[0];
-                    hr1 = basetype(sp->tp)->syms->table[0];
-                    if (hro1 && ((SYMBOL *)(hro1->p))->thisPtr)
-                        hro1 = hro1->next;
-                    if (hro1 && hr1 && ((SYMBOL *)(hro1->p))->tp)
+                    while (hro1 && hr1)
                     {
+                        SYMBOL *spo1 = (SYMBOL *)hro1->p;
+                        SYMBOL *sp1 = (SYMBOL *)hr1->p;                    
+                        if (!comparetypes(spo1->tp, sp1->tp, TRUE) && !sameTemplate(spo1->tp, sp1->tp))
+                        {
+                            break;
+                        }
+                        hro1 = hro1->next;
+                        hr1 = hr1->next;
+                    }
+                    if (hro1 || hr1)
+                    {
+                        preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
+                    }
+                    else
+                    {
+                        BOOLEAN err = FALSE;
+                        SYMBOL *last = NULL;
+                        hro1 = basetype(spo->tp)->syms->table[0];
+                        hr1 = basetype(sp->tp)->syms->table[0];
+                        if (hro1 && ((SYMBOL *)(hro1->p))->thisPtr)
+                            hro1 = hro1->next;
                         while (hro1 && hr1)
                         {
-                            SYMBOL *spo1 = (SYMBOL *)hro1->p;
-                            SYMBOL *sp1 = (SYMBOL *)hr1->p;                    
-                            if (!comparetypes(spo1->tp, sp1->tp, TRUE) && !sameTemplate(spo1->tp, sp1->tp))
+                            SYMBOL *so = (SYMBOL *)hro1->p;
+                            SYMBOL *s = (SYMBOL *)hr1->p;
+                            if (so != s && so->init && s->init)
+                                errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
+                            if (!err && last && last->init && !(so->init || s->init))
                             {
-                                break;
+                                err = TRUE;
+                                errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
                             }
+                            last = so;
+                            if (so->init)
+                                s->init = so->init;    
+                            hro1->p = hr1->p;
                             hro1 = hro1->next;
                             hr1 = hr1->next;
-                        }
-                        if (hro1 || hr1)
-                        {
-                            preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
-                        }
-                        else
-                        {
-                            BOOLEAN err = FALSE;
-                            SYMBOL *last = NULL;
-                            hro1 = basetype(spo->tp)->syms->table[0];
-                            hr1 = basetype(sp->tp)->syms->table[0];
-                            while (hro1 && hr1)
-                            {
-                                SYMBOL *so = (SYMBOL *)hro1->p;
-                                SYMBOL *s = (SYMBOL *)hr1->p;
-                                if (so != s && so->init && s->init)
-                                    errorsym(ERR_CANNOT_REDECLARE_DEFAULT_ARGUMENT, so);
-                                if (!err && last && last->init && !(so->init || s->init))
-                                {
-                                    err = TRUE;
-                                    errorsym(ERR_MISSING_DEFAULT_ARGUMENT, last);
-                                }
-                                last = so;
-                                if (so->init)
-                                    s->init = so->init;    
-                                hro1->p = hr1->p;
-                                hro1 = hro1->next;
-                                hr1 = hr1->next;
-                            }
                         }
                     }
                 }
@@ -2772,7 +2782,6 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
         SYMBOL *sp2 = clonesym(sp);
         sp2->name = litlate(sp->name);
         *spin = sp = sp2;
-        
     }
     if (*tp == NULL)
         *tp = &stdint;
@@ -4289,7 +4298,8 @@ jointemplate:
                     }
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate,
-                                        storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest, FALSE);
+                                    storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest, FALSE);
+
                     inTemplateType = FALSE;
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
@@ -4435,11 +4445,6 @@ jointemplate:
                         {
                             storage_class = sc_member;
                         }
-                        if (inTemplate && templateNestingCount == 1)
-                        {
-                            inTemplateBody++;
-                            noSpecializationError++;
-                        }
                         if (consdest != CT_NONE)
                             if (consdest == CT_CONS)
                                 sp-> isConstructor = TRUE;
@@ -4491,6 +4496,11 @@ jointemplate:
                                 lex = getsym();                                
                                 sp->memberInitializers = GetMemberInitializers(&lex, funcsp, sp);
                             }
+                        }
+                        if (inTemplate && templateNestingCount == 1)
+                        {
+                            inTemplateBody++;
+                            noSpecializationError++;
                         }
                         if (storage_class == sc_absolute)
                             sp->value.i= address;
@@ -4572,11 +4582,17 @@ jointemplate:
                                 HASHREC **p;
                                 ssp = getStructureDeclaration();
                                 if (ssp && ssp->tp->syms && (strSym || !asFriend))
+                                {
                                     p = LookupName(sp->name, ssp->tp->syms);				
+                                }
                                 else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external)
+                                {
                                     p = LookupName(sp->name, localNameSpace->syms);
+                                }
                                 else
+                                {
                                     p = LookupName(sp->name, globalNameSpace->syms);
+                                }
                                 if (p)
                                 {
                                     spi = (SYMBOL *)(*p)->p;
@@ -4589,6 +4605,9 @@ jointemplate:
                             SYMBOL *sym = NULL;
                             sym = searchOverloads(sp, spi->tp->syms);
                             if (sym && cparams.prm_cplusplus)
+                            {
+                                if (sym->linkage == lk_c && sp->linkage == lk_cdecl)
+                                    sp->linkage = lk_c;
                                 if (sp->linkage != sym->linkage && sp->linkage != lk_inline && sym->linkage != lk_inline)
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->declfile, spi->declline);
@@ -4601,12 +4620,37 @@ jointemplate:
                                     }
                                     else
 */ 
-                                    if (!sameTemplate(basetype(sym->tp)->btp, basetype(sp->tp->btp)))
+                                    // this is done here becase a templated base class may have filled in
+                                    // something by now...
+                                    // this is a little naive, what about function parameters as part of a
+                                    // return value
+                                    TYPE **ptp = NULL;
+                                    
+                                    if (!templateNestingCount)
                                     {
-                                        sym = NULL;
+                                        ptp = &basetype(sym->tp)->btp;
+                                        while (*ptp)
+                                        {
+                                            if ((*ptp)->type == bt_templateparam)
+                                            {
+                                                if ((*ptp)->templateParam->p->byClass.val)
+                                                {
+                                                    *ptp = (*ptp)->templateParam->p->byClass.val;
+                                                }
+                                                break;
+                                            }
+                                            ptp = & (*ptp)->btp;
+                                        }
+                                    }
+                                    if (!ptp || !*ptp)
+                                    {
+                                        if (!sameTemplate(basetype(sym->tp)->btp, basetype(sp->tp->btp)))
+                                        {
+                                            sym = NULL;
+                                        }
                                     }
                                 }
-                            
+                            }                            
                             if (inTemplate)
                                 if (!sym)
                                 {
@@ -4730,7 +4774,7 @@ jointemplate:
                                         break;
                                     case sc_external:
                                         if ((spi)->storage_class == sc_static)
-                                             if (!isfunction(spi->tp))
+                                            if (!isfunction(spi->tp))
                                             {
                                                 if (spi->constexpression)
                                                 {
@@ -4816,8 +4860,10 @@ jointemplate:
                                         nw = &(*nw)->next;
                                     }
                                 }
-                                if ((MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try)))
+                                if (cparams.prm_cplusplus && (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try)))
+                                {
                                     spi->templateParams = sp->templateParams;
+                                }
                                 spi->tp = sp->tp;
                                 spi->tp->sp = spi;
                             }
@@ -5038,7 +5084,7 @@ jointemplate:
                                 tp->type = bt_ifunc;
                                 hr = tp->syms->table[0];
                                 if (templateNestingCount && nameSpaceList)
-                                    sp->templateNameSpace = (SYMBOL *)nameSpaceList->data;
+                                    SetTemplateNamespace(sp);
                                     
                                 while (hr)
                                 {
@@ -5060,6 +5106,10 @@ jointemplate:
                                         tpl = tpl->btp;
                                     }
                                     hr = hr->next;
+                                }
+                                if (storage_class_in == sc_member || storage_class_in == sc_mutable)
+                                {
+                                    sp->instantiatedInlineInClass = TRUE;
                                 }
                                 if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1)
                                 {

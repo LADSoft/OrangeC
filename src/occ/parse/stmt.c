@@ -689,13 +689,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             fcb.thisptr = rangeExp;
                             fcb.ascall = TRUE;
                             ctp = rangeSP->tp;
-                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE);
+                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE, TRUE);
                             memset(&fce, 0, sizeof(fce));
                             fce.thistp = &thisTP;
                             fce.thisptr = rangeExp;
                             fce.ascall = TRUE;
                             ctp = rangeSP->tp;
-                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE);
+                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE, TRUE);
                             if (beginFunc && endFunc)
                             {
                                 if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, TRUE))
@@ -785,12 +785,12 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 fcb.arguments = &args;
                                 fcb.ascall = TRUE;
                                 ctp = rangeSP->tp;
-                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE);
+                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, ibegin, &fcb, NULL, FALSE, FALSE, TRUE);
                                 memset(&fce, 0, sizeof(fce));
                                 fce.arguments = &args;
                                 fce.ascall = TRUE;
                                 ctp = rangeSP->tp;
-                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE);
+                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, iend, &fce, NULL, FALSE, FALSE, TRUE);
                                 if (beginFunc && endFunc)
                                 {
                                     TYPE *it2;
@@ -1689,13 +1689,15 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         {
             returnexp=ConvertReturnToRef(returnexp, basetype(funcsp->tp)->btp);
         }
-        else if (returnexp->type == en_auto && 
+        else if (returnexp && returnexp->type == en_auto && 
             returnexp->v.sp->storage_class == sc_auto)
         {
             if (!isstructured(basetype(funcsp->tp)->btp) && 
                 basetype(basetype(funcsp->tp)->btp)->type != bt_memberptr)
                 error(ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE);
         }
+        if (!returnexp)
+            returnexp = intNode(en_c_i, 0); // errors
     }
     currentLineData(parent, lex, 0);
     thunkRetDestructors(&destexp, NULL, localNameSpace->syms);
@@ -2140,6 +2142,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             st->select->v.func = parms;
         }
     }
+    parent->needlabel = TRUE;
     return lex;
 }
 LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
@@ -2182,6 +2185,7 @@ LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                 {
                     lex = compound(lex, funcsp, catchstmt, FALSE);
                     parent->nosemi = TRUE;
+                    parent->needlabel &= catchstmt->needlabel;
                     if (parent->next)
                         parent->next->nosemi = TRUE;
                 }
@@ -2227,6 +2231,7 @@ LEXEME *statement_try(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         AllocateLocalContext(trystmt, funcsp);
         lex = compound(lex, funcsp, trystmt, FALSE);
         FreeLocalContext(trystmt, funcsp);
+        parent->needlabel = trystmt->needlabel;
         st = stmtNode(lex, parent, st_try);
         st->label = beGetLabel;
         st->endlabel = beGetLabel;
@@ -2355,7 +2360,7 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
 {
     LEXEME *placeholder = lex;
     lex = getsym();
-    if (MATCHKW(lex, '{'))
+    if (MATCHKW(lex, begin))
     {
         prevsym(placeholder);
         return FALSE;
@@ -2707,7 +2712,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         return lex;
     browse_blockend(lex->line);
     currentLineData(blockstmt, lex, -!first);
-    if (parent->type == begin || parent->type == kw_switch)
+    if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch)
         parent->needlabel = blockstmt->needlabel;
     if (!blockstmt->hassemi && (!blockstmt->nosemi || blockstmt->lastcaseordefault))
     {

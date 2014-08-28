@@ -164,6 +164,8 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMB
 void sizeQualifiers(TYPE *tp);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
+int PushTemplateNamespace(SYMBOL *sym);
+void PopTemplateNamespace(int n);
 BOOLEAN typeHasTemplateArg(TYPE *t);
 void templateInit(void);
 void TemplateGetDeferred(SYMBOL *sym);
@@ -187,6 +189,7 @@ void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams
 SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN isExtern);
 SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class);
 void TemplateDataInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
+void SetTemplateNamespace(SYMBOL *sym);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
 SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class);
 void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, BOOLEAN isExtern);
@@ -879,7 +882,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
 LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
 LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *isTemplate, BOOLEAN tagsOnly, BOOLEAN membersOnly, char *name);
 BOOLEAN isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOLEAN asAddress);
-BOOLEAN isExpressionAccessible(SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOLEAN asAddress);
+BOOLEAN isExpressionAccessible(SYMBOL *derived, SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOLEAN asAddress);
 BOOLEAN checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);
 SYMBOL *LookupSym(char *name);
 SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp);
@@ -890,7 +893,7 @@ SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOLEAN toErr, 
-                              BOOLEAN maybeConversion);
+                              BOOLEAN maybeConversion, BOOLEAN toInstantiate);
 void insert(SYMBOL *in, HASHTABLE *table);
 void insertOverload(SYMBOL *in, HASHTABLE *table);
 

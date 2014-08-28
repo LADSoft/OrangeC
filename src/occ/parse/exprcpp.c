@@ -231,11 +231,11 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOO
                 if (toError)
                     errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->parentClass, enclosing);
             }
-            else if (!isExpressionAccessible(memberSym, funcsp, en, FALSE))
+            else if (!isExpressionAccessible(NULL, memberSym, funcsp, en, FALSE))
             {
                 if (toError)
                 {
-                    isExpressionAccessible(memberSym, funcsp, en, FALSE);
+                    isExpressionAccessible(NULL, memberSym, funcsp, en, FALSE);
                     errorsym(ERR_CANNOT_ACCESS, memberSym);
                 }
             }
@@ -267,7 +267,7 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *f
     *tp = tpq;
     rv = varNode(en_memberptr, memberSym);
     rv->isfunc = TRUE;
-    if (!isExpressionAccessible(memberSym, funcsp, NULL, TRUE))
+    if (!isExpressionAccessible(NULL, memberSym, funcsp, NULL, TRUE))
     {
         errorsym(ERR_CANNOT_ACCESS, memberSym);
     }
@@ -766,7 +766,7 @@ BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *f
                     }
                     if (isref(*newType))
                         *newType = tpn;
-                    if (!basetype(tpo)->sp->hasvtab || !basetype(tpo)->syms->table[0])
+                    if (!basetype(tpo)->sp->hasvtab || !basetype(tpo)->sp->tp->syms->table[0])
                         errorsym(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, basetype(tpo)->sp);
                     return TRUE;
                 }
@@ -953,6 +953,10 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
         {
             SYMBOL *spo = basetype(tpo)->sp;
             SYMBOL *spn = basetype(tpn)->sp;
+            if (spo == spn)
+            {
+                return TRUE;
+            }
             if (!isstructured(tpo) || (!spo->hasvtab && !spo->accessspecified && !spo->baseClasses))
             {
                 if (!isstructured(tpn) || (!spn->hasvtab && !spn->accessspecified && !spn->baseClasses))
@@ -992,6 +996,10 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
             {
                 SYMBOL *spo = basetype(tpo)->sp;
                 SYMBOL *spn = basetype(tpn)->sp;
+                if (spo == spn)
+                {
+                    return TRUE;
+                }
                 if (!isstructured(tpo) || (!spo->hasvtab && !spo->accessspecified && !spo->baseClasses))
                 {
                     if (!isstructured(tpn) || (!spn->hasvtab && !spn->accessspecified && !spn->baseClasses))
@@ -1053,7 +1061,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         }
         if (tp)
         {
-            SYMBOL *sp = gsearch("__GetTypeInfo");
+            SYMBOL *sp = namespacesearch("__GetTypeInfo", globalNameSpace, FALSE, FALSE);
             if (sp)
             {
                 
@@ -1083,7 +1091,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 arg2->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
                 *exp = exprNode(en_func, 0, 0);
                 (*exp)->v.func = funcparams;
-                sp = gsearch("std");
+                sp = namespacesearch("std", globalNameSpace, FALSE, FALSE);
                 if (sp->storage_class == sc_namespace)
                 {
                     sp = namespacesearch("type_info", sp->nameSpaceValues, TRUE, FALSE);
@@ -1151,10 +1159,10 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         }
     }
     funcparams->ascall = TRUE;    
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE);
     if (s3)
     {
-        if (!isExpressionAccessible(s3, funcsp, funcparams->thisptr, FALSE))
+        if (!isExpressionAccessible(NULL, s3, funcsp, funcparams->thisptr, FALSE))
             errorsym(ERR_CANNOT_ACCESS, s3);		
         s3->throughClass = s3->parentClass != NULL;
         funcparams->sp = s3;
@@ -1367,10 +1375,10 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
             break;
     }
     funcparams->ascall = TRUE;    
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE);
     if (s3)
     {
-        if (!isExpressionAccessible(s3, funcsp, funcparams->thisptr, FALSE))
+        if (!isExpressionAccessible(NULL, s3, funcsp, funcparams->thisptr, FALSE))
             errorsym(ERR_CANNOT_ACCESS, s3);		
         if (ismember(s3))
         {
@@ -1523,7 +1531,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     }
     // should have always found something
     placement->ascall = TRUE;    
-    s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE);
+    s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE, TRUE);
     if (s1)
     {
         SYMBOL *sp;
@@ -1747,7 +1755,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     one->tp = &stdpointer;
     funcparams->arguments = one;
     funcparams->ascall = TRUE;
-    s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, NULL, TRUE, FALSE);
+    s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, NULL, TRUE, FALSE, TRUE);
     if (s1)
     {
         s1->throughClass = s1->parentClass != NULL;

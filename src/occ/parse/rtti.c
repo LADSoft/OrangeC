@@ -156,10 +156,12 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
     }
     else if (isstructured(tp) && !basetype(tp)->sp->trivialCons)
     {
-        sp = search(overloadNameTab[CI_DESTRUCTOR], tp->syms);
+        sp = search(overloadNameTab[CI_DESTRUCTOR], basetype(tp)->syms);
         if (sp)
+        {
             sp = basetype(sp->tp)->syms->table[0]->p;
-        sp->genreffed = TRUE;
+            sp->genreffed = TRUE;
+        }
     }
 
     cseg();

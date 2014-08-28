@@ -43,6 +43,7 @@ extern NAMESPACEVALUES *localNameSpace;
 extern TYPE stdpointer;
 extern int startlab, retlab;
 extern int total_errors;
+extern INCLUDES *includes;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
 static LIST *inlineDataHead, *inlineDataTail;

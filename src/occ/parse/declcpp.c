@@ -659,6 +659,7 @@ void deferredCompileOne(SYMBOL *cur)
     // function body
     if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams))
     {
+        int tns = PushTemplateNamespace(cur->parentClass);
         cur->linkage = lk_inline;
         if (cur->templateParams)
         {
@@ -672,6 +673,7 @@ void deferredCompileOne(SYMBOL *cur)
             addStructureDeclaration(&l);
             count++;
         }
+        /*
         sp = cur->parentClass;
         while (sp)
         {
@@ -684,6 +686,7 @@ void deferredCompileOne(SYMBOL *cur)
             }
             sp = sp->parentClass;
         }
+        */
         dontRegisterTemplate++;
         lex = SetAlternateLex(cur->deferredCompile);
         cur->deferredCompile = NULL;
@@ -694,6 +697,7 @@ void deferredCompileOne(SYMBOL *cur)
         {
             dropStructureDeclaration();
         }
+        PopTemplateNamespace(tns);
     }
 }
 void deferredCompile(void)
@@ -707,7 +711,8 @@ void deferredCompile(void)
         while (deferredBackfill)
         {
             SYMBOL *cur = (SYMBOL *)deferredBackfill->data;
-            deferredCompileOne(cur);
+            if (!cur->parentClass->templateLevel)
+                deferredCompileOne(cur);
             deferredBackfill = deferredBackfill->next;
         }
     }
@@ -939,7 +944,20 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         if (MATCHKW(lex,classsel) || ISID(lex))
         {
             bcsym = NULL;
-            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, TRUE, sc_global);
+            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, FALSE, sc_global);
+            if (bcsym && bcsym->storage_class == sc_typedef)
+            {
+                // in case typedef is being used as a base class specifier
+                TYPE *tp = basetype(bcsym->tp);
+                if (isstructured(tp))
+                {
+                    bcsym = tp->sp;
+                }
+                else
+                {
+                    bcsym = NULL;
+                }
+            }
             lex = getsym();
             if (bcsym && bcsym->templateLevel)
             {
@@ -1055,7 +1073,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
     lst = declsym->baseClasses;
     while (lst)
     {
-        if (!isExpressionAccessible(lst->cls, NULL, NULL, FALSE))
+        if (!isExpressionAccessible(NULL, lst->cls, NULL, NULL, FALSE))
         {
             BOOLEAN err = TRUE;
             BASECLASS *lst2 = declsym->baseClasses;

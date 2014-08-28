@@ -117,21 +117,6 @@ char *unmang_intrins(char *buf, char *name, char *last)
     while (*name != '@' &&  *name != '$' &&  *name)
         *p++ = *name++;
     *p = 0;
-    if (cur[1] == 'o')
-    {
-        p = cur;
-        strcpy(buf, "operator ");
-        buf += strlen(buf);
-        p = unmang1(buf, p + 2, last);
-        buf += strlen(buf);
-        if (p[0] == '$')
-        {
-            unmang1(buf, p +1, last);
-            buf += strlen(buf);
-        }
-    }
-    else
-    {
         for (i = 0; i < IT_SIZE; i++)
             if (!strcmp(cur, cpp_funcname_tab[i]))
                 break;
@@ -148,8 +133,7 @@ char *unmang_intrins(char *buf, char *name, char *last)
                         if (*name == '$')
                         {
                             buf += strlen(buf);
-                            name = unmang1(buf, name+1, last);
-                            strcat(buf, "()");
+                            name = unmang1(buf, name+2, last);
                         }
                         break;
                     case 1: // delete
@@ -171,7 +155,6 @@ char *unmang_intrins(char *buf, char *name, char *last)
                 strcat(buf, xlate_tab[i]);
             }
         }
-    }
     return name;
 
 }

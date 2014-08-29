@@ -42,6 +42,7 @@
 #include "ObjTypes.h"
 #include "ObjIndexManager.h"
 #include "ObjMemory.h"
+#include "ObjExpression.h"
 class ObjLineNo;
 class ObjFixup;
 class ObjFactory;
@@ -67,7 +68,7 @@ public:
     } ;
     
     ObjSection(ObjString &Name, ObjInt Index) :name(Name), externalName(""), 
-            alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1) {}
+            alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), size(new ObjExpression(0)), offset(new ObjExpression(0)) {}
     virtual ~ObjSection() { };
     ObjString GetName() { return name; }
     void SetName(ObjString &Name) {name = Name; }

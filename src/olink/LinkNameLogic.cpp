@@ -198,10 +198,10 @@ LinkNameLogic::ParseItem *LinkNameLogic::ParseOutPrimary(std::string &spec)
     }
     char buf[4096], *q = buf;
     n = 0;
-    while (UTF8::IsAlnum(spec.c_str() + n) || spec[n] == '*' || spec[n] == '?')
+    while ((UTF8::IsAlnum(spec.c_str() + n) || spec[n] == '*' || spec[n] == '?') && spec.size() > n)
     {
         int v = UTF8::CharSpan(spec.c_str() + n);
-        for (int i=0; i < v && spec.size() > v; i++)
+        for (int i=0; i < v && spec.size() >= v + n; i++)
             *q++ = spec[n++];
     }
     *q = 0;

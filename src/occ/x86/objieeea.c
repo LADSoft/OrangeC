@@ -819,6 +819,8 @@ BOOLEAN isbasevolatile(TYPE *tp)
 
 int link_getseg(SYMBOL *sp)
 {
+    if (sp->mainsym)
+        sp = sp->mainsym;
     if (!sp->tp)
         return dataseg;
     switch (sp->storage_class)

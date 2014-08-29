@@ -157,9 +157,21 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
     else if (isstructured(tp) && !basetype(tp)->sp->trivialCons)
     {
         sp = search(overloadNameTab[CI_DESTRUCTOR], basetype(tp)->syms);
+        // at this point if the class was never instantiated the destructor
+        // may not have been created...
         if (sp)
         {
-            sp = basetype(sp->tp)->syms->table[0]->p;
+            if (!sp->inlineFunc.stmt && !sp->deferredCompile)
+            {
+                EXPRESSION *exp = intNode(en_c_i, 0);
+                callDestructor(basetype(tp)->sp, &exp, NULL, TRUE, TRUE, FALSE, TRUE);
+                sp = exp->left->v.func->sp;
+                
+            }
+            else
+            {
+                sp = basetype(sp->tp)->syms->table[0]->p;
+            }
             sp->genreffed = TRUE;
         }
     }

@@ -925,7 +925,6 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
             while (deferred)
             {
                 SYMBOL *sp = deferred->data;
-                backFillDeferredInitializers(sp, funcsp);
                 deferredCompile();
                 deferred = deferred->next;
             }

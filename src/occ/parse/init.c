@@ -2120,7 +2120,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 *init = it;
             }
             exp = baseexp;
-            callDestructor(basetype(itype)->sp, &exp, NULL, TRUE, FALSE, FALSE);
+            callDestructor(basetype(itype)->sp, &exp, NULL, TRUE, FALSE, FALSE, FALSE);
             initInsert(&it, itype, exp, offset, TRUE);
             if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {
@@ -2352,7 +2352,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     tn->size = n * s;
                     tn->btp = btp;
                 }
-                callDestructor(btp->sp, &exp, sz, TRUE, FALSE, FALSE);
+                callDestructor(btp->sp, &exp, sz, TRUE, FALSE, FALSE, FALSE);
                 initInsert(push, tn, exp, last, FALSE);
             }
             if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
@@ -2430,7 +2430,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
             INITIALIZER *dest = NULL, *it ;
             EXPRESSION *expl = getThisNode(sp);
             initInsert(init, sp->tp, exp, offset, FALSE);
-            callDestructor(sp, &expl, NULL, TRUE, FALSE, FALSE);
+            callDestructor(sp, &expl, NULL, TRUE, FALSE, FALSE, FALSE);
             initInsert(&dest, sp->tp, expl, offset, TRUE);
             if (sp->storage_class != sc_auto && sp->storage_class != sc_parameter && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
             {
@@ -2921,7 +2921,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     sp->init = it;
                 }
                 exp = baseexp;
-                callDestructor(z->sp, &exp, sz, TRUE, FALSE, FALSE);
+                callDestructor(z->sp, &exp, sz, TRUE, FALSE, FALSE, FALSE);
                 initInsert(&init, z, exp, 0, TRUE);
                 if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member && storage_class_in != sc_mutable)
                 {

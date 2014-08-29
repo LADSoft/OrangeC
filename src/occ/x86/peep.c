@@ -1371,10 +1371,13 @@ void peep_fstp(OCODE *ip)
     {
         if (equal_address(ip->fwd->oper1, ip->oper1))
         {
-            ip->opcode = op_fst;
-            remove_peep_entry(ip->fwd);
+            if (ip->oper1->length != ISZ_LDOUBLE)
+            {
+                ip->opcode = op_fst;
+                remove_peep_entry(ip->fwd);
+            }
         }
-    }
+    }    
 }
 /*-------------------------------------------------------------------------*/
 

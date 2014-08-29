@@ -3336,55 +3336,60 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
             if (strcmp(ss->name, ts->name) != 0) 
             {
                 ts = search(ss->name, tmpl->tp->syms);
-                if (!ts)
-                {
-                    diag("TemplateClassFunctionInstantiate invalid signature match");
-                    break;
-                }
+                // we might get here with ts = NULL for example when a using statement inside a template
+                // references base class template members which aren't defined yet.
+//                if (!ts)
+//                {
+//                    diag("TemplateClassFunctionInstantiate invalid signature match");
+//                    break;
+//                }
             }
-            if (ss->tp->type == bt_aggregate && ts->tp->type == bt_aggregate)
+            if (ts)
             {
-                HASHREC *os2 = ts->tp->syms->table[0];
-                HASHREC *ns2 = ss->tp->syms->table[0];
-                // these lists may be mismatched, in particular the old symbol table
-                // may have partial specializations for templates added after the class was defined...
-                while (ns2 && os2)
+                if (ss->tp->type == bt_aggregate && ts->tp->type == bt_aggregate)
                 {
-                    SYMBOL *ts2 = (SYMBOL *)os2->p;
-                    SYMBOL *ss2 = (SYMBOL *)ns2->p;
-                    HASHREC *tsf = basetype(ts2->tp)->syms->table[0];
-                    HASHREC *ssf = basetype(ss2->tp)->syms->table[0];
-                    while (tsf && ssf)
+                    HASHREC *os2 = ts->tp->syms->table[0];
+                    HASHREC *ns2 = ss->tp->syms->table[0];
+                    // these lists may be mismatched, in particular the old symbol table
+                    // may have partial specializations for templates added after the class was defined...
+                    while (ns2 && os2)
                     {
-                        ssf->p->name = tsf->p->name;
-                        tsf = tsf->next;
-                        ssf = ssf->next;
-                    }
-                    ss2->deferredCompile = ts2->deferredCompile;
-                    if (!ss2->instantiatedInlineInClass)
-                    {
-                        TEMPLATEPARAMLIST *tpo = tmpl->parentTemplate->templateParams;
-                        if (tpo)
+                        SYMBOL *ts2 = (SYMBOL *)os2->p;
+                        SYMBOL *ss2 = (SYMBOL *)ns2->p;
+                        HASHREC *tsf = basetype(ts2->tp)->syms->table[0];
+                        HASHREC *ssf = basetype(ss2->tp)->syms->table[0];
+                        while (tsf && ssf)
                         {
-                            TEMPLATEPARAMLIST *tpn = ts2->templateParams;
-                            while (tpo && tpn)
-                            {
-                                SYMBOL *s = tpn->p->sym;
-                                *tpn->p = *tpo->p;
-                                tpn->p->sym = s;
-                                tpo = tpo->next;
-                                tpn = tpn->next;
-                            }
-                            ss2->templateParams = ts2->templateParams;
+                            ssf->p->name = tsf->p->name;
+                            tsf = tsf->next;
+                            ssf = ssf->next;
                         }
+                        ss2->deferredCompile = ts2->deferredCompile;
+                        if (!ss2->instantiatedInlineInClass)
+                        {
+                            TEMPLATEPARAMLIST *tpo = tmpl->parentTemplate->templateParams;
+                            if (tpo)
+                            {
+                                TEMPLATEPARAMLIST *tpn = ts2->templateParams;
+                                while (tpo && tpn)
+                                {
+                                    SYMBOL *s = tpn->p->sym;
+                                    *tpn->p = *tpo->p;
+                                    tpn->p->sym = s;
+                                    tpo = tpo->next;
+                                    tpn = tpn->next;
+                                }
+                                ss2->templateParams = ts2->templateParams;
+                            }
+                        }
+                        ns2 = ns2->next;
+                        os2 = os2->next;
                     }
-                    ns2 = ns2->next;
-                    os2 = os2->next;
                 }
-            }
-            else
-            {
-                ss->deferredCompile = ts->deferredCompile;
+                else
+                {
+                    ss->deferredCompile = ts->deferredCompile;
+                }
             }
             ns = ns->next;
             os = os->next;
@@ -3699,7 +3704,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             sym->linkage = lk_inline;
             sym->xc = NULL;
             instantiatingTemplate++;
-    //        backFillDeferredInitializersForFunction(sym, sym);
+
             lex = SetAlternateLex(sym->deferredCompile);
             if (MATCHKW(lex, kw_try) || MATCHKW(lex, colon))
             {

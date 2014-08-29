@@ -39,7 +39,7 @@
 all: dll clib
 
 CLIBDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
-	threads TIME uio wc uchar cpp\complib
+	threads TIME uio wc uchar cpp
 
 DIRS= $(CLIBDIRS) platform
 

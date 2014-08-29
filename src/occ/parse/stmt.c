@@ -714,7 +714,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                        callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE, FALSE);
                                         initInsert(&dest, iteratorType, exp, 0, TRUE);
                                         fcb.returnSP->dest = dest;
                                        
@@ -722,7 +722,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                        callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE, FALSE);
                                         initInsert(&dest, iteratorType, exp, 0, TRUE);
                                         fce.returnSP->dest = dest;
                                     }
@@ -812,7 +812,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                            callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE, FALSE);
                                             initInsert(&dest, iteratorType, exp, 0, TRUE);
                                             fcb.returnSP->dest = dest;
                                             
@@ -820,7 +820,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                            callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE, FALSE);
                                             initInsert(&dest, iteratorType, exp, 0, TRUE);
                                             fce.returnSP->dest = dest;
                                         }
@@ -967,7 +967,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE, FALSE);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE, FALSE);
                             }
                             else if (isarray(selectTP))
                             {
@@ -1010,7 +1010,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE, FALSE);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                    callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE, FALSE);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star,
@@ -1043,7 +1043,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, FALSE, TRUE, FALSE);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE, FALSE);
                             }
                         }
                         
@@ -1084,7 +1084,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                    callDestructor(st->select->v.func->returnSP, &declDest, NULL, TRUE, FALSE, FALSE, FALSE);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -2018,7 +2018,7 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             {
                 INITIALIZER *init = NULL;
                 EXPRESSION *exp = select->v.func->returnEXP;
-                callDestructor(basetype(tp)->sp, &exp, NULL, TRUE, FALSE, FALSE);
+                callDestructor(basetype(tp)->sp, &exp, NULL, TRUE, FALSE, FALSE, FALSE);
                 initInsert(&init, sp->tp, exp, 0, FALSE);                
                 sp->dest = init;
             }
@@ -3006,7 +3006,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA *block = Alloc(sizeof(BLOCKDATA)) ;
     STATEMENT *startStmt;
-    int aa=0x12345678;
     SYMBOL *spt = funcsp;
     if (bodyCount++ == 0)
         hasXCInfo = FALSE;

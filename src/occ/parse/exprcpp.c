@@ -435,7 +435,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
                     SYMBOL *av = ev->v.sp;
                     params->returnEXP = ev;
                     params->returnSP = sp;
-                    callDestructor(basetype(*tp)->sp, &ev, NULL, TRUE, noinline, FALSE);
+                    callDestructor(basetype(*tp)->sp, &ev, NULL, TRUE, noinline, FALSE, FALSE);
                     initInsert(&av->dest, *tp, ev, 0, TRUE);
                 }
                 e1 = doinline(params, NULL);
@@ -658,7 +658,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             }
             else
             {
-                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, flags & _F_NOINLINE, FALSE);
+                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, flags & _F_NOINLINE, FALSE, FALSE);
                 initInsert(&sp->dest, *tp, exp1, 0, TRUE);
             }
         }
@@ -1730,7 +1730,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     exp2 = *exp;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
-        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, flags & _F_NOINLINE, TRUE);
+        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, flags & _F_NOINLINE, TRUE, FALSE);
     }
     exp1 = exp2;
     if (!global)

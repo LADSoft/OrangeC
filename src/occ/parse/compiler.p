@@ -125,7 +125,8 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
 void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms);
 void createAssignment(SYMBOL *sym, SYMBOL *asnfunc);
 void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count);
-void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, BOOLEAN noinline, BOOLEAN pointer);
+void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, 
+                    BOOLEAN noinline, BOOLEAN pointer, BOOLEAN skipAccess);
 BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
                     BOOLEAN maybeConversion, BOOLEAN noinline, BOOLEAN implicit, BOOLEAN pointer);
@@ -145,8 +146,6 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
 void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOLEAN isvirtual, int offset);
 void deferredCompileOne(SYMBOL *cur);
 void deferredCompile(void);
-void backFillDeferredInitializersForFunction(SYMBOL *cur, SYMBOL *funcsp);
-void backFillDeferredInitializers(SYMBOL *declsym, SYMBOL *funcsp);
 TYPE * PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp);
 void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings);
 BOOLEAN usesVTab(SYMBOL *sym);

@@ -67,24 +67,24 @@ void inlineinit(void)
     vc1Thunks = CreateHashTable(1);
     didInlines = CreateHashTable(32);
 }
-static BOOLEAN inSearch(SYMBOL *sp)
+static SYMBOL *inSearch(SYMBOL *sp)
 {
     HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
     while (*hr)
     {
         SYMBOL *sym = (SYMBOL *)(*hr)->p;
         if (!strcmp(sym->decoratedName, sp->decoratedName))
-            return TRUE;
+            return sym;
         hr = &(*hr)->next;
     }
-    return FALSE;
+    return NULL;
 }
 static void inInsert(SYMBOL *sp)
 {
     // assumes the symbol isn't already there...
     HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
     HASHREC *added = Alloc(sizeof(HASHREC));
-    
+    sp->mainsym = NULL;
     added->p = sp;
     added->next = *hr;
     *hr = added;
@@ -124,15 +124,23 @@ void dumpInlines(void)
                 SYMBOL *sym = (SYMBOL *)funcList->data;
                 if (sym->genreffed && sym->inlineFunc.stmt)
                 {
-                    if (!sym->didinline && !inSearch(sym))
+                    if (!sym->didinline)// && !inSearch(sym))
                     {
-                        inInsert(sym);
-                        sym->genreffed = FALSE;
-                        UndoPreviousCodegen(sym);
-                        startlab = nextLabel++;
-                        retlab = nextLabel++;
-                        genfunc(sym);
-                        done = FALSE;
+                        SYMBOL *srch = inSearch(sym);
+                        if (srch)
+                        {
+                            sym->mainsym = srch;
+                        }
+                        else
+                        {
+                            inInsert(sym);
+                            sym->genreffed = FALSE;
+                            UndoPreviousCodegen(sym);
+                            startlab = nextLabel++;
+                            retlab = nextLabel++;
+                            genfunc(sym);
+                            done = FALSE;
+                        }
                     }
                     sym->didinline = TRUE;
                 }

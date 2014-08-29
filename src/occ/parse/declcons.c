@@ -1375,7 +1375,7 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
         {
             EXPRESSION *iexp = getThisNode(sp);
             iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
-            callDestructor(basetype(sp->tp)->sp, &iexp, NULL, TRUE, FALSE, FALSE);
+            callDestructor(basetype(sp->tp)->sp, &iexp, NULL, TRUE, FALSE, FALSE, FALSE);
             optimize_for_constants(&iexp);
             if (*exp)
             {
@@ -2287,7 +2287,7 @@ static void genDestructorCall(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *base, int of
     {
         createDestructor(sp);
     }
-    callDestructor(sp, &exp, NULL, top, FALSE, TRUE);
+    callDestructor(sp, &exp, NULL, top, FALSE, TRUE, FALSE);
     st = stmtNode(NULL,b, st_expr);
     optimize_for_constants(&exp);
     st->select = exp;
@@ -2413,7 +2413,8 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     }
     
 }
-void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, BOOLEAN noinline, BOOLEAN pointer)
+void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, 
+                    BOOLEAN noinline, BOOLEAN pointer, BOOLEAN skipAccess)
 {
     SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     SYMBOL *dest1;
@@ -2437,7 +2438,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN
     dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE);
     if (dest1)
     {
-        if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
+        if (!skipAccess && dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
         {
             errorsym(ERR_CANNOT_ACCESS, dest1);
         }

@@ -1391,6 +1391,9 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
             {
                 IMODE *ap;
                 // constructor or other function creating a structure on the stack
+                ths = a->exp->left->v.func->thisptr;
+                ths->v.sp->stackblock = TRUE;
+                
                 rv = ths->v.sp->tp->size;
                 if (rv % chosenAssembler->arch->stackalign)
                     rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;

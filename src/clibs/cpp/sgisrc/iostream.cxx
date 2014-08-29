@@ -53,6 +53,8 @@ template class basic_iostream<wchar_t>;
 // with placement new in ios_base::_S_initialize() 
 
 #pragma init_seg("SGI_STL_NO_INIT")
+// for ORANGE_C we use a different pragma to forgo the initialization
+#pragma ignore_global_init 1
 
 istream cin(0);
 ostream cout(0);

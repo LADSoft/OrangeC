@@ -1751,7 +1751,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                         }
                         else
                         {
-                            callDestructor(stype->sp, &dexp, NULL, TRUE, noinline, FALSE);
+                            callDestructor(stype->sp, &dexp, NULL, TRUE, noinline, FALSE, FALSE);
                             if (dexp)
                                 p->dest = dexp;
                         }
@@ -1846,7 +1846,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                             else
                             {
                                 exp = &p->exp->v.func->thisptr;
-                                tp = p->exp->v.func->thistp;
+                                tp = p->exp->v.func->thistp->btp;
                             }
                             if (exp)
                             {
@@ -5053,7 +5053,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             if (asndest)
             {
                 SYMBOL *sp = anonymousVar(sc_auto, tp1)->v.sp;
-                callDestructor(sp, &asndest, NULL, TRUE, flags & _F_NOINLINE, FALSE);
+                callDestructor(sp, &asndest, NULL, TRUE, flags & _F_NOINLINE, FALSE, FALSE);
                 initInsert(&sp->dest, tp1, asndest, 0, TRUE);
             }
             

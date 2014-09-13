@@ -30,30 +30,30 @@
 	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-//#include <new.h>
+#include <new.h>
 #include <stdlib.h>
 
 namespace __dls {
-//   const char _RTL_DATA *__dls_bad_alloc = "bad_alloc" ;
+   const char _RTL_DATA *__dls_bad_alloc = "bad_alloc" ;
 } ;
 
 namespace std {
 
 //   nothrow_t _RTL_DATA nothrow;
-//   _RTL_FUNC bad_alloc::~bad_alloc() 
-//   {
-//   }
+   _RTL_FUNC bad_alloc::~bad_alloc() 
+   {
+   }
 
 } ;
        
-//static new_handler _new_handler ;
+static new_handler _new_handler ;
 
-//new_handler _RTL_FUNC set_new_handler(new_handler __newv)
-//{
- //  new_handler rv = _new_handler ;
-  // _new_handler = __newv ;
-  // return rv ;
-//}
+new_handler _RTL_FUNC set_new_handler(new_handler __newv)
+{
+   new_handler rv = _new_handler ;
+   _new_handler = __newv ;
+   return rv ;
+}
 
 void *__realnew(size_t n)
 {
@@ -64,10 +64,10 @@ void *__realnew(size_t n)
       if (rv)
          return rv ;
 	  return NULL;
-//      if (!_new_handler)
-//		  return NULL;
+      if (!_new_handler)
+		  return NULL;
 //         throw std::bad_alloc() ;
- //     (*_new_handler)() ;
+      (*_new_handler)() ;
    } while (1) ;
    return 0 ; // never gets here
 }

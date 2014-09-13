@@ -97,7 +97,7 @@ ObjString ObjIeeeAscii::GetSymbolName(ObjSymbol *Symbol)
 }
 ObjString ObjIeeeAscii::ToString(const ObjString &strng)
 {
-    return ObjUtil::ToHex(strng.length(), 2) + strng;
+    return ObjUtil::ToHex(strng.length(), 3) + strng;
 }
 ObjString ObjIeeeAscii::ToTime(std::tm tms)
 {

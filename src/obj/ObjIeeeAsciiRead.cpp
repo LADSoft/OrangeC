@@ -77,8 +77,8 @@ std::map<const char *, ObjIeeeAscii::ParseData *, ObjIeeeAscii::ParseDataLT> Obj
 
 ObjString ObjIeeeAscii::ParseString(const char *buffer, int *pos)
 {
-    int len = ObjUtil::FromHex(buffer, pos, 2);
-    char name[256];
+    int len = ObjUtil::FromHex(buffer, pos, 3);
+    char name[512];
     memcpy(name, buffer + *pos, len);
     name[len] = '\0';
     *pos += len;
@@ -1087,7 +1087,7 @@ bool ObjIeeeAscii::SectionAttributes(const char *buffer, eParseType ParseType)
         ThrowSyntax(buffer, ParseType);
     ObjInt quals = 0;
     ObjString name;
-    while (buffer[pos])
+    while (buffer[pos] && buffer[pos+1] == ',')
     {
         switch (buffer[pos++])
         {
@@ -1131,14 +1131,12 @@ bool ObjIeeeAscii::SectionAttributes(const char *buffer, eParseType ParseType)
                 quals |= ObjSection::zero;
                 break;
             default:
-                --pos;
-                name = ParseString(buffer, &pos);
+		        ThrowSyntax(buffer, ParseType);
                 break;
         }
-        if (buffer[pos] != ',')
-            break;
         pos++;
     }
+    name = ParseString(buffer, &pos);
     CheckTerm(buffer + pos);
     ObjSection *sect = factory->MakeSection(name, index);
     sect->SetQuals(quals);

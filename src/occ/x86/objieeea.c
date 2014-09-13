@@ -131,7 +131,7 @@ void omfInit(void)
 }
 static void emit_record_ieee(char *format, ...)
 {
-    char buffer[256];
+    char buffer[512];
     int i, l;
     va_list ap;
 
@@ -235,8 +235,8 @@ static void link_header(char *name)
     char fpspec = 'I';
     if (anyusedfloat)
         fpspec = 'F';
-    emit_record_ieee("MB%cCC386,%02X%s.\r\n", fpspec, strlen(name), name);
-    emit_record_ieee("CO104,08%08lX.\r\n", options);
+    emit_record_ieee("MB%cCC386,%03X%s.\r\n", fpspec, strlen(name), name);
+    emit_record_ieee("CO104,008%08lX.\r\n", options);
     emit_record_ieee("AD%x,%x,%c.\r\n", bitspermau, maus, bigendchar);
     emit_record_ieee("DT%04d%02d%02d%02d%02d%02d.\r\n", x.tm_year + 1900,
         x.tm_mon+1, x.tm_mday, x.tm_hour, x.tm_min,
@@ -331,8 +331,8 @@ void link_Files(void)
             char buf1[256];
             char buf[256];
             link_FileTime(files->name, buf);
-            sprintf(buf1, "%d,%02X%s,%s",files->filenum, strlen(files->name), files->name, buf);
-            emit_record_ieee("CO300,%02X%s.\r\n",strlen(buf1),buf1);
+            sprintf(buf1, "%d,%03X%s,%s",files->filenum, strlen(files->name), files->name, buf);
+            emit_record_ieee("CO300,%03X%s.\r\n",strlen(buf1),buf1);
             
             if (start)
             {
@@ -342,7 +342,7 @@ void link_Files(void)
             files = files->next;
         }
     }
-    emit_record_ieee("CO100,07ENDMAKE.\r\n");
+    emit_record_ieee("CO100,007ENDMAKE.\r\n");
 }
 
 //-------------------------------------------------------------------------
@@ -357,7 +357,7 @@ void link_Segs(void)
     {
         if (segxlattab[i])
         {
-            emit_record_ieee("ST%X,%s,%02X%s.\r\n", segxlattab[i], segchars[i],
+            emit_record_ieee("ST%X,%s,%03X%s.\r\n", segxlattab[i], segchars[i],
                 strlen(segnames[i]), segnames[i]);
             emit_record_ieee("SA%X,%x.\r\n", segxlattab[i], segAligns[i]);
             emit_record_ieee("ASS%X,%lX.\r\n", segxlattab[i], segs[i].curlast);
@@ -377,7 +377,7 @@ void link_Segs(void)
             strcpy(buf,"vsc_");
         }
         beDecorateSymName(buf + 4, v->sp);
-        emit_record_ieee("ST%X,%s,E,%02X%s.\r\n", i, v->data ? segchars[dataseg]:
+        emit_record_ieee("ST%X,%s,E,%03X%s.\r\n", i, v->data ? segchars[dataseg]:
             segchars[codeseg], strlen(buf), buf);
         emit_record_ieee("SA%X,%x.\r\n", i, 4);
         emit_record_ieee("ASS%X,%lX.\r\n", i++, v->seg->curlast);
@@ -471,7 +471,7 @@ void dumpStructFields(int sel, int n, int sz, HASHREC *hr)
     if (sel != 9)
         emit_record_ieee(",%X",sz);
     for (i=0; i < count; i++)
-        emit_record_ieee(",T%X,%02X%s,%X", table1[i], strlen(table[i]->name), table[i]->name, table[i]->offset);
+        emit_record_ieee(",T%X,%03X%s,%X", table1[i], strlen(table[i]->name), table[i]->name, table[i]->offset);
     
     if (last != 0)
         emit_record_ieee(",T%X", last);
@@ -499,7 +499,7 @@ void dumpEnumFields(int sel, int n, int baseType, int sz, HASHREC *hr)
         emit_record_ieee(",%X", sz);
         
     for (i=0; i < count; i++)
-        emit_record_ieee(",T%X,%02X%s,%X", baseType, strlen(table[i]->name), table[i]->name, table1[i]);
+        emit_record_ieee(",T%X,%03X%s,%X", baseType, strlen(table[i]->name), table[i]->name, table1[i]);
     
     if (last != 0)
         emit_record_ieee(",T%X", last);
@@ -595,7 +595,7 @@ void link_extendedtype(TYPE *tp1)
                 dumpStructFields(sel, n, tp->size, tp->syms->table[0]);
             else
                 dumpStructFields(sel, n, tp->size, NULL);
-            emit_record_ieee("NT%X,%02X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
+            emit_record_ieee("NT%X,%03X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
         }
         else if (tp->type == bt_ellipse)
         {
@@ -616,7 +616,7 @@ void link_extendedtype(TYPE *tp1)
                 dumpEnumFields(8, n, m, tp->size, tp->syms->table[0]);
             else
                 dumpEnumFields(8, n, m, tp->size, NULL);
-            emit_record_ieee("NT%X,%02X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
+            emit_record_ieee("NT%X,%03X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
         }
     }
 }
@@ -632,7 +632,7 @@ int link_puttype(TYPE *tp)
             {
                 tp->dbgindex = typeIndex++;
                 emit_record_ieee("ATT%X,TA,T%X.\r\n", tp->dbgindex, tp->btp->dbgindex);
-                emit_record_ieee("NT%X,%02X%s.\r\n", tp->dbgindex, strlen(tp->sp->name), tp->sp->name);
+                emit_record_ieee("NT%X,%03X%s.\r\n", tp->dbgindex, strlen(tp->sp->name), tp->sp->name);
             }
         }
         else
@@ -720,7 +720,7 @@ void link_types()
                 sp->tp->dbgindex = typeIndex++;
                emit_record_ieee("ATT%X,TA,T%X.\r\n", sp->tp->dbgindex, n);
             }
-            emit_record_ieee("NT%X,%02X%s.\r\n", sp->tp->dbgindex, strlen(sp->name), sp->name);
+            emit_record_ieee("NT%X,%03X%s.\r\n", sp->tp->dbgindex, strlen(sp->name), sp->name);
             dbgTypeDefs = dbgTypeDefs->next;
         }
         emit_cs(FALSE);
@@ -734,7 +734,7 @@ void link_putext(SYMBOL *sp)
     char buf[512];
     beDecorateSymName(buf, sp);
     sp->value.i = extIndex++;
-    emit_record_ieee("NX%X,%02X%s.\r\n", (int)sp->value.i, strlen(buf), buf);
+    emit_record_ieee("NX%X,%03X%s.\r\n", (int)sp->value.i, strlen(buf), buf);
     #ifdef XXXXX
         if (prm_debug)
             if (r->datatype &TY_TYPE)
@@ -780,8 +780,8 @@ void link_putimport(SYMBOL *sp)
     int l;
     beDecorateSymName(buf, sp);
     l = strlen(buf);
-    sprintf(buf1,"N,%02X%s,%02X%s,%02X%s", l, buf, l, buf, strlen(sp->importfile), sp->importfile);
-    emit_record_ieee("CO201,%02X%s.\r\n", strlen(buf1), buf1);
+    sprintf(buf1,"N,%03X%s,%03X%s,%03X%s", l, buf, l, buf, strlen(sp->importfile), sp->importfile);
+    emit_record_ieee("CO201,%03X%s.\r\n", strlen(buf1), buf1);
 }
 
 //-------------------------------------------------------------------------
@@ -909,7 +909,7 @@ void link_putpub(SYMBOL *sp, char sel)
         index = autoIndex++;
     sp->value.i = index;
     beDecorateSymName(buf, sp);
-    emit_record_ieee("N%c%X,%02X%s.\r\n", sel, index, strlen(buf), buf);
+    emit_record_ieee("N%c%X,%03X%s.\r\n", sel, index, strlen(buf), buf);
     if (sel == 'A')
     {
         emit_record_ieee("AS%c%X,%X.\r\n", sel, index, sp->offset); // taken as BP relative...
@@ -1001,8 +1001,8 @@ void link_putexport(SYMBOL *sp)
     int l;
     beDecorateSymName(buf, sp);
     l = strlen(buf);
-    sprintf(buf1,"N,%02X%s,%02X%s", l, buf, l, buf);
-    emit_record_ieee("CO200,%02X%s.\r\n", strlen(buf1), buf1);
+    sprintf(buf1,"N,%03X%s,%03X%s", l, buf, l, buf);
+    emit_record_ieee("CO200,%03X%s.\r\n", strlen(buf1), buf1);
 }
 
 //-------------------------------------------------------------------------
@@ -1027,7 +1027,7 @@ void link_Exports(void)
 
 void link_PassSeperator(void)
 {
-    emit_record_ieee("CO101,06ENDSYM.\r\n");
+    emit_record_ieee("CO101,006ENDSYM.\r\n");
 }
 
 //-------------------------------------------------------------------------
@@ -1144,6 +1144,8 @@ static long putlr(FIXUP *p, EMIT_LIST *s, int curseg, int offs)
     link_Fixups(buf, p, s, curseg, offs);
     if (strstr(buf, "R0"))
         diag("putlr: invalid segment");
+    if (strstr(buf, "X0"))
+        diag("putlr: invalid extern");
     emit_record_ieee("LR(%s,%X).\r\n", buf, 4);
     return (long)(4);
 }
@@ -1208,30 +1210,30 @@ static void putattribs(EMIT_TAB *seg, int addr)
                     else
                         sprintf(buf1, "N%x", seg->attriblist->v.sp->value.i);
                     if (seg->attriblist->start)
-                        emit_record_ieee("CO404,%02X%s.\r\n", strlen(buf1), buf1);
+                        emit_record_ieee("CO404,%03X%s.\r\n", strlen(buf1), buf1);
                     else
-                        emit_record_ieee("CO405,%02X%s.\r\n", strlen(buf1), buf1);
+                        emit_record_ieee("CO405,%03X%s.\r\n", strlen(buf1), buf1);
                     break;
                 case e_ad_blockdata:
                     if (seg->attriblist->start)
                     {
-                        emit_record_ieee("CO402,00.\r\n");
+                        emit_record_ieee("CO402,000.\r\n");
                     }
                     else
                     {
-                        emit_record_ieee("CO403,00.\r\n");
+                        emit_record_ieee("CO403,000.\r\n");
                     }
                     break;
                 case e_ad_vardata:
                     if (seg->attriblist->v.sp->tp->type != bt_ellipse)
                     {
                         sprintf(buf1, "A%X", seg->attriblist->v.sp->value.i);
-                        emit_record_ieee("CO400,%02X%s.\r\n", strlen(buf1), buf1);
+                        emit_record_ieee("CO400,%03X%s.\r\n", strlen(buf1), buf1);
                     }
                     break;
                 case e_ad_linedata:
                     sprintf(buf1, "%d,%d", seg->attriblist->v.ld->fileindex, seg->attriblist->v.ld->lineno);
-                    emit_record_ieee("CO401,%02X%s.\r\n", strlen(buf1), buf1);
+                    emit_record_ieee("CO401,%03X%s.\r\n", strlen(buf1), buf1);
                     break;
             }
         }
@@ -1357,17 +1359,17 @@ void link_BrowseInfo(void)
 {
     if (browseInfo && cparams.prm_browse)
     {
-        emit_record_ieee("CO102,07ENDDATA.\r\n");
+        emit_record_ieee("CO102,007ENDDATA.\r\n");
         while (browseInfo)
         {
             char buf1[256];
-            sprintf(buf1, "%x,%x,%d,%d,%d,%02X%s",
+            sprintf(buf1, "%x,%x,%d,%d,%d,%03X%s",
                              browseInfo->type, 
                              browseInfo->flags, 
                              browseInfo->filenum,
                              browseInfo->lineno,
                              browseInfo->charpos, strlen(browseInfo->name), browseInfo->name);   
-            emit_record_ieee("CO500,%02X%s.\r\n", strlen(buf1), buf1);
+            emit_record_ieee("CO500,%03X%s.\r\n", strlen(buf1), buf1);
             browseInfo = browseInfo->next;
         }
     }

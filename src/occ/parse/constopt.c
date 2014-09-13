@@ -3611,6 +3611,8 @@ static void rebalance(EXPRESSION *ep)
 void optimize_for_constants(EXPRESSION **expr)
 {
     int rv = TRUE, count = 8;
+    EXPRESSION * oldasidehead = asidehead;
+    EXPRESSION * oldasidetail = asidetail;
     asidehead = 0;
     asidetail = &asidehead;
     while (rv && count--)
@@ -3620,6 +3622,8 @@ void optimize_for_constants(EXPRESSION **expr)
         *asidetail =  *expr;
         *expr = asidehead;
     }
+    asidehead = oldasidehead;
+    asidetail - oldasidetail;
     rebalance(*expr);
 }
 LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **expr, BOOLEAN commaallowed)

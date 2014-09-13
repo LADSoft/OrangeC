@@ -513,6 +513,7 @@ void insertStartup(BOOLEAN startupFlag, char *name, int prio);
 char *lookupAlias(char *name);
 void insertAlias(char *name, char *alias);
 int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label);
+void dumpTemplateInitializers(void);
 void dumpInitializers(void);
 void dumpVTab(SYMBOL *sym);
 void insertInitSym(SYMBOL *sp);

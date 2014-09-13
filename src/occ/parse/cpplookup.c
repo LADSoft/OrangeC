@@ -2028,13 +2028,16 @@ static SYMBOL *getUserConversion(int flags,
                 while (*hr)
                 {
                     SYMBOL *sym = (SYMBOL *)(*hr)->p;
-                    if (sym->templateLevel && sym->templateParams)
+                    if (!sym->instantiated)
                     {
-                        spList[i++] = detemplate(sym, &funcparams, NULL) ;
-                    }
-                    else
-                    {
-                        spList[i++] = sym;
+                        if (sym->templateLevel && sym->templateParams)
+                        {
+                            spList[i++] = detemplate(sym, &funcparams, NULL) ;
+                        }
+                        else
+                        {
+                            spList[i++] = sym;
+                        }
                     }
                     hr = &(*hr)->next;
                 }

@@ -1598,8 +1598,7 @@ static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr)
             {
                 *pos = exprNode(en_void, *pos, asn);
                 pos = &(*pos)->right;
-            }
-            
+            }            
         }
         entries = entries->next;
     }

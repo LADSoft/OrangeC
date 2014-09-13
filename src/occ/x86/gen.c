@@ -769,6 +769,7 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
                         *op = op_lea;
                     else
                         (*apl)->mode = am_immed;
+                    (*apl)->length = im->size;
                 }
                 else if (im->offset->type == en_c_ll || im->offset->type == en_c_ull)
                 {
@@ -2250,6 +2251,7 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
         
     if (q->dc.left->mode == i_immed)
     {
+        apl->length = 0;
         gen_code(op_call, apl, 0);
     }
     else

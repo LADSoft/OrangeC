@@ -439,8 +439,8 @@ char *unmang1(char *buf, char *name, char *last)
             *p = 0;
             if (*name)
             {
-                char buf2[256];
                 // discard return value
+				buf2[0] = 0;
                 name = unmang1(buf2, name, last);
             }            
             strcpy(buf, buf1);

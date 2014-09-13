@@ -574,7 +574,7 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
                 else
                 {
                     p = mangleType(p, sym->tp, TRUE); // otherwise functions get their parameter list in the name
-                    if (!sym->templateLevel)
+//                    if (!sym->templateLevel)
                     {
                         int tmplCount = 0;
                         while (p > errbuf && (*--p != '$' || tmplCount)) 

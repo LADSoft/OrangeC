@@ -3564,7 +3564,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             instantiatingTemplate++;
             lex = SetAlternateLex(lex);
             lex = innerDeclStruct(lex, NULL, cls, NULL, cls->tp->type == bt_class ? ac_private : ac_public, cls->isfinal, &defd);
-            FinishStruct(cls, NULL);
+//            FinishStruct(cls, NULL);
             SetAlternateLex(NULL);
             lex = reinstateLex;
             while (lex)
@@ -3688,6 +3688,20 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     {
         insertOverload(sym, sym->overloadName->tp->syms);
 
+    hr = sym->overloadName->tp->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *data = (SYMBOL *)hr->p;
+        if (data->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp))
+        {
+            if (sym != data)
+            {
+                printf("hi");
+                break;
+            }
+        }
+        hr = hr->next;
+    }
         if (sym->storage_class == sc_member || sym->storage_class == sc_virtual)
         {
             injectThisPtr(sym, basetype(sym->tp)->syms);
@@ -4162,6 +4176,10 @@ static void referenceInstanceMembers(SYMBOL *cls)
             {
                 sym = (SYMBOL *)hr2->p;
                 sym->genreffed = TRUE;
+                if (sym->deferredCompile && !sym->inlineFunc.stmt)
+                {
+                    deferredCompileOne(sym);
+                }
                 hr2 = hr2->next;
             }
         }

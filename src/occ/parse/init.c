@@ -834,7 +834,7 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
         genstorage(basetype(tp)->size);
 #endif
 }
-static void dumpTemplateInitializers()
+void dumpTemplateInitializers()
 {
 #ifndef PARSER_ONLY
     templateListTail = templateListHead;
@@ -859,7 +859,6 @@ void dumpInitializers(void)
         int data = 0;
         int thread = 0;
         int *sizep;
-        dumpTemplateInitializers();
         dumpDynamicInitializers();
         dumpTLSInitializers();
         dumpDynamicDestructors();
@@ -1038,6 +1037,29 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         {
             if (itype->type != bt_templateparam)
             {
+                EXPRESSION **exp2;
+                exp2 = &exp;
+                while (castvalue(*exp2))
+                    exp2 = &(*exp2)->left;
+                if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads)
+                {
+                    HASHREC *hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
+                    FUNCTIONCALL fpargs;
+                    INITLIST **args = &fpargs.arguments;
+                    TYPE *tp1 = NULL;
+                    memset(&fpargs, 0, sizeof(fpargs));
+                    while (hrp)
+                    {
+                        *args = Alloc(sizeof(INITLIST));
+                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
+                        if (isref((*args)->tp))
+                            (*args)->tp = basetype((*args)->tp)->btp;
+                        args = &(*args)->next;
+                        hrp = hrp->next;
+                    }
+                    fpargs.ascall = TRUE;
+                    GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
+                }
                 if (cparams.prm_cplusplus && (isarithmetic(itype) || basetype(itype)->type == bt_enum) && isstructured(tp))
                 {
                     castToArithmetic(FALSE, &tp, &exp, (enum e_kw)-1, itype, FALSE, TRUE);
@@ -1157,15 +1179,28 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         }
         if (tp)
         {
+            EXPRESSION **exp2;
             if (cparams.prm_cplusplus && isstructured(tp))
             {
                 castToPointer(&tp, &exp, (enum e_kw)-1, itype, FALSE);
             }
-            if (isfuncptr(itype) && tp->type == bt_aggregate)
+            exp2 = &exp;
+            while (castvalue(*exp2))
+                exp2 = &(*exp2)->left;
+            if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads)
             {
-                HASHREC *hrp = basetype(basetype(itype)->btp)->syms->table[0];
                 FUNCTIONCALL fpargs;
                 INITLIST **args = &fpargs.arguments;
+                TYPE *tp1 = NULL;
+                HASHREC *hrp;
+                if (isfuncptr(itype))
+                {
+                    hrp = basetype(basetype(itype)->btp)->syms->table[0];
+                }
+                else
+                {
+                    hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
+                }
                 memset(&fpargs, 0, sizeof(fpargs));
                 while (hrp)
                 {
@@ -1177,7 +1212,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                     hrp = hrp->next;
                 }
                 fpargs.ascall = TRUE;
-                GetOverloadedFunction(&tp, &exp, tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
+                GetOverloadedFunction(isfuncptr(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
             }
             if (tp->type == bt_memberptr)
             {
@@ -3004,10 +3039,6 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 sp->value.i = sp->init->exp->v.i ;
                 sp->storage_class = sc_constant;
             }
-    if (cparams.prm_cplusplus && isstructured(sp->tp))
-    {
-        ReferenceVTab(basetype(sp->tp)->sp);
-    }
     if (isref(sp->tp) && sp->storage_class != sc_typedef)
     {
         if (!sp->init && sp->storage_class != sc_external && sp->storage_class != sc_member && sp->storage_class != sc_mutable && !asExpression)

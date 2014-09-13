@@ -122,7 +122,7 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL *sym = (SYMBOL *)funcList->data;
-                if (sym->genreffed && sym->inlineFunc.stmt)
+                if (sym->linkage == lk_inline && sym->genreffed && sym->inlineFunc.stmt)
                 {
                     if (!sym->didinline)// && !inSearch(sym))
                     {
@@ -194,25 +194,6 @@ void dumpvc1Thunks(void)
         hr = hr->next;
     }
 #endif
-}
-static void ReferenceVTabFuncs(VTABENTRY *entries)
-{
-    if (entries)
-    {
-        VIRTUALFUNC *vf;
-        ReferenceVTabFuncs(entries->next);
-        vf = entries->virtuals;
-        while (vf)
-        {
-            vf->func->genreffed = TRUE;
-            vf = vf->next;
-        }
-    }
-}
-void ReferenceVTab(SYMBOL *sym)
-{
-    sym->genreffed = TRUE;
-    ReferenceVTabFuncs(sym->vtabEntries);
 }
 SYMBOL *getvc1Thunk(int offset)
 {
@@ -940,7 +921,7 @@ static STATEMENT *SetupArguments(FUNCTIONCALL *params)
         
     STATEMENT *st = NULL, **stp = &st;
     INITLIST *al = params->arguments;
-    HASHREC *hr = params->sp->inlineFunc.syms->table[0];
+    HASHREC *hr = basetype(params->sp->tp)->syms->table[0];
     if (ismember(params->sp))
     {
         SYMBOL *sx = (SYMBOL *)hr->p;
@@ -1053,6 +1034,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (newExpression->type == en_stmt)
     {
         newExpression->left = intNode(en_c_i, 0);
+		newExpression->left->v.sp = params->sp;
         if (isstructured(basetype(params->sp->tp)->btp))
             cast(&stdpointer, &newExpression->left);
         else

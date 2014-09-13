@@ -3392,6 +3392,7 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 }
 static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp)
 {
+    tp = PerformDeferredInitialization(basetype(tp), NULL);
     if (isref(tp))
         tp = basetype(tp)->btp;
     if (exp)
@@ -4956,7 +4957,7 @@ static BOOLEAN isTemplatedPointer(TYPE *tp)
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags)
 {
     BOOLEAN done = FALSE;
-    EXPRESSION *exp1=NULL;
+    EXPRESSION *exp1=NULL, **exp2;
     EXPRESSION *asndest = NULL;
     BOOLEAN localMutable = FALSE;
     TYPE *tp2;
@@ -5077,11 +5078,23 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 cppCast(*tp, &tp1, &exp1, flags & _F_NOINLINE);
             }
         }
-        if (isfuncptr(*tp) && tp1->type == bt_aggregate)
+        exp2 = &exp1;
+        while (castvalue(*exp2))
+            exp2 = &(*exp2)->left;
+        if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads)
         {
-            HASHREC *hrp = basetype(basetype(*tp)->btp)->syms->table[0];
             FUNCTIONCALL fpargs;
             INITLIST **args = &fpargs.arguments;
+            TYPE *tp2;
+            HASHREC *hrp ;
+            if (isfuncptr(*tp))
+            {
+                hrp = basetype(basetype(*tp)->btp)->syms->table[0];
+            }
+            else
+            {
+                hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
+            }
             memset(&fpargs, 0, sizeof(fpargs));
             while (hrp)
             {
@@ -5093,7 +5106,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 hrp = hrp->next;
             }
             fpargs.ascall = TRUE;
-            GetOverloadedFunction(&tp1, &exp1, tp1->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
+            GetOverloadedFunction(isfuncptr(*tp) ? & tp1 : &tp2, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
         }
         if (isconstraw(*tp, TRUE) && !localMutable)
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);

@@ -82,6 +82,41 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
             genaddress(entry->vtabOffset);
             while (vf)
             {
+                if (vf->func->deferredCompile && (!vf->func->templateLevel || vf->func->instantiated))
+                {
+                    FUNCTIONCALL fcall;
+                    TYPE *tp = NULL;
+                    EXPRESSION *exp = intNode(en_c_i, 0);
+                    SYMBOL *sp = vf->func->overloadName;
+                    INITLIST **args = &fcall.arguments;
+                    HASHREC *hr = basetype(vf->func->tp)->syms->table[0];
+                    memset(&fcall, 0, sizeof(fcall));
+                    while (hr)
+                    {
+                        SYMBOL *sym = (SYMBOL *)hr->p;
+                        if (sym->thisPtr)
+                        {
+                            fcall.thistp = sym->tp;
+                            fcall.thisptr = exp;
+                        }
+                        else if (sym->tp->type != bt_void)
+                        {
+                            *args = Alloc(sizeof(INITLIST));
+                            (*args)->tp = sym->tp;
+                            (*args)->exp = exp;
+                            args = &(*args)->next;
+                            
+                        }
+                        hr = hr->next;
+                    }
+                    fcall.ascall = TRUE;
+                    sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, NULL, TRUE, FALSE, TRUE);
+                    if (sp)                    
+                        vf->func = sp;
+                }
+                vf->func->genreffed = TRUE;
+                InsertInline(vf->func);
+                InsertExtern(vf->func);
                 if (sym == vf->func->parentClass && entry->vtabOffset)
                 {
                     char buf[512];
@@ -100,7 +135,6 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                 else
                 {
                     genref(vf->func, 0);
-                    vf->func->genreffed = TRUE;
                 }
                 vf = vf->next;
             }

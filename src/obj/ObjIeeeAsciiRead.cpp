@@ -1121,6 +1121,9 @@ bool ObjIeeeAscii::SectionAttributes(const char *buffer, eParseType ParseType)
             case 'U':
                 quals |= ObjSection::unique;
                 break;
+            case 'V':
+                quals |= ObjSection::virt;
+                break;
             case 'W':
                 quals |= ObjSection::ram;
                 break;

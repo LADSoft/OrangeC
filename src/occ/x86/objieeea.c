@@ -364,20 +364,19 @@ void link_Segs(void)
             firstVirtualSeg++;
         }
     }
-    i = firstVirtualSeg;
     while (v)
     {
-        v->sp->value.i = i;
+        i = v->sp->value.i;
         if (v->data)
         {
-            strcpy(buf,"vsd_");
+            strcpy(buf,"vsd");
         }
         else
         {
-            strcpy(buf,"vsc_");
+            strcpy(buf,"vsc");
         }
-        beDecorateSymName(buf + 4, v->sp);
-        emit_record_ieee("ST%X,%s,E,%03X%s.\r\n", i, v->data ? segchars[dataseg]:
+        beDecorateSymName(buf + 3, v->sp);
+        emit_record_ieee("ST%X,%s,E,V,%03X%s.\r\n", i, v->data ? segchars[dataseg]:
             segchars[codeseg], strlen(buf), buf);
         emit_record_ieee("SA%X,%x.\r\n", i, 4);
         emit_record_ieee("ASS%X,%lX.\r\n", i++, v->seg->curlast);
@@ -888,14 +887,10 @@ void link_putpub(SYMBOL *sp, char sel)
     int l = 0;
     char buf[512], obuf[512];
     int index;
-    /*
-    if (sp->gennedvirtfunc)
+    if (!cparams.prm_cplusplus && sp->linkage == lk_inline)
+    {
         return ;
-    if (sp->value.classdata.templatedata)
-        return ;
-        */
-    if (sp->linkage == lk_inline)
-        return ;
+    }
     if (isconst(sp->tp) && isint(sp->tp) && sp
         ->storage_class == sc_static)
         return ;
@@ -931,6 +926,7 @@ void link_putpub(SYMBOL *sp, char sel)
 
 void link_Publics(void)
 {
+    VIRTUAL_LIST *v = virtualFirst;
     LIST *lf = globalNames;
     while (lf)
     {
@@ -1111,8 +1107,9 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
         case fm_rellabel:
             rel = TRUE;
         case fm_label:
-            iseg = LabelSeg(fixup->label);
-            xseg = segxlattab[iseg];
+            xseg = iseg = LabelSeg(fixup->label);
+            if (iseg < MAX_SEGS)
+                xseg = segxlattab[iseg];
             if (rel)
             {
             /*
@@ -1128,7 +1125,7 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
             }
             else
             {
-                sprintf(buf, "R%X,%X,+", segxlattab[iseg], LabelAddress(fixup
+                sprintf(buf, "R%X,%X,+", xseg, LabelAddress(fixup
                     ->label) + offs);
             }
             /* segment relative */
@@ -1301,10 +1298,10 @@ void link_Data(void)
             }
             emit_cs(FALSE);
         }
-    i = firstVirtualSeg;
     while (v)
     {
         EMIT_LIST *rec = v->seg->first;
+        i = v->sp->value.i;
         emit_record_ieee("SB%X.\r\n", i);
         while (rec)
         {

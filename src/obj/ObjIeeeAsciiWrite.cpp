@@ -320,7 +320,9 @@ void ObjIeeeAscii::RenderSection(ObjSection *Section)
         RenderCstr("X,");
     if (quals & ObjSection::zero)
         RenderCstr("Z,");
-
+   if (quals & ObjSection::virt)
+        RenderCstr("V,");
+ 
     // this assums a section number < 160... otherwise it could be an attrib
     RenderString(ToString(Section->GetName()) + ".");
     endl();

@@ -64,7 +64,8 @@ public:
         unique = 0x200 ,
         ram = 0x400 ,
         exec = 0x800 ,
-        zero = 0x1000 
+        zero = 0x1000,
+        virt = 0x2000 
     } ;
     
     ObjSection(ObjString &Name, ObjInt Index) :name(Name), externalName(""), 

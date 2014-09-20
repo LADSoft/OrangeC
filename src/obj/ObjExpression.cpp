@@ -41,6 +41,7 @@
 #include "ObjFunction.h"
 #include "ObjSection.h"
 #include "ObjExpression.h"
+#include <stdio.h>
 
 void ObjExpression::Simplify()
 {

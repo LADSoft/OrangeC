@@ -31,11 +31,13 @@
 %include "matherr.inc"
 
 %ifdef __BUILDING_LSCRTL_DLL
+[export __copysign]
 [export _copysign]
 [export _copysignf]
 [export _copysignl]
 %endif
 [global _copysign]
+[global __copysign]
 [global _copysignf]
 [global _copysignl]
 SECTION data CLASS=DATA USE32
@@ -61,6 +63,7 @@ _copysignl:
     fld	tword[ecx]
     ret
 _copysign:
+__copysign:
     lea	ecx,[esp+4]
     lea	edx,[esp+12]
     and word [ecx +6],07fffh

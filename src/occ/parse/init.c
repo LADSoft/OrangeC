@@ -87,7 +87,6 @@ static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
 static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
 static STARTUP *startupList, *rundownList;
 static LIST *symListHead, *symListTail;
-static LIST *templateListHead, *templateListTail;
 static HASHTABLE *aliasHash;
 static int inittag = 0;
 
@@ -97,7 +96,6 @@ LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc,
 void init_init(void)
 {
     symListHead = NULL;
-    templateListHead = NULL;
     startupList = rundownList = NULL;
     aliasHash = CreateHashTable(13);
     dynamicInitializers = TLSInitializers = NULL;
@@ -834,21 +832,6 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
         genstorage(basetype(tp)->size);
 #endif
 }
-void dumpTemplateInitializers()
-{
-#ifndef PARSER_ONLY
-    templateListTail = templateListHead;
-    dseg();
-    while(templateListTail)
-    {
-        SYMBOL *sp = (SYMBOL *)templateListTail->data;
-        gen_virtual(sp, TRUE);
-        dumpInitGroup(sp, sp->tp);
-        gen_endvirtual(sp);
-        templateListTail= templateListTail->next;
-    }
-#endif
-}
 void dumpInitializers(void)
 {
 #ifndef PARSER_ONLY
@@ -930,19 +913,6 @@ void insertInitSym(SYMBOL *sp)
             symListTail = symListTail->next = lst;
         else
             symListHead = symListTail = lst;
-        sp->indecltable = TRUE;
-    }
-}
-void insertTemplateData(SYMBOL *sp)
-{
-    if (!sp->indecltable)
-    {
-        LIST *lst = Alloc(sizeof(LIST));
-        lst->data = sp;
-        if (templateListHead)
-            templateListTail = templateListTail->next = lst;
-        else
-            templateListHead = templateListTail = lst;
         sp->indecltable = TRUE;
     }
 }
@@ -3050,7 +3020,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         || sp->storage_class == sc_localstatic)
     {
         if (instantiatingTemplate)
-            insertTemplateData(sp);
+        {
+            sp->linkage = lk_inline;
+            InsertInlineData(sp);
+        }
         else {
             SYMBOL *tmpl;
             if (storage_class_in == sc_auto || storage_class_in == sc_register)
@@ -3065,6 +3038,11 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 insertInitSym(sp);
         }       
     }
+    else if (sp->storage_class == sc_external && instantiatingTemplate)
+    {
+        sp->linkage = lk_inline;
+        InsertInlineData(sp);
+    } 
     if (sp->init)
         declareAndInitialize = TRUE;
 

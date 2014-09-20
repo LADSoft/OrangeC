@@ -1023,6 +1023,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             }
             break;
         case sc_member:
+        case sc_mutable:
             if (thisptr)
                 expsym = thisptr;
             else if (funcsp)

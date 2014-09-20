@@ -415,6 +415,9 @@ char *unmang1(char *buf, char *name, char *last)
             if (*name == 'v')
             {
                 // special case for func with void argument
+                *p++ = ',';
+                *p++ = ' ';
+	            *p = 0;
                 name++;
             }
             else

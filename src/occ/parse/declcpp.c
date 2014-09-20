@@ -723,6 +723,21 @@ void deferredCompileOne(SYMBOL *cur)
         */
         dontRegisterTemplate++;
         lex = SetAlternateLex(cur->deferredCompile);
+        if (MATCHKW(lex, kw_try) || MATCHKW(lex, colon))
+        {
+            BOOLEAN viaTry = MATCHKW(lex, kw_try);
+            int old = GetGlobalFlag();
+            if (viaTry)
+            {
+                cur->hasTry = TRUE;
+                lex = getsym();                                
+            }
+            if (MATCHKW(lex, colon))
+            {
+                lex = getsym();                                
+                cur->memberInitializers = GetMemberInitializers(&lex, NULL, cur);
+            }
+        }
         cur->deferredCompile = NULL;
         lex = body(lex, cur);
         SetAlternateLex(NULL);
@@ -2107,10 +2122,8 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
                     sp1->mainsym = sym;
                     sp1->access = access;
                     InsertSymbol(sp1, storage_class, sp1->linkage, TRUE);
-                    if (sp1->storage_class == sc_external)
-                    {
-                        InsertExtern(sp1);
-                    }
+                    InsertExtern(sp1);
+                    InsertInline(sp1);
                     sp1->parentClass = ssp1;
                     hr = &(*hr)->next;
                 }

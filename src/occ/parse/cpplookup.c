@@ -2279,6 +2279,19 @@ static void getPointerConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *exp, int *n,
         getQualConversion(tpp, tpa, n, seq);
     }
 }
+BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told)
+{
+    if (isconst(tnew) != isconst(told) || isvolatile(tnew) != isvolatile(told))
+        return FALSE;
+    while (basetype(tnew)->type == basetype(told)->type && basetype(tnew)->type == bt_pointer)
+    {
+        tnew = basetype(tnew)->btp;
+        told = basetype(told)->btp;
+        if (isconst(tnew) != isconst(told) || isvolatile(tnew) != isvolatile(told))
+            return FALSE;
+    }
+    return sameTemplate(tnew, told);
+}
 BOOLEAN sameTemplate(TYPE *P, TYPE *A)
 {
     BOOLEAN PLd, PAd;

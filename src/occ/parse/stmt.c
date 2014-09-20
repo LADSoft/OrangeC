@@ -65,7 +65,6 @@ BOOLEAN setjmp_used;
 BOOLEAN functionHasAssembly;
 BOOLEAN declareAndInitialize;
 
-static int bodyCount;
 static LINEDATA *linesHead, *linesTail;
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
                            BLOCKDATA *parent, BOOLEAN asExpression);
@@ -77,7 +76,6 @@ void statement_ini()
 {
     nextLabel = 1;
     linesHead = linesTail = NULL;
-    bodyCount = 0;
 }
 void InsertLineData(int lineno, int fileindex, char *fname, char *line)
 {
@@ -3002,13 +3000,13 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     BOOLEAN oldsetjmp_used = setjmp_used;
     BOOLEAN oldfunctionHasAssembly = functionHasAssembly;
     BOOLEAN oldDeclareAndInitialize = declareAndInitialize;
+    BOOLEAN oldHasXCInfo = hasXCInfo;
     HASHTABLE *oldSyms = localNameSpace->syms;
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA *block = Alloc(sizeof(BLOCKDATA)) ;
     STATEMENT *startStmt;
     SYMBOL *spt = funcsp;
-    if (bodyCount++ == 0)
-        hasXCInfo = FALSE;
+    hasXCInfo = FALSE;
     localNameSpace->syms = NULL;
     functionHasAssembly = FALSE;
     setjmp_used = FALSE;
@@ -3073,9 +3071,9 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     theCurrentFunc = oldtheCurrentFunc;
     startlab = oldstartlab;
     retlab = oldretlab;
+    hasXCInfo = oldHasXCInfo;
     setjmp_used = oldsetjmp_used;
     functionHasAssembly = oldfunctionHasAssembly;
     localNameSpace->syms = oldSyms;
-    bodyCount--;
     return lex;
 }

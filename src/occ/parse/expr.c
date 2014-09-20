@@ -364,6 +364,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     break;
                 
                 case sc_localstatic:
+                    sp->genreffed = TRUE;
                     if (funcsp && funcsp->linkage == lk_inline 
                         && funcsp->storage_class == sc_global)
                         errorsym(ERR_INLINE_CANNOT_REFER_TO_STATIC, sp);
@@ -380,6 +381,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     sp->used = TRUE;
                 case sc_global:
                 case sc_external:
+                    sp->genreffed = TRUE;
                     if (sp->parentClass && !isExpressionAccessible(NULL, sp, funcsp, NULL, FALSE))
                         errorsym(ERR_CANNOT_ACCESS, sp);		
                     if (sp->linkage3 == lk_threadlocal)
@@ -470,7 +472,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 funcparams->novtab = TRUE;
             if (cparams.prm_cplusplus && (sp->storage_class == sc_member || sp->storage_class == sc_mutable))
             {
-                qualifyForFunc(funcsp, tp);
+                qualifyForFunc(funcsp, tp, *ismutable);
             }
         }
     }

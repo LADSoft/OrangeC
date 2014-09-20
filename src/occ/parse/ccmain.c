@@ -502,7 +502,6 @@ void compile(void)
     {
         dumpInitializers();
         dumpInlines();
-        dumpTemplateInitializers();
         dumpStartups();
 #ifndef PARSER_ONLY
         dumpLits();

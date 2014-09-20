@@ -1555,7 +1555,6 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     {
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
-        
     if (chosenAssembler->gen->handleIntrins)
     {
         ap = chosenAssembler->gen->handleIntrins(node, flags &F_NOVALUE);
@@ -2506,8 +2505,6 @@ int natural_size(EXPRESSION *node)
     int siz0, siz1;
     if (node == 0)
     {
-        if (!strcmp(theCurrentFunc->name, "_M_do_put_bool"))
-            printf("hi");
         return 0;
     }
     switch (node->type)

@@ -2599,7 +2599,7 @@ static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo)
         if (spo && isfunction(spo->tp))
         {
             HASHREC *hro1, *hr1;
-            if (!comparetypes(basetype(spo->tp)->btp, basetype(sp->tp)->btp, TRUE) && !sameTemplate(basetype(spo->tp)->btp, basetype(sp->tp)->btp))
+            if (!comparetypes(basetype(spo->tp)->btp, basetype(sp->tp)->btp, TRUE) && !sameTemplatePointedTo(basetype(spo->tp)->btp, basetype(sp->tp)->btp))
             {
                 
                 preverrorsym(ERR_TYPE_MISMATCH_FUNC_DECLARATION, spo, spo->declfile, spo->declline);
@@ -2616,7 +2616,7 @@ static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo)
                     {
                         SYMBOL *spo1 = (SYMBOL *)hro1->p;
                         SYMBOL *sp1 = (SYMBOL *)hr1->p;                    
-                        if (!comparetypes(spo1->tp, sp1->tp, TRUE) && !sameTemplate(spo1->tp, sp1->tp))
+                        if (!comparetypes(spo1->tp, sp1->tp, TRUE) && !sameTemplatePointedTo(spo1->tp, sp1->tp))
                         {
                             break;
                         }
@@ -4481,6 +4481,10 @@ jointemplate:
                             sp->importfile = importFile;
                         }
                         SetLinkerNames(sp, storage_class_in == sc_auto && isstructured(sp->tp) ? lk_auto : linkage);
+                        if (inTemplate && templateNestingCount == 1)
+                        {
+                            inTemplateBody++;
+                        }
                         if (cparams.prm_cplusplus && isfunction(sp->tp) && (MATCHKW(lex, kw_try) || MATCHKW(lex, colon)))
                         {
                             BOOLEAN viaTry = MATCHKW(lex, kw_try);
@@ -4498,7 +4502,6 @@ jointemplate:
                         }
                         if (inTemplate && templateNestingCount == 1)
                         {
-                            inTemplateBody++;
                             noSpecializationError++;
                         }
                         if (storage_class == sc_absolute)
@@ -4613,39 +4616,35 @@ jointemplate:
                                 }
                                 else if (sym && !comparetypes(basetype(sp->tp)->btp, basetype((sym)->tp)->btp, TRUE))
                                 {
-/*                                    if (!inTemplate)
-                                    {
-                                        errorsym(ERR_OVERLOAD_DIFFERS_ONLY_IN_RETURN_TYPE, sp);
-                                    }
-                                    else
-*/ 
                                     // this is done here becase a templated base class may have filled in
                                     // something by now...
                                     // this is a little naive, what about function parameters as part of a
                                     // return value
-                                    TYPE **ptp = NULL;
-                                    
-                                    if (!templateNestingCount)
+                                    if (isfunction(sym->tp))
                                     {
-                                        ptp = &basetype(sym->tp)->btp;
-                                        while (*ptp)
+                                        TYPE **ptp = NULL;
+                                        if (!templateNestingCount)
                                         {
-                                            if ((*ptp)->type == bt_templateparam)
+                                            ptp = &basetype(sym->tp)->btp;
+                                            while (*ptp)
                                             {
-                                                if ((*ptp)->templateParam->p->byClass.val)
+                                                if ((*ptp)->type == bt_templateparam)
                                                 {
-                                                    *ptp = (*ptp)->templateParam->p->byClass.val;
+                                                    if ((*ptp)->templateParam->p->byClass.val)
+                                                    {
+                                                        *ptp = (*ptp)->templateParam->p->byClass.val;
+                                                    }
+                                                    break;
                                                 }
-                                                break;
+                                                ptp = & (*ptp)->btp;
                                             }
-                                            ptp = & (*ptp)->btp;
                                         }
-                                    }
-                                    if (!ptp || !*ptp)
-                                    {
-                                        if (!sameTemplate(basetype(sym->tp)->btp, basetype(sp->tp->btp)))
+                                        if (!ptp || !*ptp)
                                         {
-                                            sym = NULL;
+                                            if (!sameTemplatePointedTo(basetype(sym->tp)->btp, basetype(sp->tp->btp)))
+                                            {
+                                                sym = NULL;
+                                            }
                                         }
                                     }
                                 }
@@ -4670,9 +4669,9 @@ jointemplate:
                                 if ((nsv || strSym) && storage_class_in != sc_member && storage_class_in != sc_mutable && (!inTemplate || !sp->templateParams))
                                 {
                                     char buf[256];
-                                    if (!strcmp(sp->name, "$bctr"))
+                                    if (!strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR]))
                                         strcpy(buf, strSym->name);
-                                    else if (!strcmp(sp->name, "$bdtr"))
+                                    else if (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]))
                                     {
                                         buf[0] = '~';
                                         strcpy(buf+1, strSym->name);
@@ -5110,10 +5109,18 @@ jointemplate:
                                 {
                                     sp->instantiatedInlineInClass = TRUE;
                                 }
-                                if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1)
+                                if (storage_class_in != sc_member && TemplateFullySpecialized(sp))
+                                {
+                                    sp->genreffed = TRUE;
+                                    sp->linkage = lk_inline;
+                                    SetGlobalFlag(old + (sp->linkage == lk_inline));
+                                    lex = body(lex, sp);
+                                    SetGlobalFlag(old);
+                                }
+                                else if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1)
                                 {
                                     lex = getDeferredData(lex, sp, TRUE);
-                                }    
+                                }
                                 else
                                 {
                                     SetGlobalFlag(old + (sp->linkage == lk_inline));

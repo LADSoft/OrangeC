@@ -150,11 +150,11 @@ EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en)
     }
     return rv;
 }
-void qualifyForFunc(SYMBOL *sym, TYPE **tp)
+void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable)
 {
     if (sym)
     {
-        if (isconst(sym->tp))
+        if (isconst(sym->tp) && !isMutable)
         {
             TYPE *tp1 = Alloc(sizeof(TYPE));
             tp1->size = (*tp)->size;
@@ -180,7 +180,7 @@ void getThisType(SYMBOL *sym, TYPE **tp)
     (*tp)->type = bt_pointer;
     (*tp)->size = getSize(bt_pointer);
     (*tp)->btp = sym->parentClass->tp;
-    qualifyForFunc(sym, tp);
+    qualifyForFunc(sym, tp, FALSE);
 }
 EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOOLEAN toError)
 {

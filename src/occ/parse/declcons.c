@@ -477,10 +477,8 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
-    tp->btp->type = bt_pointer;
-    tp->btp->size = getSize(bt_pointer);
-    tpx = tp->btp->btp = (TYPE *)Alloc(sizeof(TYPE));
-    *(tp->btp->btp) = *basetype(sp->tp);
+    tpx = tp->btp = (TYPE *)Alloc(sizeof(TYPE));
+    *(tp->btp) = *basetype(sp->tp);
     func = makeID(sc_member, tp, NULL, overloadNameTab[assign - kw_new + CI_NEW]);
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);
@@ -1711,16 +1709,19 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
         
     while (bc)
     {
-        SYMBOL *parent = bc->cls;
-        int i;
-        for (i=n-1;i >=0 && parent; i--, parent = parent->parentClass)
-            if (strcmp(parent->name, clslst[i]))
-                break;
-        if (i < 0)
+        if (!bc->isvirtual)
         {
-            ccount++;
-            sp = bc->cls;
-            *offset = bc->offset;
+            SYMBOL *parent = bc->cls;
+            int i;
+            for (i=n-1;i >=0 && parent; i--, parent = parent->parentClass)
+                if (strcmp(parent->name, clslst[i]))
+                    break;
+            if (i < 0)
+            {
+                ccount++;
+                sp = bc->cls;
+                *offset = bc->offset;
+            }
         }
         bc = bc->next;
     }

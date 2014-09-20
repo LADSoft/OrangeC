@@ -97,6 +97,7 @@ void displayLexeme(LEXEME *lex);
 
                               /* Declare.c */
 
+BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told);
 BOOLEAN sameTemplate(TYPE *P, TYPE *A);
 void ParseBuiltins(void);
 BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always);
@@ -194,6 +195,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, 
 void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, BOOLEAN isExtern);
 void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
+BOOLEAN TemplateFullySpecialized(SYMBOL *sp);
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isextern);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOLEAN needsemi, BOOLEAN asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
@@ -202,7 +204,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class,
 
 void checkscope(TYPE *tp1, TYPE *tp2);
 void checkauto(TYPE *tp);
-void qualifyForFunc(SYMBOL *sym, TYPE **tp);
+void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable);
 void getThisType(SYMBOL *sym, TYPE **tp);
 SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOLEAN isExplicit);
 LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags);

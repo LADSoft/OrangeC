@@ -281,6 +281,7 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
     {
         SYMBOL *snew = (SYMBOL *)hnew->p;
         SYMBOL *sold = (SYMBOL *)hold->p;
+        TYPE *tnew, *told;
         if (sold->thisPtr)
         {
             hold = hold->next;
@@ -295,20 +296,23 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
                 break;
             snew = hnew->p;
         }
-        if (snew->tp->type == bt_templateparam)
+        tnew = basetype(snew->tp);
+        told = basetype(sold->tp);
+        if (tnew->type == bt_templateparam)
         {
-            if (sold->tp->type != bt_templateparam || 
-                snew->tp->templateParam->p->type != sold->tp->templateParam->p->type ||
-                snew->tp->templateParam->p->type != kw_typename ||
-                (snew->tp->templateParam->p->byClass.dflt || sold->tp->templateParam->p->byClass.dflt) &&
-                (!snew->tp->templateParam->p->byClass.dflt || !sold->tp->templateParam->p->byClass.dflt ||
-                !comparetypes(sold->tp->templateParam->p->byClass.dflt, snew->tp->templateParam->p->byClass.dflt, TRUE)))
+            if (told->type != bt_templateparam || 
+                tnew->templateParam->p->type != told->templateParam->p->type ||
+                tnew->templateParam->p->type != kw_typename ||
+                (tnew->templateParam->p->byClass.dflt && tnew->templateParam->p->byClass.dflt->type != bt_templateparam
+                  || told->templateParam->p->byClass.dflt && told->templateParam->p->byClass.dflt->type != bt_templateparam) &&
+                (!tnew->templateParam->p->byClass.dflt || !told->templateParam->p->byClass.dflt ||
+                !comparetypes(told->templateParam->p->byClass.dflt, tnew->templateParam->p->byClass.dflt, TRUE)))
                 
                     break;                    
         }
-        else if (sold->tp->type == bt_any || snew->tp->type == bt_any) // packed template param
+        else if (told->type == bt_any || tnew->type == bt_any) // packed template param
             break;
-        else if (!comparetypes(sold->tp, snew->tp, TRUE) && !sameTemplate(sold->tp, snew->tp) || basetype(sold->tp)->type != basetype(snew->tp)->type)
+        else if (!comparetypes(told, tnew, TRUE) && !sameTemplatePointedTo(told, tnew) || told->type != tnew->type)
             break;
         else 
         {

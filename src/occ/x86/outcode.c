@@ -56,6 +56,7 @@ EMIT_TAB segs[MAX_SEGS];
 LIST *includedFiles ;
 VIRTUAL_LIST *virtualFirst, *virtualLast;
 
+static int virtualSegmentNumber;
 static LABEL **labelbuf;
 static int lastIncludeNum;
 /*char segregs[] = "CSDSESFSGSSS";*/
@@ -3992,7 +3993,7 @@ void outcode_file_init(void)
     for (i = 0; i < MAX_SEGS; i++)
         memset(&segs[i], 0, sizeof(segs[i]));
     virtualFirst = virtualLast = 0;
-
+    virtualSegmentNumber = MAX_SEGS;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -4418,6 +4419,7 @@ void outcode_start_virtual_seg(SYMBOL *sp, int data)
     x->sp = sp;
     x->seg = beGlobalAlloc(sizeof(EMIT_TAB));
     x->data = data;
+    sp->value.i = virtualSegmentNumber++;
     if (virtualFirst)
         virtualLast = virtualLast->next = x;
     else
@@ -6357,7 +6359,7 @@ int outcode_AssembleIns(OCODE *ins, int address)
     {
         case op_label:
             ins->address = address;
-            InsertLabel((int)ins->oper1, address, codeseg);
+            InsertLabel((int)ins->oper1, address, oa_currentSeg == virtseg ? theCurrentFunc->value.i : codeseg);
             return 0;
         case op_line:
         case op_blockstart:
@@ -6436,7 +6438,7 @@ void outcode_optimize(OCODE *peeplist)
                 head->outbuf[1] = adr;
             }
             if (head->opcode == op_label && offset)
-                InsertLabel((int)head->oper1, head->address, codeseg);
+                InsertLabel((int)head->oper1, head->address, oa_currentSeg == virtseg ? theCurrentFunc->value.i : codeseg);
             head = head->fwd;
         }
     }

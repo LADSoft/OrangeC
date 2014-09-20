@@ -316,7 +316,7 @@ void AllocateStackSpace(SYMBOL *funcsp)
 /*
  * This allocates space for local variables
  * we do this AFTER the register optimization so that we can
- * avoid allocating space on the tempStack twice
+ * avoid allocating space on the stack twice
  */
 {
     int maxlvl = -1; 
@@ -325,6 +325,7 @@ void AllocateStackSpace(SYMBOL *funcsp)
     int i;
     HASHTABLE *syms = funcsp->inlineFunc.syms;
     LIST **temps = &temporarySymbols;
+    BOOLEAN show = FALSE;
     while (syms)
     {
         if (syms->blockLevel >= maxlvl)
@@ -387,7 +388,9 @@ void AllocateStackSpace(SYMBOL *funcsp)
                 sp->offset =  - lc_maxauto;					
                 if (lc_maxauto > max)
                     max = lc_maxauto;
+                oldauto = max;
                 *temps = (*temps)->next;
+                sp->inAllocTable = FALSE; // needed because due to inlining a temp may be used across multiple function bodies
             }
             else
             {

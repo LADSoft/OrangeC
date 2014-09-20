@@ -1178,6 +1178,8 @@ void doms_only(BOOLEAN always)
         criticalThunkPtr = (QUAD **)*criticalThunkPtr;
     }
     CancelInfinite(blockCount);
+
+    blockArray[0]->dominates = NULL;
     for (i=1; i < blockCount; i++)
     {
         if (blockArray[i])

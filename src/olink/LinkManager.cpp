@@ -98,7 +98,7 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
     for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
     {
         LinkSymbolData test(file, *it);
-        if (publics.find(&test) != publics.end())
+        if (publics.find(&test) != publics.end() || virtsections.find(&test) != virtsections.end())
         {
             if (toerr)
                 LinkError("Duplicate public " + (*it)->GetDisplayName() + " in module " + file->GetName());
@@ -133,16 +133,24 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
             {
                 (*it1)->SetUsed(true);
             }
-            else
+            else 
             {
-                LinkSymbolData *newSymbol = new LinkSymbolData(file, *it);
-                SymbolIterator its = imports.find(newSymbol);
-                if (its != imports.end())
+                it1 = virtsections.find(&test);
+                if (it1 != virtsections.end())
                 {
-                    newSymbol->SetUsed(true);
-                    (*its)->SetUsed(true);
+                    (*it1)->SetUsed(true);
                 }
-                externals.insert(newSymbol);
+                else
+                {
+                    LinkSymbolData *newSymbol = new LinkSymbolData(file, *it);
+                    SymbolIterator its = imports.find(newSymbol);
+                    if (its != imports.end())
+                    {
+                        newSymbol->SetUsed(true);
+                        (*its)->SetUsed(true);
+                    }
+                    externals.insert(newSymbol);
+                }
             }
         }
     }
@@ -173,6 +181,46 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
             {
                 (*it)->SetUsed(true);
                 newSymbol->SetUsed(true);
+            }
+        }
+    }
+    for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    {
+        if ((*it)->GetQuals() & ObjSection::virt)
+        {
+            int n = (*it)->GetName().find('@');
+            if (n != std::string::npos)
+            {
+                std::string name = (*it)->GetName().substr(n);
+                ObjSymbol sym(name, ObjSymbol::ePublic, -1);
+                LinkSymbolData test(file, &sym);
+                if (publics.find(&test) != publics.end())
+                {
+                    if (toerr)
+                        LinkError("Duplicate public " + (*it)->GetName() + " in module " + file->GetName());
+                }
+                else if (virtsections.find(&test) != virtsections.end())
+                {
+                }
+                else
+                {
+                    LinkSymbolData *newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
+                    virtsections.insert(newSymbol);
+                    SymbolIterator its = externals.find(newSymbol);
+                    if (its != externals.end())
+                    {
+                        
+                        newSymbol->SetUsed(true);
+                        LinkSymbolData *p = *its;
+                        externals.erase(its);
+                        delete p;
+                    }
+                    its = exports.find(newSymbol);
+                    if (its != exports.end())
+                    {
+                        (*its)->SetUsed(true);
+                    }
+                }
             }
         }
     }

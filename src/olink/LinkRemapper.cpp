@@ -246,6 +246,9 @@ ObjExpression *LinkRemapper::RewriteExpression(LinkExpression *exp, LinkExpressi
             }
             break;
         }
+        case LinkExpression::eUnresolvedSection:
+            rv = new ObjExpression(ObjExpression::eAdd, new ObjExpression(exp->GetUnresolvedSection()),new ObjExpression(exp->GetUnresolvedSection()->GetBase()));
+            break;
         case LinkExpression::eAdd:
             rv = new ObjExpression(ObjExpression::eAdd, RewriteExpression(exp->GetLeft(), sym), RewriteExpression(exp->GetRight(), sym));
             break;
@@ -272,6 +275,7 @@ ObjExpression *LinkRemapper::RewriteExpression(LinkExpression *exp, LinkExpressi
     }
     return rv;
 }
+
 ObjExpression *LinkRemapper::ScanExpression(ObjExpression *offset, LinkSymbolData *d)
 {
     switch(offset->GetOperator())

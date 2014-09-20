@@ -42,6 +42,8 @@
 #include "ObjTypes.h"
 #include <set>
 
+class ObjSection;
+
 class LinkExpression;
 class LinkExpressionSymbol
 {
@@ -65,7 +67,7 @@ class LinkExpression
 {
 
     public:
-        enum eOperator { eValue, ePC, eSymbol, eSection, eAdd, eSub, eMul, eDiv, eNeg, eCpl };
+        enum eOperator { eValue, ePC, eSymbol, eUnresolvedSection, eSection, eAdd, eSub, eMul, eDiv, eNeg, eCpl };
         LinkExpression() : op (eValue), left(NULL), right(NULL), symbolName(""), value(0), sect(0) {}
         LinkExpression(eOperator Op) : op (Op), left(NULL), right(NULL), symbolName(""), value(0) {}
         LinkExpression(ObjInt Value) : op (eValue), left(NULL), right(NULL), symbolName(""), value(Value) {}
@@ -76,12 +78,14 @@ class LinkExpression
         LinkExpression(eOperator Op, LinkExpression *Left, LinkExpression *Right)
             : op (Op), left(Left), right(Right), symbolName(""), value(0) {}
         LinkExpression(const LinkExpression &exp);
+        LinkExpression(ObjSection *Unresolved): op(eUnresolvedSection), unresolvedSection(Unresolved) { }
         ~LinkExpression() 
         {
             delete left;
              delete right;
         }
         eOperator GetOperator() { return op; }
+        ObjSection *GetUnresolvedSection() { return unresolvedSection; }
         LinkExpression *GetLeft() { return left; }
         LinkExpression *GetRight() { return right; }
         ObjString &GetSymbol() { return symbolName; }
@@ -103,5 +107,6 @@ class LinkExpression
         ObjInt value;
         ObjInt sect;
         static std::set<LinkExpressionSymbol *, leltcompare> symbols;
+        ObjSection *unresolvedSection;
 };
 #endif

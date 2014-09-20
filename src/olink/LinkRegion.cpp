@@ -274,13 +274,15 @@ bool LinkRegion::CheckEqualSection(ObjSection *sect)
         {
             if (equalSections[sect->GetName()] != sect->GetAbsSize())
             {
-                LinkManager::LinkError("Region " + QualifiedRegionName() + " Section " + sect->GetName() + "equal qualifier with unequal sections");
+                LinkManager::LinkError("Region " + QualifiedRegionName() + " Section " + sect->GetName() + " equal qualifier with unequal sections");
             }
             return true;
         }
     }
     return false;
 }
+#include <fstream>
+
 void LinkRegion::AddFile(ObjFile *file)
 {
     LinkNameLogic logic(name);
@@ -296,12 +298,32 @@ void LinkRegion::AddFile(ObjFile *file)
             sect->SetUtilityFlag(true);
             if (!CheckEqualSection(sect))
             {
+                // make a public for virtual sections (C++)
+                if (sect->GetQuals() & ObjSection::virt)
+                {
+                    int i;
+                    for (i=0; i < sect->GetName().size(); i++)
+                    {
+                        if (sect->GetName()[i] == '@')
+                            break;
+                    }
+                    if (i < sect->GetName().size())
+                    {
+                        std::string pubName = sect->GetName().substr(i);
+                        LinkExpressionSymbol *esym = new LinkExpressionSymbol(pubName, new LinkExpression(sect)) ;
+                        if (!LinkExpression::EnterSymbol(esym))
+                        {
+                            delete esym;
+                            LinkManager::LinkError("Symbol " + pubName + " redefined");
+                        }
+                    }
+                }
                 if (quals & ObjSection::now)
                 {
                     if (quals &ObjSection::postpone)
                         LinkManager::LinkError("file " + file->GetName() + "Region " 
                                                  + QualifiedRegionName() + 
-                                    "has both 'now' and 'postpone' qualifiers");
+                                    " has both 'now' and 'postpone' qualifiers");
                     AddNowData(file, sect);
                 }
                 else if (quals & ObjSection::postpone)

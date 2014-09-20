@@ -47,7 +47,7 @@ class LinkExpression;
 class LinkTokenizer
 {
     public:
-        enum eTokenType { eUnknown, eSymbol, eNumber, ePartition, eOverlay, eRegion,
+        enum eTokenType { eUnknown, eSymbol, eNumber, ePartition, eOverlay, eRegion, 
                 eComma, eBegin, eEnd, eSemi, eOpen, eClose, eBracketOpen, eBracketClose, eAssign,
                 ePC,
                 eAddr, eSize, eMaxSize, eRoundSize, eAlign, eVirtual, eFill,

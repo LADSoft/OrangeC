@@ -39,6 +39,7 @@
 */
 #include "LinkExpression.h"
 #include "LinkManager.h"
+#include "ObjSection.h"
 #include <exception>
 std::set<LinkExpressionSymbol *, leltcompare> LinkExpression::symbols;
 LinkExpression::LinkExpression(const LinkExpression &exp)
@@ -103,6 +104,8 @@ ObjInt LinkExpression::Eval(ObjInt pc)
         case eValue:
         case eSection:
             return value;
+        case eUnresolvedSection:
+            return unresolvedSection->GetBase() + unresolvedSection->GetOffset()->Eval(pc);
         case ePC:
             return pc;
         case eSymbol:

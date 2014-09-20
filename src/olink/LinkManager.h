@@ -164,6 +164,7 @@ class LinkManager
         ObjString outputFile;
         LinkTokenizer specification;
         PartitionData partitions;
+        SymbolData virtsections;
         SymbolData publics;
         SymbolData externals;
         SymbolData imports;

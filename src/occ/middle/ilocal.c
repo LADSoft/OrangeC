@@ -113,8 +113,9 @@ static void renameToTemps(SYMBOL *funcsp)
             tp = sp->tp;
             if (tp->type == bt_typedef)
                 tp = tp->btp;
+            tp = basetype(tp);
             if (!sp->pushedtotemp && sp->storage_class != sc_parameter && !sp->imaddress && !sp->inasm && !sp->inCatch
-                && ((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void  || basetype(tp)->type == bt_pointer && basetype(tp)->btp->type != bt_func
+                && ((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void  || tp->type == bt_pointer && tp->btp->type != bt_func
                     || isref(tp)) 
                 && (sp->storage_class == sc_auto || sp->storage_class == sc_register)
                 && !sp->usedasbit)

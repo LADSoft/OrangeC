@@ -1403,7 +1403,8 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
             }
             else
             {
-                gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
+                IMODE *ap = gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
+                gen_nodag(i_parm, 0, ap, 0);
                 rv = a->tp->size;
             }
         }

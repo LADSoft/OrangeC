@@ -61,10 +61,12 @@ ostream cout(0);
 ostream cerr(0);
 ostream clog(0);
 
+#ifdef INSTANTIATE_WIDE_STREAMS
 wistream wcin(0);
 wostream wcout(0);
 wostream wcerr(0);
 wostream wclog(0);
+#endif
 
 #else
 
@@ -92,12 +94,14 @@ aligned_buffer<sizeof(ostream)> cout;
 aligned_buffer<sizeof(ostream)> cerr;
 aligned_buffer<sizeof(ostream)> clog;
 
+#ifdef INSTANTIATE_WIDE_STREAMS
 aligned_buffer<sizeof(wistream)> wcin;
 aligned_buffer<sizeof(wostream)> wcout;
 aligned_buffer<sizeof(wostream)> wcerr;
 aligned_buffer<sizeof(wostream)> wclog;
 #endif
 
+#endif
 // Get the file number associated with an stdio stream.  On Unix
 // systems there's a fileno() function in stdio.h, with Microsoft
 // libc it's called _fileno.
@@ -138,6 +142,7 @@ void ios_base::_S_initialize()
     ptr_cin->tie(ptr_cout);
     ptr_cerr->setf(ios_base::unitbuf);
 
+#ifdef INSTANTIATE_WIDE_STREAMS
     // Run constructors for the four wide stream objects.
     wistream* ptr_wcin  = new(&wcin)  wistream(0);
     wostream* ptr_wcout = new(&wcout) wostream(0);
@@ -174,6 +179,7 @@ void ios_base::_S_initialize()
 
     ptr_wcin->tie(ptr_wcout);
     ptr_wcerr->setf(ios_base::unitbuf);
+#endif
   }
   catch(...) {}
 }
@@ -187,11 +193,14 @@ void ios_base::_S_uninitialize()
   ostream* ptr_cerr = reinterpret_cast<ostream*>(&cerr);
   ostream* ptr_clog = reinterpret_cast<ostream*>(&clog);
 
+#ifdef INSTANTIATE_WIDE_STREAMS
+
   wistream* ptr_wcin  = reinterpret_cast<wistream*>(&wcin);
   wostream* ptr_wcout = reinterpret_cast<wostream*>(&wcout);
   wostream* ptr_wcerr = reinterpret_cast<wostream*>(&wcerr);
   wostream* ptr_wclog = reinterpret_cast<wostream*>(&wclog);
 
+#endif
   delete ptr_cin->rdbuf(0);
   delete ptr_cout->rdbuf(0);
   delete ptr_cerr->rdbuf(0);
@@ -204,6 +213,7 @@ void ios_base::_S_uninitialize()
   ptr_cerr->~ostream();
   ptr_clog->~ostream();
 
+#ifdef INSTANTIATE_WIDE_STREAMS
   delete ptr_wcin->rdbuf(0);
   delete ptr_wcout->rdbuf(0);
   delete ptr_wcerr->rdbuf(0);
@@ -213,7 +223,7 @@ void ios_base::_S_uninitialize()
   ptr_wcout->~wostream();
   ptr_wcerr->~wostream();
   ptr_wclog->~wostream();
-
+#endif
   // Shut down the locale subsystem.
   locale::_S_uninitialize();
 }

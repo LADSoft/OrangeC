@@ -37,6 +37,7 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 ASM_DEPENDENCIES = $(wildcard 386\*.nas)
 CPP_DEPENDENCIES = $(wildcard *.cpp)
+#DEFINES=/DINSTANTIATE_WIDE_STREAMS
 
 all: $(DEPENDENCIES)
 

@@ -149,9 +149,13 @@ bool PreProcessor::GetPreLine(std::string &line)
         }
     }
     if (ppStart == '%' && macro.GetLine(line, lineno))
+    {
         return true;
+    }
     if (include.GetLine(line, lineno))
+    {
         return true;
+    }
     return false;
 }
 bool PreProcessor::GetLine(std::string &line)

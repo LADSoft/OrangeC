@@ -575,6 +575,7 @@ void ppDefine::SyntaxError(const std::string &name)
 {
     Errors::Error(std::string("Wrong number of arguments in call to macro ") +name);
 }
+#include <fstream>
 
 void ppDefine::replacesegment(std::string &line, int begin, int end, bool outer)
 {
@@ -947,6 +948,7 @@ void ppDefine::ParseAsmSubstitutions(std::string &line)
         }
     }
 }
+
 void ppDefine::ReplaceAsmMacros(std::string &line)
 {
     
@@ -1014,6 +1016,7 @@ void ppDefine::replaceDefined(std::string &line)
         n = line.find("defined", n);
     }
 }
+#include <fstream>
 void ppDefine::Process(std::string &line)
 {	
     char tk[2] = { REPLACED_TOKENIZING, 0 };

@@ -208,6 +208,6 @@ int UTF8::ToUpper(int val)
         }
     }
     if (upper[bottom][0] != val )
-        return 0;
+        return val;
     return upper[bottom][1];
 }

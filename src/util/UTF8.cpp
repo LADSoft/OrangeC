@@ -116,6 +116,7 @@ int UTF8::Span(const char *str)
     }
     return rv;
 }
+#include <fstream>
 std::string UTF8::ToUpper(const std::string& val)
 {
     std::string rv;

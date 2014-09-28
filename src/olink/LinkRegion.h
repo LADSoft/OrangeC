@@ -73,7 +73,7 @@ class LinkRegion
         typedef std::vector<ObjString *> SourceFile;
         typedef std::vector<NamedSection *> SectionData;
         LinkRegion(LinkOverlay *Parent) : name(""), common(false), maxSize(-1), 
-                                         parent(Parent) {}
+                                         parent(Parent), overlayed(false) {}
         ~LinkRegion();
 
         ObjString GetName() { return name; }
@@ -114,7 +114,7 @@ class LinkRegion
         void AddData(SectionData &data, ObjFile *file, ObjSection *section);
     private:
         std::map<std::string, int> equalSections;
-        bool CheckEqualSection(ObjSection *sect);
+        void ArrangeOverlayed(SectionDataIterator it, ObjInt address);
         void AddFile(ObjFile *file);
         bool ParseFiles(CmdFiles &files, LinkTokenizer &spec);
         bool ParseName(LinkTokenizer &spec);
@@ -127,6 +127,7 @@ class LinkRegion
         ObjInt ArrangeSections();
         ObjString name;
         bool common ;
+        bool overlayed;
         SourceFile sourceFiles;
         SectionData nowData;
         SectionData normalData;

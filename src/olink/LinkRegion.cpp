@@ -261,27 +261,6 @@ void LinkRegion::AddData(SectionData &data, ObjFile *file, ObjSection *section)
     }
     ns->sections.push_back(OneSection(file, section));
 }
-bool LinkRegion::CheckEqualSection(ObjSection *sect)
-{
-    if (sect->GetQuals() & ObjSection::equal)
-    {
-        std::map<std::string, int>::iterator it = equalSections.find(sect->GetName());
-        if (it == equalSections.end())
-        {
-            equalSections[sect->GetName()] = sect->GetAbsSize();
-        }
-        else
-        {
-            if (equalSections[sect->GetName()] != sect->GetAbsSize())
-            {
-                LinkManager::LinkError("Region " + QualifiedRegionName() + " Section " + sect->GetName() + " equal qualifier with unequal sections");
-            }
-            return true;
-        }
-    }
-    return false;
-}
-#include <fstream>
 
 void LinkRegion::AddFile(ObjFile *file)
 {
@@ -296,44 +275,21 @@ void LinkRegion::AddFile(ObjFile *file)
                 attribs.SetAlign(new LinkExpression(sect->GetAlignment()));
             // using section::utility flag to for placed regions
             sect->SetUtilityFlag(true);
-            if (!CheckEqualSection(sect))
+            if (quals & ObjSection::now)
             {
-                // make a public for virtual sections (C++)
-                if (sect->GetQuals() & ObjSection::virt)
-                {
-                    int i;
-                    for (i=0; i < sect->GetName().size(); i++)
-                    {
-                        if (sect->GetName()[i] == '@')
-                            break;
-                    }
-                    if (i < sect->GetName().size())
-                    {
-                        std::string pubName = sect->GetName().substr(i);
-                        LinkExpressionSymbol *esym = new LinkExpressionSymbol(pubName, new LinkExpression(sect)) ;
-                        if (!LinkExpression::EnterSymbol(esym))
-                        {
-                            delete esym;
-                            LinkManager::LinkError("Symbol " + pubName + " redefined");
-                        }
-                    }
-                }
-                if (quals & ObjSection::now)
-                {
-                    if (quals &ObjSection::postpone)
-                        LinkManager::LinkError("file " + file->GetName() + "Region " 
-                                                 + QualifiedRegionName() + 
-                                    " has both 'now' and 'postpone' qualifiers");
-                    AddNowData(file, sect);
-                }
-                else if (quals & ObjSection::postpone)
-                {
-                    AddPostponeData(file, sect);
-                }
-                else
-                {
-                    AddNormalData(file, sect);
-                }
+                if (quals &ObjSection::postpone)
+                    LinkManager::LinkError("file " + file->GetName() + "Region " 
+                                             + QualifiedRegionName() + 
+                                " has both 'now' and 'postpone' qualifiers");
+                AddNowData(file, sect);
+            }
+            else if (quals & ObjSection::postpone)
+            {
+                AddPostponeData(file, sect);
+            }
+            else
+            {
+                AddNormalData(file, sect);
             }
         }
     }
@@ -457,7 +413,8 @@ void LinkRegion::CheckAttributes()
                     anySeparate = true;
             }
         }
-        if (anyCommon && !anyEqual)
+        overlayed = anyMax | anyEqual;
+        if (anyCommon && !anyEqual && !anyMax)
             common = true;
         if (n > 1 && anyUnique)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " unique qualifier with multiple sections");
@@ -467,10 +424,49 @@ void LinkRegion::CheckAttributes()
             LinkManager::LinkError("Region " + QualifiedRegionName() + " Mixing Common and NonCommon sections");
         if (anyEqual && anyMax)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " Mixing equal and max characteristics");
+        if (anyEqual && notEqual)
+            LinkManager::LinkError("Region " + QualifiedRegionName() + " Equal sections with different size");
         if (anySeparate && anyCommon)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " Mixing separate and common sections");
         if (maxAlign > attribs.GetAlign())
             attribs.SetAlign(new LinkExpression(maxAlign));
+    }
+}
+void LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
+{
+    ObjSection *curSection = NULL;
+    ObjFile *curFile = NULL;
+    for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+    {
+        ObjSection *sect = (*it1).section;
+        if (!curSection || sect->GetAbsSize() > curSection->GetAbsSize())
+            curSection = sect;
+    }
+    (*it)->sections.clear();
+    (*it)->sections.push_back(OneSection(curFile, curSection));
+
+    curSection->SetBase(address);
+    if (attribs.GetVirtualOffsetSpecified())
+        curSection->SetVirtualOffset(attribs.GetVirtualOffset());
+    // make a public for virtual sections (C++)
+    if (curSection->GetQuals() & ObjSection::virt)
+    {
+        int i;
+        for (i=0; i < curSection->GetName().size(); i++)
+        {
+            if (curSection->GetName()[i] == '@')
+                break;
+        }
+        if (i < curSection->GetName().size())
+        {
+            std::string pubName = curSection->GetName().substr(i);
+            LinkExpressionSymbol *esym = new LinkExpressionSymbol(pubName, new LinkExpression(curSection)) ;
+            if (!LinkExpression::EnterSymbol(esym))
+            {
+                delete esym;
+                LinkManager::LinkError("Symbol " + pubName + " redefined");
+            }
+        }
     }
 }
 ObjInt LinkRegion::ArrangeSections()
@@ -513,6 +509,25 @@ ObjInt LinkRegion::ArrangeSections()
                 if (attribs.GetVirtualOffsetSpecified())
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
             }
+        }
+        size = maxSize;
+    }
+    else if (overlayed)
+    {
+        // it is an error if an overlayed section appears in multiple categories
+        // and for non-virtual sections it won't be flagged.   For virtual sections
+        // the implicit public will be redeclared and cause an error...
+        for (SectionDataIterator it = nowData.begin(); it != nowData.end(); ++it)
+        {
+            ArrangeOverlayed(it, address);
+        }
+        for (SectionDataIterator it = normalData.begin(); it != normalData.end(); ++it)
+        {
+            ArrangeOverlayed(it, address);
+        }
+        for (SectionDataIterator it = postponeData.begin(); it != postponeData.end(); ++it)
+        {
+            ArrangeOverlayed(it, address);
         }
         size = maxSize;
     }

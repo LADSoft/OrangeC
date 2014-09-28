@@ -343,45 +343,46 @@ char *unmang1(char *buf, char *name, char *last)
         
     start: if (isdigit(*name))
     {
+        char *s = buf;
         v =  *name++ - '0';
         while (isdigit(*name))
             v = v * 10+ *name++ - '0';
-        if (name[0] == '#')
+        if (name[0] == '@')
+            name++;            
+        while (v > 0)
         {
-            char *s = buf;
-            char *newname = unmangTemplate(buf, name, last);
-            if (newname - name < v)
+            char *newname;
+            if (name[0] == '#')
             {
+                newname = unmangTemplate(buf, name, last);
+                v -= newname - name;
                 name = newname;
-                if (*name == '$')
-                {
-                    name++;
-                    name = unmang1(buf, name, last);
-                }
+                buf += strlen(buf);
             }
-            else
+            else if (name[0] == '$')
             {
-                name = newname;
-            }
-            if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-                strcpy(manglenames[manglenamecount++], s);
-        }
-        else
-        {
-            char *s = buf;
-            while (v--)
-            if (*name == '@')
-            {
-                *buf++ = ':';
-                *buf++ = ':';
                 name++;
+                newname = unmang1(buf, name, last);
+                v -= newname - name-1;
+                name = newname;
+                buf += strlen(buf);
             }
             else
-                *buf++ =  *name++;
-            *buf = 0;
-            if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-                strcpy(manglenames[manglenamecount++], s);
+            {
+                v--;
+                if (*name == '@')
+                {
+                    *buf++ = ':';
+                    *buf++ = ':';
+                    name++;
+                }
+                else
+                    *buf++ =  *name++;
+                *buf = 0;
+            }
         }
+        if (manglenamecount < MAX_MANGLE_NAME_COUNT)
+            strcpy(manglenames[manglenamecount++], s);
     }
     else
     switch (*name++)

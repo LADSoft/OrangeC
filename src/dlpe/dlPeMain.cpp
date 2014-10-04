@@ -286,6 +286,10 @@ bool dlPeMain::ReadSections(const std::string &path)
             Utils::fatal("Input file internal error in import list");
         }
     }
+	else
+	{
+		std:: cout << "Invalid rel file format " + ieee.GetErrorQualifier() << std::endl;
+	}
     return false;
 }
 std::string dlPeMain::GetOutputName(char *infile) const

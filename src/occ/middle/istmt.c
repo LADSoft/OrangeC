@@ -650,7 +650,6 @@ void optimize(SYMBOL *funcsp)
     //printf("invar\n");
         if (optflags & OPT_INVARIANT)
             MoveLoopInvariants();	/* move loop invariants out of loops */
-
         if (optflags & OPT_GLOBAL)
         {
         //printf("alias\n");

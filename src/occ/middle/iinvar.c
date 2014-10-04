@@ -272,6 +272,7 @@ void ScanForInvariants(BLOCK *b)
 }
 void MoveLoopInvariants(void)
 {
+    /*
     int i;
     refs = NULL;
     for (i=0; i < blockCount; i++)
@@ -282,4 +283,5 @@ void MoveLoopInvariants(void)
     current = 1;
     ScanForInvariants(blockArray[0]);
     WeedRefs();
+    */
 }

@@ -46,11 +46,11 @@ static char *unmangle(char *val, char *name);
 
 ObjString ObjSymbol::GetDisplayName()
 {
-    char val[512];
+    char val[1024];
     return unmangle(val, (char *)name.c_str());
 }
 
-static char anonymousNameSpaceName[512];
+static char anonymousNameSpaceName[1024];
     char *tn_void = "void";
     char *tn_bool = "bool";
     char *tn_char = "char";
@@ -111,7 +111,7 @@ static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 char *unmang_intrins(char *buf, char *name, char *last)
 {
-    char cur[512],  *p = cur,  *q;
+    char cur[1024],  *p = cur,  *q;
     int i;
     *p++ = *name++; // past the '$'
     while (*name != '@' &&  *name != '$' &&  *name)
@@ -199,7 +199,7 @@ static char *unmangptr(char *buf , char *name, char *last)
     }
     else if (*name != 'A')
     { 
-        char basetp[256];
+        char basetp[1024];
         int l;
         if (cconst)
         {
@@ -252,7 +252,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                     }
                     else
                     {
-                        char tname[256];
+                        char tname[1024];
                         *buf = 0;
                         tname[0] = 0;
                         if (*name == 'e')
@@ -348,7 +348,7 @@ char *unmang1(char *buf, char *name, char *last)
         while (isdigit(*name))
             v = v * 10+ *name++ - '0';
         if (name[0] == '@')
-            name++;            
+            name++, v--;            
         while (v > 0)
         {
             char *newname;
@@ -445,7 +445,7 @@ char *unmang1(char *buf, char *name, char *last)
             *p = 0;
             if (*name)
             {
-                char buf2[256];
+                char buf2[1024];
                 // discard return value
                 name = unmang1(buf2, name, last);
             }            

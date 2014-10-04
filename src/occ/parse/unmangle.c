@@ -186,7 +186,7 @@ static char *unmangptr(char *buf , char *name, char *last)
     }
     else if (*name != 'A')
     { 
-        char basetp[256];
+        char basetp[512];
         int l;
         if (cconst)
         {
@@ -239,7 +239,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                     }
                     else
                     {
-                        char tname[256];
+                        char tname[512];
                         *buf = 0;
                         tname[0] = 0;
                         if (*name == 'e')
@@ -335,7 +335,7 @@ char *unmang1(char *buf, char *name, char *last)
         while (isdigit(*name))
             v = v * 10+ *name++ - '0';
         if (name[0] == '@')
-            name++;            
+            name++,v--;
         while (v > 0)
         {
             char *newname;

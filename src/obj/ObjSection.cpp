@@ -38,4 +38,14 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "ObjSection.h"
+#include "ObjSymbol.h"
 
+ObjString ObjSection::GetDisplayName()
+{
+    if (name.find("vsc") == 0)
+    {
+        ObjSymbol sym(name.substr(3), ObjSymbol::eLabel, -1);
+        return sym.GetDisplayName();
+    }
+    return name;
+}

@@ -914,6 +914,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
     enum e_ac currentAccess;
     BOOLEAN isvirtual = FALSE;
     BOOLEAN done = FALSE;
+    BOOLEAN superclassFullySpecialized = TemplateFullySpecialized(declsym);
     SYMBOL *bcsym;
     currentAccess = defaultAccess;
     lex = getsym(); // past ':'
@@ -948,7 +949,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
                     inTemplateSpecialization++;
                     lex = GetTemplateArguments(lex, funcsp, &lst);
                     inTemplateSpecialization--;
-                    bcsym = GetClassTemplate(bcsym, lst, FALSE, sc_global);
+                    bcsym = GetClassTemplate(bcsym, lst, FALSE, sc_global, superclassFullySpecialized);
                 }
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->p->packed)
@@ -1961,10 +1962,6 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
         sp->parentNameSpace = nameSpaceList->data;
     }
     sp->value.i++;
-    list = Alloc(sizeof(LIST));
-    list->next = globalNameSpace->childNameSpaces;
-    list->data = sp;
-    globalNameSpace->childNameSpaces = list;
 
     list = Alloc(sizeof(LIST));
     list->next = nameSpaceList;

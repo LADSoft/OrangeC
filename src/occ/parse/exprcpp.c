@@ -729,7 +729,7 @@ BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *f
                 {
                     // if we are going up in the class heirarchy that is the only time we really need to do
                     // a dynamic cast
-                    SYMBOL *sp = gsearch("__dynamic_cast");
+                    SYMBOL *sp = namespacesearch("__dynamic_cast", globalNameSpace, FALSE, FALSE);
                     if (sp)
                     {
                         EXPRESSION *exp1 = *exp;

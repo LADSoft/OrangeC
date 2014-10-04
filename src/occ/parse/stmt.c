@@ -280,7 +280,7 @@ static void thunkCatchCleanup(STATEMENT *st, SYMBOL *funcsp, BLOCKDATA *src, BLO
     {
         if (srch->type == kw_catch)
         {
-            SYMBOL *sp = gsearch("_CatchCleanup");
+            SYMBOL *sp = namespacesearch("_CatchCleanup", globalNameSpace, FALSE, FALSE);
             if (sp)
             {
                 FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
@@ -2075,7 +2075,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     lex = getsym();
     if (!MATCHKW(lex, semicolon))
     {
-        SYMBOL *sp = gsearch("_ThrowException");
+        SYMBOL *sp = namespacesearch("_ThrowException", globalNameSpace, FALSE, FALSE);
         makeXCTab(funcsp);
         lex = expression_assign(lex, funcsp, NULL, &tp, &exp, NULL, 0);
         if (!tp)
@@ -2095,6 +2095,12 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             if (isstructured(tp))
             {
                 cons = getCopyCons(basetype(tp)->sp, FALSE);
+                if (!cons->inlineFunc.stmt)
+                    if (cons->defaulted)
+                        createConstructor(basetype(tp)->sp, cons);
+                    else if (cons->deferredCompile)
+                        deferredCompileOne(cons);                        
+                cons->genreffed = TRUE;
             }
             sp = basetype(sp->tp)->syms->table[0]->p;
             arg1->next = arg2;
@@ -2104,7 +2110,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             arg1->exp = varNode(en_auto, funcsp->xc->xctab);
             arg1->tp = &stdpointer;
             arg2->exp = exp;
-            arg2->tp = tp;
+            arg2->tp = &stdpointer;
             arg3->exp = isarray(tp) ? intNode(en_c_i, tp->size/(basetype(tp)->btp->size + basetype(tp)->btp->arraySkew)) : intNode(en_c_i, 1);
             arg3->tp = &stdint;
             arg4->exp = cons ? varNode(en_pc, cons) : intNode(en_c_i, 0);
@@ -2122,7 +2128,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     }
     else
     {
-        SYMBOL *sp = gsearch("_RethrowException");
+        SYMBOL *sp = namespacesearch("_RethrowException", globalNameSpace, FALSE, FALSE);
         if (sp)
         {
             FUNCTIONCALL *parms = Alloc(sizeof(FUNCTIONCALL));
@@ -2596,7 +2602,7 @@ static void insertXCInfo(SYMBOL *funcsp)
     funcsp->xc->xcDestLab = beGetLabel;
     funcsp->xc->xclab = sp;
     
-    sp = gsearch("_InitializeException");
+    sp = namespacesearch("_InitializeException", globalNameSpace, FALSE, FALSE);
     if (sp)
     {
         FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
@@ -2619,7 +2625,7 @@ static void insertXCInfo(SYMBOL *funcsp)
         exp = exprNode(en_func, 0, 0);
         exp->v.func = funcparams;
         funcsp->xc->xcInitializeFunc = exp;
-        sp = gsearch("_RundownException");
+        sp = namespacesearch("_RundownException", globalNameSpace, FALSE, FALSE);
         if (sp)
         {
             sp = basetype(sp->tp)->syms->table[0]->p;
@@ -2807,7 +2813,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     }
     if (parent->type == kw_catch)
     {
-        SYMBOL *sp = gsearch("_CatchCleanup");
+        SYMBOL *sp = namespacesearch("_CatchCleanup", globalNameSpace, FALSE, FALSE);
         if (sp)
         {
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
@@ -3002,6 +3008,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     BOOLEAN oldDeclareAndInitialize = declareAndInitialize;
     BOOLEAN oldHasXCInfo = hasXCInfo;
     HASHTABLE *oldSyms = localNameSpace->syms;
+    HASHTABLE *oldLabelSyms = labelSyms;
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
     BLOCKDATA *block = Alloc(sizeof(BLOCKDATA)) ;
     STATEMENT *startStmt;
@@ -3075,5 +3082,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     setjmp_used = oldsetjmp_used;
     functionHasAssembly = oldfunctionHasAssembly;
     localNameSpace->syms = oldSyms;
+    labelSyms = oldLabelSyms;
     return lex;
 }

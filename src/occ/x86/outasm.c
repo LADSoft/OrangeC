@@ -1849,6 +1849,7 @@ void oa_putlen(int l)
         case ISZ_BOOLEAN:
         case ISZ_UCHAR:
         case ISZ_USHORT:
+        case ISZ_WCHAR:
         case ISZ_UINT:
         case ISZ_U16:
         case ISZ_U32:
@@ -1939,6 +1940,7 @@ void pointersize(int size)
             break;
         case ISZ_U16:
         case ISZ_USHORT:
+        case ISZ_WCHAR:
             bePrintf( "WORD ");
             break;
         case ISZ_BOOLEAN:

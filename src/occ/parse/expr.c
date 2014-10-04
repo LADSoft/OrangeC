@@ -953,7 +953,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                                 lex = GetTemplateArguments(lex, funcsp, &lst);
                                 if (sp1)
                                 {
-                                    sp1 = GetClassTemplate(sp1, lst, FALSE, sc_global);
+                                    sp1 = GetClassTemplate(sp1, lst, FALSE, sc_global, FALSE);
                                     if (sp1)
                                         sp2 = sp1;
                                     else

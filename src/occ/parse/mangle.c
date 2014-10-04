@@ -70,6 +70,8 @@ static char *mangleNameSpaces(char *in, SYMBOL *sp)
 {
     if (!sp)
         return in;
+//    if (!sp || sp->value.i > 1)
+//        return in;
     in = mangleNameSpaces(in, sp->parentNameSpace);
     sprintf(in, "@%s", sp->name);
     return in + strlen(in);

@@ -120,6 +120,7 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *funcsp, SYMBOL *
 void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons);
 SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
 void createConstructorsForLambda(SYMBOL *sp);
+void createConstructor(SYMBOL *sp, SYMBOL *consfunc);
 void createDefaultConstructors(SYMBOL *sp);
 void destructBlock(EXPRESSION **exp, HASHREC *hr);
 EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOLEAN parseInitializers, BOOLEAN doCopy);
@@ -164,8 +165,9 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMB
 void sizeQualifiers(TYPE *tp);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
+void propagateTemplateMemberDefinition(SYMBOL *sym);
 int PushTemplateNamespace(SYMBOL *sym);
-void PopTemplateNamespace(int n);
+void PopTemplateNamespace(int count);
 BOOLEAN typeHasTemplateArg(TYPE *t);
 void templateInit(void);
 void TemplateGetDeferred(SYMBOL *sym);
@@ -191,7 +193,7 @@ SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN i
 void TemplateDataInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
 void SetTemplateNamespace(SYMBOL *sym);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
-SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class);
+SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class, BOOLEAN superIsFullySpecialized);
 void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, BOOLEAN isExtern);
 void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);

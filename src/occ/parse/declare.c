@@ -316,7 +316,7 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
                 }
             }
         }
-        else
+        else if (ISID(lex))
         {
             char buf[256];
             strcpy(buf, lex->value.s.a);
@@ -1077,7 +1077,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
             {        
                 TEMPLATEPARAMLIST *lst = NULL;
                 lex = GetTemplateArguments(lex, funcsp, &lst);
-                sp = GetClassTemplate(sp, lst, MATCHKW(lex, semicolon), storage_class);
+                sp = GetClassTemplate(sp, lst, MATCHKW(lex, semicolon), storage_class, FALSE);
             }
         }
     }
@@ -2216,7 +2216,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                                 lex = GetTemplateArguments(lex, funcsp, &lst);
                                 if (sp1)
                                 {
-                                    sp1 = GetClassTemplate(sp1, lst, TRUE, storage_class);
+                                    sp1 = GetClassTemplate(sp1, lst, TRUE, storage_class, FALSE);
                                     tn = NULL;
                                     if (sp1)
                                         tn = sp1->tp;
@@ -2290,7 +2290,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                             if (sp->parentTemplate)
                                 sp = sp->parentTemplate;
                             lex = GetTemplateArguments(lex, funcsp, &lst);
-                            sp = GetClassTemplate(sp, lst, isTypedef && getStructureDeclaration(), storage_class);
+                            sp = GetClassTemplate(sp, lst, isTypedef && getStructureDeclaration(), storage_class, FALSE);
                         }
                         else
                         {
@@ -5109,7 +5109,7 @@ jointemplate:
                                 {
                                     sp->instantiatedInlineInClass = TRUE;
                                 }
-                                if (storage_class_in != sc_member && TemplateFullySpecialized(sp))
+                                if (storage_class_in != sc_member && TemplateFullySpecialized(sp->parentClass))
                                 {
                                     sp->genreffed = TRUE;
                                     sp->linkage = lk_inline;
@@ -5120,6 +5120,7 @@ jointemplate:
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1)
                                 {
                                     lex = getDeferredData(lex, sp, TRUE);
+                                    propagateTemplateMemberDefinition(sp);
                                 }
                                 else
                                 {

@@ -151,8 +151,9 @@ void dumpInlines(void)
             while (vtabList)
             {
                 SYMBOL *sym = (SYMBOL *)vtabList->data;
-                if (sym->vtabsp->genreffed && hasVTab(sym))
+                if (sym->vtabsp->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
                 {
+                    sym->vtabsp->didinline = TRUE;
                     sym->vtabsp->genreffed = FALSE;
                     dumpVTab(sym);
                     done = FALSE;
@@ -165,8 +166,9 @@ void dumpInlines(void)
         while (dataList)
         {
             SYMBOL *sym = (SYMBOL *)dataList->data;
-            if (sym->genreffed)
+            if (sym->genreffed && !sym->didinline)
             {
+                sym->didinline = TRUE;
                 sym->genreffed = FALSE;
                 gen_virtual(sym, TRUE);
                 if (sym->init)
@@ -966,6 +968,7 @@ void SetupVariables(SYMBOL *sp)
 
 EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
 {
+    BOOLEAN found = FALSE;
     STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
     EXPRESSION *newExpression;
     BOOLEAN allocated = FALSE;
@@ -974,6 +977,8 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!isfunction(params->functp))
         return NULL;
     if (params->sp->linkage != lk_inline)
+        return NULL;
+    if (params->sp->templateParams)
         return NULL;
     if (params->sp->noinline)
         return NULL;
@@ -1034,7 +1039,6 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (newExpression->type == en_stmt)
     {
         newExpression->left = intNode(en_c_i, 0);
-		newExpression->left->v.sp = params->sp;
         if (isstructured(basetype(params->sp->tp)->btp))
             cast(&stdpointer, &newExpression->left);
         else

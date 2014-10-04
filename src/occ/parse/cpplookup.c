@@ -377,7 +377,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 else
                 {
                     SYMBOL *sp1 = sp;
-                    sp = GetClassTemplate(sp, current, FALSE, storage_class);
+                    sp = GetClassTemplate(sp, current, FALSE, storage_class, FALSE);
                 }
             }
             if (sp)
@@ -2172,6 +2172,11 @@ static SYMBOL *getUserConversion(int flags,
                             *userFunc = found1;
                     }
                     infunc = FALSE;
+                    if (found1->deferredCompile && !found1->inlineFunc.stmt)
+                    {
+                        deferredCompileOne(found1);
+                    }
+                    
                     return found1;
                 }
             }
@@ -3027,10 +3032,6 @@ static SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp)
                 SYMBOL *ns = sym->parentNameSpace;
                 linked = TRUE;
                 ns->value.i++;
-                list = Alloc(sizeof(LIST));
-                list->next = globalNameSpace->childNameSpaces;
-                list->data = ns;
-                globalNameSpace->childNameSpaces = list;
             
                 list = Alloc(sizeof(LIST));
                 list->next = nameSpaceList;

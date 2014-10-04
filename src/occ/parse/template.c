@@ -46,6 +46,7 @@ extern LIST *deferred;
 extern int structLevel;
 extern LIST *nameSpaceList;
 extern INCLUDES *includes;
+extern int inDefaultParam;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -1511,7 +1512,7 @@ static TYPE * SynthesizeStructure(TYPE *tp_in, TEMPLATEPARAMLIST *enclosing)
                 }
                 search = search->next;
             }
-            sp = GetClassTemplate(sp, params, TRUE, sc_register);
+            sp = GetClassTemplate(sp, params, TRUE, sc_register, FALSE);
             if (sp)
             {
                 TYPE *tp1 = NULL, **tpp = &tp1;
@@ -1577,7 +1578,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                 if (tp->sp->templateSelector->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST *current = tp->sp->templateSelector->next->templateParams;
-                    sp = GetClassTemplate(ts, current, FALSE, sc_global);
+                    sp = GetClassTemplate(ts, current, FALSE, sc_global, FALSE);
                     if (sp)
                         tp = sp->tp;
                     else
@@ -2336,7 +2337,7 @@ static BOOLEAN ValidArg(TYPE *tp)
                 if (tp->sp->templateSelector->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST *current = tp->sp->templateSelector->next->templateParams;
-                    sp = GetClassTemplate(ts, current, FALSE, sc_global);
+                    sp = GetClassTemplate(ts, current, FALSE, sc_global, FALSE);
                     tp = NULL;
                 }
                 else if (tp->templateParam->p->type == kw_typename)
@@ -2462,13 +2463,20 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
     BOOLEAN usesParams = !!args;
     INITLIST *check = args;
     HASHREC *hr = basetype(func->tp)->syms->table[0];
+    inDefaultParam++;
     if (!valFromDefault(params, usesParams, &args))
+    {
+        inDefaultParam--;
         return FALSE;
+    }
     while (params)
     {
         if (params->p->type == kw_typename || params->p->type == kw_template || params->p->type == kw_int)
             if (!params->p->packed && !params->p->byClass.val)
+            {
+                inDefaultParam--;
                 return FALSE;
+            }
         params = params->next;
     }
     if (hr)
@@ -2499,6 +2507,7 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
                 if (sp->init && sp->init->exp && !ValidExp(&sp->init->exp))
                 {
                     dropStructureDeclaration();
+                    inDefaultParam--;
                     return FALSE;
                 }
             }
@@ -2514,11 +2523,15 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
     while (hr && (!usesParams || check))
     {
         if (!ValidArg(((SYMBOL *)hr->p)->tp))
+        {
+            inDefaultParam--;
             return FALSE;
+        }
         if (check)
             check = check->next;
         hr = hr->next;
     }
+    inDefaultParam--;
     return TRUE;
 }
 static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOOLEAN byClass)
@@ -3493,6 +3506,7 @@ static int pushContext(SYMBOL *cls, BOOLEAN all)
 void SetTemplateNamespace(SYMBOL *sym)
 {
     LIST *list = nameSpaceList;
+    sym->templateNameSpace = NULL;
     while (list)
     {
         LIST *nlist = Alloc(sizeof(LIST));
@@ -3505,7 +3519,14 @@ void SetTemplateNamespace(SYMBOL *sym)
 int PushTemplateNamespace(SYMBOL *sym)
 {
     int rv = 0;
-    LIST *list = sym ? sym->templateNameSpace : NULL;
+    LIST *list = nameSpaceList;
+    while (list)
+    {
+        SYMBOL *sp = (SYMBOL *)list->data;
+        sp->value.i ++;
+        list = list->next;
+    } 
+    list = sym ? sym->templateNameSpace : NULL;
     while (list)
     {
         SYMBOL *sp = (SYMBOL *)list->data;
@@ -3513,10 +3534,6 @@ int PushTemplateNamespace(SYMBOL *sym)
         {
             LIST *nlist;
             sp->value.i++;
-            nlist = Alloc(sizeof(LIST));
-            nlist->next = globalNameSpace->childNameSpaces;
-            nlist->data = sp;
-            globalNameSpace->childNameSpaces = nlist;
         
             nlist = Alloc(sizeof(LIST));
             nlist->next = nameSpaceList;
@@ -3535,17 +3552,24 @@ int PushTemplateNamespace(SYMBOL *sym)
 void PopTemplateNamespace(int n)
 {
     int i;
+    LIST *list;
     for (i=0; i < n; i++)
     {
         LIST *nlist;
         SYMBOL *sp;
         globalNameSpace = globalNameSpace->next;
-        nlist = globalNameSpace->childNameSpaces;
+        nlist = nameSpaceList;
         sp = (SYMBOL *)nlist->data;
         sp->value.i--;
-        globalNameSpace->childNameSpaces = nlist->next;
         nameSpaceList = nameSpaceList->next;
     }
+    list = nameSpaceList;
+    while (list)
+    {
+        SYMBOL *sp = (SYMBOL *)list->data;
+        sp->value.i --;
+        list = list->next;
+    } 
     
 }
 SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN isExtern)
@@ -3557,7 +3581,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
         return cls;
     if (!isExtern)
     {
-        if (sym->maintemplate)
+        if (sym->maintemplate && (!sym->specialized || sym->maintemplate->specialized))
         {
             lex = sym->maintemplate->deferredCompile;
             if (lex)
@@ -3565,7 +3589,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
         }
         if (!lex)
             lex = sym->deferredCompile;
-        if (!lex)
+        if (!lex && (!sym->specialized || sym->parentTemplate->specialized))
             lex = sym->parentTemplate->deferredCompile;
         if (lex)
         {
@@ -3574,7 +3598,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             BOOLEAN defd = FALSE;
             SYMBOL old;
             struct templateListData l;
-            int nscount = PushTemplateNamespace(sym);
+            int nsl = PushTemplateNamespace(sym);
             LEXEME *reinstateLex = lex;
             deferred = NULL;
             old = *cls;
@@ -3600,7 +3624,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             }
             if (old.tp->syms)
                 TemplateTransferClassDeferred(cls, &old);
-            PopTemplateNamespace(nscount);
+            PopTemplateNamespace(nsl);
             instantiatingTemplate --;
             deferred = oldDeferred;
             structLevel = oldStructLevel;
@@ -3724,7 +3748,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
         lex = sym->deferredCompile;
         if (lex)
         {
-            int nscount = PushTemplateNamespace(sym);
+            int nsl = PushTemplateNamespace(sym);
             if (sym->storage_class != sc_member && sym->storage_class != sc_mutable)
                 sym->storage_class = sc_global;
             sym->linkage = lk_inline;
@@ -3755,7 +3779,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
                 lex = lex->next;
             }
             SetAlternateLex(NULL);
-            PopTemplateNamespace(nscount);
+            PopTemplateNamespace(nsl);
             instantiatingTemplate --;
             sym->genreffed |= warning;
         }
@@ -3946,7 +3970,8 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
     }
     return rv;
 }
-SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class)
+SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class,
+                         BOOLEAN superIsFullySpecialized)
 {
     int n = 1, i=0;
     TEMPLATEPARAMLIST *unspecialized = sp->templateParams->next;
@@ -4049,7 +4074,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, 
         errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
         return NULL;
     }
-    if (found1 && !found2 && (!templateNestingCount || found1->specialized))
+    if (found1 && !found2 && (!templateNestingCount || found1->specialized || superIsFullySpecialized))
     {
         SYMBOL *parent = found1->parentTemplate;
         SYMBOL *sym = found1;
@@ -4184,11 +4209,12 @@ static void referenceInstanceMembers(SYMBOL *cls)
                 while (hr2)
                 {
                     sym = (SYMBOL *)hr2->p;
-                    sym->genreffed = TRUE;
                     if (sym->deferredCompile && !sym->inlineFunc.stmt)
                     {
                         deferredCompileOne(sym);
                     }
+                    if (sym->inlineFunc.stmt)
+                        sym->genreffed = TRUE;
                     hr2 = hr2->next;
                 }
             }
@@ -4262,11 +4288,11 @@ static BOOLEAN fullySpecialized(TEMPLATEPARAMLIST *tpl)
 }
 BOOLEAN TemplateFullySpecialized(SYMBOL *sp)
 {
-    if (sp->parentClass)
+    if (sp)
     {
-        if (sp->parentClass->templateParams && sp->parentClass->templateParams->p->bySpecialization.types)
+        if (sp->templateParams && sp->templateParams->p->bySpecialization.types)
         {
-            TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams->p->bySpecialization.types;
+            TEMPLATEPARAMLIST *tpl = sp->templateParams->p->bySpecialization.types;
             while (tpl)
             {
                 if (!fullySpecialized(tpl))
@@ -4277,6 +4303,33 @@ BOOLEAN TemplateFullySpecialized(SYMBOL *sp)
         }
     }
     return FALSE;
+}
+void propagateTemplateMemberDefinition(SYMBOL *sym)
+{
+    LEXEME *lex = sym->deferredCompile;
+    SYMBOL *parent = sym->parentClass;
+    if (lex && parent)
+    {
+        LIST *lst = parent->instantiations;
+        while (lst)
+        {
+            SYMBOL *cur = (SYMBOL *)lst->data;
+            if (cur ->tp->syms)
+            {
+                HASHREC **p = LookupName(sym->name, cur->tp->syms);				
+                if (p)
+                {
+                    cur =(SYMBOL *)(*p)->p;
+                    cur = searchOverloads(sym, cur->tp->syms);
+                    if (cur && !cur->deferredCompile)
+                    {
+                        cur->deferredCompile = lex;
+                    }
+                }
+            }
+            lst = lst->next;
+        }
+    }
 }
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isExtern)
 {
@@ -4407,7 +4460,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                     SYMBOL *instance; 
                     lex = getsym();
                     lex = GetTemplateArguments(lex, funcsp, &templateParams);
-                    instance = GetClassTemplate(cls, templateParams, FALSE, sc_global);
+                    instance = GetClassTemplate(cls, templateParams, FALSE, sc_global, FALSE);
                     if (instance)
                     {
                         if (isExtern)

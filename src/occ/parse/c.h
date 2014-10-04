@@ -388,7 +388,6 @@ typedef struct __nsv
     struct __nsv *next;
     HASHTABLE *syms;
     HASHTABLE *tags;
-    LIST *childNameSpaces;
     LIST *usingDirectives;    
     LIST *inlineDirectives;    
     struct sym *origname;
@@ -455,7 +454,7 @@ typedef struct sym
         unsigned assigned: 1; /* value has been assigned */
         unsigned altered: 1;
         unsigned used: 1; /* value has been fetched */
-        unsigned genreffed: 1; /* reffed in codegen */
+        unsigned genreffed : 1; /* reffed in codegen */
         unsigned gentemplate: 1; /* template instantiation or reference generated */
         unsigned allocaUsed: 1;
         unsigned oldstyle : 1; /* pointer to a names list if an old style function arg */

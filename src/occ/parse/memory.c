@@ -50,7 +50,7 @@ static MEMBLK *templates;
 static int globalFlag;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak;
 
-#define MINALLOC (64 * 1024)
+#define MINALLOC (128 * 1024)
 #define MALIGN (4)
 
 //#define DEBUG

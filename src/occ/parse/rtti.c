@@ -675,6 +675,18 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
     }
     return xcSym;
 }
+static BOOLEAN allocatedXC(EXPRESSION *exp)
+{
+    switch (exp->type)
+    {
+        case en_add:
+            return allocatedXC(exp->left) || allocatedXC(exp->right);
+        case en_auto:
+            return exp->v.sp->allocate;
+        default:
+            return FALSE;
+    }
+}
 static int evalofs(EXPRESSION *exp)
 {
     switch (exp->type)
@@ -759,7 +771,7 @@ void XTDumpTab(SYMBOL *funcsp)
             }
             else
             {
-                if (p->xtSym && !p->exp->dest)
+                if (p->xtSym && !p->exp->dest && allocatedXC(p->exp->v.t.thisptr))
                 {
                     XCLIST *q = p;
                     while (q)

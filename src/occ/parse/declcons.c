@@ -1253,6 +1253,8 @@ void createDefaultConstructors(SYMBOL *sp)
     SYMBOL *asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
     if (!dest)
         declareDestructor(sp);
+    else
+        sp->hasDest = TRUE;
     if (cons)
     {
         sp->hasUserCons = TRUE;
@@ -2087,7 +2089,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
         releaseInitializers(sym, cons);
     return thisptr;
 }
-static void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
+void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
 {
     HASHTABLE *syms;
     BLOCKDATA b;

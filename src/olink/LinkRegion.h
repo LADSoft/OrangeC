@@ -114,7 +114,7 @@ class LinkRegion
         void AddData(SectionData &data, ObjFile *file, ObjSection *section);
     private:
         std::map<std::string, int> equalSections;
-        void ArrangeOverlayed(SectionDataIterator it, ObjInt address);
+        ObjInt ArrangeOverlayed(SectionDataIterator it, ObjInt address);
         void AddFile(ObjFile *file);
         bool ParseFiles(CmdFiles &files, LinkTokenizer &spec);
         bool ParseName(LinkTokenizer &spec);

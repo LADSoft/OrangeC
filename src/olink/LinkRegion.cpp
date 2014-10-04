@@ -432,7 +432,7 @@ void LinkRegion::CheckAttributes()
             attribs.SetAlign(new LinkExpression(maxAlign));
     }
 }
-void LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
+ObjInt LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
 {
     ObjSection *curSection = NULL;
     ObjFile *curFile = NULL;
@@ -440,7 +440,10 @@ void LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
     {
         ObjSection *sect = (*it1).section;
         if (!curSection || sect->GetAbsSize() > curSection->GetAbsSize())
+        {
             curSection = sect;
+            curFile = (*it1).file;
+        }
     }
     (*it)->sections.clear();
     (*it)->sections.push_back(OneSection(curFile, curSection));
@@ -468,6 +471,9 @@ void LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
             }
         }
     }
+    if (curSection)
+        return curSection->GetAbsSize();
+    return 0;
 }
 ObjInt LinkRegion::ArrangeSections()
 {
@@ -519,17 +525,26 @@ ObjInt LinkRegion::ArrangeSections()
         // the implicit public will be redeclared and cause an error...
         for (SectionDataIterator it = nowData.begin(); it != nowData.end(); ++it)
         {
-            ArrangeOverlayed(it, address);
+            address += align - 1;
+            address /= align;
+            address *= align;
+            address += ArrangeOverlayed(it, address);
         }
         for (SectionDataIterator it = normalData.begin(); it != normalData.end(); ++it)
         {
-            ArrangeOverlayed(it, address);
+            address += align - 1;
+            address /= align;
+            address *= align;
+            address += ArrangeOverlayed(it, address);
         }
         for (SectionDataIterator it = postponeData.begin(); it != postponeData.end(); ++it)
         {
-            ArrangeOverlayed(it, address);
+            address += align - 1;
+            address /= align;
+            address *= align;
+            address += ArrangeOverlayed(it, address);
         }
-        size = maxSize;
+        size = address - oldAddress;
     }
     else
     {

@@ -275,6 +275,7 @@ ObjExpression *LinkRemapper::RewriteExpression(LinkExpression *exp, LinkExpressi
     }
     return rv;
 }
+#include <fstream>
 
 ObjExpression *LinkRemapper::ScanExpression(ObjExpression *offset, LinkSymbolData *d)
 {

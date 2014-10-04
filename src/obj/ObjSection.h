@@ -69,7 +69,8 @@ public:
     } ;
     
     ObjSection(ObjString &Name, ObjInt Index) :name(Name), externalName(""), 
-            alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), size(new ObjExpression(0)), offset(new ObjExpression(0)) {}
+            alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), 
+            size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL) {}
     virtual ~ObjSection() { };
     ObjString GetName() { return name; }
     void SetName(ObjString &Name) { name = Name; }
@@ -98,7 +99,10 @@ public:
     void SetVirtualOffset(ObjInt offset) { virtualOffset = offset; }
     bool GetUtilityFlag() { return utilityFlag; }
     void SetUtilityFlag(bool flag) { utilityFlag = flag; }
+    void SetAliasFor(ObjSection *other) { aliasFor = other; }
+    ObjSection *GetAliasFor() const { return aliasFor; }
 private:
+    ObjSection *aliasFor;
     ObjString name;
     ObjString externalName;
     ObjInt alignment;

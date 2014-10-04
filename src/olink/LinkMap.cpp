@@ -127,7 +127,7 @@ void LinkMap::ShowRegionLine(std::fstream &stream, LinkRegion *region, ObjInt of
 }
 void LinkMap::ShowFileLine(std::fstream &stream, LinkRegion::OneSection *data, ObjInt n)
 {
-    stream << "      File: " << data->file->GetName() << "(" << data->section->GetDisplayName() << ") " ;
+    stream << "      File: " << data->file->GetName() << "(" << data->section->GetName() << ") " ;
     stream << "addr=" << std::setw(6) << std::setfill('0') << std::hex << data->section->GetOffset()->Eval(0) /*+ n*/ << " " ;
     stream << "size=" << std::setw(4) << std::setfill('0') << std::hex << data->section->GetSize()->Eval(0) << " " ;
     stream << std::endl;

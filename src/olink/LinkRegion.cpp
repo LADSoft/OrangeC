@@ -445,6 +445,11 @@ ObjInt LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
             curFile = (*it1).file;
         }
     }
+    for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
+    {
+        ObjSection *sect = (*it1).section;
+        sect->SetAliasFor(curSection);
+    }
     (*it)->sections.clear();
     (*it)->sections.push_back(OneSection(curFile, curSection));
 
@@ -473,6 +478,7 @@ ObjInt LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
     }
     if (curSection)
         return curSection->GetAbsSize();
+    std::cout << "hi" << std::endl;
     return 0;
 }
 ObjInt LinkRegion::ArrangeSections()

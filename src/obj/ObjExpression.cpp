@@ -43,6 +43,12 @@
 #include "ObjExpression.h"
 #include <stdio.h>
 
+ObjSection *ObjExpression:: GetSection() 
+{ 
+    if (section->GetAliasFor()) 
+        return section->GetAliasFor(); 
+    return section; 
+}
 void ObjExpression::Simplify()
 {
 }
@@ -64,7 +70,10 @@ ObjInt ObjExpression::Eval(ObjInt pc)
             return value;
         case eSection:
             op = eValue;
-            value = section->GetOffset()->Eval(pc);
+            if (section->GetAliasFor())
+                value = section->GetAliasFor()->GetOffset()->Eval(pc);
+            else
+                value = section->GetOffset()->Eval(pc);
             return value;
         case eNonExpression:
             left->Eval(pc);

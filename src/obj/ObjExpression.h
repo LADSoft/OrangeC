@@ -41,7 +41,6 @@
 #define OBJEXPRESSION_H
 
 #include "ObjTypes.h"
-
 class ObjSymbol;
 class ObjFunction;
 class ObjSection;
@@ -68,7 +67,7 @@ public:
     ObjExpression *GetRight() { return right; }
     void SetRight(ObjExpression *Right) { right = Right; }
     ObjSymbol *GetSymbol() { return symbol; }
-    ObjSection *GetSection() { return section; }
+    ObjSection *GetSection();
     ObjInt GetValue() { return value; }
     eOperator GetOp() { return op; }
     void Simplify() ;

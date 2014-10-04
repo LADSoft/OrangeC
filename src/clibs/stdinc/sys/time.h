@@ -2,6 +2,10 @@
 #ifndef __SYS_TIME_H
 #define __SYS_TIME_H
 
+#ifndef __DEFS_H__
+#include <_defs.h>
+#endif
+
 #ifndef _TIMEVAL_DEFINED
 #define _TIMEVAL_DEFINED
 struct timeval {
@@ -15,6 +19,6 @@ struct timezone {
 };
 #endif /* _TIMEVAL_DEFINED */
 
-int gettimeofday (struct timeval * tv, struct timezone * tz);
+int _RTL_FUNC gettimeofday (struct timeval * tv, struct timezone * tz);
 
 #endif

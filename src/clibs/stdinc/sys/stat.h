@@ -38,6 +38,7 @@
 #if !defined(__STAT_H)
 #define __STAT_H
 
+
 #pragma pack(1)
 
 #ifndef __DEFS_H__

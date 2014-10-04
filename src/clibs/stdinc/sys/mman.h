@@ -50,6 +50,10 @@
 
 
 #include <sys/types.h>
+#ifndef __DEFS_H__
+#include <_defs.h>
+#endif
+
 
 
 
@@ -100,36 +104,34 @@
 #define	POSIX_MADV_WILLNEED	3	/* [MC1] will need these pages */
 #define	POSIX_MADV_DONTNEED	4	/* [MC1] dont need these pages */
 
-
-
 #ifdef __cplusplus
 namespace std {
 extern "C"
 {
 #endif
 /* [ML] */
-int	mlockall(int);
-int	munlockall(void);
+int	_RTL_FUNC mlockall(int);
+int	_RTL_FUNC munlockall(void);
 /* [MR] */
-int	mlock(const void *, size_t);
+int	_RTL_FUNC mlock(const void *, size_t);
 #ifndef _MMAP
 #define	_MMAP
 /* [MC3]*/
-void *	mmap(void *, size_t, int, int, int, off_t);
+void _RTL_FUNC *	mmap(void *, size_t, int, int, int, off_t);
 #endif
 /* [MPR] */
-int	mprotect(void *, size_t, int);
+int	_RTL_FUNC mprotect(void *, size_t, int);
 /* [MF|SIO] */
-int	msync(void *, size_t, int);
+int	_RTL_FUNC msync(void *, size_t, int);
 /* [MR] */
-int	munlock(const void *, size_t);
+int	_RTL_FUNC munlock(const void *, size_t);
 /* [MC3]*/
-int	munmap(void *, size_t);
+int	_RTL_FUNC munmap(void *, size_t);
 /* [SHM] */
-int	shm_open(const char *, int, ...);
-int	shm_unlink(const char *);
+int	_RTL_FUNC shm_open(const char *, int, ...);
+int	_RTL_FUNC shm_unlink(const char *);
 /* [ADV] */
-int	posix_madvise(void *, size_t, int);
+int	_RTL_FUNC posix_madvise(void *, size_t, int);
 
 #ifdef __cplusplus
 }

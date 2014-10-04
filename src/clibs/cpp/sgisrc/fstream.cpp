@@ -17,8 +17,6 @@
 
 #ifdef __ORANGEC__
 #define __unix
-#define _SC_PAGESIZE 30
-extern "C" int sysconf(int);
 #endif
 
 #ifdef __unix

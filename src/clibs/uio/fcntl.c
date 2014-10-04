@@ -30,29 +30,33 @@
     TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-#ifndef _UNISTD_H
-#define _UNISTD_H
-
 #include <io.h>
-#include <sys/types.h>
+#include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
+#include <assert.h>
+#include <fcntl.h>
 
-#define ftruncate chsize
-
-#define _SC_PAGESIZE 30
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-int _RTL_FUNC sysconf(int);
-
-int _RTL_FUNC fsync(int fd);
-
-ssize_t _RTL_FUNC pread(int fd, void *buf, size_t nbyte, off_t offset);
-ssize_t _RTL_FUNC pwrite(int fd, const void *buf, size_t nbyte, off_t offset);
-
-#ifdef __cplusplus
+extern int __uimodes[HANDLE_MAX];
+int _RTL_FUNC fcntl(int __handle, int type, ...)
+{
+   int mode ;
+   assert(type == F_GETFL); 
+   __ll_enter_critical() ;
+   __handle = __uiohandle(__handle) ;
+   if (__handle == -1) {
+      __ll_exit_critical() ;
+      return -1 ;
+   }
+   mode = __uimodes[__handle];
+   __ll_exit_critical() ;
+   return mode ;
 }
-#endif
-
-#endif
+long _RTL_FUNC _filelength(int __handle)
+{
+    return filelength(__handle);
+}

@@ -61,7 +61,7 @@ typedef struct __fpos_t {
 #ifdef __cplusplus
     __fpos_t() : pos(0) { mbstate[0] = mbstate[1] = 0; }
     __fpos_t(long Pos) : pos(Pos) { mbstate[0] = mbstate[1] = 0; }
-    operator int() { return pos; }
+    operator long() { return pos; }
 #endif
 } fpos_t;
 

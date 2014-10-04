@@ -50,6 +50,7 @@
 #include "ObjFactory.h"
 #include "PEObject.h"
 #include "MZHeader.h"
+#include <iostream>
 
 #ifdef MICROSOFT
 #define system(x) winsystem(x)

@@ -350,22 +350,6 @@ static BOOLEAN hasConstFuncs(SYMBOL *sp, int type)
                 return TRUE;
             hr = hr->next;
         }
-        /*
-        FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-        params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
-        params->arguments->tp = (TYPE *)Alloc(sizeof(TYPE));
-        params->arguments->tp->type = bt_const;
-        params->arguments->tp->size = basetype(sp->tp)->size;
-        params->arguments->tp->btp = basetype(sp->tp);
-        params->arguments->exp = intNode(en_not_lvalue, 0);
-        params->thisptr = varNode(en_auto, sp);
-        params->thistp = Alloc(sizeof(TYPE));
-        params->thistp->type = bt_pointer;
-        params->thistp->size = getSize(bt_pointer);
-        params->thistp->btp = sp->tp;
-        params->ascall = TRUE;
-        return !!GetOverloadedFunction(&tp, &params->fcall, ovl, params, NULL, FALSE, FALSE);
-        */
     }
     return FALSE;
 }
@@ -478,7 +462,13 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
     tp->size = getSize(bt_pointer);
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     tpx = tp->btp = (TYPE *)Alloc(sizeof(TYPE));
-    *(tp->btp) = *basetype(sp->tp);
+    if (isstructured(sp->tp))
+    {
+        tpx->type = move ? bt_rref : bt_lref;
+        tpx->size = getSize(bt_pointer);
+        tpx = tpx->btp = (TYPE *)Alloc(sizeof(TYPE));
+;    }
+    *(tpx) = *basetype(sp->tp);
     func = makeID(sc_member, tp, NULL, overloadNameTab[assign - kw_new + CI_NEW]);
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);
@@ -588,39 +578,39 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
     SYMBOL *ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(base->tp)->syms);
     if (ovl)
     {
-        FUNCTIONCALL funcparams;
-        INITLIST arg;
-        EXPRESSION exp,exp1;
-        TYPE tpp;
-        TYPE *tpx = NULL;
-        EXPRESSION *epx = NULL;
-        memset(&funcparams, 0, sizeof(funcparams));
-        memset(&arg, 0, sizeof(arg));
-        memset(&exp, 0, sizeof(exp));
-        memset(&exp1, 0, sizeof(exp1));
-        memset(&tpp, 0, sizeof(tpp));
-        if (move)
+        HASHREC *hr = ovl->tp->syms->table[0];
+        while (hr)
         {
-            exp.type = en_auto;
-            exp.v.sp = base;
+            SYMBOL *sym = (SYMBOL *)hr->p, *sym1 = NULL;
+            HASHREC *hrArgs = basetype(sym->tp)->syms->table[0];
+            sym = (SYMBOL *)hrArgs->p;
+            if (sym->thisPtr)
+            {
+                hrArgs = hrArgs->next;
+                if (hrArgs)
+                    sym = (SYMBOL *)hrArgs->p;
+            }
+            if (hrArgs && hrArgs->next)
+            {
+                sym1 = (SYMBOL *)hrArgs->next->p;
+            }
+            if (hrArgs && (!sym1 || sym1->init))
+            {
+                TYPE *tp = basetype(sym->tp);
+                if (tp->type == bt_lref)
+                {
+                    tp = basetype(tp->btp);
+                    if (isstructured(tp))
+                    {
+                        if (comparetypes(tp, base->tp, TRUE) || sameTemplate(tp, base->tp))
+                        {
+                            return (SYMBOL *)hr->p;
+                        }
+                    }
+                }
+            }
+            hr = hr->next;
         }
-        else
-        {
-            exp.type = en_not_lvalue;
-            exp.left = &exp1;
-            exp1.type = en_auto;
-            exp1.v.sp = base;
-        }
-        arg.exp = &exp;
-        arg.tp = base->tp;
-        tpp.type = bt_pointer;
-        tpp.size = getSize(bt_pointer);
-        tpp.btp = base->tp;
-        funcparams.arguments = &arg;
-        funcparams.thisptr = &exp;
-        funcparams.thistp = &tpp;
-        funcparams.ascall = TRUE;
-        return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE, FALSE);
     }
     return NULL;
 }
@@ -629,39 +619,39 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
     SYMBOL *ovl = search(overloadNameTab[assign - kw_new + CI_NEW ], basetype(base->tp)->syms);
     if (ovl)
     {
-        FUNCTIONCALL funcparams;
-        INITLIST arg;
-        EXPRESSION exp, exp1;
-        TYPE tpt;
-        TYPE *tpx = NULL;
-        EXPRESSION *epx = NULL;
-        memset(&funcparams, 0, sizeof(funcparams));
-        memset(&arg, 0, sizeof(arg));
-        memset(&exp, 0, sizeof(exp));
-        memset(&exp1, 0, sizeof(exp1));
-        memset(&tpt,0, sizeof(tpt));
-        if (move)
+        HASHREC *hr = ovl->tp->syms->table[0];
+        while (hr)
         {
-            exp.type = en_auto;
-            exp.v.sp = base;
+            SYMBOL *sym = (SYMBOL *)hr->p, *sym1 = NULL;
+            HASHREC *hrArgs = basetype(sym->tp)->syms->table[0];
+            sym = (SYMBOL *)hrArgs->p;
+            if (sym->thisPtr)
+            {
+                hrArgs = hrArgs->next;
+                if (hrArgs)
+                    sym = (SYMBOL *)hrArgs->p;
+            }
+            if (hrArgs && hrArgs->next)
+            {
+                sym1 = (SYMBOL *)hrArgs->next->p;
+            }
+            if (hrArgs && (!sym1 || sym1->init))
+            {
+                TYPE *tp = basetype(sym->tp);
+                if (tp->type == bt_lref)
+                {
+                    tp = basetype(tp->btp);
+                    if (isstructured(tp))
+                    {
+                        if (comparetypes(tp, base->tp, TRUE) || sameTemplate(tp, base->tp))
+                        {
+                            return (SYMBOL *)hr->p;
+                        }
+                    }
+                }
+            }
+            hr = hr->next;
         }
-        else
-        {
-            exp.type = en_not_lvalue;
-            exp.left = &exp1;
-            exp1.type = en_auto;
-            exp1.v.sp = base;
-        }
-        tpt.type = bt_pointer;
-        tpt.btp = base->tp;
-        tpt.size = getSize(bt_pointer);
-        arg.exp = &exp;
-        arg.tp = &tpt;
-        funcparams.arguments = &arg;
-        funcparams.thisptr = &exp;
-        funcparams.thistp = &tpt;
-        funcparams.ascall = TRUE;
-        return GetOverloadedFunction(&tpx, &funcparams.fcall, ovl, &funcparams, NULL, FALSE, FALSE, FALSE);
     }
     return NULL;
 }

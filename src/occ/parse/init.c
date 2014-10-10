@@ -82,6 +82,7 @@ typedef struct _dyninit_
 } DYNAMIC_INITIALIZER;
 
 BOOLEAN initializingGlobalVar ;
+int ignore_global_init;
 
 static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
 static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
@@ -261,20 +262,22 @@ static int dumpBits(INITIALIZER **init)
 }
 void insertDynamicInitializer(SYMBOL *sp, INITIALIZER *init)
 {
-    DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
-    di->sp = sp;
-    di->init = init;
-    if (sp->linkage3 == lk_threadlocal)
+    if (!ignore_global_init)
     {
-        di->next = TLSInitializers;
-        TLSInitializers = di;
+        DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
+        di->sp = sp;
+        di->init = init;
+        if (sp->linkage3 == lk_threadlocal)
+        {
+            di->next = TLSInitializers;
+            TLSInitializers = di;
+        }
+        else
+        {
+            di->next = dynamicInitializers;
+            dynamicInitializers = di;
+        }
     }
-    else
-    {
-        di->next = dynamicInitializers;
-        dynamicInitializers = di;
-    }
-//	genstorage(sp->tp->size);
     
 }
 static void insertTLSInitializer(SYMBOL *sp, INITIALIZER *init)
@@ -842,11 +845,6 @@ void dumpInitializers(void)
         int data = 0;
         int thread = 0;
         int *sizep;
-        dumpDynamicInitializers();
-        dumpTLSInitializers();
-        dumpDynamicDestructors();
-        dumpTLSDestructors();
-        dumpvc1Thunks();
         symListTail = symListHead;
         while (symListTail)
         {
@@ -900,6 +898,11 @@ void dumpInitializers(void)
             }
             symListTail = symListTail->next;
         }
+        dumpDynamicInitializers();
+        dumpTLSInitializers();
+        dumpDynamicDestructors();
+        dumpTLSDestructors();
+        dumpvc1Thunks();
     }
 #endif
 }
@@ -3035,7 +3038,9 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 else
                     tmpl = tmpl->parentClass;
             if (!tmpl)
+            {
                 insertInitSym(sp);
+            }
         }       
     }
     else if (sp->storage_class == sc_external && instantiatingTemplate)

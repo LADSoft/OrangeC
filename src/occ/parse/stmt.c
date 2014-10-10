@@ -224,7 +224,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
         }
     }
         
-    if (cparams.prm_cplusplus && isstructured(tp))
+    if (cparams.prm_cplusplus && isstructured(tp) && kw != kw_for)
     {
         castToArithmetic(FALSE, &tp, exp, (enum e_kw)-1, &stdint, FALSE, TRUE);
     }
@@ -1468,7 +1468,10 @@ static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp)
 {
     if (lvalue(exp))
     {
-        EXPRESSION *exp2 = exp;
+        EXPRESSION *exp2;
+        while (castvalue(exp))
+            exp = exp->left;
+        exp2 = exp;
         if (!isstructured(basetype(tp)->btp))
             exp = exp->left;
         if (exp->type == en_auto)
@@ -1484,8 +1487,6 @@ static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp)
         }
         else
         {
-            while (castvalue(exp2))
-                exp2 = exp2->left;
              if (referenceTypeError(tp, exp2) != exp2->type && (!isstructured(basetype(tp)->btp) || exp2->type != en_lvalue))
                 errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
         }
@@ -1617,9 +1618,17 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         {
                             optimize_for_constants(exp1);
                         }
-                        if (exp1->type == en_func && exp1->v.func->returnSP && (comparetypes(tp1, tp, TRUE) || sameTemplate(tp, tp1)) 
-                            || exp1->type == en_stmt)
-                        {
+                        if (exp1->type == en_func && exp1->v.func->returnSP)
+                        {   
+                            if ((comparetypes(tp1, tp, TRUE) || sameTemplate(tp, tp1)) 
+                                || exp1->type == en_stmt)
+                            {
+                                returnexp = exp1;
+                            }
+                            else
+                            {
+                                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                            }
                             returnexp = exp1;
                         }
                         else

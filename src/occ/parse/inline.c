@@ -972,6 +972,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
     EXPRESSION *newExpression;
     BOOLEAN allocated = FALSE;
+    return NULL;
     if (function_list_count >= MAX_INLINE_NESTING)
         return NULL;
     if (!isfunction(params->functp))

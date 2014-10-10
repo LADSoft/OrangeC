@@ -972,7 +972,7 @@ static BOOLEAN matchTemplatedType(TYPE *old, TYPE *sym, BOOLEAN strict)
     }
 }
 SYMBOL *SynthesizeResult(SYMBOL *sym, TEMPLATEPARAMLIST *params);
-static BOOLEAN TemplateParseDefaultArgs(TEMPLATEPARAMLIST *dest, TEMPLATEPARAMLIST *src, TEMPLATEPARAMLIST *enclosing);
+static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym, TEMPLATEPARAMLIST *dest, TEMPLATEPARAMLIST *src, TEMPLATEPARAMLIST *enclosing);
 static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, INITLIST *args);
 SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp, TEMPLATEPARAMLIST *templateParams)
 {
@@ -1000,7 +1000,7 @@ SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp, TEMPLATEPARA
             }
             hr = hr->next;
         }
-        if (TemplateParseDefaultArgs(params,params,params) && ValidateArgsSpecified(params, sp, NULL))
+        if (TemplateParseDefaultArgs(params,params,params, sp) && ValidateArgsSpecified(params, sp, NULL))
         {
             SYMBOL * deduced = SynthesizeResult(sp, templateParams);
             deduced->overloadName = overloads;
@@ -2633,7 +2633,10 @@ INITLIST *TemplateDeduceArgList(HASHREC *templateArgs, INITLIST *symArgs)
     }
     return symArgs;
 }
-static BOOLEAN TemplateParseDefaultArgs(TEMPLATEPARAMLIST *dest, TEMPLATEPARAMLIST *src, TEMPLATEPARAMLIST *enclosing)
+static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym, 
+                                        TEMPLATEPARAMLIST *dest, 
+                                        TEMPLATEPARAMLIST *src, 
+                                        TEMPLATEPARAMLIST *enclosing)
 {
     STRUCTSYM s;
     s.tmpl = enclosing;
@@ -2643,11 +2646,13 @@ static BOOLEAN TemplateParseDefaultArgs(TEMPLATEPARAMLIST *dest, TEMPLATEPARAMLI
         if (!dest->p->byClass.val && !dest->p->packed)
         {
             LEXEME *lex;
+            int n;
             if (!src->p->byClass.txtdflt)
             {
                 dropStructureDeclaration();
                 return FALSE;
             }
+            n = PushTemplateNamespace(declareSym);
             dest->p->byClass.txtdflt = src->p->byClass.txtdflt;
             lex = SetAlternateLex(src->p->byClass.txtdflt);
             switch(dest->p->type)
@@ -2688,6 +2693,7 @@ static BOOLEAN TemplateParseDefaultArgs(TEMPLATEPARAMLIST *dest, TEMPLATEPARAMLI
                 }
                     break;
             }
+            PopTemplateNamespace(n);
             SetAlternateLex(NULL);
         }
         src = src->next;
@@ -2828,7 +2834,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
         }
         // set up default values for non-deduced and non-initialized args
         params = nparams->next;
-        if (TemplateParseDefaultArgs(params, params, params) && 
+        if (TemplateParseDefaultArgs(sym, params, params, params) && 
             ValidateArgsSpecified(sym->templateParams->next, sym, args->arguments))
         {
             return SynthesizeResult(sym, nparams);
@@ -2845,7 +2851,7 @@ SYMBOL *TemplateDeduceWithoutArgs(SYMBOL *sym)
 {
     TEMPLATEPARAMLIST *nparams = sym->templateParams;
     TEMPLATEPARAMLIST *params = nparams->next;
-    if (TemplateParseDefaultArgs(params, params, params) && ValidateArgsSpecified(sym->templateParams->next, sym, NULL))
+    if (TemplateParseDefaultArgs(sym, params, params, params) && ValidateArgsSpecified(sym->templateParams->next, sym, NULL))
     {
         return SynthesizeResult(sym, nparams);
     }
@@ -2889,7 +2895,7 @@ SYMBOL *TemplateDeduceArgsFromType(SYMBOL *sym, TYPE *tp)
         TEMPLATEPARAMLIST *params;
         TemplateDeduceFromConversionType(basetype(sym->tp)->btp, basetype(tp)->btp);
         params = nparams->next;
-        if (TemplateParseDefaultArgs(params, params, params) && ValidateArgsSpecified(sym->templateParams->next, sym, NULL))
+        if (TemplateParseDefaultArgs(sym, params, params, params) && ValidateArgsSpecified(sym->templateParams->next, sym, NULL))
             return SynthesizeResult(sym, nparams);
     }
     else
@@ -2924,7 +2930,7 @@ SYMBOL *TemplateDeduceArgsFromType(SYMBOL *sym, TYPE *tp)
             }
         }
         params = nparams->next;
-        if (TemplateParseDefaultArgs(params, params, params) && ValidateArgsSpecified(sym->templateParams->next, sym, NULL))
+        if (TemplateParseDefaultArgs(sym, params, params, params) && ValidateArgsSpecified(sym->templateParams->next, sym, NULL))
         {
             return SynthesizeResult(sym, nparams);
         }
@@ -3952,7 +3958,7 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
         {
             params = origParams;
             primary = spsyms ? spsyms : nparams->next;
-            if (!TemplateParseDefaultArgs(params, primary, primary))
+            if (!TemplateParseDefaultArgs(sp, params, primary, primary))
                 rv = NULL;
             while (params && primary)
             {

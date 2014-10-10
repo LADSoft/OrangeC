@@ -426,15 +426,15 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
     {
         DumpIncDec(funcsp);
     }
+    if (stmt && stmt->destexp)
+    {
+        gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
+    }
     if (ap)
     {
         ap1 = tempreg(size, 0);
         ap1->retval = TRUE;
         gen_icode(i_assn, ap1, ap, 0);
-    }
-    if (stmt && stmt->destexp)
-    {
-        gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
     }
     /* create the return or a branch to the return
      * return is put at end of function...

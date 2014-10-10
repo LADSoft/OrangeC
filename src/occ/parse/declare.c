@@ -3577,7 +3577,8 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                         lex = getsym();
                     }
                     sp->operatorId = ov;
-                    sp->declcharpos = lex->charindex;
+                    if (lex)
+                        sp->declcharpos = lex->charindex;
                     *spi = sp;
                 }
             }
@@ -4535,26 +4536,34 @@ jointemplate:
                             errorsym(ERR_MUTABLE_NON_CONST, sp);
                         if (sp->isConstructor)
                         {
-                            HASHREC *hr = sp->tp->syms->table[0];
-                            SYMBOL *sp1 = (SYMBOL *)hr->p;
-                            SYMBOL *sp2 = NULL;
-                            if (hr->next)
-                                sp2= (SYMBOL *)(hr->next)->p;
-                            if (isstructured(sp1->tp) && (!sp2 || sp2->init))
+                            if (sp->tp->syms)
                             {
-                                SYMBOL *sp3 = basetype(sp1->tp)->sp;
-                                if (sp3 == sp->parentClass || sameTemplate(sp3, sp->parentClass))
+                                HASHREC *hr = sp->tp->syms->table[0];
+                                SYMBOL *sp1 = (SYMBOL *)hr->p;
+                                SYMBOL *sp2 = NULL;
+                                if (hr->next)
+                                    sp2= (SYMBOL *)(hr->next)->p;
+                                if (isstructured(sp1->tp) && (!sp2 || sp2->init))
                                 {
-                                    // this is an error because it can become a recursive
-                                    // constructor, we fix it before generating the error
-                                    // to refrain from propagating further errors.
-                                    TYPE *tpx = Alloc(sizeof(TYPE));
-                                    tpx->type == bt_lref;
-                                    tpx->size = getSize(bt_pointer);
-                                    tpx->btp = sp1->tp;
-                                    sp1->tp = tpx;
-                                    errorsym(ERR_CONSTRUCTOR_NOT_ALLOWED, sp);
-                                }                                
+                                    SYMBOL *sp3 = basetype(sp1->tp)->sp;
+                                    if (sp3 == sp->parentClass || sameTemplate(sp3, sp->parentClass))
+                                    {
+                                        // this is an error because it can become a recursive
+                                        // constructor, we fix it before generating the error
+                                        // to refrain from propagating further errors.
+                                        TYPE *tpx = Alloc(sizeof(TYPE));
+                                        tpx->type == bt_lref;
+                                        tpx->size = getSize(bt_pointer);
+                                        tpx->btp = sp1->tp;
+                                        sp1->tp = tpx;
+                                        errorsym(ERR_CONSTRUCTOR_NOT_ALLOWED, sp);
+                                    }                                
+                                }
+                            }
+                            else
+                            {
+                                // to prevent crashes when we have an error
+                                sp->tp->syms = CreateHashTable(1);
                             }
                         }
                         if (ssp && strSym && strSym->tp->type != bt_templateselector)
@@ -4602,7 +4611,7 @@ jointemplate:
                             }
                         }
                         ConsDestDeclarationErrors(sp, notype);
-                        if (spi && spi->storage_class == sc_overloads)
+                        if (spi && spi->storage_class == sc_overloads && isfunction(sp->tp))
                         {
                             SYMBOL *sym = NULL;
                             sym = searchOverloads(sp, spi->tp->syms);

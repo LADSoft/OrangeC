@@ -471,7 +471,7 @@ static struct {
 {"Cannot place attribute argument clause here", ERROR },
 {"Only constructors or conversion functions may be explicit", ERROR },
 {"Implicit use of explicit constructor or conversion function", ERROR },
-{"class '%s' is not a defined class with virtual functions", ERROR },
+{"Type '%s' is not a defined class with virtual functions", ERROR },
 {"Template may not be declared in class defined within function scope", ERROR},
 {"Template must be declared at global scope or within a class", ERROR },
 {"Packed template parameter cannot have default" ,ERROR },

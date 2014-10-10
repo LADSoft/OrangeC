@@ -1831,7 +1831,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                         temp = p->exp->left;
                     }
                     // use constructor or conversion function and push on stack ( no destructor)
-                    if (temp->type == en_func && ((sameType = comparetypes(sym->tp, tpx, TRUE)) || classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
+                    if (temp->type == en_func && !isref(basetype(temp->v.func->sp->tp)->btp) &&((sameType = comparetypes(sym->tp, tpx, TRUE)) || classRefCount(basetype(sym->tp)->sp, basetype(tpx)->sp) == 1))
                     {
                         EXPRESSION **exp = NULL;
                         SYMBOL *esp;
@@ -2096,7 +2096,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     EXPRESSION *exp_in = *exp;
     BOOLEAN operands = FALSE;
     BOOLEAN hasThisPtr = FALSE;
-    if (exp_in->type != en_func || isfuncptr(*tp))
+    if (exp_in->type != en_func || isfuncptr(*tp) || isstructured(*tp))
     {
         TYPE *tpx = *tp;
         SYMBOL *sym;
@@ -2184,6 +2184,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     {
                         TYPE **cur;
                         funcparams->thisptr = varNode(en_auto, basetype(funcsp->tp)->syms->table[0]->p);
+                        deref(&stdpointer, &funcparams->thisptr);
                         funcparams->thistp = Alloc(sizeof(TYPE));
                         cur = &funcparams->thistp->btp;
                         funcparams->thistp->type = bt_pointer;
@@ -2309,13 +2310,19 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             {
                 if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {
-                    funcparams->returnEXP = anonymousVar(flags & _F_INRETURN ? sc_parameter : sc_auto, basetype(*tp)->btp);
-                    funcparams->returnSP = funcparams->returnEXP->v.sp;
                     if (flags & _F_INRETURN)
                     {
+                        funcparams->returnEXP = varNode(en_auto, makeID(sc_auto, basetype(*tp)->btp, NULL, AnonymousName()));
+                        funcparams->returnSP = funcparams->returnEXP->v.sp;
+                        funcparams->returnEXP = exprNode(en_l_p, funcparams->returnEXP, NULL);
                         funcparams->returnSP->allocate = FALSE; // static var
                         funcparams->returnSP->offset = chosenAssembler->arch->retblocksize;
                         funcparams->returnSP->structuredReturn = TRUE;
+                    }
+                    else
+                    {
+                        funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
+                        funcparams->returnSP = funcparams->returnEXP->v.sp;
                     }
                 }
                 funcparams->ascall = TRUE;    
@@ -4849,7 +4856,10 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         }
         else
         {
-            *tp = &stdint;
+            if (cparams.prm_cplusplus)
+                *tp = &stdbool;
+            else
+                *tp = &stdint;
         }
         if (basetype(*tp)->type == bt_memberptr)
         {

@@ -1037,7 +1037,7 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
             matched = TRUE;
             break;
         }
-        if (sym->storage_class == sc_overloads && isfunction(member->tp))
+        if (sym->storage_class == sc_overloads && isfunction(member->tp) && sym->tp->syms)
         {
             HASHREC *hr1 = sym->tp->syms->table[0];
             while (hr1)

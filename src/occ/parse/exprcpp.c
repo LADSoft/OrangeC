@@ -1178,7 +1178,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
 BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
                         TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args, BOOLEAN noinline)
 {
-    SYMBOL *s1 = NULL, *s2 = NULL, *s3;
+    SYMBOL *s1 = NULL, *s2 = NULL, *s3, *s4 = NULL, *s5 = NULL;
     HASHREC **hrd, *hrs;
     FUNCTIONCALL *funcparams;
     char *name = overloadNameTab[kw - kw_new + CI_NEW];
@@ -1222,16 +1222,26 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     // next find some occurrance in the class or struct
     if (isstructured(*tp))
     {
+        int n;
         l.str = (void *)basetype(*tp)->sp;
         addStructureDeclaration(&l);
         s2 = classsearch(name, FALSE);
+        n = PushTemplateNamespace(basetype(*tp)->sp); // used for more than just templates here
+        s4 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
+        PopTemplateNamespace(n);
     }
     else
     {
         l.str = NULL;
     }
+    if (tp1 && isstructured(tp1))
+    {
+        int n = PushTemplateNamespace(basetype(tp1)->sp); // used for more than just templates here
+        s5 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
+        PopTemplateNamespace(n);
+    }
     // quit if there are no matches because we will use the default...
-    if (!s1 && !s2)
+    if (!s1 && !s2 && !s4 && !s5)
     {
         if (l.str)
             dropStructureDeclaration();
@@ -1260,6 +1270,30 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     if (s2)
     {
         hrs = s2->tp->syms->table[0];
+        while (hrs)
+        {
+            HASHREC *ins = Alloc(sizeof(HASHREC));
+            ins->p = hrs->p;
+            *hrd = ins;
+            hrd = &(*hrd)->next;
+            hrs = hrs->next;
+        }
+    }
+    if (s4)
+    {
+        hrs = s4->tp->syms->table[0];
+        while (hrs)
+        {
+            HASHREC *ins = Alloc(sizeof(HASHREC));
+            ins->p = hrs->p;
+            *hrd = ins;
+            hrd = &(*hrd)->next;
+            hrs = hrs->next;
+        }
+    }
+    if (s5)
+    {
+        hrs = s5->tp->syms->table[0];
         while (hrs)
         {
             HASHREC *ins = Alloc(sizeof(HASHREC));

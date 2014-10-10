@@ -41,6 +41,7 @@
 #ifndef CPREPROCESSOR
 extern ARCH_ASM *chosenAssembler;
 extern char infile[];
+extern int ignore_global_init;
 #endif
 extern COMPILER_PARAMS cparams;
 extern char *prm_searchpath,  *sys_searchpath;
@@ -763,6 +764,12 @@ void dopragma(void)
         return;
     }
 #ifndef CPREPROCESSOR
+    else if (!strcmp(name, "ignore_global_init"))
+    {
+        skipspace();
+        ignore_global_init = expectnum(NULL);
+        return;
+    }
     else if (!strcmp(name, "startup"))
         sflag = TRUE;
     else if (!strcmp(name, "rundown"))

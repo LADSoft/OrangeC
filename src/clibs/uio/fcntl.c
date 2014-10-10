@@ -56,7 +56,3 @@ int _RTL_FUNC fcntl(int __handle, int type, ...)
    __ll_exit_critical() ;
    return mode ;
 }
-long _RTL_FUNC _filelength(int __handle)
-{
-    return filelength(__handle);
-}

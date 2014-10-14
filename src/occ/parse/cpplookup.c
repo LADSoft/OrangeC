@@ -1023,7 +1023,8 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
         if (ssp == member)
             return TRUE;
     }
-    if (isFriend(derived, funcsp) || funcsp && isFriend(derived, funcsp->parentClass) || isFriend(derived, ssp))
+    if (isFriend(derived, funcsp) || funcsp && isFriend(derived, funcsp->parentClass)
+        || isFriend(derived, ssp) || isFriend(member->parentClass, funcsp))
         friendly = TRUE;
     if (!currentBase->tp->syms)
         return FALSE;
@@ -1103,7 +1104,8 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
     if (matched)
     {
         SYMBOL *sym = member;
-        return friendly || level <= 1 && (minAccess < ac_public || sym->access == ac_public) || sym->access >= minAccess;
+        return friendly || level <= 1 && (minAccess < ac_public || sym->access == ac_public) 
+        &&(level == 0 || sym->access != ac_private) || sym->access >= minAccess;
     }
     lst = currentBase->baseClasses;
     while (lst)
@@ -1113,7 +1115,8 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
         if (lst->cls == member || sameTemplate(lst->cls->tp, member->tp))
         {
             SYMBOL *sym = lst->cls;
-            return level <= 1 && (minAccess < ac_public || sym->access == ac_public) || sym->access >= minAccess;
+            return level <= 1 && (minAccess < ac_public || sym->access == ac_public) 
+                &&(level == 0 || sym->access != ac_private)|| sym->access >= minAccess;
         }
         if (isAccessibleInternal(derived, lst->cls, member, funcsp, level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none : minAccess, level+1, asAddress, friendly))
             return TRUE;
@@ -1319,7 +1322,7 @@ static void  GatherConversions(SYMBOL *sp, SYMBOL **spList, int n, FUNCTIONCALL 
         int j;
         if (spList[i])
         {
-            enum e_cvsrn arr[500][3];
+            enum e_cvsrn arr[500][10];
             int counts[500];
             SYMBOL **funcs[200];
             BOOLEAN t;

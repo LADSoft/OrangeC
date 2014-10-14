@@ -512,6 +512,11 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         AllocateLocalContext(parent, funcsp);
     }
     lex = statement(lex, funcsp, dostmt,TRUE);
+    if (cparams.prm_cplusplus || cparams.prm_c99)
+    {
+        addedBlock--;
+        FreeLocalContext(dostmt, funcsp);
+    }
     parent->nosemi = FALSE;
     if (MATCHKW(lex, kw_while))
     {
@@ -1198,6 +1203,11 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         AllocateLocalContext(parent, funcsp);
                     }
                     lex = statement(lex, funcsp, forstmt, TRUE);
+                    if (cparams.prm_cplusplus || cparams.prm_c99)
+                    {
+                        addedBlock--;
+                        FreeLocalContext(forstmt, funcsp);
+                    }
                     st = stmtNode(lex, forstmt, st_label);
                     st->label = forstmt->continuelabel;
                     st = stmtNode(lex, forstmt, st_expr);
@@ -1336,6 +1346,11 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     }
                 }
                 needlabelelse = parent->needlabel;
+                if (cparams.prm_cplusplus || cparams.prm_c99)
+                {
+                    FreeLocalContext(parent, funcsp);
+                    addedBlock--;
+                }
                 st = stmtNode(lex, parent, st_label);
                 st->label = elsebr;
             }
@@ -1358,6 +1373,11 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         sti->type = st_select;
                         sti->label = st1->label;
                     }
+                }
+                if (cparams.prm_cplusplus || cparams.prm_c99)
+                {
+                    FreeLocalContext(parent, funcsp);
+                    addedBlock--;
                 }
                 st = stmtNode(lex, parent, st_label);
                 st->label = ifbranch;
@@ -1942,6 +1962,11 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 AllocateLocalContext(parent, funcsp);
             }
             lex = statement(lex, funcsp, whilestmt, TRUE);
+            if (cparams.prm_cplusplus || cparams.prm_c99)
+            {
+                addedBlock--;
+                FreeLocalContext(whilestmt, funcsp);
+            }
             st = stmtNode(lex, whilestmt, st_label);
             st->label = whilestmt->continuelabel;
             if (whileline)

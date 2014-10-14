@@ -109,7 +109,7 @@ void iexpr_func_init(void)
 }
 static void cacheTempSymbol(SYMBOL *sp)
 {
-    if (sp->anonymous && !sp->stackblock)
+    if (sp->anonymous && !sp->stackblock && sp->storage_class != sc_parameter)
     {
         if (sp->allocate && !sp->inAllocTable)
         {

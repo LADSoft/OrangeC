@@ -217,7 +217,7 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
     {
         table = sp->parentClass->tp->syms;
     }		
-    else if (storage_class == sc_auto || storage_class == sc_register 
+    else if (storage_class == sc_auto || storage_class == sc_register || storage_class == sc_catchvar
         || storage_class == sc_parameter || storage_class == sc_localstatic)
     {
         table = localNameSpace->syms;
@@ -2840,7 +2840,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 {
                     spi = makeID(sc_parameter, tp1, NULL, NewUnnamedID());
                     spi->anonymous = TRUE;
-                       SetLinkerNames(spi, lk_none);
+                    SetLinkerNames(spi, lk_none);
                     if (tp1->type == bt_templateparam && tp1->templateParam->p->packed && MATCHKW(lex, ellipse))
                     {
                         spi->packed = TRUE;
@@ -3773,6 +3773,16 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             break;
         case and:
         case land:
+            if (storage_class == sc_catchvar)
+            {
+                // already a ref;
+                lex = getsym();
+                ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+                lex = getQualifiers(lex, tp, linkage, linkage2, linkage3);
+                lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate,
+                                    storage_class, linkage, linkage2, linkage3, asFriend, FALSE, beforeOnly);
+                break;
+            }
             if (cparams.prm_cplusplus)
             {
                 TYPE *tp2;
@@ -4299,8 +4309,8 @@ jointemplate:
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate,
                                     storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest, FALSE);
-
                     inTemplateType = FALSE;
+
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
                     if (tprv && (!notype || consdest || isTemplatedCast) )
@@ -4396,8 +4406,19 @@ jointemplate:
                         {
                             if (asFriend)
                             {
-                                SYMBOL *sym = getStructureDeclaration();
+                                SYMBOL *sym = NULL;
                                 LIST *l = Alloc(sizeof(LIST));
+								STRUCTSYM *ls = structSyms;
+								while (ls && !ls->str)
+									ls = ls->next;
+                                if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector)
+								{
+									ls = ls->next;
+									while (ls && !ls->str)
+										ls = ls->next;
+								}
+								if (ls)
+									sym = ls->str;
                                 l->data = (void *)tp1->sp;
                                 l->next = sym->friends;
                                 sym->friends = l;
@@ -4453,7 +4474,12 @@ jointemplate:
                         sp->parent = funcsp; /* function vars have a parent */
                         if (strSym && !strcmp(strSym->name, sp->name))
                             sp->name = overloadNameTab[CI_CONSTRUCTOR];
-                        if (nameSpaceList && storage_class_in != sc_auto)
+                        if (instantiatingTemplate)
+                        {
+                            if (sp->parentClass)
+                                sp->parentNameSpace = sp->parentClass->parentNameSpace;
+                        }
+                        else if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
                         if (inTemplate || promotedToTemplate)
                             sp->templateLevel = templateHeaderCount - !!asFriend;
@@ -4536,34 +4562,26 @@ jointemplate:
                             errorsym(ERR_MUTABLE_NON_CONST, sp);
                         if (sp->isConstructor)
                         {
-                            if (sp->tp->syms)
+                            HASHREC *hr = sp->tp->syms->table[0];
+                            SYMBOL *sp1 = (SYMBOL *)hr->p;
+                            SYMBOL *sp2 = NULL;
+                            if (hr->next)
+                                sp2= (SYMBOL *)(hr->next)->p;
+                            if (isstructured(sp1->tp) && (!sp2 || sp2->init))
                             {
-                                HASHREC *hr = sp->tp->syms->table[0];
-                                SYMBOL *sp1 = (SYMBOL *)hr->p;
-                                SYMBOL *sp2 = NULL;
-                                if (hr->next)
-                                    sp2= (SYMBOL *)(hr->next)->p;
-                                if (isstructured(sp1->tp) && (!sp2 || sp2->init))
+                                SYMBOL *sp3 = basetype(sp1->tp)->sp;
+                                if (sp3 == sp->parentClass || sameTemplate(sp3, sp->parentClass))
                                 {
-                                    SYMBOL *sp3 = basetype(sp1->tp)->sp;
-                                    if (sp3 == sp->parentClass || sameTemplate(sp3, sp->parentClass))
-                                    {
-                                        // this is an error because it can become a recursive
-                                        // constructor, we fix it before generating the error
-                                        // to refrain from propagating further errors.
-                                        TYPE *tpx = Alloc(sizeof(TYPE));
-                                        tpx->type == bt_lref;
-                                        tpx->size = getSize(bt_pointer);
-                                        tpx->btp = sp1->tp;
-                                        sp1->tp = tpx;
-                                        errorsym(ERR_CONSTRUCTOR_NOT_ALLOWED, sp);
-                                    }                                
-                                }
-                            }
-                            else
-                            {
-                                // to prevent crashes when we have an error
-                                sp->tp->syms = CreateHashTable(1);
+                                    // this is an error because it can become a recursive
+                                    // constructor, we fix it before generating the error
+                                    // to refrain from propagating further errors.
+                                    TYPE *tpx = Alloc(sizeof(TYPE));
+                                    tpx->type == bt_lref;
+                                    tpx->size = getSize(bt_pointer);
+                                    tpx->btp = sp1->tp;
+                                    sp1->tp = tpx;
+                                    errorsym(ERR_CONSTRUCTOR_NOT_ALLOWED, sp);
+                                }                                
                             }
                         }
                         if (ssp && strSym && strSym->tp->type != bt_templateselector)
@@ -4611,7 +4629,7 @@ jointemplate:
                             }
                         }
                         ConsDestDeclarationErrors(sp, notype);
-                        if (spi && spi->storage_class == sc_overloads && isfunction(sp->tp))
+                        if (spi && spi->storage_class == sc_overloads)
                         {
                             SYMBOL *sym = NULL;
                             sym = searchOverloads(sp, spi->tp->syms);
@@ -4951,8 +4969,19 @@ jointemplate:
                         {
                             if (isfunction(sp->tp))
                             {
-                                SYMBOL *sym = getStructureDeclaration();
+                                SYMBOL *sym = NULL;
                                 LIST *l = Alloc(sizeof(LIST));
+								STRUCTSYM *ls = structSyms;
+								while (ls && !ls->str)
+									ls = ls->next;
+                                if (strSym && strSym->tp->type != bt_enum && strSym->tp->type != bt_templateselector)
+								{
+									ls = ls->next;
+									while (ls && !ls->str)
+										ls = ls->next;
+								}
+								if (ls)
+									sym = ls->str;
                                 l->data = (void *)sp;
                                 l->next = sym->friends;
                                 sym->friends = l;

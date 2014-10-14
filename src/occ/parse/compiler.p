@@ -239,7 +239,7 @@ EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en);
 LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner);
 LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack);
 LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack);
-void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp);
+EXPRESSION *DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION *exp, int flags);
 void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinline);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
@@ -886,6 +886,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
                      BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class);
 LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
 LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *isTemplate, BOOLEAN tagsOnly, BOOLEAN membersOnly, char *name);
+BOOLEAN isFriend(SYMBOL *cls, SYMBOL *frnd);
 BOOLEAN isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOLEAN asAddress);
 BOOLEAN isExpressionAccessible(SYMBOL *derived, SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOLEAN asAddress);
 BOOLEAN checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);

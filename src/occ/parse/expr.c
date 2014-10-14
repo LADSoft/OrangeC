@@ -1479,7 +1479,7 @@ static int simpleDerivation(EXPRESSION *exp)
     }
     return rv;
 }
-void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp)
+EXPRESSION *DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION *exp, int flags)
 {
     if (isref(tpn))
         tpn = basetype(tpn)->btp;
@@ -1495,33 +1495,35 @@ void DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION **exp)
             if (n == 1)
             {
                 // derived to base
-                EXPRESSION *v = Alloc(sizeof(EXPRESSION));
+                EXPRESSION q, *v = &q;
+                memset(&q, 0, sizeof(q));
                 v->type = en_c_i;
                 v = baseClassOffset(spn, spo, v);
+
                 optimize_for_constants(&v);
-//                    if (isAccessible(spo, spo, spn, NULL, ac_public, FALSE))
+                if (v->type != en_c_i && (flags & _F_NOVIRTUALBASE))
+                    return NULL;
+
+                v = baseClassOffset(spn, spo, exp);
+                if ((flags & _F_VALIDPOINTER) || v->type != en_c_i || simpleDerivation(exp) == 2)
+                {
+                    optimize_for_constants(&v);
+                }
+                else
                 {
                     EXPRESSION *varsp = anonymousVar(sc_auto, &stdpointer);
                     EXPRESSION *var = exprNode(en_l_p, varsp, NULL);
-                    EXPRESSION *asn = exprNode(en_assign, var, *exp);
+                    EXPRESSION *asn = exprNode(en_assign, var, exp);
                     EXPRESSION *left = exprNode(en_add, var, v);
-                    if (simpleDerivation(*exp) == 2)
-                    {
-                        *exp = left;
-                    }
-                    else
-                    {
-                        EXPRESSION *right = var;
-                        if (v->type == en_l_p) // check for virtual base
-                            v->left = var;
-                        *exp = exprNode(en_cond, var, exprNode(en_void, left, right));
-                    }                    
-                    *exp = exprNode(en_void, asn, *exp);
-                    return;
+                    EXPRESSION *right = var;
+                    v = exprNode(en_cond, var, exprNode(en_void, left, right));
+                    v = exprNode(en_void, asn, v);
                 }
+                return v;
             }
         }
     }
+    return exp;
 }
 static BOOLEAN cloneTempExpr(EXPRESSION **expr, SYMBOL **found, SYMBOL **replace);
 BOOLEAN cloneTempStmt(STATEMENT **block, SYMBOL **found, SYMBOL **replace)
@@ -1872,7 +1874,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                             consexp = varNode(en_auto, esp);
                             arg->exp = temp->v.func->returnEXP ? temp->v.func->returnEXP : temp->v.func->thisptr;
                             arg->tp = sym->tp;
-                            DerivedToBase(sym->tp, tpx, &arg->exp);
+                            arg->exp = DerivedToBase(sym->tp, tpx, arg->exp, _F_VALIDPOINTER);
                             funcparams->arguments = arg;
                             callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE || noinline, TRUE, FALSE);
                             p->exp = exprNode(en_void, p->exp, consexp);
@@ -1938,9 +1940,9 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                                     tpx2 = spx->parentClass->tp;
                                 }
                                 esp->tp = tpx1; // guaranteed to be a structured type or reference to one
-                                DerivedToBase(tpx1, p->tp, &p->exp->v.func->thisptr);
+                                p->exp->v.func->thisptr = DerivedToBase(tpx1, p->tp, p->exp->v.func->thisptr, _F_VALIDPOINTER);
                                 if (isstructured(tpx2) || isref(tpx2) && isstructured(basetype(tpx2)->btp))
-                                    DerivedToBase(sym->tp, tpx2, &p->exp);
+                                    p->exp = DerivedToBase(sym->tp, tpx2, p->exp, 0);
                                 else
                                     cast(sym->tp, &p->exp);
                             }
@@ -1948,7 +1950,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                         else
                         {
                             if (!comparetypes(sym->tp, p->tp, TRUE))
-                                DerivedToBase(sym->tp, p->tp, &p->exp);
+                                p->exp = DerivedToBase(sym->tp, p->tp, p->exp, 0);
                         }
                     }
                     else if (comparetypes(sym->tp, p->tp, TRUE))
@@ -2010,7 +2012,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                     {
                         if (isstructured(tpb) && isstructured(tpd))
                         {
-                            DerivedToBase(tpb, tpd, &p->exp);
+                            p->exp = DerivedToBase(tpb, tpd, p->exp, 0);
                         }
                         p->tp = sym->tp;
                     }
@@ -2185,6 +2187,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                         TYPE **cur;
                         funcparams->thisptr = varNode(en_auto, basetype(funcsp->tp)->syms->table[0]->p);
                         deref(&stdpointer, &funcparams->thisptr);
+                        funcparams->thisptr = DerivedToBase(sp->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp, funcparams->thisptr, _F_VALIDPOINTER);
                         funcparams->thistp = Alloc(sizeof(TYPE));
                         cur = &funcparams->thistp->btp;
                         funcparams->thistp->type = bt_pointer;
@@ -2220,7 +2223,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             *tp = sp->tp;
             if (hasThisPtr)
             {
-                test = isAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, basetype(basetype(funcparams->thistp)->btp)->sp, sp, funcsp, ac_protected, FALSE );
+                test = isExpressionAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, sp, funcsp, funcparams->thisptr, FALSE );
+                if (!test)
+                    test = isExpressionAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, sp, funcsp, funcparams->thisptr, FALSE );
             }
             else
             {
@@ -2308,6 +2313,13 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             if (isfunction(*tp))
             {
+                if (funcparams->thisptr)
+                {
+                    SYMBOL *base = funcparams->sp->parentClass;
+                    SYMBOL *derived = basetype(basetype(funcparams->thistp)->btp)->sp;
+                    if (base != derived)
+                        funcparams->thisptr = DerivedToBase(base->tp, derived->tp, funcparams->thisptr, _F_VALIDPOINTER);
+                }
                 if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {
                     if (flags & _F_INRETURN)
@@ -2360,6 +2372,20 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     {
                         exp_in = varNode(en_func, NULL);
                         exp_in->v.func = funcparams;
+                    }
+                    if (exp_in && cparams.prm_cplusplus && funcparams->returnEXP)
+                    {
+                        if (!funcparams->returnSP->trivialCons)
+                        {
+                            EXPRESSION *expx;
+                            exp_in = exprNode(en_thisref, exp_in, NULL);
+                            exp_in->v.t.thisptr = funcparams->returnEXP;
+                            exp_in->v.t.tp = funcparams->returnSP->tp;
+                            
+                            expx = funcparams->returnEXP;
+                            callDestructor(basetype(funcparams->returnSP->tp)->sp, &expx, NULL, TRUE, FALSE, FALSE, TRUE);
+                            initInsert(&funcparams->returnSP->dest, funcparams->returnSP->tp, expx, 0, TRUE);
+                        }
                     }
                     if (exp_in)
                     {

@@ -439,7 +439,8 @@ char *unmang1(char *buf, char *name, char *last)
             }
             if (*name == '$')
                 name++;
-            p -= 2;
+			if (p >= buf1+2)
+	            p -= 2;
             *p = 0;
             if (*name)
             {

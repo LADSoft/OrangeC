@@ -112,7 +112,7 @@ EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en)
                 if (lst->isvirtual)
                 {
                     VBASEENTRY *p = derived->vbaseEntries;
-                    while (p && lst->cls != p->cls && !p->alloc)
+                    while (p && lst->cls != p->cls)
                         p = p->next;
                     if (p)
                     {
@@ -304,7 +304,7 @@ static BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION *
             }
             else
             {
-                DerivedToBase(cst->parentClass->tp, *tp, exp);
+                *exp = DerivedToBase(cst->parentClass->tp, *tp, *exp, 0);
                 {
                     e1 = doinline(params, NULL);
                     if (!e1)
@@ -368,7 +368,7 @@ BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BO
                 FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION *e1;
                 
-                DerivedToBase(cst->parentClass->tp, *tp, exp);
+                *exp = DerivedToBase(cst->parentClass->tp, *tp, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
                 params->thistp = Alloc(sizeof(TYPE));
@@ -419,7 +419,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
             {
                 FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION *e1;
-                DerivedToBase(cst->parentClass->tp, src, exp);
+                *exp = DerivedToBase(cst->parentClass->tp, src, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
                 params->thistp = Alloc(sizeof(TYPE));
@@ -446,7 +446,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp, BOOLEAN noinline)
                 }
                 cst->genreffed = TRUE;
                 *exp = e1;
-                DerivedToBase(*tp, basetype(cst)->btp, exp);
+                *exp = DerivedToBase(*tp, basetype(cst)->btp, *exp, 0);
                 return TRUE;
             }
         }
@@ -846,7 +846,16 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
                 optimize_for_constants(&v);
                 if (v->type == en_c_i) // check for no virtual base
                 {
-                    *exp = exprNode(en_lvalue, exprNode(en_add, *exp, v), NULL);
+                    EXPRESSION *varsp = anonymousVar(sc_auto, &stdpointer);
+                    EXPRESSION *var = exprNode(en_l_p, varsp, NULL);
+                    EXPRESSION *asn = exprNode(en_assign, var, *exp);
+                    EXPRESSION *left = exprNode(en_add, var, v);
+                    EXPRESSION *right = var;
+                    if (v->type == en_l_p) // check for virtual base
+                        v->left = var;
+                    v = exprNode(en_cond, var, exprNode(en_void, left, right));
+                    v = exprNode(en_void, asn, v);
+                    *exp = exprNode(en_lvalue, v, NULL);
                     return TRUE;
                 }
             }
@@ -859,7 +868,16 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
                 optimize_for_constants(&v);
                 if (v->type == en_c_i) // check for no virtual base
                 {
-                    *exp = exprNode(en_lvalue, exprNode(en_sub, *exp, v), NULL);
+                    EXPRESSION *varsp = anonymousVar(sc_auto, &stdpointer);
+                    EXPRESSION *var = exprNode(en_l_p, varsp, NULL);
+                    EXPRESSION *asn = exprNode(en_assign, var, *exp);
+                    EXPRESSION *left = exprNode(en_sub, var, v);
+                    EXPRESSION *right = var;
+                    if (v->type == en_l_p) // check for virtual base
+                        v->left = var;
+                    v = exprNode(en_cond, var, exprNode(en_void, left, right));
+                    v = exprNode(en_void, asn, v);
+                    *exp = exprNode(en_lvalue, v, NULL);
                     return TRUE;
                 }
             }
@@ -1182,6 +1200,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
     HASHREC **hrd, *hrs;
     FUNCTIONCALL *funcparams;
     char *name = overloadNameTab[kw - kw_new + CI_NEW];
+    TYPE *tpin = *tp;
     TYPE *tpx;
     STRUCTSYM l ;
     if (!*tp)
@@ -1420,7 +1439,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
             funcparams->thistp = Alloc(sizeof(TYPE));
             funcparams->thistp->type = bt_pointer;
             funcparams->thistp->size = getSize(bt_pointer);
-            funcparams->thistp->btp = *tp;        
+            funcparams->thistp->btp = tpin;        
             funcparams->thisptr = *exp;
         }
         s3->throughClass = s3->parentClass != NULL;

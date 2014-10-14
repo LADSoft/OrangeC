@@ -2033,7 +2033,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
             STATEMENT *st;
             sp->constop = TRUE;
             sp->decoratedName = sp->errname = sp->name;
-            sp->offset = chosenAssembler->arch->retblocksize + cons->paramSize + getSize(bt_pointer);
+            sp->offset = chosenAssembler->arch->retblocksize + cons->paramsize;
             insert(sp, localNameSpace->syms);
     
             deref(&stdint, &val);
@@ -2413,7 +2413,7 @@ void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN
     SYMBOL *against = top ? sp : sp->parentClass;
     TYPE *tp = NULL, *stp = sp->tp;
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-    
+    SYMBOL *sym = basetype(sp->tp)->sp;
     // if it isn't already defined get out, there will be an error from somewhere else..
     if (!basetype(sp->tp)->syms || !dest)
         return;

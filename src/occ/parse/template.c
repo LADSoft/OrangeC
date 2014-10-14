@@ -3620,7 +3620,6 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             instantiatingTemplate++;
             lex = SetAlternateLex(lex);
             lex = innerDeclStruct(lex, NULL, cls, NULL, cls->tp->type == bt_class ? ac_private : ac_public, cls->isfinal, &defd);
-//            FinishStruct(cls, NULL);
             SetAlternateLex(NULL);
             lex = reinstateLex;
             while (lex)

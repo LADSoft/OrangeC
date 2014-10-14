@@ -210,6 +210,10 @@ enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 #define _F_INTEMPLATEPARAMS 16
 #define _F_INRETURN 32
 #define _F_INARGS 64
+
+#define _F_NOVIRTUALBASE 1
+#define _F_VALIDPOINTER 2
+
 typedef struct expr
 {
     struct expr *left, *right;
@@ -403,7 +407,6 @@ typedef struct sym
     int  declline ; /* line number symbol was declared at */
     int declcharpos ; /* character position symbol was declared at */
     int declfilenum; /* the file number */
-    int paramSize;
     int sizeNoVirtual; /* size without virtual classes and thunks */
     struct sym *parent;
     struct sym *parentClass;
@@ -498,7 +501,7 @@ typedef struct sym
         unsigned isExplicit:1; // explicit constructor or conversion function
         unsigned specialized:1; // is a template specialization        
         unsigned packed:1; // packed template param instance
-        unsigned instantiated:1; // instantiated template
+        unsigned instantiated; // instantiated template
         unsigned performedDeferred : 1; // structured type has deferred compilation done already
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
         unsigned temp : 1; // temporary boolean...

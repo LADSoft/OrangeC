@@ -292,21 +292,23 @@ static void insertTLSInitializer(SYMBOL *sp, INITIALIZER *init)
 }
 void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init)
 {
-    DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
-    di->sp = sp;
-    di->init = init;
-    if (sp->linkage3 == lk_threadlocal)
+    if (!ignore_global_init)
     {
-        di->next = TLSDestructors;
-        TLSDestructors = di;
-    }
-    else
-    {
-        di->next = dynamicDestructors;
-        dynamicDestructors = di;
-    }
-//	genstorage(sp->tp->size);
-    
+        DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
+        di->sp = sp;
+        di->init = init;
+        if (sp->linkage3 == lk_threadlocal)
+        {
+            di->next = TLSDestructors;
+            TLSDestructors = di;
+        }
+        else
+        {
+            di->next = dynamicDestructors;
+            dynamicDestructors = di;
+        }
+    //	genstorage(sp->tp->size);
+    }    
 }
 static void dumpDynamicInitializers(void)
 {

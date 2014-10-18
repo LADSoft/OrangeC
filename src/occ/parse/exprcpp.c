@@ -608,7 +608,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             SYMBOL *sp = NULL;
             sp = anonymousVar(sc_auto, *tp)->v.sp;
             lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE, flags);
-            *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL, flags & _F_NOINLINE);
+            *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL, flags & _F_NOINLINE, FALSE);
             if (sp)
             {
                 EXPRESSION **e1 = exp;
@@ -1713,7 +1713,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 if (init->exp)
                 {
-                    *exp = convertInitToExpression(tp1, NULL, funcsp, init, base, flags & _F_NOINLINE);
+                    *exp = convertInitToExpression(tp1, NULL, funcsp, init, base, flags & _F_NOINLINE, FALSE);
                 }
                 if (arrSize && !isstructured(*tp))
                 {

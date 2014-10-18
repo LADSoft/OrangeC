@@ -54,6 +54,7 @@ extern TYPE stddoublecomplex;
 extern TYPE stdlongdoublecomplex;
 extern TYPE stdchar16t;
 extern TYPE stdchar32t;
+extern TYPE stdpointer;
 extern int nextLabel;
 extern SYMBOL *theCurrentFunc;
 extern NAMESPACEVALUES *localNameSpace;
@@ -970,7 +971,7 @@ BOOLEAN lvalue(EXPRESSION *exp)
             return FALSE;
     }
 }
-EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN noinline)
+EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN noinline, BOOLEAN isdest)
 {
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
@@ -1237,6 +1238,24 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             }
         }
         init = init->next;
+    }
+    if (sp->storage_class == sc_localstatic)
+    {
+        if (isdest)
+        {
+            rv = exprNode(en_voidnz, exprNode(en_void, sp->localInitGuard, rv), intNode(en_c_i, 0));        
+        }
+        else
+        {
+            EXPRESSION *guard = anonymousVar(sc_static, &stdint);
+            insertInitSym(guard->v.sp);
+            deref(&stdpointer, &guard);
+            optimize_for_constants(&rv);
+            rv = exprNode(en_voidnz, exprNode(en_void, 
+                                              exprNode(en_not, guard, NULL), 
+                                              exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))), intNode(en_c_i, 0));        
+            sp->localInitGuard = guard;
+        }
     }
     if (isstructured(tp) && !cparams.prm_cplusplus)
     {

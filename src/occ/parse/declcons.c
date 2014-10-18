@@ -1410,7 +1410,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
     {
         EXPRESSION *exp;
         STATEMENT *st = stmtNode(NULL,b, st_expr);
-        exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE);
+        exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE, FALSE);
         optimize_for_constants(&exp);
         st->select = exp;
     }
@@ -1423,7 +1423,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
         STATEMENT *st;
         if (member->init->exp)
         {
-            exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE);
+            exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE, FALSE);
         }
         else
         {

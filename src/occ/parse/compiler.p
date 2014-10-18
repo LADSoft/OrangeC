@@ -345,7 +345,7 @@ void cast(TYPE *tp, EXPRESSION **exp);
 BOOLEAN castvalue(EXPRESSION *exp);
 BOOLEAN lvalue(EXPRESSION *exp);
 BOOLEAN xvalue(EXPRESSION *exp);
-EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN noinline);
+EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN noinline, BOOLEAN isdest);
 BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source);
 BOOLEAN isconstzero(TYPE *tp, EXPRESSION *exp);
 BOOLEAN isarithmeticconst(EXPRESSION *exp);

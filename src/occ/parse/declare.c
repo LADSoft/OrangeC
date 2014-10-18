@@ -5254,14 +5254,14 @@ jointemplate:
                                 else if (!sp->label)
                                     sp->label = nextLabel++;
                             lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
-                            if (sp->storage_class == sc_auto || sp->storage_class == sc_register)
+                            if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_localstatic && sp->init && !IsConstantExpression(sp->init->exp, FALSE))
                             {
                                 if (sp->init)
                                 {
                                     STATEMENT *st ;
                                     currentLineData(block, hold,0);
                                     st = stmtNode(hold, block, st_expr);
-                                    st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE);
+                                    st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE, FALSE);
                                 }
                             }
                         }

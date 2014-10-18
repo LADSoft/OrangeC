@@ -319,7 +319,7 @@ static void dumpDynamicInitializers(void)
         EXPRESSION *exp = NULL;
         STATEMENT *stmt;
         stmt = stmtNode(NULL, NULL, st_expr);
-        exp = convertInitToExpression(dynamicInitializers->init->basetp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL, FALSE);
+        exp = convertInitToExpression(dynamicInitializers->init->basetp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL, FALSE, FALSE);
         optimize_for_constants(&exp);
         stmt->select = exp;
         stmt->next = st;
@@ -368,7 +368,7 @@ static void dumpTLSInitializers(void)
             EXPRESSION *exp;
             STATEMENT *stmt;
             stmt = stmtNode(NULL, NULL, st_expr);
-            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, NULL, TLSInitializers->init, NULL, FALSE);
+            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, NULL, TLSInitializers->init, NULL, FALSE, FALSE);
             optimize_for_constants(&exp);
             stmt->select = exp;
             stmt->next = st;
@@ -392,7 +392,7 @@ static void dumpDynamicDestructors(void)
     STATEMENT *st = NULL, **stp = &st;
     while (dynamicDestructors)
     {
-        EXPRESSION *exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, NULL, dynamicDestructors->init, NULL, FALSE);
+        EXPRESSION *exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, NULL, dynamicDestructors->init, NULL, FALSE, TRUE);
         *stp = stmtNode(NULL, NULL, st_expr);
         optimize_for_constants(&exp);
         (*stp)->select = exp;
@@ -438,7 +438,7 @@ static void dumpTLSDestructors(void)
         SetLinkerNames(funcsp, lk_none);
         while (TLSDestructors)
         {
-            EXPRESSION *exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, NULL, TLSDestructors->init, NULL, FALSE);
+            EXPRESSION *exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, NULL, TLSDestructors->init, NULL, FALSE, TRUE);
             *stp = stmtNode(NULL, NULL, st_expr);
             optimize_for_constants(&exp);
             (*stp)->select = exp;
@@ -605,7 +605,8 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
         {
             if (cparams.prm_cplusplus)
             {
-                insertDynamicInitializer(sp, init);
+                if (sp->storage_class != sc_localstatic)
+                    insertDynamicInitializer(sp, init);
                 return 0;
             }
             else
@@ -666,7 +667,8 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     }
                     else if (cparams.prm_cplusplus)
                     {
-                        insertDynamicInitializer(sp, init);
+                        if (sp->storage_class != sc_localstatic)
+                            insertDynamicInitializer(sp, init);
                         return 0;
                     }
                     else
@@ -2121,7 +2123,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             }
             callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, (flags & _F_NOINLINE), implicit, FALSE); 
             initInsert(&it, itype, exp, offset, TRUE);
-            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
+            if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {
                 insertDynamicInitializer(base, it);
             }
@@ -2160,7 +2162,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             {
                 INITIALIZER *it = NULL;
                 initInsert(&it, itype, exp1, offset, FALSE);
-                if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
+                if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
                 {
                     insertDynamicInitializer(base, it);
                 }
@@ -2337,7 +2339,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     last += s;
                 }
             }
-            if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
+            if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
             {
                 *init = NULL;
                 insertDynamicInitializer(base, first);
@@ -2922,7 +2924,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 EXPRESSION *exp = baseexp;
                 callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, (flags & _F_NOINLINE), TRUE, FALSE);
                 initInsert(&it, z, exp, 0, TRUE);
-                if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member && storage_class_in != sc_mutable)
+                if (storage_class_in != sc_auto && storage_class_in != sc_localstatic && storage_class_in != sc_parameter && storage_class_in != sc_member && storage_class_in != sc_mutable)
                 {
                     insertDynamicInitializer(sp, it);
                 }
@@ -3041,6 +3043,8 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     tmpl = tmpl->parentClass;
             if (!tmpl)
             {
+                if (sp->init && sp->storage_class == sc_localstatic && !IsConstantExpression(sp->init->exp, FALSE))
+                    sp->init = NULL;
                 insertInitSym(sp);
             }
         }       
@@ -3051,7 +3055,9 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         InsertInlineData(sp);
     } 
     if (sp->init)
+    {
         declareAndInitialize = TRUE;
+    }
 
     DecGlobalFlag();    
     initializingGlobalVar = FALSE;

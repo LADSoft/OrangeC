@@ -1736,7 +1736,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                             }
                             hr = hr->next;
                         }
-                        p->exp = convertInitToExpression(stype, NULL, theCurrentFunc, init, thisptr, noinline);
+                        p->exp = convertInitToExpression(stype, NULL, theCurrentFunc, init, thisptr, noinline, FALSE);
                         if (!isref(sym->tp))
                             sp->stackblock = TRUE;
                         done = TRUE;
@@ -1799,7 +1799,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN noinli
                         n += btp->size;
                         pinit = pinit->next;
                     }
-                    p->exp = convertInitToExpression(sym->tp, NULL, theCurrentFunc, init, thisptr, noinline);
+                    p->exp = convertInitToExpression(sym->tp, NULL, theCurrentFunc, init, thisptr, noinline, FALSE);
                     p->tp = sym->tp;
                     done = TRUE;
                 }
@@ -3639,6 +3639,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 tp1->btp = btp->btp;
                 *tp = tp1;
                 *exp = varNode(en_auto, basetype(funcsp->tp)->syms->table[0]->p);
+                deref(&stdpointer, exp);
                 *exp = exprNode(en_add, *exp, intNode(en_c_i, oldexp->v.sp->offset));
             }
         }
@@ -4223,7 +4224,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                         insert(sp, localNameSpace->syms);
                     }
                     lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE, flags );
-                    *exp = convertInitToExpression(*tp, NULL, funcsp, init, NULL, flags & _F_NOINLINE);
+                    *exp = convertInitToExpression(*tp, NULL, funcsp, init, NULL, flags & _F_NOINLINE, FALSE);
                 }
                 else
                 { 
@@ -5051,7 +5052,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         spinit = anonymousVar(sc_localstatic, tp1)->v.sp;
                         insert(spinit, localNameSpace->syms);
                         lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, tp1, spinit, FALSE, flags);
-                        exp1 = convertInitToExpression(tp1, NULL, funcsp, init, exp1, flags & _F_NOINLINE);
+                        exp1 = convertInitToExpression(tp1, NULL, funcsp, init, exp1, flags & _F_NOINLINE, FALSE);
                     }
                     else
                     {

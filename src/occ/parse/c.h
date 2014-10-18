@@ -412,6 +412,7 @@ typedef struct sym
     struct sym *parentClass;
     struct sym *parentNameSpace;
     struct sym *vtabsp;
+    EXPRESSION *localInitGuard;
     NAMESPACEVALUES *nameSpaceValues; /* for a namespace SP */
     LINEDATA *linedata;
     enum e_sc storage_class; /* storage class */

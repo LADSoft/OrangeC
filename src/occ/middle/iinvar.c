@@ -124,10 +124,12 @@ static void nokeep(int tnum)
     if (i && !i->invarNoKeep) // in case of variable that never had its value defined
     {
         i->invarNoKeep = TRUE;
+        /*
         if (i->temps & TEMP_LEFT)
             nokeep(i->dc.left->offset->v.sp->value.i);
         if (i->temps & TEMP_RIGHT)
             nokeep(i->dc.right->offset->v.sp->value.i);
+        */
     }
 }
 static BOOLEAN IsAncestor(BLOCK *b1, BLOCK *b2)
@@ -272,7 +274,6 @@ void ScanForInvariants(BLOCK *b)
 }
 void MoveLoopInvariants(void)
 {
-    /*
     int i;
     refs = NULL;
     for (i=0; i < blockCount; i++)
@@ -283,5 +284,4 @@ void MoveLoopInvariants(void)
     current = 1;
     ScanForInvariants(blockArray[0]);
     WeedRefs();
-    */
 }

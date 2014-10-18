@@ -493,7 +493,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
     {
         memset(&expx, 0, sizeof(expx));
         expx.type = en_c_i;
-        exp = baseClassOffset(sp->parentClass, membertp->sp, exp);
+        exp = baseClassOffset(sp->parentClass, membertp->sp, &exp);
         optimize_for_constants(&exp);
         if (isfunction(sp->tp))
         {

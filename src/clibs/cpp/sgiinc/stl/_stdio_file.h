@@ -169,7 +169,7 @@ inline ptrdiff_t _FILE_I_avail(const FILE& __f)
   { return __f.level; }
 
 inline char& _FILE_I_preincr(FILE& __f)  { return *++(char *)__f.curp; }
-inline char& _FILE_I_postincr(FILE& __f) { return *(char *)__f.curp; }
+inline char& _FILE_I_postincr(FILE& __f) { return *(char *)__f.curp++; }
 inline char& _FILE_I_predecr(FILE& __f)  { return *--(char *)__f.curp; }
 inline char& _FILE_I_postdecr(FILE& __f) { return *(char *)__f.curp--; }
 inline void  _FILE_I_bump(FILE& __f, int __n) { __f.curp += __n; }

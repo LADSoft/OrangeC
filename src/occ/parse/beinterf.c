@@ -474,7 +474,8 @@ int needsAtomicLockFromType(TYPE *tp)
 }
 static int basesize(ARCH_SIZING *p, TYPE *tp)
 {
-    switch (basetype(tp)->type)
+    tp = basetype(tp);
+    switch (tp->type)
     {
         case bt_char16_t:
             return 2;
@@ -538,8 +539,10 @@ static int basesize(ARCH_SIZING *p, TYPE *tp)
         case bt_union:
             if (p->a_struct)
                 return p->a_struct;
+            else if (tp->alignment)
+                return tp->alignment;
             else
-                return tp->alignment ? tp->alignment: 1;
+                return tp->sp->structAlign?  tp->sp->structAlign : 1;
         default:
 /*            diag("basesize: unknown type");*/
             return 1;

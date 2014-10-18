@@ -188,6 +188,7 @@ void ios_base::_S_uninitialize()
 {
   // Note that destroying output streambufs flushes the buffers.
 
+  try {
   istream* ptr_cin  = reinterpret_cast<istream*>(&cin);
   ostream* ptr_cout = reinterpret_cast<ostream*>(&cout);
   ostream* ptr_cerr = reinterpret_cast<ostream*>(&cerr);
@@ -224,6 +225,8 @@ void ios_base::_S_uninitialize()
   ptr_wcerr->~wostream();
   ptr_wclog->~wostream();
 #endif
+  }
+  catch (...) { }
   // Shut down the locale subsystem.
   locale::_S_uninitialize();
 }

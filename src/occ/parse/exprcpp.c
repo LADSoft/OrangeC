@@ -96,17 +96,30 @@ void checkscope(TYPE *tp1, TYPE *tp2)
             error(ERR_SCOPED_TYPE_MISMATCH);
     }
 }
+static EXPRESSION **findPointerToExpression(EXPRESSION **parent, EXPRESSION *expr)
+{
+    EXPRESSION *y;
+    if (*parent == expr)
+        return parent;
+    y = findPointerToExpression(&(*parent)->left, expr);
+    if (y)
+        return y;
+    y = findPointerToExpression(&(*parent)->right, expr);
+    if (y)
+        return y;
+    return NULL;
+}
 EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en)
 {
     EXPRESSION *rv = en;
-    BASECLASS *lst = derived->baseClasses;
-    if (base == derived)
-        rv = en;
-    else
+    if (base != derived)
     {
+        BASECLASS *lst = derived->baseClasses;
         while(lst)
         {
             // start by looking at all the explicit base clases
+            // this doesn't need to do a deep search as all existing base classes
+            // of all other base classes are listed here.
             if (lst->cls == base)
             {                
                 if (lst->isvirtual)
@@ -145,7 +158,24 @@ EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en)
                 }
                 vbase = vbase->next;
             }
-            
+            if (!vbase)
+            {
+                // if still not found do a deep search through vbase entries
+                vbase = derived->vbaseEntries;
+                while (vbase)
+                {
+                    rv = baseClassOffset(base, vbase->cls, en);
+                    if (rv != en )
+                    {
+                        EXPRESSION **p = findPointerToExpression(&rv, en);
+                        EXPRESSION *ec = intNode(en_c_i, vbase->pointerOffset);
+                        *p = exprNode(en_add, *p, ec);
+                        deref(&stdpointer, p);
+                        break;
+                    }
+                    vbase = vbase->next;
+                }
+            }
         }
     }
     return rv;
@@ -1767,6 +1797,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     int lbl = beGetLabel;
     char *name = overloadNameTab[CI_DELETE];
     EXPRESSION *in;
+    EXPRESSION *var, *asn;
     lex = getsym();
     if (MATCHKW(lex, openbr))
     {
@@ -1779,8 +1810,10 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
     if (!ispointer(*tp))
         error(ERR_POINTER_TYPE_EXPECTED);
-    in = *exp;
-    exp2 = *exp;
+    asn = *exp;
+    var = anonymousVar(sc_auto, *tp);
+    deref(*tp, &var);
+    in = exp2 = *exp = var;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
         callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, flags & _F_NOINLINE, TRUE, FALSE);
@@ -1828,6 +1861,8 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         *exp = exp1;
         *tp = s1->tp;
     }
+    var = exprNode(en_assign, var, asn);
+    *exp = exprNode(en_void, var, *exp); 
     *tp = &stdvoid;
     return lex;
 }

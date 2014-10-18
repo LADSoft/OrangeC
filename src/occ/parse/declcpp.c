@@ -857,6 +857,8 @@ void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings)
 BOOLEAN usesVTab(SYMBOL *sym)
 {
     HASHREC *hr;
+    BASECLASS *base;
+    VTABENTRY *vt;
     hr = sym->tp->syms->table[0];
     while (hr)
     {
@@ -872,6 +874,13 @@ BOOLEAN usesVTab(SYMBOL *sym)
             }
         }
         hr = hr->next;
+    }
+    base = sym->baseClasses;
+    while (base)
+    {
+        if (base->cls->hasvtab)
+            return TRUE;
+        base = base->next;
     }
     return FALSE;
 }

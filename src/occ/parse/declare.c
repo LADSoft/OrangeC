@@ -1688,6 +1688,20 @@ static LEXEME *nestedTypeSearch(LEXEME *lex, SYMBOL **sym)
     }
     return lex;
 }
+static BOOLEAN isPointer(LEXEME *lex)
+{
+    while (KWTYPE(lex, (TT_TYPEQUAL | TT_LINKAGE)))
+        lex = getsym();
+    if (ISKW(lex))
+        switch(KW(lex))
+        {
+            case and:
+            case land:
+            case star:
+                return TRUE;
+        }
+    return FALSE;
+}
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out, BOOLEAN inTemplate, enum e_sc storage_class, 
                      enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3_in, 
                      enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, BOOLEAN isTypedef)
@@ -2290,7 +2304,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                             if (sp->parentTemplate)
                                 sp = sp->parentTemplate;
                             lex = GetTemplateArguments(lex, funcsp, &lst);
-                            sp = GetClassTemplate(sp, lst, isTypedef && getStructureDeclaration(), storage_class, FALSE);
+                            sp = GetClassTemplate(sp, lst, isPointer(lex) || isTypedef && getStructureDeclaration(), storage_class, FALSE);
                         }
                         else
                         {

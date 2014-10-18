@@ -1564,7 +1564,7 @@ static void virtualBaseThunks(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *thisptr)
         st->select = first;
     }
 }
-static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr)
+static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr, BOOLEAN isvirtual)
 {
     VTABENTRY *entries = sym->vtabEntries;
     EXPRESSION *first = NULL, **pos = &first;
@@ -1573,7 +1573,7 @@ static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr)
     localsp = sym->vtabsp;
     while (entries)
     {
-        if (!entries->isdead)
+        if (!entries->isdead && entries->isvirtual == isvirtual)
         {
             EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, entries->dataOffset));
             EXPRESSION *right = exprNode(en_add, exprNode(en_add, varNode(en_global, localsp), intNode(en_c_i, entries->vtabOffset)), intNode(en_c_i, VTAB_XT_OFFS));
@@ -2043,6 +2043,8 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
             st->label = lbl;
             virtualBaseThunks(b, sym, thisptr);
             doVirtualBases(b, sym, cons->memberInitializers, sym->vbaseEntries, thisptr, otherptr, cons, doCopy);
+            if (hasVTab(sym))
+                dovtabThunks(b, sym, thisptr, TRUE);
             st = stmtNode(NULL,b, st_label);
             st->label = lbl;
         }
@@ -2055,7 +2057,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
             bc = bc->next;
         }
         if (hasVTab(sym))
-            dovtabThunks(b, sym, thisptr);
+            dovtabThunks(b, sym, thisptr, FALSE);
         hr = sym->tp->syms->table[0];
         while (hr)
         {

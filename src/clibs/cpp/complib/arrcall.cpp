@@ -31,6 +31,13 @@
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <windows.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <locale.h>
+#include <wchar.h>
+#include "libp.h"
 
 typedef void (*CONSDEST)(void *);
 void __arrCall(void *instance, void *cons, void *dest, int elems, int size)
@@ -46,7 +53,6 @@ void __arrCall(void *instance, void *cons, void *dest, int elems, int size)
                 (*xx)(pos);
                 pos = (void *)((BYTE *)pos + size);
             }
-            ((int *)instance)[-2] = elems; // NEXT field gets the # elems
         }
         catch(...)
         {
@@ -65,7 +71,8 @@ void __arrCall(void *instance, void *cons, void *dest, int elems, int size)
     }
     else if (dest)
     {
-        elems = ((int *)instance)[-2];  // get #elems from the NEXT fields
+        // if we get here it was a new'd array...
+        elems = (((FREELIST *)instance)[-1].size - 8)/size;  // get #elems from the RTL's size field
         pos = (void *)((BYTE *)pos + (elems-1) * size);
         while (pos >= instance)
         {

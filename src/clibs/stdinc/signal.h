@@ -77,7 +77,6 @@ sighandler_t _RTL_FUNC signal(int __sig, sighandler_t __func);
 #define __SIGNAL_H_USING_LIST
 using std::sighandler_t;
 using std::sig_atomic_t;
-using std::_CatcherPTR;
 using std::raise;
 using std::signal;
 #endif

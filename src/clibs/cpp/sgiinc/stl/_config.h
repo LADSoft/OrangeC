@@ -584,7 +584,7 @@
 #if defined(__STL_CLASS_PARTIAL_SPECIALIZATION) \
     && defined(__STL_MEMBER_TEMPLATES) \
     && !defined(_STL_NO_CONCEPT_CHECKS)
-#  define __STL_USE_CONCEPT_CHECKS
+//#  define __STL_USE_CONCEPT_CHECKS
 #endif
 
 

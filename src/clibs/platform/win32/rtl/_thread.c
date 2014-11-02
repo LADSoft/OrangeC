@@ -127,7 +127,7 @@ uintptr_t _RTL_FUNC _beginthreadex(void *security, unsigned stack_size,
     mem->arglist = arglist;
     mem->startmode = 1;
     __ll_enter_critical();
-    mem->handle = CreateThread(security,stack_size,(LPTHREAD_START_ROUTINE)__threadstart,mem,initflag,&thrdaddr);
+    mem->handle = CreateThread(security,stack_size,(LPTHREAD_START_ROUTINE)__threadstart,mem,initflag, thrdaddr);
     __ll_exit_critical();
     if (mem->handle == NULL) {
         int err = GetLastError();

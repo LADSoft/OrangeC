@@ -276,7 +276,7 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
         return NULL;
     if (f->sp->allocaUsed)
         return NULL;
-    if (f->sp->templateParams)
+    if (f->sp->templateParams && !f->sp->specialized)
         return NULL;
     if (!f->sp->inlineFunc.syms)
         return NULL;

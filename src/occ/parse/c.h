@@ -142,7 +142,7 @@ enum e_node
         en_l_l, en_l_ul, en_l_ll, en_l_ull, en_l_f, en_l_d, en_l_ld,  en_l_p, en_l_ref,
         en_l_fi, en_l_di, en_l_ldi, en_l_fc, en_l_dc, en_l_ldc, en_l_fp, en_l_sp, en_l_bit,
         en_nullptr, en_memberptr, en_mp_as_bool, en_mp_compare,
-        en_trapcall, en_func, en_intcall, en_tempref, 
+        en_trapcall, en_func, en_intcall, en_tempref, en_tempshim, 
         en_arraymul, en_arraylsh, en_arraydiv, en_arrayadd, en_structadd,
         en_add, en_sub, en_mul, en_mod, en_div, en_lsh, en_rsh, en_ursh,
         en_cond, en_assign, en_eq, en_ne, 
@@ -198,18 +198,17 @@ enum e_bt
         bt_none
 };
 enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_c, lk_cpp,
-    lk_interrupt, lk_fault, lk_inline, lk_noreturn, lk_threadlocal, 
+    lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal, 
     lk_import, lk_export, lk_auto };
     
 enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 
 #define _F_AMPERSAND 1
-#define _F_NOINLINE 2
-#define _F_PACKABLE 4
-#define _F_SELECTOR 8
-#define _F_INTEMPLATEPARAMS 16
-#define _F_INRETURN 32
-#define _F_INARGS 64
+#define _F_PACKABLE 2
+#define _F_SELECTOR 4
+#define _F_INTEMPLATEPARAMS 8
+#define _F_INRETURN 16
+#define _F_INARGS 32
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
@@ -505,9 +504,13 @@ typedef struct sym
         unsigned instantiated; // instantiated template
         unsigned performedDeferred : 1; // structured type has deferred compilation done already
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
-        unsigned temp : 1; // temporary boolean...
+        unsigned isInline : 1; /* function is a candidate for inline functionality */
+        unsigned temp : 1; // temporary boolean...  
+        unsigned noCoalesceImmed : 1; // set to true if temp or memory address which references an immediate is used
+                                     // other than as the immediate reference      
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
+    int labelCount; /* number of code labels within a function body */ 
     int nextid; /* ID to use for nextage purposes (binary output) */
     int offset; /* address offset of data in the given seg, or optimize register */
     int label; /* label number for statics */
@@ -726,7 +729,6 @@ typedef struct functioncall
     int ascall:1;
     int astemplate:1;
     int noobject:1;
-    int noinline:1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN      16384

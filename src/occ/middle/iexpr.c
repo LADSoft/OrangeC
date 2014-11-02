@@ -2,7 +2,7 @@
     Software License Agreement (BSD License)
     
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
-    All rights reserved.f
+    All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
@@ -63,13 +63,16 @@ extern BLOCKLIST *blocktail;
 extern int catchLevel;
 extern EXPRESSION *xcexp;
 extern int consIndex;
+extern int inlinesym_count;
+extern EXPRESSION *inlinesym_thisptr[MAX_INLINE_NESTING];
 extern LIST *temporarySymbols;
+extern TYPE stdpointer;
 
 int calling_inline;
 
 IMODE *inlinereturnap;
 IMODE *structret_imode;
-LIST *immed_list;
+LIST *immed_list[4091];
 
 SYMBOL *inlinesp_list[MAX_INLINE_NESTING];
 int inlinesp_count;
@@ -93,10 +96,10 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label);
 void iexpr_init(void)
 {
     calling_inline = 0;
-    immed_list = 0;
     inlinesp_count = 0;
     push_nesting = 0;
     this_bound = 0;
+    memset(&immed_list, 0, sizeof(immed_list));
 }
 void iexpr_func_init(void)
 {
@@ -106,20 +109,6 @@ void iexpr_func_init(void)
     memset(immedHash, 0 , sizeof(immedHash));
     memset(castHash, 0, sizeof(castHash));
     incdecList = NULL;
-}
-static void cacheTempSymbol(SYMBOL *sp)
-{
-    if (sp->anonymous && !sp->stackblock && sp->storage_class != sc_parameter)
-    {
-        if (sp->allocate && !sp->inAllocTable)
-        {
-            LIST *lst = Alloc(sizeof(LIST));
-            lst->data = sp;
-            lst->next = temporarySymbols;
-            temporarySymbols = lst;
-            sp->inAllocTable = TRUE;
-        }
-    }
 }
 void DumpIncDec(SYMBOL *funcsp)
 {
@@ -343,6 +332,7 @@ SYMBOL *varsp(EXPRESSION *node)
         case en_global:
         case en_tempref:
         case en_threadlocal:
+        case en_tempshim:
             return node->v.sp;
     }
     return 0;
@@ -417,7 +407,8 @@ IMODE *make_immed(int size, LLONG_TYPE i)
  */
 
 {
-    LIST *a = immed_list;
+    int index = ((ULLONG_TYPE)i)%(sizeof(immed_list)/sizeof(immed_list[0]));
+    LIST *a = immed_list[index];
     IMODE *ap;
     while (a)
     {
@@ -436,8 +427,8 @@ IMODE *make_immed(int size, LLONG_TYPE i)
     
     a = (LIST *)Alloc(sizeof(LIST));
     a->data = ap;
-    a->next = immed_list;
-    immed_list = a;
+    a->next = immed_list[index];
+    immed_list[index] = a;
     DecGlobalFlag();
     return ap;
 }
@@ -805,9 +796,27 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                     gen_icode(i_assn, ap2, ap1, NULL);
                 ap1 = indnode(ap2, siz1);
                 break;
+            case en_tempshim:
+                if (!node->left->v.sp->imvalue)
+                    node->left->v.sp->imvalue = tempreg(natural_size(node), 0);
+                ap1 = node->left->v.sp->imvalue;
+                break;
             case en_auto:
                 sp = node->left->v.sp;
-                cacheTempSymbol(sp);
+                if (sp->thisPtr)
+                {
+                    if (inlinesym_count)
+                    {
+                        EXPRESSION *exp = inlinesym_thisptr[inlinesym_count-1];
+                        if (exp)
+                            return gen_expr(funcsp, exp , 0, natural_size(exp));
+                    }
+                }
+                if (sp->storage_class == sc_parameter && sp->inlineFunc.stmt)
+                {
+                    node = (EXPRESSION *)sp->inlineFunc.stmt;
+                    sp = node->left->v.sp;
+                }
                 if (catchLevel)
                     sp->inCatch = TRUE;
                 if (!sp->imaddress && catchLevel)
@@ -1562,6 +1571,12 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         if (ap)
             return ap;
     }
+    if (!f->sp->noinline && f->sp->isInline)
+    {
+        ap = gen_inline(funcsp, node, flags);
+        if (ap)
+            return ap;
+    }
     {
         int n = sizeParams(f->arguments, funcsp);
         int v = sizeFromISZ(ISZ_ADDR);
@@ -2131,13 +2146,44 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 gen_icode(i_assn, ap2, ap1, NULL);
             rv = ap2;
             break;
+        case en_tempshim:
+            diag("gen_expr: address of tempshim");
+            rv = tempreg(ISZ_ADDR, 0);
+            break;
         case en_auto:
             if (node->v.sp->stackblock)
             {
                 rv = node->v.sp->imvalue;
                 break;
             }
-            cacheTempSymbol(node->v.sp);
+            if (node->v.sp->storage_class == sc_parameter && node->v.sp->inlineFunc.stmt)
+            {
+                EXPRESSION *ep = ((EXPRESSION *)node->v.sp->inlineFunc.stmt);
+                if (ep->left->type == en_tempshim)
+                {
+                    // have to promote a temp variable to a stacked variable
+                    // this can work since we don't clone expression nodes...
+                    EXPRESSION *ep2 = anonymousVar(sc_auto, node->v.sp->tp);
+                    LIST *lst = Alloc(sizeof(LIST));                    
+                    lst->data = ep2->v.sp;
+                    lst->next = temporarySymbols;
+                    temporarySymbols = lst;
+                    ep2->v.sp->inAllocTable = TRUE;
+                    ap1 = gen_expr(funcsp, ep2, F_STORE, natural_size(ep));
+                    ap2 = gen_expr(funcsp, ep, 0, natural_size(ep));
+                    ap3 = LookupImmedTemp(ap2, ap2);
+                    if (ap3 != ap2)
+                    {
+                        gen_icode(i_assn, ap3, ap2, NULL);
+                        ap2 = ap3;
+                    }
+                    gen_icode(i_assn, ap1, ap2, NULL);
+                    ep->type = en_auto;
+                    ep->v.sp = ep2->v.sp;
+                }
+                node = ep;
+            }
+            node->v.sp->allocate = TRUE;
             // fallthrough
         case en_pc:
         case en_global:
@@ -2633,6 +2679,7 @@ int natural_size(EXPRESSION *node)
         case en_global:
         case en_absolute:
         case en_labcon:
+        case en_tempshim:
             return ISZ_ADDR;
         case en_tempref:
             return ISZ_UINT;

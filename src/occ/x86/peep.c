@@ -62,6 +62,19 @@ void o_peepini(void)
 {
     peep_head = peep_tail = 0;
 }
+void oa_adjust_codelab(void *select, int offset)
+{
+    OCODE *peep = (OCODE *)select;
+    if (peep->oper1 && peep->oper1->offset && peep->oper1->offset->type == en_labcon)
+        if (peep->oper1->offset->v.i < 0)
+            peep->oper1->offset->v.i += offset;
+    if (peep->oper2 && peep->oper2->offset && peep->oper2->offset->type == en_labcon)
+        if (peep->oper2->offset->v.i < 0)
+            peep->oper2->offset->v.i += offset;
+    if (peep->oper3 && peep->oper3->offset && peep->oper3->offset->type == en_labcon)
+        if (peep->oper3->offset->v.i < 0)
+            peep->oper3->offset->v.i += offset;
+}
 
 AMODE *makedreg(int r)
 /*

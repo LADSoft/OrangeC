@@ -44,6 +44,7 @@
 
 extern ASMNAME oplst[];
 
+extern int codeLabel;
 extern int prm_assembler;
 extern HASHTABLE *labelSyms;
 extern int usingEsp;
@@ -496,7 +497,7 @@ static EXPRESSION *inasm_ident(void)
             sp->tp = beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
             sp->tp->bits = sp->tp->startbit =  - 1;
-            sp->offset = beGetLabel;
+            sp->offset = codeLabel++;
             insert(sp, labelSyms);
             node = intNode(en_labcon, sp->offset);
         }
@@ -577,7 +578,7 @@ static EXPRESSION *inasm_label(void)
         sp->tp = beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;
         sp->tp->bits = sp->tp->startbit =  - 1;
-        sp->offset = beGetLabel;
+        sp->offset = codeLabel++;
         SetLinkerNames(sp, lk_none);
         insert(sp, labelSyms);
     }

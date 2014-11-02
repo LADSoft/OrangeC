@@ -38,7 +38,6 @@
 #include "compiler.h"
 
 extern COMPILER_PARAMS cparams;
-extern int nextLabel;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern HASHTABLE *labelSyms;
 extern TYPE stdint;
@@ -1728,44 +1727,7 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
         if (seql[l] == CV_USER && seqr[r] == CV_USER && funcl && funcr)
         {
             return 0;
-            /*
-            int v1, v2;
-            TYPE *atype1, *atype2;
-            if (funcl->castoperator)
-            {
-                ltype = basetype(funcl->tp)->btp;
-                atype1 = ((SYMBOL *)basetype(funcl->tp)->syms->table[0]->p)->tp;
-            }
-            else
-            {
-                ltype = ((SYMBOL *)basetype(funcl->tp)->syms->table[0]->p)->tp;
-                atype1 = basetype(funcl->tp)->btp;
-            }
-            if (funcr->castoperator)
-            {
-                rtype = basetype(funcr->tp)->btp;
-                atype2 = ((SYMBOL *)basetype(funcr->tp)->syms->table[0]->p)->tp;
-            }
-            else
-            {
-                rtype = ((SYMBOL *)basetype(funcr->tp)->syms->table[0]->p)->tp;
-                atype2 = basetype(funcr->tp)->btp;
-            }
-            v1 = compareConversions(funcl, funcr, seql +l, seqr + r, 
-                                    ltype, rtype, atype1, NULL, NULL, NULL, lenl-l, lenr-r, TRUE);
-            v2 = compareConversions(funcl, funcr, seql +l, seqr + r, 
-                                    ltype, rtype, atype2, NULL, NULL, NULL, lenl-l, lenr-r, TRUE);
-            if (v1 != v2)
-                if (v1 == 0)
-                    return 1;
-                else if (v2 == 0)
-                    return -1;
-                else
-                    return 0;
-            else
-                return v1;
-            */
-        }
+		}
     }
     // ellipse always returns 0;
     return 0;
@@ -2841,7 +2803,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
         for (i=0; i < m; i++)
             if (seq[i] == CV_NONE)
                 return FALSE;
-        memcpy(arr+pos, seq, 3 * sizeof(enum e_cvsrn));
+        memcpy(arr+pos, seq, m * sizeof(enum e_cvsrn));
         sizes[n++] = m;
         pos += m;
         hr = &(*hr)->next;
@@ -2861,7 +2823,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
         for (i=0; i < m; i++)
             if (seq[i] == CV_NONE)
                 return FALSE;
-        memcpy(arr+pos, seq, 3 * sizeof(enum e_cvsrn));
+        memcpy(arr+pos, seq, m * sizeof(enum e_cvsrn));
         sizes[n++] = m;
         pos += m;
         return TRUE;
@@ -2913,7 +2875,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                     for (i=0; i < m; i++)
                         if (seq[i] == CV_NONE)
                             return FALSE;
-                    memcpy(arr+pos, seq, 3 * sizeof(enum e_cvsrn));
+                    memcpy(arr+pos, seq, m * sizeof(enum e_cvsrn));
                     sizes[n++] = m;
                     pos += m;
                 }
@@ -2992,7 +2954,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                 for (i=0; i < m; i++)
                     if (seq[i] == CV_NONE)
                         return FALSE;
-                memcpy(arr+pos, seq, 3 * sizeof(enum e_cvsrn));
+                memcpy(arr+pos, seq, m * sizeof(enum e_cvsrn));
                 sizes[n++] = m;
                 pos += m;
             }

@@ -62,7 +62,6 @@ extern TYPE stdfunc;
 extern int prm_globsub, prm_copyprop;
 extern int prm_optlive;
 extern int blockCount, exitBlock;
-extern int nextLabel;
 extern int total_errors;
 extern TEMP_INFO **tempInfo;
 extern BOOLEAN functionHasAssembly;
@@ -74,13 +73,19 @@ extern BLOCK **blockArray;
 extern int maxBlocks, maxTemps;
 extern int retlab, startlab;
 extern LIST *temporarySymbols;
+extern int inlinesym_count;
 
+IMODE *returnImode;
+int retcount;
 int consIndex;
 EXPRESSION *xcexp;
 int catchLevel;
 int tempCount;
 int optflags = ~0;
+int codeLabelOffset;
+
 static LIST *mpthunklist;
+
 
 static int breaklab;
 static int contlab;
@@ -91,6 +96,7 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp);
 void genstmtini(void)
 {
     mpthunklist = NULL;
+    returnImode = NULL;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -251,7 +257,7 @@ void gather_cases(CASEDATA *cd, struct cases *cs)
     }
     while (cd)
     {
-        cs->ptrs[pos].label = cd->label;
+        cs->ptrs[pos].label = cd->label + codeLabelOffset;
         cs->ptrs[pos++].id = cd->val;
         cd = cd->next;
     }
@@ -282,7 +288,7 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
     ULLONG_TYPE a = 1;
 #endif
     oldbreak = breaklab;
-    breaklab = stmt->breaklabel;
+    breaklab = stmt->breaklabel + codeLabelOffset;
     memset(&cs,0,sizeof(cs));
 #ifndef USE_LONGLONG
     cs.top = INT_MIN;
@@ -308,7 +314,7 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
             doatomicFence(funcsp, stmt->select, barrier);
         }
     }
-    gen_icode2(i_coswitch, make_immed(ISZ_UINT,cs.count), ap, make_immed(ISZ_UINT,cs.top - cs.bottom), stmt->label);
+    gen_icode2(i_coswitch, make_immed(ISZ_UINT,cs.count), ap, make_immed(ISZ_UINT,cs.top - cs.bottom), stmt->label + codeLabelOffset);
     gather_cases(stmt->cases,&cs);
     qsort(cs.ptrs, cs.count, sizeof(cs.ptrs[0]), gcs_compare);
     for (i = 0; i < cs.count; i++)
@@ -320,18 +326,18 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
 
 void genselect(STATEMENT *stmt, SYMBOL *funcsp, BOOLEAN jmptrue)
 {
-    if (stmt->altlabel)
+    if (stmt->altlabel + codeLabelOffset)
     {
-//		gen_label(stmt->altlabel);
+//		gen_label(stmt->altlabel + codeLabelOffset);
 //		intermed_tail->dc.opcode = i_skipcompare;
     }
     if (jmptrue)
-        truejp(stmt->select, funcsp, stmt->label);
+        truejp(stmt->select, funcsp, stmt->label + codeLabelOffset);
     else
-        falsejp(stmt->select, funcsp, stmt->label);
-    if (stmt->altlabel)
+        falsejp(stmt->select, funcsp, stmt->label + codeLabelOffset);
+    if (stmt->altlabel + codeLabelOffset)
     {
-//		gen_label(stmt->altlabel);
+//		gen_label(stmt->altlabel + codeLabelOffset);
 //		intermed_tail->dc.opcode = i_skipcompare;
     }
 }
@@ -371,10 +377,10 @@ static void gen_catch(SYMBOL *funcsp, STATEMENT *stmt, int startLab, int transfe
     stmt->tryStart = tryStart;
     stmt->tryEnd = tryEnd;
 }
-void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE *allocaAP)
 /*
  *      generate a return statement.
  */
+void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE *allocaAP)
 {
     IMODE *ap = NULL,  *ap1, *ap3;
     EXPRESSION ep;
@@ -432,8 +438,16 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
     }
     if (ap)
     {
-        ap1 = tempreg(size, 0);
-        ap1->retval = TRUE;
+        if (returnImode)
+            ap1 = returnImode;
+        else
+        {
+            ap1 = tempreg(size, 0);
+            if (!inlinesym_count)
+                ap1->retval = TRUE;
+            else
+                returnImode = ap1;
+        }
         gen_icode(i_assn, ap1, ap, 0);
     }
     /* create the return or a branch to the return
@@ -446,29 +460,52 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         {
            retsize = funcsp->paramsize ;
         }
-        gen_label(retlab);
+        if (1 || !inlinesym_count || !noepilogue && funcsp->retcount > 1)
+        {
+            gen_label(retlab);
+        }
+        else
+        {
+            QUAD *q = intermed_tail;
+            while (q && q->dc.opcode != i_block && q->dc.opcode != i_goto)
+            {
+                q = q->back;
+            }
+            if (q && q->dc.opcode == i_goto)
+            {
+                q->back->fwd = q->fwd;
+                if (q->fwd)
+                    q->fwd->back = q->back;
+                else
+                    intermed_tail = q->back;
+                addblock(-1);
+            }
+        }
         if (!noepilogue)
         {
-            if (allocaAP)
-            {
-                gen_icode(i_loadstack, 0, allocaAP, 0);
-            }
-/*			if (funcsp->loadds && funcsp->farproc)
-                gen_icode(i_unloadcontext,0,0,0);
-*/
         
-            if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcRundownFunc)
-                gen_expr(funcsp, funcsp->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
-            gen_icode(i_epilogue,0,0,0);
-            if (funcsp->linkage == lk_interrupt || funcsp->linkage == lk_fault) {
-/*				if (funcsp->loadds)
-                    gen_icode(i_unloadcontext,0,0,0);
-*/
-                gen_icode(i_popcontext, 0,0,0);
-                gen_icode(i_rett, 0, make_immed(ISZ_UINT,funcsp->linkage == lk_interrupt), 0);
-            } else
+            if (!inlinesym_count)
             {
-                gen_icode(i_ret, 0, make_immed(ISZ_UINT,retsize), 0);
+                if (allocaAP)
+                {
+                    gen_icode(i_loadstack, 0, allocaAP, 0);
+                }
+    /*			if (funcsp->loadds && funcsp->farproc)
+                    gen_icode(i_unloadcontext,0,0,0);
+    */
+                if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcRundownFunc)
+                    gen_expr(funcsp, funcsp->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
+                gen_icode(i_epilogue,0,0,0);
+                if (funcsp->linkage == lk_interrupt || funcsp->linkage == lk_fault) {
+    /*				if (funcsp->loadds)
+                        gen_icode(i_unloadcontext,0,0,0);
+    */
+                    gen_icode(i_popcontext, 0,0,0);
+                    gen_icode(i_rett, 0, make_immed(ISZ_UINT,funcsp->linkage == lk_interrupt), 0);
+                } else
+                {
+                    gen_icode(i_ret, 0, make_immed(ISZ_UINT,retsize), 0);
+                }
             }
         }
     }
@@ -518,7 +555,7 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
                 gen_varstart(stmt->select);
                 break;
             case st_dbgblock:
-                gen_dbgblock(stmt->label);
+                gen_dbgblock(stmt->label + codeLabelOffset);
                 break;
                 break;
             case st_block:
@@ -526,31 +563,32 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
                 genstmt(stmt->blockTail, funcsp);
                 break;
             case st_label:
-                gen_label((int)stmt->label);
+                gen_label((int)stmt->label + codeLabelOffset);
                 break;
             case st_goto:
-                gen_igoto(i_goto, (int)stmt->label);
+                gen_igoto(i_goto, (int)stmt->label + codeLabelOffset);
                 break;
             case st_asmgoto:
-                gen_igoto(i_asmgoto, (int)stmt->label);
+                gen_igoto(i_asmgoto, (int)stmt->label + codeLabelOffset);
                 break;
             case st_asmcond:
-                gen_igoto(i_asmcond, (int)stmt->label);
+                gen_igoto(i_asmcond, (int)stmt->label + codeLabelOffset);
                 break;
             case st_try:
-                gen_try(funcsp, stmt, stmt->label, stmt->endlabel, stmt->breaklabel, stmt->lower);
+                gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
                 break;
             case st_catch:
             {
                 STATEMENT *last;
                 while (stmt && stmt->type == st_catch)
                 {
-                    gen_catch(funcsp, stmt, stmt->altlabel, stmt->breaklabel, stmt->lower);
+                    // the following adjustment to altlabel is required to get the XT info proper
+                    gen_catch(funcsp, stmt, stmt->altlabel += codeLabelOffset, stmt->breaklabel + codeLabelOffset, stmt->lower);
                     last = stmt;
                     stmt = stmt->next;
                 }
                 stmt = last;
-                gen_label(stmt->breaklabel);
+                gen_label(stmt->breaklabel + codeLabelOffset);
             }
                 break;
             case st_expr:
@@ -593,6 +631,57 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
         stmt = stmt->next;
     }
     return rv;
+}
+// simplify addresses to make the aliasing work faster...
+// this is necessary because the inlining replaces what were
+// references to 'this' with addresses
+//
+// it also improves teh code generation when inlining functions
+// with parameters passed by reference...
+typedef struct _data
+{
+    struct _data *next;
+    IMODE *mem;
+    IMODE *addr;
+} DATA;
+static    DATA *buckets[32];
+static void StoreInBucket(IMODE *mem, IMODE *addr)
+{
+    DATA *lst;
+    int bucket = (int)mem;
+    bucket = (bucket >> 16) ^ (bucket >> 8) ^ (bucket >> 2);
+    bucket %= 32;
+    lst = buckets[bucket];
+    while (lst)
+    {
+        if (lst->mem == mem)
+        {
+            if (lst->addr != addr)
+                lst->mem->offset->v.sp->noCoalesceImmed = TRUE;
+            return;
+        }
+        lst = lst->next;
+    }
+    lst = Alloc(sizeof(DATA));
+    lst->mem = mem;
+    lst->addr = addr;
+    lst->next = buckets[bucket];
+    buckets[bucket] = lst;
+}
+static IMODE *GetBucket(IMODE *mem)
+{
+    DATA *lst;
+    int bucket = (int)mem;
+    bucket = (bucket >> 16) ^ (bucket >> 8) ^ (bucket >> 2);
+    bucket %= 32;
+    lst = buckets[bucket];
+    while (lst)
+    {
+        if (lst->mem == mem)
+            return lst->addr;
+        lst = lst->next;
+    }
+    return NULL;
 }
 /* coming into this routine we have two major requirements:
  * first, imodes that describe the same thing are the same object
@@ -778,18 +867,24 @@ void genfunc(SYMBOL *funcsp)
  *      generate a function body and dump the icode
  */
 {
+    IMODE *oldReturnImode = returnImode;
     IMODE *allocaAP = NULL;
     SYMBOL *oldCurrentFunc;
     EXPRESSION *funcexp = varNode(en_global, funcsp);
     SYMBOL *tmpl = funcsp;
     if (total_errors)
         return;
+    returnImode = NULL;
     while (tmpl)
         if (tmpl->templateLevel)
             break;
         else
             tmpl = tmpl->parentClass;
-//	//printf("%s\n", funcsp->name);
+            
+    /* for inlines */
+    codeLabelOffset = nextLabel - INT_MIN ;
+    nextLabel += funcsp->labelCount;
+
     temporarySymbols = NULL;
     contlab = breaklab =  - 1;
     structret_imode = 0 ;
@@ -798,6 +893,7 @@ void genfunc(SYMBOL *funcsp)
     blockMax = 0;
     exitBlock = 0;
     consIndex = 0;
+    retcount = 0;
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();
@@ -813,15 +909,14 @@ void genfunc(SYMBOL *funcsp)
     }
     else
     {
-        xcexp = NULL;
-    }
-    /*      firstlabel = nextLabel;*/
+        xcexp = NULL; 
+   }
     cseg();
     gen_line(funcsp->linedata);
     gen_func(funcexp, 1);
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
-    if (cparams.prm_cplusplus && (funcsp->linkage == lk_inline || tmpl))
+    if (funcsp->linkage == lk_virtual || tmpl)
         gen_virtual(funcsp, FALSE);
     else
     {
@@ -842,11 +937,11 @@ void genfunc(SYMBOL *funcsp)
     if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)
     {
         gen_expr(funcsp, funcsp->xc->xcInitializeFunc, F_NOVALUE, ISZ_UINT);
-        gen_label(funcsp->xc->xcInitLab);
+        gen_label(funcsp->xc->xcInitLab + codeLabelOffset);
     }
 /*    if (funcsp->loadds && funcsp->farproc) */
 /*	        gen_icode(i_loadcontext, 0,0,0); */
-    AllocateLocalContext(NULL, funcsp);
+    AllocateLocalContext(NULL, funcsp, nextLabel++);
     if (funcsp->allocaUsed)
     {
             EXPRESSION *allocaExp = anonymousVar(sc_auto, &stdpointer);
@@ -867,7 +962,7 @@ void genfunc(SYMBOL *funcsp)
     tFree();
     InsertParameterThunks(funcsp, blockArray[1]);
     optimize(funcsp);
-    FreeLocalContext(NULL, funcsp);
+    FreeLocalContext(NULL, funcsp, nextLabel++);
         
     AllocateStackSpace(funcsp);
     FillInPrologue(intermed_head, funcsp);
@@ -875,13 +970,14 @@ void genfunc(SYMBOL *funcsp)
     rewrite_icode(); /* Translate to machine code & dump */
     if (chosenAssembler->gen->post_function_gen)
         chosenAssembler->gen->post_function_gen(funcsp, intermed_head);
-    if (cparams.prm_cplusplus && (funcsp->linkage == lk_inline || tmpl))
+    if (funcsp->linkage == lk_virtual || tmpl)
         gen_endvirtual(funcsp);
     XTDumpTab(funcsp);
     intermed_head = NULL;
     dag_rundown();
     oFree();
     theCurrentFunc = oldCurrentFunc;
+    returnImode = oldReturnImode;
     if (blockCount > maxBlocks)
         maxBlocks = blockCount;
     if (tempCount > maxTemps)

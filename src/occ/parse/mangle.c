@@ -514,11 +514,11 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
         linkage = lk_c;
     if (linkage == lk_c && !cparams.prm_cmangle)
         linkage = lk_stdcall;
-    if (linkage == lk_inline)
+    if (linkage == lk_virtual)
         if (cparams.prm_cplusplus)
             linkage = lk_cpp;
         else
-            linkage = lk_c;                
+            linkage = lk_c;  
         
     switch (linkage)
     {

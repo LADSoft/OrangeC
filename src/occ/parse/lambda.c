@@ -349,7 +349,8 @@ static void createCaller(void)
     STATEMENT *st;
     lambdaCall = lambdaCall->tp->syms->table[0]->p;
     func->parentClass = lambdas->cls;
-    func->linkage = lk_inline;
+    func->linkage = lk_virtual;
+    func->isInline = TRUE;
     func->omitFrame = TRUE;
     memset(&block1, 0, sizeof(BLOCKDATA));
     memset(&block2, 0, sizeof(BLOCKDATA));
@@ -387,7 +388,8 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
     EXPRESSION *exp = varNode(en_label, self);
     lambdaCall = lambdaCall->tp->syms->table[0]->p;
     func->parentClass = lambdas->cls;
-    func->linkage = lk_inline;
+    func->linkage = lk_virtual;
+    func->isInline = TRUE;
     func->omitFrame = TRUE;
     deref(&stdpointer, &exp);
     memset(&block1, 0, sizeof(BLOCKDATA));
@@ -432,7 +434,8 @@ static void createConverter(SYMBOL *self)
     func->tp->btp->size = getSize(bt_pointer);
     func->tp->btp->btp = args;
     func->tp->syms = CreateHashTable(1);
-    func->linkage = lk_inline;
+    func->linkage = lk_virtual;
+    func->isInline = TRUE;
     hr->p = sym;
     func->tp->syms->table[0] = hr;
     func->parentClass = lambdas->cls;
@@ -500,7 +503,7 @@ static EXPRESSION *createLambda(BOOLEAN noinline)
     {
         INITIALIZER *init = NULL;
         EXPRESSION *exp = clsThs;
-        callDestructor(cls, &exp, NULL, TRUE, noinline, FALSE, FALSE);
+        callDestructor(cls, &exp, NULL, TRUE, FALSE, FALSE);
         initInsert(&init, cls->tp, exp, 0, TRUE);
         if (cls->storage_class != sc_auto)
         {
@@ -601,7 +604,7 @@ static EXPRESSION *createLambda(BOOLEAN noinline)
                         params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                         params->arguments->tp = ctp;
                         params->arguments->exp = en;
-                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, noinline, TRUE, FALSE))
+                        if (!callConstructor(&ctp, &en1, params, FALSE, NULL, TRUE, FALSE, TRUE, FALSE))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }
@@ -884,7 +887,8 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     SetLinkerNames(lambdas->func, lk_cdecl);
     injectThisPtr(lambdas->func, basetype(lambdas->func->tp)->syms);
     lambdas->func->tp->btp = self->functp;
-    lambdas->func->linkage = lk_inline;
+    lambdas->func->linkage = lk_virtual;
+    lambdas->func->isInline = TRUE;
     ssl.str = self->cls;
     ssl.tmpl = NULL;
     addStructureDeclaration(&ssl);
@@ -902,7 +906,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     localNameSpace->syms = self->oldSyms;
     localNameSpace->tags = self->oldTags;
     finishClass();
-    *exp = createLambda(flags & _F_NOINLINE);
+    *exp = createLambda(0);
     *tp = lambdas->cls->tp;
     lambdas = lambdas->next;
     if (lambdas)

@@ -712,7 +712,7 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST **ls
                 else
                 {
 join:
-                    lex = expression_no_comma(lex, funcsp, NULL, &tp, &exp, NULL, _F_NOINLINE | _F_INTEMPLATEPARAMS);
+                    lex = expression_no_comma(lex, funcsp, NULL, &tp, &exp, NULL, _F_INTEMPLATEPARAMS);
                     optimize_for_constants(&exp);
                     if (!tp)
                     {
@@ -2502,7 +2502,7 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
             {
                 LEXEME *lex = SetAlternateLex(sp->deferredCompile);
                 sp->init = NULL;
-                lex = initialize(lex, func, sp, sc_parameter, TRUE, _F_NOINLINE);
+                lex = initialize(lex, func, sp, sc_parameter, TRUE, 0);
                 SetAlternateLex(NULL);
                 if (sp->init && sp->init->exp && !ValidExp(&sp->init->exp))
                 {
@@ -2683,7 +2683,7 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
                 {
                     TYPE *tp1;
                     EXPRESSION *exp1;
-                    lex = expression_no_comma(lex, NULL, NULL, &tp1, &exp1, NULL, _F_NOINLINE | _F_INTEMPLATEPARAMS);
+                    lex = expression_no_comma(lex, NULL, NULL, &tp1, &exp1, NULL, _F_INTEMPLATEPARAMS);
                     dest->p->byNonType.val = exp1;
                     if (!templatecomparetypes(dest->p->byNonType.tp, tp1, TRUE))
                     {
@@ -3583,7 +3583,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
     LEXEME *lex = NULL;
     SYMBOL *cls= sym;
     int pushCount;
-    if (cls->linkage == lk_inline)
+    if (cls->linkage == lk_virtual)
         return cls;
     if (!isExtern)
     {
@@ -3608,10 +3608,10 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             LEXEME *reinstateLex = lex;
             deferred = NULL;
             old = *cls;
-            cls->linkage = lk_inline;
+            cls->linkage = lk_virtual;
             cls->parentClass = SynthesizeParentClass(cls->parentClass);
             pushCount = pushContext(cls, FALSE);
-            cls->linkage = lk_inline;
+            cls->linkage = lk_virtual;
             cls->tp = Alloc(sizeof(TYPE));
             *cls->tp = *old.tp;
             cls->tp->syms = NULL;
@@ -3722,7 +3722,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
         if (data->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp))
         {
             sym = data;
-            if (sym->linkage == lk_inline || isExtern)
+            if (sym->linkage == lk_virtual || isExtern)
                 return sym;
             found = TRUE;
             break;
@@ -3756,7 +3756,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             int nsl = PushTemplateNamespace(sym);
             if (sym->storage_class != sc_member && sym->storage_class != sc_mutable)
                 sym->storage_class = sc_global;
-            sym->linkage = lk_inline;
+            sym->linkage = lk_virtual;
             sym->xc = NULL;
             instantiatingTemplate++;
 

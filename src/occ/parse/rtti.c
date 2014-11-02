@@ -164,7 +164,7 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
             if (!sp->inlineFunc.stmt && !sp->deferredCompile)
             {
                 EXPRESSION *exp = intNode(en_c_i, 0);
-                callDestructor(basetype(tp)->sp, &exp, NULL, TRUE, TRUE, FALSE, TRUE);
+                callDestructor(basetype(tp)->sp, &exp, NULL, TRUE, FALSE, TRUE);
                 sp = exp->left->v.func->sp;
                 
             }
@@ -245,38 +245,41 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
             bc = bc->next;
         }
     }
-    hr = sym->tp->syms->table[0];
-    while (hr)
+    if (sym->tp->syms)
     {
-        SYMBOL *member = (SYMBOL *)hr->p;
-        TYPE *tp = member->tp;
-        int flags = XD_CL_ENCLOSED;
-        if (isref(tp))
+        hr = sym->tp->syms->table[0];
+        while (hr)
         {
-            tp = basetype(tp)->btp;
-            flags |= XD_CL_BYREF;
-        }
-        if (isconst(tp))
-            flags |= XD_CL_CONST;
-        tp = basetype(tp);
-        if (isstructured(tp))
-        {
-            if (genXT)
+            SYMBOL *member = (SYMBOL *)hr->p;
+            TYPE *tp = member->tp;
+            int flags = XD_CL_ENCLOSED;
+            if (isref(tp))
             {
-                RTTIDumpType(tp);
+                tp = basetype(tp)->btp;
+                flags |= XD_CL_BYREF;
             }
-            else
+            if (isconst(tp))
+                flags |= XD_CL_CONST;
+            tp = basetype(tp);
+            if (isstructured(tp))
             {
-                SYMBOL *xtSym;
-                char name[512];
-                RTTIGetName(name, tp);
-                xtSym = search(name, rttiSyms);
-                genint(flags);
-                genref(xtSym , 0);
-                genint(member->offset);
+                if (genXT)
+                {
+                    RTTIDumpType(tp);
+                }
+                else
+                {
+                    SYMBOL *xtSym;
+                    char name[512];
+                    RTTIGetName(name, tp);
+                    xtSym = search(name, rttiSyms);
+                    genint(flags);
+                    genref(xtSym , 0);
+                    genint(member->offset);
+                }
             }
+            hr = hr->next;
         }
-        hr = hr->next;
     }
 }
 static void RTTIDumpStruct(SYMBOL *xtSym, TYPE *tp)
@@ -321,7 +324,7 @@ SYMBOL *RTTIDumpType(TYPE *tp)
         if (!xtSym)
         {
             xtSym = makeID(sc_global, tp, NULL, litlate(name));
-            xtSym->linkage = lk_inline;
+            xtSym->linkage = lk_virtual;
             xtSym->decoratedName = xtSym->errname = xtSym->name;
             insert(xtSym, rttiSyms);
             switch (basetype(tp)->type)
@@ -337,6 +340,7 @@ SYMBOL *RTTIDumpType(TYPE *tp)
                         RTTIDumpPointer(xtSym, tp);
                     break;
                 case bt_struct:
+                case bt_class:
                     RTTIDumpStruct(xtSym, tp);
                     break;
                 default:
@@ -649,7 +653,7 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
         }
         sprintf(name, "@$xct%s", funcsp->decoratedName);
         xcSym = makeID(sc_global, &stdpointer, NULL, litlate(name));
-        xcSym->linkage = lk_inline;
+        xcSym->linkage = lk_virtual;
         xcSym->decoratedName = xcSym->errname = xcSym->name;
         cseg();
         gen_virtual(xcSym, FALSE);
@@ -765,6 +769,8 @@ void XTDumpTab(SYMBOL *funcsp)
                 {
                     genaddress(0);
                 }
+                // this was normalized in the back end...  depends on the RTTI information
+                // being generated AFTER the function is generated, however...
                 gen_labref(p->stmt->altlabel);
                 genint(p->stmt->tryStart);
                 genint(p->stmt->tryEnd);

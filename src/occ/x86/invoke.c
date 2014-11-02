@@ -248,7 +248,7 @@ int RunExternalFiles(char *rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s /c+ %s @"TEMPFILE, root, !showBanner ? "-!" : "", args);
+        sprintf(spname, "\"%solink.exe\" %s /mx /c+ %s @"TEMPFILE, root, !showBanner ? "-!" : "", args);
         rv = system(spname);
         unlink(TEMPFILE);
 

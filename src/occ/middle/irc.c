@@ -64,7 +64,6 @@
  * can start replacing imodes wholesale without regard for it.
  */
 extern BITINT bittab[BITINTBITS];
-extern int nextLabel;
 extern QUAD *intermed_head;
 extern ARCH_ASM *chosenAssembler; 
 extern COMPILER_PARAMS cparams;
@@ -312,6 +311,67 @@ void alloc_init(void)
 {
     spillcount = maxAllocationSpills = 0;
 }
+static void cacheTempSymbol(SYMBOL *sp)
+{
+    if (sp->anonymous && !sp->stackblock && sp->storage_class != sc_parameter)
+    {
+        if (sp->allocate && !sp->inAllocTable)
+        {
+            LIST *lst = Alloc(sizeof(LIST));
+            lst->data = sp;
+            lst->next = temporarySymbols;
+            temporarySymbols = lst;
+            sp->inAllocTable = TRUE;
+        }
+    }
+}
+static void ScanForVar(EXPRESSION *exp)
+{
+    if (exp)
+    {
+        if (exp->type == en_auto)
+        {
+            cacheTempSymbol(exp->v.sp);
+        }
+        else if (exp->type != en_tempref)
+        {
+            ScanForVar(exp->left);
+            ScanForVar(exp->right);
+        }
+    }
+}
+static void ScanForAnonymousVars(void)
+{
+    static QUAD *head ;
+    head = intermed_head;
+    while (head)
+    {
+        if (head->dc.opcode != i_block && head->dc.opcode != i_blockend 
+            && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
+            && head->dc.opcode != i_label && head->dc.opcode != i_line && head->dc.opcode != i_passthrough)
+        {
+            if (head->ans)
+            {
+                ScanForVar(head->ans->offset);
+                ScanForVar(head->ans->offset2);
+                ScanForVar(head->ans->offset3);
+            }                
+            if (head->dc.left)
+            {
+                ScanForVar(head->dc.left->offset);
+                ScanForVar(head->dc.left->offset2);
+                ScanForVar(head->dc.left->offset3);
+            }                
+            if (head->dc.right)
+            {
+                ScanForVar(head->dc.right->offset);
+                ScanForVar(head->dc.right->offset2);
+                ScanForVar(head->dc.right->offset3);
+            }                
+        }
+        head = head->fwd;
+    }
+}
 void AllocateStackSpace(SYMBOL *funcsp)
 /*
  * This allocates space for local variables
@@ -326,6 +386,7 @@ void AllocateStackSpace(SYMBOL *funcsp)
     HASHTABLE *syms = funcsp->inlineFunc.syms;
     LIST **temps = &temporarySymbols;
     BOOLEAN show = FALSE;
+    ScanForAnonymousVars();
     while (syms)
     {
         if (syms->blockLevel >= maxlvl)

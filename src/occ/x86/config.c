@@ -525,6 +525,7 @@ ARCH_DEBUG dbgStruct [] = {
 ARCH_GEN outputfunctions = {
     oa_header,             /* generate assembly language header */
     oa_trailer,            /* generate assembly language trailer */
+    oa_adjust_codelab,   /* adjust an assembly language statement for the relative code labels */
     NULL, 			         /* allow access to the quad list prior to GCSE */
     examine_icode,                   /* allow access to the quad list after GCSE */
     flush_peep,             /* called after function body is generated */

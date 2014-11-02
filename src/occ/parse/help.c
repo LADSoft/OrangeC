@@ -971,7 +971,7 @@ BOOLEAN lvalue(EXPRESSION *exp)
             return FALSE;
     }
 }
-EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN noinline, BOOLEAN isdest)
+EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN isdest)
 {
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
@@ -1056,7 +1056,17 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                 if (exp->type == en_thisref)
                     exp = exp->left;
                 if (thisptr && exp->type == en_func)
-                    exp->v.func->thisptr = init->offset ? exprNode(en_add, expsym, intNode(en_c_i, init->offset)) : expsym;
+                {
+                    EXPRESSION *exp1 = init->offset ? exprNode(en_add, expsym, intNode(en_c_i, init->offset)) : expsym;
+                    if (isarray(tp))
+                    {
+                        exp->v.func->arguments->exp = exp1;
+                    }
+                    else
+                    {
+                        exp->v.func->thisptr = exp1;
+                    }
+                }
                 exp = init->exp;
             }
             else if (!init->exp)
@@ -1086,7 +1096,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = ctype;
                         funcparams->arguments->exp = exp2;
-                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, noinline, FALSE, FALSE); 
+                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE); 
                         exp = expsym;
                     }
                     else
@@ -1163,7 +1173,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                                 funcparams->arguments = Alloc(sizeof(INITLIST));
                                 funcparams->arguments->tp = ctype;
                                 funcparams->arguments->exp = exp;
-                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE,noinline, FALSE, FALSE); 
+                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE); 
                                 exp = expsym;
                             }
                             else

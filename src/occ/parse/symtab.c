@@ -37,7 +37,7 @@
 */
 #include "compiler.h"
 
-extern int nextLabel;
+extern int codeLabel;
 
 #ifndef CPREPROCESSOR
 extern ARCH_DEBUG *chosenDebugger;
@@ -76,12 +76,11 @@ HASHTABLE *CreateHashTable(int size)
     return rv;
 }
 #ifndef CPREPROCESSOR
-void AllocateLocalContext(BLOCKDATA *block, SYMBOL *sp)
+void AllocateLocalContext(BLOCKDATA *block, SYMBOL *sp, int label)
 {
     HASHTABLE *tn = CreateHashTable(1);
     STATEMENT *st;
     LIST *l;
-    int label = nextLabel++;
     st = stmtNode(NULL, block, st_dbgblock);
     st->label = 1;
     if (block && cparams.prm_debug)
@@ -124,12 +123,11 @@ void TagSyms(HASHTABLE *syms)
     }
 }
 #endif
-void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp)
+void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp, int label)
 {
     HASHTABLE *locals = localNameSpace->syms;
     HASHTABLE *tags = localNameSpace->tags;
     STATEMENT *st;
-    int label = nextLabel++;
     if (block && cparams.prm_debug)
     {
         st = stmtNode(NULL, block, st_label);

@@ -3988,7 +3988,7 @@ void outcode_file_init(void)
     int i;
     adjustUsesESP(1);
     lastIncludeNum = 0;
-    labelbuf = beGlobalAlloc(400 *sizeof(LABEL*));
+    labelbuf = beGlobalAlloc(10000 *sizeof(LABEL*));
 
     for (i = 0; i < MAX_SEGS; i++)
         memset(&segs[i], 0, sizeof(segs[i]));
@@ -4496,6 +4496,7 @@ int resolveoffset(OCODE *ins, EXPRESSION *n, int *resolved)
                 rv += n->v.i;
                 break;
             case en_auto:
+            case en_tempshim:
                 rv += n->v.sp->offset;
                 break;
             case en_labcon:
@@ -6461,7 +6462,9 @@ void outcode_dumpIns(OCODE *peeplist)
                 if (peeplist->branched &BR_SHORT)
                 {
                     if (adr <  - 128 || adr >= 127)
+                    {
                         diag("Short branch out of range in outcode_dumpIns");
+                    }
                     peeplist->outbuf[peeplist->addroffset] = adr;
                 }
                 else

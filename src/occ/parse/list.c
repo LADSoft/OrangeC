@@ -281,7 +281,7 @@ void list_var(SYMBOL *sp, int i)
         fprintf(listFile,"Offset:   %08X ", val);
     fprintf(listFile,"Storage: ");
     if (sp->tp->type == bt_ifunc)
-        if (sp->linkage == lk_inline)
+        if (sp->isInline && !sp->noinline)
             fprintf(listFile,"%-7s","inline");
         else
             fprintf(listFile,"%-7s","code");

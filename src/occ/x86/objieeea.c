@@ -664,7 +664,7 @@ void link_types()
         while (lf)
         {
             SYMBOL *sp = lf->data;
-            if (sp->storage_class == sc_global && sp->linkage != lk_inline && sp->tp->used)
+            if (sp->storage_class == sc_global && !sp->isInline && sp->tp->used)
             {
                 link_puttype(sp->tp);
             }
@@ -841,7 +841,7 @@ int link_getseg(SYMBOL *sp)
         case sc_external:
         case sc_localstatic:
         case sc_overloads:
-            if (sp->linkage == lk_inline && cparams.prm_cplusplus)
+            if (sp->linkage == lk_virtual && cparams.prm_cplusplus)
                 return sp->value.i | 0xc0000000;
             if (isfunction(sp->tp))
 /*				
@@ -861,7 +861,7 @@ int link_getseg(SYMBOL *sp)
                 else
                     return bssxseg;
         case sc_label:
-            if (sp->linkage == lk_inline)
+            if (sp->linkage == lk_virtual)
                 return sp->value.i | 0xc0000000;
             else
                 return codeseg;
@@ -887,7 +887,7 @@ void link_putpub(SYMBOL *sp, char sel)
     int l = 0;
     char buf[512], obuf[512];
     int index;
-    if (!cparams.prm_cplusplus && sp->linkage == lk_inline)
+    if (!cparams.prm_cplusplus && sp->linkage == lk_virtual)
     {
         return ;
     }
@@ -931,7 +931,7 @@ void link_Publics(void)
     while (lf)
     {
         SYMBOL *sp = lf->data;
-        if ((sp->storage_class == sc_global || (sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt) && sp->linkage != lk_inline)
+        if ((sp->storage_class == sc_global || (sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt) && !sp->isInline)
         {
             link_putpub(sp, 'I');
         }
@@ -1011,7 +1011,7 @@ void link_Exports(void)
     {
         sp = lf->data;
         if (sp->storage_class == sc_global && sp->linkage2 == lk_export && 
-            sp->linkage != lk_inline)
+            !sp->isInline)
         {
             link_putexport(sp);
         }

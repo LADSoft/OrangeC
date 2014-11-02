@@ -1428,12 +1428,17 @@ void putamode(QUAD *q, IMODE *ap)
 }
 
 /*-------------------------------------------------------------------------*/
-
+extern BLOCK **blockArray;
+extern int blockCount;
 void put_code(QUAD *q)
 /*
  *      output a generic instruction.
  */
 {
+    int i;
+    for (i=0; i < blockCount; i++)
+        if (blockArray[i] && blockArray[i]->head == q)
+            oprintf(icdFile, "block %d\n", i);
     (*oplst[q->dc.opcode])(q);
     oputc('\n', icdFile);
         /*
@@ -2129,6 +2134,8 @@ void gen_labref(int n)
  * Generate a reference to a label
  */
 {
+    if (n < 0)
+        diag("gen_labref: uncompensatedlabel");
     if (chosenAssembler->gen->gen_labref)
         chosenAssembler->gen->gen_labref(n);
     if (!icdFile)
@@ -2472,7 +2479,7 @@ void localdef(SYMBOL *sp)
 }
 void globaldef(SYMBOL *sp)
 {
-    if (sp->linkage2 == lk_export && sp->linkage != lk_inline)
+    if (sp->linkage2 == lk_export && sp->linkage != lk_virtual)
         put_expfunc(sp);
     IncGlobalFlag();
     if (chosenAssembler->gen->global_define)

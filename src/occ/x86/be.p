@@ -195,6 +195,7 @@ void dump_browsedata(BROWSEINFO *bri);
 void dump_browsefile(BROWSEFILE *brf);
 void oa_header(char *filename, char *compiler_version);
 void oa_trailer(void);
+void oa_adjust_codelab(void *select, int offset);
 void oa_globaldef(SYMBOL *sp);
 void oa_localdef(SYMBOL *sp);
 void oa_output_alias(char *name, char *alias);

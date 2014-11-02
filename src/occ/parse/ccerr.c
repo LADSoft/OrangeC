@@ -1021,7 +1021,7 @@ void diag(char *fmt, ...)
         printf("Diagnostic: ");
         vprintf(fmt, argptr);
         if (theCurrentFunc)
-            printf(":%s", theCurrentFunc->name);
+            printf(":%s", theCurrentFunc->decoratedName);
         printf("\n");
         va_end(argptr);
     }
@@ -1437,7 +1437,7 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                         while (hr)
                         {
                             SYMBOL *sp = hr->p;
-                            if (sp->linkage == lk_inline && !sp->inlineFunc.stmt && !sp->templateLevel)
+                            if (sp->isInline && !sp->inlineFunc.stmt && !sp->templateLevel)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp);
                             }

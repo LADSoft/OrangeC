@@ -478,7 +478,10 @@ void calculateStructOffsets(SYMBOL *sp)
     BASECLASS *bases = sp->baseClasses;
     
     if (bases)
-        bases->offset = 0;
+        if (sp->hasvtab && !bases->cls->hasvtab)
+            bases->offset = getSize(bt_pointer);
+        else
+            bases->offset = 0;
     if (sp->hasvtab && (!sp->baseClasses || !sp->baseClasses->cls->hasvtab || sp->baseClasses->isvirtual))
         size += getSize(bt_pointer);
     while (bases)
@@ -780,7 +783,7 @@ void FinishStruct(SYMBOL *sp, SYMBOL *funcsp)
             InsertInline(sp);
             sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
-            sp->vtabsp->linkage = lk_inline;
+            sp->vtabsp->linkage = lk_virtual;
             sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
             warnCPPWarnings(sp, funcsp != NULL);
         }
@@ -2482,6 +2485,7 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
     BOOLEAN unsized = FALSE;
     BOOLEAN empty = FALSE;
     lex = getsym(); /* past '[' */
+    *tp = PerformDeferredInitialization(*tp, funcsp);
     if (MATCHKW(lex, star))
     {
         if (!cparams.prm_c99)
@@ -2884,9 +2888,11 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                     else
                     {
                         inDefaultParam++;
-                        lex = initialize(lex, funcsp, spi, sc_parameter, TRUE, _F_NOINLINE); /* also reserves space */
+                        lex = initialize(lex, funcsp, spi, sc_auto, TRUE, 0); /* also reserves space */
                         if (spi->init)
+                        {
                             checkDefaultArguments(spi);
+                        }
                         inDefaultParam--;
                     }
                     if (isfuncptr(spi->tp) && spi->init && lvalue(spi->init->exp))
@@ -4133,6 +4139,7 @@ void injectThisPtr(SYMBOL *sp, HASHTABLE *syms)
         }
         tpx->btp = basetype(sp->parentClass->tp);
         ths = makeID(sc_parameter, type, NULL, "__$$this");   
+        ths->parent = sp;
         ths->thisPtr = TRUE;
         ths->used = TRUE;
         SetLinkerNames(ths, lk_cdecl);
@@ -4354,6 +4361,22 @@ jointemplate:
                         /* at this point the arguments will be global but the rv won't */
                         incrementedStorageClass++;
                         IncGlobalFlag(); /* in case we have to initialize a func level static */
+                    }
+                    if (cparams.prm_cplusplus && isfunction(tp1) && (storage_class_in == sc_member || storage_class_in == sc_mutable) && !asFriend)
+                    {
+                        if (MATCHKW(lex,colon) ||
+                                MATCHKW(lex, begin) || MATCHKW(lex, kw_try))
+                        {
+                            sp->isInline = TRUE;
+                        }
+                    }
+                    if (linkage == lk_inline)
+                    {
+                        if (cparams.prm_cplusplus)
+                            linkage = lk_virtual;
+                        else
+                            linkage = lk_none;
+                        sp->isInline = TRUE;
                     }
                     if (linkage == lk_none)
                         linkage = defaultLinkage; 
@@ -4651,7 +4674,7 @@ jointemplate:
                             {
                                 if (sym->linkage == lk_c && sp->linkage == lk_cdecl)
                                     sp->linkage = lk_c;
-                                if (sp->linkage != sym->linkage && sp->linkage != lk_inline && sym->linkage != lk_inline)
+                                if (sp->linkage != sym->linkage && !sp->isInline && !sym->isInline)
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->declfile, spi->declline);
                                 }
@@ -4731,7 +4754,7 @@ jointemplate:
                                 errorNotMember(strSym, nsv, sp->name);
                             }
                         }
-                        if ((!spi || spi->storage_class != sc_member && spi->storage_class != sc_mutable) && sp->storage_class == sc_global && linkage == lk_inline)
+                        if ((!spi || spi->storage_class != sc_member && spi->storage_class != sc_mutable) && sp->storage_class == sc_global && sp->isInline)
                             sp->storage_class = sc_static;
                         if (spi)
                         {
@@ -4825,7 +4848,7 @@ jointemplate:
                                                     spi->storage_class = sc_global;
                                                 }
                                             }
-                                            else if (spi->linkage == lk_inline && basetype(spi->tp)->type == bt_ifunc)
+                                            else if (spi->isInline && basetype(spi->tp)->type == bt_ifunc)
                                             {
                                                 spi->storage_class = sc_global;
                                                 spi->genreffed = TRUE;
@@ -5063,7 +5086,7 @@ jointemplate:
                         }
                     }
                     sizeQualifiers(tp1);
-                    if (linkage == lk_inline)
+                    if (sp->isInline)
                     {
                         if (!isfunction(sp->tp))
                             error(ERR_INLINE_NOT_ALLOWED);
@@ -5114,7 +5137,7 @@ jointemplate:
                                         error(ERR_MISSING_TYPE_SPECIFIER);
                             }
                             if( sp->constexpression)
-                                sp->linkage = lk_inline;
+                                sp->isInline = TRUE;
                             if (cparams.prm_cplusplus)
                             {
                                 if (ismember(sp))
@@ -5164,8 +5187,8 @@ jointemplate:
                                 if (storage_class_in != sc_member && TemplateFullySpecialized(sp->parentClass))
                                 {
                                     sp->genreffed = TRUE;
-                                    sp->linkage = lk_inline;
-                                    SetGlobalFlag(old + (sp->linkage == lk_inline));
+                                    sp->linkage = lk_virtual;
+                                    SetGlobalFlag(old + 1);
                                     lex = body(lex, sp);
                                     SetGlobalFlag(old);
                                 }
@@ -5176,7 +5199,7 @@ jointemplate:
                                 }
                                 else
                                 {
-                                    SetGlobalFlag(old + (sp->linkage == lk_inline));
+                                    SetGlobalFlag(old + 1);
                                     lex = body(lex, sp);
                                     SetGlobalFlag(old);
                                 }
@@ -5261,7 +5284,7 @@ jointemplate:
                                     STATEMENT *st ;
                                     currentLineData(block, hold,0);
                                     st = stmtNode(hold, block, st_expr);
-                                    st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE, FALSE);
+                                    st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE);
                                 }
                             }
                         }
@@ -5287,7 +5310,7 @@ jointemplate:
                         // fixme don't check if in parent class...
                         if (!globalNameSpace->next)
                         {
-                            if (linkage == lk_inline)
+                            if (sp->isInline)
                             {
                                 error(ERR_MAIN_CANNOT_BE_INLINE_FUNC);
                             }

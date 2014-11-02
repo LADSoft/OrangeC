@@ -452,6 +452,7 @@ void compile(void)
     outcodeini();
     conflictini();
     iexpr_init();
+    iinlineInit();
     flow_init();
     genstmtini();
 #endif

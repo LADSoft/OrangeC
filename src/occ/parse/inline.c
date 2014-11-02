@@ -122,7 +122,7 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL *sym = (SYMBOL *)funcList->data;
-                if (sym->linkage == lk_inline && sym->genreffed && sym->inlineFunc.stmt)
+                if (sym->linkage == lk_virtual && sym->genreffed && sym->inlineFunc.stmt)
                 {
                     if (!sym->didinline)// && !inSearch(sym))
                     {
@@ -464,7 +464,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
         case en_func:
             temp->v.func = NULL;
             fp = node->v.func;
-            if (fp->sp->linkage == lk_inline)
+            if (fp->sp->linkage == lk_virtual)
             {
                 // check for recursion
                 for (i=0; i <inlinesp_count; i++)
@@ -475,7 +475,7 @@ EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval)
                     }
                 }
             }
-            if (fp->sp->linkage == lk_inline && !fp->sp->noinline && i >= inlinesp_count)
+            if (fp->sp->isInline && !fp->sp->noinline && i >= inlinesp_count)
             {
                 if (inlinesp_count >= MAX_INLINE_NESTING)
                 {
@@ -972,18 +972,16 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
     EXPRESSION *newExpression;
     BOOLEAN allocated = FALSE;
-    return NULL;
+
     if (function_list_count >= MAX_INLINE_NESTING)
         return NULL;
     if (!isfunction(params->functp))
         return NULL;
-    if (params->sp->linkage != lk_inline)
+    if (!params->sp->isInline)
         return NULL;
     if (params->sp->templateParams)
         return NULL;
     if (params->sp->noinline)
-        return NULL;
-    if (params->noinline)
         return NULL;
     if (!params->sp->inlineFunc.syms)
         return NULL;
@@ -996,7 +994,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!localNameSpace->syms)
     {
         allocated = TRUE;
-        AllocateLocalContext(NULL, NULL);
+        AllocateLocalContext(NULL, NULL,nextLabel++);
     }
     stmt1 = SetupArguments(params);
     if (stmt1)
@@ -1030,7 +1028,7 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     optimize_for_constants(&newExpression->left);
     if (allocated)
     {
-        FreeLocalContext(NULL, NULL);
+        FreeLocalContext(NULL, NULL, nextLabel++);
     }
     function_list_count--;
     if (newExpression->type == en_stmt)
@@ -1113,7 +1111,7 @@ EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!params->sp->inlineFunc.syms)
         return NULL;
 
-    AllocateLocalContext(NULL, NULL);
+    AllocateLocalContext(NULL, NULL, nextLabel++);
     stmt = SetupArguments(params);
     SetupVariables(params->sp);
 
@@ -1150,6 +1148,6 @@ EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *params, SYMBOL *funcsp)
         newExpression = NULL;
         error(ERR_CONSTANT_FUNCTION_EXPECTED);
     }
-    FreeLocalContext(NULL, NULL);
+    FreeLocalContext(NULL, NULL, nextLabel++);
     return newExpression;
 }

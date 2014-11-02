@@ -54,6 +54,7 @@
 
 #define DOING_LCSE
 
+extern int codeLabelOffset;
 extern COMPILER_PARAMS cparams; 
 extern TEMP_INFO **tempInfo;
 extern ARCH_ASM *chosenAssembler; 
@@ -586,6 +587,8 @@ void gen_label(int labno)
  */
 {
     QUAD *newQuad;
+    if (labno < 0)
+        diag("gen_label: uncompensatedlabel");
     flush_dag();
     if (!wasgoto)
         addblock(i_label);
@@ -787,6 +790,8 @@ void gen_asm(STATEMENT *stmt)
     newQuad = (QUAD *)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_passthrough;
     newQuad->dc.left = (IMODE*)stmt->select; /* actually is defined by the INASM module*/
+    if (chosenAssembler->gen->adjust_codelab)
+        chosenAssembler->gen->adjust_codelab(newQuad->dc.left, codeLabelOffset);
     flush_dag();
     add_intermed(newQuad);
 }

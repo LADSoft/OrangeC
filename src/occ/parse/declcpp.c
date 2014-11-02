@@ -41,7 +41,6 @@ extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern INCLUDES *includes;
 extern char *overloadNameTab[];
 extern char *overloadXlateTab[];
-extern int nextLabel;
 extern enum e_kw skim_end[];
 extern enum e_kw skim_closepa[];
 extern enum e_kw skim_semi_declare[];
@@ -694,7 +693,7 @@ void deferredCompileOne(SYMBOL *cur)
     if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams))
     {
         int tns = PushTemplateNamespace(cur->parentClass);
-        cur->linkage = lk_inline;
+        cur->linkage = lk_virtual;
         if (cur->templateParams)
         {
             n.tmpl = cur->templateParams;
@@ -773,7 +772,7 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
     {
         SYMBOL *sp = basetype(tp)->sp;
         BOOLEAN donesomething = FALSE;
-        if (!templateNestingCount && sp->templateLevel && (!sp->instantiated || sp->linkage != lk_inline))
+        if (!templateNestingCount && sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual))
         {
             TEMPLATEPARAMLIST *dest, *src;
             donesomething = TRUE;

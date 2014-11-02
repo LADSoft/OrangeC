@@ -108,6 +108,7 @@ EXE_dependencies = \
     iconst$(OBJ) \
     iexpr$(OBJ) \
     iflow$(OBJ) \
+    iinline$(OBJ) \
     iinvar$(OBJ) \
     ilazy$(OBJ) \
     ilive$(OBJ) \

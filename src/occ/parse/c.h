@@ -499,7 +499,7 @@ typedef struct sym
         unsigned isConstructor:1; // is a constructor
         unsigned isDestructor:1; // is  adestructor
         unsigned isExplicit:1; // explicit constructor or conversion function
-        unsigned specialized:1; // is a template specialization        
+        unsigned specialized:1; // is a template specialization
         unsigned packed:1; // packed template param instance
         unsigned instantiated; // instantiated template
         unsigned performedDeferred : 1; // structured type has deferred compilation done already

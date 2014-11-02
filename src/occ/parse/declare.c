@@ -4719,6 +4719,35 @@ jointemplate:
                                     // a specialization
                                     // this may result in returning sp depending on what happens...
                                     TEMPLATEPARAMLIST *templateParams;
+                                    if (sp->templateParams->p->bySpecialization.types)
+                                    {
+                                        HASHREC *hr = spi->tp->syms->table[0];
+                                        while (hr)
+                                        {
+                                            SYMBOL *sym1 = (SYMBOL *)hr->p;
+                                            if (sym1->templateLevel)
+                                            {
+                                                TEMPLATEPARAMLIST *one = sp->templateParams->p->bySpecialization.types;
+                                                TEMPLATEPARAMLIST *two = sym1->templateParams->next;
+                                                while (one && two)
+                                                {
+                                                    if (one->p->type != two->p->type)
+                                                        break;
+                                                    one = one->next;
+                                                    two = two->next;
+                                                        
+                                                }
+                                                if (!one && !two)
+                                                    break;
+                                            }
+                                            hr = hr->next;
+                                        }
+                                        if (!hr)
+                                            errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
+                                        sp->specialized = TRUE;
+                                    }
+                                    else if (sp->templateParams && !sp->templateParams->next)
+                                        sp->specialized = TRUE;
                                     sym = LookupFunctionSpecialization(spi, sp, sp->templateParams);
                                     if (sym == sp && spi->storage_class != sc_overloads)
                                         sym = spi;
@@ -4749,6 +4778,8 @@ jointemplate:
                         }
                         else if (!spi)
                         {
+                            if (sp->templateParams && sp->templateParams->p->bySpecialization.types)
+                                errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                             if (strSym && storage_class_in != sc_member && storage_class_in != sc_mutable)
                             {
                                 errorNotMember(strSym, nsv, sp->name);
@@ -4952,10 +4983,6 @@ jointemplate:
                                 if (isfunction(sp->tp) && templateParams->p->bySpecialization.types && templateParams->next)
                                 {
                                     error(ERR_FUNCTION_TEMPLATE_NO_PARTIAL_SPECIALIZE);
-                                }
-                                else if (inTemplate && templateParams->p->bySpecialization.types)
-                                {
-                                    errorsym(ERR_SPECIALIZATION_REQUIRES_PRIMARY, sp);
                                 }
                                 else if (!isfunction(tp) && templateParams->next && templateParams->p->bySpecialization.types)
                                 {

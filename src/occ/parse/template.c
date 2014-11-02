@@ -3741,7 +3741,23 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     pushCount++;
     if (!found)
     {
-        insertOverload(sym, sym->overloadName->tp->syms);
+        BOOLEAN ok = TRUE;
+        if (sym->specialized)
+        {
+            HASHREC *hr = sym->overloadName->tp->syms->table[0];
+            while (hr)
+            {
+                if (matchOverload(sym->tp, ((SYMBOL *)hr->p)->tp))
+                {
+                    hr->p = sym;
+                    ok = FALSE;
+                    break;
+                }
+                hr = hr->next;
+            }
+        }
+        if (ok)
+            insertOverload(sym, sym->overloadName->tp->syms);
 
         if (sym->storage_class == sc_member || sym->storage_class == sc_virtual)
         {

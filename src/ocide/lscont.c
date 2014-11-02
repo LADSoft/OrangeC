@@ -223,7 +223,7 @@ CCW_params *CreateContainerWindow(HWND parent, CCW_params *child, RECT *r)
     {
         p->child = child;
         p->hwnd = CreateMDIWindow(szContainerClassName, "",  WS_VISIBLE|	  
-        WS_CHILD | WS_OVERLAPPEDWINDOW -WS_MAXIMIZEBOX | WS_SYSMENU | MDIS_ALLCHILDSTYLES | 
+        WS_CHILD | WS_OVERLAPPED | WS_SYSMENU | MDIS_ALLCHILDSTYLES | 
         WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
         WS_SIZEBOX | WS_MINIMIZEBOX,
             r->left,

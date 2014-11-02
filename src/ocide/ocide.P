@@ -827,7 +827,7 @@ void DrawWindowBmp(HWND hwnd, struct _tabStruct *ptr, HDC hDc, int bordertype);
 void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr);
 struct _singleTab *AddTab(struct _tabStruct *ptr, char *name, LPARAM lParam);
 struct _singleTab *RemoveTab(struct _tabStruct *ptr, LPARAM lParam);
-struct _singleTab *ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam);
+BOOL ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam);
 void SelectTab(struct _tabStruct *ptr, LPARAM lParam);
 void RemoveAllTabs(struct _tabStruct *ptr);
 struct _singleTab * FindTabByPos(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam);

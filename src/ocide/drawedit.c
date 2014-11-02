@@ -1481,7 +1481,7 @@ void RegisterDrawWindow(void)
     
     ccThreadExit = CreateEvent(0,0,0,0);
     ewSem = CreateEvent(NULL, FALSE, TRUE, NULL);
-    _beginthread((BEGINTHREAD_FUNC)ScanParse, 0, NULL);
+    _beginthreadex(NULL, 0, (BEGINTHREAD_FUNC)ScanParse, NULL, 0, &ccThreadId);
 }
 
 //-------------------------------------------------------------------------

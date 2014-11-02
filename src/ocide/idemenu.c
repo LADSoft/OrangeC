@@ -659,10 +659,13 @@ void InitMenuPopup(HMENU menu)
     if (!making && !hwndGeneralProps)
         mf_state = MF_ENABLED;
     EnableMenuItem(menu, IDM_GENERALPROPERTIES, mf_state);
-    EnableMenuItem(menu, IDM_PROJECTPROPERTIES, mf_state);
     EnableMenuItem(menu, IDM_SELECTPROFILE, mf_state);
-    EnableMenuItem(menu, IDM_ACTIVEPROJECTPROPERTIES, mf_state);
     EnableMenuItem(menu, IDM_BUILDRULES, mf_state);
+    
+    if (!activeProject)
+        mf_state = MF_GRAYED;
+    EnableMenuItem(menu, IDM_ACTIVEPROJECTPROPERTIES, mf_state);
+    EnableMenuItem(menu, IDM_PROJECTPROPERTIES, mf_state);
     if (making)
         mf_state = MF_ENABLED;
     else

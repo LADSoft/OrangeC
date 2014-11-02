@@ -778,7 +778,8 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SelectProfileDialog();
                 break;
             case IDM_ACTIVEPROJECTPROPERTIES:
-                prjSelectedItem = activeProject->hTreeItem;
+                if (activeProject)
+                    prjSelectedItem = activeProject->hTreeItem;
                 // fall through
             case IDM_PROJECTPROPERTIES:
                 data = GetItemInfo(prjSelectedItem);

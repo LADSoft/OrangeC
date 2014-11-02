@@ -74,11 +74,11 @@ char *findbrowsehist[MAX_COMBO_HISTORY];
 char *replacebrowsehist[MAX_COMBO_HISTORY];
 
 POINT findDlgPos;
+BOOL finding = TRUE;
 
 static BOOL infindorreplace;
 static BOOL dirty;
 static BOOL findFromTB;
-BOOL finding = TRUE;
 static BOOL replacing = FALSE;
 static BOOL usingfif;
 static int tempfind;
@@ -86,7 +86,7 @@ static int tempreplace;
 static int tempfindext;
 static int tempreplaceext;
 static char browsePath[MAX_PATH];
-static char fileType[MAX_PATH];
+static char fileType[MAX_PATH] = "*.*";
 static BOOL canceled = FALSE;
 static BOOL inSetSel;
 static int replaceCount;
@@ -125,7 +125,8 @@ typedef struct _bufList
     CHARRANGE range;
 } BUFLIST;
 
-static char findText[256];
+char findText[256];
+
 static char replaceText[256];
 
 static CHARRANGE findPos, replacePos;

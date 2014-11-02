@@ -49,6 +49,7 @@
 #include "xml.h"
 
 extern char *currentProfileName;
+extern char findText[256];
 extern int profileDebugMode;
 extern HWND hwndTbFind;
 extern int editFlags;
@@ -369,7 +370,10 @@ void RestoreHistory(struct xmlNode *node, int version)
         children = children->next;
     }
     if (histitem == findhist)
+    {
+        strcpy(findText, findhist[0]);
         SendMessage((HWND)hwndTbFind, WM_SETHISTORY, 0, (LPARAM)findhist);
+    }
 }
 
 

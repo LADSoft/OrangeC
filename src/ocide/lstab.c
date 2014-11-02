@@ -505,20 +505,22 @@ struct _singleTab *RemoveTab(struct _tabStruct *ptr, LPARAM lParam)
     }
     return NULL;
 }
-struct _singleTab *ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam)
+BOOL ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam)
 {
-    
+    BOOL rv = FALSE;
     struct _singleTab *tabs = ptr->active.head;
     while (tabs)
     {
         if (tabs->lParam == lParam)
         {
+            if (tabs->modified != modified)
+                rv = TRUE;
             tabs->modified = modified;
             break;
         }
         tabs = tabs->chain.next;
     }
-    return NULL;
+    return rv;
 }
 void SelectTab(struct _tabStruct *ptr, LPARAM lParam)
 {
@@ -1284,8 +1286,8 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
             return 0;
         case TABM_SETMODIFY:
             ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
-            ModifyTab(ptr, wParam, lParam);
-            InvalidateRect(hwnd, 0, 1);
+            if (ModifyTab(ptr, wParam, lParam))
+                InvalidateRect(hwnd, 0, 1);
             return 0;
         case WM_LBUTTONDOWN:
             ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);

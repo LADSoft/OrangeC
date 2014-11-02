@@ -1697,7 +1697,7 @@ void insertchar(HWND hwnd, EDITDATA *p, int ch)
 {
     int len = 0, temp;
     UNDO *u = 0;
-    if (p->cd->inserting)
+    if (p->cd->inserting || p->cd->text[p->selstartcharpos].ch == '\n')
     {
         int i = p->selendcharpos - p->selstartcharpos;
         u = undo_deletesel(hwnd, p);
@@ -4371,7 +4371,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         strcpy(buf2, temp);
                         if (!stricmp(buf, buf2))
                         {
-                            PostMessage(hwnd, WM_CLOSE, 0, 0);
+                            // if it is the prefix of another item don't close out the box
+                            temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected+1, 0);
+                            if (temp == -1 || strnicmp(buf, temp, len))
+                                PostMessage(hwnd, WM_CLOSE, 0, 0);
                         }
                     }
                 }
@@ -4798,7 +4801,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     {
         if (PropGetInt(NULL, "CODE_COMPLETION") < 2)
             return 0;
-        if (!codecompleteBox)
+//        if (!codecompleteBox)
         {
             char buf[4096], *q = buf + sizeof(buf);
             int pos = p->selstartcharpos-1;
@@ -4815,11 +4818,20 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 names = GetCodeCompKeywords(q, names, &size, &max, hwnd, p);
             if (size)
             {
-                codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
+                BOOL wasDisplayed = FALSE;
+                if (!codecompleteBox)
+                {
+                    codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
                                        (WS_POPUP) | WS_CLIPCHILDREN,
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        hwnd,0, hInstance,0);
+                }
+                else
+                {
+                    wasDisplayed = TRUE;
+                    InvalidateRect(codecompleteBox, 0, 0);
+                }
                 if (codecompleteBox)
                 {
                     int count = 0;
@@ -4858,9 +4870,20 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     {
                         height = t.tmHeight * count;
                         width += 10 + GetSystemMetrics(SM_CXVSCROLL) + 2 * GetSystemMetrics(SM_CXFRAME);
-                        GetCompletionPos(hwnd, p, &cpos, width, height);
-                        SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
-                        SendMessage(codecompleteBox, WM_USER + 2, 0, (LPARAM)q);
+                        if (wasDisplayed)
+                        {
+                            RECT client;
+                            GetClientRect(codecompleteBox, &client);
+                            cpos.x = client.left;
+                            cpos.y = client.top;
+                            ClientToScreen(codecompleteBox, &cpos);
+                        }
+                        else
+                        {
+                            GetCompletionPos(hwnd, p, &cpos, width, height);
+                            SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
+                            SendMessage(codecompleteBox, WM_USER + 2, 0, (LPARAM)q);
+                        }
                         MoveWindow(codecompleteBox, cpos.x, cpos.y, width+4, height+4, FALSE);
                         ShowWindow(codecompleteBox, SW_SHOW);
                         if (IsWindowVisible(hwndShowFunc))
@@ -5828,9 +5851,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         DeleteObject(p->cd->hItalicFont);
                         DeleteObject(p->cd->hBoldFont);
                         DeleteObject(p->cd->hbrBackground);
+                        freemem(p);
                         free(p->cd->lineData);
                         free((void*)p->cd);
-                        freemem(p);
                     }
                 }
                 free((void*)p);

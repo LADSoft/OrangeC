@@ -35,7 +35,7 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-DIRS=pe rtl def lscrtl pels msvcrdm crtdmain
+DIRS=pe rtl def pels msvcrdm crtdmain #lscrtl
 BUILDING_DLL = /DBUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
 all: lscrtl_objs alldirs
@@ -48,8 +48,8 @@ $(eval $(ALLDIRS))
 DISTRIBUTE:
 	$(MAKE) /Cpe DISTRIBUTE
 	$(MAKE) /Cpels DISTRIBUTE
-	$(MAKE) /Clscrtl DISTRIBUTE
 	$(MAKE) /Cmsvcrdm DISTRIBUTE
 	$(MAKE) /Ccrtdmain DISTRIBUTE
 	$(COPYDIR) wininc\*.h $(DISTINC)
 	$(COPYDIR) wininc\win32\*.h $(DISTINCWIN)
+#	$(MAKE) /Clscrtl DISTRIBUTE

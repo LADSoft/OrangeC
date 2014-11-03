@@ -5304,9 +5304,22 @@ jointemplate:
                                 else if (!sp->label)
                                     sp->label = nextLabel++;
                             lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
-                            if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_localstatic && sp->init && !IsConstantExpression(sp->init->exp, FALSE))
+                            if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_localstatic && sp->init)
                             {
-                                if (sp->init)
+                                BOOLEAN doit = TRUE;
+                                if (sp->storage_class == sc_localstatic)
+                                {
+                                    INITIALIZER *init = sp->init;
+                                    while (init)
+                                    {
+                                        if (init->exp && !IsConstantExpression(init->exp, FALSE))
+                                            break;
+                                        init = init->next;
+                                    }
+                                    if (!init)
+                                        doit = FALSE;
+                                }
+                                if (doit && sp->init)
                                 {
                                     STATEMENT *st ;
                                     currentLineData(block, hold,0);

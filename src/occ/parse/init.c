@@ -2747,7 +2747,7 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
             rv = IsConstantExpression(node->left, allowParams);
             break;
         case en_func:
-            rv = FALSE;
+            return !node->v.func->ascall;
             break;
         case en_stmt:
             rv = FALSE;
@@ -3043,7 +3043,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     tmpl = tmpl->parentClass;
             if (!tmpl)
             {
-                if (sp->init && sp->storage_class == sc_localstatic && !IsConstantExpression(sp->init->exp, FALSE))
+                if (cparams.prm_cplusplus && sp->init && sp->storage_class == sc_localstatic && !IsConstantExpression(sp->init->exp, FALSE))
                     sp->init = NULL;
                 insertInitSym(sp);
             }

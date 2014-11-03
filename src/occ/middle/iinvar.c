@@ -41,6 +41,8 @@ extern BLOCK **blockArray;
 extern int blockCount;
 extern TEMP_INFO **tempInfo;
 extern int tempCount;
+extern SYMBOL *theCurrentFunc;
+
 static int current;
 /* this moving of loop invariant expressions is pretty straightforward.
  * we are in SSA form and we do a depth-first visit of all the blocks
@@ -274,14 +276,17 @@ void ScanForInvariants(BLOCK *b)
 }
 void MoveLoopInvariants(void)
 {
-    int i;
-    refs = NULL;
-    for (i=0; i < blockCount; i++)
-        if (blockArray[i])
-            blockArray[i]->preWalk = 0;
-    for (i=0; i < tempCount; i++)
-        tempInfo[i]->blockDefines = NULL;
-    current = 1;
-    ScanForInvariants(blockArray[0]);
-    WeedRefs();
+    if (0)
+    {
+        int i;
+        refs = NULL;
+        for (i=0; i < blockCount; i++)
+            if (blockArray[i])
+                blockArray[i]->preWalk = 0;
+        for (i=0; i < tempCount; i++)
+            tempInfo[i]->blockDefines = NULL;
+        current = 1;
+        ScanForInvariants(blockArray[0]);
+        WeedRefs();
+    }
 }

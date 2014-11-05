@@ -132,6 +132,7 @@ int highlightWholeWord;
 
 static int page_size = -1;
 static HWND codecompleteBox;
+static BOOL inStructBox;
 static HWND hwndShowFunc;
 
 void SendUpdate(HWND hwnd);
@@ -4172,6 +4173,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 DestroyWindow(hwndLB);
                 hwndLB = NULL;
                 codecompleteBox = NULL;
+                inStructBox = FALSE;
                 break;
             case WM_PAINT:
                 dc = BeginPaint(hwnd, &ps);
@@ -4688,6 +4690,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        hwnd,0, hInstance,0);
+                inStructBox = TRUE;
                 if (codecompleteBox)
                 {
                     int count = 0;
@@ -4799,7 +4802,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     }
     int showVariableOrKeyword(HWND hwnd, EDITDATA *p)
     {
-        if (PropGetInt(NULL, "CODE_COMPLETION") < 2)
+        if (inStructBox || PropGetInt(NULL, "CODE_COMPLETION") < 2)
             return 0;
 //        if (!codecompleteBox)
         {

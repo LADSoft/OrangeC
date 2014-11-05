@@ -110,24 +110,30 @@ static void inlineBindThis(SYMBOL *funcsp, HASHREC *hr, EXPRESSION *thisptr)
     {
         if (thisptr)
         {
-            IMODE *src, *ap1;
+            IMODE *src, *ap1, *idest;
             EXPRESSION *dest;
+            LIST *lst = Alloc(sizeof(LIST));
             thisptr = inlinesym_count == 0 || 
                         inlinesym_thisptr[inlinesym_count-1] == NULL || 
                         !hasRelativeThis(thisptr) ? thisptr : inlineGetThisPtr(thisptr);
             sym = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
-            dest = varNode(en_tempshim, sym);
+            sym->allocate = TRUE;
+            sym->inAllocTable = TRUE;
+            lst->data = sym;
+            lst->next = temporarySymbols;
+            temporarySymbols = lst;
+            dest = varNode(en_auto, sym);
             deref(sym->tp, &dest);
             inlinesym_thisptr[inlinesym_count] = dest;
-            dest = gen_expr(funcsp, dest, 0, natural_size(dest));
-            src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
+            idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+            idest->offset->v.sp->pushedtotemp = TRUE;
             ap1 = LookupLoadTemp(NULL, src);
             if (ap1 != src)
             {
                 gen_icode(i_assn, ap1, src, NULL);
                 src = ap1;
             }
-            gen_icode(i_assn, dest, src, NULL);
+            gen_icode(i_assn, idest, src, NULL);
         }
     }
     else if (inlinesym_count)
@@ -160,10 +166,16 @@ static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
         IMODE *src, *ap1, *idest;
         EXPRESSION *dest;
         SYMBOL *sym2 = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
-        dest = varNode(en_tempshim, sym2);
+        LIST *lst = Alloc(sizeof(LIST));
+        sym2->allocate = TRUE;
+        sym2->inAllocTable = TRUE;
+        lst->data = sym2;
+        lst->next = temporarySymbols;
+        temporarySymbols = lst;
+        dest = varNode(en_auto, sym2);
         deref(sym->tp, &dest);
         list[cnt++] = dest;
-        idest = gen_expr(funcsp, dest, 0, natural_size(dest));
+        idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
         src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
         ap1 = LookupLoadTemp(NULL, src);
         if (ap1 != src)

@@ -4496,7 +4496,6 @@ int resolveoffset(OCODE *ins, EXPRESSION *n, int *resolved)
                 rv += n->v.i;
                 break;
             case en_auto:
-            case en_tempshim:
                 rv += n->v.sp->offset;
                 break;
             case en_labcon:

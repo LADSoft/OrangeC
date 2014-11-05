@@ -126,7 +126,7 @@ static void inlineBindThis(SYMBOL *funcsp, HASHREC *hr, EXPRESSION *thisptr)
             deref(sym->tp, &dest);
             inlinesym_thisptr[inlinesym_count] = dest;
             idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-            idest->offset->v.sp->pushedtotemp = TRUE;
+            src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
             ap1 = LookupLoadTemp(NULL, src);
             if (ap1 != src)
             {

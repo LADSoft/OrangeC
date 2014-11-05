@@ -332,7 +332,6 @@ SYMBOL *varsp(EXPRESSION *node)
         case en_global:
         case en_tempref:
         case en_threadlocal:
-        case en_tempshim:
             return node->v.sp;
     }
     return 0;
@@ -795,11 +794,6 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                 if (ap1 != ap2)
                     gen_icode(i_assn, ap2, ap1, NULL);
                 ap1 = indnode(ap2, siz1);
-                break;
-            case en_tempshim:
-                if (!node->left->v.sp->imvalue)
-                    node->left->v.sp->imvalue = tempreg(natural_size(node), 0);
-                ap1 = node->left->v.sp->imvalue;
                 break;
             case en_auto:
                 sp = node->left->v.sp;
@@ -2146,10 +2140,6 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 gen_icode(i_assn, ap2, ap1, NULL);
             rv = ap2;
             break;
-        case en_tempshim:
-            diag("gen_expr: address of tempshim");
-            rv = tempreg(ISZ_ADDR, 0);
-            break;
         case en_auto:
             if (node->v.sp->stackblock)
             {
@@ -2158,30 +2148,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             }
             if (node->v.sp->storage_class == sc_parameter && node->v.sp->inlineFunc.stmt)
             {
-                EXPRESSION *ep = ((EXPRESSION *)node->v.sp->inlineFunc.stmt);
-                if (ep->left->type == en_tempshim)
-                {
-                    // have to promote a temp variable to a stacked variable
-                    // this can work since we don't clone expression nodes...
-                    EXPRESSION *ep2 = anonymousVar(sc_auto, node->v.sp->tp);
-                    LIST *lst = Alloc(sizeof(LIST));                    
-                    lst->data = ep2->v.sp;
-                    lst->next = temporarySymbols;
-                    temporarySymbols = lst;
-                    ep2->v.sp->inAllocTable = TRUE;
-                    ap1 = gen_expr(funcsp, ep2, F_STORE, natural_size(ep));
-                    ap2 = gen_expr(funcsp, ep, 0, natural_size(ep));
-                    ap3 = LookupImmedTemp(ap2, ap2);
-                    if (ap3 != ap2)
-                    {
-                        gen_icode(i_assn, ap3, ap2, NULL);
-                        ap2 = ap3;
-                    }
-                    gen_icode(i_assn, ap1, ap2, NULL);
-                    ep->type = en_auto;
-                    ep->v.sp = ep2->v.sp;
-                }
-                node = ep;
+                return gen_expr (funcsp, ((EXPRESSION *)node->v.sp->inlineFunc.stmt)->left, flags, size);
             }
             node->v.sp->allocate = TRUE;
             // fallthrough
@@ -2679,7 +2646,6 @@ int natural_size(EXPRESSION *node)
         case en_global:
         case en_absolute:
         case en_labcon:
-        case en_tempshim:
             return ISZ_ADDR;
         case en_tempref:
             return ISZ_UINT;

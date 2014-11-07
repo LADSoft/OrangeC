@@ -50,6 +50,7 @@
 #include <stdlib.h>
 
 extern SCOPE *activeScope;
+extern LOGFONT systemDialogFont;
 
 #define TRANSPARENT_COLOR 0x872395
 
@@ -98,19 +99,6 @@ LOGFONT EditFont =
          OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH 
          | FF_DONTCARE,
         CONTROL_FONT
-};
-
-static LOGFONT FuncFont = 
-{
-     - 12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, 
-         FF_DONTCARE, "Arial"
-};
-static LOGFONT CompleteFont = 
-{
-     - 12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, 
-         FF_DONTCARE, "Arial"
 };
 
 // COLORREF selcolor = 0 ;
@@ -4078,11 +4066,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             case WM_MEASUREITEM: 
                 lpmis = (LPMEASUREITEMSTRUCT) lParam; 
                 dc = GetDC(hwnd);
-                font = CreateFontIndirect(&CompleteFont);
-                font = SelectObject(dc, font);
                 GetTextMetrics(dc, &tm);
-                font = SelectObject(dc, font);
-                DeleteObject(font);
                 ReleaseDC(hwnd, dc);
                 /* Set the height of the list box items. */ 
      
@@ -4122,13 +4106,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         strcpy(buf2, temp);
                         GetTextMetrics(lpdis->hDC, &tm); 
      
-//	                    if (lpdis->itemState == ODS_SELECTED) 
-//						{
-//							lf = CompleteFont; 
-//							lf.lfWeight = FW_BOLD;
-//							font = CreateFontIndirect(&lf);
-//		 					font = SelectObject(lpdis->hDC, font);
-//						}
                         TextOut(lpdis->hDC, 
                             6, 
                             (lpdis->rcItem.bottom + lpdis->rcItem.top - tm.tmHeight) / 2,
@@ -4163,9 +4140,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        CW_USEDEFAULT, CW_USEDEFAULT,
                                        hwnd, (HMENU)100, hInstance,0);
-                
-                font = CreateFontIndirect(&CompleteFont);
-                SendMessage(hwndLB, WM_SETFONT, (WPARAM)font, FALSE);
+                ApplyDialogFont(hwndLB);
                 SetLayeredWindowAttributes(hwnd, TRANSPARENT_COLOR, 0xff, LWA_COLORKEY);
                 break;
             case WM_DESTROY:
@@ -4395,7 +4370,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     struct llist *ll = malloc(sizeof(struct llist)), **find = &stringdata;
                     if (ll)
                     {
-                        int i = 0;
+                        int i = 0, rv;
                         strncpy(ll->name, (char *)lParam, 256);
                         ll->name[255] = 0;
                         while ((*find) && strcmp(ll->name, (*find)->name) > 0)
@@ -4405,7 +4380,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         }
                         ll->next = *find;
                         *find = ll;
-                        return SendMessage(hwndLB, LB_INSERTSTRING, i, (LPARAM)ll->name);
+                        rv =  SendMessage(hwndLB, LB_INSERTSTRING, i, (LPARAM)ll->name);
+                        SendMessage(hwndLB, LB_SETCURSEL, selected = 0, 0);
+                        return rv;
                     }
                 }
                 return 0;
@@ -4418,6 +4395,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     if ((int)temp != LB_ERR)
                         if (!strnicmp(temp, (char *)lParam, strlen((char *)lParam)))
                         {
+                            int n = SendMessage(hwndLB, LB_GETCOUNT, 0, 0);
+                            if (n > 8)
+                                n = 8;
+                            n = i - n/2;
+                            if (n < 0)
+                                n = 0;
+                            SendMessage(hwndLB, LB_SETTOPINDEX, n, 0);
                             SendMessage(hwndLB, LB_SETCURSEL, i, 0);
                             return i;
                         }
@@ -4432,6 +4416,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         if ((int)temp != LB_ERR)
                             if (!strnicmp(temp, (char *)lParam, strlen((char *)lParam)))
                             {
+                                int n = SendMessage(hwndLB, LB_GETCOUNT, 0, 0);
+                                if (n > 8)
+                                    n = 8;
+                                n = i - n/2;
+                                if (n < 0)
+                                    n = 0;
+                                SendMessage(hwndLB, LB_SETTOPINDEX, n, 0);
                                 SendMessage(hwndLB, LB_SETCURSEL, i, 0);
                                 return i;
                             }
@@ -4700,9 +4691,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     POINT cpos;
                     TEXTMETRIC t;
                     HDC dc = GetDC(codecompleteBox);
-                    HFONT font = CreateFontIndirect(&CompleteFont);
                     drawline(hwnd, p, p->selstartcharpos);
-                    font = SelectObject(dc, font);
                     GetTextMetrics(dc, &t);
                     SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
                     p->cd->selecting = FALSE;
@@ -4717,8 +4706,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         n = SendMessage(codecompleteBox, LB_ADDSTRING, 0, (LPARAM)name);
                     }
                     ccFreeStructData(structData);
-                    font = SelectObject(dc, font);
-                    DeleteObject(font);
                     ReleaseDC(codecompleteBox, dc);
                     if (count > 8)
                         count = 8;
@@ -4804,7 +4791,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     {
         if (inStructBox || PropGetInt(NULL, "CODE_COMPLETION") < 2)
             return 0;
-//        if (!codecompleteBox)
+        if (!codecompleteBox)
         {
             char buf[4096], *q = buf + sizeof(buf);
             int pos = p->selstartcharpos-1;
@@ -4821,20 +4808,11 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 names = GetCodeCompKeywords(q, names, &size, &max, hwnd, p);
             if (size)
             {
-                BOOL wasDisplayed = FALSE;
-                if (!codecompleteBox)
-                {
-                    codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
-                                       (WS_POPUP) | WS_CLIPCHILDREN,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       hwnd,0, hInstance,0);
-                }
-                else
-                {
-                    wasDisplayed = TRUE;
-                    InvalidateRect(codecompleteBox, 0, 0);
-                }
+                codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
+                                   (WS_POPUP) | WS_CLIPCHILDREN,
+                                   CW_USEDEFAULT, CW_USEDEFAULT,
+                                   CW_USEDEFAULT, CW_USEDEFAULT,
+                                   hwnd,0, hInstance,0);
                 if (codecompleteBox)
                 {
                     int count = 0;
@@ -4844,9 +4822,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     POINT cpos;
                     TEXTMETRIC t;
                     HDC dc = GetDC(codecompleteBox);
-                    HFONT font = CreateFontIndirect(&CompleteFont);
                     drawline(hwnd, p, p->selstartcharpos);
-                    font = SelectObject(dc, font);
                     GetTextMetrics(dc, &t);
                     SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
                     p->cd->selecting = FALSE;
@@ -4862,8 +4838,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         free(name);
                     }
                     free(names);
-                    font = SelectObject(dc, font);
-                    DeleteObject(font);
                     ReleaseDC(codecompleteBox, dc);
                     if (count > 8)
                         count = 8;
@@ -4873,21 +4847,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     {
                         height = t.tmHeight * count;
                         width += 10 + GetSystemMetrics(SM_CXVSCROLL) + 2 * GetSystemMetrics(SM_CXFRAME);
-                        if (wasDisplayed)
-                        {
-                            RECT client;
-                            GetClientRect(codecompleteBox, &client);
-                            cpos.x = client.left;
-                            cpos.y = client.top;
-                            ClientToScreen(codecompleteBox, &cpos);
-                        }
-                        else
-                        {
-                            GetCompletionPos(hwnd, p, &cpos, width, height);
-                            SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
-                            SendMessage(codecompleteBox, WM_USER + 2, 0, (LPARAM)q);
-                        }
-                        MoveWindow(codecompleteBox, cpos.x, cpos.y, width+4, height+4, FALSE);
+                        GetCompletionPos(hwnd, p, &cpos, width, height);
+                        SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
+                        SendMessage(codecompleteBox, WM_USER + 2, 0, (LPARAM)q);
+                        MoveWindow(codecompleteBox, cpos.x, cpos.y, width+4, height+4, TRUE);
                         ShowWindow(codecompleteBox, SW_SHOW);
                         if (IsWindowVisible(hwndShowFunc))
                             ShowWindow(hwndShowFunc, SW_HIDE);
@@ -5015,9 +4978,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         switch(iMessage)
         {
             case WM_CREATE:
-            
-                normal = CreateFontIndirect(&FuncFont);
-                lf = FuncFont;
+                lf = systemDialogFont;
+                normal = (HFONT)CreateFontIndirect(&lf);
                 lf.lfWeight = FW_BOLD;
                 bold = CreateFontIndirect(&lf);
                 SetLayeredWindowAttributes(hwnd, TRANSPARENT_COLOR, 0xff, LWA_COLORKEY);

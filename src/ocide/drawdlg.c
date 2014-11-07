@@ -67,6 +67,7 @@
 
 #define WM_MOVEDCHILD 20000
 
+extern LOGFONT systemCaptionFont;
 extern HWND hwndSrcTab;
 extern HWND hwndClient;
 extern HINSTANCE hInstance;
@@ -887,10 +888,7 @@ static void GetBaseUnits(HWND hwnd, struct resRes *dlgData, LPSIZE base)
     }
     else
     {
-        NONCLIENTMETRICS m;
-        m.cbSize = sizeof(NONCLIENTMETRICS);
-        SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS),&m, NULL);
-        font = CreateFontIndirect(&m.lfCaptionFont);
+        font = CreateFontIndirect(&systemCaptionFont);
     }
     font = SelectObject(hDC, font);
     GetTextExtentPoint32(hDC,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 52, base);

@@ -55,16 +55,9 @@ static WNDPROC oldproc;
 static HWND hwndCtrl, lsTabCtrl;
 static int index;
 static int wheelIncrement;
-static LOGFONT tabFontData = 
-{
-    -13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
-        FF_DONTCARE,
-        "Arial"
-};
 static LOGFONT Textfontdata =
 {
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
+    -11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH |
         FF_DONTCARE,
         CONTROL_FONT
@@ -423,7 +416,7 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     static HWND hsubwnds[4]; // build, debug, find1, find2
-    static HFONT tabNormalFont, textFont;
+    static HFONT textFont;
     CHARFORMAT cfm;
     NMHDR *h;
     RECT r;
@@ -503,10 +496,9 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_CREATE:
             hwndInfo = hwnd;
             GetClientRect(hwnd, &r);
-            tabNormalFont = CreateFontIndirect(&tabFontData);
             textFont = CreateFontIndirect(&Textfontdata);
             lsTabCtrl = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
-            SendMessage(lsTabCtrl, WM_SETFONT, (WPARAM)tabNormalFont, 0);
+            ApplyDialogFont(lsTabCtrl);
             OffsetRect(&r,  - r.left,  - r.top);
             r.bottom -= 27;
             hsubwnds[0] = CreateWindowEx(0, "XBUILDEDIT", 0, WS_CHILD +
@@ -552,7 +544,6 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             EndPaint(hwnd, &ps);
             return 0;
         case WM_DESTROY:
-            DeleteObject(tabNormalFont);
             DeleteObject(textFont);
             DestroyWindow(lsTabCtrl);
             DestroyWindow(hsubwnds[0]);

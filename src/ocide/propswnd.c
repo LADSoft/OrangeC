@@ -100,14 +100,6 @@ static int currentPropertyRow;
 static HWND currentPropertyWindow;
 
 //static PROPDESC *desc;
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
-static HFONT font;
 
 static char *szPropsClassName = "xccProps";
 static char *szPropsTitle = "Properties";
@@ -466,7 +458,6 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_CHILD | LVS_REPORT | LVS_SINGLESEL,
                 0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
                 hInstance, NULL);
-            font = CreateFontIndirect(&fontdata);
             SetListViewColumns();
             break;
         case WM_SIZE:

@@ -51,7 +51,6 @@ HWND hwndTab;
 HWND hwndTabCtrl;
 static char szTabClassName[] = "xccTabClass";
 static char szTabTitle[] = "Workspace";
-static HFONT tabBoldFont, tabNormalFont;
 static char *nameTags[] = 
 {
     "Files", "Resources"
@@ -62,18 +61,6 @@ static HBITMAP *bitmaps[] =
      &projBitmap, &resBitmap
 };
 
-static LOGFONT Boldfontdata = 
-{
-    -12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS,
-        CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE,
-        "Arial"
-};
-static LOGFONT Normalfontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, 
-        "Arial"
-};
 void GetTabRect(RECT *rect)
 {
     GetClientRect(hwndTabCtrl, rect);
@@ -136,18 +123,12 @@ LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return SendMessage(hwndTabCtrl, iMessage, wParam, lParam);
         case WM_DRAWITEM:
             dr = (DRAWITEMSTRUCT*)lParam;
-            if (dr->itemState &ODS_SELECTED)
-                font = tabBoldFont;
-            else
-                font = tabNormalFont;
             hMemDC = CreateCompatibleDC(dr->hDC);
             hbmp = SelectObject(hMemDC,  *bitmaps[dr->itemID]);
             BitBlt(dr->hDC, dr->rcItem.left + 2, dr->rcItem.bottom - 18, 16, 16,
                 hMemDC, 0, 0, SRCCOPY);
-            font = SelectObject(dr->hDC, font);
             TextOut(dr->hDC, dr->rcItem.left + 18, dr->rcItem.bottom - 16,
                 nameTags[dr->itemID], strlen(nameTags[dr->itemID]));
-            font = SelectObject(dr->hDC, font);
             SelectObject(dr->hDC, hbmp);
             DeleteDC(hMemDC);
             break;
@@ -158,9 +139,7 @@ LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_CLIPSIBLINGS + WS_VISIBLE + TCS_FLATBUTTONS /*+ TCS_OWNERDRAWFIXED */
                 + TCS_FOCUSNEVER /*+ TCS_FIXEDWIDTH*/ + TCS_BOTTOM, r.left, r.top,
                 r.right - r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
-            tabBoldFont = CreateFontIndirect(&Boldfontdata);
-            tabNormalFont = CreateFontIndirect(&Normalfontdata);
-            SendMessage(hwndTabCtrl, WM_SETFONT, (WPARAM)tabNormalFont, 0);
+            ApplyDialogFont(hwndTabCtrl);
             projBitmap = LoadImage(hInstance, "ID_PROJBMP", IMAGE_BITMAP,0,0,LR_DEFAULTSIZE | LR_LOADMAP3DCOLORS);
             resBitmap = LoadImage(hInstance, "ID_RESBMP", IMAGE_BITMAP,0,0,LR_DEFAULTSIZE | LR_LOADMAP3DCOLORS);
             tabIml = ImageList_Create(16, 16, ILC_COLOR32, 1, 0);
@@ -192,8 +171,6 @@ LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             DestroyWindow(hwndTabCtrl);
             DeleteObject(projBitmap);
             DeleteObject(resBitmap);
-            DeleteObject(tabNormalFont);
-            DeleteObject(tabBoldFont);
             hwndTab = 0;
             break;
         case WM_SIZE:

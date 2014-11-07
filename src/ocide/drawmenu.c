@@ -54,6 +54,7 @@ extern HWND hwndSrcTab;
 extern HWND hwndClient;
 extern HINSTANCE hInstance;
 extern PROJECTITEM *workArea;
+extern LOGFONT systemMenuFont;
 
 static char *szMenuDrawClassName = "xccMenuDrawClass";
 static char *szUntitled = "Menu";
@@ -422,16 +423,13 @@ static void PaintTopRow(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
 static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct resRes *menuData)
 {
     RECT r1;
-    NONCLIENTMETRICS m;
     HFONT font;
     SIZE sz;
     HDC compatDC, arrowDC;
     HBITMAP compatBitmap, arrowBitmap;
     int fontHeight;
-    m.cbSize = sizeof(NONCLIENTMETRICS);
-    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS),&m, NULL);
-    fontHeight = (m.lfMenuFont.lfHeight < 0 ? - m.lfMenuFont.lfHeight : m.lfMenuFont.lfHeight)+6;
-    font = CreateFontIndirect(&m.lfMenuFont);
+    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    font = CreateFontIndirect(&systemMenuFont);
     compatDC = CreateCompatibleDC(hDC);
     arrowDC = CreateCompatibleDC(hDC);
     font = SelectObject(compatDC, font);
@@ -613,11 +611,8 @@ static void SelectItem(struct resRes *menuData, MENUITEM *orig, MENUITEM *select
     if (openEditor)
     {
         char buf[512];
-        NONCLIENTMETRICS m;
         HFONT font;
-        m.cbSize = sizeof(NONCLIENTMETRICS);
-        SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS),&m, NULL);
-        font = CreateFontIndirect(&m.lfMenuFont);
+        font = CreateFontIndirect(&systemMenuFont);
         StringWToA(buf, selected->text, wcslen(selected->text));
         menuData->gd.editWindow = CreateWindow("edit", "", WS_VISIBLE |
             WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER | ES_AUTOHSCROLL,
@@ -706,14 +701,11 @@ static BOOL SelectFromTopRow(HDC hDC, struct resRes *menuData,
 }
 static void SelectSubmenu(HWND hwnd, struct resRes *menuData, POINT mouse, BOOL openEditor)
 {
-    NONCLIENTMETRICS m;
     HFONT font;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
-    m.cbSize = sizeof(NONCLIENTMETRICS);
-    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS),&m, NULL);
-    fontHeight = (m.lfMenuFont.lfHeight < 0 ? - m.lfMenuFont.lfHeight : m.lfMenuFont.lfHeight)+6;
-    font = CreateFontIndirect(&m.lfMenuFont);
+    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    font = CreateFontIndirect(&systemMenuFont);
     font = SelectObject(hDC, font);
     mouse.x += menuData->gd.scrollPos.x;
     mouse.y += menuData->gd.scrollPos.y;
@@ -834,14 +826,11 @@ static int HitTestFromTopRow(HDC hDC, struct resRes *menuData,MENUITEM *items, i
 int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse)
 {
     int rv;
-    NONCLIENTMETRICS m;
     HFONT font;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
-    m.cbSize = sizeof(NONCLIENTMETRICS);
-    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS),&m, NULL);
-    fontHeight = (m.lfMenuFont.lfHeight < 0 ? - m.lfMenuFont.lfHeight : m.lfMenuFont.lfHeight)+6;
-    font = CreateFontIndirect(&m.lfMenuFont);
+    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    font = CreateFontIndirect(&systemMenuFont);
     font = SelectObject(hDC, font);
     mouse.x += menuData->gd.scrollPos.x;
     mouse.y += menuData->gd.scrollPos.y;
@@ -1012,14 +1001,11 @@ static int InsertDeleteFromTopRow(HDC hDC, struct resRes *menuData,
 }
 void InsertDelete(HWND hwnd, struct resRes * menuData, int code)
 {
-    NONCLIENTMETRICS m;
     HFONT font;
     int fontHeight;
     HDC hDC = GetDC(hwnd);
-    m.cbSize = sizeof(NONCLIENTMETRICS);
-    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS),&m, NULL);
-    fontHeight = (m.lfMenuFont.lfHeight < 0 ? - m.lfMenuFont.lfHeight : m.lfMenuFont.lfHeight)+6;
-    font = CreateFontIndirect(&m.lfMenuFont);
+    fontHeight = (systemMenuFont.lfHeight < 0 ? - systemMenuFont.lfHeight : systemMenuFont.lfHeight)+6;
+    font = CreateFontIndirect(&systemMenuFont);
     font = SelectObject(hDC, font);
     InsertDeleteFromTopRow(hDC, menuData, &menuData->resource->u.menu->items, fontHeight, code);
     font = SelectObject(hDC, font);

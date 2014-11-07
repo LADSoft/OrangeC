@@ -57,6 +57,7 @@
 
 extern char szInstallPath[];
 extern PROJECTITEM *workArea;
+extern LOGFONT systemDialogFont;
 extern HWND hwndFrame;
 extern HINSTANCE hInstance;
 extern BUILDRULE *buildRules;
@@ -567,9 +568,17 @@ static void CreateItemWindow(HWND parent, HWND lv, RECT *r, SETTING *current)
     {
         SETTINGCOMBO *sc;
         char *sel;
+        int i;
         case e_combo:
+            sc = current->combo;
+            i = 0;
+            while (sc)
+            {
+                i++;
+                sc = sc->next;
+            }
             current->hWnd = CreateWindow("xccCombo","", WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | CBS_DROPDOWNLIST,
-                                         r->left+1, r->top, r->right - r->left-1, r->bottom - r->top-1, parent, 0, hInstance, 0);
+                                         r->left+1, r->top, r->right - r->left-1, r->bottom - r->top -1, parent, 0, hInstance, 0);
             SendMessage(current->hWnd, WM_SETFONT, (WPARAM)SendMessage(lv, WM_GETFONT, 0, 0), 1);
             sc = current->combo;
             sel = NULL;
@@ -1390,17 +1399,21 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             if (helpPt.y > pt.y)
                 pt.y = helpPt.y;
             hAcceptBtn = CreateWindowEx(0, "button", szAccept, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 1 * (pt.x + 20), r.bottom -pt.y - 12, pt.x+12, pt.y + 8,
+                                        r.right - 1 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
                                         hwnd, (HMENU)IDOK, hInstance, NULL);
+            SendMessage(hAcceptBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             hCancelBtn = CreateWindowEx(0, "button", szClose, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 2 * (pt.x + 20), r.bottom -pt.y - 12, pt.x+12, pt.y + 8,
+                                        r.right - 2 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
                                         hwnd, (HMENU)IDCANCEL, hInstance, NULL);
+            SendMessage(hCancelBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             hApplyBtn = CreateWindowEx(0, "button", szApply, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 3 * (pt.x + 20), r.bottom -pt.y - 12, pt.x+12, pt.y + 8,
+                                        r.right - 3 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
                                         hwnd, (HMENU)IDC_AUXBUTTON, hInstance, NULL);
+            SendMessage(hApplyBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             hHelpBtn = CreateWindowEx(0, "button", szHelp, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 5 * (pt.x + 20), r.bottom -pt.y - 12, pt.x+12, pt.y + 8,
+                                        r.right - 5 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
                                         hwnd, (HMENU)IDHELP, hInstance, NULL);
+            SendMessage(hHelpBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             EnableWindow(hAcceptBtn, FALSE);
             EnableWindow(hApplyBtn, FALSE);
             EnableWindow(hHelpBtn, FALSE);
@@ -1569,14 +1582,11 @@ static LRESULT CALLBACK FontWndProc(HWND hwnd, UINT iMessage,
         ContextHelp(IDH_CHOOSE_FONT_DIALOG);
     else switch(iMessage)
     {
-        NONCLIENTMETRICS NonClientMetrics;
         case WM_CREATE:
             ptr = CreateButtonWnd(hwnd, TRUE, FALSE);
             SetWindowLong(hwnd, 0, (long)ptr);
-              NonClientMetrics.cbSize = sizeof(NonClientMetrics);
-              SystemParametersInfo(SPI_GETNONCLIENTMETRICS, 0, &NonClientMetrics, 0);
-              ptr->font = CreateFontIndirect(&NonClientMetrics.lfMessageFont);
-            ptr->lfHeight = NonClientMetrics.lfMenuFont.lfHeight;
+            ptr->font = CreateFontIndirect(&systemDialogFont);
+            ptr->lfHeight = systemDialogFont.lfHeight;
             SendMessage(hwnd, WM_COMMAND, IDC_SETFONTNAME, 0);
             break;
         case WM_COMMAND:
@@ -1751,13 +1761,16 @@ static LRESULT CALLBACK ComboWndProc(HWND hwnd, UINT iMessage,
     struct buttonWindow *ptr;
     switch(iMessage)
     {
-        RECT r;
+        RECT r, rc;
+        int n;
+        TEXTMETRIC t;
+        HDC hDC;
         case WM_CREATE:
             ptr = CreateButtonWnd(hwnd, TRUE, TRUE);
             SetWindowLong(hwnd, 0, (long)ptr);
             GetClientRect(hwnd, &r);
             ptr->list = CreateWindow("listbox",0,WS_CHILD | LBS_NOTIFY | WS_VSCROLL | WS_BORDER, 
-                                         r.left, r.bottom, 500, r.right-r.left,
+                                         r.left, r.bottom, 16, r.right-r.left,
                                         hwnd, (HMENU)IDC_LISTBOX, hInstance, 0);
             break;
         case WM_COMMAND:
@@ -1779,13 +1792,14 @@ static LRESULT CALLBACK ComboWndProc(HWND hwnd, UINT iMessage,
                 case IDC_AUXBUTTON:
                 {
                     GetClientRect(hwnd, &r);
+                    GetClientRect(ptr->list, &rc);
                     if (IsWindowVisible(ptr->list))
                     {
-                        SetWindowPos(hwnd, 0, r.left, r.top, r.right-r.left, r.bottom - r.top - 500, SWP_NOACTIVATE | SWP_NOMOVE);
+                        SetWindowPos(hwnd, 0, r.left, r.top, r.right-r.left, r.bottom - r.top - rc.bottom + rc.top - GetSystemMetrics(SM_CYBORDER)*2, SWP_NOACTIVATE | SWP_NOMOVE);
                     }
                     else
                     {
-                        SetWindowPos(hwnd, 0, r.left, r.top, r.right-r.left, r.bottom - r.top + 500, SWP_NOACTIVATE | SWP_NOMOVE);
+                        SetWindowPos(hwnd, 0, r.left, r.top, r.right-r.left, r.bottom - r.top + rc.bottom - rc.top + GetSystemMetrics(SM_CYBORDER)*2, SWP_NOACTIVATE | SWP_NOMOVE);
                     }
                     SetWindowPos(ptr->list, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOMOVE | (IsWindowVisible(ptr->list) ? SWP_HIDEWINDOW : SWP_SHOWWINDOW));
                     break;
@@ -1798,6 +1812,16 @@ static LRESULT CALLBACK ComboWndProc(HWND hwnd, UINT iMessage,
         case CB_ADDSTRING:
             ptr = (struct buttonWindow*)GetWindowLong(hwnd, 0);
             SendMessage(ptr->list, LB_ADDSTRING, wParam, lParam);
+            n = SendMessage(ptr->list, LB_GETCOUNT, 0, 0);
+            hDC = GetDC(hwnd);
+            GetTextMetrics(hDC, &t);
+            GetClientRect(hwnd, & r);
+            GetClientRect(ptr->list, &rc);
+            rc.bottom = (t.tmHeight) * n;
+            SetWindowPos(ptr->list, NULL, 0,0, r.right - r.left, 
+                         rc.bottom - rc.top, 
+                         SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+            ReleaseDC(hwnd, hDC);
             break;
         case CB_SELECTSTRING:
         case WM_SETTEXT:

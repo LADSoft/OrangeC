@@ -52,7 +52,6 @@ HWND hwndPropsTab;
 HWND hwndPropsTabCtrl;
 static char szPropsTabClassName[] = "xccTabClassProp";
 static char szPropsTabTitle[] = "Properties";
-static HFONT tabBoldFont, tabNormalFont;
 static char *nameTags[] = 
 {
     "Properties", "Toolbox"
@@ -63,18 +62,6 @@ static HBITMAP *bitmaps[] =
      &propsBitMap, &toolsBitMap
 };
 
-static LOGFONT Boldfontdata = 
-{
-    -12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS,
-        CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE,
-        "Arial"
-};
-static LOGFONT Normalfontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, 
-        "Arial"
-};
 void GetPropsTabRect(RECT *rect)
 {
     GetClientRect(hwndPropsTabCtrl, rect);
@@ -131,10 +118,6 @@ LRESULT CALLBACK PropsTabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return SendMessage(hwndPropsTabCtrl, iMessage, wParam, lParam);
         case WM_DRAWITEM:
             dr = (DRAWITEMSTRUCT*)lParam;
-            if (dr->itemState &ODS_SELECTED)
-                font = tabBoldFont;
-            else
-                font = tabNormalFont;
             hMemDC = CreateCompatibleDC(dr->hDC);
             hbmp = SelectObject(hMemDC,  *bitmaps[dr->itemID]);
             BitBlt(dr->hDC, dr->rcItem.left + 2, dr->rcItem.bottom - 18, 16, 16,
@@ -153,9 +136,7 @@ LRESULT CALLBACK PropsTabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_CLIPSIBLINGS + WS_VISIBLE + TCS_FLATBUTTONS /*+ TCS_OWNERDRAWFIXED */
                 + TCS_FOCUSNEVER /*+ TCS_FIXEDWIDTH*/ + TCS_BOTTOM, r.left, r.top,
                 r.right - r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
-            tabBoldFont = CreateFontIndirect(&Boldfontdata);
-            tabNormalFont = CreateFontIndirect(&Normalfontdata);
-            SendMessage(hwndPropsTabCtrl, WM_SETFONT, (WPARAM)tabNormalFont, 0);
+            ApplyDialogFont(hwndPropsTabCtrl);
             propsBitMap = LoadImage(hInstance, "ID_PROPSBMP", IMAGE_BITMAP,0,0,LR_DEFAULTSIZE | LR_LOADMAP3DCOLORS);
             toolsBitMap = LoadImage(hInstance, "ID_TOOLBOXBMP", IMAGE_BITMAP,0,0,LR_DEFAULTSIZE | LR_LOADMAP3DCOLORS);
             tabIml = ImageList_Create(16, 16, ILC_COLOR32, 1, 0);
@@ -187,8 +168,6 @@ LRESULT CALLBACK PropsTabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             DestroyWindow(hwndPropsTabCtrl);
             DeleteObject(propsBitMap);
             DeleteObject(toolsBitMap);
-            DeleteObject(tabNormalFont);
-            DeleteObject(tabBoldFont);
             hwndPropsTab = 0;
             break;
         case WM_SIZE:

@@ -74,13 +74,6 @@ static CONTEXT regContext;
 static HWND hwndTree;
 static char szRegisterClassName[] = "xccRegisterClass";
 static char szRegisterTitle[] = "";
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH |
-        FF_DONTCARE,
-        "Arial"
-};
 static HANDLE registerHandle;
 static CONTEXT oldContext;
 static HBITMAP valueBitmap, itemBitmap;
@@ -305,12 +298,10 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     HDC dc;
     TEXTMETRIC metric;
     DEBUG_EVENT *xc;
-    HFONT oldFont;
     LOGBRUSH brushstr;
     RECT r;
     int i;
     NM_TREEVIEW *nmt;
-    HFONT font;
     switch (iMessage)
     {
         case WM_NOTIFY:
@@ -450,8 +441,7 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             tch.colBmp1 = itemBitmap;
             tch.colBmp2 = valueBitmap;
             hwndTree = CreateextTreeWindow(hwnd, TCS_LINE | WS_VISIBLE, &r, &tch);
-            font = CreateFontIndirect(&fontdata);
-            SendMessage(hwndTree, WM_SETFONT, (WPARAM)font, 0);
+            ApplyDialogFont(hwndTree);
             break;
 
         case WM_CLOSE:

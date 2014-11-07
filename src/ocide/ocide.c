@@ -82,6 +82,8 @@ extern HWND hwndToolNav, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBoo
 extern enum DebugStates uState;
 extern PROJECTITEM *workArea;
 
+void ApplyDialogFont(HWND hwnd);
+
 //extern int __argc;
 //extern char **__argv;
 
@@ -109,8 +111,10 @@ DWORD threadMain;
 
 char *watchhist[MAX_COMBO_HISTORY];
 
+LOGFONT systemDialogFont, systemMenuFont, systemCaptionFont;
+
 static char szFrameClassName[] = "ocideFrame";
-static LOGFONT tabfontdata = 
+static LOGFONT NormalFontData = 
 {
     -13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
@@ -597,8 +601,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 CreateJumpListWindow();
                 MakeToolBar(hwnd);
                 hwndSrcTab = CreateLsTabWindow(hwnd, TABS_HOTTRACK | TABS_FLAT | TABS_CLOSEBTN | TABS_WINDOWBTN | TABS_DRAGABLE | WS_VISIBLE);
-                font = CreateFontIndirect(&tabfontdata);
-                SendMessage(hwndSrcTab, WM_SETFONT, (WPARAM)font, 0);
+                ApplyDialogFont(hwndSrcTab);
                 timerid = SetTimer(hwnd, IDT_STARTING, 100, 0);
                 SetTimer(hwnd, IDT_RETRIEVEFILENAMES, 500, 0);
             }
@@ -1575,6 +1578,34 @@ void ProcessMessage(MSG *msg)
         }
     }
 }
+static void GetSystemDialogFont(void)
+{
+    OSVERSIONINFO osvi;
+    NONCLIENTMETRICS ncm;
+    ncm.cbSize = sizeof(NONCLIENTMETRICS);
+#ifndef BORLANDC
+    memset(&osvi,0,sizeof(osvi));
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+    GetVersionEx(&osvi);
+    if (osvi.dwMajorVersion < 6)
+        ncm.cbSize -= sizeof(ncm.iPaddedBorderWidth);
+#endif
+    if (SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0))
+    {
+        systemDialogFont = ncm.lfMessageFont;
+        systemMenuFont = ncm.lfMenuFont;
+        systemCaptionFont = ncm.lfCaptionFont;
+    }
+    else
+    {
+        systemCaptionFont = systemMenuFont = systemDialogFont = NormalFontData;
+    }
+}
+void ApplyDialogFont(HWND hwnd)
+{
+    HFONT xfont = CreateFontIndirect(&systemDialogFont);
+    SendMessage(hwnd, WM_SETFONT, (WPARAM)xfont, 0);
+}
 void InitFont(BOOL up)
 {
     if (up)
@@ -1698,6 +1729,8 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
         RegisterStringTableDrawWindow();
         RegisterRCDataDrawWindow();
     }
+    
+    GetSystemDialogFont();
     
     hMenuMain = LoadMenuGeneric(hInstance, "MAINMENU");
 

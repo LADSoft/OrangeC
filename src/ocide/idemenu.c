@@ -362,13 +362,10 @@ long APIENTRY WindowShowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
     lParam)
 {
     LV_ITEM item;
-    static HFONT hfont;
     switch (message)
     {
         case WM_INITDIALOG:
-            hfont = CreateFontIndirect(&fontdata);
-            SendMessage(GetDlgItem(hwnd, IDC_FILELIST), WM_SETFONT, (WPARAM)
-                hfont, 0);
+            ApplyDialogFont((HWND)GetDlgItem(hwnd, IDC_FILELIST));
             if (!CreateWindowData(hwnd, TRUE))
                 EndDialog(hwnd, 1);
             else
@@ -386,7 +383,6 @@ long APIENTRY WindowShowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
                     ListView_GetItem(GetDlgItem(hwnd, IDC_FILELIST), &item);
                     SendMessage(hwndClient, WM_MDIACTIVATE, (WPARAM)item.lParam,
                         0);
-                    DeleteObject(hfont);
                     EndDialog(hwnd, IDOK);
                 }
             }
@@ -395,7 +391,6 @@ long APIENTRY WindowShowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
             switch (wParam &0xffff)
             {
             case IDCANCEL:
-                DeleteObject(hfont);
                 EndDialog(hwnd, IDCANCEL);
                 break;
             }

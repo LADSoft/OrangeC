@@ -63,6 +63,7 @@ extern WNDPROC oldPrjEditProc;
 extern HWND hwndEdit;
 extern PROJECTITEM *editItem;
 extern char *szprjEditClassName;
+extern LOGFONT systemDialogFont;
 
 LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
@@ -81,27 +82,6 @@ static int treeViewSelected;
 HTREEITEM prjSelectedItem;
 
 static HCURSOR dragCur, noCur;
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
-static LOGFONT italicFontData = 
-{
-    -12, 0, 0, 0, FW_NORMAL, TRUE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
-static LOGFONT boldFontData = 
-{
-    -12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
 
 static void SetExt(OPENFILENAME *ofn, char *ext)
 {
@@ -456,6 +436,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     static HTREEITEM srcItem, dstItem;
     switch (iMessage)
     {
+        LOGFONT lf;
         case WM_SYSCOMMAND:
             if (wParam == SC_CLOSE)
                 SendMessage(hwnd, WM_CLOSE, 0, 0);
@@ -914,9 +895,13 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 hInstance, NULL);
             i = GetWindowLong(prjTreeWindow, GWL_STYLE);
             TreeView_SetImageList(prjTreeWindow, treeIml, TVSIL_NORMAL);
-            projFont = CreateFontIndirect(&fontdata);
-            boldProjFont = CreateFontIndirect(&boldFontData);
-            italicProjFont = CreateFontIndirect(&italicFontData);
+            lf = systemDialogFont;
+            projFont = CreateFontIndirect(&lf);
+            lf.lfItalic = TRUE;
+            italicProjFont = CreateFontIndirect(&lf);
+            lf.lfItalic = FALSE;
+            lf.lfWeight = FW_BOLD;
+            boldProjFont = CreateFontIndirect(&lf);
             SendMessage(prjTreeWindow, WM_SETFONT, (WPARAM)boldProjFont, 0);
             return 0;
         case WM_CLOSE:

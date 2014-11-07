@@ -152,14 +152,6 @@ DWORD customImageColors[16] = {
 };
 
 
-static LOGFONT tabFontData = 
-{
-    -11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
-        FF_DONTCARE,
-        "Arial"
-};
-
 static DWORD defaultColors[MAX_COLORS] = {
     RGB(255, 255, 255), RGB(0, 0, 0),
     RGB(192, 192, 192), RGB(128, 128, 128),
@@ -3131,7 +3123,6 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     RECT rf, rs;
     int parts[4], i;
     IMGDATA *p;
-    HFONT tabNormalFont;
     switch (iMessage)
     {
         case WM_NOTIFY:
@@ -3314,8 +3305,7 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (p->res->type != FT_BMP)
             {
                 p->hwndImageTab = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
-                tabNormalFont = CreateFontIndirect(&tabFontData);
-                SendMessage(p->hwndImageTab, WM_SETFONT, (WPARAM)tabNormalFont, 0);
+                ApplyDialogFont(p->hwndImageTab);
                 InsertTabs(p, p->resList);
             }
             p->hwndFontTB = CreateToolBarWindow(-1, hwnd, hwnd, 16,

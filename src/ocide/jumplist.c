@@ -552,13 +552,11 @@ LRESULT CALLBACK JumpListProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             hwndTypeCombo = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_CLIPSIBLINGS +
                 WS_BORDER + WS_VISIBLE + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
                                 r.left + 70, r.top, 200, 100, hwnd, (HMENU)100, hInstance, 0);
-            xfont = CreateFontIndirect(&jumpListFontData);
-            SendMessage(hwndTypeCombo, WM_SETFONT, (WPARAM)xfont, 1);
+            ApplyDialogFont(hwndTypeCombo);
             hwndValueCombo = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_CLIPSIBLINGS +
                 WS_BORDER + WS_VISIBLE + CBS_DROPDOWN + CBS_AUTOHSCROLL + WS_VSCROLL, 
                                 r.left + 70, r.top, 200, 200, hwnd, (HMENU)200, hInstance, 0);
-            xfont = CreateFontIndirect(&jumpListFontData);
-            SendMessage(hwndValueCombo, WM_SETFONT, (WPARAM)xfont, 1);
+            ApplyDialogFont(hwndValueCombo);
             oldProcCombo = (WNDPROC)GetWindowLong(hwndValueCombo, GWL_WNDPROC);
             SetWindowLong(hwndValueCombo, GWL_WNDPROC, (long)ValueComboProc);
 

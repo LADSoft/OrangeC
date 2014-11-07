@@ -46,6 +46,8 @@
 #include "winconst.h"
  
 extern HINSTANCE hInstance;
+extern LOGFONT systemDialogFont;
+
 static char *szextTreeWindClassName = "ladSoftextTreeWindow";
 static char *szColumnTreeWindClassName = "ladSoftColumnTreeWindow";
 static char *szextEditWindClassName = "ladSoftextEditWindow";
@@ -413,7 +415,7 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
             //         wp.cx -= 4 * GetSystemMetrics(SM_CXDLGFRAME) ;
             //         wp.y += 2*GetSystemMetrics(SM_CYDLGFRAME );
             //         wp.cy -= 4 * GetSystemMetrics(SM_CYDLGFRAME) ;
-            ptr->watchFont = CreateFontIndirect(&fontdata);
+            ptr->watchFont = CreateFontIndirect(&systemDialogFont);
             SendMessage(ptr->hwndHeader, WM_SETFONT, (WPARAM)ptr->watchFont, 0);
             SetWindowPos(ptr->hwndHeader, wp.hwndInsertAfter, wp.x, wp.y, wp.cx,
                 wp.cy, wp.flags | SWP_SHOWWINDOW);

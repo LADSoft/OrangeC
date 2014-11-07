@@ -72,6 +72,7 @@ extern char szIconFilter[];
 extern char szFontFilter[];
 extern char szMessageTableFilter[];
 extern jmp_buf errjump;
+extern LOGFONT systemDialogFont;
 
 HWND hwndRes;
 char *rcSearchPath;
@@ -1838,6 +1839,7 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     TVHITTESTINFO hittest;
     switch (iMessage)
     {
+        LOGFONT lf;
         case WM_NOTIFY:
             nm = (NM_TREEVIEW*)lParam;
             switch (nm->hdr.code)
@@ -1951,8 +1953,13 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 hInstance, NULL);
             i = GetWindowLong(treeWindow, GWL_STYLE);
             TreeView_SetImageList(treeWindow, ImageList_Duplicate(treeIml), TVSIL_NORMAL);
-            projFont = CreateFontIndirect(&fontdata);
-            boldProjFont = CreateFontIndirect(&boldFontData);
+            lf = systemDialogFont;
+            projFont = CreateFontIndirect(&lf);
+            lf.lfItalic = TRUE;
+            italicProjFont = CreateFontIndirect(&lf);
+            lf.lfItalic = FALSE;
+            lf.lfWeight = FW_BOLD;
+            boldProjFont = CreateFontIndirect(&lf);
             break;
         case WM_SIZE:
             MoveWindow(treeWindow, 0, 0, LOWORD(lParam), HIWORD(lParam), 0);

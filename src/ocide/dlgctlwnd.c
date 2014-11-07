@@ -82,14 +82,6 @@ static HBITMAP mainIml;
 static HCURSOR dragCur, noCur;
 static HWND lvwindow;
 static PROPDESC *desc;
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
-static HFONT font;
 
 static char *szCtlTbClassName = "xccCtlTb";
 static char *szCtlTbTitle = "Toolbox";
@@ -195,7 +187,6 @@ LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_CHILD | LVS_SMALLICON,
                 0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
                 hInstance, NULL);
-            font = CreateFontIndirect(&fontdata);
             ListView_SetBkColor(lvwindow, RetrieveSysColor(COLOR_BTNFACE));
             ListView_SetTextBkColor(lvwindow, RetrieveSysColor(COLOR_BTNFACE));
             lvIml = ImageList_Create(32, 32, ILC_COLOR24, IMAGECOUNT, 0);

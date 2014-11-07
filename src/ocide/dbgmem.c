@@ -56,6 +56,7 @@ extern enum DebugState uState;
 extern THREAD *activeThread;
 extern PROJECTITEM *workArea;
 extern SCOPE *activeScope;
+extern LOGFONT systemDialogFont;
 
 char *memhist[MAX_COMBO_HISTORY];
 HWND hwndMem;
@@ -77,32 +78,17 @@ static HWND hwndMemInternal[4];
 static int curpos;
 static char cursmod[32];
 static int modifying;
-static HFONT tabNormalFont;
 static HFONT staticFont;
 static HWND hwndTabCtrl;
 static int index;
 
 static char *nameTags[4] = { "Memory 1", "Memory 2", "Memory 3", "Memory 4" };
-static LOGFONT fontdata = 
-{
-    -13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH |
-        FF_DONTCARE,
-        CONTROL_FONT
-};
 static LOGFONT Normalfontdata = 
 {
     -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
         FF_DONTCARE,
         CONTROL_FONT
-};
-static LOGFONT tabFontData = 
-{
-    -13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
-        FF_DONTCARE,
-        "Arial"
 };
 
 HFONT MemFont;
@@ -763,26 +749,24 @@ LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             modifying = 0;
             curpos = 0;
             SetCursMode();
-            MemFont = CreateFontIndirect(&fontdata);
-            staticFont = CreateFontIndirect(&Normalfontdata);
             GetClientRect(hwnd, &r);
+            MemFont = CreateFontIndirect(&Normalfontdata);
             hwndStatic = CreateWindow("STATIC", "Address:", WS_CHILD + WS_CLIPSIBLINGS + WS_VISIBLE,
                 r.left + 20, r.top + 6, 60, 18,
                 hwnd, 0, hInstance, 0);
-            SendMessage(hwndStatic, WM_SETFONT, (LPARAM)staticFont, 1);
+            ApplyDialogFont(hwndStatic);
             hwndCombo = CreateWindow("COMBOBOX", "", WS_CHILD + WS_CLIPSIBLINGS +
                 WS_BORDER + WS_VISIBLE + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
                                 r.left + 80, r.top, 200, 100, hwnd, 0, hInstance, 0);
-            SendMessage(hwndCombo, WM_SETFONT, (LPARAM)MemFont, 1);
+            ApplyDialogFont(hwndCombo);
             SubClassHistoryCombo(hwndCombo);
             SendMessage(hwndCombo, WM_SETHISTORY, 0, (LPARAM)memhist);
             pt.x = pt.y = 5;
             hwndEdit = ChildWindowFromPoint(hwndCombo, pt);
             oldproc = (WNDPROC)SetWindowLong(hwndEdit, GWL_WNDPROC, (int)EditHook);
             GetClientRect(hwnd, &r);
-            tabNormalFont = CreateFontIndirect(&tabFontData);
             hwndTabCtrl = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
-            SendMessage(hwndTabCtrl, WM_SETFONT, (WPARAM)tabNormalFont, 0);
+            ApplyDialogFont(hwndTabCtrl);
             r.top += 26;
             r.bottom -= 25;
             // we want the next four to all be the same size since they are overlapping windows inside the memory window
@@ -803,8 +787,6 @@ LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_DESTROY:
             hwndMem = 0;
-            DeleteObject(MemFont);
-            DeleteObject(staticFont);
             break;
         case WM_SETFOCUS:
             SetFocus(hwndCombo);

@@ -61,16 +61,7 @@ SCOPE *StackList;
 
 static char szStackClassName[] = "xccStackClass";
 
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH |
-        FF_DONTCARE,
-        CONTROL_FONT
-
-};
 static HIMAGELIST tagImageList;
-static HFONT StackFont;
 static int curSel;
 static char *szStackTitle = "Call Stack Window";
 static HWND hwndLV;
@@ -328,8 +319,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                            LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
                            0,0,r.right-r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
             ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-            StackFont = CreateFontIndirect(&fontdata);
-            SendMessage(hwndLV, WM_SETFONT, (WPARAM)StackFont, 0);
+            ApplyDialogFont(hwndLV);
             lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
             lvC.cx = 20;
             lvC.iSubItem = 0;
@@ -414,7 +404,6 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_DESTROY:
             ClearStackArea(hwnd);
             hwndStack = 0;
-            DeleteObject(StackFont);
             break;
         case WM_SETFOCUS:
             SendMessage(GetParent(hwnd), WM_ACTIVATEME, 0, 0);

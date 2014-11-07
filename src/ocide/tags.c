@@ -773,7 +773,6 @@ void PreviousBookMarkFile(void)
 LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam)
 {
-    static HFONT font;
     LPMEASUREITEMSTRUCT mi;
     LV_COLUMN lvC;
     LV_ITEM item;
@@ -796,7 +795,6 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
         case WM_COMMAND:
             if (wParam == IDCANCEL)
             {
-                DeleteObject(font);
                 DestroyWindow(hwnd);
                 hwndBookmark = 0;
             }
@@ -806,7 +804,6 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     IDC_BMLISTBOX));
                 if (sel ==  - 1)
                 {
-                    DeleteObject(font);
                     EndDialog(hwnd, 1);
                     break;
                 }
@@ -831,7 +828,6 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     }
                     l = l->next;
                 }
-                DeleteObject(font);
                 EndDialog(hwnd, 1);
             }
             break;
@@ -844,9 +840,8 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
             break;
         case WM_INITDIALOG:
             CenterWindow(hwnd);
-            font = CreateFontIndirect(&fontdata);
             hwndlb = GetDlgItem(hwnd, IDC_BMLISTBOX);
-            SendMessage(hwndlb, WM_SETFONT, (WPARAM)font, 0);
+            ApplyDialogFont(hwndlb);
             GetWindowRect(hwndlb, &r);
             lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
             lvC.cx = r.right - r.left;

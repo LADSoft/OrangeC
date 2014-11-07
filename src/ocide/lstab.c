@@ -60,6 +60,8 @@
 #define MAX_MENU_ROW 15
 #define ID_MENUITEMS (2000)
 
+extern LOGFONT systemDialogFont;
+
 static char *szTabClassName = "ladSoftTabWindow";
 static char *szMenuClassName = "ladSoftMenuWindow";
 static HBITMAP closeBitmap;
@@ -113,13 +115,6 @@ struct _tabStruct
     struct _singleTab **menuList;
 } ;
 
-static LOGFONT Normalfontdata = 
-{
-    -11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
-        FF_DONTCARE,
-        "Arial"
-};
 struct _singleTab *CreateItem(char *name, LPARAM lParam)
 {
     struct _singleTab *newItem = calloc(1, sizeof(struct _singleTab));
@@ -1003,7 +998,7 @@ static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int 
     int itemCount = GetMenuItemCount(hMenu) ;
     int startX, startY, width, height;
     int i;
-    HFONT font = CreateFontIndirect(&Normalfontdata);
+    HFONT font = CreateFontIndirect(&systemDialogFont);
     TEXTMETRIC tm;
     HDC dc;
     BOOL done = FALSE;

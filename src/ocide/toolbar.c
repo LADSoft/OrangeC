@@ -61,13 +61,6 @@ extern int making;
 extern FILEBROWSE *fileBrowseCursor;
 extern FILEBROWSE *fileBrowseInfo;
 extern PROJECTITEM *activeProject;
-static LOGFONT toolbarFontData = 
-{
-    -13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
-        FF_DONTCARE,
-        "Arial"
-};
 
 HWND hwndTbFind, hwndTbThreads, hwndTbProcedure;
 
@@ -391,6 +384,10 @@ static TBBUTTON threadButtons[] =
     ,
     {
         160, 10001, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT, {0}, 0, -1
+    }
+    ,
+    {
+        0, 0, TBSTATE_WRAP, TBSTYLE_SEP, {0}, 0, -1 // not a control, a real separator
     }
     ,
     {
@@ -737,7 +734,8 @@ LRESULT CALLBACK tbStatProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
         case WM_CREATE:
             lpcp = (LPCREATESTRUCT) lParam;
             hwndStatic = CreateWindowEx(0, "static", lpcp->lpszName, WS_CHILD +
-                WS_VISIBLE + SS_CENTERIMAGE, 0,0,100, 200, hwnd, 0, lpcp->hInstance, 0);  
+                WS_VISIBLE | SS_CENTERIMAGE, 0,0,100, 200, hwnd, 0, lpcp->hInstance, 0);  
+            ApplyDialogFont(hwndStatic);
             SetWindowLong(hwnd, GWL_USERDATA, (long)hwndStatic);
             break;
         case WM_DESTROY:
@@ -778,7 +776,6 @@ static void RegisterTbControls(void)
 }
 void MakeToolBar(HWND hwnd)
 {
-    HFONT xfont;
     HWND hwndTemp;
     RegisterTbControls();
     hwndToolEdit = CreateToolBarWindow(DID_EDITTOOL, hwndFrame, hwndFrame, 16,
@@ -792,7 +789,7 @@ void MakeToolBar(HWND hwnd)
     hwndToolBookmark = CreateToolBarWindow(DID_BOOKMARKTOOL, hwndFrame, hwndFrame,
         16, 15, ID_BOOKMARKTB, 8, bookmarkButtons, bookmarkhints, 0, "Bookmark Tools", IDH_BOOKMARK_TOOLBAR);
     hwndToolThreads = CreateToolBarWindow(DID_THREADSTOOL, hwndFrame, hwndFrame,
-        16, 15, ID_BOOKMARKTB, 4, threadButtons, threadhints, 0, "Bookmark Tools", IDH_THREAD_TOOLBAR);
+        16, 15, ID_THREADSTB, 4, threadButtons, threadhints, 0, "Bookmark Tools", IDH_THREAD_TOOLBAR);
   
     hwndTemp = CreateWindowEx(WS_EX_TRANSPARENT, "xccTbStatic", "Thread:", WS_CHILD +
         WS_VISIBLE, 
@@ -817,10 +814,9 @@ void MakeToolBar(HWND hwnd)
     SendMessage(hwndToolNav, LCF_ADDCONTROL, 0, (LPARAM)hwndTbFind);
     SubClassHistoryCombo(hwndTbFind);
     
-    xfont = CreateFontIndirect(&toolbarFontData);
-    SendMessage(hwndTbFind, WM_SETFONT, (WPARAM)xfont, 0);
-    SendMessage(hwndTbThreads, WM_SETFONT, (WPARAM)xfont, 0);
-    SendMessage(hwndTbProcedure, WM_SETFONT, (WPARAM)xfont, 0);
+    ApplyDialogFont(hwndTbFind);
+    ApplyDialogFont(hwndTbThreads);
+    ApplyDialogFont(hwndTbProcedure);
     
     EnableWindow(hwndTbThreads, FALSE);
     EnableWindow(hwndTbProcedure, FALSE);

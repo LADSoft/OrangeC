@@ -57,24 +57,10 @@ extern SCOPE *activeScope;
 HWND hwndWatch;
 static char szWatchClassName[] = "xccWatchClass";
 static char szWatchTitle[] = "Watch Window";
-static HFONT tabNormalFont;
 static HWND hwndTabCtrl;
 
 static HBITMAP valueBitmap, itemBitmap;
 
-static LOGFONT fontdata = 
-{
-    14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, 
-        "Helvetica"
-};
-static LOGFONT tabFontData = 
-{
-    -13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
-        FF_DONTCARE,
-        "Arial"
-};
 static char *nameTags[4] = { "Watch 1", "Watch 2", "Watch 3", "Watch 4" };
 static HWND hwndTree[4];
 static WATCHINFO *watchinfo_list[4];
@@ -753,8 +739,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             tch.colBmp1 = itemBitmap;
             tch.colBmp2 = valueBitmap;
             hwndTabCtrl = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
-            tabNormalFont = CreateFontIndirect(&tabFontData);
-            SendMessage(hwndTabCtrl, WM_SETFONT, (WPARAM)tabNormalFont, 0);
+            ApplyDialogFont(hwndTabCtrl);
             r.bottom -= 25;
             for (i=3; i >0 ; i--)
                 hwndTree[i] = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE, &r, &tch);

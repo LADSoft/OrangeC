@@ -64,14 +64,6 @@ static HWND hwndLV;
 static int curSel;
 static HIMAGELIST tagImageList;
 
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-        DEFAULT_PITCH | FF_MODERN | FF_DONTCARE, 
-        CONTROL_FONT
-};
-static HFONT ThreadFont;
 static char *szThreadTitle = "Thread Window";
 
 static void CopyText(HWND hwnd)
@@ -245,8 +237,7 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
                            LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
                            0,0,r.right-r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
             ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-            ThreadFont = CreateFontIndirect(&fontdata);
-            SendMessage(hwndLV, WM_SETFONT, (WPARAM)ThreadFont, 0);
+            ApplyDialogFont(hwndLV);
             lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
             lvC.cx = 20;
             lvC.iSubItem = 0;
@@ -272,7 +263,6 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             break;
         case WM_DESTROY:
             hwndThread = 0;
-            DeleteObject(ThreadFont);
             break;
         case WM_RESTACK:
             EnableWindow(hwndLV, uState != notDebugging && wParam);

@@ -14,7 +14,7 @@
 #define _HSCR_HELP_CONSTANTS_
 
 #define  Scribble10             (10)        // index
-#define  Scribble20             (20)        // Getting Started
+#define  IDH_GETTING_STARTED    (20)        // Getting Started
 #define  Scribble30             (30)        // Copyright
 #define  Scribble40             (40)        // Menus
 #define  Scribble50             (50)        // Editor Window
@@ -49,8 +49,8 @@
 #define  Scribble340            (340)       // Goto Line Dialog
 #define  Scribble350            (350)       // Open File Dialog
 #define  IDH_NEW_PROJECT_DIALOG (360)       // New Project Dialog
-#define  Scribble362            (362)       // New Work Area Dialog
-#define  Scribble365            (365)       // New File Dialog
+#define  IDH_NEW_WORKAREA_DIALOG (362)      // New Work Area Dialog
+#define  IDH_NEW_FILE_DIALOG    (365)       // New File Dialog
 #define  Scribble370            (370)       // Add To Watch Dialog
 #define  Scribble380            (380)       // Browse To Dialog
 #define  Scribble390            (390)       // Bookmark Dialog

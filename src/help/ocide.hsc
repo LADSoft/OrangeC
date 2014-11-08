@@ -93,7 +93,7 @@ FALSE
 \par \pard\li660\ri1440\cf2\b0\strike\fs20 Berkely License\cf3\strike0\{linkID=30\}\cf2\strike 
 \par }
 20
-Scribble20
+IDH_GETTING_STARTED
 Getting Started
 begin;getting started;start;
 
@@ -1467,7 +1467,7 @@ FALSE
 \par Selecting \b Create New Directory For Project \b0 will result in the IDE creating a subdirectory with the projects name to put the project files in.\b\f1 
 \par }
 362
-Scribble362
+IDH_NEW_WORKAREA_DIALOG
 New Work Area Dialog
 
 
@@ -1494,7 +1494,7 @@ FALSE
 \par 
 \par }
 365
-Scribble365
+IDH_NEW_FILE_DIALOG
 New File Dialog
 
 
@@ -4246,7 +4246,7 @@ FALSE
 177
 1 General Information
 2 Welcome=Scribble10
-2 Getting Started=Scribble20
+2 Getting Started=IDH_GETTING_STARTED
 2 Using With NASM=Scribble840
 2 GNU CopyLeft Statement=Scribble30
 1 Bookmarks
@@ -4278,9 +4278,9 @@ FALSE
 2 Font Dialog=IDH_CHOOSE_FONT_DIALOG
 2 General Properties Dialog=IDH_GENERAL_PROPERTIES_DIALOG
 2 Goto Line Dialog=Scribble340
-2 New File Dialog=Scribble365
+2 New File Dialog=IDH_NEW_FILE_DIALOG
 2 New Project Dialog=IDH_NEW_PROJECT_DIALOG
-2 New Work Area Dialog=Scribble362
+2 New Work Area Dialog=IDH_NEW_WORKAREA_DIALOG
 2 Open File Dialog=Scribble350
 2 Project Properties Dialog=IDH_PROJECT_PROPERTIES_DIALOG
 2 Reload File Dialog=IDH_RELOAD_FILE_DIALOG
@@ -4391,9 +4391,9 @@ FALSE
 2 Build Toolbar=IDH_BUILD_TOOLBAR
 2 Build Menu=Scribble250
 2 Workarea Context Menu=Scribble210
-2 New Work Area Dialog=Scribble362
+2 New Work Area Dialog=IDH_NEW_WORKAREA_DIALOG
 2 New Project Dialog=IDH_NEW_PROJECT_DIALOG
-2 New File Dialog=Scribble365
+2 New File Dialog=IDH_NEW_FILE_DIALOG
 2 Generated Make File=Scribble270
 2 Project Properties Dialog=IDH_PROJECT_PROPERTIES_DIALOG
 3 Profiles=Scribble585

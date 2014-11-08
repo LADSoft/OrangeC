@@ -3,9 +3,9 @@
         <COMMAND TYPE="NORMAL">
    			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
                 del $(OUTPUTFILE)
-    			"$$(LSINSTALLBIN)\olib.exe" -! /p$(__PAGE_SIZE) "%.l" @&amp;&amp;|
+    			"$$(LSINSTALLBIN)\olib.exe" -! /p$(__PAGE_SIZE) "%.l" "@&amp;&amp;|
 + "%.o"
-|
+|"
    			</ITEM>
             <ITEM NAME="Make Banner" ID="__MAKEBANNER" TYPE="TEXT">Creating Library</ITEM>
     	</COMMAND>	

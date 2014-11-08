@@ -4791,7 +4791,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     {
         if (inStructBox || PropGetInt(NULL, "CODE_COMPLETION") < 2)
             return 0;
-        if (!codecompleteBox)
         {
             char buf[4096], *q = buf + sizeof(buf);
             int pos = p->selstartcharpos-1;
@@ -4802,62 +4801,74 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 return 0;
             while (pos && (isalnum(p->cd->text[pos].ch) || p->cd->text[pos].ch == '_' || p->cd->text[pos].ch == '#'))
                    *--q = p->cd->text[pos--].ch;
-            if (strlen(q) >= PropGetInt(NULL, "CODE_COMPLETION_VARIABLE_THRESHOLD"))
-                names = GetCodeCompVariables(q, names, &size, &max, hwnd, p);
-            if (strlen(q) >= PropGetInt(NULL, "CODE_COMPLETION_KEYWORD_THRESHOLD"))
-                names = GetCodeCompKeywords(q, names, &size, &max, hwnd, p);
-            if (size)
+            if (codecompleteBox)
             {
-                codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
-                                   (WS_POPUP) | WS_CLIPCHILDREN,
-                                   CW_USEDEFAULT, CW_USEDEFAULT,
-                                   CW_USEDEFAULT, CW_USEDEFAULT,
-                                   hwnd,0, hInstance,0);
-                if (codecompleteBox)
+                if (strlen(q) == PropGetInt(NULL, "CODE_COMPLETION_VARIABLE_THRESHOLD")
+                    || strlen(q) == PropGetInt(NULL, "CODE_COMPLETION_KEYWORD_THRESHOLD"))
                 {
-                    int count = 0;
-                    int max = 0;
-                    POINT siz1;
-                    int width, height;
-                    POINT cpos;
-                    TEXTMETRIC t;
-                    HDC dc = GetDC(codecompleteBox);
-                    drawline(hwnd, p, p->selstartcharpos);
-                    GetTextMetrics(dc, &t);
-                    SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
-                    p->cd->selecting = FALSE;
-                    width = 0;
-                    for (count =0; count < size; count++)
+                    SendMessage(codecompleteBox, WM_CLOSE, 0, 0);
+                    codecompleteBox = NULL;
+                }
+            }
+            if (!codecompleteBox)
+            {
+                if (strlen(q) >= PropGetInt(NULL, "CODE_COMPLETION_VARIABLE_THRESHOLD"))
+                    names = GetCodeCompVariables(q, names, &size, &max, hwnd, p);
+                if (strlen(q) >= PropGetInt(NULL, "CODE_COMPLETION_KEYWORD_THRESHOLD"))
+                    names = GetCodeCompKeywords(q, names, &size, &max, hwnd, p);
+                if (size)
+                {
+                    codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
+                                       (WS_POPUP) | WS_CLIPCHILDREN,
+                                       CW_USEDEFAULT, CW_USEDEFAULT,
+                                       CW_USEDEFAULT, CW_USEDEFAULT,
+                                       hwnd,0, hInstance,0);
+                    if (codecompleteBox)
                     {
-                        int n;
-                        char *name = names[count];
-                        GetTextExtentPoint32(dc, name, strlen(name), &siz1);
-                        if (siz1.x > width)
-                            width = siz1.x;
-                        n = SendMessage(codecompleteBox, LB_ADDSTRING, 0, (LPARAM)name);
-                        free(name);
+                        int count = 0;
+                        int max = 0;
+                        POINT siz1;
+                        int width, height;
+                        POINT cpos;
+                        TEXTMETRIC t;
+                        HDC dc = GetDC(codecompleteBox);
+                        drawline(hwnd, p, p->selstartcharpos);
+                        GetTextMetrics(dc, &t);
+                        SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
+                        p->cd->selecting = FALSE;
+                        width = 0;
+                        for (count =0; count < size; count++)
+                        {
+                            int n;
+                            char *name = names[count];
+                            GetTextExtentPoint32(dc, name, strlen(name), &siz1);
+                            if (siz1.x > width)
+                                width = siz1.x;
+                            n = SendMessage(codecompleteBox, LB_ADDSTRING, 0, (LPARAM)name);
+                            free(name);
+                        }
+                        free(names);
+                        ReleaseDC(codecompleteBox, dc);
+                        if (count > 8)
+                            count = 8;
+                        if (width < 70)
+                            width = 70;
+                        if (count)
+                        {
+                            height = t.tmHeight * count;
+                            width += 10 + GetSystemMetrics(SM_CXVSCROLL) + 2 * GetSystemMetrics(SM_CXFRAME);
+                            GetCompletionPos(hwnd, p, &cpos, width, height);
+                            SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
+                            SendMessage(codecompleteBox, WM_USER + 2, 0, (LPARAM)q);
+                            MoveWindow(codecompleteBox, cpos.x, cpos.y, width+4, height+4, TRUE);
+                            ShowWindow(codecompleteBox, SW_SHOW);
+                            if (IsWindowVisible(hwndShowFunc))
+                                ShowWindow(hwndShowFunc, SW_HIDE);
+                            return TRUE;
+                        }
+                        else
+                            DestroyWindow(codecompleteBox);
                     }
-                    free(names);
-                    ReleaseDC(codecompleteBox, dc);
-                    if (count > 8)
-                        count = 8;
-                    if (width < 70)
-                        width = 70;
-                    if (count)
-                    {
-                        height = t.tmHeight * count;
-                        width += 10 + GetSystemMetrics(SM_CXVSCROLL) + 2 * GetSystemMetrics(SM_CXFRAME);
-                        GetCompletionPos(hwnd, p, &cpos, width, height);
-                        SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
-                        SendMessage(codecompleteBox, WM_USER + 2, 0, (LPARAM)q);
-                        MoveWindow(codecompleteBox, cpos.x, cpos.y, width+4, height+4, TRUE);
-                        ShowWindow(codecompleteBox, SW_SHOW);
-                        if (IsWindowVisible(hwndShowFunc))
-                            ShowWindow(hwndShowFunc, SW_HIDE);
-                        return TRUE;
-                    }
-                    else
-                        DestroyWindow(codecompleteBox);
                 }
             }
         }

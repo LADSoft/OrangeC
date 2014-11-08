@@ -334,6 +334,7 @@ static int GenCommand(PROJECTITEM *pj, BOOL always)
             if (banner)
                 MakeMessage(banner, pj->realName);
             free(banner);
+            
             rv = !Execute(cmd, project->realName, ERR_BUILD_WINDOW);
             free(cmd);
             if (rv)

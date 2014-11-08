@@ -7,11 +7,11 @@
                 <ASSIGN ID="RCDEFINE">$(__RCDEFINE)</ASSIGN>
             </ASSIGNMENTS>
     		<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-	    		"$$(LSINSTALLBIN)\orc.exe" -! @&amp;&amp;|
+	    		"$$(LSINSTALLBIN)\orc.exe" -! "@&amp;&amp;|
 $$(RCFLAGS) "-i$$(INCLUDE)" $$(UNICODE) $$(RCDEFINE)
 -r 
 "-o%.res" 
-| "%.rc"
+|" "%.rc"
 			</ITEM>
 			<ITEM NAME="Source Extension" ID="__SOURCE_EXTENSION" TYPE="TEXT">
 				%.rc

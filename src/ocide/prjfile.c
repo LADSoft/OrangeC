@@ -402,8 +402,9 @@ void ProjectNewFile(void)
             else
                 p++;
             strcpy(p, newTitle);
-            
-            strcat(p, extensionMap[newMode][0]);
+
+            if (xstricmp(p + strlen(p) - strlen(extensionMap[newMode][0]), extensionMap[newMode][0])) 
+                strcat(p, extensionMap[newMode][0]);
             fil = fopen(buf, "rb");
             if (fil)
             {

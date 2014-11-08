@@ -2,9 +2,9 @@
 	<PROPGROUP CLASS="BROWSE" SELECT="BROWSE" ORDER = "100" NAME="Custom Build">	
 		<COMMAND>
   			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-				"$$(LSINSTALLBIN)\obrc.exe" -! "$(PROJECTDIR)\$(OUTPUTNAME)" @&amp;&amp;|
+				"$$(LSINSTALLBIN)\obrc.exe" -! "$(PROJECTDIR)\$(OUTPUTNAME)" "@&amp;&amp;|
 "$(OUTPUTDIR)\*.cbr"
-|
+|"
 			</ITEM>
 			<ITEM NAME="Source Extension" ID="__SOURCE_EXTENSION" TYPE="TEXT">
 				%.c

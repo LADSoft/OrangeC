@@ -2,12 +2,12 @@
     <PROPGROUP VERSION="10" CLASS="FILE" NAME="Compiler Settings" ORDER="10">
     	<COMMAND>
    			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-	    			"$$(LSINSTALLBIN)\occ.exe" -! @&amp;&amp;|
+	    			"$$(LSINSTALLBIN)\occ.exe" -! "@&amp;&amp;|
 $$(CFLAGS) "-o%.o" $$(UNICODE) 
 "/I$$(INCLUDE)"
 $$(DEFINE)
 "%.c" 
-|           
+|"
 			</ITEM>
    			<ITEM NAME="Code Completion" ID="__CODE_COMPLETION" TYPE="TEXT">
 	    			"$$(LSINSTALLBIN)\occpr.exe" "@&amp;&amp;|

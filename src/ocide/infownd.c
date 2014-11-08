@@ -47,6 +47,7 @@
 
 extern HANDLE hInstance;
 extern HWND hwndWatch, hwndClient, hwndFrame, hwndTab;
+extern LOGFONT systemDialogFont;
 
 static HWND hwndInfo;
 static int latch;
@@ -55,13 +56,6 @@ static WNDPROC oldproc;
 static HWND hwndCtrl, lsTabCtrl;
 static int index;
 static int wheelIncrement;
-static LOGFONT Textfontdata =
-{
-    -11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FIXED_PITCH |
-        FF_DONTCARE,
-        CONTROL_FONT
-};
 
 static char *nameTags[] = 
 {
@@ -496,7 +490,7 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_CREATE:
             hwndInfo = hwnd;
             GetClientRect(hwnd, &r);
-            textFont = CreateFontIndirect(&Textfontdata);
+            textFont = CreateFontIndirect(&systemDialogFont);
             lsTabCtrl = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
             ApplyDialogFont(lsTabCtrl);
             OffsetRect(&r,  - r.left,  - r.top);

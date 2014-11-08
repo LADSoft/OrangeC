@@ -73,13 +73,6 @@ static char windowTexts[MAX_WINMENU][260];
 static HANDLE *winMenu[MAX_WINMENU];
 static WNDPROC oldMenuProc;
 
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, 
-        CONTROL_FONT
-};
-
 static int MenuBitmapIDs[] = { ID_EDITTB, ID_BUILDTB , ID_DEBUGTB, ID_EXTRA, ID_NAVTB, ID_BOOKMARKTB };
 static struct menuBitmap {
     int id;

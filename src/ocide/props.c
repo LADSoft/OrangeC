@@ -274,6 +274,7 @@ LRESULT CALLBACK SelectProfileDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     EndDialog(hwnd, 0);
                     break;
                 case IDHELP:
+                    ContextHelp(IDH_SELECT_PROFILE_DIALOG);
                     break;
             }
             break;

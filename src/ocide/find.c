@@ -81,42 +81,18 @@ static BOOL dirty;
 static BOOL findFromTB;
 static BOOL replacing = FALSE;
 static BOOL usingfif;
-static int tempfind;
-static int tempreplace;
-static int tempfindext;
-static int tempreplaceext;
 static char browsePath[MAX_PATH];
 static char fileType[MAX_PATH] = "*.*";
 static BOOL canceled = FALSE;
 static BOOL inSetSel;
 static int replaceCount;
 
-int findflags[F_M_MAX] =
-{
-    F_DOWN | F_OPENWINDOW,
-    F_DOWN | F_OPENWINDOW,
-    F_DOWN | F_OUTPUT1 | F_SUBDIR,
-    F_DOWN | F_OUTPUT1 | F_SUBDIR,
-    F_DOWN | F_OUTPUT1 | F_SUBDIR,
-    F_DOWN | F_OUTPUT1 | F_SUBDIR,
-} ;
-int replaceflags[F_M_MAX] =
-{
-    F_DOWN | F_OPENWINDOW,
-    F_DOWN | F_OPENWINDOW,
-    F_DOWN | F_OPENWINDOW | F_SUBDIR,
-    F_DOWN | F_OPENWINDOW | F_SUBDIR,
-    F_DOWN | F_OPENWINDOW | F_SUBDIR,
-    F_DOWN | F_OPENWINDOW | F_SUBDIR,
-} ;
+int findflags = F_DOWN | F_OPENWINDOW | F_SUBDIR;
+int replaceflags = F_DOWN | F_OPENWINDOW | F_SUBDIR;
 int findmode = F_M_OPENDOCUMENTS;
 int replacemode = F_M_CURRENTDOCUMENT;
-int fiffindmode = F_M_CURRENTPROJECT;
-int fifreplacemode = F_M_CURRENTPROJECT;
 int findext = 4;
 int replaceext = 0;
-int fiffindext = 0;
-int fifreplaceext = 0;
 
 typedef struct _bufList
 {
@@ -800,12 +776,12 @@ static void RestartFind()
 void FindResetWindows()
 {
     CHARRANGE *findPointer = &findPos;
-    int flags = findflags[findmode];
+    int flags = findflags;
     int mode = findmode;
     if (!finding)
     {
         findPointer = &replacePos;
-        flags = replaceflags[replacemode];
+        flags = replaceflags;
         mode = replacemode;
     }
     //select the currently active window as the first thing to search in
@@ -882,7 +858,7 @@ void FindResetWindows()
             {
                 if (finding)
                 {
-                    if (findflags[findmode] & F_DOWN)
+                    if (findflags & F_DOWN)
                     {
 //                        a.cpMin += strlen(findText);
                     }
@@ -893,7 +869,7 @@ void FindResetWindows()
                 }
                 else
                 {
-                    if (replaceflags[replacemode] & F_DOWN)
+                    if (replaceflags & F_DOWN)
                     {
 //                        if (!replacing)
 //                            a.cpMin += strlen(replaceText);
@@ -1402,111 +1378,109 @@ static void EnableWindows(HWND hwnd, BOOL state)
 }
 DWORD DoFindNext(void *p)
 {
-    HWND hwndDlg = p;
-    FindResetWindows();
-    infindorreplace = TRUE;
-    if (findFromTB)
-    {
-        FindStringFromToolbar(NULL);
-    }
-    else
-    {
-        PostMessage(hwndDlg, WM_ENABLEFIND, FALSE ,0);
-        canceled = FALSE;
-        if (findText[0])
-        {
-            FindStringFromFiles(findmode, findflags[findmode], findText,
-                                browsePath, fileType);
-        }
-        if (canceled)
-            EndFind();
-        PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
-    }
-    infindorreplace = FALSE;
+	if (!infindorreplace)
+	{
+		HWND hwndDlg = p;
+		FindResetWindows();
+		infindorreplace = TRUE;
+		if (findFromTB)
+		{
+			FindStringFromToolbar(NULL);
+		}
+		else
+		{
+			PostMessage(hwndDlg, WM_ENABLEFIND, FALSE ,0);
+			canceled = FALSE;
+			if (findText[0])
+			{
+				FindStringFromFiles(findmode, findflags, findText,
+									browsePath, fileType);
+			}
+			if (canceled)
+				EndFind();
+			PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
+		}
+		infindorreplace = FALSE;
+	}
 }
 DWORD DoReplaceNext(void *p)
 {
-    HWND hwndDlg = p;
-    PostMessage(hwndDlg, WM_ENABLEFIND, FALSE ,0);
-    canceled = FALSE;
-    replaceCount = 0;
-    replacing = TRUE;
-    infindorreplace = TRUE;
-    if (findText[0])
-        ReplaceInDocuments(replacemode, replaceflags[replacemode], findText, replaceText,
-                           browsePath, fileType);
-    if (canceled)
-        EndFind();
-    infindorreplace = FALSE;
-    replacing = FALSE;
-    dirty = TRUE;
-    PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
-    if (!canceled)
-    {
-        if (replaceflags[replacemode] & F_REPLACEALL)
-            ExtendedMessageBox("Replace", 0, "Replaced %d occurrences.", replaceCount);
-    }
+	if (!infindorreplace)
+	{
+		HWND hwndDlg = p;
+		PostMessage(hwndDlg, WM_ENABLEFIND, FALSE ,0);
+		canceled = FALSE;
+		replaceCount = 0;
+		replacing = TRUE;
+		infindorreplace = TRUE;
+		if (findText[0])
+			ReplaceInDocuments(replacemode, replaceflags, findText, replaceText,
+							   browsePath, fileType);
+		if (canceled)
+			EndFind();
+		infindorreplace = FALSE;
+		replacing = FALSE;
+		dirty = TRUE;
+		PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
+		if (!canceled)
+		{
+			if (replaceflags & F_REPLACEALL)
+				ExtendedMessageBox("Replace", 0, "Replaced %d occurrences.", replaceCount);
+		}
+	}
 }
 void SetFlags(HWND hwndDlg, DLGHDR *pHdr)
 {
     if (!pHdr->iSel)
     {
-        int sel = SendDlgItemMessage(hwndDlg, IDC_COMBOFINDWHERE, CB_GETCURSEL, findmode, 0);
-        if (sel >= 0)
+        int flags = findflags;
+        if (flags & F_REGULAR)
         {
-            int flags = findflags[sel];
-            if (flags & F_REGULAR)
-            {
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 1 , 0);
-            }
-            else if (flags & F_WILDCARD)
-            {
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 2 , 0);
-            }
-            else
-            {
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 0 , 0);
-            }
-            CheckDlgButton(hwndDlg, IDC_CHECKFINDUP, (flags & F_DOWN) ? BST_UNCHECKED : BST_CHECKED); 
-            CheckDlgButton(hwndDlg, IDC_CHECKFINDWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED); 
-            CheckDlgButton(hwndDlg, IDC_CHECKFINDCASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED); 
-            CheckDlgButton(hwndDlg, IDC_CHECKFINDRECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED); 
-            if (flags & F_OUTPUT1)
-            {
-                CheckRadioButton(hwndDlg, IDC_RADIOFINDDOCUMENT, IDC_RADIOFIND2, IDC_RADIOFIND1);
-            }
-            else if (flags & F_OUTPUT2)
-            {
-                CheckRadioButton(hwndDlg, IDC_RADIOFINDDOCUMENT, IDC_RADIOFIND2, IDC_RADIOFIND2);
-            }
-            else if (flags & F_OPENWINDOW)
-            {
-                CheckRadioButton(hwndDlg, IDC_RADIOFINDDOCUMENT, IDC_RADIOFIND2, IDC_RADIOFINDDOCUMENT);
-            }
+            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 1 , 0);
+        }
+        else if (flags & F_WILDCARD)
+        {
+            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 2 , 0);
+        }
+        else
+        {
+            SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_SETCURSEL, 0 , 0);
+        }
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDUP, (flags & F_DOWN) ? BST_UNCHECKED : BST_CHECKED); 
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED); 
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDCASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED); 
+        CheckDlgButton(hwndDlg, IDC_CHECKFINDRECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED); 
+        if (flags & F_OUTPUT1)
+        {
+            CheckRadioButton(hwndDlg, IDC_RADIOFINDDOCUMENT, IDC_RADIOFIND2, IDC_RADIOFIND1);
+        }
+        else if (flags & F_OUTPUT2)
+        {
+            CheckRadioButton(hwndDlg, IDC_RADIOFINDDOCUMENT, IDC_RADIOFIND2, IDC_RADIOFIND2);
+        }
+        else if (flags & F_OPENWINDOW)
+        {
+            CheckRadioButton(hwndDlg, IDC_RADIOFINDDOCUMENT, IDC_RADIOFIND2, IDC_RADIOFINDDOCUMENT);
         }
     }
     else
     {
-        int sel = SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_GETCURSEL, findmode, 0);
-        if (sel >= 0)
+        int flags = replaceflags;
+        if (flags & F_REGULAR)
         {
-            int flags = replaceflags[sel];
-            if (flags & F_REGULAR)
-            {
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 1 , 0);
-            }
-            else if (flags & F_WILDCARD)
-            {
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 2 , 0);
-            }
-            else
-            {
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 0 , 0);
-            }
-            CheckDlgButton(hwndDlg, IDC_CHECKREPLACEWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED); 
-            CheckDlgButton(hwndDlg, IDC_CHECKREPLACECASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED); 
-            CheckDlgButton(hwndDlg, IDC_CHECKREPLACERECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED); 
+            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 1 , 0);
         }
+        else if (flags & F_WILDCARD)
+        {
+            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 2 , 0);
+        }
+        else
+        {
+            SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_SETCURSEL, 0 , 0);
+        }
+        CheckDlgButton(hwndDlg, IDC_CHECKREPLACEWHOLE, (flags & F_WHOLEWORD) ? BST_CHECKED : BST_UNCHECKED); 
+        CheckDlgButton(hwndDlg, IDC_CHECKREPLACECASE, (flags & F_MATCHCASE) ? BST_CHECKED : BST_UNCHECKED); 
+        CheckDlgButton(hwndDlg, IDC_CHECKREPLACERECURSIVE, (flags & F_SUBDIR) ? BST_CHECKED : BST_UNCHECKED); 
     }
 }
 void LoadBrowsePath(HWND hwndDlg, int id)
@@ -1742,95 +1716,95 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     break;
                 case IDC_COMBOFINDHOW:
                     n = SendDlgItemMessage(hwndDlg, IDC_COMBOFINDHOW, CB_GETCURSEL, 0, 0);
-                    findflags[findmode] &= ~(F_REGULAR | F_WILDCARD);
+                    findflags &= ~(F_REGULAR | F_WILDCARD);
                     switch (n)
                     {
                         case 0:
                             break;
                         case 1:
-                            findflags[findmode] |= F_REGULAR;
+                            findflags |= F_REGULAR;
                             break;
                         case 2:
-                            findflags[findmode] |= F_WILDCARD;
+                            findflags |= F_WILDCARD;
                             break;
                     }
                     break;
                 case IDC_COMBOREPLACEHOW:
                     n = SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_GETCURSEL, 0, 0);
-                    replaceflags[replacemode] &= ~(F_REGULAR | F_WILDCARD);
+                    replaceflags &= ~(F_REGULAR | F_WILDCARD);
                     switch (n)
                     {
                         case 0:
                             break;
                         case 1:
-                            replaceflags[replacemode] |= F_REGULAR;
+                            replaceflags |= F_REGULAR;
                             break;
                         case 2:
-                            replaceflags[replacemode] |= F_WILDCARD;
+                            replaceflags |= F_WILDCARD;
                             break;
                     }
                     break;
                 case IDC_CHECKFINDWHOLE:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        findflags[findmode] ^= F_WHOLEWORD;
+                        findflags ^= F_WHOLEWORD;
                     }
                     break;
                 case IDC_CHECKREPLACEWHOLE:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        replaceflags[replacemode] ^= F_WHOLEWORD;
+                        replaceflags ^= F_WHOLEWORD;
                     }
                     break;
                 case IDC_CHECKFINDCASE:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        findflags[findmode] ^= F_MATCHCASE;
+                        findflags ^= F_MATCHCASE;
                     }
                     break;
                 case IDC_CHECKREPLACECASE:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        replaceflags[replacemode] ^= F_MATCHCASE;
+                        replaceflags ^= F_MATCHCASE;
                     }
                     break;
                 case IDC_CHECKFINDRECURSIVE:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        findflags[findmode] ^= F_SUBDIR;
+                        findflags ^= F_SUBDIR;
                     }
                     break;
                 case IDC_CHECKREPLACERECURSIVE:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        replaceflags[replacemode] ^= F_SUBDIR;
+                        replaceflags ^= F_SUBDIR;
                     }
                     break;
                 case IDC_CHECKFINDUP:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        findflags[findmode] ^= F_DOWN;
+                        findflags ^= F_DOWN;
                     }
                     break;
                 case IDC_RADIOFINDDOCUMENT:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        findflags[findmode] &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
-                        findflags[findmode] |= F_OPENWINDOW;
+                        findflags &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
+                        findflags |= F_OPENWINDOW;
                     }
                     break;
                 case IDC_RADIOFIND1:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        findflags[findmode] &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
-                        findflags[findmode] |= F_OUTPUT1;
+                        findflags &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
+                        findflags |= F_OUTPUT1;
                     }
                     break;
                 case IDC_RADIOFIND2:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        findflags[findmode] &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
-                        findflags[findmode] |= F_OUTPUT2;
+                        findflags &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
+                        findflags |= F_OUTPUT2;
                     }
                     break;
                 case IDCANCEL:
@@ -1874,7 +1848,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     child = GetDlgItem(hwndDlg, IDC_COMBOREPLACE);
                     SendMessage(child, WM_GETTEXT, 256, (LPARAM)replaceText);
                     findFromTB = FALSE;
-                    replaceflags[replacemode] &= ~F_REPLACEALL;
+                    replaceflags &= ~F_REPLACEALL;
                     GetBrowsePath(hwndDlg, IDC_COMBOREPLACEPATH);
                     xGetFileType(hwndDlg, IDC_COMBOREPLACETYPE);
                     _beginthread((BEGINTHREAD_FUNC)DoReplaceNext, 0, (LPVOID)hwndDlg);
@@ -1893,7 +1867,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                         findFromTB = FALSE;
                         EndFind();
                     }
-                    replaceflags[replacemode] |= F_REPLACEALL;
+                    replaceflags |= F_REPLACEALL;
                     GetBrowsePath(hwndDlg, IDC_COMBOREPLACEPATH);
                     xGetFileType(hwndDlg, IDC_COMBOREPLACETYPE);
                     _beginthread((BEGINTHREAD_FUNC)DoReplaceNext, 0, (LPVOID)hwndDlg);
@@ -1972,14 +1946,24 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
             inSetSel = FALSE;
             if (usingfif)
             {
-                tempfind = findmode;
-                tempreplace = replacemode;
-                tempfindext = findext;
-                tempreplaceext = replaceext;
-                findmode = fiffindmode;
-                replacemode = fifreplacemode;
-                findext = fiffindext;
-                replaceext = fifreplaceext;
+                usingfif = FALSE;
+                if (findflags & F_OPENWINDOW)
+                {
+                    findflags &= ~F_OPENWINDOW;
+                    findflags |= F_OUTPUT1;
+                    findmode = F_M_CURRENTPROJECT;
+                    replacemode = F_M_CURRENTPROJECT;
+                }
+            }
+            else
+            {
+                if (!(findflags & F_OPENWINDOW))
+                {
+                    findflags &= ~(F_OUTPUT1 | F_OUTPUT2);
+                    findflags |= F_OPENWINDOW;
+                    findmode = F_M_CURRENTDOCUMENT;
+                    replacemode = F_M_CURRENTDOCUMENT;
+                }
             }
             hwndFind = hwndDlg;
             pHdr = (DLGHDR *) calloc(1, sizeof(DLGHDR));
@@ -2064,18 +2048,6 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                     pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
                     return FindChildDlgProc(pHdr->hwndDisplay, iMessage, wParam, lParam);
                 case IDCANCEL:
-                    if (usingfif)
-                    {
-                        usingfif = FALSE;
-                        fiffindmode = findmode;
-                        fifreplacemode = replacemode;
-                        fiffindext = tempfindext;
-                        fifreplaceext = tempreplaceext;
-                        findmode = tempfind;
-                        replacemode = tempreplace;
-                        findext = tempfindext;
-                        replaceext = tempreplaceext;
-                    }
                     SetEvent(findEvent);
                     SetFocus((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0));
                     EndDialog(hwndDlg, 0);

@@ -54,13 +54,6 @@ HWND hwndBookmark;
 static char bpModule[256];
 static int bpLine;
 
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, 
-        CONTROL_FONT
-};
-
 DWINFO currentBM;
 
 struct tagfile *tagFileList,  *last_module;

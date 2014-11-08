@@ -77,16 +77,12 @@ extern PROJECTITEM *activeProject;
 extern FILEBROWSE *fileBrowseInfo;
 extern int fileBrowseCount;
 extern POINT findDlgPos;
-extern int findflags[F_M_MAX];
-extern int replaceflags[F_M_MAX];
+extern int findflags;
+extern int replaceflags;
 extern int findmode;
 extern int replacemode;
-extern int fiffindmode;
-extern int fifreplacemode;
 extern int findext;
 extern int replaceext;
-extern int fiffindext;
-extern int fifreplaceext;
 extern PROFILENAMELIST *profileNames;
 extern char *sysProfileName;
 extern BOOL snapToGrid;
@@ -717,32 +713,20 @@ void RestoreFind(struct xmlNode *node, int version)
             findDlgPos.y = atoi(attribs->value);
         else if (IsAttrib(attribs, "FF"))
         {
-            sscanf(attribs->value, "%d;%d;%d;%d;%d;%d;", 
-                   &findflags[0], &findflags[1], &findflags[2],
-                   &findflags[3], &findflags[4], &findflags[5]);
+            sscanf(attribs->value, "%d", &findflags);
         }
         else if (IsAttrib(attribs, "RF"))
         {
-            sscanf(attribs->value, "%d;%d;%d;%d;%d;%d;", 
-                   &replaceflags[0], &replaceflags[1], &replaceflags[2],
-                   &replaceflags[3], &replaceflags[4], &replaceflags[5]);
+            sscanf(attribs->value, "%d", &replaceflags); 
         }
         else if (IsAttrib(attribs, "FM"))
             findmode = atoi(attribs->value);
         else if (IsAttrib(attribs, "RM"))
             replacemode = atoi(attribs->value);
-        else if (IsAttrib(attribs, "FFM"))
-            fiffindmode = atoi(attribs->value);
-        else if (IsAttrib(attribs, "FRM"))
-            fifreplacemode = atoi(attribs->value);
         else if (IsAttrib(attribs, "FE"))
             findext = atoi(attribs->value);
         else if (IsAttrib(attribs, "RE"))
             replaceext = atoi(attribs->value);
-        else if (IsAttrib(attribs, "FFE"))
-            fiffindext = atoi(attribs->value);
-        else if (IsAttrib(attribs, "FRE"))
-            fifreplaceext = atoi(attribs->value);
         attribs = attribs->next;
     }
 }
@@ -1333,15 +1317,8 @@ void SaveWorkArea(PROJECTITEM *wa)
     fprintf(out, "\t<DIALOG GRIDSPACING=\"%d\" SHOWGRID=\"%d\" SNAPTOGRID=\"%d\"/>\n", gridSpacing, showGrid, snapToGrid);
 
     fprintf(out, "\t<FIND X=\"%d\" Y=\"%d\"", findDlgPos.x, findDlgPos.y);
-    fprintf(out, "\n\t\tFF=\"");
-    for(i=0; i < F_M_MAX; i++)
-        fprintf(out, "%d;", findflags[i]);
-    fprintf(out, "\"\n\t\tRF=\"");
-    for(i=0; i < F_M_MAX; i++)
-        fprintf(out, "%d;", replaceflags[i]);
-    fprintf(out, "\"\n\t\tFM=\"%d\" RM=\"%d\" FFM=\"%d\" FRM=\"%d\" FE=\"%d\" RE=\"%d\" FFE=\"%d\" FRE=\"%d\"/>\n",
-            findmode, replacemode, fiffindmode, fifreplacemode,
-            findext, replaceext, fiffindext, fifreplaceext);
+    fprintf(out, "\n\t\tFF=\"%d\" RF=\"%d\" FM=\"%d\" RM=\"%d\" FE=\"%d\" RE=\"%d\"/>\n",
+            findflags, replaceflags, findmode, replacemode, findext, replaceext);
     SaveWatchpoints(out);
     SaveDataBreakpoints(out);
     SaveToolBars(out);

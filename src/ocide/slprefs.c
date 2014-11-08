@@ -50,12 +50,10 @@
 
 extern PROJECTITEM generalProject;
 
-extern int findflags[F_M_MAX];
-extern int replaceflags[F_M_MAX];
+extern int findflags;
+extern int replaceflags;
 extern int findmode;
 extern int replacemode;
-extern int fiffindmode;
-extern int fifreplacemode;
 
 extern int memoryWordSize;
 
@@ -145,40 +143,16 @@ void RestoreFindflags(struct xmlNode *node, int version)
     struct xmlNode *children;
     while (attribs)
     {
+        if (IsAttrib(attribs, "FFLAG"))
+            findflags = atoi(attribs->value);
+        if (IsAttrib(attribs, "RFLAG"))
+            replaceflags = atoi(attribs->value);
         if (IsAttrib(attribs, "FMODE"))
             findmode = atoi(attribs->value);
         if (IsAttrib(attribs, "RMODE"))
             replacemode = atoi(attribs->value);
-        if (IsAttrib(attribs, "FIFFINDMODE"))
-            fiffindmode = atoi(attribs->value);
-        if (IsAttrib(attribs, "FIFREPLACEMODE"))
-            fifreplacemode = atoi(attribs->value);
         attribs = attribs->next;
     } 
-    children = node->children;
-    while (children)
-    {
-        int index = -1;
-        int findFlags = -1;
-        int replaceFlags = -1;
-        attribs = children->attribs;
-        while (attribs)
-        {
-            if (IsAttrib(attribs, "INDEX"))
-                index = atoi(attribs->value);
-            else if (IsAttrib(attribs, "FIND"))
-                findFlags = atoi(attribs->value);
-            else if (IsAttrib(attribs, "REPLACE"))
-                replaceFlags = atoi(attribs->value);
-            attribs = attribs->next;
-        }
-        if (index != -1 && findFlags != -1 && replaceFlags != -1) 
-        {
-            findflags[index] = findFlags;
-            replaceflags[index] = replaceFlags;
-        }
-        children = children->next;
-    }
 }
 void RestoreCustomColors(struct xmlNode *node, int version)
 {
@@ -333,12 +307,8 @@ void SavePreferences(void)
     }
     fprintf(out, "\n\t</CUSTOMCOLORS>\n");
     fprintf(out, "\t<MEMWND WORDSIZE=\"%d\"/>\n", memoryWordSize);
-    fprintf(out, "\t<FIND FMODE=\"%d\" RMODE=\"%d\" FIFFINDMODE=\"%d\" FIFREPLACEMODE=\"%d\">\n", findmode, replacemode, fiffindmode, fifreplacemode);
-    for (i=0; i < F_M_MAX; i++)
-    {
-        fprintf(out, "\t\t<MODE INDEX=\"%d\" FIND=\"%d\" REPLACE=\"%d\"/>\n", i, findflags[i], replaceflags[i]);
-    }			
-    fprintf(out, "\t</FIND>\n");
+    fprintf(out, "\t<FIND FMODE=\"%d\" RMODE=\"%d\" FFLAG=\"%d\" RFLAG=\"%d\"/>\n", 
+            findmode, replacemode, findflags, replaceflags);
     fprintf(out, "\t<PROPERTIES>\n");
     SaveProps(out, generalProject.profiles->debugSettings, 2);
     fprintf(out, "\t</PROPERTIES>\n");

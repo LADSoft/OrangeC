@@ -84,27 +84,6 @@ static HWND hwndEdit;
 static HTREEITEM resSelection;
 static PROJECTITEM *rclickItem;
 static HTREEITEM rclickSelection;
-static LOGFONT fontdata = 
-{
-    -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
-static LOGFONT italicFontData = 
-{
-    -12, 0, 0, 0, FW_NORMAL, TRUE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
-static LOGFONT boldFontData = 
-{
-    -12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH
-        | FF_MODERN | FF_DONTCARE,
-        CONTROL_FONT
-};
 static HFONT projFont, boldProjFont, italicProjFont;
 
 static HWND treeWindow;

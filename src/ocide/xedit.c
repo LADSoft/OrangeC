@@ -5734,10 +5734,16 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 else 
                 {
                     LOGFONT editFont;
+                    OSVERSIONINFO osvi;
                     p->cd = (COREDATA*)calloc(1,sizeof(COREDATA));
                     p->cd->inserting = TRUE;
                     
                     memcpy(&editFont, &EditFont, sizeof(editFont));
+                    memset(&osvi,0,sizeof(osvi));
+                    osvi.dwOSVersionInfoSize = sizeof(osvi);
+                    GetVersionEx(&osvi);
+                    if (osvi.dwMajorVersion >= 6)
+                        strcpy(editFont.lfFaceName, "Consolas");
                     PropGetFont(NULL, "FONT", &editFont);
 
                     xfont = CreateFontIndirect(&editFont);

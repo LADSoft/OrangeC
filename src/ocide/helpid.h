@@ -1,55 +1,26 @@
 /*
-    Software License Agreement (BSD License)
-    
-    Copyright (c) 1997-2012, David Lindauer, (LADSoft).
-    All rights reserved.
-    
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
-    
-    * Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the
-      following disclaimer.
-    
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the
-      following disclaimer in the documentation and/or other
-      materials provided with the distribution.
-    
-    * Neither the name of LADSoft nor the names of its
-      contributors may be used to endorse or promote products
-      derived from this software without specific prior
-      written permission of LADSoft.
-    
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
-    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-    contact information:
-        email: TouchStone222@runbox.com <David Lindauer>
-*/
+ * CCIDE Help
+ * LADSoft
+ *
+ * This help file was created with HelpScribble 7.8.8
+ * Licensed to: LADSoft
+ *
+ * HelpScribble is copyright (c) 1996-2014  Jan Goyvaerts
+ * Visit http://www.helpscribble.com/ for more information
+ */
 
 
 #ifndef _HSCR_HELP_CONSTANTS_
 #define _HSCR_HELP_CONSTANTS_
 
 #define  Scribble10             (10)        // index
-#define  IDH_GETTING_STARTED    (20)        // Getting Started
+#define  Scribble20             (20)        // Getting Started
 #define  Scribble30             (30)        // Copyright
 #define  Scribble40             (40)        // Menus
 #define  Scribble50             (50)        // Editor Window
 #define  Scribble60             (60)        // File Menu
 #define  Scribble70             (70)        // Workarea Menu
-#define  Scribble80             (80)        // FileFile Menu
+#define  Scribble80             (80)        // File SubMenu
 #define  Scribble90             (90)        // Search Menu
 #define  IDH_FIND_REPLACE_DIALOG (100)      // Find/Replace dialog
 #define  Scribble110            (110)       // Project Menu
@@ -61,7 +32,7 @@
 #define  Scribble170            (170)       // View Browse Menu
 #define  Scribble180            (180)       // View Menu
 #define  Scribble190            (190)       // Workarea Window
-#define  Scribble200            (200)       // Client Context Menu
+#define  Scribble195            (195)       // Client Context Menu
 #define  Scribble210            (210)       // Workarea Context Menu
 #define  Scribble220            (220)       // Folder Context Menu
 #define  Scribble230            (230)       // Project Context Menu
@@ -78,8 +49,8 @@
 #define  Scribble340            (340)       // Goto Line Dialog
 #define  Scribble350            (350)       // Open File Dialog
 #define  IDH_NEW_PROJECT_DIALOG (360)       // New Project Dialog
-#define  IDH_NEW_WORKAREA_DIALOG (362)      // New Work Area Dialog
-#define  IDH_NEW_FILE_DIALOG    (365)       // New File Dialog
+#define  Scribble362            (362)       // New Work Area Dialog
+#define  Scribble365            (365)       // New File Dialog
 #define  Scribble370            (370)       // Add To Watch Dialog
 #define  Scribble380            (380)       // Browse To Dialog
 #define  Scribble390            (390)       // Bookmark Dialog
@@ -102,6 +73,9 @@
 #define  Scribble560            (560)       // General Project Configuration Properties
 #define  Scribble570            (570)       // Debug Project Config Properties
 #define  IDH_PROJECT_PROPERTIES_DIALOG (580) // Project Properties Dialog
+#define  Scribble585            (585)       // Profiles
+#define  Scribble587            (587)       // New Profile Dialog
+#define  IDH_SELECT_PROFILE_DIALOG (589)    // Select Profile Dialog
 #define  Scribble590            (590)       // Compiler Properties
 #define  Scribble600            (600)       // Assembler Properties
 #define  Scribble610            (610)       // Resource Compiler Properties
@@ -127,7 +101,6 @@
 #define  Scribble810            (810)       // Regular Expressions
 #define  IDH_SAVE_FILE_DIALOG   (820)       // Save File Dialog
 #define  IDH_RELOAD_FILE_DIALOG (830)       // Reload File Dialog
-#define  Scribble840            (840)       // Support For NASM
 #define  Scribble850            (850)       // Hot Keys
 #define  IDH_TOOLBAR_SELECT_DIALOG (860)    // Customize Tools
 #define  IDH_BUILD_RULE_DIALOG  (880)       // Build Rules
@@ -135,5 +108,25 @@
 #define  Scribble900            (900)       // Jump List
 #define  IDH_CUSTOM_TOOLS_DIALOG (910)      // Custom Tools
 #define  IDH_CUSTOM_TOOLS_EDITOR (920)      // Custom Tools Editor
+#define  Scribble1000           (1000)      // Resource Editor
+#define  Scribble1005           (1005)      // Resource Window
+#define  Scribble1010           (1010)      // Add New Resource Dialog
+#define  Scribble1020           (1020)      // Resource Menu
+#define  Scribble1026           (1026)      // Resource Properties
+#define  Scribble1040           (1040)      // Accelerators Window
+#define  Scribble1050           (1050)      // Accelerators Context Menu
+#define  Scribble1060           (1060)      // Dialog Window
+#define  Scribble1065           (1065)      // Dialog Control Toolbox
+#define  Scribble1070           (1070)      // Dialog Context Menu
+#define  Scribble1080           (1080)      // Image Window
+#define  Scribble1090           (1090)      // Image Context Menu
+#define  Scribble1100           (1100)      // RCData Window
+#define  Scribble1110           (1110)      // RCData Context Menu
+#define  Scribble1120           (1120)      // String Table Window
+#define  Scribble1130           (1130)      // String Table Context Menu
+#define  Scribble1140           (1140)      // Version Data Window
+#define  Scribble1145           (1145)      // Version Data Context Menu
+#define  Scribble1150           (1150)      // Menu Window
+#define  Scribble1160           (1160)      // Menu Context Menu
 
 #endif /* _HSCR_HELP_CONSTANTS_ */

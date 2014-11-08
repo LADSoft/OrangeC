@@ -2,10 +2,10 @@
  * CCIDE Help
  * LADSoft
  *
- * This help file was created with HelpScribble 7.8.3
+ * This help file was created with HelpScribble 7.8.8
  * Licensed to: LADSoft
  *
- * HelpScribble is copyright (c) 1996-2009  Jan Goyvaerts
+ * HelpScribble is copyright (c) 1996-2014  Jan Goyvaerts
  * Visit http://www.helpscribble.com/ for more information
  */
 
@@ -67,7 +67,7 @@
 #define  Scribble500            (500)       // Colors
 #define  Scribble510            (510)       // Formatting
 #define  Scribble520            (520)       // Backup Settings
-#define  Scribble531            (531)       // Hints And Code Completion
+#define  Scribble530            (530)       // Hints And Code Completion
 #define  Scribble540            (540)       // Printer Settings
 #define  IDH_GENERAL_PROPERTIES_DIALOG (550) // General Properties Dialog
 #define  Scribble560            (560)       // General Project Configuration Properties
@@ -75,7 +75,7 @@
 #define  IDH_PROJECT_PROPERTIES_DIALOG (580) // Project Properties Dialog
 #define  Scribble585            (585)       // Profiles
 #define  Scribble587            (587)       // New Profile Dialog
-#define  Scribble589            (589)       // Select Profile Dialog
+#define  IDH_SELECT_PROFILE_DIALOG (589)    // Select Profile Dialog
 #define  Scribble590            (590)       // Compiler Properties
 #define  Scribble600            (600)       // Assembler Properties
 #define  Scribble610            (610)       // Resource Compiler Properties

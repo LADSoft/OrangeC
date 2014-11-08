@@ -453,7 +453,7 @@ FALSE
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Find/Replace Dialog\cf0\b0\f1\fs20 
 \par 
-\par \pard\ri1440\tx660\f0 The Find/Replace dialog iss accessible by clicking one of the items on the \cf2\strike Edit Toolbar\cf3\strike0\{linkID=740\}\cf0 , by selecting one of the items from the \cf2\strike Search Menu\cf3\strike0\{linkID=90\}\cf0  , or by pressing \b CTRL-F\b0  or \b CTRL-H\b0 .\f1 
+\par \pard\ri1440\tx660\f0 The Find/Replace dialog is accessible by clicking one of the items on the \cf2\strike Edit Toolbar\cf3\strike0\{linkID=740\}\cf0 , by selecting one of the items from the \cf2\strike Search Menu\cf3\strike0\{linkID=90\}\cf0  , or by pressing \b CTRL-F\b0  or \b CTRL-H\b0 .\f1 
 \par \pard 
 \par \f0 The Find/Replace dialog is a generic dialog with two tabs.  One tab is used for locating text, and the other tab is used for replacing text.  The text may be searched for in a variety of places, including in open windows, as part of a project or workarea, or on the disk.  Text that is found may either be found one item at a time with navigation to each item, or a batch of locations may be sent to one of two windows dedicated to showing text that has been located.
 \par 
@@ -713,7 +713,7 @@ FALSE
 \par 
 \par \pard\cf2\b Goto line\b0  opens the \cf3\strike Goto Dialog\cf4\strike0\{linkID=340\}\cf2 .  This allows positioning on a given line when the line number is entered.
 \par \pard\ri1440\tx660\tx2820\cf0 
-\par \b Browse To\b0  navigates to the definition of the word under the cursor if browse information is turned on in the \cf3\strike General Properties Hints\cf4\strike0\{linkID=531\}\cf0  page
+\par \b Browse To\b0  navigates to the definition of the word under the cursor if browse information is turned on in the \cf3\strike General Properties Hints\cf4\strike0\{linkID=530\}\cf0  page
 \par 
 \par \b Return To Origin\b0  opens the window the current breakpoint is associated with and navigates to the breakpoint line.
 \par \b 
@@ -1257,7 +1257,7 @@ FALSE
 \par 
 \par Single stepping can also be performed by pressing F10 for step over, and F11 for step into.  F9 toggles breakpoints. F5 starts the program running when it is stopped.
 \par 
-\par The \cf2\strike Project Debug Properties\cf3\strike0\{linkID=570\}\cf0  holds settings used for setting up debugging on a project by project basis.  the \cf2\strike Hints\cf3\strike0\{linkID=531\}\cf0  properties page has settings for enabling and disabling debug hints on a global basis.
+\par The \cf2\strike Project Debug Properties\cf3\strike0\{linkID=570\}\cf0  holds settings used for setting up debugging on a project by project basis.  the \cf2\strike Hints\cf3\strike0\{linkID=530\}\cf0  properties page has settings for enabling and disabling debug hints on a global basis.
 \par 
 \par Only one project can be started at a time, however if some projects are DLLs which are called by the active project, the debugger will allow symbolic debugging of them.\f1 
 \par }
@@ -1712,7 +1712,7 @@ FALSE
 \par 
 \par Browse information is also used by the \cf2\strike Jump List\cf3\strike0\{linkID=900\}.\cf0 
 \par 
-\par Browsing is enabled in the \cf2\strike Hints Configuration\cf3\strike0\{linkID=531\}\cf0 .
+\par Browsing is enabled in the \cf2\strike Hints Configuration\cf3\strike0\{linkID=530\}\cf0 .
 \par 
 \par If a browse is requested, and browsing is not enabled, the IDE will ask if the workarea should be rebuilt with browsing enabled.  If the answer is yes, the workarea will be rebuilt as if by the \b Rebuild All \b0 selection on the \cf2\strike Build Menu\cf3\strike0\{linkID=250\}\cf0 , and then the browse will complete.
 \par }
@@ -2027,8 +2027,8 @@ FALSE
 \par 
 \par \f1 
 \par }
-531
-Scribble531
+530
+Scribble530
 Hints And Code Completion
 
 
@@ -2174,7 +2174,7 @@ FALSE
 \par \tab\cf2\strike Backup Settings\cf3\strike0\{linkID=520\}\cf0\tab File backup parameters\cf3 
 \par \pard\tx720\tx1380\tx4240 
 \par \pard\tx720\tx1400\cf0\b Other Settings\b0 
-\par \pard\tx1380\tx4220\tab\cf2\strike Hints and Code Completion\cf3\strike0\{linkID=531\}\tab\cf0 Settings related to automatic help given by the editor
+\par \pard\tx1380\tx4220\tab\cf2\strike Hints and Code Completion\cf3\strike0\{linkID=530\}\tab\cf0 Settings related to automatic help given by the editor
 \par \tab\cf2\strike Printer Settings\cf3\strike0\{linkID=540\}\cf0\tab Printer Settings
 \par 
 \par \pard\tx720 Properties specific to building programs are on the \cf2\strike Project Properties\cf3\strike0\{linkID=580\}\cf0  dialog\f1 
@@ -2258,7 +2258,7 @@ FALSE
 \par 
 \par \pard\qc\cf3\{bmc debug.png\}
 \par \pard 
-\par \cf0 Note there is also a setting on the \cf2\strike Hints And Code Completion\cf3\strike0\{linkID=531\}\cf0  properties page which enables or disables debugger hints.  Debugger hints show the value of variables when the cursor is placed over them.\cf3 
+\par \cf0 Note there is also a setting on the \cf2\strike Hints And Code Completion\cf3\strike0\{linkID=530\}\cf0  properties page which enables or disables debugger hints.  Debugger hints show the value of variables when the cursor is placed over them.\cf3 
 \par \pard\qc 
 \par \pard\cf0 The following properties are available on this page:
 \par 
@@ -2391,7 +2391,7 @@ FALSE
 \par \cf0 Typing a new name and selecting 'ok' will result in the profile being added to the list of possible profiles.  It will have the default configuration.\f1 
 \par }
 589
-Scribble589
+IDH_SELECT_PROFILE_DIALOG
 Select Profile Dialog
 
 
@@ -3543,7 +3543,7 @@ FALSE
 \par \tab Global Types
 \par \tab Preprocessor Macros
 \par 
-\par \pard\b0 Note that the Jump List depends on the program having previously been compiled with\cf2\strike  Browse Information\cf3\strike0\{linkID=430\}\cf0  enabled on the \cf2\strike Hints and Code Completion\cf3\strike0\{linkID=531\}\cf0  properties page.\f1 
+\par \pard\b0 Note that the Jump List depends on the program having previously been compiled with\cf2\strike  Browse Information\cf3\strike0\{linkID=430\}\cf0  enabled on the \cf2\strike Hints and Code Completion\cf3\strike0\{linkID=530\}\cf0  properties page.\f1 
 \par }
 910
 IDH_CUSTOM_TOOLS_DIALOG
@@ -4301,7 +4301,7 @@ FALSE
 3 Colors=Scribble500
 3 Formatting=Scribble510
 3 Backup Settings=Scribble520
-3 Hints And Code Completion=Scribble531
+3 Hints And Code Completion=Scribble530
 3 Printer Settings=Scribble540
 2 Edit Toolbar=IDH_EDIT_TOOLBAR
 2 Edit Menu=Scribble130
@@ -4398,7 +4398,7 @@ FALSE
 2 Project Properties Dialog=IDH_PROJECT_PROPERTIES_DIALOG
 3 Profiles=Scribble585
 4 New Profile Dialog=Scribble587
-4 Select Profile Dialog=Scribble589
+4 Select Profile Dialog=IDH_SELECT_PROFILE_DIALOG
 3 Debug Project Config Properties=Scribble570
 3 General Project Configuration Properties=Scribble560
 3 Compiler Properties=Scribble590

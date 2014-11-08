@@ -93,7 +93,7 @@ void abspath(char *name)
 
 void browse_init(void)
 {
-    if (!cparams.prm_browse)
+    if (!cparams.prm_browse && !cparams.prm_debug)
         return ;
     currentFile = 0;
     files = NULL;

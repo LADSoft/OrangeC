@@ -436,7 +436,6 @@ void compile(void)
     SetGlobalFlag(TRUE);
     errorinit();
     constoptinit();
-    browse_init();
     declare_init();
     init_init();
     inlineinit();

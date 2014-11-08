@@ -85,7 +85,7 @@ static LIST *globalNames ;
 static LIST *exportNames ;
 static LIST *importNames ;
 
-static BROWSEINFO *browseInfo;
+static BROWSEINFO *browseInfo, *browseInfoTail;
 static BROWSEFILE *browseFiles;
 
 char *segnames[] = 
@@ -126,7 +126,7 @@ void omfInit(void)
     globalNames = 0;
     exportNames = 0;
     importNames = 0;
-    browseInfo = NULL;
+    browseInfo = browseInfoTail = NULL;
     browseFiles = NULL;
 }
 static void emit_record_ieee(char *format, ...)
@@ -148,10 +148,10 @@ static void emit_record_ieee(char *format, ...)
 
 void omf_dump_browsedata(BROWSEINFO *bri)
 {
-    BROWSEINFO **b = &browseInfo;
-    while (*b)
-        b = &(*b)->next;
-    *b = bri;
+    if (browseInfo)
+        browseInfoTail = browseInfoTail->next = bri;
+    else
+        browseInfoTail = browseInfo = bri;
 }
 void omf_dump_browsefile(BROWSEFILE *brf)
 {

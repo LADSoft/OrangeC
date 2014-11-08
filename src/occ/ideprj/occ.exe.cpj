@@ -4,13 +4,13 @@
 	<TARGET TITLE="occ">
 		<PROPERTIES>
 			<PROFILE NAME="WIN32" TYPE="DEBUG">
-				<PROP ID="__DEBUG_ARGUMENTS">/DUSE_LONGLONG /I..\parse;..\preproc;..\middle /9 /c ..\parse\ccmain.c</PROP>
-				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
 				<PROP ID="__INCLUDE">..\parse;..\preproc;..\middle;..\x86</PROP>
+				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
+				<PROP ID="__DEBUG_ARGUMENTS">/DUSE_LONGLONG /I..\parse;..\preproc;..\middle /9 /c ..\parse\ccmain.c</PROP>
 			</PROFILE>
 			<PROFILE NAME="WIN32" TYPE="RELEASE">
-				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
 				<PROP ID="__INCLUDE">..\x86;..\parse;..\preproc;..\middle</PROP>
+				<PROP ID="__DEFINE">WIN32;USE_LONGLONG</PROP>
 			</PROFILE>
 		</PROPERTIES>
 		<FILES>
@@ -41,6 +41,7 @@
 				<FILE NAME="..\middle\iconst.c" TITLE="iconst.c" CLEAN="0"/>
 				<FILE NAME="..\middle\iexpr.c" TITLE="iexpr.c" CLEAN="0"/>
 				<FILE NAME="..\middle\iflow.c" TITLE="iflow.c" CLEAN="0"/>
+				<FILE NAME="..\middle\iinline.c" TITLE="iinline.c" CLEAN="0"/>
 				<FILE NAME="..\middle\iinvar.c" TITLE="iinvar.c" CLEAN="0"/>
 				<FILE NAME="..\middle\ilazy.c" TITLE="ilazy.c" CLEAN="0"/>
 				<FILE NAME="..\middle\ilive.c" TITLE="ilive.c" CLEAN="0"/>

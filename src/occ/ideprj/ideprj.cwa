@@ -6,9 +6,7 @@
 	</PROFILELIST>
 	<DIALOG GRIDSPACING="4" SHOWGRID="0" SNAPTOGRID="0"/>
 	<FIND X="662" Y="133"
-		FF="129;129;545;545;545;545;"
-		RF="129;129;641;641;641;641;"
-		FM="1" RM="0" FFM="2" FRM="2" FE="4" RE="0" FFE="0" FRE="0"/>
+		FF="129" RF="129" FM="1" RM="0" FE="4" RE="0"/>
 	<WATCH ID="1" ENABLE="0" NAME="" MODE="3" SIZE="3"/>
 	<WATCH ID="2" ENABLE="0" NAME="" MODE="3" SIZE="3"/>
 	<WATCH ID="3" ENABLE="0" NAME="" MODE="3" SIZE="3"/>
@@ -33,7 +31,7 @@
 		<DOCK ID="21" VALUE="32770 0 1 0 0 0 0 0 133 47 0 67 133 91 0 67 133 91"/>
 		<DOCK ID="22" VALUE="32770 0 1 1 0 0 0 0 296 47 133 67 429 91 133 67 429 91"/>
 		<DOCK ID="24" VALUE="32770 0 1 2 0 0 0 0 195 47 429 67 624 91 429 67 624 91"/>
-		<DOCK ID="25" VALUE="32770 0 1 3 0 0 0 0 479 47 624 67 1103 91 624 67 1103 91"/>
+		<DOCK ID="25" VALUE="32770 0 1 3 0 0 0 0 487 47 624 67 1111 91 624 67 1111 91"/>
 	</DOCKS>
 	<PROJECTS SELECTED="occ">
 		<FILE NAME="occ.exe" CLEAN="0"/>
@@ -41,8 +39,8 @@
 	<EDITWINDOWS>
 		<WINDOW NAME="..\preproc\ccerr.c" TITLE="ccerr.c" X="0" Y="0" WIDTH="790" HEIGHT="250" LINENO="1" COPYID="1"/>
 		<WINDOW NAME="..\parse\osutil.c" TITLE="osutil.c" X="52" Y="52" WIDTH="790" HEIGHT="250" LINENO="957" COPYID="1"/>
-		<WINDOW NAME="..\parse\ccmain.c" TITLE="ccmain.c" X="78" Y="78" WIDTH="790" HEIGHT="250" LINENO="539" COPYID="1"/>
-		<ACTIVE NAME="c:\orangec\src\occ\parse\ccmain.c" TITLE="ccmain.c"/>
+		<WINDOW NAME="..\parse\ccmain.c" TITLE="ccmain.c" X="78" Y="78" WIDTH="790" HEIGHT="250" LINENO="545" COPYID="1"/>
+		<ACTIVE NAME="C:\OrangeC\src\occ\parse\ccmain.c" TITLE="ccmain.c"/>
 	</EDITWINDOWS>
 	<HISTORY TYPE="FIND">
 		<HISTITEM VALUE="getcodecomp"/>

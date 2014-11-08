@@ -4665,7 +4665,8 @@ jointemplate:
                                 }
                             }
                         }
-                        ConsDestDeclarationErrors(sp, notype);
+                        if (cparams.prm_cplusplus)
+                            ConsDestDeclarationErrors(sp, notype);
                         if (spi && spi->storage_class == sc_overloads)
                         {
                             SYMBOL *sym = NULL;

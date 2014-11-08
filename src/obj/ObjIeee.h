@@ -62,7 +62,7 @@ class ObjIeeeBinary : public  ObjIOBase
 {
     enum
     {
-        BUFFERSIZE = 4096
+        BUFFERSIZE = 32768
     };
     enum
     {
@@ -192,7 +192,7 @@ protected:
     typedef std::vector<ObjSourceFile *> FileMap;
 
       void bufferup(const char *data, int len);
-    void flush() { fwrite(ioBuffer, ioBufferLen, 1, sfile); ioBufferLen = 0; }
+    void flush() { fwrite(ioBuffer, ioBufferLen, 1, sfile); ioBufferLen = 0; fflush(sfile); }
     void getline(ObjByte *buf, size_t size);
     void WriteHeader();
     void WriteFiles();
@@ -251,7 +251,7 @@ class ObjIeeeAscii : public  ObjIOBase
 {
     enum
     {
-        BUFFERSIZE = 4096
+        BUFFERSIZE = 32768
     };
 public:
     ObjIeeeAscii(const ObjString &Name, bool CaseSensitive = true) : ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0) {}
@@ -387,7 +387,7 @@ protected:
     typedef std::vector<ObjSourceFile *> FileMap;
 
       void bufferup(const char *data, int len);
-    void flush() { fwrite(ioBuffer, ioBufferLen, 1, sfile); ioBufferLen = 0; }
+    void flush() { fwrite(ioBuffer, ioBufferLen, 1, sfile); ioBufferLen = 0; fflush(sfile); }
     void getline(char *buf, size_t size);
     void WriteHeader();
     void WriteFiles();

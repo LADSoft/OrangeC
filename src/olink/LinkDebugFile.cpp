@@ -67,7 +67,7 @@ static int version_ok;
 // approach because the codelooks much prettier...
 char *LinkDebugFile::pragmas=
 {
-    "PRAGMA journal_mode = MEMORY; PRAGMA synchronous = OFF;PRAGMA temp_store = MEMORY;"
+    "PRAGMA journal_mode=MEMORY; PRAGMA temp_store=MEMORY;"
 };
 char *LinkDebugFile::tables= 
 {
@@ -164,6 +164,7 @@ char *LinkDebugFile::tables=
 } ;
 char *LinkDebugFile::indexes = 
 {
+    "BEGIN; "
     "CREATE INDEX LNIndex ON LineNumbers(fileid,line);"
     "CREATE INDEX TNIndex1 ON TypeNames(symbolId);"
     "CREATE INDEX TNIndex2 ON TypeNames(typeId);"
@@ -173,6 +174,7 @@ char *LinkDebugFile::indexes =
     "CREATE INDEX GBLIndex2 ON Globals(varAddress, fileId);"
     "CREATE INDEX LCLIndex ON Locals(symbolId, fileId);"
     "CREATE INDEX AUTIndex ON Autos(symbolId, fileId, funcId);"
+    "COMMIT; "
 } ;
 LinkDebugFile::~LinkDebugFile()
 {
@@ -758,7 +760,7 @@ bool LinkDebugFile::CreateOutput()
     if (ok)
     {
         ok = false;
-        Begin();
+//        Begin();
         if (WriteFileNames())
             if (WriteLineNumbers())
                 if (WriteVariableTypes())
@@ -769,7 +771,7 @@ bool LinkDebugFile::CreateOutput()
                                     if (WriteNamesTable())
                                         if (CreateIndexes())
                                             ok = true;
-        End();
+//        End();
     }
     if (dbPointer)
         sqlite3_close(dbPointer);

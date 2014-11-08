@@ -1248,6 +1248,8 @@ bool ObjIeeeAscii::Fixup(const char *buffer, eParseType ParseType)
 }
 bool ObjIeeeAscii::ModuleStart(const char *buffer, eParseType ParseType)
 {
+	if (strstr(buffer,"ppmain"))
+		printf("hi");
     if (file)
         ThrowSyntax(buffer, ParseType);
     char translator[256];

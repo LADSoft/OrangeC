@@ -487,6 +487,7 @@ bool dlPeMain::LoadStub(const std::string &exeName)
 void dlPeMain::WriteStub(std::fstream &out)
 {
     out.write((char *)stubData, stubSize);
+    out.flush();
 }
 void dlPeMain::PadHeader(std::fstream &out)
 {
@@ -502,6 +503,7 @@ void dlPeMain::PadHeader(std::fstream &out)
         out.write(buf, s);
         n -= s;
     }
+    out.flush();
 }
 int dlPeMain::Run(int argc, char **argv)
 {
@@ -565,10 +567,13 @@ int dlPeMain::Run(int argc, char **argv)
             (*it)->WriteHeader(out);
         }
         PadHeader(out);
+        out.flush();
         for (std::deque<PEObject *>::iterator it = objects.begin(); it != objects.end(); ++it)
         {
             (*it)->Write(out);
+            out.flush();
         }		
+        out.flush();
         out.close();
         if (!out.fail())
         {

@@ -59,6 +59,7 @@ static int version_ok;
 
 char *BRCWriter::tables= 
 {
+    "PRAGMA journal_mode=MEMORY; PRAGMA temp_store = MEMORY; "
     "BEGIN; "
     "CREATE TABLE brPropertyBag ("
     " property VARCHAR(100)"
@@ -104,7 +105,6 @@ char *BRCWriter::deletion =
     "DELETE FROM LineNumbers;"
     "DELETE FROM JumpTable;"
     "COMMIT;"
-    "VACUUM"
 };
 BRCWriter::~BRCWriter()
 {
@@ -186,6 +186,7 @@ int BRCWriter::CreateTables(void)
 int BRCWriter::DBOpen(char *name)
 {
     int rv = false;
+    unlink(name);
     if (sqlite3_open_v2(name, &dbPointer,SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK)
     {
 #ifdef TEST
@@ -383,6 +384,7 @@ char easytolower(char in){
 } 
 bool BRCWriter::WriteFileList()
 {
+    Begin();
     std::map<std::string, int> &unsorted = loader.GetFileNames();
     for (std::map<std::string, int>::iterator it = unsorted.begin(); it != unsorted.end(); ++it)
     {
@@ -391,10 +393,12 @@ bool BRCWriter::WriteFileList()
         if (!Insert(myString.c_str(), it->second))
             return false;
     }
+    End();
     return true;
 }
 bool BRCWriter::WriteDictionary(Symbols &syms)
 {
+    Begin();
     for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
     {
         SymData *sym = it->second;
@@ -434,10 +438,12 @@ bool BRCWriter::WriteDictionary(Symbols &syms)
         if (!Insert(it->first.c_str(), type, &sym->index))
             return false;
     }
+    End();
     return true;
 }
 bool BRCWriter::WriteLineData(Symbols &syms)
 {
+    Begin();
     for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
     {
         SymData *s = it->second;
@@ -449,10 +455,12 @@ bool BRCWriter::WriteLineData(Symbols &syms)
                     return false;
         }
     }
+    End();
     return true;
 }
 bool BRCWriter::WriteJumpTable(Symbols &syms)
 {
+    Begin();
     for (Symbols::iterator it = syms.begin(); it != syms.end(); ++it)
     {
         SymData *s = it->second;
@@ -485,6 +493,7 @@ bool BRCWriter::WriteJumpTable(Symbols &syms)
             }
         }
     }
+    End();
     return true;
 }
 bool BRCWriter::write()
@@ -496,13 +505,13 @@ bool BRCWriter::write()
     if (ok)
     {
         ok = false;
-        if (Begin())
+//        if (Begin())
             if (WriteFileList())
                 if (WriteDictionary(syms))
                     if (WriteLineData(syms))
                         if (WriteJumpTable(syms))
                             ok = true;
-        if (!End())
+//        if (!End())
             ok = false;
     }
     if (dbPointer)

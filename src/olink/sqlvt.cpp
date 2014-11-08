@@ -41,7 +41,7 @@ int SQL3VirtualTable::Exec(char *str)
 int SQL3VirtualTable::InsertIntoFrom(char *str)
 {
     char *zSql;
-    zSql = sqlite3_mprintf("INSERT INTO %Q SELECT * FROM TEMP.%Q;", str, GetName());
+    zSql = sqlite3_mprintf("BEGIN; INSERT INTO %Q SELECT * FROM TEMP.%Q; COMMIT;", str, GetName());
     int rc = Exec(zSql);
     sqlite3_free(zSql);
     return rc;

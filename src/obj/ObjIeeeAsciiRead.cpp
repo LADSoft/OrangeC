@@ -79,6 +79,8 @@ ObjString ObjIeeeAscii::ParseString(const char *buffer, int *pos)
 {
     int len = ObjUtil::FromHex(buffer, pos, 3);
     char name[512];
+    if (len > strlen(buffer+*pos))
+        ThrowSyntax(buffer, eAll);
     memcpy(name, buffer + *pos, len);
     name[len] = '\0';
     *pos += len;
@@ -1248,8 +1250,6 @@ bool ObjIeeeAscii::Fixup(const char *buffer, eParseType ParseType)
 }
 bool ObjIeeeAscii::ModuleStart(const char *buffer, eParseType ParseType)
 {
-	if (strstr(buffer,"ppmain"))
-		printf("hi");
     if (file)
         ThrowSyntax(buffer, ParseType);
     char translator[256];

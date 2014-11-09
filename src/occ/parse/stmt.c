@@ -198,7 +198,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
             error(ERR_NO_DECLARATION_HERE);
         }
         /* fixme need type */
-        lex = autodeclare(lex, funcsp, &tp, exp, NULL, kw != kw_for);
+        lex = autodeclare(lex, funcsp, &tp, exp, parent, kw != kw_for);
         if (tp->type == bt_memberptr)
         {
             *exp = exprNode(en_mp_as_bool, *exp, NULL);
@@ -2387,7 +2387,20 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
     declareAndInitialize = FALSE;
     memset(&block, 0, sizeof(block));
     lex = declare(lex, funcsp, tp, sc_auto, lk_none, &block, FALSE, asExpression, FALSE, FALSE, ac_public);
+
+    // move any auto assignments
     reverseAssign(block.head, exp);
+    
+    // now move variable declarations
+    while (block.head)
+    {
+        if (block.head->type == st_varstart)
+        {
+            STATEMENT *s = stmtNode(lex, parent, st_varstart);
+            s->select = block.head->select;
+        }
+        block.head = block.head->next;
+    }
     if (!*exp)
     {
         *exp = intNode(en_c_i, 0);

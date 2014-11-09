@@ -226,7 +226,7 @@ static void DeleteThread(DWORD procId, DWORD threadId)
         {
             THREAD *v = *thread;
             (*thread) = (*thread)->next;
-            CloseHandle(v->hThread);
+  //          CloseHandle(v->hThread);
             free(v);
         }
     }
@@ -284,7 +284,7 @@ static void DeleteProcess(DWORD procId)
             free(q);
         }
         (*process) = (*process)->next;
-        CloseHandle(v->hProcess);
+//        CloseHandle(v->hProcess);
         FreeDebugInfo(v->dbg_info);
         free(v);
     }
@@ -440,11 +440,11 @@ void BlastExitProcFunc(DWORD procID, DWORD threadID, DWORD address)
     THREAD *thread = GetThread(procID, threadID);
     int buf = 0; // exit code
     thread->regs.Eip = address;
-    thread->regs.Esp -= 4; // for return address (n/c since this is ExitProcess)
     // write exit code
+    thread->regs.Esp -= 4; // for exit code
     WriteProcessMemory(thread->process->hProcess, (LPVOID)thread->regs.Esp, (LPVOID) &buf,
         4, 0);
-    thread->regs.Esp -= 4; // for exit code
+    thread->regs.Esp -= 4; // for return address (n/c since this is ExitProcess)
 }
 
 //-------------------------------------------------------------------------
@@ -1081,13 +1081,16 @@ void StartDebug(char *cmd)
                                 THREAD *th = debugProcessList->threads;
                                 while (th)
                                 {
-                                    SuspendThread(th->hThread);
+									if (th->idThread != activeThread->idThread)
+		                                SuspendThread(th->hThread);
                                     th = th->next;
                                 }
                                 terminating = isTerminating = TRUE;
                                 dwContinueStatus = DBG_CONTINUE;
+                                sittingAtDataBreakpoint = FALSE;
+                                ContinueStep = FALSE;
                             }
-                            if (!SingleStepping && !isTerminating)
+                            else if (!SingleStepping && !isTerminating)
                                 if (SittingOnBreakPoint(&stDE) || sittingAtDataBreakpoint)
                                 {
                                     sittingAtDataBreakpoint = FALSE;
@@ -1154,11 +1157,12 @@ void StartDebug(char *cmd)
                     }
                     break;
             }
+			// Pass on to the operating system.
+			ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
         }
         else
         {
-            dwContinueStatus = DBG_CONTINUE;
-            bContinue = TRUE;
+	        bContinue = TRUE;
             if (terminating)
             {
                 // if we get here all threads have been stopped, and there
@@ -1171,12 +1175,12 @@ void StartDebug(char *cmd)
                     // Blast an exit process call into the main thread, and resume it
                     GetRegs(0);
                     BlastExitProcFunc(
-                        debugProcessList->idProcess, activeThread->idThread,
+                        activeProcess->idProcess, activeThread->idThread,
                         debugProcessList->ExitAddr);
                     SetRegs(0);
                     while ((int)ResumeThread(activeThread->hThread) > 1)
                         ;
-                    PostThreadMessage(stDE.dwThreadId, WM_NULL, 0, 0);
+                    PostThreadMessage(activeThread->idThread, WM_NULL, 0, 0);
                 }
                 else
                 {
@@ -1189,9 +1193,6 @@ void StartDebug(char *cmd)
                 }
             }
         }
-        // Pass on to the operating system.
-        ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
-
     }
     activeProcess = NULL;
     CloseHandle(stProcessInfo.hThread);

@@ -206,14 +206,14 @@ DWORD DosWindowThread(void *xx)
                         dwContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
                         break;
                 }
+                // Pass on to the operating system.
+                ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
             }
             else
             {
                 dwContinueStatus = DBG_CONTINUE;
                 bContinue = TRUE;
             }
-            // Pass on to the operating system.
-            ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
     
         }
         CloseHandle(stProcessInfo.hProcess);

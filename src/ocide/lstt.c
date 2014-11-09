@@ -67,6 +67,8 @@ struct _hook
 #define IDT_START 1000
 #define IDT_HIDE 1001
 
+extern LOGFONT systemDialogFont;
+
 static char *szTTIPClassName = "xccTTIPWindow";
 static HANDLE sem;
 static struct _hook *hooks;
@@ -262,6 +264,7 @@ static LRESULT CALLBACK TTIPWndProc(HWND hwnd, UINT iMessage,
             rv = DefWindowProc(hwnd, iMessage, wParam, lParam);
             if (rv)
                 return rv;
+            ptr->font = CreateFontIndirect(&systemDialogFont);
             ptr->enabled = TRUE;
             ptr->initDelay = 400;
             ptr->cancelDelay = 5000;

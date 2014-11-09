@@ -243,7 +243,7 @@ int IsStepping(DEBUG_EVENT *dbe)
     else if (uState == FinishStepOut)
     {
         int addr = GetBreakpointLine((int)dbe
-            ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
+            ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, TRUE);
         if (!addr || addr == dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             uState = Running;

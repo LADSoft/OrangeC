@@ -106,7 +106,7 @@ void RefreshAddresses(VARINFO *var, int address, THREAD *thread, int noscope)
     while (var)
     {
         int unscope = noscope;
-        int val;
+        int val=0;
         if (noscope)
             var->outofscope = TRUE;
         else

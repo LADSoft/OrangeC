@@ -685,7 +685,7 @@ void StartDebug(char *cmd)
     HMODULE hpsapiLib;
     THREAD **th;
     int val, i, hbp;
-    BOOL terminating = FALSE, isTerminating = FALSE;
+    BOOL isTerminating = FALSE;
     char buf[512],*pwd = cmd + strlen(cmd)+1;
     BOOL sittingAtDataBreakpoint = FALSE;
 
@@ -1015,7 +1015,7 @@ void StartDebug(char *cmd)
                                             &activeThread->breakpoint);
                                     }
                                     ClearTempBreakPoint(stDE.dwProcessId);
-                                    if (!terminating && uState != SteppingOut
+                                    if (!isTerminating && uState != SteppingOut
                                         && !IsStepping(&stDE))
                                     {
                                         dwContinueStatus = HandleBreakpoint
@@ -1072,23 +1072,31 @@ void StartDebug(char *cmd)
                             doterm: if (dwContinueStatus ==
                                 DBG_TERMINATE_PROCESS)
                             {
-                                // suspend all the threads so we won't get
-                                // exceptions while we are closing.  We have
-                                // to defer the actual close until no more events
-                                // are coming in to prevent a clash between
-                                // the shutdown and threads that are just
-                                // starting
-                                THREAD *th = debugProcessList->threads;
-                                while (th)
-                                {
-									if (th->idThread != activeThread->idThread)
-		                                SuspendThread(th->hThread);
-                                    th = th->next;
-                                }
-                                terminating = isTerminating = TRUE;
+                                isTerminating = TRUE;
                                 dwContinueStatus = DBG_CONTINUE;
                                 sittingAtDataBreakpoint = FALSE;
                                 ContinueStep = FALSE;
+								if (debugProcessList->ExitAddr)
+								{
+									// Blast an exit process call into the main thread, and resume it
+									GetRegs(0);
+									BlastExitProcFunc(
+										activeProcess->idProcess, activeThread->idThread,
+										debugProcessList->ExitAddr);
+									SetRegs(0);
+									while ((int)ResumeThread(activeThread->hThread) > 1)
+										;
+									PostThreadMessage(activeThread->idThread, WM_NULL, 0, 0);
+								}
+								else
+								{
+									// This should never happen, unless we don't have ExitProcess
+									// in the executable file.  Our tools don't do that.
+									TerminateProcess(debugProcessList->hProcess, 0);
+									ExtendedMessageBox("Debugger", MB_SETFOREGROUND |
+										MB_SYSTEMMODAL, 
+										"A forced termination has been used.\n  This may leave the system in an unstable state.");
+								}
                             }
                             else if (!SingleStepping && !isTerminating)
                                 if (SittingOnBreakPoint(&stDE) || sittingAtDataBreakpoint)
@@ -1107,43 +1115,46 @@ void StartDebug(char *cmd)
                         default:
                             activeProcess = GetProcess(stDE.dwProcessId);
                             activeThread = stoppedThread = GetThread(stDE.dwProcessId, stDE.dwThreadId);
-                            switch(databpCheck(&stDE))
-                            {
-                                case 0:
-                                    /* real exception */
-                                    GetRegs(0);
-                                    ClearBreakPoints(stDE.dwProcessId);
-                                    dwContinueStatus = HandleException(&stDE, cmd);
-                                    if (dwContinueStatus == DBG_TERMINATE_PROCESS)
-                                        goto doterm;
-                                    SetRegs(0);
-                                    break;
-                                case 1:
-                                    /* breakpoint */
-                                    GetRegs(0);
-                                    ClearBreakPoints(stDE.dwProcessId);
-                                    ClearTempBreakPoint(stDE.dwProcessId);
-                                    if (!terminating && uState != SteppingOut
-                                        && !IsStepping(&stDE))
-                                    {
-                                        sittingAtDataBreakpoint = TRUE;
-                                        dwContinueStatus = HandleBreakpoint
-                                            (&stDE, cmd);
-                                        isSteppingOut(&stDE);
-                                        goto doterm;
-                                    }
-                                    else
-                                        dwContinueStatus = DBG_CONTINUE;
-                                    break;
-                                case 2:
-                                    /* singlestep & continue */
-                                    GetRegs(0);
-                                    ClearBreakPoints(stDE.dwProcessId);
-                                    ContinueStep = TRUE;
-                                    SingleStep(stDE.dwProcessId, stDE.dwThreadId);
-                                    SetRegs(0);
-                                    break;
-                            }
+							if (!isTerminating)
+							{
+								switch(databpCheck(&stDE))
+								{
+									case 0:
+										/* real exception */
+										GetRegs(0);
+										ClearBreakPoints(stDE.dwProcessId);
+										dwContinueStatus = HandleException(&stDE, cmd);
+										if (dwContinueStatus == DBG_TERMINATE_PROCESS)
+											goto doterm;
+										SetRegs(0);
+										break;
+									case 1:
+										/* breakpoint */
+										GetRegs(0);
+										ClearBreakPoints(stDE.dwProcessId);
+										ClearTempBreakPoint(stDE.dwProcessId);
+										if (!isTerminating && uState != SteppingOut
+											&& !IsStepping(&stDE))
+										{
+											sittingAtDataBreakpoint = TRUE;
+											dwContinueStatus = HandleBreakpoint
+												(&stDE, cmd);
+											isSteppingOut(&stDE);
+											goto doterm;
+										}
+										else
+											dwContinueStatus = DBG_CONTINUE;
+										break;
+									case 2:
+										/* singlestep & continue */
+										GetRegs(0);
+										ClearBreakPoints(stDE.dwProcessId);
+										ContinueStep = TRUE;
+										SingleStep(stDE.dwProcessId, stDE.dwThreadId);
+										SetRegs(0);
+										break;
+								}
+							}
                             break;
                                     
                         }
@@ -1163,35 +1174,6 @@ void StartDebug(char *cmd)
         else
         {
 	        bContinue = TRUE;
-            if (terminating)
-            {
-                // if we get here all threads have been stopped, and there
-                // has been a 0.5 second delay since the last debug event.
-                // We assume there are no more debug events sitting there
-                // if there were things become unstable when we exit
-                terminating = FALSE;
-                if (debugProcessList->ExitAddr)
-                {
-                    // Blast an exit process call into the main thread, and resume it
-                    GetRegs(0);
-                    BlastExitProcFunc(
-                        activeProcess->idProcess, activeThread->idThread,
-                        debugProcessList->ExitAddr);
-                    SetRegs(0);
-                    while ((int)ResumeThread(activeThread->hThread) > 1)
-                        ;
-                    PostThreadMessage(activeThread->idThread, WM_NULL, 0, 0);
-                }
-                else
-                {
-                    // This should never happen, unless we don't have ExitProcess
-                    // in the executable file.  Our tools don't do that.
-                    TerminateProcess(debugProcessList->hProcess, 0);
-                    ExtendedMessageBox("Debugger", MB_SETFOREGROUND |
-                        MB_SYSTEMMODAL, 
-                        "A forced termination has been used.\n  This may leave the system in an unstable state.");
-                }
-            }
         }
     }
     activeProcess = NULL;

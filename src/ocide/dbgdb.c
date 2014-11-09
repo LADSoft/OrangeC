@@ -548,12 +548,18 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
 int GetFuncId(DEBUG_INFO *dbg_info, int Address)
 {
     static char *query = {
-        "SELECT Names.id FROM Names"
+        "SELECT Names.id, Globals.varAddress FROM Names"
         "    JOIN Globals on Globals.symbolId = Names.id"
         "    WHERE Globals.varAddress <= ?" 
         "       ORDER BY Globals.varAddress DESC;"
     };
-    int rv = 0;
+    static char *lquery = {
+        "SELECT Names.id, Locals.varAddress FROM Names"
+        "    JOIN Locals on Locals.symbolId = Names.id"
+        "    WHERE Locals.varAddress <= ?" 
+        "       ORDER BY Locals.varAddress DESC;"
+    };
+    int rv = 0, gbl=0, lcl=0, agbl =0, alcl=0;
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
     rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
@@ -573,7 +579,8 @@ int GetFuncId(DEBUG_INFO *dbg_info, int Address)
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    rv = sqlite3_column_int(handle, 0);
+                    gbl = sqlite3_column_int(handle, 0);
+                    agbl = sqlite3_column_int(handle, 1);
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;
@@ -584,6 +591,36 @@ int GetFuncId(DEBUG_INFO *dbg_info, int Address)
         }
         sqlite3_finalize(handle);
     }
+    rc = sqlite3_prepare_v2(dbg_info->dbPointer, lquery, strlen(lquery)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        sqlite3_bind_int(handle, 1, Address);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                    lcl = sqlite3_column_int(handle, 0);
+                    alcl = sqlite3_column_int(handle, 1);
+                    rc = SQLITE_OK;
+                    done = TRUE;
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        sqlite3_finalize(handle);
+    }
+    rv = agbl > alcl ? gbl : lcl;
     return rv;
 }
 int GetLocalSymbolAddress(DEBUG_INFO *dbg_info, int funcId, char *name, char *filename, int line, int *address, int *type)

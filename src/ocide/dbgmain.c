@@ -892,7 +892,7 @@ void StartDebug(char *cmd)
                                 stDE.u.CreateThread.lpStartAddress);
                             strcpy(th->name, name);
                         }
-                        sprintf(buf, "Thread creation: %08x %08x %s\r\n",
+                        sprintf(buf, "Thread creation: %d %08x %s\r\n",
                             stDE.dwThreadId, stDE.u.CreateThread.lpStartAddress,
                             name);
                         SendInfoMessage(ERR_DEBUG_WINDOW, buf);
@@ -909,7 +909,7 @@ void StartDebug(char *cmd)
                         THREAD *th = GetThread(stDE.dwProcessId, stDE.dwThreadId);
                         if (th)
                         {
-                            sprintf(buf, "Thread exit: %08x %s : exit code %d\r\n", th
+                            sprintf(buf, "Thread exit: %d %s : exit code %d\r\n", th
                                 ->idThread, th->name, stDE.u.ExitProcess.dwExitCode);
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                             DeleteThread(stDE.dwProcessId, stDE.dwThreadId);
@@ -1190,8 +1190,7 @@ void StartDebug(char *cmd)
             }
         }
         // Pass on to the operating system.
-//        if (bContinue)
-            ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
+        ContinueDebugEvent(stDE.dwProcessId, stDE.dwThreadId, dwContinueStatus);
 
     }
     activeProcess = NULL;

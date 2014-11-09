@@ -366,7 +366,7 @@ void asmDoPaint(HWND hwnd)
     DeleteObject(hpen);
     DeleteObject(graybrush);
     
-    if (activeProcess->hProcess)
+    if (activeProcess && activeProcess->hProcess)
     {
         oldFont = SelectObject(dc, asmFont);
         oldcolor = SetTextColor(dc, 0xff0000);

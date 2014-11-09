@@ -555,7 +555,7 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp)
                 gen_varstart(stmt->select);
                 break;
             case st_dbgblock:
-                gen_dbgblock(stmt->label + codeLabelOffset);
+                gen_dbgblock(stmt->label);
                 break;
                 break;
             case st_block:

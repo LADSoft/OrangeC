@@ -345,7 +345,7 @@ void SetJumplistPos(HWND hwnd, int linepos)
                 "SELECT Names.name FROM JumpTable"
                 "    JOIN Names ON Names.id = JumpTable.symbolId"
                 "    JOIN FileNames On FileNames.id = JumpTable.fileId"
-                "    WHERE ? >= JumpTable.startLine AND ? < JumpTable.endLine"
+                "    WHERE ? >= JumpTable.startLine AND (JumpTable.endLine == 0 OR ? < JumpTable.endLine)"
                 "    And FileNames.name = ?"
             };
             sqlite3_stmt *handle;

@@ -1149,7 +1149,7 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op
     LIST *l;
     (void)size;
     siz1 = natural_size(node->left);
-    ap1 = gen_expr( funcsp, node->left, 0, siz1);
+    ap1 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
     ncnode = node->left;
     while (castvalue(ncnode))
         ncnode = ncnode->left;

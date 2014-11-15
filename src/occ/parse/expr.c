@@ -3915,8 +3915,10 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                             *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
                         }
                         else
+                        {
                             *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec,
                                         *exp, exp1);
+                        }
                         while (lvalue(exp1))
                             exp1 = exp1->left;
                         if (exp1->type == en_auto)
@@ -4147,7 +4149,9 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                     }
                     else
                     {
-                        *exp = exprNode(en_assign, *exp, exprNode(kw == autoinc ? en_add : en_sub, *exp, intNode(en_c_i,1)));
+                        EXPRESSION *dest = *exp;
+                        *exp = RemoveAutoIncDec(*exp);                            
+                        *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, intNode(en_c_i,1)));
                     }
                 }
             }

@@ -460,10 +460,9 @@ int LoadFile(HWND hwnd, DWINFO *info, BOOL savepos)
     long size;
     char *buf,*p,*q;
     FILE *in = fopen(info->dwName, "rb");
-    info->dosStyle = FALSE;
+    info->dosStyle = TRUE;
     if (!in)
     {
-        info->dosStyle = TRUE;
         ShowWindow(info->dwHandle, SW_SHOW);
         return FALSE;
     }
@@ -484,6 +483,8 @@ int LoadFile(HWND hwnd, DWINFO *info, BOOL savepos)
     buf[size] = 0;
     fclose(in);
     p = q = buf;
+    if (*p)
+        info->dosStyle = FALSE;
     while (*p)
     {
         if (*p != '\r')
@@ -1581,6 +1582,7 @@ HWND CreateDrawWindow(DWINFO *baseinfo, int visible)
         newInfo->dwLineNo =  - 1;
         newInfo->logMRU = TRUE;
         newInfo->newFile = TRUE;
+        newInfo->dosStyle = TRUE;
         if (SaveFileDialog(&ofn, 0, 0, TRUE, szNewFileFilter, "Open New File"))
         {
             char *q = ofn.lpstrFile, path[256];

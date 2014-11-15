@@ -210,7 +210,7 @@ int GetEqualsBreakpoint(DEBUG_INFO *dbg_info, DWORD Address, char *module, int *
     static char *query = {
         "SELECT FileNames.name, LineNumbers.line, LineNumbers.address FROM  LineNumbers"
         "    JOIN FileNames on LineNumbers.fileId = FileNames.id"
-        "    WHERE LineNumbers.address = ?;"
+        "    WHERE LineNumbers.address <= ? ORDER BY LineNumbers.address DESC ;"
     };
     int rv = 0;
     int rc = SQLITE_OK;

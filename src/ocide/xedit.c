@@ -272,7 +272,7 @@ static void Colorize(INTERNAL_CHAR *buf, int start, int len, int color, int
  **********************************************************************/
 int keysym(char x)
 {
-    return isalnum(x) || x == '_';
+    return isalnum(x) || x == '.';
 }
 
 /**********************************************************************
@@ -4330,7 +4330,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 }
                 return -1;
             case WM_CHARTOITEM:
-                if (wParam == '.' || wParam == '-')
+                if (!keysym(wParam))
                 {
                     PostMessage(hwnd, WM_CLOSE, 0, 0);
                     SendMessage(parent, WM_CHAR, wParam, 0);
@@ -5621,7 +5621,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     if (!p->cd->readonly)
                     {
                         insertchar(hwnd, p, wParam);
-                        if (wParam == '.' || wParam == '>' || isalnum(wParam) || wParam == '_')
+                        if (wParam == '.' || wParam == '>' || keysym(wParam))
                         {
                             PostMessage(hwnd, WM_CODECOMPLETE, wParam, p->selstartcharpos);
                         }

@@ -69,7 +69,7 @@
 					<SETTING NAME="No" VALUE="0"/>
 					<SETTING NAME="Yes" VALUE="1"/>
 				</ITEM>
-				<ITEM NAME="Stop on First Chance exception" ID="__STOP_FIRST_CHANCE" TYPE = "COMBO" DEFAULT="0">
+				<ITEM NAME="Stop on First Chance exception" ID="__STOP_FIRST_CHANCE" TYPE = "COMBO" DEFAULT="1">
 					<SETTING NAME="No" VALUE="0"/>
 					<SETTING NAME="Yes" VALUE="1"/>
 				</ITEM>

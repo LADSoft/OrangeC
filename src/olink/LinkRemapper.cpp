@@ -347,6 +347,7 @@ ObjInt LinkRemapper::GetTypeIndex(ObjType *type)
     else
         return LookupFileType((int)type->GetType());
 }
+/*
 void LinkRemapper::SetTypeIndex(ObjType *type)
 {
     if (type->GetType() < ObjType::eVoid)
@@ -354,6 +355,7 @@ void LinkRemapper::SetTypeIndex(ObjType *type)
     else
         type->SetType((ObjType::eType)LookupFileType((int)type->GetType()));
 }
+*/
 ObjInt LinkRemapper::RegisterType(ObjFile *file, ObjType *type, char *name)
 {
     int n;
@@ -370,7 +372,7 @@ ObjInt LinkRemapper::RegisterType(ObjFile *file, ObjType *type, char *name)
         newTypes[name] = n;
     }
     fileTypes[type->GetIndex()] = n;
-      type->SetIndex(n);
+    //type->SetIndex(n);
     return n;
 }
 ObjInt LinkRemapper::MapType(ObjFile *file, ObjType *type)
@@ -535,6 +537,10 @@ ObjFile *LinkRemapper::Remap()
         for (ObjFile::TypeIterator its = (*it)->TypeBegin(); its != (*it)->TypeEnd(); ++its)
         {
             RenumberType(file, *its);
+        }
+        for (ObjFile::TypeIterator its = (*it)->TypeBegin(); its != (*it)->TypeEnd(); ++its)
+        {
+            (*its)->SetIndex(LookupFileType((*its)->GetIndex()));            
         }
         fileTypes.clear();
         for (ObjFile::SourceFileIterator its = (*it)->SourceFileBegin(); its != (*it)->SourceFileEnd(); ++its)

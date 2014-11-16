@@ -36,7 +36,7 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 
-all: dll clib
+all: clib # dll
 
 CLIBDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
 	threads TIME uio wc uchar cpp

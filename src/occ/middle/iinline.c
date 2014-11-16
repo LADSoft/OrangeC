@@ -104,29 +104,84 @@ static EXPRESSION *inlineGetThisPtr(EXPRESSION *exp)
 }
 static void inlineBindThis(SYMBOL *funcsp, HASHREC *hr, EXPRESSION *thisptr)
 {
-    SYMBOL *sym = (SYMBOL *)hr->p;
-    inlinesym_thisptr[inlinesym_count] = 0;
-    if (sym->thisPtr)
+    if (hr)
     {
-        if (thisptr)
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        inlinesym_thisptr[inlinesym_count] = 0;
+        if (sym->thisPtr)
         {
+            if (thisptr)
+            {
+                IMODE *src, *ap1, *idest;
+                EXPRESSION *dest;
+                LIST *lst = Alloc(sizeof(LIST));
+                thisptr = inlinesym_count == 0 || 
+                            inlinesym_thisptr[inlinesym_count-1] == NULL || 
+                            !hasRelativeThis(thisptr) ? thisptr : inlineGetThisPtr(thisptr);
+                sym = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
+                sym->allocate = TRUE;
+                sym->inAllocTable = TRUE;
+                lst->data = sym;
+                lst->next = temporarySymbols;
+                temporarySymbols = lst;
+                dest = varNode(en_auto, sym);
+                deref(sym->tp, &dest);
+                inlinesym_thisptr[inlinesym_count] = dest;
+                idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
+                ap1 = LookupLoadTemp(NULL, src);
+                if (ap1 != src)
+                {
+                    gen_icode(i_assn, ap1, src, NULL);
+                    src = ap1;
+                }
+                gen_icode(i_assn, idest, src, NULL);
+            }
+        }
+        else if (inlinesym_count)
+        {
+            inlinesym_thisptr[inlinesym_count] = inlinesym_thisptr[inlinesym_count-1];
+        }
+    }
+}
+static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
+{
+    if (hr)
+    {
+        EXPRESSION **list;
+        HASHREC *hr1;
+        int cnt = 0;
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        if (sym->thisPtr)
+        {
+            hr = hr->next;
+        }
+        hr1 = hr;
+        while (hr1)
+        {
+            cnt++;
+            hr1 = hr1->next;
+        }
+        hr1 = hr;
+        list = (EXPRESSION **)Alloc(sizeof(EXPRESSION *) * cnt);
+        cnt = 0;
+        while (hr && args) // args might go to NULL for a destructor, which currently has a VOID at the end of the arg list
+        {
+            SYMBOL *sym = (SYMBOL *)hr->p;
             IMODE *src, *ap1, *idest;
             EXPRESSION *dest;
+            SYMBOL *sym2 = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
             LIST *lst = Alloc(sizeof(LIST));
-            thisptr = inlinesym_count == 0 || 
-                        inlinesym_thisptr[inlinesym_count-1] == NULL || 
-                        !hasRelativeThis(thisptr) ? thisptr : inlineGetThisPtr(thisptr);
-            sym = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
-            sym->allocate = TRUE;
-            sym->inAllocTable = TRUE;
-            lst->data = sym;
+            sym2->allocate = TRUE;
+            sym2->inAllocTable = TRUE;
+            lst->data = sym2;
             lst->next = temporarySymbols;
             temporarySymbols = lst;
-            dest = varNode(en_auto, sym);
+            dest = varNode(en_auto, sym2);
             deref(sym->tp, &dest);
-            inlinesym_thisptr[inlinesym_count] = dest;
+            list[cnt++] = dest;
             idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-            src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
+            src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
             ap1 = LookupLoadTemp(NULL, src);
             if (ap1 != src)
             {
@@ -134,68 +189,19 @@ static void inlineBindThis(SYMBOL *funcsp, HASHREC *hr, EXPRESSION *thisptr)
                 src = ap1;
             }
             gen_icode(i_assn, idest, src, NULL);
+            args = args->next;
+            hr = hr->next;
         }
-    }
-    else if (inlinesym_count)
-    {
-        inlinesym_thisptr[inlinesym_count] = inlinesym_thisptr[inlinesym_count-1];
-    }
-}
-static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
-{
-    EXPRESSION **list;
-    HASHREC *hr1;
-    int cnt = 0;
-    SYMBOL *sym = (SYMBOL *)hr->p;
-    if (sym->thisPtr)
-    {
-        hr = hr->next;
-    }
-    hr1 = hr;
-    while (hr1)
-    {
-        cnt++;
-        hr1 = hr1->next;
-    }
-    hr1 = hr;
-    list = (EXPRESSION **)Alloc(sizeof(EXPRESSION *) * cnt);
-    cnt = 0;
-    while (hr && args) // args might go to NULL for a destructor, which currently has a VOID at the end of the arg list
-    {
-        SYMBOL *sym = (SYMBOL *)hr->p;
-        IMODE *src, *ap1, *idest;
-        EXPRESSION *dest;
-        SYMBOL *sym2 = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
-        LIST *lst = Alloc(sizeof(LIST));
-        sym2->allocate = TRUE;
-        sym2->inAllocTable = TRUE;
-        lst->data = sym2;
-        lst->next = temporarySymbols;
-        temporarySymbols = lst;
-        dest = varNode(en_auto, sym2);
-        deref(sym->tp, &dest);
-        list[cnt++] = dest;
-        idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-        src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
-        ap1 = LookupLoadTemp(NULL, src);
-        if (ap1 != src)
+        // we have to fill in the args last in case the same constructor was used
+        // in multiple arguments...
+        hr = hr1;
+        cnt = 0;
+        while (hr)
         {
-            gen_icode(i_assn, ap1, src, NULL);
-            src = ap1;
+            SYMBOL *sym = (SYMBOL *)hr->p;
+            sym->inlineFunc.stmt = list[cnt++];
+            hr = hr->next;
         }
-        gen_icode(i_assn, idest, src, NULL);
-        args = args->next;
-        hr = hr->next;
-    }
-    // we have to fill in the args last in case the same constructor was used
-    // in multiple arguments...
-    hr = hr1;
-    cnt = 0;
-    while (hr)
-    {
-        SYMBOL *sym = (SYMBOL *)hr->p;
-        sym->inlineFunc.stmt = list[cnt++];
-        hr = hr->next;
     }
 }
 static void inlineUnbindArgs(HASHREC *hr)
@@ -283,7 +289,9 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
     EXPRESSION *oldthis = inlinesym_thisptr[inlinesym_count];
 
 //    return NULL;
-    
+
+    if (cparams.prm_debug)
+        return NULL;    
     if (f->sp == theCurrentFunc)
         return NULL;
     if (f->sp->allocaUsed)

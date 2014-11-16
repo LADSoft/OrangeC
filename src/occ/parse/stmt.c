@@ -584,6 +584,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     forstmt->type = kw_for;
     forstmt->table = localNameSpace->syms;
     currentLineData(forstmt,lex,-1);
+    forline = currentLineData(NULL, lex, 0);
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
@@ -596,7 +597,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 addedBlock++;
                 AllocateLocalContext(parent, funcsp, codeLabel++);
             }
-        
+       
             lex = selection_expression(lex, forstmt, &init, funcsp, kw_for, &declaration);
             if (cparams.prm_cplusplus && !cparams.prm_oldfor && declaration && MATCHKW(lex, colon))
             {
@@ -648,7 +649,6 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     SYMBOL *rangeSP = rangeExp->v.sp;
                     deref(&stdpointer, &rangeExp);
                     needkw(&lex, closepa);
-                    forline = currentLineData(NULL, lex, 0);
                     while (castvalue(select))
                         select = select->left;
                     if (lvalue(select))
@@ -1103,6 +1103,9 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 forstmt->tail = forstmt->tail->next = forline;
                             else
                                 forstmt->head = forstmt->tail = forline;
+                            while (forstmt->tail->next)
+                                forstmt->tail->next = forstmt->tail;
+                                  
                         }
                         st = stmtNode(lex, forstmt, st_label);
                         st->label = testlabel;
@@ -1183,20 +1186,24 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                 {
-                    forline = currentLineData(NULL, lex, 0);
                     lex = getsym();
                     if (init)
                     {
                         st = stmtNode(lex, forstmt, st_expr);
                         st->select = init;
                     }
-//					st = stmtNode(lex, forstmt, st_goto);
-//					st->label = testlabel;
-                    st = stmtNode(lex, forstmt, st_notselect);
-                    st->label = forstmt->breaklabel;
-                    st->altlabel = testlabel;
-                    st->select = select;
-                        
+                    if (cparams.prm_debug)
+                    {
+    					st = stmtNode(lex, forstmt, st_goto);
+    					st->label = testlabel;
+                    }
+                    else
+                    {
+                        st = stmtNode(lex, forstmt, st_notselect);
+                        st->label = forstmt->breaklabel;
+                        st->altlabel = testlabel;
+                        st->select = select;
+                    }        
                     st = stmtNode(lex, forstmt, st_label);
                     st->label = loopLabel;
                     if (cparams.prm_cplusplus || cparams.prm_c99)
@@ -1220,6 +1227,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             forstmt->tail = forstmt->tail->next = forline;
                         else
                             forstmt->head = forstmt->tail = forline;
+                        while (forstmt->tail->next)
+                            forstmt->tail = forstmt->tail->next;
                     }
                     st = stmtNode(lex, forstmt, st_label);
                     st->label = testlabel;
@@ -1875,8 +1884,8 @@ static LEXEME *statement_switch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         if (MATCHKW(lex, closepa))
         {
             STATEMENT *st1;
-            lex = getsym();
             currentLineData(switchstmt, lex, 0);
+            lex = getsym();
             st = stmtNode(lex, switchstmt, st_switch);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
@@ -1928,6 +1937,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     whilestmt->next = parent;
     whilestmt->type = kw_while;
     whilestmt->table = localNameSpace->syms;
+    whileline = currentLineData(NULL, lex, 0);
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
@@ -1947,14 +1957,19 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
         else
         {
-            whileline = currentLineData(NULL, lex, 0);
             lex = getsym();
-//			st = stmtNode(lex, whilestmt, st_goto);
-//			st->label = whilestmt->continuelabel;
-            st = stmtNode(lex, whilestmt, st_notselect);
-            st->label = whilestmt->breaklabel;
-            st->altlabel = whilestmt->continuelabel;
-            st->select = select;
+            if (cparams.prm_debug)
+            {
+    			st = stmtNode(lex, whilestmt, st_goto);
+    			st->label = whilestmt->continuelabel;
+            }
+            else
+            {
+                st = stmtNode(lex, whilestmt, st_notselect);
+                st->label = whilestmt->breaklabel;
+                st->altlabel = whilestmt->continuelabel;
+                st->select = select;
+            }
 
             st = stmtNode(lex, whilestmt, st_label);
             st->label = loopLabel;

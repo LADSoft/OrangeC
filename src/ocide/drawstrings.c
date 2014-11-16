@@ -294,8 +294,9 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         strings = (STRINGS *)plvdi->item.lParam;
                         switch (plvdi->item.iSubItem)
                         {
-                            char *id = (char *)LocalAlloc(0, 256);
+                            char *id;
                             case 1:
+								id = (char *)LocalAlloc(0, 256);
                                 FormatVersionString(id, strings->string, strings->length);
                                 plvdi->item.pszText = id;
                                 break;
@@ -412,6 +413,7 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER,
                     r.left,r.top,r.right-r.left,16, hwnd, (HMENU)ID_EDIT,
                     hInstance, NULL);
+				ApplyDialogFont(stringTableData->gd.editWindow);
                 SetParent(stringTableData->gd.editWindow, stringTableData->gd.childWindow);
                 AccSubclassEditWnd(hwnd, stringTableData->gd.editWindow);
                 switch(stringTableData->gd.selectedColumn)
@@ -460,6 +462,7 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                 if (stringTableData->gd.selectedColumn == 0)
                                 {
                                     PropSetIdName(stringTableData, buf, &strings->id, NULL);
+								    ResAddNewDef(buf, strings->id->val);
                                 }
                                 else
                                 {
@@ -484,6 +487,7 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 case IDM_DELETE:
                     StringTableDelete(stringTableData, stringTableData->gd.selectedRow);
+					ListView_SetItemState(stringTableData->gd.childWindow, stringTableData->gd.selectedRow, LVIS_SELECTED, LVIS_SELECTED);
                     break;
                 case IDM_SAVE:
                     if (stringTableData->resource->changed)

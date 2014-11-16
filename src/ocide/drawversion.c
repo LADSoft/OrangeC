@@ -962,6 +962,7 @@ LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     WS_CHILD | WS_CLIPSIBLINGS,
                     r.left,r.top,r.right-r.left,16, hwnd, (HMENU)ID_EDIT,
                     hInstance, NULL);
+				ApplyDialogFont(versionData->gd.editWindow);
                 SetParent(versionData->gd.editWindow, versionData->gd.childWindow);
                 AccSubclassEditWnd(hwnd, versionData->gd.editWindow);
                 SendMessage(versionData->gd.editWindow, EM_SETSEL, 0, -1);
@@ -997,6 +998,7 @@ LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 case IDM_DELETE:
                     VersDelete(versionData);
+					ListView_SetItemState(versionData->gd.childWindow, versionData->gd.selectedRow, LVIS_SELECTED, LVIS_SELECTED);
                     break;
                 case IDM_SAVE:
                     if (versionData->resource->changed)

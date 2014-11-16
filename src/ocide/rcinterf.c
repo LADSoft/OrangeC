@@ -1121,7 +1121,7 @@ void ResGetStringItemName(EXPRESSION *id, char *text)
                 *p = '_';
             p++;
         }        
-        id->rendition = rcStrdup(name);
+        id->rendition = ResAddNewDef(name, id->val);
     }
 }
 int ResChangeId(char *name, int id)

@@ -689,6 +689,7 @@ int GetGlobalSymbolAddress(DEBUG_INFO *dbg_info, char *name, char *filename, int
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
     sprintf(iname, "_%s", name);
+	// search the locals for this file first
     if (filename[0])
     {
         char myName[MAX_PATH];
@@ -729,11 +730,55 @@ int GetGlobalSymbolAddress(DEBUG_INFO *dbg_info, char *name, char *filename, int
             sqlite3_finalize(handle);
         }
     }
+	// if it wasn't in the locals for this file, search the globals, unqualified
     if (!rv)
     {
         static char *glquery = {
             "SELECT Globals.varAddress, Globals.typeId FROM Globals"
             "    JOIN Names on Globals.symbolId = Names.id"
+            "    WHERE Names.name = ? OR Names.Name = ?;"
+        };
+        int rc = SQLITE_OK;
+        sqlite3_stmt *handle;
+        rc = sqlite3_prepare_v2(dbg_info->dbPointer, glquery, strlen(glquery)+1, &handle, NULL);
+        if (rc == SQLITE_OK)
+        {
+            int done = FALSE;
+            rc = SQLITE_DONE;
+            sqlite3_bind_text(handle, 1, iname, strlen(iname), SQLITE_STATIC);
+            sqlite3_bind_text(handle, 2, name, strlen(name), SQLITE_STATIC);
+            while (!done)
+            {
+                switch(rc = sqlite3_step(handle))
+                {
+                    case SQLITE_BUSY:
+                        done = TRUE;
+                        break;
+                    case SQLITE_DONE:
+                        done = TRUE;
+                        break;
+                    case SQLITE_ROW:
+                        *address = sqlite3_column_int(handle, 0);
+                        *type = sqlite3_column_int(handle, 1);
+                        rv = TRUE;
+                        rc = SQLITE_OK;
+                        done = TRUE;
+                        break;
+                    default:
+                        done = TRUE;
+                        break;
+                }
+            }
+            sqlite3_finalize(handle);
+        }
+    }
+	// if we didn't find it in the locals for the file or the globals, search the locals again without qualifiers
+	// and take the first match
+    if (!rv)
+    {
+        static char *glquery = {
+            "SELECT Locals.varAddress, Locals.typeId FROM Locals"
+            "    JOIN Names on Locals.symbolId = Names.id"
             "    WHERE Names.name = ? OR Names.Name = ?;"
         };
         int rc = SQLITE_OK;

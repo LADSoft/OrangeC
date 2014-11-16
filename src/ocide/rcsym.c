@@ -136,7 +136,7 @@ SYM *basesearch(char *na, TABLE *table, int checkaccess)
     p = ((SYM **)LookupHash(na, defhash, HASHTABLESIZE));
     if (p)
     {
-        p =  (*p)->next;
+        p =  (*p);
     }
     return (SYM*)p;
 }

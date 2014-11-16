@@ -172,6 +172,7 @@ HWND PropGetHWNDNumeric(HWND parent)
                                   CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                                   parent, 0, hInstance, NULL);
     SubclassPropsEditWindow(rv);
+	ApplyDialogFont(rv);
     return rv;
 }
 HWND PropGetHWNDText(HWND parent)
@@ -180,6 +181,7 @@ HWND PropGetHWNDText(HWND parent)
                                   CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                                   parent, 0, hInstance, NULL);
     SubclassPropsEditWindow(rv);
+	ApplyDialogFont(rv);
     return rv;
 }
 void PropSetExp(struct resRes *data, char *buf, EXPRESSION **exp)

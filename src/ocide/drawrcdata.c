@@ -659,6 +659,7 @@ LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER,
                             r.left,r.top,r.right-r.left,16, hwnd, (HMENU)ID_EDIT,
                             hInstance, NULL);
+						ApplyDialogFont(rcDataData->gd.editWindow);
                         SetParent(rcDataData->gd.editWindow, rcDataData->gd.childWindow);
                         rcDataGetValue(buf, rcData);
                         if (buf[0] == '"')
@@ -818,6 +819,7 @@ LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 case IDM_DELETE:
                     rcDataDelete(rcDataData, rcDataData->gd.selectedRow);
+					ListView_SetItemState(rcDataData->gd.childWindow, rcDataData->gd.selectedRow, LVIS_SELECTED, LVIS_SELECTED);
                     break;
             }
             break;

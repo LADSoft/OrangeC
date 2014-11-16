@@ -149,6 +149,8 @@ void ProjectRemove(void)
             MarkChanged(data, data->type == PJ_PROJ);
             TreeView_DeleteItem(prjTreeWindow, data->hTreeItem);
             ResDeleteItem(data);
+            if (data->type != PJ_FILE || !RetrieveInternalDepend(data->realName))
+                FreeSubTree(data, TRUE);
             if (data == activeProject)
             {
                 activeProject = workArea->children;
@@ -157,8 +159,6 @@ void ProjectRemove(void)
                 MarkChanged(activeProject, TRUE);
                 InvalidateRect(prjTreeWindow,0,1);
             }
-            if (data->type != PJ_FILE || !RetrieveInternalDepend(data->realName))
-                FreeSubTree(data, TRUE);
         }
     }
 }

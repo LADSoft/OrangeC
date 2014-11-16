@@ -591,7 +591,7 @@ int dmgrFlex(CCW_params *p)
 {
     int index;
     CCD_params *d;
-    d = FindParams(p, &index);
+    d = FindParams(p->child, &index);
     d->flexparams |= p->u.cw.flexed ? FLEX_UNREQ : FLEX_REQ;
     CalculateLayout( - 1, 0);
 }
@@ -1188,7 +1188,7 @@ void SizeLeftRight(int *windows, int wincount, int adj, RECT *r2)
         docks[windows[wincount - 1]]->position.right = r2->right;
     if (wincount == 1)
     {
-        SendMessage(cache[windows[0]]->hwnd, LCF_SETFLEX, 0, wincount != 1);
+        SendMessage(cache[windows[0]]->parent->hwnd, LCF_SETFLEX, 0, wincount != 1);
     }
     else
     {
@@ -1237,7 +1237,7 @@ void SizeLeftRight(int *windows, int wincount, int adj, RECT *r2)
         }
         for (i = 0; i < wincount; i++)
         {
-            SendMessage(cache[windows[i]]->hwnd, LCF_SETFLEX, docks[windows[i]]
+            SendMessage(cache[windows[i]]->parent->hwnd, LCF_SETFLEX, docks[windows[i]]
                 ->flexparams &FLEX_LARGE ? 1 : 0, wincount != 1);
             if (i != wincount - 1 && cache[windows[i]]->type != LSTOOLBAR)
                 InsertVertFrame(windows[i], 0, 0);
@@ -1592,7 +1592,7 @@ void SizeTopBottom(int *windows, int wincount, int adj, RECT *client, RECT
         docks[windows[wincount - 1]]->position.bottom = client->bottom;
     if (wincount == 1)
     {
-        SendMessage(cache[windows[0]]->hwnd, LCF_SETFLEX, 0, wincount != 1);
+        SendMessage(cache[windows[0]]->parent->hwnd, LCF_SETFLEX, 0, wincount != 1);
     }
     else
     {
@@ -1640,7 +1640,7 @@ void SizeTopBottom(int *windows, int wincount, int adj, RECT *client, RECT
         }
         for (i = 0; i < wincount; i++)
         {
-            SendMessage(cache[windows[i]]->hwnd, LCF_SETFLEX, docks[windows[i]]
+            SendMessage(cache[windows[i]]->parent->hwnd, LCF_SETFLEX, docks[windows[i]]
                 ->flexparams &FLEX_LARGE ? 1 : 0, wincount != 1);
             if (i != wincount - 1 && cache[windows[i]]->type != LSTOOLBAR)
                 InsertHorizFrame(windows[i], 0, 0);

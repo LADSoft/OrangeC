@@ -2113,7 +2113,7 @@ static void SelectMenuIdBase(RESOURCE_DATA *select)
     select->nextMenuId = 10000;
     for (res = select->resources; res; res = res->next)
     {
-        if (res->itype == RESTYPE_STRING)
+        if (res->itype == RESTYPE_MENU)
         {
             RecurseMenuIdBase(select, res->u.menu->items);
         }
@@ -2181,25 +2181,25 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
             if (!stricmp((*curs)->name, "__NEXT_CONTROL_ID"))
             {
                 select->nextControlId = GetIdVal(*curs);
-                curs = &(*curs)->xref;
+                *curs = (*curs)->xref;
                 continue;            
             }    
             if (!stricmp((*curs)->name, "__NEXT_MENU_ID"))
             {
                 select->nextMenuId = GetIdVal(*curs);
-                curs = &(*curs)->xref;
+                *curs = (*curs)->xref;
                 continue;
             }
             if (!stricmp((*curs)->name, "__NEXT_RESOURCE_ID"))
             {
                 select->nextResourceId = GetIdVal(*curs);
-                curs = &(*curs)->xref;
+                *curs = (*curs)->xref;
                 continue;
             }
             if (!stricmp((*curs)->name, "__NEXT_STRING_ID"))
             {
                 select->nextStringId = GetIdVal(*curs);
-                curs = &(*curs)->xref;
+                *curs = (*curs)->xref;
                 continue;
             }
             done = TRUE;

@@ -1511,6 +1511,7 @@ struct buttonWindow *CreateButtonWnd(HWND parent, BOOL staticText, BOOL combo)
             ptr->edit = CreateWindow("edit", "", WS_CHILD | WS_VISIBLE,
                                      r.left, r.top, r.right - r.left - 18, r.bottom - r.top, parent, 0, hInstance, NULL);
         }
+		ApplyDialogFont(ptr->edit);
         ptr->parent = GetParent(parent);
     }
     return ptr;

@@ -977,6 +977,7 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER,
                             r.left,r.top,r.right-r.left,16, hwnd, (HMENU)ID_EDIT,
                             hInstance, NULL);
+						ApplyDialogFont(acceleratorData->gd.editWindow);
                         SetParent(acceleratorData->gd.editWindow, acceleratorData->gd.childWindow);
                         buf[0] = 0;
                         FormatExp(buf, accelerator->id);
@@ -1234,6 +1235,7 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 case IDM_DELETE:
                     AccDelete(acceleratorData, acceleratorData->gd.selectedRow);
+					ListView_SetItemState(acceleratorData->gd.childWindow, acceleratorData->gd.selectedRow, LVIS_SELECTED, LVIS_SELECTED);
                     break;
                 case IDM_ACCSETKEY:
                     AccSetKey(acceleratorData, lParam);

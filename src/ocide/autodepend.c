@@ -187,6 +187,7 @@ static void FindDepends(PROJECTITEM *pj, PROJECTITEM *fi)
                                 int i = 0;
                                 char path[4096];
                                 FILE *fil;
+								path[0] = 0;
                                 p++;
                                 DependsGetPath(pj, fi, path, sizeof(path));
                                 while (*p &&  *p != '"' &&  *p != '>')

@@ -367,7 +367,8 @@ void RestoreHistory(struct xmlNode *node, int version)
     }
     if (histitem == findhist)
     {
-        strcpy(findText, findhist[0]);
+		if (findhist[0])
+	        strcpy(findText, findhist[0]);
         SendMessage((HWND)hwndTbFind, WM_SETHISTORY, 0, (LPARAM)findhist);
     }
 }

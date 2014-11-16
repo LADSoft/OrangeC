@@ -272,7 +272,7 @@ static void Colorize(INTERNAL_CHAR *buf, int start, int len, int color, int
  **********************************************************************/
 int keysym(char x)
 {
-    return isalnum(x) || x == '.';
+    return isalnum(x) || x == '_';
 }
 
 /**********************************************************************
@@ -468,7 +468,8 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
             int len;
             if (highlightText[0] && 
                 !pcmp(buf + start + i, highlightText, preproc, &len, !highlightCaseSensitive, FALSE)
-                && (!highlightWholeWord || (i == buf || (!isalnum(buf[i-1].ch)) && !isalnum(buf[i+len].ch))))
+                && (!highlightWholeWord || (i == 0 || (!isalnum(buf[i-1].ch)) && buf[i-1].ch != '_' 
+				&& !isalnum(buf[i+len].ch) && buf[i+len].ch != '_')))
             {
                 Colorize(buf, start + i, len,  (C_HIGHLIGHT << 4) + C_TEXT, FALSE);
                 i += len - 1;
@@ -4330,7 +4331,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 }
                 return -1;
             case WM_CHARTOITEM:
-                if (!keysym(wParam))
+                if (wParam == '.' || wParam == '-')
                 {
                     PostMessage(hwnd, WM_CLOSE, 0, 0);
                     SendMessage(parent, WM_CHAR, wParam, 0);
@@ -5621,7 +5622,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     if (!p->cd->readonly)
                     {
                         insertchar(hwnd, p, wParam);
-                        if (wParam == '.' || wParam == '>' || keysym(wParam))
+                        if (wParam == '.' || wParam == '>' || isalnum(wParam) || wParam == '_')
                         {
                             PostMessage(hwnd, WM_CODECOMPLETE, wParam, p->selstartcharpos);
                         }

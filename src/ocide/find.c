@@ -1421,12 +1421,12 @@ DWORD DoReplaceNext(void *p)
 		infindorreplace = FALSE;
 		replacing = FALSE;
 		dirty = TRUE;
-		PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
 		if (!canceled)
 		{
 			if (replaceflags & F_REPLACEALL)
 				ExtendedMessageBox("Replace", 0, "Replaced %d occurrences.", replaceCount);
 		}
+		PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
 	}
 }
 void SetFlags(HWND hwndDlg, DLGHDR *pHdr)

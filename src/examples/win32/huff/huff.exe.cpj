@@ -1,0 +1,25 @@
+<CC386PROJECT>
+	<VERSION ID="5"/>
+	<WORKAREA NAME="C:\OrangeC\src\examples\win32\windows examples.cwa"/>
+	<TARGET TITLE="huff">
+		<PROPERTIES>
+			<PROFILE NAME="WIN32" TYPE="DEBUG">
+				<PROP ID="__PROJECTTYPE">0</PROP>
+				<PROP ID="__DEBUG_ARGUMENTS">huff.c</PROP>
+				<PROP ID="__STOP_FIRST_CHANCE">1</PROP>
+			</PROFILE>
+			<PROFILE NAME="WIN32" TYPE="RELEASE">
+				<PROP ID="__PROJECTTYPE">0</PROP>
+			</PROFILE>
+		</PROPERTIES>
+		<FILES>
+			<FOLDER TITLE="Include Files">
+				<FILE NAME="huff.h" TITLE="huff.h" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Source Files">
+				<FILE NAME="bheap.c" TITLE="bheap.c" CLEAN="0"/>
+				<FILE NAME="huff.c" TITLE="huff.c" CLEAN="0"/>
+			</FOLDER>
+		</FILES>
+	</TARGET>
+</CC386PROJECT>

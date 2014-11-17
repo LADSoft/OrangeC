@@ -334,7 +334,7 @@ static BOOL SendImportCommand(char *fname, BOOL target)
     memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
     stStartInfo.cb = sizeof(STARTUPINFO);
-    bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, 0, 
+    bRet = CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, 0, 
             szInstallPath,  &stStartInfo, &stProcessInfo);
     if (!bRet)
     {

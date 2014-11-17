@@ -94,7 +94,7 @@ DWORD RunExternalToolThread(void *p)
             memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
             stStartInfo.cb = sizeof(STARTUPINFO);
-            bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, 0, 
+            bRet = CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, 0, 
                     curTools->wd,  &stStartInfo, &stProcessInfo);
             if (!bRet)
             {

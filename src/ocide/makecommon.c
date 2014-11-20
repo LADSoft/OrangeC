@@ -1007,7 +1007,7 @@ int Execute(char *cmd, char *wdp, int window)
     si.hStdOutput = stdoutWr;
     si.hStdError = stdoutWr;
 
-    retcode = CreateProcess(0, cmd, 0, 0, 0, DETACHED_PROCESS | CREATE_SUSPENDED, 
+    retcode = CreateProcess(0, cmd, 0, 0, TRUE, DETACHED_PROCESS | CREATE_SUSPENDED, 
                             0, path, &si, &pi);
 
     CloseHandle(stdoutWr);

@@ -226,7 +226,6 @@ static void DeleteThread(DWORD procId, DWORD threadId)
         {
             THREAD *v = *thread;
             (*thread) = (*thread)->next;
-  //          CloseHandle(v->hThread);
             free(v);
         }
     }
@@ -284,7 +283,6 @@ static void DeleteProcess(DWORD procId)
             free(q);
         }
         (*process) = (*process)->next;
-//        CloseHandle(v->hProcess);
         FreeDebugInfo(v->dbg_info);
         free(v);
     }
@@ -540,6 +538,7 @@ void StopRunning(int newState)
          */
         SetThreadPriority(hThisThread, iOldPriority);
         ProcessToTop(debugProcessList->idProcess);
+        th=debugProcessList->threads;
         free(th->breakpoint.tempvals);
         free(th->breakpoint.addresses);
         th->breakpoint.tempvals = NULL;
@@ -684,6 +683,7 @@ void StartDebug(char *cmd)
     BREAKPOINT **bp;
     HMODULE hpsapiLib;
     THREAD **th;
+    HANDLE hExitHandle = NULL;
     int val, i, hbp;
     BOOL isTerminating = FALSE;
     char buf[512],*pwd = cmd + strlen(cmd)+1;
@@ -722,7 +722,7 @@ void StartDebug(char *cmd)
     while (bContinue)
     {
         // Pause until a debug event notification happens.
-        bContinue = WaitForDebugEvent(&stDE, 500);
+        bContinue = WaitForDebugEvent(&stDE, 200);
         if (bContinue)
         {
             switch (stDE.dwDebugEventCode)
@@ -783,6 +783,11 @@ void StartDebug(char *cmd)
                             }
                         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 
+                        if (!debugProcessList->next)
+                        {
+                            DuplicateHandle(GetCurrentProcess(), debugProcessList->hProcess, 
+                                            GetCurrentProcess(),&hExitHandle, 0, FALSE, DUPLICATE_SAME_ACCESS);
+                        }
                         if (pr)
                         {
                             char buf[512];
@@ -1173,7 +1178,13 @@ void StartDebug(char *cmd)
         }
         else
         {
+            
 	        bContinue = TRUE;
+            if (hExitHandle && WaitForSingleObject(hExitHandle, 0 == WAIT_OBJECT_0))
+            {
+                CloseHandle(hExitHandle);
+                bContinue = FALSE;
+            }
         }
     }
     activeProcess = NULL;

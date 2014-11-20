@@ -119,7 +119,7 @@ DWORD DosWindowThread(void *xx)
         memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
         stStartInfo.cb = sizeof(STARTUPINFO);
-        bRet = CreateProcess(NULL, cmd, NULL, NULL, FALSE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, env, 
+        bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE, env, 
                 wd,  &stStartInfo, &stProcessInfo);
         if (!bRet)
         {

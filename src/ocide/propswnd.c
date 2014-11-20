@@ -252,16 +252,17 @@ void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ct
     ResGetHeap(workArea, data);
     ResSetDirty(data);
     if (!ctls)
-        ResSetTreeName(data,buf);    
-    while (*buf)
-        *p++ = *buf++;
+        ResSetTreeName(data,buf); 
+    q = buf;
+    while (*q)
+        *p++ = *q++;
     *p = 0;
     *exp = ReadExpFromString(name);
     if (!*exp)
     {
         *exp = rcAlloc(sizeof(EXPRESSION));
         (*exp)->type = e_int;
-        (*exp)->rendition = rcStrdup(name);
+        (*exp)->rendition = rcStrdup(buf);
         SetId(data, *exp, id, ctls);
     }
     else

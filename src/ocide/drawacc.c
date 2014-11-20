@@ -459,13 +459,16 @@ LRESULT CALLBACK AccSetKeyProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM l
     PAINTSTRUCT ps;
     HDC hDC;
     SIZE sz;
-    static char *text = "Press the key to use";
+	HFONT xfont;
+	extern LOGFONT systemDialogFont;
+    static char *text = "Press the key combination to use";
     switch (iMessage)
     {
         case WM_CREATE:
             CenterWindow(hwnd);
             child = CreateWindowEx(0, "button", "Cancel", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
-            30, 70, 140, 60, hwnd, (HMENU)IDCANCEL, hInstance, NULL);
+            40, 70, 120, 40, hwnd, (HMENU)IDCANCEL, hInstance, NULL);
+			ApplyDialogFont(child);
             SetWindowLong(hwnd, 0, (long)child);
             ignoreAccel = TRUE;
             break;
@@ -478,10 +481,14 @@ LRESULT CALLBACK AccSetKeyProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM l
         case WM_PAINT:
             GetClientRect(hwnd, &r);
             hDC = BeginPaint(hwnd, &ps);
+			xfont = CreateFontIndirect(&systemDialogFont);
+			xfont = SelectObject(hDC, xfont);
             GetTextExtentPoint32(hDC, text, strlen(text), &sz);
             SetBkColor(hDC, GetSysColor(COLOR_BTNFACE));
             SetTextColor(hDC, GetSysColor(COLOR_WINDOWTEXT));
             TextOut(hDC, (r.right - sz.cx)/2,40, text, strlen(text));
+			xfont = SelectObject(hDC, xfont);
+			DeleteObject(xfont);
             EndPaint(hwnd, &ps);
             break;
         case WM_KEYDOWN:
@@ -772,7 +779,8 @@ static void AccSetKey(struct resRes *acceleratorData, int val)
         // no window is up, make one...
         acceleratorData->gd.editWindow = CreateWindowEx(0, szAcceleratorSetKeyClassName, "", WS_VISIBLE |
             WS_POPUP | WS_BORDER,
-            0, 0, 200, 200, NULL, NULL, hInstance, NULL);
+            0, 0, 200, 150, NULL, NULL, hInstance, NULL);
+		ApplyDialogFont(acceleratorData->gd.editWindow);
         SetWindowLong(acceleratorData->gd.editWindow, GWL_USERDATA, (long)acceleratorData->activeHwnd);
     }
 }
@@ -999,6 +1007,7 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             WS_CHILD | CBS_DROPDOWN | WS_CLIPSIBLINGS | WS_BORDER,
                             r.left,r.top,r.right- r.left,50, hwnd, (HMENU)ID_EDIT,
                             hInstance, NULL);
+						ApplyDialogFont(acceleratorData->gd.editWindow);
                         SetParent(acceleratorData->gd.editWindow, acceleratorData->gd.childWindow);
                         pt.x = pt.y = 5;
                         editwnd = ChildWindowFromPoint(acceleratorData->gd.editWindow, pt);
@@ -1153,17 +1162,8 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                     EXPRESSION *id;
                                     buf[GetWindowText(acceleratorData->gd.editWindow, buf, sizeof(buf)-1)] = 0;
                                     AccSetChanged(acceleratorData, accelerator);
-                                    accelerator->id = ResReadExp(acceleratorData, buf);
-                                    id = GetBaseId(accelerator->id);
-                                    if (id && id->rendition)
-                                    {
-                                        sp = search(id->rendition, &currentResData->syms);
-                                        if (!sp)
-                                        {
-                                            ResAddNewDef(id->rendition, currentResData->nextMenuId);
-                                            id->val = currentResData->nextMenuId++;
-                                        }
-                                    }
+                                    PropSetIdName(acceleratorData, buf, &accelerator->id, NULL);
+								    ResAddNewDef(buf, accelerator->id->val);
                                 }
                                 else if (acceleratorData->gd.selectedColumn >= 2)
                                 {

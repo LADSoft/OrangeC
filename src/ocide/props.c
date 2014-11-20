@@ -1345,12 +1345,16 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 int selected = 0, count = 0;
                 hStaticProfile = CreateWindowEx(0, "static","Profile Name:", WS_VISIBLE |
                     WS_CHILD, 10, 4, 100,16, hwnd, 0, hInstance, NULL);
+                ApplyDialogFont(hStaticProfile);
                 hStaticReleaseType = CreateWindowEx(0, "static","Build Type:", WS_VISIBLE |
                     WS_CHILD, 280, 4, 100,16, hwnd, 0, hInstance, NULL);
+                ApplyDialogFont(hStaticReleaseType);
                 hProfileCombo = CreateWindowEx(0, "combobox", "", WS_VISIBLE | WS_CHILD | CBS_DROPDOWN |
                                                CBS_AUTOHSCROLL, 110,0,150,20, hwnd, (HMENU)1000, hInstance, NULL);
+                ApplyDialogFont(hProfileCombo);
                 hReleaseTypeCombo = CreateWindowEx(0, "combobox", "", WS_VISIBLE | WS_CHILD | CBS_DROPDOWN |
                                                CBS_AUTOHSCROLL, 380,0,150,20, hwnd, (HMENU)1001, hInstance, NULL);
+                ApplyDialogFont(hReleaseTypeCombo);
                 SendMessage(hProfileCombo, CB_ADDSTRING, 0, (LPARAM)sysProfileName);
                 count++;
                 while (pf)

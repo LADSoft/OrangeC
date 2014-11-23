@@ -2282,6 +2282,7 @@ RESOURCE_DATA *ReadResources(char *fileName)
         Parse(&cd);
     }
     fclose(inputFile);
+	inputFile = NULL;
     if (cd.resources)
     {
         RESOURCE_DATA *rv = rcAlloc(sizeof(RESOURCE_DATA));

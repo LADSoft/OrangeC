@@ -57,7 +57,7 @@ extern int lineno;
 extern FILE *inclfile[10]; /* shared with preproc */
 extern int incldepth; /* shared with preproc */
 extern char *infile;
-
+extern FILE *inputFile;
 extern jmp_buf errjump;
 
 int diagcount = 0;
@@ -288,8 +288,8 @@ void generror(int n, int data)
  * most errors come here
  */
 {
-
-    basicerror(n, (void*)data);
+	if (inputFile)
+	    basicerror(n, (void*)data);
 }
 
 //-------------------------------------------------------------------------

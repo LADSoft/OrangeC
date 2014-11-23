@@ -103,6 +103,15 @@ void FreeImageUndo(IMAGEDATA *res)
     }
     old->undo = NULL;
 }
+void DirtyImageUndo(IMAGEDATA *res)
+{
+	IMAGEDATA *undoList = res->undo;
+	while (undoList)
+	{
+		undoList->imageDirty = TRUE;
+		undoList = undoList->next;
+	}
+}
 void ApplyImageUndo(IMGDATA *p, IMAGEDATA *res)
 {
     IMAGEDATA * oldundo;
@@ -119,6 +128,10 @@ void ApplyImageUndo(IMGDATA *p, IMAGEDATA *res)
         {
             ResSetClean(p->resource);
         }
+		else
+		{
+			ResSetDirty(p->resource);
+		}
     }
 }    
 HBITMAP LocalCreateBitmap(HDC dc, int width, int height, int colors)
@@ -235,9 +248,9 @@ void RecoverAndMask(IMAGEDATA *res)
     PatBlt(res->hdcAndMask, 0, 0, res->width, res->height, BLACKNESS);
 
     SetBkColor(res->hdcImage, res->rgbScreen);
-    BitBlt(res->hdcAndMask, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCCOPY);
-    SetBkColor(res->hdcImage, res->rgbScreen ^ 0xffffff);
-    BitBlt(res->hdcAndMask, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCPAINT);
+    BitBlt(res->hdcAndMask, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCINVERT);
+//    SetBkColor(res->hdcImage, res->rgbScreen ^ 0xffffff);
+//    BitBlt(res->hdcAndMask, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCPAINT);
 }
 void SplitImageDC(IMAGEDATA *res)
 {

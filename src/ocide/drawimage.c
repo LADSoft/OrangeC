@@ -380,8 +380,10 @@ void SaveImage(IMAGEDATA *res)
     {
         // must be two...
         HDC cdc = CreateCompatibleDC(res->hdcImage);
+		int color = SetBkColor(res->hdcImage, 0xffffff);
         hbmpImage = SelectObject(cdc, hbmMono);
         BitBlt(cdc, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCCOPY);
+		SetBkColor(res->hdcImage, color);
         hbmpImage = SelectObject(cdc, hbmpImage);
         GetDIBits(cdc, hbmpImage, 0, res->height, lpBits,
                 (LPBITMAPINFO)lpbih, DIB_RGB_COLORS);
@@ -793,6 +795,7 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             while (res)
             {
                 SaveImage(res);
+				DirtyImageUndo(res);
                 res = res->next;
             }
         }

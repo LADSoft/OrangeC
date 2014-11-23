@@ -154,7 +154,7 @@ void freeBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
         int *p;
         for (i=0, p = pt->addresses; p && *p !=0; ++p, ++i)
         {
-            if (pt->tempvals != -1)
+            if (pt->tempvals != -1 && pt->addresses && pt->tempvals)
             {
                 WriteBreakPoint(hProcess, pt->addresses[i], pt->tempvals[i]);
             }

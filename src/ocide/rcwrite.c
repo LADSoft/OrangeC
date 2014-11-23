@@ -1156,7 +1156,10 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
     }
     if (writeText && control->text || generic)
     {
-        WriteQuotedResId(outputFile, control->text);
+		if (control->text)
+	        WriteQuotedResId(outputFile, control->text);
+		else
+			fprintf(outputFile, "\"\"");
         fprintf(outputFile, ", ");
     }
     WriteExp(outputFile, control->id);

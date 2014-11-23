@@ -134,14 +134,6 @@ HRESULT WINAPI SetWindowTheme(
     LPCWSTR pszSubIdList
 );
 
-/*
-char szSourceFilter[] = 
-{
-            "Bitmap files (*.bmp)\0*.bmp\0"
-            "Cursor files (*.cur)\0*.cur\0"
-            "Icon files (*.ico)\0*.ico\0"
-} ;
-*/
 static char brushBitmaps[12];
 
 DWORD customImageColors[16] = { 
@@ -193,13 +185,12 @@ static HCURSOR hcurs, vcurs, diagcurs;
 
 static WNDPROC toolbarHookProc, toolbarScreenHookProc ;
 
-
 static char *tbhints[] = 
 {
-    "Poly Select", "Select", "Erase", "Flood Fill", 
+    "Poly Select", "PSelect", "Erase", "Flood Fill", 
     "Pick", "Zoom", "Pencil", "Brush",
-    "Air Brush", "Text", "Line", "Poly Arc", 
-    "Rectangle", "Polygon", "Ellipse", "Rounded Rectangle" 
+    "Air Brush", "Text", "Line", "Hot Spot", 
+    "Rectangle", "Polygon", "Ellipse", "Rounded Rectangle",
 };
 
 
@@ -650,7 +641,7 @@ LRESULT CALLBACK  Color2WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 {
     PAINTSTRUCT paint;
     HDC dc;
-    TBBUTTON buttons[40]; 
+    static TBBUTTON buttons[40]; 
     int i;
     LPNMTBCUSTOMDRAW lptcd;
     IMGDATA *p;
@@ -735,11 +726,8 @@ LRESULT CALLBACK  Color2WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SendMessage(p->hwndColorToolbar, TB_ADDBUTTONS, MAX_COLORS, (LPARAM)buttons);
             }
             SendMessage(p->hwndColorToolbar, TB_SETROWS, MAKEWPARAM(2, FALSE), (LPARAM) &p->colorTbSize);
-            if (p->res->saveColors >= 8)
-            {
-                SetWindowLong(p->hwndColorToolbar, GWL_USERDATA, (LONG)p);
-                toolbarHookProc = (WNDPROC)SetWindowLong(p->hwndColorToolbar, GWL_WNDPROC, (LONG)toolProc);
-            }
+            SetWindowLong(p->hwndColorToolbar, GWL_USERDATA, (LONG)p);
+            toolbarHookProc = (WNDPROC)SetWindowLong(p->hwndColorToolbar, GWL_WNDPROC, (LONG)toolProc);
             break;
          case WM_DESTROY:
             p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);
@@ -1189,28 +1177,28 @@ LRESULT CALLBACK  AuxWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                           lptcd->nmcd.rc.top + 6);
                                 break;
 
-                            case IDM_BRUSH_DOWN_7:
+                            case IDM_BRUSH_UP_7:
                                 MoveToEx(lptcd->nmcd.hdc, lptcd->nmcd.rc.left, lptcd->nmcd.rc.top +2,  NULL);
                                 LineTo(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 7, lptcd->nmcd.rc.top + 9);
                                 break;
-                            case IDM_BRUSH_DOWN_4:
+                            case IDM_BRUSH_UP_4:
                                 MoveToEx(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 2, lptcd->nmcd.rc.top + 3,  NULL);
                                 LineTo(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 6, lptcd->nmcd.rc.top + 7);
                                 break;
-                            case IDM_BRUSH_DOWN_2:
+                            case IDM_BRUSH_UP_2:
                                 MoveToEx(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 3, lptcd->nmcd.rc.top + 4,  NULL);
                                 LineTo(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 5, lptcd->nmcd.rc.top + 6);
                                 break;
 
-                            case IDM_BRUSH_UP_7:
+                            case IDM_BRUSH_DOWN_7:
                                 MoveToEx(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 7, lptcd->nmcd.rc.top +2,  NULL);
                                 LineTo(lptcd->nmcd.hdc, lptcd->nmcd.rc.left, lptcd->nmcd.rc.top + 9);
                                 break;
-                            case IDM_BRUSH_UP_4:
+                            case IDM_BRUSH_DOWN_4:
                                 MoveToEx(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 6, lptcd->nmcd.rc.top + 3,  NULL);
                                 LineTo(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 2, lptcd->nmcd.rc.top + 7);
                                 break;
-                            case IDM_BRUSH_UP_2:
+                            case IDM_BRUSH_DOWN_2:
                                 MoveToEx(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 5, lptcd->nmcd.rc.top + 4,  NULL);
                                 LineTo(lptcd->nmcd.hdc, lptcd->nmcd.rc.left + 3, lptcd->nmcd.rc.top + 6);
                                 break;
@@ -1713,7 +1701,7 @@ static void buttonDown(HWND hwnd, IMGDATA *p, int right, int x, int y)
                     lbrush.lbColor = p->currentLeftColor;
                 else
                     lbrush.lbColor = p->currentRightColor;
-                if (p->drawMode = IDM_BRUSH)
+                if (p->drawMode == IDM_BRUSH)
                 {
                     switch(p->brushType)
                     {
@@ -1841,6 +1829,9 @@ static void buttonUp(HWND hwnd, IMGDATA *p, int right, int x, int y)
             }
             p->captured = 0;
             ReleaseCapture();
+		case IDM_FILL:
+            if (p->res->type != FT_BMP)
+				RecoverAndMask(p->res);
             InvalidateRect(hwnd, 0, 0);
             break;
         

@@ -192,11 +192,12 @@ void GrepMain::FindLine(const std::string fileName, int &matchCount, int &matchL
     }
     *matchPos = p;
 }
-void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName)
+void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName, int &openCount)
 {
     std::fstream fil(fileName.c_str(), std::ios::in | std::ios::binary);
     if (fil != NULL)
     {
+        openCount ++;
         fil.seekg(0, std::ios::end);
         int length = fil.tellg();
         fil.seekg(0);
@@ -258,10 +259,6 @@ void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName)
             delete[] buf;
         }
     }
-    else
-    {
-        std::cout << "Error: Could not open '" + fileName + "'" << std::endl;
-    }
 }
 int GrepMain::Run(int argc, char **argv)
 {
@@ -290,14 +287,13 @@ int GrepMain::Run(int argc, char **argv)
         Utils::fatal("Invalid regular expression");
 
     CmdFiles files(argv + 2, recurseDirs.GetValue());
-    if (files.GetSize() == 0)
+
+    int openCount = 0;
+    for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it !=files.FileNameEnd(); ++it)
+        OneFile(regexp, *(*it), openCount);
+    if (openCount == 0)
     {
         std::cout << "Nothing to do." << std::endl;
-    }
-    else
-    {
-        for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it !=files.FileNameEnd(); ++it)
-            OneFile(regexp, *(*it));
     }
     return 0 ;
 }

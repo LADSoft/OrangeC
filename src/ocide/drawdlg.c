@@ -802,7 +802,7 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
             case iID:
                 SendMessage(editWnd, WM_GETTEXT, sizeof(buf), (LPARAM)buf);
                 UndoChanged(data->dlg, data->data);
-                PropSetIdName(data->dlg, buf, &data->data->id, data->dlg->resource->u.dialog->controls);
+                PropSetIdName(data->dlg, buf, &data->data->id, data->dlg->resource->u.dialog->controls, FALSE);
                 ResSetDirty(data->dlg);
                 break;
             case iText:
@@ -865,10 +865,10 @@ static void InsertCtlProperties(HWND lv, struct ctlData *data)
         db = db->next;
     }
 }
-static HFONT MakeFont(HDC hDC, WCHAR *font, int pointsize, int weight, int italic)
+static HFONT MakeFont(HDC hDC, WCHAR *font, int pointsize, int weight, int italic, int charset)
 {
     return CreateFontW(-MulDiv(pointsize, GetDeviceCaps(hDC, LOGPIXELSY), 72),
-                      0, 0, 0, weight, !!italic, FALSE, FALSE, DEFAULT_CHARSET,
+                      0, 0, 0, weight, !!italic, FALSE, FALSE, charset,
                       OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
                       DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, font);
 }
@@ -884,7 +884,7 @@ static void GetBaseUnits(HWND hwnd, struct resRes *dlgData, LPSIZE base)
     }
     else if (d->font)
     {
-        font = MakeFont(hDC, d->font, Eval(d->pointsize), Eval(d->ex.weight), Eval(d->ex.italic));
+        font = MakeFont(hDC, d->font, Eval(d->pointsize), Eval(d->ex.weight), Eval(d->ex.italic), Eval(d->ex.charset));
     }
     else
     {
@@ -991,37 +991,48 @@ static void DrawRect(HDC dc, RECT *r)
 }
 void ChangePosition(struct resRes *dlgData, EXPRESSION **pos, int offset)
 {
-    if ((*pos)->type == e_int)
-    {
-        (*pos)->val += offset;
-        if (snapToGrid)
-            (*pos)->val = ((*pos)->val/gridSpacing) *gridSpacing;
-    }
-    else if ((*pos)->type == plus && (*pos)->right->type == e_int)
-    {
-        (*pos)->right->val += offset;
-        if (snapToGrid)
-            (*pos)->right->val = ((*pos)->right->val/gridSpacing) *gridSpacing;
-    }
-    else if (snapToGrid)
-    {
-        (*pos)->val = ((Eval(*pos) + offset)/gridSpacing) * gridSpacing;
-        (*pos)->type = e_int;
-        (*pos)->left = (*pos)->right = 0;
-        (*pos)->rendition = "";
-    }
-    else
-    {
-        EXPRESSION *n;
-        ResGetHeap(workArea, dlgData);
-        n = rcAlloc(sizeof(EXPRESSION));
-        n->left = *pos;
-        n->right = rcAlloc(sizeof(EXPRESSION));
-        *pos = n;
-        n->type = plus;
-        n->right->type = e_int;
-        n->right->val = offset;
-    }
+	if (offset != 0)
+	{
+		char buf[256];
+		ResGetHeap(workArea, dlgData);
+		if ((*pos)->type == e_int)
+		{
+			(*pos)->val += offset;
+			sprintf(buf, "%d", (*pos)->val);
+			(*pos)->rendition = rcStrdup(buf);
+			if (snapToGrid)
+				(*pos)->val = ((*pos)->val/gridSpacing) *gridSpacing;
+		}
+		else if ((*pos)->type == plus && (*pos)->right->type == e_int)
+		{
+			(*pos)->right->val += offset;
+			sprintf(buf, "%d", (*pos)->right->val);
+			(*pos)->right->rendition = rcStrdup(buf);
+			if (snapToGrid)
+				(*pos)->right->val = ((*pos)->right->val/gridSpacing) *gridSpacing;
+		}
+		else if (snapToGrid)
+		{
+			(*pos)->val = ((Eval(*pos) + offset)/gridSpacing) * gridSpacing;
+			(*pos)->type = e_int;
+			(*pos)->left = (*pos)->right = 0;
+			sprintf(buf, "%d", (*pos)->val);
+			(*pos)->rendition = rcStrdup(buf);
+		}
+		else
+		{
+			EXPRESSION *n;
+			n = rcAlloc(sizeof(EXPRESSION));
+			n->left = *pos;
+			n->right = rcAlloc(sizeof(EXPRESSION));
+			*pos = n;
+			n->type = plus;
+			n->right->type = e_int;
+			n->right->val = offset;
+			sprintf(buf, "%d", n->right->val);
+			n->right->rendition = rcStrdup(buf);
+		}
+	}
 }
 static void UndoGroupStart(struct resRes *dlgData)
 {
@@ -1372,6 +1383,10 @@ LRESULT CALLBACK DlgControlInputRedirProc(HWND hwnd, UINT iMessage, WPARAM wPara
         case WM_KEYUP:
         case WM_KEYDOWN:
         case WM_CHAR:
+            return SendMessage(data->hwndParent, iMessage, wParam, lParam);
+        case WM_QUERYCTLDROPTARGET:
+            return 1;
+        case WM_CTLDROP:
             return SendMessage(data->hwndParent, iMessage, wParam, lParam);
         case WM_DESTROY:
             SetWindowLong(hwnd, GWL_WNDPROC, (long) oldProc);
@@ -1837,8 +1852,8 @@ static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, B
         HookAllChildren(child, (LPARAM)data);
         SendMessage(child, WM_ACTIVATESIZERECTANGLE, activate, 0);
         SendMessage(child, WM_SETFONT, (WPARAM)dlgData->gd.font, 0);
-        if (c->isCombo)
-            SendMessage(parent, WM_ACTIVATESIZERECTANGLE, !activate, 0);
+        if (c->isCombo) // force a resize down to the 'slim' size
+			data->sizing = TRUE;
         SendMessage(parent, WM_ACTIVATESIZERECTANGLE, activate, 0);
     }
 }
@@ -1986,7 +2001,9 @@ static BOOL InsertNewControl(struct resRes *dlgData, int type, POINT at)
             AddToStyle(&c->style, "WS_GROUP", WS_GROUP);
             AddToStyle(&c->style, "SS_LEFT", SS_LEFT);
             classtype = CTL_STATIC;
-            text = "Static Text";          
+            text = "Static Text";
+            r.right = 20 + strlen(text) * base.cx;
+            r.bottom = base.cy;
             break;
         case 5: // Icon
             AddToStyle(&c->style, "SS_ICON", SS_ICON);
@@ -2006,6 +2023,8 @@ static BOOL InsertNewControl(struct resRes *dlgData, int type, POINT at)
             AddToStyle(&c->style, "CBS_DROPDOWNLIST", CBS_DROPDOWNLIST);
             classtype = CTL_COMBOBOX;
             text = "Combo Box";
+            r.right = 20 + strlen(text) * base.cx;
+            r.bottom = 4 * base.cy;
             break;
         case 8: // list box
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
@@ -2176,6 +2195,7 @@ static void SetAltMode(int mode, struct resRes *dlgData)
                 EnumChildWindows( dlgData->gd.childWindow, RemoveAllWindows, 0);
             if (mode == DA_CREATION)
                 UndoReorder(dlgData);
+	        InvalidateRect(dlgData->gd.childWindow, NULL, TRUE);
         }
         dlgData->gd.dlgAltMode = mode;
     }
@@ -2386,14 +2406,14 @@ static void InsertDlgProperties(HWND lv, struct resRes *data)
     PropSetItem(lv, 9, 102, "Point Size");
     PropSetItem(lv, 10, 102, "Bold");
     PropSetItem(lv, 11, 102, "Italic");
-//    PropSetItem(lv, 12, 102, "Char Set");
+    PropSetItem(lv, 12, 102, "Charset");
     
-    PropSetItem(lv, 12, 103, "Resource id");
-    PropSetItem(lv, 13, 103, "Language");
-    PropSetItem(lv, 14, 103, "SubLanguage");
-    PropSetItem(lv, 15, 103, "Characteristics");
-    PropSetItem(lv, 16, 103, "Version");    
-    PropSetItem(lv, 17, 103, "Class");    
+    PropSetItem(lv, 13, 103, "Resource id");
+    PropSetItem(lv, 14, 103, "Language");
+    PropSetItem(lv, 15, 103, "SubLanguage");
+    PropSetItem(lv, 16, 103, "Characteristics");
+    PropSetItem(lv, 17, 103, "Version");    
+    PropSetItem(lv, 18, 103, "Class");    
 }
 void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
 {
@@ -2451,25 +2471,25 @@ void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
             else
                 strcpy(buf, "No");
             break;
-//        case 12:
-//            FormatExp(buf, data->resource->u.dialog->charset);
-//            break;
         case 12:
-            FormatResId(buf, &data->resource->id);
+            FormatExp(buf, data->resource->u.dialog->ex.charset);
             break;
         case 13:
-            FormatExp(buf, data->resource->info.language_high);
+            FormatResId(buf, &data->resource->id);
             break;
         case 14:
-            FormatExp(buf, data->resource->info.language_low);
+            FormatExp(buf, data->resource->info.language_high);
             break;
         case 15:
-            FormatExp(buf, data->resource->info.characteristics);
+            FormatExp(buf, data->resource->info.language_low);
             break;
         case 16:
-            FormatExp(buf, data->resource->info.version);
+            FormatExp(buf, data->resource->info.characteristics);
             break;
         case 17:
+            FormatExp(buf, data->resource->info.version);
+            break;
+        case 18:
             if (data->resource->u.dialog->class)
                 FormatResId(buf, data->resource->u.dialog->class);
             break;
@@ -2602,21 +2622,24 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                 PropSetExp(data, buf, &data->resource->u.dialog->ex.italic);
                 break;
             case 12:
-                PropSetIdName(data, buf, &data->resource->id.u.id, NULL);
+                PropSetExp(data, buf, &data->resource->u.dialog->ex.charset);
                 break;
             case 13:
-                PropSetExp(data, buf, &data->resource->info.language_high);
+                PropSetIdName(data, buf, &data->resource->id.u.id, NULL, TRUE);
                 break;
             case 14:
-                PropSetExp(data, buf, &data->resource->info.language_low);
+                PropSetExp(data, buf, &data->resource->info.language_high);
                 break;
             case 15:
-                PropSetExp(data, buf, &data->resource->info.characteristics);
+                PropSetExp(data, buf, &data->resource->info.language_low);
                 break;
             case 16:
-                PropSetExp(data, buf, &data->resource->info.version);
+                PropSetExp(data, buf, &data->resource->info.characteristics);
                 break;
             case 17:
+                PropSetExp(data, buf, &data->resource->info.version);
+                break;
+            case 18:
                 ResSetDirty(data->resource->u.dialog);
                 if (!data->resource->u.dialog->class)
                     data->resource->u.dialog->class = rcAlloc(sizeof(IDENT));
@@ -2807,6 +2830,10 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 GetClientRect(hwnd, &client);
                 end.x = GET_X_LPARAM(lParam);
                 end.y = GET_Y_LPARAM(lParam);
+                if (end.x > client.right)
+                    end.x = client.right -1;
+                if (end.y > client.bottom)
+                    end.y = client.bottom -1;
                 if (saved && PtInRect(&client, end))
                 {
                     SIZE base;

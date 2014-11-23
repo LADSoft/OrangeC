@@ -207,6 +207,7 @@ char *ParseVersionString(char *string, int *returnedLength)
                             val = val * 8 + (ch - '0');
                             ch = *string++;
                         }
+                        string--;
                         *q++ = val;
                     }
                     else

@@ -87,7 +87,7 @@
 //#include "props.h"  
 #include "rcgui.h"
 extern PROJECTITEM *workArea;
-extern HWND hwndPropsTabCtrl;
+extern HWND hwndPropsTab, hwndPropsTabCtrl;
 extern HINSTANCE hInstance;
 extern RESOURCE_DATA *currentResData;
 HWND hwndProps;
@@ -109,7 +109,7 @@ static void SetListViewColumns(void)
     RECT r;
     LV_COLUMN lvC;
     ListView_EnableGroupView(lvwindow, TRUE);
-    ListView_SetExtendedListViewStyle(lvwindow, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(lvwindow, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
 
     GetPropsTabRect(&r);
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM  | LVCF_TEXT;
@@ -128,7 +128,7 @@ static void ResizeListViewColumns(void)
     RECT r;
     LV_COLUMN lvC;
 
-    GetPropsTabRect(&r);
+    GetClientRect(lvwindow, &r);
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
     lvC.cx = (r.right - r.left) / 2;
     lvC.iSubItem = 0;
@@ -233,7 +233,7 @@ static void SetId(struct resRes *data, EXPRESSION *exp, int id, CONTROL *ctls)
         }
     }
 }
-void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ctls)
+void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ctls, BOOL changeTree)
 {
     WCHAR name[512], *p = name;
     char xx[256],*q;
@@ -251,7 +251,7 @@ void PropSetIdName(struct resRes *data, char *buf, EXPRESSION **exp, CONTROL *ct
     }
     ResGetHeap(workArea, data);
     ResSetDirty(data);
-    if (!ctls)
+    if (changeTree)
         ResSetTreeName(data,buf); 
     q = buf;
     while (*q)
@@ -306,8 +306,11 @@ void SetResourceProperties(void *data, struct propertyFuncs *funcs)
     ListView_DeleteAllItems(lvwindow);
     if (funcs)
     {
+		RECT rs;
         funcs->draw(lvwindow, data);
+		ResizeListViewColumns();
     }
+	SendMessage(hwndPropsTab, WM_SELERRWINDOW, 0, 0);
 }
 static int CustomDraw(HWND hwnd, LPNMLVCUSTOMDRAW draw)
 {
@@ -370,30 +373,31 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 case LVN_GETDISPINFO:
                 {
                     LV_DISPINFO *plvdi = (LV_DISPINFO*)lParam;
-                    plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
-                    plvdi->item.mask &= ~LVIF_IMAGE;
-                    switch (plvdi->item.iSubItem)
-                    {
-                    case 1:
-                        if (currentPropertyFuncs)
-                        {
-                            char buf[256];
-                            LV_ITEM item;
-                            memset(&item, 0, sizeof(item));
-                            item.iItem = plvdi->item.iItem;
-                            item.mask = LVIF_PARAM;
-                            ListView_GetItem(lvwindow, &item);
-                            currentPropertyFuncs->getText(buf, lvwindow, currentPropertyData, item.lParam);
-                            plvdi->item.pszText = buf;
-                        }
-                        else
-                        {
-                            plvdi->item.pszText = "";
-                        }
-                        break;
-                    default:
-                        break;
-                    }
+					plvdi->item.mask |= LVIF_TEXT | LVIF_DI_SETITEM;
+					plvdi->item.mask &= ~LVIF_IMAGE;
+					switch (plvdi->item.iSubItem)
+					{
+					case 1:
+						if (currentPropertyFuncs)
+						{
+							char buf[256];
+							LV_ITEM item;
+							buf[0] = 0;
+							memset(&item, 0, sizeof(item));
+							item.iItem = plvdi->item.iItem;
+							item.mask = LVIF_PARAM;
+							ListView_GetItem(lvwindow, &item);
+							currentPropertyFuncs->getText(buf, lvwindow, currentPropertyData, item.lParam);
+							plvdi->item.pszText = buf;
+						}
+						else
+						{
+							plvdi->item.pszText = "";
+						}
+						break;
+					default:
+						break;
+					}
                 }
                 case NM_CUSTOMDRAW:
                     return CustomDraw(hwnd, (LPNMLVCUSTOMDRAW)lParam);

@@ -280,6 +280,8 @@
         </EXSTYLE>
     </CONTROL>
     <CONTROL TYPE="GROUPBOX">
+        <HEADER LABEL="Group Box Settings"/>
+        <CAPTION LABEL="Caption" TYPE="TEXT"/>
         <HEADER LABEL="Common Settings"/>
         <ID LABEL="Id" TYPE="ID" />
         <NUMBER LABEL="x" TYPE="x"/>

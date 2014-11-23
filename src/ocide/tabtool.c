@@ -158,6 +158,15 @@ LRESULT CALLBACK PropsTabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return 0;
         case WM_COMMAND:
             break;
+		case WM_SELERRWINDOW:
+			{
+				NMHDR xx;
+				memset(&xx, 0, sizeof(xx));
+				xx.code = TCN_SELCHANGE;
+				TabCtrl_SetCurSel(hwndPropsTabCtrl, lParam);
+				SendMessage(hwnd, WM_NOTIFY, 0, (LPARAM)&xx);
+			}
+			break;
         case WM_PAINT:
             dc = BeginPaint(hwnd, &paint);
             EndPaint(hwnd, &paint);

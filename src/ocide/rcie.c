@@ -78,7 +78,7 @@ EXPRESSION *ReadExpFromString(WCHAR *id)
 {
     EXPRESSION *expr;
     WCHAR *p;
-    cantnewline = TRUE;
+    cantnewline++;
     p = --lptr;
     lptr = id;
     getch();
@@ -86,7 +86,7 @@ EXPRESSION *ReadExpFromString(WCHAR *id)
     expr = iecondop();
     lptr = p;
     getch();
-    cantnewline = FALSE;
+    cantnewline--;
     return expr;
 }
 EXPRESSION *InternalLookup(char *id, int translate)

@@ -231,9 +231,11 @@ void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
         switch(row)
         {
             case 0:
-                PropSetIdName(data, buf, &data->gd.selectedMenu->id, NULL);
+                PropSetIdName(data, buf, &data->gd.selectedMenu->id, NULL, FALSE);
                 break;
             case 1:
+                if (data->gd.selectedMenu->id)
+                    ResGetMenuItemName(data->gd.selectedMenu->id, buf);
                 StringAsciiToWChar(& data->gd.selectedMenu->text, buf, strlen(buf));
                 InvalidateRect(data->activeHwnd, 0, 0);
                 break;

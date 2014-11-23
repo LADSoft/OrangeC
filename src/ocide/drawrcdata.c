@@ -622,6 +622,7 @@ LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                             WS_CHILD | CBS_DROPDOWN | WS_CLIPSIBLINGS | WS_BORDER,
                             r.left,r.top,180,50, hwnd, (HMENU)ID_EDIT,
                             hInstance, NULL);
+                        ApplyDialogFont(rcDataData->gd.editWindow);
                         SetParent(rcDataData->gd.editWindow, rcDataData->gd.childWindow);
                         pt.x = pt.y = 5;
                         editwnd = ChildWindowFromPoint(rcDataData->gd.editWindow, pt);

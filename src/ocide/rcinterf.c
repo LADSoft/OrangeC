@@ -73,6 +73,7 @@ extern char szFontFilter[];
 extern char szMessageTableFilter[];
 extern jmp_buf errjump;
 extern LOGFONT systemDialogFont;
+extern struct propertyFuncs imgFuncs;
 
 HWND hwndRes;
 char *rcSearchPath;
@@ -127,7 +128,7 @@ static struct {
     { "Font", "IDF_FONT", RESTYPE_FONT },
     { "Menu", "IDM_MENU", RESTYPE_MENU },
     { "Message Table", "IDT_MESSAGETABLE", RESTYPE_MESSAGETABLE },
-    { "Version", "IDV_VERSION", RESTYPE_VERSION },
+    { "Version", "VS_VERSION_INFO", RESTYPE_VERSION },
     { "String", "IDS_STRING", RESTYPE_STRING },
     { "RCData", "IDR_RCDATA", RESTYPE_RCDATA },
 } ;
@@ -226,140 +227,170 @@ static char *FormatExpInternal(char *buf, EXPRESSION *p, int n)
     {
         case hook:
             *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, hook);
             strcpy(buf, " ? ");
             buf = FormatExpInternal(buf, p->right->left, hook);
             strcpy(buf, " : ");
             buf = FormatExpInternal(buf, p->left->left, hook);
             *buf++ = ')';
+			*buf = 0;
             break;            
         case land:
             buf = FormatExpInternal(buf, p->left, land);
             strcpy(buf, " && ");            
             buf = FormatExpInternal(buf, p->right, land);
+			*buf = 0;
             break;
         case lor:
             if (n != lor)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, lor);
             strcpy(buf, " || ");            
             buf = FormatExpInternal(buf, p->right, lor);
             if (n != lor)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case or:
             if (n != or)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, or);
             strcpy(buf, " | ");            
             buf = FormatExpInternal(buf, p->right, or);
             if (n != or)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case uparrow:
             if (n != uparrow)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, uparrow);
             strcpy(buf, " ^ ");            
             buf = FormatExpInternal(buf, p->right, uparrow);
             if (n != uparrow)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case and:
             if (n != and)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, and);
             strcpy(buf, " & ");            
             buf = FormatExpInternal(buf, p->right, and);
             if (n != and)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case eq:
             if (n != eq)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, eq);
             strcpy(buf, " == ");            
             buf = FormatExpInternal(buf, p->right, eq);
             if (n != eq)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case neq:
             if (n != eq)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, eq);
             strcpy(buf, " != ");            
             buf = FormatExpInternal(buf, p->right, eq);
             if (n != eq)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case lt:
             if (n != lt)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
             strcpy(buf, " < ");            
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case gt:
             if (n != lt)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
             strcpy(buf, " > ");            
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case leq:
             if (n != lt)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
             strcpy(buf, " <= ");            
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case geq:
             if (n != lt)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, lt);
             strcpy(buf, " >= ");            
             buf = FormatExpInternal(buf, p->right, lt);
             if (n != lt)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case lshift:
             if (n != lshift)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, lshift);
             strcpy(buf, " << ");            
             buf = FormatExpInternal(buf, p->right, lshift);
             if (n != lshift)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case rshift:
             if (n != rshift)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, rshift);
             strcpy(buf, " >> ");            
             buf = FormatExpInternal(buf, p->right, rshift);
             if (n != rshift)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case plus:
             if (n != plus)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, plus);
             strcpy(buf, " + ");            
             buf = FormatExpInternal(buf, p->right, plus);
             if (n != plus)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case minus:
             if (p->right)
             {
                 if (n != minus)
                     *buf++ = '(';
+                *buf = 0;
                 buf = FormatExpInternal(buf, p->left, plus);
                 strcpy(buf, " - ");            
                 buf = FormatExpInternal(buf, p->right, plus);
@@ -369,47 +400,60 @@ static char *FormatExpInternal(char *buf, EXPRESSION *p, int n)
             else
             {
                 *buf++ = '-';
+                *buf = 0;
                 buf = FormatExpInternal(buf, p->left, minus);
             }
+			*buf = 0;
             break;
         case star:
             if (n != star)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, star);
             strcpy(buf, " * ");            
             buf = FormatExpInternal(buf, p->right, star);
             if (n != star)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case divide:
             if (n != star)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, star);
             strcpy(buf, " / ");            
             buf = FormatExpInternal(buf, p->right, star);
             if (n != star)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case modop:
             if (n != star)
                 *buf++ = '(';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, star);
             strcpy(buf, " % ");            
             buf = FormatExpInternal(buf, p->right, star);
             if (n != star)
                 *buf++ = ')';
+			*buf = 0;
             break;
         case not:
             *buf++ = '!';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, not);
+			*buf = 0;
             break;
         case kw_not:
             strcpy(buf, " NOT ");
             buf = FormatExpInternal(buf, p->left, not);
+			*buf = 0;
             break;
         case compl:
             *buf++ = '~';
+            *buf = 0;
             buf = FormatExpInternal(buf, p->left, compl);
+			*buf = 0;
             break;
         case e_int:
             if (p->rendition)
@@ -420,6 +464,7 @@ static char *FormatExpInternal(char *buf, EXPRESSION *p, int n)
         default:
             break;
     }
+
     return buf+strlen(buf);
 }
 void FormatExp(char *buf, EXPRESSION *exp)
@@ -427,7 +472,9 @@ void FormatExp(char *buf, EXPRESSION *exp)
     if (!exp)
         sprintf(buf, "0");
     else
+	{
         FormatExpInternal(buf, exp, -1);
+	}
 }
 void FormatResId(char *buf, IDENT *id)
 {
@@ -832,6 +879,10 @@ void HandleDblClick(HTREEITEM item, BOOL err)
                     case RESTYPE_RCDATA:
                         CreateRCDataDrawWindow(d);
                         break;
+                    case RESTYPE_FONT:
+                    case RESTYPE_MESSAGETABLE:
+                        SetResourceProperties(d, &imgFuncs);
+                        break;
                     default:
                         if (err)
                             ExtendedMessageBox("Unimplemented", 0, "There is no editor for this type of resource");
@@ -996,7 +1047,7 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
                 else if (delItem)
                 {
                     AppendMenu(popup, MF_STRING, ID_DELETE, delItem);
-                    AppendMenu(popup, MF_STRING, IDM_RENAME, "Rename");
+//                    AppendMenu(popup, MF_STRING, IDM_RENAME, "Rename");
                 }
                 TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTBUTTON, pos.x,
                     pos.y, hWnd, NULL);
@@ -1102,11 +1153,18 @@ void ResGetMenuItemName(EXPRESSION *id, char *text)
         sprintf(name, "IDM_%s",text);
         while (*p)
         {
+            if (*p == '&')
+            {
+                strcpy (p, p+1);
+                continue;
+            }
+               
             if (!isalnum(*p))
                 *p = '_';
             p++;
         }        
         id->rendition = rcStrdup(name);
+        ResAddNewDef(name, id->val);
     }
 }
 void ResGetStringItemName(EXPRESSION *id, char *text)
@@ -1290,6 +1348,8 @@ static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
                     draw->clrTextBk = RetrieveSysColor(COLOR_WINDOW);
                 }
                 SelectObject(draw->nmcd.hdc, projFont);
+                if (hwndEdit)
+                    InvalidateRect(hwndEdit, 0, TRUE);
                 return CDRF_NEWFONT;    
             }
             return CDRF_DODEFAULT;
@@ -1360,7 +1420,8 @@ static DIALOG *ResNewDialog()
     rv->height = ResNewExp(120, 0);
     rv->caption = WStrDup(L"New Dialog");
     rv->pointsize = ResNewExp(8, 0);
-    rv->font = WStrDup(L"MS Sans Serif");
+    rv->font = WStrDup(L"MS Shell Dlg");
+    rv->ex.charset = ResNewExp(DEFAULT_CHARSET, "DEFAULT_CHARSET");
     ResPrependDialogButton(&rv->controls, "Help", IDHELP, "IDHELP", 186, 46, 50, 14);
     ResPrependDialogButton(&rv->controls, "Cancel", IDCANCEL, "IDCANCEL", 186, 26, 50, 14);
     ResPrependDialogButton(&rv->controls, "OK", IDOK, "IDOK", 186, 6, 50, 14);
@@ -1756,7 +1817,7 @@ static void NewResource(HTREEITEM sel, struct resRes *res)
         {
             if (newRes->itype == RESTYPE_VERSION)
             {
-                newRes->id.u.id = ResNewExp(1, "IDV_VERSION");
+                newRes->id.u.id = ResNewExp(1, "VS_VERSION_INFO");
                 ResAddNewDef(newRes->id.u.id->rendition, newRes->id.u.id->val);
             }
             else if (newRes->itype == RESTYPE_STRING)
@@ -1804,10 +1865,11 @@ void ResDoneRenaming(void)
     {
         if (strcmp(buf, editItem->name))
         {
-            PropSetIdName(editItem, buf, &editItem->resource->id.u.id, NULL);
+            PropSetIdName(editItem, buf, &editItem->resource->id.u.id, NULL, TRUE);
         }
     }
     DestroyWindow(hwndEdit);
+    hwndEdit = NULL;
 }
 LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)

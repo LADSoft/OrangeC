@@ -1083,6 +1083,24 @@ static void ReadDialogSettings(COMPILEDATA *cd, DIALOG *dlg, CHARACTERISTICS *in
                 dlg->pointsize = ReadExp();
                 skip_comma();
                 ReadString(&dlg->font);
+                if (extended)
+                {
+                    skip_comma();
+                    if (lastst != eol)
+                    {
+                        dlg->ex.weight = ReadExp();
+                        skip_comma();
+                        if (lastst != eol)
+                        {
+                            dlg->ex.italic = ReadExp();
+                            skip_comma();
+                            if (lastst != eol)
+                            {
+                                dlg->ex.charset = ReadExp();
+                            }
+                        }
+                    }
+                }
                 break;
             case kw_caption:
                 //                dlg->style |= WS_DLGFRAME ;
@@ -1915,12 +1933,19 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
                     {
                         getsym();
                         (*cur1)->charset = ReadExp();
+                        if (lastst == comma)
+                        {
+                            getsym();
+                        }
+                        else 
+                        {
+                            break;
+                        }
                     }
                     else 
                     {
                         break;
                     }
-                    getsym();
                     cur1 = &(*cur1)->next;
                 }
                 need_eol();

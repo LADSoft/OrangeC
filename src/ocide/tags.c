@@ -335,7 +335,8 @@ int TagNewLine(char *name, int lineno)
         if (!stricmp(l->name, name))
         {
             return newline(l, lineno);
-        } l = l->next;
+        } 
+        l = l->next;
     }
     return lineno;
 }
@@ -531,7 +532,7 @@ void ToggleBookMark(int linenum)
     DWINFO *ptr = editWindows;
     while (ptr)
     {
-        if (ptr->dwHandle == hWnd)
+        if (ptr->active && ptr->dwHandle == hWnd)
         {
             char buf[256],  *ch;
             int addr;

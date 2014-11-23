@@ -422,7 +422,7 @@ void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
                 DWINFO *ptr = editWindows;
                 while (ptr)
                 {
-                    if (SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, 
+                    if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, 
                         (LPARAM)newInfo))
                     {
                         extra = (EDITDATA *)SendMessage(ptr->dwHandle, EM_GETEDITDATA, 0, 0);

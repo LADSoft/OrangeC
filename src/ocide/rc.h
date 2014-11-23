@@ -73,7 +73,7 @@ enum e_sym
         kw_popup, kw_preload, kw_productversion, kw_pushbutton, kw_radiobutton,
         kw_rcdata, kw_rcinclude, kw_rtext, kw_scrollbar, kw_separator, kw_shift,
         kw_state3, kw_stringtable, kw_style, kw_value, kw_version,
-        kw_versioninfo, kw_virtkey, kw_italic, kw_weight, kw_dialogex,
+        kw_versioninfo, kw_virtkey, kw_weight, kw_italic, kw_dialogex,
         kw_menuex, kw_pure, kw_noinvert, 
     /* Finally tokens for keywords */
     //	kw_int, kw_void, kw_char, kw_float, kw_double, kw_struct, kw_union,
@@ -300,6 +300,7 @@ typedef struct
         EXPRESSION *help;
         EXPRESSION *weight;
         EXPRESSION *italic;
+        EXPRESSION *charset;
     } ex;
     CONTROL *controls;
 } DIALOG;

@@ -426,7 +426,10 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
 }
 static void WriteExp(FILE *outputFile, EXPRESSION *exp)
 {
-    WriteExpInternal(outputFile, exp, -1);
+    if (!exp)
+        fprintf(outputFile, "0");
+    else
+        WriteExpInternal(outputFile, exp, -1);
 }
 static void WriteCommentLines(FILE *outputFile, LIST *lines)
 {
@@ -814,7 +817,7 @@ static void WriteVersion(FILE *outputFile, RESOURCE *res)
     }
     if (v->fixed->file_flags)
     {
-        fprintf(outputFile, "FILEFLAGSMASK ");
+        fprintf(outputFile, "FILEFLAGS");
         WriteExp(outputFile, v->fixed->file_flags);
         fprintf(outputFile, "\n");
     }
@@ -1009,12 +1012,15 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
                     break;
                 case CTL_LISTBOX:
                     fprintf(outputFile, "LISTBOX ");
+                    writeText = FALSE;
                     break;
                 case CTL_SCROLLBAR:
                     fprintf(outputFile, "SCROLLBAR ");
+                    writeText = FALSE;
                     break;
                 case CTL_COMBOBOX:
                     fprintf(outputFile, "COMBOBOX ");
+                    writeText = FALSE;
                     break;
                 case CTL_BUTTON:
                     if (control->style->val & BS_AUTO3STATE)
@@ -1032,7 +1038,6 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
                     else if (control->style->val & BS_CHECKBOX)
                     {
                         fprintf(outputFile, "CHECKBOX ");
-                        writeText = FALSE;
                     }
                     else if (control->style->val & BS_DEFPUSHBUTTON)
                     {
@@ -1149,7 +1154,7 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
         fprintf(outputFile, "CONTROL ");
         
     }
-    if (writeText && control->text)
+    if (writeText && control->text || generic)
     {
         WriteQuotedResId(outputFile, control->text);
         fprintf(outputFile, ", ");
@@ -1239,6 +1244,21 @@ static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *
         WriteExp(outputFile, dlg->pointsize);
         fprintf(outputFile, ", ");
         WriteWString(outputFile, dlg->font, wcslen(dlg->font));
+        if (dlg->ex.weight || dlg->ex.italic || dlg->ex.charset)
+        {
+            fprintf(outputFile, ", ");
+            WriteExp(outputFile, dlg->ex.weight);
+        }
+        if (dlg->ex.italic || dlg->ex.charset)
+        {
+            fprintf(outputFile, ", ");
+            WriteExp(outputFile, dlg->ex.italic);
+        }
+        if (dlg->ex.charset)
+        {
+            fprintf(outputFile, ", ");
+            WriteExp(outputFile, dlg->ex.charset);
+        }
         fprintf(outputFile, "\n");
     }
     if (dlg->caption)
@@ -1257,18 +1277,6 @@ static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *
     {
         fprintf(outputFile, "HELP ");
         WriteExp(outputFile, dlg->ex.help);
-        fprintf(outputFile, "\n");
-    }
-    if (dlg->ex.weight)
-    {
-        fprintf(outputFile, "WEIGHT ");
-        WriteExp(outputFile, dlg->ex.weight);
-        fprintf(outputFile, "\n");
-    }
-    if (dlg->ex.italic)
-    {
-        fprintf(outputFile, "ITALIC ");
-        WriteExp(outputFile, dlg->ex.italic);
         fprintf(outputFile, "\n");
     }
 }

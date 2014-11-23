@@ -419,7 +419,7 @@ void SetBP(DEBUG_EVENT *dbe)
         DWINFO *ptr = editWindows;
         while (ptr)
         {
-            if (ptr->dwHandle == hWnd)
+            if (ptr->active && ptr->dwHandle == hWnd)
             {
                 int addr, linenum;
                 SendMessage(ptr->dwHandle, EM_GETSEL, (WPARAM) &linenum, 0);

@@ -461,7 +461,7 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                 StringTableSetChanged(stringTableData, strings);
                                 if (stringTableData->gd.selectedColumn == 0)
                                 {
-                                    PropSetIdName(stringTableData, buf, &strings->id, NULL);
+                                    PropSetIdName(stringTableData, buf, &strings->id, NULL, TRUE);
 								    ResAddNewDef(buf, strings->id->val);
                                 }
                                 else

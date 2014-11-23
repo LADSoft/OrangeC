@@ -169,6 +169,8 @@ void CalculateDisassembly(int moving)
     linecount = (r.bottom - r.top) / 16;
     code_ptr = dbuf;
 
+	if (!activeProcess)
+		return;
     i = 0;
     code_address = asmAddress - LINES / 2;
     while (code_address < asmAddress + LINES / 2 && i < LINES)

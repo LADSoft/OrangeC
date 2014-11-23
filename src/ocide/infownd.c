@@ -218,6 +218,7 @@ void BumpToEditor(HWND hwnd)
     }
     if (lineno !=  - 1)
     {
+        lineno = TagNewLine(info.dwName, lineno);
         info.dwLineNo = lineno;
         info.logMRU = FALSE;
         info.newFile = FALSE;

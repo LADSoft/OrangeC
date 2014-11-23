@@ -86,6 +86,7 @@ HIMAGELIST tagImageList;
 static DWORD ccThreadId;
 static HANDLE ccThreadExit;
 static BOOL stopCCThread;
+static DWINFO *ewQueue;
 void recolorize(DWINFO *ptr);
 void AsyncOpenFile(DWINFO *newInfo);
 
@@ -133,12 +134,37 @@ char *stristr(char *str1, char *str2)
     }
     return 0;
 }
+DWINFO *DeQueueEditWindow(void)
+{
+    // these are never freed but will be reused...
+    // we don't free them because these items are used
+    // across threads and we don't want the memory going away or being 
+    // reused for other purposes while it is being used
+    DWINFO *rv = NULL;
+    if (ewQueue)
+    {
+        rv = ewQueue;
+        ewQueue = ewQueue->next;
+    }
+    else
+    {
+        rv = malloc(sizeof(DWINFO));
+    }
+    memset(rv, 0, sizeof(DWINFO));
+}
+void EnQueueEditWindow(DWINFO *ptr)
+{
+    ptr->active = FALSE;
+    ptr->next =ewQueue;
+    ewQueue = ptr;
+}
 void ResetEditTitles(void )
 {
     DWINFO *ptr = editWindows;
     while (ptr)
     {
-        SetTitle(ptr->self);
+        if (ptr->active)
+            SetTitle(ptr->self);
         ptr = ptr->next;
     }
 }
@@ -151,7 +177,8 @@ void rehighlight(char *text, int whole, int casesensitive)
     highlightCaseSensitive = casesensitive;
     while (ptr)
     {
-        recolorize(ptr);
+        if (ptr->active)
+            recolorize(ptr);
         ptr = ptr->next;
     }
 }
@@ -188,13 +215,16 @@ void ApplyEditorSettings(void)
     LoadColors();
     while (ptr)
     {
-        HFONT fnt = CreateFontIndirect(&lf);
-        PostMessage(ptr->dwHandle, WM_SETFONT, (WPARAM)
-            fnt, 1);
-        PostMessage(ptr->dwHandle, EM_SETTABSTOPS, 0, tabs);
-        PostMessage(ptr->dwHandle, WM_SETEDITORSETTINGS,
-            0, 0);
-        PostMessage(ptr->self, WM_SETLINENUMBERMODE, 0, 0);
+        if (ptr->active)
+        {
+            HFONT fnt = CreateFontIndirect(&lf);
+            PostMessage(ptr->dwHandle, WM_SETFONT, (WPARAM)
+                fnt, 1);
+            PostMessage(ptr->dwHandle, EM_SETTABSTOPS, 0, tabs);
+            PostMessage(ptr->dwHandle, WM_SETEDITORSETTINGS,
+                0, 0);
+            PostMessage(ptr->self, WM_SETLINENUMBERMODE, 0, 0);
+        }
         ptr = ptr->next;
     }
 }
@@ -208,7 +238,7 @@ void InvalidateByName(char *name)
     strcpy(info.dwName, name);
     while (ptr)
     {
-        if (SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
+        if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
             &info))
         {
             InvalidateRect(ptr->dwHandle, 0, 0);
@@ -224,7 +254,7 @@ DWINFO *GetFileInfo(char *name)
     strcpy(info.dwName, name);
     while (ptr)
     {
-        if (SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
+        if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
             &info))
             return ptr;
         ptr = ptr->next;
@@ -238,7 +268,7 @@ void EditRenameFile(char *oldName, char *newName)
     strcpy(info.dwName, oldName);
     while (ptr)
     {
-        if (SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
+        if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
             &info))
         {
             char *p;
@@ -292,7 +322,7 @@ void SaveDrawAll(void)
     DWINFO *ptr = editWindows;
     while (ptr)
     {
-        if (SendMessage(ptr->dwHandle, EM_GETMODIFY, 0, 0))
+        if (ptr->active && SendMessage(ptr->dwHandle, EM_GETMODIFY, 0, 0))
             SendMessage(ptr->self, WM_COMMAND, IDM_SAVE, 0);
         ptr = ptr->next;
     }
@@ -306,7 +336,8 @@ int AnyModified(void)
     int rv = 0;
     while (ptr)
     {
-        rv |= SendMessage(ptr->dwHandle, EM_GETMODIFY, 0, 0);
+        if (ptr->active)
+            rv |= SendMessage(ptr->dwHandle, EM_GETMODIFY, 0, 0);
         ptr = ptr->next;
     }
     return rv;
@@ -322,7 +353,8 @@ void CloseAll(void)
     ptr = editWindows;
     while (ptr)
     {
-        ShowWindow(ptr->self, SW_HIDE);
+        if (ptr->active)
+            ShowWindow(ptr->self, SW_HIDE);
         ptr = ptr->next;
     }
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
@@ -331,8 +363,10 @@ void CloseAll(void)
     while (ptr)
     {
         HANDLE xx = ptr->self;
+        BOOL active = ptr->active;
         ptr = ptr->next;
-        PostMessage(xx, WM_CLOSE, 0, 0);
+        if (active)
+            PostMessage(xx, WM_CLOSE, 0, 0);
     }
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
         ProcessMessage(&msg);
@@ -345,7 +379,8 @@ void RedrawAllBreakpoints(void)
     DWINFO *ptr = editWindows;
     while (ptr)
     {
-        InvalidateRect(ptr->self, 0, 0);
+        if (ptr->active)
+            InvalidateRect(ptr->self, 0, 0);
         ptr = ptr->next;
     }
 }
@@ -863,7 +898,7 @@ void InstallForParse(HWND hwnd)
                 DWINFO *ptr = editWindows;
                 while (ptr)
                 {
-                    if (IsWindow(ptr->self))
+                    if (ptr->active && IsWindow(ptr->self))
                     {
                         name = ptr->dwName;
                         len = strlen(name);
@@ -881,7 +916,8 @@ void InstallAllForParse(void)
     DWINFO *ptr = editWindows;
     while (ptr)
     {
-        InstallForParse(ptr->self);
+        if (ptr->active)
+            InstallForParse(ptr->self);
         ptr = ptr->next;
     }
 }
@@ -1243,7 +1279,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 return rv;
             createStruct = (LPCREATESTRUCT)lParam;
             ed = (EDITDATA *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
-            ptr = calloc(1, sizeof(DWINFO));
+            ptr = DeQueueEditWindow();
             SetWindowLong(hwnd, 0, (int)ptr);
             SetWindowLong(hwnd, 4, (int)EDITSIG);
             if (ed != -1)
@@ -1297,6 +1333,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 editWindows->prev = ptr;
             ptr->next = editWindows;
             ptr->prev = NULL;
+            ptr->active = TRUE;
             editWindows = ptr;
             SetEvent(ewSem);
             SendMessage(hwnd, WM_SETLINENUMBERMODE, 2, 0);
@@ -1346,7 +1383,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_DESTROY:
             ptr = (DWINFO*)GetWindowLong(hwnd, 0);
             PostMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
-            free(ptr);
+            EnQueueEditWindow(ptr);
             PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
             break;
         case WM_SIZE:
@@ -1499,7 +1536,7 @@ HWND openfile(DWINFO *newInfo, int newwindow, int visible)
         DWINFO *ptr = editWindows;
         while (ptr)
         {
-            if (SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, 
+            if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, 
                 (LPARAM)newInfo))
             {
                 if (newwindow)

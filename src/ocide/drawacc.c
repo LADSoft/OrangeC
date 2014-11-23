@@ -166,7 +166,7 @@ void AccPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
         switch(row)
         {
             case 0:
-                PropSetIdName(data, buf, &data->resource->id.u.id, NULL);
+                PropSetIdName(data, buf, &data->resource->id.u.id, NULL, TRUE);
                 break;
             case 1:
                 PropSetExp(data, buf, &data->resource->info.language_high);
@@ -1162,7 +1162,7 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                     EXPRESSION *id;
                                     buf[GetWindowText(acceleratorData->gd.editWindow, buf, sizeof(buf)-1)] = 0;
                                     AccSetChanged(acceleratorData, accelerator);
-                                    PropSetIdName(acceleratorData, buf, &accelerator->id, NULL);
+                                    PropSetIdName(acceleratorData, buf, &accelerator->id, NULL, TRUE);
 								    ResAddNewDef(buf, accelerator->id->val);
                                 }
                                 else if (acceleratorData->gd.selectedColumn >= 2)

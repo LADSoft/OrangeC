@@ -77,7 +77,7 @@ void ReloadLineData(char *name)
     strcpy(info.dwName, name);
     while (ptr)
     {
-        if (SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
+        if (ptr->active && SendMessage(ptr->self, WM_COMMAND, ID_QUERYHASFILE, (LPARAM)
             &info))
         {
             PostMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
@@ -152,7 +152,8 @@ static DWORD CALLBACK dbVacuum(void *xx)
     p = editWindows;
     while (p)
     {
-        InvalidateRect(p->dwHandle, 0, 0);
+        if (p->active)
+            InvalidateRect(p->dwHandle, 0, 0);
         p = p->next;
     }
     SetEvent(ewSem);
@@ -265,7 +266,7 @@ static BOOL changed(char *name)
     ptr = editWindows;
     while (ptr)
     {
-        if (!xstricmp(name,ptr->dwName))
+        if (ptr->active && !xstricmp(name,ptr->dwName))
         {
             e = ptr->editData;
             break;
@@ -1041,7 +1042,7 @@ static char *GetFileData(char *filname, int *size)
     ptr = editWindows;
     while (ptr)
     {
-        if (!xstricmp(filname,ptr->dwName))
+        if (ptr->active && !xstricmp(filname,ptr->dwName))
         {
             e = ptr->editData;
             break;

@@ -127,7 +127,7 @@ static void ImgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
             switch(row)
             {
                 case 0:
-                    PropSetIdName(data, buf, &data->resource->id.u.id, NULL);
+                    PropSetIdName(data, buf, &data->resource->id.u.id, NULL, TRUE);
                     break;                
                 case 1:
                     PropSetExp(data, buf, &data->resource->info.language_high);

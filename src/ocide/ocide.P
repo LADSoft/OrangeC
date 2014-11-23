@@ -356,7 +356,7 @@ void GetCtlPropText(char *buf, HWND lv, struct ctlData *data, int row);/* STATIC
 HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data);    /* STATIC */
 void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data);/* STATIC */
 void InsertCtlProperties(HWND lv, struct ctlData *data);          /* STATIC */
-HFONT MakeFont(HDC hDC, WCHAR *font, int pointsize, int weight, int italic);/* STATIC */
+HFONT MakeFont(HDC hDC, WCHAR *font, int pointsize, int weight, int italic, int charset);/* STATIC */
 void GetBaseUnits(HWND hwnd, struct resRes *dlgData, LPSIZE base);/* STATIC */
 void ConvertToPixels(RECT *r, LPSIZE base);                       /* STATIC */
 void ConvertToDlgUnits(RECT *r, LPSIZE base);                     /* STATIC */

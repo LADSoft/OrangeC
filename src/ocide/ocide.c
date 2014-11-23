@@ -1242,7 +1242,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         DWINFO *ptr = editWindows;
                         while (ptr)
                         {
-                            if (win2 == ptr->self)
+                            if (ptr->active && win2 == ptr->self)
                             {
                                 PostMessage(win2, WM_COMMAND, wParam, lParam);
                                 break;

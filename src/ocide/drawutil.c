@@ -166,14 +166,15 @@ void GetSecondaryFileList(HWND hwndLV, int *items, BOOL changed)
     ptr = editWindows;
     while (ptr)
     {
-        ptr->deferClose = TRUE;
+        if (ptr->active)
+            ptr->deferClose = TRUE;
         ptr = ptr->next;
     }
     SetEvent(ewSem);
     ptr = editWindows;
     while (ptr)
     {
-        if (!ptr->inSaveDialog)
+        if (ptr->active && !ptr->inSaveDialog)
         {
             int rv = FALSE;
             if (changed)
@@ -224,8 +225,10 @@ void GetSecondaryFileList(HWND hwndLV, int *items, BOOL changed)
     while (ptr)
     {
         HWND xx = ptr->self;
+		BOOL active = ptr->active;
         ptr = ptr->next;
-        PostMessage(xx, WM_DEFERREDCLOSE, 0, 0);
+        if (active)
+            PostMessage(xx, WM_DEFERREDCLOSE, 0, 0);
     }
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
         ProcessMessage(&msg);
@@ -261,7 +264,8 @@ static int CreateFileSaveData(HWND hwnd, int changed)
     ptr = editWindows;
     while (ptr)
     {
-        ptr->inSaveDialog = FALSE;
+        if (ptr->active)
+            ptr->inSaveDialog = FALSE;
         ptr = ptr->next;
     }
     SetEvent(ewSem);

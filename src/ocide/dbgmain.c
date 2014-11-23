@@ -340,24 +340,27 @@ static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
 {
     char module[256];
     int linenum;
-    SetForegroundWindow(hwndFrame);
-//    ProcessToTop(GetCurrentProcessId());
-    if (uState != Aborting)
-        uState = atBreakpoint;
-    PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-    if (hwndStack)
-        PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
-    if (hwndRegister)
-        PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-            GetThread(info->dwProcessId, info->dwThreadId)->hThread);
-    PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
-    if (hwndThread)
-        PostMessage(hwndThread, WM_RESTACK, (WPARAM)1, 0);
-    if (hwndMem)
-        PostMessage(hwndMem, WM_RESTACK, 0, 0);
-    if (hwndThread)
-        SendMessage(hwndThread, WM_RESTACK, 0, 0);
-    PostMessage(hwndFrame, WM_BREAKPOINT, 0, (LPARAM)info);
+	if (uState != Aborting)
+	{
+		SetForegroundWindow(hwndFrame);
+	//    ProcessToTop(GetCurrentProcessId());
+		if (uState != Aborting)
+			uState = atBreakpoint;
+		PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+		if (hwndStack)
+			PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
+		if (hwndRegister)
+			PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+				GetThread(info->dwProcessId, info->dwThreadId)->hThread);
+		PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
+		if (hwndThread)
+			PostMessage(hwndThread, WM_RESTACK, (WPARAM)1, 0);
+		if (hwndMem)
+			PostMessage(hwndMem, WM_RESTACK, 0, 0);
+		if (hwndThread)
+			SendMessage(hwndThread, WM_RESTACK, 0, 0);
+		PostMessage(hwndFrame, WM_BREAKPOINT, 0, (LPARAM)info);
+	}
     if (uState != Aborting && uState != notDebugging)
     {
         WaitForSingleObject(BreakpointSem, INFINITE);
@@ -855,7 +858,8 @@ void StartDebug(char *cmd)
                                             dllInfo->breakpoint = addr;
                                             while (ptr)
                                             {
-                                                InvalidateRect(ptr->self, 0, 0);
+                                                if (ptr->active)
+                                                    InvalidateRect(ptr->self, 0, 0);
                                                 ptr = ptr->next;
                                             }
                                         }

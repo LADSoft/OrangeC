@@ -2758,7 +2758,9 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
                 lex = getsym();
             }
             else
-                break;
+            {
+                error(ERR_DECLARE_SYNTAX);
+            }
         }
     }
     if (parent->type == kw_switch)

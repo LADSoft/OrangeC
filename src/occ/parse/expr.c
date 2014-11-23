@@ -1292,8 +1292,8 @@ join:
                                 error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                         else if (ispointer(decl->tp))
                         {
-                            if (!ispointer(list->tp) && isarithmeticconst(list->exp) && !isconstzero(decl->tp, list->exp))
-                                error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                            if (!ispointer(list->tp) && (!isarithmeticconst(list->exp) || !isconstzero(decl->tp, list->exp)))
+                                errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                             else if (!comparetypes(decl->tp, list->tp, TRUE))
                                 if (!isconstzero(list->tp, list->exp))
                                     if (!isvoidptr(decl->tp) && !isvoidptr(list->tp))
@@ -1322,8 +1322,8 @@ join:
                                         }
                         } 
                         else if (ispointer(list->tp))
-                            if (!isvoidptr(list->tp))
-                                error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                            if (!ispointer(decl->tp))
+                                errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                     }
                       dest = decl->tp;
                 }

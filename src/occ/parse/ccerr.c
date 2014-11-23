@@ -195,7 +195,7 @@ static struct {
 {"Argument list too long in call to '%s'", ERROR },
 {"Argument list too short in call to '%s'", ERROR },
 {"Call of nonfunction", ERROR },
-{"Type mismatch in argument '%s' in call to '%s'", ERROR },
+{"Type mismatch in parameter '%s' in call to '%s'", ERROR },
 {"extern object may not be initialized", ERROR },
 {"typedef may not be initialized", ERROR },
 {"object with variably modified type may not be initialized", ERROR },
@@ -900,9 +900,7 @@ void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
         sprintf(argbuf,"%d",argnum);
     else
     {
-        argbuf[0] = '\'';
-        unmangle(argbuf+1, declsp->errname);
-        strcat(argbuf,"'");
+        unmangle(argbuf, declsp->errname);
     }
     unmangle(buf, funcsp->errname);
     currentErrorLine = 0;

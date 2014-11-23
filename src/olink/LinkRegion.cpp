@@ -478,7 +478,6 @@ ObjInt LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
     }
     if (curSection)
         return curSection->GetAbsSize();
-    std::cout << "hi" << std::endl;
     return 0;
 }
 ObjInt LinkRegion::ArrangeSections()

@@ -355,7 +355,8 @@ void Dialog::WriteRes(ResFile &resFile)
         if (extended)
         {
             resFile.WriteWord(weight);
-            resFile.WriteWord(italics);
+            resFile.WriteByte(italics);
+            resFile.WriteByte(charset);
         }
         resFile.WriteString(font);
     }
@@ -412,6 +413,24 @@ void Dialog::ReadSettings(RCFile &rcFile)
                 pointSize = rcFile.GetNumber();
                 rcFile.SkipComma();
                 font = rcFile.GetString();
+                if (extended)
+                {
+                    rcFile.SkipComma();
+                    if (!rcFile.AtEol())
+                    {
+                        weight = rcFile.GetNumber();
+                        rcFile.SkipComma();
+                        if (!rcFile.AtEol())
+                        {
+                            italics = rcFile.GetNumber();
+                            rcFile.SkipComma();
+                            if (!rcFile.AtEol())
+                            {
+                                charset = rcFile.GetNumber();
+                            }
+                        }
+                    }
+                } 
                 break;
             case Lexer::CAPTION:
                 hascaption = true;

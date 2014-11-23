@@ -55,7 +55,7 @@ void StringVerInfo::WriteRes(ResFile &resFile)
     size_t pos1 = resFile.GetPos();
     resFile.WriteWord(0);
     resFile.WriteWord(0);
-    resFile.WriteWord(1);
+    resFile.WriteWord(0);
     resFile.WriteString(language);
     for (iterator it = begin(); it != end(); ++it)
     {

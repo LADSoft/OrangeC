@@ -104,7 +104,7 @@ class Dialog : public Resource
 public:
     Dialog(const ResourceId &Id, const ResourceInfo &info, bool Extended)
         : Resource(eDialog, Id, info), style(0), exStyle(0), pointSize(0),
-            extended(Extended), weight(0), italics(0), helpIndex(0) { }
+            extended(Extended), weight(0), italics(0), charset(1), helpIndex(0) { }
     virtual ~Dialog();
     virtual void WriteRes(ResFile &resFile);
     virtual void ReadRC(RCFile &rcFile);
@@ -150,6 +150,7 @@ private:
     bool extended;
     int weight;
     int italics;
+    int charset;
     int helpIndex;
 };
 

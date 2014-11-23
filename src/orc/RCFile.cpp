@@ -180,8 +180,7 @@ std::string RCFile::GetFileName()
 {
     if (GetToken()->IsString())
     {
-//		std::string rv = CvtString(GetToken()->GetRawString());
-        std::string rv = CvtString(GetToken()->GetString());
+	std::string rv = CvtString(GetToken()->GetRawString());
         NextToken();
         rv = Utils::SearchForFile(includePath, rv);
         return rv;

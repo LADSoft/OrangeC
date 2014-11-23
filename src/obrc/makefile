@@ -41,7 +41,7 @@ INCLUDE=..\util;..\ocpp;..\obj;..\sqlite3
 CPP_DEPENDENCIES=$(wildcard *.cpp) 
 C_DEPENDENCIES= sqlite3.c
 LIB_DEPENDENCIES=util.lib ocpp.lib obj.lib
-DEFINES=/DL_INT=__int64 "/DL_UINT=unsigned __int64"
+DEFINES=/DL_INT=__int64 "/DL_UINT=unsigned __int64" /DSQLITE_THREADSAFE=0
 
 vpath %.c ..\sqlite3
 

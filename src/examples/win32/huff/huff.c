@@ -199,8 +199,6 @@ void decode (char *name, BYTE *data)
     }
     printf("Not an hf file");
 }
-// didn't ask to rebuild
-// various crashes: step in, stop
 int main(int argc, char **argv)
 {
     int dodecode = 0;

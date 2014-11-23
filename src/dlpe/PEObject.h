@@ -182,7 +182,7 @@ private:
 class PEResourceObject : public PEObject
 {
 public:
-    PEResourceObject(ResourceContainer &Resources) : PEObject(".rsrc"), resources(Resources) { SetFlags(WINF_INITDATA | WINF_SHARED | WINF_READABLE | WINF_NEG_FLAGS); }
+    PEResourceObject(ResourceContainer &Resources) : PEObject(".rsrc"), resources(Resources) { SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS); }
     virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
 private:
     struct Dir

@@ -80,6 +80,7 @@ typedef struct {
     BOOLEAN prm_linkreg;       /* use a frame pointer */
     BOOLEAN prm_charisunsigned; /* char type is unsigned */
     BOOLEAN prm_assemble;		/* do assembler mode */
+    BOOLEAN prm_makestubs;      /* generate make stubs */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */

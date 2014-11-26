@@ -37,13 +37,8 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=omake
 MAIN_FILE=MakeMain.cpp
-INCLUDE=..\util
+INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util.lib
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
 
 DISTRIBUTE: copyexe

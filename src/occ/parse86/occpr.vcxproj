@@ -49,7 +49,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;BORLAND;_CRT_SECURE_NO_WARNINGS;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;BORLAND;_CRT_SECURE_NO_WARNINGS;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -66,7 +66,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;BORLAND;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;BORLAND;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

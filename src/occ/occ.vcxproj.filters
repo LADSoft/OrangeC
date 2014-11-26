@@ -207,6 +207,9 @@
     <ClCompile Include="parse\template.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="middle\iinline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parse\beinterf.h">

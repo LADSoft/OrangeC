@@ -36,9 +36,9 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 CC=\bcc55\bin\bcc32
-CFLAGS = /c /w- /RT- /O2 /v /I$(INCLUDE) $(DEFINES) /DMICROSOFT
+CCFLAGS = /c /w- /RT- /O2 /v  
 LINK=\bcc55\bin\ilink32
-LINKFLAGS=-v -c -m -Gn -Gi /V5.1 /Lc:\bcc55\lib;c:\bcc55\lib\psdk;$(OBJECT)
+LFLAGS=-v -c -m -Gn -Gi /V5.1 /Lc:\bcc55\lib;c:\bcc55\lib\psdk
 
 LIB=\bcc55\bin\tlib
 LIBFLAGS=/P1024
@@ -48,45 +48,10 @@ TASM=\bcc55\bin\tasm32
 ASM=nasm
 ASMFLAGS = -fobj
 
-RC=orc
+RC=$(DISTROOT)\src\orc
 RCFLAGS = -r
 
-vpath %.obj $(OBJECT)
-vpath %.lib c:\bcc55\lib c:\bcc55\lib\psdk $(OBJECT)
-
-%.obj: %.cpp
-	$(CC) $(CFLAGS) -o$@ $^
-
-%.obj: %.c
-	$(CC) $(CFLAGS) -o$@ $^
-
-%.obj: %.asm
-	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $@
-
-%.obj: %.nas
-	$(ASM) $(ASMFLAGS) -o$@ $^
-
-%.res: %.rc
-	$(RC) $(RCFLAGS) -o$@ $^
-
-CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
-C_deps = $(notdir $(C_DEPENDENCIES:.c=.obj))
-ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.obj))
-TASM_deps = $(notdir $(TASM_DEPENDENCIES:.asm=.obj))
-RES_deps = $(notdir $(RC_DEPENDENCIES:.rc=.res))
-
-MAIN_DEPENDENCIES = $(MAIN_FILE:.cpp=.obj)
-ifeq "$(MAIN_DEPENDENCIES)" "$(MAIN_FILE)"
-MAIN_DEPENDENCIES = $(MAIN_FILE:.c=.obj)
-endif
-
-LLIB_DEPENDENCIES = $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)) 
-
-$(OBJECT)\$(NAME).lib: $(LLIB_DEPENDENCIES)
-	-del $(OBJECT)\$(NAME).lib
-	$(LIB) $(LIBFLAGS) $(OBJECT)\$(NAME).lib @&&|
-+ $(addprefix +$(OBJECT)\,$(LLIB_DEPENDENCIES))
-|
+CCFLAGS := $(CCFLAGS) /I$(INCLUDES) $(DEFINES) /DMICROSOFT
 ifeq "$(TARGET)" "GUI"
 STARTUP=C0W32.obj
 TYPE=/Tpe/aa
@@ -97,14 +62,38 @@ TYPE=/Tpe/ap
 COMPLIB=cw32.lib
 endif
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(OBJ_DEPENDENCIES) $(OBJECT)\$(NAME).lib $(LIB_DEPENDENCIES) $(RES_deps)
-	$(LINK) $(TYPE) $(LINKFLAGS) @&&|
-$(STARTUP) $(OBJ_DEPENDENCIES) $(MAIN_DEPENDENCIES) $(LLIB_DEPENDENCIES)
+
+vpath %.obj $(_OUTPUTDIR)
+vpath %.lib c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
+
+%.obj: %.cpp
+	$(CC) $(CCFLAGS) -o$@ $^
+
+%.obj: %.c
+	$(CC) $(CCFLAGS) -o$@ $^
+
+%.obj: %.asm
+	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $@
+
+%.obj: %.nas
+	$(ASM) $(ASMFLAGS) -o$@ $^
+
+%.res: %.rc
+	$(RC) $(RCFLAGS) -o$@ $^
+
+$(_LIBDIR)\$(NAME).lib: $(LLIB_DEPENDENCIES)
+#	-del $(_LIBDIR)\$(NAME).lib >> $(NULLDEV)
+	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(NAME).lib @&&|
+ $(addprefix -+$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
+|
+
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(_LIBDIR)\$(NAME).lib $(LIB_DEPENDENCIES) $(RES_deps)
+	$(LINK) $(TYPE) $(LFLAGS) @&&|
+$(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
 $(NAME)
 $(NAME)
-$(LIB_DEPENDENCIES) $(COMPLIB) import32.lib
+$(_LIBDIR)\$(NAME).lib $(addprefix $(_LIBDIR)\,$(LIB_DEPENDENCIES)) $(COMPLIB) import32.lib
 $(DEF_DEPENDENCIES)
 $(RES_deps)
 |
 
-include $(DISTMAKE)

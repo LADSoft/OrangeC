@@ -35,6 +35,13 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
+
+# I'm having issues with 64-bit windows getting out of sync and 
+# doing the file deletions too late.   In this case I use the 32-bit
+# version of 7-zip.
+#
+ZIP:="c:\program files (x86)\7-zip\7z" -tzip 
+
 VERNAME := $(word 3, $(shell type,\orangec\src\version.h))
 VERNAME := $(subst ",,$(VERNAME))
 VERNAME := $(subst .,,$(VERNAME))

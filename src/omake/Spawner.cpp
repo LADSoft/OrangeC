@@ -129,8 +129,8 @@ int Spawner::Run(const std::string &cmd, bool ignoreErrors, bool silent, bool do
             int rv = 0;
             if (!dontrun)
                 rv = OS::Spawn(command, environment);
-			if (!silent)
-				std::cout << std::endl;
+//			if (!silent)
+//				std::cout << std::endl;
             if (!ignoreErrors && rv != 0)
                 return rv;
         }

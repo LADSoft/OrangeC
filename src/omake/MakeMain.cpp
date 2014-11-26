@@ -45,6 +45,7 @@
 #include "Utils.h"
 #include "Parser.h"
 #include "Eval.h"
+#include "CmdFiles.h"
 #include <ctype.h>
 #include <iostream>
 #include <strstream>
@@ -73,20 +74,22 @@ CmdSwitchBool MakeMain::silent(switchParser, 's');
 CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S');
 CmdSwitchBool MakeMain::printDir(switchParser, 'w');
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
+CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
 
 char *MakeMain::usageText = "[options] goals\n"
                     "\n"
                     "/B    Rebuild all             /C    Set directory\n"
                     "/Dxxx Define something        /Ixxx Set include path\n"
                     "/R    Ignore builtin vars     /S    Cancel keepgoing\n"
-                    "/Wxxx WhatIf                  /d    Reserved\n"
-                    "/e    Environment overrides   /fxxx Specify make file\n"
-                    "/h    This text               /i    Ignore errors\n"
-                    "/k    Keep going              /n    Display only\n"
-                    "/oxxx Specify old goals       /p    Print database\n"
-                    "/q    Query                   /r    Ignore builtin rules\n"
-                    "/s    Don't print commands    /t    Touch\n"
-                    "/u    Debug warnings          /w    Print directory\n"
+                    "/T    Tree Build              /Wxxx WhatIf\n"
+                    "/d    Reserved                /e    Environment overrides\n"
+                    "/fxxx Specify make file       /h    This text\n"
+                    "/i    Ignore errors           /k    Keep going\n"
+                    "/n    Display only            /oxxx Specify old goals\n"
+                    "/p    Print database          /q    Query\n"
+                    "/r    Ignore builtin rules    /s    Don't print commands\n"
+                    "/t    Touch                   /u    Debug warnings\n"
+                    "/w    Print directory\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";
@@ -210,6 +213,7 @@ void MakeMain::SetMakeFlags()
     {
         vals += "u";
     }
+    // not setting -T so we don't make it recursive
     if (vals == "-")
         vals = "";
     if (includes.GetValue().size())
@@ -322,6 +326,43 @@ void MakeMain::ShowDatabase()
          it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
         ShowRule(*it);
+    }
+}
+void vv() 
+{
+}
+void MakeMain::SetTreePath(std::string &files)
+{
+    vv();
+    // will get the working dir possibly modified by a 'C' command
+    std::string wd = OS::GetWorkingDir() + CmdFiles::DIR_SEP;
+    int pos = wd.find_last_of(CmdFiles::DIR_SEP);
+    if (pos != std::string::npos)
+    {
+        bool found = false;
+        std::string path;
+        do {
+            path = wd.substr(0, pos+1) + files;
+            std::fstream check(path.c_str(), std::ios::in);
+            if (check != NULL)
+            {
+                found = true;
+            }
+            else
+            {
+                pos = wd.find_last_of(CmdFiles::DIR_SEP);
+                wd = wd.substr(0, pos);
+                pos = wd.find_last_of(CmdFiles::DIR_SEP);
+                if (pos == std::string::npos)
+                    path = "";
+            }
+        } while (!found && pos != std::string::npos);
+        if (path.size())
+        {
+            files = path;
+            SetVariable("_TREEROOT", files, Variable::o_command_line, false);
+            SetVariable("_TREETARGET", OS::GetWorkingDir(), Variable::o_command_line, false);
+        }
     }
 }
 int MakeMain::Run(int argc, char **argv, char **env)
@@ -440,7 +481,12 @@ int MakeMain::Run(int argc, char **argv, char **env)
         *RuleContainer::Instance() += ruleList;
         std::string files = specifiedFiles.GetValue();
         if (!files.size())
-            files = "makefile";
+            if (treeBuild.GetValue())
+                files = "treetop.mak";
+            else
+                files = "makefile";
+        if (treeBuild.GetValue())
+            SetTreePath(files);
         Include::Instance()->AddFileList(files, false, false);
         SetupImplicit();
         RuleContainer::Instance()->SecondaryEval();

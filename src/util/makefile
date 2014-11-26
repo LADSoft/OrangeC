@@ -37,13 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=util
 MAIN_FILE=
-INCLUDE=
+INCLUDES=
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 C_DEPENDENCIES=$(wildcard *.c)
 LIB_DEPENDENCIES=
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE:
-include $(CPPMAKE)
 
 DISTRIBUTE:

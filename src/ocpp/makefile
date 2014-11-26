@@ -36,16 +36,11 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=ocpp
-#MAIN_FILE=ppMain.cpp
-INCLUDE=..\util
+MAIN_FILE=ppMain.cpp
+INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util.lib
 DEFINES=/DL_INT=__int64 "/DL_UINT=unsigned __int64"
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-#EXEFILE: $(NAME).exe
-EXEFILE:
-include $(CPPMAKE)
 
 #DISTRIBUTE: copyexe
 DISTRIBUTE:

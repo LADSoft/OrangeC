@@ -37,17 +37,12 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=obrc
 MAIN_FILE=BRCMain.cpp
-INCLUDE=..\util;..\ocpp;..\obj;..\sqlite3
+INCLUDES=..\util;..\ocpp;..\objlib;..\sqlite3
 CPP_DEPENDENCIES=$(wildcard *.cpp) 
 C_DEPENDENCIES= sqlite3.c
-LIB_DEPENDENCIES=util.lib ocpp.lib obj.lib
+LIB_DEPENDENCIES=util.lib ocpp.lib objlib.lib
 DEFINES=/DL_INT=__int64 "/DL_UINT=unsigned __int64" /DSQLITE_THREADSAFE=0
 
 vpath %.c ..\sqlite3
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
 
 DISTRIBUTE: copyexe

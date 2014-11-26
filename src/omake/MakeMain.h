@@ -60,6 +60,7 @@ protected:
     void LoadCmdDefines();
     void ShowRule(RuleList *ruleList);
     void ShowDatabase();
+    void SetTreePath(std::string &files);
 private:
     int restarts;
     static CmdSwitchParser switchParser;
@@ -86,6 +87,7 @@ private:
     static CmdSwitchBool cancelKeep;
     static CmdSwitchBool printDir;
     static CmdSwitchBool warnUndef;
+    static CmdSwitchBool treeBuild;
     static char *usageText;
     static char *builtinVars;
     static char *builtinRules;

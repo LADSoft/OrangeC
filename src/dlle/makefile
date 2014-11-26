@@ -37,14 +37,10 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=dlle
 MAIN_FILE=dlLeMain.cpp
-INCLUDE=..\util;..\obj;..\exefmt
+INCLUDES=..\util;..\objlib;..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib obj.lib
+LIB_DEPENDENCIES=util.lib objlib.lib
 EXCLUDE=ledump.obj
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
 
 DISTRIBUTE: copyexe
 	copy *.spc $(DISTBIN)

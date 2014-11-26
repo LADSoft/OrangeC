@@ -37,15 +37,10 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=orc
 MAIN_FILE=rcMain.cpp
-INCLUDE=..\util;..\ocpp
+INCLUDES=..\util;..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util.lib ocpp.lib
 DEFINES=/DL_INT=__int64 "/DL_UINT=unsigned __int64"
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\orc.cfg

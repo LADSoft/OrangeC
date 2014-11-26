@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>/c /v /T:CON32 c0xpe.o ..\occ\ideprj\win32\debug\*.o clwin.l climp.l</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>/T:CON32 /c+ /v c0xpe.o \orangec\src\olink\huff.o \orangec\src\olink\bheap.o clwin.l climp.l</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>\orangec\bin</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerCommandArguments>/T:CON32 /c c0xpe.o \orangec\src\occ\ideprj\win32\debug\*.o clwin.l climp.l</LocalDebuggerCommandArguments>

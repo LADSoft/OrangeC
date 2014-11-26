@@ -64,11 +64,10 @@ int main()
 
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
-    std::fstream b("bzip2.o", std::fstream::in);
-    std::fstream c("q.o", std::fstream::out);
+    FILE *b = fopen("bzip2.o", "r");
+    FILE *c = fopen( "q.o" , "w");
     ObjIeee i1("hi");
     ObjFile *fi1 = i1.Read(b, ObjIeee::eAll, &fact1);
     i1.Write(c, fi1, &fact1);
-    b.close();
         
 }

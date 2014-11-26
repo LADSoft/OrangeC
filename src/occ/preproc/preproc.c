@@ -51,6 +51,7 @@ extern FILE *cppFile;
 
 int preprocLine;
 char *preprocFile;
+LIST *nonSysIncludeFiles;
 
 HASHTABLE *defsyms;
 INCLUDES *includes, *inclData;
@@ -118,6 +119,7 @@ void preprocini(char *name, FILE *fil)
     inclData = NULL;
     incfiles = NULL;
     libincludes = NULL;
+    nonSysIncludeFiles = NULL;
     stdpragmas = STD_PRAGMA_FCONTRACT ;
     defsyms = CreateHashTable(GLOBALHASHSIZE);
 #ifndef CPREPROCESSOR
@@ -1001,7 +1003,8 @@ void doinclude(void)
  */
 {
     INCLUDES *inc;
-    char name[260];
+    BOOLEAN nonSys = FALSE;
+    char name[260], name_orig[260];
     if (includes->ifskip)
         return;
     inc = GetIncludeData();
@@ -1017,7 +1020,7 @@ void doinclude(void)
         pperror(ERR_INCL_FILE_NAME, 0);
         return;
     }
-    
+    strcpy(name_orig, name);
     if (inc->sys_inc)
         inc->handle = SrchPth(name, sys_searchpath, "r", TRUE) ;
     if (inc->handle == NULL && includes) 
@@ -1034,14 +1037,29 @@ void doinclude(void)
         }
     }
     if (inc->handle == NULL)
+    {
         inc->handle = SrchPth(name, ".", "r", FALSE) ;
+        if (inc->handle)
+            nonSys = TRUE;
+    }
     if (inc->handle == NULL)
+    {
         inc->handle = SrchPth(name, prm_searchpath, "r", FALSE) ;
+        if (inc->handle)
+            nonSys = TRUE;
+    }
     if (!inc->sys_inc && inc->handle == NULL)
         inc->handle = SrchPth(name, sys_searchpath, "r", TRUE) ;
         
     IncGlobalFlag();
     inc->fname = litlate(name);
+    if (nonSys)
+    {
+        LIST *fil = (LIST *)Alloc(sizeof(LIST));
+        fil->data = inc->fname;
+        fil->next = nonSysIncludeFiles;
+        nonSysIncludeFiles = fil;
+    }
     DecGlobalFlag();
     if (inc->handle ==  NULL)
     {

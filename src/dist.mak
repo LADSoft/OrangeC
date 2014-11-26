@@ -35,11 +35,16 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
+
+ifndef DISTNAME
+DISTNAME = $(NAME)
+endif
+
 stubexe:
-	$(RESTUB) $(DISTBIN)\$(NAME).exe $(STUB)
-#	upx $(DISTBIN)\$(NAME).exe
-#	$(RENSEG) $(DISTBIN)\$(NAME).exe
+	$(RESTUB) $(DISTBIN)\$(DISTNAME).exe $(STUB)
+#	upx $(DISTBIN)\$(DISTNAME).exe
+#	$(RENSEG) $(DISTBIN)\$(DISTNAME).exe
 distcopy:
-	copy $(RELEASEPATH)\$(NAME).exe $(DISTBIN)
+	copy $(RELEASEPATH)\$(NAME).exe $(DISTBIN)\$(DISTNAME).exe
 copyexe: distcopy stubexe
 

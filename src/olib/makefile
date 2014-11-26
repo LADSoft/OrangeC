@@ -37,13 +37,8 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=olib
 MAIN_FILE=LibMain.cpp
-INCLUDE=..\util;..\obj;..\ocpp
+INCLUDES=..\util;..\objlib;..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib obj.lib ocpp.lib
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
+LIB_DEPENDENCIES=util.lib objlib.lib ocpp.lib
 
 DISTRIBUTE: copyexe

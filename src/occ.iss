@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.0.10.1
+AppVerName=Orange C Version 5.20.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -34,7 +34,7 @@ ChangesEnvironment=yes
 ; MinVersion=4,3.51
 
 [Messages]
-BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2013
+BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2014
 
 [Types]
 Name: "desktop"; Description: "Desktop Installation"
@@ -83,6 +83,7 @@ Source: "C:\orangec\examples\win32\*.*"; DestDir: "{userdocs}\Orange C Projects\
 Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
 
 Source: "C:\orangec\examples\*.*"; DestDir: "{app}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\memstick

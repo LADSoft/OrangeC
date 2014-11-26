@@ -37,18 +37,13 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=olink
 MAIN_FILE=LinkerMain.cpp
-INCLUDE=..\util;..\obj;..\olib;..\sqlite3
+INCLUDES=..\util;..\objlib;..\olib;..\sqlite3
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 C_DEPENDENCIES= sqlite3.c
-LIB_DEPENDENCIES=util.lib obj.lib olib.lib
+LIB_DEPENDENCIES=util.lib objlib.lib olib.lib
 DEFINES=/DSQLITE_THREADSAFE=0
 
 vpath %.c ..\sqlite3
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
 
 DISTRIBUTE: copyexe
 	copy *.app $(DISTBIN)

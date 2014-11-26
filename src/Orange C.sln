@@ -12,8 +12,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ocpplib", "ocpp\ocpp.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "util", "util\util.vcxproj", "{72430015-06C0-42A2-B9EC-D0E5E2EAE83D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obj", "obj\obj.vcxproj", "{22E147D5-E684-4B10-9CB4-D6CD8EF02118}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "orc", "orc\orc.vcxproj", "{96F30DDE-3FB2-4FBB-9FEA-5A2B43967F1D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "olink", "olink\olink.vcxproj", "{5E7EB317-3A07-4564-B18F-A279174828E4}"
@@ -90,6 +88,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ocide", "ocide\ocide.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ocpp", "occ\preproc\occp.vcxproj", "{1C54F254-041D-4A6F-B379-5A6F08B96775}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obj", "ObjLib\obj.vcxproj", "{22E147D5-E684-4B10-9CB4-D6CD8EF02118}"
+	ProjectSection(ProjectDependencies) = postProject
+		{72430015-06C0-42A2-B9EC-D0E5E2EAE83D} = {72430015-06C0-42A2-B9EC-D0E5E2EAE83D}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -108,10 +111,6 @@ Global
 		{72430015-06C0-42A2-B9EC-D0E5E2EAE83D}.Debug|Win32.Build.0 = Debug|Win32
 		{72430015-06C0-42A2-B9EC-D0E5E2EAE83D}.Release|Win32.ActiveCfg = Release|Win32
 		{72430015-06C0-42A2-B9EC-D0E5E2EAE83D}.Release|Win32.Build.0 = Release|Win32
-		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Debug|Win32.ActiveCfg = Debug|Win32
-		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Debug|Win32.Build.0 = Debug|Win32
-		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Release|Win32.ActiveCfg = Release|Win32
-		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Release|Win32.Build.0 = Release|Win32
 		{96F30DDE-3FB2-4FBB-9FEA-5A2B43967F1D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{96F30DDE-3FB2-4FBB-9FEA-5A2B43967F1D}.Debug|Win32.Build.0 = Debug|Win32
 		{96F30DDE-3FB2-4FBB-9FEA-5A2B43967F1D}.Release|Win32.ActiveCfg = Release|Win32
@@ -180,6 +179,10 @@ Global
 		{1C54F254-041D-4A6F-B379-5A6F08B96775}.Debug|Win32.Build.0 = Debug|Win32
 		{1C54F254-041D-4A6F-B379-5A6F08B96775}.Release|Win32.ActiveCfg = Release|Win32
 		{1C54F254-041D-4A6F-B379-5A6F08B96775}.Release|Win32.Build.0 = Release|Win32
+		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Debug|Win32.ActiveCfg = Debug|Win32
+		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Debug|Win32.Build.0 = Debug|Win32
+		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Release|Win32.ActiveCfg = Release|Win32
+		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

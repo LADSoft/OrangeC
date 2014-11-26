@@ -35,10 +35,11 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=ogrep
-MAIN_FILE=GrepMain.cpp
-INCLUDES=..\util
+NAME=ObjLib
+MAIN_FILE=test2.cpp
+INCLUDES=
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib
+LIB_DEPENDENCIES=
+EXCLUDE=ObjIO.obj test.obj test2.obj
 
-DISTRIBUTE: copyexe
+DISTRIBUTE:

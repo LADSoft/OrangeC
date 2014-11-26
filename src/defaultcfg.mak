@@ -35,20 +35,5 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-DIRS=pe pels rtl def lscrtl msvcrdm crtdmain
-BUILDING_DLL = /DBUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
-all: lscrtl_objs alldirs
-
-lscrtl_objs:
-	$(MAKE) -Crtl "/DOBJECT=$(DLLOBJECT)" "$(BUILDING_DLL)"
-
-$(eval $(ALLDIRS))
-
-DISTRIBUTE:
-	$(MAKE) /Cpe DISTRIBUTE
-	$(MAKE) /Cpels DISTRIBUTE
-	$(MAKE) /Cmsvcrdm DISTRIBUTE
-	$(MAKE) /Ccrtdmain DISTRIBUTE
-	$(COPYDIR) wininc\*.h $(DISTINC)
-	$(COPYDIR) wininc\win32\*.h $(DISTINCWIN)	
+include $(DISTROOT)\src\bcc32.mak

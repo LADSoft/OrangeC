@@ -48,7 +48,7 @@
 #include <ctype.h>
 #include <strstream>
 #include <iostream>
-
+#include <fstream>
 std::map<const std::string, Eval::StringFunc> Eval::builtins;
 std::string Eval::VPath;
 std::map<std::string, std::string> Eval::vpaths;
@@ -1489,6 +1489,16 @@ std::string Eval::info(const std::string &arglist)
     std::cout << a.Evaluate() << std::endl;
     return "";
 }
+std::string Eval::exists(const std::string &arglist)
+{
+    Eval a(arglist, false, ruleList, rule);
+    std::string fileName = a.Evaluate();
+    std::fstream aa(fileName.c_str(), std::ios::in);
+    if (aa.is_open())
+        return "1";
+    else
+        return "0";
+}
 void Eval::Init()
 {
     builtins["subst"] = &Eval::subst;
@@ -1526,5 +1536,6 @@ void Eval::Init()
     builtins["error"] = &Eval::errorx;
     builtins["warning"] = &Eval::warningx;
     builtins["info"] = &Eval::info;
+    builtins["exists"] = &Eval::exists;
 }
 

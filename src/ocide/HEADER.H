@@ -554,6 +554,7 @@ typedef struct dwinfo
     int inSaveDialog : 1;
     int deferClose:1;
     int shouldClose:1;
+    int active : 1;
 } DWINFO;
 
 typedef struct _databreak_

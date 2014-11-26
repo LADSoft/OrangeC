@@ -35,46 +35,11 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-
-BACKEND_FILES = config.obj
-
-BACKEND_INCLUDE_PATH=.
-
-LIBRARY:
-EXEFILE: mkobj occpr.exe
-
-mkobj:
-	-mkdir $(OBJECT)
-
-#compiler defines we need to take care of eventually
-#set up stack/dta and handle the 8.3 names for include files
-#MSDOS = -DMSDOS
-#determine if we can ignore the banner for a batch compile
-WIN32 = -DWIN32
-#use long long type
-LL = -DUSE_LONGLONG
-
-
-OBJECT=objectb55
-CCFLAGS = /I$(SRCPATH) /DPARSER_ONLY $(i386) $(LL) $(MSDOS) $(WIN32) /DBORLAND /DSQLITE_THREADSAFE=0
-CC = c:\bcc55\bin\bcc32 -c -v
-ASM = nasm -fobj
-LIB = c:\bcc55\bin\tlib32
-LINK = c:\bcc55\bin\ilink32 -v -m -Gn -Gi
-SOURCE = ..\parse;..\preproc;..\middle
-
-SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..\..\sqlite3;..
-
-vpath %.c $(SRCPATH)
-vpath %.obj $(OBJECT)
-
-%.obj: %.c
-	$(CC) $(CCFLAGS) -o$@ $^
-
-#.path.c = .\;..\parse;..\preproc;..\middle
-
-#		*List Macros*
-EXE_dependencies = \
+NAME=occpr
+MAIN_FILE=ccmain.c
+INCLUDES=..\parse;..\preproc;..\middle
+C_DEPENDENCIES= \
+    $(BACKEND_FILES) \
     ccmain.obj \
     sqlite3.obj \
     ccif.obj \
@@ -111,19 +76,20 @@ EXE_dependencies = \
     template.obj \
     types.obj \
     unmangle.obj
+#LIB_DEPENDENCIES=util.lib objlib.lib
+#determine if we can ignore the banner for a batch compile
+WIN32 = -DWIN32
+#use long long type
+LL = -DUSE_LONGLONG
+DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) /DBORLAND /DPARSER_ONLY 
 
-CC_RCFILE=occpr
+SOURCE = ..\parse;..\preproc;..\middle
 
-#		*Explicit Rules*
-occpr.exe: $(EXE_dependencies) $(BACKEND_FILES)
-	$(LINK) $(LINKFLAGS)  @&&|
-c0x32.obj $(addprefix $(OBJECT)\,$(EXE_dependencies) $(BACKEND_FILES)),occpr.exe,occ.map, cw32.lib import32.lib
-|
-#	$(PEPATCH) occpr.exe
+SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\sqlite3
+BACKEND_FILES = config.c
 
+BACKEND_INCLUDE_PATH=.
 
-DISTRIBUTE:
-	copy $(RELEASEPATH)\occpr.exe $(DISTBIN)
-	$(RESTUB) $(DISTBIN)\occpr.exe $(STUB)
-#	upx $(DISTBIN)\occpr.exe
-#	$(RENSEG) $(DISTBIN)\occpr.exe
+vpath %.c $(SRCPATH)
+
+DISTRIBUTE: copyexe

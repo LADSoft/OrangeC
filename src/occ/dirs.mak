@@ -35,16 +35,6 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=obj
-MAIN_FILE=test2.cpp
-INCLUDE=
-CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=
-EXCLUDE=ObjIO.obj test.obj test2.obj
 
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE:
+DIRS = x86 preproc parse86
 
-include $(CPPMAKE)
-
-DISTRIBUTE:

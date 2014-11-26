@@ -48,6 +48,7 @@ extern int total_errors;
 extern FILE *listFile;
 extern char version[256];
 extern int optflags;
+extern LIST *nonSysIncludeFiles;
 
 #ifdef MICROSOFT
 char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
@@ -170,6 +171,10 @@ static CMDLIST Args[] =
     }
     , 
     {
+        'M', ARG_BOOL, bool_setup
+    }
+    , 
+    {
         'c', ARG_BOOL, bool_setup
     }
     , 
@@ -218,6 +223,8 @@ void bool_setup(char select, char *string)
         cparams.prm_c99 = cparams.prm_c1x = v;
     if (select == '9')
         cparams.prm_c99 = v;
+    if (select == 'M')
+        cparams.prm_makestubs = v;
     if (select == 'A')
         cparams.prm_ansi = v;
     if (select == 'e')
@@ -430,6 +437,25 @@ static void debug_dumptypedefs(NAMESPACEVALUES *nameSpace)
         }
     }
 }
+void MakeStubs(void)
+{
+    LIST *list;
+    // parse the file, only gets the macro expansions
+    errorinit();
+    syminit();
+    preprocini(infile, inputFile);
+    lexini();
+    setglbdefs();
+    while (getsym() != NULL) ;
+    printf("%s:\\\n", infile);
+    list = nonSysIncludeFiles;
+    while (list)
+    {
+        printf("    %s \\\n", (char *)list->data);
+        list = list->next;
+    }
+    printf("\n");
+}
 void compile(void)
 {
     LEXEME *lex = NULL ;
@@ -616,96 +642,103 @@ int main(int argc, char *argv[])
         if (!inputFile)
             fatal("Cannot open input file %s", buffer);
         strcpy(infile, buffer);
+        if (cparams.prm_makestubs)
+        {
+            MakeStubs();
+        }
+        else
+        {
 #ifndef PARSER_ONLY
-        outputFile = fopen(outfile, cparams.prm_asmfile ? "w" : "wb");
-        if (!outputFile)
-        {
-            fclose(inputFile);
-            fatal("Cannot open output file %s", outfile);
-        }
-        setvbuf(outputFile,0,_IOFBF,32768);
+            outputFile = fopen(outfile, cparams.prm_asmfile ? "w" : "wb");
+            if (!outputFile)
+            {
+                fclose(inputFile);
+                fatal("Cannot open output file %s", outfile);
+            }
+            setvbuf(outputFile,0,_IOFBF,32768);
 #endif
-         if (cparams.prm_cppfile)
-        {
-            StripExt(buffer);
-            AddExt(buffer, ".i");
-            strcpy(cppfile, buffer);
-            cppFile = fopen(buffer, "w");
-            if (!cppFile)
+             if (cparams.prm_cppfile)
             {
-                fclose(inputFile);
-                fclose(outputFile);
-                fatal("Cannot open preprocessor output file %s", buffer);
+                StripExt(buffer);
+                AddExt(buffer, ".i");
+                strcpy(cppfile, buffer);
+                cppFile = fopen(buffer, "w");
+                if (!cppFile)
+                {
+                    fclose(inputFile);
+                    fclose(outputFile);
+                    fatal("Cannot open preprocessor output file %s", buffer);
+                }
             }
-        }
-        if (cparams.prm_listfile)
-        {
-            StripExt(buffer);
-            AddExt(buffer, ".lst");
-            listFile = fopen(buffer, "w");
-            if (!listFile)
+            if (cparams.prm_listfile)
             {
-                fclose(inputFile);
-                fclose(cppFile);
-                fclose(outputFile);
-                fatal("Cannot open list file %s", buffer);
+                StripExt(buffer);
+                AddExt(buffer, ".lst");
+                listFile = fopen(buffer, "w");
+                if (!listFile)
+                {
+                    fclose(inputFile);
+                    fclose(cppFile);
+                    fclose(outputFile);
+                    fatal("Cannot open list file %s", buffer);
+                }
             }
-        }
-        if (cparams.prm_errfile)
-        {
-            StripExt(buffer);
-            AddExt(buffer, ".err");
-            errFile = fopen(buffer, "w");
-            if (!errFile)
+            if (cparams.prm_errfile)
             {
-                fclose(inputFile);
-                fclose(cppFile);
-                fclose(listFile);
-                fclose(outputFile);
-                fatal("Cannot open error file %s", buffer);
+                StripExt(buffer);
+                AddExt(buffer, ".err");
+                errFile = fopen(buffer, "w");
+                if (!errFile)
+                {
+                    fclose(inputFile);
+                    fclose(cppFile);
+                    fclose(listFile);
+                    fclose(outputFile);
+                    fatal("Cannot open error file %s", buffer);
+                }
             }
-        }
-        if (cparams.prm_browse)
-        {
-            char name[260];
-            strcpy(name, outfile);
-            StripExt(name);
-            AddExt(name, ".cbr");
-            browseFile = fopen(name, "wb");
-            if (!browseFile)
-            {   
-                fclose(errFile);
-                fclose(inputFile);
-                fclose(cppFile);
-                fclose(listFile);
-                fclose(outputFile);
-                fatal("Cannot open browse file %s", buffer);
+            if (cparams.prm_browse)
+            {
+                char name[260];
+                strcpy(name, outfile);
+                StripExt(name);
+                AddExt(name, ".cbr");
+                browseFile = fopen(name, "wb");
+                if (!browseFile)
+                {   
+                    fclose(errFile);
+                    fclose(inputFile);
+                    fclose(cppFile);
+                    fclose(listFile);
+                    fclose(outputFile);
+                    fatal("Cannot open browse file %s", buffer);
+                }
+                setvbuf(browseFile,0,_IOFBF,32768);
             }
-            setvbuf(browseFile,0,_IOFBF,32768);
-        }
-        if (cparams.prm_icdfile)
-        {
-            StripExt(buffer);
-            AddExt(buffer, ".icd");
-            icdFile = fopen(buffer, "w");
-            if (!icdFile)
-            {   
-                fclose(browseFile);
-                fclose(errFile);
-                fclose(inputFile);
-                fclose(cppFile);
-                fclose(listFile);
-                fclose(outputFile);
-                fatal("Cannot open error file %s", buffer);
+            if (cparams.prm_icdfile)
+            {
+                StripExt(buffer);
+                AddExt(buffer, ".icd");
+                icdFile = fopen(buffer, "w");
+                if (!icdFile)
+                {   
+                    fclose(browseFile);
+                    fclose(errFile);
+                    fclose(inputFile);
+                    fclose(cppFile);
+                    fclose(listFile);
+                    fclose(outputFile);
+                    fatal("Cannot open error file %s", buffer);
+                }
+                setvbuf(icdFile,0,_IOFBF,32768);
             }
-            setvbuf(icdFile,0,_IOFBF,32768);
+    
+            if (multipleFiles && !cparams.prm_quiet)
+                printf("%s\n", clist->data);
+    
+    
+            compile();
         }
-
-        if (multipleFiles && !cparams.prm_quiet)
-            printf("%s\n", clist->data);
-
-
-        compile();
 #ifdef PARSER_ONLY
         localFree();
 #endif
@@ -747,20 +780,23 @@ int main(int argc, char *argv[])
         clist = clist->next;
     }
     rv = !!stoponerr ;
-    if (!cparams.prm_compileonly && !stoponerr) {
-        rv = 0 ;
-        if (chosenAssembler->compiler_postprocess)
-        {
-            char buf[260];
+    if (!cparams.prm_makestubs)
+    {
+        if (!cparams.prm_compileonly && !stoponerr) {
+            rv = 0 ;
+            if (chosenAssembler->compiler_postprocess)
+            {
+                char buf[260];
 #ifdef MICROSOFT
-            GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
+                GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
 #else
-            strcpy(buffer, argv[0]);
+                strcpy(buffer, argv[0]);
 #endif
-            rv = chosenAssembler->compiler_postprocess(buffer);
+                rv = chosenAssembler->compiler_postprocess(buffer);
+            }
         }
+        if (chosenAssembler->rundown)
+            chosenAssembler->rundown();
     }
-    if (chosenAssembler->rundown)
-        chosenAssembler->rundown();
     return rv;
 }

@@ -39,18 +39,14 @@ NAME=ocide
 TARGET=GUI
 MAIN_FILE= ocide.c
 DEF_DEPENDENCIES=ocide.def
-INCLUDE=..\sqlite3
-C_DEPENDENCIES= $(wildcard *.c) sqlite3.c ..\util\malloc.c
+INCLUDES=..\sqlite3
+C_DEPENDENCIES= $(wildcard *.c) sqlite3.c malloc.c
 RC_DEPENDENCIES=ocide.rc
 LIB_DEPENDENCIES=msimg32.lib shell32.lib
 OBJ_DEPENDENCIES=\bcc55\lib\wildargs.obj
 DEFINES=/DBORLANDC /DGUI
 
-vpath %.c ..\sqlite3
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
+vpath %.c ..\sqlite3 ..\util
 
 DISTRIBUTE: copyexe
 	copy rule\*.rul $(DISTROOT)\rule

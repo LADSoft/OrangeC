@@ -35,165 +35,32 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-all: files
 
-# comment this out for github release as it requires CC386
-# WITHCC386 = 1
+ifndef _TREEROOT
+all: 
+	$(MAKE) /T
 
-DIRS = util obj obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-    oimplib omake orc ocl ocide occ\x86 occ\preproc occ\parse86 help
+distribute:
+	$(MAKE) /T distribute
 
-ifdef WITHCC386
-DIRS := $(DIRS) dos
-endif
+clean:  
+	$(MAKE) /T clean
 
-SYSINCLIDE=c:\bc5\include
-export SYSINCLUDE
-
-CPPMAKE:=$(realpath .\cpp.mak)
-export CPPMAKE
-DISTMAKE:=$(realpath .\dist.mak)
-export DISTMAKE
-
-ZIP:="c:\program files (x86)\7-zip\7z" -tzip 
-export ZIP
-
-OBJECT:=$(realpath object)
-export OBJECT
-
-define DOLIB
-	$$(MAKE) /C$(dir) LIBRARY
-endef
-
-define DOEXE
-	$$(MAKE) /C$(dir) EXEFILE
-endef
-
-define filesdef
-files: copydir.exe restub.exe renseg.exe pepatch.exe
-	-mkdir $(OBJECT)
-	$(foreach dir, $(DIRS), $(DOLIB))
-	$(foreach dir, $(DIRS), $(DOEXE))
-endef
-
-
-$(eval $(filesdef))
-
-DISTROOT=C:\orangec
-export DISTROOT
-DISTBIN=$(DISTROOT)\bin
-export DISTBIN
-DISTHELP=$(DISTROOT)\help
-export DISTHELP
-DISTINC=$(DISTROOT)\include
-export DISTINC
-DISTINCWIN=$(DISTINC)\win32
-export DISTINCWIN
-DISTLIB=$(DISTROOT)\lib
-export DISTLIB
-DISTSTARTUP=$(DISTROOT)\lib\startup
-export DISTSTARTUP
-DISTSTARTUPDOS=$(DISTROOT)\lib\startup\msdos
-export DISTSTARTUPDOS
-DISTSTARTUPWIN=$(DISTROOT)\lib\startup\win32
-export DISTSTARTUPWIN
-DISTADDON=$(DISTROOT)\addon
-export DISTADDON
-DISTDOC=$(DISTROOT)\doc
-export DISTDOC
-DISTLIC=$(DISTROOT)\license
-export DISTLIC
-DISTEXAM=$(DISTROOT)\examples
-export DISTEXAM
-DISTDIST=$(DISTROOT)\dist
-export DISTDIST
-
-ifdef MS
-    RELEASEPATH = $(DISTROOT)\src\release
 else
-    RELEASEPATH= .
-endif
-
-export RELEASEPATH
-
-define DODIST
-	$$(MAKE) /C$(dir) DISTRIBUTE
-endef
 
 copydir.exe: copydir.c
-	bcc32 $^
+	$(CC) $^
 
 restub.exe: restub.cpp
-	bcc32 $^
+	$(CC) $^
 
 renseg.exe:renseg.cpp
-	bcc32 $^
+	$(CC) $^
 
 pepatch.exe:pepatch.c
-	bcc32 -Idlpe $^
+	$(CC) -Idlpe $^
 
-COPYDIR := $(realpath .\copydir.exe)
-
-define distdef
-DISTRIBUTE:
-	-mkdir $(DISTROOT)
-#	-del /Q $(DISTROOT)
-	-mkdir $(DISTROOT)\rule
-	-del /Q $(DISTROOT)\rule
-	-mkdir $(DISTBIN)
-	-del /Q $(DISTBIN)
-	-mkdir $(DISTHELP)
-	-del /Q $(DISTHELP)
-	-mkdir $(DISTINC)
-	-del /Q $(DISTINC)
-	-mkdir $(DISTINC)\sys
-	-del /Q $(DISTINC)\sys
-	-mkdir $(DISTINC)\stl
-	-del /Q $(DISTINC)\stl
-	-mkdir $(DISTINCWIN)
-	-del /Q $(DISTINCWIN)
-	-mkdir $(DISTLIB)
-	-del /Q $(DISTLIB)
-	-mkdir $(DISTSTARTUP)
-	-del /Q $(DISTSTARTUP)
-	-mkdir $(DISTSTARTUPDOS)
-	-del /Q $(DISTSTARTUPDOS)
-	-mkdir $(DISTSTARTUPWIN)
-	-del /Q $(DISTSTARTUPWIN)
-	-mkdir $(DISTADDON)
-	-del /Q $(DISTADDON)
-	-mkdir $(DISTDOC)
-	-del /Q $(DISTDOC)
-	-mkdir $(DISTDOC)\general
-	-del /Q $(DISTDOC)\general
-	-mkdir $(DISTDOC)\oasm
-	-del /Q $(DISTDOC)\oasm
-	-mkdir $(DISTDOC)\occ
-	-del /Q $(DISTDOC)\occ
-	-mkdir $(DISTDOC)\ogrep
-	-del /Q $(DISTDOC)\ogrep
-	-mkdir $(DISTDOC)\olink
-	-del /Q $(DISTDOC)\olink
-	-mkdir $(DISTDOC)\omake
-	-del /Q $(DISTDOC)\omake
-	-mkdir $(DISTLIC)
-	-del /Q $(DISTLIC)
-	-mkdir $(DISTEXAM)
-	-del /Q $(DISTEXAM)
-	-mkdir $(DISTEXAM)\msdos
-	-del /Q $(DISTEXAM)\msdos
-	-mkdir $(DISTEXAM)\system
-	-del /Q $(DISTEXAM)\system
-	-mkdir $(DISTEXAM)\win32
-	-del /Q $(DISTEXAM)\win32
-	-mkdir $(DISTEXAM)\win32\listview
-	-del /Q $(DISTEXAM)\win32\listview
-	-mkdir $(DISTEXAM)\win32\xmlview
-	-del /Q $(DISTEXAM)\win32\xmlview
-	-mkdir $(DISTEXAM)\win32\RCDemo
-	-del /Q $(DISTEXAM)\win32\RCDemo
-	-mkdir $(DISTDIST)
-	$(foreach dir, $(DIRS), $(DODIST))
+DISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 	$(COPYDIR) examples\*.* $(DISTEXAM)
 	$(COPYDIR) examples\msdos\*.* $(DISTEXAM)\msdos
 	$(COPYDIR) examples\system\*.* $(DISTEXAM)\system
@@ -201,6 +68,7 @@ DISTRIBUTE:
 	$(COPYDIR) examples\win32\listview\*.* $(DISTEXAM)\win32\listview
 	$(COPYDIR) examples\win32\xmlview\*.* $(DISTEXAM)\win32\xmlview
 	$(COPYDIR) examples\win32\RCDemo\*.* $(DISTEXAM)\win32\RCDemo
+	$(COPYDIR) examples\win32\Huff\*.* $(DISTEXAM)\win32\Huff
 	$(COPYDIR) doc\*.* $(DISTDOC)
 	$(COPYDIR) doc\general\*.* $(DISTDOC)\general
 	$(COPYDIR) doc\oasm\*.* $(DISTDOC)\oasm
@@ -216,30 +84,13 @@ DISTRIBUTE:
 	copy ocl.lic $(DISTLIC)
 	copy addon.txt $(DISTADDON)
 ifdef BUILDENV
-	$(MAKE) /Cclibs DISTRIBUTE /DBUILDENV
+	$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE /DBUILDENV
 else
-	$(MAKE) /Cclibs DISTRIBUTE
+	$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE
 ifdef WITHCC386
-	$(MAKE) /C..\ -f$(realpath .\doszip.mak)
-	$(MAKE) /Cdos\install -fmakefile.le
+	$(MAKE) /C$(DISTROOT)\src\..\ -f$(realpath .\doszip.mak)
+	$(MAKE) /C$(DISTROOT)\src\dos\install -fmakefile.le
+endif
 	$(MAKE) /Cc:\ -f$(realpath .\zip.mak)
 endif
 endif
-
-endef
-
-$(eval $(distdef))
-
-export COPYDIR
-
-PEPATCH:=$(realpath .\pepatch.exe)
-export PEPATCH
-
-RESTUB:=$(realpath .\restub.exe)
-export RESTUB
-
-RENSEG:=$(realpath .\renseg.exe)
-export RENSEG
-
-STUB:=$(realpath clibs\platform\dos32\extender\hx\dpmist32.bin)
-export STUB

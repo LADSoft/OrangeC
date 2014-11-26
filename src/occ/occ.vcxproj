@@ -88,6 +88,7 @@
     <ClCompile Include="middle\ICONST.c" />
     <ClCompile Include="middle\IEXPR.c" />
     <ClCompile Include="middle\IFLOW.c" />
+    <ClCompile Include="middle\iinline.c" />
     <ClCompile Include="middle\iinvar.c" />
     <ClCompile Include="middle\ilazy.c" />
     <ClCompile Include="middle\ilive.c" />

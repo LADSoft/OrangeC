@@ -1,5 +1,77 @@
 Release notes
 
+version 5.20.1:
+    general: use fflush() liberally throughout to speed disk access
+    occ:    defining the same typedef inside of multiple functions resulted in 
+            an error
+    occ:    rewrite inlining code to make it work better
+    occ:    basic support for C++ (no debugging, may have some bugs)
+    occ:    fix problem where using debug information while specifying multiple 
+            files on the command line would crash the compiler
+    occ:    fix problem where browse information would take exponential time due 
+            to excess list traversal
+    occ:    "array[*index++] ++;"   would increment 'index' twice.
+    occ:    don't expand inline functions when generating debug code
+    occ:    typing "int a int b;" at the beginning of a function body
+            wouldn't result in an error in C99/C11/C++ mode
+    occ:    conversion of integers to pointers and vice versa in a function argument
+            was allowed with a warning.   Now it is an error.
+    occ:    add make dependency generation similar to gnu C
+    ocide:  prettifying/ use default shell font throughout
+    ocide:  default to Consolas font for edit windows on vista/7/8, use 
+            bitstream mono font on XP.
+    ocide:  fix a crash that could occur if you debug a file that was built in release mode
+    ocide:  fix a crash that could occur when closing windows
+    ocide:  fix a crash due to multiple threads doing a find simultaneously
+    ocide:  fix crash that could occur sometime after removing the 'startup' project
+    ocide:  fix crash that could occur when clicking the arrow on for example
+            the build window
+    ocide:  fix crash that could occur when debugger's "stop running" button was pressed
+    ocide:  fix random crash due to mishandling of multithreading
+    ocide:  fix various problems with string resources
+    ocide:  fix various problems with accelerator resources
+    ocide:  fix various problems with menu resources
+    ocide:  fix various problems with dialog/control resources
+    ocide:  fix various problems with image editor
+    ocide:  allow editing font-related meta data
+    ocide:  fix problem when specifying the \0 at the end of a version resource string
+    ocide:  fix problem parsing generated versioninfo structures
+    ocide:  fix problem when changing a resource id from the property window
+    dlpe/orc/ocide: fix problems where version information wouldn't be displayed 
+            in OS file details window
+    occ/ocide: allow looking at variables declared in for statements (c99)
+    occ/ocide: allow looking at variables declared in 'static' functions 
+    occ/ocide: improve debugging of control statements
+    olink/ocide: fix debug type information
+    ocide:  set debugger's 'stop on exception' to default to 'yes'
+    ocide:  debugger: adjust the search for lines matching an address to use the next lower
+            line if the PC isn't parked exactly on a line's first address.
+    ocide:  if a symbol is not found in the statics of the current file or the globals
+            do an unqualified search of all statics to see if it can be found anywhere
+    ocide:  allow debugger to stop cleanly when program is still running
+    ocide:  enable code completion again (it was broken during cleanup)
+    ocide:  don't close code completion window so gratuitously, but close if a 
+            non-symbol character is typed
+    ocide:  enable find-next immediately after opening ide
+    ocide:  editor:  in typeover mode, typing at end of line will insert 
+            characters on line instead of typing over the end of line character
+    ocide:  resolve disparaties between find and find in files
+    ocide:  fix problems with context sensitive help not being right in some
+            dialogs
+    ocide:  fix problems with cancel buttons on the external tools dialogs not working
+    ocide:  default new files to a format notepad can read properly
+    ocide:  when selecting an error from the information window, the cursor
+            might move to the wrong line if lines were inserted or deleted
+    ogrep:  when the -d option was used with an explicit filename, ogrep would
+            complain 'file not found' in any directory that didn't have the file
+    orc:    allow specifying extended font parameters on the DIALOGEX FONT line            
+    orc:    allow path specifications in file names
+    oasm:   __db was considered same as 'db' and so forth...
+    omake:  add support for common TREE builds
+    clib:   fix _beginthreadex to return the thread id properly
+    clibs:  add a bunch of C++ templates and support functions
+    clibs:  no longer distributing lscrtl.dll
+
 version 5.0.10: 3/29/14
     misc:   various code cleanup and improvements suggested by Kirill Joss
     misc:   include dlea allocator in most C++ apps (borland compile only)  this helps speed it up
@@ -14,7 +86,7 @@ version 5.0.10: 3/29/14
     ogrep:  fix crash under some circumstances
     olib:   fix bug that caused libraries to be generated incorrectly, this will probably also speed up links
     olink:  fix bug where a debug info table that didn't exist was referenced
-    ocide: fix find dialog to not crash when invoked
+    ocide:  fix find dialog to not crash when invoked
     ocide:  after debugging, a build would not work (said file in relative format)
     ocide:  show types in watch window correctly
     clibs:  fix fputc and friends to match const correctness in headers

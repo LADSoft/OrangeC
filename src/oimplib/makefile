@@ -37,14 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=oimplib
 MAIN_FILE=ImpLibMain.cpp
-INCLUDE=..\util;..\obj;..\olib;..\olink;..\ocpp;..\exefmt
+INCLUDES=..\util;..\objlib;..\olib;..\olink;..\ocpp;..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib obj.lib olib.lib olink.lib ocpp.lib
+LIB_DEPENDENCIES=util.lib objlib.lib olib.lib olink.lib ocpp.lib
 DEFINES=/DL_INT=__int64 "/DL_UINT=unsigned __int64"
-
-LIBRARY: $(OBJECT)\$(NAME).lib
-EXEFILE: $(NAME).exe
-
-include $(CPPMAKE)
 
 DISTRIBUTE: copyexe

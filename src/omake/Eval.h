@@ -131,6 +131,7 @@ public:
     static std::string warning(const std::string &arglist);
     std::string warningx(const std::string &arglist);
     std::string info(const std::string &arglist);
+    std::string exists(const std::string &arglist);
     // internal
     static void Init();
     static int GetErrCount() { return errcount; }

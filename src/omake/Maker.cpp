@@ -604,7 +604,7 @@ void Maker::EnterSuffixTerminals()
         }
     }
 }
-void Maker::GetEnvironment(Environment &env)
+void Maker::GetEnvironment(EnvironmentStrings &env)
 {
     bool exportAll = false;
     RuleList *rl = RuleContainer::Instance()->Lookup(".EXPORT_ALL_VARIABLES");
@@ -629,7 +629,7 @@ void Maker::DeleteOne(Depends *depend)
     if (depend->ShouldDelete())
         OS::RemoveFile(depend->GetGoal());	
 }
-int Maker::RunOne(Depends *depend, Environment &env, bool keepGoing)
+int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
 {
     int rv = 0;
     if (depend->GetRuleList()->IsBuilt())
@@ -729,7 +729,7 @@ int Maker::RunCommands(bool keepGoing)
 {
     int rv =0 ;
     bool stop = false;
-    Environment env;
+    EnvironmentStrings env;
     GetEnvironment(env);
     int count;
     for (std::deque<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)

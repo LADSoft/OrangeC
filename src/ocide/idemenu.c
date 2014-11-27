@@ -62,7 +62,7 @@ extern DWINFO *editWindows;
 extern HWND hwndFind, hwndProject, hwndASM, hwndThread;
 extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndStack;
 extern int making;
-extern enum DebugStates uState;
+extern enum DebugState uState;
 extern char szHelpPath[]; 
 extern PROJECTITEM *activeProject;
 

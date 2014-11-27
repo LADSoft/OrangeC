@@ -42,6 +42,7 @@
 
 #include <stdlib.h>
 #include <string>
+#include <string.h>
 
 class RCFile;
 class ResFile;
@@ -71,7 +72,7 @@ public:
     bool PastEnd() { return pos >= len; }
     void WriteRes(ResFile &resFile);
     void ReadRC(RCFile &rcFile);
-    int operator [] (int val) { return data[val]; }		
+    unsigned char operator [] (int val) { return data[val]; }		
 private:
     int len;
     unsigned char *data;

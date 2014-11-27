@@ -87,7 +87,8 @@ bool ppInclude::CheckLine(int token, const std::string &args)
         }
         else
         {
-            int n = expr.Eval(line1.substr(0, npos));
+            std::string temp = line1.substr(0, npos);
+            int n = expr.Eval(temp);
             ParseName(line1.substr(npos+1));
             current->SetErrlineInfo(name, n-1);
         }

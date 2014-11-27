@@ -95,7 +95,7 @@ ObjString ObjIeeeAscii::GetSymbolName(ObjSymbol *Symbol)
     name = name + ObjUtil::ToHex(Symbol->GetIndex());
     return name;
 }
-ObjString ObjIeeeAscii::ToString(const ObjString &strng)
+ObjString ObjIeeeAscii::ToString(const ObjString strng)
 {
     return ObjUtil::ToHex(strng.length(), 3) + strng;
 }
@@ -357,7 +357,7 @@ void ObjIeeeAscii::RenderDebugTag(ObjDebugTag *Tag)
         case ObjDebugTag::eBlockStart:
         case ObjDebugTag::eBlockEnd:
             RenderComment(Tag->GetType() == ObjDebugTag::eBlockStart ?
-                                 eBlockStart : eBlockEnd, ObjString(""));
+                                 eBlockStart : eBlockEnd, ObjString (""));
             break;
         case ObjDebugTag::eFunctionStart:
         case ObjDebugTag::eFunctionEnd:
@@ -539,7 +539,7 @@ void ObjIeeeAscii::RenderExpression(ObjExpression *Expression)
             break;
     }
 }
-void ObjIeeeAscii::RenderComment(eCommentType Type, ObjString &strng)
+void ObjIeeeAscii::RenderComment(eCommentType Type, ObjString strng)
 {
     RenderString("CO" + ObjUtil::ToDecimal((int)Type,3) 
                 + "," + ToString(strng) + ".");
@@ -564,7 +564,7 @@ bool ObjIeeeAscii::HandleWrite()
     RenderCS();
     ResetCS();
     WriteFiles();
-    RenderComment(eMakePass, ObjString("Make Pass Separator"));
+    RenderComment(eMakePass, ObjString ("Make Pass Separator"));
     RenderCS();
     ResetCS();
     WriteSectionHeaders();	
@@ -577,11 +577,11 @@ bool ObjIeeeAscii::HandleWrite()
     WriteStartAddress();
     RenderCS();
     ResetCS();
-    RenderComment(eLinkPass, ObjString("Link Pass Separator"));
+    RenderComment(eLinkPass, ObjString ("Link Pass Separator"));
     WriteSections();	
     RenderCS();
     ResetCS();
-    RenderComment(eBrowsePass, ObjString("Browse Pass Separator"));
+    RenderComment(eBrowsePass, ObjString ("Browse Pass Separator"));
     WriteBrowseInfo();	
     RenderCS();
     ResetCS();
@@ -607,12 +607,12 @@ void ObjIeeeAscii::WriteHeader()
     }
     if (absolute)
     {
-        RenderComment(eAbsolute, ObjString("Absolute file"));
+        RenderComment(eAbsolute, ObjString ("Absolute file"));
     }
 }
 void ObjIeeeAscii::WriteFiles()
 {
-    for (ObjFile::SourceFileIterator it = file->SourceFileBegin();
+    for (ObjFile ::SourceFileIterator it = file->SourceFileBegin();
              it != file->SourceFileEnd(); ++it)
     {	
         RenderFile(*it);
@@ -620,7 +620,7 @@ void ObjIeeeAscii::WriteFiles()
 }
 void ObjIeeeAscii::WriteSectionHeaders()
 {
-    for (ObjFile::SectionIterator it = file->SectionBegin();
+    for (ObjFile ::SectionIterator it = file->SectionBegin();
              it != file->SectionEnd(); ++it)
     {	
         RenderSection(*it);
@@ -630,7 +630,7 @@ void ObjIeeeAscii::WriteTypes()
 {
     if (GetDebugInfoFlag())
     {
-        for (ObjFile::TypeIterator it = file->TypeBegin();
+        for (ObjFile ::TypeIterator it = file->TypeBegin();
              it != file->TypeEnd(); ++it)
         {
             RenderType(*it);
@@ -639,28 +639,28 @@ void ObjIeeeAscii::WriteTypes()
 }
 void ObjIeeeAscii::WriteSymbols()
 {
-    for (ObjFile::SymbolIterator it = file->PublicBegin();
+    for (ObjFile ::SymbolIterator it = file->PublicBegin();
              it != file->PublicEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile::SymbolIterator it = file->ExternalBegin();
+    for (ObjFile ::SymbolIterator it = file->ExternalBegin();
              it != file->ExternalEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile::SymbolIterator it = file->LocalBegin();
+    for (ObjFile ::SymbolIterator it = file->LocalBegin();
              it != file->LocalEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile::SymbolIterator it = file->AutoBegin();
+    for (ObjFile ::SymbolIterator it = file->AutoBegin();
              it != file->AutoEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile::SymbolIterator it = file->RegBegin();
+    for (ObjFile ::SymbolIterator it = file->RegBegin();
              it != file->RegEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile::SymbolIterator it = file->DefinitionBegin();
+    for (ObjFile ::SymbolIterator it = file->DefinitionBegin();
              it != file->DefinitionEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile::SymbolIterator it = file->ImportBegin();
+    for (ObjFile ::SymbolIterator it = file->ImportBegin();
              it != file->ImportEnd(); ++it)
         RenderSymbol(*it);
-    for (ObjFile::SymbolIterator it = file->ExportBegin();
+    for (ObjFile ::SymbolIterator it = file->ExportBegin();
              it != file->ExportEnd(); ++it)
         RenderSymbol(*it);
 }
@@ -676,7 +676,7 @@ void ObjIeeeAscii::WriteStartAddress()
 }
 void ObjIeeeAscii::WriteSections()
 {
-    for (ObjFile::SectionIterator it = file->SectionBegin();
+    for (ObjFile ::SectionIterator it = file->SectionBegin();
              it != file->SectionEnd(); ++it)
     {	
         RenderString("SB" + ObjUtil::ToHex((*it)->GetIndex()) + ".");
@@ -686,7 +686,7 @@ void ObjIeeeAscii::WriteSections()
 }
 void ObjIeeeAscii::WriteBrowseInfo()
 {
-    for (ObjFile::BrowseInfoIterator it = file->BrowseInfoBegin();
+    for (ObjFile ::BrowseInfoIterator it = file->BrowseInfoBegin();
              it != file->BrowseInfoEnd(); ++it)
     {
         RenderBrowseInfo(*it);

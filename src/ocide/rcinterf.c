@@ -46,7 +46,6 @@
 #include <setjmp.h>
 
 #include "header.h"
-#include "rc.h"
 #include "rcgui.h"
 #include "img.h"
 
@@ -135,6 +134,7 @@ static struct {
 
 static struct resRes dummies[sizeof(DirNames)/sizeof(DirNames[0])];
 
+static PROJECTITEM *GetItemInfo(HTREEITEM item);
 static void GetProjectPath(char *buf)
 {
     PROJECTITEM *data = GetItemInfo(prjSelectedItem);

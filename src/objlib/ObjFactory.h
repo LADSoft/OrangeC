@@ -61,7 +61,7 @@ public:
     ~ObjFactory() { Deallocate(); }
     ObjIndexManager *GetIndexManager() { return indexManager; }
     virtual ObjBrowseInfo *MakeBrowseInfo(ObjBrowseInfo::eType Type, ObjBrowseInfo::eQual Qual, 
-                                          ObjLineNo *Line, ObjInt CharPos, ObjString &Data)
+                                          ObjLineNo *Line, ObjInt CharPos, ObjString Data)
     {
         ObjBrowseInfo *b = new ObjBrowseInfo(Type, Qual, Line, CharPos, Data);
         Tag(b);
@@ -136,13 +136,13 @@ public:
         Tag(e);
         return e;
     }
-    virtual ObjFile *MakeFile(ObjString &Name)
+    virtual ObjFile *MakeFile(ObjString Name)
     {
-        ObjFile *f = new ObjFile(Name);
+        ObjFile *f = new ObjFile (Name);
         Tag(f);
         return f;
     }
-    virtual ObjFunction *MakeFunction(ObjString &Name, ObjType *ReturnType, int index = -1)
+    virtual ObjFunction *MakeFunction(ObjString Name, ObjType *ReturnType, int index = -1)
     {
         ObjFunction *f = new ObjFunction(Name, ReturnType, index >= 0 ? index : indexManager->NextType());
         Tag(f);
@@ -172,19 +172,19 @@ public:
         Tag(m);
         return m;
     }
-    virtual ObjSection *MakeSection(ObjString &Name, int index = -1)
+    virtual ObjSection *MakeSection(ObjString Name, int index = -1)
     {
         ObjSection *s = new ObjSection(Name, index >= 0 ? index : indexManager->NextSection());
         Tag(s);
         return s;
     }
-    virtual ObjSourceFile *MakeSourceFile(ObjString &Name, int index = -1)
+    virtual ObjSourceFile *MakeSourceFile(ObjString Name, int index = -1)
     {
         ObjSourceFile *s = new ObjSourceFile(Name, index >= 0 ? index : indexManager->NextFile());
         Tag (s);
         return s;
     }
-    virtual ObjSymbol *MakePublicSymbol(ObjString &Name, int index=-1)
+    virtual ObjSymbol *MakePublicSymbol(ObjString Name, int index=-1)
     {
         ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::ePublic, 
                                      index >= 0 ? index : indexManager->NextPublic());
@@ -192,14 +192,14 @@ public:
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeExternalSymbol(ObjString &Name, int index = -1)
+    virtual ObjSymbol *MakeExternalSymbol(ObjString Name, int index = -1)
     {
         ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eExternal, 
                                      index >= 0 ? index : indexManager->NextExternal());
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeLocalSymbol(ObjString &Name, int index = -1)
+    virtual ObjSymbol *MakeLocalSymbol(ObjString Name, int index = -1)
     {
         ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eLocal, 
                                      index >= 0 ? index : indexManager->NextLocal());
@@ -207,40 +207,40 @@ public:
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeAutoSymbol(ObjString &Name, int index = -1)
+    virtual ObjSymbol *MakeAutoSymbol(ObjString Name, int index = -1)
     {
         ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eAuto, 
                                      index >= 0 ? index : indexManager->NextAuto());
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeRegSymbol(ObjString &Name, int index = -1)
+    virtual ObjSymbol *MakeRegSymbol(ObjString Name, int index = -1)
     {
         ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eReg, 
                                      index >= 0 ? index : indexManager->NextReg());
         Tag(p);
         return p;
     }
-    virtual ObjSymbol *MakeLabelSymbol(ObjString &Name)
+    virtual ObjSymbol *MakeLabelSymbol(ObjString Name)
     {
         ObjSymbol *p = new ObjSymbol(Name, ObjSymbol::eLabel, 0);
         p->SetSectionRelative(true);
         Tag(p);
         return p;
     }
-    virtual ObjImportSymbol *MakeImportSymbol(const ObjString &Name)
+    virtual ObjImportSymbol *MakeImportSymbol(const ObjString Name)
     {
         ObjImportSymbol *p = new ObjImportSymbol(Name);
         Tag(p);
         return p;
     }
-    virtual ObjExportSymbol *MakeExportSymbol(const ObjString &Name)
+    virtual ObjExportSymbol *MakeExportSymbol(const ObjString Name)
     {
         ObjExportSymbol *p = new ObjExportSymbol(Name);
         Tag(p);
         return p;
     }
-    virtual ObjDefinitionSymbol *MakeDefinitionSymbol(ObjString &Name)
+    virtual ObjDefinitionSymbol *MakeDefinitionSymbol(ObjString Name)
     {
         ObjDefinitionSymbol *p = new ObjDefinitionSymbol(Name);
         Tag(p);
@@ -266,7 +266,7 @@ public:
         Tag(t);
         return t;
     }
-    virtual ObjType *MakeType(ObjString &Name, ObjType::eType Type, ObjType *Base, ObjInt Index = -1)
+    virtual ObjType *MakeType(ObjString Name, ObjType::eType Type, ObjType *Base, ObjInt Index = -1)
     {
         ObjType *t;
         if (Index == -1 && Type < ObjType::eVoid)
@@ -276,7 +276,7 @@ public:
         Tag(t);
         return t;
     }
-    virtual ObjField *MakeField(ObjString &Name, ObjType *Base, ObjInt ConstVal)
+    virtual ObjField *MakeField(ObjString Name, ObjType *Base, ObjInt ConstVal)
     {
         ObjField *f = new ObjField(Name, Base, ConstVal);
         Tag(f);

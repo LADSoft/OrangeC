@@ -42,6 +42,7 @@
 #include "ObjFile.h"
 #include "ObjSymbol.h"
 #include "ResourceContainer.h"
+#include <string.h>
 
 unsigned PEObject::objectAlign = 0x1000;
 unsigned PEObject::fileAlign = 0x200;

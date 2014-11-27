@@ -42,7 +42,7 @@
 #include "ResFile.h"
 #include "ResourceData.h"
 #include <windows.h>
-#include <exception>
+#include <stdexcept>
 Control::~Control()
 {
     for (iterator it = begin(); it != end(); ++it)

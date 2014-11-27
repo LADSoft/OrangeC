@@ -52,6 +52,7 @@
 #include "LEFixup.h"
 #include "ResidentNameTable.h"
 #include "MZHeader.h"
+#include <string.h>
 
 CmdSwitchParser dlLeMain::SwitchParser;
 CmdSwitchString dlLeMain::stubSwitch(SwitchParser, 's');

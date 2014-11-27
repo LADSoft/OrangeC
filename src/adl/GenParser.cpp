@@ -465,7 +465,7 @@ bool GenParser::GenerateStateFuncs()
     for (std::deque<State *>::iterator it = parser.states.begin();
          it != parser.states.end(); ++it, ++i)
     {
-        (*file) << "\t&StateFunc" << i << "," << std::endl;
+        (*file) << "\t&" << className << "::StateFunc" << i << "," << std::endl;
     }
     (*file) << "};" << std::endl;
     for (std::deque<Number *>::iterator it = parser.numbers.begin();

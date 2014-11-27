@@ -403,7 +403,7 @@ void codegen_setup(char select, char *string)
         string++;
     }
 }
-static void stackalign_setup(char select, char *string)
+void stackalign_setup(char select, char *string)
 {
     int n = 16;
     if (string[0])

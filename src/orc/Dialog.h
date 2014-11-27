@@ -58,7 +58,7 @@ public:
         Scrollbar = 0x84,
         Combobox = 0x85
     };
-    Control() : id(0), style(0), exStyle(0), helpIndex(0), data(NULL) { }
+    Control() : id(0), style(0), exStyle(0), helpIndex(0) { }
     ~Control();
     void WriteRes(ResFile &resFile, bool ex, bool last);
     void ReadRC(RCFile &rcFile, bool extended);
@@ -84,9 +84,9 @@ public:
     iterator end() { return data.end(); }
     static bool ValidType(RCFile &rcFile);
 protected:
-    void Control::ReadStandard(RCFile &rcFile, int cls , int style, int extended, int text);
-    void Control::GetClass(RCFile &rcFile);
-    void Control::ReadGeneric(RCFile &rcFile, bool extended);
+    void ReadStandard(RCFile &rcFile, int cls , int style, int extended, int text);
+    void GetClass(RCFile &rcFile);
+    void ReadGeneric(RCFile &rcFile, bool extended);
 private:
     int id;
     int style;

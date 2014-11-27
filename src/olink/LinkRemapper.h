@@ -88,7 +88,7 @@ class LinkRemapper
         std::vector<ObjSection *> sections;
         std::map<ObjString, ObjInt> newTypes;
         std::map<ObjInt, ObjInt> fileTypes;
-        static unsigned LinkRemapper::crc_table[256];
+        static unsigned crc_table[256];
         unsigned crc32(unsigned char *buf, int len, unsigned crc);
 } ;
 #endif

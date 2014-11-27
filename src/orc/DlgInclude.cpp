@@ -41,7 +41,7 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
-#include <exception>
+#include <stdexcept>
 
 void DlgInclude::WriteRes(ResFile &resFile) 
 { 

@@ -52,14 +52,14 @@ public:
     int Run(int argc, char *argv[]);
 
 private:
-    static CmdSwitchParser rcMain::SwitchParser;
-    static CmdSwitchFile rcMain::File;
-    static CmdSwitchBool rcMain::Boolr;
-    static CmdSwitchBool rcMain::Boolt;
-    static CmdSwitchBool rcMain::Boolv;
-    static CmdSwitchOutput rcMain::OutputFile;
-    static CmdSwitchDefine rcMain::Defines;
-    static CmdSwitchString rcMain::includePath;
+    static CmdSwitchParser SwitchParser;
+    static CmdSwitchFile File;
+    static CmdSwitchBool Boolr;
+    static CmdSwitchBool Boolt;
+    static CmdSwitchBool Boolv;
+    static CmdSwitchOutput OutputFile;
+    static CmdSwitchDefine Defines;
+    static CmdSwitchString includePath;
     
     static char *usageText;
 } ;

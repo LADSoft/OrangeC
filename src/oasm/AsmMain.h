@@ -55,14 +55,14 @@ public:
 protected:
     void CheckAssign(std::string &line, PreProcessor &pp);
 private:
-    static CmdSwitchParser AsmMain::SwitchParser;
-    static CmdSwitchBool AsmMain::CaseInsensitive;
-    static CmdSwitchCombo AsmMain::CreateListFile;
-    static CmdSwitchFile AsmMain::File;
-    static CmdSwitchBool AsmMain::PreprocessOnly;
-    static CmdSwitchOutput AsmMain::OutputFile;
-    static CmdSwitchDefine AsmMain::Defines;
-    static CmdSwitchString AsmMain::includePath;
+    static CmdSwitchParser SwitchParser;
+    static CmdSwitchBool CaseInsensitive;
+    static CmdSwitchCombo CreateListFile;
+    static CmdSwitchFile File;
+    static CmdSwitchBool PreprocessOnly;
+    static CmdSwitchOutput OutputFile;
+    static CmdSwitchDefine Defines;
+    static CmdSwitchString includePath;
     
     static char *usageText;
 } ;

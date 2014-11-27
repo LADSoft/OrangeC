@@ -40,7 +40,7 @@
 #include "ResourceId.h"
 #include "ResFile.h"
 #include "RCFile.h"
-#include <exception>
+#include <stdexcept>
 
 void ResourceId::WriteRes(ResFile &resFile)
 {

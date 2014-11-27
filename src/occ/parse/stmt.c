@@ -2313,7 +2313,7 @@ LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         if (MATCHKW(lex, begin))
         {
             lex = getsym();
-            while (!MATCHKW(lex, end) && !MATCHKW(lex, eof))
+            while (lex && !MATCHKW(lex, end))
             {
                 currentLineData(parent, lex, 0);
                 lex = chosenAssembler->inlineAsm(lex, parent);
@@ -2363,7 +2363,7 @@ LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
          errorstr(ERR_ASM, "Assembly language not supported by this compiler");
          if (MATCHKW(lex, begin))
          {
-             while (!MATCHKW(lex, end) && !MATCHKW(lex, eof))
+             while (lex && !MATCHKW(lex, end))
             {
                 currentLineData(parent, lex, 0);
                 lex = getsym();

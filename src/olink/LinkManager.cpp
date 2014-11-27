@@ -56,6 +56,7 @@
 #include <strstream>
 #include <fstream>
 #include <stdio.h>
+#include <limits.h>
 
 int LinkManager::errors;
 int LinkManager::warnings;

@@ -41,6 +41,7 @@
 #define FLOATING_H
 
 #include <string>
+#include <string.h>
 
 #define INTERNAL_FPF_PRECISION ((80/8)/sizeof(u16))
 /*

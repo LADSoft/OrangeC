@@ -41,7 +41,7 @@
 #include "ResFile.h"
 #include "RCFile.h"
 #include <windows.h>
-#include <exception>
+#include <stdexcept>
 
 void StringVerInfo::WriteRes(ResFile &resFile)
 {

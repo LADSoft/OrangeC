@@ -68,7 +68,7 @@ class Rule;
 class Spawner
 {
     public:
-        Spawner(Environment Environ, bool IgnoreErrors, bool Silent, bool DontRun) : environment(Environ),
+        Spawner(const EnvironmentStrings &Environ, bool IgnoreErrors, bool Silent, bool DontRun) : environment(Environ),
             ignoreErrors(IgnoreErrors), silent(Silent), dontRun(DontRun), tempNum(1) { }
         ~Spawner() { }
         int Run(Command &commands, RuleList *ruleList = NULL, Rule *rule= NULL);
@@ -85,7 +85,7 @@ class Spawner
     private:
         static int lineLength;
         static std::deque<std::string> cmdList;
-        Environment environment;
+        EnvironmentStrings environment;
         bool ignoreErrors;
         bool silent;
         bool dontRun;

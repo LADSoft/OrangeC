@@ -50,7 +50,7 @@ class ObjFunction : public ObjType
     typedef std::vector<ObjType *>ParameterContainer;
 public:
     enum eLinkage { eLabel, eC, eStdcall, ePascal, eMethod };
-    ObjFunction(ObjString &Name, ObjType *returnType, ObjInt Index) 
+    ObjFunction(ObjString Name, ObjType *returnType, ObjInt Index) 
             : ObjType(Name, eFunction, returnType, Index), linkage(eLabel) {}
     virtual ~ObjFunction() {}
     void Add(ObjType *Param)

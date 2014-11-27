@@ -43,7 +43,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sys/stat.h>
-void ObjSourceFile::RetrieveFileTime(const ObjString &name)
+void ObjSourceFile::RetrieveFileTime(const ObjString name)
 {
 //    struct stat xxstat;
 //    stat(const_cast<char *>(name.c_str()), &xxstat);

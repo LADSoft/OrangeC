@@ -1,5 +1,7 @@
 #include "LinkDebugAux.h"
 #include <stdio.h>
+#include <string.h>
+
 int LinkerColumnsWithNameVirtualTable::id;
 
 LinkerColumnsWithNameVirtualTable::LinkerColumnsWithNameVirtualTable(std::vector<sqlite3_int64> &Data, std::vector<ObjString *> &Names, int Columns, bool primary)

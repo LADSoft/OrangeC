@@ -66,9 +66,6 @@ extern int templateNestingCount;
 extern int templateHeaderCount;
 extern int instantiatingTemplate;
 extern int packIndex;
-#ifndef BORLAND
-extern int wcslen(short *);
-#endif
 extern int inTemplateSpecialization;
 
 int inDefaultParam;
@@ -87,7 +84,7 @@ static char *importFile;
 #define CT_CONS 1
 #define CT_DEST 2
 
-LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL **strSym, BOOLEAN inTemplate, BOOLEAN assumeType, enum e_sc *storage_class, enum e_sc *storage_class_in,
+static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL **strSym, BOOLEAN inTemplate, BOOLEAN assumeType, enum e_sc *storage_class, enum e_sc *storage_class_in,
                        ADDRESS *address, BOOLEAN *blocked, BOOLEAN *isExplicit, BOOLEAN *constexpression, TYPE **tp, 
                        enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest);
 
@@ -488,7 +485,7 @@ void calculateStructOffsets(SYMBOL *sp)
     {
         SYMBOL *sym = bases->cls;
         int align = sym->structAlign;
-        totalAlign = max(totalAlign, align);
+        totalAlign = imax(totalAlign, align);
         if (align > 1)
         {
             int al2 = align - size % align;
@@ -523,7 +520,7 @@ void calculateStructOffsets(SYMBOL *sp)
                 align = getAlign(sc_member, tp);
                 
             }
-            totalAlign = max(totalAlign, align);
+            totalAlign = imax(totalAlign, align);
             p->parent = sp;
             if (tp->size == 0)
             {

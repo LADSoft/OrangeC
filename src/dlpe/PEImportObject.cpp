@@ -45,6 +45,8 @@
 
 #include <ctype.h>
 #include <map>
+#include <string.h>
+
 void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
 {
     if (virtual_addr == 0)

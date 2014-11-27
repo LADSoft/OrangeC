@@ -37,8 +37,8 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
-#ifndef OBJFILE_H
-#define OBJFILE_H
+#ifndef ObjFile_H
+#define ObjFile_H
 
 #include <string.h>
 #include <vector>
@@ -60,11 +60,11 @@ class ObjFile : public ObjWrapper
     typedef std::vector<ObjBrowseInfo *> BrowseInfoContainer;
     typedef std::vector<ObjSourceFile *> SourceFileContainer;
 public:
-    ObjFile(ObjString &Name) : name(Name), inputFile(NULL), bigEndian(false)
+    ObjFile (ObjString Name) : name(Name), inputFile(NULL), bigEndian(false)
     { 
         memset(&fileTime, 0, sizeof(fileTime));
     }
-    virtual ~ObjFile() {}
+    virtual ~ObjFile () {}
     void Add(ObjSection *Section)
     {
         if (Section)
@@ -88,7 +88,7 @@ public:
     }
     void ResolveSymbols(ObjFactory *Factory);
     ObjString GetName() { return name; }
-    void SetName(ObjString &Name) { name = Name; }
+    void SetName(ObjString Name) { name = Name; }
     ObjSourceFile *GetInputFile() { return inputFile; }
     void SetInputFile(ObjSourceFile *InputFile) { inputFile = InputFile; }
     bool GetBigEndian() { return bigEndian; }
@@ -143,7 +143,7 @@ public:
     SourceFileIterator SourceFileBegin() { return sourceFiles.begin(); }
     SourceFileIterator SourceFileEnd() { return sourceFiles.end(); }
 
-    ObjSection *FindSection(const ObjString &Name);
+    ObjSection *FindSection(const ObjString Name);
     ObjSection *GetSection(int section) { return sections[section]; }
     
 private:

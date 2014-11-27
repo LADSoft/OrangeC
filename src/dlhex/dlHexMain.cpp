@@ -46,6 +46,7 @@
 #include "ObjIeee.h"
 #include "ObjExpression.h"
 #include <iostream>
+#include <string.h>
 
 CmdSwitchParser dlHexMain::SwitchParser;
 

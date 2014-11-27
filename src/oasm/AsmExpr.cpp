@@ -45,6 +45,8 @@
 #include "AsmLexer.h"
 #include <exception>
 #include <fstream>
+#include <limits.h>
+#include <stdexcept>
 
 KeywordHash AsmExpr::hash;
 bool AsmExpr::initted;
@@ -68,8 +70,8 @@ void AsmExpr::InitHash()
         hash[")"] = closepa;
         hash["+"] = ::plus;
         hash["-"] = ::minus;
-        hash["!"] = not;
-        hash["~"] = compl;
+        hash["!"] = lnot;
+        hash["~"] = bcompl;
         hash["*"] = star;
         hash["/"] = divide;
         hash["/-"] = sdivide;
@@ -83,9 +85,9 @@ void AsmExpr::InitHash()
         hash["<="] = leq;
         hash["=="] = eq;
         hash["!="] = ne;
-        hash["|"] = or;
-        hash["&"] = and;
-        hash["^"] = xor;
+        hash["|"] = bor;
+        hash["&"] = band;
+        hash["^"] = bxor;
         hash["||"] = lor;
         hash["&&"] = land;
         hash["$"] = dollars;
@@ -677,7 +679,7 @@ AsmExprNode * AsmExpr::unary()
     if (!token->IsEnd())
     {
         int kw = token->GetKeyword();
-        if (kw == ::plus || kw == ::minus || kw == not || kw == compl || kw == SEG)
+        if (kw == ::plus || kw == ::minus || kw == lnot || kw == bcompl || kw == SEG)
         {
             token = tokenizer->Next();
             if (!token->IsEnd())
@@ -693,10 +695,10 @@ AsmExprNode * AsmExpr::unary()
                         break;
                     case ::plus:
                         break;
-                    case not:
+                    case lnot:
                         val1= new AsmExprNode(AsmExprNode::NOT, val1);
                         break;
-                    case compl:
+                    case bcompl:
                         val1 = new AsmExprNode(AsmExprNode::CMPL, val1);
                         break;
                 }
@@ -850,7 +852,7 @@ AsmExprNode * AsmExpr::equal()
 AsmExprNode * AsmExpr::and_()
 {
     AsmExprNode * val1 = equal();
-    while (!token->IsEnd() && token->GetKeyword()== and)
+    while (!token->IsEnd() && token->GetKeyword()== band)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -864,7 +866,7 @@ AsmExprNode * AsmExpr::and_()
 AsmExprNode * AsmExpr::xor_()
 {
     AsmExprNode * val1 = and_();
-    while (!token->IsEnd() && token->GetKeyword()== xor)
+    while (!token->IsEnd() && token->GetKeyword()== bxor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -878,7 +880,7 @@ AsmExprNode * AsmExpr::xor_()
 AsmExprNode * AsmExpr::or_()
 {
     AsmExprNode * val1 = xor_();
-    while (!token->IsEnd() && token->GetKeyword()== or)
+    while (!token->IsEnd() && token->GetKeyword()== bor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())

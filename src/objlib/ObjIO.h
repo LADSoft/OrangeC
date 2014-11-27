@@ -44,7 +44,7 @@
 #include <vector>
 #include "ObjTypes.h"
 
-class ObjFile;
+class ObjFile ;
 class ObjFactory;
 class ObjExpression;
 
@@ -52,14 +52,14 @@ class ObjIOBase
 {
 public:
     enum eParseType { eMake, eLink, eBrowse, eAll };
-    ObjIOBase(const ObjString &Name, bool CaseSensitive) : name(Name), translatorName(""),bitsPerMAU(8),
+    ObjIOBase(const ObjString Name, bool CaseSensitive) : name(Name), translatorName(""),bitsPerMAU(8),
                 MAUS(4), debugInfo(true), startAddress(NULL), caseSensitive(CaseSensitive), absolute(false) {}
-    virtual ~ObjIOBase() {}
+    virtual ~ObjIOBase() { }
     ObjString GetName() { return name; }
     virtual bool Write(FILE *fil, ObjFile *File, ObjFactory *Factory) = 0;
     virtual ObjFile *Read(FILE *fil, eParseType ParseType, ObjFactory *Factory) = 0;
-    ObjString &GetTranslatorName() { return translatorName; }
-    void SetTranslatorName(ObjString &TranslatorName ) { translatorName = TranslatorName; }
+    ObjString GetTranslatorName() { return translatorName; }
+    void SetTranslatorName(ObjString TranslatorName ) { translatorName = TranslatorName; }
     ObjInt GetBitsPerMAU() { return bitsPerMAU; }
     void SetBitsPerMAU(ObjInt BitsPerMAU) { bitsPerMAU = BitsPerMAU; }
     ObjInt GetMAUS() { return MAUS; }

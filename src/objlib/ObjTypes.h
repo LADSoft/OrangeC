@@ -44,7 +44,7 @@
 
 typedef unsigned char ObjByte;
 typedef int ObjInt;
-typedef std::string ObjString;
+typedef std::string ObjString ;
 
 class ObjWrapper
 {

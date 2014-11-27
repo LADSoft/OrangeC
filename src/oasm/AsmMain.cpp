@@ -126,7 +126,8 @@ void AsmMain::CheckAssign(std::string &line, PreProcessor &pp)
                         else
                         {
                             ppExpr e(false);
-                            value = e.Eval(line.substr(npos));
+                            std::string temp = line.substr(npos);
+                            value = e.Eval(temp);
                             pp.Assign(name, value, caseInsensitive);
                         }
                     }

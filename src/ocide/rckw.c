@@ -44,8 +44,13 @@
 #include <malloc.h>
 #include <string.h>
 #include <ctype.h>
-#include <Windows.h>
-#include "rc.h"
+#include <windows.h>
+#include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
+#include <stdio.h>
+
+#include "header.h"
 
 #define KWHASHSIZE 253
 

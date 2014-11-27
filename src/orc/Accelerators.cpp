@@ -40,7 +40,7 @@
 #include "Accelerators.h"
 #include "RCFile.h"
 #include "ResFile.h"
-#include <exception>
+#include <stdexcept>
 void Accelerators::Key::WriteRes(ResFile &resFile, bool last)
 {
     resFile.WriteWord(flags | (last ? Last : 0));

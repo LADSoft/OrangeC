@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "LibManager.h"
+#include <string.h>
 
 void LibManager::InitHeader()
 {
@@ -62,6 +63,6 @@ ObjInt LibManager::Lookup(const ObjString &name)
 {
     if (header.sig == LibHeader::LIB_SIG)
         return dictionary.Lookup(stream, header.dictionaryOffset, header.dictionaryBlocks, name);
-    return NULL;
+    return 0;
 }
 

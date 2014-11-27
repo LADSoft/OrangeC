@@ -41,7 +41,7 @@
 #include "ObjSymbol.h"
 #include <ctype.h>
 #include <stdio.h>
-
+#include <string.h>
 
 static char *unmangle(char *val, char *name);
 

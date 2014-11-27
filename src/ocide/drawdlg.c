@@ -133,16 +133,6 @@ HWND PropGetHWNDCombobox(HWND parent);
 HWND PropGetHWNDNumeric(HWND parent);
 HWND PropGetHWNDText(HWND parent);
 
-struct ctlData
-{
-    WNDPROC oldWndProcRedir;
-    HWND hwndParent, hwndRedir;
-    HWND hwndPrev;
-    struct resRes *dlg;
-    CONTROL *data;
-    struct ctlDB *db;
-    int sizing:1;
-} ;
 
 struct dlgUndo
 {
@@ -2932,15 +2922,18 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 }
 static char *UnStreamExpr(char *p, EXPRESSION **c)
 {
-    int type = *((short *)p)++;
+    int type = *((short *)p);
+    p += sizeof(short);
     if (type >= 0)
     {
         EXPRESSION *rv = rcAlloc(sizeof(EXPRESSION));
         int len;
         *c = rv;
         rv->type = type;
-        rv->val = *((int *)p)++;
-        len = *((unsigned char *)p)++;
+        rv->val = *((int *)p);
+        p += sizeof(int);
+        len = *((unsigned char *)p);
+        p += sizeof(unsigned char);
         if (len)
         {
             rv->rendition = rcAlloc(len + 1);
@@ -2956,8 +2949,10 @@ static char *UnStreamExpr(char *p, EXPRESSION **c)
 static char *UnStreamIdent(char *p, IDENT *ident)
 {
     int len;
-    ident->symbolic = *((short *)p)++;
-    len = *((short *)p)++;
+    ident->symbolic = *((short *)p);
+    p += sizeof(short);
+    len = *((short *)p);
+    p += sizeof(short);
     if (len)
     {
         WCHAR *name = rcAlloc(sizeof(WCHAR) * (len + 1));
@@ -2969,7 +2964,8 @@ static char *UnStreamIdent(char *p, IDENT *ident)
     if (ident->symbolic)
     {
         WCHAR *name;
-        len = *((short *)p)++;
+        len = *((short *)p);
+        p += sizeof(short);
         name = rcAlloc(sizeof(WCHAR) * (len + 1));
         memcpy(name, p, sizeof(WCHAR) * len);
         name[len] = 0;
@@ -2985,8 +2981,10 @@ static char *UnStreamIdent(char *p, IDENT *ident)
 }
 static char *UnStreamControl(char *p, struct resRes *dlgData, CONTROL *c)
 {
-    c->generic = *((int *)p)++;
-    c->baseStyle = *((int *)p)++;
+    c->generic = *((int *)p);
+    p += sizeof(int);
+    c->baseStyle = *((int *)p);
+    p += sizeof(int);
     p = UnStreamIdent(p, &c->class);
     c->text = rcAlloc(sizeof(IDENT));
     p = UnStreamIdent(p, c->text);
@@ -3037,9 +3035,10 @@ static void StreamActiveControlsFromClipboard(struct resRes *dlgData)
         {
             CONTROL *newControls = NULL, **cp = &newControls, *nc;
             char *p = buf;
-            int count = *((int *)p)++;
+            int count = *((int *)p);
             int i;
             int x = INT_MAX, y = INT_MAX;
+            p += sizeof(int);
             ResGetHeap(workArea, dlgData);
             for (i=0; i < count; i++)
             {
@@ -3097,12 +3096,15 @@ static char *StreamExpr(char *p, EXPRESSION *exp)
 {
     if (!exp)
     {
-        *((short *)p)++=-1;
+        *((short *)p)=-1;
+        p += sizeof(short);
     }
     else
     {
-        *((short *)p)++ = exp->type;
-        *((int *)p)++ = exp->val;
+        *((short *)p) = exp->type;
+        p += sizeof(short);
+        *((int *)p) = exp->val;
+        p += sizeof(int);
         if (exp->rendition)
         {
             *p++ = strlen(exp->rendition);
@@ -3120,20 +3122,24 @@ static char *StreamExpr(char *p, EXPRESSION *exp)
 }
 static char * StreamIdent(char *p, IDENT *ident)
 {
-    *((short *)p)++ = ident->symbolic;
+    *((short *)p) = ident->symbolic;
+    p += sizeof(short);
     if (!ident->origName)
     {
-        *((short *)p)++ = 0;
+        *((short *)p) = 0;
+        p += sizeof(short);
     }
     else
     {
-        *((short *)p)++ = wcslen(ident->origName);
+        *((short *)p) = wcslen(ident->origName);
+        p += sizeof(short);
         wcscpy(p, ident->origName);
         p += sizeof(WCHAR) * wcslen(ident->origName);
     }        
     if (ident->symbolic)
     {
-        *((short *)p)++ = ident->u.n.length;
+        *((short *)p) = ident->u.n.length;
+        p += sizeof(short);
         memcpy(p, ident->u.n.symbol, ident->u.n.length * sizeof(WCHAR));
         p += sizeof(WCHAR) * ident->u.n.length;
     }
@@ -3160,8 +3166,10 @@ static BOOL CALLBACK StreamToClipboard(HWND hwnd, LPARAM lParam)
         int len;
         CONTROL *c = data->data;
                 
-        *((int *)p)++ = c->generic;
-        *((int *)p)++ = c->baseStyle;
+        *((int *)p) = c->generic;
+        p += sizeof(int);
+        *((int *)p) = c->baseStyle;
+        p += sizeof(int);
         p = StreamIdent(p, &c->class);
         p = StreamIdent(p, c->text);
         p = StreamExpr(p, c->id);

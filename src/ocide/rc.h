@@ -37,6 +37,9 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+
+#ifndef __RC_H
+#define __RC_H
 #include <windows.h>
 #define ESC_A (007)
 #define ESC_B (010)
@@ -45,6 +48,11 @@
 #define ESC_R (015)
 #define ESC_T (011)
 #define ESC_V (013)
+
+typedef struct _list {
+    struct _list *next;
+    void *data;
+} LIST;
 
 enum e_sym
 {
@@ -89,11 +97,6 @@ enum e_sym
     eol, eof
 };
 
-typedef struct _list_
-{
-    struct _list_ *next; /* Link to next element */
-    void *data; /* Generic data */
-} LIST;
 
 /* Global symbol table is a hash table */
 #define HASHTABLESIZE 1023
@@ -546,4 +549,7 @@ typedef struct
     int nextResourceId;
 } RESOURCE_DATA;
 
+#include "rcgui.h"
 #include "rc.p"
+
+#endif

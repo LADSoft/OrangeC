@@ -47,7 +47,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include "rc.h"
+#include <windows.h>
+#include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
+#include <stdio.h>
+
+#include "header.h"
 
 extern int lastch;
 extern short *lptr; 
@@ -112,7 +118,7 @@ EXPRESSION *LookupWithTranslation(char *id)
 {
     return InternalLookup(id, TRUE);
 }
-static int Lookup(char *id)
+static int rcLookup(char *id)
 {
     int rv = 0;
     EXPRESSION *expr = InternalLookup(id, FALSE);
@@ -199,7 +205,7 @@ static EXPRESSION *ieprimary(void)
     }
     else if (lastst == ident)
     {
-        int val = Lookup(lastid);
+        int val = rcLookup(lastid);
         char *s = rcStrdup(lastid);
         temp = rcAlloc(sizeof(EXPRESSION));
         temp->type = e_int;

@@ -1065,7 +1065,7 @@ int LookupBitfieldInfo(DEBUG_INFO *dbg_info, int type, int *start, int *end)
     }
     return rv;
 }
-VARINFO *LookupStructInfo(DEBUG_INFO *dbg_info, int type, int Address, DWORD thread, 
+VARINFO *LookupStructInfo(DEBUG_INFO *dbg_info, int type, int Address, 
                           char *structtag, int *size)
 {
     static char *query = {

@@ -42,6 +42,7 @@
 #include "Utils.h"
 #include "windows.h"
 #include <time.h>
+#include <string.h>
 
 void PEResourceObject::Setup(ObjInt &endVa, ObjInt &endPhys)
 {

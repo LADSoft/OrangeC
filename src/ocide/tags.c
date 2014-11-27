@@ -58,7 +58,7 @@ DWINFO currentBM;
 
 struct tagfile *tagFileList,  *last_module;
 
-int oldline(struct tagfile *, int, int);
+static int oldline(struct tagfile *, int, int);
 
 int IsTagged(char *module, int line)
 {

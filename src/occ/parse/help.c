@@ -1542,7 +1542,7 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
             t1= bt_int;
         if (t2 < bt_int)
             t2= bt_int;
-        t1 = max(t1, t2);
+        t1 = imax(t1, t2);
        rv = inttype(t1);
        if (rv->type != tp1->type && exp1)
          cast(rv, exp1);

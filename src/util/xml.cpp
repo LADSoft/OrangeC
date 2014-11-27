@@ -39,7 +39,7 @@
 */
 #include "xml.h"
 #include "ctype.h"
-
+#include <string.h>
 bool xmlAttrib::Read(std::fstream &stream)
 {
     char t;

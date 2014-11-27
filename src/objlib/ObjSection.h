@@ -68,17 +68,17 @@ public:
         virt = 0x2000 
     } ;
     
-    ObjSection(ObjString &Name, ObjInt Index) :name(Name), externalName(""), 
+    ObjSection(ObjString Name, ObjInt Index) :name(Name), externalName(""), 
             alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), 
             size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL) {}
     virtual ~ObjSection() { };
     ObjString GetName() { return name; }
-    void SetName(ObjString &Name) { name = Name; }
+    void SetName(ObjString Name) { name = Name; }
     ObjString GetDisplayName();
     ObjString GetExternalName() { return externalName; }
-    void SetExternalName(ObjString &Name) {externalName = Name; }
+    void SetExternalName(ObjString Name) {externalName = Name; }
     ObjString GetClass() { return sectionClass; }
-    void SetClass(ObjString &SectionClass) { sectionClass = SectionClass; }
+    void SetClass(ObjString SectionClass) { sectionClass = SectionClass; }
     ObjInt GetAlignment() { return alignment; }
     void SetAlignment(ObjInt Alignment) { alignment = Alignment; }
     ObjInt GetQuals() { return quals; }

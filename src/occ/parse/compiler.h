@@ -86,5 +86,6 @@ typedef unsigned char UBYTE;
 #include "compiler.p"
 
 #define imax(x, y) ((x) > (y) ? (x) : (y))
+#define imin(x, y) ((x) < (y) ? (x) : (y))
 #define M_LN2       0.693147180559945309417
 #define M_LN10      2.30258509299404568402

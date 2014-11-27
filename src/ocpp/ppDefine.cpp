@@ -48,6 +48,8 @@
 #include "UTF8.h"
 #include <time.h>
 #include <strstream>
+#include <limits.h>
+#include <stdlib.h>
 
 static const int ellipses = 100;
 

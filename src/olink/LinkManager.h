@@ -47,6 +47,8 @@
 #include "CmdFiles.h"
 #include "LinkTokenizer.h"
 #include <iostream>
+#include <string.h>
+
 class LibManager;
 class LinkPartition;
 class LinkPartitionSpecifier;

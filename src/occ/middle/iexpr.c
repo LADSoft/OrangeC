@@ -121,7 +121,7 @@ void DumpIncDec(SYMBOL *funcsp)
         l = l->next;
     }
 }
-IMODE *LookupExpression(enum e_op op, int size, IMODE *left, IMODE *right)
+IMODE *LookupExpression(enum i_ops op, int size, IMODE *left, IMODE *right)
 {
     IMODE *ap = NULL;
     QUAD head ;
@@ -871,7 +871,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
 }
 /*-------------------------------------------------------------------------*/
 
-IMODE *gen_unary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op)
+IMODE *gen_unary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op)
 /*
  *      generate code to evaluate a unary minus or complement.
  */
@@ -890,7 +890,7 @@ IMODE *gen_unary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op)
 
 /*-------------------------------------------------------------------------*/
 
-IMODE *gen_asrhd(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op)
+IMODE *gen_asrhd(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op)
 {
     IMODE *ap,  *ap1,  *ap2, *ap3;
     int lab = nextLabel++;
@@ -919,7 +919,7 @@ IMODE *gen_asrhd(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op)
 
 /*-------------------------------------------------------------------------*/
 
-IMODE *gen_binary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op)
+IMODE *gen_binary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op)
 /*
  *      generate code to evaluate a binary node and return 
  *      the addressing mode of the result.
@@ -1137,7 +1137,7 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
 
 /*-------------------------------------------------------------------------*/
 
-IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, int op)
+IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op)
 /*
  *      generate an auto increment or decrement node. op should be
  *      either op_add (for increment) or op_sub (for decrement).

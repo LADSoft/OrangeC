@@ -425,7 +425,7 @@ bool ppMacro::HandleRotate(std::string &line)
     }
     return true;
 }
-bool ppMacro::Invoke(std::string &name, std::string &line)
+bool ppMacro::Invoke(std::string name, std::string line)
 {
     std::map<std::string, MacroData *>::iterator it = macros.find(name);
     if (it == macros.end())

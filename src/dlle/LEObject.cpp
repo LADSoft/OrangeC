@@ -44,6 +44,7 @@
 #include "ObjExpression.h"
 #include "LEHeader.h"
 #include <fstream>
+#include <string.h>
 ObjFile *LEObject::file;
 
 bool LEObject::IsRel(ObjExpression *e)

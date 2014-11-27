@@ -41,7 +41,7 @@
 #include "RCFile.h"
 #include "ResFile.h"
 
-#include <exception>
+#include <stdexcept>
 void ResourceData::WriteRes(ResFile &resFile) 
 { 
     if (data) 

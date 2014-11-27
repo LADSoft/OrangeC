@@ -425,7 +425,7 @@ static int BrowseStep(PROJECTITEM *pj)
         if (p && p->profiles->debugSettings->command)
         {
             AddAssigns(p->profiles->debugSettings->command->assignments);
-            RecursiveAddSymbols(p->profiles->debugSettings->command->children);
+            RecursiveAddSymbols(p->profiles->debugSettings->command->children, TRUE);
             if ( GenCommand(pj, TRUE))
             {
                 FreeJumpSymbols();

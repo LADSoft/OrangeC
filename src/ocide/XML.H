@@ -37,6 +37,9 @@
 	contact information:
 		email: TouchStone222@runbox.com <David Lindauer>
 */
+#ifndef _XML_H
+#define _XML_H
+
 #define MAX_XML_TEXT_LEN 0x800
 #define MAX_XML_NAME_LEN 0x80
 struct xmlAttr
@@ -60,3 +63,5 @@ void xmlFree(struct xmlNode *Node);
 struct xmlNode *xmlReadFile(FILE *in);
 void xmlWriteFile(FILE *out, struct xmlNode *root);
 char *xmlConvertString(char *s, int attr);
+
+#endif _XML_H

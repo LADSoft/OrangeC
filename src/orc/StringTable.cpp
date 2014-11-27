@@ -42,7 +42,7 @@
 #include "RCFile.h"
 #include "Errors.h"
 #include <windows.h>
-#include <exception>
+#include <stdexcept>
 
 std::map<int, StringTable *> StringTable::stringTables;
 ResourceInfo StringTable::currentInfo(0);

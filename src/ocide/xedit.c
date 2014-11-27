@@ -3206,7 +3206,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     /**********************************************************************
      * eol indexes to the last character in a line
      **********************************************************************/
-    void eol(HWND hwnd, EDITDATA *p)
+    void endofline(HWND hwnd, EDITDATA *p)
     {
         int pos;
         pos = p->selendcharpos;
@@ -5486,7 +5486,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     }
                     else
                     {
-                        eol(hwnd, p);
+                        endofline(hwnd, p);
                         setcurcol(p);
                     }
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
@@ -6080,7 +6080,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 {
                     INTERNAL_CHAR *x = p->cd->text;
                     while (i--)
-                        *((char*)lParam)++ = x++->ch;
+                    {
+                        *((char*)lParam) = x++->ch;
+                        lParam += sizeof(char);
+                    }
                     *(char*)lParam = 0;
                 }
                 return i;

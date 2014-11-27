@@ -53,8 +53,8 @@ void ppExpr::InitHash()
         hash[")"] = closepa;
         hash["+"] = plus;
         hash["-"] = minus;
-        hash["!"] = not;
-        hash["~"] = compl;
+        hash["!"] = lnot;
+        hash["~"] = bcompl;
         hash["*"] = star;
         hash["/"] = divide;
         hash["%"] = mod;
@@ -66,9 +66,9 @@ void ppExpr::InitHash()
         hash["<="] = leq;
         hash["=="] = eq;
         hash["!="] = ne;
-        hash["|"] = or;
-        hash["&"] = and;
-        hash["^"] = xor;
+        hash["|"] = bor;
+        hash["&"] = band;
+        hash["^"] = bxor;
         hash["||"] = lor;
         hash["&&"] = land;
         hash["?"] = hook;
@@ -169,7 +169,7 @@ PPINT ppExpr::unary(std::string &line)
     if (!token->IsEnd())
     {
         int kw = token->GetKeyword();
-        if (kw == plus || kw == minus || kw == not || kw == compl)
+        if (kw == plus || kw == minus || kw == lnot || kw == bcompl)
         {
             token = tokenizer->Next();
             if (!token->IsEnd())
@@ -183,10 +183,10 @@ PPINT ppExpr::unary(std::string &line)
                     case plus:
                         val1 = + val1;
                         break;
-                    case not:
+                    case lnot:
                         val1 = !val1;
                         break;
-                    case compl:
+                    case bcompl:
                         val1 = ~val1;
                         break;
                 }
@@ -349,7 +349,7 @@ PPINT ppExpr::equal(std::string &line)
 PPINT ppExpr::and_(std::string &line)
 {
     PPINT val1 = equal(line);
-    while (!token->IsEnd() && token->GetKeyword()== and)
+    while (!token->IsEnd() && token->GetKeyword()== band)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -363,7 +363,7 @@ PPINT ppExpr::and_(std::string &line)
 PPINT ppExpr::xor_(std::string &line)
 {
     PPINT val1 = and_(line);
-    while (!token->IsEnd() && token->GetKeyword()== xor)
+    while (!token->IsEnd() && token->GetKeyword()== bxor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -377,7 +377,7 @@ PPINT ppExpr::xor_(std::string &line)
 PPINT ppExpr::or_(std::string &line)
 {
     PPINT val1 = xor_(line);
-    while (!token->IsEnd() && token->GetKeyword()== or)
+    while (!token->IsEnd() && token->GetKeyword()== bor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())

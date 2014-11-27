@@ -67,6 +67,37 @@ HASHTABLE *CreateHashTable(int size);
 #define F_STRUCTURE 8
 #define F_POINTER 16
 
+static const int rank[] = 
+{
+//    0,0,0,0,0,1,1,2,2,2,2,2,2,3,4,5,6,6,7
+    0,1,1,1,1,2,2,3,3,3,3,3,3,4,5,6,7,7,8
+};
+enum e_cvsrn
+{
+    // tier 1
+    CV_IDENTITY,
+    CV_LVALUETORVALUE,
+    CV_ARRAYTOPOINTER,
+    CV_FUNCTIONTOPOINTER,
+    CV_QUALS,
+    CV_INTEGRALPROMOTION,
+    CV_FLOATINGPROMOTION,
+    CV_INTEGRALCONVERSION,
+    CV_FLOATINGCONVERSION,
+    CV_FLOATINGINTEGRALCONVERSION,
+    CV_POINTERCONVERSION,
+    CV_POINTERTOMEMBERCONVERSION,
+    CV_BOOLCONVERSION, 
+    CV_DERIVEDFROMBASE,
+    // tier 2
+    CV_USER,
+    // tier 3
+    CV_ELLIPSIS,
+    // other
+    CV_PAD,
+    CV_AMBIGUOUS,
+    CV_NONE,
+} ;
 static SYMBOL *getUserConversion(int flags,
                               TYPE *tpp, TYPE *tpa, EXPRESSION *expa,
                               int *n, enum e_cvsrn *seq, SYMBOL *candidate_in, SYMBOL **userFunc);
@@ -1281,37 +1312,6 @@ static void weedToFunctions(LIST **lst)
             lst = &(*lst)->next;
     }
 }
-static const int rank[] = 
-{
-//    0,0,0,0,0,1,1,2,2,2,2,2,2,3,4,5,6,6,7
-    0,1,1,1,1,2,2,3,3,3,3,3,3,4,5,6,7,7,8
-};
-enum e_cvsrn
-{
-    // tier 1
-    CV_IDENTITY,
-    CV_LVALUETORVALUE,
-    CV_ARRAYTOPOINTER,
-    CV_FUNCTIONTOPOINTER,
-    CV_QUALS,
-    CV_INTEGRALPROMOTION,
-    CV_FLOATINGPROMOTION,
-    CV_INTEGRALCONVERSION,
-    CV_FLOATINGCONVERSION,
-    CV_FLOATINGINTEGRALCONVERSION,
-    CV_POINTERCONVERSION,
-    CV_POINTERTOMEMBERCONVERSION,
-    CV_BOOLCONVERSION, 
-    CV_DERIVEDFROMBASE,
-    // tier 2
-    CV_USER,
-    // tier 3
-    CV_ELLIPSIS,
-    // other
-    CV_PAD,
-    CV_AMBIGUOUS,
-    CV_NONE,
-} ;
 static void  GatherConversions(SYMBOL *sp, SYMBOL **spList, int n, FUNCTIONCALL *args, 
                                TYPE *atp, enum e_cvsrn **icsList, int **lenList, int argCount, SYMBOL **funcList)
 {

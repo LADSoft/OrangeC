@@ -41,7 +41,7 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include <fstream>
-#include <exception>
+#include <stdexcept>
 
 MenuItem::~MenuItem()
 {

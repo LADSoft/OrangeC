@@ -48,7 +48,7 @@
 
 #pragma pack(1)
 
-#ifdef BORLANDC
+#ifdef BORLAND
     #define LLONG_TYPE __int64
 #else 
     #define LLONG_TYPE long long
@@ -634,15 +634,20 @@ typedef struct hashTable
     NameValuePair *pairs[MAKEHASH_MAX];
 } HashTable;
 
-
+#include "rc.h"
+#include "xml.h"
+#include "lstab.h"
 #include "ocide.p"
 
 
-#ifndef TTM_POPUP
-#define TTM_POPUP 34
+#ifdef BORLAND
 #define UNNAMED_UNION u.
 #else
 #define UNNAMED_UNION
+#endif
+
+#ifndef TTM_POPUP
+#define TTM_POPUP 34
 #endif
 
 
@@ -654,5 +659,26 @@ typedef struct hashTable
 #define strdup(s) my_strdup(s)
 #endif
 
+#ifdef GNUC
+#pragma pack(push,1)
+typedef struct tagTVKEYDOWN {
+    NMHDR hdr;
+    WORD wVKey;
+    UINT flags;
+} NMTVKEYDOWN,  *LPNMTVKEYDOWN;
+#pragma pack(pop)
+typedef struct tagNMTTCUSTOMDRAW
+{
+    NMCUSTOMDRAW nmcd;
+    UINT uDrawFlags;
+} NMTTCUSTOMDRAW,  * LPNMTTCUSTOMDRAW;
+#define STATUS_FLOAT_MULTIPLE_FAULTS     ((DWORD   )0xC00002B4L)
+#define STATUS_FLOAT_MULTIPLE_TRAPS      ((DWORD   )0xC00002B5L)
+#define STATUS_ILLEGAL_VLM_REFERENCE     ((DWORD   )0xC00002C0L)
+#define STATUS_REG_NAT_CONSUMPTION       ((DWORD   )0xC00002C9L)
+
+#define MCW_EM 0x0008001F
+
+#endif
 
 #pragma pack()

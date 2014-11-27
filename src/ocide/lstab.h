@@ -1,7 +1,7 @@
 /*
     Software License Agreement (BSD License)
     
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
+    Copyright (c) 1997-2012, David Lindauer, (LADSoft).
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
@@ -37,60 +37,68 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
-#ifndef ppExpr_h
-#define ppExpr_h
+#ifndef _LSTAB_H
+#define _LSTAB_H
 
-#include <string>
-
-#include "token.h"
-class ppDefine;
-
-typedef L_INT PPINT;
-
-enum kw
+struct _stList
 {
-    openpa, closepa, plus, minus, lnot, bcompl, star, divide, mod,
-    leftshift, rightshift, gt, lt, geq, leq, eq, ne,
-    bor, bxor, band, land, lor, hook, colon, comma
+    struct _singleTab *head;
+    struct _singleTab *tail;
 };
-class ppExpr
+struct _stItem
 {
-public:
-    ppExpr(bool isunsignedchar) : define(NULL),
-        unsignedchar(isunsignedchar) { InitHash(); }
-    ~ppExpr() { }
-
-	void SetParams(ppDefine *Define)
-	{
-		define = Define;
-	}
-    PPINT Eval(std::string &line);
-    std::string GetString() { return tokenizer->GetString(); }
-    void SetDefine (ppDefine *Define) { define = Define; }
-    static KeywordHash *GetHash() { return &hash; }
-protected:
-    PPINT primary(std::string &line);
-    PPINT unary(std::string &line);
-    PPINT multiply(std::string &line);
-    PPINT add(std::string &line);
-    PPINT shift(std::string &line);
-    PPINT relation(std::string &line);	
-    PPINT equal(std::string &line);
-    PPINT and_(std::string &line);
-    PPINT xor_(std::string &line);
-    PPINT or_(std::string &line);
-    PPINT logicaland(std::string &line);
-    PPINT logicalor(std::string &line);
-    PPINT conditional(std::string &line);
-    PPINT comma_(std::string &line);
-
-private:
-    static void InitHash();
-    bool unsignedchar;
-    ppDefine *define;
-    Tokenizer *tokenizer;
-    const Token *token;
-    static KeywordHash hash;
-    static bool initted;
+    struct _singleTab *prev;
+    struct _singleTab *next;
+};
+struct _singleTab
+{
+    struct _stItem chain;
+    struct _stItem selectedChain;
+    char *text;
+    LPARAM lParam;
+    BOOL displayed;
+    BOOL modified;
+    RECT displayRect;
+    RECT closeBtn;
+}; 
+struct _tabStruct
+{
+    struct _stList active;
+    struct _stList selected;
+    struct _singleTab *highlighted;
+    int fontHeight;
+    HFONT normalFont, boldFont;
+    RECT windowBtn;
+    HPEN greyPen;
+    HPEN whitePen;
+    HWND toolTip;
+    HBITMAP xBitmap, xBitmapSelected;
+    HBITMAP xBack;
+    HBITMAP menuBitmap;
+     HBITMAP menuBitmap2;
+    RECT xRect;
+    BOOL captured;
+    BOOL flat;
+    BOOL displayMenu;
+    DWORD windowBtnMode;
+    BOOL dragging;
+    HCURSOR oldCursor;
+    struct _singleTab *dragSrc;
+    struct _singleTab **menuList;
 } ;
+
+struct ttrack
+{
+    HANDLE tWait;
+    HWND hwnd;
+    HMENU menu;
+    int rows;
+    int cols;
+    int rowHeight;
+    int rowWidth;
+    BOOL inWindow;
+    int id;
+    int oldTrack;
+} ;
+
 #endif

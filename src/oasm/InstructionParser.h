@@ -121,11 +121,11 @@ class InstructionParser
 public:
     InstructionParser() :expr(NULL) { }
     
-    static InstructionParser *InstructionParser::GetInstance();
+    static InstructionParser *GetInstance();
     
-    bool MatchesOpcode(std::string &opcode);
+    bool MatchesOpcode(std::string opcode);
     
-    Instruction *Parse(std::string &args, int PC);
+    Instruction *Parse(const std::string args, int PC);
     virtual void Setup(Section *sect) = 0;
     virtual void Init() = 0;	
     virtual bool ParseSection(AsmFile *fil, Section *sect) = 0;

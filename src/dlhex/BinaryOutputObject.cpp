@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "OutputObjects.h"
+#include <string.h>
 
 int OutputObject::Pad(std::fstream &stream, ObjInt addr, ObjInt size, ObjInt padChar)
 {

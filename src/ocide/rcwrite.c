@@ -46,7 +46,6 @@
 #include <setjmp.h>
 #include <time.h>
 #include "header.h"
-#include "rc.h"
 
 //#define TEST
 extern jmp_buf errjump;

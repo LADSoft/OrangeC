@@ -75,13 +75,13 @@ public:
     ObjType(eType Type, ObjType *BaseType, ObjInt Index) : name(""), type(Type), base(0), top(1), 
                 index(Index), constVal(0), baseType(BaseType), 
                 indexType(&defaultIndexType) {}
-    ObjType(ObjString &Name, eType Type, ObjType *BaseType, ObjInt Index) 
+    ObjType(ObjString Name, eType Type, ObjType *BaseType, ObjInt Index) 
                 : name(Name), type(Type), base(0), top(1), index(Index),
                 constVal(0), baseType(BaseType), 
                 indexType(&defaultIndexType) {}
     virtual ~ObjType() {}
     ObjString GetName() { return name; }
-    void SetName(ObjString &Name) {name = Name; }
+    void SetName(ObjString Name) {name = Name; }
     ObjInt GetIndex() { return index; }
     void SetIndex(ObjInt Index) { index = Index; }
     eType GetType() { return type; }
@@ -133,11 +133,11 @@ private:
 class ObjField: public ObjWrapper
 {
 public:
-    ObjField(ObjString &Name, ObjType *Base, ObjInt ConstVal)
+    ObjField(ObjString Name, ObjType *Base, ObjInt ConstVal)
         : name(Name), base(Base), constVal(ConstVal) {}
         
-    ObjString &GetName() { return name; }
-    void SetName(ObjString &Name) { name = Name; }
+    ObjString GetName() { return name; }
+    void SetName(ObjString Name) { name = Name; }
         
     ObjType *GetBase() { return base; }
     void SetBase(ObjType *Base) { base = Base; }

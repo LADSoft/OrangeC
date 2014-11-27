@@ -78,8 +78,6 @@ extern BLOCK **blockArray;
 extern TEMP_INFO **tempInfo;
 extern int tempCount;
 extern QUAD *intermed_head, *intermed_tail;
-extern BLOCK **reverseOrder, **forwardOrder;
-extern int blocks;
 extern int walkPostorder;
 extern BITINT *uivBytes;
 

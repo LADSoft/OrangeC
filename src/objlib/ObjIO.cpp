@@ -39,10 +39,12 @@
 */
 #include "objio.h"
 
-ObjIOBase::ObjIOBase(ObjString &Name) : name(Name),
+/*
+ObjIOBase::ObjIOBase(ObjString  Name) : name(Name),
     translatorName(""), bitsPerMAU(8), MAUS(1), bigEndian(false), debugInfo(false)
      { ObjIOContainer::Instance()->Add(this); }
 ObjIOBase::~ObjIOBase() { ObjIOContainer::Instance()->Remove(this);}
+*/
 
 void ObjIOContainer::Add(ObjIOBase *ObjIO)
 {

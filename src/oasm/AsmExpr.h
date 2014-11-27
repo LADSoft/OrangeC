@@ -57,7 +57,7 @@ public:
                 type(xType), ival(0), left(Left), right(Right), sect(NULL) { }
     AsmExprNode(PPINT Ival) : type(IVAL), ival(Ival), left(NULL), right(NULL), sect(NULL) { }
     AsmExprNode(const FPF &Fval) : type(FVAL), ival(0), fval(Fval), left(NULL), right(NULL), sect(NULL) { }
-    AsmExprNode(std::string &lbl) : type(LABEL), ival(0), left(NULL), right(NULL), label(lbl), sect(NULL){ }
+    AsmExprNode(std::string lbl) : type(LABEL), ival(0), left(NULL), right(NULL), label(lbl), sect(NULL){ }
     AsmExprNode(Section *Sect, int offs) : type(BASED), ival(offs), left(NULL), right(NULL), sect(Sect){ }
     AsmExprNode(const AsmExprNode &old)
     {
@@ -98,12 +98,12 @@ public:
     static void ReInit() ;
     static AsmExprNode *Eval(AsmExprNode *n, int PC);
     std::string GetString() { return tokenizer->GetString(); }
-    static void SetCurrentLabel(std::string &lbl) { currentLabel = lbl; }
+    static void SetCurrentLabel(std::string lbl) { currentLabel = lbl; }
     static void SetSection(Section *Sect) { section=Sect; }
     static Section *GetSection() { return section; }
-    static void SetEqu(std::string &name, AsmExprNode *n) { equs[name] = n; }
+    static void SetEqu(std::string name, AsmExprNode *n) { equs[name] = n; }
     static AsmExprNode *ConvertToBased(AsmExprNode *n, int pc);
-    static AsmExprNode *GetEqu(std::string &name)
+    static AsmExprNode *GetEqu(std::string name)
     {
         std::map<std::string, AsmExprNode *>::iterator it = equs.find(name);
         if (it != equs.end())

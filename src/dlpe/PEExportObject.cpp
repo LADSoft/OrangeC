@@ -47,6 +47,8 @@
 #include <ctype.h>
 #include <map>
 #include <iostream>
+#include <string.h>
+
 class namelt
 {
     public:

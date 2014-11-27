@@ -126,7 +126,8 @@ int ppMain::Run(int argc, char *argv[])
             }
             else
             {
-                pp.Undefine(working.substr(0, n));
+                std::string temp = working.substr(0, n);
+                pp.Undefine(temp);
                 working = working.substr(n+1);
             }
         }
@@ -201,7 +202,8 @@ int ppMain::Run(int argc, char *argv[])
                                     else
                                     {
                                         ppExpr e(false);
-                                        value = e.Eval(working.substr(npos));
+                                        std::string temp = working.substr(npos);
+                                        value = e.Eval(temp);
                                         if (value < INT_MIN || value >= UINT_MAX)
                                             Errors::Error("ocpp does not support long longs in command line definitions");
                                         pp.Assign(name, (int)value, caseInsensitive);

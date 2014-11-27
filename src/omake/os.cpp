@@ -40,13 +40,13 @@
 
 #define _CRT_SECURE_NO_WARNINGS  
 
-#include "os.h"
 #include <windows.h>
 #include <direct.h>
 #include <stdio.h>
 #include <time.h>
 #include "Variable.h"
 #include "Eval.h"
+#include "os.h"
 
 bool Time::operator >(const Time &last)
 {
@@ -57,7 +57,7 @@ bool Time::operator >(const Time &last)
             return true;
     return false;
 }
-int OS::Spawn(const std::string &command, Environment &environ)
+int OS::Spawn(const std::string command, EnvironmentStrings &environment)
 {
     Variable *v = VariableContainer::Instance()->Lookup("SHELL");
     if (!v)
@@ -80,7 +80,7 @@ int OS::Spawn(const std::string &command, Environment &environ)
     startup.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
     int n = 0;
-    for (Environment::iterator it = environ.begin(); it != environ.end(); ++it)
+    for (EnvironmentStrings::iterator it = environment.begin(); it != environment.end(); ++it)
     {
         n += (*it).name.size() + (*it).value.size() + 2;
     }
@@ -90,7 +90,7 @@ int OS::Spawn(const std::string &command, Environment &environ)
     {
         memset(env, 0, sizeof(char)*n); // !!!
         char *p = env;
-        for (Environment::iterator it = environ.begin(); it != environ.end(); ++it)
+        for (EnvironmentStrings::iterator it = environment.begin(); it != environment.end(); ++it)
         {
             memcpy(p, (*it).name.c_str(), (*it).name.size());
             p+= (*it).name.size();
@@ -122,7 +122,7 @@ int OS::Spawn(const std::string &command, Environment &environ)
     delete[] env;
     return rv;
 }
-std::string OS::SpawnWithRedirect(const std::string &command)
+std::string OS::SpawnWithRedirect(const std::string command)
 {
     std::string rv;
     Variable *v = VariableContainer::Instance()->Lookup("SHELL");
@@ -171,7 +171,7 @@ std::string OS::SpawnWithRedirect(const std::string &command)
     CloseHandle(pipeWriteDuplicate);
     return rv;
 }
-Time (OS::GetCurrentTime)()
+Time OS::GetCurrentTime()
 {
     SYSTEMTIME systemTime;
     ::GetLocalTime(&systemTime);
@@ -187,7 +187,7 @@ Time (OS::GetCurrentTime)()
     Time rv(t, systemTime.wMilliseconds);
     return rv;
 }
-Time OS::GetFileTime(const std::string &fileName)
+Time OS::GetFileTime(const std::string fileName)
 {
     FILETIME mod;
     HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
@@ -215,7 +215,7 @@ Time OS::GetFileTime(const std::string &fileName)
     Time rv;
     return rv;
 }
-void OS::SetFileTime(const std::string &fileName, Time time)
+void OS::SetFileTime(const std::string fileName, Time time)
 {
     FILETIME cr, ac, mod;
     HANDLE h = CreateFile(fileName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL,
@@ -247,11 +247,11 @@ std::string OS::GetWorkingDir()
     getcwd(buf, MAX_PATH);
     return buf;
 }
-bool OS::SetWorkingDir(const std::string &name)
+bool OS::SetWorkingDir(const std::string name)
 {
     return !chdir(name.c_str());
 }
-void OS::RemoveFile(const std::string &name)
+void OS::RemoveFile(const std::string name)
 {
     unlink(name.c_str());
 }

@@ -285,7 +285,8 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
         if (argv[0][0] == '@') // meant to be a file loader
         {
             const char *data = &argv[0][1];
-            std::set<CmdSwitchBase *, plt>::iterator it = switches.find(&CmdSwitchBase('@'));
+            CmdSwitchBase temp('@');
+            std::set<CmdSwitchBase *, plt>::iterator it = switches.find(&temp);
             if (it == switches.end())
                 return false;
             (*it)->Parse(&argv[0][1]);
@@ -304,7 +305,8 @@ bool CmdSwitchParser::Parse(int *argc, char *argv[])
                 const char *end = data + strlen(data);
                 while (data < end)
                 {
-                    std::set<CmdSwitchBase *,plt>::iterator it = switches.find(&CmdSwitchBase(*data));
+                    CmdSwitchBase temp(*data);
+                    std::set<CmdSwitchBase *,plt>::iterator it = switches.find(&temp);
                     if (it == switches.end())
                         return false;
                     data++;

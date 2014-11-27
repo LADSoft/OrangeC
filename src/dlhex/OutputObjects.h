@@ -53,7 +53,7 @@ public:
     virtual int Pad(std::fstream &stream, ObjInt addr, ObjInt size, int padChar);	
     virtual int WriteHeader(std::fstream &stream) = 0;
     virtual int WriteTrailer(std::fstream &stream) = 0;
-    virtual std::ios::open_mode GetOpenFlags() = 0;
+    virtual std::ios::openmode GetOpenFlags() = 0;
 };
 
 class IntelOutputObject : public OutputObject
@@ -65,7 +65,7 @@ public:
     virtual int Write(std::fstream &stream, char *data, int line, int firstAddress);
     virtual int WriteHeader(std::fstream &stream);
     virtual int WriteTrailer(std::fstream &stream);
-    virtual std::ios::open_mode GetOpenFlags() { return std::ios::out; }
+    virtual std::ios::openmode GetOpenFlags() { return std::ios::out; }
 protected:
     void putrecord(std::fstream &stream, unsigned char *data, int datalen, int offset);
     void putulba(std::fstream &stream, int address);
@@ -82,7 +82,7 @@ public:
     virtual int Write(std::fstream &stream, char *data, int line, int firstAddress);
     virtual int WriteHeader(std::fstream &stream);
     virtual int WriteTrailer(std::fstream &stream);
-    virtual std::ios::open_mode GetOpenFlags() { return std::ios::out; }
+    virtual std::ios::openmode GetOpenFlags() { return std::ios::out; }
 protected:
     void putdatarec(std::fstream &stream, unsigned char *data, int datalen, long offset);
     void putendrec(std::fstream &stream);
@@ -100,7 +100,7 @@ public:
     virtual int Write(std::fstream &stream, char *data, int line, int firstAddress);
     virtual int WriteHeader(std::fstream &stream) { return 0; }
     virtual int WriteTrailer(std::fstream &stream) { return 0; }
-    virtual std::ios::open_mode GetOpenFlags() { return std::ios::out | std::ios::binary; }
+    virtual std::ios::openmode GetOpenFlags() { return std::ios::out | std::ios::binary; }
     
 };
 

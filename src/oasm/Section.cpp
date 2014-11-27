@@ -46,7 +46,7 @@
 #include "Fixup.h"
 #include "AsmFile.h"
 
-#include <exception>
+#include <stdexcept>
 #include <limits.h>
 #include <fstream>
 #include <iostream>

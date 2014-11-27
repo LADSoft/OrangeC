@@ -44,6 +44,7 @@ typedef unsigned char UBYTE;
 
 #include <deque>
 #include <ctype.h>
+#include <string.h>
 
 class RegExpContext;
 

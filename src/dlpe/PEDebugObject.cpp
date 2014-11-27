@@ -44,6 +44,8 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <map>
+#include <string.h>
+
 void PEDebugObject::Setup(ObjInt &endVa, ObjInt &endPhys)
 {
     if (virtual_addr == 0)

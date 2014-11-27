@@ -41,6 +41,8 @@
 #include "Utils.h"
 #include "ObjExpression.h"
 #include "ObjFile.h"
+#include <string.h>
+
 void PEFixupObject::Setup(ObjInt &endVa, ObjInt &endPhys)
 {
     if (virtual_addr == 0)

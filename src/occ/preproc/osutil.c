@@ -127,7 +127,7 @@ void usage(char *prog_name)
 #endif
     exit(1);
 }
-static int strcasecmp(char *left, char *right)
+int strcasecmp(const char *left, const char *right)
 {
     while (*left && *right)
     {

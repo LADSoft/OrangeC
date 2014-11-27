@@ -45,7 +45,7 @@
 #include "Instruction.h"
 #include "Fixup.h"
 #include "UTF8.h"
-#include <exception>
+#include <stdexcept>
 
 extern bool IsSymbolStartChar(char ch);
 extern bool IsSymbolChar(char ch);
@@ -172,11 +172,11 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     }
     return rv;
 }
-bool InstructionParser::MatchesOpcode(std::string &opcode)
+bool InstructionParser::MatchesOpcode(std::string opcode)
 {
     return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
 }
-Instruction *InstructionParser::Parse(std::string &args, int PC)
+Instruction *InstructionParser::Parse(const std::string args, int PC)
 {
     int errLine = Errors::GetErrorLine();
     std::string errName = Errors::GetFileName();

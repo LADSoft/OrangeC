@@ -53,7 +53,7 @@ public:
     bool LoadFiles() ;
         
     size_t size() { return names.size(); }
-#define SIGNAT 'SG' + ('NI' << 16)
+#define SIGNAT 0x494e4753 //'SG' + ('NI' << 16)
     struct ResourceData
     {
         unsigned sig;

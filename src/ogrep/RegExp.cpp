@@ -39,6 +39,7 @@
 */
 #include "RegExp.h"
 #include <limits.h>
+#include <stdlib.h>
 
 UBYTE RegExpMatch::wordChars[256/8];
 bool RegExpMatch::initted;
@@ -152,14 +153,14 @@ const char * RegExpMatch::SetClass(const char *name)
 }
 void RegExpMatch::SetSet(const char **p, bool caseSensitive)
 {
-    bool not = false;
+    bool lnot = false;
     UBYTE last[256/8];
     const char *str = *p;
     memcpy(last, matches, sizeof(last));
     memset(matches, 0, sizeof(matches));
     if (*str == '^')
     {
-        not = true;
+        lnot = true;
         str++;
     }
     if (*str == '-')
@@ -205,7 +206,7 @@ void RegExpMatch::SetSet(const char **p, bool caseSensitive)
         invalid = true;
     else
         str++;
-    if (!invalid && not)
+    if (!invalid && lnot)
     {
         for (int i = 32/8; i < 128/8; i++)
             matches[i] = ~matches[i] &last[i];

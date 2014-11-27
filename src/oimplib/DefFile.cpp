@@ -41,8 +41,9 @@
 #include "DefFile.h"
 #include "PEHeader.h"
 #include "MZHeader.h"
-#include <exception>
+#include <stdexcept>
 #include <iostream>
+#include <stdlib.h>
 
 bool DefFile::initted;
 KeywordHash DefFile::keywords;

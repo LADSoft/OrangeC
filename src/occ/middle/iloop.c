@@ -227,7 +227,7 @@ static LOOP *LoopAncestor(BLOCK *b)
         head = head->parent;
     return head;
 }
-static void FindBody(BLOCKLIST *gen, BLOCK *head, enum e_lt type)
+static void FindBody(BLOCKLIST *gen, BLOCK *head, enum e_lptype type)
 {
     LIST *queue = NULL, **qx;
     LOOP *lp, **lpp ;
@@ -991,7 +991,7 @@ void CalculateInduction(void)
                                  * the outer loops have higher indexes
                                  * we want the outermost loop
                                  */
-                                tempInfo[(int)q->data]->inductionLoop = max(i, tempInfo[(int)q->data]->inductionLoop);
+                                tempInfo[(int)q->data]->inductionLoop = imax(i, tempInfo[(int)q->data]->inductionLoop);
                                 q = q->next;
                             }
                         }

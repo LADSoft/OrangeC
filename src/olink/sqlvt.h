@@ -112,7 +112,7 @@ private:
     std::vector<sqlite3_int64> &data;
     int columns;
     int rows;
-    static int IntegerColumnsVirtualTable::id;
+    static int id;
 };
 
 #endif

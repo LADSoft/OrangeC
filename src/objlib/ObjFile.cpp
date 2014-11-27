@@ -41,12 +41,12 @@
 #include "ObjSection.h"
 #include "ObjSymbol.h"
 
-void ObjFile::ResolveSymbols(ObjFactory *Factory)
+void ObjFile ::ResolveSymbols(ObjFactory *Factory)
 {
     for (SectionIterator it = SectionBegin(); it != SectionEnd(); ++it)
         (*it)->ResolveSymbols(Factory);
 }	
-void ObjFile::Add(ObjSymbol *Symbol)
+void ObjFile ::Add(ObjSymbol *Symbol)
 {
     switch(Symbol->GetType())
     {
@@ -78,7 +78,7 @@ void ObjFile::Add(ObjSymbol *Symbol)
             break;
     }
 }
-ObjSection *ObjFile::FindSection(const ObjString &Name)
+ObjSection *ObjFile ::FindSection(const ObjString Name)
 {
     for (SectionIterator it = sections.begin(); it != sections.end(); ++it)
         if ((*it)->GetName() == Name)

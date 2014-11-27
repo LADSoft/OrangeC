@@ -60,7 +60,7 @@
 #include <windows.h>
 #include <iostream>
 
-#include <exception>
+#include <stdexcept>
 
 std::string RCFile::CvtString(const std::wstring &str)
 {
@@ -99,8 +99,8 @@ bool RCFile::IsNumber()
 {
     bool rv = GetToken() && (GetToken()->IsNumeric() || (GetToken()->IsKeyword() && (
         GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
-        GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::not ||
-        GetToken()->GetKeyword() == Lexer::compl)||GetToken()->GetKeyword() == Lexer::comma));
+        GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
+        GetToken()->GetKeyword() == Lexer::bcompl)||GetToken()->GetKeyword() == Lexer::comma));
     return rv;
 }
 unsigned RCFile::GetNumber()

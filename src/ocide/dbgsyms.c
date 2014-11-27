@@ -442,7 +442,8 @@ int GetStructInfo(DEBUG_INFO *dbg_info, VARINFO *v, int qual)
         v->unionx = TRUE;
     else
         v->structure = TRUE;
-    v->subtype =LookupStructInfo(dbg_info, v->type, v->address, v->thread, v->udt && v->structtag[0] ? &dummy[0] : &v->structtag[0], &v->arraysize);
+    v->subtype =LookupStructInfo(dbg_info, v->type, v->address, 
+                                 v->udt && v->structtag[0] ? &dummy[0] : &v->structtag[0], &v->arraysize);
     return v->arraysize;
 }
 int GetArrayInfo(DEBUG_INFO *dbg_info, VARINFO *v)

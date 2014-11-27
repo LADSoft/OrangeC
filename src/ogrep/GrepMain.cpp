@@ -270,7 +270,7 @@ int GrepMain::Run(int argc, char **argv)
     {
         Utils::banner(argv[0]);
         Utils::usage(argv[0], helpText);
-        exit(1);
+        return 1;
     }
     if (argc < 3)
     {

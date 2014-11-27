@@ -1,6 +1,7 @@
 NAME      CCIDE.EXE
 
 IMPORTS
+    SHBindToParent = SHELL32.SHBindToParent
     SHGetFolderPathA = SHFOLDER.SHGetFolderPathA
     SHGetFolderPathW = SHFOLDER.SHGetFolderPathW
 	OpenThemeData = UXTHEME.OpenThemeData

@@ -51,9 +51,9 @@ class Lexer
 public:
     enum
     {
-        openpa=1, closepa, plus, minus, not, compl, star, divide, mod,
+        openpa=1, closepa, plus, minus, lnot, bcompl, star, divide, mod,
         leftshift, rightshift, gt, lt, geq, leq, eq, ne,
-        or, xor, and, land, lor, hook, colon, comma,
+        bor, bxor, band, land, lor, hook, colon, comma,
         openbr, closebr, assn,
         // must be after punctuation
         ABSOLUTE, ALIGN, CLASS, DB, DD, DQ, DT, DW, EXPORT, EXTERN, EQU, GROUP, 

@@ -42,9 +42,15 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "rc.h"
 #include <stdarg.h>
 #include <setjmp.h>
+#include <windows.h>
+#include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
+#include <stdio.h>
+
+#include "header.h"
  
 extern HWND hwndFrame;
 extern int errlineno;

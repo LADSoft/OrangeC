@@ -48,10 +48,6 @@
 //extern char **__argv;
 extern HWND hwndFrame;
 
-typedef struct _list {
-    struct _list *next;
-    char *data;
-} LIST;
 LIST *nameList;
 static LPSTR lpszSlotName = "\\\\.\\mailslot\\ocide_mailslot"; 
 static HANDLE ghMailSlot;

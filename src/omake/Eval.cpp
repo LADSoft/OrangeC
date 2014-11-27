@@ -1453,7 +1453,7 @@ std::string Eval::flavor(const std::string &arglist)
 std::string Eval::shell(const std::string &arglist)
 {
     Eval a(arglist, false, ruleList, rule);
-    Environment empty;
+    EnvironmentStrings empty;
     Spawner sp (empty, true, true, false);
     return sp.shell(a.Evaluate());
 }

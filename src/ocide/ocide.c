@@ -79,7 +79,7 @@ extern char *lines[];
 extern int curline;
 extern THREAD *activeThread, *stoppedThread;
 extern HWND hwndToolNav, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark;
-extern enum DebugStates uState;
+extern enum DebugState uState;
 extern PROJECTITEM *workArea;
 
 void ApplyDialogFont(HWND hwnd);
@@ -1583,7 +1583,7 @@ static void GetSystemDialogFont(void)
     OSVERSIONINFO osvi;
     NONCLIENTMETRICS ncm;
     ncm.cbSize = sizeof(NONCLIENTMETRICS);
-#ifndef BORLANDC
+#if !defined(GNUC) && !defined(BORLAND)
     memset(&osvi,0,sizeof(osvi));
     osvi.dwOSVersionInfoSize = sizeof(osvi);
     GetVersionEx(&osvi);

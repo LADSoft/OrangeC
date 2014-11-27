@@ -44,6 +44,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <stdlib.h>
+
 void dump_mz(std::fstream &file, MZHeader &mzh)
 {
     unsigned headerSize = mzh.n_header_paragraphs * 16;

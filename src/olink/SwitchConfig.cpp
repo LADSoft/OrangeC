@@ -44,6 +44,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 #ifdef MICROSOFT
 #define system(x) winsystem(x)

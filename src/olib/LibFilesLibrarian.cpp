@@ -43,6 +43,7 @@
 #include "ObjIeee.h"
 #include "ObjFactory.h"
 #include <iostream>
+#include <string.h>
 
 void LibFiles::Add(ObjFile &obj)
 {

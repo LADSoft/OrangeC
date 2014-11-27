@@ -626,7 +626,7 @@ void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOLEAN isvirtual, in
             if (vbase->alloc)
             {
                 int align = getBaseAlign(bt_pointer);
-                sp->structAlign = max(sp->structAlign, align );
+                sp->structAlign = imax(sp->structAlign, align );
                 if (align != 1)
                 {
                     int al = sp->tp->size % align;
@@ -659,7 +659,7 @@ void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOLEAN isvirtual, in
             {
                 int align = lst->cls->structAlign;
                 VTABENTRY *old = lst->cls->vtabEntries;
-                sp->structAlign = max(sp->structAlign, align );
+                sp->structAlign = imax(sp->structAlign, align );
                 if (align != 1)
                 {
                     int al = sp->tp->size % align;
@@ -2007,7 +2007,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES *v)
         t = t->next;
     }
 }
-static void InsertTag(SYMBOL *sp, enum sc storage_class, BOOLEAN allowDups)
+static void InsertTag(SYMBOL *sp, enum e_sc storage_class, BOOLEAN allowDups)
 {
     HASHTABLE *table;
     SYMBOL *ssp = getStructureDeclaration();

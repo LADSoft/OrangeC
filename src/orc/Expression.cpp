@@ -39,7 +39,7 @@
 */
 #include "Errors.h"
 #include "Expression.h"
-#include <exception>
+#include <stdexcept>
 
 int Expression::primary()
 {
@@ -77,7 +77,7 @@ int Expression::unary()
     if (lexer.GetToken() != NULL)
     {
         int kw = lexer.GetToken()->GetKeyword();
-        if (kw == Lexer::plus || kw == Lexer::minus || kw == Lexer::not || kw == Lexer::compl)
+        if (kw == Lexer::plus || kw == Lexer::minus || kw == Lexer::lnot || kw == Lexer::bcompl)
         {
             lexer.NextToken();
             if (lexer.GetToken() != NULL)
@@ -91,10 +91,10 @@ int Expression::unary()
                     case Lexer::plus:
                         val1 = + val1;
                         break;
-                    case Lexer::not:
+                    case Lexer::lnot:
                         val1 = !val1;
                         break;
-                    case Lexer::compl:
+                    case Lexer::bcompl:
                         val1 = ~val1;
                         break;
                 }
@@ -257,7 +257,7 @@ int Expression::equal()
 int Expression::and_()
 {
     int val1 = equal();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::and)
+    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::band)
     {
         lexer.NextToken();
         if (lexer.GetToken() != NULL)
@@ -271,7 +271,7 @@ int Expression::and_()
 int Expression::xor_()
 {
     int val1 = and_();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::xor)
+    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::bxor)
     {
         lexer.NextToken();
         if (lexer.GetToken() != NULL)
@@ -285,7 +285,7 @@ int Expression::xor_()
 int Expression::or_()
 {
     int val1 = xor_();
-    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::or)
+    while (lexer.GetToken() != NULL && lexer.GetToken()->GetKeyword() == Lexer::bor)
     {
         lexer.NextToken();
         if (lexer.GetToken() != NULL)

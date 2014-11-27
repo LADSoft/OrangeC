@@ -327,7 +327,7 @@ PROJECTITEM *RetrieveInternalDepend(char *fileName)
     }
     return NULL;
 }
-void ResetInternalAutoDepends(char *fileName)
+void ResetInternalAutoDepends(void)
 {
     PROJECTITEM *internals = internalDepends;
     internalDepends = NULL;

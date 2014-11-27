@@ -109,7 +109,7 @@ enum e_kw
         kw_F9, kw_FA, kw_FB, kw_FC, kw_FD, kw_FE, kw_FF, kw_cr0, kw_cr1, kw_cr2,
         kw_cr3, kw_cr4, kw_cr5, kw_cr6, kw_cr7, kw_dr0, kw_dr1, kw_dr2, kw_dr3,
         kw_dr4, kw_dr5, kw_dr6, kw_dr7, kw_tr0, kw_tr1, kw_tr2, kw_tr3, kw_tr4,
-        kw_tr5, kw_tr6, kw_tr7, eol, eof, kw_none
+        kw_tr5, kw_tr6, kw_tr7, eol, kw_none
 };
 
 enum ovcl 
@@ -396,6 +396,8 @@ typedef struct __nsv
     struct sym *origname;
     struct sym *name;
 } NAMESPACEVALUES;
+
+    enum e_cm { cmNone, cmValue, cmRef, cmThis } captureMode;
 /* symbols */
 typedef struct sym
 {
@@ -559,7 +561,7 @@ typedef struct sym
 typedef struct __lambda
 {
     struct __lambda *prev, *next;
-    enum e_cm { cmNone, cmValue, cmRef, cmThis } captureMode;
+    enum e_cm captureMode;
     BOOLEAN isMutable;
     BOOLEAN captureThis;
     HASHTABLE *captured;

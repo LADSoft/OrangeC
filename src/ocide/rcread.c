@@ -42,7 +42,13 @@
 #include <stdlib.h>
 
 #include <time.h>
-#include "rc.h"
+#include <windows.h>
+#include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
+#include <stdio.h>
+
+#include "header.h"
 #include <setjmp.h>
 
 EXPRESSION *ReadExp(void);

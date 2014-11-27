@@ -88,12 +88,12 @@ typedef struct _includes_
     int		sysflags;
     BOOLEAN	sys_inc;
     IFSTRUCT *ifs;
-    char 	*ibufPtr;
+    unsigned char 	*ibufPtr;
     int		inputlen;
     char	*fname;
     int     typed_id;
-    char inputline[MACRO_REPLACE_SIZE];
-    char inputbuffer[32768];
+    unsigned char inputline[MACRO_REPLACE_SIZE];
+    unsigned char inputbuffer[32768];
 } INCLUDES;
 /* #define tracking */
 typedef struct _defstruct

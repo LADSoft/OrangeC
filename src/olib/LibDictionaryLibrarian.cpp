@@ -45,6 +45,8 @@
 #include "Utils.h"
 #include <ctype.h>
 #include <iostream>
+#include <string.h>
+
 int LibDictionary::primes[] = 
 {
   2,   3,   5,   7,  11,  13,  17,  19,  23,  29, 

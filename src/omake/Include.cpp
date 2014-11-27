@@ -46,6 +46,8 @@
 #include "Rule.h"
 #include <fstream>
 #include <iostream>
+#include <string.h>
+
 Include *Include::instance = NULL;
 
 Include *Include::Instance()

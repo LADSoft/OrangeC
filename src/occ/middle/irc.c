@@ -591,9 +591,9 @@ int SqueezeChange(int temp, int t, int delta)
         tempInfo[temp]->rawSqueeze[v->index] += delta;
 
         if (delta >= 0)
-            delta = max(0, min(delta, tempInfo[temp]->regClass->saturationBound[v->index] - alpha));
+            delta = imax(0, imin(delta, tempInfo[temp]->regClass->saturationBound[v->index] - alpha));
         else
-            delta = min(0, max(delta, delta - (tempInfo[temp]->regClass->saturationBound[v->index] - alpha)));
+            delta = imin(0, imax(delta, delta - (tempInfo[temp]->regClass->saturationBound[v->index] - alpha)));
 
         v = v->parent;	
     } while (delta && v);
@@ -806,8 +806,8 @@ static void CountInstructions(BOOLEAN first)
         head = head->fwd;
     }	
 }
-void Adjacent(int n);
-void Adjacent1(int n);
+static void Adjacent(int n);
+static void Adjacent1(int n);
 static BOOLEAN BriggsCoalesceInit(int u, int v, int n)
 {
     int k = 0;
@@ -828,7 +828,7 @@ static BOOLEAN BriggsCoalesceInit(int u, int v, int n)
                         k++;
         }
     }
-    K = min(tempInfo[u]->regClass->regCount, tempInfo[v]->regClass->regCount);		
+    K = imin(tempInfo[u]->regClass->regCount, tempInfo[v]->regClass->regCount);		
     if (k >= K)
     {
         hiMoves[n] = k - (K - 1);

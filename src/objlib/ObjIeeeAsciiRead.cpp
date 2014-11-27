@@ -52,26 +52,26 @@ void DebugThrowHook()
 }
 ObjIeeeAscii::ParseData ObjIeeeAscii::parseData[] =
 {
-    ObjIeeeAscii::ParseData("LD", ObjIeeeAscii::Data ),
-    ObjIeeeAscii::ParseData("LR", ObjIeeeAscii::Fixup ),
-    ObjIeeeAscii::ParseData("LE", ObjIeeeAscii::EnumeratedData ),
-    ObjIeeeAscii::ParseData("NI", ObjIeeeAscii::PublicSymbol ),
-    ObjIeeeAscii::ParseData("NX", ObjIeeeAscii::ExternalSymbol ),
-    ObjIeeeAscii::ParseData("CO", ObjIeeeAscii::Comment ),
-    ObjIeeeAscii::ParseData("AT", ObjIeeeAscii::TypeSpec),
-    ObjIeeeAscii::ParseData("CS", ObjIeeeAscii::CheckSum ),
-    ObjIeeeAscii::ParseData("AS", ObjIeeeAscii::GetOffset ),
-    ObjIeeeAscii::ParseData("NN", ObjIeeeAscii::LocalSymbol),
-    ObjIeeeAscii::ParseData("NA", ObjIeeeAscii::AutoSymbol ),
-    ObjIeeeAscii::ParseData("NE", ObjIeeeAscii::RegSymbol ),
-    ObjIeeeAscii::ParseData("NT", ObjIeeeAscii::TypeName ),
-    ObjIeeeAscii::ParseData("SB", ObjIeeeAscii::SectionDataHeader ),
-    ObjIeeeAscii::ParseData("ST", ObjIeeeAscii::SectionAttributes ),
-    ObjIeeeAscii::ParseData("SA", ObjIeeeAscii::SectionAlignment ),
-    ObjIeeeAscii::ParseData("MB", ObjIeeeAscii::ModuleStart ),
-    ObjIeeeAscii::ParseData("DT", ObjIeeeAscii::ModuleDate ),
-    ObjIeeeAscii::ParseData("AD", ObjIeeeAscii::ModuleAttributes ),
-    ObjIeeeAscii::ParseData("ME", ObjIeeeAscii::ModuleEnd ),
+    ObjIeeeAscii::ParseData("LD", &ObjIeeeAscii::Data ),
+    ObjIeeeAscii::ParseData("LR", &ObjIeeeAscii::Fixup ),
+    ObjIeeeAscii::ParseData("LE", &ObjIeeeAscii::EnumeratedData ),
+    ObjIeeeAscii::ParseData("NI", &ObjIeeeAscii::PublicSymbol ),
+    ObjIeeeAscii::ParseData("NX", &ObjIeeeAscii::ExternalSymbol ),
+    ObjIeeeAscii::ParseData("CO", &ObjIeeeAscii::Comment ),
+    ObjIeeeAscii::ParseData("AT", &ObjIeeeAscii::TypeSpec),
+    ObjIeeeAscii::ParseData("CS", &ObjIeeeAscii::CheckSum ),
+    ObjIeeeAscii::ParseData("AS", &ObjIeeeAscii::GetOffset ),
+    ObjIeeeAscii::ParseData("NN", &ObjIeeeAscii::LocalSymbol),
+    ObjIeeeAscii::ParseData("NA", &ObjIeeeAscii::AutoSymbol ),
+    ObjIeeeAscii::ParseData("NE", &ObjIeeeAscii::RegSymbol ),
+    ObjIeeeAscii::ParseData("NT", &ObjIeeeAscii::TypeName ),
+    ObjIeeeAscii::ParseData("SB", &ObjIeeeAscii::SectionDataHeader ),
+    ObjIeeeAscii::ParseData("ST", &ObjIeeeAscii::SectionAttributes ),
+    ObjIeeeAscii::ParseData("SA", &ObjIeeeAscii::SectionAlignment ),
+    ObjIeeeAscii::ParseData("MB", &ObjIeeeAscii::ModuleStart ),
+    ObjIeeeAscii::ParseData("DT", &ObjIeeeAscii::ModuleDate ),
+    ObjIeeeAscii::ParseData("AD", &ObjIeeeAscii::ModuleAttributes ),
+    ObjIeeeAscii::ParseData("ME", &ObjIeeeAscii::ModuleEnd ),
 } ;
 std::map<const char *, ObjIeeeAscii::ParseData *, ObjIeeeAscii::ParseDataLT> ObjIeeeAscii::parseTree;
 
@@ -84,7 +84,7 @@ ObjString ObjIeeeAscii::ParseString(const char *buffer, int *pos)
     memcpy(name, buffer + *pos, len);
     name[len] = '\0';
     *pos += len;
-    return ObjString(name);
+    return ObjString (name);
 }
 void ObjIeeeAscii::ParseTime(const char *buffer, std::tm &tms, int *pos)
 {

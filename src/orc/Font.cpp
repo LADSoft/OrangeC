@@ -41,7 +41,7 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
-#include <exception>
+#include <stdexcept>
 
 
 Font::Font(const ResourceId &Id, const ResourceInfo &info)

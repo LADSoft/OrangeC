@@ -40,9 +40,13 @@
 #ifndef OBJIEEE_H
 #define OBJIEEE_H
 #include <fstream>
-#include <exception>
+#include <stdexcept>
 #include <map>
 #include <sstream>
+#include <stdarg.h>
+#include <time.h>
+#include <string.h>
+
 #include "ObjIO.h"
 #include "ObjUtil.h"
 #include "ObjIndexManager.h"
@@ -75,7 +79,7 @@ class ObjIeeeBinary : public  ObjIOBase
         EEMBEDDED = 0x80000000
     };
 public:
-    ObjIeeeBinary(const ObjString &Name, bool CaseSensitive = true) : ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0) {}
+    ObjIeeeBinary(const ObjString Name, bool CaseSensitive = true) : ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0) {}
     virtual ~ObjIeeeBinary() { }
     virtual bool Write(FILE *fil, ObjFile *File, ObjFactory *Factory)
         { sfile = fil; factory = Factory; file = File; return HandleWrite(); }
@@ -87,7 +91,7 @@ protected:
     {
         public:
             BadCS() : std::domain_error("Bad Checksum") {}
-            virtual ~BadCS() { } ;
+            virtual ~BadCS() throw() { } ;
         
     } ;
     class SyntaxError : public std::domain_error
@@ -96,7 +100,7 @@ protected:
             SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
                                                          static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str()),
                                         lineNo(lineno) {}
-            virtual ~SyntaxError() { } ;
+            virtual ~SyntaxError() throw() { } ;
             
             int GetLineNo() const { return lineNo; }
         private:
@@ -116,7 +120,7 @@ protected:
     ObjFactory *GetFactory() { return factory; }
     ObjFile *GetFile() { return file; }
     ObjString ParseString(const ObjByte *buffer, int *pos);
-    void ParseTime(const ObjByte *buffer, std::tm &time, int *pos);
+    void ParseTime(const ObjByte *buffer, struct tm &time, int *pos);
     ObjSymbol *FindSymbol(char ch, int index);
     ObjExpression *GetExpression(const ObjByte *buffer, int *pos);
     void CheckTerm(const ObjByte *buffer, int pos)
@@ -204,13 +208,13 @@ protected:
     void WriteBrowseInfo();
     void WriteTrailer();
     void RenderCS();
-    ObjString ToString(const ObjString &strng);
+    ObjString ToString(const ObjString strng);
     int GetTypeIndex(ObjType *Type);
     ObjString GetSymbolName(const ObjByte *buffer, int *index);
-    ObjString ToTime(std::tm time);
+    ObjString ToTime(struct tm time);
     void RenderFunction(ObjFunction *Function);
     void RenderStructure(ObjType *Type);
-    void RenderComment(eCommentType Type, ObjString &strng);
+    void RenderComment(eCommentType Type, ObjString strng);
     void RenderFile(ObjSourceFile *File);
     void RenderSymbol(ObjSymbol *Symbol);
     void RenderType(ObjType *Type);
@@ -254,7 +258,7 @@ class ObjIeeeAscii : public  ObjIOBase
         BUFFERSIZE = 32768
     };
 public:
-    ObjIeeeAscii(const ObjString &Name, bool CaseSensitive = true) : ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0) {}
+    ObjIeeeAscii(const ObjString Name, bool CaseSensitive = true) : ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0) {}
     virtual ~ObjIeeeAscii() { }
     virtual bool Write(FILE *fil, ObjFile *File, ObjFactory *Factory)
         { sfile = fil; factory = Factory; file = File; return HandleWrite(); }
@@ -267,7 +271,7 @@ protected:
     {
         public:
             BadCS() : std::domain_error("Bad Checksum") {}
-            virtual ~BadCS() { } ;
+            virtual ~BadCS() throw() { } ;
         
     } ;
     class SyntaxError : public std::domain_error
@@ -276,7 +280,7 @@ protected:
             SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
                                                          static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str()),
                                         lineNo(lineno) {}
-            virtual ~SyntaxError() { } ;
+            virtual ~SyntaxError() throw() { } ;
             
             int GetLineNo() const { return lineNo; }
         private:
@@ -317,7 +321,7 @@ protected:
     ObjFactory *GetFactory() { return factory; }
     ObjFile *GetFile() { return file; }
     ObjString ParseString(const char *buffer, int *pos);
-    void ParseTime(const char *buffer, std::tm &time, int *pos);
+    void ParseTime(const char *buffer, struct tm &time, int *pos);
     ObjSymbol *FindSymbol(char ch, int index);
     ObjExpression *GetExpression(const char *buffer, int *pos);
     void CheckTerm(const char *buffer)
@@ -376,7 +380,7 @@ protected:
         GatherCS(cstr);
         bufferup(cstr, strlen(cstr));
     }
-    void RenderString(const ObjString &strng)
+    void RenderString(const ObjString strng)
     {
         RenderCstr(strng.c_str());
     }
@@ -399,13 +403,13 @@ protected:
     void WriteBrowseInfo();
     void WriteTrailer();
     void RenderCS();
-    ObjString ToString(const ObjString &strng);
+    ObjString ToString(const ObjString strng);
     ObjString GetTypeIndex(ObjType *Type);
     ObjString GetSymbolName(const char *buffer, int *index);
-    ObjString ToTime(std::tm time);
+    ObjString ToTime(struct tm time);
     void RenderFunction(ObjFunction *Function);
     void RenderStructure(ObjType *Type);
-    void RenderComment(eCommentType Type, ObjString &strng);
+    void RenderComment(eCommentType Type, ObjString strng);
     void RenderFile(ObjSourceFile *File);
     void RenderSymbol(ObjSymbol *Symbol);
     void RenderType(ObjType *Type);
@@ -447,7 +451,7 @@ protected:
 class ObjIeee : public  ObjIeeeAscii
 {
 public:
-    ObjIeee(const ObjString &Name, bool CaseSensitive = true) : ObjIeeeAscii(Name, CaseSensitive) { }
+    ObjIeee(const ObjString Name, bool CaseSensitive = true) : ObjIeeeAscii(Name, CaseSensitive) { }
     virtual ~ObjIeee() { }
 } ;    
 class ObjIeeeIndexManager : public ObjIndexManager

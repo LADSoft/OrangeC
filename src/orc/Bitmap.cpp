@@ -43,7 +43,7 @@
 #include "ResFile.h"
 #include <windows.h>
 
-#include <exception>
+#include <stdexcept>
 
 #define BITMAP_SIG 0x4d42 // BM
 static const int SKIP = 14;

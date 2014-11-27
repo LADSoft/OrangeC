@@ -52,15 +52,15 @@ class ObjSymbol : public ObjWrapper
 public:
     enum eType { eLabel, ePublic, eLocal, eGlobal, eExternal, eAuto, eReg, 
             eExport, eImport, eDefinition };
-    ObjSymbol(const ObjString &Name, eType Type, ObjInt Index) : name(Name), 
+    ObjSymbol(const ObjString Name, eType Type, ObjInt Index) : name(Name), 
             offset(0), index(Index), type(Type), baseType(NULL),
             sectionRelative(false) { }
     virtual ~ObjSymbol() { }
     bool IsSectionRelative() { return sectionRelative; }
     void SetSectionRelative(bool flag) { sectionRelative = flag; }
-    ObjString &GetName() { return name; }
+    ObjString GetName() { return name; }
     ObjString GetDisplayName();
-    void SetName(ObjString &Name ) {name = Name; }
+    void SetName(ObjString Name ) {name = Name; }
     eType GetType() { return type; }
     void SetType(eType Type) { type = Type; }
     ObjType *GetBaseType() { return baseType; }
@@ -84,7 +84,7 @@ private:
 class ObjImportSymbol : public ObjSymbol
 {
 public:
-    ObjImportSymbol(const ObjString &InternalName) : ObjSymbol(InternalName, eImport, 0),
+    ObjImportSymbol(const ObjString InternalName) : ObjSymbol(InternalName, eImport, 0),
         byOrdinal(false), ordinal(0), externalName(""), dllName("") {} 
     virtual ~ObjImportSymbol() {}
         
@@ -93,9 +93,9 @@ public:
     ObjInt GetOrdinal() { return ordinal; }
     void SetOrdinal(ObjInt Ordinal) { ordinal = Ordinal; }
     ObjString GetExternalName() { return externalName; }
-    void SetExternalName(ObjString &ExternalName) { externalName = ExternalName; }
+    void SetExternalName(ObjString ExternalName) { externalName = ExternalName; }
     ObjString GetDllName() { return dllName; }
-    void SetDllName(ObjString &DllName) { dllName = DllName; }
+    void SetDllName(ObjString DllName) { dllName = DllName; }
 private:
     bool byOrdinal;
     ObjString externalName;
@@ -106,7 +106,7 @@ private:
 class ObjExportSymbol : public ObjSymbol
 {
 public:
-    ObjExportSymbol(const ObjString &InternalName) : ObjSymbol(InternalName, eExport, 0),
+    ObjExportSymbol(const ObjString InternalName) : ObjSymbol(InternalName, eExport, 0),
         byOrdinal(false), ordinal(0xffffffff), externalName("") {} 
     virtual ~ObjExportSymbol() {}
     bool GetByOrdinal() { return byOrdinal; }
@@ -114,9 +114,9 @@ public:
     ObjInt GetOrdinal() { return ordinal; }
     void SetOrdinal(ObjInt Ordinal) { ordinal = Ordinal; }
     ObjString GetExternalName() { return externalName; }
-    void SetExternalName(ObjString &ExternalName) { externalName = ExternalName; }
+    void SetExternalName(ObjString ExternalName) { externalName = ExternalName; }
     ObjString GetDllName() { return dllName; }
-    void SetDllName(ObjString &DllName) { dllName = DllName; }
+    void SetDllName(ObjString DllName) { dllName = DllName; }
 protected:
     virtual ObjInt NextIndex(ObjSymbol &)
     {
@@ -132,7 +132,7 @@ private:
 class ObjDefinitionSymbol : public ObjSymbol
 {
 public:
-    ObjDefinitionSymbol(const ObjString &InternalName) : ObjSymbol(InternalName, eDefinition, 0),
+    ObjDefinitionSymbol(const ObjString InternalName) : ObjSymbol(InternalName, eDefinition, 0),
         value(0) { };
     virtual ~ObjDefinitionSymbol() {}
     ObjInt GetValue() { return value; }

@@ -62,6 +62,7 @@ static int Semaphores;
 static int stopWinMain;
 static HANDLE abortEvent;
 
+static void DeleteDLLInfo(DWORD procId, DLL_INFO *info);
 // this code sorta has the beginning of multiprocess debugging, but, the symbol
 // table stuff needs to be revamped to handle it properly.  For right now,
 // debugging is started on a single-process basis so there will only be one process

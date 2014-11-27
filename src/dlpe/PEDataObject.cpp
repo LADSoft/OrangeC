@@ -43,6 +43,8 @@
 #include "ObjFile.h"
 #include "ObjUtil.h"
 #include "Utils.h"
+#include <string.h>
+
 void PEDataObject::Setup(ObjInt &endVa, ObjInt &endPhys)
 {
     if (virtual_addr == 0)

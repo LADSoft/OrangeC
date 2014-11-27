@@ -42,7 +42,7 @@
 #include <stdio.h>
 #define GRIP_DEFINES
 #include "lsctrl.h"
-
+#include <wingdi.h>
 
 extern HWND hwndClient;
 static char *szGripClassName = "ladSoftGripWindow";

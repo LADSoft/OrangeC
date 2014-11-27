@@ -38,6 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "ResidentNameTable.h"
+#include <string.h>
 
 void ResidentNameTable::Setup()
 {

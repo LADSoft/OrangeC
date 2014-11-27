@@ -120,9 +120,9 @@ protected:
     std::string GetFileTime(const std::string &goal, const std::string &preferredPath, Time &timeval);
     bool ScanList(const std::string &v, const std::string &goal);
     bool OnList(const std::string &goal, char *what);
-    void GetEnvironment(Environment &env);
+    void GetEnvironment(EnvironmentStrings &env);
     void DeleteOne(Depends *depend);
-    int RunOne(Depends *depend, Environment &env, bool keepGoing);
+    int RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing);
     void CancelOne(Depends *depend);
     void EnterSuffixTerminals();
 private:

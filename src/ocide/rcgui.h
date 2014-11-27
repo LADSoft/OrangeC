@@ -37,6 +37,9 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+#ifndef _RCGUI_H
+#define _RCGUI_H
+
 #include <windows.h>
 
 #define IL_CHECKBOX 0
@@ -117,6 +120,16 @@ struct propertyFuncs
     void (*getText)(char *buf, HWND lv, struct ctlData *data, int row);
     HWND (*startEdit)(HWND lv, int row, void *data);
     void (*finishEdit)(HWND lv, int row, HWND editWnd, void *data);
+} ;
+struct ctlData
+{
+    WNDPROC oldWndProcRedir;
+    HWND hwndParent, hwndRedir;
+    HWND hwndPrev;
+    struct resRes *dlg;
+    CONTROL *data;
+    struct ctlDB *db;
+    int sizing:1;
 } ;
 
 #ifndef LVIF_GROUPID
@@ -216,4 +229,5 @@ typedef struct tagLVGROUP
 typedef struct tagLVITEMA LVITEMA_x, *LPLVITEMA_x;
 typedef struct tagLVHITTESTINFO  LVHITTESTINFO_x, *LPLVHITTESTINFO_x;
 
+#endif
 #endif

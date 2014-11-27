@@ -90,6 +90,8 @@ static struct _propsData generalProps =
     &generalProject,
 } ;
 
+static SETTING *PropFindAll(PROFILE **list, int count, char *id);
+
 char *LookupProfileName(char *name)
 {
     if (!strcmp(name, sysProfileName))

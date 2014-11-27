@@ -84,10 +84,10 @@ Coding *x86Parser::StateFunc4()
 	return stateCoding_eot;
 }
 x86Parser::StateFuncDispatchType x86Parser::stateFuncs[] = {
-	&StateFunc1,
-	&StateFunc2,
-	&StateFunc3,
-	&StateFunc4,
+	&x86Parser::StateFunc1,
+	&x86Parser::StateFunc2,
+	&x86Parser::StateFunc3,
+	&x86Parser::StateFunc4,
 };
 bool x86Parser::Number1(int tokenPos)
 {
@@ -103,7 +103,7 @@ bool x86Parser::Number2(int tokenPos)
 	bool rv = false;
 	if (!rv)
 	{
-		rv = ParseNumber(0, 0, 6, 1, tokenPos);
+		rv = ParseNumber(0, 1, 8, 1, tokenPos);
 	}
 	return rv;
 }
@@ -112,7 +112,7 @@ bool x86Parser::Number3(int tokenPos)
 	bool rv = false;
 	if (!rv)
 	{
-		rv = ParseNumber(0, 0, 8, 1, tokenPos);
+		rv = ParseNumber(0, 0, 6, 1, tokenPos);
 	}
 	return rv;
 }
@@ -121,7 +121,7 @@ bool x86Parser::Number4(int tokenPos)
 	bool rv = false;
 	if (!rv)
 	{
-		rv = ParseNumber(0, 0, 16, 0, tokenPos);
+		rv = ParseNumber(0, 0, 8, 1, tokenPos);
 	}
 	return rv;
 }
@@ -130,11 +130,20 @@ bool x86Parser::Number5(int tokenPos)
 	bool rv = false;
 	if (!rv)
 	{
-		rv = ParseNumber(0, 0, 32, 0, tokenPos);
+		rv = ParseNumber(0, 0, 16, 0, tokenPos);
 	}
 	return rv;
 }
 bool x86Parser::Number6(int tokenPos)
+{
+	bool rv = false;
+	if (!rv)
+	{
+		rv = ParseNumber(0, 0, 32, 0, tokenPos);
+	}
+	return rv;
+}
+bool x86Parser::Number7(int tokenPos)
 {
 	bool rv = false;
 	if (!rv && stateVars[0]==0)
@@ -143,7 +152,7 @@ bool x86Parser::Number6(int tokenPos)
 	}
 	return rv;
 }
-bool x86Parser::Number7(int tokenPos)
+bool x86Parser::Number8(int tokenPos)
 {
 	bool rv = false;
 	if (!rv && stateVars[0]==1)
@@ -152,7 +161,7 @@ bool x86Parser::Number7(int tokenPos)
 	}
 	return rv;
 }
-bool x86Parser::Number8(int tokenPos)
+bool x86Parser::Number9(int tokenPos)
 {
 	bool rv = false;
 	if (!rv)
@@ -161,7 +170,7 @@ bool x86Parser::Number8(int tokenPos)
 	}
 	return rv;
 }
-bool x86Parser::Number9(int tokenPos)
+bool x86Parser::Number10(int tokenPos)
 {
 	bool rv = false;
 	if (!rv)
@@ -170,21 +179,12 @@ bool x86Parser::Number9(int tokenPos)
 	}
 	return rv;
 }
-bool x86Parser::Number10(int tokenPos)
-{
-	bool rv = false;
-	if (!rv && stateVars[0]==0)
-	{
-		rv = ParseNumber(2, 1, 16, 0, tokenPos);
-	}
-	return rv;
-}
 bool x86Parser::Number11(int tokenPos)
 {
 	bool rv = false;
 	if (!rv && stateVars[0]==0)
 	{
-		rv = ParseNumber(-2, 1, 16, 0, tokenPos);
+		rv = ParseNumber(2, 1, 16, 0, tokenPos);
 	}
 	return rv;
 }
@@ -193,7 +193,7 @@ bool x86Parser::Number12(int tokenPos)
 	bool rv = false;
 	if (!rv && stateVars[0]==0)
 	{
-		rv = ParseNumber(2, 1, 16, 0, tokenPos);
+		rv = ParseNumber(-2, 1, 16, 0, tokenPos);
 	}
 	return rv;
 }
@@ -202,11 +202,20 @@ bool x86Parser::Number13(int tokenPos)
 	bool rv = false;
 	if (!rv && stateVars[0]==0)
 	{
-		rv = ParseNumber(-2, 1, 16, 0, tokenPos);
+		rv = ParseNumber(2, 1, 16, 0, tokenPos);
 	}
 	return rv;
 }
 bool x86Parser::Number14(int tokenPos)
+{
+	bool rv = false;
+	if (!rv && stateVars[0]==0)
+	{
+		rv = ParseNumber(-2, 1, 16, 0, tokenPos);
+	}
+	return rv;
+}
+bool x86Parser::Number15(int tokenPos)
 {
 	bool rv = false;
 	if (!rv && stateVars[0]!=0)
@@ -215,7 +224,7 @@ bool x86Parser::Number14(int tokenPos)
 	}
 	return rv;
 }
-bool x86Parser::Number15(int tokenPos)
+bool x86Parser::Number16(int tokenPos)
 {
 	bool rv = false;
 	if (!rv)
@@ -228,14 +237,14 @@ bool x86Parser::Number15(int tokenPos)
 		rv = SetNumber(tokenPos, 8, 3);
 	return rv;
 }
-bool x86Parser::Number16(int tokenPos)
+bool x86Parser::Number17(int tokenPos)
 {
 	bool rv = false;
 	if (!rv)
 		rv = SetNumber(tokenPos, 0, 0);
 	return rv;
 }
-bool x86Parser::Number17(int tokenPos)
+bool x86Parser::Number18(int tokenPos)
 {
 	bool rv = false;
 	if (!rv)
@@ -260,6 +269,7 @@ x86Parser::NumberDispatchType x86Parser::numberFuncs[] = {
 	&x86Parser::Number15,
 	&x86Parser::Number16,
 	&x86Parser::Number17,
+	&x86Parser::Number18,
 };
 
 unsigned char x86Parser::RegClassData1[] = {255, 0, };
@@ -665,131 +675,134 @@ void x86Parser::Init()
 	opcodeTable["lea"] = 227;
 	opcodeTable["leave"] = 228;
 	opcodeTable["les"] = 229;
-	opcodeTable["lfs"] = 230;
-	opcodeTable["lgdt"] = 231;
-	opcodeTable["lgs"] = 232;
-	opcodeTable["lidt"] = 233;
-	opcodeTable["lmsw"] = 234;
-	opcodeTable["lods"] = 235;
-	opcodeTable["lodsb"] = 236;
-	opcodeTable["lodsw"] = 237;
-	opcodeTable["lodsd"] = 238;
-	opcodeTable["loop"] = 239;
-	opcodeTable["loope"] = 240;
-	opcodeTable["loopne"] = 241;
-	opcodeTable["loopnz"] = 242;
-	opcodeTable["loopz"] = 243;
-	opcodeTable["lsl"] = 244;
-	opcodeTable["lss"] = 245;
-	opcodeTable["ltr"] = 246;
-	opcodeTable["mov"] = 247;
-	opcodeTable["movs"] = 248;
-	opcodeTable["movsb"] = 249;
-	opcodeTable["movsw"] = 250;
-	opcodeTable["movsd"] = 251;
-	opcodeTable["movsx"] = 252;
-	opcodeTable["movzx"] = 253;
-	opcodeTable["mul"] = 254;
-	opcodeTable["neg"] = 255;
-	opcodeTable["nop"] = 256;
-	opcodeTable["not"] = 257;
-	opcodeTable["or"] = 258;
-	opcodeTable["out"] = 259;
-	opcodeTable["outs"] = 260;
-	opcodeTable["outsb"] = 261;
-	opcodeTable["outsw"] = 262;
-	opcodeTable["outsd"] = 263;
-	opcodeTable["pop"] = 264;
-	opcodeTable["popa"] = 265;
-	opcodeTable["popaw"] = 266;
-	opcodeTable["popad"] = 267;
-	opcodeTable["popf"] = 268;
-	opcodeTable["popfw"] = 269;
-	opcodeTable["popfd"] = 270;
-	opcodeTable["push"] = 271;
-	opcodeTable["pusha"] = 272;
-	opcodeTable["pushaw"] = 273;
-	opcodeTable["pushad"] = 274;
-	opcodeTable["pushf"] = 275;
-	opcodeTable["pushfw"] = 276;
-	opcodeTable["pushfd"] = 277;
-	opcodeTable["rcl"] = 278;
-	opcodeTable["rcr"] = 279;
-	opcodeTable["rdmsr"] = 280;
-	opcodeTable["rdpmc"] = 281;
-	opcodeTable["rdtsc"] = 282;
-	opcodeTable["ret"] = 283;
-	opcodeTable["retf"] = 284;
-	opcodeTable["rol"] = 285;
-	opcodeTable["ror"] = 286;
-	opcodeTable["rsm"] = 287;
-	opcodeTable["sahf"] = 288;
-	opcodeTable["sal"] = 289;
-	opcodeTable["sar"] = 290;
-	opcodeTable["sbb"] = 291;
-	opcodeTable["scas"] = 292;
-	opcodeTable["scasb"] = 293;
-	opcodeTable["scasw"] = 294;
-	opcodeTable["scasd"] = 295;
-	opcodeTable["seta"] = 296;
-	opcodeTable["setae"] = 297;
-	opcodeTable["setb"] = 298;
-	opcodeTable["setbe"] = 299;
-	opcodeTable["setc"] = 300;
-	opcodeTable["sete"] = 301;
-	opcodeTable["setg"] = 302;
-	opcodeTable["setge"] = 303;
-	opcodeTable["setl"] = 304;
-	opcodeTable["setle"] = 305;
-	opcodeTable["setna"] = 306;
-	opcodeTable["setnae"] = 307;
-	opcodeTable["setnb"] = 308;
-	opcodeTable["setnbe"] = 309;
-	opcodeTable["setnc"] = 310;
-	opcodeTable["setne"] = 311;
-	opcodeTable["setng"] = 312;
-	opcodeTable["setnge"] = 313;
-	opcodeTable["setnl"] = 314;
-	opcodeTable["setnle"] = 315;
-	opcodeTable["setno"] = 316;
-	opcodeTable["setnp"] = 317;
-	opcodeTable["setns"] = 318;
-	opcodeTable["setnz"] = 319;
-	opcodeTable["seto"] = 320;
-	opcodeTable["setp"] = 321;
-	opcodeTable["setpe"] = 322;
-	opcodeTable["setpo"] = 323;
-	opcodeTable["sets"] = 324;
-	opcodeTable["setz"] = 325;
-	opcodeTable["shl"] = 326;
-	opcodeTable["shld"] = 327;
-	opcodeTable["shr"] = 328;
-	opcodeTable["shrd"] = 329;
-	opcodeTable["sidt"] = 330;
-	opcodeTable["sldt"] = 331;
-	opcodeTable["smsw"] = 332;
-	opcodeTable["stc"] = 333;
-	opcodeTable["std"] = 334;
-	opcodeTable["sti"] = 335;
-	opcodeTable["stos"] = 336;
-	opcodeTable["stosb"] = 337;
-	opcodeTable["stosw"] = 338;
-	opcodeTable["stosd"] = 339;
-	opcodeTable["str"] = 340;
-	opcodeTable["sub"] = 341;
-	opcodeTable["test"] = 342;
-	opcodeTable["ud2"] = 343;
-	opcodeTable["verr"] = 344;
-	opcodeTable["verw"] = 345;
-	opcodeTable["wait"] = 346;
-	opcodeTable["wbinvd"] = 347;
-	opcodeTable["wrmsr"] = 348;
-	opcodeTable["xadd"] = 349;
-	opcodeTable["xbts"] = 350;
-	opcodeTable["xchg"] = 351;
-	opcodeTable["xlat"] = 352;
-	opcodeTable["xlatb"] = 353;
-	opcodeTable["xor"] = 354;
+	opcodeTable["lfence"] = 230;
+	opcodeTable["lfs"] = 231;
+	opcodeTable["lgdt"] = 232;
+	opcodeTable["lgs"] = 233;
+	opcodeTable["lidt"] = 234;
+	opcodeTable["lmsw"] = 235;
+	opcodeTable["lods"] = 236;
+	opcodeTable["lodsb"] = 237;
+	opcodeTable["lodsw"] = 238;
+	opcodeTable["lodsd"] = 239;
+	opcodeTable["loop"] = 240;
+	opcodeTable["loope"] = 241;
+	opcodeTable["loopne"] = 242;
+	opcodeTable["loopnz"] = 243;
+	opcodeTable["loopz"] = 244;
+	opcodeTable["lsl"] = 245;
+	opcodeTable["lss"] = 246;
+	opcodeTable["ltr"] = 247;
+	opcodeTable["mfence"] = 248;
+	opcodeTable["mov"] = 249;
+	opcodeTable["movs"] = 250;
+	opcodeTable["movsb"] = 251;
+	opcodeTable["movsw"] = 252;
+	opcodeTable["movsd"] = 253;
+	opcodeTable["movsx"] = 254;
+	opcodeTable["movzx"] = 255;
+	opcodeTable["mul"] = 256;
+	opcodeTable["neg"] = 257;
+	opcodeTable["nop"] = 258;
+	opcodeTable["not"] = 259;
+	opcodeTable["or"] = 260;
+	opcodeTable["out"] = 261;
+	opcodeTable["outs"] = 262;
+	opcodeTable["outsb"] = 263;
+	opcodeTable["outsw"] = 264;
+	opcodeTable["outsd"] = 265;
+	opcodeTable["pop"] = 266;
+	opcodeTable["popa"] = 267;
+	opcodeTable["popaw"] = 268;
+	opcodeTable["popad"] = 269;
+	opcodeTable["popf"] = 270;
+	opcodeTable["popfw"] = 271;
+	opcodeTable["popfd"] = 272;
+	opcodeTable["push"] = 273;
+	opcodeTable["pusha"] = 274;
+	opcodeTable["pushaw"] = 275;
+	opcodeTable["pushad"] = 276;
+	opcodeTable["pushf"] = 277;
+	opcodeTable["pushfw"] = 278;
+	opcodeTable["pushfd"] = 279;
+	opcodeTable["rcl"] = 280;
+	opcodeTable["rcr"] = 281;
+	opcodeTable["rdmsr"] = 282;
+	opcodeTable["rdpmc"] = 283;
+	opcodeTable["rdtsc"] = 284;
+	opcodeTable["ret"] = 285;
+	opcodeTable["retf"] = 286;
+	opcodeTable["rol"] = 287;
+	opcodeTable["ror"] = 288;
+	opcodeTable["rsm"] = 289;
+	opcodeTable["sahf"] = 290;
+	opcodeTable["sal"] = 291;
+	opcodeTable["sar"] = 292;
+	opcodeTable["sbb"] = 293;
+	opcodeTable["scas"] = 294;
+	opcodeTable["scasb"] = 295;
+	opcodeTable["scasw"] = 296;
+	opcodeTable["scasd"] = 297;
+	opcodeTable["seta"] = 298;
+	opcodeTable["setae"] = 299;
+	opcodeTable["setb"] = 300;
+	opcodeTable["setbe"] = 301;
+	opcodeTable["setc"] = 302;
+	opcodeTable["sete"] = 303;
+	opcodeTable["setg"] = 304;
+	opcodeTable["setge"] = 305;
+	opcodeTable["setl"] = 306;
+	opcodeTable["setle"] = 307;
+	opcodeTable["setna"] = 308;
+	opcodeTable["setnae"] = 309;
+	opcodeTable["setnb"] = 310;
+	opcodeTable["setnbe"] = 311;
+	opcodeTable["setnc"] = 312;
+	opcodeTable["setne"] = 313;
+	opcodeTable["setng"] = 314;
+	opcodeTable["setnge"] = 315;
+	opcodeTable["setnl"] = 316;
+	opcodeTable["setnle"] = 317;
+	opcodeTable["setno"] = 318;
+	opcodeTable["setnp"] = 319;
+	opcodeTable["setns"] = 320;
+	opcodeTable["setnz"] = 321;
+	opcodeTable["seto"] = 322;
+	opcodeTable["setp"] = 323;
+	opcodeTable["setpe"] = 324;
+	opcodeTable["setpo"] = 325;
+	opcodeTable["sets"] = 326;
+	opcodeTable["setz"] = 327;
+	opcodeTable["sfence"] = 328;
+	opcodeTable["shl"] = 329;
+	opcodeTable["shld"] = 330;
+	opcodeTable["shr"] = 331;
+	opcodeTable["shrd"] = 332;
+	opcodeTable["sidt"] = 333;
+	opcodeTable["sldt"] = 334;
+	opcodeTable["smsw"] = 335;
+	opcodeTable["stc"] = 336;
+	opcodeTable["std"] = 337;
+	opcodeTable["sti"] = 338;
+	opcodeTable["stos"] = 339;
+	opcodeTable["stosb"] = 340;
+	opcodeTable["stosw"] = 341;
+	opcodeTable["stosd"] = 342;
+	opcodeTable["str"] = 343;
+	opcodeTable["sub"] = 344;
+	opcodeTable["test"] = 345;
+	opcodeTable["ud2"] = 346;
+	opcodeTable["verr"] = 347;
+	opcodeTable["verw"] = 348;
+	opcodeTable["wait"] = 349;
+	opcodeTable["wbinvd"] = 350;
+	opcodeTable["wrmsr"] = 351;
+	opcodeTable["xadd"] = 352;
+	opcodeTable["xbts"] = 353;
+	opcodeTable["xchg"] = 354;
+	opcodeTable["xlat"] = 355;
+	opcodeTable["xlatb"] = 356;
+	opcodeTable["xor"] = 357;
 	prefixTable["a16"] = 0;
 	prefixTable["a32"] = 1;
 	prefixTable["lock"] = 2;
@@ -862,7 +875,7 @@ void x86Parser::TokenFunc345(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches198[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc199, x86Parser::tokenBranches199 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc345, x86Parser::tokenBranches345 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc345, x86Parser::tokenBranches345 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc36(x86Operand &operand, int tokenPos)
@@ -951,9 +964,9 @@ void x86Parser::TokenFunc428(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches34[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc35, x86Parser::tokenBranches35 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc136, x86Parser::tokenBranches136 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc136, x86Parser::tokenBranches136 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc282, x86Parser::tokenBranches282 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc428, x86Parser::tokenBranches428 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc428, x86Parser::tokenBranches428 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc97(x86Operand &operand, int tokenPos)
@@ -1009,7 +1022,7 @@ void x86Parser::TokenFunc372(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches225[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc226, x86Parser::tokenBranches226 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc372, x86Parser::tokenBranches372 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc372, x86Parser::tokenBranches372 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc57(x86Operand &operand, int tokenPos)
@@ -1098,9 +1111,9 @@ void x86Parser::TokenFunc461(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches55[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc56, x86Parser::tokenBranches56 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc169, x86Parser::tokenBranches169 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc169, x86Parser::tokenBranches169 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc315, x86Parser::tokenBranches315 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc461, x86Parser::tokenBranches461 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc461, x86Parser::tokenBranches461 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc120(x86Operand &operand, int tokenPos)
@@ -1156,7 +1169,7 @@ void x86Parser::TokenFunc402(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches255[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc256, x86Parser::tokenBranches256 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc402, x86Parser::tokenBranches402 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc402, x86Parser::tokenBranches402 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc79(x86Operand &operand, int tokenPos)
@@ -1178,7 +1191,7 @@ x86Token x86Parser::tokenBranches583[] = {
 };
 void x86Parser::TokenFunc662(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 68;
+	operand.addressCoding = 67;
 }
 x86Token x86Parser::tokenBranches661[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc662,  },
@@ -1186,7 +1199,7 @@ x86Token x86Parser::tokenBranches661[] = {
 };
 void x86Parser::TokenFunc740(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 79;
+	operand.addressCoding = 77;
 }
 x86Token x86Parser::tokenBranches739[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc740,  },
@@ -1194,7 +1207,7 @@ x86Token x86Parser::tokenBranches739[] = {
 };
 void x86Parser::TokenFunc1034(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 106;
+	operand.addressCoding = 104;
 }
 x86Token x86Parser::tokenBranches1033[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1034,  },
@@ -1202,7 +1215,7 @@ x86Token x86Parser::tokenBranches1033[] = {
 };
 void x86Parser::TokenFunc1442(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 124;
+	operand.addressCoding = 122;
 }
 x86Token x86Parser::tokenBranches1441[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1442,  },
@@ -1210,7 +1223,7 @@ x86Token x86Parser::tokenBranches1441[] = {
 };
 void x86Parser::TokenFunc1670(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 142;
+	operand.addressCoding = 140;
 }
 x86Token x86Parser::tokenBranches1669[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1670,  },
@@ -1256,14 +1269,14 @@ void x86Parser::TokenFunc1669(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1032[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1033, x86Parser::tokenBranches1033 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1033, x86Parser::tokenBranches1033 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1441, x86Parser::tokenBranches1441 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1669, x86Parser::tokenBranches1669 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1669, x86Parser::tokenBranches1669 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1232(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 106;
+	operand.addressCoding = 104;
 }
 x86Token x86Parser::tokenBranches1031[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1032 },
@@ -1284,12 +1297,12 @@ void x86Parser::TokenFunc1031(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1030[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1031, x86Parser::tokenBranches1031 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1031, x86Parser::tokenBranches1031 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1043(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 107;
+	operand.addressCoding = 105;
 }
 x86Token x86Parser::tokenBranches1042[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1043,  },
@@ -1297,7 +1310,7 @@ x86Token x86Parser::tokenBranches1042[] = {
 };
 void x86Parser::TokenFunc1451(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 125;
+	operand.addressCoding = 123;
 }
 x86Token x86Parser::tokenBranches1450[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1451,  },
@@ -1305,7 +1318,7 @@ x86Token x86Parser::tokenBranches1450[] = {
 };
 void x86Parser::TokenFunc1679(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 143;
+	operand.addressCoding = 141;
 }
 x86Token x86Parser::tokenBranches1678[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1679,  },
@@ -1351,14 +1364,14 @@ void x86Parser::TokenFunc1678(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1041[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1042, x86Parser::tokenBranches1042 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1042, x86Parser::tokenBranches1042 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1450, x86Parser::tokenBranches1450 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1678, x86Parser::tokenBranches1678 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1678, x86Parser::tokenBranches1678 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1239(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 107;
+	operand.addressCoding = 105;
 }
 x86Token x86Parser::tokenBranches1029[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1030 },
@@ -1418,9 +1431,9 @@ void x86Parser::TokenFunc1029(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches582[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc583, x86Parser::tokenBranches583 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc583, x86Parser::tokenBranches583 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc661, x86Parser::tokenBranches661 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc739, x86Parser::tokenBranches739 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc739, x86Parser::tokenBranches739 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1029, x86Parser::tokenBranches1029 },
 	{x86Token::EOT }
 };
@@ -1443,7 +1456,7 @@ x86Token x86Parser::tokenBranches590[] = {
 };
 void x86Parser::TokenFunc669(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 69;
+	operand.addressCoding = 68;
 }
 x86Token x86Parser::tokenBranches668[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc669,  },
@@ -1451,7 +1464,7 @@ x86Token x86Parser::tokenBranches668[] = {
 };
 void x86Parser::TokenFunc747(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 80;
+	operand.addressCoding = 78;
 }
 x86Token x86Parser::tokenBranches746[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc747,  },
@@ -1459,7 +1472,7 @@ x86Token x86Parser::tokenBranches746[] = {
 };
 void x86Parser::TokenFunc1014(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 104;
+	operand.addressCoding = 102;
 }
 x86Token x86Parser::tokenBranches1013[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1014,  },
@@ -1467,7 +1480,7 @@ x86Token x86Parser::tokenBranches1013[] = {
 };
 void x86Parser::TokenFunc1422(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 122;
+	operand.addressCoding = 120;
 }
 x86Token x86Parser::tokenBranches1421[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1422,  },
@@ -1475,7 +1488,7 @@ x86Token x86Parser::tokenBranches1421[] = {
 };
 void x86Parser::TokenFunc1650(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 140;
+	operand.addressCoding = 138;
 }
 x86Token x86Parser::tokenBranches1649[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1650,  },
@@ -1521,14 +1534,14 @@ void x86Parser::TokenFunc1649(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1012[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1013, x86Parser::tokenBranches1013 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1013, x86Parser::tokenBranches1013 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1421, x86Parser::tokenBranches1421 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1649, x86Parser::tokenBranches1649 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1649, x86Parser::tokenBranches1649 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1216(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 104;
+	operand.addressCoding = 102;
 }
 x86Token x86Parser::tokenBranches1011[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1012 },
@@ -1549,12 +1562,12 @@ void x86Parser::TokenFunc1011(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1010[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1011, x86Parser::tokenBranches1011 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1011, x86Parser::tokenBranches1011 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1023(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 105;
+	operand.addressCoding = 103;
 }
 x86Token x86Parser::tokenBranches1022[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1023,  },
@@ -1562,7 +1575,7 @@ x86Token x86Parser::tokenBranches1022[] = {
 };
 void x86Parser::TokenFunc1431(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 123;
+	operand.addressCoding = 121;
 }
 x86Token x86Parser::tokenBranches1430[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1431,  },
@@ -1570,7 +1583,7 @@ x86Token x86Parser::tokenBranches1430[] = {
 };
 void x86Parser::TokenFunc1659(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 141;
+	operand.addressCoding = 139;
 }
 x86Token x86Parser::tokenBranches1658[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1659,  },
@@ -1616,14 +1629,14 @@ void x86Parser::TokenFunc1658(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1021[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1022, x86Parser::tokenBranches1022 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1022, x86Parser::tokenBranches1022 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1430, x86Parser::tokenBranches1430 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1658, x86Parser::tokenBranches1658 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1658, x86Parser::tokenBranches1658 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1223(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 105;
+	operand.addressCoding = 103;
 }
 x86Token x86Parser::tokenBranches1009[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1010 },
@@ -1683,15 +1696,15 @@ void x86Parser::TokenFunc1009(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches589[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc590, x86Parser::tokenBranches590 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc590, x86Parser::tokenBranches590 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc668, x86Parser::tokenBranches668 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc746, x86Parser::tokenBranches746 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc746, x86Parser::tokenBranches746 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1009, x86Parser::tokenBranches1009 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc847(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 85;
+	operand.addressCoding = 83;
 }
 x86Token x86Parser::tokenBranches846[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc847,  },
@@ -1711,12 +1724,12 @@ void x86Parser::TokenFunc846(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches845[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc846, x86Parser::tokenBranches846 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc846, x86Parser::tokenBranches846 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc838(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 84;
+	operand.addressCoding = 82;
 }
 x86Token x86Parser::tokenBranches837[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc838,  },
@@ -1737,7 +1750,7 @@ void x86Parser::TokenFunc837(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches836[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc837, x86Parser::tokenBranches837 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc837, x86Parser::tokenBranches837 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc503(x86Operand &operand, int tokenPos)
@@ -1752,7 +1765,7 @@ x86Token x86Parser::tokenBranches502[] = {
 };
 void x86Parser::TokenFunc598(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 55;
+	operand.addressCoding = 51;
 }
 x86Token x86Parser::tokenBranches597[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc598,  },
@@ -1760,7 +1773,7 @@ x86Token x86Parser::tokenBranches597[] = {
 };
 void x86Parser::TokenFunc676(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 70;
+	operand.addressCoding = 64;
 }
 x86Token x86Parser::tokenBranches675[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc676,  },
@@ -1768,7 +1781,7 @@ x86Token x86Parser::tokenBranches675[] = {
 };
 void x86Parser::TokenFunc754(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 76;
+	operand.addressCoding = 74;
 }
 x86Token x86Parser::tokenBranches753[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc754,  },
@@ -1776,7 +1789,7 @@ x86Token x86Parser::tokenBranches753[] = {
 };
 void x86Parser::TokenFunc1054(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 100;
+	operand.addressCoding = 98;
 }
 x86Token x86Parser::tokenBranches1053[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1054,  },
@@ -1784,7 +1797,7 @@ x86Token x86Parser::tokenBranches1053[] = {
 };
 void x86Parser::TokenFunc1462(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 118;
+	operand.addressCoding = 116;
 }
 x86Token x86Parser::tokenBranches1461[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1462,  },
@@ -1792,7 +1805,7 @@ x86Token x86Parser::tokenBranches1461[] = {
 };
 void x86Parser::TokenFunc1690(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 136;
+	operand.addressCoding = 134;
 }
 x86Token x86Parser::tokenBranches1689[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1690,  },
@@ -1838,14 +1851,14 @@ void x86Parser::TokenFunc1689(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1052[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1053, x86Parser::tokenBranches1053 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1053, x86Parser::tokenBranches1053 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1461, x86Parser::tokenBranches1461 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1689, x86Parser::tokenBranches1689 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1689, x86Parser::tokenBranches1689 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1248(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 100;
+	operand.addressCoding = 98;
 }
 x86Token x86Parser::tokenBranches1051[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1052 },
@@ -1866,12 +1879,12 @@ void x86Parser::TokenFunc1051(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1050[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1051, x86Parser::tokenBranches1051 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1051, x86Parser::tokenBranches1051 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1063(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 101;
+	operand.addressCoding = 99;
 }
 x86Token x86Parser::tokenBranches1062[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1063,  },
@@ -1879,7 +1892,7 @@ x86Token x86Parser::tokenBranches1062[] = {
 };
 void x86Parser::TokenFunc1471(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 119;
+	operand.addressCoding = 117;
 }
 x86Token x86Parser::tokenBranches1470[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1471,  },
@@ -1887,7 +1900,7 @@ x86Token x86Parser::tokenBranches1470[] = {
 };
 void x86Parser::TokenFunc1699(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 137;
+	operand.addressCoding = 135;
 }
 x86Token x86Parser::tokenBranches1698[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1699,  },
@@ -1933,14 +1946,14 @@ void x86Parser::TokenFunc1698(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1061[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1062, x86Parser::tokenBranches1062 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1062, x86Parser::tokenBranches1062 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1470, x86Parser::tokenBranches1470 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1698, x86Parser::tokenBranches1698 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1698, x86Parser::tokenBranches1698 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1255(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 101;
+	operand.addressCoding = 99;
 }
 x86Token x86Parser::tokenBranches1049[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1050 },
@@ -2000,15 +2013,15 @@ void x86Parser::TokenFunc1049(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches596[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc597, x86Parser::tokenBranches597 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc597, x86Parser::tokenBranches597 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc675, x86Parser::tokenBranches675 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc753, x86Parser::tokenBranches753 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc753, x86Parser::tokenBranches753 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1049, x86Parser::tokenBranches1049 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc863(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 87;
+	operand.addressCoding = 85;
 }
 x86Token x86Parser::tokenBranches862[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc863,  },
@@ -2028,12 +2041,12 @@ void x86Parser::TokenFunc862(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches861[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc862, x86Parser::tokenBranches862 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc862, x86Parser::tokenBranches862 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc854(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 86;
+	operand.addressCoding = 84;
 }
 x86Token x86Parser::tokenBranches853[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc854,  },
@@ -2054,12 +2067,12 @@ void x86Parser::TokenFunc853(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches852[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc853, x86Parser::tokenBranches853 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc853, x86Parser::tokenBranches853 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc508(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 55;
+	operand.addressCoding = 51;
 }
 x86Token x86Parser::tokenBranches507[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc508,  },
@@ -2069,7 +2082,7 @@ x86Token x86Parser::tokenBranches507[] = {
 };
 void x86Parser::TokenFunc531(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 60;
+	operand.addressCoding = 59;
 }
 x86Token x86Parser::tokenBranches530[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc531,  },
@@ -2130,10 +2143,10 @@ x86Token x86Parser::tokenBranches7[] = {
 	{x86Token::REGISTER, 18, 0, 0, x86Parser::RegClassData2,  NULL, x86Parser::tokenBranches54 },
 	{x86Token::REGISTER, 17, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches497 },
 	{x86Token::REGISTER, 19, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches502 },
-	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc8, x86Parser::tokenBranches8 },
+	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc8, x86Parser::tokenBranches8 },
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc78, x86Parser::tokenBranches78 },
 	{x86Token::REGISTERCLASS, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc507, x86Parser::tokenBranches507 },
-	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc530, x86Parser::tokenBranches530 },
+	{x86Token::NUMBER, 7, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc530, x86Parser::tokenBranches530 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches6[] = {
@@ -2192,7 +2205,7 @@ void x86Parser::TokenFunc354(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches207[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc208, x86Parser::tokenBranches208 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc354, x86Parser::tokenBranches354 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc354, x86Parser::tokenBranches354 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc43(x86Operand &operand, int tokenPos)
@@ -2281,9 +2294,9 @@ void x86Parser::TokenFunc435(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches41[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc42, x86Parser::tokenBranches42 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc143, x86Parser::tokenBranches143 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc143, x86Parser::tokenBranches143 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc289, x86Parser::tokenBranches289 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc435, x86Parser::tokenBranches435 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc435, x86Parser::tokenBranches435 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc102(x86Operand &operand, int tokenPos)
@@ -2339,7 +2352,7 @@ void x86Parser::TokenFunc363(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches216[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc217, x86Parser::tokenBranches217 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc363, x86Parser::tokenBranches363 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc363, x86Parser::tokenBranches363 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc50(x86Operand &operand, int tokenPos)
@@ -2428,9 +2441,9 @@ void x86Parser::TokenFunc454(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches48[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc49, x86Parser::tokenBranches49 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc162, x86Parser::tokenBranches162 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc162, x86Parser::tokenBranches162 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc308, x86Parser::tokenBranches308 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc454, x86Parser::tokenBranches454 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc454, x86Parser::tokenBranches454 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc115(x86Operand &operand, int tokenPos)
@@ -2486,7 +2499,7 @@ void x86Parser::TokenFunc409(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches262[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc263, x86Parser::tokenBranches263 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc409, x86Parser::tokenBranches409 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc409, x86Parser::tokenBranches409 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc84(x86Operand &operand, int tokenPos)
@@ -2508,7 +2521,7 @@ x86Token x86Parser::tokenBranches562[] = {
 };
 void x86Parser::TokenFunc641(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 63;
+	operand.addressCoding = 62;
 }
 x86Token x86Parser::tokenBranches640[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc641,  },
@@ -2516,7 +2529,7 @@ x86Token x86Parser::tokenBranches640[] = {
 };
 void x86Parser::TokenFunc719(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 75;
+	operand.addressCoding = 73;
 }
 x86Token x86Parser::tokenBranches718[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc719,  },
@@ -2524,7 +2537,7 @@ x86Token x86Parser::tokenBranches718[] = {
 };
 void x86Parser::TokenFunc974(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 98;
+	operand.addressCoding = 96;
 }
 x86Token x86Parser::tokenBranches973[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc974,  },
@@ -2532,7 +2545,7 @@ x86Token x86Parser::tokenBranches973[] = {
 };
 void x86Parser::TokenFunc1382(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 116;
+	operand.addressCoding = 114;
 }
 x86Token x86Parser::tokenBranches1381[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1382,  },
@@ -2540,7 +2553,7 @@ x86Token x86Parser::tokenBranches1381[] = {
 };
 void x86Parser::TokenFunc1610(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 134;
+	operand.addressCoding = 132;
 }
 x86Token x86Parser::tokenBranches1609[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1610,  },
@@ -2586,14 +2599,14 @@ void x86Parser::TokenFunc1609(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches972[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc973, x86Parser::tokenBranches973 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc973, x86Parser::tokenBranches973 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1381, x86Parser::tokenBranches1381 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1609, x86Parser::tokenBranches1609 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1609, x86Parser::tokenBranches1609 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1184(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 98;
+	operand.addressCoding = 96;
 }
 x86Token x86Parser::tokenBranches971[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches972 },
@@ -2614,12 +2627,12 @@ void x86Parser::TokenFunc971(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches970[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc971, x86Parser::tokenBranches971 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc971, x86Parser::tokenBranches971 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc983(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 99;
+	operand.addressCoding = 97;
 }
 x86Token x86Parser::tokenBranches982[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc983,  },
@@ -2627,7 +2640,7 @@ x86Token x86Parser::tokenBranches982[] = {
 };
 void x86Parser::TokenFunc1391(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 117;
+	operand.addressCoding = 115;
 }
 x86Token x86Parser::tokenBranches1390[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1391,  },
@@ -2635,7 +2648,7 @@ x86Token x86Parser::tokenBranches1390[] = {
 };
 void x86Parser::TokenFunc1619(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 135;
+	operand.addressCoding = 133;
 }
 x86Token x86Parser::tokenBranches1618[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1619,  },
@@ -2681,14 +2694,14 @@ void x86Parser::TokenFunc1618(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches981[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc982, x86Parser::tokenBranches982 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc982, x86Parser::tokenBranches982 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1390, x86Parser::tokenBranches1390 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1618, x86Parser::tokenBranches1618 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1618, x86Parser::tokenBranches1618 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1191(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 99;
+	operand.addressCoding = 97;
 }
 x86Token x86Parser::tokenBranches969[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches970 },
@@ -2748,9 +2761,9 @@ void x86Parser::TokenFunc969(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches561[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc562, x86Parser::tokenBranches562 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc562, x86Parser::tokenBranches562 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc640, x86Parser::tokenBranches640 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc718, x86Parser::tokenBranches718 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc718, x86Parser::tokenBranches718 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc969, x86Parser::tokenBranches969 },
 	{x86Token::EOT }
 };
@@ -2773,7 +2786,7 @@ x86Token x86Parser::tokenBranches569[] = {
 };
 void x86Parser::TokenFunc648(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 66;
+	operand.addressCoding = 65;
 }
 x86Token x86Parser::tokenBranches647[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc648,  },
@@ -2781,7 +2794,7 @@ x86Token x86Parser::tokenBranches647[] = {
 };
 void x86Parser::TokenFunc726(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 77;
+	operand.addressCoding = 75;
 }
 x86Token x86Parser::tokenBranches725[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc726,  },
@@ -2789,7 +2802,7 @@ x86Token x86Parser::tokenBranches725[] = {
 };
 void x86Parser::TokenFunc954(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 96;
+	operand.addressCoding = 94;
 }
 x86Token x86Parser::tokenBranches953[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc954,  },
@@ -2797,7 +2810,7 @@ x86Token x86Parser::tokenBranches953[] = {
 };
 void x86Parser::TokenFunc1362(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 114;
+	operand.addressCoding = 112;
 }
 x86Token x86Parser::tokenBranches1361[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1362,  },
@@ -2805,7 +2818,7 @@ x86Token x86Parser::tokenBranches1361[] = {
 };
 void x86Parser::TokenFunc1590(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 132;
+	operand.addressCoding = 130;
 }
 x86Token x86Parser::tokenBranches1589[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1590,  },
@@ -2851,14 +2864,14 @@ void x86Parser::TokenFunc1589(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches952[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc953, x86Parser::tokenBranches953 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc953, x86Parser::tokenBranches953 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1361, x86Parser::tokenBranches1361 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1589, x86Parser::tokenBranches1589 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1589, x86Parser::tokenBranches1589 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1168(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 96;
+	operand.addressCoding = 94;
 }
 x86Token x86Parser::tokenBranches951[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches952 },
@@ -2879,12 +2892,12 @@ void x86Parser::TokenFunc951(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches950[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc951, x86Parser::tokenBranches951 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc951, x86Parser::tokenBranches951 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc963(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 97;
+	operand.addressCoding = 95;
 }
 x86Token x86Parser::tokenBranches962[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc963,  },
@@ -2892,7 +2905,7 @@ x86Token x86Parser::tokenBranches962[] = {
 };
 void x86Parser::TokenFunc1371(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 115;
+	operand.addressCoding = 113;
 }
 x86Token x86Parser::tokenBranches1370[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1371,  },
@@ -2900,7 +2913,7 @@ x86Token x86Parser::tokenBranches1370[] = {
 };
 void x86Parser::TokenFunc1599(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 133;
+	operand.addressCoding = 131;
 }
 x86Token x86Parser::tokenBranches1598[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1599,  },
@@ -2946,14 +2959,14 @@ void x86Parser::TokenFunc1598(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches961[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc962, x86Parser::tokenBranches962 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc962, x86Parser::tokenBranches962 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1370, x86Parser::tokenBranches1370 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1598, x86Parser::tokenBranches1598 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1598, x86Parser::tokenBranches1598 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1175(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 97;
+	operand.addressCoding = 95;
 }
 x86Token x86Parser::tokenBranches949[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches950 },
@@ -3013,15 +3026,15 @@ void x86Parser::TokenFunc949(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches568[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc569, x86Parser::tokenBranches569 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc569, x86Parser::tokenBranches569 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc647, x86Parser::tokenBranches647 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc725, x86Parser::tokenBranches725 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc725, x86Parser::tokenBranches725 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc949, x86Parser::tokenBranches949 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc815(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 89;
+	operand.addressCoding = 87;
 }
 x86Token x86Parser::tokenBranches814[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc815,  },
@@ -3041,12 +3054,12 @@ void x86Parser::TokenFunc814(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches813[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc814, x86Parser::tokenBranches814 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc814, x86Parser::tokenBranches814 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc806(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 88;
+	operand.addressCoding = 86;
 }
 x86Token x86Parser::tokenBranches805[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc806,  },
@@ -3067,7 +3080,7 @@ void x86Parser::TokenFunc805(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches804[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc805, x86Parser::tokenBranches805 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc805, x86Parser::tokenBranches805 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc488(x86Operand &operand, int tokenPos)
@@ -3090,7 +3103,7 @@ x86Token x86Parser::tokenBranches576[] = {
 };
 void x86Parser::TokenFunc655(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 67;
+	operand.addressCoding = 66;
 }
 x86Token x86Parser::tokenBranches654[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc655,  },
@@ -3098,7 +3111,7 @@ x86Token x86Parser::tokenBranches654[] = {
 };
 void x86Parser::TokenFunc733(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 78;
+	operand.addressCoding = 76;
 }
 x86Token x86Parser::tokenBranches732[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc733,  },
@@ -3106,7 +3119,7 @@ x86Token x86Parser::tokenBranches732[] = {
 };
 void x86Parser::TokenFunc994(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 102;
+	operand.addressCoding = 100;
 }
 x86Token x86Parser::tokenBranches993[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc994,  },
@@ -3114,7 +3127,7 @@ x86Token x86Parser::tokenBranches993[] = {
 };
 void x86Parser::TokenFunc1402(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 120;
+	operand.addressCoding = 118;
 }
 x86Token x86Parser::tokenBranches1401[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1402,  },
@@ -3122,7 +3135,7 @@ x86Token x86Parser::tokenBranches1401[] = {
 };
 void x86Parser::TokenFunc1630(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 138;
+	operand.addressCoding = 136;
 }
 x86Token x86Parser::tokenBranches1629[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1630,  },
@@ -3168,14 +3181,14 @@ void x86Parser::TokenFunc1629(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches992[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc993, x86Parser::tokenBranches993 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc993, x86Parser::tokenBranches993 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1401, x86Parser::tokenBranches1401 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1629, x86Parser::tokenBranches1629 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1629, x86Parser::tokenBranches1629 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1200(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 102;
+	operand.addressCoding = 100;
 }
 x86Token x86Parser::tokenBranches991[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches992 },
@@ -3196,12 +3209,12 @@ void x86Parser::TokenFunc991(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches990[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc991, x86Parser::tokenBranches991 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc991, x86Parser::tokenBranches991 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1003(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 103;
+	operand.addressCoding = 101;
 }
 x86Token x86Parser::tokenBranches1002[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1003,  },
@@ -3209,7 +3222,7 @@ x86Token x86Parser::tokenBranches1002[] = {
 };
 void x86Parser::TokenFunc1411(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 121;
+	operand.addressCoding = 119;
 }
 x86Token x86Parser::tokenBranches1410[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1411,  },
@@ -3217,7 +3230,7 @@ x86Token x86Parser::tokenBranches1410[] = {
 };
 void x86Parser::TokenFunc1639(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 139;
+	operand.addressCoding = 137;
 }
 x86Token x86Parser::tokenBranches1638[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1639,  },
@@ -3263,14 +3276,14 @@ void x86Parser::TokenFunc1638(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1001[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1002, x86Parser::tokenBranches1002 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1002, x86Parser::tokenBranches1002 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1410, x86Parser::tokenBranches1410 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1638, x86Parser::tokenBranches1638 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1638, x86Parser::tokenBranches1638 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1207(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 103;
+	operand.addressCoding = 101;
 }
 x86Token x86Parser::tokenBranches989[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches990 },
@@ -3330,15 +3343,15 @@ void x86Parser::TokenFunc989(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches575[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc576, x86Parser::tokenBranches576 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc576, x86Parser::tokenBranches576 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc654, x86Parser::tokenBranches654 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc732, x86Parser::tokenBranches732 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc732, x86Parser::tokenBranches732 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc989, x86Parser::tokenBranches989 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc831(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 91;
+	operand.addressCoding = 89;
 }
 x86Token x86Parser::tokenBranches830[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc831,  },
@@ -3358,12 +3371,12 @@ void x86Parser::TokenFunc830(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches829[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc830, x86Parser::tokenBranches830 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc830, x86Parser::tokenBranches830 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc822(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 90;
+	operand.addressCoding = 88;
 }
 x86Token x86Parser::tokenBranches821[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc822,  },
@@ -3384,7 +3397,7 @@ void x86Parser::TokenFunc821(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches820[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc821, x86Parser::tokenBranches821 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc821, x86Parser::tokenBranches821 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc493(x86Operand &operand, int tokenPos)
@@ -3399,7 +3412,7 @@ x86Token x86Parser::tokenBranches492[] = {
 };
 void x86Parser::TokenFunc536(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 61;
+	operand.addressCoding = 60;
 }
 x86Token x86Parser::tokenBranches535[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc536,  },
@@ -3460,10 +3473,10 @@ x86Token x86Parser::tokenBranches12[] = {
 	{x86Token::REGISTER, 18, 0, 0, x86Parser::RegClassData2,  NULL, x86Parser::tokenBranches47 },
 	{x86Token::REGISTER, 17, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches482 },
 	{x86Token::REGISTER, 19, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches487 },
-	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc13, x86Parser::tokenBranches13 },
+	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc13, x86Parser::tokenBranches13 },
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc83, x86Parser::tokenBranches83 },
 	{x86Token::REGISTERCLASS, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc492, x86Parser::tokenBranches492 },
-	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc535, x86Parser::tokenBranches535 },
+	{x86Token::NUMBER, 7, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc535, x86Parser::tokenBranches535 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches11[] = {
@@ -3522,7 +3535,7 @@ void x86Parser::TokenFunc381(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches234[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc235, x86Parser::tokenBranches235 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc381, x86Parser::tokenBranches381 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc381, x86Parser::tokenBranches381 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc64(x86Operand &operand, int tokenPos)
@@ -3611,9 +3624,9 @@ void x86Parser::TokenFunc442(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches62[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc63, x86Parser::tokenBranches63 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc150, x86Parser::tokenBranches150 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc150, x86Parser::tokenBranches150 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc296, x86Parser::tokenBranches296 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc442, x86Parser::tokenBranches442 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc442, x86Parser::tokenBranches442 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc107(x86Operand &operand, int tokenPos)
@@ -3669,7 +3682,7 @@ void x86Parser::TokenFunc390(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches243[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc244, x86Parser::tokenBranches244 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc390, x86Parser::tokenBranches390 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc390, x86Parser::tokenBranches390 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc71(x86Operand &operand, int tokenPos)
@@ -3758,9 +3771,9 @@ void x86Parser::TokenFunc468(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches69[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc70, x86Parser::tokenBranches70 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc176, x86Parser::tokenBranches176 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc176, x86Parser::tokenBranches176 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc322, x86Parser::tokenBranches322 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc468, x86Parser::tokenBranches468 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc468, x86Parser::tokenBranches468 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc125(x86Operand &operand, int tokenPos)
@@ -3816,7 +3829,7 @@ void x86Parser::TokenFunc416(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches269[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc270, x86Parser::tokenBranches270 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc416, x86Parser::tokenBranches416 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc416, x86Parser::tokenBranches416 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc89(x86Operand &operand, int tokenPos)
@@ -3830,7 +3843,7 @@ x86Token x86Parser::tokenBranches88[] = {
 };
 void x86Parser::TokenFunc605(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 56;
+	operand.addressCoding = 55;
 }
 x86Token x86Parser::tokenBranches604[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc605,  },
@@ -3838,7 +3851,7 @@ x86Token x86Parser::tokenBranches604[] = {
 };
 void x86Parser::TokenFunc683(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 71;
+	operand.addressCoding = 69;
 }
 x86Token x86Parser::tokenBranches682[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc683,  },
@@ -3846,7 +3859,7 @@ x86Token x86Parser::tokenBranches682[] = {
 };
 void x86Parser::TokenFunc768(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 82;
+	operand.addressCoding = 80;
 }
 x86Token x86Parser::tokenBranches767[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc768,  },
@@ -3854,7 +3867,7 @@ x86Token x86Parser::tokenBranches767[] = {
 };
 void x86Parser::TokenFunc1094(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 110;
+	operand.addressCoding = 108;
 }
 x86Token x86Parser::tokenBranches1093[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1094,  },
@@ -3862,7 +3875,7 @@ x86Token x86Parser::tokenBranches1093[] = {
 };
 void x86Parser::TokenFunc1502(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 128;
+	operand.addressCoding = 126;
 }
 x86Token x86Parser::tokenBranches1501[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1502,  },
@@ -3870,7 +3883,7 @@ x86Token x86Parser::tokenBranches1501[] = {
 };
 void x86Parser::TokenFunc1730(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 146;
+	operand.addressCoding = 144;
 }
 x86Token x86Parser::tokenBranches1729[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1730,  },
@@ -3916,14 +3929,14 @@ void x86Parser::TokenFunc1729(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1092[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1093, x86Parser::tokenBranches1093 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1093, x86Parser::tokenBranches1093 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1501, x86Parser::tokenBranches1501 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1729, x86Parser::tokenBranches1729 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1729, x86Parser::tokenBranches1729 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1280(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 110;
+	operand.addressCoding = 108;
 }
 x86Token x86Parser::tokenBranches1091[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1092 },
@@ -3944,12 +3957,12 @@ void x86Parser::TokenFunc1091(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1090[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1091, x86Parser::tokenBranches1091 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1091, x86Parser::tokenBranches1091 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1103(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 111;
+	operand.addressCoding = 109;
 }
 x86Token x86Parser::tokenBranches1102[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1103,  },
@@ -3957,7 +3970,7 @@ x86Token x86Parser::tokenBranches1102[] = {
 };
 void x86Parser::TokenFunc1511(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 129;
+	operand.addressCoding = 127;
 }
 x86Token x86Parser::tokenBranches1510[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1511,  },
@@ -3965,7 +3978,7 @@ x86Token x86Parser::tokenBranches1510[] = {
 };
 void x86Parser::TokenFunc1739(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 147;
+	operand.addressCoding = 145;
 }
 x86Token x86Parser::tokenBranches1738[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1739,  },
@@ -4011,14 +4024,14 @@ void x86Parser::TokenFunc1738(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1101[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1102, x86Parser::tokenBranches1102 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1102, x86Parser::tokenBranches1102 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1510, x86Parser::tokenBranches1510 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1738, x86Parser::tokenBranches1738 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1738, x86Parser::tokenBranches1738 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1287(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 111;
+	operand.addressCoding = 109;
 }
 x86Token x86Parser::tokenBranches1089[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1090 },
@@ -4078,15 +4091,15 @@ void x86Parser::TokenFunc1089(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches603[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc604, x86Parser::tokenBranches604 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc604, x86Parser::tokenBranches604 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc682, x86Parser::tokenBranches682 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc767, x86Parser::tokenBranches767 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc767, x86Parser::tokenBranches767 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1089, x86Parser::tokenBranches1089 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc513(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 56;
+	operand.addressCoding = 55;
 }
 x86Token x86Parser::tokenBranches512[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc513,  },
@@ -4095,7 +4108,7 @@ x86Token x86Parser::tokenBranches512[] = {
 };
 void x86Parser::TokenFunc612(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 57;
+	operand.addressCoding = 56;
 }
 x86Token x86Parser::tokenBranches611[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc612,  },
@@ -4103,7 +4116,7 @@ x86Token x86Parser::tokenBranches611[] = {
 };
 void x86Parser::TokenFunc690(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 72;
+	operand.addressCoding = 70;
 }
 x86Token x86Parser::tokenBranches689[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc690,  },
@@ -4111,7 +4124,7 @@ x86Token x86Parser::tokenBranches689[] = {
 };
 void x86Parser::TokenFunc761(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 81;
+	operand.addressCoding = 79;
 }
 x86Token x86Parser::tokenBranches760[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc761,  },
@@ -4119,7 +4132,7 @@ x86Token x86Parser::tokenBranches760[] = {
 };
 void x86Parser::TokenFunc1074(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 108;
+	operand.addressCoding = 106;
 }
 x86Token x86Parser::tokenBranches1073[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1074,  },
@@ -4127,7 +4140,7 @@ x86Token x86Parser::tokenBranches1073[] = {
 };
 void x86Parser::TokenFunc1482(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 126;
+	operand.addressCoding = 124;
 }
 x86Token x86Parser::tokenBranches1481[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1482,  },
@@ -4135,7 +4148,7 @@ x86Token x86Parser::tokenBranches1481[] = {
 };
 void x86Parser::TokenFunc1710(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 144;
+	operand.addressCoding = 142;
 }
 x86Token x86Parser::tokenBranches1709[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1710,  },
@@ -4181,14 +4194,14 @@ void x86Parser::TokenFunc1709(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1072[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1073, x86Parser::tokenBranches1073 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1073, x86Parser::tokenBranches1073 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1481, x86Parser::tokenBranches1481 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1709, x86Parser::tokenBranches1709 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1709, x86Parser::tokenBranches1709 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1264(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 108;
+	operand.addressCoding = 106;
 }
 x86Token x86Parser::tokenBranches1071[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1072 },
@@ -4209,12 +4222,12 @@ void x86Parser::TokenFunc1071(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1070[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1071, x86Parser::tokenBranches1071 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1071, x86Parser::tokenBranches1071 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1083(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 109;
+	operand.addressCoding = 107;
 }
 x86Token x86Parser::tokenBranches1082[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1083,  },
@@ -4222,7 +4235,7 @@ x86Token x86Parser::tokenBranches1082[] = {
 };
 void x86Parser::TokenFunc1491(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 127;
+	operand.addressCoding = 125;
 }
 x86Token x86Parser::tokenBranches1490[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1491,  },
@@ -4230,7 +4243,7 @@ x86Token x86Parser::tokenBranches1490[] = {
 };
 void x86Parser::TokenFunc1719(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 145;
+	operand.addressCoding = 143;
 }
 x86Token x86Parser::tokenBranches1718[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1719,  },
@@ -4276,14 +4289,14 @@ void x86Parser::TokenFunc1718(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1081[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1082, x86Parser::tokenBranches1082 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1082, x86Parser::tokenBranches1082 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1490, x86Parser::tokenBranches1490 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1718, x86Parser::tokenBranches1718 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1718, x86Parser::tokenBranches1718 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1271(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 109;
+	operand.addressCoding = 107;
 }
 x86Token x86Parser::tokenBranches1069[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1070 },
@@ -4343,15 +4356,15 @@ void x86Parser::TokenFunc1069(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches610[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc611, x86Parser::tokenBranches611 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc611, x86Parser::tokenBranches611 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc689, x86Parser::tokenBranches689 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc760, x86Parser::tokenBranches760 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc760, x86Parser::tokenBranches760 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1069, x86Parser::tokenBranches1069 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc879(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 93;
+	operand.addressCoding = 91;
 }
 x86Token x86Parser::tokenBranches878[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc879,  },
@@ -4371,12 +4384,12 @@ void x86Parser::TokenFunc878(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches877[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc878, x86Parser::tokenBranches878 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc878, x86Parser::tokenBranches878 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc870(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 92;
+	operand.addressCoding = 90;
 }
 x86Token x86Parser::tokenBranches869[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc870,  },
@@ -4397,12 +4410,12 @@ void x86Parser::TokenFunc869(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches868[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc869, x86Parser::tokenBranches869 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc869, x86Parser::tokenBranches869 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc518(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 57;
+	operand.addressCoding = 56;
 }
 x86Token x86Parser::tokenBranches517[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc518,  },
@@ -4412,7 +4425,7 @@ x86Token x86Parser::tokenBranches517[] = {
 };
 void x86Parser::TokenFunc619(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 58;
+	operand.addressCoding = 57;
 }
 x86Token x86Parser::tokenBranches618[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc619,  },
@@ -4420,7 +4433,7 @@ x86Token x86Parser::tokenBranches618[] = {
 };
 void x86Parser::TokenFunc697(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 73;
+	operand.addressCoding = 71;
 }
 x86Token x86Parser::tokenBranches696[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc697,  },
@@ -4428,7 +4441,7 @@ x86Token x86Parser::tokenBranches696[] = {
 };
 void x86Parser::TokenFunc775(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 83;
+	operand.addressCoding = 81;
 }
 x86Token x86Parser::tokenBranches774[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc775,  },
@@ -4436,7 +4449,7 @@ x86Token x86Parser::tokenBranches774[] = {
 };
 void x86Parser::TokenFunc1114(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 112;
+	operand.addressCoding = 110;
 }
 x86Token x86Parser::tokenBranches1113[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1114,  },
@@ -4444,7 +4457,7 @@ x86Token x86Parser::tokenBranches1113[] = {
 };
 void x86Parser::TokenFunc1522(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 130;
+	operand.addressCoding = 128;
 }
 x86Token x86Parser::tokenBranches1521[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1522,  },
@@ -4452,7 +4465,7 @@ x86Token x86Parser::tokenBranches1521[] = {
 };
 void x86Parser::TokenFunc1750(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 148;
+	operand.addressCoding = 146;
 }
 x86Token x86Parser::tokenBranches1749[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1750,  },
@@ -4498,14 +4511,14 @@ void x86Parser::TokenFunc1749(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1112[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1113, x86Parser::tokenBranches1113 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1113, x86Parser::tokenBranches1113 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1521, x86Parser::tokenBranches1521 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1749, x86Parser::tokenBranches1749 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1749, x86Parser::tokenBranches1749 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1296(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 112;
+	operand.addressCoding = 110;
 }
 x86Token x86Parser::tokenBranches1111[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1112 },
@@ -4526,12 +4539,12 @@ void x86Parser::TokenFunc1111(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1110[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1111, x86Parser::tokenBranches1111 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1111, x86Parser::tokenBranches1111 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1123(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 113;
+	operand.addressCoding = 111;
 }
 x86Token x86Parser::tokenBranches1122[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1123,  },
@@ -4539,7 +4552,7 @@ x86Token x86Parser::tokenBranches1122[] = {
 };
 void x86Parser::TokenFunc1531(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 131;
+	operand.addressCoding = 129;
 }
 x86Token x86Parser::tokenBranches1530[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1531,  },
@@ -4547,7 +4560,7 @@ x86Token x86Parser::tokenBranches1530[] = {
 };
 void x86Parser::TokenFunc1759(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 149;
+	operand.addressCoding = 147;
 }
 x86Token x86Parser::tokenBranches1758[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1759,  },
@@ -4593,14 +4606,14 @@ void x86Parser::TokenFunc1758(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1121[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1122, x86Parser::tokenBranches1122 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1122, x86Parser::tokenBranches1122 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1530, x86Parser::tokenBranches1530 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1758, x86Parser::tokenBranches1758 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1758, x86Parser::tokenBranches1758 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1303(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 113;
+	operand.addressCoding = 111;
 }
 x86Token x86Parser::tokenBranches1109[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches1110 },
@@ -4660,15 +4673,15 @@ void x86Parser::TokenFunc1109(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches617[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc618, x86Parser::tokenBranches618 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc618, x86Parser::tokenBranches618 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc696, x86Parser::tokenBranches696 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc774, x86Parser::tokenBranches774 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc774, x86Parser::tokenBranches774 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1109, x86Parser::tokenBranches1109 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc895(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 95;
+	operand.addressCoding = 93;
 }
 x86Token x86Parser::tokenBranches894[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc895,  },
@@ -4688,12 +4701,12 @@ void x86Parser::TokenFunc894(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches893[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc894, x86Parser::tokenBranches894 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc894, x86Parser::tokenBranches894 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc886(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 94;
+	operand.addressCoding = 92;
 }
 x86Token x86Parser::tokenBranches885[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc886,  },
@@ -4714,12 +4727,12 @@ void x86Parser::TokenFunc885(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches884[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc885, x86Parser::tokenBranches885 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc885, x86Parser::tokenBranches885 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc523(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 58;
+	operand.addressCoding = 57;
 }
 x86Token x86Parser::tokenBranches522[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc523,  },
@@ -4729,7 +4742,7 @@ x86Token x86Parser::tokenBranches522[] = {
 };
 void x86Parser::TokenFunc541(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 62;
+	operand.addressCoding = 61;
 }
 x86Token x86Parser::tokenBranches540[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc541,  },
@@ -4790,10 +4803,10 @@ x86Token x86Parser::tokenBranches17[] = {
 	{x86Token::REGISTER, 18, 0, 0, x86Parser::RegClassData2,  NULL, x86Parser::tokenBranches68 },
 	{x86Token::REGISTER, 17, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches512 },
 	{x86Token::REGISTER, 19, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches517 },
-	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc18, x86Parser::tokenBranches18 },
+	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc18, x86Parser::tokenBranches18 },
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc88, x86Parser::tokenBranches88 },
 	{x86Token::REGISTERCLASS, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc522, x86Parser::tokenBranches522 },
-	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc540, x86Parser::tokenBranches540 },
+	{x86Token::NUMBER, 7, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc540, x86Parser::tokenBranches540 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches16[] = {
@@ -4844,7 +4857,7 @@ void x86Parser::TokenFunc329(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches182[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc183, x86Parser::tokenBranches183 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc329, x86Parser::tokenBranches329 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc329, x86Parser::tokenBranches329 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc24(x86Operand &operand, int tokenPos)
@@ -4933,9 +4946,9 @@ void x86Parser::TokenFunc421(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches22[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc23, x86Parser::tokenBranches23 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc129, x86Parser::tokenBranches129 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc129, x86Parser::tokenBranches129 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc275, x86Parser::tokenBranches275 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc421, x86Parser::tokenBranches421 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc421, x86Parser::tokenBranches421 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc92(x86Operand &operand, int tokenPos)
@@ -4991,7 +5004,7 @@ void x86Parser::TokenFunc336(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches189[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc190, x86Parser::tokenBranches190 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc336, x86Parser::tokenBranches336 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc336, x86Parser::tokenBranches336 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc29(x86Operand &operand, int tokenPos)
@@ -5080,9 +5093,9 @@ void x86Parser::TokenFunc447(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches27[] = {
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc28, x86Parser::tokenBranches28 },
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc155, x86Parser::tokenBranches155 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc155, x86Parser::tokenBranches155 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc301, x86Parser::tokenBranches301 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc447, x86Parser::tokenBranches447 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc447, x86Parser::tokenBranches447 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc110(x86Operand &operand, int tokenPos)
@@ -5138,7 +5151,7 @@ void x86Parser::TokenFunc395(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches248[] = {
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc249, x86Parser::tokenBranches249 },
-	{x86Token::NUMBER, 3, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc395, x86Parser::tokenBranches395 },
+	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc395, x86Parser::tokenBranches395 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc74(x86Operand &operand, int tokenPos)
@@ -5160,7 +5173,7 @@ x86Token x86Parser::tokenBranches545[] = {
 };
 void x86Parser::TokenFunc624(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 63;
+	operand.addressCoding = 62;
 }
 x86Token x86Parser::tokenBranches623[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc624,  },
@@ -5168,7 +5181,7 @@ x86Token x86Parser::tokenBranches623[] = {
 };
 void x86Parser::TokenFunc707(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 75;
+	operand.addressCoding = 73;
 }
 x86Token x86Parser::tokenBranches706[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc707,  },
@@ -5176,7 +5189,7 @@ x86Token x86Parser::tokenBranches706[] = {
 };
 void x86Parser::TokenFunc920(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 98;
+	operand.addressCoding = 96;
 }
 x86Token x86Parser::tokenBranches919[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc920,  },
@@ -5184,7 +5197,7 @@ x86Token x86Parser::tokenBranches919[] = {
 };
 void x86Parser::TokenFunc1328(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 116;
+	operand.addressCoding = 114;
 }
 x86Token x86Parser::tokenBranches1327[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1328,  },
@@ -5192,7 +5205,7 @@ x86Token x86Parser::tokenBranches1327[] = {
 };
 void x86Parser::TokenFunc1556(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 134;
+	operand.addressCoding = 132;
 }
 x86Token x86Parser::tokenBranches1555[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1556,  },
@@ -5238,14 +5251,14 @@ void x86Parser::TokenFunc1555(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches918[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc919, x86Parser::tokenBranches919 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc919, x86Parser::tokenBranches919 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1327, x86Parser::tokenBranches1327 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1555, x86Parser::tokenBranches1555 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1555, x86Parser::tokenBranches1555 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1142(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 98;
+	operand.addressCoding = 96;
 }
 x86Token x86Parser::tokenBranches917[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches918 },
@@ -5266,12 +5279,12 @@ void x86Parser::TokenFunc917(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches916[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc917, x86Parser::tokenBranches917 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc917, x86Parser::tokenBranches917 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc927(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 99;
+	operand.addressCoding = 97;
 }
 x86Token x86Parser::tokenBranches926[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc927,  },
@@ -5279,7 +5292,7 @@ x86Token x86Parser::tokenBranches926[] = {
 };
 void x86Parser::TokenFunc1335(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 117;
+	operand.addressCoding = 115;
 }
 x86Token x86Parser::tokenBranches1334[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1335,  },
@@ -5287,7 +5300,7 @@ x86Token x86Parser::tokenBranches1334[] = {
 };
 void x86Parser::TokenFunc1563(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 135;
+	operand.addressCoding = 133;
 }
 x86Token x86Parser::tokenBranches1562[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1563,  },
@@ -5333,14 +5346,14 @@ void x86Parser::TokenFunc1562(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches925[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc926, x86Parser::tokenBranches926 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc926, x86Parser::tokenBranches926 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1334, x86Parser::tokenBranches1334 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1562, x86Parser::tokenBranches1562 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1562, x86Parser::tokenBranches1562 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1147(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 99;
+	operand.addressCoding = 97;
 }
 x86Token x86Parser::tokenBranches915[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches916 },
@@ -5400,9 +5413,9 @@ void x86Parser::TokenFunc915(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches544[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc545, x86Parser::tokenBranches545 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc545, x86Parser::tokenBranches545 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc623, x86Parser::tokenBranches623 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc706, x86Parser::tokenBranches706 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc706, x86Parser::tokenBranches706 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc915, x86Parser::tokenBranches915 },
 	{x86Token::EOT }
 };
@@ -5425,7 +5438,7 @@ x86Token x86Parser::tokenBranches550[] = {
 };
 void x86Parser::TokenFunc629(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 64;
+	operand.addressCoding = 63;
 }
 x86Token x86Parser::tokenBranches628[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc629,  },
@@ -5433,7 +5446,7 @@ x86Token x86Parser::tokenBranches628[] = {
 };
 void x86Parser::TokenFunc702(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 74;
+	operand.addressCoding = 72;
 }
 x86Token x86Parser::tokenBranches701[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc702,  },
@@ -5441,7 +5454,7 @@ x86Token x86Parser::tokenBranches701[] = {
 };
 void x86Parser::TokenFunc904(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 96;
+	operand.addressCoding = 94;
 }
 x86Token x86Parser::tokenBranches903[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc904,  },
@@ -5449,7 +5462,7 @@ x86Token x86Parser::tokenBranches903[] = {
 };
 void x86Parser::TokenFunc1312(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 114;
+	operand.addressCoding = 112;
 }
 x86Token x86Parser::tokenBranches1311[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1312,  },
@@ -5457,7 +5470,7 @@ x86Token x86Parser::tokenBranches1311[] = {
 };
 void x86Parser::TokenFunc1540(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 132;
+	operand.addressCoding = 130;
 }
 x86Token x86Parser::tokenBranches1539[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1540,  },
@@ -5503,14 +5516,14 @@ void x86Parser::TokenFunc1539(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches902[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc903, x86Parser::tokenBranches903 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc903, x86Parser::tokenBranches903 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1311, x86Parser::tokenBranches1311 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1539, x86Parser::tokenBranches1539 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1539, x86Parser::tokenBranches1539 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1130(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 96;
+	operand.addressCoding = 94;
 }
 x86Token x86Parser::tokenBranches901[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches902 },
@@ -5531,12 +5544,12 @@ void x86Parser::TokenFunc901(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches900[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc901, x86Parser::tokenBranches901 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc901, x86Parser::tokenBranches901 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc911(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 97;
+	operand.addressCoding = 95;
 }
 x86Token x86Parser::tokenBranches910[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc911,  },
@@ -5544,7 +5557,7 @@ x86Token x86Parser::tokenBranches910[] = {
 };
 void x86Parser::TokenFunc1319(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 115;
+	operand.addressCoding = 113;
 }
 x86Token x86Parser::tokenBranches1318[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1319,  },
@@ -5552,7 +5565,7 @@ x86Token x86Parser::tokenBranches1318[] = {
 };
 void x86Parser::TokenFunc1547(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 133;
+	operand.addressCoding = 131;
 }
 x86Token x86Parser::tokenBranches1546[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1547,  },
@@ -5598,14 +5611,14 @@ void x86Parser::TokenFunc1546(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches909[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc910, x86Parser::tokenBranches910 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc910, x86Parser::tokenBranches910 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1318, x86Parser::tokenBranches1318 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1546, x86Parser::tokenBranches1546 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1546, x86Parser::tokenBranches1546 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1135(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 97;
+	operand.addressCoding = 95;
 }
 x86Token x86Parser::tokenBranches899[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches900 },
@@ -5665,15 +5678,15 @@ void x86Parser::TokenFunc899(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches549[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc550, x86Parser::tokenBranches550 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc550, x86Parser::tokenBranches550 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc628, x86Parser::tokenBranches628 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc701, x86Parser::tokenBranches701 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc701, x86Parser::tokenBranches701 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc899, x86Parser::tokenBranches899 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc787(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 85;
+	operand.addressCoding = 83;
 }
 x86Token x86Parser::tokenBranches786[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc787,  },
@@ -5693,12 +5706,12 @@ void x86Parser::TokenFunc786(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches785[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc786, x86Parser::tokenBranches786 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc786, x86Parser::tokenBranches786 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc780(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 84;
+	operand.addressCoding = 82;
 }
 x86Token x86Parser::tokenBranches779[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc780,  },
@@ -5719,7 +5732,7 @@ void x86Parser::TokenFunc779(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches778[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc779, x86Parser::tokenBranches779 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc779, x86Parser::tokenBranches779 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc475(x86Operand &operand, int tokenPos)
@@ -5742,7 +5755,7 @@ x86Token x86Parser::tokenBranches555[] = {
 };
 void x86Parser::TokenFunc634(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 65;
+	operand.addressCoding = 64;
 }
 x86Token x86Parser::tokenBranches633[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc634,  },
@@ -5750,7 +5763,7 @@ x86Token x86Parser::tokenBranches633[] = {
 };
 void x86Parser::TokenFunc712(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 76;
+	operand.addressCoding = 74;
 }
 x86Token x86Parser::tokenBranches711[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc712,  },
@@ -5758,7 +5771,7 @@ x86Token x86Parser::tokenBranches711[] = {
 };
 void x86Parser::TokenFunc936(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 100;
+	operand.addressCoding = 98;
 }
 x86Token x86Parser::tokenBranches935[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc936,  },
@@ -5766,7 +5779,7 @@ x86Token x86Parser::tokenBranches935[] = {
 };
 void x86Parser::TokenFunc1344(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 118;
+	operand.addressCoding = 116;
 }
 x86Token x86Parser::tokenBranches1343[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1344,  },
@@ -5774,7 +5787,7 @@ x86Token x86Parser::tokenBranches1343[] = {
 };
 void x86Parser::TokenFunc1572(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 136;
+	operand.addressCoding = 134;
 }
 x86Token x86Parser::tokenBranches1571[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1572,  },
@@ -5820,14 +5833,14 @@ void x86Parser::TokenFunc1571(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches934[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc935, x86Parser::tokenBranches935 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc935, x86Parser::tokenBranches935 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1343, x86Parser::tokenBranches1343 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1571, x86Parser::tokenBranches1571 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1571, x86Parser::tokenBranches1571 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1154(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 100;
+	operand.addressCoding = 98;
 }
 x86Token x86Parser::tokenBranches933[] = {
 	{x86Token::TOKEN, 4, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches934 },
@@ -5848,12 +5861,12 @@ void x86Parser::TokenFunc933(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches932[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc933, x86Parser::tokenBranches933 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc933, x86Parser::tokenBranches933 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc943(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 101;
+	operand.addressCoding = 99;
 }
 x86Token x86Parser::tokenBranches942[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc943,  },
@@ -5861,7 +5874,7 @@ x86Token x86Parser::tokenBranches942[] = {
 };
 void x86Parser::TokenFunc1351(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 119;
+	operand.addressCoding = 117;
 }
 x86Token x86Parser::tokenBranches1350[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1351,  },
@@ -5869,7 +5882,7 @@ x86Token x86Parser::tokenBranches1350[] = {
 };
 void x86Parser::TokenFunc1579(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 137;
+	operand.addressCoding = 135;
 }
 x86Token x86Parser::tokenBranches1578[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1579,  },
@@ -5915,14 +5928,14 @@ void x86Parser::TokenFunc1578(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches941[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc942, x86Parser::tokenBranches942 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc942, x86Parser::tokenBranches942 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1350, x86Parser::tokenBranches1350 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1578, x86Parser::tokenBranches1578 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc1578, x86Parser::tokenBranches1578 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1159(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 101;
+	operand.addressCoding = 99;
 }
 x86Token x86Parser::tokenBranches931[] = {
 	{x86Token::TOKEN, 5, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches932 },
@@ -5982,15 +5995,15 @@ void x86Parser::TokenFunc931(x86Operand &operand, int tokenPos)
 	operand.values[2][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches554[] = {
-	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc555, x86Parser::tokenBranches555 },
+	{x86Token::NUMBER, 16, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc555, x86Parser::tokenBranches555 },
 	{x86Token::NUMBER, 0, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc633, x86Parser::tokenBranches633 },
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc711, x86Parser::tokenBranches711 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc711, x86Parser::tokenBranches711 },
 	{x86Token::REGISTERCLASS, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc931, x86Parser::tokenBranches931 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc799(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 87;
+	operand.addressCoding = 85;
 }
 x86Token x86Parser::tokenBranches798[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc799,  },
@@ -6010,12 +6023,12 @@ void x86Parser::TokenFunc798(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches797[] = {
-	{x86Token::NUMBER, 4, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc798, x86Parser::tokenBranches798 },
+	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc798, x86Parser::tokenBranches798 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc792(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 86;
+	operand.addressCoding = 84;
 }
 x86Token x86Parser::tokenBranches791[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc792,  },
@@ -6036,7 +6049,7 @@ void x86Parser::TokenFunc791(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches790[] = {
-	{x86Token::NUMBER, 14, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc791, x86Parser::tokenBranches791 },
+	{x86Token::NUMBER, 15, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc791, x86Parser::tokenBranches791 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc478(x86Operand &operand, int tokenPos)
@@ -6051,7 +6064,7 @@ x86Token x86Parser::tokenBranches477[] = {
 };
 void x86Parser::TokenFunc526(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 59;
+	operand.addressCoding = 58;
 }
 x86Token x86Parser::tokenBranches525[] = {
 	{x86Token::TOKEN, 2, 1, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc526,  },
@@ -6126,16 +6139,16 @@ x86Token x86Parser::tokenBranches2[] = {
 	{x86Token::REGISTER, 18, 0, 0, x86Parser::RegClassData2,  NULL, x86Parser::tokenBranches26 },
 	{x86Token::REGISTER, 17, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches471 },
 	{x86Token::REGISTER, 19, 0, 0, x86Parser::RegClassData3,  NULL, x86Parser::tokenBranches474 },
-	{x86Token::NUMBER, 5, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc3, x86Parser::tokenBranches3 },
+	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc3, x86Parser::tokenBranches3 },
 	{x86Token::REGISTERCLASS, 12, 0, 0, x86Parser::RegClassData1, &x86Parser::TokenFunc16, x86Parser::tokenBranches16 },
 	{x86Token::REGISTERCLASS, 11, 0, 0, x86Parser::RegClassData2, &x86Parser::TokenFunc73, x86Parser::tokenBranches73 },
 	{x86Token::REGISTERCLASS, 5, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc477, x86Parser::tokenBranches477 },
-	{x86Token::NUMBER, 6, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc525, x86Parser::tokenBranches525 },
+	{x86Token::NUMBER, 7, 0, 0, x86Parser::RegClassData3, &x86Parser::TokenFunc525, x86Parser::tokenBranches525 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1760(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 150;
+	operand.addressCoding = 148;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -6148,7 +6161,7 @@ void x86Parser::TokenFunc1760(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1761(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 150;
+	operand.addressCoding = 148;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -6161,7 +6174,7 @@ void x86Parser::TokenFunc1761(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1762(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 150;
+	operand.addressCoding = 148;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -6174,7 +6187,7 @@ void x86Parser::TokenFunc1762(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1763(x86Operand &operand, int tokenPos)
 {
-	operand.addressCoding = 150;
+	operand.addressCoding = 148;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -6195,7 +6208,7 @@ x86Token x86Parser::tokenBranches1[] = {
 };
 void x86Parser::TokenFunc1765(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 151;
+	operand.operandCoding = 149;
 }
 x86Token x86Parser::tokenBranches1764[] = {
 	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc1765,  },
@@ -6203,7 +6216,7 @@ x86Token x86Parser::tokenBranches1764[] = {
 };
 void x86Parser::TokenFunc1767(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 152;
+	operand.operandCoding = 150;
 }
 x86Token x86Parser::tokenBranches1766[] = {
 	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc1767,  },
@@ -6373,7 +6386,7 @@ x86Token x86Parser::tokenBranches1777[] = {
 };
 void x86Parser::TokenFunc1790(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 153;
+	operand.operandCoding = 151;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6386,7 +6399,7 @@ void x86Parser::TokenFunc1790(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1789[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc1790,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1790,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1788[] = {
@@ -6399,7 +6412,7 @@ x86Token x86Parser::tokenBranches1787[] = {
 };
 void x86Parser::TokenFunc1794(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 154;
+	operand.operandCoding = 152;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6412,7 +6425,7 @@ void x86Parser::TokenFunc1794(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1793[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1794,  },
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc1794,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1792[] = {
@@ -6425,7 +6438,7 @@ x86Token x86Parser::tokenBranches1791[] = {
 };
 void x86Parser::TokenFunc1798(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 155;
+	operand.operandCoding = 153;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6438,7 +6451,7 @@ void x86Parser::TokenFunc1798(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1797[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc1798,  },
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc1798,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1796[] = {
@@ -6636,7 +6649,7 @@ Coding x86Parser::tokenCoding1827_9[] = {
 };
 void x86Parser::TokenFunc1827(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6650,7 +6663,7 @@ void x86Parser::TokenFunc1827(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1827_9;
 }
 x86Token x86Parser::tokenBranches1826[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc1827,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1827,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1825[] = {
@@ -6671,7 +6684,7 @@ Coding x86Parser::tokenCoding1832_9[] = {
 };
 void x86Parser::TokenFunc1832(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 157;
+	operand.operandCoding = 155;
 	operand.values[13] = new Coding[2];
 	CleanupValues.push_back(operand.values[13]);
 	operand.values[13]->type = Coding::number;
@@ -6685,7 +6698,7 @@ void x86Parser::TokenFunc1832(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1832_9;
 }
 x86Token x86Parser::tokenBranches1831[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc1832,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc1832,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1837_9[] = {
@@ -6694,7 +6707,7 @@ Coding x86Parser::tokenCoding1837_9[] = {
 };
 void x86Parser::TokenFunc1837(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 158;
+	operand.operandCoding = 156;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6708,11 +6721,11 @@ void x86Parser::TokenFunc1837(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1837_9;
 }
 x86Token x86Parser::tokenBranches1836[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1837,  },
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc1837,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1830[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches1831 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches1831 },
 	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches1836 },
 	{x86Token::EOT }
 };
@@ -6730,7 +6743,7 @@ Coding x86Parser::tokenCoding1842_9[] = {
 };
 void x86Parser::TokenFunc1842(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 159;
+	operand.operandCoding = 157;
 	operand.values[13] = new Coding[2];
 	CleanupValues.push_back(operand.values[13]);
 	operand.values[13]->type = Coding::number;
@@ -6744,7 +6757,7 @@ void x86Parser::TokenFunc1842(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1842_9;
 }
 x86Token x86Parser::tokenBranches1841[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc1842,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc1842,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1847_9[] = {
@@ -6753,7 +6766,7 @@ Coding x86Parser::tokenCoding1847_9[] = {
 };
 void x86Parser::TokenFunc1847(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 160;
+	operand.operandCoding = 158;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6767,11 +6780,11 @@ void x86Parser::TokenFunc1847(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1847_9;
 }
 x86Token x86Parser::tokenBranches1846[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc1847,  },
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc1847,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1840[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches1841 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches1841 },
 	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches1846 },
 	{x86Token::EOT }
 };
@@ -6789,7 +6802,7 @@ Coding x86Parser::tokenCoding1851_9[] = {
 };
 void x86Parser::TokenFunc1851(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6803,7 +6816,7 @@ void x86Parser::TokenFunc1851(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1851_9;
 }
 x86Token x86Parser::tokenBranches1850[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc1851,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1851,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1849[] = {
@@ -6820,7 +6833,7 @@ Coding x86Parser::tokenCoding1855_9[] = {
 };
 void x86Parser::TokenFunc1855(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 157;
+	operand.operandCoding = 155;
 	operand.values[13] = new Coding[2];
 	CleanupValues.push_back(operand.values[13]);
 	operand.values[13]->type = Coding::number;
@@ -6834,7 +6847,7 @@ void x86Parser::TokenFunc1855(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1855_9;
 }
 x86Token x86Parser::tokenBranches1854[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc1855,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc1855,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1859_9[] = {
@@ -6843,7 +6856,7 @@ Coding x86Parser::tokenCoding1859_9[] = {
 };
 void x86Parser::TokenFunc1859(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 158;
+	operand.operandCoding = 156;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6857,11 +6870,11 @@ void x86Parser::TokenFunc1859(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1859_9;
 }
 x86Token x86Parser::tokenBranches1858[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1859,  },
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc1859,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1853[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches1854 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches1854 },
 	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches1858 },
 	{x86Token::EOT }
 };
@@ -6875,7 +6888,7 @@ Coding x86Parser::tokenCoding1863_9[] = {
 };
 void x86Parser::TokenFunc1863(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 159;
+	operand.operandCoding = 157;
 	operand.values[13] = new Coding[2];
 	CleanupValues.push_back(operand.values[13]);
 	operand.values[13]->type = Coding::number;
@@ -6889,7 +6902,7 @@ void x86Parser::TokenFunc1863(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1863_9;
 }
 x86Token x86Parser::tokenBranches1862[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc1863,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc1863,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1867_9[] = {
@@ -6898,7 +6911,7 @@ Coding x86Parser::tokenCoding1867_9[] = {
 };
 void x86Parser::TokenFunc1867(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 160;
+	operand.operandCoding = 158;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6912,11 +6925,11 @@ void x86Parser::TokenFunc1867(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1867_9;
 }
 x86Token x86Parser::tokenBranches1866[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc1867,  },
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc1867,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches1861[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches1862 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches1862 },
 	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches1866 },
 	{x86Token::EOT }
 };
@@ -6984,7 +6997,7 @@ Coding x86Parser::tokenCoding1873_9[] = {
 };
 void x86Parser::TokenFunc1873(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 161;
+	operand.operandCoding = 159;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -6998,7 +7011,7 @@ void x86Parser::TokenFunc1873(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1873_9;
 }
 x86Token x86Parser::tokenBranches1872[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc1873,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1873,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1882_8[] = {
@@ -7043,7 +7056,7 @@ Coding x86Parser::tokenCoding1878_9[] = {
 };
 void x86Parser::TokenFunc1878(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 162;
+	operand.operandCoding = 160;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -7057,7 +7070,7 @@ void x86Parser::TokenFunc1878(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1878_9;
 }
 x86Token x86Parser::tokenBranches1877[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc1878,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1878,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1886_8[] = {
@@ -7149,7 +7162,7 @@ void x86Parser::TokenFunc1888(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1889(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 163;
+	operand.operandCoding = 161;
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
 	operand.values[10]->type = Coding::reg;
@@ -7162,7 +7175,7 @@ void x86Parser::TokenFunc1889(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1890(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 164;
+	operand.operandCoding = 162;
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
 	operand.values[10]->type = Coding::reg;
@@ -7257,7 +7270,7 @@ x86Token x86Parser::tokenBranches1897[] = {
 };
 void x86Parser::TokenFunc1910(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 165;
+	operand.operandCoding = 163;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -7278,7 +7291,7 @@ x86Token x86Parser::tokenBranches1908[] = {
 };
 void x86Parser::TokenFunc1913(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 166;
+	operand.operandCoding = 164;
 }
 x86Token x86Parser::tokenBranches1912[] = {
 	{x86Token::REGISTER, 30, 1, 0, NULL,&x86Parser::TokenFunc1913,  },
@@ -7314,7 +7327,7 @@ x86Token x86Parser::tokenBranches1917[] = {
 };
 void x86Parser::TokenFunc1911(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 167;
+	operand.operandCoding = 165;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -7334,7 +7347,7 @@ x86Token x86Parser::tokenBranches1907[] = {
 };
 void x86Parser::TokenFunc1922(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 150;
+	operand.operandCoding = 148;
 }
 x86Token x86Parser::tokenBranches1921[] = {
 	{x86Token::REGISTER, 30, 1, 0, NULL,&x86Parser::TokenFunc1922,  },
@@ -7346,7 +7359,7 @@ x86Token x86Parser::tokenBranches1920[] = {
 };
 void x86Parser::TokenFunc1920(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 150;
+	operand.operandCoding = 148;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -7359,7 +7372,7 @@ void x86Parser::TokenFunc1920(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1924(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 168;
+	operand.operandCoding = 166;
 }
 x86Token x86Parser::tokenBranches1919[] = {
 	{x86Token::REGISTERCLASS, 13, 1, 0, NULL,&x86Parser::TokenFunc1920, x86Parser::tokenBranches1920 },
@@ -7405,7 +7418,7 @@ x86Token x86Parser::tokenBranches1930[] = {
 };
 void x86Parser::TokenFunc1935(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 169;
+	operand.operandCoding = 167;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -7418,12 +7431,12 @@ void x86Parser::TokenFunc1935(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1934[] = {
-	{x86Token::NUMBER, 7, 1, 0, NULL,&x86Parser::TokenFunc1935,  },
+	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc1935,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1937(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 170;
+	operand.operandCoding = 168;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -7437,7 +7450,7 @@ void x86Parser::TokenFunc1937(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1939(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 171;
+	operand.operandCoding = 169;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -7450,13 +7463,13 @@ void x86Parser::TokenFunc1939(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches1936[] = {
-	{x86Token::NUMBER, 10, 1, 0, NULL,&x86Parser::TokenFunc1937,  },
-	{x86Token::NUMBER, 13, 1, 0, NULL,&x86Parser::TokenFunc1939,  },
+	{x86Token::NUMBER, 11, 1, 0, NULL,&x86Parser::TokenFunc1937,  },
+	{x86Token::NUMBER, 14, 1, 0, NULL,&x86Parser::TokenFunc1939,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc1940(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 170;
+	operand.operandCoding = 168;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -7470,7 +7483,7 @@ void x86Parser::TokenFunc1940(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc1941(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 171;
+	operand.operandCoding = 169;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -7485,8 +7498,8 @@ void x86Parser::TokenFunc1941(x86Operand &operand, int tokenPos)
 x86Token x86Parser::tokenBranches1933[] = {
 	{x86Token::TOKEN, 13, 0, 0, NULL, NULL, x86Parser::tokenBranches1934 },
 	{x86Token::TOKEN, 14, 0, 0, NULL, NULL, x86Parser::tokenBranches1936 },
-	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc1940,  },
-	{x86Token::NUMBER, 13, 1, 0, NULL,&x86Parser::TokenFunc1941,  },
+	{x86Token::NUMBER, 10, 1, 0, NULL,&x86Parser::TokenFunc1940,  },
+	{x86Token::NUMBER, 14, 1, 0, NULL,&x86Parser::TokenFunc1941,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1946_8[] = {
@@ -7772,7 +7785,7 @@ Coding x86Parser::tokenCoding1982_9[] = {
 };
 void x86Parser::TokenFunc1982(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -7794,8 +7807,8 @@ void x86Parser::TokenFunc1985(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1985_9;
 }
 x86Token x86Parser::tokenBranches1978[] = {
-	{x86Token::NUMBER, 16, 1, 0, NULL,&x86Parser::TokenFunc1979,  },
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc1982,  },
+	{x86Token::NUMBER, 17, 1, 0, NULL,&x86Parser::TokenFunc1979,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1982,  },
 	{x86Token::REGISTER, 4, 1, 0, NULL,&x86Parser::TokenFunc1985,  },
 	{x86Token::EOT }
 };
@@ -7827,7 +7840,7 @@ Coding x86Parser::tokenCoding1995_9[] = {
 };
 void x86Parser::TokenFunc1995(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -7841,8 +7854,8 @@ void x86Parser::TokenFunc1995(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding1995_9;
 }
 x86Token x86Parser::tokenBranches1989[] = {
-	{x86Token::NUMBER, 16, 1, 0, NULL,&x86Parser::TokenFunc1990,  },
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc1995,  },
+	{x86Token::NUMBER, 17, 1, 0, NULL,&x86Parser::TokenFunc1990,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc1995,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding1999_9[] = {
@@ -7892,7 +7905,7 @@ Coding x86Parser::tokenCoding2005_9[] = {
 };
 void x86Parser::TokenFunc2005(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -7915,8 +7928,8 @@ void x86Parser::TokenFunc2008(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2008_9;
 }
 x86Token x86Parser::tokenBranches2001[] = {
-	{x86Token::NUMBER, 16, 1, 0, NULL,&x86Parser::TokenFunc2002,  },
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2005,  },
+	{x86Token::NUMBER, 17, 1, 0, NULL,&x86Parser::TokenFunc2002,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2005,  },
 	{x86Token::REGISTER, 4, 1, 0, NULL,&x86Parser::TokenFunc2008,  },
 	{x86Token::EOT }
 };
@@ -7950,7 +7963,7 @@ Coding x86Parser::tokenCoding2018_9[] = {
 };
 void x86Parser::TokenFunc2018(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -7964,8 +7977,8 @@ void x86Parser::TokenFunc2018(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2018_9;
 }
 x86Token x86Parser::tokenBranches2012[] = {
-	{x86Token::NUMBER, 16, 1, 0, NULL,&x86Parser::TokenFunc2013,  },
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2018,  },
+	{x86Token::NUMBER, 17, 1, 0, NULL,&x86Parser::TokenFunc2013,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2018,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2022_9[] = {
@@ -7997,7 +8010,7 @@ Coding x86Parser::tokenCoding2029_9[] = {
 };
 void x86Parser::TokenFunc2029(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8011,7 +8024,7 @@ void x86Parser::TokenFunc2029(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2029_9;
 }
 x86Token x86Parser::tokenBranches2028[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2029,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2029,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2025_9[] = {
@@ -8043,7 +8056,7 @@ void x86Parser::TokenFunc2032(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2032_9;
 }
 x86Token x86Parser::tokenBranches2024[] = {
-	{x86Token::NUMBER, 16, 1, 0, NULL,&x86Parser::TokenFunc2025,  },
+	{x86Token::NUMBER, 17, 1, 0, NULL,&x86Parser::TokenFunc2025,  },
 	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2028 },
 	{x86Token::REGISTER, 4, 1, 0, NULL,&x86Parser::TokenFunc2032,  },
 	{x86Token::EOT }
@@ -8078,7 +8091,7 @@ Coding x86Parser::tokenCoding2042_9[] = {
 };
 void x86Parser::TokenFunc2042(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8092,8 +8105,8 @@ void x86Parser::TokenFunc2042(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2042_9;
 }
 x86Token x86Parser::tokenBranches2036[] = {
-	{x86Token::NUMBER, 16, 1, 0, NULL,&x86Parser::TokenFunc2037,  },
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2042,  },
+	{x86Token::NUMBER, 17, 1, 0, NULL,&x86Parser::TokenFunc2037,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2042,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2046_9[] = {
@@ -8139,7 +8152,7 @@ Coding x86Parser::tokenCoding2053_9[] = {
 };
 void x86Parser::TokenFunc2053(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8169,7 +8182,7 @@ void x86Parser::TokenFunc2059(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2059_9;
 }
 x86Token x86Parser::tokenBranches2052[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2053,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2053,  },
 	{x86Token::REGISTER, 4, 1, 0, NULL,&x86Parser::TokenFunc2059,  },
 	{x86Token::EOT }
 };
@@ -8213,7 +8226,7 @@ Coding x86Parser::tokenCoding2065_9[] = {
 };
 void x86Parser::TokenFunc2065(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8243,7 +8256,7 @@ void x86Parser::TokenFunc2071(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2071_9;
 }
 x86Token x86Parser::tokenBranches2064[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2065,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2065,  },
 	{x86Token::REGISTER, 4, 1, 0, NULL,&x86Parser::TokenFunc2071,  },
 	{x86Token::EOT }
 };
@@ -8324,7 +8337,7 @@ Coding x86Parser::tokenCoding2089_8[] = {
 };
 void x86Parser::TokenFunc2089(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 172;
+	operand.operandCoding = 170;
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
 	operand.values[10]->type = Coding::reg;
@@ -8342,7 +8355,7 @@ x86Token x86Parser::tokenBranches2088[] = {
 };
 void x86Parser::TokenFunc2098(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 173;
+	operand.operandCoding = 171;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8355,12 +8368,12 @@ void x86Parser::TokenFunc2098(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2097[] = {
-	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2098,  },
+	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2098,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2102(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 174;
+	operand.operandCoding = 172;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8373,7 +8386,7 @@ void x86Parser::TokenFunc2102(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2101[] = {
-	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2102,  },
+	{x86Token::NUMBER, 7, 1, 0, NULL,&x86Parser::TokenFunc2102,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2096[] = {
@@ -8423,7 +8436,7 @@ x86Token x86Parser::tokenBranches2109[] = {
 };
 void x86Parser::TokenFunc2112(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 177;
+	operand.operandCoding = 175;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8437,7 +8450,7 @@ void x86Parser::TokenFunc2112(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2114(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 178;
+	operand.operandCoding = 176;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -8478,8 +8491,8 @@ void x86Parser::TokenFunc2118(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2118_9;
 }
 x86Token x86Parser::tokenBranches2111[] = {
-	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2112,  },
-	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2114,  },
+	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2112,  },
+	{x86Token::NUMBER, 7, 1, 0, NULL,&x86Parser::TokenFunc2114,  },
 	{x86Token::ADDRESSCLASS, 6, 1, 0, NULL,&x86Parser::TokenFunc2116,  },
 	{x86Token::ADDRESSCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc2118,  },
 	{x86Token::EOT }
@@ -8499,7 +8512,7 @@ void x86Parser::TokenFunc2095(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2103(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 175;
+	operand.operandCoding = 173;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -8513,7 +8526,7 @@ void x86Parser::TokenFunc2103(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2104(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 176;
+	operand.operandCoding = 174;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -8554,9 +8567,9 @@ void x86Parser::TokenFunc2106(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2106_9;
 }
 x86Token x86Parser::tokenBranches2094[] = {
-	{x86Token::NUMBER, 3, 0, 0, NULL,&x86Parser::TokenFunc2095, x86Parser::tokenBranches2095 },
-	{x86Token::NUMBER, 11, 1, 0, NULL,&x86Parser::TokenFunc2103,  },
-	{x86Token::NUMBER, 13, 1, 0, NULL,&x86Parser::TokenFunc2104,  },
+	{x86Token::NUMBER, 4, 0, 0, NULL,&x86Parser::TokenFunc2095, x86Parser::tokenBranches2095 },
+	{x86Token::NUMBER, 12, 1, 0, NULL,&x86Parser::TokenFunc2103,  },
+	{x86Token::NUMBER, 14, 1, 0, NULL,&x86Parser::TokenFunc2104,  },
 	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc2105,  },
 	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2106,  },
 	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2107 },
@@ -8566,7 +8579,7 @@ x86Token x86Parser::tokenBranches2094[] = {
 };
 void x86Parser::TokenFunc2170(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 179;
+	operand.operandCoding = 177;
 }
 x86Token x86Parser::tokenBranches2169[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2170,  },
@@ -8602,7 +8615,7 @@ x86Token x86Parser::tokenBranches2162[] = {
 };
 void x86Parser::TokenFunc2196(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 181;
+	operand.operandCoding = 179;
 }
 x86Token x86Parser::tokenBranches2195[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2196,  },
@@ -8647,7 +8660,7 @@ x86Token x86Parser::tokenBranches2160[] = {
 };
 void x86Parser::TokenFunc2183(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 180;
+	operand.operandCoding = 178;
 }
 x86Token x86Parser::tokenBranches2182[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2183,  },
@@ -8683,7 +8696,7 @@ x86Token x86Parser::tokenBranches2175[] = {
 };
 void x86Parser::TokenFunc2209(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 182;
+	operand.operandCoding = 180;
 }
 x86Token x86Parser::tokenBranches2208[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2209,  },
@@ -8749,7 +8762,7 @@ x86Token x86Parser::tokenBranches2158[] = {
 };
 void x86Parser::TokenFunc2222(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 183;
+	operand.operandCoding = 181;
 }
 x86Token x86Parser::tokenBranches2221[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2222,  },
@@ -8785,7 +8798,7 @@ x86Token x86Parser::tokenBranches2214[] = {
 };
 void x86Parser::TokenFunc2248(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 185;
+	operand.operandCoding = 183;
 }
 x86Token x86Parser::tokenBranches2247[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2248,  },
@@ -8830,7 +8843,7 @@ x86Token x86Parser::tokenBranches2212[] = {
 };
 void x86Parser::TokenFunc2235(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 184;
+	operand.operandCoding = 182;
 }
 x86Token x86Parser::tokenBranches2234[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2235,  },
@@ -8866,7 +8879,7 @@ x86Token x86Parser::tokenBranches2227[] = {
 };
 void x86Parser::TokenFunc2261(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 186;
+	operand.operandCoding = 184;
 }
 x86Token x86Parser::tokenBranches2260[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2261,  },
@@ -8932,7 +8945,7 @@ x86Token x86Parser::tokenBranches2210[] = {
 };
 void x86Parser::TokenFunc2274(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 187;
+	operand.operandCoding = 185;
 }
 x86Token x86Parser::tokenBranches2273[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2274,  },
@@ -8968,7 +8981,7 @@ x86Token x86Parser::tokenBranches2266[] = {
 };
 void x86Parser::TokenFunc2300(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 189;
+	operand.operandCoding = 187;
 }
 x86Token x86Parser::tokenBranches2299[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2300,  },
@@ -9013,7 +9026,7 @@ x86Token x86Parser::tokenBranches2264[] = {
 };
 void x86Parser::TokenFunc2287(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 188;
+	operand.operandCoding = 186;
 }
 x86Token x86Parser::tokenBranches2286[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2287,  },
@@ -9049,7 +9062,7 @@ x86Token x86Parser::tokenBranches2279[] = {
 };
 void x86Parser::TokenFunc2313(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 190;
+	operand.operandCoding = 188;
 }
 x86Token x86Parser::tokenBranches2312[] = {
 	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2313,  },
@@ -9159,7 +9172,7 @@ x86Token x86Parser::tokenBranches2317[] = {
 };
 void x86Parser::TokenFunc2335(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 191;
+	operand.operandCoding = 189;
 	operand.values[16] = new Coding[2];
 	CleanupValues.push_back(operand.values[16]);
 	operand.values[16]->type = Coding::number;
@@ -9172,7 +9185,7 @@ void x86Parser::TokenFunc2335(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2334[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2335,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2335,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2333[] = {
@@ -9197,7 +9210,7 @@ void x86Parser::TokenFunc2332(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2331[] = {
-	{x86Token::NUMBER, 3, 0, 0, NULL,&x86Parser::TokenFunc2332, x86Parser::tokenBranches2332 },
+	{x86Token::NUMBER, 4, 0, 0, NULL,&x86Parser::TokenFunc2332, x86Parser::tokenBranches2332 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2330[] = {
@@ -9240,12 +9253,12 @@ void x86Parser::TokenFunc2337(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2336[] = {
-	{x86Token::NUMBER, 1, 0, 0, NULL,&x86Parser::TokenFunc2337, x86Parser::tokenBranches2337 },
+	{x86Token::NUMBER, 2, 0, 0, NULL,&x86Parser::TokenFunc2337, x86Parser::tokenBranches2337 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2352(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 167;
+	operand.operandCoding = 163;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -9290,7 +9303,7 @@ x86Token x86Parser::tokenBranches2356[] = {
 };
 void x86Parser::TokenFunc2353(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 167;
+	operand.operandCoding = 163;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -9334,7 +9347,7 @@ x86Token x86Parser::tokenBranches2362[] = {
 };
 void x86Parser::TokenFunc2359(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 167;
+	operand.operandCoding = 163;
 	operand.values[7] = new Coding[2];
 	CleanupValues.push_back(operand.values[7]);
 	operand.values[7]->type = Coding::reg;
@@ -9793,7 +9806,7 @@ x86Token x86Parser::tokenBranches2457[] = {
 };
 void x86Parser::TokenFunc2459(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 192;
+	operand.operandCoding = 190;
 }
 x86Token x86Parser::tokenBranches2456[] = {
 	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2457 },
@@ -9819,7 +9832,7 @@ x86Token x86Parser::tokenBranches2461[] = {
 };
 void x86Parser::TokenFunc2463(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 193;
+	operand.operandCoding = 191;
 }
 x86Token x86Parser::tokenBranches2460[] = {
 	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2461 },
@@ -9837,7 +9850,7 @@ Coding x86Parser::tokenCoding2488_9[] = {
 };
 void x86Parser::TokenFunc2488(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 194;
+	operand.operandCoding = 192;
 	operand.values[17] = new Coding[2];
 	CleanupValues.push_back(operand.values[17]);
 	operand.values[17]->type = Coding::number;
@@ -9852,7 +9865,7 @@ void x86Parser::TokenFunc2488(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2488_9;
 }
 x86Token x86Parser::tokenBranches2487[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc2488,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc2488,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2494_8[] = {
@@ -9866,7 +9879,7 @@ Coding x86Parser::tokenCoding2494_9[] = {
 };
 void x86Parser::TokenFunc2494(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 195;
+	operand.operandCoding = 193;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -9882,7 +9895,7 @@ void x86Parser::TokenFunc2494(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches2486[] = {
 	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2487 },
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2494,  },
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2494,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2485[] = {
@@ -9906,7 +9919,7 @@ void x86Parser::TokenFunc2485(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2523(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 198;
+	operand.operandCoding = 196;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -9920,12 +9933,12 @@ void x86Parser::TokenFunc2523(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches2484[] = {
 	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc2485, x86Parser::tokenBranches2485 },
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2523,  },
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2523,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2519(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 197;
+	operand.operandCoding = 195;
 	operand.values[13] = new Coding[2];
 	CleanupValues.push_back(operand.values[13]);
 	operand.values[13]->type = Coding::number;
@@ -9938,7 +9951,7 @@ void x86Parser::TokenFunc2519(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2518[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc2519,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc2519,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2483[] = {
@@ -9961,7 +9974,7 @@ Coding x86Parser::tokenCoding2505_9[] = {
 };
 void x86Parser::TokenFunc2505(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 194;
+	operand.operandCoding = 192;
 	operand.values[17] = new Coding[2];
 	CleanupValues.push_back(operand.values[17]);
 	operand.values[17]->type = Coding::number;
@@ -9976,7 +9989,7 @@ void x86Parser::TokenFunc2505(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2505_9;
 }
 x86Token x86Parser::tokenBranches2504[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc2505,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc2505,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2511_8[] = {
@@ -9990,7 +10003,7 @@ Coding x86Parser::tokenCoding2511_9[] = {
 };
 void x86Parser::TokenFunc2511(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 196;
+	operand.operandCoding = 194;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -10006,7 +10019,7 @@ void x86Parser::TokenFunc2511(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches2503[] = {
 	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2504 },
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2511,  },
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2511,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2502[] = {
@@ -10030,7 +10043,7 @@ void x86Parser::TokenFunc2502(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2531(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 200;
+	operand.operandCoding = 198;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -10044,12 +10057,12 @@ void x86Parser::TokenFunc2531(x86Operand &operand, int tokenPos)
 }
 x86Token x86Parser::tokenBranches2501[] = {
 	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc2502, x86Parser::tokenBranches2502 },
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2531,  },
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2531,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2527(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 199;
+	operand.operandCoding = 197;
 	operand.values[13] = new Coding[2];
 	CleanupValues.push_back(operand.values[13]);
 	operand.values[13]->type = Coding::number;
@@ -10062,7 +10075,7 @@ void x86Parser::TokenFunc2527(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2526[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc2527,  },
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc2527,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2500[] = {
@@ -10105,7 +10118,7 @@ x86Token x86Parser::tokenBranches2481[] = {
 };
 void x86Parser::TokenFunc2536(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 201;
+	operand.operandCoding = 199;
 	operand.values[18] = new Coding[2];
 	CleanupValues.push_back(operand.values[18]);
 	operand.values[18]->type = Coding::number;
@@ -10118,12 +10131,12 @@ void x86Parser::TokenFunc2536(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2535[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2536,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2536,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2547(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 204;
+	operand.operandCoding = 202;
 }
 x86Token x86Parser::tokenBranches2534[] = {
 	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2535 },
@@ -10136,7 +10149,7 @@ x86Token x86Parser::tokenBranches2533[] = {
 };
 void x86Parser::TokenFunc2540(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 202;
+	operand.operandCoding = 200;
 	operand.values[18] = new Coding[2];
 	CleanupValues.push_back(operand.values[18]);
 	operand.values[18]->type = Coding::number;
@@ -10149,12 +10162,12 @@ void x86Parser::TokenFunc2540(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2539[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2540,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2540,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2550(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 205;
+	operand.operandCoding = 203;
 }
 x86Token x86Parser::tokenBranches2538[] = {
 	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2539 },
@@ -10167,7 +10180,7 @@ x86Token x86Parser::tokenBranches2537[] = {
 };
 void x86Parser::TokenFunc2544(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 203;
+	operand.operandCoding = 201;
 	operand.values[18] = new Coding[2];
 	CleanupValues.push_back(operand.values[18]);
 	operand.values[18]->type = Coding::number;
@@ -10180,12 +10193,12 @@ void x86Parser::TokenFunc2544(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2543[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2544,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2544,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2553(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 206;
+	operand.operandCoding = 204;
 }
 x86Token x86Parser::tokenBranches2542[] = {
 	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2543 },
@@ -10204,7 +10217,7 @@ x86Token x86Parser::tokenBranches2532[] = {
 };
 void x86Parser::TokenFunc2562(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 207;
+	operand.operandCoding = 205;
 }
 x86Token x86Parser::tokenBranches2561[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2562,  },
@@ -10220,7 +10233,7 @@ x86Token x86Parser::tokenBranches2559[] = {
 };
 void x86Parser::TokenFunc2578(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 209;
+	operand.operandCoding = 207;
 }
 x86Token x86Parser::tokenBranches2577[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2578,  },
@@ -10249,7 +10262,7 @@ x86Token x86Parser::tokenBranches2556[] = {
 };
 void x86Parser::TokenFunc2570(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 208;
+	operand.operandCoding = 206;
 }
 x86Token x86Parser::tokenBranches2569[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2570,  },
@@ -10265,7 +10278,7 @@ x86Token x86Parser::tokenBranches2567[] = {
 };
 void x86Parser::TokenFunc2586(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 210;
+	operand.operandCoding = 208;
 }
 x86Token x86Parser::tokenBranches2585[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2586,  },
@@ -10311,7 +10324,7 @@ x86Token x86Parser::tokenBranches2555[] = {
 };
 void x86Parser::TokenFunc2594(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 211;
+	operand.operandCoding = 209;
 }
 x86Token x86Parser::tokenBranches2593[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2594,  },
@@ -10327,7 +10340,7 @@ x86Token x86Parser::tokenBranches2591[] = {
 };
 void x86Parser::TokenFunc2610(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 213;
+	operand.operandCoding = 211;
 }
 x86Token x86Parser::tokenBranches2609[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2610,  },
@@ -10356,7 +10369,7 @@ x86Token x86Parser::tokenBranches2588[] = {
 };
 void x86Parser::TokenFunc2602(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 212;
+	operand.operandCoding = 210;
 }
 x86Token x86Parser::tokenBranches2601[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2602,  },
@@ -10372,7 +10385,7 @@ x86Token x86Parser::tokenBranches2599[] = {
 };
 void x86Parser::TokenFunc2618(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 214;
+	operand.operandCoding = 212;
 }
 x86Token x86Parser::tokenBranches2617[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2618,  },
@@ -10418,7 +10431,7 @@ x86Token x86Parser::tokenBranches2587[] = {
 };
 void x86Parser::TokenFunc2626(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 215;
+	operand.operandCoding = 213;
 }
 x86Token x86Parser::tokenBranches2625[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2626,  },
@@ -10434,7 +10447,7 @@ x86Token x86Parser::tokenBranches2623[] = {
 };
 void x86Parser::TokenFunc2642(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 217;
+	operand.operandCoding = 215;
 }
 x86Token x86Parser::tokenBranches2641[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2642,  },
@@ -10463,7 +10476,7 @@ x86Token x86Parser::tokenBranches2620[] = {
 };
 void x86Parser::TokenFunc2634(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 216;
+	operand.operandCoding = 214;
 }
 x86Token x86Parser::tokenBranches2633[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2634,  },
@@ -10479,7 +10492,7 @@ x86Token x86Parser::tokenBranches2631[] = {
 };
 void x86Parser::TokenFunc2650(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 218;
+	operand.operandCoding = 216;
 }
 x86Token x86Parser::tokenBranches2649[] = {
 	{x86Token::REGISTER, 10, 1, 0, NULL,&x86Parser::TokenFunc2650,  },
@@ -10531,7 +10544,7 @@ x86Token x86Parser::tokenBranches2554[] = {
 };
 void x86Parser::TokenFunc2657(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 219;
+	operand.operandCoding = 217;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -10544,7 +10557,7 @@ void x86Parser::TokenFunc2657(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2656[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2657,  },
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2657,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2655[] = {
@@ -10571,7 +10584,7 @@ x86Token x86Parser::tokenBranches2662[] = {
 };
 void x86Parser::TokenFunc2673(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 220;
+	operand.operandCoding = 218;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -10584,12 +10597,12 @@ void x86Parser::TokenFunc2673(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2672[] = {
-	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2673,  },
+	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc2673,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2675(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 221;
+	operand.operandCoding = 219;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -10602,12 +10615,12 @@ void x86Parser::TokenFunc2675(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2674[] = {
-	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2675,  },
+	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc2675,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2686(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 222;
+	operand.operandCoding = 220;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -10620,12 +10633,12 @@ void x86Parser::TokenFunc2686(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2685[] = {
-	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2686,  },
+	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2686,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2691(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 223;
+	operand.operandCoding = 221;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -10638,7 +10651,7 @@ void x86Parser::TokenFunc2691(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2690[] = {
-	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2691,  },
+	{x86Token::NUMBER, 7, 1, 0, NULL,&x86Parser::TokenFunc2691,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2684[] = {
@@ -10665,7 +10678,7 @@ void x86Parser::TokenFunc2683(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2693(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 224;
+	operand.operandCoding = 222;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -10679,7 +10692,7 @@ void x86Parser::TokenFunc2693(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2695(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 225;
+	operand.operandCoding = 223;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -10720,16 +10733,16 @@ void x86Parser::TokenFunc2699(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding2699_9;
 }
 x86Token x86Parser::tokenBranches2682[] = {
-	{x86Token::NUMBER, 3, 0, 0, NULL,&x86Parser::TokenFunc2683, x86Parser::tokenBranches2683 },
-	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2693,  },
-	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2695,  },
+	{x86Token::NUMBER, 4, 0, 0, NULL,&x86Parser::TokenFunc2683, x86Parser::tokenBranches2683 },
+	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc2693,  },
+	{x86Token::NUMBER, 7, 1, 0, NULL,&x86Parser::TokenFunc2695,  },
 	{x86Token::ADDRESSCLASS, 6, 1, 0, NULL,&x86Parser::TokenFunc2697,  },
 	{x86Token::ADDRESSCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc2699,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2701(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 226;
+	operand.operandCoding = 224;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -10742,12 +10755,12 @@ void x86Parser::TokenFunc2701(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2700[] = {
-	{x86Token::NUMBER, 7, 1, 0, NULL,&x86Parser::TokenFunc2701,  },
+	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2701,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc2703(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 227;
+	operand.operandCoding = 225;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -10761,7 +10774,7 @@ void x86Parser::TokenFunc2703(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2705(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 228;
+	operand.operandCoding = 226;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -10774,8 +10787,8 @@ void x86Parser::TokenFunc2705(x86Operand &operand, int tokenPos)
 	operands.push_back(numeric);
 }
 x86Token x86Parser::tokenBranches2702[] = {
-	{x86Token::NUMBER, 12, 1, 0, NULL,&x86Parser::TokenFunc2703,  },
-	{x86Token::NUMBER, 13, 1, 0, NULL,&x86Parser::TokenFunc2705,  },
+	{x86Token::NUMBER, 13, 1, 0, NULL,&x86Parser::TokenFunc2703,  },
+	{x86Token::NUMBER, 14, 1, 0, NULL,&x86Parser::TokenFunc2705,  },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding2711_8[] = {
@@ -10816,7 +10829,7 @@ x86Token x86Parser::tokenBranches2712[] = {
 };
 void x86Parser::TokenFunc2706(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 227;
+	operand.operandCoding = 225;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -10830,7 +10843,7 @@ void x86Parser::TokenFunc2706(x86Operand &operand, int tokenPos)
 }
 void x86Parser::TokenFunc2707(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 228;
+	operand.operandCoding = 226;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -10874,35 +10887,20 @@ x86Token x86Parser::tokenBranches2681[] = {
 	{x86Token::TOKEN, 15, 0, 0, NULL, NULL, x86Parser::tokenBranches2682 },
 	{x86Token::TOKEN, 13, 0, 0, NULL, NULL, x86Parser::tokenBranches2700 },
 	{x86Token::TOKEN, 14, 0, 0, NULL, NULL, x86Parser::tokenBranches2702 },
-	{x86Token::NUMBER, 11, 1, 0, NULL,&x86Parser::TokenFunc2706,  },
-	{x86Token::NUMBER, 13, 1, 0, NULL,&x86Parser::TokenFunc2707,  },
+	{x86Token::NUMBER, 12, 1, 0, NULL,&x86Parser::TokenFunc2706,  },
+	{x86Token::NUMBER, 14, 1, 0, NULL,&x86Parser::TokenFunc2707,  },
 	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc2708,  },
 	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2709,  },
 	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2710 },
 	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches2712 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding2745_8[] = {
-	{ Coding::valSpecified, 6},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding2745_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc2745(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding2745_8;
-	operand.values[9] = tokenCoding2745_9;
-}
 Coding x86Parser::tokenCoding2746_8[] = {
 	{ Coding::valSpecified, 6},
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding2746_9[] = {
-	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
 	{ Coding::eot },
@@ -10912,62 +10910,77 @@ void x86Parser::TokenFunc2746(x86Operand &operand, int tokenPos)
 	operand.values[8] = tokenCoding2746_8;
 	operand.values[9] = tokenCoding2746_9;
 }
-x86Token x86Parser::tokenBranches2744[] = {
-	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc2745,  },
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2746,  },
+Coding x86Parser::tokenCoding2747_8[] = {
+	{ Coding::valSpecified, 6},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding2747_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc2747(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding2747_8;
+	operand.values[9] = tokenCoding2747_9;
+}
+x86Token x86Parser::tokenBranches2745[] = {
+	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc2746,  },
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2747,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2753(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2754(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 227;
+}
+x86Token x86Parser::tokenBranches2753[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2754,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2766(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 229;
 }
-x86Token x86Parser::tokenBranches2752[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2753,  },
+x86Token x86Parser::tokenBranches2765[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2766,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2765(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 231;
-}
-x86Token x86Parser::tokenBranches2764[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2765,  },
+x86Token x86Parser::tokenBranches2752[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2753 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2765 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2751[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2752 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2764 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2752 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2750[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2751 },
+void x86Parser::TokenFunc2760(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 228;
+}
+x86Token x86Parser::tokenBranches2759[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2760,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2759(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2772(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 230;
 }
-x86Token x86Parser::tokenBranches2758[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2759,  },
+x86Token x86Parser::tokenBranches2771[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2772,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2771(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 232;
-}
-x86Token x86Parser::tokenBranches2770[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2771,  },
+x86Token x86Parser::tokenBranches2758[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2759 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2771 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2757[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2758 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2770 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2758 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2756[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2757 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2756(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2757(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -10979,66 +10992,66 @@ void x86Parser::TokenFunc2756(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
+x86Token x86Parser::tokenBranches2750[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches2751 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2757, x86Parser::tokenBranches2757 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2749[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches2750 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2756, x86Parser::tokenBranches2756 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2750 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2748[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2749 },
+void x86Parser::TokenFunc2778(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 231;
+}
+x86Token x86Parser::tokenBranches2777[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2778,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2777(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2790(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 233;
 }
-x86Token x86Parser::tokenBranches2776[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2777,  },
+x86Token x86Parser::tokenBranches2789[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2790,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2789(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 235;
-}
-x86Token x86Parser::tokenBranches2788[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2789,  },
+x86Token x86Parser::tokenBranches2776[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2777 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2789 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2775[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2776 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2788 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2776 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2774[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2775 },
+void x86Parser::TokenFunc2784(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 232;
+}
+x86Token x86Parser::tokenBranches2783[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2784,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2783(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2796(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 234;
 }
-x86Token x86Parser::tokenBranches2782[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2783,  },
+x86Token x86Parser::tokenBranches2795[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2796,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2795(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 236;
-}
-x86Token x86Parser::tokenBranches2794[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2795,  },
+x86Token x86Parser::tokenBranches2782[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2783 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2795 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2781[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2782 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2794 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2782 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2780[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2781 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2780(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2781(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -11050,66 +11063,66 @@ void x86Parser::TokenFunc2780(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
+x86Token x86Parser::tokenBranches2774[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches2775 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2781, x86Parser::tokenBranches2781 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2773[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches2774 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2780, x86Parser::tokenBranches2780 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2774 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2772[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2773 },
+void x86Parser::TokenFunc2802(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 235;
+}
+x86Token x86Parser::tokenBranches2801[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2802,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2801(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2814(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 237;
 }
-x86Token x86Parser::tokenBranches2800[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2801,  },
+x86Token x86Parser::tokenBranches2813[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2814,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2813(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 239;
-}
-x86Token x86Parser::tokenBranches2812[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2813,  },
+x86Token x86Parser::tokenBranches2800[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2801 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2813 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2799[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2800 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2812 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2800 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2798[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2799 },
+void x86Parser::TokenFunc2808(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 236;
+}
+x86Token x86Parser::tokenBranches2807[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2808,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2807(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2820(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 238;
 }
-x86Token x86Parser::tokenBranches2806[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2807,  },
+x86Token x86Parser::tokenBranches2819[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2820,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2819(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 240;
-}
-x86Token x86Parser::tokenBranches2818[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2819,  },
+x86Token x86Parser::tokenBranches2806[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2807 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2819 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2805[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches2806 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches2818 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2806 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2804[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2805 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2804(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2805(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -11121,22 +11134,58 @@ void x86Parser::TokenFunc2804(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
+x86Token x86Parser::tokenBranches2798[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches2799 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2805, x86Parser::tokenBranches2805 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2797[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches2798 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2804, x86Parser::tokenBranches2804 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2798 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2796[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2797 },
+x86Token x86Parser::tokenBranches2748[] = {
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches2749 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches2773 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches2797 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2747[] = {
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches2748 },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches2772 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches2796 },
+void x86Parser::TokenFunc2825(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 239;
+	operand.values[14] = new Coding[2];
+	CleanupValues.push_back(operand.values[14]);
+	operand.values[14]->type = Coding::number;
+	operand.values[14]->val = operands.size();
+	operand.values[14]->bits = 0;
+	operand.values[14]->field = 0;
+	operand.values[14]->math = 0;
+	operand.values[14]->mathval = 0;
+	operand.values[14][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+x86Token x86Parser::tokenBranches2824[] = {
+	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc2825,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2824(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2827(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 240;
+	operand.values[14] = new Coding[2];
+	CleanupValues.push_back(operand.values[14]);
+	operand.values[14]->type = Coding::number;
+	operand.values[14]->val = operands.size();
+	operand.values[14]->bits = 0;
+	operand.values[14]->field = 0;
+	operand.values[14]->math = 0;
+	operand.values[14]->mathval = 0;
+	operand.values[14][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+x86Token x86Parser::tokenBranches2826[] = {
+	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc2827,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2829(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 241;
 	operand.values[14] = new Coding[2];
@@ -11150,13 +11199,13 @@ void x86Parser::TokenFunc2824(x86Operand &operand, int tokenPos)
 	operand.values[14][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches2823[] = {
-	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2824,  },
+x86Token x86Parser::tokenBranches2828[] = {
+	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc2829,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2826(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2831(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 242;
+	operand.operandCoding = 241;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -11168,13 +11217,13 @@ void x86Parser::TokenFunc2826(x86Operand &operand, int tokenPos)
 	operand.values[14][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches2825[] = {
-	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2826,  },
+x86Token x86Parser::tokenBranches2830[] = {
+	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc2831,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2828(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2833(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 243;
+	operand.operandCoding = 240;
 	operand.values[14] = new Coding[2];
 	CleanupValues.push_back(operand.values[14]);
 	operand.values[14]->type = Coding::number;
@@ -11186,211 +11235,175 @@ void x86Parser::TokenFunc2828(x86Operand &operand, int tokenPos)
 	operand.values[14][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches2827[] = {
-	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2828,  },
+x86Token x86Parser::tokenBranches2832[] = {
+	{x86Token::NUMBER, 9, 1, 0, NULL,&x86Parser::TokenFunc2833,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2830(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 243;
-	operand.values[14] = new Coding[2];
-	CleanupValues.push_back(operand.values[14]);
-	operand.values[14]->type = Coding::number;
-	operand.values[14]->val = operands.size();
-	operand.values[14]->bits = 0;
-	operand.values[14]->field = 0;
-	operand.values[14]->math = 0;
-	operand.values[14]->mathval = 0;
-	operand.values[14][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches2829[] = {
-	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2830,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2832(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 242;
-	operand.values[14] = new Coding[2];
-	CleanupValues.push_back(operand.values[14]);
-	operand.values[14]->type = Coding::number;
-	operand.values[14]->val = operands.size();
-	operand.values[14]->bits = 0;
-	operand.values[14]->field = 0;
-	operand.values[14]->math = 0;
-	operand.values[14]->mathval = 0;
-	operand.values[14][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches2831[] = {
-	{x86Token::NUMBER, 8, 1, 0, NULL,&x86Parser::TokenFunc2832,  },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding2836_8[] = {
+Coding x86Parser::tokenCoding2837_8[] = {
 	{ Coding::valSpecified, 3},
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2836_9[] = {
+Coding x86Parser::tokenCoding2837_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2836(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2837(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding2836_8;
-	operand.values[9] = tokenCoding2836_9;
+	operand.values[8] = tokenCoding2837_8;
+	operand.values[9] = tokenCoding2837_9;
 }
-x86Token x86Parser::tokenBranches2835[] = {
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2836,  },
+x86Token x86Parser::tokenBranches2836[] = {
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2837,  },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding2840_8[] = {
+Coding x86Parser::tokenCoding2842_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2840_9[] = {
+Coding x86Parser::tokenCoding2842_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 34, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2840(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2842(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding2840_8;
-	operand.values[9] = tokenCoding2840_9;
+	operand.values[8] = tokenCoding2842_8;
+	operand.values[9] = tokenCoding2842_9;
 }
-x86Token x86Parser::tokenBranches2839[] = {
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2840,  },
+x86Token x86Parser::tokenBranches2841[] = {
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2842,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2838[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2839 },
+x86Token x86Parser::tokenBranches2840[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2841 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding2843_8[] = {
+Coding x86Parser::tokenCoding2845_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 20, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2843_9[] = {
+Coding x86Parser::tokenCoding2845_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 35, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2843(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2845(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding2843_8;
-	operand.values[9] = tokenCoding2843_9;
+	operand.values[8] = tokenCoding2845_8;
+	operand.values[9] = tokenCoding2845_9;
 }
-x86Token x86Parser::tokenBranches2842[] = {
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2843,  },
+x86Token x86Parser::tokenBranches2844[] = {
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2845,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2841[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2842 },
+x86Token x86Parser::tokenBranches2843[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2844 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding2846_8[] = {
+Coding x86Parser::tokenCoding2848_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 21, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2846_9[] = {
+Coding x86Parser::tokenCoding2848_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 38, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2846(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2848(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding2846_8;
-	operand.values[9] = tokenCoding2846_9;
+	operand.values[8] = tokenCoding2848_8;
+	operand.values[9] = tokenCoding2848_9;
 }
-x86Token x86Parser::tokenBranches2845[] = {
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2846,  },
+x86Token x86Parser::tokenBranches2847[] = {
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc2848,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2844[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2845 },
+x86Token x86Parser::tokenBranches2846[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2847 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2852(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2854(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 244;
+	operand.operandCoding = 242;
 }
-x86Token x86Parser::tokenBranches2851[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2852,  },
+x86Token x86Parser::tokenBranches2853[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2854,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2860(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2862(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 243;
+}
+x86Token x86Parser::tokenBranches2861[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2862,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2876(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 245;
 }
+x86Token x86Parser::tokenBranches2875[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2876,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2861(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc2875(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+x86Token x86Parser::tokenBranches2860[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2861, x86Parser::tokenBranches2861 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc2875, x86Parser::tokenBranches2875 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2859[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2860,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2860 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2874(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2868(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 247;
+	operand.operandCoding = 244;
 }
-x86Token x86Parser::tokenBranches2873[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2874,  },
+x86Token x86Parser::tokenBranches2867[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2868,  },
 	{x86Token::EOT }
 };
+void x86Parser::TokenFunc2853(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
 void x86Parser::TokenFunc2859(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc2873(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches2858[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2859, x86Parser::tokenBranches2859 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2873, x86Parser::tokenBranches2873 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2857[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2858 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2866(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 246;
-}
-x86Token x86Parser::tokenBranches2865[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2866,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2851(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc2857(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -11402,7 +11415,7 @@ void x86Parser::TokenFunc2857(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2865(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2867(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -11415,105 +11428,105 @@ void x86Parser::TokenFunc2865(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
+x86Token x86Parser::tokenBranches2852[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2853, x86Parser::tokenBranches2853 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2859, x86Parser::tokenBranches2859 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc2867, x86Parser::tokenBranches2867 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2851[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2852 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2850[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2851, x86Parser::tokenBranches2851 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2857, x86Parser::tokenBranches2857 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2865, x86Parser::tokenBranches2865 },
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2851 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2849[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2850 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2850 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2848[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2849 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2847[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2848 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2880(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2882(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 248;
+	operand.operandCoding = 246;
 }
-x86Token x86Parser::tokenBranches2879[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2880,  },
+x86Token x86Parser::tokenBranches2881[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2882,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2888(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2890(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 247;
+}
+x86Token x86Parser::tokenBranches2889[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2890,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2904(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 249;
 }
+x86Token x86Parser::tokenBranches2903[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2904,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2889(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc2903(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+x86Token x86Parser::tokenBranches2888[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2889, x86Parser::tokenBranches2889 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc2903, x86Parser::tokenBranches2903 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2887[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2888,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2888 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2902(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2896(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 251;
+	operand.operandCoding = 248;
 }
-x86Token x86Parser::tokenBranches2901[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2902,  },
+x86Token x86Parser::tokenBranches2895[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2896,  },
 	{x86Token::EOT }
 };
+void x86Parser::TokenFunc2881(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
 void x86Parser::TokenFunc2887(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc2901(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches2886[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2887, x86Parser::tokenBranches2887 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2901, x86Parser::tokenBranches2901 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2885[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2886 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2894(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 250;
-}
-x86Token x86Parser::tokenBranches2893[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2894,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2879(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc2885(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -11525,7 +11538,7 @@ void x86Parser::TokenFunc2885(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2893(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2895(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -11538,105 +11551,105 @@ void x86Parser::TokenFunc2893(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
+x86Token x86Parser::tokenBranches2880[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2881, x86Parser::tokenBranches2881 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2887, x86Parser::tokenBranches2887 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc2895, x86Parser::tokenBranches2895 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2879[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2880 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2878[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2879, x86Parser::tokenBranches2879 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2885, x86Parser::tokenBranches2885 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2893, x86Parser::tokenBranches2893 },
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2879 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2877[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2878 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2878 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2876[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2877 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2875[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2876 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2908(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2910(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 252;
+	operand.operandCoding = 250;
 }
-x86Token x86Parser::tokenBranches2907[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2908,  },
+x86Token x86Parser::tokenBranches2909[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2910,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2916(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2918(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 251;
+}
+x86Token x86Parser::tokenBranches2917[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2918,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2932(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 253;
 }
+x86Token x86Parser::tokenBranches2931[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2932,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2917(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc2931(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+x86Token x86Parser::tokenBranches2916[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2917, x86Parser::tokenBranches2917 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc2931, x86Parser::tokenBranches2931 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2915[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2916,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2916 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2930(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2924(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 255;
+	operand.operandCoding = 252;
 }
-x86Token x86Parser::tokenBranches2929[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2930,  },
+x86Token x86Parser::tokenBranches2923[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2924,  },
 	{x86Token::EOT }
 };
+void x86Parser::TokenFunc2909(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
 void x86Parser::TokenFunc2915(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc2929(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches2914[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2915, x86Parser::tokenBranches2915 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2929, x86Parser::tokenBranches2929 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2913[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2914 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2922(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 254;
-}
-x86Token x86Parser::tokenBranches2921[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc2922,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2907(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc2913(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -11648,7 +11661,7 @@ void x86Parser::TokenFunc2913(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2921(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2923(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -11661,25 +11674,106 @@ void x86Parser::TokenFunc2921(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
+x86Token x86Parser::tokenBranches2908[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2909, x86Parser::tokenBranches2909 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2915, x86Parser::tokenBranches2915 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc2923, x86Parser::tokenBranches2923 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2907[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2908 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2906[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2907, x86Parser::tokenBranches2907 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2913, x86Parser::tokenBranches2913 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2921, x86Parser::tokenBranches2921 },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches2907 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2905[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2906 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2906 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2904[] = {
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches2905 },
+void x86Parser::TokenFunc2936(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 254;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+Coding x86Parser::tokenCoding2948_8[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding2948_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 138, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc2948(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding2948_8;
+	operand.values[9] = tokenCoding2948_9;
+}
+x86Token x86Parser::tokenBranches2935[] = {
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2936,  },
+	{x86Token::ADDRESSCLASS, 3, 1, 0, NULL,&x86Parser::TokenFunc2948,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2903[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2904 },
+x86Token x86Parser::tokenBranches2934[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2935 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2934(x86Operand &operand, int tokenPos)
+x86Token x86Parser::tokenBranches2933[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2934 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2940(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 255;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+Coding x86Parser::tokenCoding2952_8[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding2952_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 139, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc2952(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding2952_8;
+	operand.values[9] = tokenCoding2952_9;
+}
+x86Token x86Parser::tokenBranches2939[] = {
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2940,  },
+	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc2952,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2938[] = {
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2939 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2937[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2938 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2944(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 256;
 	operand.values[12] = new Coding[2];
@@ -11693,126 +11787,126 @@ void x86Parser::TokenFunc2934(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-Coding x86Parser::tokenCoding2946_8[] = {
+Coding x86Parser::tokenCoding2956_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2946_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 138, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc2946(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding2946_8;
-	operand.values[9] = tokenCoding2946_9;
-}
-x86Token x86Parser::tokenBranches2933[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2934,  },
-	{x86Token::ADDRESSCLASS, 3, 1, 0, NULL,&x86Parser::TokenFunc2946,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2932[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2933 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2931[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2932 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2938(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 257;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-Coding x86Parser::tokenCoding2950_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding2950_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 139, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc2950(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding2950_8;
-	operand.values[9] = tokenCoding2950_9;
-}
-x86Token x86Parser::tokenBranches2937[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2938,  },
-	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc2950,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2936[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2937 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2935[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2936 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2942(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 258;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-Coding x86Parser::tokenCoding2954_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding2954_9[] = {
+Coding x86Parser::tokenCoding2956_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 139, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2954(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2956(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding2954_8;
-	operand.values[9] = tokenCoding2954_9;
+	operand.values[8] = tokenCoding2956_8;
+	operand.values[9] = tokenCoding2956_9;
 }
+x86Token x86Parser::tokenBranches2943[] = {
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2944,  },
+	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc2956,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2942[] = {
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches2943 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches2941[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2942,  },
-	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc2954,  },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2942 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2940[] = {
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches2941 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2939[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2940 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3102_8[] = {
+Coding x86Parser::tokenCoding2961_8[] = {
 	{ Coding::valSpecified, 0},
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3102_9[] = {
+Coding x86Parser::tokenCoding2961_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 198, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc2961(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 154;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[8] = tokenCoding2961_8;
+	operand.values[9] = tokenCoding2961_9;
+}
+x86Token x86Parser::tokenBranches2960[] = {
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2961,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2959[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2960 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2958[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2959 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2957[] = {
+	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2958 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding2966_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding2966_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc2966(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 193;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[8] = tokenCoding2966_8;
+	operand.values[9] = tokenCoding2966_9;
+}
+x86Token x86Parser::tokenBranches2965[] = {
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2966,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2964[] = {
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2965 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2963[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2964 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2962[] = {
+	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches2963 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding2971_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding2971_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3102(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2971(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 196;
+	operand.operandCoding = 194;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -11823,23 +11917,64 @@ void x86Parser::TokenFunc3102(x86Operand &operand, int tokenPos)
 	operand.values[12]->mathval = 0;
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[8] = tokenCoding3102_8;
-	operand.values[9] = tokenCoding3102_9;
+	operand.values[8] = tokenCoding2971_8;
+	operand.values[9] = tokenCoding2971_9;
 }
-x86Token x86Parser::tokenBranches3101[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3102,  },
+x86Token x86Parser::tokenBranches2970[] = {
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc2971,  },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding2957_8[] = {
+x86Token x86Parser::tokenBranches2969[] = {
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches2970 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2968[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2969 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches2967[] = {
+	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches2968 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3104_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3104_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3104(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 194;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[8] = tokenCoding3104_8;
+	operand.values[9] = tokenCoding3104_9;
+}
+x86Token x86Parser::tokenBranches3103[] = {
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc3104,  },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding2974_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 19, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2957_9[] = {
+Coding x86Parser::tokenCoding2974_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 32, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2957(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2974(x86Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -11850,19 +11985,19 @@ void x86Parser::TokenFunc2957(x86Operand &operand, int tokenPos)
 	operand.values[19]->math = 0;
 	operand.values[19]->mathval = 0;
 	operand.values[19][1].type = Coding::eot;
-	operand.values[8] = tokenCoding2957_8;
-	operand.values[9] = tokenCoding2957_9;
+	operand.values[8] = tokenCoding2974_8;
+	operand.values[9] = tokenCoding2974_9;
 }
-Coding x86Parser::tokenCoding2960_8[] = {
+Coding x86Parser::tokenCoding2977_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 20, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2960_9[] = {
+Coding x86Parser::tokenCoding2977_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 33, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2960(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2977(x86Operand &operand, int tokenPos)
 {
 	operand.values[20] = new Coding[2];
 	CleanupValues.push_back(operand.values[20]);
@@ -11873,19 +12008,19 @@ void x86Parser::TokenFunc2960(x86Operand &operand, int tokenPos)
 	operand.values[20]->math = 0;
 	operand.values[20]->mathval = 0;
 	operand.values[20][1].type = Coding::eot;
-	operand.values[8] = tokenCoding2960_8;
-	operand.values[9] = tokenCoding2960_9;
+	operand.values[8] = tokenCoding2977_8;
+	operand.values[9] = tokenCoding2977_9;
 }
-Coding x86Parser::tokenCoding2963_8[] = {
+Coding x86Parser::tokenCoding2980_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 21, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding2963_9[] = {
+Coding x86Parser::tokenCoding2980_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 36, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc2963(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2980(x86Operand &operand, int tokenPos)
 {
 	operand.values[21] = new Coding[2];
 	CleanupValues.push_back(operand.values[21]);
@@ -11896,242 +12031,120 @@ void x86Parser::TokenFunc2963(x86Operand &operand, int tokenPos)
 	operand.values[21]->math = 0;
 	operand.values[21]->mathval = 0;
 	operand.values[21][1].type = Coding::eot;
-	operand.values[8] = tokenCoding2963_8;
-	operand.values[9] = tokenCoding2963_9;
+	operand.values[8] = tokenCoding2980_8;
+	operand.values[9] = tokenCoding2980_9;
 }
-x86Token x86Parser::tokenBranches2956[] = {
-	{x86Token::REGISTERCLASS, 14, 1, 0, NULL,&x86Parser::TokenFunc2957,  },
-	{x86Token::REGISTERCLASS, 15, 1, 0, NULL,&x86Parser::TokenFunc2960,  },
-	{x86Token::REGISTERCLASS, 16, 1, 0, NULL,&x86Parser::TokenFunc2963,  },
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3101 },
+x86Token x86Parser::tokenBranches2973[] = {
+	{x86Token::REGISTERCLASS, 14, 1, 0, NULL,&x86Parser::TokenFunc2974,  },
+	{x86Token::REGISTERCLASS, 15, 1, 0, NULL,&x86Parser::TokenFunc2977,  },
+	{x86Token::REGISTERCLASS, 16, 1, 0, NULL,&x86Parser::TokenFunc2980,  },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3103 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2955[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2956 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding2968_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding2968_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 198, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc2968(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 156;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[8] = tokenCoding2968_8;
-	operand.values[9] = tokenCoding2968_9;
-}
-x86Token x86Parser::tokenBranches2967[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc2968,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2966[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2967 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2965[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2966 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2964[] = {
-	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2965 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding2973_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding2973_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc2973(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 195;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[8] = tokenCoding2973_8;
-	operand.values[9] = tokenCoding2973_9;
-}
 x86Token x86Parser::tokenBranches2972[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc2973,  },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2973 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2971[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches2972 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2970[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2971 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2969[] = {
-	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches2970 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding2978_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding2978_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc2978(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2986(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 196;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[8] = tokenCoding2978_8;
-	operand.values[9] = tokenCoding2978_9;
+	operand.operandCoding = 257;
 }
-x86Token x86Parser::tokenBranches2977[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc2978,  },
+x86Token x86Parser::tokenBranches2985[] = {
+	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc2986,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2976[] = {
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches2977 },
+x86Token x86Parser::tokenBranches2984[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2985 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2975[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2976 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2974[] = {
-	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches2975 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2984(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 259;
-}
 x86Token x86Parser::tokenBranches2983[] = {
-	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc2984,  },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2984 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2982[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2983 },
+void x86Parser::TokenFunc2994(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 258;
+}
+x86Token x86Parser::tokenBranches2993[] = {
+	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc2994,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2981[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2982 },
+x86Token x86Parser::tokenBranches2992[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2993 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc2992(x86Operand &operand, int tokenPos)
+x86Token x86Parser::tokenBranches2991[] = {
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2992 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3008(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 260;
 }
-x86Token x86Parser::tokenBranches2991[] = {
-	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc2992,  },
+x86Token x86Parser::tokenBranches3007[] = {
+	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc3008,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3006[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3007 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3005[] = {
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3006 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc2991(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc3005(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
 x86Token x86Parser::tokenBranches2990[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2991 },
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2991, x86Parser::tokenBranches2991 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc3005, x86Parser::tokenBranches3005 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches2989[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2990 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2990 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3006(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3000(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 262;
+	operand.operandCoding = 259;
 }
-x86Token x86Parser::tokenBranches3005[] = {
-	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc3006,  },
+x86Token x86Parser::tokenBranches2999[] = {
+	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc3000,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3004[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3005 },
+x86Token x86Parser::tokenBranches2998[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2999 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3003[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3004 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2989(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc3003(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches2988[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2989, x86Parser::tokenBranches2989 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3003, x86Parser::tokenBranches3003 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2987[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2988 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2998(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 261;
-}
 x86Token x86Parser::tokenBranches2997[] = {
-	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc2998,  },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2998 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2996[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches2997 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches2995[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2996 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2981(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2983(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -12144,7 +12157,7 @@ void x86Parser::TokenFunc2981(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-void x86Parser::TokenFunc2987(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2989(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -12156,7 +12169,7 @@ void x86Parser::TokenFunc2987(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2995(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2997(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -12169,21 +12182,21 @@ void x86Parser::TokenFunc2995(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches2980[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc2981, x86Parser::tokenBranches2981 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2987, x86Parser::tokenBranches2987 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2995, x86Parser::tokenBranches2995 },
+x86Token x86Parser::tokenBranches2982[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc2983, x86Parser::tokenBranches2983 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc2989, x86Parser::tokenBranches2989 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc2997, x86Parser::tokenBranches2997 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3066_8[] = {
+Coding x86Parser::tokenCoding3068_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3066_9[] = {
+Coding x86Parser::tokenCoding3068_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 136, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3066(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3068(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -12194,122 +12207,122 @@ void x86Parser::TokenFunc3066(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3066_8;
-	operand.values[9] = tokenCoding3066_9;
+	operand.values[8] = tokenCoding3068_8;
+	operand.values[9] = tokenCoding3068_9;
 }
-x86Token x86Parser::tokenBranches3065[] = {
-	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3066,  },
+x86Token x86Parser::tokenBranches3067[] = {
+	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3068,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3064[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3065 },
+x86Token x86Parser::tokenBranches3066[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3067 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches2979[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2980 },
-	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3064 },
+x86Token x86Parser::tokenBranches2981[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches2982 },
+	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3066 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3012(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3014(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 263;
+	operand.operandCoding = 261;
 }
+x86Token x86Parser::tokenBranches3013[] = {
+	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3014,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3012[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3013 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3011[] = {
-	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3012,  },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3012 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3010[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3011 },
+void x86Parser::TokenFunc3022(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 262;
+}
+x86Token x86Parser::tokenBranches3021[] = {
+	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3022,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3009[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3010 },
+x86Token x86Parser::tokenBranches3020[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3021 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3020(x86Operand &operand, int tokenPos)
+x86Token x86Parser::tokenBranches3019[] = {
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3020 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3036(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 264;
 }
-x86Token x86Parser::tokenBranches3019[] = {
-	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3020,  },
+x86Token x86Parser::tokenBranches3035[] = {
+	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3036,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3034[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3035 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3033[] = {
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3034 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3019(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc3033(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
 x86Token x86Parser::tokenBranches3018[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3019 },
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3019, x86Parser::tokenBranches3019 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc3033, x86Parser::tokenBranches3033 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3017[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3018 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3018 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3034(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3028(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 266;
+	operand.operandCoding = 263;
 }
-x86Token x86Parser::tokenBranches3033[] = {
-	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3034,  },
+x86Token x86Parser::tokenBranches3027[] = {
+	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3028,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3032[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3033 },
+x86Token x86Parser::tokenBranches3026[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3027 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3031[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3032 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3017(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc3031(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches3016[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc3017, x86Parser::tokenBranches3017 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3031, x86Parser::tokenBranches3031 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3015[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3016 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3026(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 265;
-}
 x86Token x86Parser::tokenBranches3025[] = {
-	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3026,  },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3026 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3024[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3025 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3023[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3024 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3009(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3011(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -12322,7 +12335,7 @@ void x86Parser::TokenFunc3009(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-void x86Parser::TokenFunc3015(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3017(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -12334,7 +12347,7 @@ void x86Parser::TokenFunc3015(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc3023(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3025(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -12347,22 +12360,22 @@ void x86Parser::TokenFunc3023(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches3008[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc3009, x86Parser::tokenBranches3009 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3015, x86Parser::tokenBranches3015 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3023, x86Parser::tokenBranches3023 },
+x86Token x86Parser::tokenBranches3010[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3011, x86Parser::tokenBranches3011 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3017, x86Parser::tokenBranches3017 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc3025, x86Parser::tokenBranches3025 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3070_8[] = {
+Coding x86Parser::tokenCoding3072_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3070_9[] = {
+Coding x86Parser::tokenCoding3072_9[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 137, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3070(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3072(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -12373,18 +12386,18 @@ void x86Parser::TokenFunc3070(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3070_8;
-	operand.values[9] = tokenCoding3070_9;
+	operand.values[8] = tokenCoding3072_8;
+	operand.values[9] = tokenCoding3072_9;
 }
-Coding x86Parser::tokenCoding3086_8[] = {
+Coding x86Parser::tokenCoding3088_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3086_9[] = {
+Coding x86Parser::tokenCoding3088_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 140, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3086(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3088(x86Operand &operand, int tokenPos)
 {
 	operand.values[22] = new Coding[2];
 	CleanupValues.push_back(operand.values[22]);
@@ -12395,123 +12408,123 @@ void x86Parser::TokenFunc3086(x86Operand &operand, int tokenPos)
 	operand.values[22]->math = 0;
 	operand.values[22]->mathval = 0;
 	operand.values[22][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3086_8;
-	operand.values[9] = tokenCoding3086_9;
+	operand.values[8] = tokenCoding3088_8;
+	operand.values[9] = tokenCoding3088_9;
 }
-x86Token x86Parser::tokenBranches3069[] = {
-	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3070,  },
-	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3086,  },
+x86Token x86Parser::tokenBranches3071[] = {
+	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3072,  },
+	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3088,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3068[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3069 },
+x86Token x86Parser::tokenBranches3070[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3071 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3007[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3008 },
-	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3068 },
+x86Token x86Parser::tokenBranches3009[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3010 },
+	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3070 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3040(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3042(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 267;
+	operand.operandCoding = 265;
 }
+x86Token x86Parser::tokenBranches3041[] = {
+	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3042,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3040[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3041 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3039[] = {
-	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3040,  },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3040 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3038[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3039 },
+void x86Parser::TokenFunc3050(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 266;
+}
+x86Token x86Parser::tokenBranches3049[] = {
+	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3050,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3037[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3038 },
+x86Token x86Parser::tokenBranches3048[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3049 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3048(x86Operand &operand, int tokenPos)
+x86Token x86Parser::tokenBranches3047[] = {
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3048 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3064(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 268;
 }
-x86Token x86Parser::tokenBranches3047[] = {
-	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3048,  },
+x86Token x86Parser::tokenBranches3063[] = {
+	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3064,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3062[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3063 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3061[] = {
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3062 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3047(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc3061(x86Operand &operand, int tokenPos)
+{
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
 x86Token x86Parser::tokenBranches3046[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3047 },
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3047, x86Parser::tokenBranches3047 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc3061, x86Parser::tokenBranches3061 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3045[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3046 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3046 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3062(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3056(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 270;
+	operand.operandCoding = 267;
 }
-x86Token x86Parser::tokenBranches3061[] = {
-	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3062,  },
+x86Token x86Parser::tokenBranches3055[] = {
+	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3056,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3060[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3061 },
+x86Token x86Parser::tokenBranches3054[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3055 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3059[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3060 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3045(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc3059(x86Operand &operand, int tokenPos)
-{
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches3044[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc3045, x86Parser::tokenBranches3045 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3059, x86Parser::tokenBranches3059 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3043[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3044 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3054(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 269;
-}
 x86Token x86Parser::tokenBranches3053[] = {
-	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3054,  },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3054 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3052[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3053 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3051[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3052 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3037(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3039(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -12524,7 +12537,7 @@ void x86Parser::TokenFunc3037(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-void x86Parser::TokenFunc3043(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3045(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -12536,7 +12549,7 @@ void x86Parser::TokenFunc3043(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc3051(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3053(x86Operand &operand, int tokenPos)
 {
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
@@ -12549,22 +12562,22 @@ void x86Parser::TokenFunc3051(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches3036[] = {
-	{x86Token::NUMBER, 5, 0, 0, NULL,&x86Parser::TokenFunc3037, x86Parser::tokenBranches3037 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3043, x86Parser::tokenBranches3043 },
-	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3051, x86Parser::tokenBranches3051 },
+x86Token x86Parser::tokenBranches3038[] = {
+	{x86Token::NUMBER, 6, 0, 0, NULL,&x86Parser::TokenFunc3039, x86Parser::tokenBranches3039 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3045, x86Parser::tokenBranches3045 },
+	{x86Token::NUMBER, 7, 0, 0, NULL,&x86Parser::TokenFunc3053, x86Parser::tokenBranches3053 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3074_8[] = {
+Coding x86Parser::tokenCoding3076_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3074_9[] = {
+Coding x86Parser::tokenCoding3076_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 137, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3074(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3076(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -12575,26 +12588,26 @@ void x86Parser::TokenFunc3074(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3074_8;
-	operand.values[9] = tokenCoding3074_9;
+	operand.values[8] = tokenCoding3076_8;
+	operand.values[9] = tokenCoding3076_9;
 }
-x86Token x86Parser::tokenBranches3073[] = {
-	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3074,  },
+x86Token x86Parser::tokenBranches3075[] = {
+	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3076,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3072[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3073 },
+x86Token x86Parser::tokenBranches3074[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3075 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3090_8[] = {
+Coding x86Parser::tokenCoding3092_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3090_9[] = {
+Coding x86Parser::tokenCoding3092_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 140, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3090(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3092(x86Operand &operand, int tokenPos)
 {
 	operand.values[22] = new Coding[2];
 	CleanupValues.push_back(operand.values[22]);
@@ -12605,77 +12618,77 @@ void x86Parser::TokenFunc3090(x86Operand &operand, int tokenPos)
 	operand.values[22]->math = 0;
 	operand.values[22]->mathval = 0;
 	operand.values[22][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3090_8;
-	operand.values[9] = tokenCoding3090_9;
+	operand.values[8] = tokenCoding3092_8;
+	operand.values[9] = tokenCoding3092_9;
 }
-x86Token x86Parser::tokenBranches3089[] = {
-	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3090,  },
+x86Token x86Parser::tokenBranches3091[] = {
+	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3092,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3088[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3089 },
+x86Token x86Parser::tokenBranches3090[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3091 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3035[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3036 },
-	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3072 },
-	{x86Token::ADDRESSCLASS, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3088 },
+x86Token x86Parser::tokenBranches3037[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3038 },
+	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3074 },
+	{x86Token::ADDRESSCLASS, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3090 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3078_8[] = {
+Coding x86Parser::tokenCoding3080_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3078_9[] = {
+Coding x86Parser::tokenCoding3080_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 142, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3078(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3080(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding3078_8;
-	operand.values[9] = tokenCoding3078_9;
+	operand.values[8] = tokenCoding3080_8;
+	operand.values[9] = tokenCoding3080_9;
 }
+x86Token x86Parser::tokenBranches3079[] = {
+	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3080,  },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3084_8[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3084_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 142, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3084(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3084_8;
+	operand.values[9] = tokenCoding3084_9;
+}
+x86Token x86Parser::tokenBranches3083[] = {
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3084,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3078[] = {
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3079 },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3083 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3077[] = {
-	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3078,  },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3078 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3082_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 22, -1, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3082_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 142, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3082(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3082_8;
-	operand.values[9] = tokenCoding3082_9;
-}
-x86Token x86Parser::tokenBranches3081[] = {
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3082,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3076[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3077 },
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3081 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3075[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3076 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3094_8[] = {
+Coding x86Parser::tokenCoding3096_8[] = {
 	{ Coding::valSpecified, 0},
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3094_9[] = {
+Coding x86Parser::tokenCoding3096_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 198, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3094(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3096(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -12686,33 +12699,33 @@ void x86Parser::TokenFunc3094(x86Operand &operand, int tokenPos)
 	operand.values[12]->mathval = 0;
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[8] = tokenCoding3094_8;
-	operand.values[9] = tokenCoding3094_9;
+	operand.values[8] = tokenCoding3096_8;
+	operand.values[9] = tokenCoding3096_9;
 }
+x86Token x86Parser::tokenBranches3095[] = {
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3096,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3094[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3095 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3093[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc3094,  },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3094 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3092[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3093 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3091[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3092 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3098_8[] = {
+Coding x86Parser::tokenCoding3100_8[] = {
 	{ Coding::valSpecified, 0},
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3098_9[] = {
+Coding x86Parser::tokenCoding3100_9[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 199, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3098(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3100(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 195;
+	operand.operandCoding = 193;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -12723,22 +12736,22 @@ void x86Parser::TokenFunc3098(x86Operand &operand, int tokenPos)
 	operand.values[12]->mathval = 0;
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[8] = tokenCoding3098_8;
-	operand.values[9] = tokenCoding3098_9;
+	operand.values[8] = tokenCoding3100_8;
+	operand.values[9] = tokenCoding3100_9;
 }
+x86Token x86Parser::tokenBranches3099[] = {
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3100,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3098[] = {
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3099 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3097[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3098,  },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3098 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3096[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3097 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3095[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3096 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc2838(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2840(x86Operand &operand, int tokenPos)
 {
 	operand.values[19] = new Coding[2];
 	CleanupValues.push_back(operand.values[19]);
@@ -12750,7 +12763,7 @@ void x86Parser::TokenFunc2838(x86Operand &operand, int tokenPos)
 	operand.values[19]->mathval = 0;
 	operand.values[19][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2841(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2843(x86Operand &operand, int tokenPos)
 {
 	operand.values[20] = new Coding[2];
 	CleanupValues.push_back(operand.values[20]);
@@ -12762,7 +12775,7 @@ void x86Parser::TokenFunc2841(x86Operand &operand, int tokenPos)
 	operand.values[20]->mathval = 0;
 	operand.values[20][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2844(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2846(x86Operand &operand, int tokenPos)
 {
 	operand.values[21] = new Coding[2];
 	CleanupValues.push_back(operand.values[21]);
@@ -12774,7 +12787,7 @@ void x86Parser::TokenFunc2844(x86Operand &operand, int tokenPos)
 	operand.values[21]->mathval = 0;
 	operand.values[21][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2931(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2933(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -12786,7 +12799,7 @@ void x86Parser::TokenFunc2931(x86Operand &operand, int tokenPos)
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2935(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2937(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -12798,7 +12811,7 @@ void x86Parser::TokenFunc2935(x86Operand &operand, int tokenPos)
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc2939(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc2941(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -12810,7 +12823,7 @@ void x86Parser::TokenFunc2939(x86Operand &operand, int tokenPos)
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc3075(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3077(x86Operand &operand, int tokenPos)
 {
 	operand.values[22] = new Coding[2];
 	CleanupValues.push_back(operand.values[22]);
@@ -12822,420 +12835,420 @@ void x86Parser::TokenFunc3075(x86Operand &operand, int tokenPos)
 	operand.values[22]->mathval = 0;
 	operand.values[22][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches2837[] = {
-	{x86Token::REGISTERCLASS, 14, 0, 0, NULL,&x86Parser::TokenFunc2838, x86Parser::tokenBranches2838 },
-	{x86Token::REGISTERCLASS, 15, 0, 0, NULL,&x86Parser::TokenFunc2841, x86Parser::tokenBranches2841 },
-	{x86Token::REGISTERCLASS, 16, 0, 0, NULL,&x86Parser::TokenFunc2844, x86Parser::tokenBranches2844 },
-	{x86Token::REGISTER, 0, 0, 0, NULL, NULL, x86Parser::tokenBranches2847 },
-	{x86Token::REGISTER, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2875 },
-	{x86Token::REGISTER, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2903 },
-	{x86Token::REGISTERCLASS, 1, 0, 0, NULL,&x86Parser::TokenFunc2931, x86Parser::tokenBranches2931 },
-	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc2935, x86Parser::tokenBranches2935 },
-	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc2939, x86Parser::tokenBranches2939 },
-	{x86Token::ADDRESSCLASS, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches2955 },
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches2964 },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches2969 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches2974 },
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2979 },
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3007 },
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3035 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3075, x86Parser::tokenBranches3075 },
-	{x86Token::ADDRESSCLASS, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3091 },
-	{x86Token::ADDRESSCLASS, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3095 },
+x86Token x86Parser::tokenBranches2839[] = {
+	{x86Token::REGISTERCLASS, 14, 0, 0, NULL,&x86Parser::TokenFunc2840, x86Parser::tokenBranches2840 },
+	{x86Token::REGISTERCLASS, 15, 0, 0, NULL,&x86Parser::TokenFunc2843, x86Parser::tokenBranches2843 },
+	{x86Token::REGISTERCLASS, 16, 0, 0, NULL,&x86Parser::TokenFunc2846, x86Parser::tokenBranches2846 },
+	{x86Token::REGISTER, 0, 0, 0, NULL, NULL, x86Parser::tokenBranches2849 },
+	{x86Token::REGISTER, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches2877 },
+	{x86Token::REGISTER, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches2905 },
+	{x86Token::REGISTERCLASS, 1, 0, 0, NULL,&x86Parser::TokenFunc2933, x86Parser::tokenBranches2933 },
+	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc2937, x86Parser::tokenBranches2937 },
+	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc2941, x86Parser::tokenBranches2941 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches2957 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches2962 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches2967 },
+	{x86Token::ADDRESSCLASS, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches2972 },
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches2981 },
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3009 },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3037 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3077, x86Parser::tokenBranches3077 },
+	{x86Token::ADDRESSCLASS, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3093 },
+	{x86Token::ADDRESSCLASS, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3097 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3116(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3118(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 271;
+	operand.operandCoding = 269;
 }
-x86Token x86Parser::tokenBranches3115[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3116,  },
+x86Token x86Parser::tokenBranches3117[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3118,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3116[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3117 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3115[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3116 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3131(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 270;
+}
+x86Token x86Parser::tokenBranches3130[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3131,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3129[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3130 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3128[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3129 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3128(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
 x86Token x86Parser::tokenBranches3114[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3115 },
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3115 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3128, x86Parser::tokenBranches3128 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3113[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3114 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3114 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3129(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 272;
-}
-x86Token x86Parser::tokenBranches3128[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3129,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3127[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3128 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3126[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3127 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3126(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
 x86Token x86Parser::tokenBranches3112[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3113 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3126, x86Parser::tokenBranches3126 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3113 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3111[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3112 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3112 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3110[] = {
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3111 },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3111 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3109[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3110 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3108[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3109 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3142(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3144(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 273;
+	operand.operandCoding = 271;
 }
-x86Token x86Parser::tokenBranches3141[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3142,  },
+x86Token x86Parser::tokenBranches3143[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3144,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3142[] = {
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3143 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3141[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3142 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3157(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 272;
+}
+x86Token x86Parser::tokenBranches3156[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3157,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3155[] = {
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3156 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3154[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3155 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3154(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
 x86Token x86Parser::tokenBranches3140[] = {
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3141 },
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3141 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3154, x86Parser::tokenBranches3154 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3139[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3140 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3140 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3155(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 274;
-}
-x86Token x86Parser::tokenBranches3154[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3155,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3153[] = {
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3154 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3152[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3153 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3152(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
 x86Token x86Parser::tokenBranches3138[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3139 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3152, x86Parser::tokenBranches3152 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3139 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3137[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3138 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3138 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3136[] = {
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3137 },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3137 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3135[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3136 },
+x86Token x86Parser::tokenBranches3109[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3110 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3136 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3134[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3135 },
+x86Token x86Parser::tokenBranches3108[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3109 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3107[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3108 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3134 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3108 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3106[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3107 },
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3107 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3105[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3106 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3104[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3105 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3168(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3170(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 275;
+	operand.operandCoding = 273;
 }
-x86Token x86Parser::tokenBranches3167[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3168,  },
+x86Token x86Parser::tokenBranches3169[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3170,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3168[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3169 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3167[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3168 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3183(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 274;
+}
+x86Token x86Parser::tokenBranches3182[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3183,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3181[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3182 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3180[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3181 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3180(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
 x86Token x86Parser::tokenBranches3166[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3167 },
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3167 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3180, x86Parser::tokenBranches3180 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3165[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3166 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3166 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3181(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 276;
-}
-x86Token x86Parser::tokenBranches3180[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3181,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3179[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3180 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3178[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3179 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3178(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
 x86Token x86Parser::tokenBranches3164[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3165 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3178, x86Parser::tokenBranches3178 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3165 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3163[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3164 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3164 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3162[] = {
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3163 },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3163 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3161[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3162 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3160[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3161 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3194(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3196(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 277;
+	operand.operandCoding = 275;
 }
-x86Token x86Parser::tokenBranches3193[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3194,  },
+x86Token x86Parser::tokenBranches3195[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3196,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3194[] = {
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3195 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3193[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3194 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3209(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 276;
+}
+x86Token x86Parser::tokenBranches3208[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3209,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3207[] = {
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3208 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3206[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3207 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3206(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
 x86Token x86Parser::tokenBranches3192[] = {
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3193 },
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3193 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3206, x86Parser::tokenBranches3206 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3191[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3192 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3192 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3207(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 278;
-}
-x86Token x86Parser::tokenBranches3206[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3207,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3205[] = {
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3206 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3204[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3205 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3204(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
 x86Token x86Parser::tokenBranches3190[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3191 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3204, x86Parser::tokenBranches3204 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3191 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3189[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3190 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3190 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3188[] = {
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3189 },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3189 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3187[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3188 },
+x86Token x86Parser::tokenBranches3161[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3162 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3188 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3186[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3187 },
+x86Token x86Parser::tokenBranches3160[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3161 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3159[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3160 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3186 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3160 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3158[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3159 },
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3159 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3157[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3158 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3156[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3157 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3220(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3222(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 279;
+	operand.operandCoding = 277;
 }
-x86Token x86Parser::tokenBranches3219[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3220,  },
+x86Token x86Parser::tokenBranches3221[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3222,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3220[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3221 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3219[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3220 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3235(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 278;
+}
+x86Token x86Parser::tokenBranches3234[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3235,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3233[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3234 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3232[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3233 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3232(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
 x86Token x86Parser::tokenBranches3218[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3219 },
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3219 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3232, x86Parser::tokenBranches3232 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3217[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3218 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3218 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3233(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 280;
-}
-x86Token x86Parser::tokenBranches3232[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3233,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3231[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3232 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3230[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3231 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3230(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
 x86Token x86Parser::tokenBranches3216[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3217 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3230, x86Parser::tokenBranches3230 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3217 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3215[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3216 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3216 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3214[] = {
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3215 },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3215 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3213[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3214 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3212[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3213 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3246(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3248(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 281;
+	operand.operandCoding = 279;
 }
+x86Token x86Parser::tokenBranches3247[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3248,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3246[] = {
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3247 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3245[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3246,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3246 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3244[] = {
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3245 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3243[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3244 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3259(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3261(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 282;
+	operand.operandCoding = 280;
 }
+x86Token x86Parser::tokenBranches3260[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3261,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3259[] = {
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3260 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3258[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3259,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3259 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3257[] = {
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3258 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3256[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3257 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3256(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3258(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -13247,73 +13260,73 @@ void x86Parser::TokenFunc3256(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
+x86Token x86Parser::tokenBranches3244[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3245 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3258, x86Parser::tokenBranches3258 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3243[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3244 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3242[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3243 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3256, x86Parser::tokenBranches3256 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3243 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3241[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3242 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3242 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3240[] = {
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3241 },
+	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3241 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3239[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3240 },
+x86Token x86Parser::tokenBranches3213[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3214 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3240 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3238[] = {
-	{x86Token::TOKEN, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3239 },
+x86Token x86Parser::tokenBranches3212[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3213 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3211[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3212 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3238 },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3212 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3210[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3211 },
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3211 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3209[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3210 },
+x86Token x86Parser::tokenBranches3105[] = {
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3106 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3158 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3210 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3208[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3209 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3103[] = {
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3104 },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3156 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3208 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3274(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3276(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 281;
+}
+void x86Parser::TokenFunc3280(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 282;
+}
+void x86Parser::TokenFunc3284(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 283;
 }
-void x86Parser::TokenFunc3278(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 284;
-}
-void x86Parser::TokenFunc3282(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 285;
-}
-x86Token x86Parser::tokenBranches3273[] = {
-	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc3274,  },
-	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3278,  },
-	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3282,  },
+x86Token x86Parser::tokenBranches3275[] = {
+	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc3276,  },
+	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3280,  },
+	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3284,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3272[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3273 },
+x86Token x86Parser::tokenBranches3274[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3275 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3272(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3274(x86Operand &operand, int tokenPos)
 {
 	operand.values[18] = new Coding[2];
 	CleanupValues.push_back(operand.values[18]);
@@ -13326,88 +13339,88 @@ void x86Parser::TokenFunc3272(x86Operand &operand, int tokenPos)
 	operand.values[18][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches3271[] = {
-	{x86Token::NUMBER, 2, 0, 0, NULL,&x86Parser::TokenFunc3272, x86Parser::tokenBranches3272 },
+x86Token x86Parser::tokenBranches3273[] = {
+	{x86Token::NUMBER, 3, 0, 0, NULL,&x86Parser::TokenFunc3274, x86Parser::tokenBranches3274 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3285(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3287(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 284;
+}
+void x86Parser::TokenFunc3290(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 285;
+}
+void x86Parser::TokenFunc3293(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 286;
 }
-void x86Parser::TokenFunc3288(x86Operand &operand, int tokenPos)
+x86Token x86Parser::tokenBranches3286[] = {
+	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc3287,  },
+	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3290,  },
+	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3293,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3285[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3286 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3272[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3273 },
+	{x86Token::REGISTER, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3285 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3302(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 287;
 }
-void x86Parser::TokenFunc3291(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 288;
-}
-x86Token x86Parser::tokenBranches3284[] = {
-	{x86Token::REGISTER, 0, 1, 0, NULL,&x86Parser::TokenFunc3285,  },
-	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3288,  },
-	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3291,  },
+x86Token x86Parser::tokenBranches3301[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3302,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3283[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3284 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3270[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3271 },
-	{x86Token::REGISTER, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3283 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3300(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3318(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 289;
 }
+x86Token x86Parser::tokenBranches3317[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3318,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3300[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3301 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3317 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3299[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3300,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3300 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3316(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3310(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 291;
+	operand.operandCoding = 288;
 }
-x86Token x86Parser::tokenBranches3315[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3316,  },
+x86Token x86Parser::tokenBranches3309[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3310,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3298[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3299 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3315 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3297[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3298 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3308(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3326(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 290;
 }
+x86Token x86Parser::tokenBranches3325[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3326,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3308[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3309 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3325 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3307[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3308,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3308 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3324(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 292;
-}
-x86Token x86Parser::tokenBranches3323[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3324,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3306[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3307 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3323 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3305[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3306 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3305(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3307(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -13419,66 +13432,66 @@ void x86Parser::TokenFunc3305(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3296[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3297 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3305, x86Parser::tokenBranches3305 },
+x86Token x86Parser::tokenBranches3298[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3299 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3307, x86Parser::tokenBranches3307 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3295[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3296 },
+x86Token x86Parser::tokenBranches3297[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3298 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3332(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3334(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 291;
+}
+x86Token x86Parser::tokenBranches3333[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3334,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3350(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 293;
 }
+x86Token x86Parser::tokenBranches3349[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3350,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3332[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3333 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3349 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3331[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3332,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3332 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3348(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3342(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 295;
+	operand.operandCoding = 292;
 }
-x86Token x86Parser::tokenBranches3347[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3348,  },
+x86Token x86Parser::tokenBranches3341[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3342,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3330[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3331 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3347 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3329[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3330 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3340(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3358(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 294;
 }
+x86Token x86Parser::tokenBranches3357[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3358,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3340[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3341 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3357 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3339[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3340,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3340 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3356(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 296;
-}
-x86Token x86Parser::tokenBranches3355[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3356,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3338[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3339 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3355 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3337[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3338 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3337(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3339(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -13490,66 +13503,66 @@ void x86Parser::TokenFunc3337(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3328[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3329 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3337, x86Parser::tokenBranches3337 },
+x86Token x86Parser::tokenBranches3330[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3331 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3339, x86Parser::tokenBranches3339 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3327[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3328 },
+x86Token x86Parser::tokenBranches3329[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3330 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3364(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3366(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 295;
+}
+x86Token x86Parser::tokenBranches3365[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3366,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3382(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 297;
 }
+x86Token x86Parser::tokenBranches3381[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3382,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3364[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3365 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3381 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3363[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3364,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3364 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3380(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3374(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 299;
+	operand.operandCoding = 296;
 }
-x86Token x86Parser::tokenBranches3379[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3380,  },
+x86Token x86Parser::tokenBranches3373[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3374,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3362[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3363 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3379 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3361[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3362 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3372(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3390(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 298;
 }
+x86Token x86Parser::tokenBranches3389[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3390,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3372[] = {
+	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3373 },
+	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3389 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3371[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3372,  },
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3372 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3388(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 300;
-}
-x86Token x86Parser::tokenBranches3387[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3388,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3370[] = {
-	{x86Token::REGISTER, 20, 0, 0, NULL, NULL, x86Parser::tokenBranches3371 },
-	{x86Token::REGISTER, 21, 0, 0, NULL, NULL, x86Parser::tokenBranches3387 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3369[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3370 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3369(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3371(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -13561,45 +13574,27 @@ void x86Parser::TokenFunc3369(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3360[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3361 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3369, x86Parser::tokenBranches3369 },
+x86Token x86Parser::tokenBranches3362[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3363 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3371, x86Parser::tokenBranches3371 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3359[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3360 },
+x86Token x86Parser::tokenBranches3361[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3362 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3296[] = {
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3297 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3329 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3361 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3295[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3296 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3294[] = {
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3295 },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3327 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3359 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3293[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3294 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3292[] = {
-	{x86Token::REGISTER, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3293 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3396_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3396_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 143, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3396(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3396_8;
-	operand.values[9] = tokenCoding3396_9;
-}
-x86Token x86Parser::tokenBranches3395[] = {
-	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3396,  },
+	{x86Token::REGISTER, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3295 },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3398_8[] = {
@@ -13607,7 +13602,7 @@ Coding x86Parser::tokenCoding3398_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3398_9[] = {
-	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 143, 8},
 	{ Coding::eot },
 };
@@ -13617,46 +13612,64 @@ void x86Parser::TokenFunc3398(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding3398_9;
 }
 x86Token x86Parser::tokenBranches3397[] = {
-	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3398,  },
+	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3398,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3393(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 301;
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-void x86Parser::TokenFunc3394(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 302;
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-void x86Parser::TokenFunc3399(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 303;
-}
+Coding x86Parser::tokenCoding3400_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3400_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 143, 8},
+	{ Coding::eot },
+};
 void x86Parser::TokenFunc3400(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 304;
+	operand.values[8] = tokenCoding3400_8;
+	operand.values[9] = tokenCoding3400_9;
+}
+x86Token x86Parser::tokenBranches3399[] = {
+	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3400,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3395(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 299;
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
+}
+void x86Parser::TokenFunc3396(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 300;
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
 }
 void x86Parser::TokenFunc3401(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 305;
+	operand.operandCoding = 301;
+}
+void x86Parser::TokenFunc3402(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 302;
+}
+void x86Parser::TokenFunc3403(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 303;
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
 	operand.values[1]->type = Coding::reg;
@@ -13667,19 +13680,19 @@ void x86Parser::TokenFunc3401(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3392[] = {
-	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3393,  },
-	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3394,  },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3395 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3397 },
-	{x86Token::REGISTER, 28, 1, 0, NULL,&x86Parser::TokenFunc3399,  },
-	{x86Token::REGISTER, 29, 1, 0, NULL,&x86Parser::TokenFunc3400,  },
-	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3401,  },
+x86Token x86Parser::tokenBranches3394[] = {
+	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3395,  },
+	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3396,  },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3397 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3399 },
+	{x86Token::REGISTER, 28, 1, 0, NULL,&x86Parser::TokenFunc3401,  },
+	{x86Token::REGISTER, 29, 1, 0, NULL,&x86Parser::TokenFunc3402,  },
+	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3403,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3412(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3414(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 308;
+	operand.operandCoding = 306;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -13691,46 +13704,13 @@ void x86Parser::TokenFunc3412(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches3411[] = {
-	{x86Token::NUMBER, 0, 1, 0, NULL,&x86Parser::TokenFunc3412,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3416(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 309;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-Coding x86Parser::tokenCoding3420_8[] = {
-	{ Coding::valSpecified, 6},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3420_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3420(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 311;
-	operand.values[8] = tokenCoding3420_8;
-	operand.values[9] = tokenCoding3420_9;
-}
-x86Token x86Parser::tokenBranches3415[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3416,  },
-	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3420,  },
+x86Token x86Parser::tokenBranches3413[] = {
+	{x86Token::NUMBER, 1, 1, 0, NULL,&x86Parser::TokenFunc3414,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc3418(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 310;
+	operand.operandCoding = 307;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -13752,44 +13732,18 @@ Coding x86Parser::tokenCoding3422_9[] = {
 };
 void x86Parser::TokenFunc3422(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 312;
+	operand.operandCoding = 309;
 	operand.values[8] = tokenCoding3422_8;
 	operand.values[9] = tokenCoding3422_9;
 }
 x86Token x86Parser::tokenBranches3417[] = {
 	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3418,  },
-	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3422,  },
+	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3422,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3409(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3420(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 306;
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-void x86Parser::TokenFunc3410(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 307;
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-void x86Parser::TokenFunc3413(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 309;
+	operand.operandCoding = 308;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -13801,31 +13755,90 @@ void x86Parser::TokenFunc3413(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-void x86Parser::TokenFunc3414(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 310;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-void x86Parser::TokenFunc3423(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 313;
-}
+Coding x86Parser::tokenCoding3424_8[] = {
+	{ Coding::valSpecified, 6},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3424_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 255, 8},
+	{ Coding::eot },
+};
 void x86Parser::TokenFunc3424(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 314;
+	operand.operandCoding = 310;
+	operand.values[8] = tokenCoding3424_8;
+	operand.values[9] = tokenCoding3424_9;
+}
+x86Token x86Parser::tokenBranches3419[] = {
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc3420,  },
+	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3424,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3411(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 304;
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
+}
+void x86Parser::TokenFunc3412(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 305;
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
+}
+void x86Parser::TokenFunc3415(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 307;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc3416(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 308;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
 }
 void x86Parser::TokenFunc3425(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 315;
+	operand.operandCoding = 311;
+}
+void x86Parser::TokenFunc3426(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 312;
+}
+void x86Parser::TokenFunc3427(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 313;
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
 	operand.values[1]->type = Coding::reg;
@@ -13836,20 +13849,43 @@ void x86Parser::TokenFunc3425(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3408[] = {
-	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3409,  },
-	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3410,  },
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3411 },
-	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc3413,  },
-	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc3414,  },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3415 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3417 },
-	{x86Token::REGISTER, 28, 1, 0, NULL,&x86Parser::TokenFunc3423,  },
-	{x86Token::REGISTER, 29, 1, 0, NULL,&x86Parser::TokenFunc3424,  },
-	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3425,  },
+x86Token x86Parser::tokenBranches3410[] = {
+	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3411,  },
+	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3412,  },
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3413 },
+	{x86Token::NUMBER, 6, 1, 0, NULL,&x86Parser::TokenFunc3415,  },
+	{x86Token::NUMBER, 7, 1, 0, NULL,&x86Parser::TokenFunc3416,  },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3417 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3419 },
+	{x86Token::REGISTER, 28, 1, 0, NULL,&x86Parser::TokenFunc3425,  },
+	{x86Token::REGISTER, 29, 1, 0, NULL,&x86Parser::TokenFunc3426,  },
+	{x86Token::REGISTERCLASS, 12, 1, 0, NULL,&x86Parser::TokenFunc3427,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3438(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3440(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 314;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+}
+void x86Parser::TokenFunc3441(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 315;
+}
+x86Token x86Parser::tokenBranches3439[] = {
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3440,  },
+	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc3441,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3443(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 316;
 	operand.values[12] = new Coding[2];
@@ -13863,18 +13899,550 @@ void x86Parser::TokenFunc3438(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-void x86Parser::TokenFunc3439(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3444(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 317;
 }
-x86Token x86Parser::tokenBranches3437[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3438,  },
-	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc3439,  },
+x86Token x86Parser::tokenBranches3442[] = {
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3443,  },
+	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc3444,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3441(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3458(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 318;
+}
+x86Token x86Parser::tokenBranches3457[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3458,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3470(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 320;
+}
+x86Token x86Parser::tokenBranches3469[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3470,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3456[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3457 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3469 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3455[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3456 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3454[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3455 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3464(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 319;
+}
+x86Token x86Parser::tokenBranches3463[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3464,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3476(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 321;
+}
+x86Token x86Parser::tokenBranches3475[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3476,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3462[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3463 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3475 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3461[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3462 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3461(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
+x86Token x86Parser::tokenBranches3460[] = {
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3461, x86Parser::tokenBranches3461 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3453[] = {
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3454 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3460 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3482(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 322;
+}
+x86Token x86Parser::tokenBranches3481[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3482,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3494(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 324;
+}
+x86Token x86Parser::tokenBranches3493[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3494,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3480[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3481 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3493 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3479[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3480 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3478[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3479 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3488(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 323;
+}
+x86Token x86Parser::tokenBranches3487[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3488,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3500(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 325;
+}
+x86Token x86Parser::tokenBranches3499[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3500,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3486[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3487 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3499 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3485[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3486 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3485(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
+x86Token x86Parser::tokenBranches3484[] = {
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3485, x86Parser::tokenBranches3485 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3477[] = {
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3478 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3484 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3506(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 326;
+}
+x86Token x86Parser::tokenBranches3505[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3506,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3518(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 328;
+}
+x86Token x86Parser::tokenBranches3517[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3518,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3504[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3505 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3517 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3503[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3504 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3502[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3503 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3512(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 327;
+}
+x86Token x86Parser::tokenBranches3511[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3512,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3524(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 329;
+}
+x86Token x86Parser::tokenBranches3523[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3524,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3510[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3511 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3523 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3509[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3510 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3509(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
+x86Token x86Parser::tokenBranches3508[] = {
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3509, x86Parser::tokenBranches3509 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3501[] = {
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3502 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3508 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3452[] = {
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3453 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3477 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3501 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3566_8[] = {
+	{ Coding::valSpecified, 4},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3566_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3566(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3566_8;
+	operand.values[9] = tokenCoding3566_9;
+}
+Coding x86Parser::tokenCoding3567_8[] = {
+	{ Coding::valSpecified, 4},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3567_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3567(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3567_8;
+	operand.values[9] = tokenCoding3567_9;
+}
+x86Token x86Parser::tokenBranches3565[] = {
+	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc3566,  },
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3567,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3577(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 330;
+}
+x86Token x86Parser::tokenBranches3576[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3577,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3589(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 332;
+}
+x86Token x86Parser::tokenBranches3588[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3589,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3575[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3576 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3588 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3574[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3575 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3573[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3574 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3583(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 331;
+}
+x86Token x86Parser::tokenBranches3582[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3583,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3595(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 333;
+}
+x86Token x86Parser::tokenBranches3594[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3595,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3581[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3582 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3594 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3580[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3581 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3580(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
+x86Token x86Parser::tokenBranches3579[] = {
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3580, x86Parser::tokenBranches3580 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3572[] = {
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3573 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3579 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3601(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 334;
+}
+x86Token x86Parser::tokenBranches3600[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3601,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3613(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 336;
+}
+x86Token x86Parser::tokenBranches3612[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3613,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3599[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3600 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3612 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3598[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3599 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3597[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3598 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3607(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 335;
+}
+x86Token x86Parser::tokenBranches3606[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3607,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3619(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 337;
+}
+x86Token x86Parser::tokenBranches3618[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3619,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3605[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3606 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3618 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3604[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3605 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3604(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
+x86Token x86Parser::tokenBranches3603[] = {
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3604, x86Parser::tokenBranches3604 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3596[] = {
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3597 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3603 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3625(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 338;
+}
+x86Token x86Parser::tokenBranches3624[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3625,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3637(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 340;
+}
+x86Token x86Parser::tokenBranches3636[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3637,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3623[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3624 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3636 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3622[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3623 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3621[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3622 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3631(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 339;
+}
+x86Token x86Parser::tokenBranches3630[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3631,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3643(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 341;
+}
+x86Token x86Parser::tokenBranches3642[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3643,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3629[] = {
+	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3630 },
+	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3642 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3628[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3629 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3628(x86Operand &operand, int tokenPos)
+{
+	operand.values[1] = new Coding[2];
+	CleanupValues.push_back(operand.values[1]);
+	operand.values[1]->type = Coding::reg;
+	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[1]->bits = 0;
+	operand.values[1]->field = 0;
+	operand.values[1]->math = 0;
+	operand.values[1]->mathval = 0;
+	operand.values[1][1].type = Coding::eot;
+}
+x86Token x86Parser::tokenBranches3627[] = {
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3628, x86Parser::tokenBranches3628 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3620[] = {
+	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3621 },
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3627 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3571[] = {
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3572 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3596 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3620 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3648_8[] = {
+	{ Coding::valSpecified, 1},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3648_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3648(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3648_8;
+	operand.values[9] = tokenCoding3648_9;
+}
+Coding x86Parser::tokenCoding3649_8[] = {
+	{ Coding::valSpecified, 1},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3649_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3649(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3649_8;
+	operand.values[9] = tokenCoding3649_9;
+}
+x86Token x86Parser::tokenBranches3647[] = {
+	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc3648,  },
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3649,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3655(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 342;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -13886,548 +14454,45 @@ void x86Parser::TokenFunc3441(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-void x86Parser::TokenFunc3442(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 319;
-}
-x86Token x86Parser::tokenBranches3440[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3441,  },
-	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc3442,  },
+x86Token x86Parser::tokenBranches3654[] = {
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3655,  },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3456(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 320;
-}
-x86Token x86Parser::tokenBranches3455[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3456,  },
+x86Token x86Parser::tokenBranches3653[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3654 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3468(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 322;
-}
-x86Token x86Parser::tokenBranches3467[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3468,  },
+x86Token x86Parser::tokenBranches3652[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3653 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3454[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3455 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3467 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3453[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3454 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3452[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3453 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3462(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 321;
-}
-x86Token x86Parser::tokenBranches3461[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3462,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3474(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 323;
-}
-x86Token x86Parser::tokenBranches3473[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3474,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3460[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3461 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3473 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3459[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3460 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3459(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3458[] = {
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3459, x86Parser::tokenBranches3459 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3451[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3452 },
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3458 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3480(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 324;
-}
-x86Token x86Parser::tokenBranches3479[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3480,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3492(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 326;
-}
-x86Token x86Parser::tokenBranches3491[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3492,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3478[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3479 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3491 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3477[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3478 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3476[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3477 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3486(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 325;
-}
-x86Token x86Parser::tokenBranches3485[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3486,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3498(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 327;
-}
-x86Token x86Parser::tokenBranches3497[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3498,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3484[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3485 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3497 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3483[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3484 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3483(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3482[] = {
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3483, x86Parser::tokenBranches3483 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3475[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3476 },
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3482 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3504(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 328;
-}
-x86Token x86Parser::tokenBranches3503[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3504,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3516(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 330;
-}
-x86Token x86Parser::tokenBranches3515[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3516,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3502[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3503 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3515 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3501[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3502 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3500[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3501 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3510(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 329;
-}
-x86Token x86Parser::tokenBranches3509[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3510,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3522(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 331;
-}
-x86Token x86Parser::tokenBranches3521[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3522,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3508[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3509 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3521 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3507[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3508 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3507(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3506[] = {
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3507, x86Parser::tokenBranches3507 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3499[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3500 },
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3506 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3450[] = {
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3451 },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3475 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3499 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3563_8[] = {
-	{ Coding::valSpecified, 4},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3563_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3563(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3563_8;
-	operand.values[9] = tokenCoding3563_9;
-}
-Coding x86Parser::tokenCoding3564_8[] = {
-	{ Coding::valSpecified, 4},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3564_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3564(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3564_8;
-	operand.values[9] = tokenCoding3564_9;
-}
-x86Token x86Parser::tokenBranches3562[] = {
-	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc3563,  },
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3564,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3574(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 332;
-}
-x86Token x86Parser::tokenBranches3573[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3574,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3586(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 334;
-}
-x86Token x86Parser::tokenBranches3585[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3586,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3572[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3573 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3585 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3571[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3572 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3570[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3571 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3580(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 333;
-}
-x86Token x86Parser::tokenBranches3579[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3580,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3592(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 335;
-}
-x86Token x86Parser::tokenBranches3591[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3592,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3578[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3579 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3591 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3577[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3578 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3577(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3576[] = {
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3577, x86Parser::tokenBranches3577 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3569[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3570 },
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3576 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3598(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 336;
-}
-x86Token x86Parser::tokenBranches3597[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3598,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3610(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 338;
-}
-x86Token x86Parser::tokenBranches3609[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3610,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3596[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3597 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3609 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3595[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3596 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3594[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3595 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3604(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 337;
-}
-x86Token x86Parser::tokenBranches3603[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3604,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3616(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 339;
-}
-x86Token x86Parser::tokenBranches3615[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3616,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3602[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3603 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3615 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3601[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3602 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3601(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3600[] = {
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3601, x86Parser::tokenBranches3601 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3593[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3594 },
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3600 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3622(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 340;
-}
-x86Token x86Parser::tokenBranches3621[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3622,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3634(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 342;
-}
-x86Token x86Parser::tokenBranches3633[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3634,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3620[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3621 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3633 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3619[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3620 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3618[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3619 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3628(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 341;
-}
-x86Token x86Parser::tokenBranches3627[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3628,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3640(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3659(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 343;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches3639[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3640,  },
+x86Token x86Parser::tokenBranches3658[] = {
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3659,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3626[] = {
-	{x86Token::REGISTER, 22, 0, 0, NULL, NULL, x86Parser::tokenBranches3627 },
-	{x86Token::REGISTER, 23, 0, 0, NULL, NULL, x86Parser::tokenBranches3639 },
+x86Token x86Parser::tokenBranches3657[] = {
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3658 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3625[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3626 },
+x86Token x86Parser::tokenBranches3656[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3657 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3625(x86Operand &operand, int tokenPos)
-{
-	operand.values[1] = new Coding[2];
-	CleanupValues.push_back(operand.values[1]);
-	operand.values[1]->type = Coding::reg;
-	operand.values[1]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[1]->bits = 0;
-	operand.values[1]->field = 0;
-	operand.values[1]->math = 0;
-	operand.values[1]->mathval = 0;
-	operand.values[1][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3624[] = {
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3625, x86Parser::tokenBranches3625 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3617[] = {
-	{x86Token::REGISTER, 24, 0, 0, NULL, NULL, x86Parser::tokenBranches3618 },
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3624 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3568[] = {
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3569 },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3593 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3617 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3645_8[] = {
-	{ Coding::valSpecified, 1},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3645_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3645(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3645_8;
-	operand.values[9] = tokenCoding3645_9;
-}
-Coding x86Parser::tokenCoding3646_8[] = {
-	{ Coding::valSpecified, 1},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3646_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3646(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3646_8;
-	operand.values[9] = tokenCoding3646_9;
-}
-x86Token x86Parser::tokenBranches3644[] = {
-	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc3645,  },
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3646,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3652(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3663(x86Operand &operand, int tokenPos)
 {
 	operand.operandCoding = 344;
 	operand.values[12] = new Coding[2];
@@ -14441,79 +14506,27 @@ void x86Parser::TokenFunc3652(x86Operand &operand, int tokenPos)
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
 }
-x86Token x86Parser::tokenBranches3651[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc3652,  },
+x86Token x86Parser::tokenBranches3662[] = {
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc3663,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3650[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3651 },
+x86Token x86Parser::tokenBranches3661[] = {
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3662 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3649[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3650 },
+x86Token x86Parser::tokenBranches3660[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3661 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3656(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 345;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches3655[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3656,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3654[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3655 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3653[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3654 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3660(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 346;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-}
-x86Token x86Parser::tokenBranches3659[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3660,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3658[] = {
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3659 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3657[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3658 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3664_8[] = {
+Coding x86Parser::tokenCoding3667_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3664_9[] = {
+Coding x86Parser::tokenCoding3667_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3664(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3667(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -14524,31 +14537,31 @@ void x86Parser::TokenFunc3664(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3664_8;
-	operand.values[9] = tokenCoding3664_9;
+	operand.values[8] = tokenCoding3667_8;
+	operand.values[9] = tokenCoding3667_9;
 }
-x86Token x86Parser::tokenBranches3663[] = {
-	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3664,  },
+x86Token x86Parser::tokenBranches3666[] = {
+	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3667,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3662[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3663 },
+x86Token x86Parser::tokenBranches3665[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3666 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3661[] = {
-	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3662 },
+x86Token x86Parser::tokenBranches3664[] = {
+	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3665 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3668_8[] = {
+Coding x86Parser::tokenCoding3671_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3668_9[] = {
+Coding x86Parser::tokenCoding3671_9[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3668(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3671(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -14559,31 +14572,31 @@ void x86Parser::TokenFunc3668(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3668_8;
-	operand.values[9] = tokenCoding3668_9;
+	operand.values[8] = tokenCoding3671_8;
+	operand.values[9] = tokenCoding3671_9;
 }
-x86Token x86Parser::tokenBranches3667[] = {
-	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3668,  },
+x86Token x86Parser::tokenBranches3670[] = {
+	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3671,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3666[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3667 },
+x86Token x86Parser::tokenBranches3669[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3670 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3665[] = {
-	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3666 },
+x86Token x86Parser::tokenBranches3668[] = {
+	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3669 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3672_8[] = {
+Coding x86Parser::tokenCoding3675_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3672_9[] = {
+Coding x86Parser::tokenCoding3675_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3672(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3675(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -14594,128 +14607,96 @@ void x86Parser::TokenFunc3672(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3672_8;
-	operand.values[9] = tokenCoding3672_9;
+	operand.values[8] = tokenCoding3675_8;
+	operand.values[9] = tokenCoding3675_9;
 }
-x86Token x86Parser::tokenBranches3671[] = {
-	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3672,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3670[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3671 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3669[] = {
-	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3670 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3676_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3676_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3676(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3676_8;
-	operand.values[9] = tokenCoding3676_9;
-}
-x86Token x86Parser::tokenBranches3675[] = {
-	{x86Token::ADDRESSCLASS, 3, 1, 0, NULL,&x86Parser::TokenFunc3676,  },
-	{x86Token::EOT }
-};
 x86Token x86Parser::tokenBranches3674[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3675 },
+	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3675,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3673[] = {
 	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3674 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3680_8[] = {
+x86Token x86Parser::tokenBranches3672[] = {
+	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3673 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3679_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3680_9[] = {
+Coding x86Parser::tokenCoding3679_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 132, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3679(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3679_8;
+	operand.values[9] = tokenCoding3679_9;
+}
+x86Token x86Parser::tokenBranches3678[] = {
+	{x86Token::ADDRESSCLASS, 3, 1, 0, NULL,&x86Parser::TokenFunc3679,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3677[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3678 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3676[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3677 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3683_8[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3683_9[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3680(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3683(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding3680_8;
-	operand.values[9] = tokenCoding3680_9;
+	operand.values[8] = tokenCoding3683_8;
+	operand.values[9] = tokenCoding3683_9;
 }
-x86Token x86Parser::tokenBranches3679[] = {
-	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3680,  },
+x86Token x86Parser::tokenBranches3682[] = {
+	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3683,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3678[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3679 },
+x86Token x86Parser::tokenBranches3681[] = {
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3682 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3677[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3678 },
+x86Token x86Parser::tokenBranches3680[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3681 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3684_8[] = {
+Coding x86Parser::tokenCoding3687_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3684_9[] = {
+Coding x86Parser::tokenCoding3687_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 133, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3684(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3684_8;
-	operand.values[9] = tokenCoding3684_9;
-}
-x86Token x86Parser::tokenBranches3683[] = {
-	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3684,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3682[] = {
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3683 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3681[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3682 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3687_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3687_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 246, 8},
-	{ Coding::eot },
-};
 void x86Parser::TokenFunc3687(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 156;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
 	operand.values[8] = tokenCoding3687_8;
 	operand.values[9] = tokenCoding3687_9;
 }
 x86Token x86Parser::tokenBranches3686[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc3687,  },
+	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3687,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3685[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3686 },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3686 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3684[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3685 },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3690_8[] = {
@@ -14723,13 +14704,12 @@ Coding x86Parser::tokenCoding3690_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3690_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 246, 8},
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc3690(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 195;
+	operand.operandCoding = 154;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -14756,13 +14736,13 @@ Coding x86Parser::tokenCoding3693_8[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3693_9[] = {
-	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8},
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc3693(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 196;
+	operand.operandCoding = 193;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -14784,91 +14764,18 @@ x86Token x86Parser::tokenBranches3691[] = {
 	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3692 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3697_8[] = {
+Coding x86Parser::tokenCoding3696_8[] = {
 	{ Coding::valSpecified, 0},
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3697_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 246, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3697(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 156;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[8] = tokenCoding3697_8;
-	operand.values[9] = tokenCoding3697_9;
-}
-x86Token x86Parser::tokenBranches3696[] = {
-	{x86Token::NUMBER, 2, 1, 0, NULL,&x86Parser::TokenFunc3697,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3695[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3696 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3694[] = {
-	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3695 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3701_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3701_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3701(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 195;
-	operand.values[12] = new Coding[2];
-	CleanupValues.push_back(operand.values[12]);
-	operand.values[12]->type = Coding::number;
-	operand.values[12]->val = operands.size();
-	operand.values[12]->bits = 0;
-	operand.values[12]->field = 0;
-	operand.values[12]->math = 0;
-	operand.values[12]->mathval = 0;
-	operand.values[12][1].type = Coding::eot;
-	operands.push_back(numeric);
-	operand.values[8] = tokenCoding3701_8;
-	operand.values[9] = tokenCoding3701_9;
-}
-x86Token x86Parser::tokenBranches3700[] = {
-	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3701,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3699[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3700 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3698[] = {
-	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3699 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3705_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3705_9[] = {
+Coding x86Parser::tokenCoding3696_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3705(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3696(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 196;
+	operand.operandCoding = 194;
 	operand.values[12] = new Coding[2];
 	CleanupValues.push_back(operand.values[12]);
 	operand.values[12]->type = Coding::number;
@@ -14879,112 +14786,183 @@ void x86Parser::TokenFunc3705(x86Operand &operand, int tokenPos)
 	operand.values[12]->mathval = 0;
 	operand.values[12][1].type = Coding::eot;
 	operands.push_back(numeric);
-	operand.values[8] = tokenCoding3705_8;
-	operand.values[9] = tokenCoding3705_9;
+	operand.values[8] = tokenCoding3696_8;
+	operand.values[9] = tokenCoding3696_9;
 }
-x86Token x86Parser::tokenBranches3704[] = {
-	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3705,  },
+x86Token x86Parser::tokenBranches3695[] = {
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc3696,  },
 	{x86Token::EOT }
 };
+x86Token x86Parser::tokenBranches3694[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3695 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3700_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3700_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 246, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3700(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 154;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[8] = tokenCoding3700_8;
+	operand.values[9] = tokenCoding3700_9;
+}
+x86Token x86Parser::tokenBranches3699[] = {
+	{x86Token::NUMBER, 3, 1, 0, NULL,&x86Parser::TokenFunc3700,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3698[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3699 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3697[] = {
+	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3698 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3704_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3704_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3704(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 193;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
+	operand.values[8] = tokenCoding3704_8;
+	operand.values[9] = tokenCoding3704_9;
+}
 x86Token x86Parser::tokenBranches3703[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3704 },
+	{x86Token::NUMBER, 4, 1, 0, NULL,&x86Parser::TokenFunc3704,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3702[] = {
-	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3703 },
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3703 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3673(x86Operand &operand, int tokenPos)
-{
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-void x86Parser::TokenFunc3677(x86Operand &operand, int tokenPos)
-{
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-void x86Parser::TokenFunc3681(x86Operand &operand, int tokenPos)
-{
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3648[] = {
-	{x86Token::REGISTER, 0, 0, 0, NULL, NULL, x86Parser::tokenBranches3649 },
-	{x86Token::REGISTER, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3653 },
-	{x86Token::REGISTER, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3657 },
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3661 },
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3665 },
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3669 },
-	{x86Token::REGISTERCLASS, 1, 0, 0, NULL,&x86Parser::TokenFunc3673, x86Parser::tokenBranches3673 },
-	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc3677, x86Parser::tokenBranches3677 },
-	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc3681, x86Parser::tokenBranches3681 },
-	{x86Token::ADDRESSCLASS, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3685 },
-	{x86Token::ADDRESSCLASS, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3688 },
-	{x86Token::ADDRESSCLASS, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3691 },
-	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3694 },
-	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3698 },
-	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3702 },
+x86Token x86Parser::tokenBranches3701[] = {
+	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3702 },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3708_8[] = {
-	{ Coding::valSpecified, 4},
+	{ Coding::valSpecified, 0},
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3708_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 247, 8},
 	{ Coding::eot },
 };
 void x86Parser::TokenFunc3708(x86Operand &operand, int tokenPos)
 {
+	operand.operandCoding = 194;
+	operand.values[12] = new Coding[2];
+	CleanupValues.push_back(operand.values[12]);
+	operand.values[12]->type = Coding::number;
+	operand.values[12]->val = operands.size();
+	operand.values[12]->bits = 0;
+	operand.values[12]->field = 0;
+	operand.values[12]->math = 0;
+	operand.values[12]->mathval = 0;
+	operand.values[12][1].type = Coding::eot;
+	operands.push_back(numeric);
 	operand.values[8] = tokenCoding3708_8;
 	operand.values[9] = tokenCoding3708_9;
 }
-Coding x86Parser::tokenCoding3709_8[] = {
-	{ Coding::valSpecified, 4},
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3709_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3709(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3709_8;
-	operand.values[9] = tokenCoding3709_9;
-}
 x86Token x86Parser::tokenBranches3707[] = {
-	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc3708,  },
-	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3709,  },
+	{x86Token::NUMBER, 5, 1, 0, NULL,&x86Parser::TokenFunc3708,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3706[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3707 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3705[] = {
+	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3706 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3676(x86Operand &operand, int tokenPos)
+{
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
+}
+void x86Parser::TokenFunc3680(x86Operand &operand, int tokenPos)
+{
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
+}
+void x86Parser::TokenFunc3684(x86Operand &operand, int tokenPos)
+{
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
+}
+x86Token x86Parser::tokenBranches3651[] = {
+	{x86Token::REGISTER, 0, 0, 0, NULL, NULL, x86Parser::tokenBranches3652 },
+	{x86Token::REGISTER, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3656 },
+	{x86Token::REGISTER, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3660 },
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3664 },
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3668 },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3672 },
+	{x86Token::REGISTERCLASS, 1, 0, 0, NULL,&x86Parser::TokenFunc3676, x86Parser::tokenBranches3676 },
+	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc3680, x86Parser::tokenBranches3680 },
+	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc3684, x86Parser::tokenBranches3684 },
+	{x86Token::ADDRESSCLASS, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3688 },
+	{x86Token::ADDRESSCLASS, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3691 },
+	{x86Token::ADDRESSCLASS, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3694 },
+	{x86Token::TOKEN, 10, 0, 0, NULL, NULL, x86Parser::tokenBranches3697 },
+	{x86Token::TOKEN, 8, 0, 0, NULL, NULL, x86Parser::tokenBranches3701 },
+	{x86Token::TOKEN, 9, 0, 0, NULL, NULL, x86Parser::tokenBranches3705 },
 	{x86Token::EOT }
 };
 Coding x86Parser::tokenCoding3711_8[] = {
-	{ Coding::valSpecified, 5},
+	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3711_9[] = {
@@ -14999,7 +14977,7 @@ void x86Parser::TokenFunc3711(x86Operand &operand, int tokenPos)
 	operand.values[9] = tokenCoding3711_9;
 }
 Coding x86Parser::tokenCoding3712_8[] = {
-	{ Coding::valSpecified, 5},
+	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
 Coding x86Parser::tokenCoding3712_9[] = {
@@ -15018,16 +14996,51 @@ x86Token x86Parser::tokenBranches3710[] = {
 	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3712,  },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3720_8[] = {
+Coding x86Parser::tokenCoding3714_8[] = {
+	{ Coding::valSpecified, 5},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3714_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3714(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3714_8;
+	operand.values[9] = tokenCoding3714_9;
+}
+Coding x86Parser::tokenCoding3715_8[] = {
+	{ Coding::valSpecified, 5},
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3715_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3715(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3715_8;
+	operand.values[9] = tokenCoding3715_9;
+}
+x86Token x86Parser::tokenBranches3713[] = {
+	{x86Token::ADDRESSCLASS, 9, 1, 0, NULL,&x86Parser::TokenFunc3714,  },
+	{x86Token::ADDRESSCLASS, 10, 1, 0, NULL,&x86Parser::TokenFunc3715,  },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3723_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3720_9[] = {
+Coding x86Parser::tokenCoding3723_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 192, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3720(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3723(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -15038,81 +15051,93 @@ void x86Parser::TokenFunc3720(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3720_8;
-	operand.values[9] = tokenCoding3720_9;
+	operand.values[8] = tokenCoding3723_8;
+	operand.values[9] = tokenCoding3723_9;
 }
+x86Token x86Parser::tokenBranches3722[] = {
+	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3723,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3721[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3722 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3720[] = {
+	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3721 },
+	{x86Token::EOT }
+};
 x86Token x86Parser::tokenBranches3719[] = {
-	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3720,  },
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3720 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3718[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3719 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3717[] = {
-	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3718 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3716[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3717 },
-	{x86Token::EOT }
-};
-Coding x86Parser::tokenCoding3725_8[] = {
+Coding x86Parser::tokenCoding3728_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3725_9[] = {
+Coding x86Parser::tokenCoding3728_9[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3725(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3728(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding3725_8;
-	operand.values[9] = tokenCoding3725_9;
+	operand.values[8] = tokenCoding3728_8;
+	operand.values[9] = tokenCoding3728_9;
 }
-x86Token x86Parser::tokenBranches3724[] = {
-	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3725,  },
+x86Token x86Parser::tokenBranches3727[] = {
+	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3728,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3723[] = {
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3724 },
+x86Token x86Parser::tokenBranches3726[] = {
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3727 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3722[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3723 },
+x86Token x86Parser::tokenBranches3725[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3726 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3729_8[] = {
+Coding x86Parser::tokenCoding3732_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3729_9[] = {
+Coding x86Parser::tokenCoding3732_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
 	{ Coding::eot },
 };
+void x86Parser::TokenFunc3732(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3732_8;
+	operand.values[9] = tokenCoding3732_9;
+}
+x86Token x86Parser::tokenBranches3731[] = {
+	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3732,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3730[] = {
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3731 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3729[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3730 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3725(x86Operand &operand, int tokenPos)
+{
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
+}
 void x86Parser::TokenFunc3729(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding3729_8;
-	operand.values[9] = tokenCoding3729_9;
-}
-x86Token x86Parser::tokenBranches3728[] = {
-	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3729,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3727[] = {
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3728 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3726[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3727 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3722(x86Operand &operand, int tokenPos)
-{
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
 	operand.values[10]->type = Coding::reg;
@@ -15123,47 +15148,14 @@ void x86Parser::TokenFunc3722(x86Operand &operand, int tokenPos)
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
 }
-void x86Parser::TokenFunc3726(x86Operand &operand, int tokenPos)
-{
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3721[] = {
-	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc3722, x86Parser::tokenBranches3722 },
-	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc3726, x86Parser::tokenBranches3726 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3733(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 347;
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
-x86Token x86Parser::tokenBranches3732[] = {
-	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3733,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3731[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3732 },
+x86Token x86Parser::tokenBranches3724[] = {
+	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc3725, x86Parser::tokenBranches3725 },
+	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc3729, x86Parser::tokenBranches3729 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc3736(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 348;
+	operand.operandCoding = 345;
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
 	operand.values[10]->type = Coding::reg;
@@ -15175,109 +15167,130 @@ void x86Parser::TokenFunc3736(x86Operand &operand, int tokenPos)
 	operand.values[10][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches3735[] = {
-	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3736,  },
+	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3736,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3734[] = {
 	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3735 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3750_8[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::tokenCoding3750_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8},
-	{ Coding::eot },
-};
-void x86Parser::TokenFunc3750(x86Operand &operand, int tokenPos)
-{
-	operand.values[8] = tokenCoding3750_8;
-	operand.values[9] = tokenCoding3750_9;
-}
-x86Token x86Parser::tokenBranches3749[] = {
-	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3750,  },
-	{x86Token::EOT }
-};
 void x86Parser::TokenFunc3739(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 347;
+	operand.operandCoding = 346;
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
 }
 x86Token x86Parser::tokenBranches3738[] = {
-	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3739,  },
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3749 },
+	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3739,  },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3737[] = {
 	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3738 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3754_8[] = {
+Coding x86Parser::tokenCoding3753_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3754_9[] = {
-	{ Coding::stateFunc, 3 },
+Coding x86Parser::tokenCoding3753_9[] = {
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3754(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3753(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding3754_8;
-	operand.values[9] = tokenCoding3754_9;
+	operand.values[8] = tokenCoding3753_8;
+	operand.values[9] = tokenCoding3753_9;
 }
-x86Token x86Parser::tokenBranches3753[] = {
-	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3754,  },
+x86Token x86Parser::tokenBranches3752[] = {
+	{x86Token::ADDRESSCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3753,  },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc3742(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 348;
+	operand.operandCoding = 345;
 }
 x86Token x86Parser::tokenBranches3741[] = {
-	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3742,  },
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3753 },
+	{x86Token::REGISTER, 2, 1, 0, NULL,&x86Parser::TokenFunc3742,  },
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3752 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3740[] = {
 	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3741 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3746_8[] = {
+Coding x86Parser::tokenCoding3757_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3746_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8},
+Coding x86Parser::tokenCoding3757_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3746(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3757(x86Operand &operand, int tokenPos)
 {
-	operand.values[8] = tokenCoding3746_8;
-	operand.values[9] = tokenCoding3746_9;
+	operand.values[8] = tokenCoding3757_8;
+	operand.values[9] = tokenCoding3757_9;
 }
-x86Token x86Parser::tokenBranches3745[] = {
-	{x86Token::ADDRESSCLASS, 3, 1, 0, NULL,&x86Parser::TokenFunc3746,  },
+x86Token x86Parser::tokenBranches3756[] = {
+	{x86Token::ADDRESSCLASS, 5, 1, 0, NULL,&x86Parser::TokenFunc3757,  },
 	{x86Token::EOT }
 };
+void x86Parser::TokenFunc3745(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 346;
+}
 x86Token x86Parser::tokenBranches3744[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3745 },
+	{x86Token::REGISTER, 3, 1, 0, NULL,&x86Parser::TokenFunc3745,  },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3756 },
 	{x86Token::EOT }
 };
 x86Token x86Parser::tokenBranches3743[] = {
 	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3744 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3758_8[] = {
+Coding x86Parser::tokenCoding3749_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3758_9[] = {
+Coding x86Parser::tokenCoding3749_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3758(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3749(x86Operand &operand, int tokenPos)
+{
+	operand.values[8] = tokenCoding3749_8;
+	operand.values[9] = tokenCoding3749_9;
+}
+x86Token x86Parser::tokenBranches3748[] = {
+	{x86Token::ADDRESSCLASS, 3, 1, 0, NULL,&x86Parser::TokenFunc3749,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3747[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3748 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3746[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3747 },
+	{x86Token::EOT }
+};
+Coding x86Parser::tokenCoding3761_8[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::tokenCoding3761_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 134, 8},
+	{ Coding::eot },
+};
+void x86Parser::TokenFunc3761(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -15288,31 +15301,31 @@ void x86Parser::TokenFunc3758(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3758_8;
-	operand.values[9] = tokenCoding3758_9;
+	operand.values[8] = tokenCoding3761_8;
+	operand.values[9] = tokenCoding3761_9;
 }
-x86Token x86Parser::tokenBranches3757[] = {
-	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3758,  },
+x86Token x86Parser::tokenBranches3760[] = {
+	{x86Token::REGISTERCLASS, 1, 1, 0, NULL,&x86Parser::TokenFunc3761,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3756[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3757 },
+x86Token x86Parser::tokenBranches3759[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3760 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3755[] = {
-	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3756 },
+x86Token x86Parser::tokenBranches3758[] = {
+	{x86Token::ADDRESSCLASS, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3759 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3762_8[] = {
+Coding x86Parser::tokenCoding3765_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3762_9[] = {
+Coding x86Parser::tokenCoding3765_9[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3762(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3765(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -15323,31 +15336,31 @@ void x86Parser::TokenFunc3762(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3762_8;
-	operand.values[9] = tokenCoding3762_9;
+	operand.values[8] = tokenCoding3765_8;
+	operand.values[9] = tokenCoding3765_9;
 }
-x86Token x86Parser::tokenBranches3761[] = {
-	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3762,  },
+x86Token x86Parser::tokenBranches3764[] = {
+	{x86Token::REGISTERCLASS, 4, 1, 0, NULL,&x86Parser::TokenFunc3765,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3760[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3761 },
+x86Token x86Parser::tokenBranches3763[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3764 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3759[] = {
-	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3760 },
+x86Token x86Parser::tokenBranches3762[] = {
+	{x86Token::ADDRESSCLASS, 4, 0, 0, NULL, NULL, x86Parser::tokenBranches3763 },
 	{x86Token::EOT }
 };
-Coding x86Parser::tokenCoding3766_8[] = {
+Coding x86Parser::tokenCoding3769_8[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 10, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::tokenCoding3766_9[] = {
+Coding x86Parser::tokenCoding3769_9[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 135, 8},
 	{ Coding::eot },
 };
-void x86Parser::TokenFunc3766(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3769(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
 	CleanupValues.push_back(operand.values[10]);
@@ -15358,33 +15371,21 @@ void x86Parser::TokenFunc3766(x86Operand &operand, int tokenPos)
 	operand.values[10]->math = 0;
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
-	operand.values[8] = tokenCoding3766_8;
-	operand.values[9] = tokenCoding3766_9;
+	operand.values[8] = tokenCoding3769_8;
+	operand.values[9] = tokenCoding3769_9;
 }
-x86Token x86Parser::tokenBranches3765[] = {
-	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3766,  },
+x86Token x86Parser::tokenBranches3768[] = {
+	{x86Token::REGISTERCLASS, 7, 1, 0, NULL,&x86Parser::TokenFunc3769,  },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3764[] = {
-	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3765 },
+x86Token x86Parser::tokenBranches3767[] = {
+	{x86Token::TOKEN, 7, 0, 0, NULL, NULL, x86Parser::tokenBranches3768 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3763[] = {
-	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3764 },
+x86Token x86Parser::tokenBranches3766[] = {
+	{x86Token::ADDRESSCLASS, 5, 0, 0, NULL, NULL, x86Parser::tokenBranches3767 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3737(x86Operand &operand, int tokenPos)
-{
-	operand.values[10] = new Coding[2];
-	CleanupValues.push_back(operand.values[10]);
-	operand.values[10]->type = Coding::reg;
-	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
-	operand.values[10]->bits = 0;
-	operand.values[10]->field = 0;
-	operand.values[10]->math = 0;
-	operand.values[10]->mathval = 0;
-	operand.values[10][1].type = Coding::eot;
-}
 void x86Parser::TokenFunc3740(x86Operand &operand, int tokenPos)
 {
 	operand.values[10] = new Coding[2];
@@ -15409,68 +15410,80 @@ void x86Parser::TokenFunc3743(x86Operand &operand, int tokenPos)
 	operand.values[10]->mathval = 0;
 	operand.values[10][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3730[] = {
-	{x86Token::REGISTER, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3731 },
-	{x86Token::REGISTER, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3734 },
-	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc3737, x86Parser::tokenBranches3737 },
-	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc3740, x86Parser::tokenBranches3740 },
-	{x86Token::REGISTERCLASS, 1, 0, 0, NULL,&x86Parser::TokenFunc3743, x86Parser::tokenBranches3743 },
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3755 },
-	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3759 },
-	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3763 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3773(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3746(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 349;
+	operand.values[10] = new Coding[2];
+	CleanupValues.push_back(operand.values[10]);
+	operand.values[10]->type = Coding::reg;
+	operand.values[10]->val = inputTokens[tokenPos]->val->ival;
+	operand.values[10]->bits = 0;
+	operand.values[10]->field = 0;
+	operand.values[10]->math = 0;
+	operand.values[10]->mathval = 0;
+	operand.values[10][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3772[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3773,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3785(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 351;
-}
-x86Token x86Parser::tokenBranches3784[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3785,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3771[] = {
-	{x86Token::REGISTER, 14, 0, 0, NULL, NULL, x86Parser::tokenBranches3772 },
-	{x86Token::REGISTER, 15, 0, 0, NULL, NULL, x86Parser::tokenBranches3784 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3770[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3771 },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3779(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 350;
-}
-x86Token x86Parser::tokenBranches3778[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3779,  },
-	{x86Token::EOT }
-};
-void x86Parser::TokenFunc3791(x86Operand &operand, int tokenPos)
-{
-	operand.operandCoding = 352;
-}
-x86Token x86Parser::tokenBranches3790[] = {
-	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3791,  },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3777[] = {
-	{x86Token::REGISTER, 14, 0, 0, NULL, NULL, x86Parser::tokenBranches3778 },
-	{x86Token::REGISTER, 15, 0, 0, NULL, NULL, x86Parser::tokenBranches3790 },
-	{x86Token::EOT }
-};
-x86Token x86Parser::tokenBranches3776[] = {
-	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3777 },
+x86Token x86Parser::tokenBranches3733[] = {
+	{x86Token::REGISTER, 2, 0, 0, NULL, NULL, x86Parser::tokenBranches3734 },
+	{x86Token::REGISTER, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3737 },
+	{x86Token::REGISTERCLASS, 4, 0, 0, NULL,&x86Parser::TokenFunc3740, x86Parser::tokenBranches3740 },
+	{x86Token::REGISTERCLASS, 7, 0, 0, NULL,&x86Parser::TokenFunc3743, x86Parser::tokenBranches3743 },
+	{x86Token::REGISTERCLASS, 1, 0, 0, NULL,&x86Parser::TokenFunc3746, x86Parser::tokenBranches3746 },
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3758 },
+	{x86Token::TOKEN, 8, 0, 1, NULL, NULL, x86Parser::tokenBranches3762 },
+	{x86Token::TOKEN, 9, 0, 1, NULL, NULL, x86Parser::tokenBranches3766 },
 	{x86Token::EOT }
 };
 void x86Parser::TokenFunc3776(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 347;
+}
+x86Token x86Parser::tokenBranches3775[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3776,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3788(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 349;
+}
+x86Token x86Parser::tokenBranches3787[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3788,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3774[] = {
+	{x86Token::REGISTER, 14, 0, 0, NULL, NULL, x86Parser::tokenBranches3775 },
+	{x86Token::REGISTER, 15, 0, 0, NULL, NULL, x86Parser::tokenBranches3787 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3773[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3774 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3782(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 348;
+}
+x86Token x86Parser::tokenBranches3781[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3782,  },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3794(x86Operand &operand, int tokenPos)
+{
+	operand.operandCoding = 350;
+}
+x86Token x86Parser::tokenBranches3793[] = {
+	{x86Token::TOKEN, 2, 1, 0, NULL,&x86Parser::TokenFunc3794,  },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3780[] = {
+	{x86Token::REGISTER, 14, 0, 0, NULL, NULL, x86Parser::tokenBranches3781 },
+	{x86Token::REGISTER, 15, 0, 0, NULL, NULL, x86Parser::tokenBranches3793 },
+	{x86Token::EOT }
+};
+x86Token x86Parser::tokenBranches3779[] = {
+	{x86Token::TOKEN, 3, 0, 0, NULL, NULL, x86Parser::tokenBranches3780 },
+	{x86Token::EOT }
+};
+void x86Parser::TokenFunc3779(x86Operand &operand, int tokenPos)
 {
 	operand.values[1] = new Coding[2];
 	CleanupValues.push_back(operand.values[1]);
@@ -15482,22 +15495,22 @@ void x86Parser::TokenFunc3776(x86Operand &operand, int tokenPos)
 	operand.values[1]->mathval = 0;
 	operand.values[1][1].type = Coding::eot;
 }
-x86Token x86Parser::tokenBranches3769[] = {
-	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3770 },
-	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3776, x86Parser::tokenBranches3776 },
+x86Token x86Parser::tokenBranches3772[] = {
+	{x86Token::REGISTER, 27, 0, 0, NULL, NULL, x86Parser::tokenBranches3773 },
+	{x86Token::REGISTERCLASS, 12, 0, 0, NULL,&x86Parser::TokenFunc3779, x86Parser::tokenBranches3779 },
 	{x86Token::EOT }
 };
-x86Token x86Parser::tokenBranches3768[] = {
-	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3769 },
+x86Token x86Parser::tokenBranches3771[] = {
+	{x86Token::TOKEN, 1, 0, 0, NULL, NULL, x86Parser::tokenBranches3772 },
 	{x86Token::EOT }
 };
-void x86Parser::TokenFunc3792(x86Operand &operand, int tokenPos)
+void x86Parser::TokenFunc3795(x86Operand &operand, int tokenPos)
 {
-	operand.operandCoding = 353;
+	operand.operandCoding = 351;
 }
-x86Token x86Parser::tokenBranches3767[] = {
-	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3768 },
-	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc3792,  },
+x86Token x86Parser::tokenBranches3770[] = {
+	{x86Token::TOKEN, 10, 0, 1, NULL, NULL, x86Parser::tokenBranches3771 },
+	{x86Token::EMPTY, 0, 1, 0, NULL,&x86Parser::TokenFunc3795,  },
 	{x86Token::EOT }
 };
 bool x86Parser::Opcode0(x86Operand &operand)
@@ -16779,11 +16792,11 @@ bool x86Parser::Opcode103(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings104_8[] = {
-	{ Coding::valSpecified, 7},
+	{ Coding::valSpecified, 6},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings104_26[] = {
-	{ Coding::valSpecified, 6},
+	{ Coding::valSpecified, 7},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings104_23[] = {
@@ -16820,11 +16833,11 @@ bool x86Parser::Opcode105(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings106_8[] = {
-	{ Coding::valSpecified, 6},
+	{ Coding::valSpecified, 7},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings106_26[] = {
-	{ Coding::valSpecified, 7},
+	{ Coding::valSpecified, 6},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings106_23[] = {
@@ -17486,11 +17499,11 @@ bool x86Parser::Opcode157(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings158_8[] = {
-	{ Coding::valSpecified, 5},
+	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings158_26[] = {
-	{ Coding::valSpecified, 4},
+	{ Coding::valSpecified, 5},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings158_23[] = {
@@ -17527,11 +17540,11 @@ bool x86Parser::Opcode159(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings160_8[] = {
-	{ Coding::valSpecified, 4},
+	{ Coding::valSpecified, 5},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings160_26[] = {
-	{ Coding::valSpecified, 5},
+	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings160_23[] = {
@@ -18427,74 +18440,70 @@ bool x86Parser::Opcode229(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings230_23[] = {
+Coding x86Parser::OpcodeCodings230_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 180, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 232, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode230(x86Operand &operand)
 {
-	operand.values[23] = OpcodeCodings230_23;
+	operand.values[9] = OpcodeCodings230_9;
 	bool rv;
 	{
-		rv = Opcode3(operand);
+		rv = Opcode0(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings231_8[] = {
-	{ Coding::valSpecified, 2},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings231_9[] = {
+Coding x86Parser::OpcodeCodings231_23[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 180, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode231(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings231_8;
-	operand.values[9] = OpcodeCodings231_9;
-	bool rv;
-	{
-		rv = Opcode18(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings232_23[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 181, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode232(x86Operand &operand)
-{
-	operand.values[23] = OpcodeCodings232_23;
+	operand.values[23] = OpcodeCodings231_23;
 	bool rv;
 	{
 		rv = Opcode3(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings233_8[] = {
-	{ Coding::valSpecified, 3},
+Coding x86Parser::OpcodeCodings232_8[] = {
+	{ Coding::valSpecified, 2},
 	{ Coding::eot },
 };
-Coding x86Parser::OpcodeCodings233_9[] = {
+Coding x86Parser::OpcodeCodings232_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode233(x86Operand &operand)
+bool x86Parser::Opcode232(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings233_8;
-	operand.values[9] = OpcodeCodings233_9;
+	operand.values[8] = OpcodeCodings232_8;
+	operand.values[9] = OpcodeCodings232_9;
 	bool rv;
 	{
 		rv = Opcode18(operand);
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings233_23[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 181, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode233(x86Operand &operand)
+{
+	operand.values[23] = OpcodeCodings233_23;
+	bool rv;
+	{
+		rv = Opcode3(operand);
+	}
+	return rv;
+}
 Coding x86Parser::OpcodeCodings234_8[] = {
-	{ Coding::valSpecified, 6},
+	{ Coding::valSpecified, 3},
 	{ Coding::eot },
 };
 Coding x86Parser::OpcodeCodings234_9[] = {
@@ -18506,34 +18515,39 @@ bool x86Parser::Opcode234(x86Operand &operand)
 {
 	operand.values[8] = OpcodeCodings234_8;
 	operand.values[9] = OpcodeCodings234_9;
-	bool rv = ParseOperands(tokenBranches2744, operand);
+	bool rv;
+	{
+		rv = Opcode18(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings235_8[] = {
+	{ Coding::valSpecified, 6},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings235_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode235(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings235_8;
+	operand.values[9] = OpcodeCodings235_9;
+	bool rv = ParseOperands(tokenBranches2745, operand);
 	if (!rv)
 	{
 		rv = Opcode18(operand);
 	}
 	return rv;
 }
-bool x86Parser::Opcode235(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches2747, operand);
-	return rv;
-}
-Coding x86Parser::OpcodeCodings236_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode236(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings236_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
+	bool rv = ParseOperands(tokenBranches2748, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings237_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode237(x86Operand &operand)
@@ -18546,7 +18560,7 @@ bool x86Parser::Opcode237(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings238_9[] = {
-	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
@@ -18559,48 +18573,48 @@ bool x86Parser::Opcode238(x86Operand &operand)
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings239_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
+	{ Coding::eot },
+};
 bool x86Parser::Opcode239(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches2823, operand);
+	operand.values[9] = OpcodeCodings239_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
 	return rv;
 }
 bool x86Parser::Opcode240(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches2825, operand);
+	bool rv = ParseOperands(tokenBranches2824, operand);
 	return rv;
 }
 bool x86Parser::Opcode241(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches2827, operand);
+	bool rv = ParseOperands(tokenBranches2826, operand);
 	return rv;
 }
 bool x86Parser::Opcode242(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches2829, operand);
+	bool rv = ParseOperands(tokenBranches2828, operand);
 	return rv;
 }
 bool x86Parser::Opcode243(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches2831, operand);
+	bool rv = ParseOperands(tokenBranches2830, operand);
 	return rv;
 }
-Coding x86Parser::OpcodeCodings244_23[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode244(x86Operand &operand)
 {
-	operand.values[23] = OpcodeCodings244_23;
-	bool rv;
-	{
-		rv = Opcode2(operand);
-	}
+	bool rv = ParseOperands(tokenBranches2832, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings245_23[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 178, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode245(x86Operand &operand)
@@ -18608,70 +18622,71 @@ bool x86Parser::Opcode245(x86Operand &operand)
 	operand.values[23] = OpcodeCodings245_23;
 	bool rv;
 	{
-		rv = Opcode3(operand);
+		rv = Opcode2(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings246_8[] = {
-	{ Coding::valSpecified, 3},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings246_9[] = {
+Coding x86Parser::OpcodeCodings246_23[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 178, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode246(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings246_8;
-	operand.values[9] = OpcodeCodings246_9;
-	bool rv = ParseOperands(tokenBranches2835, operand);
+	operand.values[23] = OpcodeCodings246_23;
+	bool rv;
+	{
+		rv = Opcode3(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings247_8[] = {
+	{ Coding::valSpecified, 3},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings247_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode247(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings247_8;
+	operand.values[9] = OpcodeCodings247_9;
+	bool rv = ParseOperands(tokenBranches2836, operand);
 	if (!rv)
 	{
 		rv = Opcode18(operand);
 	}
 	return rv;
 }
-bool x86Parser::Opcode247(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches2837, operand);
-	return rv;
-}
+Coding x86Parser::OpcodeCodings248_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 240, 8},
+	{ Coding::eot },
+};
 bool x86Parser::Opcode248(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches3103, operand);
+	operand.values[9] = OpcodeCodings248_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings249_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode249(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings249_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
+	bool rv = ParseOperands(tokenBranches2839, operand);
 	return rv;
 }
-Coding x86Parser::OpcodeCodings250_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode250(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings250_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
+	bool rv = ParseOperands(tokenBranches3105, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings251_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode251(x86Operand &operand)
@@ -18683,73 +18698,75 @@ bool x86Parser::Opcode251(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings252_23[] = {
-	{ Coding::valSpecified, 190},
+Coding x86Parser::OpcodeCodings252_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode252(x86Operand &operand)
 {
-	operand.values[23] = OpcodeCodings252_23;
-	bool rv;
-	{
-		rv = Opcode15(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings253_23[] = {
-	{ Coding::valSpecified, 182},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode253(x86Operand &operand)
-{
-	operand.values[23] = OpcodeCodings253_23;
-	bool rv;
-	{
-		rv = Opcode15(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings254_8[] = {
-	{ Coding::valSpecified, 4},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode254(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings254_8;
-	bool rv;
-	{
-		rv = Opcode7(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings255_8[] = {
-	{ Coding::valSpecified, 3},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode255(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings255_8;
-	bool rv;
-	{
-		rv = Opcode7(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings256_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 144, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode256(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings256_9;
+	operand.values[9] = OpcodeCodings252_9;
 	bool rv;
 	{
 		rv = Opcode0(operand);
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings253_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode253(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings253_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings254_23[] = {
+	{ Coding::valSpecified, 190},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode254(x86Operand &operand)
+{
+	operand.values[23] = OpcodeCodings254_23;
+	bool rv;
+	{
+		rv = Opcode15(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings255_23[] = {
+	{ Coding::valSpecified, 182},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode255(x86Operand &operand)
+{
+	operand.values[23] = OpcodeCodings255_23;
+	bool rv;
+	{
+		rv = Opcode15(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings256_8[] = {
+	{ Coding::valSpecified, 4},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode256(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings256_8;
+	bool rv;
+	{
+		rv = Opcode7(operand);
+	}
+	return rv;
+}
 Coding x86Parser::OpcodeCodings257_8[] = {
-	{ Coding::valSpecified, 2},
+	{ Coding::valSpecified, 3},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode257(x86Operand &operand)
@@ -18761,69 +18778,67 @@ bool x86Parser::Opcode257(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings258_8[] = {
-	{ Coding::valSpecified, 1},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings258_23[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 12, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings258_24[] = {
-	{ Coding::valSpecified, 8},
+Coding x86Parser::OpcodeCodings258_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 144, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode258(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings258_8;
-	operand.values[23] = OpcodeCodings258_23;
-	operand.values[24] = OpcodeCodings258_24;
+	operand.values[9] = OpcodeCodings258_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings259_8[] = {
+	{ Coding::valSpecified, 2},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode259(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings259_8;
+	bool rv;
+	{
+		rv = Opcode7(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings260_8[] = {
+	{ Coding::valSpecified, 1},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings260_23[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 12, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings260_24[] = {
+	{ Coding::valSpecified, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode260(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings260_8;
+	operand.values[23] = OpcodeCodings260_23;
+	operand.values[24] = OpcodeCodings260_24;
 	bool rv;
 	{
 		rv = Opcode4(operand);
 	}
 	return rv;
 }
-bool x86Parser::Opcode259(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3270, operand);
-	return rv;
-}
-bool x86Parser::Opcode260(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3292, operand);
-	return rv;
-}
-Coding x86Parser::OpcodeCodings261_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode261(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings261_9;
-	bool rv;
-	{
-		rv = Opcode1(operand);
-	}
+	bool rv = ParseOperands(tokenBranches3272, operand);
 	return rv;
 }
-Coding x86Parser::OpcodeCodings262_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode262(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings262_9;
-	bool rv;
-	{
-		rv = Opcode1(operand);
-	}
+	bool rv = ParseOperands(tokenBranches3294, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings263_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode263(x86Operand &operand)
@@ -18835,13 +18850,23 @@ bool x86Parser::Opcode263(x86Operand &operand)
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings264_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
+	{ Coding::eot },
+};
 bool x86Parser::Opcode264(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches3392, operand);
+	operand.values[9] = OpcodeCodings264_9;
+	bool rv;
+	{
+		rv = Opcode1(operand);
+	}
 	return rv;
 }
 Coding x86Parser::OpcodeCodings265_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 97, 8},
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode265(x86Operand &operand)
@@ -18849,26 +18874,16 @@ bool x86Parser::Opcode265(x86Operand &operand)
 	operand.values[9] = OpcodeCodings265_9;
 	bool rv;
 	{
-		rv = Opcode0(operand);
+		rv = Opcode1(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings266_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 97, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode266(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings266_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
+	bool rv = ParseOperands(tokenBranches3394, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings267_9[] = {
-	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 97, 8},
 	{ Coding::eot },
 };
@@ -18882,7 +18897,8 @@ bool x86Parser::Opcode267(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings268_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 157, 8},
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 97, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode268(x86Operand &operand)
@@ -18895,8 +18911,8 @@ bool x86Parser::Opcode268(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings269_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 157, 8},
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 97, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode269(x86Operand &operand)
@@ -18909,7 +18925,6 @@ bool x86Parser::Opcode269(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings270_9[] = {
-	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 157, 8},
 	{ Coding::eot },
 };
@@ -18922,13 +18937,23 @@ bool x86Parser::Opcode270(x86Operand &operand)
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings271_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 157, 8},
+	{ Coding::eot },
+};
 bool x86Parser::Opcode271(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches3408, operand);
+	operand.values[9] = OpcodeCodings271_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
 	return rv;
 }
 Coding x86Parser::OpcodeCodings272_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 96, 8},
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 157, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode272(x86Operand &operand)
@@ -18940,22 +18965,12 @@ bool x86Parser::Opcode272(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings273_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 96, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode273(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings273_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
+	bool rv = ParseOperands(tokenBranches3410, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings274_9[] = {
-	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 96, 8},
 	{ Coding::eot },
 };
@@ -18969,7 +18984,8 @@ bool x86Parser::Opcode274(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings275_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 156, 8},
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 96, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode275(x86Operand &operand)
@@ -18982,8 +18998,8 @@ bool x86Parser::Opcode275(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings276_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 156, 8},
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 96, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode276(x86Operand &operand)
@@ -18996,7 +19012,6 @@ bool x86Parser::Opcode276(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings277_9[] = {
-	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 156, 8},
 	{ Coding::eot },
 };
@@ -19009,60 +19024,62 @@ bool x86Parser::Opcode277(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings278_8[] = {
-	{ Coding::valSpecified, 2},
+Coding x86Parser::OpcodeCodings278_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 156, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode278(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings278_8;
+	operand.values[9] = OpcodeCodings278_9;
 	bool rv;
 	{
-		rv = Opcode16(operand);
+		rv = Opcode0(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings279_8[] = {
-	{ Coding::valSpecified, 3},
+Coding x86Parser::OpcodeCodings279_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 156, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode279(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings279_8;
+	operand.values[9] = OpcodeCodings279_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings280_8[] = {
+	{ Coding::valSpecified, 2},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode280(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings280_8;
 	bool rv;
 	{
 		rv = Opcode16(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings280_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 50, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode280(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings280_9;
-	bool rv;
-	{
-		rv = Opcode1(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings281_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 51, 8},
+Coding x86Parser::OpcodeCodings281_8[] = {
+	{ Coding::valSpecified, 3},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode281(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings281_9;
+	operand.values[8] = OpcodeCodings281_8;
 	bool rv;
 	{
-		rv = Opcode1(operand);
+		rv = Opcode16(operand);
 	}
 	return rv;
 }
 Coding x86Parser::OpcodeCodings282_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 49, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 50, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode282(x86Operand &operand)
@@ -19074,152 +19091,150 @@ bool x86Parser::Opcode282(x86Operand &operand)
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings283_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 51, 8},
+	{ Coding::eot },
+};
 bool x86Parser::Opcode283(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches3437, operand);
-	return rv;
-}
-bool x86Parser::Opcode284(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3440, operand);
-	return rv;
-}
-Coding x86Parser::OpcodeCodings285_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode285(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings285_8;
-	bool rv;
-	{
-		rv = Opcode16(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings286_8[] = {
-	{ Coding::valSpecified, 1},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode286(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings286_8;
-	bool rv;
-	{
-		rv = Opcode16(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings287_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode287(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings287_9;
+	operand.values[9] = OpcodeCodings283_9;
 	bool rv;
 	{
 		rv = Opcode1(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings288_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 158, 8},
+Coding x86Parser::OpcodeCodings284_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 49, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode284(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings284_9;
+	bool rv;
+	{
+		rv = Opcode1(operand);
+	}
+	return rv;
+}
+bool x86Parser::Opcode285(x86Operand &operand)
+{
+	bool rv = ParseOperands(tokenBranches3439, operand);
+	return rv;
+}
+bool x86Parser::Opcode286(x86Operand &operand)
+{
+	bool rv = ParseOperands(tokenBranches3442, operand);
+	return rv;
+}
+Coding x86Parser::OpcodeCodings287_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode287(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings287_8;
+	bool rv;
+	{
+		rv = Opcode16(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings288_8[] = {
+	{ Coding::valSpecified, 1},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode288(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings288_9;
+	operand.values[8] = OpcodeCodings288_8;
+	bool rv;
+	{
+		rv = Opcode16(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings289_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode289(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings289_9;
+	bool rv;
+	{
+		rv = Opcode1(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings290_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 158, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode290(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings290_9;
 	bool rv;
 	{
 		rv = Opcode0(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings289_8[] = {
-	{ Coding::valSpecified, 4},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode289(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings289_8;
-	bool rv;
-	{
-		rv = Opcode16(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings290_8[] = {
-	{ Coding::valSpecified, 7},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode290(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings290_8;
-	bool rv;
-	{
-		rv = Opcode16(operand);
-	}
-	return rv;
-}
 Coding x86Parser::OpcodeCodings291_8[] = {
-	{ Coding::valSpecified, 3},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings291_23[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 28, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings291_24[] = {
-	{ Coding::valSpecified, 24},
+	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode291(x86Operand &operand)
 {
 	operand.values[8] = OpcodeCodings291_8;
-	operand.values[23] = OpcodeCodings291_23;
-	operand.values[24] = OpcodeCodings291_24;
+	bool rv;
+	{
+		rv = Opcode16(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings292_8[] = {
+	{ Coding::valSpecified, 7},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode292(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings292_8;
+	bool rv;
+	{
+		rv = Opcode16(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings293_8[] = {
+	{ Coding::valSpecified, 3},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings293_23[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 28, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings293_24[] = {
+	{ Coding::valSpecified, 24},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode293(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings293_8;
+	operand.values[23] = OpcodeCodings293_23;
+	operand.values[24] = OpcodeCodings293_24;
 	bool rv;
 	{
 		rv = Opcode4(operand);
 	}
 	return rv;
 }
-bool x86Parser::Opcode292(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3450, operand);
-	return rv;
-}
-Coding x86Parser::OpcodeCodings293_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode293(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings293_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings294_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode294(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings294_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
+	bool rv = ParseOperands(tokenBranches3452, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings295_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode295(x86Operand &operand)
@@ -19231,34 +19246,36 @@ bool x86Parser::Opcode295(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings296_25[] = {
-	{ Coding::valSpecified, 7},
+Coding x86Parser::OpcodeCodings296_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode296(x86Operand &operand)
 {
-	operand.values[25] = OpcodeCodings296_25;
+	operand.values[9] = OpcodeCodings296_9;
 	bool rv;
 	{
-		rv = Opcode14(operand);
+		rv = Opcode0(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings297_25[] = {
-	{ Coding::valSpecified, 3},
+Coding x86Parser::OpcodeCodings297_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode297(x86Operand &operand)
 {
-	operand.values[25] = OpcodeCodings297_25;
+	operand.values[9] = OpcodeCodings297_9;
 	bool rv;
 	{
-		rv = Opcode14(operand);
+		rv = Opcode0(operand);
 	}
 	return rv;
 }
 Coding x86Parser::OpcodeCodings298_25[] = {
-	{ Coding::valSpecified, 2},
+	{ Coding::valSpecified, 7},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode298(x86Operand &operand)
@@ -19271,7 +19288,7 @@ bool x86Parser::Opcode298(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings299_25[] = {
-	{ Coding::valSpecified, 6},
+	{ Coding::valSpecified, 3},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode299(x86Operand &operand)
@@ -19297,7 +19314,7 @@ bool x86Parser::Opcode300(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings301_25[] = {
-	{ Coding::valSpecified, 4},
+	{ Coding::valSpecified, 6},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode301(x86Operand &operand)
@@ -19310,7 +19327,7 @@ bool x86Parser::Opcode301(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings302_25[] = {
-	{ Coding::valSpecified, 15},
+	{ Coding::valSpecified, 2},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode302(x86Operand &operand)
@@ -19323,7 +19340,7 @@ bool x86Parser::Opcode302(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings303_25[] = {
-	{ Coding::valSpecified, 13},
+	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode303(x86Operand &operand)
@@ -19336,7 +19353,7 @@ bool x86Parser::Opcode303(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings304_25[] = {
-	{ Coding::valSpecified, 12},
+	{ Coding::valSpecified, 15},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode304(x86Operand &operand)
@@ -19349,7 +19366,7 @@ bool x86Parser::Opcode304(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings305_25[] = {
-	{ Coding::valSpecified, 14},
+	{ Coding::valSpecified, 13},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode305(x86Operand &operand)
@@ -19362,7 +19379,7 @@ bool x86Parser::Opcode305(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings306_25[] = {
-	{ Coding::valSpecified, 6},
+	{ Coding::valSpecified, 12},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode306(x86Operand &operand)
@@ -19375,7 +19392,7 @@ bool x86Parser::Opcode306(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings307_25[] = {
-	{ Coding::valSpecified, 2},
+	{ Coding::valSpecified, 14},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode307(x86Operand &operand)
@@ -19388,7 +19405,7 @@ bool x86Parser::Opcode307(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings308_25[] = {
-	{ Coding::valSpecified, 3},
+	{ Coding::valSpecified, 6},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode308(x86Operand &operand)
@@ -19401,7 +19418,7 @@ bool x86Parser::Opcode308(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings309_25[] = {
-	{ Coding::valSpecified, 7},
+	{ Coding::valSpecified, 2},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode309(x86Operand &operand)
@@ -19427,7 +19444,7 @@ bool x86Parser::Opcode310(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings311_25[] = {
-	{ Coding::valSpecified, 5},
+	{ Coding::valSpecified, 7},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode311(x86Operand &operand)
@@ -19440,7 +19457,7 @@ bool x86Parser::Opcode311(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings312_25[] = {
-	{ Coding::valSpecified, 14},
+	{ Coding::valSpecified, 3},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode312(x86Operand &operand)
@@ -19453,7 +19470,7 @@ bool x86Parser::Opcode312(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings313_25[] = {
-	{ Coding::valSpecified, 12},
+	{ Coding::valSpecified, 5},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode313(x86Operand &operand)
@@ -19466,7 +19483,7 @@ bool x86Parser::Opcode313(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings314_25[] = {
-	{ Coding::valSpecified, 13},
+	{ Coding::valSpecified, 14},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode314(x86Operand &operand)
@@ -19479,7 +19496,7 @@ bool x86Parser::Opcode314(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings315_25[] = {
-	{ Coding::valSpecified, 15},
+	{ Coding::valSpecified, 12},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode315(x86Operand &operand)
@@ -19492,7 +19509,7 @@ bool x86Parser::Opcode315(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings316_25[] = {
-	{ Coding::valSpecified, 1},
+	{ Coding::valSpecified, 13},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode316(x86Operand &operand)
@@ -19505,7 +19522,7 @@ bool x86Parser::Opcode316(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings317_25[] = {
-	{ Coding::valSpecified, 11},
+	{ Coding::valSpecified, 15},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode317(x86Operand &operand)
@@ -19518,7 +19535,7 @@ bool x86Parser::Opcode317(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings318_25[] = {
-	{ Coding::valSpecified, 9},
+	{ Coding::valSpecified, 1},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode318(x86Operand &operand)
@@ -19531,7 +19548,7 @@ bool x86Parser::Opcode318(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings319_25[] = {
-	{ Coding::valSpecified, 5},
+	{ Coding::valSpecified, 11},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode319(x86Operand &operand)
@@ -19544,7 +19561,7 @@ bool x86Parser::Opcode319(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings320_25[] = {
-	{ Coding::valSpecified, 0},
+	{ Coding::valSpecified, 9},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode320(x86Operand &operand)
@@ -19557,7 +19574,7 @@ bool x86Parser::Opcode320(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings321_25[] = {
-	{ Coding::valSpecified, 10},
+	{ Coding::valSpecified, 5},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode321(x86Operand &operand)
@@ -19570,7 +19587,7 @@ bool x86Parser::Opcode321(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings322_25[] = {
-	{ Coding::valSpecified, 10},
+	{ Coding::valSpecified, 0},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode322(x86Operand &operand)
@@ -19583,7 +19600,7 @@ bool x86Parser::Opcode322(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings323_25[] = {
-	{ Coding::valSpecified, 11},
+	{ Coding::valSpecified, 10},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode323(x86Operand &operand)
@@ -19596,7 +19613,7 @@ bool x86Parser::Opcode323(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings324_25[] = {
-	{ Coding::valSpecified, 8},
+	{ Coding::valSpecified, 10},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode324(x86Operand &operand)
@@ -19609,7 +19626,7 @@ bool x86Parser::Opcode324(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings325_25[] = {
-	{ Coding::valSpecified, 4},
+	{ Coding::valSpecified, 11},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode325(x86Operand &operand)
@@ -19621,162 +19638,172 @@ bool x86Parser::Opcode325(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings326_8[] = {
-	{ Coding::valSpecified, 4},
+Coding x86Parser::OpcodeCodings326_25[] = {
+	{ Coding::valSpecified, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode326(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings326_8;
+	operand.values[25] = OpcodeCodings326_25;
 	bool rv;
 	{
-		rv = Opcode16(operand);
+		rv = Opcode14(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings327_23[] = {
-	{ Coding::valSpecified, 164},
+Coding x86Parser::OpcodeCodings327_25[] = {
+	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode327(x86Operand &operand)
 {
-	operand.values[23] = OpcodeCodings327_23;
+	operand.values[25] = OpcodeCodings327_25;
 	bool rv;
 	{
-		rv = Opcode17(operand);
+		rv = Opcode14(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings328_8[] = {
-	{ Coding::valSpecified, 5},
+Coding x86Parser::OpcodeCodings328_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 248, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode328(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings328_8;
+	operand.values[9] = OpcodeCodings328_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings329_8[] = {
+	{ Coding::valSpecified, 4},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode329(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings329_8;
 	bool rv;
 	{
 		rv = Opcode16(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings329_23[] = {
-	{ Coding::valSpecified, 172},
+Coding x86Parser::OpcodeCodings330_23[] = {
+	{ Coding::valSpecified, 164},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode329(x86Operand &operand)
+bool x86Parser::Opcode330(x86Operand &operand)
 {
-	operand.values[23] = OpcodeCodings329_23;
+	operand.values[23] = OpcodeCodings330_23;
 	bool rv;
 	{
 		rv = Opcode17(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings330_8[] = {
-	{ Coding::valSpecified, 1},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings330_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode330(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings330_8;
-	operand.values[9] = OpcodeCodings330_9;
-	bool rv;
-	{
-		rv = Opcode18(operand);
-	}
-	return rv;
-}
 Coding x86Parser::OpcodeCodings331_8[] = {
-	{ Coding::valSpecified, 0},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings331_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::valSpecified, 5},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode331(x86Operand &operand)
 {
 	operand.values[8] = OpcodeCodings331_8;
-	operand.values[9] = OpcodeCodings331_9;
+	bool rv;
+	{
+		rv = Opcode16(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings332_23[] = {
+	{ Coding::valSpecified, 172},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode332(x86Operand &operand)
+{
+	operand.values[23] = OpcodeCodings332_23;
+	bool rv;
+	{
+		rv = Opcode17(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings333_8[] = {
+	{ Coding::valSpecified, 1},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings333_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode333(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings333_8;
+	operand.values[9] = OpcodeCodings333_9;
 	bool rv;
 	{
 		rv = Opcode18(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings332_8[] = {
+Coding x86Parser::OpcodeCodings334_8[] = {
+	{ Coding::valSpecified, 0},
+	{ Coding::eot },
+};
+Coding x86Parser::OpcodeCodings334_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode334(x86Operand &operand)
+{
+	operand.values[8] = OpcodeCodings334_8;
+	operand.values[9] = OpcodeCodings334_9;
+	bool rv;
+	{
+		rv = Opcode18(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings335_8[] = {
 	{ Coding::valSpecified, 4},
 	{ Coding::eot },
 };
-Coding x86Parser::OpcodeCodings332_9[] = {
+Coding x86Parser::OpcodeCodings335_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 8},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode332(x86Operand &operand)
+bool x86Parser::Opcode335(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings332_8;
-	operand.values[9] = OpcodeCodings332_9;
-	bool rv = ParseOperands(tokenBranches3562, operand);
+	operand.values[8] = OpcodeCodings335_8;
+	operand.values[9] = OpcodeCodings335_9;
+	bool rv = ParseOperands(tokenBranches3565, operand);
 	if (!rv)
 	{
 		rv = Opcode18(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings333_9[] = {
+Coding x86Parser::OpcodeCodings336_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 249, 8},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode333(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings333_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings334_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 253, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode334(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings334_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings335_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 251, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode335(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings335_9;
-	bool rv;
-	{
-		rv = Opcode0(operand);
-	}
-	return rv;
-}
 bool x86Parser::Opcode336(x86Operand &operand)
 {
-	bool rv = ParseOperands(tokenBranches3568, operand);
+	operand.values[9] = OpcodeCodings336_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
 	return rv;
 }
 Coding x86Parser::OpcodeCodings337_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 253, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode337(x86Operand &operand)
@@ -19789,8 +19816,7 @@ bool x86Parser::Opcode337(x86Operand &operand)
 	return rv;
 }
 Coding x86Parser::OpcodeCodings338_9[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 251, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode338(x86Operand &operand)
@@ -19802,123 +19828,102 @@ bool x86Parser::Opcode338(x86Operand &operand)
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings339_9[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode339(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings339_9;
+	bool rv = ParseOperands(tokenBranches3571, operand);
+	return rv;
+}
+Coding x86Parser::OpcodeCodings340_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode340(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings340_9;
 	bool rv;
 	{
 		rv = Opcode0(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings340_8[] = {
+Coding x86Parser::OpcodeCodings341_9[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode341(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings341_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings342_9[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode342(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings342_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings343_8[] = {
 	{ Coding::valSpecified, 1},
 	{ Coding::eot },
 };
-Coding x86Parser::OpcodeCodings340_9[] = {
+Coding x86Parser::OpcodeCodings343_9[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode340(x86Operand &operand)
+bool x86Parser::Opcode343(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings340_8;
-	operand.values[9] = OpcodeCodings340_9;
-	bool rv = ParseOperands(tokenBranches3644, operand);
+	operand.values[8] = OpcodeCodings343_8;
+	operand.values[9] = OpcodeCodings343_9;
+	bool rv = ParseOperands(tokenBranches3647, operand);
 	if (!rv)
 	{
 		rv = Opcode18(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings341_8[] = {
+Coding x86Parser::OpcodeCodings344_8[] = {
 	{ Coding::valSpecified, 5},
 	{ Coding::eot },
 };
-Coding x86Parser::OpcodeCodings341_23[] = {
+Coding x86Parser::OpcodeCodings344_23[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 44, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::OpcodeCodings341_24[] = {
+Coding x86Parser::OpcodeCodings344_24[] = {
 	{ Coding::valSpecified, 40},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode341(x86Operand &operand)
+bool x86Parser::Opcode344(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings341_8;
-	operand.values[23] = OpcodeCodings341_23;
-	operand.values[24] = OpcodeCodings341_24;
+	operand.values[8] = OpcodeCodings344_8;
+	operand.values[23] = OpcodeCodings344_23;
+	operand.values[24] = OpcodeCodings344_24;
 	bool rv;
 	{
 		rv = Opcode4(operand);
 	}
 	return rv;
 }
-bool x86Parser::Opcode342(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3648, operand);
-	return rv;
-}
-Coding x86Parser::OpcodeCodings343_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode343(x86Operand &operand)
-{
-	operand.values[9] = OpcodeCodings343_9;
-	bool rv;
-	{
-		rv = Opcode1(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings344_8[] = {
-	{ Coding::valSpecified, 4},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings344_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
-	{ Coding::eot },
-};
-bool x86Parser::Opcode344(x86Operand &operand)
-{
-	operand.values[8] = OpcodeCodings344_8;
-	operand.values[9] = OpcodeCodings344_9;
-	bool rv = ParseOperands(tokenBranches3707, operand);
-	if (!rv)
-	{
-		rv = Opcode18(operand);
-	}
-	return rv;
-}
-Coding x86Parser::OpcodeCodings345_8[] = {
-	{ Coding::valSpecified, 5},
-	{ Coding::eot },
-};
-Coding x86Parser::OpcodeCodings345_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
-	{ Coding::eot },
-};
 bool x86Parser::Opcode345(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings345_8;
-	operand.values[9] = OpcodeCodings345_9;
-	bool rv = ParseOperands(tokenBranches3710, operand);
-	if (!rv)
-	{
-		rv = Opcode18(operand);
-	}
+	bool rv = ParseOperands(tokenBranches3651, operand);
 	return rv;
 }
 Coding x86Parser::OpcodeCodings346_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 155, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode346(x86Operand &operand)
@@ -19926,93 +19931,146 @@ bool x86Parser::Opcode346(x86Operand &operand)
 	operand.values[9] = OpcodeCodings346_9;
 	bool rv;
 	{
-		rv = Opcode0(operand);
+		rv = Opcode1(operand);
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings347_8[] = {
+	{ Coding::valSpecified, 4},
+	{ Coding::eot },
+};
 Coding x86Parser::OpcodeCodings347_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 9, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode347(x86Operand &operand)
 {
+	operand.values[8] = OpcodeCodings347_8;
 	operand.values[9] = OpcodeCodings347_9;
-	bool rv;
+	bool rv = ParseOperands(tokenBranches3710, operand);
+	if (!rv)
 	{
-		rv = Opcode1(operand);
+		rv = Opcode18(operand);
 	}
 	return rv;
 }
+Coding x86Parser::OpcodeCodings348_8[] = {
+	{ Coding::valSpecified, 5},
+	{ Coding::eot },
+};
 Coding x86Parser::OpcodeCodings348_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 48, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
 bool x86Parser::Opcode348(x86Operand &operand)
 {
+	operand.values[8] = OpcodeCodings348_8;
 	operand.values[9] = OpcodeCodings348_9;
-	bool rv;
+	bool rv = ParseOperands(tokenBranches3713, operand);
+	if (!rv)
 	{
-		rv = Opcode1(operand);
+		rv = Opcode18(operand);
 	}
 	return rv;
 }
-bool x86Parser::Opcode349(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3716, operand);
-	return rv;
-}
-bool x86Parser::Opcode350(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3721, operand);
-	return rv;
-}
-bool x86Parser::Opcode351(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3730, operand);
-	return rv;
-}
-bool x86Parser::Opcode352(x86Operand &operand)
-{
-	bool rv = ParseOperands(tokenBranches3767, operand);
-	return rv;
-}
-Coding x86Parser::OpcodeCodings353_9[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
+Coding x86Parser::OpcodeCodings349_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 155, 8},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode353(x86Operand &operand)
+bool x86Parser::Opcode349(x86Operand &operand)
 {
-	operand.values[9] = OpcodeCodings353_9;
+	operand.values[9] = OpcodeCodings349_9;
 	bool rv;
 	{
 		rv = Opcode0(operand);
 	}
 	return rv;
 }
-Coding x86Parser::OpcodeCodings354_8[] = {
+Coding x86Parser::OpcodeCodings350_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 9, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode350(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings350_9;
+	bool rv;
+	{
+		rv = Opcode1(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings351_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 48, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode351(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings351_9;
+	bool rv;
+	{
+		rv = Opcode1(operand);
+	}
+	return rv;
+}
+bool x86Parser::Opcode352(x86Operand &operand)
+{
+	bool rv = ParseOperands(tokenBranches3719, operand);
+	return rv;
+}
+bool x86Parser::Opcode353(x86Operand &operand)
+{
+	bool rv = ParseOperands(tokenBranches3724, operand);
+	return rv;
+}
+bool x86Parser::Opcode354(x86Operand &operand)
+{
+	bool rv = ParseOperands(tokenBranches3733, operand);
+	return rv;
+}
+bool x86Parser::Opcode355(x86Operand &operand)
+{
+	bool rv = ParseOperands(tokenBranches3770, operand);
+	return rv;
+}
+Coding x86Parser::OpcodeCodings356_9[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
+	{ Coding::eot },
+};
+bool x86Parser::Opcode356(x86Operand &operand)
+{
+	operand.values[9] = OpcodeCodings356_9;
+	bool rv;
+	{
+		rv = Opcode0(operand);
+	}
+	return rv;
+}
+Coding x86Parser::OpcodeCodings357_8[] = {
 	{ Coding::valSpecified, 6},
 	{ Coding::eot },
 };
-Coding x86Parser::OpcodeCodings354_23[] = {
+Coding x86Parser::OpcodeCodings357_23[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 52, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::OpcodeCodings354_24[] = {
+Coding x86Parser::OpcodeCodings357_24[] = {
 	{ Coding::valSpecified, 48},
 	{ Coding::eot },
 };
-bool x86Parser::Opcode354(x86Operand &operand)
+bool x86Parser::Opcode357(x86Operand &operand)
 {
-	operand.values[8] = OpcodeCodings354_8;
-	operand.values[23] = OpcodeCodings354_23;
-	operand.values[24] = OpcodeCodings354_24;
+	operand.values[8] = OpcodeCodings357_8;
+	operand.values[23] = OpcodeCodings357_23;
+	operand.values[24] = OpcodeCodings357_24;
 	bool rv;
 	{
 		rv = Opcode4(operand);
 	}
 	return rv;
 }
-x86Parser::DispatchType x86Parser::DispatchTable[355] = {
+x86Parser::DispatchType x86Parser::DispatchTable[358] = {
 	NULL,
 	NULL,
 	NULL,
@@ -20368,6 +20426,9 @@ x86Parser::DispatchType x86Parser::DispatchTable[355] = {
 	&x86Parser::Opcode352,
 	&x86Parser::Opcode353,
 	&x86Parser::Opcode354,
+	&x86Parser::Opcode355,
+	&x86Parser::Opcode356,
+	&x86Parser::Opcode357,
 };
 Coding x86Parser::Coding1[] = {
 	{ Coding::stateFunc, 0 },
@@ -20911,14 +20972,6 @@ Coding x86Parser::Coding55[] = {
 };
 Coding x86Parser::Coding56[] = {
 	{ Coding::stateFunc, 1 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 3},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding57[] = {
-	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
@@ -20929,7 +20982,7 @@ Coding x86Parser::Coding57[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding58[] = {
+Coding x86Parser::Coding57[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
@@ -20939,7 +20992,7 @@ Coding x86Parser::Coding58[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding59[] = {
+Coding x86Parser::Coding58[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
@@ -20948,7 +21001,17 @@ Coding x86Parser::Coding59[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ Coding::eot },
 };
+Coding x86Parser::Coding59[] = {
+	{ Coding::stateFunc, 1 },
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
+	{ Coding::eot },
+};
 Coding x86Parser::Coding60[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::stateFunc, 1 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
@@ -20958,7 +21021,7 @@ Coding x86Parser::Coding60[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding61[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::stateFunc, 1 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
@@ -20968,7 +21031,7 @@ Coding x86Parser::Coding61[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding62[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::stateFunc, 1 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
@@ -20978,16 +21041,6 @@ Coding x86Parser::Coding62[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding63[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 1 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding64[] = {
 	{ Coding::stateFunc, 1 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
@@ -20996,6 +21049,15 @@ Coding x86Parser::Coding64[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding64[] = {
+	{ Coding::stateFunc, 1 },
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21004,7 +21066,7 @@ Coding x86Parser::Coding65[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21013,26 +21075,30 @@ Coding x86Parser::Coding66[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding67[] = {
-	{ Coding::stateFunc, 1 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding68[] = {
+Coding x86Parser::Coding67[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding68[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21042,6 +21108,16 @@ Coding x86Parser::Coding69[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding70[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
@@ -21049,22 +21125,13 @@ Coding x86Parser::Coding69[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding70[] = {
+Coding x86Parser::Coding71[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding71[] = {
-	{ Coding::stateFunc, 1 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21074,31 +21141,29 @@ Coding x86Parser::Coding72[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding73[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding74[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 4, 8, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding75[] = {
@@ -21106,7 +21171,7 @@ Coding x86Parser::Coding75[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21115,32 +21180,11 @@ Coding x86Parser::Coding76[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding77[] = {
-	{ Coding::stateFunc, 1 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding78[] = {
-	{ Coding::stateFunc, 1 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding79[] = {
+Coding x86Parser::Coding77[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
@@ -21149,7 +21193,7 @@ Coding x86Parser::Coding79[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding80[] = {
+Coding x86Parser::Coding78[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
@@ -21162,13 +21206,36 @@ Coding x86Parser::Coding80[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding81[] = {
+Coding x86Parser::Coding79[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding80[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding81[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21178,30 +21245,31 @@ Coding x86Parser::Coding82[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding83[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding84[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21212,7 +21280,7 @@ Coding x86Parser::Coding85[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32},
 	{ Coding::eot },
@@ -21224,31 +21292,33 @@ Coding x86Parser::Coding86[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding87[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding88[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
@@ -21261,7 +21331,7 @@ Coding x86Parser::Coding89[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32},
 	{ Coding::eot },
@@ -21274,33 +21344,33 @@ Coding x86Parser::Coding90[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding91[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding92[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
@@ -21313,7 +21383,7 @@ Coding x86Parser::Coding93[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32},
 	{ Coding::eot },
@@ -21326,35 +21396,33 @@ Coding x86Parser::Coding94[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding95[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 32},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding96[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding97[] = {
@@ -21365,7 +21433,7 @@ Coding x86Parser::Coding97[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding98[] = {
@@ -21376,7 +21444,7 @@ Coding x86Parser::Coding98[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding99[] = {
@@ -21387,7 +21455,7 @@ Coding x86Parser::Coding99[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding100[] = {
@@ -21398,11 +21466,12 @@ Coding x86Parser::Coding100[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding101[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
@@ -21414,6 +21483,7 @@ Coding x86Parser::Coding101[] = {
 };
 Coding x86Parser::Coding102[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
@@ -21424,30 +21494,6 @@ Coding x86Parser::Coding102[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding103[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding104[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding105[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
@@ -21460,19 +21506,20 @@ Coding x86Parser::Coding105[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding106[] = {
+Coding x86Parser::Coding104[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding107[] = {
+Coding x86Parser::Coding105[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
@@ -21484,7 +21531,7 @@ Coding x86Parser::Coding107[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding108[] = {
+Coding x86Parser::Coding106[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
@@ -21494,6 +21541,32 @@ Coding x86Parser::Coding108[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding107[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding108[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::indirect, 9, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding109[] = {
@@ -21505,7 +21578,7 @@ Coding x86Parser::Coding109[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding110[] = {
@@ -21517,7 +21590,7 @@ Coding x86Parser::Coding110[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding111[] = {
@@ -21529,7 +21602,7 @@ Coding x86Parser::Coding111[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding112[] = {
@@ -21541,31 +21614,31 @@ Coding x86Parser::Coding112[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding113[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding114[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding115[] = {
@@ -21576,7 +21649,7 @@ Coding x86Parser::Coding115[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21588,7 +21661,7 @@ Coding x86Parser::Coding116[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21600,7 +21673,7 @@ Coding x86Parser::Coding117[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21612,12 +21685,13 @@ Coding x86Parser::Coding118[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding119[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
@@ -21630,6 +21704,7 @@ Coding x86Parser::Coding119[] = {
 };
 Coding x86Parser::Coding120[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
@@ -21642,27 +21717,27 @@ Coding x86Parser::Coding120[] = {
 };
 Coding x86Parser::Coding121[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding122[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21675,7 +21750,7 @@ Coding x86Parser::Coding123[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21688,33 +21763,33 @@ Coding x86Parser::Coding124[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding125[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding126[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21727,7 +21802,7 @@ Coding x86Parser::Coding127[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21740,7 +21815,7 @@ Coding x86Parser::Coding128[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21753,7 +21828,7 @@ Coding x86Parser::Coding129[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
@@ -21766,34 +21841,32 @@ Coding x86Parser::Coding130[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding131[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding132[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 2},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 4, 8, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding133[] = {
@@ -21804,7 +21877,7 @@ Coding x86Parser::Coding133[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21816,7 +21889,7 @@ Coding x86Parser::Coding134[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21828,7 +21901,7 @@ Coding x86Parser::Coding135[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21840,12 +21913,13 @@ Coding x86Parser::Coding136[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding137[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
@@ -21858,6 +21932,7 @@ Coding x86Parser::Coding137[] = {
 };
 Coding x86Parser::Coding138[] = {
 	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
@@ -21870,27 +21945,27 @@ Coding x86Parser::Coding138[] = {
 };
 Coding x86Parser::Coding139[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding140[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 54, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21903,7 +21978,7 @@ Coding x86Parser::Coding141[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21916,33 +21991,33 @@ Coding x86Parser::Coding142[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding143[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding144[] = {
 	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 62, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21955,7 +22030,7 @@ Coding x86Parser::Coding145[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21968,7 +22043,7 @@ Coding x86Parser::Coding146[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 5, 3},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21981,7 +22056,7 @@ Coding x86Parser::Coding147[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
@@ -21994,120 +22069,108 @@ Coding x86Parser::Coding148[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding149[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 6, 2, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding150[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::indirect, 9, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 2, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 4, 3},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 2, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 5, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 0, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding151[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 7, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding152[] = {
+Coding x86Parser::Coding150[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding153[] = {
+Coding x86Parser::Coding151[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ Coding::indirect, 9, -1, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding154[] = {
+Coding x86Parser::Coding152[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 23, 8, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding155[] = {
+Coding x86Parser::Coding153[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 23, 8, 0, 43, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding156[] = {
+Coding x86Parser::Coding154[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 23, 8, 0, 43, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding157[] = {
+Coding x86Parser::Coding155[] = {
 	{ Coding::native },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding158[] = {
+Coding x86Parser::Coding156[] = {
 	{ Coding::stateFunc, 2 },
+	{ Coding::native },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 13, 8, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding157[] = {
+	{ Coding::stateFunc, 2 },
+	{ Coding::native },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding158[] = {
+	{ Coding::stateFunc, 3 },
 	{ Coding::native },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 13, 8, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding159[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::native },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding160[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::native },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 13, 8, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding161[] = {
 	{ Coding::stateFunc, 3 },
 	{ Coding::native },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding162[] = {
+Coding x86Parser::Coding160[] = {
 	{ Coding::stateFunc, 2 },
 	{ Coding::native },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding161[] = {
+	{ Coding::stateFunc, 3 },
+	{ Coding::native },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding162[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 9, 5, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding163[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::native },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 9, 5, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding164[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 9, 5, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
+	{ Coding::indirect, 23, -1, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 7, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding165[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 9, 5, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
+	{ Coding::indirect, 23, -1, 0, 43, 4 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 26, 3, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 7, 3, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding166[] = {
@@ -22118,33 +22181,19 @@ Coding x86Parser::Coding166[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding167[] = {
-	{ Coding::indirect, 23, -1, 0, 43, 4 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 7, 3, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding168[] = {
-	{ Coding::indirect, 23, -1, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 7, 3, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding169[] = {
 	{ Coding::indirect, 9, -1, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 8, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 1, 3},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding170[] = {
+Coding x86Parser::Coding168[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 4},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 25, 4, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding171[] = {
+Coding x86Parser::Coding169[] = {
 	{ Coding::stateFunc, 2 },
 	{ Coding::valSpecified, 15},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 8, 4},
@@ -22152,7 +22201,7 @@ Coding x86Parser::Coding171[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding172[] = {
+Coding x86Parser::Coding170[] = {
 	{ Coding::stateFunc, 3 },
 	{ Coding::valSpecified, 15},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 8, 4},
@@ -22160,40 +22209,40 @@ Coding x86Parser::Coding172[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding173[] = {
+Coding x86Parser::Coding171[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 25, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding174[] = {
+Coding x86Parser::Coding172[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 154, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 1, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding175[] = {
+Coding x86Parser::Coding173[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 154, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 1, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding176[] = {
+Coding x86Parser::Coding174[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 232, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding177[] = {
+Coding x86Parser::Coding175[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 232, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding178[] = {
+Coding x86Parser::Coding176[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ Coding::stateFunc, 2 },
@@ -22202,7 +22251,7 @@ Coding x86Parser::Coding178[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding179[] = {
+Coding x86Parser::Coding177[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ Coding::stateFunc, 3 },
@@ -22211,114 +22260,132 @@ Coding x86Parser::Coding179[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding180[] = {
+Coding x86Parser::Coding178[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding181[] = {
+Coding x86Parser::Coding179[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding180[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding181[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding182[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding183[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 166, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding184[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding185[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding186[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding187[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding188[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding189[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding190[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding191[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 167, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding192[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 200, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 16, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding193[] = {
+Coding x86Parser::Coding191[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 155, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 223, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 224, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding194[] = {
+Coding x86Parser::Coding192[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 223, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 224, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding195[] = {
+Coding x86Parser::Coding193[] = {
 	{ Coding::native },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 17, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding196[] = {
+Coding x86Parser::Coding194[] = {
 	{ Coding::native },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding197[] = {
+Coding x86Parser::Coding195[] = {
 	{ Coding::native },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding198[] = {
+Coding x86Parser::Coding196[] = {
 	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 107, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 13, 8, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding197[] = {
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 105, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding198[] = {
+	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 107, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
@@ -22327,24 +22394,6 @@ Coding x86Parser::Coding198[] = {
 	{ Coding::eot },
 };
 Coding x86Parser::Coding199[] = {
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 105, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding200[] = {
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 107, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 13, 8, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding201[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 105, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 3, 2},
@@ -22353,88 +22402,103 @@ Coding x86Parser::Coding201[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding202[] = {
+Coding x86Parser::Coding200[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 228, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 18, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding203[] = {
+Coding x86Parser::Coding201[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 229, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 18, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding204[] = {
+Coding x86Parser::Coding202[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 229, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 18, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding205[] = {
+Coding x86Parser::Coding203[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 236, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding206[] = {
+Coding x86Parser::Coding204[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 237, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding207[] = {
+Coding x86Parser::Coding205[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 237, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding208[] = {
+Coding x86Parser::Coding206[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding209[] = {
+Coding x86Parser::Coding207[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding208[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding209[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding210[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding211[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 108, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding212[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding213[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding214[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding215[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
@@ -22442,537 +22506,537 @@ Coding x86Parser::Coding215[] = {
 };
 Coding x86Parser::Coding216[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding217[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding218[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding219[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 109, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding220[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 205, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding221[] = {
+Coding x86Parser::Coding219[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 227, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding222[] = {
+Coding x86Parser::Coding220[] = {
 	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 227, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding223[] = {
+Coding x86Parser::Coding221[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 1, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding222[] = {
+	{ Coding::stateFunc, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 1, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding223[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ Coding::stateFunc, 2 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding224[] = {
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 1, 16, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding225[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ Coding::stateFunc, 2 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding226[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ Coding::stateFunc, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 234, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 16},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding227[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 235, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding228[] = {
+Coding x86Parser::Coding226[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 233, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding229[] = {
+Coding x86Parser::Coding227[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 233, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding230[] = {
+Coding x86Parser::Coding228[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding231[] = {
+Coding x86Parser::Coding229[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding230[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding231[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding232[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding233[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 172, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding234[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding235[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding236[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding237[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding238[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding239[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding240[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding241[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 173, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding242[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 226, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding243[] = {
+Coding x86Parser::Coding241[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 225, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding244[] = {
+Coding x86Parser::Coding242[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 224, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 14, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding245[] = {
+Coding x86Parser::Coding243[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding244[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding245[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding246[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding247[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding248[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding249[] = {
 	{ Coding::stateFunc, 2 },
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding248[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding249[] = {
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding250[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding251[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding252[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding253[] = {
 	{ Coding::stateFunc, 3 },
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding252[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding253[] = {
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding254[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding255[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding256[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding257[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 22, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding258[] = {
+Coding x86Parser::Coding256[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 23, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding259[] = {
+Coding x86Parser::Coding257[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 23, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding260[] = {
+Coding x86Parser::Coding258[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding259[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding260[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding261[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding262[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding263[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 162, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding264[] = {
 	{ Coding::stateFunc, 2 },
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding263[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding264[] = {
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding265[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding266[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding267[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding268[] = {
 	{ Coding::stateFunc, 3 },
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding267[] = {
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ Coding::eot },
+};
+Coding x86Parser::Coding268[] = {
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding269[] = {
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
 Coding x86Parser::Coding270[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding271[] = {
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 163, 8},
-	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
-	{ Coding::eot },
-};
-Coding x86Parser::Coding272[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding273[] = {
+Coding x86Parser::Coding271[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding272[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding273[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding274[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding275[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 164, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding276[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding277[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding278[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding279[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding280[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding281[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding282[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding283[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 165, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding284[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 230, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 18, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding285[] = {
+Coding x86Parser::Coding283[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 231, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 18, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding286[] = {
+Coding x86Parser::Coding284[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 231, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 18, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding287[] = {
+Coding x86Parser::Coding285[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 238, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding288[] = {
+Coding x86Parser::Coding286[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 239, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding289[] = {
+Coding x86Parser::Coding287[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 239, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding290[] = {
+Coding x86Parser::Coding288[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding291[] = {
+Coding x86Parser::Coding289[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding290[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding291[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding292[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding293[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 110, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding294[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding295[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding296[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding297[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
@@ -22980,339 +23044,324 @@ Coding x86Parser::Coding297[] = {
 };
 Coding x86Parser::Coding298[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding299[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding300[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding301[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 111, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding302[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding303[] = {
+Coding x86Parser::Coding301[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 11, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding304[] = {
+Coding x86Parser::Coding302[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 161, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding305[] = {
+Coding x86Parser::Coding303[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 169, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding306[] = {
+Coding x86Parser::Coding304[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 7, 3},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding307[] = {
+Coding x86Parser::Coding305[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 10, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding308[] = {
+Coding x86Parser::Coding306[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 10, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding309[] = {
+Coding x86Parser::Coding307[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 106, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding310[] = {
+Coding x86Parser::Coding308[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 104, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding311[] = {
+Coding x86Parser::Coding309[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 104, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding312[] = {
+Coding x86Parser::Coding310[] = {
 	{ Coding::stateFunc, 2 },
 	{ Coding::native },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding313[] = {
+Coding x86Parser::Coding311[] = {
 	{ Coding::stateFunc, 3 },
 	{ Coding::native },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding314[] = {
+Coding x86Parser::Coding312[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 160, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding315[] = {
+Coding x86Parser::Coding313[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 15, 8},
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 168, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding316[] = {
+Coding x86Parser::Coding314[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 0, 2},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 3, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 6, 3},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding317[] = {
+Coding x86Parser::Coding315[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 194, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding318[] = {
+Coding x86Parser::Coding316[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 195, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding319[] = {
+Coding x86Parser::Coding317[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 202, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding320[] = {
+Coding x86Parser::Coding318[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 203, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding321[] = {
+Coding x86Parser::Coding319[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding322[] = {
+Coding x86Parser::Coding320[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding321[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding322[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding323[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding324[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 174, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding325[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding326[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding327[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding328[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding329[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding330[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding331[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding332[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 175, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding333[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding334[] = {
+Coding x86Parser::Coding332[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding333[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding334[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding335[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding336[] = {
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 2 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 170, 8},
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding337[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding338[] = {
 	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding339[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding340[] = {
-	{ Coding::stateFunc, 2 },
-	{ Coding::stateFunc, 1 },
+	{ Coding::stateFunc, 3 },
+	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding341[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding342[] = {
 	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 0 },
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding343[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding344[] = {
-	{ Coding::stateFunc, 3 },
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 1, 8, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 171, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding345[] = {
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 168, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 8, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding346[] = {
+Coding x86Parser::Coding344[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 169, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 16, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding347[] = {
+Coding x86Parser::Coding345[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 169, 8},
 	{ (Coding::Type)(Coding::indirect | Coding::bitSpecified), 12, 32, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding348[] = {
+Coding x86Parser::Coding346[] = {
 	{ Coding::stateFunc, 2 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 18, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding349[] = {
+Coding x86Parser::Coding347[] = {
 	{ Coding::stateFunc, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 18, 5},
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified | Coding::bitSpecified), 10, 3, 0 },
 	{ Coding::eot },
 };
-Coding x86Parser::Coding350[] = {
+Coding x86Parser::Coding348[] = {
 	{ Coding::stateFunc, 0 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding351[] = {
+Coding x86Parser::Coding349[] = {
 	{ Coding::stateFunc, 0 },
+	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 1, -1, 3 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding350[] = {
+	{ Coding::stateFunc, 1 },
+	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
+	{ Coding::eot },
+};
+Coding x86Parser::Coding351[] = {
+	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 1, -1, 3 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
 	{ Coding::eot },
 };
 Coding x86Parser::Coding352[] = {
-	{ Coding::stateFunc, 1 },
 	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
 	{ Coding::eot },
 };
-Coding x86Parser::Coding353[] = {
-	{ Coding::stateFunc, 1 },
-	{ (Coding::Type)(Coding::indirect | Coding::fieldSpecified), 1, -1, 3 },
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
-	{ Coding::eot },
-};
-Coding x86Parser::Coding354[] = {
-	{ (Coding::Type)(Coding::bitSpecified | Coding::valSpecified), 215, 8},
-	{ Coding::eot },
-};
-Coding * x86Parser::Codings[354] = {
+Coding * x86Parser::Codings[352] = {
 	x86Parser::Coding1,
 	x86Parser::Coding2,
 	x86Parser::Coding3,
@@ -23665,8 +23714,6 @@ Coding * x86Parser::Codings[354] = {
 	x86Parser::Coding350,
 	x86Parser::Coding351,
 	x86Parser::Coding352,
-	x86Parser::Coding353,
-	x86Parser::Coding354,
 };
 Coding x86Parser::prefixCoding1[] = {
 	{ Coding::stateFunc, 0 },

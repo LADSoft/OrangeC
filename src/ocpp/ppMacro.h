@@ -70,7 +70,7 @@ public:
     ~ppMacro();
     bool Check(int token, std::string &line);
     bool GetLine(std::string &line, int &lineno);
-    bool Invoke(std::string &name, std::string &line);
+    bool Invoke(std::string name, std::string line);
     int GetMacroId() { MacroData *p = GetTopMacro(); if (p) return p->id; else return -1; }
     int GetMacroMax() { MacroData *p = GetTopMacro(); if (p) return p->argmax; else return 0; }
     std::vector<std::string> *GetMacroArgs() { MacroData *p = GetTopMacro(); if (p) return &p->args; else return NULL; }

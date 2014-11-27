@@ -41,7 +41,7 @@
 #include "PreProcessor.h"
 #include "UTF8.h"
 
-#include <exception>
+#include <stdexcept>
 
 KeywordHash Lexer::hash;	
 bool Lexer::hashInitted;
@@ -62,8 +62,8 @@ void Lexer::InitHash()
         hash[")"] = closepa;
         hash["+"] = plus;
         hash["-"] = minus;
-        hash["!"] = not;
-        hash["~"] = compl;
+        hash["!"] = lnot;
+        hash["~"] = bcompl;
         hash["*"] = star;
         hash["/"] = divide;
         hash["%"] = mod;
@@ -76,9 +76,9 @@ void Lexer::InitHash()
         hash["=="] = eq;
         hash["!="] = ne;
         hash["="] = assn;
-        hash["|"] = or;
-        hash["&"] = and;
-        hash["^"] = xor;
+        hash["|"] = bor;
+        hash["&"] = band;
+        hash["^"] = bxor;
         hash["||"] = lor;
         hash["&&"] = land;
         hash["?"] = hook;

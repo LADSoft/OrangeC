@@ -50,7 +50,7 @@ class ObjBrowseInfo : public ObjWrapper
 public:
     enum eType { eDefine, eVariable, eFileStart, eFuncStart, eFuncEnd, eBlockStart, eBlockEnd };
     enum eQual { eGlobal, eStatic, eExternal, eLocal, ePrototype, eTypeval };
-    ObjBrowseInfo(eType Type, eQual Qual, ObjLineNo *Line, ObjInt CharPos, ObjString &Data) :
+    ObjBrowseInfo(eType Type, eQual Qual, ObjLineNo *Line, ObjInt CharPos, ObjString Data) :
         type(Type), qual(Qual), line(Line), charpos(CharPos), data(Data) { }
     virtual ~ObjBrowseInfo() { }
                 
@@ -59,8 +59,8 @@ public:
     eType GetType() { return type; }
     eQual GetQual() { return qual; }
     void SetType(eType Type) { type = Type; }
-    ObjString &GetData() { return data; }
-    void SetData (ObjString &Data){ data = Data; }
+    ObjString GetData() { return data; }
+    void SetData (ObjString Data){ data = Data; }
     ObjLineNo *GetLineNo() { return line; }
     void SetLineNo(ObjLineNo *Line) { line = Line; }				
     ObjInt GetCharPos() { return charpos; }
@@ -72,4 +72,4 @@ private:
     eQual qual;
     ObjString data;	
 } ;
-#endif OBJBROWSEINFO_H
+#endif //OBJBROWSEINFO_H

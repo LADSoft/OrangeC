@@ -72,7 +72,7 @@ BLOCK *currentBlock;
 int blockMax;
 
 static void add_intermed(QUAD *newQuad);
-void gen_nodag(int op, IMODE *res, IMODE *left, IMODE *right);
+void gen_nodag(enum i_ops op, IMODE *res, IMODE *left, IMODE *right);
 
 int equalnode(EXPRESSION *node1, EXPRESSION *node2)
 /*
@@ -600,7 +600,7 @@ void gen_label(int labno)
 }
 /*-------------------------------------------------------------------------*/
 
-QUAD * gen_icode(enum e_op op, IMODE *res, IMODE *left, IMODE *right)
+QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -701,7 +701,7 @@ void gen_data(int val)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_icgoto(int op, long label, IMODE *left, IMODE *right)
+void gen_icgoto(enum i_ops op, long label, IMODE *left, IMODE *right)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -724,7 +724,7 @@ void gen_icgoto(int op, long label, IMODE *left, IMODE *right)
 
 /*-------------------------------------------------------------------------*/
 
-QUAD *gen_igosub(int op, IMODE *left)
+QUAD *gen_igosub(enum i_ops op, IMODE *left)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -746,7 +746,7 @@ QUAD *gen_igosub(int op, IMODE *left)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_icode2(int op, IMODE *res, IMODE *left, IMODE *right, int label)
+void gen_icode2(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, int label)
 /*
  *      generate a code sequence into the peep list.
  *		only being used for switches
@@ -806,7 +806,7 @@ void gen_asmdata(STATEMENT *stmt)
 }
 /*-------------------------------------------------------------------------*/
 
-void gen_nodag(int op, IMODE *res, IMODE *left, IMODE *right)
+void gen_nodag(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
 /*
  *      generate a code sequence into the peep list.
  */

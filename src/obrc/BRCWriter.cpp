@@ -42,6 +42,7 @@
 #include "ObjBrowseInfo.h"
 #include <stdio.h>
 #include <algorithm>
+#include <string.h>
 #define STRINGVERSION "100"
 
 #define DBVersion atoi(STRINGVERSION)
@@ -403,9 +404,9 @@ bool BRCWriter::WriteDictionary(Symbols &syms)
     {
         SymData *sym = it->second;
         int type = 0;
-        for (BrowseDataset::iterator it = sym->data.begin(); it != sym->data.end(); ++it)
+        for (BrowseDataset::iterator it1 = sym->data.begin(); it1 != sym->data.end(); ++it1)
         {
-            BrowseData *l = *it;
+            BrowseData *l = *it1;
             if (!l->blockLevel && l->qual != ObjBrowseInfo::eExternal)
             {
                 type |= JT_GLOBAL;

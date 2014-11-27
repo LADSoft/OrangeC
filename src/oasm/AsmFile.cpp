@@ -53,9 +53,9 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <exception>
-#include <time.h>
 #include <fstream>
 #include <iostream>
+#include <limits.h>
 
 AsmFile::~AsmFile()
 {
@@ -889,8 +889,8 @@ bool AsmFile::IsNumber()
 {
     bool rv = GetToken() && (GetToken()->IsNumeric() || (GetToken()->IsKeyword() && (
         GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
-        GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::not ||
-        GetToken()->GetKeyword() == Lexer::compl)));
+        GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
+        GetToken()->GetKeyword() == Lexer::bcompl)));
     return rv;
 }
 unsigned AsmFile::GetValue()

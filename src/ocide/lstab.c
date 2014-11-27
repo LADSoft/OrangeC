@@ -68,52 +68,6 @@ static HBITMAP closeBitmap;
 static HCURSOR dragCur, noCur;
 static HIMAGELIST mainIml;
 
-struct _stList
-{
-    struct _singleTab *head;
-    struct _singleTab *tail;
-};
-struct _stItem
-{
-    struct _singleTab *prev;
-    struct _singleTab *next;
-};
-struct _singleTab
-{
-    struct _stItem chain;
-    struct _stItem selectedChain;
-    char *text;
-    LPARAM lParam;
-    BOOL displayed;
-    BOOL modified;
-    RECT displayRect;
-    RECT closeBtn;
-}; 
-struct _tabStruct
-{
-    struct _stList active;
-    struct _stList selected;
-    struct _singleTab *highlighted;
-    int fontHeight;
-    HFONT normalFont, boldFont;
-    RECT windowBtn;
-    HPEN greyPen;
-    HPEN whitePen;
-    HWND toolTip;
-    HBITMAP xBitmap, xBitmapSelected;
-    HBITMAP xBack;
-    HBITMAP menuBitmap;
-     HBITMAP menuBitmap2;
-    RECT xRect;
-    BOOL captured;
-    BOOL flat;
-    BOOL displayMenu;
-    DWORD windowBtnMode;
-    BOOL dragging;
-    HCURSOR oldCursor;
-    struct _singleTab *dragSrc;
-    struct _singleTab **menuList;
-} ;
 
 struct _singleTab *CreateItem(char *name, LPARAM lParam)
 {
@@ -714,19 +668,6 @@ static void DeleteMenuList(struct _tabStruct *ptr)
         ptr->menuList = NULL;
     }
 }
-struct ttrack
-{
-    HANDLE tWait;
-    HWND hwnd;
-    HMENU menu;
-    int rows;
-    int cols;
-    int rowHeight;
-    int rowWidth;
-    BOOL inWindow;
-    int id;
-    int oldTrack;
-} ;
 static BOOL InMenuWnd(HWND hwnd)
 {
     POINT pt;
@@ -1142,7 +1083,7 @@ static HMENU MyCreateMenu(HWND hwnd, struct _tabStruct *ptr)
     }
     return rv;
 }
-static void DisplayTabMenu(HWND hwnd, struct _tabstruct *ptr)
+static void DisplayTabMenu(HWND hwnd, struct _tabStruct *ptr)
 {
     HMENU hMenu;
     if (CreateMenuList(ptr))

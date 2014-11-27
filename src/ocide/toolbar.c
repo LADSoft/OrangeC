@@ -54,7 +54,7 @@ extern PROJECTITEM *activeProject;
 extern HWND hwndFrame, hwndClient;
 extern HINSTANCE hInstance;
 extern DWINFO *editWindows;
-extern enum DebugStates uState;
+extern enum DebugState uState;
 extern HWND hwndFind, hwndProject, hwndASM, hwndThread;
 extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndStack;
 extern int making;

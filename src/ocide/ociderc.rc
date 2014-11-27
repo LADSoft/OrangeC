@@ -3,7 +3,7 @@
 #include <commctrl.h>
 #include "..\version.h"
 #include "winconst.h"
-Language LANG_ENGLISH,SUBLANG_ENGLISH_US
+LANGUAGE LANG_ENGLISH,SUBLANG_ENGLISH_US
 
 1 VERSIONINFO 
 FILEVERSION PRODUCT_VERSION
@@ -85,7 +85,7 @@ RESDLGMENU MENUEX
         MENUITEM "Set Creation Order", IDM_CREATIONORDER
         MENUITEM "Set Tab Stops", IDM_SETTABSTOPS
         MENUITEM "Set Group Flags", IDM_SETGROUPFLAGS
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         POPUP "Grid Spacing"
         {
             MENUITEM "2", IDM_GRID2
@@ -95,7 +95,7 @@ RESDLGMENU MENUEX
         }
         MENUITEM "Show Grid", IDM_SHOWGRID
         MENUITEM "Snap To Grid", IDM_SNAPTOGRID
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Delete",       IDM_DELETE
     }
 }
@@ -116,14 +116,14 @@ RESIMGMENU MENUEX
         }
         MENUITEM "Clear Image", IDM_CLEAR
         MENUITEM "Clear Selection", IDM_CLEARSELECTION
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         POPUP "Insert Image", IDM_INSERT
         {
             MENUITEM "16x16x2", IDM_MI16161
             MENUITEM "16x16x16", IDM_MI16164
             MENUITEM "16x16x256", IDM_MI16168
             MENUITEM "16x16x24bits", IDM_MI161624
-            MENUITEM "",,MFT_SEPARATOR
+            MENUITEM "",0,MFT_SEPARATOR
             MENUITEM "32x32x2", IDM_MI32321
             MENUITEM "32x32x16", IDM_MI32324
             MENUITEM "32x32x256", IDM_MI32328
@@ -139,7 +139,7 @@ BUILDMENU MENUEX
         MENUITEM "&Make...\tF7",                       IDM_MAKE
 		 MENUITEM "Make &Active Project\tShift+F7",	   IDM_BUILDSELECTED
         MENUITEM "Rebuild &All...",                  IDM_BUILDALL
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "S&top Build",                       IDM_STOPBUILD
         }
      }
@@ -158,19 +158,19 @@ EDITMENU MENUEX
      POPUP "edit"
         {
         MENUITEM "Save File\tCtl+S",                   IDM_SAVE
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Cut\tCtl+X",                          IDM_CUT
         MENUITEM "Copy\tCtl+C",                         IDM_COPY
         MENUITEM "Paste\tCtl-V",                        IDM_PASTE
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Toggle Bookmark\tAlt+F2",      IDM_BOOKMARK
         MENUITEM "Goto Line\tAlt+F8",                    IDM_GOTO
         MENUITEM "Browse To\tCtl+F12",            IDM_BROWSETO
 		 MENUITEM "Return to origin\tCtl+P",				IDM_SCROLLTOBP
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Toggle Breakpoint\tF9",        IDM_BREAKPOINT
 		 MENUITEM "Data Breakpoint",					IDM_DATABREAKPOINTINDIRECT
-		 MENUITEM "",,MFT_SEPARATOR
+		 MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Run to Cursor\tCtl+F5",                IDM_RUNTO
         MENUITEM "Add to Watch",                 IDM_ADDWATCHINDIRECT
         }
@@ -184,17 +184,17 @@ WORKAREAMENU MENUEX
 	    MENUITEM "&New Project...",        	     	IDM_NEWPROJECT
     	 MENUITEM "&Existing Project...",           IDM_EXISTINGPROJECT
 	}
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "&Make...\tF7",                       IDM_MAKE
 	 MENUITEM "Make &Active Project\tShift+F7",	   IDM_BUILDSELECTED
     MENUITEM "&Rebuild All...",                  IDM_BUILDALL
-    MENUITEM "",,MFT_SEPARATOR
+    MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "S&top Build",                       IDM_STOPBUILD
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "&Run/Continue\tF5",						IDM_RUN
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "&Close Work Area...",        	     	IDM_CLOSEWS
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "&Select Profile...",      IDM_SELECTPROFILE
 	 MENUITEM "&Properties...",			IDM_PROJECTPROPERTIES
 	}
@@ -215,23 +215,23 @@ PROJECTMENU MENUEX
 	{
 		 MENUITEM "&New File...",					IDM_NEWFILE_P
 		 MENUITEM "&Existing File...",					IDM_EXISTINGFILE
-		 MENUITEM "",,MFT_SEPARATOR
+		 MENUITEM "",0,MFT_SEPARATOR
 		 MENUITEM "New &Folder",							IDM_NEWFOLDER
 	}
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "&Make...",                       IDM_MAKE
     MENUITEM "&Rebuild...",                  IDM_BUILDALL
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "S&top Build",                       IDM_STOPBUILD
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "&Run/Continue\tF5",						IDM_RUN
     MENUITEM "&Run without debugger",                         IDM_RUNNODEBUG
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "Remo&ve",							IDM_REMOVE
 	 MENUITEM "Rename",							IDM_RENAME
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM  "&Build window...",				IDM_MAKEWINDOW
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "Set as &Active project",			IDM_SETACTIVEPROJECT
 	 MENUITEM "&Properties...",			IDM_PROJECTPROPERTIES
 	}
@@ -244,10 +244,10 @@ FOLDERMENU MENUEX
 	{
 		 MENUITEM "&New File...",					IDM_NEWFILE_P
 		 MENUITEM "&Existing File...",					IDM_EXISTINGFILE
-		 MENUITEM "",,MFT_SEPARATOR
+		 MENUITEM "",0,MFT_SEPARATOR
 		 MENUITEM "New &Folder",							IDM_NEWFOLDER
 	}
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "Remo&ve", IDM_REMOVE
 	 MENUITEM "&Rename", IDM_RENAME
 	}
@@ -258,13 +258,13 @@ FILEMENU MENUEX
 	POPUP "FILE"
 	{
 	 MENUITEM "&Open",			IDM_OPENFILES
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "&Compile File\tCtl-F7",   IDM_COMPILEFILEFROMTREE
-	 MENUITEM "",,MFT_SEPARATOR
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "&Remove",		IDM_REMOVE
 	 MENUITEM "&Rename",		IDM_RENAME
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "&Properties...",			IDM_PROJECTPROPERTIES
 	}
 }
@@ -275,9 +275,9 @@ WINDOWMENU MENUEX
           MENUITEM "C&lose",     				IDM_CLOSEWINDOW
 		  MENUITEM "Close &All",				IDM_CLOSEALLWINDOWS
 		  MENUITEM "Create New View",				IDM_COPYWINDOW
-		  MENUITEM "",,MFT_SEPARATOR
+		  MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "Save All Files",                IDM_SAVEALL
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "&Cascade\tShift+F5",     	IDM_CASCADE
           MENUITEM "Tile &Horizontally\tShift+F4",IDM_TILEHORIZ
           MENUITEM "Tile &Vertically\tCtl+F4",   IDM_TILEVERT
@@ -301,13 +301,13 @@ MAINMENU MENUEX
           	  }
           	 MENUITEM "&Save...",        	     	IDM_SAVEWS
              MENUITEM "&Close...",        	     	IDM_CLOSEWS
-			 MENUITEM "",,MFT_SEPARATOR
+			 MENUITEM "",0,MFT_SEPARATOR
             POPUP "&Import"
             {
                 MENUITEM "Old Workspace...",                 IDM_IMPORT_CWS
                 MENUITEM "Old Target...",                    IDM_IMPORT_CTG
             }
-			 MENUITEM "",,MFT_SEPARATOR
+			 MENUITEM "",0,MFT_SEPARATOR
   		    POPUP "&Add"
 		    {
                 MENUITEM "&New Project...",        	     	IDM_NEWPROJECT
@@ -326,24 +326,24 @@ MAINMENU MENUEX
 	          MENUITEM "Save &As...",        	     	IDM_SAVEAS
 	          MENUITEM "&Close",                 	IDM_CLOSE
 		  }
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "Save All Files",                IDM_SAVEALL2
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "&Print...",                    IDM_PRINT
-		  MENUITEM "",,MFT_SEPARATOR
+		  MENUITEM "",0,MFT_SEPARATOR
 		  MENUITEM  "Comman&d window...",			IDM_DOSWINDOW
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "E&xit",                  	IDM_EXIT
           }
      POPUP "&Edit"
 	{
         MENUITEM "&Undo\tCtl+Z",                       IDM_UNDO
         MENUITEM "&Redo\tCtl+Y",                       IDM_REDO
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Cu&t\tCtl+X",                        IDM_CUT
         MENUITEM "&Copy\tCtl+C",                       IDM_COPY
         MENUITEM "&Paste\tCtl+V",                      IDM_PASTE
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "&Select All\tCtl+A",			IDM_SELECTALL
         POPUP "&Edit Tools"
         {
@@ -360,9 +360,9 @@ MAINMENU MENUEX
 	 MENUITEM "&Work Area",			IDM_VIEWPROJECT
 	 MENUITEM "&Information Window",			IDM_VIEWERROR
 	 MENUITEM "&Property Window",			IDM_VIEWPROPS
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	 MENUITEM "Create New &View",				IDM_COPYWINDOW
-	 MENUITEM "",,MFT_SEPARATOR
+	 MENUITEM "",0,MFT_SEPARATOR
 	
         POPUP "&Bookmarks"
         {
@@ -371,7 +371,7 @@ MAINMENU MENUEX
                 MENUITEM "&Previous Bookmark\tShift+F2",   IDM_PREVBOOKMARK
                 MENUITEM "&Next File",       IDM_NEXTBOOKMARKFILE
                 MENUITEM "&Previous File",   IDM_PREVBOOKMARKFILE
-                MENUITEM "",,MFT_SEPARATOR
+                MENUITEM "",0,MFT_SEPARATOR
                 MENUITEM "&Show Bookmarks...\tCtl+F2",      IDM_BOOKMARKWINDOW
                 MENUITEM "&Remove All Bookmarks",    IDM_REMOVEBOOKMARKS
         }        
@@ -382,7 +382,7 @@ MAINMENU MENUEX
                 MENUITEM "Browse Bac&k\tShift+F12",         IDM_BROWSEBACK
         }
 	
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
 	
         MENUITEM "&Goto line...\tCtl+G",                  IDM_GOTO
 	}
@@ -397,20 +397,20 @@ MAINMENU MENUEX
      {
 	    MENUITEM "Create &New Project...",        	     	IDM_NEWPROJECT
     	MENUITEM "Add &Existing Project...",           IDM_EXISTINGPROJECT
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "&Select Profile...",      IDM_SELECTPROFILE
         MENUITEM "Project &Properties...",          IDM_ACTIVEPROJECTPROPERTIES
      }
      POPUP "&Build"
 	{
     	 MENUITEM "&Compile file\tCtl-F7",		IDM_COMPILEFILE
-	    MENUITEM "",,MFT_SEPARATOR
+	    MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "&Make...\tF7",                        IDM_MAKE
 		 MENUITEM "Make &Active Project\tShift+F7",	   IDM_BUILDSELECTED
         MENUITEM "Rebuild &All...",                   IDM_BUILDALL
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "S&top Build",                       IDM_STOPBUILD
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "&Generate Make File...",              IDM_GENMAKE
 
 	}
@@ -425,45 +425,45 @@ MAINMENU MENUEX
                 MENUITEM "&Threads",                    IDM_VIEWTHREAD
                 MENUITEM "&Watch",                      IDM_VIEWWATCH
         }
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "&Run/Continue\tF5",                         IDM_RUN
         MENUITEM "S&top Debugging\tShift+F5",              IDM_STOPDEBUGGING
         MENUITEM "Run to &Cursor\tCtl+F5",                IDM_RUNTO
         MENUITEM "Sto&p\tAlt+F5",                        IDM_STOP
 		 MENUITEM "Run &without debugger",				IDM_RUNNODEBUG
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "&Add to Watch...",                    IDM_ADDWATCH
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "&Hardware Breakpoints...",              IDM_HBREAK
 		 MENUITEM "&Data Breakpoints...",				IDM_DATABREAKPOINT
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Toggle &Breakpoint\tF9",           IDM_BREAKPOINT
         MENUITEM "&Remove All Breakpoints...",          IDM_REMOVEALLBREAKPOINTS
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
 		 MENUITEM "Return to &origin\tCtl+P",				IDM_SCROLLTOBP
 	}
      POPUP "&Tools"
     {
         MENUITEM "&Customize",                        IDM_TOOLCUSTOM
         MENUITEM "Build &Rules",                      IDM_BUILDRULES
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
           POPUP "External tools..."
           { // placeholder
-		  MENUITEM "",,MFT_SEPARATOR
+		  MENUITEM "",0,MFT_SEPARATOR
 		  MENUITEM "Customize",			IDM_EDITEXTERNALTOOLS
           }
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "Proper&ties...",               IDM_GENERALPROPERTIES
         
     }
     POPUP "&Resource"
     {
         MENUITEM "New Resource", IDM_NEWRESOURCE
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         MENUITEM "Set Creation Order", IDM_CREATIONORDER
         MENUITEM "Set Tab Stops", IDM_SETTABSTOPS
         MENUITEM "Set Group Flags", IDM_SETGROUPFLAGS
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         POPUP "Grid Spacing", IDM_GRIDMENU
         {
             MENUITEM "2", IDM_GRID2
@@ -473,7 +473,7 @@ MAINMENU MENUEX
         }
         MENUITEM "Show Grid", IDM_SHOWGRID
         MENUITEM "Snap To Grid", IDM_SNAPTOGRID
-        MENUITEM "",,MFT_SEPARATOR
+        MENUITEM "",0,MFT_SEPARATOR
         POPUP "Flip Selection", IDM_FLIPMENU
         {
             MENUITEM "Horizontally", IDM_FLIPHORZ
@@ -492,9 +492,9 @@ MAINMENU MENUEX
           {
           MENUITEM "C&lose",     				IDM_CLOSEWINDOW
 		  MENUITEM "Close &All",				IDM_CLOSEALLWINDOWS
-		  MENUITEM "",,MFT_SEPARATOR
+		  MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "Save All Files",                IDM_SAVEALL
-		  MENUITEM "",,MFT_SEPARATOR
+		  MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "&Cascade\tShift+F5",     	IDM_CASCADE
           MENUITEM "Tile &Horizontally\tShift+F4",IDM_TILEHORIZ
           MENUITEM "Tile &Vertically\tCtl+F4",   IDM_TILEVERT
@@ -507,9 +507,9 @@ MAINMENU MENUEX
           MENUITEM "&RTL help...",             	   IDM_RTLHELP
           MENUITEM "&Tools help...",                IDM_TOOLSHELP
 
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
           MENUITEM "Getting &started...",            IDM_GETTINGSTARTED
-          MENUITEM "",,MFT_SEPARATOR
+          MENUITEM "",0,MFT_SEPARATOR
 	  MENUITEM "A&bout...",			IDM_ABOUT
         }
      }
@@ -548,7 +548,7 @@ PRINTFORMATMENU MENUEX
           MENUITEM "Number Of Pages",                IDM_PFNUMPAGE
           MENUITEM "File Name",                IDM_PFFILENAME
 
-		  MENUITEM "",,MFT_SEPARATOR
+		  MENUITEM "",0,MFT_SEPARATOR
 		  MENUITEM "Left",				IDM_PFLEFT
 		  MENUITEM "Right",				IDM_PFRIGHT
 		  MENUITEM "Center",				IDM_PFCENTER
@@ -710,7 +710,7 @@ FONT 10, "MS Shell Dlg"
 }
 LANGUAGE LANG_NEUTRAL,SUBLANG_NEUTRAL
 
-FINDSTUBDLG DIALOG 5 3 100 100
+FINDSTUBDLG DIALOG 5, 3, 100, 100
 EXSTYLE WS_EX_DLGMODALFRAME | WS_EX_CONTEXTHELP
 STYLE DS_MODALFRAME | DS_3DLOOK | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Find"

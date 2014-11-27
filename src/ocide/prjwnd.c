@@ -51,7 +51,7 @@
 #define N_EDITDONE -4001
 
 extern int making;
-extern enum DebugStates uState;
+extern enum DebugState uState;
 extern HINSTANCE hInstance;
 extern HWND hwndClient, hwndFrame;
 extern HWND hwndTab;

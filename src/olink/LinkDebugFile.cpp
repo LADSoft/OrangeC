@@ -635,17 +635,17 @@ bool LinkDebugFile::WriteGlobalsTable()
 
     return true;
 }
+class context
+{
+public:
+    context() : startLine(NULL), currentLine(NULL) { }
+    ObjLineNo *startLine;
+    ObjLineNo *currentLine;
+    std::deque<ObjSymbol *>vars;
+} ;
 bool LinkDebugFile::WriteAutosTable()
 {
     std::vector<sqlite3_int64> v;
-    class context
-    {
-    public:
-        context() : startLine(NULL), currentLine(NULL) { }
-        ObjLineNo *startLine;
-        ObjLineNo *currentLine;
-        std::deque<ObjSymbol *>vars;
-    } ;
     std::deque<context *> contexts;
     context *currentContext = NULL;
     int funcId = 0;

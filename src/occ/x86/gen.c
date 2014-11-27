@@ -1063,7 +1063,7 @@ void gen_lshift(enum e_op op, AMODE *aph, AMODE *apl, AMODE *n)
         }
         else
         {
-            gen_icode(op_push, makedreg(EAX), NULL, NULL);
+            gen_code(op_push, makedreg(EAX), NULL);
             pushlevel += 4;
             pushed = TRUE;
             reg = EAX;

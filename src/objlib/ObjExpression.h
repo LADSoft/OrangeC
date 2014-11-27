@@ -83,4 +83,4 @@ private:
     ObjExpression *right;
     eOperator op;
 };
-#endif OBJEXPRESSION_H
+#endif //OBJEXPRESSION_H

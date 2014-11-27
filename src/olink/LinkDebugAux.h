@@ -26,5 +26,5 @@ private:
     std::vector<ObjString *> &names;
     int columns;
     int rows;
-    static int LinkerColumnsWithNameVirtualTable::id;
+    static int id;
 };

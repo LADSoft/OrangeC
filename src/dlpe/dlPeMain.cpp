@@ -51,6 +51,7 @@
 #include "PEObject.h"
 #include "MZHeader.h"
 #include <iostream>
+#include <string.h>
 
 #ifdef MICROSOFT
 #define system(x) winsystem(x)

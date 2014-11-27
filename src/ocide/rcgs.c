@@ -45,7 +45,13 @@
 #include <limits.h>
 #include <string.h>
 #include <windows.h>
-#include "rc.h"
+#include <windows.h>
+#include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
+#include <stdio.h>
+
+#include "header.h"
 
 #define MAX_STRLEN 257
 

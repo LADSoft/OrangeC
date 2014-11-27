@@ -37,11 +37,16 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <windows.h>
-#include "rc.h"
+#include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
+
+#include "header.h"
 #include <time.h>
 
 #define MAX_STRLEN 257

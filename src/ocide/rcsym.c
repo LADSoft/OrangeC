@@ -43,7 +43,12 @@
 #include <malloc.h>
 #include <string.h>
 #include <windows.h>
-#include "rc.h"
+#include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
+#include <stdio.h>
+
+#include "header.h"
 #define ROTR(x,bits) (((x << (16 - bits)) | (x >> bits)) & 0xffff)
 #define ROTL(x,bits) (((x << bits) | (x >> (16 - bits))) & 0xffff)
 #define HASHTABLESIZE 1023

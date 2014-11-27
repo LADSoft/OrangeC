@@ -41,6 +41,10 @@
 #define OS_H
 
 #include <deque>
+#include <string>
+
+#undef GetCurrentTime
+
 class Time
 {
 public:
@@ -53,23 +57,23 @@ public:
     void Clear() { seconds = 0; ms = 0; }
 };
 struct EnvEntry {
-    EnvEntry(const std::string &Name, const std::string &Value) :
+    EnvEntry(const std::string Name, const std::string Value) :
         name(Name), value(Value) { }
     std::string name;
     std::string value;
 } ;
-typedef std::deque<EnvEntry> Environment;
+typedef std::deque<EnvEntry> EnvironmentStrings;
 
 class OS
 {
 public:
-    static int Spawn(const std::string &command, Environment &environ);
-    static std::string SpawnWithRedirect(const std::string &command);
+    static int Spawn(const std::string command, EnvironmentStrings &environment);
+    static std::string SpawnWithRedirect(const std::string command);
     static Time GetCurrentTime();
-    static Time GetFileTime(const std::string &fileName);
-    static void SetFileTime(const std::string &fileName, Time time);
+    static Time GetFileTime(const std::string fileName);
+    static void SetFileTime(const std::string fileName, Time time);
     static std::string GetWorkingDir();
-    static bool SetWorkingDir(const std::string &name);
-    static void RemoveFile(const std::string &name);
+    static bool SetWorkingDir(const std::string name);
+    static void RemoveFile(const std::string name);
 } ;
 #endif

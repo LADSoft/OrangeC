@@ -53,7 +53,7 @@ extern int dbgblocknum;
     int prm_crtdll = FALSE;
     int prm_lscrtdll = FALSE;
     int prm_msvcrt = FALSE;
-    enum asmTypes prm_assembler;
+    int prm_assembler = FALSE;
     int prm_flat = FALSE ;
     int prm_nodos = FALSE ;
 static    char usage_text[] = "[options] [@response file] files\n"

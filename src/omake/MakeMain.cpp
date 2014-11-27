@@ -50,6 +50,9 @@
 #include <iostream>
 #include <strstream>
 #include <iomanip>
+#include <string.h>
+#include <stdlib.h>
+
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchString MakeMain::specifiedFiles(switchParser, 'f', ' ');
 CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');

@@ -37,58 +37,59 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=occpr
 MAIN_FILE=ccmain.c
-INCLUDES=..\parse;..\preproc;..\middle
+INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
-    ccmain.obj \
-    sqlite3.obj \
-    ccif.obj \
-    db.obj \
-    piper.obj \
-    beinterf.obj \
-    browse.obj \
-    ccerr.obj \
-    constopt.obj \
-    cppbltin.obj \
-    cpplookup.obj \
-    debug.obj \
-    declare.obj \
-    declcons.obj \
-    declcpp.obj \
-    expr.obj \
-    exprcpp.obj \
-    float.obj \
-    help.obj \
-    init.obj \
-    inline.obj \
-    lambda.obj \
-    lex.obj \
-    list.obj \
-    mangle.obj \
-    memory.obj \
-    osutil.obj \
-    output.obj \
-    preproc.obj \
-    ppexpr.obj \
-    rtti.obj \
-    stmt.obj \
-    symtab.obj \
-    template.obj \
-    types.obj \
-    unmangle.obj
+    ccmain.c \
+    sqlite3.c \
+    ccif.c \
+    db.c \
+    piper.c \
+    beinterf.c \
+    browse.c \
+    ccerr.c \
+    constopt.c \
+    cppbltin.c \
+    cpplookup.c \
+    debug.c \
+    declare.c \
+    declcons.c \
+    declcpp.c \
+    expr.c \
+    exprcpp.c \
+    float.c \
+    help.c \
+    init.c \
+    inline.c \
+    lambda.c \
+    lex.c \
+    list.c \
+    mangle.c \
+    memory.c \
+    osutil.c \
+    output.c \
+    preproc.c \
+    ppexpr.c \
+    rtti.c \
+    stmt.c \
+    symtab.c \
+    template.c \
+    types.c \
+    unmangle.c
 #LIB_DEPENDENCIES=util.lib objlib.lib
 #determine if we can ignore the banner for a batch compile
-WIN32 = -DWIN32
+WIN32 = WIN32
 #use long long type
-LL = -DUSE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) /DBORLAND /DPARSER_ONLY 
+LL = USE_LONGLONG
+DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) PARSER_ONLY 
 
 SOURCE = ..\parse;..\preproc;..\middle
 
-SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\sqlite3
+BACKEND_INCLUDE_PATH=.
+SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\sqlite3
+$(info $(SRCPATH))
 BACKEND_FILES = config.c
 
-BACKEND_INCLUDE_PATH=.
 
 vpath %.c $(SRCPATH)
 

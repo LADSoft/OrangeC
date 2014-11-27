@@ -230,10 +230,10 @@
     <ClInclude Include="XML.H" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="ocide.rc" />
+    <Manifest Include="res\ocide.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <Manifest Include="res\ocide.exe.manifest" />
+    <ResourceCompile Include="ociderc.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

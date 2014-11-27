@@ -37,9 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=oasm
 MAIN_FILE=AsmMain.cpp
-INCLUDES=..\util;..\ocpp;..\objlib
+INCLUDES=..\util ..\ocpp ..\objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib objlib.lib ocpp.lib
-DEFINES=/DL_INT=__int64 "/DL_UINT=unsigned __int64"
+LIB_DEPENDENCIES=ocpp objlib util
+DEFINES=L_INT=__int64 "L_UINT=unsigned@__int64"
 
 DISTRIBUTE: copyexe

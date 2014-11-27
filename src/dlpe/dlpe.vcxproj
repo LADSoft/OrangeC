@@ -68,7 +68,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib..\sqlite3;..\exefmt</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\util;..\objlib;..\sqlite3;..\exefmt</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>

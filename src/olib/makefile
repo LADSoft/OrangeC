@@ -37,8 +37,8 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=olib
 MAIN_FILE=LibMain.cpp
-INCLUDES=..\util;..\objlib;..\ocpp
+INCLUDES=..\util ..\objlib ..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib objlib.lib ocpp.lib
+LIB_DEPENDENCIES=ocpp objlib util
 
 DISTRIBUTE: copyexe

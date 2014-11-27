@@ -37,9 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=dlhex
 MAIN_FILE=dlHexMain.cpp
-INCLUDES=..\util;..\objlib
+INCLUDES=..\util ..\objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib objlib.lib
+LIB_DEPENDENCIES=util objlib
 
 DISTRIBUTE: copyexe
 	copy *.spc $(DISTBIN)

@@ -37,11 +37,11 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=dlpe
 MAIN_FILE=dlPeMain.cpp
-INCLUDES=..\util;..\objlib;..\sqlite3;..\exefmt
+INCLUDES=..\util ..\objlib ..\sqlite3 ..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 C_DEPENDENCIES= sqlite3.c
-LIB_DEPENDENCIES=util.lib objlib.lib
-DEFINES=/DSQLITE_THREADSAFE=0
+LIB_DEPENDENCIES=util objlib
+DEFINES=SQLITE_THREADSAFE=0
 
 vpath %.c ..\sqlite3
 

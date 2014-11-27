@@ -35,11 +35,11 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=ObjLib
+NAME=objlib
 MAIN_FILE=test2.cpp
 INCLUDES=
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=
-EXCLUDE=ObjIO.obj test.obj test2.obj
+EXCLUDE=ObjIO test test2
 
 DISTRIBUTE:

@@ -34,10 +34,14 @@
 #	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #	contact information:
-#		email: TouchStone222@runbox.com <David Lindauer>
+#		email: TouchStone222runbox.com <David Lindauer>
 
-DISTROOT=C:\orangec
+TREETOP :=$(dir $(_TREEROOT))
+DISTROOT := $(TREETOP)..
+
 export DISTROOT
+
+
 
 all: files
 
@@ -51,12 +55,7 @@ mkdir:
 rmdir:
 	-rmdir  $(_OUTPUTDIR) >> $(NULLDEV)
 
-CC = bcc32
-
-_TARGETDIR= $(_TREETARGET)
-
-_OUTPUTDIR=$(_TARGETDIR)\obj
-_LIBDIR=$(DISTROOT)\src\lib
+_TARGETDIR:= $(_TREETARGET)
 
 define DOLIB
 	$(MAKE) /C$(dir) /f$(_TREEROOT) /D_TREETARGET=$(_TARGETDIR)\$(dir) /DLIBRARY
@@ -84,29 +83,30 @@ DISTRIBUTE:
 
 endif
 
-CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
-C_deps = $(notdir $(C_DEPENDENCIES:.c=.obj))
-ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.obj))
-TASM_deps = $(notdir $(TASM_DEPENDENCIES:.asm=.obj))
-RES_deps = $(notdir $(RC_DEPENDENCIES:.rc=.res))
 
-MAIN_DEPENDENCIES = $(MAIN_FILE:.cpp=.obj)
-ifeq "$(MAIN_DEPENDENCIES)" "$(MAIN_FILE)"
-MAIN_DEPENDENCIES = $(MAIN_FILE:.c=.obj)
-endif
-
-LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
-
-compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(NAME).lib
 ifeq "$(MAIN_DEPENDENCIES)" "$(MAIN_FILE)"
 link:
 else
 link: $(NAME).exe
 endif
 
-include $(DISTROOT)\src\defaultcfg.mak
+_OUTPUTDIR=$(_TARGETDIR)\obj\$(OBJ_IND_PATH)
+export _OUTPUTDIR
+_LIBDIR=$(DISTROOT)\src\lib\$(OBJ_IND_PATH)
+export _LIBDIR
+
+include $(TREETOP)config.mak
+
+export LIB_EXT
+export LIB_PREFIX
 
 
+$(info hi $(_OUTPUTDIR))
+ifndef NAME
+compile:
+else
+compile: $(LLIB_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT)
+endif
 
 ifndef _STARTED
 _STARTED = 1
@@ -193,7 +193,8 @@ cleanDISTRIBUTE:
 	-mkdir $(DISTADDON) >> $(NULLDEV)
 	-del /Q $(DISTADDON) >> $(NULLDEV)
 	-mkdir $(DISTDOC) >> $(NULLDEV)
-	-del /Q $(DISTDOC) >> $(NULLDEV)	-mkdir $(DISTDOC)\general >> $(NULLDEV)
+	-del /Q $(DISTDOC) >> $(NULLDEV)	
+	-mkdir $(DISTDOC)\general >> $(NULLDEV)
 	-del /Q $(DISTDOC)\general >> $(NULLDEV)
 	-mkdir $(DISTDOC)\oasm >> $(NULLDEV)
 	-del /Q $(DISTDOC)\oasm >> $(NULLDEV)
@@ -207,9 +208,11 @@ cleanDISTRIBUTE:
 	-del /Q $(DISTDOC)\omake >> $(NULLDEV)
 	-mkdir $(DISTLIC) >> $(NULLDEV)
 	-del /Q $(DISTLIC) >> $(NULLDEV)
-	-mkdir $(DISTEXAM) >> $(NULLDEV)	-del /Q $(DISTEXAM) >> $(NULLDEV)
+	-mkdir $(DISTEXAM) >> $(NULLDEV)
+	-del /Q $(DISTEXAM) >> $(NULLDEV)
 	-mkdir $(DISTEXAM)\msdos >> $(NULLDEV)
-	-del /Q $(DISTEXAM)\msdos >> $(NULLDEV)	-mkdir $(DISTEXAM)\system >> $(NULLDEV)
+	-del /Q $(DISTEXAM)\msdos >> $(NULLDEV)
+	-mkdir $(DISTEXAM)\system >> $(NULLDEV)
 	-del /Q $(DISTEXAM)\system >> $(NULLDEV)
 	-mkdir $(DISTEXAM)\win32 >> $(NULLDEV)
 	-del /Q $(DISTEXAM)\win32 >> $(NULLDEV)

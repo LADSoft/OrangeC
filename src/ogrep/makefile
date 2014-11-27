@@ -39,6 +39,6 @@ NAME=ogrep
 MAIN_FILE=GrepMain.cpp
 INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib
+LIB_DEPENDENCIES=util
 
 DISTRIBUTE: copyexe

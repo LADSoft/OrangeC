@@ -35,20 +35,10 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=ocide
-TARGET=GUI
-MAIN_FILE= ocide.c
-DEF_DEPENDENCIES=ocide.def
-INCLUDES=..\sqlite3
-C_DEPENDENCIES= $(wildcard *.c) sqlite3.c #malloc.c
-RC_DEPENDENCIES=ociderc.rc
-LIB_DEPENDENCIES=msimg32 shell32
-#OBJ_DEPENDENCIES=\bcc55\lib\wildargs.obj
-DEFINES=GUI
 
-vpath %.c ..\sqlite3 ..\util
+ifndef COMPILER
+COMPILER := MINGW
+endif
 
-DISTRIBUTE: copyexe
-	copy rule\*.rul $(DISTROOT)\rule
-	copy rule\*.props $(DISTBIN)
-	copy fonts\ttf-bitstream-vera-1.10\veramono.ttf $(DISTBIN)
+include $(TREETOP)\bcc32.mak
+include $(TREETOP)\mingw.mak

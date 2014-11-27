@@ -37,9 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=dlmz
 MAIN_FILE=dlMzMain.cpp
-INCLUDES=..\util;..\objlib;..\exefmt
+INCLUDES=..\util ..\objlib ..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib objlib.lib
+LIB_DEPENDENCIES=util objlib
 
 DISTRIBUTE: copyexe
 	copy *.spc $(DISTBIN)

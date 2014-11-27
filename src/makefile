@@ -38,13 +38,13 @@
 
 ifndef _TREEROOT
 all: 
-	$(MAKE) /T
+	@$(MAKE) /T
 
 distribute:
-	$(MAKE) /T distribute
+	@$(MAKE) /T distribute
 
 clean:  
-	$(MAKE) /T clean
+	@$(MAKE) /T clean
 
 else
 
@@ -84,13 +84,13 @@ DISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 	copy ocl.lic $(DISTLIC)
 	copy addon.txt $(DISTADDON)
 ifdef BUILDENV
-	$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE /DBUILDENV
+	@$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE /DBUILDENV
 else
-	$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE
+	@$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE
 ifdef WITHCC386
-	$(MAKE) /C$(DISTROOT)\src\..\ -f$(realpath .\doszip.mak)
-	$(MAKE) /C$(DISTROOT)\src\dos\install -fmakefile.le
+	@$(MAKE) /C$(DISTROOT)\src\..\ -f$(realpath .\doszip.mak)
+	@$(MAKE) /C$(DISTROOT)\src\dos\install -fmakefile.le
 endif
-	$(MAKE) /Cc:\ -f$(realpath .\zip.mak)
+	@$(MAKE) /Cc:\ -f$(realpath .\zip.mak)
 endif
 endif

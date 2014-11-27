@@ -39,6 +39,6 @@ NAME=omake
 MAIN_FILE=MakeMain.cpp
 INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib
+LIB_DEPENDENCIES=util
 
 DISTRIBUTE: copyexe

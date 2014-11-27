@@ -37,7 +37,7 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=occ
 MAIN_FILE=ccmain.c
-INCLUDES=..\parse;..\preproc;..\middle
+INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.c \
@@ -96,10 +96,10 @@ C_DEPENDENCIES= \
     winsystem.c
 #LIB_DEPENDENCIES=util.lib objlib.lib
 #determine if we can ignore the banner for a batch compile
-WIN32 = -DWIN32
+WIN32 = WIN32
 #use long long type
-LL = -DUSE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) /DBORLAND
+LL = USE_LONGLONG
+DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 
 SOURCE = ..\parse;..\preproc;..\middle
 

@@ -37,9 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=dlpm
 MAIN_FILE=dlPmMain.cpp
-INCLUDES=..\util;..\objlib;..\exefmt
+INCLUDES=..\util ..\objlib ..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util.lib objlib.lib
+LIB_DEPENDENCIES=util objlib
 
 DISTRIBUTE: copyexe
 	copy *.spc $(DISTBIN)

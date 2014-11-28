@@ -525,6 +525,8 @@ static struct {
 {"Dependent type '%s' is not defined in structured type '%s'", ERROR },
 {"Constructor '%s' is not allowed", ERROR },
 {"Constant member '%s' in a class without constructors", ERROR },
+{"Delete of pointer to undefined type '%s'", WARNING },
+
 #endif
 } ;
 

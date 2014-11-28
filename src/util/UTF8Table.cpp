@@ -1142,7 +1142,6 @@ static bool Match(int *table, int size, int val)
 {
     int top = size;
     int bottom = -1;
-//    int v;
     while (top - bottom > 1)
     {
         int mid = (top + bottom) / 2;
@@ -1155,7 +1154,7 @@ static bool Match(int *table, int size, int val)
             bottom = mid;
         }
     }
-    if (table[bottom] != val )
+    if (bottom < 0 || table[bottom] != val )
         return 0;
     return 1;
 }

@@ -36,6 +36,12 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 
+#
+# BCC32 - borland c 5.5
+# MINGW - mingw32 compiler
+# OWC   - open watcom compiler
+# DMC   - digital mars compiler
+#
 ifndef COMPILER
 COMPILER := MINGW
 endif

@@ -46,7 +46,7 @@
 #include "OS.h"
 #include "Maker.h"
 #include <ctype.h>
-#include <strstream>
+#include <sstream>
 #include <iostream>
 #include <fstream>
 std::map<const std::string, Eval::StringFunc> Eval::builtins;
@@ -715,7 +715,7 @@ int Eval::GetNumber(const std::string &line)
         error("Numeric value expected");
     else
     {
-        std::strstream s;
+        std::stringstream s;
         s << line;
         s >> rv;
     }
@@ -969,7 +969,7 @@ std::string Eval::words(const std::string &arglist)
             ExtractFirst(text, " ");
         }	
     }
-    std::strstream s;
+    std::stringstream s;
     s << count;
     std::string rv;
     s >> rv;

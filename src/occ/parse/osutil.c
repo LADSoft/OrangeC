@@ -49,7 +49,7 @@
     #endif 
 #endif 
 
-#ifdef MICROSOFT
+#if defined(WIN32) || defined(MICROSOFT)
 char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
@@ -976,12 +976,12 @@ void ccinit(int argc, char *argv[])
         usage(argv[0]);
 #endif
         
-#ifdef MICROSOFT
+#if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(NULL, buffer, sizeof(buffer));    
 #else
     strcpy(buffer, argv[0]);
 #endif
-                
+    printf("%s\n", buffer);                
     parseconfigfile(buffer);
     if (!parse_args(&argc, argv, TRUE) || (!clist && argc == 1))
         usage(argv[0]);

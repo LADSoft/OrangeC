@@ -42,7 +42,7 @@
 #include "Utils.h"
 
 #include <fstream>
-#include <strstream>
+#include <sstream>
 #include <iostream>
 
 int Errors::maxErrors = 100;
@@ -135,7 +135,7 @@ void Errors::FileName()
 }
 std::string Errors::ToNum(L_INT num)
 {
-    std::strstream xx;
+    std::stringstream xx;
     std::string rv;
     xx << num;
     xx >> rv;

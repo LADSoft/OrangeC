@@ -39,7 +39,7 @@
 ifeq "$(COMPILER)" "BCC32"
 
 COMPILER_PATH := c:\bcc55
-OBJ_IND_PATH := bcc55
+OBJ_IND_PATH := bcc32
 
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.obj))
@@ -81,7 +81,7 @@ DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(addsuffix .lib,$(LIB_DEPENDENCIES))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND
+CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
 ifeq "$(TARGET)" "GUI"
 STARTUP=C0W32.obj
 TYPE=/Tpe/aa
@@ -92,7 +92,7 @@ TYPE=/Tpe/ap
 COMPLIB=cw32$(LIB_EXT)
 endif
 
-
+COMPLIB:=$(COMPLIB) msimg32 shell32
 vpath %.obj $(_OUTPUTDIR)
 vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
@@ -118,7 +118,7 @@ $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
  $(addprefix -+$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
 |
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(addprefix $(_LIBDIR)\,$(LIB_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
 	$(LINK) $(TYPE) $(LFLAGS) @&&|
 $(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
 $(NAME)

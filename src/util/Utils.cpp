@@ -100,7 +100,7 @@ void Utils::fatal(const char *format, ...)
 char *Utils::GetModuleName()
 {
     static char buf[256];
-#ifdef MICROSOFT
+#if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(NULL, buf, sizeof(buf));
 #else   
     strcpy(buf, __argv[0]);

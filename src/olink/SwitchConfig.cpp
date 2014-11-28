@@ -46,7 +46,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#ifdef MICROSOFT
+#if defined(WIN32) || defined( MICROSOFT)
 #define system(x) winsystem(x)
 extern "C" int winsystem(const char *);
 #endif
@@ -341,7 +341,7 @@ int SwitchConfig::RunApp(const std::string &path, const std::string &file, const
     cmd = cmd + flags + "\"" + file + "\"";
     for (std::deque<std::string>::iterator it = files.begin(); it != files.end(); ++it)
         cmd = cmd + " \"" + (*it) + "\"";
-//	std::cout << "Running App: " << cmd << std::endl;
+	//std::cout << "Running App: " << cmd << std::endl;
     return system(cmd.c_str());
 }
 bool SwitchConfig::VisitAttrib(xmlNode &node, xmlAttrib *attrib, void *userData)

@@ -47,7 +47,7 @@
 #include "SymbolTable.h"
 #include "UTF8.h"
 #include <time.h>
-#include <strstream>
+#include <sstream>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -191,7 +191,7 @@ void ppDefine::DoAssign(std::string &line, bool caseInsensitive)
         failed = line.find_first_not_of(" \t\v\r\n") != std::string::npos;
         if (!failed)
         {
-            std::strstream aa;
+            std::stringstream aa;
             aa << (int)n;
             std::string value;
             aa >> value;
@@ -323,7 +323,7 @@ int ppDefine::LookupDefault(std::string &macro, int begin, int end, const std::s
         insert = include->GetFile();
     else if (name == "__LINE__")
     {
-        std::strstream str;
+        std::stringstream str;
         str << include->GetLineNo();
         str >> insert;
     }

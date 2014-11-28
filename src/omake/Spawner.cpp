@@ -41,7 +41,7 @@
 #include "Eval.h"
 #include "Maker.h"
 #include <fstream>
-#include <strstream>
+#include <sstream>
 #include <iomanip>
 #include <iostream>
 const char Spawner::escapeStart = '\x1';
@@ -79,7 +79,7 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
         {
             char match = cmd[n+2];
             cmd.erase(n);
-            std::strstream str;
+            std::stringstream str;
             str << "maketemp." << std::setw(3) << std::setfill('0') << tempNum++;
             str >> makeName;
             std::fstream fil(makeName.c_str(), std::ios::out);

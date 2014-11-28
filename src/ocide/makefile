@@ -42,7 +42,7 @@ DEF_DEPENDENCIES=ocide.def
 INCLUDES=..\sqlite3
 C_DEPENDENCIES= $(wildcard *.c) sqlite3.c #malloc.c
 RC_DEPENDENCIES=ociderc.rc
-LIB_DEPENDENCIES=msimg32 shell32
+LIB_DEPENDENCIES=
 #OBJ_DEPENDENCIES=\bcc55\lib\wildargs.obj
 DEFINES=GUI
 

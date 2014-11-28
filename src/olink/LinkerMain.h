@@ -55,7 +55,7 @@ protected:
     void AddFile(LinkManager &linker, std::string &name);
     void AddFiles(LinkManager &linker, CmdFiles &files);
     void SetDefines(LinkManager &linker);
-    std::string &SpecFileContents(const std::string &specFile);
+    std::string SpecFileContents(const std::string &specFile);
 private:
     static CmdSwitchParser SwitchParser;
 

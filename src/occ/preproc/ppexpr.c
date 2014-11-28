@@ -468,10 +468,11 @@ static PPINT iecommaop(BOOLEAN *uns)
     skipspace();
     return(val1);
 }
-PPINT ppexpr(void)
+PPINT ppexpr()
 /* Integer expressions */
 {
-    BOOLEAN uns;
+    BOOLEAN uns = FALSE;
+    PPINT val1 = iecommaop(&uns);
     skipspace();
-    return iecommaop(&uns);
+    return val1;
 }

@@ -101,7 +101,6 @@ export LIB_EXT
 export LIB_PREFIX
 
 
-$(info hi $(_OUTPUTDIR))
 ifndef NAME
 compile:
 else

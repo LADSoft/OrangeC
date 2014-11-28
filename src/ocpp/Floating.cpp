@@ -38,7 +38,7 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #include "floating.h"
-#include <strstream>
+#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <limits.h>
@@ -852,7 +852,7 @@ void FPF::ToString(std::string &dest) const
                 dest += "E-";
             else
                 dest += "E+";
-            std::strstream str;
+            std::stringstream str;
             str << power;
             std::string xx;
             str >> xx;

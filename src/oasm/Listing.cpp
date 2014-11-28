@@ -42,7 +42,7 @@
 #include "Instruction.h"
 #include "Fixup.h"
 #include "Utils.h"
-#include <strstream>
+#include <sstream>
 #include <iomanip>
 #include <fstream>
 
@@ -74,12 +74,12 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
     {
         if (cur->label)
         {
-            std::strstream xx;
+            std::stringstream xx;
             xx << std::hex << cur->label->GetOffset()->ival ;
             std::string ss;
             xx >> ss;
-            if (xx.pcount() < AddressWidth *2)
-                outputLine += zeros.substr(0, AddressWidth *2 - xx.pcount());
+            if (xx.gcount() < AddressWidth *2)
+                outputLine += zeros.substr(0, AddressWidth *2 - xx.gcount());
             outputLine += ss + std::string("  ")+ blanks.substr(0, Bytes *3 + 1) + line;
             out << outputLine << std::endl;
         }
@@ -90,18 +90,18 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
         }
         else if (cur->ins->IsLabel())
         {
-            std::strstream xx;
+            std::stringstream xx;
             xx << std::hex << cur->ins->GetOffset() ;
             std::string ss;
             xx >> ss;
-            if (xx.pcount() < AddressWidth *2)
-                outputLine += zeros.substr(0, AddressWidth *2 - xx.pcount());
+            if (xx.gcount() < AddressWidth *2)
+                outputLine += zeros.substr(0, AddressWidth *2 - xx.gcount());
             outputLine += ss + std::string(": ")+ blanks.substr(0, Bytes *3 + 1) + line;
             out << outputLine << std::endl;
         }
         else
         {
-            std::strstream xx;
+            std::stringstream xx;
             std::string ss;
             int size = cur->ins->GetSize() / cur->ins->GetRepeat();
             unsigned char *buf = cur->ins->GetBytes();
@@ -138,7 +138,7 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                         out << outputLine << std::endl;
                         outputLine = blanks.substr(0, 10);
                     }
-                    std::strstream xx;
+                    std::stringstream xx;
                     if (buf[i] < 16)
                         xx << "0" << std::hex << (int)buf[i];
                     else
@@ -164,7 +164,7 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                     {
                         for (int j=0; j < fsize; j++)
                         {
-                            std::strstream xx;
+                            std::stringstream xx;
                             if (buf[i] < 16)
                                 xx << "0" << std::hex << (int)buf[i++];
                             else
@@ -177,7 +177,7 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                     {
                         for (int j=fsize-1; j >= 0; j--)
                         {
-                            std::strstream xx;
+                            std::stringstream xx;
                             if (buf[i+j] < 16)
                                 xx << "0" << std::hex << (int)buf[i+j];
                             else

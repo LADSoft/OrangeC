@@ -1962,8 +1962,8 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                     findflags &= ~(F_OUTPUT1 | F_OUTPUT2);
                     findflags |= F_OPENWINDOW;
                     findmode = F_M_CURRENTDOCUMENT;
-                    replacemode = F_M_CURRENTDOCUMENT;
                 }
+                replacemode = F_M_CURRENTDOCUMENT;
             }
             hwndFind = hwndDlg;
             pHdr = (DLGHDR *) calloc(1, sizeof(DLGHDR));

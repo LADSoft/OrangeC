@@ -55,7 +55,6 @@
 #include "CmdSwitch.h"
 #endif
 #include <cstdio>
-#include <strstream>
 #include <iomanip>
 
 int main()

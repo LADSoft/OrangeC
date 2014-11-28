@@ -43,7 +43,7 @@
 #include "Eval.h"
 #include "Parser.h"
 #include "CmdFiles.h"
-#include <strstream>
+#include <sstream>
 #include <fstream>
 #include <list>
 #include <stdlib.h>
@@ -681,7 +681,7 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
         rv = sp.Run(*depend->GetRule()->GetCommands(), rl, NULL);
     if (rv)
     {
-        std::strstream a;
+        std::stringstream a;
         a << rv;
         std::string b;
         a >> b;

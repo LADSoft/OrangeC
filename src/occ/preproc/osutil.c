@@ -42,7 +42,7 @@
 #include <ctype.h>
 #include "..\..\version.h" 
 
-#ifdef MICROSOFT
+#if defined(WIN32) || defined(MICROSOFT)
 char * __stdcall GetModuleFileNameA(void * handle, char *buf, int size);
 #endif
 
@@ -947,7 +947,7 @@ void ccinit(int argc, char *argv[])
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
         usage(argv[0]);
 #endif
-#ifdef MICROSOFT
+#if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(NULL, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);

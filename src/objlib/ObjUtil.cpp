@@ -41,7 +41,6 @@
 #define _CRT_SECURE_NO_WARNINGS  
 
 #include "ObjUtil.h"
-#include <strstream>
 #include <iomanip>
 #include <stdio.h>
 #include <string.h>

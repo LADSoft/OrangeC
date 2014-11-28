@@ -44,7 +44,7 @@
 #include <ctype.h>
 #include <stdlib>
 #include <fstream>
-#include <strstream>
+#include <sstream>
 #include <assert.h>
 bool GenParser::Generate()
 {
@@ -443,7 +443,7 @@ bool GenParser::GenerateStateFuncs()
                 }
                 else
                 {
-                    std::strstream t ;
+                    std::stringstream t ;
                     t << "stateVars[" << it2->second << "]";
                     val = "";
                     t >> val;
@@ -504,7 +504,7 @@ bool GenParser::GenerateStateFuncs()
                     }
                     else
                     {
-                        std::strstream t ;
+                        std::stringstream t ;
                         t << "stateVars[" << it2->second << "]";
                         val = "";
                         t >> val;

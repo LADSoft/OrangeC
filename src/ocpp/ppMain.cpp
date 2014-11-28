@@ -43,7 +43,7 @@
 #include "PreProcessor.h"
 #include "Errors.h"
 
-#include <strstream>
+#include <sstream>
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
@@ -139,7 +139,7 @@ int ppMain::Run(int argc, char *argv[])
                 Errors::SetShowTrivialWarnings(true);
                 working.erase(0,1);
             }
-            std::strstream v;
+            std::stringstream v;
             v << working;
             v >> n;
             if (n)

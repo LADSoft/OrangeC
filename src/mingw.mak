@@ -80,16 +80,15 @@ DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
 CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES)\
-    -DGNUC -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500
+    -DGNUC -DWIN32 -D_WIN32_IE=0x600 -D_WIN32_WINNT=0x500 -DWINVER=0x500
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
 endif
 
-COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lshell32 -lole32 -luxtheme
+COMPLIB=-lstdc++ -lcomctl32 -lgdi32 -lcomdlg32 -lole32 -luxtheme -lkernel32 -lmsimg32
 
 
-$(info bye $(_OUTPUTDIR))
 vpath %.o $(_OUTPUTDIR)
 vpath %$(LIB_EXT) c:\bcc55\lib c:\bcc55\lib\psdk $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
@@ -113,10 +112,14 @@ $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 |
 LDEPS := $(addprefix -l,$(NAME) $(LIB_DEPENDENCIES))
 LDEPS := $(subst \,/,$(LDEPS))
+
+LDEPS2 := $(addprefix $(_LIBDIR)\$(LIB_PREFIX),$(NAME) $(LIB_DEPENDENCIES))
+LDEPS2 := $(addsuffix .a, $(LDEPS2))
+
 LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))
 LMAIN := $(subst \,/,$(LMAIN))
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(RES_deps)
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
 	$(CC) $(LFLAGS) -o $(NAME).exe @&&|
 $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
 |

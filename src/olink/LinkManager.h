@@ -93,7 +93,7 @@ class LinkManager
     typedef std::set<LinkSymbolData *, linkltcompare> SymbolData;
     typedef std::vector<ObjFile *> FileData;
     public:
-        LinkManager(ObjString &Specification, bool CaseSensitive, const ObjString &OutputFile = "", 
+        LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile = "", 
                         bool CompleteLink = false, bool DebugPassThrough = false, ObjString DebugFile = "") :
                         specification(Specification), outputFile(OutputFile), specName(Specification),
                         factory(NULL), indexManager(NULL), completeLink(CompleteLink),
@@ -179,7 +179,7 @@ class LinkManager
         ObjIndexManager *indexManager;
         ObjFactory *factory;
         ObjString libPath;
-        ObjString &specName;
+        ObjString specName;
         ObjString debugFile;
         bool completeLink;
         bool caseSensitive;

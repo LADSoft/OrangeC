@@ -111,3 +111,4 @@ BACKEND_INCLUDE_PATH=.
 vpath %.c $(SRCPATH)
 
 DISTRIBUTE: copyexe
+	copy target.cfg $(DISTBIN)\occ.cfg

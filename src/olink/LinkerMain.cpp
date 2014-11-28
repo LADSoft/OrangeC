@@ -50,7 +50,6 @@
 #include "Utils.h"
 #include "LinkerMain.h"
 #include <windows.h>
-#include <strstream>
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
@@ -144,9 +143,9 @@ void LinkerMain::SetDefines(LinkManager &linker)
         TargetConfig.AddDefine(linker, d->name, d->value);
     }
 }
-std::string &LinkerMain::SpecFileContents(const std::string &specFile)
+std::string LinkerMain::SpecFileContents(const std::string &specFile)
 {
-    static std::string rv;
+    std::string rv;
     if (specFile.size() != 0)
     {
         std::fstream fil(specFile.c_str(), std::ios::in);
@@ -156,8 +155,8 @@ std::string &LinkerMain::SpecFileContents(const std::string &specFile)
             size_t n = fil.tellg();
             fil.seekg(0);
             char *data = new char[n+1];
-            memset(data,0,n+1);
             fil.read(data, n);
+            data[fil.gcount()] = '\0';
             rv = data;
             delete [] data;
         }

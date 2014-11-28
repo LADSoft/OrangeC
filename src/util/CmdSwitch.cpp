@@ -42,7 +42,7 @@
 #include <windows.h>
 #include "CmdSwitch.h"
 #include "Utils.h"
-#include <strstream>
+#include <sstream>
 #include <ctype.h>
 #include <fstream>
 
@@ -71,7 +71,7 @@ int CmdSwitchInt::Parse(const char *data)
         p++;
     if (*p)
         return -1;
-    std::istrstream translate(number);
+    std::stringstream translate(number);
     value =0;
     translate >> value;
     if (value < lowLimit || value > hiLimit)
@@ -91,7 +91,7 @@ int CmdSwitchHex::Parse(const char *data)
         p++;
     if (*p)
         return -1;
-    std::istrstream translate(number);
+    std::stringstream translate(number);
     value =0;
     translate >> std::hex >> value;
     if (value < lowLimit || value > hiLimit)

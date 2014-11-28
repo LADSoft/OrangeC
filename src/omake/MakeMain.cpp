@@ -48,7 +48,7 @@
 #include "CmdFiles.h"
 #include <ctype.h>
 #include <iostream>
-#include <strstream>
+#include <sstream>
 #include <iomanip>
 #include <string.h>
 #include <stdlib.h>
@@ -444,7 +444,7 @@ int MakeMain::Run(int argc, char **argv, char **env)
         SetMakeFlags();
         if (restarts)
         {
-            std::strstream str;
+            std::stringstream str;
             std::string temp;
             str << restarts;
             str >> temp;
@@ -457,7 +457,7 @@ int MakeMain::Run(int argc, char **argv, char **env)
         }
         else
         {
-            std::strstream str;
+            std::stringstream str;
             std::string temp;
             str << v->GetValue();
             int n;

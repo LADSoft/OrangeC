@@ -104,9 +104,9 @@ enum e_sym
 /* #define tracking */
 typedef struct
 {
-    char *string;
+    short *string;
     short argcount;
-    char **args;
+    short **args;
 } DEFSTRUCT;
 
 /* struct for preprocessor if tracking */

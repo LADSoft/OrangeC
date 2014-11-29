@@ -40,13 +40,13 @@ TARGET=GUI
 MAIN_FILE= ocide.c
 DEF_DEPENDENCIES=ocide.def
 INCLUDES=..\sqlite3
-C_DEPENDENCIES= $(wildcard *.c) sqlite3.c #malloc.c
+C_DEPENDENCIES= $(wildcard *.c)
 RC_DEPENDENCIES=ociderc.rc
-LIB_DEPENDENCIES=
+LIB_DEPENDENCIES=sqlite3
 #OBJ_DEPENDENCIES=\bcc55\lib\wildargs.obj
 DEFINES=GUI
 
-vpath %.c ..\sqlite3 ..\util
+vpath %.c ..\util
 
 DISTRIBUTE: copyexe
 	copy rule\*.rul $(DISTROOT)\rule

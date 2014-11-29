@@ -174,6 +174,9 @@ size_t      _RTL_FUNC wcstombs(char *restrict __s, const wchar_t *restrict __pwc
 int         _RTL_FUNC wctomb(char *restrict __s, wchar_t __wc);
 int         _RTL_FUNC wctombflush(char *__s);
 
+#ifndef STDC
+#define environ _environ
+#endif
 
 extern  char          _RTL_DATA ** _environ;
 extern  int           _RTL_DATA    _fmode;

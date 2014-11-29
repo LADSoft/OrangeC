@@ -44,6 +44,8 @@
 #include <direct.h>
 #include <stdio.h>
 #include <time.h>
+#undef min
+#undef max
 #include "Variable.h"
 #include "Eval.h"
 #include "os.h"

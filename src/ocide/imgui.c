@@ -25,7 +25,7 @@
 #define IDB_ERASETOOLBAR 1007
 #define IDB_FONTTOOLBAR 1008
 
-#define ID_STATUS_WINDOW 100
+#define ID_IMG_STATUS_WINDOW 100
 #define ID_CONTROLTOOLBAR 101
 #define ID_COLORTOOLBAR 102
 #define ID_COLORSELECTTOOLBAR 103
@@ -3285,7 +3285,7 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             p->cbImgData = sizeof(IMGDATA) - sizeof(SHORT);
             SetWindowLong(hwnd, GWL_USERDATA, (LONG)p);
             p->hwndStatus = CreateStatusWindow(WS_VISIBLE | WS_CHILD, "", hwnd,
-                ID_STATUS_WINDOW);
+                ID_IMG_STATUS_WINDOW);
             SetWindowLong(p->hwndStatus, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE));
             GetClientRect(hwnd, &rf);
             parts[0] = rf.right - 400;

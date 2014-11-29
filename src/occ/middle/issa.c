@@ -235,7 +235,7 @@ static IMODE* renameTemp(BLOCK *b, QUAD *head, IMODE *adr)
 static void RemoveName(int i)
 {
     IMODE *key = tempInfo[i]->enode->v.sp->imvalue;
-    int hashval = dhash(&key, sizeof(void *));
+    int hashval = dhash((UBYTE *)&key, sizeof(void *));
     DAGLIST *list = name_hash[hashval];
     while (list)
     {

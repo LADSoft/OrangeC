@@ -39,7 +39,12 @@
 */
 #include <windows.h>
 #include <commctrl.h>
+#include <richedit.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+#include "header.h"
 #include "winconst.h"
 #include "lsctrl.h"
 

@@ -45,6 +45,7 @@
 
 #include <string>
 #include <ctype.h>
+#include <time.h>
 #include <map>
 #include <iostream>
 #include <string.h>
@@ -144,10 +145,10 @@ void PEExportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
         {
             int n = s->GetOrdinal();
             if (rvaTable[n - minOrd] != 0)
-                std::cout << "Warning: Export '" << s->GetDisplayName() << "' duplicates an ordinal" << std::endl;
+                std::cout << "Warning: Export '" << s->GetDisplayName().c_str() << "' duplicates an ordinal" << std::endl;
             int addr = publics[s->GetName()];
             if (addr == 0)
-                std::cout << "Warning: Export '" << s->GetDisplayName() << "' has no related public" << std::endl;
+                std::cout << "Warning: Export '" << s->GetDisplayName().c_str() << "' has no related public" << std::endl;
                 
             rvaTable[n - minOrd] = addr - imageBase;
         }
@@ -165,7 +166,7 @@ void PEExportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
             s->SetOrdinal(pos + minOrd);
             int addr = publics[s->GetName()];
             if (addr == 0)
-                std::cout << "Warning: Export '" << s->GetDisplayName() << "' has no related public" << std::endl;
+                std::cout << "Warning: Export '" << s->GetDisplayName().c_str() << "' has no related public" << std::endl;
             rvaTable[pos] = addr - imageBase;
         }
     }

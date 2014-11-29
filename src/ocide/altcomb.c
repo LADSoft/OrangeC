@@ -49,7 +49,7 @@ static int wndoffs;
 static WNDPROC oldComboProc;
 static WNDPROC oldEditProc;
 
-static short *propname = L"HISTBUF";
+static char *propname = "HISTBUF";
 
 LRESULT CALLBACK historyEditComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)

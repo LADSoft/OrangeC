@@ -43,7 +43,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include <sstream>
+#include "utils.h"
 #include "SymbolTable.h"
 #include "Token.h"
 #include "ppExpr.h"
@@ -106,10 +106,7 @@ public:
     void replaceDefined(std::string &line);
     void Assign(const std::string &name, int value, bool caseInsensitive) 
         { 
-            std::stringstream aa;
-            aa << value;
-            std::string v;
-            aa >> v;
+            std::string v = Utils::NumberToString(value);
             Define(name, v, NULL, false, false, false, caseInsensitive);
         }
 

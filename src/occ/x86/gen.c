@@ -2236,7 +2236,7 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
 {
     TYPE *tp = NULL;
     EXPRESSION *en = NULL;
-    int op;
+    enum e_op op;
     AMODE *apl, *aph;
     if (q->dc.left->offset)
         en = GetSymRef(q->dc.left->offset);
@@ -4309,7 +4309,7 @@ void asm_tryblock(QUAD *q)			 /* try/catch */
         ap1->offset = intNode(en_c_i,  q->dc.v.label); // ESP
     }
 
-    switch(q->dc.left->offset->v.i)
+    switch((int)q->dc.left->offset->v.i)
     {
         case 0: /* try */
             gen_codes(op_push, ISZ_UINT , ap1, 0);
@@ -4433,9 +4433,9 @@ void asm_atomic(QUAD *q)
         gen_code(op_lfence, NULL, NULL);
     switch(q->dc.opcode)
     {
-        int opa;
-        int opl;
-        int opr;
+        enum e_op opa;
+        enum e_op opl;
+        enum e_op opr;
         AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
         int lbl1, lbl2;
         case i_atomic_fence:

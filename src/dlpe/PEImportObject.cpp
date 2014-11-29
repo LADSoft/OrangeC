@@ -69,11 +69,12 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     int impNameSize = 0;
     int importCount = 0;
     int dllCount = 0;
+        std::string name; // moved out of loop because of annoying OPENWATCOM bug
     for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {
         ObjImportSymbol *s = (ObjImportSymbol *)(*it);
         // uppercase the module name for NT... 98 doesn't need it but can accept it
-        std::string name = s->GetDllName();
+        name = s->GetDllName();
         for (int i =0; i < name.size(); i++)
             name[i] = toupper(name[i]);
         s->SetDllName(name);

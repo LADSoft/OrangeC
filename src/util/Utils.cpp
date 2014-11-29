@@ -50,6 +50,11 @@
 #include "utils.h"
 #include "CmdFiles.h"
 
+#ifdef OPENWATCOM
+#include <strstream>
+#else
+#include <sstream>
+#endif
 #include "..\version.h"
 
 char *Utils::ShortName(char *v)
@@ -177,4 +182,66 @@ std::string Utils::SearchForFile(const std::string &path, const std::string &nam
         }
     }
     return name;
+}
+std::string Utils::NumberToString(int num)
+{
+#ifdef OPENWATCOM
+    std::ostrstream aa;
+    aa << num;
+    return std::string(aa.rdbuf()->str());
+#else
+    std::stringstream aa;
+    aa << num;
+    std:: string rv;
+    aa >> rv;
+    return rv;
+#endif
+}
+std::string Utils::NumberToStringHex(int num)
+{
+#ifdef OPENWATCOM
+    std::ostrstream aa;
+    aa << std::hex << num;
+    return std::string(aa.rdbuf()->str());
+#else
+    std::stringstream aa;
+    aa << std::hex << num;
+    std:: string rv;
+    aa >> rv;
+    return rv;
+#endif
+}
+int Utils::StringToNumber(std::string str)
+{
+#ifdef OPENWATCOM
+    std::ostrstream aa;
+    aa << str.c_str();
+    std::istrstream bb(aa.rdbuf()->str());
+    int rv;
+    bb >> rv;
+    return rv;
+#else
+    std::stringstream aa;
+    aa << str;
+    int rv;
+    aa >> rv;
+    return rv;
+#endif
+}
+int Utils::StringToNumberHex(std::string str)
+{
+#ifdef OPENWATCOM
+    std::ostrstream aa;
+    aa << str.c_str();
+    std::istrstream bb(aa.rdbuf()->str());
+    int rv;
+    bb >> std::hex >> rv;
+    return rv;
+#else
+    std::stringstream aa;
+    aa << str;
+    int rv;
+    aa >> std::hex >> rv;
+    return rv;
+#endif
 }

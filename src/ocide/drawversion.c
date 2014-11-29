@@ -326,7 +326,7 @@ static void PopulateVersion(HWND hwnd, struct resRes *versionData)
             struct ver_stringinfo *strings = var->u.string.strings;
             while (strings)
             {
-                WCHAR key[256], value[256];
+                char key[256], value[256];
                 StringWToA(key, strings->key, wcslen(strings->key));
                 strcpy(value, "\"\"");
                 FormatVersionString(value, strings->value, strings->length);
@@ -397,7 +397,7 @@ static void VersInsert(struct resRes *versionData)
             if (var->type == VERINFO_STRING)
             {
                 int i =7;
-                WCHAR key[256], value[256];
+                char key[256], value[256];
                 struct ver_stringinfo **p = &var->u.string.strings, *strings;
                 ResGetHeap(workArea, versionData);
                 while (*p && i < versionData->gd.selectedRow)

@@ -45,7 +45,7 @@ extern char infile[];
 
 LAMBDA *lambdas;
 
-static lambdaQualifier[260];
+static char lambdaQualifier[260];
 static int lambdaIndex;
 static SYMBOL *lambdaFunc;
 void lambda_init(void)

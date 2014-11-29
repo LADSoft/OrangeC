@@ -93,7 +93,7 @@ char lastid[256] = "";
 char laststr[MAX_STRLEN + 1] = "";
 long ival = 0;
 long double rval = 0.0;
-char *linstack[20]; /* stack for substitutions */
+short *linstack[20]; /* stack for substitutions */
 char chstack[20]; /* place to save lastch */
 int lstackptr = 0; /* substitution stack pointer */
 int cantnewline = FALSE;
@@ -247,7 +247,7 @@ static void CacheLine(WCHAR *lptr, char *xbuf)
 {
     if (inSymFile)
     {
-        char *p = strstr(xbuf, L"#define");
+        char *p = strstr(xbuf, "#define");
         if (p)
             return;
     }

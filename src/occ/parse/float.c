@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#define USE_LONGLONG
+//#define USE_LONGLONG
 #define TRUE 1
 #define FALSE 0
 #include "floating.h"

@@ -138,7 +138,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
                             DefFile defFile(inputFile);
                             if (!defFile.Read())
                             {
-                                std::cout << "Def file '" << inputFile << "' is missing or in wrong format" << std::endl;
+                                std::cout << "Def file '" << inputFile.c_str() << "' is missing or in wrong format" << std::endl;
                                 return;
                             }
                             defFile.SetFileName(inputFile);
@@ -149,7 +149,7 @@ void ImpLibMain::AddFile(LibManager &librarian, const char *arg)
                             DLLExportReader dllFile(inputFile);
                             if (!dllFile.Read())
                             {
-                                std::cout << "Dll file '" << inputFile << "' is missing or in wrong format" << std::endl;
+                                std::cout << "Dll file '" << inputFile.c_str() << "' is missing or in wrong format" << std::endl;
                                 return;
                             }
                             librarian.AddFile(*DllFileToObjFile(dllFile));
@@ -340,7 +340,7 @@ int ImpLibMain::HandleLibrary(const std::string &outputFile, int argc, char **ar
     if (librarian.IsOpen())
         if (!librarian.LoadLibrary())
         {
-            std::cout << outputFile << " is not a library" << std::endl;
+            std::cout << outputFile.c_str() << " is not a library" << std::endl;
             return 1;
         }
     for (int i= 2; i < argc; i++)
@@ -424,7 +424,7 @@ int ImpLibMain::Run(int argc, char **argv)
         }
         else if (ext != ".l")
         {
-            std::cout << outputFile << " is an invalid output file type" << std::endl;
+            std::cout << outputFile.c_str() << " is an invalid output file type" << std::endl;
             return 1;
         }
     }

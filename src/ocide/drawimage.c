@@ -449,7 +449,7 @@ void SaveImage(IMAGEDATA *res)
     }
 
     res->bits = lpBPtr;
-    res->bitmapInfo = DIBInfo;
+    res->bitmapInfo = (BITMAPINFO *)DIBInfo;
     res->DIBSize = DIBSize + bitsSize;
 
     res->fileDirty = TRUE;
@@ -484,7 +484,7 @@ IMAGEDATA *NewImage(HWND hwndParent, IMAGEDATA *res)
     return id;
 }
 static int validDIB(
-    LPBITMAPINFO DIB,
+    LPBITMAPINFOHEADER DIB,
     DWORD DIBSize,
     int bitmap)
 {
@@ -496,37 +496,37 @@ static int validDIB(
     if (DIBSize < sizeof(BITMAPINFOHEADER))
         return FALSE;
 
-    if (DIB->bmiHeader.biSize != sizeof(BITMAPINFOHEADER))
+    if (DIB->biSize != sizeof(BITMAPINFOHEADER))
         return FALSE;
 
-    if (DIB->bmiHeader.biPlanes != 1)
+    if (DIB->biPlanes != 1)
         return FALSE;
 
-    if (DIB->bmiHeader.biBitCount != 1 &&
-            DIB->bmiHeader.biBitCount != 4 &&
-            DIB->bmiHeader.biBitCount != 8 &&
-            DIB->bmiHeader.biBitCount != 24)
+    if (DIB->biBitCount != 1 &&
+            DIB->biBitCount != 4 &&
+            DIB->biBitCount != 8 &&
+            DIB->biBitCount != 24)
         return FALSE;
 
     if (bitmap) {
-        height = DIB->bmiHeader.biHeight;
+        height = DIB->biHeight;
         ANDMaskBytes = 0;
     }
     else {
-        height = DIB->bmiHeader.biHeight / 2;
-        ANDMaskBytes = (((DIB->bmiHeader.biWidth + 31) & 0xffffffe0) >> 3) *
+        height = DIB->biHeight / 2;
+        ANDMaskBytes = (((DIB->biWidth + 31) & 0xffffffe0) >> 3) *
                 height;
     }
-    if (DIB->bmiHeader.biBitCount == 24)
+    if (DIB->biBitCount == 24)
         colorTableBytes = 0;
     else
-        colorTableBytes = (1 << DIB->bmiHeader.biBitCount) * sizeof(RGBQUAD);
-    XORMaskBytes = ((((DIB->bmiHeader.biWidth * DIB->bmiHeader.biBitCount) +
+        colorTableBytes = (1 << DIB->biBitCount) * sizeof(RGBQUAD);
+    XORMaskBytes = ((((DIB->biWidth * DIB->biBitCount) +
             31) & 0xffffffe0) >> 3) * height;
 
-    if (DIB->bmiHeader.biSizeImage &&
-            DIB->bmiHeader.biSizeImage != XORMaskBytes + ANDMaskBytes &&
-            DIB->bmiHeader.biSizeImage != XORMaskBytes)
+    if (DIB->biSizeImage &&
+            DIB->biSizeImage != XORMaskBytes + ANDMaskBytes &&
+            DIB->biSizeImage != XORMaskBytes)
         return FALSE;
 
     if (DIBSize != sizeof(BITMAPINFOHEADER) + colorTableBytes +
@@ -582,7 +582,7 @@ static IMAGEDATA *LoadBitmapImage(HWND hwndParent, struct resRes *imageData)
         return NULL;
     }
     id->bits = bitmapData->pixelData;
-    id->bitmapInfo = bitmapData->headerData;
+    id->bitmapInfo = (BITMAPINFO *)bitmapData->headerData;
     id->type = FT_BMP;
     id->height = bih.biHeight;
     id->width = bih.biWidth;
@@ -626,7 +626,7 @@ static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, in
         }
         *tail = id;
         tail = &(*tail)->next;
-        id->bitmapInfo = cursors->data;
+        id->bitmapInfo = (BITMAPINFO *)cursors->data;
         id->type = resType;
         id->height = cursors->height;
         id->width = cursors->width;
@@ -652,7 +652,7 @@ static IMAGEDATA *LoadCursorImage(HWND hwndParent, struct resRes * imageData, in
             colorTableBytes = (1 << lpBitmapInfo->bmiHeader.biBitCount) * sizeof(RGBQUAD);
         id->bits = cursors->data + sizeof(BITMAPINFOHEADER) + colorTableBytes;
 
-        if (!validDIB(lpBitmapInfo, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id)) {
+        if (!validDIB(&lpBitmapInfo->bmiHeader, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id)) {
             while (head)
             {
                 IMAGEDATA *next = head->next;
@@ -693,7 +693,7 @@ static IMAGEDATA *LoadIconImage(HWND hwndParent, struct resRes * imageData, int 
         }
         *tail = id;
         tail = &(*tail)->next;
-        id->bitmapInfo = icons->data;
+        id->bitmapInfo = (BITMAPINFO *)icons->data;
         id->type = resType;
         id->height = icons->height;
         id->width = icons->width;
@@ -717,7 +717,7 @@ static IMAGEDATA *LoadIconImage(HWND hwndParent, struct resRes * imageData, int 
             colorTableBytes = (1 << lpBitmapInfo->bmiHeader.biBitCount) * sizeof(RGBQUAD);
         id->bits = icons->data + sizeof(BITMAPINFOHEADER) + colorTableBytes;
 
-        if (!validDIB(lpBitmapInfo, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id)) {
+        if (!validDIB(&lpBitmapInfo->bmiHeader, id->DIBSize, FALSE) || !LoadImageToDC(hwndParent, id)) {
             while (head)
             {
                 IMAGEDATA *next = head->next;

@@ -46,9 +46,9 @@
 #include "OS.h"
 #include "Maker.h"
 #include <ctype.h>
-#include <sstream>
 #include <iostream>
 #include <fstream>
+#include "Utils.h"
 std::map<const std::string, Eval::StringFunc> Eval::builtins;
 std::string Eval::VPath;
 std::map<std::string, std::string> Eval::vpaths;
@@ -715,9 +715,7 @@ int Eval::GetNumber(const std::string &line)
         error("Numeric value expected");
     else
     {
-        std::stringstream s;
-        s << line;
-        s >> rv;
+        rv = Utils::StringToNumber(line);
     }
     return rv;
 }
@@ -969,10 +967,7 @@ std::string Eval::words(const std::string &arglist)
             ExtractFirst(text, " ");
         }	
     }
-    std::stringstream s;
-    s << count;
-    std::string rv;
-    s >> rv;
+    std::string rv = Utils::NumberToString(count);
     return rv;
 }
 std::string Eval::firstword(const std::string &arglist)
@@ -1460,33 +1455,33 @@ std::string Eval::shell(const std::string &arglist)
 
 std::string Eval::error(const std::string &arglist)
 {
-    std::cout << "Error " << file << "(" << lineno << "): " << arglist << std::endl;
+    std::cout << "Error " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
     errcount++;
     return "";
 }
 std::string Eval::errorx(const std::string &arglist)
 {
     Eval a(arglist, false, NULL, NULL);
-    std::cout << "Error " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
+    std::cout << "Error " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
     errcount++;
     return "";
 }
 std::string Eval::warning(const std::string &arglist)
 {
-    std::cout << "Warning " << file << "(" << lineno << "): " << arglist << std::endl;
+    std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << arglist.c_str() << std::endl;
     return "";
 }
 std::string Eval::warningx(const std::string &arglist)
 {
     Eval a(arglist, false, NULL, NULL);
-    std::cout << "Warning " << file << "(" << lineno << "): " << a.Evaluate() << std::endl;
+    std::cout << "Warning " << file.c_str() << "(" << lineno << "): " << a.Evaluate().c_str() << std::endl;
     return "";
 }
 
 std::string Eval::info(const std::string &arglist)
 {
     Eval a(arglist, false, ruleList, rule);
-    std::cout << a.Evaluate() << std::endl;
+    std::cout << a.Evaluate().c_str() << std::endl;
     return "";
 }
 std::string Eval::exists(const std::string &arglist)

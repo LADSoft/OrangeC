@@ -140,7 +140,7 @@ static void PopulateItem(HWND hwnd, RCDATA *rcData, int items)
     item.iSubItem = 0;
     item.mask = LVIF_PARAM | LVIF_TEXT;
     item.lParam = (LPARAM)rcData;
-    item.pszText = key;//fixme
+    item.pszText = (unsigned short *)key;//fixme
     ListView_InsertItem(hwnd, &item);
     item.iSubItem = 1;
     item.mask = LVIF_PARAM;

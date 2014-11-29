@@ -89,7 +89,7 @@ Variable *VariableContainer::Lookup(const std::string &name)
     }
     else
     {
-        const std::map<const std::string *, Variable *, vlt>::iterator it = variables.find(&name);
+        std::map<const std::string *, Variable *, vlt>::iterator it = variables.find(&name);
         if (it != variables.end())
         {
             rv = it->second;

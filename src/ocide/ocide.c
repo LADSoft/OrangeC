@@ -49,7 +49,6 @@
 #include "splash.h"
 #include "..\version.h"
 #include <sys\stat.h>
-
 /* timer identifiers
  *
  * note that the current timer implementation assumes only one timer
@@ -1583,7 +1582,7 @@ static void GetSystemDialogFont(void)
     OSVERSIONINFO osvi;
     NONCLIENTMETRICS ncm;
     ncm.cbSize = sizeof(NONCLIENTMETRICS);
-#if !defined(GNUC) && !defined(BORLAND)
+#if !defined(GNUC) && !defined(BORLAND) && !defined(OPENWATCOM)
     memset(&osvi,0,sizeof(osvi));
     osvi.dwOSVersionInfoSize = sizeof(osvi);
     GetVersionEx(&osvi);
@@ -1648,7 +1647,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     {
         StartInstanceComms();
     }
-
 
     GetModuleFileName(0,buf, 260);
     p =strrchr(buf,'\\');

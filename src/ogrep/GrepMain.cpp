@@ -44,6 +44,12 @@
 #include <iomanip>
 #include <iostream>
 #include <Stdio.h>
+#ifdef OPENWATCOM
+namespace std
+{
+    ios &left(ios &in) { return in; }
+}
+#endif
 CmdSwitchParser GrepMain::SwitchParser;
 
 CmdSwitchBool GrepMain::recurseDirs(SwitchParser, 'd');
@@ -131,7 +137,7 @@ void GrepMain::DisplayMatch(const std::string &fileName, int &matchCount, int li
 {
     if (matchCount == 0 && displayHeaderFileName.GetValue())
     {
-        std::cout << "FILE: " << fileName;
+        std::cout << "FILE: " << fileName.c_str();
         if (verboseMode.GetValue() || !displayMatchCount.GetValue())
             std::cout << std::endl;
     }
@@ -150,7 +156,7 @@ void GrepMain::DisplayMatch(const std::string &fileName, int &matchCount, int li
         {
             int n = fileName.size();
             n = ((n + 8) /8) * 8;
-            std::cout << std::setfill(' ') << std::setw(n) << std::left << fileName;
+            std::cout << std::setfill(' ') << std::setw(n) << std::left << fileName.c_str();
         }
         if (displayLineNumbers.GetValue())
         {

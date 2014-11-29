@@ -52,6 +52,7 @@
 #include "MZHeader.h"
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
 
 #ifdef MICROSOFT
 #define system(x) winsystem(x)
@@ -290,7 +291,7 @@ bool dlPeMain::ReadSections(const std::string &path)
     }
 	else
 	{
-		std:: cout << "Invalid rel file format " + ieee.GetErrorQualifier() << std::endl;
+		std:: cout << "Invalid rel file format " << ieee.GetErrorQualifier().c_str() << std::endl;
 	}
     return false;
 }

@@ -144,7 +144,7 @@ private:
 class KeywordToken : public Token
 {
 public:
-    KeywordToken(std::string &line, const KeywordHash *table) : keyValue(-1), keywordTable(table) { Parse(line); }
+    KeywordToken(std::string &line, KeywordHash *table) : keyValue(-1), keywordTable(table) { Parse(line); }
     virtual bool IsKeyword() const { return keyValue != -1; }
     virtual int GetKeyword() const { return keyValue; }
     virtual bool IsError() const { return keyValue == -1; }
@@ -153,12 +153,12 @@ protected:
     virtual void Parse(std::string &line);
 private:
     int keyValue;
-    const KeywordHash *keywordTable;
+    KeywordHash *keywordTable;
 } ;
 class IdentifierToken : public Token
 {
 public:
-    IdentifierToken(std::string &line, const KeywordHash *Table, bool CaseInsensitive) 
+    IdentifierToken(std::string &line, KeywordHash *Table, bool CaseInsensitive) 
     : keyValue(-1), keywordTable(Table), caseInsensitive(CaseInsensitive) { Parse(line); }
     virtual bool IsIdentifier() const { return keyValue == -1; }
     virtual bool IsKeyword() const { return keyValue != -1; }
@@ -170,7 +170,7 @@ protected:
 private:
     int keyValue;
     bool parseKeyword;
-    const KeywordHash *keywordTable;
+    KeywordHash *keywordTable;
     std::string id;
     bool caseInsensitive;
 } ;
@@ -193,7 +193,7 @@ private:
 class Tokenizer
 {
 public:
-    Tokenizer(const std::string &Line, const KeywordHash *Table) : line(Line), keywordTable(Table),
+    Tokenizer(const std::string &Line, KeywordHash *Table) : line(Line), keywordTable(Table),
         currentToken(NULL), caseInsensitive(false) { }
     virtual ~Tokenizer() {  delete currentToken; }
     void Reset(const std::string &Line) { line = Line; delete currentToken; currentToken = NULL; }
@@ -204,7 +204,7 @@ public:
     static void SetC99(bool flag) { NumericToken::SetC99(flag); }
     void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
 private:
-    const KeywordHash *keywordTable;
+    KeywordHash *keywordTable;
     std::string line;
     Token *currentToken;
     bool caseInsensitive;

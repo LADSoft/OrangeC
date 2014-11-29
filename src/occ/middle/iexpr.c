@@ -280,7 +280,7 @@ IMODE *LookupCastTemp(IMODE *im, int size)
         memset(&ch, 0, sizeof(ch));
         ch.sf.im = im;
         ch.sf.size = size;
-        hash = dhash(&ch.sf, sizeof(ch.sf));
+        hash = dhash((UBYTE *)&ch.sf, sizeof(ch.sf));
         sh = castHash[hash];
         while (sh)
         {
@@ -1826,7 +1826,7 @@ IMODE *gen_atomic(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
             left = indnode(av, sz);
             right = gen_expr(funcsp, node->v.ad->value, 0, sz);
-            switch(node->v.ad->third->v.i)
+            switch((int)node->v.ad->third->v.i)
             {
                 default:
                 case asplus:

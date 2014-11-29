@@ -273,6 +273,7 @@ int Real::GetFixupOffset(ObjExpression *fixup, int sbase, int pc)
             return fixup->Eval(pc);
         Utils::fatal("Invalid fixup");			
     }
+    return 0;
 }
 int Real::GetFirstSeg(ObjExpression *exp)
 {

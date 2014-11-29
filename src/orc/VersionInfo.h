@@ -68,6 +68,7 @@ class StringVerInfo : public InternalVerInfo
 public:
     struct Info
     {
+        Info() { }
         Info(std::wstring Key, std::wstring Value) : key(Key), value(Value) { }
         std::wstring key;
         std::wstring value;
@@ -89,6 +90,7 @@ class VarVerInfo : public InternalVerInfo
 public:
     struct Info
     {
+        Info() { }
         
         Info(std::wstring Key) : key(Key) { }
         Info(const Info &Old);

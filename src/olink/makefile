@@ -39,11 +39,8 @@ NAME=olink
 MAIN_FILE=LinkerMain.cpp
 INCLUDES=..\util ..\objlib ..\olib ..\sqlite3
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-C_DEPENDENCIES= sqlite3.c
-LIB_DEPENDENCIES=util objlib olib
+LIB_DEPENDENCIES=sqlite3 util objlib olib
 DEFINES=SQLITE_THREADSAFE=0
-
-vpath %.c ..\sqlite3
 
 DISTRIBUTE: copyexe
 	copy *.app $(DISTBIN)

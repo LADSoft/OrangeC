@@ -52,7 +52,7 @@ class LinkTokenizer
                 ePC,
                 eAddr, eSize, eMaxSize, eRoundSize, eAlign, eVirtual, eFill,
                 eAdd, eSub, eMul, eDiv, eNeg, eCmpl, eEOF } ;
-        LinkTokenizer(ObjString &spec) : data(spec), token(eUnknown), 
+        LinkTokenizer(ObjString spec) : data(spec), token(eUnknown), 
                             value(0), lineNo(1) { NextToken(); }
         ~LinkTokenizer() { }
         
@@ -81,7 +81,7 @@ class LinkTokenizer
         bool GetAdd(LinkExpression **exp, bool canUsePC);
         bool GetMul(LinkExpression **exp, bool canUsePC);
         eTokenType token;
-        ObjString &data;
+        ObjString data;
         ObjString symbol;
         ObjInt value;
         ObjInt lineNo;

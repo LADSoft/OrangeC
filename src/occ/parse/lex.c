@@ -1234,7 +1234,7 @@ LEXEME *getsym(void)
     static char buf[2048];
     static int pos = 0;
     int cval;
-    LCHAR *strptr;
+    SLCHAR *strptr;
 
     if (context->cur)
     {
@@ -1307,7 +1307,7 @@ LEXEME *getsym(void)
         }
         else if ((strptr = getString(&includes->lptr, &tp)) != NULL)
         {
-            lex->value.s.w = strptr;
+            lex->value.s.w = (LCHAR *)strptr;
             lex->type = tp == l_u8str ? l_astr : tp;
             if (isstartchar(*includes->lptr) && !isspace(*(includes->lptr-1)))
             {

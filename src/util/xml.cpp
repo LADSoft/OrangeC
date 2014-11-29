@@ -86,7 +86,7 @@ bool xmlAttrib::Read(std::fstream &stream)
 }
 bool xmlAttrib::Write(std::fstream &stream)
 {
-    stream << ' ' << name << " = \"";
+    stream << ' ' << name.c_str() << " = \"";
     const char *p = value.c_str();
     while(*p)
         WriteTextChar(stream, *p++);
@@ -394,7 +394,7 @@ bool xmlNode::Write(std::fstream &stream, int indent)
 {
     for (int i=0; i < indent; i++)
         stream << "  " ;
-    stream << '<' << elementType;
+    stream << '<' << elementType.c_str();
     if (attribs.size())
     {
         std::deque<xmlAttrib *>::iterator it;
@@ -416,7 +416,7 @@ bool xmlNode::Write(std::fstream &stream, int indent)
         }
         for (int i=0; i < indent; i++)
             stream << "  ";
-        stream << "</" << elementType << '>' << std::endl;
+        stream << "</" << elementType.c_str() << '>' << std::endl;
     }
     else
     {

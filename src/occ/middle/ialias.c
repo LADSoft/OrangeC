@@ -208,7 +208,7 @@ static ALIASNAME *LookupMem(IMODE *im)
                 im = im->offset->v.sp->imvalue;
             break;
     }
-    hash = dhash(&im, sizeof(im));
+    hash = dhash((UBYTE *)&im, sizeof(im));
     p = &names[hash];
     while (*p)
     {
@@ -309,7 +309,7 @@ static ALIASNAME *LookupAliasName(ALIASNAME *name, int offset)
     struct UIVHash **uivs;
     str[0] = offset;
     *((ALIASNAME **)(str + 1)) = name;
-    hash = dhash(str, sizeof(str));
+    hash = dhash((UBYTE *)str, sizeof(str));
     uivs = &names[hash];
     while (*uivs)
     {
@@ -347,7 +347,7 @@ static ALIASNAME *GetAliasName(ALIASNAME *name, int offset)
     struct UIVHash **uivs;
     str[0] = offset;
     *((ALIASNAME **)(str + 1)) = name;
-    hash = dhash(str, sizeof(str));
+    hash = dhash((UBYTE *)str, sizeof(str));
     uivs = &names[hash];
     while (*uivs)
     {
@@ -366,7 +366,7 @@ static ALIASADDRESS *LookupAddress(ALIASNAME *name, int offset)
     LIST *li;
     str[0] = offset;
     *((ALIASNAME **)(str + 1)) = name;
-    hash = dhash(str, sizeof(str));
+    hash = dhash((UBYTE *)str, sizeof(str));
     search = &addresses[hash];
     while (*search)
     {
@@ -414,7 +414,7 @@ static ALIASADDRESS *GetAddress(ALIASNAME *name, int offset)
     LIST *li;
     str[0] = offset;
     *((ALIASNAME **)(str + 1)) = name;
-    hash = dhash(str, sizeof(str));
+    hash = dhash((UBYTE *)str, sizeof(str));
     search = &addresses[hash];
     while (*search)
     {

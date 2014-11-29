@@ -86,7 +86,7 @@ bool ResourceContainer::LoadFiles()
     {
         if (!LoadFile((*it)))
         {
-            std::cout << "Error loading resource file '" << (*it) << "'" << std::endl;
+            std::cout << "Error loading resource file '" << (*it).c_str() << "'" << std::endl;
             rv = false;
         }
     }

@@ -37,9 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=objlib
 MAIN_FILE=test2.cpp
-INCLUDES=
+INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=
-EXCLUDE=ObjIO test test2
+LIB_DEPENDENCIES=util
+EXCLUDE=ObjIO test2
 
 DISTRIBUTE:

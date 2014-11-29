@@ -40,10 +40,13 @@
 #ifndef CMDSWITCH_H
 #define CMDSWITCH_H
 
+// next lines are for watcom
+#undef min
+#undef max
+#include <limits.h>
 #include <string>
 #include <set>
 #include <vector>
-#include <limits.h>
 #include <fstream>
 class CmdSwitchParser;
 

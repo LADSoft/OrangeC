@@ -47,6 +47,7 @@
 #include "ObjExpression.h"
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
 
 CmdSwitchParser dlHexMain::SwitchParser;
 
@@ -98,7 +99,7 @@ void dlHexMain::GetSectionNames(std::vector<std::string> &names, ObjFile *file)
                     if (file->FindSection(name))
                         names.push_back(name);
                     else
-                        std::cout << "Warning: Section '" << name << "' not in .rel file" << std::endl;
+                        std::cout << "Warning: Section '" << name.c_str() << "' not in .rel file" << std::endl;
                 }
                 p++;
             }
@@ -112,7 +113,7 @@ void dlHexMain::GetSectionNames(std::vector<std::string> &names, ObjFile *file)
             if (file->FindSection(name))
                 names.push_back(name);
             else
-                std::cout << "Warning: Section '" << name << "' not in .rel file" << std::endl;
+                std::cout << "Warning: Section '" << name.c_str() << "' not in .rel file" << std::endl;
         }
     }
     else

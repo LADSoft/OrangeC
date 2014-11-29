@@ -60,6 +60,7 @@ class LinkRegion
     public:
         struct OneSection
         {
+            OneSection() : file(NULL), section(NULL) { }
             OneSection(ObjFile *File, ObjSection *Section) : file(File), section(Section) { }
             ObjFile *file;
             ObjSection *section;

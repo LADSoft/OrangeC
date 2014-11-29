@@ -132,42 +132,42 @@ static REGDATA regs[] =
         {
              &xeax, &eaxbuf
         }
-        , &oldContext.Eax, &regContext.Eax, 0, editable
+        , (BYTE *)&oldContext.Eax, (BYTE *)&regContext.Eax, 0, editable
     }
     , 
     {
         {
              &xebx, &ebxbuf
         }
-        , &oldContext.Ebx, &regContext.Ebx, 0, editable
+        , (BYTE *)&oldContext.Ebx, (BYTE *)&regContext.Ebx, 0, editable
     }
     , 
     {
         {
              &xecx, &ecxbuf
         }
-        , &oldContext.Ecx, &regContext.Ecx, 0, editable
+        , (BYTE *)&oldContext.Ecx, (BYTE *)&regContext.Ecx, 0, editable
     }
     , 
     {
         {
              &xedx, &edxbuf
         }
-        , &oldContext.Edx, &regContext.Edx, 0, editable
+        , (BYTE *)&oldContext.Edx, (BYTE *)&regContext.Edx, 0, editable
     }
     , 
     {
         {
              &xesi, &esibuf
         }
-        , &oldContext.Esi, &regContext.Esi, 0, editable
+        , (BYTE *)&oldContext.Esi, (BYTE *)&regContext.Esi, 0, editable
     }
     , 
     {
         {
              &xedi, &edibuf
         }
-        , &oldContext.Edi, &regContext.Edi, 0, editable
+        , (BYTE *)&oldContext.Edi, (BYTE *)&regContext.Edi, 0, editable
     }
     , 
     {
@@ -181,28 +181,28 @@ static REGDATA regs[] =
         {
              &xesp, &espbuf
         }
-        , &oldContext.Esp, &regContext.Esp, 0, editable
+        , (BYTE *)&oldContext.Esp, (BYTE *)&regContext.Esp, 0, editable
     }
     , 
     {
         {
              &xebp, &ebpbuf
         }
-        , &oldContext.Ebp, &regContext.Ebp, 0, editable
+        , (BYTE *)&oldContext.Ebp, (BYTE *)&regContext.Ebp, 0, editable
     }
     , 
     {
         {
              &xeip, &eipbuf
         }
-        , &oldContext.Eip, &regContext.Eip, 0, editable
+        , (BYTE *)&oldContext.Eip, (BYTE *)&regContext.Eip, 0, editable
     }
     , 
     {
         {
              &xeflags, &eflagsbuf
         }
-        , &oldContext.EFlags, &regContext.EFlags, 0, editable
+        , (BYTE *)&oldContext.EFlags, (BYTE *)&regContext.EFlags, 0, editable
     }
     , 
     {

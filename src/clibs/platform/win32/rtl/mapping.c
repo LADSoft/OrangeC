@@ -47,7 +47,7 @@ void * _RTL_FUNC mmap(void *addr, size_t len, int prot, int flags, int fildes, o
     void *rv = NULL;
     HANDLE map;
     assert(addr == 0 && prot == PROT_READ && flags == MAP_PRIVATE);
-    map = CreateFileMapping(_get_osfhandle(fildes), NULL, PAGE_READONLY | SEC_RESERVE, 0, 0, NULL);
+    map = CreateFileMapping((HANDLE)_get_osfhandle(fildes), NULL, PAGE_READONLY | SEC_RESERVE, 0, 0, NULL);
     if (map != 0)
     {
         rv = MapViewOfFile(map, FILE_MAP_READ, 0, off, 0);

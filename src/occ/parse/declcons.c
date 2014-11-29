@@ -78,8 +78,8 @@ void ConsDestDeclarationErrors(SYMBOL *sp, BOOLEAN notype)
 }
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL *sym)
 {
-    LEXEME *lex = *lex2;
-    MEMBERINITIALIZERS *first = NULL, **cur = &first, *last = NULL ;
+    LEXEME *lex = *lex2, *last = NULL;
+    MEMBERINITIALIZERS *first = NULL, **cur = &first;
 //    if (sym->name != overloadNameTab[CI_CONSTRUCTOR])
 //        error(ERR_INITIALIZER_LIST_REQUIRES_CONSTRUCTOR);
     while (lex != NULL)
@@ -1317,7 +1317,7 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             consfunc->isInline = TRUE;
         //    consfunc->inlineFunc.stmt->blockTail = b.tail;
             InsertInline(consfunc);
-            match->genreffed;
+//            match->genreffed;
             if (match->deferredCompile && !match->inlineFunc.stmt)
                 deferredCompileOne(match);
             localNameSpace->syms = syms;
@@ -1699,7 +1699,7 @@ static void dovtabThunks(BLOCKDATA *b, SYMBOL *sym, EXPRESSION *thisptr, BOOLEAN
         st->select = first;
     }
 }
-static void doVirtualBases(BLOCK *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBASEENTRY *vbe, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
+static void doVirtualBases(BLOCKDATA *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBASEENTRY *vbe, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
 	if (vbe)
 	{
@@ -2203,7 +2203,7 @@ void createConstructor(SYMBOL *sp, SYMBOL *consfunc)
     InsertInline(consfunc);
     localNameSpace->syms = syms;
 }
-static void asnVirtualBases(BLOCKDATA *b, SYMBOL *sp, VBASEENTRY *vbe, 
+void asnVirtualBases(BLOCKDATA *b, SYMBOL *sp, VBASEENTRY *vbe, 
                             EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst)
 {
 	if (vbe)

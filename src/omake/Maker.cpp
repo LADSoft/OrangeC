@@ -43,7 +43,7 @@
 #include "Eval.h"
 #include "Parser.h"
 #include "CmdFiles.h"
-#include <sstream>
+#include "utils.h"
 #include <fstream>
 #include <list>
 #include <stdlib.h>
@@ -681,10 +681,7 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
         rv = sp.Run(*depend->GetRule()->GetCommands(), rl, NULL);
     if (rv)
     {
-        std::stringstream a;
-        a << rv;
-        std::string b;
-        a >> b;
+        std::string b = Utils::NumberToString(rv);
         if (RuleContainer::Instance()->Lookup(".DELETE_ON_ERROR"))
         {
             OS::RemoveFile(depend->GetGoal());

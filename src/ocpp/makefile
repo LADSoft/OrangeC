@@ -40,7 +40,7 @@ MAIN_FILE=ppMain.cpp
 INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
-DEFINES=L_INT=__int64 "L_UINT=unsigned@__int64"
+DEFINES=L_INT=__int64
 
 #DISTRIBUTE: copyexe
 DISTRIBUTE:

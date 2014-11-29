@@ -111,7 +111,7 @@ char *rcStrdup(char *s)
 }
 void rcFree(void *p)
 {
-    return HeapFree(memHeap, 0, p);//fixme
+    HeapFree(memHeap, 0, p);//fixme
 }
 #define GetByte(fil) fgetc(fil)
 
@@ -805,7 +805,7 @@ static void ReadQuotedResID(IDENT *id)
             *p++ = *idp++;
         *p++ = '\n';
         *p = 0;
-        strcpy(nbuf, buf);
+        wcscpy(nbuf, buf);
         defcheck(buf);
         if (wcscmp(nbuf, buf) != 0)
         {
@@ -818,7 +818,8 @@ static void ReadQuotedResID(IDENT *id)
             lptr = p;
             getch();
             cantnewline = FALSE;
-            StringAsciiToWChar(&id->origName, nbuf, strlen(nbuf));
+            wcscpy(id->origName, nbuf);
+//            StringAsciiToWChar(&id->origName, nbuf, wcslen(nbuf));
             return;
         }        
         generror(ERR_INVALIDCLASS, 0);
@@ -1173,7 +1174,7 @@ static int GetIdentString(void)
     *p = 0;
     wcscpy(nbuf, buf);
     defcheck(buf);
-    if (strcmp(nbuf, buf))
+    if (wcscmp(nbuf, buf))
     {
         cantnewline = TRUE;
         p = --lptr;

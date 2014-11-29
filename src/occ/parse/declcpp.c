@@ -1228,7 +1228,7 @@ void checkUnpackedExpression(EXPRESSION *exp)
 static void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
 {
     if (!packedExp)
-        return FALSE;
+        return;
     GatherPackedVars(count, arg, packedExp->left);
     GatherPackedVars(count, arg, packedExp->right);
     if (packedExp->type == en_auto && packedExp->v.sp->packed)
@@ -1236,7 +1236,6 @@ static void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
         arg[(*count)++] = packedExp->v.sp;
         NormalizePacked(packedExp->v.sp->tp);
     }
-    return FALSE;
     
 }
 int CountPacks(TEMPLATEPARAMLIST *packs)

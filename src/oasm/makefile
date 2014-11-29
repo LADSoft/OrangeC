@@ -40,6 +40,6 @@ MAIN_FILE=AsmMain.cpp
 INCLUDES=..\util ..\ocpp ..\objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpp objlib util
-DEFINES=L_INT=__int64 "L_UINT=unsigned@__int64"
+DEFINES=L_INT=__int64
 
 DISTRIBUTE: copyexe

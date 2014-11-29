@@ -41,6 +41,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <richedit.h>
 #include <float.h>
 #include "helpid.h"
 #include "header.h"
@@ -70,7 +71,7 @@ int WindowItemCount = 0;
 static int winMenuCount;
 static int winShowCount;
 static char windowTexts[MAX_WINMENU][260];
-static HANDLE *winMenu[MAX_WINMENU];
+static HWND *winMenu[MAX_WINMENU];
 static WNDPROC oldMenuProc;
 
 static int MenuBitmapIDs[] = { ID_EDITTB, ID_BUILDTB , ID_DEBUGTB, ID_EXTRA, ID_NAVTB, ID_BOOKMARKTB };

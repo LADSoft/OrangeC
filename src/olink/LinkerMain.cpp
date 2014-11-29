@@ -196,6 +196,7 @@ int LinkerMain::Run(int argc, char **argv)
     CmdFiles files(argv+1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
+        
     // setup
     const ObjString &outputFile = GetOutputFile(files);
     unlink(outputFile.c_str());

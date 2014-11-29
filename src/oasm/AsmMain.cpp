@@ -209,7 +209,7 @@ int AsmMain::Run(int argc, char *argv[])
                 while (pp.GetLine(working))
                 {
                     CheckAssign(working, pp);
-                    out << working << std::endl;
+                    out << working.c_str() << std::endl;
                 }
             }
             out.close();

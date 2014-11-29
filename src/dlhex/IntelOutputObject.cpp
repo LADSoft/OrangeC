@@ -47,13 +47,13 @@ void IntelOutputObject::putrecord(std::fstream &stream, unsigned char *data, int
     cs += (offset >>8) & 255;
         
     cs += datalen;
-    stream << ":" << ObjUtil::ToHex(datalen, 2) << ObjUtil::ToHex(offset & 0xffff, 4) << "00"; // data record
+    stream << ":" << ObjUtil::ToHex(datalen, 2).c_str() << ObjUtil::ToHex(offset & 0xffff, 4).c_str() << "00"; // data record
     for (i=0; i < datalen; i++) {
-        stream << ObjUtil::ToHex(data[i], 2);
+        stream << ObjUtil::ToHex(data[i], 2).c_str();
         cs += data[i];
     }
     cs = (256-(cs & 255)) & 0xff;
-    stream << ObjUtil::ToHex(cs,2) << std::endl;
+    stream << ObjUtil::ToHex(cs,2).c_str() << std::endl;
 }
 void IntelOutputObject::putulba(std::fstream &stream, int address)
 {
@@ -81,7 +81,7 @@ void IntelOutputObject::putulba(std::fstream &stream, int address)
     cs += (offset >>8) & 255;
     cs = (256-(cs & 255)) & 0xff;
         
-    stream << ":" << ObjUtil::ToHex(len, 2) << "0000" << ObjUtil::ToHex(type, 2) << ObjUtil::ToHex(offset, 4) << ObjUtil::ToHex(cs, 2) << std::endl;
+    stream << ":" << ObjUtil::ToHex(len, 2).c_str() << "0000" << ObjUtil::ToHex(type, 2).c_str() << ObjUtil::ToHex(offset, 4).c_str() << ObjUtil::ToHex(cs, 2).c_str() << std::endl;
 }
 int IntelOutputObject::Write(std::fstream &stream, char *data, int len, int firstAddress)
 {

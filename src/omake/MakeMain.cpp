@@ -48,11 +48,17 @@
 #include "CmdFiles.h"
 #include <ctype.h>
 #include <iostream>
-#include <sstream>
 #include <iomanip>
 #include <string.h>
 #include <stdlib.h>
-
+#include <ios>
+#include <stdio.h>
+#ifdef OPENWATCOM
+namespace std
+{
+    ios& right(ios&in) { return in; }
+}
+#endif;
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchString MakeMain::specifiedFiles(switchParser, 'f', ' ');
 CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
@@ -97,10 +103,10 @@ char *MakeMain::usageText = "[options] goals\n"
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";
 
-int main(int argc, char **argv, char **env)
+int main(int argc, char **argv)
 {
     MakeMain Main;
-    return Main.Run(argc, argv, env);
+    return Main.Run(argc, argv);
 }
 
 void MakeMain::Dispatch(const char *data)
@@ -235,8 +241,9 @@ void MakeMain::SetMakeFlags()
     }
     SetVariable("MAKEOVERRIDES", vals, Variable::o_command_line, true);
 }
-void MakeMain::LoadEnvironment(char **env)
+void MakeMain::LoadEnvironment()
 {
+    char **env = environ;
     Variable::Origin origin;
     if (environOverride.GetValue())
         origin = Variable::o_environ_override;
@@ -282,27 +289,27 @@ void MakeMain::ShowRule(RuleList *ruleList)
 {
     for (RuleList::iterator it = ruleList->begin(); it != ruleList->end(); ++it)
     {
-        std::cout << ruleList->GetTarget() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
+        std::cout << ruleList->GetTarget().c_str() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
         std::cout << "\tPrerequisites:" << std::endl;
-        std::cout << "\t\t" << (*it)->GetPrerequisites() << std::endl;
+        std::cout << "\t\t" << (*it)->GetPrerequisites().c_str() << std::endl;
         std::cout << "\tOrder Prerequisites:" << std::endl;
-        std::cout << "\t\t" << (*it)->GetOrderPrerequisites() << std::endl;
+        std::cout << "\t\t" << (*it)->GetOrderPrerequisites().c_str() << std::endl;
         std::cout << "\tCommands:" << std::endl;
         Command *commands = (*it)->GetCommands();
         for (Command::iterator it = commands->begin(); it != commands->end(); ++it)
         {
-            std::cout << "\t\t" << (*it) << std::endl;
+            std::cout << "\t\t" << (*it).c_str() << std::endl;
         }
     }
     std::cout << "\tTargetVariables:" << std::endl;
     for (RuleList::VariableIterator it = ruleList->VariableBegin(); it != ruleList->VariableEnd(); ++it)
     {
-        std::cout << std::setw(25) << std::setfill(' ') << std::right << *(it->first);
+        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*it->first).c_str();
         if (it->second->GetFlavor() == Variable::f_recursive)
             std::cout << " =  ";
         else
             std::cout << " := ";
-        std::cout << it->second->GetValue() << std::endl;
+        std::cout << it->second->GetValue().c_str() << std::endl;
     }
 }
 void MakeMain::ShowDatabase()
@@ -311,12 +318,12 @@ void MakeMain::ShowDatabase()
     for (VariableContainer::iterator it = VariableContainer::Instance()->begin();
          it != VariableContainer::Instance()->end(); ++it)
     {
-        std::cout << std::setw(25) << std::setfill(' ') << std::right << *it->first;
+        std::cout << std::setw(25) << std::setfill(' ') << std::right << (*it->first).c_str();
         if (it->second->GetFlavor() == Variable::f_recursive)
             std::cout << " =  ";
         else
             std::cout << " := ";
-        std::cout << it->second->GetValue() << std::endl;
+        std::cout << it->second->GetValue().c_str() << std::endl;
     }
     std::cout << std::endl << "Explicit rules:" << std::endl;
     for (RuleContainer::iterator it = RuleContainer::Instance()->begin();
@@ -368,7 +375,7 @@ void MakeMain::SetTreePath(std::string &files)
         }
     }
 }
-int MakeMain::Run(int argc, char **argv, char **env)
+int MakeMain::Run(int argc, char **argv)
 {
     char *p = getenv("MAKEFLAGS");
     if (p)
@@ -395,13 +402,13 @@ int MakeMain::Run(int argc, char **argv, char **env)
         cwd = OS::GetWorkingDir();
         if (!OS::SetWorkingDir(dir.GetValue()))
         {
-            std::cout << "Cannot set working dir to: " << dir.GetValue() << std::endl;
+            std::cout << "Cannot set working dir to: " << dir.GetValue().c_str() << std::endl;
             return 2;
         }
     }
     if (printDir.GetValue())
     {
-        std::cout << OS::GetWorkingDir() << std::endl;
+        std::cout << OS::GetWorkingDir().c_str() << std::endl;
     }
     if (cancelKeep.GetValue())
     {
@@ -418,7 +425,7 @@ int MakeMain::Run(int argc, char **argv, char **env)
         RuleContainer::Instance()->Clear();
         Include::Instance()->Clear();
         Maker::ClearFirstGoal();
-        LoadEnvironment(env);
+        LoadEnvironment();
         LoadCmdDefines();
         SetVariable("MAKE", argv[0], Variable::o_environ, false);
         Variable *v = VariableContainer::Instance()->Lookup("SHELL");
@@ -444,10 +451,7 @@ int MakeMain::Run(int argc, char **argv, char **env)
         SetMakeFlags();
         if (restarts)
         {
-            std::stringstream str;
-            std::string temp;
-            str << restarts;
-            str >> temp;
+            std::string temp = Utils::NumberToString(restarts);
             SetVariable("MAKE_RESTARTS", temp, Variable::o_command_line, false);
         }
         v = VariableContainer::Instance()->Lookup("MAKE_LEVEL");
@@ -457,15 +461,8 @@ int MakeMain::Run(int argc, char **argv, char **env)
         }
         else
         {
-            std::stringstream str;
-            std::string temp;
-            str << v->GetValue();
-            int n;
-            str >> n;
-            n++;
-            str <<  n;
-            str >> temp;
-            v->SetValue(temp);
+            int n = Utils::StringToNumber(v->GetValue());
+            v->SetValue(Utils::NumberToString(n+1));
         }
         SetVariable(".FEATURES","second-expansion order-only target-specific", Variable::o_environ, false);
         SetVariable(".DEFAULT_GOAL","", Variable::o_environ, false);
@@ -534,7 +531,7 @@ int MakeMain::Run(int argc, char **argv, char **env)
     }
     if (printDir.GetValue())
     {
-        std::cout << OS::GetWorkingDir() << std::endl;
+        std::cout << OS::GetWorkingDir().c_str() << std::endl;
     }
     return rv;
 }

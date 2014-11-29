@@ -109,6 +109,7 @@ void linemac(short *string);
 
 static char *unmangid; /* In this module we have to ignore leading underscores
     */
+static WCHAR unmangidW[256];
 static STARTUPS *startuplist,  *rundownlist;
 static short defkw[] = 
 {
@@ -122,24 +123,24 @@ static int skiplevel;
 
 struct inmac
 {
-    char *s;
+    short *s;
     void(*func)();
 } ingrownmacros[INGROWNMACROS] = 
 {
     {
-        "__FILE__", filemac
+        L"__FILE__", filemac
     }
     , 
     {
-        "__DATE__", datemac, 
+        L"__DATE__", datemac, 
     }
     , 
     {
-        "__TIME__", timemac
+        L"__TIME__", timemac
     }
     , 
     {
-        "__LINE__", linemac
+        L"__LINE__", linemac
     }
 };
 
@@ -459,7 +460,7 @@ void getdefsym(void)
     else if (isstartchar(lastch))
     {
         lptr--;
-        defid(unmangid, &lptr, 0);
+        defid(unmangidW, &lptr, unmangid);
         lastch =  *lptr++;
         lastst = ident;
     }
@@ -502,7 +503,7 @@ int dodefine(void)
         getdefsym();
         while (lastst == ident)
         {
-            args[count++] = prcStrdup(unmangid);
+            args[count++] = prcStrdup(unmangidW);
             getdefsym();
             if (lastst != comma)
                 break;
@@ -613,7 +614,7 @@ int definsert(short *end, short *begin, short *text, int len, int replen)
     p = pstrlen(text);
     val = p - replen;
     r = pstrlen(begin);
-    if (val + (int)strlen(begin) + 1 >= len)
+    if (val + (int)pstrlen(begin) + 1 >= len)
     {
         generror(ERR_MACROSUBS, 0);
         return ( - 8000);
@@ -728,7 +729,7 @@ void defmacroreplace(short *macro, short *name)
     int i;
     macro[0] = 0;
     for (i = 0; i < INGROWNMACROS; i++)
-    if (!strcmp(name, ingrownmacros[i].s))
+    if (!pstrcmp(name, ingrownmacros[i].s))
     {
         (ingrownmacros[i].func)(macro);
         break;
@@ -798,7 +799,7 @@ int replacesegment(short *start, short *end, int *inbuffer, int totallen, int
             defid(name, &p, ascii);
             if ((sp = search(ascii, &defsyms)) != 0 && !indefine(sp))
             {
-                DEFSTRUCT *def = sp->value.s;
+                DEFSTRUCT *def = (DEFSTRUCT *)sp->value.s;
                 enterdefine(sp);
                 pstrcpy(macro, def->string);
                 if (def->argcount)
@@ -879,7 +880,7 @@ int replacesegment(short *start, short *end, int *inbuffer, int totallen, int
             }
             else
             {
-                join: defmacroreplace(macro, ascii);
+                join: defmacroreplace(macro, name);
                 if (macro[0])
                 {
                     if ((rv = definsert(p, q, macro, totallen -  *inbuffer, p -

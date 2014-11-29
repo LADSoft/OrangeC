@@ -226,7 +226,7 @@ int     _RTL_FUNC cnd_wait(cnd_t *cond, mtx_t *mtx)
         default:
             return thrd_error;
         case thrd_success:
-            return cnd_timedwait(cond, mtx, -1);
+            return cnd_timedwait(cond, mtx, (xtime *)-1);
         case thrd_busy:
             abort();
             // never gets here

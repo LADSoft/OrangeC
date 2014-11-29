@@ -44,6 +44,8 @@
 #include <float.h>
 #include <limits.h>
 
+typedef unsigned L_INT L_UINT;
+
 bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
 bool NumericToken::c99;

@@ -932,7 +932,7 @@ static void deleteParseData(char *name)
         }
     }
 }
-void ScanParse(void)
+unsigned __stdcall ScanParse(void *aa)
 {
     while (1)
     {
@@ -1139,7 +1139,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 if (ptr->dwName[0] == 0)
                     goto dialog;
-                rv = SaveFile(hwnd, (char*)GetWindowLong(hwnd, 0));
+                rv = SaveFile(hwnd, (DWINFO*)GetWindowLong(hwnd, 0));
                 TagLinesAdjust(ptr->dwName, TAGM_SAVEFILE);
                 SendMessage(ptr->dwHandle, EM_SETMODIFY, 0, 0);
                 drawParams(ptr, hwnd);

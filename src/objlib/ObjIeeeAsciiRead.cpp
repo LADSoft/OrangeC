@@ -46,7 +46,6 @@
 #include <stack>
 #include <ctype.h>
 #include <stdio.h>
-
 void DebugThrowHook()
 {
 }

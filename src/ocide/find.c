@@ -902,7 +902,7 @@ void FindSetDirty()
 {
     dirty = TRUE;
 }
-static DWINFO *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *specifiedPath, char *specifiedExtensions, int flags)
+static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *specifiedPath, char *specifiedExtensions, int flags)
 {
     if (!editWindows)
         return NULL;

@@ -52,6 +52,10 @@ public:
     static std::string FullPath(const std::string &path, const std::string &name);
     static std::string QualifiedFile(const char *path, const char *ext);
     static std::string SearchForFile(const std::string &path, const std::string &name);
+    static std::string NumberToString(int num);
+    static std::string NumberToStringHex(int num);
+    static int StringToNumber(std::string str);
+    static int StringToNumberHex(std::string str);
 protected:
     static char *ShortName(char *v);
 };

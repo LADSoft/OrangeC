@@ -40,6 +40,6 @@ MAIN_FILE=ImpLibMain.cpp
 INCLUDES=..\util ..\objlib ..\olib ..\olink ..\ocpp ..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpp olib olink objlib util
-DEFINES=L_INT=__int64 "L_UINT=unsigned@__int64"
+DEFINES=L_INT=__int64
 
 DISTRIBUTE: copyexe

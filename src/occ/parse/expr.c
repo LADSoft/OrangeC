@@ -1293,7 +1293,10 @@ join:
                         else if (ispointer(decl->tp))
                         {
                             if (!ispointer(list->tp) && (!isarithmeticconst(list->exp) || !isconstzero(decl->tp, list->exp)))
-                                errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
+                            {
+                                if (!isfunction(list->tp) || !isvoidptr(decl->tp) && (!isfunction(basetype(decl->tp)->btp) || !comparetypes(basetype(decl->tp)->btp, list->tp, TRUE)))
+                                    errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
+                            }
                             else if (!comparetypes(decl->tp, list->tp, TRUE))
                                 if (!isconstzero(list->tp, list->exp))
                                     if (!isvoidptr(decl->tp) && !isvoidptr(list->tp))
@@ -2004,6 +2007,11 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                     TYPE *etp = sym->tp;
                     if (cppCast(p->tp, &etp, &p->exp))
                         p->tp = etp;
+                }
+                else if (isvoidptr(sym->tp) && p->tp->type == bt_aggregate)
+                {
+                    HASHREC *hr = p->tp->syms->table[0];
+                    p->exp = varNode(en_pc, (SYMBOL *)hr->p);
                 }
                 else if (ispointer(sym->tp) && ispointer(p->tp))
                 {

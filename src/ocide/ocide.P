@@ -416,7 +416,6 @@ void recolorize(DWINFO *ptr);
 DWORD MsgWait(HANDLE event, DWORD timeout);
 void InstallForParse(HWND hwnd);
 void InstallAllForParse(void);
-void ScanParse(void);
 LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 void RegisterDrawWindow(void);

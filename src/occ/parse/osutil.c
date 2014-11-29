@@ -981,7 +981,7 @@ void ccinit(int argc, char *argv[])
 #else
     strcpy(buffer, argv[0]);
 #endif
-    printf("%s\n", buffer);                
+
     parseconfigfile(buffer);
     if (!parse_args(&argc, argv, TRUE) || (!clist && argc == 1))
         usage(argv[0]);

@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <string.h>
+#include <stdlib.h>
 #define STRINGVERSION "100"
 
 #define DBVersion atoi(STRINGVERSION)

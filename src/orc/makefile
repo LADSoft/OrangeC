@@ -40,7 +40,7 @@ MAIN_FILE=rcMain.cpp
 INCLUDES=..\util ..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpp util
-DEFINES=L_INT=__int64 "L_UINT=unsigned@__int64"
+DEFINES=L_INT=__int64
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\orc.cfg

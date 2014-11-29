@@ -49,6 +49,8 @@
 #include "Utils.h"
 #include <iomanip>
 #include <set>
+#include <iostream>
+#include <fstream>
 
 std::fstream &LinkMap::Address(std::fstream &stream, ObjInt base, ObjInt offset, int group)
 {
@@ -103,7 +105,7 @@ void LinkMap::ShowPartitionLine(std::fstream &stream, LinkPartition *partition)
     if (partition)
     {
         LinkAttribs &attribs = partition->GetAttribs();
-        stream << "Partition: " << partition->GetName();
+        stream << "Partition: " << partition->GetName().c_str();
         ShowAttribs(stream, attribs, 0, -1);
     }
 }
@@ -112,7 +114,7 @@ void LinkMap::ShowOverlayLine(std::fstream &stream, LinkOverlay *overlay)
     if (overlay)
     {
         LinkAttribs &attribs = overlay->GetAttribs();
-        stream << "  Overlay: " << overlay->GetName();
+        stream << "  Overlay: " << overlay->GetName().c_str();
         ShowAttribs(stream, attribs, 0, -1);
     }
 }
@@ -121,13 +123,13 @@ void LinkMap::ShowRegionLine(std::fstream &stream, LinkRegion *region, ObjInt of
     if (region)
     {
         LinkAttribs &attribs = region->GetAttribs();
-        stream << "    Region: " << region->GetName();
+        stream << "    Region: " << region->GetName().c_str();
         ShowAttribs(stream, attribs, offs, group );
     }
 }
 void LinkMap::ShowFileLine(std::fstream &stream, LinkRegion::OneSection *data, ObjInt n)
 {
-    stream << "      File: " << data->file->GetName() << "(" << data->section->GetName() << ") " ;
+    stream << "      File: " << data->file->GetName().c_str() << "(" << data->section->GetName().c_str() << ") " ;
     stream << "addr=" << std::setw(6) << std::setfill('0') << std::hex << data->section->GetOffset()->Eval(0) /*+ n*/ << " " ;
     stream << "size=" << std::setw(4) << std::setfill('0') << std::hex << data->section->GetSize()->Eval(0) << " " ;
     stream << std::endl;
@@ -139,7 +141,7 @@ void LinkMap::ShowSymbol(std::fstream &stream, const MapSymbolData &symbol)
         stream << "   ";
     else
         stream << " X ";
-    stream << symbol.sym->GetSymbol()->GetDisplayName() << std::setw(1) << std::endl;
+    stream << symbol.sym->GetSymbol()->GetDisplayName().c_str() << std::setw(1) << std::endl;
 }
 void LinkMap::NormalSections(std::fstream &stream)
 {
@@ -243,7 +245,7 @@ void LinkMap::Publics(std::fstream &stream)
 }
 void LinkMap::WriteMap()
 {
-    std::fstream stream(name.c_str(), std::ios_base::out | std::ios_base::trunc);
+    std::fstream stream(name.c_str(), std::ios::out | std::ios::trunc);
     if (stream != NULL)
     {
         if (type == eDetailed)

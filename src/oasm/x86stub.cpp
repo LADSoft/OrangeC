@@ -230,7 +230,7 @@ void Instruction::Optimize(int pc, bool last)
                                 if (last)
                                 {
                                     Errors::IncrementCount();
-                                    std::cout << "Error " << (*it)->GetFileName() << "(" << (*it)->GetErrorLine() << "):" << "Branch out of range" << std::endl;
+                                    std::cout << "Error " << (*it)->GetFileName().c_str() << "(" << (*it)->GetErrorLine() << "):" << "Branch out of range" << std::endl;
                                 }
                             }
                         }
@@ -248,7 +248,7 @@ void Instruction::Optimize(int pc, bool last)
                                     if (last)
                                     {
                                         Errors::IncrementCount();
-                                        std::cout << "Error " << (*it)->GetFileName() << "(" << (*it)->GetErrorLine() << "):" << "Value out of range" << std::endl;
+                                        std::cout << "Error " << (*it)->GetFileName().c_str() << "(" << (*it)->GetErrorLine() << "):" << "Value out of range" << std::endl;
                                     }
                                 }
                             }

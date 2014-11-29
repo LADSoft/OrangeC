@@ -49,8 +49,8 @@ static unsigned	dllexists = 0;
 static void _dorundown(void);
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
-void __stdcall __import ___lsdllinit(DWORD flags, void (*rundown)(), unsigned *exceptBlock);
-void __srproc(DWORD, DWORD);
+void __stdcall __import ___lsdllinit(DWORD flags, void (*rundown)(void), unsigned *exceptBlock);
+void __srproc(char *, char *);
 int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
     int flags;
@@ -62,7 +62,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     quote = 0;
     ___lsdllinit(flags, _dorundown, exceptBlock);
     if (!(flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
-    {
+    {   
         if (flags & DLL)
         {
             if (!dllexists)

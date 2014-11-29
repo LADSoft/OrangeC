@@ -257,6 +257,7 @@ ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFa
         case AsmExprNode::LOR:
             throw new std::runtime_error("Operator not allowed in address expression");
     }
+    return NULL;
 }
 bool Section::SwapSectionIntoPlace(ObjExpression *t)
 {
@@ -326,7 +327,7 @@ bool Section::MakeData(ObjFactory &factory, AsmFile *fil)
                 catch (std::runtime_error *e)
                 {
                     Errors::IncrementCount();
-                    std::cout << "Error " << f.GetFileName() << "(" << f.GetErrorLine() << "):" << e->what() << std::endl;
+                    std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what() << std::endl;
                     delete e;
                     t = NULL;
                     rv = false;

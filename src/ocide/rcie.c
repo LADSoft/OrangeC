@@ -43,8 +43,6 @@
  * primary expression handler except it returns a value rather than
  * an enode list
  */
-#include <windows.h>
-#include <stdio.h>
 #include <string.h>
 #include <limits.h>
 #include <windows.h>
@@ -108,7 +106,7 @@ EXPRESSION *InternalLookup(char *id, int translate)
     *p = 0;
     wcscpy(nbuf, buf);
     defcheck(buf);
-    if (strcmp(nbuf, buf) || !isalpha(buf[0]) && buf[0] != '_')
+    if (wcscmp(nbuf, buf) || !isalpha(buf[0]) && buf[0] != '_')
     {
         expr = ReadExpFromString(translate ? nbuf : buf);
     }

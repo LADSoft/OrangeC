@@ -153,14 +153,14 @@ bool DefFile::Read()
         }
         catch (std::runtime_error *e)
         {
-            std::cout << fileName << "(" << lineno << "): " << e->what() << std::endl ;
+            std::cout << fileName.c_str() << "(" << lineno << "): " << e->what() << std::endl ;
             delete e;
         }
         delete stream;
     }
     else
     {
-        std::cout << "File '" << name << "' not found." << std::endl;
+        std::cout << "File '" << name.c_str() << "' not found." << std::endl;
     }
     return true;
 }
@@ -485,7 +485,7 @@ void DefFile::WriteName()
 {
     if (name.size())
     {
-        *stream << "NAME " << name ;
+        *stream << "NAME " << name.c_str() ;
         if (imageBase != -1)
         {
             *stream << ", ", imageBase ;
@@ -497,7 +497,7 @@ void DefFile::WriteLibrary()
 {
     if (library.size())
     {
-        *stream << "LIBRARY " << library ;
+        *stream << "LIBRARY " << library.c_str() ;
         if (imageBase != -1)
         {
             *stream << ", ", imageBase ;
@@ -515,12 +515,12 @@ void DefFile::WriteExports()
             *stream << "EXPORTS" << std::endl;
             first = false;
         }
-        *stream << "\t" << (*it)->id;
+        *stream << "\t" << (*it)->id.c_str();
         if ((*it)->entry.size() && (*it)->entry != (*it)->id || (*it)->module.size())
         {
-            *stream << "=" << (*it)->entry;
+            *stream << "=" << (*it)->entry.c_str();
             if ((*it)->module.size())
-                *stream << "." << (*it)->module;
+                *stream << "." << (*it)->module.c_str();
         }
         if ((*it)->ord != -1)
             *stream << " @" << (*it)->ord;
@@ -543,16 +543,16 @@ void DefFile::WriteImports()
         {
             if ((*it)->entry == (*it)->id)
             {
-                *stream << "\t" << (*it)->module << "." << (*it)->id;
+                *stream << "\t" << (*it)->module.c_str() << "." << (*it)->id.c_str();
             }
             else
             {
-                *stream << "\t" << (*it)->id << "=" << (*it)->module << "." << (*it)->entry;
+                *stream << "\t" << (*it)->id.c_str() << "=" << (*it)->module.c_str() << "." << (*it)->entry.c_str();
             }
         }
         else
         {
-            *stream << "\t" << (*it)->id;
+            *stream << "\t" << (*it)->id.c_str();
         }
         *stream << std::endl;
     }
@@ -560,7 +560,7 @@ void DefFile::WriteImports()
 void DefFile::WriteDescription()
 {
     if (description.size())
-        *stream << description << std::endl;
+        *stream << description.c_str() << std::endl;
 }
 void DefFile::WriteStacksize()
 {
@@ -627,7 +627,7 @@ void DefFile::WriteSections()
                 std::cout << "SECTIONS" << std::endl;
                 first = false;
             }
-            *stream << "\t" << it->first << " " ;
+            *stream << "\t" << it->first.c_str() << " " ;
             WriteSectionBits(it->second);
             break;
         }

@@ -1517,7 +1517,7 @@ static FONT *ResNewFont(PROJECTITEM *pj, RESOURCE *newRes)
     }
     return 0;
 }
-static FONT *ResNewMessageTable(PROJECTITEM *pj, RESOURCE *newRes, int *size)
+static BYTE *ResNewMessageTable(PROJECTITEM *pj, RESOURCE *newRes, int *size)
 {
     OPENFILENAME ofn;
     if (OpenFileDialog(&ofn, pj->realName, hwndFrame, FALSE, FALSE, szMessageTableFilter, "Load Message Table"))
@@ -1547,7 +1547,7 @@ static BITMAP_ *ResNewBitmap(PROJECTITEM *pj, RESOURCE *newRes)
             {
                 BITMAPINFOHEADER *lpbih;
                 nbmp->headerSize = sizeof(BITMAPINFOHEADER)  + (1 << 4) * sizeof(RGBQUAD);
-                nbmp->headerData = lpbih = rcAlloc(nbmp->headerSize);
+                nbmp->headerData = (BYTE *)(lpbih = rcAlloc(nbmp->headerSize));
                 memset(nbmp->headerData + sizeof(BITMAPINFOHEADER), 0xff, 3); // COLOR WHITE
                 lpbih->biBitCount = 4; // 16 colors
                 lpbih->biHeight = 32;
@@ -1599,7 +1599,7 @@ static CURSOR *ResNewCursor(PROJECTITEM *pj, RESOURCE *newRes)
             memset (p, 0xff, (((((DWORD)ncrs->cursors->width) + 31) & 0xffffffe0) >> 3) * ncrs->cursors->height);
 
             {
-                BITMAPINFOHEADER *lpbih = ncrs->cursors->data;
+                BITMAPINFOHEADER *lpbih = (BITMAPINFOHEADER *)ncrs->cursors->data;
                 lpbih->biBitCount = colorbits; // 2 colors
                 lpbih->biHeight = ncrs->cursors->height * 2;
                 lpbih->biWidth = ncrs->cursors->width;
@@ -1648,7 +1648,7 @@ static ICON *ResNewIcon(PROJECTITEM *pj, RESOURCE *newRes)
             // this and the blackness will make it see through by default
             memset(p, 0xff, (((((DWORD)nico->icons->width) + 31) & 0xffffffe0) >> 3) * nico->icons->height);
             {
-                LPBITMAPINFOHEADER lpbih = nico->icons->data;
+                LPBITMAPINFOHEADER lpbih = (LPBITMAPINFOHEADER)nico->icons->data;
                 lpbih->biBitCount = colorbits; // 16 colors
                 lpbih->biHeight = nico->icons->height * 2;
                 lpbih->biWidth = nico->icons->width;

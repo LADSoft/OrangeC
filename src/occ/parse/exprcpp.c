@@ -1867,7 +1867,7 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
     FUNCTIONCALL *fp;
     BOOLEAN rv = TRUE;
     if (node == 0)
-        return;
+        return rv;
     switch (node->type)
     {
         case en_auto:
@@ -1935,7 +1935,8 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_l_ll:
         case en_l_ull:
         case en_literalclass:
-            return noexceptExpression(node->left);
+            rv = noexceptExpression(node->left);
+            break;
         case en_uminus:
         case en_compl:
         case en_not:
@@ -1973,12 +1974,15 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_alloca:
         case en_loadstack:
         case en_savestack:
-            return noexceptExpression(node->left);
+            rv = noexceptExpression(node->left);
+            break;
         case en_assign:
-            return noexceptExpression(node->right) && noexceptExpression(node->left);
+            rv = noexceptExpression(node->right) && noexceptExpression(node->left);
+            break;
         case en_autoinc:
         case en_autodec:
-            return noexceptExpression(node->left);
+            rv = noexceptExpression(node->left);
+            break;
         case en_add:
         case en_sub:
 /*        case en_addcast: */
@@ -2021,31 +2025,35 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_blockassign:
         case en_mp_compare:
 /*		case en_array: */
-            return noexceptExpression(node->right) && noexceptExpression(node->left);
+            rv = noexceptExpression(node->right) && noexceptExpression(node->left);
+            break;
         case en_mp_as_bool:
         case en_blockclear:
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
-            return noexceptExpression(node->left);
+            rv = noexceptExpression(node->left);
+            break;
         case en_thisref:
-            return noexceptExpression(node->left);
+            rv = noexceptExpression(node->left);
+            break;
         case en_atomic:
             break;
         case en_func:
             fp = node->v.func;
             {
                 SYMBOL *sp = fp->sp;
-                return sp->xcMode == xc_none || sp->xcMode == xc_dynamic && !sp->xc->xcDynamic;
+                rv = sp->xcMode == xc_none || sp->xcMode == xc_dynamic && !sp->xc->xcDynamic;
             }
             break;
         case en_stmt:
-            return noexceptStmt(node->v.stmt);
+            rv = noexceptStmt(node->v.stmt);
+            break;
         default:
             diag("noexceptExpression");
             break;
     }
-    return TRUE;
+    return rv;
 }
 static BOOLEAN noexceptStmt(STATEMENT *block)
 {

@@ -667,7 +667,7 @@ void LinkManager::Link()
         {
             std::strstream stream;
             stream << "Specification file line " << specification.GetLineNo() << " : "
-                    << specification.GetError();
+                    << specification.GetError().c_str();
             std::string err(stream.str());
             LinkError(err);
         }

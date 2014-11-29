@@ -42,11 +42,10 @@
 #include <fstream>
 #include <stdexcept>
 #include <map>
-#include <sstream>
 #include <stdarg.h>
 #include <time.h>
 #include <string.h>
-
+#include "utils.h"
 #include "ObjIO.h"
 #include "ObjUtil.h"
 #include "ObjIndexManager.h"
@@ -97,8 +96,7 @@ protected:
     class SyntaxError : public std::domain_error
     {
         public:
-            SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
-                                                         static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str()),
+            SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + Utils::NumberToString(lineno)),
                                         lineNo(lineno) {}
             virtual ~SyntaxError() throw() { } ;
             
@@ -264,7 +262,7 @@ public:
         { sfile = fil; factory = Factory; file = File; return HandleWrite(); }
     virtual ObjFile *Read(FILE *fil, eParseType ParseType, ObjFactory *Factory) 
         { sfile = fil; factory = Factory; file = NULL; return HandleRead(ParseType); }
-    virtual std::string GetErrorQualifier() { return std::string ("in line ") + static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str(); }
+    virtual std::string GetErrorQualifier() { return std::string ("in line ") + Utils::NumberToString(lineno); }
     
 protected:
     class BadCS : public std::domain_error
@@ -278,7 +276,7 @@ protected:
     {
         public:
             SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
-                                                         static_cast<std::ostringstream*>( &(std::ostringstream() << lineno) )->str()),
+                                                         Utils::NumberToString(lineno)),
                                         lineNo(lineno) {}
             virtual ~SyntaxError() throw() { } ;
             

@@ -50,7 +50,7 @@
 #include "rcgui.h"
 #include "xml.h"
 
-#define ERROR ExtendedMessageBox("Error", 0, "Error reading ctl file")
+#define ERRORMSG ExtendedMessageBox("Error", 0, "Error reading ctl file")
 
 #define F_TOP 1
 #define F_BOTTOM 2
@@ -194,14 +194,14 @@ static void LoadCtlFields(struct ctlDB *dbEntry, struct xmlNode *node)
                 }
                 else
                 {
-                    ERROR;
+                    ERRORMSG;
                 }
                 attr = attr->next;
             }
         }
         else
         {
-            ERROR;
+            ERRORMSG;
         }
         children = children->next;
     }
@@ -264,7 +264,7 @@ static void LoadCtlDb(struct xmlNode *control)
                         dbEntry->ctlType = iNEGYESNO;
                     else
                     {
-                        ERROR;
+                        ERRORMSG;
                     }
                 }
                 else if (IsAttrib(attr,"MASK"))
@@ -298,7 +298,7 @@ static void LoadCtlDb(struct xmlNode *control)
                         dbEntry->ctlType = iNEGYESNO;
                     else
                     {
-                        ERROR;
+                        ERRORMSG;
                     }
                 }
                 else if (IsAttrib(attr,"MASK"))
@@ -376,7 +376,7 @@ static void LoadCtlDb(struct xmlNode *control)
         }
         else
         {
-            ERROR;
+            ERRORMSG;
         }
         children = children->next;
     }
@@ -3133,7 +3133,7 @@ static char * StreamIdent(char *p, IDENT *ident)
     {
         *((short *)p) = wcslen(ident->origName);
         p += sizeof(short);
-        wcscpy(p, ident->origName);
+        wcscpy((short *)p, ident->origName);
         p += sizeof(WCHAR) * wcslen(ident->origName);
     }        
     if (ident->symbolic)

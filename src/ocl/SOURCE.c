@@ -230,7 +230,7 @@ static void sources( char *fpath, char *fname ) {
 static void sources( char *fpath, char *fname ) {
     int fpath_len = strlen( fpath );
     struct _finddata_t fb;
-    intptr_t *t = _findfirst(strcat( fpath, fname), &fb);
+    long t = _findfirst(strcat( fpath, fname), &fb);
     if (t)
         do
         {

@@ -41,9 +41,9 @@
 #include "Eval.h"
 #include "Maker.h"
 #include <fstream>
-#include <sstream>
 #include <iomanip>
 #include <iostream>
+#include "utils.h"
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 int Spawner::lineLength = 500;
@@ -79,9 +79,14 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
         {
             char match = cmd[n+2];
             cmd.erase(n);
-            std::stringstream str;
-            str << "maketemp." << std::setw(3) << std::setfill('0') << tempNum++;
-            str >> makeName;
+            makeName = "maketemp.";
+            if (tempNum < 10)
+                makeName = makeName + "00" + Utils::NumberToString(tempNum);
+            else if (tempNum < 100)
+                makeName = makeName + "0" + Utils::NumberToString(tempNum);
+            else
+                makeName = makeName + Utils::NumberToString(tempNum);
+            tempNum++;
             std::fstream fil(makeName.c_str(), std::ios::out);
             bool done = false;
             std::string tail;
@@ -98,7 +103,7 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
                     current.erase(n);
                 }
                 Eval ce(current, false, ruleList, rule);
-                fil << ce.Evaluate() << std::endl;
+                fil << ce.Evaluate().c_str() << std::endl;
             } while (!done);						
             fil.close();
             cmd += makeName + tail;
@@ -125,7 +130,7 @@ int Spawner::Run(const std::string &cmd, bool ignoreErrors, bool silent, bool do
         {
             std::string command = *it;
             if (!silent)
-                std::cout << "\t" << command << std::endl;
+                std::cout << "\t" << command.c_str() << std::endl;
             int rv = 0;
             if (!dontrun)
                 rv = OS::Spawn(command, environment);

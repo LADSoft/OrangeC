@@ -40,7 +40,6 @@
 #include "ObjFactory.h"
 #include "ObjIeee.h"
 #include <stdio.h>
-#include <sstream>
 #include <deque>
 
 char ObjIeeeAscii::lineend[2] = { 10 };

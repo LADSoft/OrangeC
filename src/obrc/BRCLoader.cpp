@@ -305,12 +305,14 @@ bool BRCLoader::load()
             }
             else
             {
-                std::cout << std::string("Invalid object file ") + name.c_str() << std::endl;
+                std::string temp = std::string("Invalid object file ") + name.c_str(); 
+                std::cout << temp.c_str() << std::endl;
             }
         }
         else
         {
-            std::cout << std::string("Could not open file ") + name.c_str() << std::endl;
+            std::string temp = std::string("Could not open file ") + name.c_str();
+            std::cout << temp.c_str() << std::endl;
             rv = false;
         }
     }

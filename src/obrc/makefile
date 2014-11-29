@@ -39,10 +39,7 @@ NAME=obrc
 MAIN_FILE=BRCMain.cpp
 INCLUDES=..\util ..\ocpp ..\objlib ..\sqlite3
 CPP_DEPENDENCIES=$(wildcard *.cpp) 
-C_DEPENDENCIES= sqlite3.c
-LIB_DEPENDENCIES=util ocpp objlib
-DEFINES=L_INT=__int64 "L_UINT=unsigned __int64" SQLITE_THREADSAFE=0
-
-vpath %.c ..\sqlite3
+LIB_DEPENDENCIES=sqlite3 util ocpp objlib
+DEFINES=L_INT=__int64 SQLITE_THREADSAFE=0
 
 DISTRIBUTE: copyexe

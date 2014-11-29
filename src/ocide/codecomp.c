@@ -137,7 +137,7 @@ static int busyFunc(void*handle,int times)
         return 1;
     }
 }
-static DWORD CALLBACK dbVacuum(void *xx)
+static void dbVacuum(void *xx)
 {
     char *zErrMsg = NULL;
     sqlite3 *xdb = xx;

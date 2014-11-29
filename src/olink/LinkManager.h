@@ -134,8 +134,8 @@ class LinkManager
         FileIterator FileBegin() { return fileData.begin(); }
         FileIterator FileEnd() { return fileData.end(); }
         
-        static void LinkError(const ObjString &error) { HookError(0); std::cout << "Error: " << error << std::endl; errors++; }
-        static void LinkWarning(const ObjString &error) { HookError(1); std::cout << "Warning: " << error << std::endl; warnings++; }
+        static void LinkError(const ObjString &error) { HookError(0); std::cout << "Error: " << error.c_str() << std::endl; errors++; }
+        static void LinkWarning(const ObjString &error) { HookError(1); std::cout << "Warning: " << error.c_str() << std::endl; warnings++; }
 
         bool IsExternal(ObjString &name)		
         {

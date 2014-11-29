@@ -80,6 +80,7 @@ protected:
     int GetFirstSeg(ObjExpression *exp);
     struct Fixup
     {
+        Fixup() :seg(0), off(0) {}  
         Fixup(int Seg, int Off) : seg(Seg), off(Off) { }
         int seg;
         int off;

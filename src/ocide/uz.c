@@ -318,7 +318,7 @@ void GetInflateTables(void)
             len = get_n_bits(4) + 4;
             for (i = 0; i < len; i++)
                 inflate_tab_7[tab7_rearrange[i]] = get_n_bits(3);
-            ExpandTables(tab7_rearrange + len, inflate_tab_8, inflate_tab_7,
+            ExpandTables((unsigned short *)tab7_rearrange + len, inflate_tab_8, inflate_tab_7,
                 0x13);
             xdest = inflate_tab_1;
             for (i = if1_count + if2_count; i > 0;)

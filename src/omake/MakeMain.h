@@ -47,7 +47,7 @@ class MakeMain
 {
 public:
     MakeMain() : restarts(0) { }
-    int Run (int argc, char **argv, char **env);
+    int Run (int argc, char **argv);
     
 protected:
     void Dispatch(const char *data);
@@ -56,7 +56,7 @@ protected:
     void SetMakeFlags();
     void SetInternalVars();
     void SetupImplicit();
-    void LoadEnvironment(char **env);
+    void LoadEnvironment();
     void LoadCmdDefines();
     void ShowRule(RuleList *ruleList);
     void ShowDatabase();

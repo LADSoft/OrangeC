@@ -198,7 +198,7 @@ int allocmem(EDITDATA *p, int size)
     }
     else
     {
-        char *x ;
+        INTERNAL_CHAR *x ;
 #ifdef SYSALLOC
            x = VirtualAlloc(0, size, MEM_RESERVE, PAGE_NOACCESS) ;
         if (!x || !VirtualAlloc(x, (p->cd->textlen + 1) * sizeof(INTERNAL_CHAR), MEM_COMMIT, PAGE_READWRITE)) 

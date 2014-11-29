@@ -136,7 +136,7 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
         if (pj->type == PJ_FILE)
         {
             struct _propsData data;
-            SETTING *pages = calloc(sizeof(SETTING),1);
+            PROFILE *pages = calloc(sizeof(PROFILE),1);
             memset(&data, 0, sizeof(data));
             data.prototype = pages;
             SelectRules(pj, &data);

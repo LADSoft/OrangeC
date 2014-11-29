@@ -94,7 +94,7 @@ void LinkNameLogic::ParseOut(std::string spec)
 {
     top = ParseOutOr(spec);
     if (!top)
-        std::cout << "Warning: region specifier '" << spec << "' is invalid" << std::endl;
+        std::cout << "Warning: region specifier '" << spec.c_str() << "' is invalid" << std::endl;
 }
 LinkNameLogic::ParseItem *LinkNameLogic::ParseOutOr(std::string &spec)
 {

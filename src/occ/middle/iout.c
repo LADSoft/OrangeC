@@ -2220,7 +2220,7 @@ EXPRESSION *stringlit(STRING *s)
                  * in the standard...
                  */
                 for (i =0; i < s->size && i < lp->size; i++)
-                    if (wchart_cmp(lp->pointers[i], s->pointers[i]))
+                    if (wchart_cmp(lp->pointers[i]->str, s->pointers[i]->str))
                         break;
                 if (i >= s->size)
                 {

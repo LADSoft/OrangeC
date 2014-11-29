@@ -68,45 +68,36 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
     if (!cur)
     {
         outputLine = blanks + line;
-        out << outputLine << std::endl;
+        out << outputLine.c_str() << std::endl;
     }
     else
     {
         if (cur->label)
         {
-            std::stringstream xx;
-            xx << std::hex << cur->label->GetOffset()->ival ;
-            std::string ss;
-            xx >> ss;
-            if (xx.gcount() < AddressWidth *2)
-                outputLine += zeros.substr(0, AddressWidth *2 - xx.gcount());
+            std::string ss = Utils::NumberToStringHex( cur->label->GetOffset()->ival);
+            if (ss.size() < AddressWidth *2)
+                outputLine += zeros.substr(0, AddressWidth *2 - ss.size());
             outputLine += ss + std::string("  ")+ blanks.substr(0, Bytes *3 + 1) + line;
-            out << outputLine << std::endl;
+            out << outputLine.c_str() << std::endl;
         }
         else if (cur->ins->GetType() == Instruction::ALIGN)
         {
             outputLine = blanks + line;
-            out << outputLine << std::endl;
+            out << outputLine.c_str() << std::endl;
         }
         else if (cur->ins->IsLabel())
         {
-            std::stringstream xx;
-            xx << std::hex << cur->ins->GetOffset() ;
-            std::string ss;
-            xx >> ss;
-            if (xx.gcount() < AddressWidth *2)
-                outputLine += zeros.substr(0, AddressWidth *2 - xx.gcount());
+            std::string ss = Utils::NumberToStringHex(cur->ins->GetOffset());
+            if (ss.size() < AddressWidth *2)
+                outputLine += zeros.substr(0, AddressWidth *2 - ss.size());
             outputLine += ss + std::string(": ")+ blanks.substr(0, Bytes *3 + 1) + line;
-            out << outputLine << std::endl;
+            out << outputLine.c_str() << std::endl;
         }
         else
         {
-            std::stringstream xx;
-            std::string ss;
             int size = cur->ins->GetSize() / cur->ins->GetRepeat();
             unsigned char *buf = cur->ins->GetBytes();
-            xx << std::hex << cur->ins->GetOffset() ;
-            xx >> ss;
+            std::string ss = Utils::NumberToStringHex(cur->ins->GetOffset());
             if (ss.size() < AddressWidth *2)
                 outputLine += zeros.substr(0, AddressWidth *2 - ss.size());
             if (macro)
@@ -135,15 +126,12 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                             outputLine += line;
                             first = false;
                         }
-                        out << outputLine << std::endl;
+                        out << outputLine.c_str() << std::endl;
                         outputLine = blanks.substr(0, 10);
                     }
-                    std::stringstream xx;
-                    if (buf[i] < 16)
-                        xx << "0" << std::hex << (int)buf[i];
-                    else
-                        xx << std::hex << (int)buf[i];
-                    xx >> ss;
+                    ss = Utils::NumberToStringHex(buf[i]);
+                    if (ss.size() == 1)
+                        ss = std::string("0") + ss;
                     outputLine += ss + " ";
                 }
                 else
@@ -157,19 +145,16 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                             outputLine += line;
                             first = false;
                         }
-                        out << outputLine << std::endl;
+                        out << outputLine.c_str() << std::endl;
                         outputLine = blanks.substr(0, 10);
                     }
                     if (bigEndian)
                     {
                         for (int j=0; j < fsize; j++)
                         {
-                            std::stringstream xx;
-                            if (buf[i] < 16)
-                                xx << "0" << std::hex << (int)buf[i++];
-                            else
-                                xx << std::hex << (int)buf[i++];
-                            xx >> ss;
+                            ss = Utils::NumberToStringHex(buf[i]);
+                            if (ss.size() == 1)
+                                ss = std::string("0") + ss;
                             outputLine += ss;
                         }
                     }
@@ -177,12 +162,9 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                     {
                         for (int j=fsize-1; j >= 0; j--)
                         {
-                            std::stringstream xx;
-                            if (buf[i+j] < 16)
-                                xx << "0" << std::hex << (int)buf[i+j];
-                            else
-                                xx << std::hex << (int)buf[i+j];
-                            xx >> ss;
+                            ss = Utils::NumberToStringHex(buf[i]);
+                            if (ss.size() == 1)
+                                ss = std::string("0") + ss;
                             outputLine += ss;
                         }
                         i += fsize-1;
@@ -220,7 +202,7 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                     outputLine += line;
                     first = false;
                 }
-                out << outputLine << std::endl;
+                out << outputLine.c_str() << std::endl;
             }
         }
     }

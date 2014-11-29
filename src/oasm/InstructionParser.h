@@ -161,7 +161,7 @@ protected:
     int tokenPos;
     Numeric *numeric;
     struct lt {
-        bool operator ()(const std::string &left, const std::string &right)
+        bool operator () (const std::string &left, const std::string &right) const
         {
             return stricmp(left.c_str(), right.c_str()) < 0;
         }

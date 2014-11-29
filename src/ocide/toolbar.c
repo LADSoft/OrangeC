@@ -38,12 +38,17 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 #define STRICT
+#include <string.h>
+#include <limits.h>
 #include <windows.h>
 #include <commctrl.h>
+#include <commdlg.h>
+#include <richedit.h>
 #include <stdio.h>
+
+#include "header.h"
 #include <float.h>
 #include "helpid.h"
-#include "header.h"
 //#include <dir.h>
 #include "wargs.h"
 #include "splash.h"

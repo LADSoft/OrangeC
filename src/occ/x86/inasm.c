@@ -682,7 +682,7 @@ static int getscale(int *scale)
         {
             if ((MATCHTYPE(lex, l_i) || MATCHTYPE(lex, l_ui)) && ! *scale)
             {
-                switch(lex->value.i)
+                switch((int)lex->value.i)
                 {
                     case 1:
                         *scale = 0;

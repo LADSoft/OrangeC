@@ -57,6 +57,7 @@ public:
     void Clear() { seconds = 0; ms = 0; }
 };
 struct EnvEntry {
+    EnvEntry() {}
     EnvEntry(const std::string Name, const std::string Value) :
         name(Name), value(Value) { }
     std::string name;

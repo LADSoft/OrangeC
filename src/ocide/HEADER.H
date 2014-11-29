@@ -421,7 +421,7 @@ struct tagchangeln
 };
 struct tagfile
 {
-    char *next, *prev;
+    struct tagfile *next, *prev;
     char name[256];
     struct tag *tagArray[TAG_MAX];
     struct tagchangeln *changedLines;
@@ -659,6 +659,56 @@ typedef struct hashTable
 #define strdup(s) my_strdup(s)
 #endif
 
+#ifdef OPENWATCOM
+#define LWA_COLORKEY 1
+#define WS_EX_LAYERED 0x80000
+#define WS_EX_NOACTIVATE 0x8000000
+#define WM_NCMOUSEHOVER 0x2a0
+#define WM_NCMOUSELEAVE 0x2a2
+#define OFN_DONTADDTORECENT (33554432)
+#define ASFW_ANY ((DWORD)-1)
+#define BTNS_SEP TBSTYLE_SEP
+#define TTS_BALLOON 0x40
+#define LVS_EX_LABELTIP 0x4000
+#define FR_PRIVATE 0x10
+#define MIIM_BITMAP 0x80
+#define MIIM_STRING 0x40
+typedef struct tagMENUITEMINFOAxxx {
+  UINT    cbSize;
+  UINT    fMask;
+  UINT    fType;
+  UINT    fState;
+  UINT    wID;
+  HMENU   hSubMenu;
+  HBITMAP hbmpChecked;
+  HBITMAP hbmpUnchecked;
+  DWORD   dwItemData;
+  LPSTR   dwTypeData;
+  UINT    cch;
+  HBITMAP  hbmpItem;
+} MENUITEMINFOAxxx, *LPMENUITEMINFOAxxx;
+#define MENUITEMINFO MENUITEMINFOAxxx
+#define LPMENUITEMINFO LPMENUITEMINFOAxxx
+typedef struct tagNMTOOLBARAxxx {
+    NMHDR   hdr;
+    int     iItem;
+    TBBUTTON tbButton;
+    int     cchText;
+    LPSTR   pszText;
+    RECT    rcButton;
+} NMTOOLBARAxxx, * LPNMTOOLBARAxxx;
+#define NMTOOLBAR NMTOOLBARAxxx
+#define LPNMTOOLBAR LPNMTOOLBARAxxx
+int  WINAPI AddFontResourceExA( LPCSTR, DWORD, PVOID);
+#define AddFontResourceEx AddFontResourceExA
+BOOL WINAPI SetLayeredWindowAttributes(
+    HWND hwnd,
+    COLORREF crKey,
+    BYTE bAlpha,
+    DWORD dwFlags);
+BOOL WINAPI AllowSetForegroundWindow(
+    DWORD dwProcessId);
+#endif
 #ifdef GNUC
 #pragma pack(push,1)
 typedef struct tagTVKEYDOWN {

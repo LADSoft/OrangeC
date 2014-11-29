@@ -1316,5 +1316,4 @@ void LookupEnumName(DEBUG_INFO *dbg_info, int type, char *name, int ord)
         }
         sqlite3_finalize(handle);
     }
-    return rv;
 }

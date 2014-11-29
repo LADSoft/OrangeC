@@ -37,13 +37,13 @@
     contact information:
         email: TouchStone222@runbox.com <David Lindauer>
 */
+#include <fstream>
 #include "LEObject.h"
 #include "ObjFile.h"
 #include "ObjSection.h"
 #include "ObjMemory.h"
 #include "ObjExpression.h"
 #include "LEHeader.h"
-#include <fstream>
 #include <string.h>
 ObjFile *LEObject::file;
 

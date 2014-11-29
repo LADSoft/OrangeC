@@ -349,7 +349,7 @@ void HintEnum(DEBUG_INFO *dbg_info, VARINFO *info, char *buf, int toenum, int on
     int v;
     name[0] = 0;
 //	info->size = DeclType(dbg_info, info);
-    HintBasicValue(info, &signedtype, &v);
+    HintBasicValue(info, &signedtype, &name);
     LookupEnumName(dbg_info, info->type, name, v);
     if (toenum)
         sprintf(buf, "ENUM: %s(%u)", name, v);

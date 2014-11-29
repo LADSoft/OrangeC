@@ -2068,7 +2068,7 @@ static SYMBOL *getUserConversion(int flags,
                                     next = (SYMBOL *) args->next->p;
                                 if (!next || next->init)
                                 {
-                                    getSingleConversion(first->tp, tpa, expa, &n2, seq3, candidate, &exp, TRUE);
+                                    getSingleConversion(first->tp, tpa, expa, &n2, seq3, candidate, NULL, TRUE);
                                     if (n2 && seq3[n2-1] == CV_IDENTITY)
                                     {
                                         n2--;
@@ -2543,6 +2543,10 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 getPointerConversion(tpp, tpa, expa, n, seq);
             }
             else if (isint(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr))
+            {
+                seq[(*n)++] = CV_POINTERCONVERSION;
+            }
+            else if (isvoidptr(tpp) && (isfunction(tpa) || tpa->type == bt_aggregate))
             {
                 seq[(*n)++] = CV_POINTERCONVERSION;
             }
@@ -3305,7 +3309,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 spFilterList = (SYMBOL **)Alloc(sizeof(SYMBOL *) * n);
                 icsList = (enum e_cvsrn **)Alloc(sizeof(enum e_cvsrn *) * n);
                 lenList = (int **)Alloc(sizeof(int *) * n);
-                funcList = (int **)Alloc(sizeof(SYMBOL **) * n);
+                funcList = (struct sym ***)Alloc(sizeof(SYMBOL **) * n);
                     
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
                 if (atp || args->ascall)

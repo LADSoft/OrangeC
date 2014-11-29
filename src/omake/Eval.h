@@ -72,7 +72,7 @@ public:
     static void SetLine(int Lineno) { lineno = Lineno; }
     static std::string ExtractFirst(std::string &value, const std::string &seps);	
     static void StripLeadingSpaces(std::string &value);
-    std::string InternalWarning(const std::string &Warning)
+    void InternalWarning(const std::string &Warning)
     {
         if (internalWarnings)
             warning(Warning);

@@ -41,7 +41,6 @@ INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.c \
-    sqlite3.c \
     ccif.c \
     db.c \
     piper.c \
@@ -76,7 +75,7 @@ C_DEPENDENCIES= \
     template.c \
     types.c \
     unmangle.c
-#LIB_DEPENDENCIES=util.lib objlib.lib
+LIB_DEPENDENCIES=sqlite3
 #determine if we can ignore the banner for a batch compile
 WIN32 = WIN32
 #use long long type
@@ -86,7 +85,7 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32) PARSER_ONLY
 SOURCE = ..\parse;..\preproc;..\middle
 
 BACKEND_INCLUDE_PATH=.
-SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\sqlite3
+SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
 $(info $(SRCPATH))
 BACKEND_FILES = config.c
 

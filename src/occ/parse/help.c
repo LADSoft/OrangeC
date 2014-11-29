@@ -463,7 +463,7 @@ LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems)
         }
         if (elems)
             *elems += ((SLCHAR *)lex->value.s.w)->count;
-        list[pos++] = lex->value.s.w;
+        list[pos++] = (SLCHAR *)lex->value.s.w;
         lex = getsym();
     }
     string = (STRING *)Alloc(sizeof(STRING));

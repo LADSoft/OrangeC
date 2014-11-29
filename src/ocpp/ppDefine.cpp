@@ -46,8 +46,8 @@
 #include "Errors.h"
 #include "SymbolTable.h"
 #include "UTF8.h"
+#include "Utils.h"
 #include <time.h>
-#include <sstream>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -191,10 +191,7 @@ void ppDefine::DoAssign(std::string &line, bool caseInsensitive)
         failed = line.find_first_not_of(" \t\v\r\n") != std::string::npos;
         if (!failed)
         {
-            std::stringstream aa;
-            aa << (int)n;
-            std::string value;
-            aa >> value;
+            std::string value = Utils::NumberToString((int)n);
             Define(name, value, NULL, false, false, false, caseInsensitive);
         }
     }
@@ -323,9 +320,7 @@ int ppDefine::LookupDefault(std::string &macro, int begin, int end, const std::s
         insert = include->GetFile();
     else if (name == "__LINE__")
     {
-        std::stringstream str;
-        str << include->GetLineNo();
-        str >> insert;
+        insert = Utils::NumberToString(include->GetLineNo());
     }
     else if (name == "__DATE__")
         insert = date;

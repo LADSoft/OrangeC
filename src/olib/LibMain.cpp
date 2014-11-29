@@ -158,7 +158,7 @@ int LibMain::Run(int argc, char **argv)
     if (librarian.IsOpen())
         if (!librarian.LoadLibrary())
         {
-            std::cout << outputFile << " is not a library" << std::endl;
+            std::cout << outputFile.c_str() << " is not a library" << std::endl;
             return 1;
         }
     for (int i= 2; i < argc; i++)

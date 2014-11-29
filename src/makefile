@@ -37,6 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 
 ifndef _TREEROOT
+# by default this makefile just switches omake to 'TREE' mode
+# That will load TREETOP.MAK which will eventually load CONFIG.MAK to 
+# load compiler scripts
 all: 
 	@$(MAKE) /T
 
@@ -47,7 +50,7 @@ clean:
 	@$(MAKE) /T clean
 
 else
-
+# when called from TREETOP.MAK do the below
 copydir.exe: copydir.c
 	$(CC) $^
 

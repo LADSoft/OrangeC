@@ -264,27 +264,6 @@ public:
         { sfile = fil; factory = Factory; file = NULL; return HandleRead(ParseType); }
     virtual std::string GetErrorQualifier() { return std::string ("in line ") + Utils::NumberToString(lineno); }
     
-protected:
-    class BadCS : public std::domain_error
-    {
-        public:
-            BadCS() : std::domain_error("Bad Checksum") {}
-            virtual ~BadCS() throw() { } ;
-        
-    } ;
-    class SyntaxError : public std::domain_error
-    {
-        public:
-            SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
-                                                         Utils::NumberToString(lineno)),
-                                        lineNo(lineno) {}
-            virtual ~SyntaxError() throw() { } ;
-            
-            int GetLineNo() const { return lineNo; }
-        private:
-             int lineNo;
-        
-    } ;
     struct ParseDataLT {
         bool operator () (const char *left, const char *right) const
         {
@@ -310,6 +289,27 @@ protected:
     private:
         const char *name;
         ParseFunctionType func;
+    } ;
+protected:
+    class BadCS : public std::domain_error
+    {
+        public:
+            BadCS() : std::domain_error("Bad Checksum") {}
+            virtual ~BadCS() throw() { } ;
+        
+    } ;
+    class SyntaxError : public std::domain_error
+    {
+        public:
+            SyntaxError(int lineno) : std::domain_error(std::string("Syntax Error in line ") + 
+                                                         Utils::NumberToString(lineno)),
+                                        lineNo(lineno) {}
+            virtual ~SyntaxError() throw() { } ;
+            
+            int GetLineNo() const { return lineNo; }
+        private:
+             int lineNo;
+        
     } ;
     friend class ObjIeeeAscii::ParseData;
     bool HandleWrite();

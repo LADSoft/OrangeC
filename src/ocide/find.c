@@ -1279,7 +1279,7 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
     char *buf = currentBuffer;
     BOOL replaced = FALSE;
     BOOL needsUpdate = FALSE;
-    int offset = 0;
+    int offset = 0, lastoffset = 0;
     int vis;
     int linepos;
     CHARRANGE lastReplacePos;
@@ -1292,6 +1292,7 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
             {
                 if (needsUpdate)
                 {
+					offset = lastoffset;
                     if (lastReplacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
                         lastReplacePos.cpMin = replacePos.cpMax = vis = offset = 0;
                     lastReplacePos.cpMin += offset;
@@ -1302,16 +1303,21 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
                     SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
                 }
                 vis  = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
-                linepos = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, replacePos.cpMin, 0);
-                vis = linepos - vis;
                 lastPtr = ptr;
-                lastReplacePos = replacePos;
+				SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (LPARAM)&lastReplacePos);
+                linepos = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, lastReplacePos.cpMin, 0);
+                vis = linepos - vis;
                 needsUpdate = TRUE;
             }
             offset = 0;
+			lastoffset = 0;
             do 
             {
+				BOOL doupdate = FALSE;
+				doupdate = replacePos.cpMin < lastReplacePos.cpMin;
                 replaced = ReplaceNextInDocument(ptr, buf, &offset, &replacePos, flags, search, replace, context);
+				if (doupdate)
+					lastoffset = offset;
             }
             while ((flags & F_REPLACEALL) && replaced && !canceled);
             if (replaced && !(flags & F_REPLACEALL))
@@ -1331,6 +1337,7 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
              (buf = GetNextFindDocument(&replacePos, mode, &ptr, specifiedPath, specifiedExtension, flags)));
     if (needsUpdate)
     {
+		offset = lastoffset;
         if (replacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
             replacePos.cpMin = replacePos.cpMax = vis = offset = 0;
         replacePos.cpMin += offset;

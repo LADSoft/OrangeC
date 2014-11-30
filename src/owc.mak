@@ -41,6 +41,7 @@ ifeq "$(COMPILER)" "OWC"
 COMPILER_PATH := c:\watcom
 OBJ_IND_PATH := watcom
 
+PATH:=$(COMPILERPATH)\bin;$(PATH)
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.obj))
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.obj))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.obj))

@@ -2179,9 +2179,9 @@ void gen_labdifref(int n1, int n2)
     }
 }
 
-int wchart_cmp(LCHAR *left, LCHAR *right)
+int wchart_cmp(LCHAR *left, LCHAR *right, int len)
 {
-    while (*left && *right)
+    while (len--)
     {
         if (*left != *right)
         {
@@ -2192,11 +2192,7 @@ int wchart_cmp(LCHAR *left, LCHAR *right)
         }
         left++, right++;
     }
-    if (*left)
-        return 1;
-    else if (*right)
-        return -1;
-    else return 0;
+    return 0;
 }
 /*-------------------------------------------------------------------------*/
 
@@ -2220,8 +2216,11 @@ EXPRESSION *stringlit(STRING *s)
                  * in the standard...
                  */
                 for (i =0; i < s->size && i < lp->size; i++)
-                    if (wchart_cmp(lp->pointers[i]->str, s->pointers[i]->str))
-                        break;
+                {
+                    if (lp->pointers[i]->count != s->pointers[i]->count || 
+                        wchart_cmp(lp->pointers[i]->str, s->pointers[i]->str, s->pointers[i]->count))
+                            break;
+                }
                 if (i >= s->size)
                 {
                     rv = intNode(en_labcon, lp->label);

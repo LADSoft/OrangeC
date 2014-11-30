@@ -247,7 +247,7 @@ static void CacheLine(WCHAR *lptr, char *xbuf)
 {
     if (inSymFile)
     {
-        char *p = strstr(xbuf, "#define");
+        char *p = strchr(xbuf, '#');
         if (p)
             return;
     }

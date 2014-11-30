@@ -39,7 +39,7 @@ NAME=oasm
 MAIN_FILE=AsmMain.cpp
 INCLUDES=..\util ..\ocpp ..\objlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=ocpp objlib util
+LIB_DEPENDENCIES=ocpplib objlib util
 DEFINES=L_INT=__int64
 
 DISTRIBUTE: copyexe

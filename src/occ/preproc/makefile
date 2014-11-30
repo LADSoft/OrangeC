@@ -35,8 +35,7 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=ocpp2
-DISTNAME=ocpp
+NAME=ocpp
 MAIN_FILE=ppmain.c
 INCLUDES=. ..\parse ..\middle
 C_DEPENDENCIES=$(wildcard *.c)

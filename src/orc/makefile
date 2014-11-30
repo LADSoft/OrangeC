@@ -39,7 +39,7 @@ NAME=orc
 MAIN_FILE=rcMain.cpp
 INCLUDES=..\util ..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=ocpp util
+LIB_DEPENDENCIES=ocpplib util
 DEFINES=L_INT=__int64
 
 DISTRIBUTE: copyexe

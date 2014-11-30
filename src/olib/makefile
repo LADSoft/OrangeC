@@ -39,6 +39,6 @@ NAME=olib
 MAIN_FILE=LibMain.cpp
 INCLUDES=..\util ..\objlib ..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=ocpp objlib util
+LIB_DEPENDENCIES=ocpplib objlib util
 
 DISTRIBUTE: copyexe

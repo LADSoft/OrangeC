@@ -35,7 +35,8 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=ocpp
+NAME=ocpplib
+DISTNAME=ocpp
 MAIN_FILE=ppMain.cpp
 INCLUDES=..\util
 CPP_DEPENDENCIES=$(wildcard *.cpp)

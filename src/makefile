@@ -40,6 +40,9 @@ ifndef _TREEROOT
 # by default this makefile just switches omake to 'TREE' mode
 # That will load TREETOP.MAK which will eventually load CONFIG.MAK to 
 # load compiler scripts
+#
+# beware - I haven't got dependency checking for include files implemented yet
+#
 all: 
 	@$(MAKE) /T
 

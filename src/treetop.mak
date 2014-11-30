@@ -232,6 +232,13 @@ innerFiles:
 files: innerFiles compile link
 endef
 
+define cleandef
+clean:
+	-del /Q $(_LIBDIR)
+	-rmdir $(_LIBDIR)
+	$(foreach dir, $(DIRS), $(DOCLEAN))
+endef
+
 else
 define filesdef
 ifdef LIBRARY
@@ -246,6 +253,10 @@ endif
 cleanDISTRIBUTE:
 
 endef
+define cleandef
+clean: del rmdir
+	$(foreach dir, $(DIRS), $(DOCLEAN))
+endef
 endif
 define distdef
 
@@ -255,10 +266,6 @@ innerDISTRIBUTE:
 distribute: cleanDISTRIBUTE innerDISTRIBUTE DISTRIBUTE   
 endef
 
-define cleandef
-clean: del rmdir
-	$(foreach dir, $(DIRS), $(DOCLEAN))
-endef
 
 $(eval $(filesdef))
 $(eval $(distdef))

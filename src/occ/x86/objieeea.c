@@ -118,6 +118,7 @@ struct _type_hash {
 void dbginit(void) 
 { 
     dbgTypeDefs = NULL;
+    memset(typeHashTab, 0, sizeof(typeHashTab));
 }
 void omfInit(void)
 {

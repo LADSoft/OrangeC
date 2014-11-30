@@ -1279,7 +1279,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                     else
                     {
                         assignmentUsages(list->exp, FALSE);
-join:                     
+join:
                         if (!comparetypes(list->tp, decl->tp, FALSE))
                         {
                             if (basetype(decl->tp)->type != bt_memberptr)
@@ -4959,14 +4959,33 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
                     *exp = exprNode(en_mp_as_bool, *exp, NULL);
                     (*exp)->size = (*tp)->size;
                 }
+                if (ispointer(tph) || ispointer(tpc))
+                    if (!comparetypes(tph, tpc, FALSE))
+                        if (!isconstzero(tph,eph) && !isconstzero(tpc, epc))
+                            error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                if (isfunction(tph) || isfunction(tpc))
+                    if (!comparetypes(tph, tpc, TRUE))
+                        if (!isconstzero(tph,eph) && !isconstzero(tpc, epc))
+                            error(ERR_NONPORTABLE_POINTER_CONVERSION);
+                if (ispointer(tph) || isfunction(tph) || ispointer(tpc) || isfunction(tpc))
+                    if (!comparetypes(tpc, tph, TRUE))
                 if (isvoidptr(tpc) && ispointer(tph) || isvoidptr(tph) &&ispointer(tpc))
                     tpc = tph = &stdpointer;
-                else if (!((ispointer(tph) || isfunction(tph)) && isconstzero(tpc, epc)) && 
-                         !((ispointer(tpc) || isfunction(tpc)) && isconstzero(tph,eph)))
+                else if (!((ispointer(tph) || isfunction(tph))) && 
+                         !((ispointer(tpc) || isfunction(tpc))))
+                {
                     if (!comparetypes(tpc, tph, FALSE))
                         if (!(isarithmetic(tpc) && isarithmetic(tph)))
                             errortype(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
-                if (!isvoid(tpc))
+                }
+                else if ((isfunction(tph) || isfunction(tpc)) && !comparetypes(tpc, tph, TRUE))
+                    if (!isarithmetic(tph) && !isarithmetic(tpc)) 
+                        errortype(ERR_TWO_OPERANDS_SAME_TYPE, tpc, tph);
+                if (isfunction(tph))
+                    *tp = tph;
+                else if (isfunction(tpc))
+                    *tp = tpc;
+                else if (!isvoid(tpc))
                     *tp = destSize(tpc,tph,&epc,&eph, FALSE, NULL);
                 else 
                     *tp = tpc;

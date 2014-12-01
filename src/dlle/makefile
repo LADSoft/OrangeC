@@ -42,5 +42,8 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util objlib
 EXCLUDE=ledump
 
+redirect:
+	@$(MAKE) /T
+
 DISTRIBUTE: copyexe
 	copy *.spc $(DISTBIN)

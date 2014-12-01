@@ -42,4 +42,7 @@ C_DEPENDENCIES=$(wildcard *.c)
 #LIB_DEPENDENCIES=util.lib objlib.lib
 DEFINES=CPREPROCESSOR USE_LONGLONG
 
+redirect:
+	@$(MAKE) /T
+
 DISTRIBUTE: copyexe

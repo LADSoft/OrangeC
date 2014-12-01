@@ -41,4 +41,7 @@ INCLUDES=..\util ..\objlib ..\ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=ocpplib objlib util
 
+redirect:
+	@$(MAKE) /T
+
 DISTRIBUTE: copyexe

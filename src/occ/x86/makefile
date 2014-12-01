@@ -110,5 +110,8 @@ BACKEND_INCLUDE_PATH=.
 
 vpath %.c $(SRCPATH)
 
+redirect:
+	@$(MAKE) /T
+
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\occ.cfg

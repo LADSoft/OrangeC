@@ -43,5 +43,8 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 DEFINES=L_INT=__int64
 
+redirect:
+	@$(MAKE) /T
+
 #DISTRIBUTE: copyexe
 DISTRIBUTE:

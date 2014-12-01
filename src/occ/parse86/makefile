@@ -92,4 +92,7 @@ BACKEND_FILES = config.c
 
 vpath %.c $(SRCPATH)
 
+redirect:
+	@$(MAKE) /T
+
 DISTRIBUTE: copyexe

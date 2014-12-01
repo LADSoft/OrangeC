@@ -42,4 +42,7 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 EXCLUDE=ObjIO test2
 
+redirect:
+	@$(MAKE) /T
+
 DISTRIBUTE:

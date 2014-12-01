@@ -1318,6 +1318,8 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 if (ptr->dwName[0] && (!newInfo || !newInfo->newFile))
                     LoadFile(ptr->self, ptr, FALSE);
+                else
+                    ptr->dosStyle = TRUE;
                 if (ptr->dwLineNo !=  - 1)
                 {
                     PostMessage(ptr->self, WM_COMMAND, IDM_SETLINE, ptr->dwLineNo);

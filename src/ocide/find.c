@@ -577,6 +577,23 @@ static BOOL matchesExt(char *name, char *extensions)
         } 
         
     }
+    else if (!p)
+    {
+        char buf[MAX_PATH];
+        while (*extensions)
+        {
+            char *q = buf;
+            while (*extensions && *extensions != ';')
+            {
+                *q++ = *extensions++;
+            }
+            *q = 0;
+            if (*extensions)
+                extensions++;
+            if (!strcmp(buf+1, ".*"))
+                return TRUE;
+        } 
+    }
     return FALSE;
 }
 static int sortfunc(const void *Left, const void *Right)

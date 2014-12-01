@@ -470,10 +470,8 @@ void LoadFirstWorkArea(void)
                             fclose(fil);
                         }
                         info.newFile = TRUE;
-                        
                         CreateDrawWindow(&info, TRUE);
-                    }
-                
+                    }                
             }
         }
     } else

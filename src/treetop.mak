@@ -181,6 +181,8 @@ cleanDISTRIBUTE:
 	-del /Q $(DISTINC)\sys >> $(NULLDEV)
 	-mkdir $(DISTINCWIN) >> $(NULLDEV)
 	-del /Q $(DISTINCWIN) >> $(NULLDEV)
+	-mkdir $(DISTINC)\stl >> $(NULLDEV)
+	-del /Q $(DISTINC)\stl >> $(NULLDEV)
 	-mkdir $(DISTLIB) >> $(NULLDEV)
 	-del /Q $(DISTLIB) >> $(NULLDEV)
 	-mkdir $(DISTSTARTUP) >> $(NULLDEV)
@@ -261,9 +263,12 @@ endif
 define distdef
 
 
-innerDISTRIBUTE:
+exeDISTRIBUTE:
+ifndef BUILDENV
 	$(foreach dir, $(DIRS), $(DODISTRIBUTE))
-distribute: cleanDISTRIBUTE innerDISTRIBUTE DISTRIBUTE   
+endif
+
+distribute: cleanDISTRIBUTE exeDISTRIBUTE DISTRIBUTE   
 endef
 
 

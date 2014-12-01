@@ -71,7 +71,7 @@ ASM=nasm
 ASMFLAGS = -fobj
 
 RC=$(DISTROOT)\src\orc
-RCINCLUDE=\orangec\include
+RCINCLUDE=$(DISTROOT)\include
 RCFLAGS = -r
 
 ifneq "$(INCLUDES)" ""

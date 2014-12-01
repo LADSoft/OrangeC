@@ -43,14 +43,26 @@ ifndef _TREEROOT
 #
 # beware - I haven't got dependency checking for include files implemented yet
 #
-all: 
+tools: 
 	@$(MAKE) /T
 
 distribute:
 	@$(MAKE) /T distribute
 
+fullbuild: buildenv tools copyexes library distribute
+
 clean:  
 	@$(MAKE) /T clean
+
+library:
+	@$(MAKE) /Cclibs
+
+copyexes:
+	@$(MAKE) /T exeDISTRIBUTE
+
+buildenv:
+	@$(MAKE) /T -DBUILDENV distribute
+	-copy orc.exe ..\bin
 
 else
 # when called from TREETOP.MAK do the below

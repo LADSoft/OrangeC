@@ -6108,6 +6108,14 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 }
                 else
                 {
+                    if (wParam < 0)
+                        wParam = 0;
+                    if (wParam > p->cd->textlen)
+                        wParam = p->cd->textlen;
+                    if (lParam < 0)
+                        lParam = 0;
+                    if (lParam > p->cd->textlen)
+                        lParam = p->cd->textlen;
                     p->selstartcharpos = wParam;
                     p->selendcharpos = lParam;
                 }

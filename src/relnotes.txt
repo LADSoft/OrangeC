@@ -59,6 +59,7 @@ version 5.20.1:
     ocide:  don't close code completion window so gratuitously, but close if a 
             non-symbol character is typed
     ocide:  enable find-next immediately after opening ide
+    ocide:  enable finds in files without an extension
     ocide:  editor:  in typeover mode, typing at end of line will insert 
             characters on line instead of typing over the end of line character
     ocide:  resolve disparaties between find and find in files

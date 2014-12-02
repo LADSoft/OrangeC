@@ -1,4 +1,8 @@
-/* this program does huffman encoding and decoding, with the symbol type being BYTE */
+/* this program does huffman encoding and decoding, with the symbol type being BYTE.
+ * the algorithms are the basic algorithms as given on e.g. wikipedia, but for simplicity
+ * it stores the file length in the output file instead of having a 257th 'end of file'
+ * symbol.   Although it wouldn't be hard to add the eof symbol if desired...
+ */
 
 #include "huff.h"
 static HUFF freqs[256];

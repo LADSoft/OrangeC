@@ -480,7 +480,10 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     {
         char *name ;
         IncGlobalFlag();
-        name = litlate(lex->value.s.a);
+        if (ISID(lex))
+            name = litlate(lex->value.s.a);
+        else
+            name = litlate("__unknown");
         sp = Alloc(sizeof(SYMBOL ));
         sp->name = name;
         sp->used = TRUE;

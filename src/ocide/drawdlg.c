@@ -2496,9 +2496,10 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data)
         case 6:
         case 7:
         case 9:
-        case 13:
+        case 14:
         case 15:
         case 16:
+        case 17:
             rv = PropGetHWNDNumeric(lv);
             break;
         default:

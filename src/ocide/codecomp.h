@@ -61,7 +61,7 @@ typedef struct
     } *data;
 } CCSTRUCTDATA;
 void CodeCompInit(void);
-int DoParse(char *name);
+void DoParse(char *name);
 void ccLineChange(char *name, int drawnLineno, int delta);
 void deleteFileData(char *name);
 int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags);

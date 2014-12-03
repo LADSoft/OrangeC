@@ -57,6 +57,8 @@
 #define IL_VSCROLL 12
 #define IL_ETCHED 13
 
+struct ctlData;
+
 struct keypair
 {
     struct keypair *next;

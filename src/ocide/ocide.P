@@ -96,7 +96,7 @@ void BuildRulesCustomize(void);
                              /* Codecomp.c */
 
 void ReloadLineData(char *name);
-int DoParse(char *name);
+void DoParse(char *name);
 void deleteFileData(char *name);
 char ** ccGetMatchingNames(char *name, char **names, int *size, int *max);
 int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags);

@@ -41,6 +41,7 @@
 # MINGW - mingw32 compiler
 # OWC   - open watcom compiler
 # DMC   - digital mars compiler
+# CLANG - clang compiler, using MS linker
 #
 ifndef COMPILER
 COMPILER := BCC32
@@ -49,3 +50,4 @@ endif
 include $(TREETOP)\bcc32.mak
 include $(TREETOP)\mingw.mak
 include $(TREETOP)\owc.mak
+include $(TREETOP)\clang.mak

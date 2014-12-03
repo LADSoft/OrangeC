@@ -66,7 +66,7 @@ public:
         Separator = 2048,
         Help = 16384
     };
-    MenuItem() : type(0), state(0), id(0), popup(NULL), helpIndex(0) { }
+    MenuItem() : type(0), state(0), id(0), helpIndex(0) { }
     virtual ~MenuItem();
     void WriteRes(ResFile &resFile, bool ex, bool last);
     static void ReadRC(RCFile &rcFile, MenuItemList &list, bool ex);

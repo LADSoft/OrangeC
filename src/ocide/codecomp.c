@@ -316,7 +316,7 @@ static BOOL changed(char *name)
     }
     return TRUE;
 }
-int DoParse(char *name)
+void DoParse(char *name)
 {
     if (vacuuming)
         return;

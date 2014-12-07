@@ -1685,6 +1685,8 @@ void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
                         aps->length = ISZ_UINT;
                 }
                 break;
+            default:
+                break;
         }
         if (op == op_fwait)
         {
@@ -1710,6 +1712,8 @@ void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx)
                 case op_popfd:
                     outop("popf");
                     return ;
+                default:
+                    break;
             }
         }
 
@@ -2047,6 +2051,7 @@ void oa_putamode(AMODE *ap)
                 if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
                     bePrintf( "OFFSET ");
                 else if (!nosize)
+                {
                     if (ap->length == -ISZ_UCHAR || ap->length == ISZ_UCHAR)
                     {
                         bePrintf("BYTE ");
@@ -2059,6 +2064,7 @@ void oa_putamode(AMODE *ap)
                     {
                         bePrintf( "DWORD ");
                     }
+                }
             }
             else if ((prm_assembler == pa_nasm) && addsize)
                 pointersize(ap->length);
@@ -2172,8 +2178,8 @@ void oa_put_code(OCODE *cd)
         apd->mode != am_dreg));
     putop(op, aps, apd, cd->noopt);
     if ((prm_assembler == pa_nasm  || prm_assembler == pa_fasm)
-        && ((op >= op_ja && op <= op_jns && op != op_jecxz) || op ==
-        op_jmp && aps->mode == am_immed && !apd))
+        && ((op >= op_ja && op <= op_jns && op != op_jecxz) || (op ==
+        op_jmp && aps->mode == am_immed && !apd)))
     {
         if (cd->branched & BR_SHORT)
             bePrintf( "\tSHORT");
@@ -2238,14 +2244,16 @@ void oa_gen_strlab(SYMBOL *sp)
     char buf[512];
     beDecorateSymName(buf, sp);
     if (cparams.prm_asmfile)
-    if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
     {
-        newlabel = TRUE;
-        bePrintf( "\n%s", buf);
-        oa_outcol = strlen(buf) + 1;
+        if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
+        {
+            newlabel = TRUE;
+            bePrintf( "\n%s", buf);
+            oa_outcol = strlen(buf) + 1;
+        }
+        else
+            bePrintf( "%s:\n", buf);
     }
-    else
-        bePrintf( "%s:\n", buf);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2360,7 +2368,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
 }
 /*-------------------------------------------------------------------------*/
 
-int oa_genstring(LCHAR *str, int len)
+void oa_genstring(LCHAR *str, int len)
 /*
  * Generate a string literal
  */
@@ -2370,7 +2378,7 @@ int oa_genstring(LCHAR *str, int len)
     {
         int nlen = len;
         while (nlen--)
-            if (isgraph(*str) && *str != '\'' && *str != '\"' || *str == ' ')
+            if ((isgraph(*str) && *str != '\'' && *str != '\"') || *str == ' ')
             {	
                 if (!instring)
                 {
@@ -2394,7 +2402,6 @@ int oa_genstring(LCHAR *str, int len)
     }
     else
         outcode_genstring(str, len);
-    return len;
 }
 
 /*-------------------------------------------------------------------------*/

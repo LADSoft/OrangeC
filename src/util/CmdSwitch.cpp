@@ -230,12 +230,12 @@ char * CmdSwitchFile::GetStr(char *data)
         return data;
     if (*data == '"')
         quote= true, data++;
-    while (*data && (quote && *data != '"' || !quote && !isspace(*data)))
+    while (*data && ((quote && *data != '"') || (!quote && !isspace(*data))))
         *p++ = *data++;
     *p = 0;
     if (quote && *data)
         data ++;
-    while (p = strstr(buf, "%"))
+    while ((p = strstr(buf, "%")))
     {
         char *q = strchr(p+1, '%');
         if (q)

@@ -237,6 +237,8 @@ void ObjIeeeAscii::RenderType(ObjType *Type)
             RenderString(",T" + GetTypeIndex(Type->GetIndexType()));
             endl();
             break;
+        default:
+            break;
     }
 }
 void ObjIeeeAscii::RenderSymbol(ObjSymbol *Symbol)
@@ -388,7 +390,7 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager *Memory)
          itmem != Memory->MemoryEnd(); ++itmem)
     {
         ObjMemory *memory = (*itmem);
-        if (memory->HasDebugTags() && GetDebugInfoFlag()
+        if ((memory->HasDebugTags() && GetDebugInfoFlag())
             || memory->GetFixup())
         {
             if (n != 2)
@@ -535,6 +537,8 @@ void ObjIeeeAscii::RenderExpression(ObjExpression *Expression)
             break;
         case ObjExpression::ePC:
             RenderCstr("P");
+            break;
+        default:
             break;
     }
 }

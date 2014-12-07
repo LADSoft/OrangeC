@@ -60,7 +60,7 @@ static SYMBOL *inlinesym_list[MAX_INLINE_NESTING];
 #undef MAX_INLINE_NESTING
 #define MAX_INLINE_NESTING 3
 
-void iinlineInit()
+void iinlineInit(void)
 {
     inlinesym_count = 0;
 }
@@ -199,7 +199,7 @@ static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            sym->inlineFunc.stmt = list[cnt++];
+            sym->inlineFunc.stmt = (STATEMENT *)list[cnt++];
             hr = hr->next;
         }
     }
@@ -317,7 +317,7 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
     hr = basetype(f->sp->tp)->syms->table[0];
     while (hr)
     {
-        if (isstructured((SYMBOL *)hr->p))
+        if (isstructured(((SYMBOL *)hr->p)->tp))
             return NULL;
         hr = hr->next;
     }

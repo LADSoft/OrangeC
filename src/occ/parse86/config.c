@@ -78,11 +78,11 @@ static int parse_param(char mode, char *string);
 static CMDLIST args[] = 
 {
     {
-        'W', ARG_CONCATSTRING, parse_param
+        'W', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
     }
     ,
     {
-        'P', ARG_CONCATSTRING, parse_param
+        'P', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
     }
     
 } ;
@@ -183,7 +183,7 @@ static ARCH_SIZING sizes = {
     8, /*char a_farptr;*/
     2, /*char a_farseg;*/
     8, /*char a_memberptr;    */
-    0, /* char a_struct;  /* alignment only */
+    0, /* char a_struct; */ /* alignment only */
     4, /*char a_float;*/
     8, /*char a_double;*/
     10, /*char a_longdouble;*/
@@ -380,7 +380,7 @@ static int parse_param(char select, char *string)
     }
     return 0;
 }
-static int parse_codegen(int mode, char *string)
+static int parse_codegen(char mode, char *string)
 {
     switch (string[0])
     {

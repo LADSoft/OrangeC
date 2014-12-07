@@ -48,12 +48,22 @@
 #define BITMAP_SIG 0x4d42 // BM
 static const int SKIP = 14;
 
+Bitmap::~Bitmap() 
+{  
+    delete data; 
+}
+
 void Bitmap::WriteRes(ResFile &resFile) 
 { 
     Resource::WriteRes(resFile); 
     if (data) 
         data->WriteRes(resFile); 
     resFile.Release(); 
+}
+void Bitmap::SetData(ResourceData *rdata) {
+
+        delete data;
+    data = rdata;
 }
 void Bitmap::ReadRC(RCFile &rcFile)
 {

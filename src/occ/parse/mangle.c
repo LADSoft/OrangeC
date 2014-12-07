@@ -98,7 +98,7 @@ static char *mangleClasses(char *in, SYMBOL *sp)
 static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 {
     BOOLEAN bySpecial = FALSE;
-    if (sym->instantiated && !sym->templateLevel || params && params->p->bySpecialization.types)
+    if ((sym->instantiated && !sym->templateLevel) || (params && params->p->bySpecialization.types))
     {
         params = params->p->bySpecialization.types;
         bySpecial = TRUE;
@@ -181,7 +181,7 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
                         *buf++= '$';
                         if (isintconst(exp))
                         {
-                            sprintf(buf, "%d", exp->v.i);
+                            sprintf(buf, "%lld", exp->v.i);
                             if (buf[0] == '-')
                                 buf[0] = '_';
                         }
@@ -228,6 +228,8 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
                         *buf++= '$';
                     }
                 }
+                break;
+            default:
                 break;
         }
         params = params->next;
@@ -436,7 +438,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 }
                 else
                 {
-                    sprintf(in,"A%d",tp->size / tp->btp->size);
+                    sprintf(in,"A%ld",tp->size / tp->btp->size);
                     in += strlen(in);
                 }
                 in = mangleType(in, tp->btp, FALSE);
@@ -515,11 +517,12 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
     if (linkage == lk_c && !cparams.prm_cmangle)
         linkage = lk_stdcall;
     if (linkage == lk_virtual)
+    {
         if (cparams.prm_cplusplus)
             linkage = lk_cpp;
         else
             linkage = lk_c;  
-        
+    }   
     switch (linkage)
     {
         case lk_auto:

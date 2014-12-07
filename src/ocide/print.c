@@ -163,7 +163,7 @@ void split (char *fmt, char *left, char *right, char *center)
     }
     *left = *right = *center = 0;
 }
-int subs(HDC hDC, char *out, char *fmt, char *filename, int page)
+int subs(HDC hDC, char *out, const char *fmt, const char *filename, int page)
 {
     SIZE size;
     char *orig = out;

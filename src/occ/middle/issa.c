@@ -560,12 +560,12 @@ static void findCopies(BRIGGS_SET *copies, BOOLEAN all)
                 && head->dc.left->mode == i_direct && head->ans->mode == i_direct
                 && head->ans->size == head->dc.left->size
                 && !head->dc.left->retval && (all ||
-                    !head->ans->offset->v.sp->pushedtotemp
+                    (!head->ans->offset->v.sp->pushedtotemp
                 && !head->dc.left->offset->v.sp->pushedtotemp
                 && !head->ans->offset->v.sp->storeTemp
                 && !head->dc.left->offset->v.sp->storeTemp
                 && !head->ans->offset->v.sp->loadTemp
-                && !head->dc.left->offset->v.sp->loadTemp))
+                && !head->dc.left->offset->v.sp->loadTemp)))
             {
                 briggsSet(copies, head->ans->offset->v.sp->value.i);
                 briggsSet(copies, head->dc.left->offset->v.sp->value.i);
@@ -663,18 +663,24 @@ static void CoalesceTemps(LOOP *l, BOOLEAN all)
                         if (head->temps == (TEMP_LEFT | TEMP_ANS))
                         {
                             if (head->ans->mode == i_direct && head->dc.left->mode == i_direct)
+                            {
                                 if (head->ans->size == head->dc.left->size && !head->dc.left->bits)
+                                {
                                     if (all)
                                     {
                                         CheckCoalesce(head->ans->offset->v.sp->value.i, head->dc.left->offset->v.sp->value.i);
                                     }
                                     else if (!head->ans->offset->v.sp->pushedtotemp)
+                                    {
                                         if (!head->dc.left->offset->v.sp->pushedtotemp)
                                             if (!head->dc.left->offset->v.sp->loadTemp)
                                                 if (!head->ans->offset->v.sp->storeTemp)
                                                 {
                                                     CheckCoalesce(head->ans->offset->v.sp->value.i, head->dc.left->offset->v.sp->value.i);
                                                 }
+                                    }
+                                }
+                            }
                         }
                     }
                     if (head == t->entry->tail)

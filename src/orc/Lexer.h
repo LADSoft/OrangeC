@@ -98,4 +98,4 @@ private:
     static KeywordHash hash;
     static bool hashInitted;
 } ;
-#endif Lexer_h
+#endif //Lexer_h

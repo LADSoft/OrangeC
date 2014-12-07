@@ -40,6 +40,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include "header.h"
 #include "lsctrl.h"
 
 extern HWND hwndClient;
@@ -183,7 +184,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
     {
         case WM_NOTIFY:
             ptr = (CCW_params*)GetWindowLong(hwnd, 0);
-            return SendMessage(ptr->parent, iMessage, wParam, lParam);
+            return SendMessage(ptr->child->hwnd, iMessage, wParam, lParam);
         case WM_SYSCOMMAND:
             if (wParam == SC_CLOSE)
                 SendMessage(hwnd, WM_CLOSE, 0, 0);
@@ -203,7 +204,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             }
             else
             {
-                return SendMessage(ptr->parent, iMessage, wParam, lParam);
+                return SendMessage(ptr->child->hwnd, iMessage, wParam, lParam);
             }
             break;
         case WM_ERASEBKGND:
@@ -233,7 +234,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             if (dragging)
                 ReleaseCapture();
             dragging = FALSE;
-            dmgrEndMoveClient(ptr);
+            dmgrEndMoveClient(ptr, NULL);
             break;
         case WM_MOUSEMOVE:
             temppt.x = (long)(short)LOWORD(lParam);
@@ -324,7 +325,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
         case WM_CTLCOLORSCROLLBAR:
         case WM_CTLCOLORSTATIC:
             ptr = (CCW_params*)GetWindowLong(hwnd, 0);
-            return SendMessage(ptr->parent, iMessage, wParam, lParam);
+            return SendMessage(ptr->child->hwnd, iMessage, wParam, lParam);
         case WM_SIZE:
             ptr = (CCW_params*)GetWindowLong(hwnd, 0);
             SetFlexBmp(ptr);

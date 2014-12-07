@@ -99,7 +99,7 @@ private:
 } ;
 class CharacterToken : public Token
 {
-    friend StringToken;
+    friend class StringToken;
 public:
     CharacterToken(std::string &line) : value(0) { Parse(line); }
     virtual bool IsCharacter() const { return true; }

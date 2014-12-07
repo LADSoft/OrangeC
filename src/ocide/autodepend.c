@@ -42,6 +42,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "header.h"
 
@@ -127,7 +128,7 @@ static void FindDepends(PROJECTITEM *pj, PROJECTITEM *fi)
                     while (*p &&  *p != '"' &&  *p != '>')
                         buf[i++] =  *p++;
                     buf[i] = 0;
-                    if (fil = FindOnPath(buf, path))
+                    if ((fil = FindOnPath(buf, path)))
                     {
                         PROJECTITEM *newItem;
                         fclose(fil);
@@ -172,7 +173,7 @@ static void FindDepends(PROJECTITEM *pj, PROJECTITEM *fi)
             char *q = NULL;
             for (i= 0; i < sizeof(filedResourceTypes)/sizeof(filedResourceTypes[0]); i++)
             {
-                if (q = stristr(p, filedResourceTypes[i]))
+                if ((q = stristr(p, filedResourceTypes[i])))
                 {
                     if (q == p || isspace(q[-1]))
                     {
@@ -193,7 +194,7 @@ static void FindDepends(PROJECTITEM *pj, PROJECTITEM *fi)
                                 while (*p &&  *p != '"' &&  *p != '>')
                                     buf[i++] =  *p++;
                                 buf[i] = 0;
-                                if (fil = FindOnPath(buf, path))
+                                if ((fil = FindOnPath(buf, path)))
                                 {
                                     PROJECTITEM *newItem;
                                     fclose(fil);
@@ -302,6 +303,9 @@ void CalculateProjectDepends(PROJECTITEM *pj)
                 while (item && item->type != PJ_PROJ)
                     item = item->parent ;
                 CalculateFiles(item, pj);
+                break;
+            case PJ_RES:
+            case PJ_RESMENU:
                 break;
         }            
         SetBusy(0);

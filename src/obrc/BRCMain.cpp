@@ -80,7 +80,7 @@ int BRCMain::Run(int argc, char **argv)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (argc < 2 || argc == 2 && File.GetCount() < 2)
+    if (argc < 2 || (argc == 2 && File.GetCount() < 2))
     {
         Utils::usage(argv[0], usageText);
     }

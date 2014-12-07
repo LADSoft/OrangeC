@@ -68,6 +68,11 @@ static char newName[MAX_PATH];
 static char newTitle[MAX_PATH];
 static char browsePath[MAX_PATH];
 
+void SetExt(OPENFILENAME *ofn, char *ext);
+void ccDBVacuum(sqlite3 *db);
+void ccDBSetDB(sqlite3 *xdb);
+sqlite3 *ccDBOpen(PROJECTITEM *pj);
+
 //-------------------------------------------------------------------------
 void GetDefaultWorkAreaName(char *buf)
 {

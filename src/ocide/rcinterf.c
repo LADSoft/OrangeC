@@ -79,10 +79,10 @@ char *rcSearchPath;
 RESOURCE_DATA *currentResData;
 
 static char *szresEditClassName = "xccresEditClass";
-static struct resRes *editItem;
+static PROJECTITEM *editItem;
 static HWND hwndEdit;
 static HTREEITEM resSelection;
-static PROJECTITEM *rclickItem;
+static struct resRes *rclickItem;
 static HTREEITEM rclickSelection;
 static HFONT projFont, boldProjFont, italicProjFont;
 
@@ -209,7 +209,7 @@ void CreateNewResourceFile(PROJECTITEM *data, char *name, int flag)
         fil = fopen(hdr,"wb");        
         if (fil)
         {
-            fprintf(fil, headerContents);
+            fprintf(fil, "%s", headerContents);
             fclose(fil);
         }
         AddFile(data, rc, flag);
@@ -506,7 +506,7 @@ static HTREEITEM InsertResourceTreeItem(TV_INSERTSTRUCT *t)
 }
 void ResShowSubTree(PROJECTITEM *file)
 {
-    if (file)
+    if (file && file->resData)
     {
         struct resDir *dirs = file->resData->dirs;
         while(dirs)
@@ -771,8 +771,8 @@ PROJECTITEM *GetResData(PROJECTITEM *cur)
         cur = cur->children;
         while (cur)
         {
-            struct resData *rd;
-            if (rd = GetResData(cur))
+            PROJECTITEM *rd;
+            if ((rd = GetResData(cur)))
                 return rd;
             cur = cur->next;
         }
@@ -980,7 +980,7 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
             POINT pos;
             int n = p->type == PJ_RES ? d->resource->itype : p->type - PJ_RESMENU;
             
-            rclickItem = p;
+            rclickItem = d;
             rclickSelection = item;
             switch (n)
             {
@@ -1128,7 +1128,7 @@ void ResAddItem(PROJECTITEM *file)
         t.UNNAMED_UNION item.iImage = t.UNNAMED_UNION item.iSelectedImage = file->type == PJ_WS ? IL_RC : imageof(file, file->realName);
         t.UNNAMED_UNION item.lParam = (LPARAM)file ;
         file->hResTreeItem = TreeView_InsertItem(treeWindow, &t);
-        ResShowSubTree(file->resData);
+        ResShowSubTree(file);
     }
 }
 void ResDeleteItem(PROJECTITEM *data)
@@ -1353,6 +1353,8 @@ static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
                 return CDRF_NEWFONT;    
             }
             return CDRF_DODEFAULT;
+        default:
+            return CDRF_DODEFAULT;
     }
 }
 static EXPRESSION *ResNewExp(int val, char *name)
@@ -1503,6 +1505,8 @@ static int ResGetImageName(PROJECTITEM *pj, char *name, char *title, char *filte
             return 1;
         case 2: // cancel
             return 0;
+        default:
+            return 0;    
     }
 }
 static FONT *ResNewFont(PROJECTITEM *pj, RESOURCE *newRes)
@@ -1642,7 +1646,7 @@ static ICON *ResNewIcon(PROJECTITEM *pj, RESOURCE *newRes)
                 (((((DWORD)nico->icons->width * nico->icons->bits) + 31) & 0xffffffe0) >> 3) * nico->icons->height
                 + (((((DWORD)nico->icons->width) + 31) & 0xffffffe0) >> 3) * nico->icons->height;
             nico->icons->data = rcAlloc(nico->icons->bytes);
-            p = nico->icons->data + sizeof(BITMAPINFOHEADER);
+            p = (char *)nico->icons->data + sizeof(BITMAPINFOHEADER);
             p += (1 << nico->icons->bits) * sizeof(RGBQUAD);
             p += (((((DWORD)nico->icons->width * nico->icons->bits) + 31) & 0xffffffe0) >> 3) * nico->icons->height;
             // this and the blackness will make it see through by default
@@ -1791,7 +1795,7 @@ static void ResInsertNew(PROJECTITEM *pj, RESOURCE *newRes)
 }
 PROJECTITEM *GetResProjectFile(HTREEITEM sel)
 {
-    struct resRes *data = GetItemInfo(sel);
+    PROJECTITEM *data = GetItemInfo(sel);
     if (data)
     {
         while (data && data->type != PJ_FILE)
@@ -1804,7 +1808,7 @@ PROJECTITEM *GetResProjectFile(HTREEITEM sel)
 }
 static void NewResource(HTREEITEM sel, struct resRes *res)
 {
-    struct resRes *data = GetResProjectFile(sel);
+    PROJECTITEM *data = GetResProjectFile(sel);
     if (data)
     {
         // fix filename in insert
@@ -1838,7 +1842,7 @@ static void NewResource(HTREEITEM sel, struct resRes *res)
 }
 void ResRename(void)
 {
-    struct resRes *data = GetItemInfo(resSelection);
+    PROJECTITEM *data = GetItemInfo(resSelection);
     if (data && data->type == PJ_RES)
     {
         RECT r, s;
@@ -1846,7 +1850,7 @@ void ResRename(void)
         TreeView_GetItemRect(treeWindow, data->hTreeItem, &r, TRUE);
         TreeView_GetItemRect(treeWindow, data->hTreeItem, &s, FALSE);
         hwndEdit = CreateWindow(szresEditClassName,
-            data->name, WS_CHILD | ES_AUTOHSCROLL | WS_BORDER, r.left, r.top,
+            ((struct resRes *)data)->name, WS_CHILD | ES_AUTOHSCROLL | WS_BORDER, r.left, r.top,
             s.right - r.left, r.bottom - r.top, hwndRes, (HMENU)
             449, (HINSTANCE)GetWindowLong(GetParent(hwndRes),
             GWL_HINSTANCE), 0);
@@ -1863,9 +1867,9 @@ void ResDoneRenaming(void)
     GetWindowText(hwndEdit, buf, MAX_PATH);
     if (buf[0] != 0)
     {
-        if (strcmp(buf, editItem->name))
+        if (strcmp(buf, ((struct resRes *)editItem)->name))
         {
-            PropSetIdName(editItem, buf, &editItem->resource->id.u.id, NULL, TRUE);
+            PropSetIdName((struct resRes *)editItem, buf, &((struct resRes *)editItem)->resource->id.u.id, NULL, TRUE);
         }
     }
     DestroyWindow(hwndEdit);
@@ -1921,7 +1925,7 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         case VK_INSERT:
                             if (!(GetKeyState(VK_CONTROL) &0x80000000) && !(GetKeyState(VK_SHIFT) &0x8000000))
                             {
-                                struct resRes *data = GetItemInfo(resSelection);
+                                PROJECTITEM *data = GetItemInfo(resSelection);
                                 if (data && (data->type == PJ_RES))
                                     PostMessage(hwnd, WM_COMMAND, IDM_RENAME, 0);
                             }
@@ -1929,10 +1933,10 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         case VK_DELETE:
                             if (!(GetKeyState(VK_CONTROL) &0x80000000) && !(GetKeyState(VK_SHIFT) &0x8000000))
                             {
-                                struct resRes *data = GetItemInfo(resSelection);
+                                PROJECTITEM *data = GetItemInfo(resSelection);
                                 if (data && (data->type == PJ_RES))
                                 {
-                                    rclickItem = data;
+                                    rclickItem = (struct resRes *)data;
                                     PostMessage(hwnd, WM_COMMAND, ID_DELETE, 0);
                                 }
                             }
@@ -2022,7 +2026,7 @@ static LRESULT CALLBACK extEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 nm.code = N_EDITDONE;
                 nm.hwndFrom = hwnd;
-                nm.idFrom = GetDlgItem(hwnd, GWL_ID);
+                nm.idFrom = GetWindowLong(hwnd, GWL_ID);
                 SendMessage(GetParent(hwnd), WM_NOTIFY, 0, (LPARAM)&nm);
                 return 0;
             }

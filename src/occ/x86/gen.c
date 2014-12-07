@@ -302,6 +302,8 @@ void make_floatconst(AMODE *ap)
             case en_c_ldc:
                 size = ISZ_CLDOUBLE;
                 break;
+            default:
+                break;
         }
     }
     if (ValueIsOne(&ap->offset->v.f))
@@ -383,6 +385,8 @@ void make_complexconst(AMODE *ap, AMODE *api)
                 ap->offset->type = en_c_f;
                 ap->offset->v.f = ap->offset->v.c.r;
                 break;
+            default:
+                break;
         }
     }
     make_floatconst(ap);
@@ -402,6 +406,7 @@ void complexStore(AMODE *ap, AMODE *api, int sz)
 void floatLoad(AMODE *ap, int sz, int okind)
 {
     if (ap->mode != am_freg)
+    {
         if (ap->mode == am_fconst)
         {
             if (ap->preg == fczero)
@@ -421,6 +426,7 @@ void floatLoad(AMODE *ap, int sz, int okind)
         {
             gen_codes(op_fld, sz, ap, 0);
         }
+    }
 }
 BOOLEAN sameTemp(QUAD *head);
 void float_gen(QUAD *q, AMODE *apll, AMODE *aprl, int op, int rop, int pop, int prop)
@@ -585,6 +591,8 @@ int samereg(AMODE *ap1, AMODE *ap2)
                     return ap1->preg == ap2->preg;
                 case am_indispscale:
                     return ap1->preg == ap2->preg || ap1->preg == ap2->sreg;
+                default:
+                    break;
             }
             break;
         case am_indispscale:
@@ -597,7 +605,11 @@ int samereg(AMODE *ap1, AMODE *ap2)
                 case am_indisp:
                 case am_dreg:
                     return ap1->preg == ap2->preg || ap1->preg == ap2->sreg;
+                default:
+                    break;
             }
+            break;
+        default:
             break;
     }
     return FALSE;
@@ -624,7 +636,7 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
     else if (im->mode == i_ind)
     {
         enum e_am mode;
-        if (im->offset && im->offset2 || im->offset2 && im->scale)
+        if ((im->offset && im->offset2) || (im->offset2 && im->scale))  
             mode = am_indispscale;
         else if (im->offset || im->offset2)
             mode = am_indisp;
@@ -1168,6 +1180,8 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
                     case op_jbe:
                         flt = op_jae;
                         break;
+                    default:
+                        break;
                 }
             }
         }
@@ -1250,6 +1264,8 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
                 break;
             case op_setle:
                 sop = op_setbe;
+                break;
+            default:
                 break;
         }
         if (op == sop)
@@ -1357,7 +1373,7 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
     IMODE *left = q->dc.left;
     IMODE *right = q->dc.right;
     AMODE *apll, *aplh, *aprl, *aprh;
-    if ((left->mode == i_immed || left->mode == i_icon) && left->size < ISZ_FLOAT)
+    if (left->mode == i_immed && left->size < ISZ_FLOAT)
     {
         IMODE *t = right ;
         right = left ;
@@ -1422,6 +1438,8 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
                         break;
                     case op_jbe:
                         flt = op_jae;
+                        break;
+                    default:
                         break;
                 }
             }
@@ -3589,6 +3607,7 @@ addrupjn:
                     case -ISZ_ULONG:
                     case ISZ_ADDR:
                         if (ap == apa)
+                        {
                             if (q->ans->bits)
                                 bit_store(ap, apl, q->ans->size, q->ans->bits, q->ans->startbit);
                             else
@@ -3607,7 +3626,8 @@ addrupjn:
                                     if (q->dc.left->bits < 32)
                                         gen_codes(op_and, q->ans->size, apa, aimmed(( 1 << q->dc.left->bits) -1));
                                 }
-                            }			
+                            }
+                        }			
                         break;
                 }
             }
@@ -4586,8 +4606,8 @@ void asm_atomic(QUAD *q)
                     }
                     gen_codes(op_mov, sz, makedreg(reg), apll);
                 }
-                if (aprl->mode == am_indisp && aprl->preg == EAX 
-                    || aprl->mode == am_indispscale && (aprl->preg == EAX || aprl->sreg == EAX))
+                if ((aprl->mode == am_indisp && aprl->preg == EAX )
+                    || (aprl->mode == am_indispscale && (aprl->preg == EAX || aprl->sreg == EAX)))
                 {
                     push2 = TRUE;
                     gen_code(op_push, makedreg(EAX), NULL);
@@ -4622,6 +4642,8 @@ void asm_atomic(QUAD *q)
             gen_code(op_mov, makedreg(EAX), aimmed(0));
             gen_codes(op_setz, ISZ_UCHAR, makedreg(EAX), NULL);
           }
+            break;
+        default:
             break;
     }
     if (needsync == mo_release || needsync == mo_acq_rel)

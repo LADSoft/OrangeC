@@ -122,8 +122,8 @@ static LRESULT CALLBACK FocusWndProc(HWND hwnd, UINT iMessage,
             break;
         case WM_PAINT:
             GetClientRect(hwnd, &rect);
-            SystemParametersInfo(SPI_GETFOCUSBORDERWIDTH, NULL, &x, 0);
-            SystemParametersInfo(SPI_GETFOCUSBORDERHEIGHT, NULL, &y, 0);
+            SystemParametersInfo(SPI_GETFOCUSBORDERWIDTH, 0, &x, 0);
+            SystemParametersInfo(SPI_GETFOCUSBORDERHEIGHT, 0, &y, 0);
             dc = BeginPaint(hwnd, &ps);
             brush = CreateSolidBrush(TRANSPARENT_COLOR);
             FillRect(dc, &rect, brush);
@@ -217,7 +217,7 @@ void FreeParent(CCW_params *ps)
     p->child = NULL;
     if (p->type == LSCONTAINER)
     {
-        SendMessage(hwndClient, WM_MDIDESTROY, (WPARAM)p->hwnd, NULL);
+        SendMessage(hwndClient, WM_MDIDESTROY, (WPARAM)p->hwnd, 0);
     }
     else
     {
@@ -508,7 +508,7 @@ void dmgrEndMoveClient(CCW_params *p, POINT *cursor)
 
 //-------------------------------------------------------------------------
 
-int dmgrStartMoveGrip(CCW_params *p, POINT *cursor)
+void dmgrStartMoveGrip(CCW_params *p, POINT *cursor)
 {
     dmgrStartMoveClient(p, cursor);
     dmgrMoveClient(p, cursor, TRUE);
@@ -516,14 +516,14 @@ int dmgrStartMoveGrip(CCW_params *p, POINT *cursor)
 
 //-------------------------------------------------------------------------
 
-int dmgrMoveGrip(CCW_params *p, POINT *cursor)
+void dmgrMoveGrip(CCW_params *p, POINT *cursor)
 {
     dmgrMoveClient(p, cursor, TRUE);
 }
 
 //-------------------------------------------------------------------------
 
-int dmgrEndMoveGrip(CCW_params *p, POINT *cursor)
+void dmgrEndMoveGrip(CCW_params *p, POINT *cursor)
 {
     dmgrEndMoveClient(p, cursor);
 }
@@ -542,7 +542,7 @@ int dmgrDocked(CCW_params *p)
 
 //-------------------------------------------------------------------------
 
-int dmgrSizeBarStartMove(CCW_params *p, POINT *cursor)
+void dmgrSizeBarStartMove(CCW_params *p, POINT *cursor)
 {
     int i;
     RECT r;
@@ -564,7 +564,7 @@ int dmgrSizeBarStartMove(CCW_params *p, POINT *cursor)
 
 //-------------------------------------------------------------------------
 
-int dmgrSizeBarMove(CCW_params *p, POINT *cursor)
+void dmgrSizeBarMove(CCW_params *p, POINT *cursor)
 {
     RECT r = moverect;
 
@@ -577,7 +577,7 @@ int dmgrSizeBarMove(CCW_params *p, POINT *cursor)
 
 //-------------------------------------------------------------------------
 
-int dmgrSizeBarEndMove(CCW_params *p)
+void dmgrSizeBarEndMove(CCW_params *p)
 {
     ClipCursor(0);
 
@@ -587,7 +587,7 @@ int dmgrSizeBarEndMove(CCW_params *p)
 
 //-------------------------------------------------------------------------
 
-int dmgrFlex(CCW_params *p)
+void dmgrFlex(CCW_params *p)
 {
     int index;
     CCD_params *d;
@@ -598,7 +598,7 @@ int dmgrFlex(CCW_params *p)
 
 //-------------------------------------------------------------------------
 
-int dmgrSizeFrame(void)
+void dmgrSizeFrame(void)
 {
 #ifdef XXXXX
     for (i = 0; i < currentWindows; i++)
@@ -1161,10 +1161,12 @@ void SizeLeftRight(int *windows, int wincount, int adj, RECT *r2)
         {
 //            currentleft = docks[windows[i]]->position.left;
             if (currentleft < r2->left || currentleft >= r2->right - GRIPWIDTH)
+            {
                 if (i == 0)
                     currentleft = r2->left;
                 else
                     currentleft = docks[windows[i - 1]]->position.right;
+            }
             if (i > 0 && currentleft < docks[windows[i - 1]]->position.right)
                 currentleft = docks[windows[i - 1]]->position.right;
             newright = currentleft + cache[windows[i]]->u.tb.hsize.cx +
@@ -1565,10 +1567,12 @@ void SizeTopBottom(int *windows, int wincount, int adj, RECT *client, RECT
 //                client->top;
             if (currenttop < client->top || currenttop >= client->bottom -
                 GRIPWIDTH)
+            {
                 if (i == 0)
                     currenttop = client->top;
                 else
                     currenttop = docks[windows[i - 1]]->position.bottom;
+            }
             if (i > 0 && currenttop < docks[windows[i - 1]]->position.bottom)
                 currenttop = docks[windows[i - 1]]->position.bottom;
             newbottom = currenttop + cache[windows[i]]->u.tb.vsize.cy +
@@ -2440,15 +2444,17 @@ void CalculateHidden(CCD_params *d, int index, int state)
         int x = docks[windows[j]]->hiddenwidth = docks[windows[j]]->hiddenwidth
             *1000 / scale;
         if (!docks[windows[j]]->hidden)
-        if (docks[windows[j]]->flags &(DOCK_TOP | DOCK_BOTTOM))
         {
-            docks[windows[j]]->position.right = docks[windows[j]]
-                ->position.left + x * sizewidth / totalwidth;
-        }
-        else
-        {
-            docks[windows[j]]->position.bottom = docks[windows[j]]
-                ->position.top + x * sizewidth / totalwidth;
+            if (docks[windows[j]]->flags &(DOCK_TOP | DOCK_BOTTOM))
+            {
+                docks[windows[j]]->position.right = docks[windows[j]]
+                    ->position.left + x * sizewidth / totalwidth;
+            }
+            else
+            {
+                docks[windows[j]]->position.bottom = docks[windows[j]]
+                    ->position.top + x * sizewidth / totalwidth;
+            }
         }
     }
 }

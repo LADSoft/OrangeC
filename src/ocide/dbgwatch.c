@@ -117,7 +117,7 @@ void RefreshAddresses(VARINFO *var, int address, THREAD *thread, int noscope)
             val = var->address = address + var->offset;
             if (var->pointer)
             {
-                unscope = (val = var->derefaddress) == -1 && !ReadValue(var->address, &val, 4, var) || !val;
+                unscope = ((val = var->derefaddress) == -1 && !ReadValue(var->address, &val, 4, var)) || !val;
             }
         }
         RefreshAddresses(var->subtype, val, thread, unscope);
@@ -192,12 +192,12 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
             case eULongLong:
                     v = *(LLONG_TYPE*)buf1;
                     if (onevalue)
-                        sprintf(buf, "0x%Lx", v);
+                        sprintf(buf, "0x%llx", v);
                     else
                         if (signedtype)
-                            sprintf(buf, "%Ld(0x%Lx)", v, v);
+                            sprintf(buf, "%lld(0x%llx)", v, v);
                         else
-                            sprintf(buf, "%Ld(0x%Lx)", v, v);
+                            sprintf(buf, "%lld(0x%llx)", v, v);
                     break;
             default:
                 sprintf(buf, "unknown type");
@@ -290,8 +290,8 @@ void InsertSubTree(HTREEITEM parent, HTREEITEM after, VARINFO *var, int index, i
         AddTypeInfoToName(watchinfo_list[page][index].dbg_info, var);
         var->hTreeItem = InsertItem(parent, after, var, page);
         var->watchindex = index;
-        var->watchhead.col1Text = &var->screenname;
-        var->watchhead.col2Text = &var->value;
+        var->watchhead.col1Text = &var->screenname[0];
+        var->watchhead.col2Text = &var->value[0];
         if (var->pointer && !var->subtype)
         {
             var->hTreeHolder = InsertItem(var->hTreeItem, TVI_LAST, var, page);
@@ -475,7 +475,7 @@ void ExpandPointer(VARINFO *v, int code, int page)
         if (code == TVE_EXPAND)
         {
             int val;
-            int outofscope = (val = v->derefaddress) == -1 && !ReadValue(v->address, &val, 4, v) || !val;
+            int outofscope = ((val = v->derefaddress) == -1 && !ReadValue(v->address, &val, 4, v)) || !val;
             if (!v->subtype && watchinfo_list[page][v->watchindex].dbg_info)
             {
                 TreeView_DeleteItem(hwndTree[page], v->hTreeHolder);
@@ -573,11 +573,11 @@ void ChangeData(VARINFO *info, char *text, int page)
         else
         {
             if (text[0] == '0' && text[1] == 'x')
-                sscanf(text + 2, "%Lx", &value);
+                sscanf(text + 2, "%llx", &value);
             else if ((text[strlen(text) - 1] & 0xDF) == 'H')
-                sscanf(text, "%Lx", &value);
+                sscanf(text, "%llx", &value);
             else
-                sscanf(text, "%Ld", &value);
+                sscanf(text, "%lld", &value);
             switch (info->type)
             {
                 case eBool: 
@@ -609,7 +609,7 @@ void ChangeData(VARINFO *info, char *text, int page)
             char data[10];
             int signedx;
             int v;
-            HintBasicValue(info, &signedx, &data);
+            HintBasicValue(info, &signedx, &data[0]);
             v = *(int*)data;
             v &= ~(bitmask[info->bitlength - 1] << info->bitstart);
             value = v | ((value &bitmask[info->bitlength - 1]) << info
@@ -699,14 +699,14 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 return 0;
             case TVN_ITEMEXPANDING:
-                nmt = h;
+                nmt = (LPNMTREEVIEW)h;
                 if (nmt->action)
                 {
                     ExpandPointer((VARINFO*)nmt->itemNew.lParam, nmt->action, selected);
                 }
                 return 0;
             case TCN_EDITQUERY:
-                nmt = h;
+                nmt = (LPNMTREEVIEW)h;
                 item.mask = TVIF_PARAM;
                 item.hItem = (HTREEITEM)nmt->itemNew.hItem;
                 TreeView_GetItem(hwndTree[selected], &item);
@@ -719,7 +719,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 return 0;
             case TCN_EDITDONE:
-                nmt = h;
+                nmt = (LPNMTREEVIEW)h;
                 item.mask = TVIF_PARAM;
                 item.hItem = (HTREEITEM)nmt->itemNew.hItem;
                 TreeView_GetItem(hwndTree[selected], &item);

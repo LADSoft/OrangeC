@@ -43,6 +43,7 @@
 #include <richedit.h>
 
 #include "header.h"
+#include <process.h>
 
 extern HWND hwndClient;
 extern HWND hwndFrame, hwndASM, hwndRegister, hwndWatch, hwndThread;
@@ -746,7 +747,7 @@ void StartDebug(char *cmd)
                         strcpy(thread->name, "main thread");
                         dwContinueStatus = DBG_CONTINUE;
                         process->dbg_info = GetDebugInfo(process->hProcess, (DWORD)stDE.u.CreateProcessInfo.lpBaseOfImage);
-                        process->base = stDE.u.CreateProcessInfo.lpBaseOfImage;
+                        process->base = (DWORD)stDE.u.CreateProcessInfo.lpBaseOfImage;
                         if (GetFileNameOfDLL(hpsapiLib, process->hProcess, process->base, 
                                              (DWORD)stDE.u.CreateProcessInfo.lpImageName, (DWORD)stDE.u.CreateProcessInfo.fUnicode, 
                                              &process->name[0]))
@@ -844,7 +845,7 @@ void StartDebug(char *cmd)
                                     PROCESS *pr = GetProcess(stDE.dwProcessId);
                                     if (pr)
                                     {
-                                        BREAKPOINT **p =pr->breakpoints.next;
+                                        BREAKPOINT **p = &pr->breakpoints.next;
                                         while (*p)
                                             p = &(*p)->next;
                                         *p = calloc(sizeof(BREAKPOINT), 1);
@@ -853,7 +854,7 @@ void StartDebug(char *cmd)
                                             DWINFO *ptr = editWindows;
                                             int *q = calloc(2, sizeof(int));
                                             q[0] = addr;
-                                            GetBreakpointLine(addr, &(*p)->module,
+                                            GetBreakpointLine(addr, &(*p)->module[0],
                                                 &(*p)->linenum, FALSE);
                                             (*p)->addresses = q;
                                             dllInfo->breakpoint = addr;
@@ -975,7 +976,7 @@ void StartDebug(char *cmd)
                             activeProcess = GetProcess(stDE.dwProcessId);
                             activeThread = stoppedThread = GetThread(stDE.dwProcessId, stDE.dwThreadId);
                             ClearTraceFlag(stDE.dwProcessId, stDE.dwThreadId);
-                            if (hbp = hbpCheck(activeThread))
+                            if ((hbp = hbpCheck(activeThread)))
                             {
                                 ContinueStep = FALSE;
                             }
@@ -1044,7 +1045,7 @@ void StartDebug(char *cmd)
                                         activeProcess->ExitAddr =
                                             FindExitProcessAddress
                                                 (activeProcess->hProcess, activeProcess->base);
-                                    if (addr = GetMainAddress(activeProcess->dbg_info))
+                                    if ((addr = GetMainAddress(activeProcess->dbg_info)))
                                     {
                                         if (stopWinMain)
                                             if (stDE.dwProcessId == stProcessInfo.dwProcessId)
@@ -1109,6 +1110,7 @@ void StartDebug(char *cmd)
 								}
                             }
                             else if (!SingleStepping && !isTerminating)
+                            {
                                 if (SittingOnBreakPoint(&stDE) || sittingAtDataBreakpoint)
                                 {
                                     sittingAtDataBreakpoint = FALSE;
@@ -1119,6 +1121,7 @@ void StartDebug(char *cmd)
                                 {
                                     SetBreakPoints(stDE.dwProcessId);
                                 }
+                            }
                             SetRegs(0);
 
                             break;

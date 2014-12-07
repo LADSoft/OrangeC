@@ -40,9 +40,12 @@
 /*
  * Search for a file along a path list
  */
-#include <stdio.h>
 #include <string.h>
 #include <windows.h>
+#include <commctrl.h>
+#include <stdio.h>
+#include <float.h>
+#include "header.h"
 /*
  * Pull the next path off the path search list
  */
@@ -109,7 +112,7 @@ FILE *MySearchPath(char *string, char *searchpath, char *mode)
     }
     return (0);
 }
-int pstrncmp(short *str1, short *str2, int n)
+int pstrncmp(const WCHAR *str1, const WCHAR *str2, int n)
 {
     while (n &&  *str1++ ==  *str2++)
         n--;
@@ -121,7 +124,7 @@ int pstrncmp(short *str1, short *str2, int n)
 
 //-------------------------------------------------------------------------
 
-int pstrcmp(short *str1, short *str2)
+int pstrcmp(const WCHAR *str1, const WCHAR *str2)
 {
     while (*str1 &&  *str1 ==  *str2)
     {
@@ -129,16 +132,18 @@ int pstrcmp(short *str1, short *str2)
         str2++;
     }
     if (*(str1) == 0)
+    {
         if (*(str2) == 0)
             return 0;
         else
             return  - 1;
+    }
     return str1 > str2 ? 1 :  - 1;
 }
 
 //-------------------------------------------------------------------------
 
-void pstrcpy(short *str1, short *str2)
+void pstrcpy(WCHAR *str1, const WCHAR *str2)
 {
     while (*str2)
         *str1++ =  *str2++;
@@ -147,14 +152,14 @@ void pstrcpy(short *str1, short *str2)
 
 //-------------------------------------------------------------------------
 
-void pstrncpy(short *str1, short *str2, int len)
+void pstrncpy(WCHAR *str1, const WCHAR *str2, int len)
 {
-    memcpy(str1, str2, len *sizeof(short));
+    memcpy(str1, str2, len *sizeof(WCHAR));
 }
 
 //-------------------------------------------------------------------------
 
-void pstrcat(short *str1, short *str2)
+void pstrcat(WCHAR *str1, const WCHAR *str2)
 {
     while (*str1++)
         ;
@@ -165,7 +170,7 @@ void pstrcat(short *str1, short *str2)
 
 //-------------------------------------------------------------------------
 
-short *pstrchr(short *str, short ch)
+WCHAR *pstrchr(WCHAR *str, WCHAR ch)
 {
     while (*str &&  *str != ch)
         str++;
@@ -176,9 +181,9 @@ short *pstrchr(short *str, short ch)
 
 //-------------------------------------------------------------------------
 
-short *pstrrchr(short *str, short ch)
+WCHAR *pstrrchr(WCHAR *str, WCHAR ch)
 {
-    short *start = str;
+    WCHAR *start = str;
     while (*str++)
         ;
     str--;
@@ -191,7 +196,7 @@ short *pstrrchr(short *str, short ch)
 
 //-------------------------------------------------------------------------
 
-int pstrlen(short *s)
+int pstrlen(const WCHAR *s)
 {
     int len = 0;
     while (*s++)
@@ -201,11 +206,11 @@ int pstrlen(short *s)
 
 //-------------------------------------------------------------------------
 
-short *pstrstr(short *str1, short *str2)
+WCHAR *pstrstr(WCHAR *str1, const WCHAR *str2)
 {
     while (1)
     {
-        short *pt = pstrchr(str1, str2[0]);
+        WCHAR *pt = pstrchr(str1, str2[0]);
         if (!pt)
             return 0;
         if (!pstrcmp(pt, str2))

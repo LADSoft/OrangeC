@@ -65,4 +65,4 @@ typedef struct browseInfo
     int charpos;
     int flags;  
 } BROWSEINFO;
-#endif _BROWSE_H
+#endif //_BROWSE_H

@@ -115,6 +115,7 @@ struct _type_hash {
     char *name;
 } *typeHashTab[TYPE_HASH_SIZE];
 
+int link_puttype(TYPE *tp);
 void dbginit(void) 
 { 
     dbgTypeDefs = NULL;
@@ -505,7 +506,6 @@ void dumpEnumFields(int sel, int n, int baseType, int sz, HASHREC *hr)
         emit_record_ieee(",T%X", last);
     emit_record_ieee(".\r\n");
 }
-int link_puttype(TYPE *tp);
 int dumpFunction(TYPE *tp)
 {
     char buf[2048], *bptr;
@@ -518,7 +518,7 @@ int dumpFunction(TYPE *tp)
     hr = basetype(tp)->syms->table[0];
     while (hr && count < sizeof(types)/sizeof(types[0]))
     {
-        SYMBOL *s = hr->p;
+        SYMBOL *s = (SYMBOL *)hr->p;
         types[count++] = link_puttype(s->tp);
         hr = hr->next;
     }
@@ -932,7 +932,8 @@ void link_Publics(void)
     while (lf)
     {
         SYMBOL *sp = lf->data;
-        if ((sp->storage_class == sc_global || (sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt) && !sp->isInline)
+        if ((sp->storage_class == sc_global || 
+             ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)) && !sp->isInline)
         {
             link_putpub(sp, 'I');
         }
@@ -1058,7 +1059,7 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                 SYMBOL *sp = fixup->sym;
                 if ((xseg & 0xc0000000) || sp->storage_class == sc_global || sp->storage_class ==
                     sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads
-                    || (sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)
+                    || ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt))
                 {
                     if (rel)
                     {
@@ -1074,7 +1075,7 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                 {
                     if (rel)
                     {
-                        sprintf(buf, "X%X,4,-,P,-", sp->value.i);
+                        sprintf(buf, "X%X,4,-,P,-", (int)sp->value.i);
                     }
                     else
                     {
@@ -1204,9 +1205,9 @@ static void putattribs(EMIT_TAB *seg, int addr)
             {
                 case e_ad_funcdata:
                     if (seg->attriblist->v.sp->storage_class == sc_global)
-                        sprintf(buf1, "I%x", seg->attriblist->v.sp->value.i);
+                        sprintf(buf1, "I%x", (int)seg->attriblist->v.sp->value.i);
                     else
-                        sprintf(buf1, "N%x", seg->attriblist->v.sp->value.i);
+                        sprintf(buf1, "N%x", (int)seg->attriblist->v.sp->value.i);
                     if (seg->attriblist->start)
                         emit_record_ieee("CO404,%03X%s.\r\n", strlen(buf1), buf1);
                     else
@@ -1225,7 +1226,7 @@ static void putattribs(EMIT_TAB *seg, int addr)
                 case e_ad_vardata:
                     if (seg->attriblist->v.sp->tp->type != bt_ellipse)
                     {
-                        sprintf(buf1, "A%X", seg->attriblist->v.sp->value.i);
+                        sprintf(buf1, "A%X", (int)seg->attriblist->v.sp->value.i);
                         emit_record_ieee("CO400,%03X%s.\r\n", strlen(buf1), buf1);
                     }
                     break;
@@ -1382,7 +1383,7 @@ void link_BrowseInfo(void)
 void output_obj_file(void)
 {
     char name[260];
-    LIST *l = incfiles;
+    FILELIST *l = incfiles;
     int i, pos = 1;
     extIndex = pubIndex = localIndex = autoIndex =1;
     typeIndex = 1024;

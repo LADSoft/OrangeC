@@ -391,11 +391,11 @@ void kwini(void)
     struct kwblk *q = keywords;
     if (!hashtable)
     {
-        hashtable = (HASHREC*)malloc(KWHASHSIZE *sizeof(HASHREC*));
+        hashtable = (HASHREC**)malloc(KWHASHSIZE *sizeof(HASHREC*));
         memset(hashtable, 0, KWHASHSIZE *sizeof(HASHREC*));
         while (q->word)
         {
-            AddHash(q, hashtable, KWHASHSIZE);
+            AddHash((HASHREC *)q, hashtable, KWHASHSIZE);
             q++;
         } 
     }
@@ -415,7 +415,7 @@ int searchkw(void)
         buf[i] = toupper(lastid[i]);
     if (lastst != ident)
         return 0;
-    kwbp = LookupHash(buf, hashtable, KWHASHSIZE);
+    kwbp = (struct kwblk **)LookupHash(buf, hashtable, KWHASHSIZE);
 
     if (kwbp)
     {

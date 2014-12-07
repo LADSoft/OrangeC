@@ -43,6 +43,8 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <ctype.h>
+
 #include "header.h"
 
 extern HANDLE hInstance;
@@ -128,7 +130,7 @@ void TextToClipBoard(HWND hwnd, char *text)
         char *p = text;
         int l = strlen(text);
         HGLOBAL glmem;
-        while (p = strchr(p,'\n'))
+        while ((p = strchr(p,'\n')))
             n++,p++;
         glmem = GlobalAlloc(GMEM_DDESHARE + GMEM_MOVEABLE, l+n+1);
         if (glmem != NULL)
@@ -203,7 +205,7 @@ void BumpToEditor(HWND hwnd)
         t = buffer;
         while (1)
         {
-            if (t = strchr(t + 1, ':'))
+            if ((t = strchr(t + 1, ':')))
             {
                 if (isdigit(*(t + 1)))
                 {

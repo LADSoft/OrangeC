@@ -71,7 +71,7 @@ int WindowItemCount = 0;
 static int winMenuCount;
 static int winShowCount;
 static char windowTexts[MAX_WINMENU][260];
-static HWND *winMenu[MAX_WINMENU];
+static HWND winMenu[MAX_WINMENU];
 static WNDPROC oldMenuProc;
 
 static int MenuBitmapIDs[] = { ID_EDITTB, ID_BUILDTB , ID_DEBUGTB, ID_EXTRA, ID_NAVTB, ID_BOOKMARKTB };

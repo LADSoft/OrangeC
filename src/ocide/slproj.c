@@ -452,7 +452,7 @@ void SaveProject(PROJECTITEM *project)
     char name[MAX_PATH];
     sprintf(name, "%s.cpj", project->realName);
     if (PropGetBool(NULL, "BACKUP_PROJECTS"))
-        backup(name);	
+        backupFile(name);	
     out = fopen(name, "w");
     if (!out)
     {

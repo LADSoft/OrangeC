@@ -87,10 +87,12 @@ public:
     {
         SetBit(ch);
         if (!caseSensitive)
+        {
             if (isupper(ch))
                 SetBit(tolower(ch));
             else
                 SetBit(toupper(ch));
+        }
     }
     void SetRange(UBYTE n, UBYTE m, bool caseSensitive)
     {
@@ -138,7 +140,7 @@ private:
 
 class RegExpContext
 {
-    friend RegExpMatch;
+    friend class RegExpMatch;
 public:
 
     RegExpContext(const char *exp, bool regular, bool caseSensitive, bool matchesWord) 

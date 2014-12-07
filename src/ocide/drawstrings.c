@@ -68,7 +68,7 @@ EXPRESSION *ResReadExp(struct resRes *data, char *buf);
 
 struct stringTableUndo
 {
-    struct stringUndo *next;
+    struct stringTableUndo *next;
     enum { au_nop, au_insert, au_delete, au_setchars } type;
     union
     {
@@ -225,6 +225,8 @@ static void StringTableUndo(HWND hwnd, struct resRes *stringTableData)
             STRINGS **p;
             STRINGS *hold;
             int i;
+            case au_nop:
+                break;
             case au_setchars:
                 p = &stringTableData->resource->u.stringtable;
                 for(i=0; i < undo->u.values.index && *p; i++, p = &(*p)->next);

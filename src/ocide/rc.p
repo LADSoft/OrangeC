@@ -21,7 +21,9 @@ BOOL iswhitespacechar(short x) ;
 BOOL issymchar(short x) ;
 BOOL isstartchar(short x) ;
 void initsym(void);
+void backup(int st);
 int getstring(char *s, int len, FILE *file);
+void getnum(void);
 LIST *GetCachedLines(void);
 int getch(void);
 void getid(void);
@@ -71,10 +73,10 @@ int searchkw(void);
 
                                /* Rcpp.c */
 
-void filemac(short *string); /* PROTOTYPE */
-void datemac(short *string); /* PROTOTYPE */
-void timemac(short *string); /* PROTOTYPE */
-void linemac(short *string); /* PROTOTYPE */
+void filemac(WCHAR *string); /* PROTOTYPE */
+void datemac(WCHAR *string); /* PROTOTYPE */
+void timemac(WCHAR *string); /* PROTOTYPE */
+void linemac(WCHAR *string); /* PROTOTYPE */
 void pushif(void); /* PROTOTYPE */
 void preprocini(void);
 int preprocess(void);
@@ -83,28 +85,28 @@ int dopragma(void);
 int doline(void);
 void ReadFileName(void);
 int doinclude(int unquoted);
-short *prcStrdup(short *string);
+WCHAR *prcStrdup(const WCHAR *string);
 void glbdefine(char *name, char *value);
 void getdefsym(void);
 int dodefine(void);
 int doundef(void);
 void undef2(void);
-int defid(short *name, short **p, char *q);
-int definsert(short *end, short *begin, short *text, int len, int replen);
-int defreplace(short *macro, int count, short **oldargs, short **newargs);
-void cnvt(short *out, char *in);
-void filemac(short *string);
-void datemac(short *string);
-void timemac(short *string);
-void linemac(short *string);
-void defmacroreplace(short *macro, short *name);
+int defid(WCHAR *name, WCHAR **p, char *q);
+int definsert(WCHAR *end, WCHAR *begin, WCHAR *text, int len, int replen);
+int defreplace(WCHAR *macro, int count, WCHAR **oldargs, WCHAR **newargs);
+void cnvt(WCHAR *out, char *in);
+void filemac(WCHAR *string);
+void datemac(WCHAR *string);
+void timemac(WCHAR *string);
+void linemac(WCHAR *string);
+void defmacroreplace(WCHAR *macro, WCHAR *name);
 void nodefines(void);
 int indefine(SYM *sp);
 void enterdefine(SYM *sp);
 void exitdefine(void);
-int replacesegment(short *start, short *end, int *inbuffer, int totallen, int
+int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
     *changed);
-int defcheck(short *line);
+int defcheck(WCHAR *line);
 void pushif(void);
 void popif(void);
 int doifdef(int flag);
@@ -119,10 +121,10 @@ EXPRESSION *ReadExp(void); /* PROTOTYPE */
 EXPRESSION *ReadExpOr(EXPRESSION *); /* PROTOTYPE */
 int Eval(EXPRESSION *); /* PROTOTYPE */
 void *rcAlloc(int v);
-char *rcStrdup(char *s);
+char *rcStrdup(const char *s);
 void rcFree(void *p);
 CURSOR *RCLoadCursor(char *fileName);
-int StringAsciiToWChar(short **text, char *string, int len);
+int StringAsciiToWChar(WCHAR **text, char *string, int len);
 BYTE *RCLoadMessageTable(char *fileName, int *size);
 int StrToClass(char *str);
 void FreeResources(RESOURCE_DATA *r);
@@ -141,15 +143,15 @@ void insert(SYM *sp, TABLE *table);
                               /* Rcutil.c */
 
 FILE *MySearchPath(char *string, char *searchpath, char *mode);
-int pstrncmp(short *str1, short *str2, int n);
-int pstrcmp(short *str1, short *str2);
-void pstrcpy(short *str1, short *str2);
-void pstrncpy(short *str1, short *str2, int len);
-void pstrcat(short *str1, short *str2);
-short *pstrchr(short *str, short ch);
-short *pstrrchr(short *str, short ch);
-int pstrlen(short *s);
-short *pstrstr(short *str1, short *str2);
+int pstrncmp(const WCHAR *str1, const WCHAR *str2, int n);
+int pstrcmp(const WCHAR *str1, const WCHAR *str2);
+void pstrcpy(WCHAR *str1, const WCHAR *str2);
+void pstrncpy(WCHAR *str1, const WCHAR *str2, int len);
+void pstrcat(WCHAR *str1, const WCHAR *str2);
+WCHAR *pstrchr(WCHAR *str, WCHAR ch);
+WCHAR *pstrrchr(WCHAR *str, WCHAR ch);
+int pstrlen(const WCHAR *s);
+WCHAR *pstrstr(WCHAR *str1,const WCHAR *str2);
 
                               /* Rcwrite.c */
 

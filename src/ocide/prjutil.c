@@ -65,6 +65,8 @@ HWND hwndEdit;
 PROJECTITEM *editItem;
 char *szprjEditClassName = "xccprjEditClass";
 
+PROJECTITEM *GetItemInfo(HTREEITEM item);
+
 void MoveChildrenUp(PROJECTITEM *data)
 {
     PROJECTITEM *children = data->children;
@@ -320,6 +322,8 @@ static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
                 return CDRF_NEWFONT;    
             }
             return CDRF_DODEFAULT;
+        default:
+            return CDRF_DODEFAULT;
     }
 }
 static BOOL SendImportCommand(char *fname, BOOL target)
@@ -425,7 +429,7 @@ LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 nm.code = N_EDITDONE;
                 nm.hwndFrom = hwnd;
-                nm.idFrom = GetDlgItem(hwnd, GWL_ID);
+                nm.idFrom = GetWindowLong(hwnd, GWL_ID);
                 SendMessage(GetParent(hwnd), WM_NOTIFY, 0, (LPARAM)&nm);
                 return 0;
             }

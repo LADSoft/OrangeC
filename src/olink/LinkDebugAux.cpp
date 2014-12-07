@@ -56,10 +56,12 @@ int LinkerColumnsWithNameVirtualTable::Column(void *cursor, sqlite3_context *ctx
 {
     struct lfcurs * pCur = (struct lfcurs *)cursor;
     if( pCur->i>=0 && pCur->i < rows)
+    {
         if (i < columns-1)
             sqlite3_result_int64(ctx, data[pCur->i*(columns-1) + i]);
         else
             sqlite3_result_text(ctx, (char *)names[pCur->i]->c_str(), names[pCur->i]->size(), SQLITE_STATIC);
+    }
     return SQLITE_OK;
 }
 int LinkerColumnsWithNameVirtualTable::RowId(void *cursor, sqlite3_int64 *pRowid)

@@ -332,7 +332,7 @@ static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, 
     }
     if (selected)
     {
-        HPEN *pen = CreatePen(PS_DOT, 0, 0);
+        HPEN pen = CreatePen(PS_DOT, 0, 0);
         pen = SelectObject(hDC, pen);
         MoveToEx(hDC, x+1, y+1, NULL);
         LineTo(hDC, x+width-1, y+1);
@@ -966,7 +966,6 @@ static int InsertDeleteFromColumns(HDC hDC, struct resRes *menuData,
 static int InsertDeleteFromTopRow(HDC hDC, struct resRes *menuData,
                                   MENUITEM **items, int fontHeight, int code)
 {
-    MENUITEM **orig = (*items);
     int x = 10;
     SIZE xx;
     while (*items)

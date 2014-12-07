@@ -91,11 +91,7 @@ class LinkRegionSpecifier
     public:
         LinkRegionSpecifier(LinkRegion *Region) : region(Region), symbol(NULL) {}
         LinkRegionSpecifier(LinkExpressionSymbol *Symbol) : region(NULL), symbol(Symbol) {}
-        ~LinkRegionSpecifier()
-        {
-            delete region;
-            delete symbol;
-        }
+        ~LinkRegionSpecifier();
         LinkRegion *GetRegion() { return region; }
         LinkExpressionSymbol *GetSymbol() { return symbol; }
     private:

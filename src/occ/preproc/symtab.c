@@ -50,7 +50,7 @@ HASHTABLE *CreateHashTable(int size)
     return rv;
 }
 /* SYMBOL tab hash function */
-static HASHREC **GetHashLink(HASHTABLE *t, char *string)
+HASHREC **GetHashLink(HASHTABLE *t, char *string)
 {
     unsigned i;
     if ( t->size == 1)

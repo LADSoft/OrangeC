@@ -141,7 +141,7 @@ SYM *basesearch(char *na, TABLE *table, int checkaccess)
     p = ((SYM **)LookupHash(na, defhash, HASHTABLESIZE));
     if (p)
     {
-        p =  (*p);
+        p =  &(*p)->next;
     }
     return (SYM*)p;
 }
@@ -157,5 +157,5 @@ SYM *search(char *na, TABLE *table)
 void insert(SYM *sp, TABLE *table)
 
 {
-    AddHash(sp, defhash, HASHTABLESIZE);
+    AddHash((HASHREC *)sp, defhash, HASHTABLESIZE);
 }

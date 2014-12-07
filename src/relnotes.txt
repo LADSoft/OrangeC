@@ -69,6 +69,7 @@ version 5.20.1:
     ocide:  default new files to a format notepad can read properly
     ocide:  when selecting an error from the information window, the cursor
             might move to the wrong line if lines were inserted or deleted
+    ocide:  fix backups of project and workspace files
     ogrep:  when the -d option was used with an explicit filename, ogrep would
             complain 'file not found' in any directory that didn't have the file
     orc:    allow specifying extended font parameters on the DIALOGEX FONT line            

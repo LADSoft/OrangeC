@@ -41,6 +41,7 @@
 #include <string.h>
 #include "compiler.h"
 #include "browse.h"
+#include "direct.h"
   
 extern COMPILER_PARAMS cparams;
 extern ARCH_DEBUG *chosenDebugger;
@@ -48,6 +49,8 @@ extern ARCH_DEBUG *chosenDebugger;
 static int currentFile = 0;
 static BROWSEFILE *files;
 
+
+// this function isn't very portable..
 void abspath(char *name)
 {
     char projname[256],  *p,  *nname = name;
@@ -144,7 +147,7 @@ void browse_startfile(char *name, int index)
     char exname[260];
     BROWSEFILE *bf, *bff , **bffp;
     BROWSEINFO *bri;
-    if (!cparams.prm_browse && !cparams.prm_debug || !chosenDebugger || !chosenDebugger->browsefile || !chosenDebugger->browsedata)
+    if ((!cparams.prm_browse && !cparams.prm_debug) || !chosenDebugger || !chosenDebugger->browsefile || !chosenDebugger->browsedata)
         return ;
     currentFile = index;
 

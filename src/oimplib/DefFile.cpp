@@ -488,7 +488,7 @@ void DefFile::WriteName()
         *stream << "NAME " << name.c_str() ;
         if (imageBase != -1)
         {
-            *stream << ", ", imageBase ;
+            *stream << ", " << imageBase ;
         }
         *stream << std::endl;
     }
@@ -500,7 +500,7 @@ void DefFile::WriteLibrary()
         *stream << "LIBRARY " << library.c_str() ;
         if (imageBase != -1)
         {
-            *stream << ", ", imageBase ;
+            *stream << ", " << imageBase ;
         }
         *stream << std::endl;
     }
@@ -516,7 +516,7 @@ void DefFile::WriteExports()
             first = false;
         }
         *stream << "\t" << (*it)->id.c_str();
-        if ((*it)->entry.size() && (*it)->entry != (*it)->id || (*it)->module.size())
+        if (((*it)->entry.size() && (*it)->entry != (*it)->id) || (*it)->module.size())
         {
             *stream << "=" << (*it)->entry.c_str();
             if ((*it)->module.size())

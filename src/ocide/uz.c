@@ -227,11 +227,11 @@ void ExpandTables(unsigned short *dest2, unsigned short *dest, unsigned char
     idest += len - 1;
     for (i = len - 1; i >= 0; i--)
     {
-        if (sum =  *source--)
+        if ((sum =  *source--))
         {
             if (sum > 8)
             {
-                short *xdest = dest + (*idest &0xff);
+                short *xdest = (short *)(dest + (*idest &0xff));
                 int j, shift = 1, mask =  *idest >> 8;
                 sum -= 8;
                 for (j = 0; j < sum; j++)
@@ -242,7 +242,7 @@ void ExpandTables(unsigned short *dest2, unsigned short *dest, unsigned char
                         dest2[xlen] = dest2[xlen + 1] = 0;
                         xlen += 2;
                     }
-                    xdest = ~ * xdest + dest2;
+                    xdest = (short *)(~ * xdest + dest2);
                     if (mask &shift)
                         xdest++;
                     shift <<= 1;
@@ -320,7 +320,7 @@ void GetInflateTables(void)
                 inflate_tab_7[tab7_rearrange[i]] = get_n_bits(3);
             ExpandTables((unsigned short *)tab7_rearrange + len, inflate_tab_8, inflate_tab_7,
                 0x13);
-            xdest = inflate_tab_1;
+            xdest = (unsigned char *)inflate_tab_1;
             for (i = if1_count + if2_count; i > 0;)
             {
                 val = inflate_tab_8[accum &0xff];
@@ -362,8 +362,8 @@ void GetInflateTables(void)
             break;
 
     }
-    ExpandTables(inflate_tab_5, inflate_tab_3, inflate_tab_1, if1_count);
-    ExpandTables(inflate_tab_6, inflate_tab_4, inflate_tab_2, if2_count);
+    ExpandTables(inflate_tab_5, (unsigned short *)inflate_tab_3, (unsigned char *)inflate_tab_1, if1_count);
+    ExpandTables(inflate_tab_6, (unsigned short *)inflate_tab_4, (unsigned char *)inflate_tab_2, if2_count);
 }
 
 //-------------------------------------------------------------------------
@@ -397,7 +397,7 @@ unsigned consulttabs1(void)
         shr_n_bits(count = inflate_tab_1[b]);
     else
     {
-        b = fancymove(b, inflate_tab_5, &count);
+        b = fancymove(b, (short *)inflate_tab_5, &count);
         shr_n_bits(count);
     }
     if (b < 0x109)
@@ -423,7 +423,7 @@ unsigned consulttabs2(void)
         shr_n_bits(count = inflate_tab_2[b]);
     else
     {
-        b = fancymove(b, inflate_tab_6, &count);
+        b = fancymove(b, (short *)inflate_tab_6, &count);
         shr_n_bits(count);
     }
     if ((b &0xff) >= 4)
@@ -479,7 +479,7 @@ int Inflate(unsigned char *idata, unsigned char *odata)
                     break;
                 val -= 0xfe;
                 b = consulttabs2();
-                src = outputQueue + outputPos - 1-b;
+                src = (char *)(outputQueue + outputPos - 1-b);
                 for (i = 0; i < val; i++)
                 {
                     outputQueue[outputPos++] =  *src++;

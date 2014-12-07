@@ -40,6 +40,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include "header.h"
 #include "lsctrl.h"
 
 extern HWND hwndClient;

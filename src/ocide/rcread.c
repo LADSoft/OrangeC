@@ -47,6 +47,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "header.h"
 #include <setjmp.h>
@@ -58,7 +59,7 @@ int Eval(EXPRESSION *);
 extern char *errfile;
 extern SYM *rcDefs;
 extern int cantnewline;
-extern short *lptr;
+extern WCHAR *lptr;
 extern int laststrlen;
 extern char *rcSearchPath;
 extern enum e_sym lastst;
@@ -102,7 +103,7 @@ void *rcAlloc(int v)
     return rv;
           
 }
-char *rcStrdup(char *s)
+char *rcStrdup(const char *s)
 {
     char *v = rcAlloc(strlen(s) + 1);
     if (v)
@@ -371,7 +372,7 @@ static void CreateDialogResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *re
     r->info =  *resinfo;
     AddResource(cd, (IDENT *)RESTYPE_DIALOG, r, id, resinfo->language_high, resinfo->language_low, 0);
 } 
-int StringAsciiToWChar(short **text, char *string, int len)
+int StringAsciiToWChar(WCHAR **text, char *string, int len)
 {
     int i = 0;
     *text = rcAlloc(len *sizeof(WCHAR)+sizeof(WCHAR));
@@ -393,44 +394,9 @@ static void IdentFromString(IDENT *val, char *string)
 
 //-------------------------------------------------------------------------
 
-static CONTROL *CreateControl(char *text, int id, int x, int y, int
-    width, int height, int class , int style, int exstyle)
-{
-    CONTROL *ctl = rcAlloc(sizeof(CONTROL));
-    ctl->next = NULL;
-    ctl->id = id;
-    ctl->style = style;
-    ctl->exstyle = exstyle;
-    ctl->x = x;
-    ctl->y = y;
-    ctl->width = width;
-    ctl->height = height;
-    if (class  < 1024)
-    {
-            ctl->class.symbolic = 0;
-            ctl->class.u.id = class ;
-    } 
-    else
-        IdentFromString(&ctl->class , (void*)class );
-
-    if (text != NULL)
-        IdentFromString(&ctl->text, text);
-    else
-    {
-            ctl->text->symbolic = 0;
-            ctl->text->u.id = 0;
-    }
-    ctl->data = NULL;
-    ctl->help = 0;
-
-    return ctl;
-}
-
-//-------------------------------------------------------------------------
-
 static void CreateDlgIncludeResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, char *fileName)
 {
-    BYTE *data;
+    char *data;
     RESOURCE *r;
     int size;
 
@@ -440,7 +406,7 @@ static void CreateDlgIncludeResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS
     r= rcAlloc(sizeof(RESOURCE));
     r->itype = RESTYPE_DLGINCLUDE;
     r->u.data.length = size;
-    r->u.data.data = data;
+    r->u.data.data = (BYTE *)data;
     r->info =  *resinfo;
     
     AddResource(cd, (IDENT *)RESTYPE_DLGINCLUDE, r, id, resinfo
@@ -662,7 +628,7 @@ static RCDATA *CreateRCDataResourceString(char *string, int len)
     ri->u.string.length = len;
     s = rcAlloc(len);
     memcpy(s, string, len);
-    ri->u.string.s = s;
+    ri->u.string.s = (BYTE *)s;
 
     return ri;
 } 
@@ -1762,7 +1728,7 @@ static void ParseStringTable(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     need_begin();
     while (is_number())
     {
-        int val = ReadExp();
+        EXPRESSION *val = ReadExp();
         skip_comma();
         if (lastst != sconst)
             generror(ERR_STRING_EXPECTED, 0);
@@ -2206,7 +2172,7 @@ static SYM * GetIds(RESOURCE_DATA *select, SYM *syms)
     }
     if (*curs)
     { 
-        LIST **begin = curs;
+        SYM **begin = curs;
         // ok found something, try to get the values
         while (!done && *curs)
         {

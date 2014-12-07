@@ -182,6 +182,7 @@ static void GatherGlobals(void)
             while (head != blockArray[i]->tail->fwd)
             {
                 if (head->dc.opcode != i_label && !head->ignoreMe)
+                {
                     if (head->needsOCP || head->dc.opcode == i_block)
                     {
                         EnterGlobal(head);
@@ -203,7 +204,7 @@ static void GatherGlobals(void)
                     {
                         EnterGlobal(head);
                     }
-                    
+                }   
                 head = head->fwd;
             }
         }
@@ -229,8 +230,8 @@ void SetunMoveableTerms(void)
                     if (head->temps & TEMP_ANS)
                     {
                         int n = head->ans->offset->v.sp->value.i;
-                        if (!chosenAssembler->arch->hasFloatRegs
-                                &&head->ans->size >= ISZ_FLOAT || head->ans->bits || head->ans->vol)
+                        if ((!chosenAssembler->arch->hasFloatRegs
+                                &&head->ans->size >= ISZ_FLOAT) || head->ans->bits || head->ans->vol)
                             clearbit(unMoveableTerms,n );
 /*                            
                         if (head->dc.left && head->dc.left->bits)

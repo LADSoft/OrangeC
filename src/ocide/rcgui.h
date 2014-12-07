@@ -57,7 +57,6 @@
 #define IL_VSCROLL 12
 #define IL_ETCHED 13
 
-struct ctlData;
 
 struct keypair
 {
@@ -98,7 +97,7 @@ struct resRes
         int dlgAltMode : 3;
         int bDragging:1;
         int dragInView:1;
-        int lvscroll:1;
+        int lvscroll:3;
         int cantClearUndo:1;
     } gd;
 } ;
@@ -119,7 +118,7 @@ struct resData
 struct propertyFuncs
 {
     void (*draw)(HWND lv, void *data);
-    void (*getText)(char *buf, HWND lv, struct ctlData *data, int row);
+    void (*getText)(char *buf, HWND lv, void *data, int row);
     HWND (*startEdit)(HWND lv, int row, void *data);
     void (*finishEdit)(HWND lv, int row, HWND editWnd, void *data);
 } ;
@@ -162,6 +161,7 @@ typedef struct tagLVHITTESTINFO_x
 } LVHITTESTINFO_x, *LPLVHITTESTINFO_x;
 
 
+#ifndef LVIF_GROUPID
 #define LVIF_GROUPID 0x100
 #define LVIF_COLUMNS 0x0200
 
@@ -201,6 +201,7 @@ typedef struct tagLVGROUP
 } LVGROUP, *PLVGROUP;
 
 
+#ifndef LVM_INSERTGROUP
 #define LVM_INSERTGROUP         (LVM_FIRST + 145)
 #define ListView_InsertGroup(hwnd, index, pgrp) \
     SNDMSG((hwnd), LVM_INSERTGROUP, (WPARAM)index, (LPARAM)pgrp)
@@ -227,9 +228,12 @@ typedef struct tagLVGROUP
 #define LVM_ENABLEGROUPVIEW         (LVM_FIRST + 157)
 #define ListView_EnableGroupView(hwnd, fEnable) \
     SNDMSG((hwnd), LVM_ENABLEGROUPVIEW, (WPARAM)fEnable, 0)
+#endif
+#endif
 #else
 typedef struct tagLVITEMA LVITEMA_x, *LPLVITEMA_x;
 typedef struct tagLVHITTESTINFO  LVHITTESTINFO_x, *LPLVHITTESTINFO_x;
 
 #endif
+
 #endif

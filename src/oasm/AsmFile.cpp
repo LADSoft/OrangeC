@@ -59,7 +59,6 @@
 
 AsmFile::~AsmFile()
 {
-    delete parser;
     for (int i = 0; i < numericSections.size(); i++)
     {
         Section *s = numericSections[i];

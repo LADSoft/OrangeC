@@ -382,10 +382,12 @@ std::string ppDefine::defid(const std::string &macroname, int &i, int &j)
         {
             i -= 2 + quoted;
             if (quoted)
+            {
                 if (macroname[j] != '}')
                     Errors::Error("Macro substition: expected '}'");
                 else
                     j++;
+            }
             char buf[256];
             sprintf(buf, "..@%d$", n1);
             rv = std::string(buf) + rv;
@@ -464,12 +466,12 @@ void ppDefine::Tokenize(std::string &macro)
     {
         int begin,end;
         begin = end = n;
-        while (begin && macro[begin-1] == PP_TOKEN_BREAK || macro[begin-1] == PP_MASTART ||
+        while ((begin && macro[begin-1] == PP_TOKEN_BREAK) || macro[begin-1] == PP_MASTART ||
                macro[begin-1] == PP_MAEND || isspace(macro[begin-1]))
             begin--;
         if (begin && macro[begin-1] == NULL_TOKENIZER)
             begin--;
-        while (end < macro.size() && macro[end+1] == PP_TOKEN_BREAK || macro[end++] == PP_MASTART ||
+        while ((end < macro.size() && macro[end+1] == PP_TOKEN_BREAK) || macro[end++] == PP_MASTART ||
                macro[end] == PP_MAEND || isspace(macro[end]))
             end++;
         if (end < macro.size() && macro[end++] == NULL_TOKENIZER)

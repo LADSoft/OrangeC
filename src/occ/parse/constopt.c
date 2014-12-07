@@ -208,91 +208,7 @@ static BOOLEAN hasFloats(EXPRESSION *node)
         case en_c_di:
         case en_c_ldi:
             return 1;
-        case en_substack:
-        case en_loadstack:
-        case en_savestack:
-        case en_label:
-        case en_labcon:
-        case en_trapcall:
-        case en_global:
-        case en_auto:
-        case en_pc:
-        case en_threadlocal:
-        case en_absolute:
-        case en_shiftby:
-        case en_bits:
-        case en_l_sp:
-        case en_l_fp:
-        case en_x_sp:
-        case en_x_fp:
-        case en_x_bit:
-        case en_x_bool:
-        case en_x_wc:
-        case en_x_c:
-        case en_x_uc:
-        case en_x_u16:
-        case en_x_u32:
-        case en_x_s:
-        case en_x_us:
-        case en_x_i:
-        case en_x_ui:
-        case en_x_l:
-        case en_x_ul:
-        case en_x_ll:
-        case en_x_ull:
-        case en_x_p:
-        case en_l_bit:
-        case en_l_bool:
-        case en_l_u16:
-        case en_l_u32:
-        case en_l_c:
-        case en_l_uc:
-        case en_l_s:
-        case en_l_us:
-        case en_l_wc:
-        case en_l_i:
-        case en_l_ui:
-        case en_l_l:
-        case en_l_ul:
-        case en_l_ll:
-        case en_l_ull:
-        case en_l_p:
-        case en_l_ref:
-        case en_c_bool:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_i:
-        case en_c_ui:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_eq:
-        case en_ne:
-        case en_lt:
-        case en_le:
-        case en_gt:
-        case en_ge:
-        case en_ugt:
-        case en_uge:
-        case en_ult:
-        case en_ule:
-        case en_mp_compare:
-        case en_mp_as_bool:
-            return 0;
-        case en_func:
-            return 0;
-        case en_memberptr:
-            return 0;
-        case en_not:
-        case en_compl:
-        case en_uminus:
-        case en_stackblock:
-        case en_blockassign:
-        case en_blockclear:
+        default:
             return 0;
         case en_assign:
         case en_autoinc:
@@ -324,9 +240,6 @@ static BOOLEAN hasFloats(EXPRESSION *node)
             return (hasFloats(node->left) || hasFloats(node->right));
         case en_cond:
             return hasFloats(node->right);
-        case en_atomic:
-        case en_templateparam:
-            return 0;
         case en_argnopush:
         case en_not_lvalue:
         case en_thisref:
@@ -440,6 +353,7 @@ static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
         } else
             mode = 21;
     else if (ep2)
+    {
         if (isintconst(ep2))
             mode = 7;
         else if (ep2->type == en_c_d || ep2->type == en_c_ld || ep2
@@ -451,7 +365,7 @@ static int getmode(EXPRESSION *ep1, EXPRESSION *ep2)
         else if (ep2->type == en_c_dc || ep2->type == en_c_fc ||
             ep2->type == en_c_ldc)
                 mode = 22;
-    
+    }    
     return (mode);
 }
 LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value)
@@ -632,6 +546,8 @@ FPF refloat(EXPRESSION *node)
         case en_c_ldi:
             rv = CastToFloat(ISZ_LDOUBLE,&node->v.f);
             break;
+        default:
+            break;
     }
     return rv;
 }
@@ -697,6 +613,8 @@ ULLONG_TYPE reint(EXPRESSION *node)
         case en_c_di:
         case en_c_ldi:
             rv = (LLONG_TYPE)0;
+            break;
+        default:
             break;
     }
     return rv;
@@ -899,6 +817,8 @@ void dooper(EXPRESSION **node, int mode)
                 ep->v.c.i = ep2->v.c.i ;
                 refloat(ep);
                 break;
+            default:
+                break;
             }
             break;
         case en_sub:
@@ -1059,6 +979,8 @@ void dooper(EXPRESSION **node, int mode)
                 ep->v.c.i = ep2->v.c.i ;
                 ep->v.c.i.sign ^= 1;
                 refloat(ep);
+                break;
+            default:
                 break;
             }
             break;
@@ -1221,6 +1143,8 @@ void dooper(EXPRESSION **node, int mode)
                 MultiplyFPF(&temp, &ep2->v.c.i, &ep->v.c.i);
                 refloat(ep);
                 break;
+            default:
+                break;
             }
             break;
         case en_arraydiv:
@@ -1361,6 +1285,8 @@ void dooper(EXPRESSION **node, int mode)
                 DivideFPF(&ep1->v.c.i, &temp, &ep->v.c.i);
                 refloat(ep);
                 break;
+            default:
+                break;
             }
             break;
         case en_mod:
@@ -1406,6 +1332,8 @@ void dooper(EXPRESSION **node, int mode)
             ep->type = maxinttype(ep1, ep2);
             ep->v.i = ep1->v.i ^ ep2->v.i;
             ep->v.i = reint(ep);
+            break;
+        default:
             break;
     }
 }
@@ -1675,21 +1603,6 @@ int opt0(EXPRESSION **node)
                     dooper(node, mode);
                 rv = TRUE;
                 break;
-#ifdef XXXXX
-            case 21:
-                if (ep->type != en_sub)
-                {
-                    if (ep->left->v.c.r.type == IFPF_IS_ZERO &&
-                        ep->left->v.c.i.type == IFPF_IS_ZERO)
-                    {
-                        *node = ep->right;
-                    }
-                    else
-                        dooper(node, mode);
-                    rv = TRUE;
-                }
-                break;
-#endif
             case 22:
                 if (ep->right->v.c.r.type == IFPF_IS_ZERO &&
                     ep->right->v.c.i.type == IFPF_IS_ZERO)
@@ -1710,6 +1623,8 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
+            default:
+                break;
             case 1:
             case 2:
             case 3:
@@ -1760,6 +1675,8 @@ int opt0(EXPRESSION **node)
                                 break;
                             case en_arraymul:
                                 ep->type = en_arraylsh;
+                                break;
+                            default:
                                 break;
                             }
                             break;
@@ -1822,6 +1739,8 @@ int opt0(EXPRESSION **node)
                             case en_arraymul:
                                 ep->type = en_arraylsh;
                                 break;
+                            default:
+                                break;
                             }
                             break;
                         }
@@ -1832,14 +1751,6 @@ int opt0(EXPRESSION **node)
                 break;
             case 8:
                 dval = ep->right->v.f;
-#ifdef XXXXX
-                if (dval.type == IFPF_IS_ZERO)
-                {
-                    *node = ep->right;
-                    addaside(ep->left);
-                }
-                else
-#endif
                 if (!dval.sign && ValueIsOne(&dval))
                 {
                     *node = ep->left;
@@ -1852,59 +1763,6 @@ int opt0(EXPRESSION **node)
                     dooper(node, mode);
                 rv = TRUE;
                 break;
-#ifdef XXXXX
-/* multiply by imaginary const changes the mode of the other value...*/
-/* but there is no easy way to do that at this stage.  A simple cast will*/
-/* result in conversion to zero, and while we could change simple variable*/
-/* references by examination of the enode we could *not* change complicated expressions*/
-            case 12:
-                dval = ep->left->v.f;
-                if (dval.type == IFPF_IS_ZERO)
-                {
-                    addaside(ep->right);
-                    *node = ep->left;
-                }
-                else if (!dval.sign && ValueIsOne(&dval))
-                    *node = ep->right;
-                else if (dval.sign && ValueIsOne(&dval))
-                    *node = exprNode(negtype, (char*)ep->right, 0);
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
-            case 13:
-                dval = ep->right->v.f;
-                if (dval.type == IFPF_IS_ZERO)
-                {
-                    *node = ep->right;
-                    addaside(ep->left);
-                }
-                else if (!dval.sign && ValueIsOne(&dval))
-                    *node = ep->left;
-                else if (dval.sign && ValueIsOne(&dval))
-                    *node = exprNode(negtype, (char*)ep->left, 0);
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
-#endif
-#ifdef XXXXX
-            case 21:
-                dval = ep->left->v.c.r;
-                if (ep->left->v.c.i.type == IFPF_IS_ZERO)
-                {
-                    if (!dval.sign && ValueIsOne(&dval))
-                        *node = ep->right;
-                    else if (dval.sign && ValueIsOne(&dval))
-                        *node = exprNode(negtype, ep->right, 0);
-                    else
-                        dooper(node, mode);
-                }
-                else
-                    dooper(node, mode);
-                rv = TRUE;
-                break;
-#endif
             case 22:
                 dval = ep->right->v.c.r;
                 if (ep->right->v.c.i.type == IFPF_IS_ZERO)
@@ -1947,15 +1805,7 @@ int opt0(EXPRESSION **node)
                 rv = TRUE;
                 break;
             case 6:
-#ifdef XXXXX
-                if (ep->left->v.f.type == IFPF_IS_ZERO)
-                {
-                    addaside(ep->right);
-                    *node = ep->left;
-                }
-                else
-#endif
-                    dooper(node, mode);
+                dooper(node, mode);
                 rv = TRUE;
                 break;
             case 7:
@@ -1982,6 +1832,8 @@ int opt0(EXPRESSION **node)
                             case en_udiv:
                                 ep->type = en_ursh;
                                 break;
+                            default:
+                                break;
                             }
                             break;
                         }
@@ -1992,11 +1844,6 @@ int opt0(EXPRESSION **node)
                 break;
             case 8:
                 dval = ep->right->v.f;
-#ifdef XXXXX
-                if (dval.type == IFPF_IS_ZERO)
-                    *node = ep->left;
-                else 
-#endif
                 if (!dval.sign && ValueIsOne(&dval))
                     *node = ep->left;
                 if (dval.sign && ValueIsOne(&dval))
@@ -2031,6 +1878,8 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
+            default:
+                break;
             case 7:
                 if (!hasFloats(ep->left))
                 {
@@ -2061,6 +1910,8 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
+            default:
+                break;
             case 1:
                 dooper(node, mode);
                 rv = TRUE;
@@ -2094,6 +1945,8 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
+            default:
+                break;
             case 1:
                 dooper(node, mode);
                 rv = TRUE;
@@ -2134,6 +1987,8 @@ int opt0(EXPRESSION **node)
             mode = getmode(ep->left, ep->right);
             switch (mode)
             {
+            default:
+                break;
             case 1:
                 dooper(node, mode);
                 rv = TRUE;
@@ -2297,6 +2152,8 @@ join_lor:
                 *node = intNode(en_c_i, FPFEQ(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
                 break;
+            default:
+                break;
             }
             break;
         case en_ne:
@@ -2313,6 +2170,8 @@ join_lor:
             case 4:
                 *node = intNode(en_c_i, !FPFEQ(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
+                break;
+            default:
                 break;
             }
             break;
@@ -2331,6 +2190,8 @@ join_lor:
                 *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
                 break;
+            default:
+                break;
             }
             break;
         case en_le:
@@ -2348,6 +2209,8 @@ join_lor:
                 *node = intNode(en_c_i, !FPFGT(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
                 break;
+            default:
+                break;
             }
             break;
         case en_ugt:
@@ -2360,6 +2223,8 @@ join_lor:
                 *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i > 
                     (ULLONG_TYPE)ep->right->v.i));
                 rv = TRUE;
+                break;
+            default:
                 break;
             }
             break;
@@ -2374,6 +2239,8 @@ join_lor:
                     (ULLONG_TYPE)ep->right->v.i));
                 rv = TRUE;
                 break;
+            default:
+                break;
             }
             break;
         case en_ult:
@@ -2387,6 +2254,8 @@ join_lor:
                     (ULLONG_TYPE)ep->right->v.i));
                 rv = TRUE;
                 break;
+            default:
+                break;
             }
             break;
         case en_ule:
@@ -2399,6 +2268,8 @@ join_lor:
                 *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i <= 
                     (ULLONG_TYPE)ep->right->v.i));
                 rv = TRUE;
+                break;
+            default:
                 break;
             }
             break;
@@ -2417,6 +2288,8 @@ join_lor:
                 *node = intNode(en_c_i, FPFGT(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
                 break;
+            default:
+                break;
             }
             break;
         case en_ge:
@@ -2433,6 +2306,8 @@ join_lor:
             case 4:
                 *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
                 rv = TRUE;
+                break;
+            default:
                 break;
             }
             break;
@@ -2495,6 +2370,8 @@ join_lor:
         case en_templateparam:
             if ((*node)->v.sp->tp->templateParam->p->type == kw_int)
                 *node = (*node)->v.sp->tp->templateParam->p->byNonType.val;
+            break;
+        default:
             break;
     }
     return rv;
@@ -2590,6 +2467,8 @@ int fold_const(EXPRESSION *node)
                         rv = TRUE;
                     }
                     break;
+                default:
+                    break;
                 }
             }
             else if (isoptconst(node->left))
@@ -2650,6 +2529,8 @@ int fold_const(EXPRESSION *node)
                         rv = TRUE;
                     }
                     break;
+                default:
+                    break;
                 }
             }
             break;
@@ -2695,6 +2576,8 @@ int fold_const(EXPRESSION *node)
                         rv = TRUE;
                     }
                     break;
+                default:
+                    break;
                 }
             }
             else if (isoptconst(node->left))
@@ -2738,6 +2621,8 @@ int fold_const(EXPRESSION *node)
                         rv = TRUE;
                     }
                     break;
+                default:
+                    break;
                 }
             }
             break;
@@ -2766,6 +2651,8 @@ int fold_const(EXPRESSION *node)
                         rv = TRUE;
                     }
                     break;
+                default:
+                    break;
                 }
             }
             else if (isoptconst(node->left))
@@ -2788,6 +2675,8 @@ int fold_const(EXPRESSION *node)
                         enswap(&node->right->left, &node->left);
                         rv = TRUE;
                     }
+                    break;
+                default:
                     break;
                 }
             }
@@ -2825,35 +2714,6 @@ int fold_const(EXPRESSION *node)
                     rv = TRUE;
                 }
             }
-            break;
-        case en_auto:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_f:
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_bool:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_global:
-        case en_absolute:
-        case en_pc:
-        case en_threadlocal:
-        case en_c_ll:
-        case en_c_ull:
-        case en_label:
-        case en_labcon:
             break;
         case en_l_sp:
         case en_l_fp:
@@ -3021,6 +2881,8 @@ int fold_const(EXPRESSION *node)
                 if (node->v.sp->tp->templateParam->p->byNonType.val)
                     rv |= fold_const(node->v.sp->tp->templateParam->p->byNonType.val);
             break;
+        default:
+            break;
     }
     return rv;
 }
@@ -3048,19 +2910,7 @@ int typedconsts(EXPRESSION *node1)
                 node1->type = en_c_i;
             node1->v.i = node1->v.sp->value.i;
             break;
-        case en_c_l:
-        case en_c_ui:
-        case en_c_i:
-        case en_c_ul:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_ull:
-        case en_c_ll:
-        case en_c_bool:
-/*            node1->v.i = reint(node1);*/
+        default:
             break;
         case en_compl:
         case en_not:
@@ -3179,9 +3029,6 @@ int typedconsts(EXPRESSION *node1)
                 *node1 = *node1->left;
                 rv = TRUE;
             }
-            break;
-        case en_x_fp:
-        case en_x_sp:
             break;
         case en_x_ull:
             rv |= typedconsts(node1->left);

@@ -187,6 +187,8 @@ bool LinkRemapper::OptimizeRight(ObjExpression *exp, ObjExpression *right)
                 right = new ObjExpression(0);
             }
             break;
+        default:
+            break;
     }
     return rv;
 }
@@ -425,6 +427,8 @@ ObjInt LinkRemapper::MapType(ObjFile *file, ObjType *type)
         case ObjType::eTypeDef:
             sprintf(name, "T%d;%d;%s", type->GetSize(),
                     GetTypeIndex(type->GetBaseType()),type->GetName().c_str());
+            break;
+        default:
             break;
     }
     RegisterType(file, type, name);

@@ -43,6 +43,14 @@
 #include "ResourceData.h"
 #include <stdexcept>
 
+DlgInclude::~DlgInclude() 
+{ 
+    delete data; 
+}
+void DlgInclude::SetData(ResourceData *rdata) {
+        delete data;
+    data = rdata;
+}
 void DlgInclude::WriteRes(ResFile &resFile) 
 { 
     Resource::WriteRes(resFile); 

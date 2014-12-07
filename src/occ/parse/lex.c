@@ -407,13 +407,13 @@ static BOOLEAN kwmatches(KEYWORD *kw)
     }
     return FALSE;
 }
-KEYWORD *searchkw(char **p)
+KEYWORD *searchkw(unsigned char **p)
 /*
  * see if the current symbol is a keyword
  */
 {
     KEYWORD *kw;
-    char buf[1000], *q = buf,*q1 = *p;
+    unsigned char buf[1000], *q = buf,*q1 = *p;
     if (isstartchar(*q1))
     {
         int len = 0;
@@ -424,7 +424,7 @@ KEYWORD *searchkw(char **p)
         }
         *q = 0;
 #ifdef KW_HASH
-        kw = (KEYWORD *)search(buf, kwhash);
+        kw = (KEYWORD *)search((char *)buf, kwhash);
         if (kw)
 #else
         kw = (KEYWORD *)binarySearch(buf);
@@ -444,7 +444,7 @@ KEYWORD *searchkw(char **p)
                         count++;
                     if (!count)
                     {
-                        errorstr(ERR_C99_KEYWORD, buf);
+                        errorstr(ERR_C99_KEYWORD, (char *)buf);
                         return NULL;
                     }
                 }
@@ -463,7 +463,7 @@ KEYWORD *searchkw(char **p)
         if (len)
         {
             buf[len] = 0;
-            while (len && (found = (KEYWORD *)search(buf, kwhash)) == NULL)
+            while (len && (found = (KEYWORD *)search((char *)buf, kwhash)) == NULL)
             {
                 buf[--len] = 0;
             }
@@ -495,7 +495,7 @@ KEYWORD *searchkw(char **p)
     }
     return NULL;
 }
-int getChar(char **source, enum e_lexType *tp)
+int getChar(unsigned char **source, enum e_lexType *tp)
 {
     enum e_lexType v = l_achr;
     unsigned char *p = (unsigned char *)*source;
@@ -559,7 +559,7 @@ int getChar(char **source, enum e_lexType *tp)
     }
     return INT_MIN;
 }
-SLCHAR *getString(char **source, enum e_lexType *tp)
+SLCHAR *getString(unsigned char **source, enum e_lexType *tp)
 {
     BOOLEAN raw = FALSE;
     BOOLEAN found = FALSE;
@@ -607,7 +607,7 @@ SLCHAR *getString(char **source, enum e_lexType *tp)
             int pcount = 0, qcount;
             LCHAR *qpos = 0;
             int lineno = includes->line;
-            char st[2];
+            unsigned char st[2];
             BOOLEAN err = FALSE;
             while (TRUE)
             {
@@ -899,7 +899,7 @@ static int getexp(char **ptr)
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
+int getNumber(unsigned char **ptr, unsigned char **end, unsigned char *suffix, FPF *rval, LLONG_TYPE *ival)
 {
     char buf[200],  *p = buf ;
     int radix = 10;
@@ -1028,7 +1028,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     *suffix = 0;
     if (isstartchar(**ptr))
     {
-        char *ufd = suffix;
+        unsigned char *ufd = suffix;
         while (issymchar(**ptr))
             *ufd++ = *(*ptr)++;
         *ufd = 0;
@@ -1036,27 +1036,30 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     if (!floating)
     {
         lastst = l_i;
-        if (!stricmp(suffix, "L"))
+        if (!stricmp((char *)suffix, "L"))
         {
             lastst = l_l;
             suffix[0] = 0;
         }
-        else if (!stricmp(suffix, "U"))
+        else if (!stricmp((char *)suffix, "U"))
         {
             lastst = l_ui;
             suffix[0] = 0;
         }
-        else if (!stricmp(suffix, "UL") || !stricmp(suffix, "LU"))
+        else if (!stricmp((char *)suffix, "UL") || !stricmp((char *)suffix, "LU"))
         {
             lastst = l_ul;
             suffix[0] = 0;
         }
-        else if ((cparams.prm_c99 || cparams.prm_cplusplus) && !stricmp(suffix, "LL") || !cparams.prm_ansi && !stricmp(suffix, "i64"))
+        else if (((cparams.prm_c99 || cparams.prm_cplusplus) && !stricmp((char *)suffix, "LL")) 
+                 || (!cparams.prm_ansi && !stricmp((char *)suffix, "i64")))
         {
             lastst = l_ll;
             suffix[0] = 0;
         }
-        else if ((cparams.prm_c99 || cparams.prm_cplusplus) && (!stricmp(suffix, "ULL") || !stricmp(suffix, "LLU")) || !cparams.prm_ansi && !stricmp(suffix, "ui64"))
+        else if (((cparams.prm_c99 || cparams.prm_cplusplus) 
+                 && (!stricmp((char *)suffix, "ULL") || !stricmp((char *)suffix, "LLU"))) 
+                 || (!cparams.prm_ansi && !stricmp((char *)suffix, "ui64")))
         {
             lastst = l_ull;
             suffix[0] = 0;
@@ -1110,14 +1113,14 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
         {
            FPFMultiplyPowTen(rval,*ival);
         }
-        if (!stricmp(suffix, "F"))
+        if (!stricmp((char *)suffix, "F"))
         {
             float f;
             lastst = l_f;
             CastToFloat(ISZ_FLOAT, rval);
             suffix[0] = 0;
         }
-        else if (!stricmp(suffix, "L"))
+        else if (!stricmp((char *)suffix, "L"))
         {
             lastst = l_ld;
             CastToFloat(ISZ_LDOUBLE, rval);
@@ -1142,7 +1145,7 @@ int getNumber(char **ptr, char **end, char *suffix, FPF *rval, LLONG_TYPE *ival)
     }
     return lastst;
 }
-int getId(char **ptr , char *dest)
+int getId(unsigned char **ptr , unsigned char *dest)
 {
     if (!isstartchar(**ptr))
         return INT_MIN;
@@ -1191,7 +1194,7 @@ int getId(char **ptr , char *dest)
             }
             else
                 break;
-            if (n <= 0x20 || n >= 0x7f && n <= 0x9f ||
+            if (n <= 0x20 || (n >= 0x7f && n <= 0x9f) ||
                 (n >=0xd800 && n<= 0xdfff))
                 pperror(ERR_INVCONST, 0);
         }
@@ -1212,10 +1215,9 @@ LEXEME *SkipToNextLine(void)
 }
 LEXEME *getGTSym(LEXEME *in)
 {
-    static char greater[2] = ">";
+    static unsigned char *pgreater = (unsigned char *)">";
     static LEXEME lex;
     KEYWORD *kw;
-    char *pgreater = &greater;
     kw = searchkw(&pgreater);
     lex = *in;
     lex.type = l_kw;
@@ -1231,7 +1233,7 @@ LEXEME *getsym(void)
     BOOLEAN contin ;
     FPF rval;
     LLONG_TYPE ival;
-    static char buf[2048];
+    static unsigned char buf[2048];
     static int pos = 0;
     int cval;
     SLCHAR *strptr;
@@ -1323,9 +1325,9 @@ LEXEME *getsym(void)
         }
         else if (*includes->lptr != 0)
         {
-            char suffix[256];
-            char *start = includes->lptr;
-            char *end = &includes->lptr;
+            unsigned char suffix[256];
+            unsigned char *start = includes->lptr;
+            unsigned char *end = includes->lptr;
             if ((cval = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != INT_MIN)
             {
                 if (cval < l_f)
@@ -1334,10 +1336,10 @@ LEXEME *getsym(void)
                     lex->value.f = rval;
                 if (suffix[0])
                 {
-                    lex->suffix = litlate(suffix);
+                    lex->suffix = litlate((char *)suffix);
                     memcpy(suffix, start, end - start);
                     suffix[end - start] = 0;
-                    lex->litaslit = litlate(suffix);
+                    lex->litaslit = litlate((char *)suffix);
                 }
                 lex->type = cval;
             }
@@ -1348,9 +1350,9 @@ LEXEME *getsym(void)
             }
             else if (getId(&includes->lptr, buf + pos) != INT_MIN)
             {
-                lex->value.s.a = buf+pos;
+                lex->value.s.a = (char *)buf+pos;
                 lex->type = l_id;
-                pos += strlen(buf+pos)+ 1;
+                pos += strlen((char *)buf+pos)+ 1;
                 if (pos >= sizeof(buf) - 512)
                     pos = 0;
             }
@@ -1410,7 +1412,7 @@ LEXEME *SetAlternateLex(LEXEME *lexList)
     }
     else
     {
-        context = context->cur = context->next;
+        context = context->next;
         return NULL;
     }
 }

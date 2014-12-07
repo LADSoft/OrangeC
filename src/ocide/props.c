@@ -44,6 +44,7 @@
 #include <richedit.h>
 #include <prsht.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "winconst.h"
 #include "helpid.h"
 #include "header.h"
@@ -64,7 +65,7 @@ extern BUILDRULE *buildRules;
 extern unsigned int helpMsg;
 #define MyMessageBox(one,two,three,four) // ExtendedMessageBox(one,two,three,four)
 
-int custColors[16];
+COLORREF custColors[16];
 PROJECTITEM generalProject;
 char *sysProfileName = "WIN32";
 char *currentProfileName ;
@@ -186,10 +187,12 @@ SETTING *GetSettings(PROFILE *pf)
                 p = p->next;
             }
             if (p)
+            {
                 if (profileDebugMode)
                     return p->debugSettings;
                 else
                     return p->releaseSettings;
+            }
         }
     }
     return NULL;
@@ -480,7 +483,7 @@ void GetActiveRules(PROJECTITEM *item, struct _propsData *data)
     }
     qsort(data->prototype, data->protocount, sizeof(PROFILE *), SortRules);
 }
-static void PropGetPrototype(PROJECTITEM *item, struct _propsData *data, SETTING **arr)
+static void PropGetPrototype(PROJECTITEM *item, struct _propsData *data, PROFILE **arr)
 {
     memset(data, 0, sizeof(*data));
     if (item == NULL || item == &generalProject)
@@ -639,6 +642,8 @@ static void CreateItemWindow(HWND parent, HWND lv, RECT *r, SETTING *current)
             SendMessage(current->hWnd, EM_SETSEL, strlen(current->tentative), strlen(current->tentative));
             SendMessage(current->hWnd, WM_SETFONT, (WPARAM)SendMessage(lv, WM_GETFONT, 0, 0), 1);
             break;
+        default:
+            break;
     }
     if (current->hWnd)
     {
@@ -711,6 +716,8 @@ static void SaveItemData(SETTING *current)
                 free(current->tentative);
                 current->tentative = strdup(buf);
                 break;
+            default:
+                break;
         }
     }
 }
@@ -757,6 +764,7 @@ static void PopulateItems(HWND parent, HWND hwnd, SETTING *settings)
     {
         memset(&item, 0, sizeof(item));
         if (settings->type != e_tree)
+        {
             if (settings->type == e_separator)
             {
                 item.iItem = items++;
@@ -780,6 +788,7 @@ static void PopulateItems(HWND parent, HWND hwnd, SETTING *settings)
                 ListView_GetSubItemRect(hwnd, item.iItem, 1, LVIR_BOUNDS, &r);
                 CreateItemWindow(parent, hwnd, &r, settings);
             }
+        }
         settings = settings->next;
     }
 }
@@ -974,7 +983,7 @@ static BOOL GetNewProfileName(HWND hwndCombo, char *name)
             }
             if (!pf)
             {
-                rv = LookupProfileName(name);
+                rv = !!LookupProfileName(name);
                 done = TRUE;
             }
             else
@@ -1010,10 +1019,11 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     SETTING *lastSetting;
     LPCREATESTRUCT cs;
     RECT r;
-    POINT acceptPt;
-    POINT cancelPt;
-    POINT helpPt;
+    SIZE acceptSz;
+    SIZE cancelSz;
+    SIZE helpSz;
     static POINT pt;
+    static SIZE sz;
     HDC dc;
     struct _propsData *pd;
     int i;
@@ -1028,7 +1038,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
 //        case WM_CTLCOLORDLG:
         {
             if ((HWND)lParam != hStaticProfile && (HWND)lParam != hStaticReleaseType)
-                return (HBRUSH)(COLOR_WINDOW + 1);
+                return (LRESULT)(HBRUSH)(COLOR_WINDOW + 1);
         }
             break;
         case WM_NOTIFY:
@@ -1067,7 +1077,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             }
             break;
         case WM_COMMAND:
-            pd = (struct propsData *)GetWindowLong(hwnd, GWL_USERDATA);
+            pd = (struct _propsData *)GetWindowLong(hwnd, GWL_USERDATA);
             if (HIWORD(wParam) == CBN_SELCHANGE)
             {
                 if (LOWORD(wParam) == 1000) // profile type
@@ -1320,7 +1330,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             SetWindowLong(hwnd, GWL_USERDATA, (long)pd);
             populating = FALSE;
             current = NULL;
-            hwndTTip = CreateWindowEx(NULL, TOOLTIPS_CLASS, NULL,
+            hwndTTip = CreateWindowEx(0, TOOLTIPS_CLASS, NULL,
                                         WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_BALLOON,
                                         CW_USEDEFAULT, CW_USEDEFAULT,
                                         CW_USEDEFAULT, CW_USEDEFAULT,
@@ -1388,37 +1398,37 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 LVS_REPORT | LVS_SINGLESEL | WS_CHILD,
                 (r.right - r.left)*3/10, y, (r.right - r.left)*7/10, r.bottom - r.top-32-y, hwnd, 0, hInstance, NULL);
             dc = GetDC(hwnd);
-            GetTextExtentPoint32(dc, szAccept, strlen(szAccept), &acceptPt);
-            GetTextExtentPoint32(dc, szClose, strlen(szClose), &cancelPt);
-            GetTextExtentPoint32(dc, szApply, strlen(szApply), &pt);
-            GetTextExtentPoint32(dc, szHelp, strlen(szClose), &helpPt);
+            GetTextExtentPoint32(dc, szAccept, strlen(szAccept), &acceptSz);
+            GetTextExtentPoint32(dc, szClose, strlen(szClose), &cancelSz);
+            GetTextExtentPoint32(dc, szApply, strlen(szApply), &sz);
+            GetTextExtentPoint32(dc, szHelp, strlen(szClose), &helpSz);
             ReleaseDC(hwnd, dc);
-            if (acceptPt.x > pt.x)
-                pt.x = acceptPt.x;
-            if (acceptPt.y > pt.y)
-                pt.y = acceptPt.y;
-            if (cancelPt.x > pt.x)
-                pt.x = cancelPt.x;
-            if (cancelPt.y > pt.y)
-                pt.y = cancelPt.y;
-            if (helpPt.x > pt.x)
-                pt.x = helpPt.x;
-            if (helpPt.y > pt.y)
-                pt.y = helpPt.y;
+            if (acceptSz.cx > sz.cx)
+                sz.cx = acceptSz.cx;
+            if (acceptSz.cy > sz.cy)
+                sz.cy = acceptSz.cy;
+            if (cancelSz.cx > sz.cx)
+                sz.cx = cancelSz.cx;
+            if (cancelSz.cy > sz.cy)
+                sz.cy = cancelSz.cy;
+            if (helpSz.cx > sz.cx)
+                sz.cx = helpSz.cx;
+            if (helpSz.cy > sz.cy)
+                sz.cy = helpSz.cy;
             hAcceptBtn = CreateWindowEx(0, "button", szAccept, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 1 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
+                                        r.right - 1 * (sz.cx + 32), r.bottom -sz.cy - 12, sz.cx+24, sz.cy + 8,
                                         hwnd, (HMENU)IDOK, hInstance, NULL);
             SendMessage(hAcceptBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             hCancelBtn = CreateWindowEx(0, "button", szClose, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 2 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
+                                        r.right - 2 * (sz.cx + 32), r.bottom -sz.cy - 12, sz.cx+24, sz.cy + 8,
                                         hwnd, (HMENU)IDCANCEL, hInstance, NULL);
             SendMessage(hCancelBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             hApplyBtn = CreateWindowEx(0, "button", szApply, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 3 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
+                                        r.right - 3 * (sz.cx + 32), r.bottom -sz.cy - 12, sz.cx+24, sz.cy + 8,
                                         hwnd, (HMENU)IDC_AUXBUTTON, hInstance, NULL);
             SendMessage(hApplyBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             hHelpBtn = CreateWindowEx(0, "button", szHelp, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 
-                                        r.right - 5 * (pt.x + 32), r.bottom -pt.y - 12, pt.x+24, pt.y + 8,
+                                        r.right - 5 * (sz.cx + 32), r.bottom -sz.cy - 12, sz.cx+24, sz.cy + 8,
                                         hwnd, (HMENU)IDHELP, hInstance, NULL);
             SendMessage(hHelpBtn, WM_SETFONT, (WPARAM)SendMessage(hwndLV, WM_GETFONT, 0, 0), 1);
             EnableWindow(hAcceptBtn, FALSE);
@@ -1438,7 +1448,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             ResyncProjectIcons();
             break;
         case WM_DESTROY:
-            pd = (struct propsData *)GetWindowLong(hwnd, GWL_USERDATA);
+            pd = (struct _propsData *)GetWindowLong(hwnd, GWL_USERDATA);
             DestroyItemWindows(current);
             for (i=0;i < pd->protocount; i++)
             {
@@ -1557,7 +1567,7 @@ static LRESULT CALLBACK ColorWndProc(HWND hwnd, UINT iMessage,
         case WM_CTLCOLORBTN:
         {
             HBRUSH br = CreateSolidBrush(RetrieveSysColor(COLOR_WINDOW));
-            return br;
+            return (LRESULT)br;
         }
         case WM_CTLCOLORSTATIC:
         {
@@ -1645,7 +1655,7 @@ static LRESULT CALLBACK FontWndProc(HWND hwnd, UINT iMessage,
             break;
         case WM_GETFONT:
             ptr = (struct buttonWindow *)GetWindowLong(hwnd, 0);
-            return ptr->font;
+            return (LRESULT)ptr->font;
         case WM_CTLCOLORBTN:
         case WM_CTLCOLORSTATIC:
         {
@@ -1914,7 +1924,7 @@ void ShowBuildProperties(PROJECTITEM *projectItem)
 {
     if (!hwndGeneralProps)
     {
-        SETTING **arr = calloc(sizeof(SETTING *), 100);
+        PROFILE **arr = calloc(sizeof(PROFILE *), 100);
         if (arr)
         {
             static char title[512];
@@ -1925,7 +1935,7 @@ void ShowBuildProperties(PROJECTITEM *projectItem)
                 return;
             }
             PropGetPrototype(projectItem, data, arr);
-            if (data->title != &generalProps.title)
+            if (data->title != generalProps.title)
             {
                 data->title = title;
                 sprintf(title, "Build properties for %s", projectItem->displayName);
@@ -1973,7 +1983,7 @@ static SETTING *PropFindAll(PROFILE **list, int count, char *id)
 }
 SETTING *PropSearchProtos(PROJECTITEM *item, char *id, SETTING **value)
 {
-    SETTING *arr[100];
+    PROFILE *arr[100];
     struct _propsData data;
     SETTING *setting ;
     PropGetPrototype(item, &data, arr);

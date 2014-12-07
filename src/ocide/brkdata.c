@@ -330,8 +330,8 @@ INT_PTR CALLBACK DataBpAddProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 }
 void AddDataBp(HWND hwnd)
 {
-    char *name = DialogBoxParam(hInstance, "ADDDATABPDIALOG", hwnd, 
-        (DLGPROC)DataBpAddProc, NULL);
+    char *name = (char *)DialogBoxParam(hInstance, "ADDDATABPDIALOG", hwnd, 
+        (DLGPROC)DataBpAddProc, 0);
     if (name)
     {
         DATABREAK **search = &dataBpList;

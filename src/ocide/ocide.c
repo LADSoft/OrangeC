@@ -82,6 +82,7 @@ extern enum DebugState uState;
 extern PROJECTITEM *workArea;
 
 void ApplyDialogFont(HWND hwnd);
+char *getcwd( char *__buf, int __buflen ); // can't include dir.h because it defines eof...
 
 //extern int __argc;
 //extern char **__argv;
@@ -541,7 +542,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     {
                         HWND hwnd = (HWND)p->lParam;
                         SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_MAXIMIZEBOX);                        
-                        SendMessage(hwndClient, WM_MDIACTIVATE, (WPARAM)p->lParam, NULL);
+                        SendMessage(hwndClient, WM_MDIACTIVATE, (WPARAM)p->lParam, 0);
                         SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX);
                     }
                     break;
@@ -619,7 +620,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             dmgrHideWindow(DID_ASMWND, FALSE);
             dbe = (DEBUG_EVENT*)lParam;
             if (!GetBreakpointLine((DWORD)dbe
-                ->u.Exception.ExceptionRecord.ExceptionAddress, &module,
+                ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                 &linenum, FALSE))
                 dmgrHideWindow(DID_ASMWND, FALSE);
             else
@@ -658,7 +659,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                 dbe->u.Exception.ExceptionRecord.ExceptionAddress);
                 
                 if (!GetBreakpointLine((DWORD)dbe
-                    ->u.Exception.ExceptionRecord.ExceptionAddress, &module,
+                    ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                     &linenum, FALSE))
                     dmgrHideWindow(DID_ASMWND, FALSE);
                 else
@@ -751,7 +752,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case IDM_ADDWATCH:
                 if (uState != atBreakpoint && uState != atException)
                     break;
-                name = DialogBoxParam(hInstance, "ADDWATCHDIALOG", hwnd, 
+                name = (char *)DialogBoxParam(hInstance, "ADDWATCHDIALOG", hwnd, 
                     (DLGPROC)WatchAddProc, 0);
                 if (name)
                     SendMessage(hwndWatch, WM_ADDWATCH, activeThread->regs.Eip,
@@ -861,7 +862,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 return 0;
             case IDM_SCROLLTOBP:
                 if (!GetBreakpointLine((DWORD)stoppedThread->regs.Eip,
-                    &module, &linenum, FALSE))
+                    &module[0], &linenum, FALSE))
                     dmgrHideWindow(DID_ASMWND, FALSE);
                 else
                     ApplyBreakAddress(module, linenum);
@@ -1636,7 +1637,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     hCursArrow = LoadCursor(0, IDC_ARROW);
     hCursHourglass = LoadCursor(0, IDC_WAIT);
     hwnd = FindWindow(szFrameClassName, NULL);
-    if (hwnd && strstr(lpszCmdLine, " /r") || strstr(lpszCmdLine, "-r"))
+    if ((hwnd && strstr(lpszCmdLine, " /r")) || strstr(lpszCmdLine, "-r"))
     {
         PassFilesToInstance();
         return 0;

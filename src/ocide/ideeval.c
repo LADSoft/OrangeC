@@ -46,6 +46,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <float.h>
+#include <math.h>
 
 #include "header.h"
 #include "dbgtype.h"
@@ -189,12 +190,12 @@ static int lastst;
     }
 
     /*
-     *      getnum - get a number from input.
+     *      inputNum - get a number from input.
      *
-     *      getnum handles all of the numeric input. it accepts
+     *      inputNum handles all of the numeric input. it accepts
      *      decimal, octal, hexidecimal, and floating point numbers.
      */
-    static void getnum(char **text, int towarn)
+    static void inputNum(char **text, int towarn)
     {
         char buf[200],  *ptr = buf;
         int hasdot = FALSE;
@@ -227,7 +228,7 @@ static int lastst;
             (*text)++;
 
         }
-        if (radix == 16 &&  **text == 'H' ||  **text == 'h')
+        if (radix == 16 &&  (**text == 'H' ||  **text == 'h'))
             (*text)++;
         if (**text == '.')
         {
@@ -363,14 +364,14 @@ static int lastst;
         VARINFO *p = var->subtype;
         int rv =0 ;
         var->subtype = NULL;
-        if (var->type <= eULongLong || var->type >= eFloat && var->type <= eComplexLongDouble)
+        if (var->type <= eULongLong || (var->type >= eFloat && var->type <= eComplexLongDouble))
         {
             rv = basictypesize(var->type);
         }
         else
         {
             ExpandPointerInfo(*dbg, var);
-            if (var->subtype->type <= eULongLong || var->type >= eFloat && var->subtype->type <= eComplexLongDouble)
+            if (var->subtype->type <= eULongLong || (var->subtype->type >= eFloat && var->subtype->type <= eComplexLongDouble))
             {
                 rv = basictypesize(var->subtype->type);
             }
@@ -389,7 +390,7 @@ static int lastst;
     }
     static VARINFO *constnode(char **text, int towarn)
     {
-        getnum(text, towarn);
+        inputNum(text, towarn);
         if (lastst == NVAL)
             return ieerr(text, 0, 0, "Invalid constant", towarn);
         if (lastst == RVAL)
@@ -470,7 +471,7 @@ static int lastst;
         int signedtype;
         if (var->constant)
             return var;
-        if ((var->type <= eULongLong || var->type >= eFloat && var->type <= eComplexLongDouble) && !var->array)
+        if ((var->type <= eULongLong || (var->type >= eFloat && var->type <= eComplexLongDouble)) && !var->array)
         {
             EvalBasicType(var, &signedtype, scope);
             if (var->bitfield)
@@ -522,7 +523,7 @@ static int lastst;
         while (isalnum(**text) ||  **text == '_')
             *p++ = *(*text)++;
         *p = 0;
-        if (sc = FindSymbol(dbg, sc, (char*) buf, &address, &type))
+        if ((sc = FindSymbol(dbg, sc, (char*) buf, &address, &type)))
         {
             var = GetVarInfo(*dbg, (char*)buf, address, type, sc, activeThread);
 //            if (var->udt)
@@ -888,7 +889,7 @@ static int lastst;
             return var1;
         do
         {
-            while (**text == '.' ||  **text == '-' && *(*text + 1) == '>')
+            while (**text == '.' ||  (**text == '-' && *(*text + 1) == '>'))
             {
                 int address;
                 if (**text == '.')
@@ -964,7 +965,7 @@ static int lastst;
                 }
                 else
                 {
-                    getnum(text, towarn);
+                    inputNum(text, towarn);
                     if (lastst != IVAL && lastst != IUVAL)
                         return ieerr(text, var1, 0, "Invalid array index", towarn);
                 }
@@ -998,7 +999,7 @@ static int lastst;
                 }
             }
         }
-        while (**text == '.' ||  **text == '-' && *(*text + 1) == '>')
+        while (**text == '.' ||  (**text == '-' && *(*text + 1) == '>'))
             ;
         return var1;
     }
@@ -1059,7 +1060,7 @@ static int lastst;
                 val1 = ieunary(text, dbg, sc, towarn);
                 if (!val1 || !val1->pointer)
                     return ieerr(text, val1, 0, "Pointer Type Expected", towarn);
-                if (val1->type <= eULongLong || val1->type >= eFloat && val1->type <= eComplexLongDouble)
+                if (val1->type <= eULongLong || (val1->type >= eFloat && val1->type <= eComplexLongDouble))
                 {
 //                    val1->type &= ~CV_MMASK;
                     val1->pointer = FALSE;
@@ -1138,7 +1139,7 @@ static int lastst;
                                 val1->ival = val1->ival / val2->ival;
                     break;
                 case '%':
-                    if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble || val2->type >= eFloat && val2->type <= eImaginaryLongDouble
+                    if ((val1->type >= eFloat && val1->type <= eImaginaryLongDouble) || (val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
                         )
                         return ieerr(text, 0, 0, "Invalid Floating Operation", towarn);
                     val1->ival = val1->ival % val2->ival;
@@ -1330,7 +1331,7 @@ static int lastst;
             val1 = POP();
             val1 = makeconst(POP(), sc);
             val2 = makeconst(val2, sc);
-            if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble || val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+            if ((val1->type >= eFloat && val1->type <= eImaginaryLongDouble) || (val2->type >= eFloat && val2->type <= eImaginaryLongDouble))
                 return ieerr(text, val1, val2, "Invalid floating operation", towarn);
             if (oper)
             {
@@ -1496,7 +1497,7 @@ static int lastst;
             val1 = POP();
             val1 = makeconst(POP(), sc);
             val2 = makeconst(val2, sc);
-            if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble || val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+            if ((val1->type >= eFloat && val1->type <= eImaginaryLongDouble) || (val2->type >= eFloat && val2->type <= eImaginaryLongDouble))
                 return ieerr(text, val1, val2, "Invalid floating operation", towarn);
             val1->ival = val1->ival &val2->ival;
             truncateconst(val1, val2);
@@ -1522,7 +1523,7 @@ static int lastst;
             val1 = POP();
             val1 = makeconst(POP(), sc);
             val2 = makeconst(val2, sc);
-            if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble || val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+            if ((val1->type >= eFloat && val1->type <= eImaginaryLongDouble) || (val2->type >= eFloat && val2->type <= eImaginaryLongDouble))
                 return ieerr(text, val1, val2, "Invalid floating operation", towarn);
             val1->ival = val1->ival ^ val2->ival;
             truncateconst(val1, val2);
@@ -1548,7 +1549,7 @@ static int lastst;
             val1 = POP();
             val1 = makeconst(POP(), sc);
             val2 = makeconst(val2, sc);
-            if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble || val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+            if ((val1->type >= eFloat && val1->type <= eImaginaryLongDouble) || (val2->type >= eFloat && val2->type <= eImaginaryLongDouble))
                 return ieerr(text, val1, val2, "Invalid floating operation", towarn);
             val1->ival = val1->ival | val2->ival;
             truncateconst(val1, val2);
@@ -1574,7 +1575,7 @@ static int lastst;
             val1 = POP();
             val1 = makeconst(POP(), sc);
             val2 = makeconst(val2, sc);
-            if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble || val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+            if ((val1->type >= eFloat && val1->type <= eImaginaryLongDouble) || (val2->type >= eFloat && val2->type <= eImaginaryLongDouble))
                 return ieerr(text, val1, val2, "Invalid floating operation", towarn);
             val1->ival = val1->ival && val2->ival;
             truncateconst(val1, val2);
@@ -1600,7 +1601,7 @@ static int lastst;
             val1 = POP();
             val1 = makeconst(POP(), sc);
             val2 = makeconst(val2, sc);
-            if (val1->type >= eFloat && val1->type <= eImaginaryLongDouble || val2->type >= eFloat && val2->type <= eImaginaryLongDouble)
+            if ((val1->type >= eFloat && val1->type <= eImaginaryLongDouble) || (val2->type >= eFloat && val2->type <= eImaginaryLongDouble))
                 return ieerr(text, val1, val2, "Invalid floating operation", towarn);
             val1->ival = val1->ival || val2->ival;
             truncateconst(val1, val2);
@@ -1662,7 +1663,7 @@ VARINFO *EvalExpr(DEBUG_INFO **dbg, SCOPE *sc,
         if (!var)
             return var;
         if (var->constant)
-        if (!(var->type <= eULongLong || var->type >= eFloat && var->type <= eComplexLongDouble) || var->array)
+        if (!(var->type <= eULongLong || (var->type >= eFloat && var->type <= eComplexLongDouble)) || var->array)
         {
             var->constant = FALSE;
             var->address = var->ival;

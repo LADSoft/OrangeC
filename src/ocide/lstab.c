@@ -239,14 +239,14 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
 {
     int bottom = GetWindowLong(hwnd, GWL_STYLE) & TABS_BOTTOM;
     struct _singleTab *tab = ptr->active.head;
-    POINT size;
+    SIZE size;
     int right = r->right;
     int oldbk, oldfg;
     int x = LEFTHALF;
     int y = 0;
     int rightInset = RIGHTBORDER/2;
     HPEN pen = GetStockObject(WHITE_PEN);
-    HPEN oldbr;
+    HBRUSH oldbr;
     
     if (GetWindowLong(hwnd, GWL_STYLE) & TABS_CLOSEBTN)
     {
@@ -293,12 +293,12 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
         }
         x += LEFTHALF;
         GetTextExtentPoint32(hDc, p, strlen(p), &size);
-        if (x + size.x + RIGHTBORDER + rightInset > right)
+        if (x + size.cx + RIGHTBORDER + rightInset > right)
             break;
         if (!bottom)
         {
             int xfirst, yfirst;
-            MyDrawEdge(hDc, ptr, x, y - TOPBORDER, x + size.x + RIGHTBORDER + rightInset - ROUNDWIDTH, y - TOPBORDER, -1);
+            MyDrawEdge(hDc, ptr, x, y - TOPBORDER, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, y - TOPBORDER, -1);
             xfirst = x - RIGHTBORDER;
             yfirst = y + (ptr->fontHeight + TOPBORDER)/2;
             if (tab == ptr->selected.head)
@@ -308,21 +308,21 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
                 xfirst -= RIGHTBORDER - MINEND;
                 yfirst =  r->bottom - r->top- MINEND - BOTTOMBORDER;
                 MoveToEx(hDc, xfirst, r->bottom - BOTTOMBORDER + 1, NULL);
-                LineTo(hDc, x + size.x + RIGHTBORDER + rightInset, r->bottom-BOTTOMBORDER + 1);
+                LineTo(hDc, x + size.cx + RIGHTBORDER + rightInset, r->bottom-BOTTOMBORDER + 1);
                 pen = SelectObject(hDc, pen);
             } 
             MyDrawEdge(hDc, ptr, xfirst,yfirst, x, y - TOPBORDER, -1);
             MyDrawEdge(hDc, ptr, xfirst, r->bottom - BOTTOMBORDER, xfirst, yfirst,1);
-            MyDrawArc(hDc, ptr, x + size.x + RIGHTBORDER + rightInset - ROUNDWIDTH, y + TOPBORDER+1, -1);
+            MyDrawArc(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, y + TOPBORDER+1, -1);
             tab->displayRect.left = xfirst;
-            tab->displayRect.right = x + size.x + RIGHTBORDER + rightInset;
+            tab->displayRect.right = x + size.cx + RIGHTBORDER + rightInset;
             tab->displayRect.top = y;
             tab->displayRect.bottom = y + ptr->fontHeight + TOPBORDER;
         }
         else
         {
             int xfirst, yfirst;
-            MyDrawEdge(hDc, ptr, x, ptr->fontHeight + TOPBORDER + BOTTOMBORDER, x + size.x + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight + TOPBORDER + BOTTOMBORDER,1);
+            MyDrawEdge(hDc, ptr, x, ptr->fontHeight + TOPBORDER + BOTTOMBORDER, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight + TOPBORDER + BOTTOMBORDER,1);
             xfirst = x - RIGHTBORDER;
             yfirst = (ptr->fontHeight + TOPBORDER + BOTTOMBORDER)/2;
             if (tab == ptr->selected.head)
@@ -332,39 +332,39 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
                 xfirst -= RIGHTBORDER-MINEND;
                 yfirst = MINEND + BOTTOMBORDER;
                 MoveToEx(hDc, xfirst, BOTTOMBORDER - 1, NULL);
-                LineTo(hDc, x + size.x + RIGHTBORDER + rightInset, BOTTOMBORDER - 1);
+                LineTo(hDc, x + size.cx + RIGHTBORDER + rightInset, BOTTOMBORDER - 1);
                 pen = SelectObject(hDc, pen);
             } 
             MyDrawEdge(hDc, ptr, xfirst,yfirst, x, ptr->fontHeight + TOPBORDER + BOTTOMBORDER,1);
             MyDrawEdge(hDc, ptr, xfirst, BOTTOMBORDER, xfirst, yfirst,1);
-            MyDrawArc(hDc, ptr, x + size.x + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight - TOPBORDER + BOTTOMBORDER -1, 1);
+            MyDrawArc(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset - ROUNDWIDTH, ptr->fontHeight - TOPBORDER + BOTTOMBORDER -1, 1);
             tab->displayRect.left = xfirst;
-            tab->displayRect.right = x + size.x + RIGHTBORDER + rightInset;
+            tab->displayRect.right = x + size.cx + RIGHTBORDER + rightInset;
             tab->displayRect.top = y;
             tab->displayRect.bottom = y + ptr->fontHeight + TOPBORDER + BOTTOMBORDER;			
         }	
         if (tab->chain.next == ptr->selected.head)
             if (!bottom)
             {
-                MyDrawEdge(hDc, ptr, x + size.x + RIGHTBORDER + rightInset, y + ROUNDWIDTH,
-                    x + size.x + RIGHTBORDER + rightInset, y + (ptr->fontHeight + TOPBORDER)/2,1);
+                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y + ROUNDWIDTH,
+                    x + size.cx + RIGHTBORDER + rightInset, y + (ptr->fontHeight + TOPBORDER)/2,1);
             }
             else
             {
-                MyDrawEdge(hDc, ptr, x + size.x + RIGHTBORDER + rightInset, y + (ptr->fontHeight + TOPBORDER)/2,
-                    x + size.x + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
+                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y + (ptr->fontHeight + TOPBORDER)/2,
+                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
             }
         else
             if (!bottom)
             {
                 
-                MyDrawEdge(hDc, ptr, x + size.x + RIGHTBORDER + rightInset, y - TOPBORDER + ROUNDWIDTH, 
-                    x + size.x + RIGHTBORDER + rightInset, y + ptr->fontHeight + 1,1);
+                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, y - TOPBORDER + ROUNDWIDTH, 
+                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + 1,1);
             }
             else
             {
-                MyDrawEdge(hDc, ptr, x + size.x + RIGHTBORDER + rightInset, BOTTOMBORDER, 
-                    x + size.x + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
+                MyDrawEdge(hDc, ptr, x + size.cx + RIGHTBORDER + rightInset, BOTTOMBORDER, 
+                    x + size.cx + RIGHTBORDER + rightInset, y + ptr->fontHeight + TOPBORDER - ROUNDWIDTH,1);
             }
 
         if (ptr->selected.head == tab)
@@ -382,13 +382,13 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
         TextOut(hDc, x + LEFTHALF/2, y, p, strlen(p));		
         if (tab->modified)
         {
-            TextOut(hDc, x + size.x + LEFTHALF/2, y, "*", strlen("*"));
+            TextOut(hDc, x + size.cx + LEFTHALF/2, y, "*", strlen("*"));
         }
         SelectObject(hDc, xfont);
         SetTextColor(hDc, oldfg);
         SetBkColor(hDc, oldbk);
 
-        x += size.x + RIGHTBORDER + rightInset;
+        x += size.cx + RIGHTBORDER + rightInset;
         tab->displayed = TRUE;
         tab = tab->chain.next;
     }
@@ -410,7 +410,7 @@ int GetItem(struct _tabStruct *ptr , int index)
     int i;
     for (i = 0; i < index && tabs; i++, tabs = tabs->chain.next);
     if (!tabs)
-        return NULL;
+        return 0;
     return tabs->lParam;
 }
 struct _singleTab *AddTab(struct _tabStruct *ptr, char *name, LPARAM lParam)
@@ -969,11 +969,11 @@ static void TrackTabMenuEx(HMENU hMenu, int flags, int x, int y, HWND hwnd, int 
             info.cch++;
             if (GetMenuItemInfo(xx.menu, i, TRUE, &info))
             {
-                POINT sz;
+                SIZE sz;
                 char *text = info.dwTypeData;
                 GetTextExtentPoint32(dc, text, strlen(text), &sz);
-                if (sz.x + 40 > xx.rowWidth)
-                    xx.rowWidth = sz.x + 40;
+                if (sz.cx + 40 > xx.rowWidth)
+                    xx.rowWidth = sz.cx + 40;
             }
         } 
     }
@@ -1094,7 +1094,7 @@ static void DisplayTabMenu(HWND hwnd, struct _tabStruct *ptr)
             POINT pos;
             GetCursorPos(&pos);
             TrackTabMenuEx(hMenu, TPM_TOPALIGN | TPM_RIGHTALIGN | TPM_LEFTBUTTON, pos.x,
-                pos.y, hwnd, NULL);
+                pos.y, hwnd, 0);
             DestroyMenu(hMenu);
         }	
     }

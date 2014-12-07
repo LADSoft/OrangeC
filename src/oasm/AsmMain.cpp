@@ -179,7 +179,8 @@ int AsmMain::Run(int argc, char *argv[])
     {
         std::string inName = (*it)->c_str();
         int npos = inName.find_last_of(".");
-        if (npos == std::string::npos || npos && inName[npos-1] == '.' || (npos != inName.size()-1 && inName[npos+1] == CmdFiles::DIR_SEP[0]))
+        if (npos == std::string::npos || (npos && inName[npos-1] == '.')
+            || (npos != inName.size()-1 && inName[npos+1] == CmdFiles::DIR_SEP[0]))
         {
             inName = Utils::QualifiedFile( (*it)->c_str(), ".asm");
         }

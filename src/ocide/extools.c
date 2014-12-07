@@ -40,6 +40,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <process.h>
 #include "header.h"
 #include "helpid.h"
  
@@ -125,7 +126,7 @@ void ExternalToolsToMenu(void)
     int base, base1;
     MENUITEMINFO mi;
     int i, currentOffset;
-    HMENU *hMRUSubMenu;
+    HMENU hMRUSubMenu;
     int maxed;
     SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM)&maxed);
        base = ID_EXTERNALTOOLS;

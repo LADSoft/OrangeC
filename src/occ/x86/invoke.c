@@ -256,7 +256,7 @@ int RunExternalFiles(char *rootPath)
             return rv;
        if (prm_targettype == WHXDOS)
        {
-               sprintf(spname, "\"%spatchpe\" %s", root, outputfile);
+               sprintf(spname, "\"%spatchpe\" %s", root, outputFileName);
             rv = system(spname);
             if (rv)
             {

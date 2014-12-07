@@ -42,6 +42,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <process.h>
 #include "helpid.h"
 #include "header.h"
 #include "codecomp.h"
@@ -122,12 +123,13 @@ static void nm_matches(char *search, int flags, char *buf, CHARRANGE *pos)
 {
     if (flags &F_DOWN)
     {
+        char *found;
         if (flags &FR_MATCHCASE)
-            pos->cpMin = (int)strstr(buf + pos->cpMin, search);
+            found = strstr(buf + pos->cpMin, search);
         else
-            pos->cpMin = (int)stristr(buf + pos->cpMin, search);
-        if (pos->cpMin)
-            pos->cpMin = pos->cpMin - (int)buf;
+            found = stristr(buf + pos->cpMin, search);
+        if (found)
+            pos->cpMin = found - buf;
         else
             pos->cpMin = pos->cpMax;
     }
@@ -187,9 +189,9 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
                 p = strchr(buf+pos, '\n');
                 
                 if (flags &FR_MATCHCASE)
-                    q = (int)strstr(buf+pos, segment);
+                    q = strstr(buf+pos, segment);
                 else
-                    q = (int)stristr(buf+pos, segment);
+                    q = stristr(buf+pos, segment);
                 if (q)
                 {
                     if (p && q > p)
@@ -230,9 +232,9 @@ static int matches_wc(char *search, int flags, char *buf, int pos, int *len)
                 if (flags & FR_DOWN)
                 {
                     if (flags &FR_MATCHCASE)
-                        q = (int)strstr(buf+pos, segment);
+                        q = strstr(buf+pos, segment);
                     else
-                        q = (int)stristr(buf+pos, segment);
+                        q = stristr(buf+pos, segment);
                 }
                 else
                 {
@@ -472,6 +474,7 @@ static int xfind(char *fname, char *search, int flags, char *buf, int *len, CHAR
             }
         }
     }
+    return -1; // canceled
 }
 static RE_CONTEXT * getREContext(char *search, int flags)
 {
@@ -598,8 +601,8 @@ static BOOL matchesExt(char *name, char *extensions)
 }
 static int sortfunc(const void *Left, const void *Right)
 {
-    const DWINFO **left = Left;
-    const DWINFO **right = Right;
+    const DWINFO **left = (const DWINFO **)Left;
+    const DWINFO **right = (const DWINFO **)Right;
     return xstricmp((*left)->dwName, (*right)->dwName);
 }
 static BUFLIST **AddToTail(DWINFO **files, int count, BUFLIST **tail)
@@ -1117,7 +1120,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
         return NULL;
     }
 }
-int FindStringFromToolbar(char *search)
+void FindStringFromToolbar(char *search)
 {
     static char last[256];
     RE_CONTEXT *context = getREContext(search, F_WILDCARD | F_DOWN);
@@ -1126,7 +1129,7 @@ int FindStringFromToolbar(char *search)
     if (!search)
         search = last;
     if (!*search)
-        return 0;
+        return;
     if (!findFromTB || strcmp(search, last) != 0)
     {
         EndFind();
@@ -1146,7 +1149,7 @@ int FindStringFromToolbar(char *search)
     if (context)
         re_free(context);
 }
-static int FindStringFromFiles(int mode, int flags, char *search, char *specifiedPath, char *specifiedExtension)
+static void FindStringFromFiles(int mode, int flags, char *search, char *specifiedPath, char *specifiedExtension)
 {
     RE_CONTEXT *context = getREContext(search, flags);
     DWINFO *ptr = currentWindow;
@@ -1400,7 +1403,7 @@ static void EnableWindows(HWND hwnd, BOOL state)
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKREPLACECASE), state);
     EnableWindow(GetDlgItem(hwnd, IDC_CHECKREPLACERECURSIVE), state);
 }
-DWORD DoFindNext(void *p)
+void DoFindNext(void *p)
 {
 	if (!infindorreplace)
 	{
@@ -1427,7 +1430,7 @@ DWORD DoFindNext(void *p)
 		infindorreplace = FALSE;
 	}
 }
-DWORD DoReplaceNext(void *p)
+void DoReplaceNext(void *p)
 {
 	if (!infindorreplace)
 	{

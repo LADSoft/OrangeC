@@ -42,6 +42,15 @@
 #include "ResFile.h"
 #include "ResourceData.h"
 
+MessageTable::~MessageTable() 
+{  
+    delete data; 
+}
+void MessageTable::SetData(ResourceData *rdata) {
+    
+        delete data;
+    data = rdata;
+}
 void MessageTable::WriteRes(ResFile &resFile) 
 { 
     Resource::WriteRes(resFile); 

@@ -43,7 +43,7 @@ extern COMPILER_PARAMS cparams;
 
 static PPINT iecommaop(BOOLEAN *uns);
 
-int getsch(int bytes, char **source) /* return an in-quote character */
+int getsch(int bytes, unsigned char **source) /* return an in-quote character */
 {
     register int i=*(*source)++, j;
     if (**source == '\n')
@@ -115,15 +115,17 @@ int getsch(int bytes, char **source) /* return an in-quote character */
                 /* hexadecimal escape sequences are only terminated by a non hex char */
                 /* we sign extend or truncate */
                 if (bytes == 1)
+                {
                     if (cparams.prm_charisunsigned)
                         n = (int)(UBYTE)n;
                     else
                         n = (int)(char)n;
+                }
                 if (bytes == 2 && i == 'x')
                         n = (int)(LCHAR)n;
                 if (i != 'x')
                 {
-                    if (n <= 0x20 || n >= 0x7f && n <= 0x9f ||
+                    if (n <= 0x20 || (n >= 0x7f && n <= 0x9f) ||
                         (n >=0xd800 && n<= 0xdfff))
                         pperror(ERR_INVCONST, 0);
                 }
@@ -272,7 +274,7 @@ static PPINT ieaddops(BOOLEAN *uns)
 /* Add ops */
 {
    PPINT val1 = iemultops(uns),val2;
-    while (ILP[0] == '+' && ILP[1] != '+' || ILP[0] == '-' && ILP[1] != '-')	{
+    while ((ILP[0] == '+' && ILP[1] != '+') || (ILP[0] == '-' && ILP[1] != '-'))	{
         char type = ILP[0];
         BOOLEAN uns1;
         ILP++;
@@ -290,7 +292,7 @@ static PPINT ieshiftops(BOOLEAN *uns)
 /* Shift ops */
 {
    PPINT val1 = ieaddops(uns), val2;
-    while (ILP[0] == '<' && ILP[1] == '<' || ILP[0] == '>' && ILP[1] == '>') {
+    while ((ILP[0] == '<' && ILP[1] == '<') || (ILP[0] == '>' && ILP[1] == '>')) {
         int type = ILP[0];
         BOOLEAN uns1;
         ILP += 2;
@@ -307,7 +309,7 @@ static PPINT ierelation(BOOLEAN *uns)
 /* non-eq relations */
 {
    PPINT val1 = ieshiftops(uns), val2;
-    while (ILP[0] == '<' && ILP[1] != '<' || ILP[0] == '>' && ILP[1] != '>') {
+    while ((ILP[0] == '<' && ILP[1] != '<') || (ILP[0] == '>' && ILP[1] != '>')) {
         BOOLEAN eq = FALSE;
         BOOLEAN uns1;
         int type = ILP[0];
@@ -384,7 +386,7 @@ static PPINT ieandop(BOOLEAN *uns)
 static PPINT iexorop(BOOLEAN *uns)
 /* xor op */
 {
-   PPINT val1 = ieandop(&uns),val2;
+   PPINT val1 = ieandop(uns),val2;
     while (ILP[0] == '^') {
         BOOLEAN uns1;
         ILP ++;

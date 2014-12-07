@@ -53,7 +53,6 @@
 #include "LinkDebugFile.h"
 #include "Utils.h"
 
-#include <strstream>
 #include <fstream>
 #include <stdio.h>
 #include <limits.h>
@@ -665,10 +664,9 @@ void LinkManager::Link()
     else {
         if (!ParsePartitions())
         {
-            std::strstream stream;
-            stream << "Specification file line " << specification.GetLineNo() << " : "
-                    << specification.GetError().c_str();
-            std::string err(stream.str());
+            std::string err = std::string("Specification file line ") 
+                                + Utils::NumberToString(specification.GetLineNo())
+                                + specification.GetError();
             LinkError(err);
         }
     }

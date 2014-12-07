@@ -114,7 +114,7 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
     {
         case WM_CTLCOLORSTATIC:
         {
-            return (HBRUSH)(COLOR_WINDOW + 1);
+            return (LRESULT)(HBRUSH)(COLOR_WINDOW + 1);
         }
         case WM_TIMER:
             KillTimer(hwnd, 100);
@@ -148,7 +148,7 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             }
             else if (nmh->code == LVN_ITEMCHANGED)
             {
-                LPNMLISTVIEW p = (LPNMHDR)lParam;
+                LPNMLISTVIEW p = (LPNMLISTVIEW)lParam;
                 if (p->uChanged & LVIF_STATE)
                 {
                     if (p->uNewState & LVIS_SELECTED)

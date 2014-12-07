@@ -213,10 +213,12 @@ int CharacterToken::QuotedChar(int bytes, const char **source)
                 /* hexadecimal escape sequences are only terminated by a non hex char */
                 /* we sign extend or truncate */
                 if (bytes == 1)
+                {
                     if (unsignedchar)
                         n = (int)(unsigned char)n;
                     else
                         n = (int)(char)n;
+                }
                 if (bytes == 2 && i == 'x')
                         n = (int)(wchar_t)n;
 //				if (i != 'x')
@@ -574,7 +576,7 @@ int NumericToken::GetNumber(const char **ptr)
         {
             int n = UTF8::CharSpan(*ptr);
             for (int i=0; i < n && **ptr; i++)
-                (*ptr++);
+                (*ptr)++;
         }
     }
     return type;

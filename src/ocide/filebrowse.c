@@ -43,7 +43,8 @@
 #include <richedit.h>
 #include <stdio.h>
 #include <stdlib.h>
- 
+#include <ctype.h>
+
 #include "header.h"
 #include "winconst.h"
 
@@ -121,7 +122,7 @@ void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
         return;
     while (*p)
     {
-        FILE **next = &(*p)->next;
+        FILEBROWSE **next = &(*p)->next;
         if ((*p)->info == info)
         {
             if ((*p)->lineno > lineno)
@@ -155,11 +156,11 @@ void FileBrowseLineChange(DWINFO *info, int lineno, int delta)
     p = &fileBrowseInfo;
     while (*p)
     {
-        FILE **next = &(*p)->next;
+        FILEBROWSE **next = &(*p)->next;
         if ((*p)->info == info)
         {
-            if ((*p)->lineno < lineno && (*p)->lineno + DELTA >= lineno
-                || (*p)->lineno >= lineno && (*p)->lineno - DELTA <= lineno)
+            if (((*p)->lineno < lineno && (*p)->lineno + DELTA >= lineno)
+                || ((*p)->lineno >= lineno && (*p)->lineno - DELTA <= lineno))
             {
                 FILEBROWSE *q = *p;
                 if (q->next)

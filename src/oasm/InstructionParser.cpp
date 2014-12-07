@@ -383,6 +383,8 @@ AsmExprNode *InstructionParser::ExtractReg(AsmExprNode **val)
                 }
             }
             break;
+        default:
+            break;
     }
     return rv;
 }
@@ -463,6 +465,8 @@ AsmExprNode *InstructionParser::ExtractTimes(AsmExprNode **val)
                     (*val)->SetLeft(v);
                 }
             }
+            break;
+        default:
             break;
     }
     return rv;

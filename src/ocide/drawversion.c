@@ -534,7 +534,7 @@ static void VersChanged(struct resRes *versionData, char *buf)
                 }
                 break;
             case 2:
-                if (exp = ResReadExp(versionData, buf))
+                if ((exp = ResReadExp(versionData, buf)))
                 {
                     DoUndoChanged(versionData, (DWORD)version->fixed->file_flags, 0);
                     version->fixed->file_flags = exp;
@@ -543,7 +543,7 @@ static void VersChanged(struct resRes *versionData, char *buf)
                 }
                 break;
             case 3:
-                if (exp = ResReadExp(versionData, buf))
+                if ((exp = ResReadExp(versionData, buf)))
                 {
                     DoUndoChanged(versionData, (DWORD)version->fixed->file_flags_mask, 0);
                     version->fixed->file_flags_mask = exp;
@@ -552,7 +552,7 @@ static void VersChanged(struct resRes *versionData, char *buf)
                 }
                 break;
             case 4:
-                if (exp = ResReadExp(versionData, buf))
+                if ((exp = ResReadExp(versionData, buf)))
                 {
                     DoUndoChanged(versionData, (DWORD)version->fixed->file_os, 0);
                     version->fixed->file_os = exp;
@@ -561,7 +561,7 @@ static void VersChanged(struct resRes *versionData, char *buf)
                 }
                 break;
             case 5:
-                if (exp = ResReadExp(versionData, buf))
+                if ((exp = ResReadExp(versionData, buf)))
                 {
                     DoUndoChanged(versionData, (DWORD)version->fixed->file_type, 0);
                     version->fixed->file_type = exp;
@@ -570,7 +570,7 @@ static void VersChanged(struct resRes *versionData, char *buf)
                 }
                 break;
             case 6:
-                if (exp = ResReadExp(versionData, buf))
+                if ((exp = ResReadExp(versionData, buf)))
                 {
                     DoUndoChanged(versionData, (DWORD)version->fixed->file_subtype, 0);
                     version->fixed->file_subtype = exp;
@@ -674,6 +674,8 @@ static void VersUndo(struct resRes *versionData)
             switch (undo->type)
             {
                 char key[256], value[256], buf[256];
+                case vu_none:
+                    break;
                 case vu_insert:
                     *string = (*string)->next;
                     VersDeleteItem(versionData->gd.childWindow, undo->index);

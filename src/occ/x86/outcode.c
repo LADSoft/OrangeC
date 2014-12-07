@@ -3983,6 +3983,7 @@ OPCODE popn_xor[] =
     }
     , 
 };
+void adjustUsesESP();
 void outcode_file_init(void)
 {
     int i;
@@ -6265,7 +6266,7 @@ int AOP65(OPCODE *descript, OCODE *data, UBYTE **p)
     if (data->oper1->mode != am_dreg)
         return 0;
     val = resolveoffset(data, data->oper2->offset, &resolved);
-    if (resolved && data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN)
+    if (resolved && (data->oper1->length == ISZ_UCHAR || data->oper1->length ==  - ISZ_UCHAR || data->oper1->length == ISZ_BOOLEAN))
     {
         *(*p)++ = 0xb0 + data->oper1->preg;
         *(*p)++ = val;
@@ -6560,7 +6561,8 @@ void outcode_dumpIns(OCODE *peeplist)
             case op_funcend:
                 InsertFunc(peeplist->address, (SYMBOL *)peeplist->oper1, 0);
                 break;
-            
+            default:
+                break; 
         }
         peeplist = peeplist->fwd;
     }

@@ -89,4 +89,4 @@ private:
     
     static int primes[] ;
 } ;
-#endif BRCDICTIONARY_H
+#endif  //BRCDICTIONARY_H

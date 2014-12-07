@@ -51,7 +51,7 @@
 #define STRINGIZE(x) #x
 
 
-void ccLoadIdsFromNameTable(char *tabname, HASHREC *table);
+void ccLoadIdsFromNameTable(char *tabname, HASHTABLE *table);
 
 typedef struct _symid
 {
@@ -161,16 +161,16 @@ static char *deletion =
 static sqlite3 *dbPointer;
 static sqlite3_stmt *whndln;
 static sqlite3_stmt *shndln;
-static HASHREC *listn;
+static HASHTABLE *listn;
 static sqlite3_stmt *whndlm;
 static sqlite3_stmt *shndlm;
-static HASHREC *listm;
+static HASHTABLE *listm;
 static sqlite3_stmt *whndls;
 static sqlite3_stmt *shndls;
-static HASHREC *lists;
+static HASHTABLE *lists;
 static sqlite3_stmt *whndlf;
 static sqlite3_stmt *shndlf;
-static HASHREC *listf;
+static HASHTABLE *listf;
 void ccReset(void)
 {
     whndln = whndlm = whndls =whndlf = NULL;
@@ -321,7 +321,7 @@ int ccDBDeleteForFile(sqlite3_int64 id)
     }
     return rv;
 }
-void ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
+void ccLoadIdsFromNameTable(char *tabname, HASHTABLE *table)
 {
     static char *query = "SELECT name, id FROM %s";
     int rc = SQLITE_OK;
@@ -345,9 +345,9 @@ void ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
                     break;
                 case SQLITE_ROW:
                     v = (SYMID *)Alloc(sizeof(SYMID));
-                    v->name = litlate(sqlite3_column_text(handle, 0));
+                    v->name = litlate((char *)sqlite3_column_text(handle, 0));
                     v->id = sqlite3_column_int64(handle, 1);
-                    AddName(v, table);
+                    AddName((SYMBOL *)v, table);
                     rc = SQLITE_OK;
                     break;
                 default:
@@ -358,7 +358,7 @@ void ccLoadIdsFromNameTable(char *tabname, HASHREC *table)
         sqlite3_finalize(handle);
     }
 }
-static int ccSelectIdFromNameTable( sqlite3_stmt **shndl, char *name, char *tabname, sqlite3_int64 *id, HASHREC *table)
+static int ccSelectIdFromNameTable( sqlite3_stmt **shndl, char *name, char *tabname, sqlite3_int64 *id, HASHTABLE *table)
 {
     static char *query = "SELECT id FROM %s WHERE name = ?";
     int rc = SQLITE_OK;
@@ -397,7 +397,7 @@ static int ccSelectIdFromNameTable( sqlite3_stmt **shndl, char *name, char *tabn
                     v->name = name;
                     *id = sqlite3_column_int64(*shndl, 0);
                     v->id = *id;
-                    AddName(v, table);
+                    AddName((SYMBOL *)v, table);
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;
@@ -411,7 +411,7 @@ static int ccSelectIdFromNameTable( sqlite3_stmt **shndl, char *name, char *tabn
     */
     return SQLITE_ERROR;
 }
-static int ccWriteNameInTable( sqlite3_stmt **whndl, sqlite3_stmt **shndl, char *name, char *tabname, sqlite3_int64 *id, HASHREC *table)
+static int ccWriteNameInTable( sqlite3_stmt **whndl, sqlite3_stmt **shndl, char *name, char *tabname, sqlite3_int64 *id, HASHTABLE *table)
 {
     static char *query = "INSERT INTO %s (name) VALUES (?)";
     int rc;
@@ -453,7 +453,7 @@ static int ccWriteNameInTable( sqlite3_stmt **whndl, sqlite3_stmt **shndl, char 
             v->name = name;
             *id = sqlite3_last_insert_rowid(dbPointer);
             v->id = *id;
-            AddName(v, table);
+            AddName((SYMBOL *)v, table);
             
         }
     }

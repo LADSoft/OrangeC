@@ -265,10 +265,12 @@ void ProcessOneInd(EXPRESSION *match,
                             *ofs1 = offset1;
                             *ofs2 = offset2;
                             if (offset3)
+                            {
                                 if (*ofs3)
                                     *ofs3 = exprNode(en_add, *ofs3, offset3);
                                 else
                                     *ofs3 = offset3;
+                            }
                         }
                         else if (*ofs2 && ins->ans->offset->v.sp->value.i == (*ofs2)->v.sp->value.i)
                         {
@@ -315,10 +317,12 @@ void ProcessOneInd(EXPRESSION *match,
                             if (offset3 && *scale)
                                 offset3 = intNode(offset3->type, offset3->v.i << *scale);
                             if (offset3)
+                            {
                                 if (*ofs3)
                                     *ofs3 = exprNode(en_add, *ofs3, offset3);
                                 else
                                     *ofs3 = offset3;
+                            }
                         }
                     }
                     break;
@@ -396,7 +400,7 @@ void ProcessOneInd(EXPRESSION *match,
                                     if (!ins->dc.left->retval && !ins->ans->offset->v.sp->pushedtotemp)
                                     {
                                         QUAD *insz = tempInfo[ins->dc.left->offset->v.sp->value.i]->instructionDefines;
-                                        if (insz && insz->dc.opcode != i_assn || ins->block == tempInfo[n]->instructionUses->ins->block)
+                                        if ((insz && insz->dc.opcode != i_assn) || ins->block == tempInfo[n]->instructionUses->ins->block)
                                         {
                                             if (*ofs1 && (*ofs1)->v.sp->value.i == ins->ans->offset->v.sp->value.i)
                                                 *ofs1 = ins->dc.left->offset;
@@ -477,9 +481,9 @@ static BOOLEAN MatchesMem(IMODE *one, IMODE *two)
         return TRUE;
     if (one->mode == i_ind && two->mode == i_ind)
     {
-        if (one->offset && !two->offset || one->offset2 && !two->offset2 || one->offset3 && !two->offset3)
+        if ((one->offset && !two->offset) || (one->offset2 && !two->offset2) || (one->offset3 && !two->offset3))
             return FALSE;
-        if (!one->offset && two->offset || !one->offset2 && two->offset2 || !one->offset3 && two->offset3)
+        if ((!one->offset && two->offset) || (!one->offset2 && two->offset2) || (!one->offset3 && two->offset3))
             return FALSE;
         if (one->offset)
             if (one->offset->v.sp->value.i != two->offset->v.sp->value.i)
@@ -523,7 +527,7 @@ static void HandleAssn(QUAD *ins, BRIGGS_SET *globalVars)
                         case i_lsl:
                         case i_lsr:
                         case i_asr:
-                            if (ins->back->dc.right && ins->back->dc.right->mode == i_immed || ((ins->back->temps & TEMP_RIGHT) && ins->back->dc.right->mode == i_direct))
+                            if ((ins->back->dc.right && ins->back->dc.right->mode == i_immed) || ((ins->back->temps & TEMP_RIGHT) && ins->back->dc.right->mode == i_direct))
                                 if ((ins->back->temps & TEMP_LEFT) && ins->back->dc.left->mode == i_direct)
                                     if (ins->back->back->dc.opcode == i_assn)
                                         if (ins->back->dc.left == ins->back->back->ans)
@@ -554,7 +558,7 @@ static void HandleAssn(QUAD *ins, BRIGGS_SET *globalVars)
                         case i_or:
                         case i_eor:
                         case i_and:
-                            if (ins->back->dc.right && ins->back->dc.right->mode == i_immed || ((ins->back->temps & TEMP_RIGHT) && ins->back->dc.right->mode == i_direct))
+                            if ((ins->back->dc.right && ins->back->dc.right->mode == i_immed) || ((ins->back->temps & TEMP_RIGHT) && ins->back->dc.right->mode == i_direct))
                                 if ((ins->back->temps & TEMP_LEFT) && ins->back->dc.left->mode == i_direct)
                                     if (ins->back->back->dc.opcode == i_assn)
                                         if (ins->back->dc.left == ins->back->back->ans)
@@ -581,7 +585,7 @@ static void HandleAssn(QUAD *ins, BRIGGS_SET *globalVars)
                                                     }
                                                 }
                                             }
-                            if (ins->back->dc.left && ins->back->dc.left->mode == i_immed || ((ins->temps & TEMP_LEFT) && ins->back->dc.left->mode == i_direct))
+                            if ((ins->back->dc.left && ins->back->dc.left->mode == i_immed) || ((ins->temps & TEMP_LEFT) && ins->back->dc.left->mode == i_direct))
                                 if ((ins->back->temps & TEMP_RIGHT) && ins->back->dc.right->mode == i_direct)
                                     if (ins->back->back->dc.opcode == i_assn)
                                         if (ins->back->dc.right == ins->back->back->ans)
@@ -693,6 +697,8 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
                             }
                         }
                     }
+            default:
+                break;
         }
         if (ins->ans && ins->ans->mode == i_ind)
         {
@@ -703,7 +709,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
             {
                 IMODE *ind1 = Alloc(sizeof(IMODE));
                 *ind1 = *ins->ans;
-                if (offset1  && offset1->type == en_tempref || offset2 && offset2->type == en_tempref)
+                if ((offset1  && offset1->type == en_tempref) || (offset2 && offset2->type == en_tempref))
                 {
                     ins->temps |= TEMP_ANS;
                 }
@@ -735,7 +741,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
             {
                 IMODE *ind1 = Alloc(sizeof(IMODE));
                 *ind1 = *ins->dc.left;
-                if (offset1  && offset1->type == en_tempref || offset2 && offset2->type == en_tempref)
+                if ((offset1  && offset1->type == en_tempref) || (offset2 && offset2->type == en_tempref))
                 {
                     ins->temps |= TEMP_LEFT;
                 }
@@ -767,7 +773,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
             {
                 IMODE *ind1 = Alloc(sizeof(IMODE));
                 *ind1 = *ins->dc.right;
-                if (offset1  && offset1->type == en_tempref || offset2 && offset2->type == en_tempref)
+                if ((offset1  && offset1->type == en_tempref) || (offset2 && offset2->type == en_tempref))
                 {
                     ins->temps |= TEMP_RIGHT;
                 }
@@ -994,8 +1000,8 @@ int examine_icode(QUAD *head)
             }
             if (head->dc.left && head->dc.left->bits && head->dc.right)
             {
-                if (head->dc.opcode != i_setne && head->dc.opcode != i_sete 
-                    && head->dc.opcode != i_jne && head->dc.opcode != i_je
+                if ((head->dc.opcode != i_setne && head->dc.opcode != i_sete 
+                    && head->dc.opcode != i_jne && head->dc.opcode != i_je)
                     || (head->dc.left->bits != 1
                         || (head->dc.right->mode != i_immed 
                             || !isintconst(head->dc.right->offset)
@@ -1016,8 +1022,8 @@ int examine_icode(QUAD *head)
             }
             if (head->dc.right && head->dc.right->bits && head->dc.left)
             {
-                if (head->dc.opcode != i_setne && head->dc.opcode != i_sete 
-                    && head->dc.opcode != i_jne && head->dc.opcode != i_je
+                if ((head->dc.opcode != i_setne && head->dc.opcode != i_sete 
+                    && head->dc.opcode != i_jne && head->dc.opcode != i_je)
                     || (head->dc.right->bits != 1
                         || (head->dc.left->mode != i_immed 
                             || !isintconst(head->dc.left->offset)
@@ -1537,7 +1543,9 @@ binary_join:
                                 {
                                     flags |= 2;
                                     if (q->dc.opcode == i_assn && q->ans->size == q->dc.left->size)
+                                    {
                                         if (q->dc.left->mode == i_ind)
+                                        {
                                             if (first)
                                             {
                                                 second = q;
@@ -1547,6 +1555,8 @@ binary_join:
                                             {
                                                 first = q;
                                             }
+                                        }
+                                    }
                                 }
                                 else if (q->dc.opcode != i_sub && q->dc.opcode != i_sdiv && q->dc.opcode != i_udiv &&
                                          q->dc.opcode != i_smod && q->dc.opcode != i_umod &&                          
@@ -1554,7 +1564,9 @@ binary_join:
                                 {
                                     flags |= 1;
                                     if (q->dc.opcode == i_assn && q->ans->size == q->dc.left->size)
+                                    {
                                         if (q->dc.left->mode == i_ind)
+                                        {
                                             if (first)
                                             {
                                                 second = q;
@@ -1564,12 +1576,15 @@ binary_join:
                                             {
                                                 first = q;
                                             }
+                                        }
+                                    }
                                 }
                                 q = q->back;
                             }
                             if (second)
                                 first = second; 
                             if (first)
+                            {
                                 if (head->dc.left == first->ans)
                                 {
                                     head->dc.left = first->dc.left;
@@ -1578,6 +1593,7 @@ binary_join:
                                 {
                                     head->dc.right = first->dc.left;
                                 }
+                            }
                         }
                     }
                 }
@@ -1628,6 +1644,8 @@ binary_join:
                             case i_asr:
                                 q->dc.left = set_symbol( "__LXSAR", TRUE);
                                 break ;
+                            default:
+                                break;
                         }
                         InsertInstruction(head->back, q);
                         insert_nullparmadj(head->back,12);
@@ -1764,6 +1782,8 @@ binary_join:
                             else
                                 q->dc.left = set_symbol( "__CPLXDIV", TRUE);
                             break ;
+                        default:
+                            break;
                     }
                     InsertInstruction(head->back, q);
                     insert_nullparmadj(head->back, 12 * 4);
@@ -1819,6 +1839,8 @@ binary_join:
                         case i_umod:
                             q->dc.left = set_symbol( "__LXMODU", TRUE);
                             break ;
+                        default:
+                            break;
                     }
                     InsertInstruction(head->back, q);
                     insert_nullparmadj(head->back,16);
@@ -1860,11 +1882,14 @@ binary_join:
                 else
                     goto binary_join;
                 break;
+            default:
+                break;
         }
         head = head->fwd;
     }
     if (prm_useesp)
     {
+        extern void SetUsesESP(BOOLEAN yes);
         SetUsesESP(!uses_substack);
     }
     return changed;
@@ -1923,5 +1948,7 @@ void cg_internal_conflict(QUAD *head)
                 insertConflict(t1, t2);
             }
             break ;
+        default:
+            break;
     }
 }

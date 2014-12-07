@@ -1318,10 +1318,12 @@ LLONG_TYPE FPFToLongLong(FPF *src)
         memcpy(tmant,stemp.mantissa,sizeof(tmant));
 #ifdef USE_LONGLONG
         if (stemp.exp > 63)
+        {
             if (stemp.sign)
                 return LLONG_MIN;
             else
                 return LLONG_MAX;
+        }
         if (stemp.exp < 0)
             return 0;
         while (stemp.exp++ != 64) {
@@ -1696,7 +1698,7 @@ void FPFTruncate(FPF *value, int bits, int maxexp, int minexp)
 						{
 							/* else shift mantissa right and increment exponent... */
 							u16 carry = 1 ; /* high bit should be one */
-							ShiftMantRight1(&carry, &value->mantissa);
+							ShiftMantRight1(&carry, &value->mantissa[0]);
 						}
 					}
 				}

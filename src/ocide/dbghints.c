@@ -60,7 +60,7 @@ unsigned bitmask[] =
 
 int ReadValue(int address, void *val, int size, VARINFO *var)
 {
-    int len;
+    DWORD len;
     if (address < 0x1000 && var->thread)
     {
         CONTEXT *regs = &var->thread->regs;
@@ -155,7 +155,7 @@ int ReadValue(int address, void *val, int size, VARINFO *var)
 
 int WriteValue(int address, void *value, int size, CONTEXT *regs)
 {
-    int len;
+    DWORD len;
     if (address < 0x1000)
     {
         // register
@@ -273,8 +273,8 @@ int HintBasicValue(VARINFO *info, int *signedtype, char *data)
     int sz = -1;
     int type = info->type;
     int rv = type;
-    if (type >= ePChar && type <= ePULongLong
-        || type >= ePFloat && type <= ePComplexLongDouble)
+    if ((type >= ePChar && type <= ePULongLong)
+        || (type >= ePFloat && type <= ePComplexLongDouble))
     {
         ReadValue(info->address, data, 4, info);
         *signedtype = FALSE;
@@ -333,10 +333,12 @@ int HintBasicValue(VARINFO *info, int *signedtype, char *data)
         memset(data, 0 , 4);
     ReadValue(info->address, data, sz, info);
     if (*signedtype)
+    {
         if (sz == 1 && (data[0] & 0x80))
             data[1] = 0xff, data[2] = 0xff, data[3] = 0xff;
         else if (sz == 2 && (data[1] & 0x80))
             data[2] = 0xff, data[3] = 0xff;
+    }
     return sz < 4 ? eInt : rv;
 }
 
@@ -349,7 +351,7 @@ void HintEnum(DEBUG_INFO *dbg_info, VARINFO *info, char *buf, int toenum, int on
     int v;
     name[0] = 0;
 //	info->size = DeclType(dbg_info, info);
-    HintBasicValue(info, &signedtype, &name);
+    HintBasicValue(info, &signedtype, &name[0]);
     LookupEnumName(dbg_info, info->type, name, v);
     if (toenum)
         sprintf(buf, "ENUM: %s(%u)", name, v);
@@ -366,7 +368,7 @@ int HintBf(VARINFO *info, int *signedtype)
 {
     char data[20];
     int v = 0;
-    HintBasicValue(info, signedtype, &data);
+    HintBasicValue(info, signedtype, &data[0]);
     v = *(int*)data;
     if (*signedtype)
     {
@@ -432,7 +434,7 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
             case eLong: case eULong:
             case eChar32T:
             case eLongLong: case eULongLong:
-                sprintf(buf, "%Ld(%Lx)", info->ival, info->ival);
+                sprintf(buf, "%lld(%llx)", info->ival, info->ival);
                 break;
             case eFloat: case eImaginary:
             case eDouble: case eImaginaryDouble:
@@ -500,9 +502,9 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
             case eLongLong:
                 v = *(LLONG_TYPE*)buf1;
                 if (signedtype)
-                    sprintf(buf, "%Ld(0x%Lx)", v, v);
+                    sprintf(buf, "%lld(0x%llx)", v, v);
                 else
-                    sprintf(buf, "%Lu(0x%Lx)", v, v);
+                    sprintf(buf, "%llu(0x%llx)", v, v);
                 break;
             default:
                 sprintf(buf, "unknown type");

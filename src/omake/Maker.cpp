@@ -200,11 +200,13 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
                     }
                 }
                 if ((*it)->HasCommands())
-                    if (ruleList->GetDoubleColon() && remakeThis || !ruleList->GetDoubleColon())
+                    if ((ruleList->GetDoubleColon() && remakeThis) || !ruleList->GetDoubleColon())
+                    {
                         if (executionRule)
                             Eval::warning("Conflicting command lists for goal '" + goal + "'");
                         else
                             executionRule = *it;
+                    }
             }
             if (executionRule)
             {
@@ -642,7 +644,7 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
     {
 //		if (!(*it)->GetOrdered())
         {
-            if (rv = RunOne(*it, env, keepGoing))
+            if ((rv = RunOne(*it, env, keepGoing)))
             {
                 stop = true;
                 if (!keepGoing)

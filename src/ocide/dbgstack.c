@@ -94,7 +94,7 @@ static void CopyText(HWND hwnd)
 static void SetScope(SCOPE *newScope)
 {
     activeScope = newScope;
-    RedrawAllBreakpoints;
+    RedrawAllBreakpoints();
 }
 
 //-------------------------------------------------------------------------
@@ -114,7 +114,8 @@ void ClearStackArea(HWND hwnd)
 
 int eipReal(int eip)
 {
-    int len, i;
+    DWORD len;
+    int i;
     unsigned char buf[16];
     ReadProcessMemory(activeProcess->hProcess, (LPVOID)(eip - 16), (LPVOID) &buf,
         16, &len);
@@ -131,7 +132,7 @@ int eipReal(int eip)
 int readStackedData(int inebp, int *outebp)
 {
     DWORD eip = 0;
-    int len = 0;
+    DWORD len = 0;
     ReadProcessMemory(activeProcess->hProcess, (LPVOID)(inebp + 4), (LPVOID) &eip,
         4, &len);
     ReadProcessMemory(activeProcess->hProcess, (LPVOID)inebp, (LPVOID)outebp, 4,
@@ -157,7 +158,7 @@ void SetStackArea(HWND hwnd)
             return ;
         newStack->next = 0;
         FindFunctionName(newStack->name, eip);
-        GetBreakpointLine(eip, &newStack->fileName, &newStack->lineno, stackbase != NULL);
+        GetBreakpointLine(eip, &newStack->fileName[0], &newStack->lineno, stackbase != NULL);
         newStack->address = eip;
         newStack->basePtr = ebp;
         if (stackbase)
@@ -186,7 +187,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     switch (iMessage)
     {
         case WM_CTLCOLORSTATIC:
-            return (HBRUSH)(COLOR_WINDOW + 1);
+            return (LRESULT)(HBRUSH)(COLOR_WINDOW + 1);
         case WM_TIMER:
             KillTimer(hwnd, 100);
             ListView_SetItemState(hwndLV, curSel, 0, LVIS_SELECTED);
@@ -217,7 +218,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             else if (nmh->code == LVN_ITEMCHANGED)
             {
-                LPNMLISTVIEW p = (LPNMHDR)lParam;
+                LPNMLISTVIEW p = (LPNMLISTVIEW)lParam;
                 if (p->uChanged & LVIF_STATE)
                 {
                     if (p->uNewState & LVIS_SELECTED)

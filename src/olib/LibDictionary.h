@@ -87,4 +87,4 @@ private:
     
     static int primes[] ;
 } ;
-#endif LIBDICTIONARY_H
+#endif //LIBDICTIONARY_H

@@ -101,9 +101,9 @@ VOID ChangeBitmapColor(HBITMAP hbmSrc, COLORREF rgbOld, COLORREF rgbNew)
     HDC hdcMem;
     BITMAP bmBits;
 
-    if (hDC = GetDC(NULL))
+    if ((hDC = GetDC(NULL)))
     {
-        if (hdcMem = CreateCompatibleDC(hDC))
+        if ((hdcMem = CreateCompatibleDC(hDC)))
         {
             //
             // Get the bitmap struct needed by ChangeBitmapColorDC()
@@ -218,9 +218,9 @@ VOID FAR PASCAL ChangeBitmapColorDC(HDC hdcBM, LPBITMAP lpBM, COLORREF rgbOld,
     // See Section 11.2 (page 11-4) of the "Reference -- Volume 2" for more
     // information on the Termary Raster Operation codes.
     //
-    if (hbmMask = CreateBitmap(lpBM->bmWidth, lpBM->bmHeight, 1, 1, NULL))
+    if ((hbmMask = CreateBitmap(lpBM->bmWidth, lpBM->bmHeight, 1, 1, NULL)))
     {
-        if (hdcMask = CreateCompatibleDC(hdcBM))
+        if ((hdcMask = CreateCompatibleDC(hdcBM)))
         {
             //
             // Select th mask bitmap into the mono DC
@@ -330,11 +330,11 @@ HBITMAP ConvertToTransparent(HBITMAP hBmpSrc, DWORD color)
     if (GetVersion() > 6) // windows 7?
     {
         GetObject(hBmpSrc, sizeof(BITMAP), (LPSTR) &bmBits);
-        if (hDC = GetDC(NULL))
+        if ((hDC = GetDC(NULL)))
         {
-            if (hdcMem = CreateCompatibleDC(hDC))
+            if ((hdcMem = CreateCompatibleDC(hDC)))
             {
-                if (hdcMem32 = CreateCompatibleDC(hDC))
+                if ((hdcMem32 = CreateCompatibleDC(hDC)))
                 {
                     int x,y;
                     DWORD *bits;

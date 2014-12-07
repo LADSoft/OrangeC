@@ -104,6 +104,7 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
     if (isref(typ2))
         typ2 = basetype(typ2)->btp;
     if (ispointer(typ1) && ispointer(typ2))
+    {
         if (exact)
         {
             int arr = FALSE;
@@ -111,7 +112,7 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
             while (ispointer(typ1) && ispointer(typ2))
             {
                 if (!first && (exact == 1))
-                    if (isconst(typ2) && !isconst(typ1) || isvolatile(typ2) && !isvolatile(typ1))
+                    if ((isconst(typ2) && !isconst(typ1)) || (isvolatile(typ2) && !isvolatile(typ1)))
                         return FALSE;
                 first = FALSE;
                 typ1 = basetype(typ1);
@@ -126,14 +127,14 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
                 typ1 = typ1->btp;
                 typ2 = typ2->btp;				
             }
-            if (exact == 1 && (isconst(typ2) && !isconst(typ1) || isvolatile(typ2) && !isvolatile(typ1)))
+            if (exact == 1 && ((isconst(typ2) && !isconst(typ1)) || (isvolatile(typ2) && !isvolatile(typ1))))
                 return FALSE;
             return comparetypes(typ1, typ2, TRUE);
         }
             
         else
             return TRUE;
-    
+    }
     typ1 = basetype(typ1);
     typ2 = basetype(typ2);
     if (exact && (isfunction(typ1) || isfuncptr(typ1)) && (isfunction(typ2) || isfuncptr(typ2)))
@@ -177,15 +178,15 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
             return comparetypes(typ1->btp, typ2->btp, exact);
         }
     }
-    if (typ1->type == typ2->type && (isstructured(typ1) || exact && typ1->type == bt_enum))
+    if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == bt_enum)))
         return typ1->sp == typ2->sp;
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
         return TRUE;
     if (isfunction(typ1) && isfunction(typ2) && 
         typ1->sp->linkage == typ2->sp->linkage)
         return TRUE;
-    else if (!exact && (ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2))
-             || ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1))))
+    else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2)))
+             || (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))
             return (TRUE);
     else if (typ1->type == bt_enum && isint(typ2))
     {
@@ -237,6 +238,7 @@ BOOLEAN matchingCharTypes(TYPE *typ1, TYPE *typ2)
                 return TRUE;
         }
     }
+    return FALSE;
 }
 static char *putpointer(char *p, TYPE *tp)
 {
@@ -246,7 +248,7 @@ static char *putpointer(char *p, TYPE *tp)
     p = p +strlen(p);
     if (tp->array)
         if (tp->btp->size)
-            sprintf(p,"[%d]",tp->size/tp->btp->size);
+            sprintf(p,"[%ld]",tp->size/tp->btp->size);
         else
             sprintf(p,"[]");
     else if (tp->vla)
@@ -271,6 +273,8 @@ static TYPE *enumConst(char *buf, TYPE *tp)
                 break;
             case bt_restrict:
 /*				strcat(buf, tn_restrict); */
+                break;
+            default:
                 break;
         }
         tp = tp->btp;
@@ -313,7 +317,7 @@ TYPE *typenum(char *buf, TYPE *tp)
             sp = (SYMBOL *)hr->p;
             if (hr->next || !strcmp(sp->name, tp->sp->name)) // the tail is to prevent a problem when there are a lot of errors
             {
-                strcpy(buf," (*)(???)");
+                strcpy(buf," (*)(\?\?\?)");
                 break;
             }
             tp = sp->tp;
@@ -475,6 +479,8 @@ TYPE *typenum(char *buf, TYPE *tp)
             unmangle(name, tp->sp->errname);
             strcpy(buf, name);
             break;
+        default:
+            strcpy(buf, "\?\?\?");
     }
     return 0;
 }

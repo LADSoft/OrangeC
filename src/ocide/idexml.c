@@ -99,7 +99,7 @@ static void GetName(char *name, char ** s)
       *name = 0 ;
       return ;
   }
-  while(*name++=*(*s)++)    
+  while((*name++=*(*s)++))
     if (!isalnum(**s))
         break ;
 

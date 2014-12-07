@@ -47,7 +47,7 @@
 #include "codecomp.h"
 #include "regexp.h"
 #include <ctype.h>
-
+#include <process.h>
 
 #define EDITOR_OFFSET 35
 #define LINENO_DIGITS 7
@@ -83,7 +83,7 @@ DWINFO *editWindows;
 
 HIMAGELIST tagImageList;
 
-static DWORD ccThreadId;
+static unsigned int ccThreadId;
 static HANDLE ccThreadExit;
 static BOOL stopCCThread;
 static DWINFO *ewQueue;
@@ -94,14 +94,14 @@ void SetTitle(HWND hwnd);
 void EditorRundown(void)
 {
 }
-int xstricmpz(char *str1, char *str2)
+int xstricmpz(const char *str1, const char *str2)
 {
     while (*str2)
         if (toupper(*str1++) != toupper(*str2++))
             return 1;
     return  *str1 !=  *str2;
 } 
-int xstricmp(char *str1, char *str2)
+int xstricmp(const char *str1, const char *str2)
 {
     while (*str1 && *str2)
     {
@@ -151,6 +151,7 @@ DWINFO *DeQueueEditWindow(void)
         rv = malloc(sizeof(DWINFO));
     }
     memset(rv, 0, sizeof(DWINFO));
+    return rv;
 }
 void EnQueueEditWindow(DWINFO *ptr)
 {
@@ -288,7 +289,7 @@ void EditRenameFile(char *oldName, char *newName)
 
 //-------------------------------------------------------------------------
 
-int ApplyBreakAddress(char *module, int linenum)
+void ApplyBreakAddress(char *module, int linenum)
 {
     char nmodule[260];
     nmodule[0] = 0;
@@ -420,7 +421,7 @@ int SetEditData(HWND hwnd, char *buf, BOOL savepos)
 
 //-------------------------------------------------------------------------
 
-static void backup(char *name)
+void backupFile(char *name)
 {
     char newname[256], buffer[512];
     char *s;
@@ -467,7 +468,7 @@ int SaveFile(HWND hwnd, DWINFO *info)
     FILE *out;
 
     if (PropGetBool(NULL, "BACKUP_FILES"))
-        backup(info->dwName);
+        backupFile(info->dwName);
     if (!buf)
         return FALSE;
     if (info->dosStyle)
@@ -951,6 +952,7 @@ unsigned __stdcall ScanParse(void *aa)
         Sleep(50);
     }
     SetEvent(ccThreadExit);
+    return 0;
 }
 //-------------------------------------------------------------------------
 
@@ -1225,7 +1227,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd)
                     SendMessage(hwnd, WM_SETFOCUS, 0, 0);
                 else
-                    SendMessage(hwndClient, WM_MDIACTIVATE, (WPARAM)hwnd, NULL);
+                    SendMessage(hwndClient, WM_MDIACTIVATE, (WPARAM)hwnd, 0);
                 break;
             case EN_CHANGE:
             {
@@ -1282,7 +1284,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             ptr = DeQueueEditWindow();
             SetWindowLong(hwnd, 0, (int)ptr);
             SetWindowLong(hwnd, 4, (int)EDITSIG);
-            if (ed != -1)
+            if (ed != (EDITDATA *)-1)
             {
                 strcpy(ptr->dwTitle, newInfo->dwTitle);
                 SetWindowText(hwnd, newInfo->dwTitle);
@@ -1299,7 +1301,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_CLIPSIBLINGS + WS_CLIPCHILDREN + WS_HSCROLL + WS_VSCROLL + ES_LEFT + WS_VISIBLE +
                 ES_MULTILINE + ES_NOHIDESEL + ES_AUTOVSCROLL + ES_AUTOHSCROLL,
                 EDITOR_OFFSET, 0, 0, 0, hwnd, (HMENU)ID_EDITCHILD, hInstance, 
-                (ed && ed != (DWINFO *)-1) ? (void *)ed : NULL)
+                (ed && ed != (EDITDATA *)-1) ? (void *)ed : NULL)
                 ;
             ptr->self = hwnd;
             ptr->dwLineNo =  - 1;
@@ -1482,10 +1484,10 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
         case WM_FILETITLE:
             ptr = (DWINFO*)GetWindowLong(hwnd, 0);
-            return ptr->dwTitle;
+            return (LRESULT)ptr->dwTitle;
         case WM_FILENAME:
             ptr = (DWINFO*)GetWindowLong(hwnd, 0);
-            return ptr->dwName;
+            return (LRESULT)ptr->dwName;
         default:
             if (iMessage >= WM_USER)
                 return SendMessage(GetDlgItem(hwnd, ID_EDITCHILD), iMessage, wParam, lParam);
@@ -1521,7 +1523,7 @@ void RegisterDrawWindow(void)
     
     ccThreadExit = CreateEvent(0,0,0,0);
     ewSem = CreateEvent(NULL, FALSE, TRUE, NULL);
-    _beginthreadex(NULL, 0, (BEGINTHREAD_FUNC)ScanParse, NULL, 0, &ccThreadId);
+    _beginthreadex(NULL, 0, ScanParse, NULL, 0, &ccThreadId);
 }
 
 //-------------------------------------------------------------------------

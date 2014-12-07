@@ -71,8 +71,8 @@ void hbpDialog(void);
 void SingleStep(DWORD procID, DWORD threadID);
 void ClearTraceFlag(DWORD procID, DWORD threadID);
 int StepOverIncrement(DEBUG_EVENT *dbe);
-int DoStepOver(DEBUG_EVENT *dbe);
-int DoStepIn(DEBUG_EVENT *dbe);
+void DoStepOver(DEBUG_EVENT *dbe);
+void DoStepIn(DEBUG_EVENT *dbe);
 int IsStepping(DEBUG_EVENT *dbe);
 void StepOver(DEBUG_EVENT *dbe);
 void StepOut(DEBUG_EVENT *dbe);
@@ -105,7 +105,7 @@ void StartCodeCompletionServer(void);
 
                               /* Dbgasm.c */
 
-BOOL GetCodeLine(char *s);
+void GetCodeLine(char *s);
 void CalculateDisassembly(int moving);
 void DoDisassembly(HDC dc, RECT *r);
 LRESULT CALLBACK gotoProc2(HWND hwnd, UINT iMessage, WPARAM wParam,
@@ -295,15 +295,15 @@ void DestroyDockableWindow(HWND hwnd);
 void dmgrStartMoveClient(CCW_params *p, POINT *cursor);
 void dmgrMoveClient(CCW_params *p, POINT *cursor, int grip);
 void dmgrEndMoveClient(CCW_params *p, POINT *cursor);
-int dmgrStartMoveGrip(CCW_params *p, POINT *cursor);
-int dmgrMoveGrip(CCW_params *p, POINT *cursor);
-int dmgrEndMoveGrip(CCW_params *p, POINT *cursor);
+void dmgrStartMoveGrip(CCW_params *p, POINT *cursor);
+void dmgrMoveGrip(CCW_params *p, POINT *cursor);
+void dmgrEndMoveGrip(CCW_params *p, POINT *cursor);
 int dmgrDocked(CCW_params *p);
-int dmgrSizeBarStartMove(CCW_params *p, POINT *cursor);
-int dmgrSizeBarMove(CCW_params *p, POINT *cursor);
-int dmgrSizeBarEndMove(CCW_params *p);
-int dmgrFlex(CCW_params *p);
-int dmgrSizeFrame(void);
+void dmgrSizeBarStartMove(CCW_params *p, POINT *cursor);
+void dmgrSizeBarMove(CCW_params *p, POINT *cursor);
+void dmgrSizeBarEndMove(CCW_params *p);
+void dmgrFlex(CCW_params *p);
+void dmgrSizeFrame(void);
 int dmgrGetHiddenState(int id);
 int dmgrHideWindow(int id, int state);
 void PutWindow(HWND hwnd, RECT *r);
@@ -383,8 +383,9 @@ void CreateDlgDrawWindow(struct resRes *info);
                              /* Drawedit.c */
 
 void EditorRundown(void);
-int xstricmpz(char *str1, char *str2);
-int xstricmp(char *str1, char *str2);
+void backupFile(char *name);
+int xstricmpz(const char *str1, const char *str2);
+int xstricmp(const char *str1, const char *str2);
 char *stristr(char *str1, char *str2);
 DWINFO *DeQueueEditWindow(void);
 void EnQueueEditWindow(DWINFO *ptr);
@@ -396,7 +397,7 @@ void ApplyEditorSettings(void);
 void InvalidateByName(char *name);
 DWINFO *GetFileInfo(char *name);
 void EditRenameFile(char *oldName, char *newName);
-int ApplyBreakAddress(char *module, int linenum);
+void ApplyBreakAddress(char *module, int linenum);
 void SaveDrawAll(void);
 int AnyModified(void);
 void CloseAll(void);
@@ -535,9 +536,9 @@ void AddFileToArray(DWINFO ***files, int *count, int *max, char *name);
 void EndFind(void);
 void FindResetWindows(void);
 void FindSetDirty(void);
-int FindStringFromToolbar(char *search);
-DWORD DoFindNext(void *p);
-DWORD DoReplaceNext(void *p);
+void FindStringFromToolbar(char *search);
+void DoFindNext(void *p);
+void DoReplaceNext(void *p);
 void SetFlags(HWND hwndDlg, DLGHDR *pHdr);
 void LoadBrowsePath(HWND hwndDlg, int id);
 void GetBrowsePath(HWND hwndDlg, int id);
@@ -667,7 +668,7 @@ void StopInstanceComms(void);
 
                              /* Jumplist.c */
 
-FILE *LoadJumpSymbols(void);
+void LoadJumpSymbols(void);
 void FreeJumpSymbols(void);
 void SetJumplistPos(HWND hwnd, int linepos);
 LRESULT CALLBACK ValueEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
@@ -872,7 +873,7 @@ void doPopup(HWND hwnd, char *res);
                                /* Print.c */
 
 void split (char *fmt, char *left, char *right, char *center);
-int subs(HDC hDC, char *out, char *fmt, char *filename, int page);
+int subs(HDC hDC, char *out, const char *fmt, const char *filename, int page);
 void setTimeFormats(void);
 int Print(HWND win);
 
@@ -1122,28 +1123,28 @@ int dopragma(void);
 int doline(void);
 void ReadFileName(void);
 int doinclude(int unquoted);
-short *prcStrdup(short *string);
+WCHAR *prcStrdup(const WCHAR *string);
 void glbdefine(char *name, char *value);
 void getdefsym(void);
 int dodefine(void);
 int doundef(void);
 void undef2(void);
-int defid(short *name, short **p, char *q);
-int definsert(short *end, short *begin, short *text, int len, int replen);
-int defreplace(short *macro, int count, short **oldargs, short **newargs);
-void cnvt(short *out, char *in);
-void filemac(short *string);
-void datemac(short *string);
-void timemac(short *string);
-void linemac(short *string);
-void defmacroreplace(short *macro, short *name);
+int defid(WCHAR *name, WCHAR **p, char *q);
+int definsert(WCHAR *end, WCHAR *begin, WCHAR *text, int len, int replen);
+int defreplace(WCHAR *macro, int count, WCHAR **oldargs, WCHAR **newargs);
+void cnvt(WCHAR *out, char *in);
+void filemac(WCHAR *string);
+void datemac(WCHAR *string);
+void timemac(WCHAR *string);
+void linemac(WCHAR *string);
+void defmacroreplace(WCHAR *macro, WCHAR *name);
 void nodefines(void);
 int indefine(SYM *sp);
 void enterdefine(SYM *sp);
 void exitdefine(void);
-int replacesegment(short *start, short *end, int *inbuffer, int totallen, int
+int replacesegment(WCHAR *start, WCHAR *end, int *inbuffer, int totallen, int
     *changed);
-int defcheck(short *line);
+int defcheck(WCHAR *line);
 void pushif(void);
 void popif(void);
 int doifdef(int flag);
@@ -1155,11 +1156,11 @@ int doendif(void);
                               /* Rcread.c */
 
 void *rcAlloc(int v);
-char *rcStrdup(char *s);
+char *rcStrdup(const char *s);
 void rcFree(void *p);
 BITMAP_ *RCLoadBitmap(char *fileName);
 CURSOR *RCLoadCursor(char *fileName);
-int StringAsciiToWChar(short **text, char *string, int len);
+int StringAsciiToWChar(WCHAR **text, char *string, int len);
 FONT *RCLoadFont(char *fileName);
 ICON *RCLoadIcon(char *fileName);
 BYTE *RCLoadMessageTable(char *fileName, int *size);
@@ -1180,15 +1181,15 @@ void insert(SYM *sp, TABLE *table);
                               /* Rcutil.c */
 
 FILE *MySearchPath(char *string, char *searchpath, char *mode);
-int pstrncmp(short *str1, short *str2, int n);
-int pstrcmp(short *str1, short *str2);
-void pstrcpy(short *str1, short *str2);
-void pstrncpy(short *str1, short *str2, int len);
-void pstrcat(short *str1, short *str2);
-short *pstrchr(short *str, short ch);
-short *pstrrchr(short *str, short ch);
-int pstrlen(short *s);
-short *pstrstr(short *str1, short *str2);
+int pstrncmp(const WCHAR *str1, const WCHAR *str2, int n);
+int pstrcmp(const WCHAR *str1, const WCHAR *str2);
+void pstrcpy(WCHAR *str1, const WCHAR *str2);
+void pstrncpy(WCHAR *str1, const WCHAR *str2, int len);
+void pstrcat(WCHAR *str1, const WCHAR *str2);
+WCHAR *pstrchr(WCHAR *str, WCHAR ch);
+WCHAR *pstrrchr(WCHAR *str, WCHAR ch);
+int pstrlen(const WCHAR *s);
+WCHAR *pstrstr(WCHAR *str1,const WCHAR *str2);
 
                               /* Rcwrite.c */
 
@@ -1377,7 +1378,7 @@ int pcmp(INTERNAL_CHAR *s, char *t, int preproc, int *retlen, int
 int GetWordFromPos(HWND hwnd, char *outputbuf, int charpos, int *linenum, int
     *startoffs, int *endoffs);
 UNDO *getundo(HWND hwnd, EDITDATA *p, int type);
-int insertautoundo(HWND hwnd, EDITDATA *p, int type);
+void insertautoundo(HWND hwnd, EDITDATA *p, int type);
 UNDO *undo_deletesel(HWND hwnd, EDITDATA *p);
 UNDO *undo_casechange(HWND hwnd, EDITDATA *p);
 UNDO *undo_insertsel(HWND hwnd, EDITDATA *p, char *s);
@@ -1417,3 +1418,4 @@ void DeletePercent(HWND hwnd, EDITDATA *p);
 void CancelParenMatch(HWND hwnd, EDITDATA *p);
 int FindParenMatchBackward(HWND hwnd, EDITDATA *p, int dec);
 int FindParenMatchForward(HWND hwnd, EDITDATA *p, int dec);
+void RegisterXeditWindow(void);

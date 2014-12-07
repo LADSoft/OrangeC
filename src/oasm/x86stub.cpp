@@ -181,7 +181,7 @@ void Instruction::Optimize(int pc, bool last)
             {
                 int n = (*it)->GetSize() * 8;
                 int p = (*it)->GetInsOffs();
-                if ((*it)->GetSize() < 4 || expr->GetType() == AsmExprNode::IVAL && (*it)->GetSize() == 4)
+                if ((*it)->GetSize() < 4 || (expr->GetType() == AsmExprNode::IVAL && (*it)->GetSize() == 4))
                 {
                     int o;
                     bool error = false;

@@ -135,6 +135,7 @@ static void ScanVarStrength(INSTRUCTIONLIST *l, IMODE *multiplier,
                             // this first if is architecture specific
                             // forces use of shifts in addressing modes
                             if (head->dc.right->offset->v.i > 3)
+                            {
                                 if (!multiplier)
                                 {
                                     multiplier = make_immed(head->dc.right->size, 1 << head->dc.right->offset->v.i);
@@ -153,6 +154,7 @@ static void ScanVarStrength(INSTRUCTIONLIST *l, IMODE *multiplier,
                                                     multiplier, tnum, tr, vars);
                                     break;
                                 }
+                            }
                         }
                     }
                 }
@@ -164,6 +166,8 @@ static void ScanVarStrength(INSTRUCTIONLIST *l, IMODE *multiplier,
                     ScanVarStrength(tempInfo[tr]->instructionUses,
                                     multiplier, tnum, tr, vars);
                 }
+            default:
+                break;
         }
         if (multiplier && (ans) && multiplier->size < ISZ_FLOAT && ans->size < ISZ_FLOAT &&
             (multiplier->mode == i_immed || multiplier->offset->type == en_tempref)) // && !tempInfo[multiplier->offset->v.sp->value.i]->markStrength))

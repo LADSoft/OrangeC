@@ -42,6 +42,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <process.h>
 #include "header.h"
 
 extern int errcount, warncount;
@@ -136,7 +137,7 @@ void SetOutputExtensions(PROJECTITEM *pj, BOOL first)
         if (pj->type == PJ_FILE)
         {
             struct _propsData data;
-            PROFILE *pages = calloc(sizeof(PROFILE),1);
+            PROFILE **pages = calloc(sizeof(PROFILE *),100);
             memset(&data, 0, sizeof(data));
             data.prototype = pages;
             SelectRules(pj, &data);
@@ -278,6 +279,8 @@ static BOOL AnythingChanged(PROJECTITEM *pj, PROJECTITEM *fi)
             case PJ_FOLDER:
                 rv |= AnythingChanged(pj, fi->children);
                 break;
+            default:
+                break;
         }
         fi = fi->next;
     }
@@ -318,7 +321,7 @@ static BOOL DependsChanged(PROJECTITEM *pj)
 static int GenCommand(PROJECTITEM *pj, BOOL always)
 {
     BOOL rv = TRUE;
-    if (always || pj->outputExt[0] && DependsChanged(pj))
+    if (always || (pj->outputExt[0] && DependsChanged(pj)))
     {
         char *cmd= Lookup("__COMMAND_LINE", pj, NULL);
         if (!cmd)

@@ -233,7 +233,7 @@ OCODE *gen_codes(int op, int len, AMODE *ap1, AMODE *ap2)
         len =  - len;
     if (new->oper1)
         new->oper1->length = len;
-    if (new->oper2 && (len != ISZ_UINT && len != ISZ_U32 || !new->oper2->offset || new->oper2->mode != am_immed))
+    if (new->oper2 && ((len != ISZ_UINT && len != ISZ_U32) || !new->oper2->offset || new->oper2->mode != am_immed))
         new->oper2->length = len;
     return new;
 }
@@ -412,6 +412,7 @@ void peep_add(OCODE *ip)
     {
     /* change to inc */
         if (isintconst(ip->oper2->offset))
+        {
             if (ip->oper2->offset->v.i == 1)
             {
                 ip->opcode = op_inc;
@@ -422,6 +423,7 @@ void peep_add(OCODE *ip)
                 remove_peep_entry(ip);
                 return;
             }
+        }
         if (ip->oper1->mode == am_dreg)
         {
             OCODE *ip1 = ip->back;
@@ -460,6 +462,7 @@ void peep_sub(OCODE *ip)
     if (ip->oper2->mode != am_immed || !isintconst(ip->oper2->offset))
         return ;
     if (ip->fwd->opcode != op_sbb)
+    {
         if (ip->oper2->offset->v.i == 1)
         {
             ip->opcode = op_dec;
@@ -477,6 +480,7 @@ void peep_sub(OCODE *ip)
                 ip->opcode = op_add;
             }
         }
+    }
     return ;
 }
 
@@ -536,12 +540,12 @@ OCODE *peep_test(OCODE *ip)
     }
     return ip;
 }
-IMODE *peep_neg(OCODE *ip)
+OCODE *peep_neg(OCODE *ip)
 {
     if (ip->oper1->mode == am_dreg)
     {
         OCODE *ipf = ip->fwd;
-        while (ipf->opcode >= op_aaa && ipf->opcode < op_jecxz || ipf->opcode >= op_lahf)
+        while ((ipf->opcode >= op_aaa && ipf->opcode < op_jecxz) || ipf->opcode >= op_lahf)
         {
             if (ipf->opcode == op_add)
             {
@@ -990,6 +994,8 @@ void peep_mov(OCODE *ip)
                         return;
                     }
                     break;
+                default:
+                    break;
             }
         }
     }
@@ -1103,7 +1109,7 @@ void peep_movzx2(OCODE *ip)
         {
             if (ip->oper1->preg <= EBX)
             {
-                if ((ip->oper2->mode != am_indisp && ip->oper2->mode != am_indispscale 
+                if (((ip->oper2->mode != am_indisp && ip->oper2->mode != am_indispscale)
                      || ip->oper2->preg != ip->oper1->preg) && 
                      (ip->oper2->mode != am_indispscale || ip->oper2->sreg != ip->oper1->preg))
                 {
@@ -1272,8 +1278,8 @@ void peep_and(OCODE *ip)
                     if (ip->back->oper2->mode == am_immed)
                     {
                         int t1 = ip->back->oper2->offset->v.i;
-                        if (t == 0xff && t1 == 24 || t == 0xffff && t1 == 16 ||
-                            t == 0xffffff && t1 == 8)
+                        if ((t == 0xff && t1 == 24) || (t == 0xffff && t1 == 16) ||
+                            (t == 0xffffff && t1 == 8))
                         {
                             remove_peep_entry(ip);
                             return;
@@ -1288,8 +1294,8 @@ void peep_and(OCODE *ip)
                     if (ip->back->oper2->mode == am_immed)
                     {
                         int t1 = ip->back->oper2->offset->v.i;
-                        if (t == 0xff000000U && t1 == 24 || t == 0xffff0000U && t1 == 16 ||
-                            t == 0xffffff00U && t1 == 8)
+                        if ((t == 0xff000000U && t1 == 24) || (t == 0xffff0000U && t1 == 16) ||
+                            (t == 0xffffff00U && t1 == 8))
                         {
                             remove_peep_entry(ip);
                             return;
@@ -1450,6 +1456,8 @@ int equal_address(AMODE *ap1, AMODE *ap2)
 
         case am_direct:
             return equalnode(ap1->offset, ap2->offset);
+        default:
+            break;
     }
     return (FALSE);
 }
@@ -1636,6 +1644,8 @@ void oa_peep(void)
                     break;
                 case op_neg:
                     ip = peep_neg(ip);
+                    break;
+                default:
                     break;
             }
         }

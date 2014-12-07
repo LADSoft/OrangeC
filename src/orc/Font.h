@@ -54,14 +54,10 @@ class Font : public Resource
 {
 public:
     Font(const ResourceId &Id, const ResourceInfo &info);
-    virtual ~Font() {  delete data; }
+    virtual ~Font();
     virtual void WriteRes(ResFile &resFile);
     virtual void ReadRC(RCFile &rcFile);
-    void SetData(ResourceData *rdata) {
-       
-            delete data;
-        data = rdata;
-    }
+    void SetData(ResourceData *rdata);
     ResourceData *GetData() const { return data; }
     static void Reset() { nextFontIndex = 0; }
 private:

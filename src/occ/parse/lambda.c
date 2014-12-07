@@ -131,7 +131,7 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOLEAN isExplicit)
     {
         if (mode == cmThis)
         {
-            if (!sym || lambdas->lthis && sym->parentClass == basetype(lambdas->lthis->tp)->btp->sp)
+            if (!sym || (lambdas->lthis && sym->parentClass == basetype(lambdas->lthis->tp)->btp->sp))
             {
                 if (lambdas->captureThis)
                 {
@@ -333,7 +333,7 @@ static TYPE * realArgs(SYMBOL *func)
     while (src)
     {
         *dest = Alloc(sizeof(HASHREC));
-        (*dest)->p = clonesym((SYMBOL *)src->p);
+        (*dest)->p = (struct _hrintern_ *)clonesym((SYMBOL *)src->p);
         dest = &(*dest)->next;
         src = src->next;
     }
@@ -347,7 +347,7 @@ static void createCaller(void)
     SYMBOL *lambdaCall = search(isstructured(basetype(lambdas->func->tp)->btp) ? "__lambdaCallS" : "__lambdaCall", globalNameSpace->syms);
     BLOCKDATA block1, block2;
     STATEMENT *st;
-    lambdaCall = lambdaCall->tp->syms->table[0]->p;
+    lambdaCall = (SYMBOL *)lambdaCall->tp->syms->table[0]->p;
     func->parentClass = lambdas->cls;
     func->linkage = lk_virtual;
     func->isInline = TRUE;
@@ -386,7 +386,7 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
     BLOCKDATA block1, block2;
     STATEMENT *st;
     EXPRESSION *exp = varNode(en_label, self);
-    lambdaCall = lambdaCall->tp->syms->table[0]->p;
+    lambdaCall = (SYMBOL *)lambdaCall->tp->syms->table[0]->p;
     func->parentClass = lambdas->cls;
     func->linkage = lk_virtual;
     func->isInline = TRUE;
@@ -436,7 +436,7 @@ static void createConverter(SYMBOL *self)
     func->tp->syms = CreateHashTable(1);
     func->linkage = lk_virtual;
     func->isInline = TRUE;
-    hr->p = sym;
+    hr->p = (struct _hrintern_ *)sym;
     func->tp->syms->table[0] = hr;
     func->parentClass = lambdas->cls;
     memset(&block1, 0, sizeof(BLOCKDATA));
@@ -543,8 +543,8 @@ static EXPRESSION *createLambda(BOOLEAN noinline)
             }
             else
             {
-                SYMBOL *parent = search("$parent", lambdas->cls);
-                en1 = exprNode(en_auto, cls, NULL);
+                SYMBOL *parent = search("$parent", lambdas->cls->tp->syms);
+                en1 = varNode(en_auto, cls);
                 deref(&stdpointer, &en1);
                 en1 = exprNode(en_add, en1, intNode(en_c_i, parent->offset));
             }
@@ -555,7 +555,7 @@ static EXPRESSION *createLambda(BOOLEAN noinline)
         }
         else if (sp->lambdaMode)
         {
-            LAMBDASP *lsp = search(sp->name, lambdas->captured);
+            LAMBDASP *lsp = (LAMBDASP *)search(sp->name, lambdas->captured);
             if (lsp)
             {
                 en1 = exprNode(en_add, clsThs, intNode(en_c_i, sp->offset));
@@ -776,7 +776,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                             HASHREC *hr;
                             for (n=0; templateParam; templateParam = templateParam->next, n++);
                             hr = funcsp->tp->syms->table[0];
-                            while (hr && hr->p != sp)
+                            while (hr && ((SYMBOL *)hr->p) != sp)
                                 hr = hr->next;
                             while (hr && n)
                             {
@@ -833,7 +833,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             HASHREC *hr = self->captured->table[0];
             while (hr)
             {
-                LAMBDASP *lsp = (SYMBOL *)hr->p;
+                LAMBDASP *lsp = (LAMBDASP *)hr->p;
                 if (lsp->sym->lambdaMode == cmValue)
                 {
                     lsp->sym->tp = basetype(lsp->sym->tp);
@@ -874,14 +874,14 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     vpl->assigned = vpl->used = TRUE;
     SetLinkerNames(vpl, lk_cdecl);
     hrl = Alloc(sizeof(HASHREC));
-    hrl->p = vpl;
+    hrl->p = (struct _hrintern_ *)vpl;
     hrl->next = lambdas->func->tp->syms->table[0];
     lambdas->func->tp->syms->table[0] = hrl;
     vpl = makeID(sc_parameter, &stdpointer, NULL, AnonymousName());
     vpl->assigned = vpl->used = TRUE;
     SetLinkerNames(vpl, lk_cdecl);
     hrl = Alloc(sizeof(HASHREC));
-    hrl->p = vpl;
+    hrl->p = (struct _hrintern_ *)vpl;
     hrl->next = lambdas->func->tp->syms->table[0];
     lambdas->func->tp->syms->table[0] = hrl;
     SetLinkerNames(lambdas->func, lk_cdecl);

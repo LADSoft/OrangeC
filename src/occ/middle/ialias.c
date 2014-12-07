@@ -76,9 +76,17 @@ BITINT *uivBytes;
 static BOOLEAN changed;
 static ALIASLIST *parmList;
 
+struct UIVHash
+{
+    struct UIVHash *next;
+    ALIASNAME *name;
+    int offset;
+    ALIASNAME *result;
+} ;
 
 static ALIASADDRESS *addresses[DAGSIZE];
-static ALIASNAME *names[DAGSIZE];
+static ALIASNAME *mem[DAGSIZE];
+static struct UIVHash *names[DAGSIZE];
 static void ResetProcessed(void);
 static void GatherInds(BITINT *p, int n, ALIASLIST *al);
 void AliasInit(void)
@@ -91,6 +99,7 @@ void AliasInit(void)
     }
     memset(addresses, 0, sizeof(addresses));
     memset(names, 0, sizeof(names));
+    memset(mem, 0, sizeof(mem));
     parmList = NULL;
     uivBytes= NULL;
     cachedTempCount = tempCount;
@@ -207,13 +216,15 @@ static ALIASNAME *LookupMem(IMODE *im)
             if (im->offset->v.sp->imvalue)
                 im = im->offset->v.sp->imvalue;
             break;
+        default:
+            break;
     }
     hash = dhash((UBYTE *)&im, sizeof(im));
-    p = &names[hash];
+    p = &mem[hash];
     while (*p)
     {
-        if ((*p)->byUIV == FALSE && (*p)->v.name == im
-            || (*p)->byUIV == TRUE && (*p)->v.uiv->im == im && (*p)->v.uiv->offset == NULL)
+        if (((*p)->byUIV == FALSE && (*p)->v.name == im)
+            || ((*p)->byUIV == TRUE && (*p)->v.uiv->im == im && (*p)->v.uiv->offset == NULL))
         {
             return *p;
         }
@@ -229,6 +240,8 @@ static ALIASNAME *LookupMem(IMODE *im)
             (*p)->v.uiv = aAlloc(sizeof(UIV));
             (*p)->v.uiv->im = im;		
             (*p)->byUIV = TRUE;
+            break;
+        default:
             break;
     }
     return *p;
@@ -294,13 +307,6 @@ static void AliasUnionParm(ALIASLIST **dest, ALIASLIST *src)
         src = src->next;
     }
 }
-struct UIVHash
-{
-    struct UIVHash *next;
-    ALIASNAME *name;
-    int offset;
-    ALIASNAME *result;
-} ;
 static ALIASNAME *LookupAliasName(ALIASNAME *name, int offset)
 {
     int str[(sizeof(ALIASNAME *) + sizeof(int))/sizeof(int)];
@@ -397,7 +403,8 @@ static ALIASADDRESS *LookupAddress(ALIASNAME *name, int offset)
                 AliasUnion(&parmList, l);
             }
             break;
-        
+        default:
+            break;
     }
     li = aAlloc(sizeof(LIST));
     li->data = addr;
@@ -477,15 +484,15 @@ static void Createaddresses(void)
                 if (head->dc.left && !(head->temps & TEMP_LEFT))
                 {
                     // fixme...
-                    if (head->dc.left->mode == i_direct || !isarithmeticconst(head->dc.left->offset) &&
-                        head->dc.left->offset->type != en_labcon && head->dc.left->offset->type != en_add)
+                    if (head->dc.left->mode == i_direct || (!isarithmeticconst(head->dc.left->offset) &&
+                        head->dc.left->offset->type != en_labcon && head->dc.left->offset->type != en_add))
                         CreateMem(head->dc.left);
                 }
                 if (head->dc.right && !(head->temps & TEMP_RIGHT))
                 {
                     // fixme...
-                    if (head->dc.right->mode == i_direct || !isarithmeticconst(head->dc.right->offset) &&
-                        head->dc.right->offset->type != en_labcon && head->dc.right->offset->type != en_add)
+                    if (head->dc.right->mode == i_direct || (!isarithmeticconst(head->dc.right->offset) &&
+                        head->dc.right->offset->type != en_labcon && head->dc.right->offset->type != en_add))
                         CreateMem(head->dc.right);
                 }
             }
@@ -977,6 +984,8 @@ static void HandleParm(QUAD *head)
                 case en_pc:
                 case en_threadlocal:
                     return;
+                default:
+                    break;
             }
             an = LookupMem(head->dc.left->offset->v.sp->imvalue);
             if (head->dc.left->mode == i_direct)
@@ -1031,6 +1040,8 @@ static void AliasesOneBlock(BLOCK *b)
             case i_add:
             case i_sub:
                 HandleAdd(head);
+                break;
+            default:
                 break;
         }
         head = head->fwd;
@@ -1297,6 +1308,8 @@ static void ScanUIVs(void)
                     im = GetLoadTemp(im);
                     if (im)
                         setbit(uivBytes, im->offset->v.sp->value.i);
+                    break;
+                default:
                     break;
             }
             aa = aa->next;

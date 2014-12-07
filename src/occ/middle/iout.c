@@ -1372,12 +1372,14 @@ void putamode(QUAD *q, IMODE *ap)
      */
     int color = 0;
     if (q)
+    {
         if (q->ans == ap)
             color = q->ansColor;
         else if (q->dc.left == ap)
             color = q->leftColor;
         else
             color = q->rightColor;
+    }
     if (ap->offset && ap->offset->isvolatile)
         oputc('%', icdFile);
     switch (ap->mode)

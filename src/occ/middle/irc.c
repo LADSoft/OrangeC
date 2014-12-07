@@ -532,7 +532,7 @@ static void CopyLocalColors(void)
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
             i_label)
         {
-            if ((head->temps & TEMP_ANS) || head->ans && head->ans->retval)
+            if ((head->temps & TEMP_ANS) || (head->ans && head->ans->retval))
             {
                 if (head->ans->offset)
                 {
@@ -547,7 +547,7 @@ static void CopyLocalColors(void)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
             }
-            if ((head->temps & TEMP_LEFT) || head->dc.left && head->dc.left->retval)
+            if ((head->temps & TEMP_LEFT) || (head->dc.left && head->dc.left->retval))
             {
                 if (head->dc.left->offset)
                 {
@@ -562,7 +562,7 @@ static void CopyLocalColors(void)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
             }
-            if ((head->temps & TEMP_RIGHT) || head->dc.right && head->dc.right->retval)
+            if ((head->temps & TEMP_RIGHT) || (head->dc.right && head->dc.right->retval))
             {
                 if (head->dc.right->offset)
                 {
@@ -625,6 +625,7 @@ void SqueezeInit(void)
                 if (confl[k])
                     for (n=k *BITINTBITS; n < k * BITINTBITS + BITINTBITS; n++)
                         if (isset(confl, n))
+                        {
                             if (!tempInfo[n]->precolored)
                             {
                                 tempInfo[i]->squeeze += SqueezeChange(i, tempInfo[n]->regClass->vertex, 
@@ -635,6 +636,7 @@ void SqueezeInit(void)
                             {
                                 regs[tempInfo[n]->color] = TRUE;
                             }
+                        }
             tempInfo[i]->regCount = tempInfo[i]->regClass->regCount;
             for (j=0; j < REG_MAX; j++)
                 if (regs[j])
@@ -724,6 +726,7 @@ static void InitClasses(void)
     for (i=0; i < tempCount; i++)
     {
         if (tempInfo[i]->inUse)
+        {
             if  (!tempInfo[i]->liveAcrossFunctionCall)
             {
                 tempInfo[i]->regClass = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size)*2];
@@ -732,6 +735,7 @@ static void InitClasses(void)
             {
                 tempInfo[i]->regClass = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size)*2 + 1];
             }
+        }
         if (!tempInfo[i]->regClass)
             tempInfo[i]->doGlobal = FALSE;
     }
@@ -990,7 +994,7 @@ static void Adjacent(int n)
     for (i=0; i < x; i++, confl++)
     {
         BITINT v;
-        if (v = *confl)
+        if ((v = *confl))
         {
             adjacent[i] = v & ~(stackedTemps[i] | coalescedNodes[i]);
         }
@@ -1334,7 +1338,7 @@ static BOOLEAN Coalesce(void)
     for (i=0; i < instructionByteCount; i++)
     {
         BITINT x;
-        if (x = (bits(workingMoves))[i])
+        if ((x = (bits(workingMoves))[i]))
         {
             int j;
             int m = i * BITINTBITS;
@@ -1380,8 +1384,8 @@ static BOOLEAN Coalesce(void)
             AddWorkList(u);
             AddWorkList(v);
         }
-        else if (tempInfo[u]->precolored && AllOK(u, v) || 
-                 !tempInfo[u]->precolored && Conservative(u, v))
+        else if ((tempInfo[u]->precolored && AllOK(u, v)) || 
+                 (!tempInfo[u]->precolored && Conservative(u, v)))
         {
             /* zero or one precolored reg, constraints ok, coalesce */
             setbit(coalescedMoves, sel);

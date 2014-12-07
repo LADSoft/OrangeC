@@ -89,10 +89,8 @@ void WriteBreakPoint(HANDLE hProcess, int address, int value)
         ExtendedMessageBox("Debugger", MB_SYSTEMMODAL, "Could not query pages %d",
             GetLastError());
     // the following fails on win98
-    /*if*/ (!VirtualProtectEx(hProcess, mbi.BaseAddress, mbi.RegionSize,
-        PAGE_EXECUTE_WRITECOPY, &mbi.Protect));
-//        ExtendedMessageBox("Debugger", MB_SYSTEMMODAL, 
-//            "Could not protect pages %d", GetLastError());
+    VirtualProtectEx(hProcess, mbi.BaseAddress, mbi.RegionSize,
+        PAGE_EXECUTE_WRITECOPY, &mbi.Protect);
 
     if (!WriteProcessMemory(hProcess, (LPVOID)address, (LPVOID) &bf, 1, 0))
         ExtendedMessageBox("Debugger", MB_SYSTEMMODAL, 
@@ -154,7 +152,7 @@ void freeBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
         int *p;
         for (i=0, p = pt->addresses; p && *p !=0; ++p, ++i)
         {
-            if (pt->tempvals != -1 && pt->addresses && pt->tempvals)
+            if (pt->tempvals != (int *)-1 && pt->addresses && pt->tempvals)
             {
                 WriteBreakPoint(hProcess, pt->addresses[i], pt->tempvals[i]);
             }
@@ -276,7 +274,7 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
             (*p)->addresses = calloc(2, sizeof(int ));
             (*p)->addresses[0] = addr;
             (*p)->extra = extra;
-            GetBreakpointLine(addr, &(*p)->module, &(*p)->linenum, FALSE);
+            GetBreakpointLine(addr, &(*p)->module[0], &(*p)->linenum, FALSE);
             if (hwndASM)
                 InvalidateRect(hwndASM, 0, 0);
 //            Tag(TAG_BP, (*p)->module, (*p)->linenum, 0, 0, 0, 0);

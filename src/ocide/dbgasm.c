@@ -85,7 +85,7 @@ static int charwidth;
 
 extern long code_address;
 BYTE *code_ptr;
-BOOL GetCodeLine(char *s)
+void GetCodeLine(char *s)
 {
     BOOL isNewLine = TRUE;
     BYTE *oldposition = code_ptr;
@@ -130,7 +130,7 @@ static char *getline(char *module, int lineno)
     }
     strcpy(oldmodule, module);
     if (lineno == 0)
-        return lineno;
+        return NULL;
     if (!infile)
         infile = fopen(module, "r");
     if (!infile)

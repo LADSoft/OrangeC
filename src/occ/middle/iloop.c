@@ -494,6 +494,8 @@ void BuildLoopTree(void)
             case i_block:
                 b = tail->block;
                 break;
+            default:
+                break;
         }
         if (tail->block)
         {
@@ -734,6 +736,8 @@ static void CalculateInductionCandidates(LOOP *l)
                             }
                         }
                         break;
+                    default:
+                        break;
                 }
                 /* prep for reshaping */
                 switch (head->dc.opcode)
@@ -784,6 +788,8 @@ static void CalculateInductionCandidates(LOOP *l)
                             }
                         }
                         break;				
+                    default:
+                        break;
                 }
                 head = head->fwd;
             }

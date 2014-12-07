@@ -83,6 +83,7 @@ static char *extensionMap[][2] =
     ".txt", "Text Files"
 };
 
+PROJECTITEM *GetItemInfo(HTREEITEM item);
 int VerifyPath(char *path)
 {
     char err[MAX_PATH+100];
@@ -139,7 +140,7 @@ PROJECTITEM *AddFile(PROJECTITEM *data, char *name, BOOL automatic)
     PROJECTITEM **ins;
     HTREEITEM pos = TVI_FIRST;
     char *p;
-    if (file = HasFile(data, name))
+    if ((file = HasFile(data, name)))
         return file;
     p = strrchr(name, '\\');
     if (p)

@@ -85,7 +85,7 @@ static void inInsert(SYMBOL *sp)
     HASHREC **hr = GetHashLink(didInlines, sp->decoratedName);
     HASHREC *added = Alloc(sizeof(HASHREC));
     sp->mainsym = NULL;
-    added->p = sp;
+    added->p = (struct _hrintern_ *)sp;
     added->next = *hr;
     *hr = added;
 }

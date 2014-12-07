@@ -42,6 +42,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "header.h"
 
@@ -480,7 +481,7 @@ void AddAssigns(SETTING *set)
 void AddRuleSymbols(PROJECTITEM *fi)
 {
     struct _propsData data;
-    SETTING *pages[100];
+    PROFILE *pages[100];
     int i;
     memset(&data, 0, sizeof(data));
     data.prototype = pages;
@@ -493,7 +494,7 @@ void AddRuleSymbols(PROJECTITEM *fi)
 void AddRuleCommands(PROJECTITEM *fi)
 {
     struct _propsData data;
-    SETTING *pages[100];
+    PROFILE *pages[100];
     int i;
     memset(&data, 0, sizeof(data));
     data.prototype = pages;
@@ -845,25 +846,25 @@ void countErrors(char *buf)
         errcount++;
     if (!strnicmp(p, "FATAL ERROR",11))
         errcount++;
-    while (p = stristr(p, "\nERROR"))
+    while ((p = stristr(p, "\nERROR")))
     {
         errcount++;
         p += 6;
     }
     p = buf;
-    while (p = stristr(p, "\nLINKER ERROR"))
+    while ((p = stristr(p, "\nLINKER ERROR")))
     {
         errcount++;
         p += 13;
     }
     p = buf;
-    while (p = stristr(p, "\nFATAL ERROR"))
+    while ((p = stristr(p, "\nFATAL ERROR")))
     {
         errcount++;
         p += 13;
     }
     p = buf;
-    while (p = stristr(p, "\nWARNING"))
+    while ((p = stristr(p, "\nWARNING")))
     {
         warncount++;
         p += 8;
@@ -904,10 +905,10 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
     int rv = TRUE;
     while (TRUE)
     {
-        int read = 0;
+        DWORD read = 0;
         if (pos < 512)
         {
-            int avail = 0;
+            DWORD avail = 0;
             DWORD xx;
             avail = 0;
             while (!avail)
@@ -930,7 +931,7 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
         }
         pos += read;
         buf[pos] = 0;
-        while (p = strchr(buf, '\n'))
+        while ((p = strchr(buf, '\n')))
         {
             char s =  *++p;
             int wc = warncount, ec = errcount;
@@ -946,7 +947,7 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
             pos -= p - buf;
             buf[pos] = 0;
         }
-        if (pos == 512 || !rv && pos)
+        if (pos == 512 || (!rv && pos))
         {
             int wc = warncount, ec = errcount;
             buf[pos] = 0;
@@ -970,7 +971,7 @@ int Execute(char *cmd, char *wdp, int window)
 {
     char filename[260];
     char path[260], *p;
-    int retcode;
+    DWORD retcode;
     HANDLE stdoutWr, stdinRd;
     HANDLE stdoutRd, stdinWr;
     static char buf[1000];

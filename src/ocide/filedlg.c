@@ -272,7 +272,7 @@ void setofndata(OPENFILENAME *ofn, char *name, HWND handle, char *filter)
     ofn->nMaxFileTitle = sizeof(szFileTitle);
     ofn->lpstrInitialDir = szDirPath;
     ofn->Flags = OFN_EXPLORER | OFN_ENABLEHOOK | OFN_ENABLETEMPLATE | OFN_NOCHANGEDIR | OFN_DONTADDTORECENT;
-    ofn->lpfnHook = filedlghook;
+    ofn->lpfnHook = (LPOFNHOOKPROC)filedlghook;
     ofn->lpstrDefExt = NULL;
     ofn->lpTemplateName = "EXPADDIN";
     
@@ -324,7 +324,7 @@ void AppendExtension(OPENFILENAME *ofn)
             {
                 // has no  extension
                 int n = ofn->nFilterIndex *2-1;
-                char *s = ofn->lpstrFilter;
+                const char *s = ofn->lpstrFilter;
                 char *q = ofn->lpstrFileTitle + strlen(ofn->lpstrFileTitle);
                 p = ofn->lpstrFile + strlen(ofn->lpstrFile);
                 while (n--)

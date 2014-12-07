@@ -97,7 +97,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global);
         if (cparams.prm_cplusplus)
             prevsym(placeholder);
-        return sp && istype(sp) || assumeType && strSym && strSym->tp->type == bt_templateselector;
+        return (sp && istype(sp)) || (assumeType && strSym && strSym->tp->type == bt_templateselector);
     }
     else 
     {

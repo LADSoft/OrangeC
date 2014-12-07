@@ -139,6 +139,7 @@ static char *RTTIGetName(char *buf, TYPE *tp)
     strcpy(buf, "@$xt@");
     buf += strlen(buf);
     buf = mangleType(buf, tp, TRUE);
+    return buf;
 }
 static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
 {
@@ -170,7 +171,7 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
             }
             else
             {
-                sp = basetype(sp->tp)->syms->table[0]->p;
+                sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
             }
             sp->genreffed = TRUE;
         }
@@ -228,6 +229,7 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
         while (bc)
         {
             if (!bc->isvirtual)
+            {
                 if (genXT)
                 {
                     RTTIDumpType(bc->cls->tp);
@@ -242,6 +244,7 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
                     genref(xtSym , 0);
                     genint(bc->offset);
                 }
+            }
             bc = bc->next;
         }
     }
@@ -672,6 +675,8 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
                     genref(list[i] ,0);
                 }
                 genint(0);
+                break;
+            case xc_unspecified:
                 break;
         }
         gen_endvirtual(xcSym);

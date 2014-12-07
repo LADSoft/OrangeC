@@ -42,7 +42,8 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
-
+#include <ctype.h>
+#include <process.h>
 #include "header.h"
 
 extern char szInstallPath[];

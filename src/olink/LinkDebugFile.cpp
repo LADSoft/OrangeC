@@ -457,6 +457,8 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 n.push_back(new ObjString(type->GetName()));
                 break;
+            default:
+                break;
         }
        
     }
@@ -489,6 +491,8 @@ bool LinkDebugFile::WriteVariableTypes()
                 }
             }
                 break;
+            default:
+                break;
         }
        
     }
@@ -516,6 +520,8 @@ bool LinkDebugFile::WriteVariableTypes()
                     v.push_back(order++);
                 }
             }
+                break;
+            default:
                 break;
         }
        
@@ -667,6 +673,8 @@ bool LinkDebugFile::WriteAutosTable()
                         case ObjDebugTag::eLineNo:
                             currentLine = (*it2)->GetLineNo();
                             break;
+                        default:
+                            break;
                     }
                 }
                 for (ObjMemory::DebugTagIterator it2 = (*it1)->DebugTagBegin(); it2 != (*it1)->DebugTagEnd(); ++it2)
@@ -719,6 +727,8 @@ bool LinkDebugFile::WriteAutosTable()
                             contexts.pop_back();
                             break;
                         }
+                        default:
+                            break;
                     }
                     if (currentContext)
                         currentContext->currentLine = currentLine;

@@ -415,6 +415,8 @@ static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
                 return CDRF_NEWFONT;    
             }
             return CDRF_DODEFAULT;
+        default:
+            return CDRF_DODEFAULT;
     }
 }
 

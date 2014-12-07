@@ -758,7 +758,7 @@ LRESULT CALLBACK tbStatProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
             return 0;
         case WM_CTLCOLORSTATIC:
             SetBkMode((HDC)wParam, TRANSPARENT);
-            return GetStockObject(NULL_BRUSH);
+            return (LRESULT)GetStockObject(NULL_BRUSH);
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }

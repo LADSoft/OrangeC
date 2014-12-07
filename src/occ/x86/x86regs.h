@@ -231,4 +231,4 @@ static ARCH_SIZING regCosts = {
     0,/*char a_lrcomplexpad; */
 } ;
 
-char allocOrder[] = { 1, 1 };
+UBYTE allocOrder[] = { 1, 1 };

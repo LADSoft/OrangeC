@@ -571,8 +571,8 @@ typedef struct __lambda
     TYPE *functp;
     HASHREC *funcargs;
     SYMBOL *enclosingFunc;
-    HASHREC *oldSyms;
-    HASHREC *oldTags;
+    HASHTABLE *oldSyms;
+    HASHTABLE *oldTags;
     TYPE *rv;
     int index;
 } LAMBDA;

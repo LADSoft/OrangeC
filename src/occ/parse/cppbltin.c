@@ -39,7 +39,7 @@
 #include "compiler.h"
 #include "rtti.h"
 extern INCLUDES *includes;
-static char *cppbuiltin = "void * operator new(unsigned size); "
+static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigned size); "
     "void * operator new[](unsigned size); " 
     "void * operator new(unsigned size, void *ptr); " 
     "void * operator new[](unsigned size, void *ptr); " 
@@ -71,7 +71,7 @@ void ParseBuiltins(void)
     {
         LEXEME *lex;
         FILE *handle = includes->handle;
-        char *p = includes->lptr;
+        unsigned char *p = includes->lptr;
         includes->lptr = cppbuiltin;
         includes->handle = NULL;
         lex = getsym();

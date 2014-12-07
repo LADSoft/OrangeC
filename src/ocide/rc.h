@@ -104,9 +104,9 @@ enum e_sym
 /* #define tracking */
 typedef struct
 {
-    short *string;
+    WCHAR *string;
     short argcount;
-    short **args;
+    WCHAR **args;
 } DEFSTRUCT;
 
 /* struct for preprocessor if tracking */
@@ -198,7 +198,8 @@ typedef struct _hashrec_
 
 typedef struct expression
 {
-    enum { e_int } type;
+#define e_int 0
+    int type;
     int val;
     char *rendition;
     struct expression *left;
@@ -233,8 +234,8 @@ typedef struct rcdata
     } type;
     union
     {
-        EXPRESSION *word;
-        EXPRESSION *dword;
+        unsigned word;
+        unsigned dword;
         struct
         {
             int length;

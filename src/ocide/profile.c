@@ -48,6 +48,7 @@ extern char szInstallPath[1024];
     static char szProfileName[260] ;
     static char szProfileClass[] = "Defaults";
 
+int mkdir( const char *__path ); // can't include dir. because of the redef of eof
 void GetUserDataPath(char *buf)
 {
     HANDLE hndl;

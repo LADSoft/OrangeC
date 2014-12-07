@@ -663,7 +663,7 @@ static int inasm_getsize(void)
             inasm_getsym();
         }
     }
-    if (!lex || lex->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, openbr))
+    if (!lex || (lex->type != l_asmreg && !ISID(lex) && !MATCHKW(lex, openbr)))
     {
         inasm_err(ERR_ADDRESS_MODE_EXPECTED);
         return 0;
@@ -1132,10 +1132,12 @@ static AMODE *inasm_amode(int nosegreg)
             return 0;
         }
         if (!rv->length)
+        {
             if (sz)
                 rv->length = sz;
             else if (lastsym)
                 rv->length = inasm_structsize();
+        }
         if (rv->length < 0)
             rv->length =  - rv->length;
         rv->seg = seg;
@@ -1161,7 +1163,10 @@ static AMODE *inasm_immed(void)
                     rv->length = ISZ_UINT;
                     inasm_getsym();
                     return rv;
+                default:
+                    break;
         }
+        
     return NULL;
 }
 
@@ -1199,6 +1204,8 @@ AMODE *getimmed(void)
                 rv = aimmed(lex->value.i);
                 inasm_getsym();
                 return rv;
+            default:
+                break;
         }
     return NULL;
 }
@@ -1392,8 +1399,8 @@ static OCODE *ope_call(void)
             ap1->length = ap2->length = ISZ_UINT;
             return make_ocode(ap1, ap2, 0);
         }
-        else if (ap1->offset->type != en_label && ap1->offset->type
-            != en_labcon && ap1->offset->type != en_pc || ap1->seg)
+        else if ((ap1->offset->type != en_label && ap1->offset->type
+            != en_labcon && ap1->offset->type != en_pc) || ap1->seg)
             return (OCODE*) - 1;
     }
     else
@@ -1557,7 +1564,7 @@ static OCODE *ope_regrm(void)
         return (OCODE*) - 1;
     if (op == op_lea && ap2->mode == am_dreg)
         return (OCODE*) - 1;
-    if (ap2->length && ap1->length != ap2->length || ap1->length == ISZ_UCHAR)
+    if ((ap2->length && ap1->length != ap2->length) || ap1->length == ISZ_UCHAR)
         return (OCODE*) - 2;
     return make_ocode(ap1, ap2, 0);
 }
@@ -2428,7 +2435,7 @@ LEXEME *inasm_statement(LEXEME *inlex, BLOCKDATA *parent)
             return lex;
         }
         op = inasm_op();
-        if (op ==  - 1)
+        if (op == (enum e_op) - 1)
         {
             
             return lex;

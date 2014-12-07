@@ -616,7 +616,7 @@ void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
             tagid = atoi(attribs->value);
         attribs = attribs->next;
     } 
-    if (tagid ==  - 1 || tagid != TAG_BP && tagid != TAG_BOOKMARK)
+    if (tagid ==  - 1 || (tagid != TAG_BP && tagid != TAG_BOOKMARK))
         return ;
     while (*ls)
     {
@@ -1295,7 +1295,7 @@ void SaveWorkArea(PROJECTITEM *wa)
     PROFILENAMELIST *pf;
     
     if (PropGetBool(NULL, "BACKUP_PROJECTS"))
-        backup(wa->realName);	
+        backupFile(wa->realName);	
     out = fopen(wa->realName, "w");
     if (!out)
     {

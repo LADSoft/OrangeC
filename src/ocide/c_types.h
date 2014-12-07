@@ -74,4 +74,4 @@ typedef struct _type_t
     int byValue:1;
 } type_t;
 
-#endif C_TYPES_H
+#endif //C_TYPES_H

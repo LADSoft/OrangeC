@@ -52,6 +52,7 @@ int ccWriteLineNumbers( char *symname, char *typename, char *filename,
                        int indirectCount, sqlite_int64 struct_id, 
                        sqlite3_int64 main_id, int start, int end, 
                        int flags, sqlite_int64 *id);
+int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char *data, int len, int lines);
 int ccWriteGlobalArg( sqlite_int64 line_id, sqlite_int64 main_id, char *symname, char *typename, int *order);
 int ccWriteStructField( sqlite3_int64 name_id, char *symname, char *typename, 
                        int indirectCount, sqlite_int64 struct_id, 
@@ -59,4 +60,4 @@ int ccWriteStructField( sqlite3_int64 name_id, char *symname, char *typename,
                        int *order, sqlite_int64 *id);
 int ccWriteMethodArg( sqlite_int64 struct_id, char *typename, int *order);
 
-#endif DB_H
+#endif //DB_H

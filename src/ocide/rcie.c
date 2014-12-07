@@ -50,11 +50,12 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
-
+#include <ctype.h>
+ 
 #include "header.h"
 
 extern int lastch;
-extern short *lptr; 
+extern WCHAR *lptr; 
 extern int cantnewline;
 extern enum e_sym lastst;
 extern char lastid[];
@@ -106,7 +107,7 @@ EXPRESSION *InternalLookup(char *id, int translate)
     *p = 0;
     wcscpy(nbuf, buf);
     defcheck(buf);
-    if (wcscmp(nbuf, buf) || !isalpha(buf[0]) && buf[0] != '_')
+    if (wcscmp(nbuf, buf) || (!isalpha(buf[0]) && buf[0] != '_'))
     {
         expr = ReadExpFromString(translate ? nbuf : buf);
     }

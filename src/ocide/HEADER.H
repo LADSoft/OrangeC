@@ -528,7 +528,7 @@ typedef struct {
 
 typedef struct _edlist_
 {
-	struct _list_ *next;
+	struct _edlist_ *next;
 	EDITDATA *data;
 } EDLIST;
 

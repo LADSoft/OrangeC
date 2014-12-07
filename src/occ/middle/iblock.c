@@ -230,6 +230,8 @@ static void add_intermed(QUAD *newQuad)
         case i_func:
             newQuad->ignoreMe = TRUE;
             break;
+        default:
+            break;
     };
     if (intermed_head == 0)
     {
@@ -451,7 +453,8 @@ static QUAD * add_dag(QUAD *newQuad)
     
     /* Now replace the CSE or enter it into the table */
     node = LookupNVHash((UBYTE *)newQuad, DAGCOMPARE, ins_hash);
-    if (!node || newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size || node->ans->bits != newQuad->ans->bits)
+    if (!node || (newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size)
+         || node->ans->bits != newQuad->ans->bits)
     {
         if (cparams.prm_optimize)
         {
@@ -461,8 +464,8 @@ static QUAD * add_dag(QUAD *newQuad)
          */
             if (newQuad->ans && (newQuad->dc.opcode != i_assn || newQuad->dc.left->mode != i_immed)
                 && (!newQuad->ans->vol && !newQuad->ans->retval && (newQuad->ans->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)
-                && (!newQuad->dc.left || !(newQuad->livein & IM_LIVELEFT) || !newQuad->dc.left->vol && (newQuad->dc.left->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs))
-                && (!newQuad->dc.right || !(newQuad->livein & IM_LIVERIGHT) || !newQuad->dc.right->vol && (newQuad->dc.right->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs))))
+                && (!newQuad->dc.left || !(newQuad->livein & IM_LIVELEFT) || (!newQuad->dc.left->vol && (newQuad->dc.left->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)))
+                && (!newQuad->dc.right || !(newQuad->livein & IM_LIVERIGHT) || (!newQuad->dc.right->vol && (newQuad->dc.right->size < ISZ_FLOAT || chosenAssembler->arch->hasFloatRegs)))))
                     if (newQuad->dc.opcode != i_add || 
                         (!(newQuad->livein & IM_LIVELEFT) || newQuad->dc.left->mode != i_immed)
                         || (!(newQuad->livein & IM_LIVERIGHT) || newQuad->dc.right->mode != i_immed))
@@ -494,9 +497,9 @@ static QUAD * add_dag(QUAD *newQuad)
         if (newQuad->ans && (newQuad->ans->mode == i_ind || newQuad->ans->offset->type != en_tempref))
             flush_dag();
         else if (newQuad->ans /* &&  (newQuad->dc.opcode != i_assn || (newQuad->livein & IM_LIVELEFT)) */
-            && (cparams.prm_optimize  && (newQuad->ans->offset->type == en_tempref) && newQuad->ans->mode == i_direct 
+            && (cparams.prm_optimize  && ((newQuad->ans->offset->type == en_tempref && newQuad->ans->mode == i_direct) 
                 || node->dc.opcode == i_icon || node->dc.opcode
-            == i_fcon || node->dc.opcode == i_imcon || node->dc.opcode == i_cxcon))
+            == i_fcon || node->dc.opcode == i_imcon || node->dc.opcode == i_cxcon)))
         {
             ReplaceHash(node, (UBYTE *)&newQuad->ans, sizeof(IMODE*), name_hash);
         }
@@ -616,6 +619,8 @@ QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
         case i_gosub:
             flush_dag();
             break;
+        default:
+            break;
     }
     newQuad = (QUAD *)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
@@ -628,6 +633,8 @@ QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
         case i_ret:
         case i_rett:
             flush_dag();
+            break;
+        default:
             break;
     }
     wasgoto = FALSE;
@@ -847,7 +854,9 @@ void RemoveInstruction(QUAD *ins)
     {
         case i_dbgblock: case i_dbgblockend: case i_varstart: case i_func:
         case i_label:
-        return;
+            return;
+        default:
+            break;
     }
     if (ins->block->head == ins)
         return;
@@ -926,7 +935,7 @@ void InsertInstruction(QUAD *before, QUAD *ins)
     else
     {
         ins->temps = 0;
-        if (ins->ans && (ins->ans->offset && ins->ans->offset->type == en_tempref || ins->ans->offset2))
+        if (ins->ans && ((ins->ans->offset && ins->ans->offset->type == en_tempref) || ins->ans->offset2))
         {
             ins->temps |= TEMP_ANS;
             if (ins->ans->mode == i_direct)
@@ -941,7 +950,7 @@ void InsertInstruction(QUAD *before, QUAD *ins)
                     InsertUses(ins, ins->ans->offset2->v.sp->value.i);
             }
         }
-        if (ins->dc.left && (ins->dc.left->offset && ins->dc.left->offset->type == en_tempref || ins->dc.left->offset2))
+        if (ins->dc.left && ((ins->dc.left->offset && ins->dc.left->offset->type == en_tempref) || ins->dc.left->offset2))
         {
             if (!ins->dc.left->retval)
                 ins->temps |= TEMP_LEFT;

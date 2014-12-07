@@ -229,7 +229,7 @@ bool Listing::Write(std::string &listingName, std::string &inName, bool listMacr
     while (!in.eof())
     {
         char buf[4000];
-        while ((!cur  || cur && lineno < cur->lineno) && !in.eof())
+        while ((!cur  || (cur && lineno < cur->lineno)) && !in.eof())
         {
             in.getline(buf, 4000);
             std::string bufs = buf;

@@ -88,7 +88,7 @@ typedef struct _imgdata {
     POINT sizePos;
                 
     HDC selectDC;
-    HDC selectbmp;
+    HBITMAP selectbmp;
     
     IMAGEDATA *res ;
     IMAGEDATA *resList;
@@ -127,3 +127,5 @@ typedef struct _imgdata {
     struct resRes *resource;
     
 } IMGDATA ;
+
+#include "imgdraw.p"

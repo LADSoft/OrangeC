@@ -395,7 +395,7 @@ static void WriteExpInternal(FILE *outputFile, EXPRESSION *p, int n)
             if (n != star)
                 fputc('(', outputFile);
             WriteExpInternal(outputFile, p->left, star);
-            fprintf(outputFile, " % ");            
+            fprintf(outputFile, " %% ");            
             WriteExpInternal(outputFile, p->right, star);
             if (n != star)
                 fputc(')', outputFile);
@@ -777,7 +777,7 @@ static void WriteRCData(FILE *outputFile, char *rel, RESOURCE *res)
             fprintf(outputFile, "\t");
             if (data->type == RCDATA_STRING)
             {
-                WriteAString(outputFile, data->u.string.s, data->u.string.length);
+                WriteAString(outputFile, (char *)data->u.string.s, data->u.string.length);
             }
             else if (data->type == RCDATA_WORD)
             {
@@ -1153,7 +1153,7 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
         fprintf(outputFile, "CONTROL ");
         
     }
-    if (writeText && control->text || generic)
+    if ((writeText && control->text) || generic)
     {
 		if (control->text)
 	        WriteQuotedResId(outputFile, control->text);
@@ -1323,7 +1323,7 @@ static void WriteRes(FILE *outputFile, char *rel, RESOURCE *res)
     if (res->itype == RESTYPE_PLACEHOLDER)
         return;    
         
-    if (res->type.symbolic || res->itype != RESTYPE_STRING && res->itype != RESTYPE_LANGUAGE)
+    if (res->type.symbolic || (res->itype != RESTYPE_STRING && res->itype != RESTYPE_LANGUAGE))
         WriteResId(outputFile, &res->id);
     if (res->type.symbolic)
     {

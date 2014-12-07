@@ -148,7 +148,7 @@ static RESHAPE_LIST *InsertExpression(IMODE *im, RESHAPE_EXPRESSION *expr, QUAD 
     list->flags = flags;
     list->im = im;
     if (im->mode == i_immed)
-        list->rporder = INT_MAX; /* evaluate constants as early as possible */
+        list->rporder = SHRT_MAX; /* evaluate constants as early as possible */
     else
     {
         list->rporder = ins->block->loopParent->loopnum;
@@ -374,7 +374,9 @@ static void ApplyDistribution(void)
                             l = l->next;
                         }
                     }
-                    break;
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -418,7 +420,7 @@ static void replaceIM(IMODE **iml, IMODE *im)
         }
         if (!imlx)
         {
-            SYMBOL *sp = im->offset->v.sp->imind;
+            SYMBOL *sp = im->offset->v.sp;
             IMODE *imind;
             IMODELIST *imindl;
             if (sp && sp->storage_class != sc_auto && sp->storage_class != sc_register)

@@ -37,13 +37,16 @@ void pperror(int err, int data);
 void pperrorstr(int err, char *str);
 void preverror(int err, char *name, char *origfile, int origline);
 void preverrorsym(int err, SYMBOL *sp, char *origfile, int origline);
+void getcls(char *buf, SYMBOL *clssym);
 void errorat(int err, char *name, char *file, int line);
 void error(int err);
+void errorabstract(int error, SYMBOL *sp);
 void errorcurrent(int err);
 void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name);
 void errorNotMember(SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name);
 void errorint(int err, int val);
 void errorstr(int err, char *val);
+void errorstringtype(int err, char *str, TYPE *tp1);
 void errorsym(int err, SYMBOL *sym);
 void errorsym2(int err, SYMBOL *sym1, SYMBOL *sym2);
 void errorstrsym(int err, char *name, SYMBOL *sym2);
@@ -97,6 +100,9 @@ void displayLexeme(LEXEME *lex);
 
                               /* Declare.c */
 
+BOOLEAN intcmp(TYPE *t1, TYPE *t2);
+int templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
+BOOLEAN hasVTab(SYMBOL *sp);
 BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told);
 BOOLEAN sameTemplate(TYPE *P, TYPE *A);
 void ParseBuiltins(void);
@@ -119,6 +125,7 @@ void ConsDestDeclarationErrors(SYMBOL *sp, BOOLEAN notype);
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sp);
 void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons);
 SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
+void lambda_init(void);
 void createConstructorsForLambda(SYMBOL *sp);
 void createConstructor(SYMBOL *sp, SYMBOL *consfunc);
 void createDefaultConstructors(SYMBOL *sp);
@@ -162,8 +169,10 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMB
 							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN asFriend,
                         int consdest, BOOLEAN beforeOnly);
 void sizeQualifiers(TYPE *tp);
+void SetParams(SYMBOL *cons);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
+void TemplateValidateSpecialization(TEMPLATEPARAMLIST *arg);
 void propagateTemplateMemberDefinition(SYMBOL *sym);
 int PushTemplateNamespace(SYMBOL *sym);
 void PopTemplateNamespace(int count);
@@ -354,6 +363,7 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
 EXPRESSION *RemoveAutoIncDec(EXPRESSION *exp);
 							  /* IAlias.c */
 void AliasInit(void);
+void AliasRundown(void);
 void AliasPass1(void);
 void AliasPass2(void);
 void AliasStruct(BITINT *bits, IMODE *ans, IMODE *left, IMODE *right);
@@ -444,6 +454,7 @@ IMODE *gen_tcall(EXPRESSION *node, SYMBOL *funcsp, int flags);
 IMODE *gen_trapcall(SYMBOL *funcsp, EXPRESSION *node, int flags);
 IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags);
 IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags);
+IMODE *doatomicFence(SYMBOL * funcsp, EXPRESSION *parent, EXPRESSION *node, IMODE *barrier);
 IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size);
 IMODE *gen_void(EXPRESSION *node, SYMBOL *funcsp);
 int natural_size(EXPRESSION *node);
@@ -473,6 +484,12 @@ void WalkFlowgraph(BLOCK *b,
 							  /* iglobal.c */
 
 void LocalOptimization(void);
+
+							  /* iinline.c */
+
+void iinlineInit(void);
+void dumpvc1Thunks(void);
+IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags);
 
 							  /* iinvar.c */
 
@@ -515,17 +532,23 @@ void dumpCPPStaticsAndTLS();
 void insertStartup(BOOLEAN startupFlag, char *name, int prio);
 char *lookupAlias(char *name);
 void insertAlias(char *name, char *alias);
+void insertDynamicInitializer(SYMBOL *sp, INITIALIZER *init);
+void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init);
 int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label);
 void dumpTemplateInitializers(void);
+int dumpInit(SYMBOL *sp, INITIALIZER *init);
 void dumpInitializers(void);
 void dumpVTab(SYMBOL *sym);
 void insertInitSym(SYMBOL *sp);
 BOOLEAN IsConstWithArr(TYPE *tp);
 enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp);
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val);
+INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp, 
+                               int offset, BOOLEAN noassign);
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
 				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
 BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams);
+EXPRESSION *getThisNode(SYMBOL *sp);
 LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst, int flags);
 
                               /* Inline.c */
@@ -561,6 +584,7 @@ int briggsIntersect(BRIGGS_SET *s1, BRIGGS_SET *s2);
                                /* Iout.c */
 
 void outcodeini(void);
+void BitInit(void);
 void beDecorateSymName(char *buf, SYMBOL *sp);
 void putconst(EXPRESSION *offset, int color);
 void putlen(int l);
@@ -568,8 +592,11 @@ void putamode(QUAD *q, IMODE *ap);
 void put_code(QUAD *q);
 int beVariableLive(IMODE *m);
 void rewrite_icode(void);
+void genbyte(long val);
+void genbool(int val);
 void gen_vtt(VTABENTRY *entry, SYMBOL *func, SYMBOL *name);
 void gen_strlab(SYMBOL *sp);
+void gen_vc1(SYMBOL *func);
 void put_label(int lab);
 void put_staticlabel(long label);
 void genfloat(FPF *val);
@@ -657,6 +684,7 @@ void TranslateFromSSA(BOOLEAN all);
                                /* Istmt.c */
 
 void genstmtini(void);
+void makeXCTab(SYMBOL *funcsp);
 EXPRESSION *tempenode(void);
 IMODE *tempreg(int size, int mode);
 IMODE *imake_label(int label);
@@ -689,10 +717,10 @@ void ReduceLoopStrength(void);
                                 /* Lex.c */
 
 void lexini(void);
-KEYWORD *searchkw(char **p);
-int getChar(char **source, enum e_lexType *tp);
-SLCHAR *getString(char **source, enum e_lexType *tp);
-int getId(char **ptr , char *dest);
+KEYWORD *searchkw(unsigned char **p);
+int getChar(unsigned char **source, enum e_lexType *tp);
+SLCHAR *getString(unsigned char **source, enum e_lexType *tp);
+int getId(unsigned char **ptr , unsigned char *dest);
 LEXEME *SkipToNextLine(void);
 LEXEME *getGTSym(LEXEME *in);
 LEXEME *getsym(void);
@@ -711,6 +739,8 @@ void list_table(HASHTABLE *t, int j);
 
 char *mangleType (char *in, TYPE *tp, BOOLEAN first);
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage);
+char *unmang1(char *buf, char *name, char *last);
+char *unmang_intrins(char *buf, char *name, char *last);
 char *unmangle(char *name, char *source);
 
                               /* Memory.c */
@@ -784,7 +814,7 @@ void bePrintf(char *format, ...);
 
                               /* Ppexpr.c */
 
-int getsch(int UBYTEs, char **source) ;
+int getsch(int UBYTEs, unsigned char **source) ;
 PPINT ppexpr(void);
 
                               /* Ppmain.c */
@@ -796,16 +826,17 @@ int main(int argc, char *argv[]);
                               /* Preproc.c */
 
 void preprocini(char *name, FILE *fil);
-int defid(char *name, char **p);
+int defid(char *name, unsigned char **p);
 void skipspace(void);
 BOOLEAN expectid(char *buf);
-BOOLEAN expectstring(char *buf, char **in, BOOLEAN angle);
+BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle);
 LLONG_TYPE expectnum(BOOLEAN *uns);
+int getstring(unsigned char *s, int len, FILE *file);
 BOOLEAN getline(void);
 void preprocess(void);
 void doerror(void);
 void dowarning(void);
-char *getauxname(char *ptr, char **bufp);
+unsigned char *getauxname(unsigned char *ptr, char **bufp);
 void dopragma(void);
 void Compile_Pragma(void);
 void doline(void);
@@ -831,7 +862,7 @@ void datemac(char *string);
 void timemac(char *string);
 void linemac(char *string);
 void defmacroreplace(char *macro, char *name);
-int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int totallen, char **pptr);
+int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int totallen, unsigned char **pptr);
 int defcheck(unsigned char *line);
 void pushif(void);
 void popif(void);
@@ -844,6 +875,7 @@ void doendif(void);
 
                                /* Rtti.c */
 
+void rtti_init(void);
 SYMBOL * RTTIDumpType(TYPE *tp);
 void XTDumpTab(SYMBOL *funcsp);
 
@@ -865,8 +897,10 @@ LEXEME *body (LEXEME *lex, SYMBOL *funcsp);
 void syminit(void);
 BOOLEAN singlebase(SYMBOL *base, SYMBOL *of);
 HASHTABLE *CreateHashTable(int size);
+HASHREC *AddName(SYMBOL *item, HASHTABLE *table);
 void AllocateLocalContext(BLOCKDATA *parent, SYMBOL *sp, int label);
 void FreeLocalContext(BLOCKDATA *parent, SYMBOL *sp, int label);
+HASHREC **GetHashLink(HASHTABLE *t, char *string);
 HASHREC **LookupName(char *name, HASHTABLE *table);
 SYMBOL *search(char *name, HASHTABLE *table);
 BOOLEAN matchOverload(TYPE *tnew, TYPE *told);

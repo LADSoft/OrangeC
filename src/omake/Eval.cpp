@@ -541,7 +541,7 @@ size_t Eval::FindPercent(const std::string &name, size_t pos)
     while (true)
     {
         pos = name.find_first_of('%', pos);
-        if (pos == std::string::npos || pos == 0 || name[pos-1] != '\\' || pos > 1 && name[pos-2] == '\\') //  Priority of the '&&' operation is higher than that of the '||' operation
+        if (pos == std::string::npos || pos == 0 || name[pos-1] != '\\' || (pos > 1 && name[pos-2] == '\\')) //  Priority of the '&&' operation is higher than that of the '||' operation
             return pos;
         pos++;
     }
@@ -1438,6 +1438,9 @@ std::string Eval::flavor(const std::string &arglist)
                 break;
             case Variable::f_simple:
                 rv = "simple";
+                break;
+            case Variable::f_undefined:
+                rv = "undefined";
                 break;
         }
     else

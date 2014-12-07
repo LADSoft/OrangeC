@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 
+void fatal(char *,...);
 char pipeName[260];
 
 struct data

@@ -64,4 +64,4 @@ struct xmlNode *xmlReadFile(FILE *in);
 void xmlWriteFile(FILE *out, struct xmlNode *root);
 char *xmlConvertString(char *s, int attr);
 
-#endif _XML_H
+#endif //_XML_H

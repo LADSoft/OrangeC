@@ -88,7 +88,7 @@ void displayLexeme(LEXEME *lex)
                 case l_wchr:
                     if (lex->type == l_wchr)
                         printf("wide char: ");
-                    printf("%c\n", lex->value.i);
+                    fputc((int)lex->value.i, stdout);
                     break;
                 case l_id:
                     printf("id: %s\n", lex->value.s.a);

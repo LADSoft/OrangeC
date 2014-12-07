@@ -44,6 +44,8 @@
 #include <float.h>
 #include "helpid.h"
 #include "header.h"
+#include <ctype.h>
+#include <process.h>
 //extern int __argc;
 //extern char **__argv;
 extern HWND hwndFrame;

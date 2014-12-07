@@ -149,7 +149,7 @@ int GetClipboardText(HWND hwnd, HTREEITEM item, char *buf, int indent)
     {
         do
             rv += GetClipboardText(hwnd, current, buf, indent + 2);
-        while (current = TreeView_GetNextSibling(hwnd, current)) ;
+        while ((current = TreeView_GetNextSibling(hwnd, current))) ;
     }
     return rv;
 }
@@ -235,8 +235,8 @@ LRESULT CALLBACK extTreeWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     x.itemOld.mask = 0;
                     x.itemNew.mask = 0;
                     x.itemNew.hItem = hTreeItem;
-                    if (val = (char*)SendMessage(GetParent(hwnd), WM_NOTIFY, 0,
-                        (LPARAM) &x))
+                    if ((val = (char*)SendMessage(GetParent(hwnd), WM_NOTIFY, 0,
+                        (LPARAM) &x)))
                     {
                         HFONT font = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
                         ptr->editItem = hTreeItem;
@@ -318,20 +318,19 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
                 GetRelativeRect(hwnd, ptr->hwndTree, &r);
                 tvh.pt.x -= r.left;
                 tvh.pt.y -= r.top;
-                treeinfo = TreeView_HitTest(ptr->hwndTree, &tvh);
-                if (treeinfo)
+                if ((titem = TreeView_HitTest(ptr->hwndTree, &tvh)))
                 {
                     ((TV_HITTESTINFO*)lParam)->flags = tvh.flags;
                     ((TV_HITTESTINFO*)lParam)->hItem = tvh.hItem;
                 }
-                return treeinfo;
+                return (LRESULT)titem;
             case TVM_INSERTITEM:
                 is = (LPTV_INSERTSTRUCT)lParam;
                 is->UNNAMED_UNION item.mask |= TVIF_TEXT | TVIF_PARAM;
                 is->UNNAMED_UNION item.pszText = LPSTR_TEXTCALLBACK;
                 titem = (HTREEITEM)SendMessage(ptr->hwndTree, iMessage, wParam,
                     lParam);
-                return titem;
+                return (LRESULT)titem;
             default:
                 return SendMessage(ptr->hwndTree, iMessage, wParam, lParam);
         }
@@ -370,7 +369,7 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
                 InvalidateRect(ptr->hwndTree, 0, 1);
                 return 0;
             case TVN_GETDISPINFO:
-                t = n;
+                t = (LPNMTVDISPINFO)n;
                 if (TreeView_GetItemRect(ptr->hwndTree, t->item.hItem, &r, TRUE)
                     )
                 {

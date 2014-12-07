@@ -42,6 +42,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <process.h>
 #include "helpid.h"
 #include "header.h"
 #include "codecomp.h"
@@ -347,7 +348,7 @@ static void ParseFileSaveData(HWND hwnd, BOOL changed)
         }
         else
         {
-            if (pj && !pj->resData || !pj)
+            if ((pj && !pj->resData) || !pj)
             {
                 if (!ptr)
                     ptr = GetFileInfo(pj->realName);

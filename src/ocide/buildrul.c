@@ -378,7 +378,7 @@ static int FAR PASCAL brDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
                 }
                 else if (((LPNMHDR)lParam)->code == LVN_ITEMCHANGED)
                 {
-                    LPNMLISTVIEW p = (LPNMHDR)lParam;
+                    LPNMLISTVIEW p = (LPNMLISTVIEW)lParam;
                     if (p->uChanged & LVIF_STATE)
                     {
                         if (p->uNewState & LVIS_SELECTED)

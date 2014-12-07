@@ -1206,6 +1206,8 @@ void ConstantFold(QUAD *d, BOOLEAN reflow)
                 break;
             }
             break;
+        default:
+            break;
     }
 }
 static BOOLEAN eval(QUAD *q)
@@ -1364,6 +1366,8 @@ static BOOLEAN eval(QUAD *q)
                     val = qn.dc.left;
                 }
             }
+            break;
+        default:
             break;
     }
     if (tempInfo[tnum]->value.type != set || set == vo_constant)
@@ -1849,7 +1853,9 @@ static void removeForward(BLOCK *start)
                     tail->ans = tail->dc.left = tail->dc.right = NULL;
                     tail->temps = 0;
                 }
-                return;	
+                return;
+            default:
+                break;	
         }
         if (tail == start->head)
             tail = NULL;

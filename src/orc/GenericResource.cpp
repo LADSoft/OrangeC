@@ -42,6 +42,16 @@
 #include "ResFile.h"
 #include "ResourceData.h"
 
+GenericResource::~GenericResource() 
+{  
+    delete data; 
+}
+
+void GenericResource::SetData(ResourceData *rdata) {
+   
+        delete data;
+    data = rdata;
+}
 void GenericResource::WriteRes(ResFile &resFile) 
 { 
     Resource::WriteRes(resFile); 

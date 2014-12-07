@@ -165,7 +165,7 @@ static void CopyText(HWND hwnd)
 {
     int i;
     char buf[1024];
-    unsigned char charbuf[1000];
+    char charbuf[1000];
     PAINTSTRUCT ps;
     CONTEXT context;
     HDC dc;
@@ -199,13 +199,13 @@ static void CopyText(HWND hwnd)
                     switch(memoryWordSize)
                     {
                             case 1:
-                    sprintf(buf, "%02X ", charbuf[j]);
+                    sprintf(buf, "%02X ", (unsigned char)charbuf[j]);
                                     break;
                             case 2:
-                    sprintf(buf, "%04X ", (*(short *)(charbuf+j)));
+                    sprintf(buf, "%04X ", (*(unsigned short *)(charbuf+j)));
                                     break;
                             case 4:
-                    sprintf(buf, "%08X ", (*(int *)(charbuf+j)));
+                    sprintf(buf, "%08X ", (*(unsigned int *)(charbuf+j)));
                                     break;
                     }
                     if (i == cursrow[index] && j == curscol[index])
@@ -241,7 +241,7 @@ static void CopyText(HWND hwnd)
                         charbuf[j+k] = '.';
             }
             strcat(p, " ");
-            strcat(p, charbuf);
+            strcat(p, &charbuf[0]);
             strcat(p, "\n");
         }
         TextToClipBoard(hwnd, p);
@@ -254,7 +254,7 @@ void MemDoPaint(HWND hwnd, int focussed)
     {
         int i;
         char buf[256];
-        unsigned char charbuf[1000];
+        char charbuf[1000];
         PAINTSTRUCT ps;
         CONTEXT context;
         HDC dc;
@@ -292,13 +292,13 @@ void MemDoPaint(HWND hwnd, int focussed)
                     switch(memoryWordSize)
                     {
                             case 1:
-                    sprintf(buf, "%02X ", charbuf[j]);
+                    sprintf(buf, "%02X ", (unsigned char)charbuf[j]);
                                     break;
                             case 2:
-                    sprintf(buf, "%04X ", (*(short *)(charbuf+j)));
+                    sprintf(buf, "%04X ", (*(unsigned short *)(charbuf+j)));
                                     break;
                             case 4:
-                    sprintf(buf, "%08X ", (*(int *)(charbuf+j)));
+                    sprintf(buf, "%08X ", (*(unsigned int *)(charbuf+j)));
                                     break;
                     }
                     if (i == cursrow[index] && j == curscol[index])
@@ -351,7 +351,7 @@ void MemDoPaint(HWND hwnd, int focussed)
                                 (j * 2 + j/memoryWordSize)) *8, 
                                  i *16+rect.top, " ", 1);
             }
-            TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, charbuf, strlen(charbuf));
+            TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, &charbuf[0], strlen(charbuf));
         }
     
         SelectObject(dc, oldFont);

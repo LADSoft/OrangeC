@@ -41,6 +41,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #define GRIP_DEFINES
+#include "header.h"
 #include "lsctrl.h"
 #include <wingdi.h>
 
@@ -188,7 +189,7 @@ static LRESULT CALLBACK GripWndProc(HWND hwnd, UINT iMessage,
             if (dragging)
                 ReleaseCapture();
             dragging = FALSE;
-            dmgrEndMoveGrip(ptr);
+            dmgrEndMoveGrip(ptr, NULL);
             break;
         case WM_MOUSEMOVE:
             ptr = (CCW_params*)GetWindowLong(hwnd, 0);

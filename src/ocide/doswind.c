@@ -41,6 +41,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include "header.h"
+#include <process.h>
 
 struct _varData
 {

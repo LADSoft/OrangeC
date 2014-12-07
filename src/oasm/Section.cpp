@@ -241,6 +241,9 @@ ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFa
             return factory.MakeExpression(ObjExpression::eMul, xleft, xright);
         case AsmExprNode::DIV:
             return factory.MakeExpression(ObjExpression::eDiv, xleft, xright);
+        case AsmExprNode::NOT:
+        case AsmExprNode::SDIV:
+        case AsmExprNode::SMOD:
         case AsmExprNode::OR:
         case AsmExprNode::XOR:
         case AsmExprNode::AND:
@@ -255,6 +258,7 @@ ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFa
         case AsmExprNode::RSHIFT:
         case AsmExprNode::LAND:
         case AsmExprNode::LOR:
+        case AsmExprNode::REG:
             throw new std::runtime_error("Operator not allowed in address expression");
     }
     return NULL;

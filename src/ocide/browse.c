@@ -42,6 +42,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "header.h"
 #include "winconst.h"
@@ -199,7 +200,7 @@ static int FindLine(sqlite3 *db, char *file, int line, char *name, char *returne
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strcpy(returnedFileName, sqlite3_column_text(handle, 0));
+                    strcpy(returnedFileName, (char *)sqlite3_column_text(handle, 0));
                     *startLine = sqlite3_column_int(handle, 1);
                     rc = SQLITE_OK;
                     done = TRUE;
@@ -231,7 +232,7 @@ static int FindLine(sqlite3 *db, char *file, int line, char *name, char *returne
                             done = TRUE;
                             break;
                         case SQLITE_ROW:
-                            strcpy(returnedFileName, sqlite3_column_text(handle, 0));
+                            strcpy(returnedFileName, (char *)sqlite3_column_text(handle, 0));
                             *startLine = sqlite3_column_int(handle, 1);
                             rc = SQLITE_OK;
                             done = TRUE;

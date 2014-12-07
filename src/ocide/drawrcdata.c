@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "header.h"
 #include "rc.h"
@@ -209,6 +210,8 @@ static void rcDataDoUndo(struct resRes *rcDataData)
             RCDATA **p;
             RCDATA *hold;
             int i;
+            case ru_nop:
+                break;
             case ru_setchars:
                 p = &rcDataData->resource->u.rcdata;
                 for(i=0; i < undo->u.values.index && *p; i++, p = &(*p)->next);
@@ -259,7 +262,7 @@ static void rcDataInsert(struct resRes *rcDataData, int index)
     if (index != -1)
     {
         RCDATA *rcData = rcAlloc(sizeof(ACCELERATOR));
-        ResGetHeap(workArea, rcData);
+        ResGetHeap(workArea, rcDataData);
         if (rcData)
         {
             int origIndex = 0;
@@ -389,6 +392,9 @@ static void rcDataSet(struct resRes *rcDataData, RCDATA *rcData, char *text)
             for (i=0; i < rcData->u.wstring.length; i++)
                 rcData->u.wstring.w[i] = string[i];                
             break;
+        case RCDATA_BUFFER:
+            assert(0);
+            break;
     }
 }
 static void rcDataGetValue(char *buf, RCDATA *rcData)
@@ -402,7 +408,7 @@ static void rcDataGetValue(char *buf, RCDATA *rcData)
             wsprintf(buf, "%d", rcData->u.dword);
             break;
         case RCDATA_STRING:
-            FormatAsciiString(buf, rcData->u.string.s, rcData->u.string.length);
+            FormatAsciiString(buf, (char *)rcData->u.string.s, rcData->u.string.length);
             break;
         case RCDATA_WSTRING:
             FormatVersionString(buf, rcData->u.wstring.w, rcData->u.wstring.length);
@@ -742,7 +748,7 @@ LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     hittest.iItem = ListView_GetItemCount(rcDataData->gd.childWindow);
                 }
-                if (hittest.flags & LVHT_ONITEM || (hittest.flags & LVHT_NOWHERE) && rcDataData->gd.dragInView)
+                if (hittest.flags & LVHT_ONITEM || ((hittest.flags & LVHT_NOWHERE) && rcDataData->gd.dragInView))
                 {
                     int dragEnd = hittest.iItem;
                     rcDataData = (struct resRes *)GetWindowLong(hwnd, 0);

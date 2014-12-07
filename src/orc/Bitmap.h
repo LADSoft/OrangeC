@@ -51,14 +51,10 @@ class Bitmap : public Resource
 public:
     Bitmap(const ResourceId &Id, const ResourceInfo &info)
         : Resource(eBitmap, Id, info), data(NULL) { }
-    virtual ~Bitmap() {  delete data; }
+    virtual ~Bitmap();
     virtual void WriteRes(ResFile &resFile);
     virtual void ReadRC(RCFile &rcFile);
-    void SetData(ResourceData *rdata) {
- 
-            delete data;
-        data = rdata;
-    }
+    void SetData(ResourceData *rdata);
     ResourceData *GetData() const { return data; }
 private:
     ResourceData *data;

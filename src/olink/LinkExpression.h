@@ -50,7 +50,7 @@ class LinkExpressionSymbol
     public:
         LinkExpressionSymbol(const ObjString &Name, LinkExpression *Value) :
             name(Name), value(Value) {}
-        ~LinkExpressionSymbol() { delete value; }
+        ~LinkExpressionSymbol();
         ObjString &GetName() { return name; }
         LinkExpression* GetValue() { return value; }
         void SetValue(LinkExpression *v) { value = v; }

@@ -49,7 +49,7 @@ Variable::Variable(const std::string &Name, const std::string &Value, Flavor oFl
 }
 void Variable::AppendValue(const std::string &Value, bool override)
 {
-    if (override || origin != o_command_line && origin != o_environ_override)
+    if (override || (origin != o_command_line && origin != o_environ_override))
     {
         if (!constant)
             value += Value;
@@ -57,7 +57,7 @@ void Variable::AppendValue(const std::string &Value, bool override)
 }
 void Variable::AssignValue(const std::string &Value, Origin oOrigin, bool override)
 {
-    if (override || origin != o_command_line && origin != o_environ_override)
+    if (override || (origin != o_command_line && origin != o_environ_override))
     {
         if (!constant)
         {

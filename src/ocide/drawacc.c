@@ -346,6 +346,8 @@ static void AccDoUndo(struct resRes *acceleratorData)
             ACCELERATOR **p;
             ACCELERATOR *hold;
             int i;
+            case au_nop:
+                break;
             case au_setchars:
                 p = &acceleratorData->resource->u.accelerator;
                 for(i=0; i < undo->u.values.index && *p; i++, p = &(*p)->next);
@@ -732,8 +734,8 @@ static void AccSetKey(struct resRes *acceleratorData, int val)
             if (*p)
             {
                 AccSetChanged(acceleratorData, *p);
-                if (!((val & 0xfffffff) >='A' && (val & 0xfffffff) <= 'Z' ||
-                    (val & 0xfffffff) >='0' && (val & 0xfffffff) <= '9')                     
+                if (!(((val & 0xfffffff) >='A' && (val & 0xfffffff) <= 'Z') ||
+                    ((val & 0xfffffff) >='0' && (val & 0xfffffff) <= '9'))                     
                                                  || (val & ALT))
                 {
                     EXPRESSION *exp = GetVKExpression(val & 0xfffffff);
@@ -1112,7 +1114,7 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     hittest.iItem = ListView_GetItemCount(acceleratorData->gd.childWindow);
                 }
-                if (hittest.flags & LVHT_ONITEM || (hittest.flags & LVHT_NOWHERE) && acceleratorData->gd.dragInView)
+                if (hittest.flags & LVHT_ONITEM || ((hittest.flags & LVHT_NOWHERE) && acceleratorData->gd.dragInView))
                 {
                     int dragEnd = hittest.iItem;
                     acceleratorData = (struct resRes *)GetWindowLong(hwnd, 0);

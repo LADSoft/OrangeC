@@ -37,7 +37,15 @@
 */
 #include "compiler.h"
 //#include "dir.h"
-   
+  
+char *getcwd(char *, int);
+
+#ifdef PARSER_ONLY
+size_t ccReadFile(void *__ptr, size_t __size, size_t __n,
+                     FILE *__stream);
+void ccSetFileLine(char *filename, int lineno);
+void ccNewFile(char *fileName, BOOLEAN main);
+#endif 
 #ifndef CPREPROCESSOR
 extern ARCH_ASM *chosenAssembler;
 extern char infile[];
@@ -59,7 +67,7 @@ int stdpragmas;
 
 FILELIST *incfiles = 0,  *lastinc;
 LIST *libincludes = 0;
-void ppdefcheck(char *line);
+void ppdefcheck(unsigned char *line);
 
 int packdata[MAX_PACK_DATA] = 
 {
@@ -127,17 +135,17 @@ void preprocini(char *name, FILE *fil)
     packdata[0] = chosenAssembler->arch->packSize;
 #endif
 }
-int defid(char *name, char **p)
+int defid(char *name, unsigned char **p)
 /*
  * Get an identifier during macro replacement
  */
 {
     int count = 0;
-    while (issymchar((unsigned char)**p))
+    while (issymchar(**p))
     {
         if (count < SYMBOL_NAME_LEN)
         {
-            name[count++] = *(*p);
+            name[count++] = (char)*(*p);
         }
         (*p)++;
     }
@@ -159,7 +167,7 @@ BOOLEAN expectid(char *buf)
     pperror(ERR_IDENTIFIER_EXPECTED, 0);
     return FALSE;
 }
-BOOLEAN expectstring(char *buf, char **in, BOOLEAN angle)
+BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle)
 {
     skipspace();
     if (**in == '"' || (angle && **in == '<'))
@@ -220,9 +228,9 @@ LLONG_TYPE strtoll(unsigned char *s, char **e, int radix)
 PPINT expectnum(BOOLEAN *uns)
 {
 #ifdef USE_LONGLONG
-    LLONG_TYPE rv = strtoll(includes->lptr, &includes->lptr, 0);
+    LLONG_TYPE rv = strtoll((char *)includes->lptr, (char **)&includes->lptr, 0);
 #else
-    LLONG_TYPE rv = strtol(includes->lptr, &includes->lptr, 0);
+    LLONG_TYPE rv = strtol((char *)includes->lptr, (char **)&includes->lptr, 0);
 #endif
     if (uns)
     {
@@ -265,9 +273,9 @@ static void lineToCpp(void)
     }
 }
 /* Strips comments */
-static void stripcomment(char *line)
+static void stripcomment(unsigned char *line)
 {
-    char *s = line,  *e = s;
+    unsigned char *s = line,  *e = s;
     while (*e)
     {
         if (!instr)
@@ -328,9 +336,9 @@ static void stripcomment(char *line)
 }
 
 /* strip digraphs */
-void stripdigraph(char *buf)
+void stripdigraph(unsigned char *buf)
 {
-    char *cp = buf;
+    unsigned char *cp = buf;
     while (*cp)
     {
         if (*cp == '<' && *(cp + 1) == ':')
@@ -370,9 +378,9 @@ void stripdigraph(char *buf)
 }
 
 /* strip trigraphs */
-void striptrigraph(char *buf)
+void striptrigraph(unsigned char *buf)
 {
-    char *cp = buf;
+    unsigned char *cp = buf;
     while (*cp)
     {
         if (*cp == '?' && *(cp + 1) == '?')
@@ -418,9 +426,9 @@ void striptrigraph(char *buf)
     }
     *buf = 0;
 }
-int getstring(char *s, int len, FILE *file)
+int getstring(unsigned char *s, int len, FILE *file)
 {
-    char *olds = s;
+    unsigned char *olds = s;
     if (!file)
     {
         *s = 0;
@@ -496,7 +504,7 @@ BOOLEAN getline(void)
             {
                 break;
             }
-            temp = strlen(includes->inputline);
+            temp = strlen((char *)includes->inputline);
             if (temp && includes->inputline[temp-1] != '\n')
                 pperror(ERR_EOF_NONTERM,0);
 #ifndef CPREPROCESSOR
@@ -515,10 +523,10 @@ BOOLEAN getline(void)
 #ifndef CPREPROCESSOR
             if (!includes->sys_inc)
             {
-                InsertLineData(includes->line, includes->fileindex, includes->fname, includes->inputline + rvc);
+                InsertLineData(includes->line, includes->fileindex, includes->fname, (char *)includes->inputline + rvc);
             }
 #endif
-            rvc = strlen(includes->inputline);
+            rvc = strlen((char *)includes->inputline);
             while (rvc && isspace((unsigned char)includes->inputline[rvc - 1]))
                 rvc--;
 
@@ -532,7 +540,7 @@ BOOLEAN getline(void)
         if (rvc)
             includes->inputline[rvc++] = '\n';
         includes->inputline[rvc] = 0;
-        rvc = strlen(includes->inputline);
+        rvc = strlen((char *)includes->inputline);
         if (rvc && !prepped)
             rv = FALSE;
         if (rv)
@@ -594,7 +602,7 @@ BOOLEAN getline(void)
         ;
     if (defcheck(includes->inputline) ==  INT_MIN+1)
     {
-        rvc = strlen(includes->inputline);
+        rvc = strlen((char *)includes->inputline);
         if (rvc + 131 < MACRO_REPLACE_SIZE)
         {
             if (includes->inputline[rvc - 1] == '\n')
@@ -666,7 +674,7 @@ void doerror(void)
     char temp[4096];
     if (includes->ifskip)
         return ;
-    strcpy(temp, includes->lptr);
+    strcpy(temp, (char *)includes->lptr);
     
     if (temp[strlen(temp)-1] == '\n')
         temp[strlen(temp)-1] = 0;
@@ -678,7 +686,7 @@ void dowarning(void)
     char temp[4096];
     if (includes->ifskip)
         return ;
-    strcpy(temp, includes->lptr);
+    strcpy(temp, (char *)includes->lptr);
     
     if (temp[strlen(temp)-1] == '\n')
         temp[strlen(temp)-1] = 0;
@@ -687,7 +695,7 @@ void dowarning(void)
 
 /*-------------------------------------------------------------------------*/
 
-char *getauxname(char *ptr, char **bufp)
+unsigned char *getauxname(unsigned char *ptr, char **bufp)
 {
     char buf[512],  *bp = buf;
     while (isspace((unsigned char)*ptr))
@@ -704,14 +712,15 @@ char *getauxname(char *ptr, char **bufp)
 
 static void pragerror(int error)
 {
-    char buf[100],  *p = buf, i = 99;
-    char *s ;
+    char buf[100],  *p = buf;
+    int i = 99;
+    unsigned char *s ;
     skipspace();
     s = includes->lptr;
     if (*s == '(') /* ignore microsoft warning pragmas  */
         return ;
     while (i-- &&  *s &&  *s != '\n')
-        *p++ =  *s++;
+        *p++ =  (char)*s++;
     *p = 0;
     pperrorstr(error, buf);
 }
@@ -810,7 +819,7 @@ void dopragma(void)
             return;
         }
         skipspace();
-        if (!strncmp(includes->lptr, "pop", 3))
+        if (!strncmp((char *)includes->lptr, "pop", 3))
         {
             includes->lptr += 3;
             skipspace();
@@ -827,7 +836,7 @@ void dopragma(void)
         }
         else 
         {
-            if (!strncmp(includes->lptr, "push",4 ))    
+            if (!strncmp((char *)includes->lptr, "push",4 ))    
             {
                 includes->lptr += 4;
                 skipspace();
@@ -888,7 +897,7 @@ void dopragma(void)
     {
 #ifndef CPREPROCESSOR
         if (chosenAssembler && chosenAssembler->doPragma)
-            chosenAssembler->doPragma(name, includes->lptr);
+            chosenAssembler->doPragma(name, (char *)includes->lptr);
 #endif
         return ;
     }
@@ -917,7 +926,7 @@ void dopragma(void)
 void Compile_Pragma(void)
 {
     /* fixme, save context */
-    char buf[MACRO_REPLACE_SIZE],  *q = buf;
+    unsigned char buf[MACRO_REPLACE_SIZE],  *q = buf;
     unsigned char *last;
     skipspace();
     if (*includes->lptr != '(')
@@ -929,7 +938,7 @@ void Compile_Pragma(void)
         includes->lptr++;
     if (*includes->lptr == '"')
     {
-        char *p = includes->lptr;
+        unsigned char *p = includes->lptr;
         while (*p)
         {
             if (*p == '\\' && (*(p + 1) == '"' || *(p + 1) == '\\'))
@@ -1230,23 +1239,23 @@ void dodefine(void)
     }
     skipspace();
     *(--includes->lptr) = MACRO_PLACEHOLDER;
-    p = strlen(includes->lptr);
+    p = strlen((char *)includes->lptr);
     while (isspace((unsigned char)includes->lptr[p-1]))
         p--;
     includes->lptr[p++] = MACRO_PLACEHOLDER;
     includes->lptr[p] = 0;
     for (i=0,j=0; i < p+1; i++,j++)
-        if (!strncmp(includes->lptr + i, "##", 2)) {
+        if (!strncmp((char *)includes->lptr + i, "##", 2)) {
             includes->lptr[j] = REPLACED_TOKENIZING;
             i++;
         }
-        else if (!strncmp(includes->lptr +i, "%:%:", 4))
+        else if (!strncmp((char *)includes->lptr +i, "%:%:", 4))
         {
             includes->lptr[j] = REPLACED_TOKENIZING;
             i+= 3;
         } else
             includes->lptr[j] = includes->lptr[i];
-    p = strlen(includes->lptr);
+    p = strlen((char *)includes->lptr);
     for (i=0; i < p && isspace((unsigned char)includes->lptr[i]); i++)
         if (i[includes->lptr] == REPLACED_TOKENIZING)
             pperror(ERR_PP_INV_DEFINITION, 0);
@@ -1254,8 +1263,8 @@ void dodefine(void)
     if (i[includes->lptr] == '#' || i[includes->lptr] == REPLACED_TOKENIZING)
         pperror(ERR_PP_INV_DEFINITION, 0);
     
-    ps = Alloc((p = strlen(includes->lptr)) + 1);
-    strcpy(ps, includes->lptr);
+    ps = Alloc((p = strlen((char *)includes->lptr)) + 1);
+    strcpy(ps, (char *)includes->lptr);
     def->string = ps;
     if (hr)
     {
@@ -1376,11 +1385,11 @@ int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, un
             text = etext;
         }
     }
-    p = strlen(text);
+    p = strlen((char *)text);
     if (stringizing)
         p += 1;
     val = p - replen;
-    r = strlen(begin);
+    r = strlen((char *)begin);
     if (val + r + 1 >= len)
     {
         pperror(ERR_MACROSUBS, 0);
@@ -1392,7 +1401,7 @@ int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, un
     else
         if (val < 0)
         {
-            r = strlen(end) + 1;
+            r = strlen((char *)end) + 1;
             for (q = end; q < end + r; q++)
                     *(q + val) =  *q;
         }
@@ -1402,7 +1411,7 @@ int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, un
         *begin++ = STRINGIZING_PLACEHOLDER;
     return (p);
 }
-static int oddslash(char *start, char *p)
+static int oddslash(unsigned char *start, unsigned char *p)
 {
     int v = 0;
     while (p >= start && *p-- == '\\')
@@ -1463,14 +1472,14 @@ void defstringizing(unsigned char *macro)
         }
     }	
     *p = 0;
-    strcpy(macro, replmac);
+    strcpy((char *)macro, (char *)replmac);
 }
 /* replace macro args */
 int defreplaceargs(unsigned char *macro, int count, unsigned char **oldargs, unsigned char **newargs, 
                    unsigned char **expandedargs, unsigned char *varargs)
 {
     int i, rv;
-    unsigned char name[256];
+    char name[256];
     unsigned char *p = macro,  *q;
     int waiting = 0;
     while (*p)
@@ -1505,7 +1514,7 @@ int defreplaceargs(unsigned char *macro, int count, unsigned char **oldargs, uns
             }
             else for (i = 0; i < count; i++) 
             {
-                if (!strcmp(name, oldargs[i]))
+                if (!strcmp(name, (char *)oldargs[i]))
                 {
                     if ((rv = definsert(macro, p, q, newargs[i], expandedargs[i], MACRO_REPLACE_SIZE-(q - macro), p - q)) 
                         < - MACRO_REPLACE_SIZE)
@@ -1663,9 +1672,9 @@ void defmacroreplace(char *macro, char *name)
 void SetupAlreadyReplaced(unsigned char *macro)
 {
     unsigned char nn[MACRO_REPLACE_SIZE], *src = nn;
-    unsigned char name[256];
+    char name[256];
     int instr = FALSE;
-    strcpy(nn, macro);
+    strcpy((char *)nn, (char *)macro);
     while (*src)
     {
         if ((*src == '"' || *src == '\'') && !oddslash(macro, src-1))
@@ -1678,8 +1687,8 @@ void SetupAlreadyReplaced(unsigned char *macro)
             {
                 *macro++ = REPLACED_ALREADY;
             }
-            strcpy(macro, name);
-            macro += strlen(macro);
+            strcpy((char *)macro, name);
+            macro += strlen((char *)macro);
         }
         else
         {
@@ -1700,7 +1709,8 @@ int ppNumber(unsigned char *start, unsigned char *pos)
         // backtrack through all characters that could possibly be part of the number
         while (pos >= start &&
                (issymchar(*pos) || *pos == '.' ||
-               (*pos == '-' || *pos == '+') && (pos[-1] == 'e' || pos[-1] == 'E' || pos[-1] == 'p' || pos[-1] == 'P')))
+               ((*pos == '-' || *pos == '+') 
+                && (pos[-1] == 'e' || pos[-1] == 'E' || pos[-1] == 'p' || pos[-1] == 'P'))))
         {
             if (*pos == '-' || *pos == '+') pos--;
             pos--;
@@ -1716,11 +1726,11 @@ int ppNumber(unsigned char *start, unsigned char *pos)
     }
     return FALSE;
 }
-int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int totallen, char **pptr)
+int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int totallen, unsigned char **pptr)
 {
     unsigned char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
     unsigned char macro[MACRO_REPLACE_SIZE],varargs[4096];
-    unsigned char name[256];
+    char name[256];
     BOOLEAN waiting = FALSE;
     int rv;
     int size;
@@ -1796,15 +1806,15 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                             while (nm > macro && isspace((unsigned char)nm[-1]))
                                 nm--;
                             *nm = 0;
-                            args[count] = litlate(macro);
+                            args[count] = (unsigned char *)litlate((char *)macro);
                             insize = 0;
-                            size = strlen(macro) ;
+                            size = strlen((char *)macro) ;
                             rv = replacesegment(macro, macro + size, &insize, totallen,0);
                             if (rv <-MACRO_REPLACE_SIZE) {
                                 return rv;
                             }
                             macro[rv+size] = 0;
-                            expandedargs[count++] = litlate(macro);
+                            expandedargs[count++] = (unsigned char *)litlate((char *)macro);
                         }
                         while (*p && *p++ == ',' && count != sp->argcount-1)
                             ;
@@ -1820,7 +1830,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     {
                         if (count == sp->argcount-1 && cparams.prm_c99 && (sp->varargs)) 
                         {
-                            char *q = varargs ;
+                            unsigned char *q = varargs ;
                             int nestedparen=0;
                             if (!(sp->varargs))
                             {
@@ -1849,9 +1859,9 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     {
                         pperrorstr(ERR_WRONGMACROARGS, name);
                     }
-                    strcpy(macro,sp->string);
+                    strcpy((char *)macro,sp->string);
                     if (count != 0 || varargs[0])
-                        if (!defreplaceargs(macro, count, sp->args, args, expandedargs, varargs)) {
+                        if (!defreplaceargs(macro, count, (unsigned char **)sp->args, args, expandedargs, varargs)) {
                             return  INT_MIN;
                         }
                     deftokenizing(macro);
@@ -1866,11 +1876,11 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     }
                     *s = 0;
                 } else {
-                    strcpy(macro,sp->string);
+                    strcpy((char *)macro,sp->string);
                 }
                 sp->preprocessing = TRUE;
                 SetupAlreadyReplaced(macro);
-                size = strlen(macro);
+                size = strlen((char *)macro);
                 if ((rv1 = definsert(start, p, q, macro, macro, totallen -  *inbuffer,
                     p - q)) < -MACRO_REPLACE_SIZE)
                 {
@@ -1893,7 +1903,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
             }
             else
             {
-                join: defmacroreplace(macro, name);
+                join: defmacroreplace((char *)macro, name);
                 if (macro[0])
                 {
                     if ((rv = definsert(start, p, q, macro, macro, totallen -  *inbuffer, p -
@@ -1912,14 +1922,14 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
         *pptr = p ;
     return end - orig_end ;
 }
-void ppdefcheck(char *line)
+void ppdefcheck(unsigned char *line)
 {
     defcheck(line);
 }
 /* Scan line for macros and do replacements */
 int defcheck(unsigned char *line)
 {
-    int inbuffer = strlen(line);
+    int inbuffer = strlen((char *)line);
     int rv = replacesegment(line, line + inbuffer, &inbuffer, MACRO_REPLACE_SIZE,0);
     unsigned char *p = line;
     while (*p)
@@ -1941,36 +1951,38 @@ int defcheck(unsigned char *line)
 
 /*-------------------------------------------------------------------------*/
 
-static void repdefines(char *lptr)
+static void repdefines(unsigned char *lptr)
 /*
  * replace 'defined' keyword in #IF and #ELIF statements
  */
 {
-    char *q = lptr;
+    unsigned char *q = lptr;
     char name[512];
     while (*lptr)
     {
-        if (!strncmp(lptr, defkw, 7))
+        if (!strncmp((char *)lptr, defkw, 7))
         {
             BOOLEAN needend = FALSE;
             lptr += 7;
-            while (isspace((unsigned char)*lptr))
+            while (isspace(*lptr))
                 lptr++;
             if (*lptr == '(')
             {
                 lptr++;
                 needend = TRUE;
             }
-            while (isspace((unsigned char)*lptr))
+            while (isspace(*lptr))
                 lptr++;
             defid(name, &lptr);
-            while (isspace((unsigned char)*lptr))
+            while (isspace(*lptr))
                 lptr++;
             if (needend)
+            {
                 if (*lptr == ')')
                     lptr++;
                 else
                     pperror(ERR_NEEDY, ')');
+            }
             if (search(name, defsyms) != 0)
                 *q++ = '1';
             else
@@ -2057,7 +2069,7 @@ void doifdef(BOOLEAN flag)
     hr = (DEFSTRUCT *)search(name, defsyms);
     pushif();
     includes->ifs->line = includes->line;
-    if (hr && (!hr->undefined && !flag || hr->undefined && flag) || !hr && flag)
+    if ((hr && ((!hr->undefined && !flag) || (hr->undefined && flag))) || (!hr && flag))
         includes->ifskip = TRUE;
     ansieol();
 }

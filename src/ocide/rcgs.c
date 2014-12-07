@@ -68,7 +68,7 @@ extern int inSymFile;
 extern char *rcIdFile;
 
 char *infile;
-extern short *lptr; /* shared with preproc */
+extern WCHAR *lptr; /* shared with preproc */
 extern FILE *inclfile[10]; /* shared with preproc */
 extern char *inclfname[10]; /* shared with preproc */
 extern IFSTRUCT *ifshold[10];
@@ -83,7 +83,7 @@ extern int inhfile;
 char intstring[50];
 int lineno;
 int laststrlen;
-short inputline[4096];
+WCHAR inputline[4096];
 char *inputBuffer;
 char *ibufPtr;
 int inputLen;
@@ -93,7 +93,7 @@ char lastid[256] = "";
 char laststr[MAX_STRLEN + 1] = "";
 long ival = 0;
 long double rval = 0.0;
-short *linstack[20]; /* stack for substitutions */
+WCHAR *linstack[20]; /* stack for substitutions */
 char chstack[20]; /* place to save lastch */
 int lstackptr = 0; /* substitution stack pointer */
 int cantnewline = FALSE;
@@ -141,9 +141,9 @@ void initsym(void)
 
 
 /* Strips comments and also the newline char at the end of the line */
-static void stripcomment(short *line)
+static void stripcomment(WCHAR *line)
 {
-    short *s = line,  *e = s, instr = FALSE;
+    WCHAR *s = line,  *e = s, instr = FALSE;
     while (*e)
     {
         if (!instr &&  *e == '/' && !commentlevel)
@@ -251,7 +251,7 @@ static void CacheLine(WCHAR *lptr, char *xbuf)
         if (p)
             return;
     }
-    if (incldepth == 0 && (!*lptr || *lptr == '#') || inSymFile)
+    if ((incldepth == 0 && (!*lptr || *lptr == '#')) || inSymFile)
     {
             
         char *s = rcStrdup(xbuf);
@@ -358,7 +358,7 @@ int getline(int listflag)
         lptr = inputline;
         while (iswhitespacechar(*lptr))
             lptr++;
-        CacheLine(lptr, xbuf);
+        CacheLine((WCHAR *)lptr, xbuf);
         if (lptr[0] == '#')
         {
             inpreprocess++;
@@ -370,7 +370,7 @@ int getline(int listflag)
         if (incldepth)
             lastst = eol;
     }
-    while (ifskip || prepping || inhfile && !inpreprocess)
+    while (ifskip || prepping || (inhfile && !inpreprocess))
         ;
     rvc = strlen(ibuf);
     /*
@@ -1115,7 +1115,7 @@ void getsym(void)
     }
     if (! *lptr)
     {
-        if (lastst == eol && lastch ==  - 1 || lastst == eof)
+        if ((lastst == eol && lastch ==  - 1) || lastst == eof)
             lastst = eof;
         else
             lastst = eol;

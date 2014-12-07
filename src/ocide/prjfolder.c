@@ -55,6 +55,8 @@ extern HINSTANCE hInstance;
 extern HTREEITEM prjSelectedItem;
 extern HWND prjTreeWindow;
 
+PROJECTITEM *GetItemInfo(HTREEITEM item);
+
 PROJECTITEM *CreateFolder(PROJECTITEM *p, char *name, BOOL always )
 {
     PROJECTITEM *folder;

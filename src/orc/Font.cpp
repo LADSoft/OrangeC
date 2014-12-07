@@ -48,6 +48,15 @@ Font::Font(const ResourceId &Id, const ResourceInfo &info)
         : Resource(eFont, Id, info), data(NULL) 
 { 
 }
+Font::~Font() 
+{  
+    delete data; 
+}
+void Font::SetData(ResourceData *rdata) {
+   
+        delete data;
+    data = rdata;
+}
 void Font::WriteRes(ResFile &resFile)
 {
     Resource::WriteRes(resFile); 

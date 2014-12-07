@@ -98,7 +98,7 @@ void checkscope(TYPE *tp1, TYPE *tp2)
 }
 static EXPRESSION **findPointerToExpression(EXPRESSION **parent, EXPRESSION *expr)
 {
-    EXPRESSION *y;
+    EXPRESSION **y;
     if (*parent == expr)
         return parent;
     y = findPointerToExpression(&(*parent)->left, expr);
@@ -217,7 +217,7 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOO
     EXPRESSION *en;
     SYMBOL *enclosing = getStructureDeclaration();
     
-    if (enclosing && (!funcsp || funcsp->storage_class != sc_global && funcsp->storage_class != sc_static)) // lambdas will be caught by this too
+    if (enclosing && (!funcsp || (funcsp->storage_class != sc_global && funcsp->storage_class != sc_static))) // lambdas will be caught by this too
     {
         if (strSym)
         {
@@ -464,7 +464,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
                 e1->v.func = params;
                 cst->genreffed = TRUE;
                 *exp = e1;
-                *exp = DerivedToBase(*tp, basetype(cst)->btp, *exp, 0);
+                *exp = DerivedToBase(*tp, basetype(cst->tp)->btp, *exp, 0);
                 return TRUE;
             }
         }
@@ -595,7 +595,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             INITIALIZER *init = NULL, *dest=NULL;
             SYMBOL *sp = NULL;
             sp = anonymousVar(sc_auto, *tp)->v.sp;
-            lex = initType(lex, funcsp, NULL, sc_auto, &init, &dest, *tp, sp, FALSE, flags);
+            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sp, FALSE, flags);
             *exp = convertInitToExpression(*tp, sp, funcsp, init, NULL, FALSE);
             if (sp)
             {
@@ -666,7 +666,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                                     optimize_for_constants(&ces->exp);
                                     if (!IsConstantExpression(ces->exp, FALSE))
                                         error(ERR_CONSTANT_EXPRESSION_EXPECTED);
-                                    insert(ces, (*exp)->v.syms);
+                                    insert((SYMBOL *)ces, (*exp)->v.syms);
                                 }
                             }
                             init = init->next;
@@ -697,6 +697,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 if ((*exp)->type == en_func)
                     *exp = (*exp)->v.func->fcall;
                 if (throwaway)
+                {
                     if (isvoid(throwaway) && !isvoid(*tp))
                     {
                         error(ERR_NOT_AN_ALLOWED_TYPE);
@@ -718,6 +719,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                     {
                         cast(*tp, exp);
                     }
+                }
             }
             needkw(&lex, closepa);
         }
@@ -726,7 +728,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 }
 BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp)
 {
-    if (ispointer(oldType) && ispointer(*newType) || isref(*newType))
+    if ((ispointer(oldType) && ispointer(*newType)) || isref(*newType))
     {
         TYPE *tpo = oldType; 
         TYPE *tpn = *newType;
@@ -760,7 +762,7 @@ BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *f
                         SYMBOL *oldrtti = RTTIDumpType(tpo);
                         SYMBOL *newrtti = basetype(tpn)->type == bt_void ? NULL : RTTIDumpType(tpn);
                         deref(&stdpointer, &exp1);
-                        sp = basetype(sp->tp)->syms->table[0]->p;
+                        sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
                         arg1->next = arg2;
                         arg2->next = arg3;
                         arg3->next = arg4;
@@ -804,8 +806,8 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
         return TRUE;
     // conversion to or from void pointer
     if (((isvoidptr(*newType) && (ispointer(oldType) || isfunction(oldType)))
-        || ((isvoidptr(oldType)||(*exp)->type == en_nullptr) && ispointer(*newType)) 
-        && (!checkconst || isconst(basetype(*newType)->btp) || !isconst(basetype(oldType)->btp))))
+        || (((isvoidptr(oldType)||(*exp)->type == en_nullptr) && ispointer(*newType)) 
+        && (!checkconst || isconst(basetype(*newType)->btp) || !isconst(basetype(oldType)->btp)))))
         return TRUE;
     // conversion to void (discards type)
     if (isvoid(*newType))
@@ -839,7 +841,7 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
         
     }
     // base to derived pointer or derived to base pointer
-    if (ispointer(*newType) && ispointer(oldType) || isref(*newType))
+    if ((ispointer(*newType) && ispointer(oldType)) || isref(*newType))
     {
         TYPE *tpo = oldType; 
         TYPE *tpn = *newType;
@@ -911,7 +913,7 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
                 int vbo = basetype(oldType)->sp->vbaseEntries != 0;
                 int vbn = basetype(*newType)->sp->vbaseEntries != 0;
                 // can't have just new one being virtual...
-                if (vbo && vbn || !vbn)
+                if ((vbo && vbn) || !vbn)
                 {
                     if (isAccessible(basetype(oldType)->sp, basetype(oldType)->sp, basetype(*newType)->sp, funcsp, ac_public, FALSE))
                         return TRUE;
@@ -1006,6 +1008,7 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
     }
     // convert one member pointer to another
     if (basetype(*newType)->type == bt_memberptr)
+    {
         if ((*exp)->type == en_nullptr) // catch nullptr...
         {
             return TRUE;
@@ -1017,6 +1020,7 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
                 if (!checkconst || isconst(basetype(*newType)->btp) || !isconst(basetype(oldType)->btp))
                     return TRUE;
         }
+    }
     // conversion to reference
     // the deal is, if T1 is a reference and a pointer to T2 can be cast to a pointer to T1
     // using this methodology, we change the type of the value without any kind of cast operation
@@ -1114,7 +1118,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 val = makeID(sc_auto, valtp, NULL, AnonymousName());
                 val->allocate = TRUE;
                 insert(val, localNameSpace->syms);
-                sp = basetype(sp->tp)->syms->table[0]->p;
+                sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
                 funcparams->arguments = arg;
                 funcparams->sp = sp;
                 funcparams->functp = sp->tp;
@@ -1171,7 +1175,8 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
     // quit if there are no matches because we will use the default...
     if (!s2)
     {
-        funcparams->thistp = funcparams->thisptr = NULL;
+        funcparams->thistp = NULL;
+        funcparams->thisptr = NULL;
         return FALSE;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
@@ -1208,7 +1213,8 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         *tp = s3->tp;
         return TRUE;
     }
-    funcparams->thistp = funcparams->thisptr = NULL;
+    funcparams->thistp = NULL;
+    funcparams->thisptr = NULL;
     return FALSE;
 }
 BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
@@ -1254,6 +1260,8 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
                 s1 = search(name, enumSyms->tp->syms);
             if (!s1)
                s1 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
+            break;
+        default:
             break;
     }
     // next find some occurrance in the class or struct
@@ -1686,13 +1694,13 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 tp1 = Alloc(sizeof(TYPE));
                 tp1->size = 0;
                 tp1->array = 1;
-                tp1->type = bt_pointer;
+                tp1->type = bt_pointer;                
                 tp1->btp = *tp;
             }
             lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp1, sp, FALSE, 0);
             if (!isstructured(*tp) && !arrSize)
             {
-                if (!init || init->next || init->basetp && isstructured(init->basetp))
+                if (!init || init->next || (init->basetp && isstructured(init->basetp)))
                     error(ERR_NONSTRUCTURED_INIT_LIST);
             }
             // dest is lost for these purposes
@@ -2043,7 +2051,7 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
             fp = node->v.func;
             {
                 SYMBOL *sp = fp->sp;
-                rv = sp->xcMode == xc_none || sp->xcMode == xc_dynamic && !sp->xc->xcDynamic;
+                rv = sp->xcMode == xc_none || (sp->xcMode == xc_dynamic && !sp->xc->xcDynamic);
             }
             break;
         case en_stmt:
@@ -2110,7 +2118,7 @@ LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION *
     if (needkw(&lex, openpa))
     {
         lex = expression_no_check(lex, funcsp, NULL, tp, exp, 0);
-        *exp = intNode(en_c_i, noexceptExpression(exp));
+        *exp = intNode(en_c_i, noexceptExpression(*exp));
         *tp = &stdbool;
         
         needkw(&lex, closepa);

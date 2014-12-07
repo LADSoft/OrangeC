@@ -159,6 +159,7 @@ int ppMain::Run(int argc, char *argv[])
                         bool isAssign = false;
                         bool caseInsensitive = false;
                         if (npos != std::string::npos)
+                        {
                             if (working.size() - 7 > npos && working.substr(npos,6) == "assign" && isspace(working[npos+6]))
                             {
                                 isAssign = true;
@@ -168,7 +169,7 @@ int ppMain::Run(int argc, char *argv[])
                                 isAssign = true;
                                 caseInsensitive = true;
                             }
-                            
+                        }   
                         if (isAssign)
                         {
                             std::string name;

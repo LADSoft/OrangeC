@@ -285,14 +285,14 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
             hold = hold->next;
             if (!hold)
                 break;
-            sold = hold->p;
+            sold = (SYMBOL *)hold->p;
         }
         if (snew->thisPtr)
         {
             hnew = hnew->next;
             if (!hnew)
                 break;
-            snew = hnew->p;
+            snew = (SYMBOL *)hnew->p;
         }
         tnew = basetype(snew->tp);
         told = basetype(sold->tp);
@@ -301,16 +301,16 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
             if (told->type != bt_templateparam || 
                 tnew->templateParam->p->type != told->templateParam->p->type ||
                 tnew->templateParam->p->type != kw_typename ||
-                (tnew->templateParam->p->byClass.dflt && tnew->templateParam->p->byClass.dflt->type != bt_templateparam
-                  || told->templateParam->p->byClass.dflt && told->templateParam->p->byClass.dflt->type != bt_templateparam) &&
-                (!tnew->templateParam->p->byClass.dflt || !told->templateParam->p->byClass.dflt ||
-                !comparetypes(told->templateParam->p->byClass.dflt, tnew->templateParam->p->byClass.dflt, TRUE)))
+                (((tnew->templateParam->p->byClass.dflt && tnew->templateParam->p->byClass.dflt->type != bt_templateparam)
+                  || (told->templateParam->p->byClass.dflt && told->templateParam->p->byClass.dflt->type != bt_templateparam))
+                 && (!tnew->templateParam->p->byClass.dflt || !told->templateParam->p->byClass.dflt ||
+                !comparetypes(told->templateParam->p->byClass.dflt, tnew->templateParam->p->byClass.dflt, TRUE))))
                 
                     break;                    
         }
         else if (told->type == bt_any || tnew->type == bt_any) // packed template param
             break;
-        else if (!comparetypes(told, tnew, TRUE) && !sameTemplatePointedTo(told, tnew) || told->type != tnew->type)
+        else if ((!comparetypes(told, tnew, TRUE) && !sameTemplatePointedTo(told, tnew)) || told->type != tnew->type)
             break;
         else 
         {
@@ -328,7 +328,7 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
     }
     if (!hold && !hnew)
         return TRUE;
-    return NULL;
+    return FALSE;
 }
 SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
 {

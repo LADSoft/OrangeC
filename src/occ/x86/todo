@@ -15,3 +15,11 @@ cpp
 --------
 argument binding - don't treat derivedtobase as ranked
 argument binding - prefer if two structs match each other directly
+-----------------------------------------------
+a r = a(); - destructors, arrays nested within structures, extra temp, copy constructor wrong
+
+
+
+
+try to discard unused virtuals at link time
+stack alignment when chars and structures of size 1 are involved

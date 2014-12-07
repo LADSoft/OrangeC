@@ -10,8 +10,11 @@
 #include "rcgui.h"
 #include "img.h"
 
-#define CLEARTYPE_QUALITY (5)
+IMAGEDATA *NewImage(HWND hwndParent, IMAGEDATA *res);
 
+#ifndef CLEARTYPE_QUALITY
+#define CLEARTYPE_QUALITY (5)
+#endif
 //************************************************
 #define SCREENINDENT 10
 
@@ -1053,7 +1056,7 @@ LRESULT CALLBACK  ControlWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                            
             p->hwndControlToolbar = CreateToolbarEx(hwnd, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | TBSTYLE_TOOLTIPS | WS_VISIBLE | TBSTYLE_TRANSPARENT | CCS_NODIVIDER, 
                 ID_CONTROLTOOLBAR, 16, 0 /*hInstance*/, (UINT)drawToolBitmap/*IDB_TOOLBAR*/, 
-                &toolbarButtons, 15, 32, 32, 32, 32, sizeof(TBBUTTON));
+                &toolbarButtons[0], 15, 32, 32, 32, 32, sizeof(TBBUTTON));
             SetWindowLong(p->hwndControlToolbar, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE));
             SendMessage(p->hwndControlToolbar, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON),
                 0);
@@ -1218,27 +1221,27 @@ LRESULT CALLBACK  AuxWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SetWindowLong(hwnd, GWL_USERDATA, (LONG)p);
             p->hwndEraseToolbar = CreateToolbarEx(hwnd, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | TBSTYLE_TRANSPARENT | CCS_NODIVIDER, 
                 ID_ERASETOOLBAR, 4, 0, (UINT)eraseToolBitmap, 
-                &eraseButtons, 4, 28, 12, 28, 12, sizeof(TBBUTTON));
+                &eraseButtons[0], 4, 28, 12, 28, 12, sizeof(TBBUTTON));
             SetWindowLong(p->hwndEraseToolbar, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE));
             SetParent(p->hwndEraseToolbar, NULL);
             p->hwndFillToolbar = CreateToolbarEx(hwnd, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | TBSTYLE_TRANSPARENT | CCS_NODIVIDER, 
                 ID_FILLTOOLBAR, 3, 0, (UINT)fillToolBitmap, 
-                &fillButtons, 3, 28, 18, 28, 18, sizeof(TBBUTTON));
+                &fillButtons[0], 3, 28, 18, 28, 18, sizeof(TBBUTTON));
             SetWindowLong(p->hwndFillToolbar, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE));
             SetParent(p->hwndFillToolbar, NULL);
             p->hwndLineToolbar = CreateToolbarEx(hwnd, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | TBSTYLE_TRANSPARENT | CCS_NODIVIDER, 
                 ID_LINETOOLBAR, 5, 0, (UINT)lineToolBitmap, 
-                &lineButtons, 5, 28, 8, 28, 8, sizeof(TBBUTTON));
+                &lineButtons[0], 5, 28, 8, 28, 8, sizeof(TBBUTTON));
             SetWindowLong(p->hwndLineToolbar, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE));
             SetParent(p->hwndLineToolbar, NULL);
             p->hwndZoomToolbar = CreateToolbarEx(hwnd, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | TBSTYLE_TRANSPARENT | CCS_NODIVIDER, 
                 ID_ZOOMTOOLBAR, 4, 0, (UINT)zoomToolBitmap, 
-                &zoomButtons, 4, 28, 12, 28, 12, sizeof(TBBUTTON));
+                &zoomButtons[0], 4, 28, 12, 28, 12, sizeof(TBBUTTON));
             SetWindowLong(p->hwndZoomToolbar, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE));
             SetParent(p->hwndZoomToolbar, NULL);
             p->hwndBrushToolbar = CreateToolbarEx(hwnd, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | TBSTYLE_TRANSPARENT | CCS_NODIVIDER, 
                 ID_BRUSHTOOLBAR, 12, hInstance, 0, 
-                &brushButtons, 12, 5, 12, 5, 12, sizeof(TBBUTTON));
+                &brushButtons[0], 12, 5, 12, 5, 12, sizeof(TBBUTTON));
             SetWindowLong(p->hwndBrushToolbar, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE));
             SetParent(p->hwndBrushToolbar, NULL);
             break;
@@ -1589,8 +1592,8 @@ static void buttonDown(HWND hwnd, IMGDATA *p, int right, int x, int y)
                         ? RT_RECTANGLE : 
                             p->drawMode == IDM_ROUNDEDRECTANGLE ? RT_ROUNDEDRECTANGLE : RT_ELLIPSE, 
                             p->drawMode == IDM_SELECT || p->drawMode == IDM_TEXT ? FT_HOLLOW : p->fillType, pt);
-            if (right && (p->fillType != FT_FILL || p->drawMode == IDM_SELECT || p->drawMode == IDM_TEXT) ||
-                p->drawMode != IDM_SELECT && p->drawMode != IDM_TEXT && !right && p->fillType == FT_FILL)
+            if ((right && (p->fillType != FT_FILL || p->drawMode == IDM_SELECT || p->drawMode == IDM_TEXT)) ||
+                (p->drawMode != IDM_SELECT && p->drawMode != IDM_TEXT && !right && p->fillType == FT_FILL))
             {
                 pen = CreatePen(PS_SOLID, 0, p->currentRightColor);
                 DeleteObject(SelectObject(p->res->hdcImage, pen));
@@ -1936,7 +1939,7 @@ static void mouseMove(HWND hwnd, IMGDATA*p, int x, int y)
     }
     printPos(p, x, y);
     p->cursorPos = pt;
-    if (p->drawMode == IDM_ERASE || p->selected && p->captured)
+    if (p->drawMode == IDM_ERASE || (p->selected && p->captured))
         InvalidateRect(hwnd, 0, 0);
 }
 IMAGEDATA *newRes(HWND hwndParent, int type, int width, int height, int colors)
@@ -2498,8 +2501,8 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     HBRUSH brush;
                     if (p->drawMode == IDM_ELLIPSE || p->drawMode == IDM_RECTANGLE || p->drawMode == IDM_ROUNDEDRECTANGLE)
                         
-                        if (p->right && p->fillType != FT_FILL || 
-                            !p->right && p->fillType == FT_FILL)
+                        if ((p->right && p->fillType != FT_FILL) || 
+                            (!p->right && p->fillType == FT_FILL))
                             brush = CreateSolidBrush(p->currentRightColor);
                         else
                             brush = CreateSolidBrush(p->currentLeftColor);
@@ -2517,8 +2520,8 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     DeleteObject(brush);
                     if (p->drawMode == IDM_ELLIPSE || p->drawMode == IDM_RECTANGLE || p->drawMode == IDM_ROUNDEDRECTANGLE)
                         
-                        if (p->right && p->fillType != FT_FILL || 
-                            !p->right && p->fillType == FT_FILL)
+                        if ((p->right && p->fillType != FT_FILL) || 
+                            (!p->right && p->fillType == FT_FILL))
                             brush = CreateSolidBrush(p->currentLeftColor);
                         else
                             brush = CreateSolidBrush(p->currentRightColor);

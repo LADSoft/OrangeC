@@ -1398,6 +1398,7 @@ void checkUnused(HASHTABLE *syms)
             if (sp->storage_class == sc_overloads)
                 sp = (SYMBOL *)sp->tp->syms->table[0]->p;
             if (!sp->used && !sp->anonymous)
+            {
                 if (sp->assigned || sp->altered)
                 {
                     if (sp->storage_class == sc_auto || 
@@ -1406,10 +1407,13 @@ void checkUnused(HASHTABLE *syms)
                     errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
                 }
                 else
+                {
                     if (sp->storage_class == sc_parameter)
                         errorsym(ERR_UNUSED_PARAMETER, sp);
                     else
                         errorsym(ERR_UNUSED_VARIABLE, sp);
+                }
+            }
             hr = hr->next;
         }
     }
@@ -1436,7 +1440,7 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                         HASHREC *hr = sp->tp->syms->table[0];
                         while (hr)
                         {
-                            SYMBOL *sp = hr->p;
+                            SYMBOL *sp = (SYMBOL *)hr->p;
                             if (sp->isInline && !sp->inlineFunc.stmt && !sp->templateLevel)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp);

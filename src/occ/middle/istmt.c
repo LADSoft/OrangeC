@@ -306,12 +306,12 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
         IMODE *barrier;
         if (stmt->select->isatomic)
         {
-            barrier = doatomicFence(funcsp, stmt->select, NULL);
+            barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
         }
         gen_icode(i_assn, ap, ap3, NULL);
         if (stmt->select->isatomic)
         {
-            doatomicFence(funcsp, stmt->select, barrier);
+            doatomicFence(funcsp, NULL, stmt->select, barrier);
         }
     }
     gen_icode2(i_coswitch, make_immed(ISZ_UINT,cs.count), ap, make_immed(ISZ_UINT,cs.top - cs.bottom), stmt->label + codeLabelOffset);
@@ -416,12 +416,12 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
                 IMODE *barrier;
                 if (stmt->select->isatomic)
                 {
-                    barrier = doatomicFence(funcsp, stmt->select, NULL);
+                    barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
                 }
                 gen_icode(i_assn, ap, ap3, NULL);
                 if (stmt->select->isatomic)
                 {
-                    doatomicFence(funcsp, stmt->select, barrier);
+                    doatomicFence(funcsp, NULL, stmt->select, barrier);
                 }
             }
             if (abs(size) < ISZ_UINT)
@@ -460,7 +460,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
         {
            retsize = funcsp->paramsize ;
         }
-        if (1 || !inlinesym_count || !noepilogue && funcsp->retcount > 1)
+        if (1 || !inlinesym_count || (!noepilogue && funcsp->retcount > 1))
         {
             gen_label(retlab);
         }
@@ -920,7 +920,7 @@ void genfunc(SYMBOL *funcsp)
         gen_virtual(funcsp, FALSE);
     else
     {
-        if (funcsp->storage_class == sc_global || (funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual) && funcsp->inlineFunc.stmt)
+        if (funcsp->storage_class == sc_global || ((funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual) && funcsp->inlineFunc.stmt))
                 globaldef(funcsp);
         else
             localdef(funcsp);

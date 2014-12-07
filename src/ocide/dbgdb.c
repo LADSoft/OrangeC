@@ -48,6 +48,8 @@
 #define DBVersion 100
 static int version_ok;
 
+void DBClose(sqlite3 *db);
+
 static int verscallback(void *NotUsed, int argc, char **argv, char **azColName){
     int i;
     if (argc == 1)
@@ -82,7 +84,7 @@ static DWORD ReadImageBase(sqlite3 *db)
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    rv = atoi(sqlite3_column_text(handle, 0));
+                    rv = atoi((char *)sqlite3_column_text(handle, 0));
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;
@@ -173,7 +175,7 @@ int GetSymbolAddress(DEBUG_INFO *dbg_info, char *name)
         sqlite3_finalize(handle);
         if (rc != SQLITE_OK)
         {
-            rc = sqlite3_prepare_v2(dbg_info, query2, strlen(query2)+1, &handle, NULL);
+            rc = sqlite3_prepare_v2(dbg_info->dbPointer, query2, strlen(query2)+1, &handle, NULL);
             if (rc == SQLITE_OK)
             {
                 int done = FALSE;
@@ -235,7 +237,7 @@ int GetEqualsBreakpoint(DEBUG_INFO *dbg_info, DWORD Address, char *module, int *
                     // skim to last listed line number...
                     if (rv == 0 || sqlite3_column_int(handle, 2) == rv)
                     {
-                        strcpy(module, sqlite3_column_text(handle, 0));
+                        strcpy(module, (char *) sqlite3_column_text(handle, 0));
                         *linenum = sqlite3_column_int(handle, 1);
                         if (!rv)
                             rv = sqlite3_column_int(handle, 2);
@@ -285,7 +287,7 @@ int GetHigherBreakpoint(DEBUG_INFO *dbg_info, DWORD Address, char *module, int *
                     // skim to last listed line number...
                     if (rv == 0 || sqlite3_column_int(handle, 2) == rv)
                     {
-                        strcpy(module, sqlite3_column_text(handle, 0));
+                        strcpy(module, (char *)sqlite3_column_text(handle, 0));
                         *linenum = sqlite3_column_int(handle, 1);
                         if (!rv)
                             rv = sqlite3_column_int(handle, 2);
@@ -529,7 +531,7 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strcpy(name, sqlite3_column_text(handle, 0));
+                    strcpy(name, (char *)sqlite3_column_text(handle, 0));
                     rv = sqlite3_column_int(handle, 1);
                     if (type)
                         *type = sqlite3_column_int(handle, 2);
@@ -884,10 +886,10 @@ int GetTypeName(DEBUG_INFO *dbg_info, int type, char *name)
                     break;
                 case SQLITE_ROW:
                 {
-                    char *p = sqlite3_column_text(handle, 0);
+                    const unsigned char *p = sqlite3_column_text(handle, 0);
                     if (p && p[0])
                     {
-                        strcpy(name, p);
+                        strcpy(name, (char *)p);
                         rv = 1;
                     }
                     else
@@ -1101,7 +1103,7 @@ VARINFO *LookupStructInfo(DEBUG_INFO *dbg_info, int type, int Address,
                     break;
                 case SQLITE_ROW:
                     *size = sqlite3_column_int(handle, 0);
-                    strcpy(structtag, sqlite3_column_text(handle, 1));
+                    strcpy(structtag, (char *)sqlite3_column_text(handle, 1));
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;
@@ -1137,7 +1139,7 @@ VARINFO *LookupStructInfo(DEBUG_INFO *dbg_info, int type, int Address,
                         (*next)->address = Address + (*next)->offset;
                         (*next)->type = sqlite3_column_int(handle, 0);
                         (*next)->size = DeclType(dbg_info, (*next));
-                        strcpy((*next)->membername, sqlite3_column_text(handle, 3));
+                        strcpy((*next)->membername, (char *)sqlite3_column_text(handle, 3));
                         next = &(*next)->link;
                     }
                     break;
@@ -1221,7 +1223,7 @@ int LookupEnumValues(DEBUG_INFO *dbg_info, int type, char *structtag)
                     break;
                 case SQLITE_ROW:
                     rv = sqlite3_column_int(handle, 0);
-                    strcpy(structtag, sqlite3_column_text(handle, 1));
+                    strcpy(structtag, (char *)sqlite3_column_text(handle, 1));
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;
@@ -1305,7 +1307,7 @@ void LookupEnumName(DEBUG_INFO *dbg_info, int type, char *name, int ord)
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strcpy(name,sqlite3_column_text(handle, 0));
+                    strcpy(name, (char *)sqlite3_column_text(handle, 0));
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;

@@ -306,6 +306,8 @@ BE_IMODEDATA *beArgType(IMODE *in)
                         case en_pc:
                             rv->mode = bee_global_pc;
                             break;
+                        default:
+                            break;
                     }
                     break ;
                 case en_label:

@@ -531,11 +531,12 @@ static uint OP27(BYTE *stream, OPERAND *dest)
 {
     stream++;
     if (segs &SG_OPSIZ)
+    {
         if (dest->flags &OMF_OP32)
             MnemonicChar('d');
         else
             MnemonicChar('w');
-
+    }
     return (0);
 }
 
@@ -922,7 +923,7 @@ static char *GetStdReg(char *buffer, int reg, BOOL use32)
         *buffer++ = 'e';
         reg |= 8;
     }
-    pos = "alcldlblahchdhbhaxcxdxbxspbpsidi" + reg * 2;
+    pos = &"alcldlblahchdhbhaxcxdxbxspbpsidi"[reg * 2];
     *buffer++ =  *pos++;
     *buffer++ =  *pos;
     *buffer = '\0';
@@ -954,7 +955,7 @@ static char *GetSpecial(char *buffer, OPERAND *record, char *name)
 
 static char *GetSeg(char *buffer, int seg, BOOL override)
 {
-    char *pos = "escsssdsfsgs" + seg * 2;
+    char *pos = &"escsssdsfsgs"[seg * 2];
     *buffer++ =  *pos++;
     *buffer++ =  *pos++;
     if (override)
@@ -994,7 +995,7 @@ static void Scaled(char *buffer, OPERAND *record, BOOL based)
         buffer = GetStdReg(buffer, record->reg, TRUE);
     if (record->flags &OMF_SCALED)
     {
-        char *pos = " + +2*+4*+8*" + record->scale *3;
+        char *pos = &" + +2*+4*+8*"[record->scale *3];
         *buffer++ =  *pos++;
         *buffer++ =  *pos++;
         *buffer++ =  *pos++;
@@ -1099,13 +1100,17 @@ static void PutOperand(char *buffer, OPERAND *record)
             while (*buffer)
                 buffer++;
             if (record->flags &OMF_OFFSET)
+            {
                 if (record->flags &OMF_SIGNED_OFFSET)
                     FormatValue(buffer, record, segs, SY_SIGNEDOFS);
                 else
+                {
                     if (record->flags &OMF_WORD_OFFSET)
                         FormatValue(buffer, record, segs, SY_WORDOFS);
                     else
                         FormatValue(buffer, record, segs, SY_BYTEOFS);
+                }
+            }
             strcat(buffer, "]");
             break;
         case OM_SEGMENT:
@@ -1209,13 +1214,17 @@ static void RegisterSymbol(OPERAND *record)
             break;
         case OM_BASED:
             if (record->flags &OMF_OFFSET)
+            {
                 if (record->flags &OMF_SIGNED_OFFSET)
                     AddSymbol(record, SY_SIGNEDOFS);
                 else
+                {
                     if (record->flags &OMF_WORD_OFFSET)
                         AddSymbol(record, SY_WORDOFS);
                     else
                         AddSymbol(record, SY_BYTEOFS);
+                }
+            }
             break;
         case OM_SEGMENT:
             break;

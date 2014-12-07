@@ -100,7 +100,7 @@ bool RCFile::IsNumber()
     bool rv = GetToken() && (GetToken()->IsNumeric() || (GetToken()->IsKeyword() && (
         GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
         GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
-        GetToken()->GetKeyword() == Lexer::bcompl)||GetToken()->GetKeyword() == Lexer::comma));
+        GetToken()->GetKeyword() == Lexer::bcompl||GetToken()->GetKeyword() == Lexer::comma)));
     return rv;
 }
 unsigned RCFile::GetNumber()
@@ -164,7 +164,7 @@ void RCFile::SkipComma()
 }
 void RCFile::NeedBegin()
 {
-    if (!IsKeyword() || GetToken()->GetKeyword() != Lexer::openbr && GetToken()->GetKeyword() != Lexer::BEGIN)
+    if (!IsKeyword() || (GetToken()->GetKeyword() != Lexer::openbr && GetToken()->GetKeyword() != Lexer::BEGIN))
 {
         throw new std::runtime_error("Begin expected");
 }
@@ -172,7 +172,7 @@ void RCFile::NeedBegin()
 }
 void RCFile::NeedEnd()
 {
-    if (!IsKeyword() || GetToken()->GetKeyword() != Lexer::closebr && GetToken()->GetKeyword() != Lexer::END)
+    if (!IsKeyword() || (GetToken()->GetKeyword() != Lexer::closebr && GetToken()->GetKeyword() != Lexer::END))
         throw new std::runtime_error("End expected");
     NextToken();
 }

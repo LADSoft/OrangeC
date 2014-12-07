@@ -58,7 +58,7 @@ namespace std
 {
     ios& right(ios&in) { return in; }
 }
-#endif;
+#endif
 CmdSwitchParser MakeMain::switchParser;
 CmdSwitchString MakeMain::specifiedFiles(switchParser, 'f', ' ');
 CmdSwitchBool MakeMain::displayOnly(switchParser, 'n');
@@ -138,7 +138,7 @@ const char * MakeMain::GetStr(const char *data)
         data++;
     if (*data == '"')
         quote= true, data++;
-    while (*data && (quote && *data != '"' || !quote && !isspace(*data)))
+    while (*data && ((quote && *data != '"') || (!quote && !isspace(*data))))
         *p++ = *data++;
     *p = 0;
     if (quote && *data)
@@ -481,10 +481,12 @@ int MakeMain::Run(int argc, char **argv)
         *RuleContainer::Instance() += ruleList;
         std::string files = specifiedFiles.GetValue();
         if (!files.size())
+        {
             if (treeBuild.GetValue())
                 files = "treetop.mak";
             else
                 files = "makefile";
+        }
         if (treeBuild.GetValue())
             SetTreePath(files);
         Include::Instance()->AddFileList(files, false, false);

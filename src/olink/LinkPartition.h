@@ -108,11 +108,7 @@ class LinkOverlaySpecifier
     public:
         LinkOverlaySpecifier(LinkOverlay *Overlay) : overlay(Overlay), symbol(NULL) {}
         LinkOverlaySpecifier(LinkExpressionSymbol *Symbol) : overlay(NULL), symbol(Symbol) {}
-        ~LinkOverlaySpecifier()
-        {
-            delete overlay;
-            delete symbol;
-        }
+        ~LinkOverlaySpecifier();
         LinkOverlay *GetOverlay() { return overlay; }
         LinkExpressionSymbol *GetSymbol() { return symbol; }
         

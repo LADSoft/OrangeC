@@ -145,6 +145,8 @@ SETTING *LoadItem(struct xmlNode *node, int version, BOOL debug)
                         else
                             rv->value = strdup("");
                         break;
+                    default:
+                        break;
                 }
             }
             else if (IsAttrib(attribs, "LOW"))

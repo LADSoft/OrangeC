@@ -171,7 +171,8 @@ static void DrawItem(TTIP *ptr, HWND hwnd, HDC dc, RECT *r)
 static void CalculateWindowPos(HWND hwnd, TTIP *ptr)
 {
     RECT r;
-    POINT size, mouse;
+    SIZE size;
+    POINT mouse;
     int sx = GetSystemMetrics(SM_CXSCREEN);
     int sy = GetSystemMetrics(SM_CYSCREEN);
     HDC dc = GetDC(hwnd);
@@ -180,13 +181,13 @@ static void CalculateWindowPos(HWND hwnd, TTIP *ptr)
     GetTextExtentPoint32(dc, ptr->text, strlen(ptr->text), &size);
     SelectObject(dc, font);
     ReleaseDC(hwnd, dc);
-    size.x += 5;
-    size.y += 5;
+    size.cx += 5;
+    size.cy += 5;
     
     r.top = mouse.y + 10;
     r.left = mouse.x  + 10;
-    r.right = r.left + size.x;
-    r.bottom = r.top + size.y;
+    r.right = r.left + size.cx;
+    r.bottom = r.top + size.cy;
     if (r.right > sx)
     {
         r.left -= r.right - sx;

@@ -81,13 +81,19 @@ int IsTagged(char *module, int line)
                 {
                     int tl = t->drawnLineno;
                     if (line == tl)
+                    {
                         if (t->enabled)
+                        {
                             if (t->enabled &TAGF_GRAYED)
                                 return TAG_BPGRAYED;
                             else
                                 return i;
-                            else
-                                break;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                     t = t->next;
                 } 
             }
@@ -150,7 +156,7 @@ int Tag(int type, char *name, int drawnLineno, int charpos, void *extra, int
                 return TRUE;
             } 
 
-            if (t->enabled && type == TAG_BP && (!t->extra || freeextra) ||
+            if ((t->enabled && type == TAG_BP && (!t->extra || freeextra)) ||
                 type != TAG_BP)
             {
                 if (t->next)
@@ -197,7 +203,7 @@ int Tag(int type, char *name, int drawnLineno, int charpos, void *extra, int
     if (!t)
         return FALSE ;
     t->editingLineno = t->drawnLineno = drawnLineno;
-    t->debugLineno = oldline(l, drawnLineno, FALSE);
+    t->debugLineno = oldline(*l, drawnLineno, FALSE);
     t->charpos = charpos;
     t->extra = extra;
     t->enabled = TAGF_ENABLED;
@@ -223,7 +229,7 @@ int Tag(int type, char *name, int drawnLineno, int charpos, void *extra, int
 
 void TagRemoveAll(int type)
 {
-    struct tagfile *l = &tagFileList;
+    struct tagfile *l = tagFileList;
     struct tag *t;
     while (l)
     {
@@ -771,7 +777,7 @@ LRESULT CALLBACK BMProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     LV_COLUMN lvC;
     LV_ITEM item;
     RECT r;
-    struct tagfile *l = &tagFileList;
+    struct tagfile *l = tagFileList;
     struct tag *t,  *t1;
     HWND hwndlb;
     int i;

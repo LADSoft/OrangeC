@@ -5,7 +5,7 @@
 // this is to get around a buggy command.com on freedos...
 // it is implemented this way to prevent the IDE from popping up a console window
 // when it is used...
-int winsystem(const char *cmd)
+int winsystem(char *cmd)
 {
     STARTUPINFO stStartInfo;
     PROCESS_INFORMATION stProcessInfo;

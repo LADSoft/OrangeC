@@ -121,6 +121,8 @@ static void scan_gotos(QUAD *head)
                             case i_jl:
                                 ok = l < r;
                                 break ;
+                            default:
+                                break;
                         }
                         if (ok)
                         {
@@ -136,6 +138,8 @@ static void scan_gotos(QUAD *head)
             case i_coswitch:
             case i_goto:
                 golist[head->dc.v.label - firstLabel] = head;
+                break;
+            default:
                 break;
         }
         head = head->fwd;
@@ -338,13 +342,15 @@ void kill_jumpover(BLOCK *b, QUAD *head)
             case i_jl:
                 newtype = i_jge;
                 break;
+            default:
+                break;
         }
         /* remove the goto */
         head->dc.opcode = newtype;
         while (1) {
-            while (newhead && newhead->dc.opcode == i_block || newhead->ignoreMe 
+            while (newhead && (newhead->dc.opcode == i_block || newhead->ignoreMe 
                    || newhead->dc.opcode == i_dbgblock || newhead->dc.opcode == i_dbgblockend
-                   || newhead->dc.opcode == i_blockend) {
+                   || newhead->dc.opcode == i_blockend)) {
                 newhead = newhead->fwd;
             }
             if (!newhead || newhead->dc.opcode != i_goto)
@@ -440,6 +446,8 @@ static BOOLEAN peep(BLOCK *b, BOOLEAN branches)
                 break;
             case i_assn:
                 rv = peep_assn(b, head);
+                break;
+            default:
                 break;
         }
         changed |= !!rv;

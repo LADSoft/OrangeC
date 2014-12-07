@@ -44,6 +44,9 @@
 #include "header.h"
 #include "codecomp.h"
 #include <sys/stat.h>
+#include <process.h>
+#include <time.h>
+#include <ctype.h>
 #define FROMIDE
 
 #define DBVersion 100
@@ -70,6 +73,9 @@ static HANDLE ccEvent;
 
 static BOOL vacuuming;
 
+void DBClose(sqlite3 *db);
+char *getcwd( char *__buf, int __buflen ); // can't include dir.h because it defines eof...
+
 void ReloadLineData(char *name)
 {
     DWINFO *ptr = editWindows;
@@ -88,7 +94,7 @@ void ReloadLineData(char *name)
         ptr = ptr->next;
     }
 }
-static int prepare(sqlite3 *db, char *name, int len, sqlite3_stmt*handle, char ** vv)
+static int prepare(sqlite3 *db, char *name, int len, sqlite3_stmt** handle, char ** vv)
 {
     int rv;
     if (!ccEvent)
@@ -576,7 +582,7 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
     sqlite3_stmt *handle;
     int len = strlen(name);
     if (vacuuming)
-        return name;
+        return names;
     strcpy(buf, name);
     strcat(buf, "%");
     rc = prepare(db, query1, strlen(query1)+1, &handle, NULL);
@@ -598,7 +604,7 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
                     rc = SQLITE_OK;
                     break;
                 case SQLITE_ROW:
-                    strncpy(found, sqlite3_column_text(handle, 0), 250);
+                    strncpy(found, (char *)sqlite3_column_text(handle, 0), 250);
                     found[250] = 0;
                     if (!strncmp(name, found, len))
                     {
@@ -637,7 +643,7 @@ char ** ccGetMatchingNames(char *name, char **names, int *size, int *max)
                         done = TRUE;
                         break;
                     case SQLITE_ROW:
-                        strncpy(found, sqlite3_column_text(handle, 0), 250);
+                        strncpy(found, (char *) sqlite3_column_text(handle, 0), 250);
                         found[250] = 0;
                         if (!strncmp(name, found, strlen(name)))
                         {
@@ -682,7 +688,7 @@ static int LookupName(sqlite_int64 name, char *buf)
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strncpy(buf, sqlite3_column_text(handle, 0), 250);
+                    strncpy(buf, (char *)sqlite3_column_text(handle, 0), 250);
                     buf[250] = 0;
                     rc = SQLITE_OK;
                     done = TRUE;
@@ -787,8 +793,8 @@ CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indi
                             memset(rv->data + old, 0, (max - old) * sizeof(struct _structData));
                         }
                         {
-                            char *sym = sqlite3_column_text(handle, 0);
-                            char *type = sqlite3_column_text(handle, 1);
+                            char *sym = (char *)sqlite3_column_text(handle, 0);
+                            char *type = (char *)sqlite3_column_text(handle, 1);
                             sqlite3_int64 id = sqlite3_column_int64(handle, 2);
                             int indir = sqlite3_column_int(handle, 3);
                             rv->data[count].fieldName = strdup(sym);
@@ -895,8 +901,8 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
                         }
 
                         {
-                            char *sym = sqlite3_column_text(handle, 0);
-                            char *type = sqlite3_column_text(handle, 1);
+                            char *sym = (char *)sqlite3_column_text(handle, 0);
+                            char *type = (char *)sqlite3_column_text(handle, 1);
                             rv->data[count].fieldName= strdup(sym);
                             rv->data[count].fieldType= strdup(type);
                             rv->argCount++, count++;
@@ -929,7 +935,7 @@ CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 typeId)
                             done = TRUE;
                             break;
                         case SQLITE_ROW:
-                            rv->baseType = strdup(sqlite3_column_text(handle, 0));
+                            rv->baseType = strdup((char *)sqlite3_column_text(handle, 0));
                             rc = SQLITE_OK;
                             done = TRUE;
                             break;
@@ -1016,7 +1022,7 @@ BYTE * ccGetLineData(char *file, int *max)
     return rv;
 }
 
-static DWORD __stdcall Start(void *);
+static unsigned int __stdcall Start(void *);
 static BOOL started;
 
 void StartCodeCompletionServer()
@@ -1027,7 +1033,7 @@ void StartCodeCompletionServer()
         __int64 n;
         srand(time(0));
         n = rand() * (__int64)GetCurrentProcessId();
-        sprintf(pipeName, "%Ld", n);
+        sprintf(pipeName, "%lld", n);
         started = TRUE;
         serverThread = (HANDLE)_beginthreadex(NULL, 0, Start, NULL, 0, NULL);
     }
@@ -1095,7 +1101,7 @@ static char *GetFileData(char *filname, int *size)
 static DWORD serverProc(void *b)
 {
     HANDLE myPipe = (HANDLE )b;
-    DWORD n;
+    int n;
     DWORD read;
     if (ReadFile(myPipe, &n, sizeof(DWORD), &read, NULL))
     {
@@ -1115,7 +1121,7 @@ static DWORD serverProc(void *b)
     CloseHandle(myPipe);
     return 0;
 }
-static DWORD __stdcall Start(void *aa)
+static unsigned int __stdcall Start(void *aa)
 {
     char pipe[260];
     HANDLE serverPipe = 0;

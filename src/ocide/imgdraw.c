@@ -2,6 +2,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include "img.h"
+#include "header.h"
 
 static int ClipboardFormat;
 
@@ -518,7 +519,7 @@ IMAGEDATA *PasteImageFromClipboard(HWND hwnd, IMAGEDATA *match)
     if (IsClipboardFormatAvailable(ClipboardFormat))
     {
         HANDLE hClipData = GetClipboardData(ClipboardFormat);
-        LPBYTE lpClipData = (LPSTR)GlobalLock(hClipData);
+        LPBYTE lpClipData = (LPBYTE)GlobalLock(hClipData);
         rgbClipScreen = *((DWORD FAR *)lpClipData);
         
         hbmpClipAnd = CreateBitmap(cxClip, cyClip, (BYTE)1, (BYTE)1,

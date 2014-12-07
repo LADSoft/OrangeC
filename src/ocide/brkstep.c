@@ -78,7 +78,7 @@ int StepOverIncrement(DEBUG_EVENT *dbe)
     int word = 0;
     int address;
     int skiplen = 0;
-    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(address = dbe
+    ReadProcessMemory(activeProcess->hProcess, (LPVOID)(address = (int)dbe
         ->u.Exception.ExceptionRecord.ExceptionAddress), (LPVOID)buf, 16, 0);
     switch (buf[0])
     {
@@ -105,10 +105,12 @@ int StepOverIncrement(DEBUG_EVENT *dbe)
                     else
                     {
                         if (word >= 8)
+                        {
                             if (word >= 0x80)
                                 skiplen += 4;
                             else
                                 skiplen += 1;
+                        }
                         word &= 7;
                         if (word == 4)
                         {
@@ -138,7 +140,7 @@ int StepOverIncrement(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-int DoStepOver(DEBUG_EVENT *dbe)
+void DoStepOver(DEBUG_EVENT *dbe)
 {
     int skipaddr = StepOverIncrement(dbe);
     if (skipaddr)
@@ -155,7 +157,7 @@ int DoStepOver(DEBUG_EVENT *dbe)
 
 //-------------------------------------------------------------------------
 
-int DoStepIn(DEBUG_EVENT *dbe)
+void DoStepIn(DEBUG_EVENT *dbe)
 {
     LastSkipAddr = StepOverIncrement(dbe);
     SingleStep(dbe->dwProcessId, dbe->dwThreadId);
@@ -172,7 +174,7 @@ int IsStepping(DEBUG_EVENT *dbe)
         int v;
         if ((v = GetBreakpointLine((int)dbe
             ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line,FALSE)) !=
-            dbe->u.Exception.ExceptionRecord.ExceptionAddress)
+            (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             DoStepOver(dbe);
             return TRUE;
@@ -187,14 +189,14 @@ int IsStepping(DEBUG_EVENT *dbe)
     {
         int addr = GetBreakpointLine((int)dbe
             ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
-        if (addr == dbe->u.Exception.ExceptionRecord.ExceptionAddress)
+        if (addr == (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             uState = Running;
             return FALSE;
         }
         else if (LastSkipAddr)
         {
-            if (dbe->u.Exception.ExceptionRecord.ExceptionAddress !=
+            if ((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress !=
                 LastSkipAddr)
             {
                 if (addr)
@@ -228,7 +230,7 @@ int IsStepping(DEBUG_EVENT *dbe)
     {
         int addr = GetBreakpointLine((int)dbe
             ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, FALSE);
-        if (addr == dbe->u.Exception.ExceptionRecord.ExceptionAddress)
+        if (addr == (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             uState = Running;
             return FALSE;
@@ -244,7 +246,7 @@ int IsStepping(DEBUG_EVENT *dbe)
     {
         int addr = GetBreakpointLine((int)dbe
             ->u.Exception.ExceptionRecord.ExceptionAddress, module, &line, TRUE);
-        if (!addr || addr == dbe->u.Exception.ExceptionRecord.ExceptionAddress)
+        if (!addr || addr == (int)dbe->u.Exception.ExceptionRecord.ExceptionAddress)
         {
             uState = Running;
             return FALSE;

@@ -236,6 +236,10 @@ void put_ty(TYPE *tp)
             fprintf(listFile, "Function returning ");
             put_ty(tp->btp);
             break;
+        default:
+            fprintf(listFile, "???");
+            break;
+            
     }
     if (tp->bits !=  0)
         fprintf(listFile, "  Bits %d to %d", tp->startbit, tp->startbit + tp
@@ -278,7 +282,7 @@ void list_var(SYMBOL *sp, int i)
         fprintf(listFile,"Register: %-3s      ",lookupRegName((-sp->offset) & 255));
     }
     else
-        fprintf(listFile,"Offset:   %08X ", val);
+        fprintf(listFile,"Offset:   %08lX ", val);
     fprintf(listFile,"Storage: ");
     if (sp->tp->type == bt_ifunc)
         if (sp->isInline && !sp->noinline)

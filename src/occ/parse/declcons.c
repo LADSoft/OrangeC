@@ -349,7 +349,7 @@ static BOOLEAN hasConstFuncs(SYMBOL *sp, int type)
         HASHREC *hr = ovl->tp->syms->table[0];
         while (hr)
         {
-            SYMBOL *func = hr->p;
+            SYMBOL *func = (SYMBOL *)hr->p;
             if (isconst(func->tp))
                 return TRUE;
             hr = hr->next;
@@ -402,7 +402,7 @@ static SYMBOL *declareConstructor(SYMBOL *sp, BOOLEAN deflt, BOOLEAN move)
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);        
     tp->syms->table[0] = (HASHREC *)Alloc(sizeof(HASHREC));
-    tp->syms->table[0]->p = sp1;
+    tp->syms->table[0]->p = (struct _hrintern_ *)sp1;
     sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
     if (deflt)
     {
@@ -477,7 +477,7 @@ static SYMBOL *declareAssignmentOp(SYMBOL *sp, BOOLEAN move)
     sp1= makeID(sc_parameter, NULL, NULL, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = (HASHREC *)Alloc(sizeof(HASHREC));
-    tp->syms->table[0]->p = sp1;
+    tp->syms->table[0]->p = (struct _hrintern_ *)sp1;
     sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
     tpx = sp1->tp;
     tpx->type = move ? bt_rref : bt_lref;
@@ -1397,7 +1397,7 @@ void createDefaultConstructors(SYMBOL *sp)
     {
         SYMBOL *newcons = declareConstructor(sp, FALSE, FALSE);
         newcons->trivialCons = hasTrivialCopy(sp, FALSE);
-        if (hasCopy(cons, TRUE) || asgn && hasCopy(asgn, TRUE))
+        if (hasCopy(cons, TRUE) || (asgn && hasCopy(asgn, TRUE)))
             newcons->deleted = TRUE;
         if (!asgn)
             asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
@@ -1407,7 +1407,7 @@ void createDefaultConstructors(SYMBOL *sp)
     {
         SYMBOL *newsp = declareAssignmentOp(sp, FALSE);
         newsp->trivialCons = hasTrivialAssign(sp, FALSE);
-        if (hasCopy(cons, TRUE) || asgn && hasCopy(asgn, TRUE))
+        if (hasCopy(cons, TRUE) || (asgn && hasCopy(asgn, TRUE)))
             newsp->deleted = TRUE;            
         if (!asgn)
             asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
@@ -1790,7 +1790,7 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
     SYMBOL *sp = NULL;
     int vcount = 0, ccount = 0;
     strcpy(str, name);
-    while (c = strstr(p, "::"))
+    while ((c = strstr(p, "::")))
     {
         clslst[n++] = p;
         p = c;
@@ -1832,7 +1832,7 @@ SYMBOL *findClassName(char *name, SYMBOL *cls, BASECLASS *bc, VBASEENTRY *vbase,
         }
         vbase = vbase->next;
     }
-    if (ccount && vcount || ccount > 1)
+    if ((ccount && vcount) || ccount > 1)
     {
         errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp, cls);
     }
@@ -1909,7 +1909,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                 {
                     INITIALIZER *dest = NULL;
                     init->init = NULL;
-                    lex = initType(lex, cons, NULL, sc_auto, &init->init, &dest, init->sp->tp, init->sp, FALSE, 0);
+                    lex = initType(lex, cons, 0, sc_auto, &init->init, &dest, init->sp->tp, init->sp, FALSE, 0);
                 }
                 if (lex && MATCHKW(lex, ellipse))
                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -1928,8 +1928,10 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         EXPRESSION *expPacked = NULL;
                         MEMBERINITIALIZERS **p = &cons->memberInitializers;
                         FUNCTIONCALL shim;
-                        while (*p && *p != init)
-                            p = &(*p)->init;
+                        // this is quesitonable code, but *p should be an alias for init here
+                        // co commenting it out entirely should be kosher...
+//                        while (*p && *p != init)
+//                            p = &(*p)->init;
                         lex = SetAlternateLex(init->initData);
                         shim.arguments = NULL;
                         lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
@@ -1959,7 +1961,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                             }
                             bc = bc->next;
                         }
-                        if (ccount && vcount || ccount > 1)
+                        if ((ccount && vcount) || ccount > 1)
                         {
                             errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, init->sp, cls);
                         }
@@ -2272,7 +2274,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
         
     if (asn1)
     {
-        SYMBOL *parm = asn1->tp->syms->table[0]->next->p;
+        SYMBOL *parm = (SYMBOL *)asn1->tp->syms->table[0]->next->p;
         if (parm && isref(parm->tp))
         {
             TYPE *tp1 = Alloc(sizeof(TYPE));
@@ -2389,6 +2391,7 @@ static void undoVars(BLOCKDATA *b, HASHREC *vars, EXPRESSION *base)
 		SYMBOL *s = (SYMBOL *)vars->p;
 		undoVars(b, vars->next, base);
 		if ((s->storage_class == sc_member || s->storage_class == sc_mutable))
+        {
             if (isstructured(s->tp))
             {
     			genDestructorCall(b, (SYMBOL *)basetype(s->tp)->sp, base, NULL, s->offset, TRUE);
@@ -2402,6 +2405,7 @@ static void undoVars(BLOCKDATA *b, HASHREC *vars, EXPRESSION *base)
                 if (isstructured(tp))            
         			genDestructorCall(b, tp->sp, base, intNode(en_c_i, s->tp->size/ tp->size), s->offset, TRUE);
             }
+        }
 	}
 }
 static void undoBases(BLOCKDATA *b, BASECLASS *bc, EXPRESSION *base)

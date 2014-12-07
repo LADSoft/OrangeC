@@ -93,4 +93,4 @@ private:
     static bool hashInitted;
     static char *preData;
 } ;
-#endif Lexer_h
+#endif // Lexer_h

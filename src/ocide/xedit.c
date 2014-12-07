@@ -4,8 +4,7 @@
     Copyright (c) 1997-2012, David Lindauer, (LADSoft).
     All rights reserved.
     
-    Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
+    Redistribution and use otion, are permitted provided that the following 
     conditions are met:
     
     * Redistributions of source code must retain the above
@@ -48,6 +47,8 @@
 #include "c_types.h"
 #include "codecomp.h"
 #include <stdlib.h>
+#include <ctype.h>
+#include <process.h>
 
 extern SCOPE *activeScope;
 extern LOGFONT systemDialogFont;
@@ -468,8 +469,8 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
             int len;
             if (highlightText[0] && 
                 !pcmp(buf + start + i, highlightText, preproc, &len, !highlightCaseSensitive, FALSE)
-                && (!highlightWholeWord || (i == 0 || (!isalnum(buf[i-1].ch)) && buf[i-1].ch != '_' 
-				&& !isalnum(buf[i+len].ch) && buf[i+len].ch != '_')))
+                && (!highlightWholeWord || (i == 0 || ((!isalnum(buf[i-1].ch)) && buf[i-1].ch != '_' 
+				&& !isalnum(buf[i+len].ch) && buf[i+len].ch != '_'))))
             {
                 Colorize(buf, start + i, len,  (C_HIGHLIGHT << 4) + C_TEXT, FALSE);
                 i += len - 1;
@@ -503,7 +504,7 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
                                   (!hexflg && (ch == 'e' || ch== 'E')))
                             {
                                     i++;
-                                    if (!hexflg && ch >= 'A' || hexflg && (ch =='p' || ch == 'P'))
+                                    if ((!hexflg && ch >= 'A') || (hexflg && (ch =='p' || ch == 'P')))
                                     {
                                         ch = buf[start+i].ch;
                                         if (ch == '-' || ch == '+')
@@ -540,9 +541,9 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
             {
                 int ch = buf[start + i].ch;
                 int j = i++;
-                while (buf[start + i].ch && (buf[start + i].ch != ch && buf[start +
-                    i].ch != '\n' || buf[start + i - 1].ch == '\\' && buf[start + i -
-                    2].ch != '\\') && i < chars)
+                while (buf[start + i].ch && ((buf[start + i].ch != ch && buf[start +
+                    i].ch != '\n') || (buf[start + i - 1].ch == '\\' && buf[start + i -
+                    2].ch != '\\')) && i < chars)
                     i++;
                 Colorize(buf, start + j + 1, i - j - 1, (bkColor << 4) | C_STRING, FALSE);
             }
@@ -943,7 +944,7 @@ UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
 
 //-------------------------------------------------------------------------
 
-int insertautoundo(HWND hwnd, EDITDATA *p, int type)
+void insertautoundo(HWND hwnd, EDITDATA *p, int type)
 {
     UNDO *u = getundo(hwnd, p, type);
     if (u)
@@ -951,7 +952,6 @@ int insertautoundo(HWND hwnd, EDITDATA *p, int type)
         u->postselstart = p->selstartcharpos;
         u->postselend = p->selendcharpos;
     }
-    return u;
 }
 
 /**********************************************************************
@@ -979,7 +979,7 @@ UNDO *undo_deletesel(HWND hwnd, EDITDATA *p)
     }
     if (end - start > u->max)
     {
-        char *temp = realloc(u->data, end - start);
+        BYTE *temp = (BYTE *)realloc(u->data, end - start);
         if (!temp)
             return 0;
         u->data = temp;
@@ -1029,7 +1029,7 @@ UNDO *undo_deletechar(HWND hwnd, EDITDATA *p, int ch, int type)
         return u;
     if (u->max <= u->len)
     {
-        char *temp = realloc(u->data, u->max + 64);
+        BYTE *temp = realloc(u->data, u->max + 64);
         if (!temp)
             return 0;
         u->data = temp;
@@ -1052,7 +1052,7 @@ UNDO *undo_modifychar(HWND hwnd, EDITDATA *p)
         return u;
     if (u->max <= u->len)
     {
-        char *temp = realloc(u->data, u->max + 64);
+        BYTE *temp = realloc(u->data, u->max + 64);
         if (!temp)
             return 0;
         u->data = temp;
@@ -1073,7 +1073,7 @@ UNDO *undo_insertchar(HWND hwnd, EDITDATA *p, int ch)
         return u;
     if (u->max <= u->len)
     {
-        char *temp = realloc(u->data, u->max + 64);
+        BYTE *temp = realloc(u->data, u->max + 64);
         if (!temp)
             return 0;
         u->data = temp;
@@ -1903,6 +1903,7 @@ void insertcrtabs(HWND hwnd, EDITDATA *p)
                         quotechar = 0;
                     }
                     else if (!quotechar)
+                    {
                         if ((p->cd->text[pos2].ch == '\'' || p->cd->text[pos2].ch == '"')
                             && (!pos2 || p->cd->text[pos2-1].ch != '\\'
                                 || pos2 < 2 || p->cd->text[pos2-2].ch == '\\'))
@@ -1919,6 +1920,7 @@ void insertcrtabs(HWND hwnd, EDITDATA *p)
                             if (p->cd->text[pos2].ch == ')')
                                 parencount--;
                     } 
+                }
             }
             if (parencount > 0)
             {
@@ -2112,7 +2114,7 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
     while (isspace(p->cd->text[leospos].ch) && p->cd->text[leospos].ch != '\n')
         leospos++;
 
-    if (lsolpos = spacedend(p, pos))
+    if ((lsolpos = spacedend(p, pos)))
     {
         int indentlevel = 0;
         eospos = 0;
@@ -2123,20 +2125,24 @@ void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
             if (pos1 !=  - 1)
                 pos = pos1;
             else if ((p->cd->text[pos].Color & 0xf) != C_COMMENT)
-                if (p->cd->text[pos].ch == '{')
-            if (!indentlevel)
             {
-                while (pos && p->cd->text[pos - 1].ch != '\n')
-                        pos--;
-                while (isspace(p->cd->text[pos].ch))
-                    pos++;
-                eospos = pos;
-                break;
+                if (p->cd->text[pos].ch == '{')
+                {
+                    if (!indentlevel)
+                    {
+                        while (pos && p->cd->text[pos - 1].ch != '\n')
+                                pos--;
+                        while (isspace(p->cd->text[pos].ch))
+                            pos++;
+                        eospos = pos;
+                        break;
+                    }
+                    else
+                        indentlevel--;
+                }
+                else if (p->cd->text[pos].ch == '}')
+                    indentlevel++;
             }
-            else
-                indentlevel--;
-            else if (p->cd->text[pos].ch == '}')
-                indentlevel++;
             pos--;
         }
         insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
@@ -2578,6 +2584,7 @@ int FindParenMatchBackward(HWND hwnd, EDITDATA *p, int dec)
                                                || s < 2 || p->cd->text[s-2].ch == '\\'))
             quotechar = 0;
         else if (!quotechar)
+        {
             if ((p->cd->text[s].ch == '\'' || p->cd->text[s].ch == '"')
                 && (!s || p->cd->text[s-1].ch != '\\'
                     || s < 2 || p->cd->text[s-2].ch == '\\'))
@@ -2585,8 +2592,11 @@ int FindParenMatchBackward(HWND hwnd, EDITDATA *p, int dec)
             else if (p->cd->text[s].ch == skip)
                 level++;
             else if (p->cd->text[s].ch == match)
+            {
                 if (!--level)
                     break;
+            }
+        }
     }
     if (level)
         return FALSE;
@@ -2619,6 +2629,7 @@ int FindParenMatchForward(HWND hwnd, EDITDATA *p, int dec)
                                                || s < 2 || p->cd->text[s-2].ch == '\\'))
             quotechar = 0; 
         else if (!quotechar)
+        {
             if ((p->cd->text[s].ch == '\'' || p->cd->text[s].ch == '"')
                 && (p->cd->text[s-1].ch != '\\' || s < 2 || p->cd->text[s-2].ch == '\\'))
                 quotechar = p->cd->text[s].ch;
@@ -2627,6 +2638,7 @@ int FindParenMatchForward(HWND hwnd, EDITDATA *p, int dec)
             else if (p->cd->text[s].ch == match)
                 if (!--level)
                     break;
+        }
     }
     if (level)
         return FALSE;
@@ -2926,7 +2938,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         }
         return TRUE;
     }
-    int getfragment(EDITDATA *p, int pos, char *buf, int *fcolor, int *bcolor,
+    int getfragment(EDITDATA *p, int pos, char *buf, COLORREF *fcolor, COLORREF *bcolor,
         HFONT *font, int *col, int line)
     {
         int count = 0;
@@ -3042,7 +3054,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         else
         {
             if (attribs &CFE_AUTOCOLOR)
-                *fcolor = colors[p->cd->defforeground];
+                *fcolor = *(colors[p->cd->defforeground]);
             else
                 *fcolor = *(colors[color & 0xf]);
             if (p->cd->defbackground == C_SYS_WINDOWBACKGROUND)
@@ -3136,7 +3148,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 while (p->cd->text[pos].ch != '\n' && pos < p->cd->textlen)
                 {
                     int selection = FALSE;
-                    int fcolor, bcolor;
+                    COLORREF fcolor, bcolor;
                     HFONT font;
                     pos = getfragment(p, pos, buf, &fcolor, &bcolor, &font,
                         &leftcol, baseline + i);
@@ -3158,8 +3170,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 pos++;
             }
             r.left = col;
-            if (pos < p->selendcharpos && pos > p->selstartcharpos
-                    || pos >= p->selendcharpos && pos < p->selstartcharpos) {
+            if ((pos < p->selendcharpos && pos > p->selstartcharpos)
+                    || (pos >= p->selendcharpos && pos < p->selstartcharpos)) {
                 FillRect(dc, &r, selBrush);
             }
             else
@@ -3631,7 +3643,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 case UNDO_DELETESELECTION:
                     p->selstartcharpos = u->postselstart;
                     p->selendcharpos = u->postselend;
-                    Replace(hwnd, p, u->data, u->len);
+                    Replace(hwnd, p, (char *)u->data, u->len);
                     p->cd->modified = u->modified;
                     p->cd->redopos = x;
                     p->selstartcharpos = u->preselstart;
@@ -3822,7 +3834,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 case UNDO_INSERTSELECTION:
                     p->selstartcharpos = u->preselstart;
                     p->selendcharpos = u->preselend;
-                    Replace(hwnd, p, u->data, u->len);
+                    Replace(hwnd, p, (char *)u->data, u->len);
                     p->cd->modified = p->cd->undolist[x].modified;
                     p->cd->redopos = x;
                     p->selstartcharpos = u->postselstart;
@@ -4351,7 +4363,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         {
                             // if it is the prefix of another item don't close out the box
                             temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected+1, 0);
-                            if (temp == -1 || strnicmp(buf, temp, len))
+                            if (temp == (char *)-1 || strnicmp(buf, temp, len))
                                 PostMessage(hwnd, WM_CLOSE, 0, 0);
                         }
                     }
@@ -4570,11 +4582,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     break;
                 default:
                     if (!wading)
+                    {
                         if (!isalnum(p->cd->text[pos].ch) && 
                             p->cd->text[pos].ch != '_')
                             done = TRUE;
                         else
                             *--q = p->cd->text[pos].ch;
+                    }
                     break ;
             }
             pos--;
@@ -4687,7 +4701,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 {
                     int count = 0;
                     int max = 0;
-                    POINT siz1;
+                    SIZE siz1;
                     int width, height;
                     POINT cpos;
                     TEXTMETRIC t;
@@ -4702,8 +4716,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         int n;
                         char *name = structData->data[count].fieldName;
                         GetTextExtentPoint32(dc, name, strlen(name), &siz1);
-                        if (siz1.x > width)
-                            width = siz1.x;
+                        if (siz1.cx > width)
+                            width = siz1.cx;
                         n = SendMessage(codecompleteBox, LB_ADDSTRING, 0, (LPARAM)name);
                     }
                     ccFreeStructData(structData);
@@ -4739,7 +4753,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         int v;
         char *p = name;
         while (*p)
-            *p++ = tolower(*p);
+        {
+            *p = tolower(*p);
+            p++;
+        }
         while (top - bottom > 1)
         {
             int mid = (top + bottom) / 2;
@@ -4747,7 +4764,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             p = &trans[0];
             strcpy(trans, table[mid].text);
             while (*p)
-                *p++ = tolower(*p);
+            {
+                *p = tolower(*p);
+                p++;
+            }
             v = strncmp(name, trans, len);
             if (v < 0)
             {
@@ -4788,10 +4808,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         names = ccGetMatchingNames(name, names, size, max);
         return names;
     }
-    int showVariableOrKeyword(HWND hwnd, EDITDATA *p)
+    void showVariableOrKeyword(HWND hwnd, EDITDATA *p)
     {
         if (inStructBox || PropGetInt(NULL, "CODE_COMPLETION") < 2)
-            return 0;
+            return;
         {
             char buf[4096], *q = buf + sizeof(buf);
             int pos = p->selstartcharpos-1;
@@ -4799,7 +4819,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             int size = 0, max = 0;
             *--q = 0;
             if (pos <= 0)
-                return 0;
+                return;
             while (pos && (isalnum(p->cd->text[pos].ch) || p->cd->text[pos].ch == '_' || p->cd->text[pos].ch == '#'))
                    *--q = p->cd->text[pos--].ch;
             if (codecompleteBox)
@@ -4828,7 +4848,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     {
                         int count = 0;
                         int max = 0;
-                        POINT siz1;
+                        SIZE siz1;
                         int width, height;
                         POINT cpos;
                         TEXTMETRIC t;
@@ -4843,8 +4863,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                             int n;
                             char *name = names[count];
                             GetTextExtentPoint32(dc, name, strlen(name), &siz1);
-                            if (siz1.x > width)
-                                width = siz1.x;
+                            if (siz1.cx > width)
+                                width = siz1.cx;
                             n = SendMessage(codecompleteBox, LB_ADDSTRING, 0, (LPARAM)name);
                             free(name);
                         }
@@ -4865,7 +4885,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                             ShowWindow(codecompleteBox, SW_SHOW);
                             if (IsWindowVisible(hwndShowFunc))
                                 ShowWindow(hwndShowFunc, SW_HIDE);
-                            return TRUE;
+                            return;
                         }
                         else
                             DestroyWindow(codecompleteBox);
@@ -5102,7 +5122,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         char name[2046], *q = name;
         int end = p->selstartcharpos;
         int pos = p->selstartcharpos - 1;
-        POINT cpos, size;
+        POINT cpos;
+        SIZE size;
         int curArg = 0;
         p->cd->selecting = FALSE;
         if (pos <= 0 || PropGetInt(NULL, "CODE_COMPLETION") == 0)
@@ -5112,7 +5133,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             int parenLevel = 0;
             if (ch == ',')
                 curArg ++;
-            while ((pos && p->cd->text[pos].ch != '(' || parenLevel) && p->cd->text[pos].ch != ';')
+            while (((pos && p->cd->text[pos].ch != '(') || parenLevel) && p->cd->text[pos].ch != ';')
             {
                 if (p->cd->text[pos].ch == ',')
                     curArg++;
@@ -5173,9 +5194,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             dc = GetDC(hwndShowFunc);
             GetTextExtentPoint32(dc, proto, strlen(proto), &size);
             ReleaseDC(hwndShowFunc, dc);
-            GetCompletionPos(hwnd, p, &cpos, size.x, size.y);
+            GetCompletionPos(hwnd, p, &cpos, size.cx, size.cy);
 //						SetParent(codecompleteBox, hwnd);
-            MoveWindow(hwndShowFunc, cpos.x, cpos.y, size.x, size.y, TRUE);
+            MoveWindow(hwndShowFunc, cpos.x, cpos.y, size.cx, size.cy, TRUE);
             SendMessage(hwndShowFunc, WM_USER + 2, curArg, 0);
             ShowWindow(hwndShowFunc, SW_SHOW);
             SetFocus(hwnd);
@@ -5266,8 +5287,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     break;
                 case TTN_NEEDTEXT:
                     // tooltip
-                    if (uState == notDebugging && PropGetBool(NULL, "EDITOR_HINTS")
-                        || (uState == atException || uState == atBreakpoint) && PropGetBool(NULL, "DEBUGGER_HINTS"))
+                    if ((uState == notDebugging && PropGetBool(NULL, "EDITOR_HINTS"))
+                        || ((uState == atException || uState == atBreakpoint) && PropGetBool(NULL, "DEBUGGER_HINTS")))
                     {
                         char name[1000];
                         DWINFO *info = (DWINFO *)GetWindowLong(GetParent(hwnd), 0);
@@ -5706,6 +5727,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             case EM_UPDATESIBLING:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 if (lParam <= p->textshowncharpos)
+                {
                     if (wParam > 0)
                         p->textshowncharpos += wParam;
                     else
@@ -5713,6 +5735,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                             p->textshowncharpos += wParam;
                         else
                             p->textshowncharpos -= p->textshowncharpos - lParam;
+                }
                 if (lParam <= p->selstartcharpos)
                     p->selstartcharpos += wParam;
                 if (lParam <= p->selendcharpos)
@@ -6108,11 +6131,11 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 }
                 else
                 {
-                    if (wParam < 0)
+                    if ((int)wParam < 0)
                         wParam = 0;
                     if (wParam > p->cd->textlen)
                         wParam = p->cd->textlen;
-                    if (lParam < 0)
+                    if ((int)lParam < 0)
                         lParam = 0;
                     if (lParam > p->cd->textlen)
                         lParam = p->cd->textlen;
@@ -6320,7 +6343,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 break;
             case WM_GETFONT:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                return p->cd->hFont;
+                return (LRESULT)p->cd->hFont;
             case WM_SETFONT:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 DeleteObject(p->cd->hFont);

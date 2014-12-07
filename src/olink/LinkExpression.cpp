@@ -41,6 +41,11 @@
 #include "LinkManager.h"
 #include "ObjSection.h"
 #include <exception>
+LinkExpressionSymbol::~LinkExpressionSymbol() 
+{ 
+    delete value; 
+}
+
 std::set<LinkExpressionSymbol *, leltcompare> LinkExpression::symbols;
 LinkExpression::LinkExpression(const LinkExpression &exp)
 {
@@ -94,6 +99,8 @@ LinkExpression *LinkExpression::Eval(int section, int base, ObjInt offset)
             }
             break;
         }
+        default:
+            break;
     }
     return rv;
 }

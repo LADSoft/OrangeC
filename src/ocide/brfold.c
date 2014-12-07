@@ -39,6 +39,9 @@
 */
 
 #include <shlobj.h>
+#include <stdio.h>
+
+int ExtendedMessageBox(char *title, int flag, char *fmt, ...);
 
 extern char szInstallPath[1024];
 
@@ -159,7 +162,7 @@ void GetDefaultProjectsPath(LPSTR pszPath)
         pszPath[0] = 0;
     }
 }
-static int CALLBACK selectionProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+static int CALLBACK selectionProc(HWND hwnd, UINT iMessage, LPARAM wParam, LPARAM lParam)
 {
     switch (iMessage)
     {

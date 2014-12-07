@@ -333,8 +333,9 @@ SYMBOL *varsp(EXPRESSION *node)
         case en_tempref:
         case en_threadlocal:
             return node->v.sp;
+        default:
+            return 0;
     }
-    return 0;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -549,14 +550,16 @@ IMODE *indnode(IMODE *ap1, int size)
                 case sc_localstatic:
                 case sc_static:
                 case sc_external:
-                {
-                    IMODE *im = LookupLoadTemp(ap1, ap1);
-                    if (im != ap1)
-                        gen_icode(i_assn, im, ap1, NULL);
-                    ap1 = im;
-                    sp = im->offset->v.sp;
-                }
-                break;
+                    {
+                        IMODE *im = LookupLoadTemp(ap1, ap1);
+                        if (im != ap1)
+                            gen_icode(i_assn, im, ap1, NULL);
+                        ap1 = im;
+                        sp = im->offset->v.sp;
+                    }
+                    break;
+                default:
+                    break;
             }
             iml = sp->imind;
             while (iml)
@@ -943,16 +946,20 @@ IMODE *gen_binary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_
         size = imax(ap1->size,ap2->size);
     else
         if (ap1->size >= ISZ_IFLOAT && ap2->size < ISZ_IFLOAT)
+        {
             if (ap2->size < ISZ_FLOAT)
                 size = ap1->size;
             else
                 size = imax(ap1->size - ISZ_IFLOAT, ap2->size - ISZ_FLOAT) + ISZ_CFLOAT;
+        }
         else
             if (ap2->size >= ISZ_IFLOAT && ap1->size < ISZ_IFLOAT)
+            {
                 if (ap1->size < ISZ_FLOAT)
                     size = ap2->size;
                 else
                     size = imax(ap2->size - ISZ_IFLOAT, ap1->size - ISZ_FLOAT) + ISZ_CFLOAT;
+            }
     ap = LookupExpression(op, size, ap1, ap2);
     return ap;
 }
@@ -2268,6 +2275,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                     break;
                 case en_c_ldc:
                     ap1->size = ISZ_CLDOUBLE;
+                    break;
+                default:
                     break;
             }
             ap2 = LookupImmedTemp(ap1, ap1);

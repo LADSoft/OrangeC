@@ -634,6 +634,8 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
             case iID:
                 rv = PropGetHWNDText(lv);
                 break;
+            case iNone:
+                break;
         }
         if (rv)
         {
@@ -662,6 +664,8 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
                         SendMessage(rv, CB_SETITEMDATA, v, field->value);
                         field = field->next;
                     }
+                    break;
+                default:
                     break;
             }
             GetCtlPropText(buf, lv, data, row);
@@ -777,6 +781,8 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
                     case iHeight:
                         exp = data->data->height;
                         break;
+                    default:
+                        break;
                 }
                 v = strtoul(buf, NULL, 0);
                 if (v != Eval(exp))
@@ -808,6 +814,8 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
                         data->data->text->u.n.length = StringAsciiToWChar(&data->data->text->u.n.symbol, buf, strlen(buf));
                     }
                 }
+                break;
+            case iNone:
                 break;
         }
         {
@@ -907,7 +915,7 @@ static HWND CreateDlgWindow(HWND hwnd, struct resRes * dlgData)
 {
     DIALOG *d = dlgData->resource->u.dialog;
     char buf[256];
-    POINT base;
+    SIZE base;
     RECT r;
     HWND rv;
     GetBaseUnits(hwnd, dlgData, &base);
@@ -1049,7 +1057,7 @@ static void UndoInsert(struct resRes *dlgData, CONTROL *list)
     struct dlgUndo *cur = calloc(1, sizeof(struct dlgUndo));
     if (cur)
     {
-        CONTROL **item = dlgData->resource->u.dialog->controls;
+        CONTROL **item = &dlgData->resource->u.dialog->controls;
         while (*item && *item != list)
             item = &(*item)->next;
         cur->type = du_insert;
@@ -1759,7 +1767,7 @@ static BOOL CALLBACK HookAllChildren(HWND child, LPARAM old)
 static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, BOOL activate)
 {
     WCHAR *name;
-    POINT base;
+    SIZE base;
     RECT r;
     HWND child, parent;
     int plusstyle;
@@ -1945,7 +1953,7 @@ void AddToStyle(EXPRESSION **style, char *text, int val)
     if (text)
         th->rendition = rcStrdup(text);
 }
-static BOOL InsertNewControl(struct resRes *dlgData, int type, POINT at)
+static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
 {
     SIZE base;
     CONTROL *c , **parent = &dlgData->resource->u.dialog->controls;
@@ -2631,7 +2639,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                 PropSetExp(data, buf, &data->resource->info.version);
                 break;
             case 18:
-                ResSetDirty(data->resource->u.dialog);
+                ResSetDirty(data);
                 if (!data->resource->u.dialog->class)
                     data->resource->u.dialog->class = rcAlloc(sizeof(IDENT));
                 if (isdigit(buf[0]))
@@ -2997,6 +3005,7 @@ static char *UnStreamControl(char *p, struct resRes *dlgData, CONTROL *c)
     p = UnStreamExpr(p, &c->width);
     p = UnStreamExpr(p, &c->height);
     p = UnStreamExpr(p, &c->help);
+    return p;
 }
 static BOOL DlgHasId(struct resRes *dlgData, EXPRESSION *id)
 {
@@ -3134,7 +3143,7 @@ static char * StreamIdent(char *p, IDENT *ident)
     {
         *((short *)p) = wcslen(ident->origName);
         p += sizeof(short);
-        wcscpy((short *)p, ident->origName);
+        wcscpy((WCHAR *)p, ident->origName);
         p += sizeof(WCHAR) * wcslen(ident->origName);
     }        
     if (ident->symbolic)

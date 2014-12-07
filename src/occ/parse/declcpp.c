@@ -159,7 +159,7 @@ void dumpVTab(SYMBOL *sym)
     dseg();
     gen_virtual(sym->vtabsp, TRUE);
     if (xtSym)
-        genref(xtSym, NULL);
+        genref(xtSym, 0);
     else
         genaddress(0);
     count = dumpVTabEntries(count, thunks, sym, sym->vtabEntries);
@@ -184,7 +184,7 @@ void dumpVTab(SYMBOL *sym)
 }
 void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *ccount)
 {
-    if (base == derived || base && derived && sameTemplate(base->tp, derived->tp))
+    if (base == derived || (base && derived && sameTemplate(base->tp, derived->tp)))
         (*ccount)++;
     else
     {
@@ -396,8 +396,8 @@ static void checkXT(SYMBOL *sym1, SYMBOL *sym2)
     }
     else if (sym1->xcMode != sym2->xcMode)
     {
-        if (sym1->xcMode == xc_all && sym2->xcMode != xc_unspecified 
-            || sym1->xcMode == xc_unspecified && sym2->xcMode != xc_all || sym2->xcMode == xc_none)
+        if ((sym1->xcMode == xc_all && sym2->xcMode != xc_unspecified )
+            || (sym1->xcMode == xc_unspecified && sym2->xcMode != xc_all) || sym2->xcMode == xc_none)
         {
             currentErrorLine = 0;
             errorsym(ERR_EXCEPTION_SPECIFIER_AT_LEAST_AS_RESTRICTIVE, sym1);
@@ -1344,7 +1344,7 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLI
                 }
                 bc = bc->next;
             }
-            if (ccount && vcount || ccount > 1)
+            if ((ccount && vcount) || ccount > 1)
             {
                 errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, mi->sp, cls);
             }
@@ -1692,9 +1692,9 @@ void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend)
                             {
                                 tpl = basetype(tpl)->btp;
                                 tpr = basetype(tpl);
-                                if (!isconst(tpl) || tpr->type != bt_char 
+                                if (!isconst(tpl) || (tpr->type != bt_char 
                                         && tpr->type != bt_wchar_t 
-                                        && tpr->type != bt_char16_t &&tpr->type != bt_char32_t)
+                                        && tpr->type != bt_char16_t &&tpr->type != bt_char32_t))
                                 {
                                     errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);
                                 }
@@ -2164,7 +2164,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
 static void balancedAttributeParameter(LEXEME **lex)
 {
     enum e_kw start = KW(*lex);
-    enum e_kw endp = -1;
+    enum e_kw endp = (enum e_kw)-1;
     *lex = getsym();
     switch(start)
     {
@@ -2180,7 +2180,7 @@ static void balancedAttributeParameter(LEXEME **lex)
         default:
             break;
     }
-    if (endp != -1)
+    if (endp != (enum e_kw)-1)
     {
         while (*lex && !MATCHKW(*lex, endp))
             balancedAttributeParameter(lex);

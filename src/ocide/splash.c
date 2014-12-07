@@ -49,6 +49,7 @@
 
 #define STRICT
 #include <windows.h>
+#include <process.h>
 #include "splash.h"
 
 #define SPLASH_CLASS    "AbSplashScreenWndClass"
@@ -65,6 +66,8 @@ typedef struct
     HWND hButton;
     DWORD uTimerId;
 } SPLASH2, FAR *LPSPLASH2;
+
+unsigned char *InflateWrap(unsigned char *data);
 
 /*****************************************************************************/
 static unsigned char *SplashScreen_LoadBmp(HINSTANCE hInstance, LPSTR
@@ -147,7 +150,7 @@ static VOID SplashScreen_Paint(HWND hWnd)
             lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) *16;
         else if (lpbih->biBitCount == 1)
             lpbits = ((LPBYTE)lpbih) + lpbih->biSize + sizeof(RGBQUAD) *2;
-        SetDIBits(hdcMem, bmp, 0, lpSplash2->iHeight, lpbits, lpbih,
+        SetDIBits(hdcMem, bmp, 0, lpSplash2->iHeight, lpbits, (BITMAPINFO *)lpbih,
             DIB_RGB_COLORS);
         SelectObject(hdcMem, bmp);
         BitBlt(hdc, 0, 0, lpSplash2->iWidth, lpSplash2->iHeight, hdcMem, 0, 0,
@@ -249,8 +252,9 @@ static LRESULT CALLBACK SplashScreen_Proc(HWND hWnd, UINT msg, WPARAM wParam,
 }
 
 /******************************************************************************/
-static VOID __stdcall SplashScreen_Thread(LPSPLASH lpSplash)
+static unsigned __stdcall SplashScreen_Thread(void *in)
 {
+    LPSPLASH lpSplash = (LPSPLASH)in;
     LPBYTE lpBuffer;
     WNDCLASSEX wcx;
     BOOL bReg;
@@ -350,13 +354,14 @@ static VOID __stdcall SplashScreen_Thread(LPSPLASH lpSplash)
     }
 
     GlobalFree((HGLOBAL)lpSplash);
+    return 0;
 }
 
 /******************************************************************************/
 VOID WINAPI SplashScreen(LPSPLASH lpSplash)
 {
     HANDLE hThread;
-    DWORD dwTid;
+    unsigned int dwTid;
     LPSPLASH lpSplash_t;
 
     lpSplash_t = (LPSPLASH)GlobalAlloc(GPTR, sizeof(SPLASH));
@@ -365,7 +370,7 @@ VOID WINAPI SplashScreen(LPSPLASH lpSplash)
     {
         memcpy(lpSplash_t, lpSplash, sizeof(SPLASH));
         
-        hThread = (HANDLE)_beginthreadex(NULL, 0, (LPTHREAD_START_ROUTINE)SplashScreen_Thread, (LPVOID)lpSplash_t, 0, &dwTid);
+        hThread = (HANDLE)_beginthreadex(NULL, 0, SplashScreen_Thread, (LPVOID)lpSplash_t, 0, &dwTid);
 
         if (lpSplash->bWait && hThread != NULL)
             WaitForSingleObject(hThread, INFINITE);

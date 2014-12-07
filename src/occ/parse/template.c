@@ -207,6 +207,8 @@ BOOLEAN exactMatchOnTemplateArgs(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym)
                     return FALSE;
 #endif
                 break;
+            default:
+                break;
         }
         old = old->next;
         sym = sym->next;
@@ -253,6 +255,8 @@ static TEMPLATEPARAMLIST * mergeTemplateDefaults(TEMPLATEPARAMLIST *old, TEMPLAT
                 break;
             case kw_new: // specialization
                 break;
+            default:
+                break;
         }
         old = old->next;
         sym = sym->next;
@@ -277,6 +281,8 @@ static void checkTemplateDefaults(TEMPLATEPARAMLIST *args)
                 break;
             case kw_int:
                 txtdflt = args->p->byNonType.txtdflt;
+                break;
+            default:
                 break;
         }
         if (last && !txtdflt)
@@ -854,6 +860,8 @@ BOOLEAN exactMatchOnTemplateSpecialization(TEMPLATEPARAMLIST *old, TEMPLATEPARAM
                     return FALSE;
 #endif
                 break;
+            default:
+                break;
         }
         old = old->next;
         sym = sym->next;
@@ -916,7 +924,7 @@ static BOOLEAN matchTemplatedType(TYPE *old, TYPE *sym, BOOLEAN strict)
         {
             old = basetype(old);
             sym = basetype(sym);
-            if (old->type == sym->type || isfunction(old) && isfunction(sym))
+            if (old->type == sym->type || (isfunction(old) && isfunction(sym)))
             {
                 switch (old->type)
                 {
@@ -1000,7 +1008,7 @@ SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp, TEMPLATEPARA
             }
             hr = hr->next;
         }
-        if (TemplateParseDefaultArgs(params,params,params, sp) && ValidateArgsSpecified(params, sp, NULL))
+        if (TemplateParseDefaultArgs(sp, params,params,params) && ValidateArgsSpecified(params, sp, NULL))
         {
             SYMBOL * deduced = SynthesizeResult(sp, templateParams);
             deduced->overloadName = overloads;
@@ -1019,11 +1027,12 @@ LEXEME *TemplateArgGetDefault(LEXEME **lex)
         if (MATCHKW(*lex, comma))
             break;
         if (MATCHKW(*lex, gt) || MATCHKW(*lex, rightshift))
+        {
             if (!inbracket)
                 break;
             else
                 inbracket--;
-            
+        }   
         if (MATCHKW(*lex, lt))
             inbracket++;
         *cur = Alloc(sizeof(LEXEME));
@@ -1326,6 +1335,8 @@ BOOLEAN TemplateIntroduceArgs(TEMPLATEPARAMLIST *sym, TEMPLATEPARAMLIST *args)
             case kw_int:
                 sym->p->byNonType.val = args->p->byNonType.dflt;
                 break;
+            default:
+                break;
         }
         sym = sym->next;
         args = args->next;
@@ -1388,7 +1399,7 @@ static TEMPLATEPARAMLIST *copyParams(TEMPLATEPARAMLIST *t, BOOLEAN alsoSpecializ
     }
     return t;
 }
-static TYPE *SynthesizeTemplate(TYPE *tp, BOOLEAN alt)
+static SYMBOL *SynthesizeTemplate(TYPE *tp, BOOLEAN alt)
 {
     SYMBOL *rv;
     TEMPLATEPARAMLIST *r = NULL, **last = &r;
@@ -1425,6 +1436,8 @@ static TYPE *SynthesizeTemplate(TYPE *tp, BOOLEAN alt)
                     p->p->byNonType.val = p->p->byNonType.tp->templateParam->p->byNonType.val;
                 }
                 break;
+            default:
+                break;
         }
         p = p->next;
     }
@@ -1436,7 +1449,7 @@ static TYPE *SynthesizeTemplate(TYPE *tp, BOOLEAN alt)
     rv->templateParams->p = Alloc(sizeof(TEMPLATEPARAM));
     rv->templateParams->p->type = kw_new; // specialization
     rv->templateParams->p->bySpecialization.types = r;
-    return rv->tp;
+    return rv;
 }
 
 void SynthesizeQuals(TYPE ***last, TYPE **qual, TYPE ***lastQual)
@@ -2055,7 +2068,7 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
                         TP->p->byTemplate.txtdflt = TA->p->byTemplate.txtdflt;
                     if (!TP->p->byTemplate.val)
                         TP->p->byTemplate.val = TA->p->byTemplate.val;
-                    else if (!DeduceFromTemplates(TP->p->byTemplate.val, TA->p->byTemplate.val, change, byClass))
+                    else if (!DeduceFromTemplates(TP->p->byTemplate.val->tp, TA->p->byTemplate.val->tp, change, byClass))
                         return FALSE;
                     break;
                 }
@@ -2075,6 +2088,8 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
                         TP->p->byNonType.txtdflt = TA->p->byNonType.txtdflt;
                     break;
                 }
+                default:
+                    break;
             }
             TP = TP->next;
             TA = TA->next;
@@ -2120,7 +2135,7 @@ static TYPE *FixConsts(TYPE *P, TYPE *A)
             vol = TRUE;
         while (isconst(P) || isvolatile(P))
         {
-            if (constant && isconst(P) || vol && isvolatile(P))
+            if ((constant && isconst(P)) || (vol && isvolatile(P)))
             {
                 *last = Alloc(sizeof(TYPE));
                 **last = *P;
@@ -2310,7 +2325,7 @@ static BOOLEAN ValidArg(TYPE *tp)
                             return FALSE;
                         tp = tp->templateParam->p->byClass.val;
                     }
-                    if (tp->type == bt_void || isfunction(tp) || isref(tp) || isstructured(tp) && tp->sp->isabstract)
+                    if (tp->type == bt_void || isfunction(tp) || isref(tp) || (isstructured(tp) && tp->sp->isabstract))
                         return FALSE;
                 }
                 if (ispointer(tp))
@@ -2417,7 +2432,7 @@ static BOOLEAN ValidArg(TYPE *tp)
                         return FALSE;
                     tp = tp->templateParam->p->byClass.val;
                 }
-                if (isfunction(tp) || isarray(tp) || isstructured(tp) && tp->sp->isabstract)
+                if (isfunction(tp) || isarray(tp) || (isstructured(tp) && tp->sp->isabstract))
                     return FALSE;                
                 break;
             }
@@ -2436,7 +2451,7 @@ static BOOLEAN ValidArg(TYPE *tp)
         }
     }
 }
-static INITLIST * valFromDefault(TEMPLATEPARAMLIST *params, BOOLEAN usesParams, INITLIST **args)
+static BOOLEAN valFromDefault(TEMPLATEPARAMLIST *params, BOOLEAN usesParams, INITLIST **args)
 {
     while (params && (!usesParams || *args))
     {
@@ -2558,7 +2573,7 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
     }
     if (Deduce(P, A, TRUE, byClass))
         return TRUE;
-    if (isfuncptr(P) || isref(P) && isfunction(basetype(P)->btp))
+    if (isfuncptr(P) || (isref(P) && isfunction(basetype(P)->btp)))
     {
         if (exp->type == en_func)
         {
@@ -2580,14 +2595,16 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
                     SYMBOL *sym = (SYMBOL *)hr->p;
                     clearoutDeduction(P);
                     if (Deduce(P->btp, sym->tp, FALSE, byClass))
+                    {
                         if (candidate)
                             return FALSE;
                         else
                             candidate = sym;
+                    }
                     hr = hr->next;
                 }
                 if (candidate)
-                    return Deduce(P, candidate, TRUE, byClass);
+                    return Deduce(P, candidate->tp, TRUE, byClass);
             }
         }       
     }
@@ -2692,6 +2709,8 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
                     }
                 }
                     break;
+                default:
+                    break;
             }
             PopTemplateNamespace(n);
             SetAlternateLex(NULL);
@@ -2775,12 +2794,14 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
                         return FALSE;
                     break;
                 case kw_template:
-                    if (!exactMatchOnTemplateParams(initial->p->byTemplate.dflt, params->p->byTemplate.dflt->templateParams->next))
+                    if (!exactMatchOnTemplateParams(initial->p->byTemplate.dflt->templateParams->next, params->p->byTemplate.dflt->templateParams->next))
                         return FALSE;
                     break;
                 case kw_int:
                     if (!templatecomparetypes(initial->p->byNonType.tp, params->p->byNonType.tp, TRUE) && (!ispointer(params->p->byNonType.tp) || !isconstzero(initial->p->byNonType.tp, params->p->byNonType.dflt)))
                         return FALSE;
+                    break;
+                default:
                     break;
             }
             initial = initial->next;
@@ -2874,7 +2895,7 @@ static BOOLEAN TemplateDeduceFromConversionType(TYPE* orig, TYPE *tp)
         BOOLEAN doit = FALSE;
         while (ispointer(P) && ispointer(A))
         {
-            if (isconst(P) && !isconst(A) || isvolatile(P) && !isvolatile(A))
+            if ((isconst(P) && !isconst(A)) || (isvolatile(P) && !isvolatile(A)))
                 return FALSE;
             P = basetype(P)->btp;
             A = basetype(A)->btp;
@@ -2948,9 +2969,9 @@ int TemplatePartialDeduceFromType(TYPE *orig, TYPE *sym, BOOLEAN byClass)
     if (isref(orig) && isref(sym))
     {
         BOOLEAN p=FALSE, a = FALSE;
-        if (isconst(P) && !isconst(A) || isvolatile(P) && !isvolatile(A))
+        if ((isconst(P) && !isconst(A)) || (isvolatile(P) && !isvolatile(A)))
             p = TRUE;
-        if (isconst(A) && !isconst(P) || isvolatile(A) && !isvolatile(P))
+        if ((isconst(A) && !isconst(P)) || (isvolatile(A) && !isvolatile(P)))
             a = TRUE;
         if (a && !p)
             which = 1;
@@ -3184,7 +3205,7 @@ void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams
                             case kw_typename:
                                 if (typechk)
                                 {
-                                    params->p->byClass.temp = (EXPRESSION *)typechk->data;
+                                    params->p->byClass.temp = (TYPE *)typechk->data;
                                     typechk = typechk->next;
                                     
                                 }
@@ -3223,11 +3244,13 @@ void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams
                                 }
                                 */
                                 break;
+                            default:
+                                break;
                         }
                         params = params->next;
                     }
                     if (isstructured(sym->tp))
-                        typetab[i] = SynthesizeTemplate(sym->tp, TRUE);
+                        typetab[i] = SynthesizeTemplate(sym->tp, TRUE)->tp;
                     else
                         typetab[i] = SynthesizeType(sym->tp, NULL, TRUE);
                 }
@@ -3341,6 +3364,8 @@ static BOOLEAN TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST *porig, TEMP
                         return FALSE;
 #endif
                     break;
+                default:
+                    break;
             }
             porig = porig->next;
             psym = psym->next;
@@ -3366,6 +3391,7 @@ static BOOLEAN TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym)
             return FALSE;
         return TRUE;
     }
+    return FALSE;
 }
 static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
 {
@@ -3448,7 +3474,7 @@ static BOOLEAN ValidSpecialization( TEMPLATEPARAMLIST *special, TEMPLATEPARAMLIS
         }
         if (!templateMatch)
         {
-            if (special->p->byClass.val && !args->p->byClass.dflt || !special->p->byClass.val && args->p->byClass.dflt)
+            if ((special->p->byClass.val && !args->p->byClass.dflt) || (!special->p->byClass.val && args->p->byClass.dflt))
                 return FALSE;
             switch (args->p->type)
             {
@@ -3457,12 +3483,14 @@ static BOOLEAN ValidSpecialization( TEMPLATEPARAMLIST *special, TEMPLATEPARAMLIS
                         return FALSE;
                     break;
                 case kw_template:
-                    if (args->p->byTemplate.dflt && !ValidSpecialization(special->p->byTemplate.args, args->p->byTemplate.dflt, TRUE));
+                    if (args->p->byTemplate.dflt && !ValidSpecialization(special->p->byTemplate.args, args->p->byTemplate.dflt->templateParams, TRUE))
                         return FALSE;
                     break;
                 case kw_int:
                     if (!templatecomparetypes(special->p->byNonType.tp, args->p->byNonType.tp, TRUE))
                         return FALSE;
+                    break;
+                default:
                     break;
             }
         }
@@ -3619,7 +3647,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             cls->baseClasses = NULL;
             instantiatingTemplate++;
             lex = SetAlternateLex(lex);
-            lex = innerDeclStruct(lex, NULL, cls, NULL, cls->tp->type == bt_class ? ac_private : ac_public, cls->isfinal, &defd);
+            lex = innerDeclStruct(lex, NULL, cls, FALSE, cls->tp->type == bt_class ? ac_private : ac_public, cls->isfinal, &defd);
             SetAlternateLex(NULL);
             lex = reinstateLex;
             while (lex)
@@ -3749,7 +3777,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             {
                 if (matchOverload(sym->tp, ((SYMBOL *)hr->p)->tp))
                 {
-                    hr->p = sym;
+                    hr->p = (struct _hrintern_ *)sym;
                     ok = FALSE;
                     break;
                 }
@@ -3829,12 +3857,12 @@ static BOOLEAN CheckConstCorrectness(TYPE *P, TYPE *A, BOOLEAN byClass)
         {
             if (byClass)
             {
-                if (isconst(A) != isconst(P) || isvolatile(A) != isvolatile(P))
+                if ((isconst(A) != isconst(P)) || (isvolatile(A) != isvolatile(P)))
                     return FALSE;
             }
             else
             {
-                if (isconst(A) && !isconst(P) || isvolatile(A) && !isvolatile(P))
+                if ((isconst(A) && !isconst(P)) || (isvolatile(A) && !isvolatile(P)))
                     return FALSE;
             }
         }
@@ -4569,7 +4597,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                             break;
                         else
                             tmpl = tmpl->parentClass;
-                    if (tmpl && spi->storage_class == sc_static || spi->storage_class == sc_external)
+                    if ((tmpl && spi->storage_class == sc_static) || spi->storage_class == sc_external)
                     {
                         TemplateDataInstantiate(spi, TRUE, isExtern);
                         if (!comparetypes(sym->tp, spi->tp, TRUE))

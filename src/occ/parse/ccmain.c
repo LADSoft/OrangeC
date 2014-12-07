@@ -54,6 +54,13 @@ extern LIST *nonSysIncludeFiles;
 char * __stdcall GetModuleFileNameA(int handle, char *buf, int size);
 #endif
 
+#ifdef PARSER_ONLY
+void ccDumpSymbols(void);
+void ccNewFile(char *fileName, BOOLEAN main);
+void ccCloseFile(FILE *handle);
+int ccDBOpen(char *name);
+#endif
+
 int maxBlocks, maxTemps, maxAllocationSpills, maxAllocationPasses, maxAllocationAccesses;
 char cppfile[256];
 FILE *cppFile, *browseFile;

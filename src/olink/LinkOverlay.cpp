@@ -44,6 +44,11 @@
 #include "LinkExpression.h"
 #include "CmdFiles.h"
 
+LinkRegionSpecifier::~LinkRegionSpecifier()
+{
+    delete region;
+    delete symbol;
+}
 LinkOverlay::~LinkOverlay()
 {
     for (RegionIterator it = regions.begin(); it != regions.end(); ++it)

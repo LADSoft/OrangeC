@@ -180,7 +180,7 @@ static void SetRectSize(HWND hwnd, CCW_params *ptr)
             MoveWindow(ptr->hwnd, 0, GRIPWIDTH, ptr->u.tb.vsize.cx, ptr->u.tb.vsize.cy, 1);
         MoveWindow(hwnd, 0, 0, ptr->u.tb.vsize.cx, ptr->u.tb.vsize.cy, 1);
     }
-    if (ptr->vertical && hwnd == ptr->u.tb.vWnd || !ptr->vertical && hwnd == ptr->u.tb.hWnd)
+    if ((ptr->vertical && hwnd == ptr->u.tb.vWnd) || (!ptr->vertical && hwnd == ptr->u.tb.hWnd))
     {
         for (i=0; i < ptr->u.tb.btncount; i++)
             if (ptr->u.tb.children[i])
@@ -311,7 +311,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
                 if (lpnmtoolbar->iItem < ptr->u.tb.btncount)
                 {
                     lpnmtoolbar->tbButton = ptr->u.tb.buttons[lpnmtoolbar->iItem];
-                    lpnmtoolbar->tbButton.iString = ptr->u.tb.whints[lpnmtoolbar->iItem];
+                    lpnmtoolbar->tbButton.iString = (int)ptr->u.tb.whints[lpnmtoolbar->iItem];
                     return TRUE;
                 }
                 else

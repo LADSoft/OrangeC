@@ -42,6 +42,7 @@
 #include <commdlg.h>
 #include <richedit.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "header.h"
 #include "winconst.h"
@@ -80,13 +81,8 @@ static HWND hwndTypeCombo;
 static HWND hwndValueCombo;
 static WNDPROC oldProcCombo, oldProcEdit;
 
-static LOGFONT jumpListFontData = 
-{
-    -14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_MODERN |
-        FF_DONTCARE,
-        "Arial"
-};
+sqlite3 *BrowseDBOpen(PROJECTITEM *pj);
+void DBClose(sqlite3 *db);
 
 static int cf(const void *vleft, const void *vright)
 {
@@ -94,7 +90,7 @@ static int cf(const void *vleft, const void *vright)
     const JUMPLIST *right = *(const JUMPLIST**)vright;
     return(stricmp(left->name, right->name));
 }
-static void EnterJumpSymbol(PROJECTITEM *pj, char *name, int type)
+static void EnterJumpSymbol(PROJECTITEM *pj, const char *name, int type)
 {
     if (name)
     {
@@ -134,14 +130,14 @@ static void EnterJumpSymbol(PROJECTITEM *pj, char *name, int type)
 #define LIB_BUCKETS 37
 
 static void PopulateCombo(void);
-FILE *LoadJumpSymbols(void)
+void LoadJumpSymbols(void)
 {
     if (workArea)
     {
         PROJECTITEM *pj = workArea->children;
 
         if (!PropGetBool(NULL, "BROWSE_INFORMATION") || defaultWorkArea || !pj || jumpSymbols)
-            return 0;
+            return;
         jumpListTail = &jumpList;
         jumpListCount = 0;
         while (pj)
@@ -171,7 +167,7 @@ FILE *LoadJumpSymbols(void)
                                 done = TRUE;
                                 break;
                             case SQLITE_ROW:
-                                EnterJumpSymbol(pj, sqlite3_column_text(handle, 0), sqlite3_column_int(handle, 1));
+                                EnterJumpSymbol(pj, (const char *)sqlite3_column_text(handle, 0), sqlite3_column_int(handle, 1));
                                 break;
                             default:
                                 done = TRUE;
@@ -186,9 +182,7 @@ FILE *LoadJumpSymbols(void)
         }
         EnterJumpSymbol(0,0,0);
         PopulateCombo();
-        return 1;
     }
-    return 0;
 }
 
 void FreeJumpSymbols(void)
@@ -216,10 +210,10 @@ static void PopulateCombo(void)
     SendMessage(hwndValueCombo, CB_RESETCONTENT, 0, 0);
     for (i=0; i < jumpListCount; i++)
     {
-        if (type == 0 && (jumpSymbols[i]->type & JT_FUNC)
-            || type == 1 && (jumpSymbols[i]->type & JT_VAR)
-            || type == 2 && (jumpSymbols[i]->type & JT_TYPEDATA)
-            || type == 3 && (jumpSymbols[i]->type & JT_DEFINE))
+        if ((type == 0 && (jumpSymbols[i]->type & JT_FUNC))
+            || (type == 1 && (jumpSymbols[i]->type & JT_VAR))
+            || (type == 2 && (jumpSymbols[i]->type & JT_TYPEDATA))
+            || (type == 3 && (jumpSymbols[i]->type & JT_DEFINE)))
         {
             if (i == 0 || strcmp(jumpSymbols[i]->name, jumpSymbols[i-1]->name))
             {
@@ -297,7 +291,7 @@ static int JumpTo(void)
                             break;
                         case SQLITE_ROW:
                         {
-                            char *p = sqlite3_column_text(handle, 0);
+                            char *p = (char *)sqlite3_column_text(handle, 0);
                             int line = sqlite3_column_int(handle, 1);
                             DWINFO info;
                             InsertBrowse(p, line);

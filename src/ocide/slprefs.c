@@ -59,7 +59,7 @@ extern int memoryWordSize;
 
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
-extern int custColors[16];
+extern COLORREF custColors[16];
 
 //-------------------------------------------------------------------------
 

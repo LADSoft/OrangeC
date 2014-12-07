@@ -47,6 +47,11 @@
 #include "ObjFile.h"
 #include "ObjSection.h"
 
+LinkOverlaySpecifier::~LinkOverlaySpecifier()
+{
+    delete overlay;
+    delete symbol;
+}
 LinkPartition::~LinkPartition()
 {
     for (OverlayIterator it = overlays.begin(); it != overlays.end(); ++it)

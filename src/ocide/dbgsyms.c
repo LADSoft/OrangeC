@@ -46,9 +46,11 @@
 #include "cvexefmt.h"
 #include "pefile.h"
 #include "dbgtype.h"
-
+#include "sqlite3.h"
 extern PROCESS *activeProcess;
 extern enum DebugState uState;
+
+void DBClose(sqlite3 *db);
 
 //-------------------------------------------------------------------------
 
@@ -62,13 +64,13 @@ DEBUG_INFO *GetDebugInfo(HANDLE hProcess, DWORD base)
         {
             if (dbgBase)
             {
-                unsigned char buf[512];
+                char buf[512];
                 if (ReadProcessMemory(hProcess, (LPVOID)(base + dbgBase), buf, MAX_PATH + 33, &read))
                 {
                     if (!memcmp(buf, "LS14", 4))
                     {
                         DEBUG_INFO *rv;
-                        buf[33+buf[32]] = 0;
+                        buf[33+(unsigned char)buf[32]] = 0;
                         rv = DebugDBOpen(buf + 33);
                         if (rv)
                             rv->loadbase = base; // calculate an offset based on load address
@@ -532,7 +534,7 @@ int GetVLAInfo(DEBUG_INFO *dbg_info, VARINFO *v)
 int GetEnumInfo(DEBUG_INFO *dbg_info, VARINFO *v)
 {
     v->enumx = TRUE;
-    LookupEnumValues(dbg_info, v->type, &v->structtag);
+    LookupEnumValues(dbg_info, v->type, &v->structtag[0]);
     return basictypesize(v->type);
 }
 int GetTypedefInfo(DEBUG_INFO *dbg_info, VARINFO *v)
@@ -541,7 +543,7 @@ int GetTypedefInfo(DEBUG_INFO *dbg_info, VARINFO *v)
     {
         // take the outermost name for nested typedefs
         v->udt = TRUE;
-        GetTypeName(dbg_info, v->type, &v->structtag);
+        GetTypeName(dbg_info, v->type, &v->structtag[0]);
     }   
     v->type = LookupTypedefValues(dbg_info, v->type);
     return DeclType(dbg_info, v);
@@ -554,7 +556,7 @@ int DeclType(DEBUG_INFO *dbg_info, VARINFO *v)
     int qual;
     if (v->type <= eReservedTop)
     {
-        if (v->type >= ePChar && v->type <= ePULongLong || v->type == ePVoid)
+        if ((v->type >= ePChar && v->type <= ePULongLong) || v->type == ePVoid)
         {
             v->pointer = TRUE;
             v->derefaddress = -1;

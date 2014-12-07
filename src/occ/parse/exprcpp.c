@@ -72,6 +72,7 @@ extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern SYMBOL *enumSyms;
 extern LAMBDA *lambdas;
 extern int currentErrorLine;
+extern int templateNestingCount;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -1804,7 +1805,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
     if (!ispointer(*tp))
         error(ERR_POINTER_TYPE_EXPECTED);
-    if (isstructured(basetype(*tp)->btp))
+    if (!templateNestingCount && isstructured(basetype(*tp)->btp))
     {
         if (basetype(basetype(*tp)->btp)->size == 0)
             errorsym(ERR_DELETE_OF_POINTER_TO_UNDEFINED_TYPE, basetype(basetype(*tp)->btp)->sp);

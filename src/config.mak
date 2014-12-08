@@ -44,7 +44,7 @@
 # CLANG - clang compiler, using MS linker
 #
 ifndef COMPILER
-COMPILER := CLANG
+COMPILER := BCC32
 endif
 
 include $(TREETOP)\bcc32.mak

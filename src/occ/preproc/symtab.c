@@ -60,7 +60,7 @@ HASHREC **GetHashLink(HASHTABLE *t, char *string)
     return &t->table[i % t->size];
 }
 /* Add a hash item to the table */
-static HASHREC *AddName(SYMBOL *item, HASHTABLE *table)
+HASHREC *AddName(SYMBOL *item, HASHTABLE *table)
 {
     HASHREC **p = GetHashLink(table, item->name);
     HASHREC *newRec;

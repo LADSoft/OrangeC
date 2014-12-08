@@ -2709,6 +2709,8 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_RBUTTONUP:
         {
             HMENU menu, popup;
+            dragging = FALSE;
+            ReleaseCapture();
             menu = LoadMenuGeneric(hInstance, "RESDLGMENU");
             popup = GetSubMenu(menu, 0);
             pt.x = GET_X_LPARAM(lParam);

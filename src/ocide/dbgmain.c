@@ -521,8 +521,8 @@ void StopRunning(int newState)
         th->breakpoint.addresses = p;
         th->breakpoint.active = FALSE;
         allocBreakPoint(debugProcessList->hProcess, &th->breakpoint);
-        PostThreadMessage(th->idThread, WM_NULL, 0, 0);
         SetRegs(0);
+        PostThreadMessage(th->idThread, WM_NULL, 0, 0);
         th->suspcount = ResumeThread(th->hThread) - 1;
         if ((int)th->suspcount < 0)
             th->suspcount = 0;
@@ -573,6 +573,9 @@ static void abortDebugThread(void)
         }
         while (uState != notDebugging)
         {
+			MSG msg;
+			while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+				ProcessMessage(&msg);
             if (++i >= 100)
             {
                 ExtendedMessageBox("Debugger", MB_SETFOREGROUND |

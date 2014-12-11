@@ -42,6 +42,7 @@ extern int blockCount;
 extern TEMP_INFO **tempInfo;
 extern int tempCount;
 extern SYMBOL *theCurrentFunc;
+extern BITINT bittab[BITINTBITS];
 
 static int current;
 /* this moving of loop invariant expressions is pretty straightforward.
@@ -88,7 +89,7 @@ static struct reflist
  {
      while(refs)
     {
-        if (refs->newVal->invarKeep && !refs->newVal->invarNoKeep)
+        if (refs->newVal->invarKeep)
         {
             refs->old->back->fwd = refs->old->fwd;
             refs->old->fwd->back = refs->old->back;
@@ -118,20 +119,6 @@ static void keep(IMODE *l)
             keep(i->dc.left);
             keep(i->dc.right);
         }
-    }
-}
-static void nokeep(int tnum)
-{
-    QUAD *i = tempInfo[tnum]->instructionDefines;
-    if (i && !i->invarNoKeep) // in case of variable that never had its value defined
-    {
-        i->invarNoKeep = TRUE;
-        /*
-        if (i->temps & TEMP_LEFT)
-            nokeep(i->dc.left->offset->v.sp->value.i);
-        if (i->temps & TEMP_RIGHT)
-            nokeep(i->dc.right->offset->v.sp->value.i);
-        */
     }
 }
 static BOOLEAN IsAncestor(BLOCK *b1, BLOCK *b2)
@@ -197,6 +184,38 @@ static void MoveExpression(BLOCK *b, QUAD *head, BLOCK *pbl, BLOCK *pbr)
         }
     }		
 }
+static BOOLEAN isPhiUsing(LOOP *considering, int temp)
+{
+    BOOLEAN rv = FALSE;
+    if (temp != -1 && considering)
+    {
+        rv = isset(considering->invariantPhiList, temp);
+    }
+    return rv;
+}
+static BOOLEAN InvariantPhiUsing(QUAD *head)
+{
+    int ans = head->ans->offset->v.sp->value.i;
+    BOOLEAN rv = FALSE;
+    int left = -1, right = -1;
+    LOOP *considering = head->block->loopParent;
+    if (tempInfo[ans]->preSSATemp >= 0)
+        rv = !tempInfo[tempInfo[ans]->preSSATemp]->enode->v.sp->pushedtotemp;
+    if (head->temps & TEMP_LEFT) 
+        left = head->dc.left->offset->v.sp->value.i;
+    if (head->temps & TEMP_RIGHT)
+        right = head->dc.right->offset->v.sp->value.i;
+    while (considering && !considering->invariantPhiList)
+    {
+        considering = considering->parent;
+    }
+    if (considering)
+    {
+        rv &= 
+            !isPhiUsing(considering, ans) && !isPhiUsing(considering, left) && !isPhiUsing(considering, right);
+    }
+    return rv;
+}
 void ScanForInvariants(BLOCK *b)
 {
     BLOCKLIST *bl = b->succ;
@@ -210,15 +229,29 @@ void ScanForInvariants(BLOCK *b)
         {
             if (head->dc.opcode == i_phi)
             {
-                struct _phiblock *pb = head->dc.v.phi->temps;
-                tempInfo[head->dc.v.phi->T0]->blockDefines = b;
-                while(pb)
+                
+                
+                LOOP *parent = head->block->inclusiveLoopParent;
+                struct _phiblock *pb;
+                if (!parent->invariantPhiList)
                 {
-                    nokeep(pb->Tn);
+                    LOOP *last = parent->parent;
+                    while (last && !last->invariantPhiList)
+                        last = last->parent;
+                    
+                    parent->invariantPhiList = allocbit(tempCount);
+                    if (last)
+                        memcpy(bits(parent->invariantPhiList), bits(last->invariantPhiList), ((tempCount) + (BITINTBITS-1))/BITINTBITS * sizeof(BITINT));
+                }
+                pb = head->dc.v.phi->temps;
+                while (pb)
+                {
+                    setbit(parent->invariantPhiList, pb->Tn);
                     pb = pb->next;
                 }
+                setbit(parent->invariantPhiList, head->dc.v.phi->T0);
             }
-            if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->ans->size < ISZ_FLOAT)
+            else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->ans->size < ISZ_FLOAT)
             {
                 tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = b;
                 if (head->temps & (TEMP_LEFT | TEMP_RIGHT))
@@ -238,9 +271,12 @@ void ScanForInvariants(BLOCK *b)
                     else if (head->dc.right && head->dc.right->mode != i_immed)
                         canMove = FALSE;
                     if (canMove)
+                        canMove = InvariantPhiUsing(head);
+                    if (canMove)
                         if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting && (!pbr || (pbr->preWalk != b->preWalk && pbr->nesting == b->nesting)))
                             MoveExpression(b, head, pbl, pbr);
                 }
+                /*
                 else if (head->dc.opcode == i_assn && head->dc.left->mode == i_immed)
                 {
                     if (!isarithmeticconst(head->dc.left->offset))
@@ -261,6 +297,7 @@ void ScanForInvariants(BLOCK *b)
                         
                     }
                 }
+                */
             }
         }
         head = next;
@@ -276,17 +313,14 @@ void ScanForInvariants(BLOCK *b)
 }
 void MoveLoopInvariants(void)
 {
-    if (0)
-    {
-        int i;
-        refs = NULL;
-        for (i=0; i < blockCount; i++)
-            if (blockArray[i])
-                blockArray[i]->preWalk = 0;
-        for (i=0; i < tempCount; i++)
-            tempInfo[i]->blockDefines = NULL;
-        current = 1;
-        ScanForInvariants(blockArray[0]);
-        WeedRefs();
-    }
+    int i;
+    refs = NULL;
+    for (i=0; i < blockCount; i++)
+        if (blockArray[i])
+            blockArray[i]->preWalk = 0;
+    for (i=0; i < tempCount; i++)
+        tempInfo[i]->blockDefines = NULL;
+    current = 1;
+    ScanForInvariants(blockArray[0]);
+    WeedRefs();
 }

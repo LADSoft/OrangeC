@@ -166,6 +166,7 @@ typedef struct _loop
 	struct _block *entry; /* will be the block for blocks */
 	struct _loop *parent;
 	LIST *contains;	
+    BITARRAY *invariantPhiList;
 	struct _blocklist *successors;
 	PRESSURE pressure;
 	LIST *occurs;

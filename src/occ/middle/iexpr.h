@@ -178,7 +178,6 @@ typedef struct quad
     int OCPInserted:1;
     int invarInserted:1;
     int invarKeep:1;
-    int invarNoKeep:1;
     int needsOCP:1;  /* special case instruction needs to be OCP in lazy opts */
     int OCPUsed:1; /* answer was used in an OCP sort */
     int OCPGenned:1; /* node was generated already in an OCP sort */

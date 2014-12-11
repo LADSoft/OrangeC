@@ -397,7 +397,7 @@ typedef struct __nsv
     struct sym *name;
 } NAMESPACEVALUES;
 
-    enum e_cm { cmNone, cmValue, cmRef, cmThis } captureMode;
+enum e_cm { cmNone, cmValue, cmRef, cmThis };
 /* symbols */
 typedef struct sym
 {

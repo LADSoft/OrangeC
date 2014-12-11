@@ -60,6 +60,12 @@ extern WINBOOL  PASCAL WINBASEAPI AccessCheck(
 		    LPBOOL  AccessStatus
 		    );
 */
+extern LONG PASCAL InterlockedCompareExchange (
+    PLONG Destination,
+    LONG ExChange,
+    LONG Comperand
+    );
+
 extern LONG
  PASCAL WINBASEAPI InterlockedIncrement(
 		     LPLONG lpAddend

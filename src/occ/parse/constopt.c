@@ -2104,6 +2104,11 @@ join_lor:
                             rv = TRUE;
                             *node = intNode(en_c_i, 1);
                         }
+                        else if (isintconst(ep->left) && !ep->left->v.i)
+                        {
+                            rv = TRUE;
+                            *node = intNode(en_c_i, 0);
+                        }
                     }
                     else switch(ep->right->type)
                     {

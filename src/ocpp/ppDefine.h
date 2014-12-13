@@ -63,8 +63,10 @@ public:
     public:
         Definition(const std::string &Name, std::string &Value, DefinitionArgList *List, bool Permanent)
             : Symbol(Name), value(Value), argList(List), undefined(false), permanent(Permanent), varargs(false),
-            caseInsensitive(false) { }
+            caseInsensitive(false), preprocessing(false) { }
         virtual ~Definition() { delete argList;  }
+        bool IsPreprocessing() const { return preprocessing; }
+        void SetPreprocessing(bool flag) { preprocessing = flag; }
         bool HasVarArgs() const { return varargs; }
         void SetHasVarArgs() { varargs = true; }
         int GetArgCount() { if (!argList) return 0; else return argList->size(); }
@@ -86,6 +88,7 @@ public:
         bool permanent;
         bool elipses;
         bool varargs;
+        bool preprocessing;
         std::string value;
         DefinitionArgList* argList;
     };
@@ -102,7 +105,7 @@ public:
     Definition *Define(const std::string &name, std::string &value, DefinitionArgList *args, bool permanent, bool varargs, bool errors, bool caseInsensitive);
     void Undefine(const std::string &name, bool forever);
     Definition *Lookup(const std::string &name);
-    void Process(std::string &line);
+    int Process(std::string &line);
     void replaceDefined(std::string &line);
     void Assign(const std::string &name, int value, bool caseInsensitive) 
         { 
@@ -112,11 +115,13 @@ public:
 
 protected:
     enum { 
-        PP_MASTART = 17,
-        PP_MAEND = 18,
-        PP_TOKEN_BREAK = 19,
-        REPLACED_TOKENIZING = 20,
-        NULL_TOKENIZER = 26
+        MACRO_REPLACE_SIZE = 65536,
+        REPLACED_TOKENIZING  = 1,
+        /* left or right-hand size of a ## when an arg has been replaced by an empty string */
+        TOKENIZING_PLACEHOLDER = 2,
+        STRINGIZING_PLACEHOLDER = 3,
+        REPLACED_ALREADY = 4,
+        MACRO_PLACEHOLDER = 5
     } ;
     void InitHash();
     std::string defid(const std::string &macro, int &i, int &j);
@@ -125,16 +130,16 @@ protected:
     void DoUndefine(std::string &line);
     void SetDefaults();
     int LookupDefault(std::string &macro, int begin, int end, const std::string &name);
-    void nodefines(void);
-    bool indefine(const std::string &name);
-    void enterdefine(const std::string &name);
-    void exitdefine(const std::string &name);
-    int Stringize(std::string &macro, int begin, int end, const std::string &text);
+    void Stringize(std::string &macro);
     void Tokenize(std::string &macro);
+    int  InsertReplacementString(std::string &macro, int end, int begin, std::string text, std::string etext);
     bool NotSlashed(const std::string &macro, int pos);
-    void ReplaceArgs(const std::string id, std::string &macro, 
-                 const DefinitionArgList &oldargs, const DefinitionArgList &newArgs, const std::string varags);
-    void replacesegment(std::string &line, int begin, int end, bool outer);
+    bool ppNumber(const std::string &macro, int begin, int pos);
+    bool ppDefine::ReplaceArgs(std::string &macro, 
+                 const DefinitionArgList &oldargs, const DefinitionArgList &newArgs,
+                 const DefinitionArgList &expandedargs,  const std::string varargs);
+    void SetupAlreadyReplaced(std::string &macro);
+    int ReplaceSegment(std::string &line, int begin, int end, int &pptr);
     void SyntaxError(const std::string &name);	
     void ParseAsmSubstitutions(std::string &line);
     void ReplaceAsmMacros(std::string &line);				  
@@ -142,6 +147,7 @@ private:
     SymbolTable symtab;
     ppInclude *include;
     std::string date;
+    std::string dateiso;
     std::string time;
     std::set<std::string> defineList;
     KeywordHash defTokens;

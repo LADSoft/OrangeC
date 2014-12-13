@@ -104,11 +104,12 @@ class PreProcessor
 {
 public:
     PreProcessor(const std::string &FileName, const std::string &SrchPth, const std::string &SysSrchPth,
-                 bool fullName, bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool extensions) 
+                 bool fullName, bool Trigraph, char PPStart, bool isunsignedchar, 
+                 bool C89, bool extensions) 
         : ppStart(PPStart), preData(NULL), lineno(0),
         include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%'), 
             define(extensions, &include, C89, PPStart == '%'), 
-            macro(include, define), ctx(define)
+            macro(include, define), ctx(define), trigraphs(Trigraph)
         { InitHash(); Errors::SetInclude(&include); macro.SetPreProcessor(this); 
 				include.SetParams(FileName, &define, &ctx); define.SetParams(&ctx, &macro); }
         
@@ -126,7 +127,10 @@ public:
     bool InMacro() { return macro.InMacro(); }
     void SetPreData(char *data) {preData = new std::string(data); }
     bool GetPreLine(std::string &line) ;
+    std::string StripDigraphs(std::string line);
+    std::string StripTrigraphs(std::string line);
 private:
+    bool trigraphs;
     char ppStart;
     ppCtx ctx;
     ppMacro macro;

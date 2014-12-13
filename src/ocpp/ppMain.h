@@ -53,6 +53,7 @@ private:
     static CmdSwitchBool assembly;
     static CmdSwitchBool disableExtensions;
     static CmdSwitchBool c99Mode;
+    static CmdSwitchBool trigraphs;
     static CmdSwitchDefine defines;
     static CmdSwitchString undefines;
     static CmdSwitchString includePath;

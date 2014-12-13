@@ -47,6 +47,7 @@ CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', false);
+CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
 CmdSwitchString ppMain::undefines(SwitchParser, 'U',';');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
@@ -58,7 +59,7 @@ char *ppMain::usageText = "[options] files\n"
         "/9      - C99 mode                  /a      - Assembler mode\n"
         "/A      - Disable extensions        /Dxxx   - Define something\n"
         "/E[+]nn - Max number of errors      /Ipath  - Specify include path\n"
-        "/Uxxx   - Undefine something\n"
+        "/T      - translate trigraphs       /Uxxx   - Undefine something\n"
         "\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -107,13 +108,16 @@ int ppMain::Run(int argc, char *argv[])
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         PreProcessor pp(*(*it), srchPth, sysSrchPth,
-                 false, false, assembly.GetValue() ? '%' : '#' , false, !c99Mode.GetValue(), !disableExtensions.GetValue());
+                 false, trigraphs.GetValue(),  assembly.GetValue() ? '%' : '#' , false, 
+                 !c99Mode.GetValue(), !disableExtensions.GetValue());
         int n = defines.GetCount();
         for (int i=0; i < n; i++)
         {
             CmdSwitchDefine::define *v = defines.GetValue(i);
             pp.Define(v->name, v->value, false);
         }
+        if (c99Mode.GetValue())
+            pp.Define("__STDC_VERSION__", "199901L", true);
         std::string working = undefines.GetValue();
         while (working.size())
         {

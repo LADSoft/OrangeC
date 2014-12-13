@@ -51,6 +51,8 @@ bool ppFile::GetLine(std::string &line)
             return false;
         }
         StripComment(buf);
+        if (trigraphs)
+            StripTrigraphs(buf);
         char *p = strrchr(buf, '\\');
         if (p)
         {
@@ -74,10 +76,12 @@ bool ppFile::GetLine(std::string &line)
         }
         else 
         {
-            line= line + buf;
-            break;
+            line = line + buf;
+            if (!inComment)
+                break;
         }
     }
+    line = line + " ";// trailing spaced needed for function argument matching in replacesegment
     return true;
 }
 int ppFile::StripComment(char *line)
@@ -102,7 +106,6 @@ int ppFile::StripComment(char *line)
                     }
                     else if (*(e+1) == '/' && extendedComment)
                     {
-//                        *s++ = '\n';
                         *s = 0;
                         return strlen(line);
                     }

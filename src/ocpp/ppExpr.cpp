@@ -147,6 +147,11 @@ PPINT ppExpr::primary(std::string &line)
                 }					
             }
         }
+        else
+        {
+            rv = 0;
+            token = tokenizer->Next();
+        }
     }
     else if (token->IsNumeric())
     {
@@ -219,8 +224,7 @@ PPINT ppExpr::multiply(std::string &line)
                 case divide:
                     if (val2 == 0)
                     {
-                        Errors::Error("Divide by zero in preprocessor constant");
-                        val1 = 1;
+                        val1 = 0;
                     }
                     else
                     {
@@ -230,8 +234,7 @@ PPINT ppExpr::multiply(std::string &line)
                 case mod:
                     if (val2 == 0)
                     {
-                        Errors::Error("Divide by zero in preprocessor constant");
-                        val1 = 1;
+                        val1 = 0;
                     }
                     else
                     {
@@ -424,8 +427,7 @@ PPINT ppExpr::conditional(std::string &line)
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
-            PPINT val2 = logicalor(line);
-            token = tokenizer->Next();
+            PPINT val2 = comma_(line);
             if (!token->IsEnd())
             {
                 if (token->GetKeyword() == colon)
@@ -437,7 +439,7 @@ PPINT ppExpr::conditional(std::string &line)
                         if (val1)
                             val1 = val2;
                         else
-                            val2 = val3;
+                            val1 = val3;
                     }
                 }
                 else

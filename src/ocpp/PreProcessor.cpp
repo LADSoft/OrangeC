@@ -158,90 +158,158 @@ bool PreProcessor::GetPreLine(std::string &line)
     }
     return false;
 }
+/* strip digraphs */
+std::string PreProcessor::StripDigraphs(std::string line)
+{
+    if (line.size() < 2)
+        return line;
+    std::string rv;
+    int last = 0, cp;
+    for (cp=0; cp < line.size()-1; cp++)
+    {
+        int ch = 0;
+        if (line[cp] == '<' && line[cp + 1] == ':')
+        {
+            ch = '[';
+        }
+        else if (line[cp] == ':' && line[cp + 1] == '>')
+        {
+            ch = ']';
+        }
+        else if (line[cp] == '<' && line[cp + 1] == '%')
+        {
+            ch = '{';
+        }
+        else if (line[cp] == '%' && line[cp + 1] == '>')
+        {
+            ch = '}';
+        }
+        else if (line[cp] == '%' && line[cp + 1] == ':')
+        {
+            ch = '#';
+        }
+        if (ch)
+        {
+            static char msg[2] = { 0, 0 };
+            msg[0] = ch;
+            if (last != cp)
+            {
+                rv += line.substr(last, cp - last) + msg;
+            }
+            else
+            {
+                rv += msg;
+            }
+            cp++;
+            last = cp + 1;
+        }
+    }
+    if (last == 0)
+        return line;
+    rv += line.substr(last, line.size() - last);
+    return rv;
+}
+
 bool PreProcessor::GetLine(std::string &line)
 {
-    if (!GetPreLine(line))
-        return false;
-    size_t n = line.find_first_not_of(" \n\t\v\r");
-    if (n != std::string::npos)
+    std::string last;
+    while (1)
     {
-        if (line[n] == ppStart && (n +1 < line.length() && line[n+1] != ppStart))
+        if (!GetPreLine(line))
+            return false;
+        if (last.size())
+            line = last + " " + line;
+        size_t n = line.find_first_not_of(" \n\t\v\r");
+        if (n != std::string::npos)
         {
-            int n1 = line.find_first_not_of(" \n\t\v\r", n+1);
-            if (!isdigit(line[n1]))
+            if ((line[n] == ppStart && (n +1 < line.length() && line[n+1] != ppStart))
+                 || (trigraphs && n < line.size()-1 && line[n] == '%' && line[n+1] == ':'))
             {
-                Tokenizer tk(line.substr(n+1), &hash);
-                const Token *t = tk.Next();
-                if (t->IsKeyword())
+                int n1 = line.find_first_not_of(" \n\t\v\r", n+1);
+                if (!isdigit(line[n1]))
                 {
-                    if (t->GetKeyword() == ASSIGN || t->GetKeyword() == IASSIGN)
+                    if (trigraphs)
+                        line = StripDigraphs(line);
+                    Tokenizer tk(line.substr(n+1), &hash);
+                    const Token *t = tk.Next();
+                    if (t->IsKeyword())
                     {
-                        if (include.Skipping())
-                            line.erase(0, line.size());
-                        else
+                        if (t->GetKeyword() == ASSIGN || t->GetKeyword() == IASSIGN)
                         {
-                            int npos = line.find("assign");
-                            if (npos != std::string::npos)
+                            if (include.Skipping())
+                                line.erase(0, line.size());
+                            else
                             {
-                                npos = line.find_first_not_of(" \t\r\n\v", npos + 6);
+                                int npos = line.find("assign");
                                 if (npos != std::string::npos)
                                 {
-                                    npos = line.find_first_of(" \t\r\n\v", npos);
+                                    npos = line.find_first_not_of(" \t\r\n\v", npos + 6);
                                     if (npos != std::string::npos)
                                     {
-                                        std::string left = line.substr(0, npos);
-                                        std::string right = line.substr(npos);
-                                        define.Process(right);
-                                        line = left + right;
+                                        npos = line.find_first_of(" \t\r\n\v", npos);
+                                        if (npos != std::string::npos)
+                                        {
+                                            std::string left = line.substr(0, npos);
+                                            std::string right = line.substr(npos);
+                                            define.Process(right);
+                                            line = left + right;
+                                        }
+                                    }
+                                }
+                            }
+                            return true;
+                        }
+                        else
+                        {
+                            line = tk.GetString();
+                            int token = t->GetKeyword();
+                            // must come first
+                            if (!include.Check(token, line))
+                            {
+                                if (!define.Check(token, line))
+                                {
+                                    if (!ppErr.Check(token, line))
+                                    {
+                                        if (!pragma.Check(token, line))
+                                        {
+                                            if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
+                                                Errors::Error("Unknown preprocessor directive");
+                                        }
                                     }
                                 }
                             }
                         }
-                        return true;
                     }
                     else
                     {
-                        line = tk.GetString();
-                        int token = t->GetKeyword();
-                        // must come first
-                        if (!include.Check(token, line))
+                        if (ppStart == '%')
                         {
-                            if (!define.Check(token, line))
-                            {
-                                if (!ppErr.Check(token, line))
-                                {
-                                    if (!pragma.Check(token, line))
-                                    {
-                                        if (ppStart != '%' || (!macro.Check(token, line) && !ctx.Check(token, line)))
-                                            Errors::Error("Unknown preprocessor directive");
-                                    }
-                                }
-                            }
+                            goto join;
                         }
+                        Errors::Error("Invalid preprocessor directive");
                     }
+                    line.erase(0, line.size());
                 }
                 else
                 {
-                    if (ppStart == '%')
-                    {
-                        goto join;
-                    }
-                    Errors::Error("Invalid preprocessor directive");
+                    goto join;
                 }
-                line.erase(0, line.size());
             }
             else
             {
-                goto join;
+    join:
+                if (include.Skipping())
+                {
+                    line.erase(0, line.size());
+                    break;
+                }
+                else
+                {
+                    if (define.Process(line) != INT_MIN+1)
+                        break;
+                    last = line;
+                }
             }
-        }
-        else
-        {
-join:
-            if (include.Skipping())
-                line.erase(0, line.size());
-            else
-                define.Process(line);
         }
     }
     return true;

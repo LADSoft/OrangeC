@@ -116,11 +116,61 @@ ppDefine::Definition *ppDefine::Define(const std::string &name, std::string &val
     n = value.find_last_not_of(" \t\v\n");
     if (n != std::string::npos && n != value.size() - 1)
         value.erase(n+1);
+
+    int last = 0, pos;
+    std::string x;
+    int instr = 0;
+    for (pos=0; pos < value.size(); pos++)
+    {
+        if (!instr && (value[pos] == '"' || value[pos] == '\''))
+        {
+            instr = value[pos];
+        }
+        else if (instr == value[pos])
+        {
+            instr = 0;
+        }
+        else if (!instr)
+        {
+            if (isspace(value[pos]))
+            {
+                x += value.substr(last, pos - last) + " ";
+                // already stripped spaces off the end so this is safe.
+                while (isspace(value[pos]))
+                    pos++;
+                last = pos;
+                pos--;
+            }
+        }
+    }
+    x += value.substr(last, pos - last);
+    value = x;    
+    static char tk[2] = { REPLACED_TOKENIZING, 0 };
+    
+    n = value.find("##");
+    while (n != std::string::npos)
+    {
+        value.replace(n, 2, tk);
+        n = value.find("##", n+1);
+    }
+    n = value.find("%:%:");
+    while (n != std::string::npos)
+    {
+        value.replace(n, 4, tk);
+        n = value.find("%:%:",n+1);
+    }
         
+    static char mp[2] = { MACRO_PLACEHOLDER, 0 };
+    value = std::string(mp) + value + mp;
+
     std::string name1 = name;
     if (caseInsensitive)
         name1 = UTF8::ToUpper(name1);
     Definition *d = new Definition(name1, value, args, permanent);
+    if (value[1] == REPLACED_TOKENIZING)
+        d->DefinedError("macro definition begins with tokenizing token");
+    else if (value[value.size()-2] == REPLACED_TOKENIZING || value[value.size() - 2] == '#')
+        d->DefinedError("macro definition ends with tokenizing or stringizing token");
     d->SetCaseInsensitive(caseInsensitive);
     if (varargs)
         d->SetHasVarArgs();
@@ -311,19 +361,23 @@ void ppDefine::SetDefaults()
         date = string;
         strftime(string, 40, "\"%H:%M:%S\"", t1);
         time = string;
+        strftime(string, 40, "\"%Y-%m-%d\"", t1);
+        dateiso = string;
     }
 }
 int ppDefine::LookupDefault(std::string &macro, int begin, int end, const std::string &name)
 {
     std::string insert;
     if (name == "__FILE__")
-        insert = include->GetFile();
+        insert = std::string("\"") + include->GetFile() + "\"";
     else if (name == "__LINE__")
     {
         insert = Utils::NumberToString(include->GetLineNo());
     }
     else if (name == "__DATE__")
         insert = date;
+    else if (name == "__DATEISO__")
+        insert = dateiso;
     else if (name == "__TIME__")
         insert = time;
     else
@@ -351,30 +405,13 @@ std::string ppDefine::defid(const std::string &macroname, int &i, int &j)
             inctx = true;
         }
     }
-    while (j < macroname.size() && (IsSymbolChar(macroname.c_str()+j) || macroname[j] == PP_MASTART || macroname[j] == PP_MAEND))
+    while (j < macroname.size() && IsSymbolChar(macroname.c_str()+j) )
     {
         int n = UTF8::CharSpan(macroname.c_str() + j);
-        if (macroname[j] == PP_MASTART)
-        {
-            if (IsSymbolChar(macroname.c_str() + j + 1))
-                break;
-        }
-        else
-        {
-            for (int i=0; i < n && macroname[j]; i++)
-                j++;
-        }
+        for (int i=0; i < n && macroname[j]; i++)
+            j++;
     }
-    if (macroname[j] == PP_MAEND)
-        j++;
     std::string rv = macroname.substr(i,j - i);
-    char vv[3] = { PP_MASTART, PP_MAEND, 0 };
-    size_t n = rv.find(vv);
-    while (n != std::string::npos)
-    {
-        rv.erase(n, 1);
-        n = rv.find(vv, n);
-    }
     if (inctx)
     {
         int n1 = ctx->GetTopId();
@@ -395,100 +432,134 @@ std::string ppDefine::defid(const std::string &macroname, int &i, int &j)
     }
     return rv;
 }
-
-
-
-/* The next few functions support recursion blocking for macros.
- * Basicall a list of all active macros is kept and if a lookup would 
- * result in one of those macros, no replacement is done.
- */
-void ppDefine::nodefines(void)
+void ppDefine::Stringize(std::string &macro)
 {
-    defineList.clear();
-}
-
-/*-------------------------------------------------------------------------*/
-
-bool ppDefine::indefine(const std::string &name)
-{
-    return defineList.find(name) != defineList.end();
-}
-/*-------------------------------------------------------------------------*/
-
-void ppDefine::enterdefine(const std::string &name)
-{
-    defineList.insert(name);
-}
-
-/*-------------------------------------------------------------------------*/
-
-void ppDefine::exitdefine(const std::string &name)
-{
-    std::set<std::string>::iterator it = defineList.find(name);
-    if (it != defineList.end())
-        defineList.erase(it);
-}
-
-int ppDefine::Stringize(std::string &macro, int begin, int end, const std::string &text)
-{
-    int rbegin = begin;
-    while (begin != 0 && isspace(macro[begin-1]))
-        begin--;
-    if (begin != 0 && (macro[begin-1] == '#' 
-                           || (begin > 1 && macro[begin-2] == '%' && macro[begin-1] == ':')) )
+    std::string repl;
+    int waiting = 0;
+    int last = 0, pos;
+    for (pos = 0; pos < macro.size(); pos++)
     {
-        if (macro[begin-1] == '#')
-            begin--;
-        else
-            begin -=2;
-        macro.replace(begin, end - begin, "\"\"");
-        std::string temp = text;
-        char *vv = "\\\"";
-        size_t n = temp.find_first_of(vv);
-        while (n != std::string::npos)
+        if (!waiting && (macro[pos] == '"' ||  macro[pos] == '\'') && NotSlashed(macro, pos))
         {
-            temp.insert(n, "\\");
-            n = temp.find_first_of(vv, n+2);
+            waiting =  macro[pos];
         }
-        macro.replace(begin + 1, 0, temp);
-        return temp.size() + end - begin;
-    }
-    else
-    {
-        macro.replace(rbegin, end - rbegin, text);
-        return end - rbegin;
-    }
+        else if (waiting)
+        {
+            if (macro[pos] == waiting && NotSlashed(macro, pos))
+                waiting = 0;
+        }
+        else if (macro[pos] == '#' && (pos == 0 || macro[pos-1] != '#') && (pos == macro.size()-1 || macro[pos+1] != '#'))  /* # ## # */
+        {
+            repl += macro.substr(last, pos);
+            
+            pos++;
+            for ( ; pos < macro.size() && isspace(macro[pos]); ++pos) ;
+            static char mp[2] = { STRINGIZING_PLACEHOLDER, 0 };
+            size_t n = macro.find(mp, pos);
+            if (n == std::string::npos)
+                n = macro.size();
+            std::string candidate = macro.substr(pos, n - pos);
+            pos = n-1;
+            last = n;
+            if (n != macro.size())
+                last++;
+            n = candidate.find_first_of("\\\"");
+            while (n != std::string::npos)
+            {
+                candidate.insert(n, "\\");
+                n = candidate.find_first_of("\\\"", n+2);
+            }
+            n = candidate.find_first_of(" \t\v\n");
+            while (n != std::string::npos)
+            {
+                size_t m = n+1;
+                while (isspace(candidate[m])) m++;
+                candidate.replace(n, m-n, " ");
+                n = candidate.find_first_of(" \t\v\n", n+1);
+            }
+            repl += std::string("\"") + candidate + "\"";
+        }
+    }	
+    if (last < macro.size())
+        repl += macro.substr(last);
+    macro = repl;
 }
 void ppDefine::Tokenize(std::string &macro)
 {
-    size_t n = macro.find_first_of(REPLACED_TOKENIZING);
-    while (n != std::string::npos)
+    int waiting = 0;
+    for (int i=0; i < macro.size(); i++)
     {
-        int begin,end;
-        begin = end = n;
-        while ((begin && macro[begin-1] == PP_TOKEN_BREAK) || macro[begin-1] == PP_MASTART ||
-               macro[begin-1] == PP_MAEND || isspace(macro[begin-1]))
-            begin--;
-        if (begin && macro[begin-1] == NULL_TOKENIZER)
-            begin--;
-        while ((end < macro.size() && macro[end+1] == PP_TOKEN_BREAK) || macro[end++] == PP_MASTART ||
-               macro[end] == PP_MAEND || isspace(macro[end]))
-            end++;
-        if (end < macro.size() && macro[end++] == NULL_TOKENIZER)
-            end++;
-        for (int i=begin; i < end; i++)
+        if (!waiting && (macro[i] == '"' 
+            ||  macro[i] == '\'') && NotSlashed(macro, i))
         {
-            if (macro[i] != PP_MASTART && macro[i] != PP_MAEND)
+            waiting =  macro[i];
+        }
+        else if (waiting)
+        {
+            if (macro[i] == waiting && NotSlashed(macro, i))
+                waiting = 0;
+        }
+        else if (macro[i] == REPLACED_TOKENIZING)
+        {
+            int b = i, e = i;
+            while (b > 0 && (isspace(macro[b-1]) || macro[b-1] == MACRO_PLACEHOLDER))
+                b--;
+                
+                
+            while (++e < macro.size () && (isspace(macro[e]) || macro[e] == MACRO_PLACEHOLDER));
+            if (b > 0 && macro[b-1] == TOKENIZING_PLACEHOLDER && macro[e] != TOKENIZING_PLACEHOLDER)
+                b--;
+            if (e < macro.size() && macro[e] == TOKENIZING_PLACEHOLDER)
             {
-                int j = i;
-                while (macro[j] != PP_MASTART && macro[j] != PP_MAEND)
-                    j++;
-                macro.erase(i,j-i);
-                end-=j;
+                e++;
+            }
+            macro.erase(b, e-b);
+            
+            i = b-1;
+        }
+    }
+}
+int ppDefine::InsertReplacementString(std::string &macro, int end, int begin, std::string text, std::string etext)
+{
+    int q;
+    static char NULLTOKEN[] = { TOKENIZING_PLACEHOLDER, 0 };
+    static char STRINGIZERTOKEN[] = { STRINGIZING_PLACEHOLDER, 0 };
+    int  p, r;
+    int val;
+    int stringizing = false;
+    q = end;
+    while (q < macro.size()-1 && isspace(macro[q])) q++;
+    if (macro[q] == REPLACED_TOKENIZING)
+    {
+        if (!text.size())
+        {
+            text = NULLTOKEN;
+        }
+    }
+    else
+    {
+        q = begin-1;
+        while (q > 0 && isspace(macro[q])) q--;
+        if (macro[q] == REPLACED_TOKENIZING)
+        {
+            if (!text.size())
+            {
+                text = NULLTOKEN;
             }
         }
-        n = macro.find_first_of(REPLACED_TOKENIZING);
+        else if (macro[q] == '#')
+        {
+            stringizing = true;
+        }
+        else
+        {
+            text = etext;
+        }
     }
+    if (stringizing)
+        text = text + STRINGIZERTOKEN;
+    macro.replace(begin, end-begin, text);
+    return text.size();
 }
 bool ppDefine::NotSlashed(const std::string &macro, int pos)
 {
@@ -497,328 +568,323 @@ bool ppDefine::NotSlashed(const std::string &macro, int pos)
         count++;
     return !(count & 1);
 }
-/* replace macro args */
-void ppDefine::ReplaceArgs(const std::string id, std::string &macro, 
-                 const DefinitionArgList &oldargs, const DefinitionArgList &newArgs, const std::string varargs)
+bool ppDefine::ppNumber(const std::string &macro, int start, int pos)
 {
-    int instring = 0;
-    for (int i=0; i < macro.size(); i++)
+    int x = pos;
+    if (macro[pos] == '+' || macro[pos] == '-' || isdigit(macro[pos])) // we would get here with the first alpha char following the number
     {
-        if (instring)
+        // backtrack through all characters that could possibly be part of the number
+        while (pos >= start &&
+               (IsSymbolChar(macro.c_str() + pos) || macro[pos] == '.' ||
+               ((macro[pos] == '-' || macro[pos] == '+') 
+                && (macro[pos-1] == 'e' || macro[pos-1] == 'E' 
+                    || macro[pos-1] == 'p' || macro[pos-1] == 'P'))))
         {
-            if (macro[i] == instring && NotSlashed(macro, i))
-            {
-                instring = 0;
-            }
+            if (macro[pos] == '-' || macro[pos] == '+') pos--;
+            pos--;
         }
-        else if (!instring && (macro[i] == '\'' || macro[i] == '"') &&
-                 NotSlashed(macro, i))
+        // go forward, skipping sequences that couldn't actually start a number
+        pos++;
+        if (!isdigit(macro[pos]))
         {
-            instring = macro[i];
+            while (pos < x && (macro[pos] != '.' || isdigit(macro[pos-1]) || !isdigit(macro[pos+1]))) pos++;
         }
-        else if (!instring && IsSymbolStartChar(macro.c_str() + i))
+        // if we didn't get back where we started we have a number
+        return pos < x && (macro[pos] != '0' || (macro[pos+1] != 'x' && macro[pos+1] != 'X')) ;
+    }
+    return false;
+}
+/* replace macro args */
+bool ppDefine::ReplaceArgs(std::string &macro, 
+                 const DefinitionArgList &oldargs, const DefinitionArgList &newargs,
+                 const DefinitionArgList &expandedargs,  const std::string varargs)
+{
+    std::string name;
+    int waiting = 0;
+    for (int p =0; p < macro.size(); p++)
+    {
+        if (!waiting && (macro[p] == '"' 
+            ||  macro[p] == '\'') && NotSlashed(macro, p))
         {
-            int j = i;
-            std::string name = defid(macro, i, j);
+            waiting =  macro[p];
+        }
+        else if (waiting)
+        {
+            if (macro[p] == waiting && NotSlashed(macro, p))
+                waiting = 0;
+        }
+        else if (IsSymbolChar(macro.c_str() + p))
+        {
+            int q = p;
+            name = defid(macro, q ,p);
             if (!c89 && name == "__VA_ARGS__")
             {
-                if (!varargs.size()) 
-                {
-                    Errors::Error("Incorrect macro arguments");
+                if (!varargs.size()) {
+                    SyntaxError(macro);
                 }
                 else
                 {
-                    int count = Stringize(macro, i, j, varargs);
-                    i += count-1;
+                    int rv;
+                    if ((rv = InsertReplacementString(macro, p, q, varargs, varargs))
+                            < -MACRO_REPLACE_SIZE)
+                        return (false);
+                    else
+                        p = q + rv-1;
                 }
             }
-            else for (int m = 0; m < oldargs.size(); m++) 
+            else for (int i = 0; i < oldargs.size(); i++) 
             {
-                if (name == oldargs[m])
+                if (name == oldargs[i])
                 {
-                    if (newArgs[m].size())
-                    {
-                        int count = Stringize(macro, i, j, newArgs[m]);
-                        i += count-1;
-                    }
+                    int rv;
+                    if ((rv = InsertReplacementString(macro, p, q, newargs[i], expandedargs[i])) 
+                        < - MACRO_REPLACE_SIZE)
+                        return (false);
                     else
                     {
-                        static char nullarg[] = { NULL_TOKENIZER, 0 };
-                        static char emptyarg[] = { 0 } ;
-                        char *arg = emptyarg;
-                        int k = i;
-                        while (k && isspace(macro[k-1]))
-                               k--;
-                        if (k && macro[k-1] == REPLACED_TOKENIZING)
-                        {
-                            arg = nullarg;
-                        }
-                        else
-                        {
-                            k = i+1;
-                            while (k < macro.size() && isspace(macro[k]))
-                                k++;
-                            if (k < macro.size() && macro[k] == REPLACED_TOKENIZING)
-                                arg = nullarg;
-                        }
-                        int count = Stringize(macro, i, j, arg);
-                        i += count-1;
+                        p = q + rv-1;
+                        break;
                     }
-                    break;
                 }
             }
         }
     }
+    return (true);
 }
 void ppDefine::SyntaxError(const std::string &name)
 {
     Errors::Error(std::string("Wrong number of arguments in call to macro ") +name);
 }
-#include <fstream>
 
-void ppDefine::replacesegment(std::string &line, int begin, int end, bool outer)
+void ppDefine::SetupAlreadyReplaced(std::string &macro)
 {
-    int lineno;
-    int instring = 0;
-    int nestedArg = 0;
-    for (int i=0; i < line.size(); i++)
+    int instr = false;
+    for (int p= 0; p < macro.size(); p++)        
     {
-        if (instring)
+        if ((macro[p] == '"' || macro[p] == '\'') && NotSlashed(macro, p))
+            instr = !instr;
+        if (IsSymbolStartChar(macro.c_str() + p) && !instr)
         {
-            if (line[i] == instring && NotSlashed(line, i))
-            {
-                instring = 0;
-            }
-        }
-        else if (!instring && (line[i] == '\'' || line[i] == '"') &&
-                 NotSlashed(line, i))
-        {
-            instring = line[i];
-        }
-        else if (line[i] == PP_MASTART)
-        {
-            nestedArg++;			
-        }
-        else if (line[i] == PP_MAEND && nestedArg)
-        {
-            nestedArg--;
-        }
-        else if (!nestedArg && IsSymbolStartChar(line.c_str()+i))
-        {
-            int j = i;
-            std::string name = defid(line, i, j);
+            int q = p;
+            std::string name;
+            name = defid(macro, q, p);
             Symbol *sym = symtab.Lookup(name);
             Definition *d = static_cast<Definition *>(sym);
-            if (!d)
+            if (d && d->IsPreprocessing())
             {
-                if (asmpp)
-                {
-                    std::string name1 = UTF8::ToUpper(name);
-                    sym = symtab.Lookup(name1);
-                    d = static_cast<Definition *>(sym);
-                    if (d && d->IsCaseInsensitive())
-                    {
-                        name = name1;
-                        goto join;
-                    }
-                }
-                int n = LookupDefault(line, i, j, name);
-                if (n)
-                    i += n - 1;
-                else
-                    i = j;
-            }
-            else if (d->IsUndefined())
-            {
-                i = j-1;
+                static char ra[2] = { REPLACED_ALREADY, 0 }; 
+                macro.insert(q, ra);
             }
             else
             {
-join:
-                if (indefine(name))
+                p--;
+            }
+        }
+    }	
+}
+void vv()
+{
+}
+int ppDefine::ReplaceSegment(std::string &line, int begin, int end, int &pptr)
+{
+    std::string name;
+    int waiting = 0;
+    int orig_end = end;
+    int rv;
+    int size;
+    int p;
+    int insize,rv1;
+    for (p=begin; p < end; p++)
+    {
+        int q = p;
+        if (!waiting && (line[p] == '"' 
+            ||  line[p] == '\'') && NotSlashed(line, p))
+        {
+            waiting =  line[p];
+        }
+        else if (waiting)
+        {
+            if (line[p] == waiting && NotSlashed(line, p))
+                waiting = 0;
+        }
+        else if (IsSymbolStartChar(line.c_str() + p) && (p == begin || !IsSymbolChar(line.c_str() + p - 1)))
+        {
+            name = defid(line, q, p);
+            Symbol *sym = symtab.Lookup(name);
+            Definition *d = static_cast<Definition *>(sym);
+            if (!d && asmpp)
+            {
+                std::string name1 = UTF8::ToUpper(name);
+                sym = symtab.Lookup(name1);
+                d = static_cast<Definition *>(sym);
+                if (d && d->IsCaseInsensitive())
                 {
-                    char vv1[2] = { PP_MASTART, 0 };
-                    char vv2[2] = { PP_MAEND, 0 };
-                    std::string temp = std::string(vv1) + name + std::string(vv2);
-                    line.replace(i, j - i, temp);
-                    i+= temp.size() - (j - i) - 1;
+                    name = name1;
                 }
                 else
                 {
-                    std::string changed;
-                    int	pos = j;
-                    if (d->GetArgCount())
+                    sym = NULL;
+                    d = NULL;
+                }
+            }
+            if (
+#ifndef NOCPLUSPLUS
+                (name != "R" || line[p] != '"') &&
+#endif
+                d != NULL && !d->IsUndefined() && 
+                (!q || line[q-1] != REPLACED_ALREADY) && !ppNumber(line, q, p-1))
+            {
+                std::string macro;
+                if (d->GetArgList() != NULL)
+                {
+                    int q1 = p;
+                    int count = 0;
+                    
+                    
+                    while (q1 < line.size()&& (isspace(line[q1]) || line[q1] == MACRO_PLACEHOLDER)) q1++ ;
+                    if (q1 == line.size())
                     {
-                        std::string va;
-                        DefinitionArgList list;
-                        int count = 0;
-                        pos = line.find_first_not_of(" \t\n\v", pos);
-                        while (pos == std::string::npos)
-                        {
-                            pos = line.size();
-                            std::string newline;
-                            if (!include->GetLine(newline, lineno))
-                                return;
-                            line += newline;
-                            pos = line.find_first_not_of(" \t\n\v", pos);
-                        }
-                        if (line[pos] != '(')
-                        {
-                            i += LookupDefault(line, i, j, name);
-                        }
+                        // continues on the next line, get more text..
+                        return INT_MIN + 1;
+                    }
+                    if (line[q1++] != '(')
+                    {
+                        int n = LookupDefault(line, q1, p, name);
+                        if (n)
+                            p = q1 + n - 1;
                         else
+                            p = q1-1;
+                        continue;
+                    }
+                    p = q1;
+                    DefinitionArgList args, expandedargs;
+                    std::string varargs;
+                    if (d->GetArgCount() > 0)
+                    {
+                        int ln = name.size();
+                        do
                         {
-                            pos++;
-                            bool done;
-                            do
+                            int pb = p;
+                            int nestedparen = 0, nestedstring = 0;
+                            while (p < line.size() && isspace(line[p])) p++;
+                            while (p < line.size()  && (((line[p] != ',' &&  line[p] != ')') ||
+                                nestedparen || nestedstring) &&  line[p] != '\n'))
                             {
-                                int nestedparen = 0, nestedstring = 0;
-                                int pos2 = line.find_first_not_of(" \t\n\v", pos);
-                                while (pos2 == std::string::npos)
+                                if (nestedstring)
                                 {
-                                    pos2 = line.size();
-                                    std::string newline;
-                                    if (!include->GetLine(newline, lineno))
-                                    {
-                                        SyntaxError(name);
-                                        return;
-                                    }
-                                    line += newline;
-                                    pos2 = line.find_first_not_of(" \t\n\v", pos2);
+                                    if (line[p] == nestedstring && NotSlashed(line, p))
+                                        nestedstring = 0;
                                 }
-                                while (line[pos2] && 
-                                       ((line[pos2] != ',' &&  line[pos2] != ')') ||
-                                    nestedparen || nestedstring))
-                                {
-                                    if (nestedstring)
-                                    {
-                                        if (line[pos2] == nestedstring && NotSlashed(line, pos2))
-                                            nestedstring = 0;
-                                    }
-                                    else if ((line[pos2] == '\'' ||  line[pos2] == '"')  && NotSlashed(line, pos2))
-                                        nestedstring =  line[pos2];
-                                    else if (line[pos2] == '(')
-                                        nestedparen++;
-                                    else if (line[pos2] == ')' && nestedparen)
-                                        nestedparen--;
-                                    pos2++;
-                                    if (pos2 == line.size())
-                                    {
-                                        std::string newline;
-                                        if (!include->GetLine(newline, lineno))
-                                        {
-                                            SyntaxError(name);
-                                            return;
-                                        }
-                                        line += newline;
-                                    }
-                                }
-                                std::string subst = line.substr(pos, pos2-pos);
-                                size_t n = subst.find_first_of(PP_TOKEN_BREAK);
-                                while (n != std::string::npos)
-                                {
-                                    subst.erase(n, 1);
-                                    n = subst.find_first_of(PP_TOKEN_BREAK);
-                                }
-                                n = subst.find_last_not_of(" \t\n\v");
-                                if (n != std::string::npos && n != subst.size()-1)
-                                    subst.erase(n+1);
-                                if (!outer)
-                                {
-                                    replacesegment(subst, 0, subst.size(), false);
-                                }
-                                list.push_back(subst);
-                                count++;
-                                pos = pos2;
-                                done = line[pos] != ',';
-                                if (!done)
-                                {
-                                    pos++;
-                                    if (pos == line.size())
-                                    {
-                                        std::string newline;
-                                        if (!include->GetLine(newline, lineno))
-                                        {
-                                            SyntaxError(name);
-                                            return;
-                                        }
-                                        line += newline;
-                                    }
-                                }
-                            } while (pos != line.size() && !done && count != d->GetArgCount());
-                            if (pos == std::string::npos || line[pos] != ')' || d->GetArgCount())
-                            {
-                                if (count == d->GetArgCount() && !c89 && d->HasVarArgs()) 
-                                {
-                                    int nestedparen=0;
-                                    int oldpos = pos;
-                                    while ((line[pos] != ')' || nestedparen)) {
-                                        if (line[pos] == '(')nestedparen++;
-                                        if (line[pos] == ')' && nestedparen)
-                                            nestedparen--;
-                                        pos++;
-                                        if (pos == line.size())
-                                        {
-                                            std::string newline;
-                                            if (!include->GetLine(newline, lineno))
-                                            {
-                                                SyntaxError(name);
-                                                return;
-                                            }
-                                            line += newline;
-                                        }
-                                    }   
-                                    va = line.substr(oldpos, pos-oldpos);
-                                }
-                                if (line[pos] != ')' || count != d->GetArgCount())
-                                {
-                                    if (pos == std::string::npos)
-                                    {
-                                        return;
-                                    }
-                                    SyntaxError(name);
-                                    return;
-                                }
-                                pos++;
+                                else if ((line[p] == '\'' ||  line[p] == '"') 
+                                    && NotSlashed(line, p))
+                                    nestedstring =  line[p];
+                                else if (line[p] == '(')
+                                    nestedparen++;
+                                else if (line[p] == ')' && nestedparen)
+                                    nestedparen--;
+                                p++;
                             }
-                            else if (d->HasVarArgs())
-                            {
-                                SyntaxError(name);
+                            vv();
+                            q1 = p;
+                            while (q1 && isspace(line[q1-1])) q1--;
+                            std::string temp = line.substr(pb, q1 - pb);
+                            args.push_back(temp);
+                            expandedargs.push_back(temp);
+                            int sv;
+                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv);
+                            if (rv <-MACRO_REPLACE_SIZE) {
+                                return rv;
                             }
-                            if (outer)
-                            {
-                                char vv[2] = { PP_TOKEN_BREAK, 0 } ;
-                                changed = std::string(vv) + d->GetValue() + std::string(vv);	
-                            }
-                            else
-                            {
-                                changed = d->GetValue();
-                            }
-                            if (count != 0 || va.size())
-                                ReplaceArgs(name, changed, *d->GetArgList(), list, va);
+                            count++;
                         }
-                    } else {
-                        if (outer)
+                        while (line[p] && line[p++] == ',' && count != d->GetArgCount())
+                            ;
+                    }
+                    else 
+                    {
+                        count = 0;
+                        while (p < line.size()-1 && isspace(line[p])) p++;
+                        if (line[p] == ')')
+                            p++;
+                    }
+                    if (line[p - 1] != ')' || count != d->GetArgCount())
+                    {
+                        if (count == d->GetArgCount() && !c89 && d->HasVarArgs()) 
                         {
-                            char vv[2] = { PP_TOKEN_BREAK, 0 } ;
-                            changed = std::string(vv) + d->GetValue() + std::string(vv);
+                            q1 = p;
+                            int nestedparen=0;
+                            while (p < line.size() && (line[p] != ')' || nestedparen)) {
+                                if (line[p] == '(')nestedparen++;
+                                if (line[p] == ')' && nestedparen)
+                                    nestedparen--;
+                            }
+                            varargs = line.substr(q1, p - q1);
+                            p++ ;
                         }
-                        else
+                        if (line[p - 1] != ')' || count != d->GetArgCount())
                         {
-                            changed = d->GetValue();
+                            if (p == line.size())
+                            {
+                                // continues on the next line, get more text
+                                return  INT_MIN + 1;
+                            }
+                            SyntaxError(name);
+                            return  INT_MIN;
                         }
                     }
-                    Tokenize(changed);
-                    int sz = line.size();
-                    line.replace(i, pos - i, changed);
-                    enterdefine(name);
-                    replacesegment(line, i, changed.size() - (pos - i), false);
-                    exitdefine(name);
-                    i += line.size() - sz - 1;
+                    else if (d->HasVarArgs())
+                    {
+                        SyntaxError(name);
+                    }
+
+                    macro = d->GetValue();
+                    if (count != 0 || varargs.size())
+                        if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, varargs))
+                            return  INT_MIN;
+                    Tokenize(macro);
+                    Stringize(macro);
+                    static char tk[2] = { TOKENIZING_PLACEHOLDER, 0 };
+                    size_t n = macro.find(tk);
+                    while (n != std::string::npos)
+                    {
+                        macro.erase(n, 1);
+                        n = macro.find(tk,n);
+                    }
+                } else {
+                    macro = d->GetValue();
                 }
+                d->SetPreprocessing(true);
+                SetupAlreadyReplaced(macro);
+                rv1 = InsertReplacementString(line, p, q, macro, macro);
+                if (rv1 < -MACRO_REPLACE_SIZE)
+                {
+                    d->SetPreprocessing(false);
+                    return  rv1;
+                }
+                insize = rv1 - (p - q);
+                end += insize;
+                p += insize;
+                insize = 0;
+                rv = ReplaceSegment(line, q, p, p);
+                d->SetPreprocessing(false);
+                if (rv <-MACRO_REPLACE_SIZE) {
+                    return rv;
+                }
+                end += rv;
+                insize = 0;
+            }
+            else
+            {
+                int n = LookupDefault(line, q, p, name);
+                if (n)
+                    p = q + n - 1;
+                else
+                    p = q;
             }
         }
     }
+    pptr = p;
+    return end - orig_end ;
 }
 
 void ppDefine::ParseAsmSubstitutions(std::string &line)
@@ -1015,40 +1081,37 @@ void ppDefine::replaceDefined(std::string &line)
         n = line.find("defined", n);
     }
 }
-#include <fstream>
-void ppDefine::Process(std::string &line)
+
+int ppDefine::Process(std::string &line)
 {	
-    char tk[2] = { REPLACED_TOKENIZING, 0 };
-    nodefines();
-    size_t n = line.find("##");
-    while (n != std::string::npos)
-    {
-        line.replace(n, 2, tk);
-        n = line.find("##", n+1);
-    }
-    n = line.find("%:%:");
-    while (n != std::string::npos)
-    {
-        line.replace(n, 4, tk);
-        n = line.find("%:%:", n+1);
-    }
     if (asmpp)
     {
         ParseAsmSubstitutions(line);
     }
-    replacesegment(line, 0, line.size(), true);
-    char buf[4] = { PP_MASTART, PP_MAEND, PP_TOKEN_BREAK };
-    n = line.find_first_of(buf);
-    while (n != std::string::npos)
+    int sv = 0;
+    int rvi = ReplaceSegment(line, 0, line.size(), sv);
+    if (rvi == INT_MIN + 1)
+        return rvi;
+    std::string rv;
+    int p, last = 0;
+    for (p=0; p < line.size(); p++)
     {
-        int t = line.find_first_not_of(buf, n);
-        line.erase(n, t - n);
-        n = line.find_first_of(buf, n);
+        if (line[p] == REPLACED_TOKENIZING || line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY)
+        {
+            if (p != last)
+                rv += line.substr(last, p - last);
+            while (line[p] == REPLACED_TOKENIZING || line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY) p++;
+            last = p;
+        }
     }
+    if (last != p)
+        rv += line.substr(last, p- last);
+    line = rv;
     if (asmpp)
     {
         ReplaceAsmMacros(line);
     }
+    return rvi;
 }
 ppDefine::Definition *ppDefine::Lookup(const std::string &name)
 {

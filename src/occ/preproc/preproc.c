@@ -1013,7 +1013,7 @@ void doinclude(void)
 {
     INCLUDES *inc;
     BOOLEAN nonSys = FALSE;
-    char name[260], name_orig[260];
+    char name[260], name_orig[260], *p, *q;
     if (includes->ifskip)
         return;
     inc = GetIncludeData();
@@ -1029,6 +1029,15 @@ void doinclude(void)
         pperror(ERR_INCL_FILE_NAME, 0);
         return;
     }
+    p = name, q = name;
+    while (*p)
+    {
+        if ((unsigned char)*p != MACRO_PLACEHOLDER)
+            *q ++ = *p ++;
+        else
+            p++;
+    }
+    *q = 0;
     strcpy(name_orig, name);
     if (inc->sys_inc)
         inc->handle = SrchPth(name, sys_searchpath, "r", TRUE) ;

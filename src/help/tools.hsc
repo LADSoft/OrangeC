@@ -43,7 +43,7 @@ Previous
 Next
 FALSE
 
-54
+55
 10
 Scribble10
 Welcome to Command Line Tools Help
@@ -56,7 +56,7 @@ Writing
 
 
 FALSE
-37
+39
 {\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\lang1033\b\fs32 Welcome to Command Line Tools Help\f1 
@@ -90,8 +90,36 @@ FALSE
 \par \tab\cf2\strike OImpLib\cf3\strike0\{linkID=480\}\cf0  is a WIN32 import librarian capable of managing imports from DLL and .DEF files.
 \par \tab\cf2\strike ORC\cf3\strike0\{linkID=500\}\cf0  is a WIN32 resource compiler.
 \par 
+\par Information on setting up the tools for the first time may be found \cf2\strike here\cf3\strike0\{linkID=15\}\cf0 .
+\par 
 \par Here are the \cf2\strike license terms\cf3\strike0\{linkID=20\}\cf0 
 \par \fs24 
+\par 
+\par }
+15
+Scribble15
+Tools Setup
+
+
+
+
+Writing
+
+
+
+FALSE
+13
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}}
+{\colortbl ;\red0\green0\blue255;}
+\viewkind4\uc1\pard\cf1\b\fs32 Tool Setup\cf0\b0\f1\fs20 
+\par 
+\par \f0 The tools require very little in the way of set up.   Essentially, the install package comes with configuration files for each tool, which the tools read on startup to configure their environment.  The configuration files generally reference an environment variable ORANGEC.   For the the tools to work, this environment variable must be set, and the tools bin directory must be on the path.
+\par 
+\par For example, if you've installed the tools in c:\\orangec, command line commands to set up the environment for the tools might look as follows:
+\par 
+\par \f2 set ORANGEC=c:\\orangec
+\par PATH=c:\\orangec\\bin;%PATH%
+\par 
 \par 
 \par }
 20
@@ -5260,10 +5288,11 @@ FALSE
 0
 0
 0
-65
+66
 1 General Topics
 2 Welcome to Command Line Tools Help=Scribble10
 2 Copyright=Scribble20
+2 Tools Setup=Scribble15
 1 OCC Compiler
 2 OCC=Scribble30
 2 Command Line=Scribble40
@@ -5326,7 +5355,7 @@ FALSE
 2 DLLE=Scribble520
 2 DLMZ=Scribble530
 2 DLPE=Scribble540
-6
+7
 *InternetLink
 16711680
 Courier New
@@ -5399,6 +5428,19 @@ Arial
 16
 1
 B...
+0
+0
+0
+0
+0
+0
+<new macro>
+-16777208
+Arial
+0
+10
+0
+....
 0
 0
 0

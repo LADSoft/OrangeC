@@ -40,7 +40,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -283,9 +283,10 @@ unsigned long _RTL_FUNC _lrotr(unsigned long, int);
 int  *_RTL_FUNC __GetErrno(void);
 int  *_RTL_FUNC __GetDosErrno(void);
 
+#ifndef __cplusplus
 #define errno (*__GetErrno())
 #define _dos_errno (*__GetDosErrno())
-
+#endif
 #define sys_nerr _sys_nerr
 extern int _RTL_DATA _sys_nerr ;
 
@@ -302,7 +303,7 @@ void      _RTL_FUNC perror(const char *__s);
 #ifndef  _TIME_T
 typedef long time_t;
 #ifdef __cplusplus
-#  define _TIME_T std::time_t
+#  define _TIME_T __STD_NS_QUALIFIER time_t
 #else
 #  define _TIME_T time_t
 #endif /* __cplusplus */
@@ -351,114 +352,114 @@ void _RTL_FUNC _seterrormode(int);
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STDLIB_H_USING_LIST)
 #define __STDLIB_H_USING_LIST
-    using std::abort;
-    using std::_abort;
-    using std::abs;
-    using std::labs;
+    using __STD_NS_QUALIFIER abort;
+    using __STD_NS_QUALIFIER _abort;
+    using __STD_NS_QUALIFIER abs;
+    using __STD_NS_QUALIFIER labs;
 #if  __STDC_VERSION__ >= 199901L
-    using std::llabs;
+    using __STD_NS_QUALIFIER llabs;
 #endif
-    using std::atexit;
-    using std::at_quick_exit;
-    using std::atof;
-    using std::atoi;
-    using std::atol;
-    using std::_atoi64;
-    using std::bsearch;
-    using std::calloc;
-    using std::div;
-    using std::ldiv;
+    using __STD_NS_QUALIFIER atexit;
+    using __STD_NS_QUALIFIER at_quick_exit;
+    using __STD_NS_QUALIFIER atof;
+    using __STD_NS_QUALIFIER atoi;
+    using __STD_NS_QUALIFIER atol;
+    using __STD_NS_QUALIFIER _atoi64;
+    using __STD_NS_QUALIFIER bsearch;
+    using __STD_NS_QUALIFIER calloc;
+    using __STD_NS_QUALIFIER div;
+    using __STD_NS_QUALIFIER ldiv;
 #if  __STDC_VERSION__ >= 199901L
-    using std::lldiv;
+    using __STD_NS_QUALIFIER lldiv;
 #endif
-    using std::quick_exit;
-    using std::exit;
-    using std::_Exit;
-    using std::free;
-    using std::getenv;
-    using std::lfind;
-    using std::lsearch;
-    using std::_lfind;
-    using std::_lsearch;
-    using std::aligned_alloc;
-    using std::malloc;
-    using std::mblen;
-    using std::mbstowcs;
-    using std::mbtowc;
-    using std::qsort;
-    using std::rand;
-    using std::realloc;
-    using std::srand;
-    using std::strdup;
-    using std::strtod;
+    using __STD_NS_QUALIFIER quick_exit;
+    using __STD_NS_QUALIFIER exit;
+    using __STD_NS_QUALIFIER _Exit;
+    using __STD_NS_QUALIFIER free;
+    using __STD_NS_QUALIFIER getenv;
+    using __STD_NS_QUALIFIER lfind;
+    using __STD_NS_QUALIFIER lsearch;
+    using __STD_NS_QUALIFIER _lfind;
+    using __STD_NS_QUALIFIER _lsearch;
+    using __STD_NS_QUALIFIER aligned_alloc;
+    using __STD_NS_QUALIFIER malloc;
+    using __STD_NS_QUALIFIER mblen;
+    using __STD_NS_QUALIFIER mbstowcs;
+    using __STD_NS_QUALIFIER mbtowc;
+    using __STD_NS_QUALIFIER qsort;
+    using __STD_NS_QUALIFIER rand;
+    using __STD_NS_QUALIFIER realloc;
+    using __STD_NS_QUALIFIER srand;
+    using __STD_NS_QUALIFIER strdup;
+    using __STD_NS_QUALIFIER strtod;
 #if  __STDC_VERSION__ >= 199901L
-    using std::strtof;
+    using __STD_NS_QUALIFIER strtof;
 #endif
-    using std::strtol;
+    using __STD_NS_QUALIFIER strtol;
 #if  __STDC_VERSION__ >= 199901L
-    using std::strtoll;
+    using __STD_NS_QUALIFIER strtoll;
 #endif
-    using std::_strtold;
+    using __STD_NS_QUALIFIER _strtold;
 #if  __STDC_VERSION__ >= 199901L
-    using std::strtold;
+    using __STD_NS_QUALIFIER strtold;
 #endif
-    using std::strtoul;
+    using __STD_NS_QUALIFIER strtoul;
 #if  __STDC_VERSION__ >= 199901L
-    using std::strtoull;
+    using __STD_NS_QUALIFIER strtoull;
 #endif
-    using std::system;
-    using std::wcstombs;
-    using std::wctomb;
-    using std::wctombflush;
-    using std::_atold;
-    using std::_crotl;
-    using std::_crotr;
-    using std::_exit;
-    using std::itoa;
-    using std::ltoa;
+    using __STD_NS_QUALIFIER system;
+    using __STD_NS_QUALIFIER wcstombs;
+    using __STD_NS_QUALIFIER wctomb;
+    using __STD_NS_QUALIFIER wctombflush;
+    using __STD_NS_QUALIFIER _atold;
+    using __STD_NS_QUALIFIER _crotl;
+    using __STD_NS_QUALIFIER _crotr;
+    using __STD_NS_QUALIFIER _exit;
+    using __STD_NS_QUALIFIER itoa;
+    using __STD_NS_QUALIFIER ltoa;
 #if  __STDC_VERSION__ >= 199901L
-    using std::lltoa:
-    using std::_lltoa:
+    using __STD_NS_QUALIFIER lltoa:
+    using __STD_NS_QUALIFIER _lltoa:
 #endif
-    using std::_itoa;
-    using std::_ltoa;
-    using std::_i64toa;
-    using std::_makepath;
-    using std::_fullpath;
-    using std::putenv;
-    using std::_putenv;
-    using std::_rotl;
-    using std::_rotr;
-    using std::_lrotl;
-    using std::_lrotr;
-    using std::_searchenv;
-    using std::_searchstr;
-    using std::_splitpath;
-    using std::_splitpath2;
-    using std::swab;
-    using std::_swab;
-    using std::ultoa;
-    using std::_ultoa;
-    using std::_ui64toa;
+    using __STD_NS_QUALIFIER _itoa;
+    using __STD_NS_QUALIFIER _ltoa;
+    using __STD_NS_QUALIFIER _i64toa;
+    using __STD_NS_QUALIFIER _makepath;
+    using __STD_NS_QUALIFIER _fullpath;
+    using __STD_NS_QUALIFIER putenv;
+    using __STD_NS_QUALIFIER _putenv;
+    using __STD_NS_QUALIFIER _rotl;
+    using __STD_NS_QUALIFIER _rotr;
+    using __STD_NS_QUALIFIER _lrotl;
+    using __STD_NS_QUALIFIER _lrotr;
+    using __STD_NS_QUALIFIER _searchenv;
+    using __STD_NS_QUALIFIER _searchstr;
+    using __STD_NS_QUALIFIER _splitpath;
+    using __STD_NS_QUALIFIER _splitpath2;
+    using __STD_NS_QUALIFIER swab;
+    using __STD_NS_QUALIFIER _swab;
+    using __STD_NS_QUALIFIER ultoa;
+    using __STD_NS_QUALIFIER _ultoa;
+    using __STD_NS_QUALIFIER _ui64toa;
 #if  __STDC_VERSION__ >= 199901L
-    using std::ulltoa;
-    using std::_ulltoa:
+    using __STD_NS_QUALIFIER ulltoa;
+    using __STD_NS_QUALIFIER _ulltoa:
 #endif
-    using std::utoa;
-    using std::_utoa;
-    using std::perror;
-    using std::time;
-    using std::randomize;
-    using std::random;
-    using std::_strdup;
-    using std::_ecvt;
-    using std::ecvt;
-    using std::_fcvt;
-    using std::fcvt;
-    using std::_gcvt;
-    using std::gcvt;
-    using std::_onexit;
-    using std::onexit;
-    using std::_beep;
-    using std::_sleep;
+    using __STD_NS_QUALIFIER utoa;
+    using __STD_NS_QUALIFIER _utoa;
+    using __STD_NS_QUALIFIER perror;
+    using __STD_NS_QUALIFIER time;
+    using __STD_NS_QUALIFIER randomize;
+    using __STD_NS_QUALIFIER random;
+    using __STD_NS_QUALIFIER _strdup;
+    using __STD_NS_QUALIFIER _ecvt;
+    using __STD_NS_QUALIFIER ecvt;
+    using __STD_NS_QUALIFIER _fcvt;
+    using __STD_NS_QUALIFIER fcvt;
+    using __STD_NS_QUALIFIER _gcvt;
+    using __STD_NS_QUALIFIER gcvt;
+    using __STD_NS_QUALIFIER _onexit;
+    using __STD_NS_QUALIFIER onexit;
+    using __STD_NS_QUALIFIER _beep;
+    using __STD_NS_QUALIFIER _sleep;
 #endif /* __USING_CNAME__ */

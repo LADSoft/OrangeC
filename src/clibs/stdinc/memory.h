@@ -44,7 +44,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -73,11 +73,11 @@ void *       _RTL_FUNC _memccpy(void *, const void *, int, unsigned int);
 #endif  /* __MEM_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__MEMORY_H_USING_LIST)
 #define __MEMORY_H_USING_LIST
-    using std::memccpy;
-    using std::memcmp;
-    using std::memcpy;
-    using std::memicmp;
-    using std::memmove;
-    using std::memset;
-    using std::memchr;
+    using __STD_NS_QUALIFIER memccpy;
+    using __STD_NS_QUALIFIER memcmp;
+    using __STD_NS_QUALIFIER memcpy;
+    using __STD_NS_QUALIFIER memicmp;
+    using __STD_NS_QUALIFIER memmove;
+    using __STD_NS_QUALIFIER memset;
+    using __STD_NS_QUALIFIER memchr;
 #endif

@@ -46,7 +46,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 #endif
 
 

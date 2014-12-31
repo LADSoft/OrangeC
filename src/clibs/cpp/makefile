@@ -37,5 +37,8 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 all:
 	$(MAKE) /CCOMPLIB
+ifdef OLDSGL
 	$(MAKE) /CSGISRC
-
+else
+	$(MAKE) /CSTLPort-5.2.1/src
+endif

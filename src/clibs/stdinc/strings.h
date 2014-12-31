@@ -44,7 +44,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -78,12 +78,12 @@ int          _RTL_INTRINS strncasecmp(const char *, const char *, size_t);
 #endif  /* __STRING_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STRINGS_H_USING_LIST)
 #define __STRINGS_H_USING_LIST
-    using std::bcmp;
-    using std::bcopy;
-    using std::bzero;
-    using std::ffs;
-    using std::index;
-    using std::rindex;
-    using std::strcasecmp;
-    using std::strncasecmp;
+    using __STD_NS_QUALIFIER bcmp;
+    using __STD_NS_QUALIFIER bcopy;
+    using __STD_NS_QUALIFIER bzero;
+    using __STD_NS_QUALIFIER ffs;
+    using __STD_NS_QUALIFIER index;
+    using __STD_NS_QUALIFIER rindex;
+    using __STD_NS_QUALIFIER strcasecmp;
+    using __STD_NS_QUALIFIER strncasecmp;
 #endif /* __USING_CNAME__ */

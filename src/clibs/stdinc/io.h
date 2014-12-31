@@ -59,7 +59,7 @@
 #define STDERR_FILENO 2
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -175,63 +175,63 @@ int _RTL_FUNC _write(int, const void *, unsigned int);
 #endif  /* __IO_H */
 #if defined(__cplusplus) && !defined (__USING_CNAME__) && !defined(__IO_H_USING_LIST)
 #define IO_H_USING_LIST
-        using std::access;
-        using std::chmod;
-        using std::chsize;
-        using std::close;
-        using std::creat;
-        using std::dup;
-        using std::dup2;
-        using std::eof;
-        using std::filelength;
-        using std::getftime;
-        using std::isatty;
-        using std::lock;
-        using std::locking;
-        using std::lseek;
-        using std::mktemp;
-        using std::open;
-        using std::read;
-        using std::remove;
-        using std::rename;
-        using std::setftime;
-        using std::setmode;
-        using std::sopen;
-        using std::tell;
-        using std::umask;
-        using std::unlink;
-        using std::unlock;
-        using std::write;
-        using std::_findfirst;
-        using std::_findnext;
-        using std::_findclose;
-        using std::_get_osfhandle;
-        using std::_open_osfhandle;
-    using std::ftime;
+        using __STD_NS_QUALIFIER access;
+        using __STD_NS_QUALIFIER chmod;
+        using __STD_NS_QUALIFIER chsize;
+        using __STD_NS_QUALIFIER close;
+        using __STD_NS_QUALIFIER creat;
+        using __STD_NS_QUALIFIER dup;
+        using __STD_NS_QUALIFIER dup2;
+        using __STD_NS_QUALIFIER eof;
+        using __STD_NS_QUALIFIER filelength;
+        using __STD_NS_QUALIFIER getftime;
+        using __STD_NS_QUALIFIER isatty;
+        using __STD_NS_QUALIFIER lock;
+        using __STD_NS_QUALIFIER locking;
+        using __STD_NS_QUALIFIER lseek;
+        using __STD_NS_QUALIFIER mktemp;
+        using __STD_NS_QUALIFIER open;
+        using __STD_NS_QUALIFIER read;
+        using __STD_NS_QUALIFIER remove;
+        using __STD_NS_QUALIFIER rename;
+        using __STD_NS_QUALIFIER setftime;
+        using __STD_NS_QUALIFIER setmode;
+        using __STD_NS_QUALIFIER sopen;
+        using __STD_NS_QUALIFIER tell;
+        using __STD_NS_QUALIFIER umask;
+        using __STD_NS_QUALIFIER unlink;
+        using __STD_NS_QUALIFIER unlock;
+        using __STD_NS_QUALIFIER write;
+        using __STD_NS_QUALIFIER _findfirst;
+        using __STD_NS_QUALIFIER _findnext;
+        using __STD_NS_QUALIFIER _findclose;
+        using __STD_NS_QUALIFIER _get_osfhandle;
+        using __STD_NS_QUALIFIER _open_osfhandle;
+    using __STD_NS_QUALIFIER ftime;
 #ifndef _USING_NFILE
 #define _USING_NFILE
-    using std::_nfile ;
+    using __STD_NS_QUALIFIER _nfile ;
 #endif
-    using std::_finddata_t;
-        using std::_access;
-        using std::_chmod;
-        using std::_chsize;
-        using std::_close;
-        using std::_creat;
-        using std::_dup;
-        using std::_dup2;
-        using std::_eof;
-        using std::_filelength;
-        using std::_isatty;
-        using std::_locking;
-        using std::_lseek;
-        using std::_mktemp;
-        using std::_open;
-        using std::_read;
-        using std::_setmode;
-        using std::_sopen;
-        using std::_tell;
-        using std::_umask;
-        using std::_unlink;
-        using std::_write;
+    using __STD_NS_QUALIFIER _finddata_t;
+        using __STD_NS_QUALIFIER _access;
+        using __STD_NS_QUALIFIER _chmod;
+        using __STD_NS_QUALIFIER _chsize;
+        using __STD_NS_QUALIFIER _close;
+        using __STD_NS_QUALIFIER _creat;
+        using __STD_NS_QUALIFIER _dup;
+        using __STD_NS_QUALIFIER _dup2;
+        using __STD_NS_QUALIFIER _eof;
+        using __STD_NS_QUALIFIER _filelength;
+        using __STD_NS_QUALIFIER _isatty;
+        using __STD_NS_QUALIFIER _locking;
+        using __STD_NS_QUALIFIER _lseek;
+        using __STD_NS_QUALIFIER _mktemp;
+        using __STD_NS_QUALIFIER _open;
+        using __STD_NS_QUALIFIER _read;
+        using __STD_NS_QUALIFIER _setmode;
+        using __STD_NS_QUALIFIER _sopen;
+        using __STD_NS_QUALIFIER _tell;
+        using __STD_NS_QUALIFIER _umask;
+        using __STD_NS_QUALIFIER _unlink;
+        using __STD_NS_QUALIFIER _write;
 #endif

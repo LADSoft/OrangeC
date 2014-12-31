@@ -31,6 +31,7 @@
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <process.h>
@@ -40,7 +41,6 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-#include <errno.h>
 #include <io.h>
 #include <fcntl.h>
 

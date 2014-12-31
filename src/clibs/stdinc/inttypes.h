@@ -308,7 +308,7 @@ typedef struct {
 } imaxdiv_t;
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -334,10 +334,10 @@ uintmax_t _RTL_FUNC wcstoumax(const wchar_t * restrict __nptr,
 #endif
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__INTTYPES_H_USING_LIST)
 #define __INTTYPES_H_USING_LIST
-    using std::imaxabs ;
-    using std::imaxdiv ;
-    using std::strtoimax;
-    using std::strtoumax;
-    using std::wcstoimax;
-    using std::wcstoumax;
+    using __STD_NS_QUALIFIER imaxabs ;
+    using __STD_NS_QUALIFIER imaxdiv ;
+    using __STD_NS_QUALIFIER strtoimax;
+    using __STD_NS_QUALIFIER strtoumax;
+    using __STD_NS_QUALIFIER wcstoimax;
+    using __STD_NS_QUALIFIER wcstoumax;
 #endif

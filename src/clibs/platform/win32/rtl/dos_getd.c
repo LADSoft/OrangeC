@@ -30,9 +30,9 @@
     TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <errno.h>
 #include <windows.h>
 #include <dos.h>
-#include <errno.h>
 #include <time.h>
 
 void _RTL_FUNC       _dos_getdate(struct dosdate_t *__datep)

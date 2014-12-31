@@ -44,7 +44,7 @@
 #define _NORMALCURSOR  2
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -173,85 +173,85 @@ int			 _RTL_FUNC _ungetch(int);
 #endif  /* __CONIO_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__CONIO_H_USING_LIST)
 #define __CONIO_H_USING_LIST
-    using std::clreol;
-    using std::clrscr;
-    using std::gotoxy;
-    using std::getch;
-    using std::getche;
-    using std::kbhit;
-    using std::putch;
-    using std::wherex;
-    using std::wherey;
-    using std::inportb;
-    using std::inport;
-    using std::inportd;
-    using std::inp;
-    using std::inpw;
-    using std::outportb;
-    using std::outport;
-    using std::outportd;
-    using std::outp;
-    using std::outpw;
-    using std::delline;
-    using std::gettext;
-    using std::gettextinfo;
-    using std::highvideo;
-    using std::insline;
-    using std::lowvideo;
-    using std::movetext;
-    using std::normvideo;
-    using std::puttext;
-    using std::textattr;
-    using std::textbackground;
-    using std::textcolor;
-    using std::textmode;
-    using std::window;
-    using std::_setcursortype;
-    using std::cgets;
-    using std::cprintf;
-    using std::cputs;
-    using std::cscanf;
-    using std::getpass;
-    using std::ungetch;
-    using std::text_modes;
-    using std::LASTMODE;
-    using std::BW40;
-    using std::C40;
-    using std::BW80;
-    using std::C80;
-    using std::MONO;
-    using std::C4350;
-    using std::text_info;
-    using std::COLORS;
-    using std::BLACK;          /* dark colors */
-    using std::BLUE;
-    using std::GREEN;
-    using std::CYAN;
-    using std::RED;
-    using std::MAGENTA;
-    using std::BROWN;
-    using std::LIGHTGRAY;
-    using std::DARKGRAY;       /* light colors */
-    using std::LIGHTBLUE;
-    using std::LIGHTGREEN;
-    using std::LIGHTCYAN;
-    using std::LIGHTRED;
-    using std::LIGHTMAGENTA;
-    using std::YELLOW;
-    using std::WHITE;
-    using std::_cgets;
-    using std::_cprintf;
-    using std::_cputs;
-    using std::_cscanf;
-    using std::_getch;
-    using std::_getche;
-    using std::_inp;
-    using std::_inpw;
-    using std::_inpd;
-    using std::_kbhit;
-    using std::_outp;
-    using std::_outpw;
-    using std::_outpd;
-    using std::_putch;
-    using std::_ungetch;
+    using __STD_NS_QUALIFIER clreol;
+    using __STD_NS_QUALIFIER clrscr;
+    using __STD_NS_QUALIFIER gotoxy;
+    using __STD_NS_QUALIFIER getch;
+    using __STD_NS_QUALIFIER getche;
+    using __STD_NS_QUALIFIER kbhit;
+    using __STD_NS_QUALIFIER putch;
+    using __STD_NS_QUALIFIER wherex;
+    using __STD_NS_QUALIFIER wherey;
+    using __STD_NS_QUALIFIER inportb;
+    using __STD_NS_QUALIFIER inport;
+    using __STD_NS_QUALIFIER inportd;
+    using __STD_NS_QUALIFIER inp;
+    using __STD_NS_QUALIFIER inpw;
+    using __STD_NS_QUALIFIER outportb;
+    using __STD_NS_QUALIFIER outport;
+    using __STD_NS_QUALIFIER outportd;
+    using __STD_NS_QUALIFIER outp;
+    using __STD_NS_QUALIFIER outpw;
+    using __STD_NS_QUALIFIER delline;
+    using __STD_NS_QUALIFIER gettext;
+    using __STD_NS_QUALIFIER gettextinfo;
+    using __STD_NS_QUALIFIER highvideo;
+    using __STD_NS_QUALIFIER insline;
+    using __STD_NS_QUALIFIER lowvideo;
+    using __STD_NS_QUALIFIER movetext;
+    using __STD_NS_QUALIFIER normvideo;
+    using __STD_NS_QUALIFIER puttext;
+    using __STD_NS_QUALIFIER textattr;
+    using __STD_NS_QUALIFIER textbackground;
+    using __STD_NS_QUALIFIER textcolor;
+    using __STD_NS_QUALIFIER textmode;
+    using __STD_NS_QUALIFIER window;
+    using __STD_NS_QUALIFIER _setcursortype;
+    using __STD_NS_QUALIFIER cgets;
+    using __STD_NS_QUALIFIER cprintf;
+    using __STD_NS_QUALIFIER cputs;
+    using __STD_NS_QUALIFIER cscanf;
+    using __STD_NS_QUALIFIER getpass;
+    using __STD_NS_QUALIFIER ungetch;
+    using __STD_NS_QUALIFIER text_modes;
+    using __STD_NS_QUALIFIER LASTMODE;
+    using __STD_NS_QUALIFIER BW40;
+    using __STD_NS_QUALIFIER C40;
+    using __STD_NS_QUALIFIER BW80;
+    using __STD_NS_QUALIFIER C80;
+    using __STD_NS_QUALIFIER MONO;
+    using __STD_NS_QUALIFIER C4350;
+    using __STD_NS_QUALIFIER text_info;
+    using __STD_NS_QUALIFIER COLORS;
+    using __STD_NS_QUALIFIER BLACK;          /* dark colors */
+    using __STD_NS_QUALIFIER BLUE;
+    using __STD_NS_QUALIFIER GREEN;
+    using __STD_NS_QUALIFIER CYAN;
+    using __STD_NS_QUALIFIER RED;
+    using __STD_NS_QUALIFIER MAGENTA;
+    using __STD_NS_QUALIFIER BROWN;
+    using __STD_NS_QUALIFIER LIGHTGRAY;
+    using __STD_NS_QUALIFIER DARKGRAY;       /* light colors */
+    using __STD_NS_QUALIFIER LIGHTBLUE;
+    using __STD_NS_QUALIFIER LIGHTGREEN;
+    using __STD_NS_QUALIFIER LIGHTCYAN;
+    using __STD_NS_QUALIFIER LIGHTRED;
+    using __STD_NS_QUALIFIER LIGHTMAGENTA;
+    using __STD_NS_QUALIFIER YELLOW;
+    using __STD_NS_QUALIFIER WHITE;
+    using __STD_NS_QUALIFIER _cgets;
+    using __STD_NS_QUALIFIER _cprintf;
+    using __STD_NS_QUALIFIER _cputs;
+    using __STD_NS_QUALIFIER _cscanf;
+    using __STD_NS_QUALIFIER _getch;
+    using __STD_NS_QUALIFIER _getche;
+    using __STD_NS_QUALIFIER _inp;
+    using __STD_NS_QUALIFIER _inpw;
+    using __STD_NS_QUALIFIER _inpd;
+    using __STD_NS_QUALIFIER _kbhit;
+    using __STD_NS_QUALIFIER _outp;
+    using __STD_NS_QUALIFIER _outpw;
+    using __STD_NS_QUALIFIER _outpd;
+    using __STD_NS_QUALIFIER _putch;
+    using __STD_NS_QUALIFIER _ungetch;
 #endif

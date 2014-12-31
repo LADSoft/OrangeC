@@ -65,7 +65,7 @@
 #define _HARDERR_FAIL   3   /* fail the operation */
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -222,56 +222,56 @@ extern char **	  _RTL_DATA _environ ;
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__DOS_H_USING_LIST)
 #define __DOS_H_USING_LIST
-    using std::_dos_getdiskfree;
-    using std::_dos_getdrive;
-    using std::_dos_setdrive;
-    using std::_dos_getdate;
-    using std::_dos_getfileattr;
-    using std::_dos_getftime;
-    using std::_dos_getpwd;
-    using std::_dos_gettime;
-    using std::_dos_setdate;
-    using std::_dos_setfileattr;
-    using std::_dos_setpwd;
-    using std::_dos_settime;
-    using std::_dos_findfirst;
-    using std::_dos_findnext;
-    using std::_dos_open;
-    using std::_dos_close;
-    using std::_dos_setftime;
-    using std::_dos_creat;
-    using std::_dos_creatnew;
-    using std::disable;
-    using std::enable;
-    using std::_disable;
-    using std::_enable;
-    using std::getdfree;
-    using std::_getdrive;
-    using std::dostounix;
-    using std::unixtodos;
-    using std::unlink;
-    using std::_dos_read;
-    using std::_dos_write;
-    using std::getdate;
-    using std::gettime;
-    using std::setdate;
-    using std::settime;
-    using std::bdos;
-    using std::sleep;
-    using std::dfree;
-    using std::diskfree_t;
-    using std::time;
-    using std::date;
-    using std::dostime_t;
-    using std::dosdate_t;
-    using std::find_t;
-    using std::_osmajor;
-    using std::_osminor;
-    using std::_argc;
-    using std::__argc;
-    using std::_argv;
-    using std::__argv;
-    using std::_harderr;
-    using std::_hardretn;
-    using std::_hardresume;
+    using __STD_NS_QUALIFIER _dos_getdiskfree;
+    using __STD_NS_QUALIFIER _dos_getdrive;
+    using __STD_NS_QUALIFIER _dos_setdrive;
+    using __STD_NS_QUALIFIER _dos_getdate;
+    using __STD_NS_QUALIFIER _dos_getfileattr;
+    using __STD_NS_QUALIFIER _dos_getftime;
+    using __STD_NS_QUALIFIER _dos_getpwd;
+    using __STD_NS_QUALIFIER _dos_gettime;
+    using __STD_NS_QUALIFIER _dos_setdate;
+    using __STD_NS_QUALIFIER _dos_setfileattr;
+    using __STD_NS_QUALIFIER _dos_setpwd;
+    using __STD_NS_QUALIFIER _dos_settime;
+    using __STD_NS_QUALIFIER _dos_findfirst;
+    using __STD_NS_QUALIFIER _dos_findnext;
+    using __STD_NS_QUALIFIER _dos_open;
+    using __STD_NS_QUALIFIER _dos_close;
+    using __STD_NS_QUALIFIER _dos_setftime;
+    using __STD_NS_QUALIFIER _dos_creat;
+    using __STD_NS_QUALIFIER _dos_creatnew;
+    using __STD_NS_QUALIFIER disable;
+    using __STD_NS_QUALIFIER enable;
+    using __STD_NS_QUALIFIER _disable;
+    using __STD_NS_QUALIFIER _enable;
+    using __STD_NS_QUALIFIER getdfree;
+    using __STD_NS_QUALIFIER _getdrive;
+    using __STD_NS_QUALIFIER dostounix;
+    using __STD_NS_QUALIFIER unixtodos;
+    using __STD_NS_QUALIFIER unlink;
+    using __STD_NS_QUALIFIER _dos_read;
+    using __STD_NS_QUALIFIER _dos_write;
+    using __STD_NS_QUALIFIER getdate;
+    using __STD_NS_QUALIFIER gettime;
+    using __STD_NS_QUALIFIER setdate;
+    using __STD_NS_QUALIFIER settime;
+    using __STD_NS_QUALIFIER bdos;
+    using __STD_NS_QUALIFIER sleep;
+    using __STD_NS_QUALIFIER dfree;
+    using __STD_NS_QUALIFIER diskfree_t;
+    using __STD_NS_QUALIFIER time;
+    using __STD_NS_QUALIFIER date;
+    using __STD_NS_QUALIFIER dostime_t;
+    using __STD_NS_QUALIFIER dosdate_t;
+    using __STD_NS_QUALIFIER find_t;
+    using __STD_NS_QUALIFIER _osmajor;
+    using __STD_NS_QUALIFIER _osminor;
+    using __STD_NS_QUALIFIER _argc;
+    using __STD_NS_QUALIFIER __argc;
+    using __STD_NS_QUALIFIER _argv;
+    using __STD_NS_QUALIFIER __argv;
+    using __STD_NS_QUALIFIER _harderr;
+    using __STD_NS_QUALIFIER _hardretn;
+    using __STD_NS_QUALIFIER _hardresume;
 #endif

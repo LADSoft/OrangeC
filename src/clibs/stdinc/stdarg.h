@@ -38,7 +38,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -64,5 +64,5 @@ typedef void *va_list;
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STDARG_H_USING_LIST)
 #define __STDARG_H_USING_LIST
-using std::va_list ;
+using __STD_NS_QUALIFIER va_list ;
 #endif

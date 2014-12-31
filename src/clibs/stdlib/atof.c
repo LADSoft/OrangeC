@@ -30,13 +30,13 @@
 	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <errno.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <errno.h>
 #include <wchar.h>
 #include <locale.h>
 #include <float.h>

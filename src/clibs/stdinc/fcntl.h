@@ -44,7 +44,7 @@
 #endif
 
 #if defined(__cplusplus)
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 int _RTL_FUNC _pipe(int *phandles, unsigned int psize, int textmode);
@@ -130,7 +130,7 @@ int fcntl(int, int, ...);
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__FCNTL_H_USING_LIST)
 #define __FCNTL_H_USING_LIST
-using std::_pipe ;
-using std::_fmode ;
-using std::fcntl;
+using __STD_NS_QUALIFIER _pipe ;
+using __STD_NS_QUALIFIER _fmode ;
+using __STD_NS_QUALIFIER fcntl;
 #endif

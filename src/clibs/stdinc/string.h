@@ -44,7 +44,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -149,62 +149,62 @@ char * 		 _RTL_FUNC _strupr(char *);
 #endif  /* __STRING_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STRING_H_USING_LIST)
 #define __STRING_H_USING_LIST
-    using std::memcmp;
-    using std::memcpy;
-    using std::memccpy;
-    using std::memmove;
-    using std::memset;
-    using std::strcat;
-    using std::strcmp;
-    using std::strcpy;
-    using std::stpcpy;
-    using std::strcspn;
-    using std::strdup;
-    using std::strerror;
-    using std::strlen;
-    using std::strncat;
-    using std::strncmp;
-    using std::strncpy;
-    using std::stpncpy;
-    using std::strspn;
-    using std::strtok;
-    using std::_strerror;
-    using std::memchr;
-    using std::strchr;
-    using std::strrchr;
-    using std::strpbrk;
-    using std::strstr;
-    using std::_lstrcoll;
-    using std::_lstrxfrm;
-    using std::strcoll;
-    using std::strxfrm;
-    using std::strupr;
-    using std::strlwr;
-    using std::strnicmp;
-    using std::stricmp;
-    using std::strncmpi;
-    using std::strcmpi;
-    using std::_strdup;
-    using std::_memicmp;
-    using std::memicmp;
-    using std::_strset;
-    using std::strset;
-    using std::_strnset;
-    using std::strnset;
-    using std::_strrev;
-    using std::strrev;
-    using std::_stricmp;
-    using std::_strcmpi;
-    using std::_strnicmp;
-    using std::_strncmpi;
-    using std::_strlwr;
-    using std::_strupr;
-    using std::strlcpy;
-    using std::strlcat;
-    using std::bcmp;
-    using std::bcopy;
-    using std::bzero;
-    using std::ffs;
-    using std::strcasecmp;
-    using std::strncasecmp;
+    using __STD_NS_QUALIFIER memcmp;
+    using __STD_NS_QUALIFIER memcpy;
+    using __STD_NS_QUALIFIER memccpy;
+    using __STD_NS_QUALIFIER memmove;
+    using __STD_NS_QUALIFIER memset;
+    using __STD_NS_QUALIFIER strcat;
+    using __STD_NS_QUALIFIER strcmp;
+    using __STD_NS_QUALIFIER strcpy;
+    using __STD_NS_QUALIFIER stpcpy;
+    using __STD_NS_QUALIFIER strcspn;
+    using __STD_NS_QUALIFIER strdup;
+    using __STD_NS_QUALIFIER strerror;
+    using __STD_NS_QUALIFIER strlen;
+    using __STD_NS_QUALIFIER strncat;
+    using __STD_NS_QUALIFIER strncmp;
+    using __STD_NS_QUALIFIER strncpy;
+    using __STD_NS_QUALIFIER stpncpy;
+    using __STD_NS_QUALIFIER strspn;
+    using __STD_NS_QUALIFIER strtok;
+    using __STD_NS_QUALIFIER _strerror;
+    using __STD_NS_QUALIFIER memchr;
+    using __STD_NS_QUALIFIER strchr;
+    using __STD_NS_QUALIFIER strrchr;
+    using __STD_NS_QUALIFIER strpbrk;
+    using __STD_NS_QUALIFIER strstr;
+    using __STD_NS_QUALIFIER _lstrcoll;
+    using __STD_NS_QUALIFIER _lstrxfrm;
+    using __STD_NS_QUALIFIER strcoll;
+    using __STD_NS_QUALIFIER strxfrm;
+    using __STD_NS_QUALIFIER strupr;
+    using __STD_NS_QUALIFIER strlwr;
+    using __STD_NS_QUALIFIER strnicmp;
+    using __STD_NS_QUALIFIER stricmp;
+    using __STD_NS_QUALIFIER strncmpi;
+    using __STD_NS_QUALIFIER strcmpi;
+    using __STD_NS_QUALIFIER _strdup;
+    using __STD_NS_QUALIFIER _memicmp;
+    using __STD_NS_QUALIFIER memicmp;
+    using __STD_NS_QUALIFIER _strset;
+    using __STD_NS_QUALIFIER strset;
+    using __STD_NS_QUALIFIER _strnset;
+    using __STD_NS_QUALIFIER strnset;
+    using __STD_NS_QUALIFIER _strrev;
+    using __STD_NS_QUALIFIER strrev;
+    using __STD_NS_QUALIFIER _stricmp;
+    using __STD_NS_QUALIFIER _strcmpi;
+    using __STD_NS_QUALIFIER _strnicmp;
+    using __STD_NS_QUALIFIER _strncmpi;
+    using __STD_NS_QUALIFIER _strlwr;
+    using __STD_NS_QUALIFIER _strupr;
+    using __STD_NS_QUALIFIER strlcpy;
+    using __STD_NS_QUALIFIER strlcat;
+    using __STD_NS_QUALIFIER bcmp;
+    using __STD_NS_QUALIFIER bcopy;
+    using __STD_NS_QUALIFIER bzero;
+    using __STD_NS_QUALIFIER ffs;
+    using __STD_NS_QUALIFIER strcasecmp;
+    using __STD_NS_QUALIFIER strncasecmp;
 #endif /* __USING_CNAME__ */

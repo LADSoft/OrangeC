@@ -41,7 +41,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -246,23 +246,23 @@ int      _RTL_FUNC _int386(int __intno,
 #endif  /* __BIOS_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__BIOS_H_USING_LIST)
 #define __BIOS_H_USING_LIST
-    using std::_bios_disk;
-    using std::biosdisk;
-    using std::_bios_keybrd;
-    using std::_bios_printer;
-    using std::_bios_serialcom;
-    using std::bioscom;
-    using std::bioskey;
-    using std::biosprint;
-    using std::_bios_equiplist;
-    using std::_bios_memsize;
-    using std::_bios_timeofday;
-    using std::biosequip;
-    using std::biosmemory;
-    using std::biostime;
-    using std::_int386;
-    using std::diskinfo_t;
-    using std::REGS;
-    using std::SREGS;
-    using std::REGPACK;
+    using __STD_NS_QUALIFIER _bios_disk;
+    using __STD_NS_QUALIFIER biosdisk;
+    using __STD_NS_QUALIFIER _bios_keybrd;
+    using __STD_NS_QUALIFIER _bios_printer;
+    using __STD_NS_QUALIFIER _bios_serialcom;
+    using __STD_NS_QUALIFIER bioscom;
+    using __STD_NS_QUALIFIER bioskey;
+    using __STD_NS_QUALIFIER biosprint;
+    using __STD_NS_QUALIFIER _bios_equiplist;
+    using __STD_NS_QUALIFIER _bios_memsize;
+    using __STD_NS_QUALIFIER _bios_timeofday;
+    using __STD_NS_QUALIFIER biosequip;
+    using __STD_NS_QUALIFIER biosmemory;
+    using __STD_NS_QUALIFIER biostime;
+    using __STD_NS_QUALIFIER _int386;
+    using __STD_NS_QUALIFIER diskinfo_t;
+    using __STD_NS_QUALIFIER REGS;
+    using __STD_NS_QUALIFIER SREGS;
+    using __STD_NS_QUALIFIER REGPACK;
 #endif

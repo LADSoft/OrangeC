@@ -46,7 +46,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -246,27 +246,27 @@ _vectorType setvect(int _num, _vectorType _vect) ;
 #endif /* __i86_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__I86_H_USING_LIST)
 #define __I86_H_USING_LIST
-    using std::_vectorType;
-    using std::__disable;
-    using std::__enable;
-    using std::_delay;
-    using std::_int386;
-    using std::_intr;
-    using std::_nosound;
-    using std::_sound;
-    using std::_segread;
-    using std::setvect;
-    using std::REGS;
-    using std::SREGS;
-    using std::REGPACK;
-    using std::INTPACK;
-    using std::INTR_CF	;	/* carry */
-    using std::INTR_PF	;	/* parity */
-    using std::INTR_AF	;	/* auxiliary carry */
-    using std::INTR_ZF	;	/* zero */
-    using std::INTR_SF	;	/* sign */
-    using std::INTR_TF	;	/* trace */
-    using std::INTR_IF	;	/* interrupt */
-    using std::INTR_DF	;	/* direction */
-    using std::INTR_OF	;	/* overflow */
+    using __STD_NS_QUALIFIER _vectorType;
+    using __STD_NS_QUALIFIER __disable;
+    using __STD_NS_QUALIFIER __enable;
+    using __STD_NS_QUALIFIER _delay;
+    using __STD_NS_QUALIFIER _int386;
+    using __STD_NS_QUALIFIER _intr;
+    using __STD_NS_QUALIFIER _nosound;
+    using __STD_NS_QUALIFIER _sound;
+    using __STD_NS_QUALIFIER _segread;
+    using __STD_NS_QUALIFIER setvect;
+    using __STD_NS_QUALIFIER REGS;
+    using __STD_NS_QUALIFIER SREGS;
+    using __STD_NS_QUALIFIER REGPACK;
+    using __STD_NS_QUALIFIER INTPACK;
+    using __STD_NS_QUALIFIER INTR_CF	;	/* carry */
+    using __STD_NS_QUALIFIER INTR_PF	;	/* parity */
+    using __STD_NS_QUALIFIER INTR_AF	;	/* auxiliary carry */
+    using __STD_NS_QUALIFIER INTR_ZF	;	/* zero */
+    using __STD_NS_QUALIFIER INTR_SF	;	/* sign */
+    using __STD_NS_QUALIFIER INTR_TF	;	/* trace */
+    using __STD_NS_QUALIFIER INTR_IF	;	/* interrupt */
+    using __STD_NS_QUALIFIER INTR_DF	;	/* direction */
+    using __STD_NS_QUALIFIER INTR_OF	;	/* overflow */
 #endif

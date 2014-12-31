@@ -30,6 +30,7 @@
     TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <errno.h>
 #include <dos.h>
 #include <dpmi.h>
 #include <string.h>
@@ -38,7 +39,6 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-#include <errno.h>
 
 unsigned _RTL_FUNC _dos_open(char *name,unsigned mode, int *fd)
 {

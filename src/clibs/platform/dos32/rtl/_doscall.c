@@ -31,12 +31,12 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <time.h>
 #include <dpmi.h>
-#include <errno.h>
  #include "llp.h"
 
 extern int _breakflag;

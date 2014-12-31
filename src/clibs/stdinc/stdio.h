@@ -50,7 +50,54 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
+extern "C" {
+#endif
+
+typedef struct  __file__{
+        int             level;          /* fill/empty level of buffer */
+        unsigned        flags;          /* File status flags          */
+        int             fd;             /* File descriptor            */
+        unsigned char   hold;           /* Ungetc char if no buffer   */
+        int             bsize;          /* Buffer size                */
+        unsigned char   *buffer;   /* Data transfer buffer       */
+        unsigned char   *curp;     /* Current active pointer     */
+        char            *name;           /* filename */
+        short           token;          /* Used for validity checking */
+        enum { __or_unspecified,
+               __or_narrow, 
+               __or_wide } orient;       /* stream orientation */
+        int mbstate[2];                 /* space for mbstate_t structure */
+}       FILE;                           /* This is the FILE object    */
+
+
+#ifdef __cplusplus
+}
+}
+#endif
+
+#define stdin   __stdin
+#define stdout  __stdout
+#define stderr  __stderr
+#define stdaux  __stdaux /* these two not supported now */
+#define stdprn  __stdprn
+
+#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL)
+extern __STD_NS_QUALIFIER FILE * __stdin ;
+extern __STD_NS_QUALIFIER FILE * __stdout ;
+extern __STD_NS_QUALIFIER FILE * __stderr ;
+extern __STD_NS_QUALIFIER FILE * __stdaux ;
+extern __STD_NS_QUALIFIER FILE * __stdprn ;
+#else
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdin ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdout ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stderr ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdaux ;
+extern __STD_NS_QUALIFIER FILE _RTL_DATA * __stdprn ;
+#endif
+
+#ifdef __cplusplus
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -114,21 +161,6 @@ typedef struct __fpos_t {
 
 /* Definition of the control structure for streams
 */
-typedef struct  __file__{
-        int             level;          /* fill/empty level of buffer */
-        unsigned        flags;          /* File status flags          */
-        int             fd;             /* File descriptor            */
-        unsigned char   hold;           /* Ungetc char if no buffer   */
-        int             bsize;          /* Buffer size                */
-        unsigned char   *buffer;   /* Data transfer buffer       */
-        unsigned char   *curp;     /* Current active pointer     */
-        char            *name;           /* filename */
-        short           token;          /* Used for validity checking */
-        enum { __or_unspecified,
-               __or_narrow, 
-               __or_wide } orient;       /* stream orientation */
-        int mbstate[2];                 /* space for mbstate_t structure */
-}       FILE;                           /* This is the FILE object    */
 
 /* Number of files that can be open simultaneously
 */
@@ -146,25 +178,6 @@ FILE *   _RTL_FUNC __getStream(int stream) ;
 #define _IOLBF  2
 #define _IONBF  4
 
-#define stdin   __STD_NS_QUALIFIER __stdin
-#define stdout  __STD_NS_QUALIFIER __stdout
-#define stderr  __STD_NS_QUALIFIER __stderr
-#define stdaux  __STD_NS_QUALIFIER __stdaux /* these two not supported now */
-#define stdprn  __STD_NS_QUALIFIER __stdprn
-
-#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL)
-extern FILE * __stdin ;
-extern FILE * __stdout ;
-extern FILE * __stderr ;
-extern FILE * __stdaux ;
-extern FILE * __stdprn ;
-#else
-extern FILE _RTL_DATA * __stdin ;
-extern FILE _RTL_DATA * __stdout ;
-extern FILE _RTL_DATA * __stderr ;
-extern FILE _RTL_DATA * __stdaux ;
-extern FILE _RTL_DATA * __stdprn ;
-#endif
 
 void      _RTL_FUNC clearerr(FILE *__stream);
 int       _RTL_FUNC fclose(FILE *__stream);
@@ -305,88 +318,83 @@ int _RTL_FUNC _setmaxstdio(int);
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STDIO_H_USING_LIST)
 #define __STDIO_H_USING_LIST
-    using std::fileno;
-    using std::_fileno;
-    using std::__getStream;
-    using std::clearerr;
-    using std::fclose;
-    using std::fflush;
-    using std::fgetc;
-    using std::fgetpos;
-    using std::fgets;
-    using std::fopen;
-    using std::fprintf;
-    using std::fputc;
-    using std::fputs;
-    using std::fread;
-    using std::freopen;
-    using std::fscanf;
-    using std::fseek;
-    using std::fsetpos;
-    using std::ftell;
-    using std::fwrite;
-    using std::gets;
-    using std::perror;
-    using std::printf;
-    using std::puts;
-    using std::remove;
-    using std::rename;
-    using std::rewind;
-    using std::scanf;
-    using std::setbuf;
-    using std::setvbuf;
-    using std::snprintf;
-    using std::_snprintf;
-    using std::sprintf;
-    using std::sscanf;
-    using std::strerror;
-    using std::tmpfile;
-    using std::tmpnam;
-    using std::ungetc;
-    using std::vfprintf;
-    using std::vfscanf;
-    using std::vprintf;
-    using std::vscanf;
-    using std::vsnprintf;
-    using std::_vsnprintf;
-    using std::vsprintf;
-    using std::vsscanf;
-    using std::unlink;
-    using std::getc;
-    using std::getchar;
-    using std::putchar;
-    using std::putc;
-    using std::feof;
-    using std::ferror;
-    using std::fcloseall;
-    using std::_fcloseall;
-    using std::fdopen;
-    using std::_fdopen;
-    using std::fgetchar;
-    using std::_fgetchar;
-    using std::flushall;
-    using std::_flushall;
-    using std::fputchar;
-    using std::_fputchar;
-    using std::_fsopen;
-    using std::getw;
-    using std::putw;
-    using std::rmtmp;
-    using std::_strerror;
-    using std::_fgetc;
-    using std::_fputc;
-    using std::FILE;
-    using std::fpos_t;
+    using __STD_NS_QUALIFIER fileno;
+    using __STD_NS_QUALIFIER _fileno;
+    using __STD_NS_QUALIFIER __getStream;
+    using __STD_NS_QUALIFIER clearerr;
+    using __STD_NS_QUALIFIER fclose;
+    using __STD_NS_QUALIFIER fflush;
+    using __STD_NS_QUALIFIER fgetc;
+    using __STD_NS_QUALIFIER fgetpos;
+    using __STD_NS_QUALIFIER fgets;
+    using __STD_NS_QUALIFIER fopen;
+    using __STD_NS_QUALIFIER fprintf;
+    using __STD_NS_QUALIFIER fputc;
+    using __STD_NS_QUALIFIER fputs;
+    using __STD_NS_QUALIFIER fread;
+    using __STD_NS_QUALIFIER freopen;
+    using __STD_NS_QUALIFIER fscanf;
+    using __STD_NS_QUALIFIER fseek;
+    using __STD_NS_QUALIFIER fsetpos;
+    using __STD_NS_QUALIFIER ftell;
+    using __STD_NS_QUALIFIER fwrite;
+    using __STD_NS_QUALIFIER gets;
+    using __STD_NS_QUALIFIER perror;
+    using __STD_NS_QUALIFIER printf;
+    using __STD_NS_QUALIFIER puts;
+    using __STD_NS_QUALIFIER remove;
+    using __STD_NS_QUALIFIER rename;
+    using __STD_NS_QUALIFIER rewind;
+    using __STD_NS_QUALIFIER scanf;
+    using __STD_NS_QUALIFIER setbuf;
+    using __STD_NS_QUALIFIER setvbuf;
+    using __STD_NS_QUALIFIER snprintf;
+    using __STD_NS_QUALIFIER _snprintf;
+    using __STD_NS_QUALIFIER sprintf;
+    using __STD_NS_QUALIFIER sscanf;
+    using __STD_NS_QUALIFIER strerror;
+    using __STD_NS_QUALIFIER tmpfile;
+    using __STD_NS_QUALIFIER tmpnam;
+    using __STD_NS_QUALIFIER ungetc;
+    using __STD_NS_QUALIFIER vfprintf;
+    using __STD_NS_QUALIFIER vfscanf;
+    using __STD_NS_QUALIFIER vprintf;
+    using __STD_NS_QUALIFIER vscanf;
+    using __STD_NS_QUALIFIER vsnprintf;
+    using __STD_NS_QUALIFIER _vsnprintf;
+    using __STD_NS_QUALIFIER vsprintf;
+    using __STD_NS_QUALIFIER vsscanf;
+    using __STD_NS_QUALIFIER unlink;
+    using __STD_NS_QUALIFIER getc;
+    using __STD_NS_QUALIFIER getchar;
+    using __STD_NS_QUALIFIER putchar;
+    using __STD_NS_QUALIFIER putc;
+    using __STD_NS_QUALIFIER feof;
+    using __STD_NS_QUALIFIER ferror;
+    using __STD_NS_QUALIFIER fcloseall;
+    using __STD_NS_QUALIFIER _fcloseall;
+    using __STD_NS_QUALIFIER fdopen;
+    using __STD_NS_QUALIFIER _fdopen;
+    using __STD_NS_QUALIFIER fgetchar;
+    using __STD_NS_QUALIFIER _fgetchar;
+    using __STD_NS_QUALIFIER flushall;
+    using __STD_NS_QUALIFIER _flushall;
+    using __STD_NS_QUALIFIER fputchar;
+    using __STD_NS_QUALIFIER _fputchar;
+    using __STD_NS_QUALIFIER _fsopen;
+    using __STD_NS_QUALIFIER getw;
+    using __STD_NS_QUALIFIER putw;
+    using __STD_NS_QUALIFIER rmtmp;
+    using __STD_NS_QUALIFIER _strerror;
+    using __STD_NS_QUALIFIER _fgetc;
+    using __STD_NS_QUALIFIER _fputc;
+    using __STD_NS_QUALIFIER FILE;
+    using __STD_NS_QUALIFIER fpos_t;
 #ifndef _USING_NFILE
 #define _USING_NFILE
-    using std::_nfile ;
+    using __STD_NS_QUALIFIER _nfile ;
 #endif
-    using std::__stdin ;
-    using std::__stdout ;
-    using std::__stderr ;
-    using std::__stdaux ;
-    using std::__stdprn ;
-    using std::tempnam ;
-    using std::_tempnam;
+    using __STD_NS_QUALIFIER tempnam ;
+    using __STD_NS_QUALIFIER _tempnam;
 #endif /* __USING_CNAME__ */
 

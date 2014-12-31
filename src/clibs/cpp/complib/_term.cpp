@@ -54,7 +54,7 @@ namespace std {
    }
 } ;
 
-void _RTL_FUNC terminate()
+void _RTL_FUNC std::terminate()
 {
    abort() ;
 }
@@ -69,18 +69,18 @@ static CPPDATA * getCPPData()
 extern "C" void _RTL_FUNC __call_terminate()
 {
    try {
-      std::flushall() ;
+      flushall() ;
       CPPDATA * data = getCPPData();
       (*data->term)();
    } catch (...) {
    } 
    abort() ;
 }
-void _RTL_FUNC unexpected()
+void _RTL_FUNC std::unexpected()
 {
    __call_terminate() ;
 }
-terminate_handler _RTL_FUNC set_terminate(terminate_handler __t)
+std::terminate_handler _RTL_FUNC std::set_terminate(std::terminate_handler __t)
 {
     CPPDATA * data = getCPPData();
     terminate_handler *rv = (terminate_handler)data->term;
@@ -90,7 +90,7 @@ terminate_handler _RTL_FUNC set_terminate(terminate_handler __t)
     }
     return rv;
 }
-unexpected_handler _RTL_FUNC set_unexpected(unexpected_handler __u)
+std::unexpected_handler _RTL_FUNC std::set_unexpected(std::unexpected_handler __u)
 {
     CPPDATA * data = getCPPData();
     unexpected_handler *rv = (unexpected_handler)data->term;
@@ -115,8 +115,8 @@ extern "C" void _RTL_FUNC __init_cppdata()
    asm mov eax,fs:[4]
    asm mov edx,[block]
    asm mov [eax-4],edx
-   block->term = terminate ;
-   block->unexpected = unexpected ;
+   block->term = std::terminate ;
+   block->unexpected = std::unexpected ;
 }
 extern "C" void _RTL_FUNC __rundown_cppdata()
 {

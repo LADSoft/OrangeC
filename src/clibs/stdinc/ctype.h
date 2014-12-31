@@ -5,7 +5,7 @@
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, with or without modification, are
-    permitted provided that the following conditions are met:
+    permitted provided thatst the following conditions are met:
     
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
@@ -45,7 +45,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -102,29 +102,29 @@ int		 _RTL_FUNC __iscsym(int);
 };
 #endif
 
-#define isalnum(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_ALNUM))
+#define isalnum(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_ALNUM))
                      
-#define isalpha(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_ALPHA))
+#define isalpha(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_ALPHA))
                      
-#define isblank(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_BLK))
+#define isblank(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_BLK))
                      
-#define iscntrl(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_CTL))
+#define iscntrl(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_CTL))
                      
-#define isdigit(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_DIG))
+#define isdigit(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_DIG))
                      
-#define isgraph(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_GRAPH))
+#define isgraph(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_GRAPH))
                      
-#define islower(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_LOW))
+#define islower(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_LOW))
                      
-#define isprint(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_PRINT))
+#define isprint(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_PRINT))
                      
-#define ispunct(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_PUN))
+#define ispunct(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_PUN))
                      
-#define isspace(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_SP))
+#define isspace(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_SP))
                      
-#define isupper(c)   ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_UPP))
+#define isupper(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_UPP))
                      
-#define isxdigit(c)  ( __STD_NS_QUALIFIER _pctype[ (c) ] & (_IS_HEX))
+#define isxdigit(c)  ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_HEX))
 
 
 #define _toupper(c) ((c) + 'A' - 'a')
@@ -137,29 +137,29 @@ int		 _RTL_FUNC __iscsym(int);
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__pctype_H_USING_LIST)
 #define __pctype_H_USING_LIST
-    using std::isalnum;
-    using std::isalpha;
-    using std::isblank;
-    using std::iscntrl;
-    using std::isdigit;
-    using std::isgraph;
-    using std::islower;
-    using std::isprint;
-    using std::ispunct;
-    using std::isspace;
-    using std::isupper;
-    using std::isxdigit;
-    using std::isascii;
-    using std::toascii;
-    using std::__isascii;
-    using std::__toascii;
-    using std::tolower;
-    using std::_ltolower;
-    using std::toupper;
-    using std::_ltoupper;
-    using std::_pctype;
-    using std::_isctype;
-    using std::__iscsymf;
-    using std::__iscsym;
+    using __STD_NS_QUALIFIER isalnum;
+    using __STD_NS_QUALIFIER isalpha;
+    using __STD_NS_QUALIFIER isblank;
+    using __STD_NS_QUALIFIER iscntrl;
+    using __STD_NS_QUALIFIER isdigit;
+    using __STD_NS_QUALIFIER isgraph;
+    using __STD_NS_QUALIFIER islower;
+    using __STD_NS_QUALIFIER isprint;
+    using __STD_NS_QUALIFIER ispunct;
+    using __STD_NS_QUALIFIER isspace;
+    using __STD_NS_QUALIFIER isupper;
+    using __STD_NS_QUALIFIER isxdigit;
+    using __STD_NS_QUALIFIER isascii;
+    using __STD_NS_QUALIFIER toascii;
+    using __STD_NS_QUALIFIER __isascii;
+    using __STD_NS_QUALIFIER __toascii;
+    using __STD_NS_QUALIFIER tolower;
+    using __STD_NS_QUALIFIER _ltolower;
+    using __STD_NS_QUALIFIER toupper;
+    using __STD_NS_QUALIFIER _ltoupper;
+    using __STD_NS_QUALIFIER _pctype;
+    using __STD_NS_QUALIFIER _isctype;
+    using __STD_NS_QUALIFIER __iscsymf;
+    using __STD_NS_QUALIFIER __iscsym;
 #endif
 

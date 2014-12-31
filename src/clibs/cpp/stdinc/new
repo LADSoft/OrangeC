@@ -1,8 +1,8 @@
 #ifndef __STD_NEW
 #define __STD_NEW
 
-#ifndef  __DEFS_H__
-#include <_defs.h>
+#ifndef  __STDDEF_H__
+#include <stddef.h>
 #endif
 
 #include <malloc.h>
@@ -13,6 +13,9 @@ namespace __dls {
 } ;
 
 namespace std {
+
+    typedef void ( _RTL_FUNC *new_handler) ();
+    extern new_handler _RTL_FUNC set_new_handler( new_handler new_p );
 
    _RTL_CLASS class bad_alloc : public exception     
    { 

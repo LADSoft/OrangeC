@@ -31,9 +31,9 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
-#include <errno.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"

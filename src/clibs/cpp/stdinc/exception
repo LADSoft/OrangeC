@@ -1,16 +1,10 @@
 #ifndef __STD_EXCEPTION
+#define __STD_EXCEPTION
 
 #ifndef __DEFS_H__
 #include <_defs.h>
 #endif
 
-typedef void (*terminate_handler) ();
-extern terminate_handler _RTL_FUNC set_terminate(terminate_handler f) __NOTHROW ;
-extern void _RTL_FUNC terminate( );
-
-typedef void (*unexpected_handler) ();
-extern unexpected_handler _RTL_FUNC set_unexpected( unexpected_handler f)  __NOTHROW ;
-extern void _RTL_FUNC unexpected();
 
 extern bool _RTL_FUNC uncaught_exception();
 
@@ -19,6 +13,14 @@ namespace __dls {
   extern const char _RTL_DATA *__dls_BadException;
 } ;
 namespace std {
+
+typedef void (*terminate_handler) ();
+extern terminate_handler _RTL_FUNC set_terminate(terminate_handler f) __NOTHROW ;
+extern void _RTL_FUNC terminate( );
+
+typedef void (*unexpected_handler) ();
+extern unexpected_handler _RTL_FUNC set_unexpected( unexpected_handler f)  __NOTHROW ;
+extern void _RTL_FUNC unexpected();
 
   _RTL_CLASS class exception     
   {
@@ -55,5 +57,4 @@ namespace std {
   };
 }
 
-#define __STD_EXCEPTION
 #endif

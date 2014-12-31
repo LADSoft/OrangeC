@@ -62,7 +62,8 @@
 
 #ifdef __cplusplus
 #define __NOTHROW throw ( )
-#define __STD_NS_QUALIFIER std::
+#define __STD_NS__ std
+#define __STD_NS_QUALIFIER __STD_NS__::
 #else
 #define __NOTHROW 
 #define __STD_NS_QUALIFIER

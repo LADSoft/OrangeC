@@ -57,7 +57,7 @@
 #define _A_ARCH     0x20        /* Archive */
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -120,22 +120,22 @@ int _RTL_FUNC _rmdir(const char *);
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__DIR_H_USING_LIST)
 #define __DIR_H_USING_LIST
-    using std::chdir;
-    using std::_chdir;
-    using std::findfirst;
-    using std::findnext;
-    using std::fnmerge;
-    using std::fnsplit;
-    using std::getcurdir;
-    using std::getcwd;
-    using std::_getcwd;
-    using std::getdisk;
-    using std::mkdir;
-    using std::_mkdir;
-    using std::mktemp;
-    using std::rmdir;
-    using std::_rmdir;
-    using std::searchpath;
-    using std::setdisk;
-    using std::ffblk;
+    using __STD_NS_QUALIFIER chdir;
+    using __STD_NS_QUALIFIER _chdir;
+    using __STD_NS_QUALIFIER findfirst;
+    using __STD_NS_QUALIFIER findnext;
+    using __STD_NS_QUALIFIER fnmerge;
+    using __STD_NS_QUALIFIER fnsplit;
+    using __STD_NS_QUALIFIER getcurdir;
+    using __STD_NS_QUALIFIER getcwd;
+    using __STD_NS_QUALIFIER _getcwd;
+    using __STD_NS_QUALIFIER getdisk;
+    using __STD_NS_QUALIFIER mkdir;
+    using __STD_NS_QUALIFIER _mkdir;
+    using __STD_NS_QUALIFIER mktemp;
+    using __STD_NS_QUALIFIER rmdir;
+    using __STD_NS_QUALIFIER _rmdir;
+    using __STD_NS_QUALIFIER searchpath;
+    using __STD_NS_QUALIFIER setdisk;
+    using __STD_NS_QUALIFIER ffblk;
 #endif

@@ -40,7 +40,7 @@
 #define __TYPES_H
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 #endif /* __cplusplus */
 
 #ifndef _SIZE_T
@@ -54,7 +54,7 @@ typedef int ssize_t;
 #define _USING_TYPES_H_TIME_T
 typedef long time_t;
 #ifdef __cplusplus
-#  define _TIME_T std::time_t
+#  define _TIME_T __STD_NS_QUALIFIER time_t
 #else
 #  define _TIME_T time_t
 #endif /* __cplusplus */
@@ -82,17 +82,17 @@ typedef long  off_t;
 #if defined( __cplusplus) && !defined(__USING_CNAME__) && !defined(__TYPES_H_USING_LIST)
 #define __TYPES_H_USING_LIST
 #ifdef _USING_TYPES_H_TIME_T
-using std::time_t;
+using __STD_NS_QUALIFIER time_t;
 #endif
-using std::dev_t;
-using std::ino_t;
-using std::mode_t;
-using std::nlink_t;
-using std::uid_t;
-using std::gid_t;
-using std::off_t;
+using __STD_NS_QUALIFIER dev_t;
+using __STD_NS_QUALIFIER ino_t;
+using __STD_NS_QUALIFIER mode_t;
+using __STD_NS_QUALIFIER nlink_t;
+using __STD_NS_QUALIFIER uid_t;
+using __STD_NS_QUALIFIER gid_t;
+using __STD_NS_QUALIFIER off_t;
 #ifdef _USING_TYPES_H_SIZE_T
-using std::size_t;
-using std::ssize_t ;
+using __STD_NS_QUALIFIER size_t;
+using __STD_NS_QUALIFIER ssize_t ;
 #endif
 #endif

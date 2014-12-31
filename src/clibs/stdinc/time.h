@@ -46,14 +46,14 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
 #ifndef  _TIME_T
 typedef long time_t;
 #ifdef __cplusplus
-#  define _TIME_T std::time_t
+#  define _TIME_T __STD_NS_QUALIFIER time_t
 #else
 #  define _TIME_T time_t
 #endif /* __cplusplus */
@@ -122,26 +122,26 @@ unsigned _RTL_FUNC _setsystime(struct tm *, unsigned);
 #endif  /* __TIME_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__TIME_H_USING_LIST)
 #define __TIME_H_USING_LIST
-    using std::_getsystime;
-    using std::_setsystime;
-    using std::asctime;
-    using std::ctime;
-    using std::difftime;
-    using std::gmtime;
-    using std::localtime;
-    using std::time;
-    using std::mktime;
-    using std::clock;
-    using std::strftime;
-    using std::_lstrftime;
-    using std::__getDaylight;
-    using std::__getTimezone;
-    using std::__getTzName;
-    using std::stime;
-    using std::tzset;
-    using std::_strdate;
-    using std::_strtime;
-    using std::time_t;
-    using std::clock_t;
-    using std::tm;
+    using __STD_NS_QUALIFIER _getsystime;
+    using __STD_NS_QUALIFIER _setsystime;
+    using __STD_NS_QUALIFIER asctime;
+    using __STD_NS_QUALIFIER ctime;
+    using __STD_NS_QUALIFIER difftime;
+    using __STD_NS_QUALIFIER gmtime;
+    using __STD_NS_QUALIFIER localtime;
+    using __STD_NS_QUALIFIER time;
+    using __STD_NS_QUALIFIER mktime;
+    using __STD_NS_QUALIFIER clock;
+    using __STD_NS_QUALIFIER strftime;
+    using __STD_NS_QUALIFIER _lstrftime;
+    using __STD_NS_QUALIFIER __getDaylight;
+    using __STD_NS_QUALIFIER __getTimezone;
+    using __STD_NS_QUALIFIER __getTzName;
+    using __STD_NS_QUALIFIER stime;
+    using __STD_NS_QUALIFIER tzset;
+    using __STD_NS_QUALIFIER _strdate;
+    using __STD_NS_QUALIFIER _strtime;
+    using __STD_NS_QUALIFIER time_t;
+    using __STD_NS_QUALIFIER clock_t;
+    using __STD_NS_QUALIFIER tm;
 #endif

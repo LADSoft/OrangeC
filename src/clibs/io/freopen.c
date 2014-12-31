@@ -31,10 +31,10 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdio.h>
+#include <errno.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include <locale.h>
 #include <wchar.h>
 #include <share.h>

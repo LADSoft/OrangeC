@@ -1,5 +1,5 @@
-#include <windows.h>
 #include <errno.h>
+#include <windows.h>
 int cwait(int *status, int pid, int action)
 {
   DWORD rv;

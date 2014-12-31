@@ -243,7 +243,7 @@ void _ThrowException(void *irecord,void *instance,int arraySize,void *cons,void 
         __call_terminate();
         
     instantiate(record,record->baseinstance, instance);
-	RaiseException(OUR_CPP_EXC_CODE,EXCEPTION_CONTINUABLE,1,&params[0]) ;
+	RaiseException(OUR_CPP_EXC_CODE,EXCEPTION_CONTINUABLE,1,(DWORD *)&params[0]) ;
 }
 
 void uninstantiate(XCTAB *record, void *instance)
@@ -269,7 +269,7 @@ void _RethrowException(void *r)
         __call_terminate();
     uninstantiate(record, record->instance);    
     params[0] = (ULONG_PTR)record;
-	RaiseException(OUR_CPP_EXC_CODE,EXCEPTION_CONTINUABLE,1,&params[0]) ;    
+	RaiseException(OUR_CPP_EXC_CODE,EXCEPTION_CONTINUABLE,1,(DWORD *)&params[0]) ;    
 }
 void _CatchCleanup(void *r)
 {

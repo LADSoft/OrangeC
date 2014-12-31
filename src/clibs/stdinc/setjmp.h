@@ -46,7 +46,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -103,8 +103,8 @@ int     _RTL_FUNC setjmp(jmp_buf __jmpb);
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__SETJMP_H_USING_LIST)
 #define __SETJMP_H_USING_LIST
-using std::__jmp_buf;
-using std::jmp_buf;
-using std::longjmp ;
-using std::setjmp ;
+using __STD_NS_QUALIFIER __jmp_buf;
+using __STD_NS_QUALIFIER jmp_buf;
+using __STD_NS_QUALIFIER longjmp ;
+using __STD_NS_QUALIFIER setjmp ;
 #endif

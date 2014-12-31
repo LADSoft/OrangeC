@@ -39,7 +39,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 void *      _RTL_FUNC bsearch(const void * __key, const void * __base,
@@ -68,10 +68,10 @@ void * _RTL_FUNC _lsearch(const void *, void  *, unsigned int *, unsigned int,
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__SEARCH_H_USING_LIST)
 #define __SEARCH_H_USING_LIST
-using std::bsearch;
-using std::lfind;
-using std::lsearch;
-using std::_lfind;
-using std::_lsearch;
-using std::qsort;
+using __STD_NS_QUALIFIER bsearch;
+using __STD_NS_QUALIFIER lfind;
+using __STD_NS_QUALIFIER lsearch;
+using __STD_NS_QUALIFIER _lfind;
+using __STD_NS_QUALIFIER _lsearch;
+using __STD_NS_QUALIFIER qsort;
 #endif /* __USING_CNAME__ */

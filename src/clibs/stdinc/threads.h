@@ -6,14 +6,14 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
 #ifndef  _TIME_T
 typedef long time_t;
 #ifdef __cplusplus
-#  define _TIME_T std::time_t
+#  define _TIME_T __STD_NS_QUALIFIER time_t
 #else
 #  define _TIME_T time_t
 #endif /* __cplusplus */

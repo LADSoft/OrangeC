@@ -31,13 +31,13 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdio.h>
+#include <errno.h>
 #include <time.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
 #include <dpmi.h>
 #include "llp.h"
-#include <errno.h>
 
 extern unsigned _linear;
 void *__ll_malloc(size_t size)

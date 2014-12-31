@@ -49,7 +49,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -185,63 +185,63 @@ ULONG __aliasRealAddress(ULONG);
 #endif /* __DPMI_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__DPMI_H_USING_LIST)
 #define __DPMI_H_USING_LIST
-    using std::dpmi_alloc_descriptors;
-    using std::dpmi_free_selector;
-    using std::dpmi_get_sel_increment;
-    using std::dpmi_get_sel_base;
-    using std::dpmi_set_sel_base;
-    using std::dpmi_get_sel_limit;
-    using std::dpmi_set_sel_limit;
-    using std::dpmi_get_sel_access_rights;
-    using std::dpmi_set_sel_access_rights;
-    using std::dpmi_get_alias_descriptor;
-    using std::dpmi_set_descriptor;
-    using std::dpmi_get_descriptor;
-    using std::dpmi_set_multiple_descriptors;
-    using std::dpmi_get_multiple_descriptors;
-    using std::dpmi_alloc_real_memory;
-    using std::dpmi_dealloc_real_memory;
-    using std::dpmi_realloc_real_memory;
-    using std::dpmi_arbitrary_copy;
-    using std::dpmi_copy_from_ds;
-    using std::dpmi_copy_to_ds;
-    using std::dpmi_get_real_interrupt;
-    using std::dpmi_set_real_interrupt;
-    using std::dpmi_get_protected_except;
-    using std::dpmi_set_protected_except;
-    using std::dpmi_get_protected_interrupt;
-    using std::dpmi_set_protected_interrupt;
-    using std::dpmi_simulate_real_interrupt;
-    using std::dpmi_simulate_proc_far_ret_frame;
-    using std::dpmi_simulate_proc_int_frame;
-    using std::dpmi_get_real_callback;
-    using std::dpmi_free_real_callback;
-    using std::dpmi_get_state_save_restore;
-    using std::dpmi_call_state_save_restore;
-    using std::dpmi_get_version;
-    using std::dpmi_get_memory_info;
-    using std::dpmi_get_memory;
-    using std::dpmi_free_memory;
-    using std::dpmi_resize_memory;
-    using std::dpmi_get_memory_params;
-    using std::dpmi_enable_virtual_flag;
-    using std::dpmi_disable_virtual_flag;
-    using std::dpmi_return_virtual_flag;
-    using std::__aliasRealAddress;
-    using std::__seg0000;
-    using std::__seg0040;
-    using std::__seg0050;
-    using std::__segA000;
-    using std::__segB000;
-    using std::__segB800;
-    using std::ULONG;
-    using std::UWORD;
-    using std::UBYTE;
-    using std::SELECTOR;
-    using std::DESCRIPTOR;
-    using std::MULTIPLE_DESCRIPTOR;
-    using std::DPMI_REGS;
-    using std::DPMI_VER;
-    using std::DPMI_FREEMEM_INFO;
-    using std::DPMI_MEM_HANDLE;
+    using __STD_NS_QUALIFIER dpmi_alloc_descriptors;
+    using __STD_NS_QUALIFIER dpmi_free_selector;
+    using __STD_NS_QUALIFIER dpmi_get_sel_increment;
+    using __STD_NS_QUALIFIER dpmi_get_sel_base;
+    using __STD_NS_QUALIFIER dpmi_set_sel_base;
+    using __STD_NS_QUALIFIER dpmi_get_sel_limit;
+    using __STD_NS_QUALIFIER dpmi_set_sel_limit;
+    using __STD_NS_QUALIFIER dpmi_get_sel_access_rights;
+    using __STD_NS_QUALIFIER dpmi_set_sel_access_rights;
+    using __STD_NS_QUALIFIER dpmi_get_alias_descriptor;
+    using __STD_NS_QUALIFIER dpmi_set_descriptor;
+    using __STD_NS_QUALIFIER dpmi_get_descriptor;
+    using __STD_NS_QUALIFIER dpmi_set_multiple_descriptors;
+    using __STD_NS_QUALIFIER dpmi_get_multiple_descriptors;
+    using __STD_NS_QUALIFIER dpmi_alloc_real_memory;
+    using __STD_NS_QUALIFIER dpmi_dealloc_real_memory;
+    using __STD_NS_QUALIFIER dpmi_realloc_real_memory;
+    using __STD_NS_QUALIFIER dpmi_arbitrary_copy;
+    using __STD_NS_QUALIFIER dpmi_copy_from_ds;
+    using __STD_NS_QUALIFIER dpmi_copy_to_ds;
+    using __STD_NS_QUALIFIER dpmi_get_real_interrupt;
+    using __STD_NS_QUALIFIER dpmi_set_real_interrupt;
+    using __STD_NS_QUALIFIER dpmi_get_protected_except;
+    using __STD_NS_QUALIFIER dpmi_set_protected_except;
+    using __STD_NS_QUALIFIER dpmi_get_protected_interrupt;
+    using __STD_NS_QUALIFIER dpmi_set_protected_interrupt;
+    using __STD_NS_QUALIFIER dpmi_simulate_real_interrupt;
+    using __STD_NS_QUALIFIER dpmi_simulate_proc_far_ret_frame;
+    using __STD_NS_QUALIFIER dpmi_simulate_proc_int_frame;
+    using __STD_NS_QUALIFIER dpmi_get_real_callback;
+    using __STD_NS_QUALIFIER dpmi_free_real_callback;
+    using __STD_NS_QUALIFIER dpmi_get_state_save_restore;
+    using __STD_NS_QUALIFIER dpmi_call_state_save_restore;
+    using __STD_NS_QUALIFIER dpmi_get_version;
+    using __STD_NS_QUALIFIER dpmi_get_memory_info;
+    using __STD_NS_QUALIFIER dpmi_get_memory;
+    using __STD_NS_QUALIFIER dpmi_free_memory;
+    using __STD_NS_QUALIFIER dpmi_resize_memory;
+    using __STD_NS_QUALIFIER dpmi_get_memory_params;
+    using __STD_NS_QUALIFIER dpmi_enable_virtual_flag;
+    using __STD_NS_QUALIFIER dpmi_disable_virtual_flag;
+    using __STD_NS_QUALIFIER dpmi_return_virtual_flag;
+    using __STD_NS_QUALIFIER __aliasRealAddress;
+    using __STD_NS_QUALIFIER __seg0000;
+    using __STD_NS_QUALIFIER __seg0040;
+    using __STD_NS_QUALIFIER __seg0050;
+    using __STD_NS_QUALIFIER __segA000;
+    using __STD_NS_QUALIFIER __segB000;
+    using __STD_NS_QUALIFIER __segB800;
+    using __STD_NS_QUALIFIER ULONG;
+    using __STD_NS_QUALIFIER UWORD;
+    using __STD_NS_QUALIFIER UBYTE;
+    using __STD_NS_QUALIFIER SELECTOR;
+    using __STD_NS_QUALIFIER DESCRIPTOR;
+    using __STD_NS_QUALIFIER MULTIPLE_DESCRIPTOR;
+    using __STD_NS_QUALIFIER DPMI_REGS;
+    using __STD_NS_QUALIFIER DPMI_VER;
+    using __STD_NS_QUALIFIER DPMI_FREEMEM_INFO;
+    using __STD_NS_QUALIFIER DPMI_MEM_HANDLE;
 #endif

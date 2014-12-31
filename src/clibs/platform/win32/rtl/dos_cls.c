@@ -31,13 +31,13 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <dos.h>
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-#include <errno.h>
 
 unsigned _RTL_FUNC _dos_close(int fd)
 {

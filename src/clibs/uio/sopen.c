@@ -31,6 +31,7 @@
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <string.h>
+#include <errno.h>
 #include <ctype.h>
 #include <string.h>
 #include <io.h>
@@ -43,7 +44,6 @@
 #include <dir.h>
 #include <wchar.h>
 #include <locale.h>
-#include <errno.h>
 #include "libp.h"
 
 extern int __uimodes[HANDLE_MAX],__uiflags[HANDLE_MAX], __uihandles[HANDLE_MAX] ;

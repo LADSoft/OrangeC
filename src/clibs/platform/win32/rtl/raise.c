@@ -31,9 +31,9 @@
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <signal.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
 #include <time.h>
 #include <wchar.h>
 #include <locale.h>

@@ -102,7 +102,7 @@
 #define LDBL_HAS_SUBNORM    1
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -200,9 +200,9 @@ extern unsigned int _RTL_DATA _default87;
 
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__FLOAT_H_USING_LIST)
 #define __FLOAT_H_USING_LIST
-using std::_clear87 ;
-using std::_control87;
-using std::_fpreset;
-using std::_status87 ;
-using std::_default87;
+using __STD_NS_QUALIFIER _clear87 ;
+using __STD_NS_QUALIFIER _control87;
+using __STD_NS_QUALIFIER _fpreset;
+using __STD_NS_QUALIFIER _status87 ;
+using __STD_NS_QUALIFIER _default87;
 #endif

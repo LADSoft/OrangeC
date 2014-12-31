@@ -77,7 +77,7 @@ typedef const wchar_t *wctrans_t;
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 int iswalnum (wint_t __wc);
@@ -112,20 +112,20 @@ extern const wchar_t *__ctype_u_toupper; /* Case conversions.  */
 } ;
 #endif
 #ifndef	__NO_WCTYPE
-#define	iswalnum(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_ALNUM)
-#define	iswalpha(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_ALPHA)
-#define	iswcntrl(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_CTL)
-#define	iswdigit(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_DIG)
-#define	iswlower(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_LOW)
-#define	iswgraph(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_GRAPH)
-#define	iswprint(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_PRINT)
-#define	iswpunct(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_PUN)
-#define	iswspace(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_SP)
-#define	iswupper(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_UPP)
-#define	iswxdigit(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_HEX)
+#define	iswalnum(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_ALNUM)
+#define	iswalpha(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_ALPHA)
+#define	iswcntrl(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_CTL)
+#define	iswdigit(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_DIG)
+#define	iswlower(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_LOW)
+#define	iswgraph(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_GRAPH)
+#define	iswprint(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_PRINT)
+#define	iswpunct(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_PUN)
+#define	iswspace(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_SP)
+#define	iswupper(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_UPP)
+#define	iswxdigit(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_HEX)
 
 /* this next is an extension to the standard */
-#define	iswblank(wc)	__STD_NS_QUALIFIER iswctype ((wc), _IS_BLK)
+#define	iswblank(wc)	__STD_NS_QUALIFIER  iswctype ((wc), _IS_BLK)
 
 
 #define	towlower(wc)	__STD_NS_QUALIFIER towctrans (wc, __STD_NS_QUALIFIER __ctype_u_tolower)
@@ -136,22 +136,22 @@ extern const wchar_t *__ctype_u_toupper; /* Case conversions.  */
 #endif /* __WCTYPE_H  */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__WCTYPE_H_USING_LIST)
 #define __WCTYPE_H_USING_LIST
-	using std::iswalnum;
-	using std::iswalpha;
-	using std::iswcntrl;
-	using std::iswdigit;
-	using std::iswgraph;
-	using std::iswlower;
-	using std::iswprint;
-	using std::iswpunct;
-	using std::iswspace;
-	using std::iswupper;
-	using std::iswxdigit;
-	using std::iswbank;
-	using std::wctype;
-	using std::iswctype;
-	using std::towlower;
-	using std::towupper;
-	using std::wctrans;
-	using std::towctrans;
+	using __STD_NS_QUALIFIER iswalnum;
+	using __STD_NS_QUALIFIER iswalpha;
+	using __STD_NS_QUALIFIER iswcntrl;
+	using __STD_NS_QUALIFIER iswdigit;
+	using __STD_NS_QUALIFIER iswgraph;
+	using __STD_NS_QUALIFIER iswlower;
+	using __STD_NS_QUALIFIER iswprint;
+	using __STD_NS_QUALIFIER iswpunct;
+	using __STD_NS_QUALIFIER iswspace;
+	using __STD_NS_QUALIFIER iswupper;
+	using __STD_NS_QUALIFIER iswxdigit;
+	using __STD_NS_QUALIFIER iswbank;
+	using __STD_NS_QUALIFIER wctype;
+	using __STD_NS_QUALIFIER iswctype;
+	using __STD_NS_QUALIFIER towlower;
+	using __STD_NS_QUALIFIER towupper;
+	using __STD_NS_QUALIFIER wctrans;
+	using __STD_NS_QUALIFIER towctrans;
 #endif

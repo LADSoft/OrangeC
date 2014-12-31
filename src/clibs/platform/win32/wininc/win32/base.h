@@ -118,7 +118,7 @@ typedef CTRYID;
 typedef DLGPROC;
 */
 
-typedef unsigned int DWORD; /* was unsigned long */
+typedef unsigned long DWORD;
 typedef double DWORDLONG, *PDWORDLONG;
 
 

@@ -30,6 +30,7 @@
 	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <errno.h>
 #include <stdlib.h>
 #include <wctype.h>
 #include <math.h>
@@ -37,7 +38,6 @@
 #include <string.h>
 #include <wchar.h>
 #include <time.h>
-#include <errno.h>
 #include <locale.h>
 #include <float.h>
 #include "_locale.h"

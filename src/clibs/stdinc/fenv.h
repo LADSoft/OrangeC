@@ -40,7 +40,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -114,18 +114,18 @@ int feupdateenv(const fenv_t *__envp);
 #endif /* __FENV_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__FENV_H_USING_LIST)
 #define __FENV_H_USING_LIST
-	using std::feclearexcept;
-	using std::fegetexceptflag;
-	using std::feraiseexcept;
-	using std::fesetexceptflag;
-	using std::fetestexcept;
-	using std::fegetround;
-	using std::fesetround;
-	using std::fegetenv;
-	using std::feholdexcept;
-	using std::fesetenv;
-	using std::feupdateenv;
-    using std::fexcept_t;
-    using std::fenv_t;
-    using std::__fe_default_env;
+	using __STD_NS_QUALIFIER feclearexcept;
+	using __STD_NS_QUALIFIER fegetexceptflag;
+	using __STD_NS_QUALIFIER feraiseexcept;
+	using __STD_NS_QUALIFIER fesetexceptflag;
+	using __STD_NS_QUALIFIER fetestexcept;
+	using __STD_NS_QUALIFIER fegetround;
+	using __STD_NS_QUALIFIER fesetround;
+	using __STD_NS_QUALIFIER fegetenv;
+	using __STD_NS_QUALIFIER feholdexcept;
+	using __STD_NS_QUALIFIER fesetenv;
+	using __STD_NS_QUALIFIER feupdateenv;
+    using __STD_NS_QUALIFIER fexcept_t;
+    using __STD_NS_QUALIFIER fenv_t;
+    using __STD_NS_QUALIFIER __fe_default_env;
 #endif

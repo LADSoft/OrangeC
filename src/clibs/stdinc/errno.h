@@ -92,7 +92,7 @@
 #define EILSEQ	1000	/* Defined by C standard, we are leaving space for WIN32 errors */
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -117,8 +117,8 @@ extern char _RTL_DATA *_sys_errlist[] ;
 
 #if defined (__cplusplus) && !defined (__USING_CNAME__) && !defined(__ERRNO_H_USING_LIST)
 #define __ERRNO_H_USING_LIST
-using std::__GetErrno ;
-using std::__GetDosErrno ;
-using std::_sys_nerr ;
-using std::_sys_errlist ;
+using __STD_NS_QUALIFIER __GetErrno ;
+using __STD_NS_QUALIFIER __GetDosErrno ;
+using __STD_NS_QUALIFIER _sys_nerr ;
+using __STD_NS_QUALIFIER _sys_errlist ;
 #endif           

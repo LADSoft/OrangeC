@@ -30,10 +30,10 @@
 	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <errno.h>
 #include <string.h>
 #include <dir.h>
 #include <ctype.h>
-#include <errno.h>
 
 void _RTL_FUNC _splitpath(char*path, char *drive, char *dir, char*name, char *ext)
 {

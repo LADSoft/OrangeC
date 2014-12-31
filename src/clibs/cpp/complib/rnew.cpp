@@ -30,7 +30,7 @@
 	TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 	ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <new.h>
+#include <new>
 #include <stdlib.h>
 
 namespace __dls {
@@ -63,10 +63,8 @@ void *__realnew(size_t n)
       void *rv = malloc(n) ;
       if (rv)
          return rv ;
-	  return NULL;
       if (!_new_handler)
-		  return NULL;
-//         throw std::bad_alloc() ;
+          throw std::bad_alloc() ;
       (*_new_handler)() ;
    } while (1) ;
    return 0 ; // never gets here

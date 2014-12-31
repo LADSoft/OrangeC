@@ -44,7 +44,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 #endif
 
 #ifndef _PTRDIFF_T
@@ -94,11 +94,11 @@ typedef unsigned int wint_t;
 #endif  /* __STDDEF_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STDDEF_H_USING_LIST)
 #define __STDDEF_H_USING_LIST
-using std::ptrdiff_t ;
+using __STD_NS_QUALIFIER ptrdiff_t ;
 #ifdef _USING_STDDEF_SIZE_T
-using std::size_t ;
-using std::ssize_t ;
+using __STD_NS_QUALIFIER size_t ;
+using __STD_NS_QUALIFIER ssize_t ;
 #endif
-using std::wint_t;
-using std::wctype_t ;
+using __STD_NS_QUALIFIER wint_t;
+using __STD_NS_QUALIFIER wctype_t ;
 #endif

@@ -53,7 +53,7 @@
 #define LC_LAST     LC_userdef
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -104,9 +104,9 @@ struct lconv *  _RTL_FUNC _llocaleconv( void );
 #endif  /* __LOCALE_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__LOCALE_H_USING_LIST)
 #define __LOCALE_H_USING_LIST
-    using std::lconv ;
-    using std::setlocale;
-    using std::_lsetlocale;
-    using std::localeconv;
-    using std::_llocaleconv;
+    using __STD_NS_QUALIFIER lconv ;
+    using __STD_NS_QUALIFIER setlocale;
+    using __STD_NS_QUALIFIER _lsetlocale;
+    using __STD_NS_QUALIFIER localeconv;
+    using __STD_NS_QUALIFIER _llocaleconv;
 #endif

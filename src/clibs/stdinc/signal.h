@@ -38,7 +38,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace std {
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -75,8 +75,8 @@ sighandler_t _RTL_FUNC signal(int __sig, sighandler_t __func);
 #endif  /* __SIGNAL_H */
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__SIGNAL_H_USING_LIST)
 #define __SIGNAL_H_USING_LIST
-using std::sighandler_t;
-using std::sig_atomic_t;
-using std::raise;
-using std::signal;
+using __STD_NS_QUALIFIER sighandler_t;
+using __STD_NS_QUALIFIER sig_atomic_t;
+using __STD_NS_QUALIFIER raise;
+using __STD_NS_QUALIFIER signal;
 #endif

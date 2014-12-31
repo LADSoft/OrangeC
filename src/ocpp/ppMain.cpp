@@ -117,7 +117,7 @@ int ppMain::Run(int argc, char *argv[])
             pp.Define(v->name, v->value, false);
         }
         if (c99Mode.GetValue())
-            pp.Define("__STDC_VERSION__", "199901L", true);
+            pp.Define("__STDC_VERSION__", std::string("199901L"), true);
         std::string working = undefines.GetValue();
         while (working.size())
         {

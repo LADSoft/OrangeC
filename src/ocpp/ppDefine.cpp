@@ -707,7 +707,7 @@ int ppDefine::ReplaceSegment(std::string &line, int begin, int end, int &pptr)
             if (line[p] == waiting && NotSlashed(line, p))
                 waiting = 0;
         }
-        else if (IsSymbolStartChar(line.c_str() + p) && (p == begin || !IsSymbolChar(line.c_str() + p - 1)))
+        else if (IsSymbolStartChar(line.c_str() + p) && (p == begin || line[p-1] == '$' || !IsSymbolChar(line.c_str() + p - 1)))
         {
             name = defid(line, q, p);
             Symbol *sym = symtab.Lookup(name);

@@ -40,6 +40,7 @@
 #include "PreProcessor.h"
 #include "Errors.h"
 #include "UTF8.h"
+#include <fstream>
 
 bool asmMode = false;
 bool IsSymbolStartChar(const char *data)

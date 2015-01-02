@@ -150,7 +150,7 @@ UINT32 accum,accum_count ;
 UINT8  inflatebuf[1024];
 SINT32 inflatepos ;
 
-char   inflate_tab_1[0x140] ; /* #320 bytes */
+UINT8   inflate_tab_1[0x140] ; /* #320 bytes */
 UINT8  inflate_tab_2[32] ;
 SINT16 inflate_tab_3[256] ;
 SINT16 inflate_tab_4[256] ;
@@ -159,8 +159,8 @@ UINT16 inflate_tab_6[64] ;
 UINT8  inflate_tab_7[0x13] ; /* #19 bytes */
 UINT16 inflate_tab_8[0x116] ; /* #278 bytes */
 
-UINT16 intermed_tab_1[16];
-UINT16 intermed_tab_2[16];
+UINT16 intermed_tab_1[17];
+UINT16 intermed_tab_2[17];
 UINT16 intermed_tab_3[0x140]; /* #320 bytes */
 
 SINT32 if1_count, if2_count ;
@@ -270,7 +270,7 @@ UINT32 get_n_bits(SINT32 count)
     /* endif */
 }
     
-void ExpandTables(UINT16 *dest2, UINT16 *dest, UINT8 *source, SINT32 len)
+void ExpandTables(UINT16 *dest2, SINT16 *dest, UINT8 *source, SINT32 len)
 {
     SINT32 i;
     SINT16 sum = 0,xlen = 0 ;
@@ -332,7 +332,7 @@ void ExpandTables(UINT16 *dest2, UINT16 *dest, UINT8 *source, SINT32 len)
     for (i = len-1 ; i >= 0; i--) {
         if ((sum = *source--) != 0) {
             if (sum > 8) {
-                        SINT16 *xdest = dest + (*idest & 0xFF) ;
+                        SINT16 *xdest = (SINT16 *)(dest + (*idest & 0xFF)) ;
                         SINT32 j,shift=1,mask =*idest >> 8 ;
                         sum -= 8 ;
                         for (j = 0; j < sum; j++) {
@@ -342,7 +342,7 @@ void ExpandTables(UINT16 *dest2, UINT16 *dest, UINT8 *source, SINT32 len)
                         dest2[xlen] = dest2[xlen+1]= 0;
                         xlen += 2 ;
                     }
-                    xdest = ~*xdest + dest2;
+                    xdest = (SINT16 *)(~*xdest + dest2);
                     if (mask & shift)
                     xdest ++ ;
                     shift <<= 1;
@@ -373,7 +373,7 @@ void ExpandTables(UINT16 *dest2, UINT16 *dest, UINT8 *source, SINT32 len)
 
 } /* endproc */
         
-UINT32 fancymove(SINT16 b, SINT16 *tab, SINT32 *count)
+UINT32 fancymove(SINT16 b, UINT16 *tab, SINT32 *count)
 {
     SINT16 c;
     *count = 0 ;
@@ -390,7 +390,7 @@ UINT32 fancymove(SINT16 b, SINT16 *tab, SINT32 *count)
     return b ;
 }
 
-UINT32 consulttabs1(void)
+UINT32 getCopyLengthOrChar(void)
 {
     SINT16 b = (accum & 0xff) ;
     SINT32 count,shift ;
@@ -412,7 +412,7 @@ UINT32 consulttabs1(void)
     return b ;
 }
 
-UINT32 consulttabs2(void)
+UINT32 getCopyOffset(void)
 {
     SINT16 b = (accum & 0xff) ;
     SINT32 count,shift ;
@@ -435,7 +435,7 @@ UINT32 consulttabs2(void)
     SINT32 count, scount, iii, len, valx, shift, ia, vala, b ;
     UINT8 *xdest ;
     UINT8 Type, LastBlock ;
-    char *src ;
+    UINT8 *src ;
     
     LastBlock  = 0 ; 
     byte_count = -1024 ; /* Is __GLOBAL__ SINT32 */
@@ -501,7 +501,7 @@ UINT32 consulttabs2(void)
           for (iii=0; iii < len; iii++) {
             inflate_tab_7[tab7_rearrange[iii]] = get_n_bits(3) ;
           } /* next iii */
-          ExpandTables(tab7_rearrange+len,inflate_tab_8,inflate_tab_7,0x13) ;
+          ExpandTables((UINT16 *)tab7_rearrange+len,(SINT16 *)inflate_tab_8,inflate_tab_7,0x13) ;
           xdest = inflate_tab_1 ;
           for (iii=if1_count + if2_count; iii > 0; ) {
             valx = inflate_tab_8[accum & 0xff] ;
@@ -544,7 +544,7 @@ UINT32 consulttabs2(void)
         ExpandTables(inflate_tab_6,inflate_tab_4,inflate_tab_2,if2_count) ;
     
         while (1) /* do */ /* Block Inflate loop running on fixed or dynamic tabs */ {
-            vala = consulttabs1() ;
+            vala = getCopyLengthOrChar() ;
             if (!(vala & 0xFF00)) /* then */{
                 outputQueue[outputPos++] = vala & 0xFF ;
                 FlushQueue(0) ;
@@ -552,7 +552,7 @@ UINT32 consulttabs2(void)
                 if (vala == 0x100)
                 break ;
                 vala -= 0xFE ;
-                b = consulttabs2() ;
+                b = getCopyOffset() ;
                 src = outputQueue + outputPos - 1 - b ;
                 for (ia=0 ; ia < vala ; ia++) {
                     outputQueue[outputPos++] = *src++ ;
@@ -577,7 +577,7 @@ UINT32 consulttabs2(void)
 
 /* proc */ void ExtractStored(UINT32 len) {
 
-    char buf[2048] ;
+    UINT8 buf[2048] ;
     UINT32 qq7 , bytes ;
     
     while (1) /* do */ {
@@ -894,7 +894,7 @@ UINT32 gunzip(char *path, GZIPHDR *hdr, char *inName)
         if (fread(&len, 1, 2, FFzipfile) != 2)
             return 1;
         // discard the data
-        for (i ==0 ; i < len; i++)
+        for (i =0 ; i < len; i++)
             if (fgetc(FFzipfile) == -1)
                 return 1;
     }
@@ -999,6 +999,7 @@ UINT32 gunzip(char *path, GZIPHDR *hdr, char *inName)
 }
 UINT32 unzip(char *filename, char *path) {
 
+    UINT32 rval = 1;
     char *p ;
     UINT32 sfxOffset = 0;
     ZIPHEAD head ;
@@ -1065,7 +1066,7 @@ UINT32 unzip(char *filename, char *path) {
     {
         
         p = strrchr(path,'\\') ; /* Search __LAST__ occur of 1 byte in string, returns pointer to found char */ 
-        if (!p && path[0] || p && *(p+1) != 0) /* then */ strcat(path,"\\") ; 
+        if ((!p && path[0]) || (p && (*(p+1) != 0))) /* then */ strcat(path,"\\") ; 
         
         fseek(FFzipfile,sfxOffset,SEEK_SET) ; /* Set absolute position to begin again */
         if (!FindZipHeader(&head, sfxOffset)) /* then */ return 1 ; /* Mallicious */
@@ -1076,41 +1077,33 @@ UINT32 unzip(char *filename, char *path) {
             fseek(FFzipfile,ofs + sfxOffset,SEEK_SET) ; /* Set absolute position to central DIR */
             fread(&direntry,1,sizeof(direntry),FFzipfile) ;
             qq2=unzipOneFile(path,&direntry, sfxOffset); /* Result: ||| 0 : GOOD ||| (>0) : Mallicious */ 
-            if (qq2!=0) /* then */ return 1 ; /* Mallicious */
+            if (qq2!=0) /* then */ break ; /* Mallicious */
     
             ofs += 0x2E + direntry.secheadlen + 
             direntry.tertiaryheadlen + direntry.filenamelen;
     
-            qq3=qq3+1 ; if (qq3==qq4) /* then */ break;
+            qq3=qq3+1 ; if (qq3==qq4) /* then */ { rval = 0; break; }
         
         } ; /* endwhile | loop */
-        fclose(FFzipfile) ;
     }
     else if (vntype == 3) /* gzip */
     {
         p = strrchr(path,'\\') ; /* Search __LAST__ occur of 1 byte in string, returns pointer to found char */ 
-        if (!p && path[0] || p && *(p+1) != 0) /* then */ strcat(path,"\\") ; 
+        if ((!p && path[0]) || (p && (*(p+1) != 0))) /* then */ strcat(path,"\\") ; 
         
         fseek(FFzipfile,sfxOffset,SEEK_SET) ; /* Set absolute position to begin again */
         qq3=0 ;
         while (1) /* do */ {
             GZIPHDR hdr;
             if (fread(&hdr, 1, sizeof(hdr), FFzipfile) == 0)
-                return 0;
+                { rval = 0; break; }
             if (gunzip(path, &hdr, filename))
-                return 1;
+                break;
             qq3 = qq3 + 1;
         }
-        fclose(FFzipfile) ;
-        return 1;
-    }
-    else
-    {
-        fclose(FFzipfile) ;
-        return 1;
     }
     fclose(FFzipfile) ;
-    return 0 ; /* GOOD */
+    return rval ; /* GOOD */
     
 } /* endfunction unzip */ 
 
@@ -1146,7 +1139,7 @@ UINT32 ParseOptions(UINT32 argc, char *argv[])
     }
     return argc;
 }
-UINT32 main (UINT32 argc, char *argv[]) {
+int main (int argc, char *argv[]) {
 
     char arg1file[256] ;
     char arg2path[256] ;

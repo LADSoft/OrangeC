@@ -111,6 +111,7 @@ endef
 $(eval $(clibdef))
 $(eval $(dlldef))
 
+OLDSGL := 1
 ifdef DISTMAKE
 include $(DISTMAKE)
 

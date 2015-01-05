@@ -35,6 +35,7 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
+OLDSGL := 1
 all:
 	$(MAKE) /CCOMPLIB
 ifdef OLDSGL

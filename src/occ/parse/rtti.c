@@ -165,8 +165,9 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
             if (!sp->inlineFunc.stmt && !sp->deferredCompile)
             {
                 EXPRESSION *exp = intNode(en_c_i, 0);
-                callDestructor(basetype(tp)->sp, &exp, NULL, TRUE, FALSE, TRUE);
-                sp = exp->left->v.func->sp;
+                callDestructor(basetype(tp)->sp, NULL, &exp, NULL, TRUE, FALSE, TRUE);
+                if (exp && exp->left)
+                    sp = exp->left->v.func->sp;
                 
             }
             else
@@ -198,6 +199,7 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
 {
     SYMBOL *sym = basetype(tp)->sp;
     HASHREC *hr;
+    tp = PerformDeferredInitialization(tp,  NULL);
     if (sym->vbaseEntries)
     {
         VBASEENTRY *entries = sym->vbaseEntries;
@@ -215,6 +217,11 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
                     char name[512];
                     RTTIGetName(name, entries->cls->tp);
                     xtSym = search(name, rttiSyms);
+                    if (!xtSym)
+                    {
+                        RTTIDumpType(entries->cls->tp);
+                        xtSym = search(name, rttiSyms);
+                    }
                     genint(XD_CL_VIRTUAL);
                     genref(xtSym , 0);
                     genint(entries->structOffset);
@@ -266,10 +273,12 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
             tp = basetype(tp);
             if (isstructured(tp))
             {
+                tp = PerformDeferredInitialization(tp, NULL);
                 if (genXT)
                 {
                     RTTIDumpType(tp);
                 }
+                /*
                 else
                 {
                     SYMBOL *xtSym;
@@ -280,6 +289,7 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
                     genref(xtSym , 0);
                     genint(member->offset);
                 }
+                */
             }
             hr = hr->next;
         }
@@ -329,6 +339,7 @@ SYMBOL *RTTIDumpType(TYPE *tp)
             xtSym = makeID(sc_global, tp, NULL, litlate(name));
             xtSym->linkage = lk_virtual;
             xtSym->decoratedName = xtSym->errname = xtSym->name;
+            xtSym->xtEntry = TRUE;
             insert(xtSym, rttiSyms);
             switch (basetype(tp)->type)
             {

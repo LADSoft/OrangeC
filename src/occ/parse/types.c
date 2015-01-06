@@ -76,7 +76,7 @@ static TYPE *replaceTemplateSelector (TYPE *tp)
         SYMBOL *sp2 = tp->sp->templateSelector->next->sym;
         if (sp2)
         {
-            SYMBOL *sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams, FALSE, sc_none, FALSE);
+            SYMBOL *sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams, TRUE);
             if (sp1)
             {
                 sp1 = search(tp->sp->templateSelector->next->next->name, sp1->tp->syms);
@@ -479,6 +479,19 @@ TYPE *typenum(char *buf, TYPE *tp)
             unmangle(name, tp->sp->errname);
             strcpy(buf, name);
             break;
+        case bt_templateselector:
+        {
+            TEMPLATESELECTOR *ts = tp->sp->templateSelector->next;
+            strcpy(buf, ts->sym->name);
+            ts = ts->next;
+            while (ts)
+            {
+                strcat(buf, "::");
+                strcat(buf, ts->name);
+                ts = ts->next;
+            }
+            break;
+        }
         default:
             strcpy(buf, "\?\?\?");
     }

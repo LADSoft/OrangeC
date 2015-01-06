@@ -39,7 +39,7 @@ OLDSGL := 1
 all:
 	$(MAKE) /CCOMPLIB
 ifdef OLDSGL
-	$(MAKE) /CSGISRC
+#	$(MAKE) /CSGISRC
 else
-	$(MAKE) /CSTLPort-5.2.1/src
+#	$(MAKE) /CSTLPort-5.2.1/src
 endif

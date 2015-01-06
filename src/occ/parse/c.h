@@ -500,10 +500,12 @@ typedef struct sym
         unsigned inCatch:1; // used inside a catch block
         unsigned isConstructor:1; // is a constructor
         unsigned isDestructor:1; // is  adestructor
+        unsigned xtEntry:1; // is an exception table label
         unsigned isExplicit:1; // explicit constructor or conversion function
         unsigned specialized:1; // is a template specialization
         unsigned packed:1; // packed template param instance
         unsigned instantiated; // instantiated template
+        unsigned instantiated2; // instantiated template
         unsigned performedDeferred : 1; // structured type has deferred compilation done already
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
         unsigned isInline : 1; /* function is a candidate for inline functionality */

@@ -248,7 +248,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                             name++;
                         }
                         name = unmang1(tname+strlen(tname), name, last);
-                        if (*name == '$' && (name[1] == 'g' || name[1] == 'e' || isdigit(name[1])))
+                        if (*name == '$' && (name[1] == 'g' || name[1] == 'e' || isdigit(name[1]) || name[1] == '_'))
                         {
                             name++;
                             if (isdigit(*name) || *name == '_')

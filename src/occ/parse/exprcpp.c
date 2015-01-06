@@ -36,7 +36,7 @@
 
 */
 #include "compiler.h"
-#include "assert.h"
+#include <assert.h>
 
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM *chosenAssembler;
@@ -304,7 +304,7 @@ EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *f
     }
     return rv;
 }
-static BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOLEAN implicit)
+BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOLEAN implicit)
 {
     SYMBOL *sp = basetype(*tp)->sp;
     if (!other || isarithmetic(other))
@@ -458,7 +458,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
                     SYMBOL *av = ev->v.sp;
                     params->returnEXP = ev;
                     params->returnSP = sp;
-                    callDestructor(basetype(*tp)->sp, &ev, NULL, TRUE, FALSE, FALSE);
+                    callDestructor(basetype(*tp)->sp, NULL, &ev, NULL, TRUE, FALSE, FALSE);
                     initInsert(&av->dest, *tp, ev, 0, TRUE);
                 }
                 e1 = varNode(en_func, NULL);
@@ -587,8 +587,10 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOLEAN defd = FALSE;
+    BOOLEAN consdest = FALSE;
+    BOOLEAN notype = FALSE;
     *tp = NULL;
-    lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd,NULL, FALSE);
+    lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, &consdest, NULL, FALSE);
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))
@@ -610,6 +612,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         else
         {
             errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, NULL);
+            *exp = intNode(en_c_i, 0);
             errskim(&lex, skim_semi);
         }
     }
@@ -621,15 +624,17 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     }
     else
     {
+        if (isref(*tp))
+            *tp = basetype(basetype(*tp)->btp);
         if (isstructured(*tp))
         {
             SYMBOL *sp;
             TYPE *ctype = *tp;
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
             EXPRESSION *exp1;
-            PerformDeferredInitialization(ctype, funcsp);
+            ctype = PerformDeferredInitialization(ctype, funcsp);
             lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
-            exp1 = *exp = anonymousVar(sc_auto, (*tp)->sp->tp);
+            exp1 = *exp = anonymousVar(sc_auto, basetype(*tp)->sp->tp);
             sp = exp1->v.sp;
             callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE); 
             if (funcparams->sp && funcparams->sp->constexpression)
@@ -677,7 +682,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             }
             else
             {
-                callDestructor(basetype(*tp)->sp, &exp1, NULL, TRUE, FALSE, FALSE);
+                callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
                 initInsert(&sp->dest, *tp, exp1, 0, TRUE);
             }
         }
@@ -708,7 +713,9 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                         if (!isvoid(*tp))
                         {
                             if (!cparams.prm_cplusplus || !cppCast(throwaway, tp, exp))
+                            {
                                 error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                            }
                         }
                     }
                     else if ((basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
@@ -990,6 +997,8 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
         TYPE *tpn = basetype(*newType)->btp;
         if (!checkconst || isconst(tpn) || !isconst(tpo)) 
         {
+            return TRUE;
+            /*
             SYMBOL *spo = basetype(tpo)->sp;
             SYMBOL *spn = basetype(tpn)->sp;
             if (spo == spn)
@@ -1005,6 +1014,7 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
                         return TRUE;
                 }
             }
+            */
         }
     }
     // convert one member pointer to another
@@ -1035,6 +1045,8 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
         {
             if (!checkconst || isconst(tpn) || !isconst(tpo)) 
             {
+                return TRUE;
+                /*
                 SYMBOL *spo = basetype(tpo)->sp;
                 SYMBOL *spn = basetype(tpn)->sp;
                 if (spo == spn)
@@ -1053,6 +1065,7 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
                         }
                     }
                 }
+                */
             }
         }
     }
@@ -1165,7 +1178,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         STRUCTSYM l ;
         l.str = (void *)basetype(*tp)->sp;
         addStructureDeclaration(&l);
-        s2 = classsearch(name, FALSE);
+        s2 = classsearch(name, FALSE, TRUE);
         dropStructureDeclaration();
         funcparams->thistp = Alloc(sizeof(TYPE));
         funcparams->thistp->type = bt_pointer;
@@ -1271,7 +1284,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
         int n;
         l.str = (void *)basetype(*tp)->sp;
         addStructureDeclaration(&l);
-        s2 = classsearch(name, FALSE);
+        s2 = classsearch(name, FALSE, TRUE);
         n = PushTemplateNamespace(basetype(*tp)->sp); // used for more than just templates here
         s4 = namespacesearch(name, globalNameSpace, FALSE, FALSE);
         PopTemplateNamespace(n);
@@ -1530,7 +1543,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             BOOLEAN defd = FALSE;
             SYMBOL *sp = NULL;
             BOOLEAN notype = FALSE;
-            lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, FALSE);
+            lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;
@@ -1600,7 +1613,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             
             l.str = (void *)basetype(*tp)->sp;
             addStructureDeclaration(&l);
-            s1 = classsearch(name, FALSE);
+            s1 = classsearch(name, FALSE, TRUE);
             dropStructureDeclaration();
         }
     }
@@ -1682,7 +1695,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         // i can't make it work well because the array indexes aren't necessarily constants...
         if (*tp)
         {
-            INITIALIZER *init = NULL, *dest = NULL;
+            INITIALIZER *init = NULL;
             EXPRESSION *base = val;
             TYPE *tp1 = *tp;
             SYMBOL *sp = NULL;
@@ -1698,7 +1711,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 tp1->type = bt_pointer;                
                 tp1->btp = *tp;
             }
-            lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp1, sp, FALSE, 0);
+            lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, tp1, sp, FALSE, 0);
             if (!isstructured(*tp) && !arrSize)
             {
                 if (!init || init->next || (init->basetp && isstructured(init->basetp)))
@@ -1816,7 +1829,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     in = exp2 = *exp = var;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
-        callDestructor(basetype(*tp)->btp->sp, exp, exp1, TRUE, TRUE, FALSE);
+        callDestructor(basetype(*tp)->btp->sp, NULL, exp, exp1, TRUE, TRUE, FALSE);
     }
     exp1 = exp2;
     if (!global)
@@ -1826,7 +1839,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
             STRUCTSYM l ;
             l.str = (void *)basetype(*tp)->sp;
             addStructureDeclaration(&l);
-            s1 = classsearch(name, FALSE);
+            s1 = classsearch(name, FALSE, TRUE);
             dropStructureDeclaration();
         }
     }

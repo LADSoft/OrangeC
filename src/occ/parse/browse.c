@@ -41,7 +41,7 @@
 #include <string.h>
 #include "compiler.h"
 #include "browse.h"
-#include "direct.h"
+#include <direct.h>
   
 extern COMPILER_PARAMS cparams;
 extern ARCH_DEBUG *chosenDebugger;

@@ -103,139 +103,147 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
         params = params->p->bySpecialization.types;
         bySpecial = TRUE;
     }
-    *buf++ = '#';
-    strcpy(buf, sym->name);
-    strcat(buf, "$");
-    buf += strlen(buf);
-    while (params)
-    {
-        switch(params->p->type)
-        {
-            case kw_typename:
-                if (params->p->packed)
-                {
-                    if (params->p->byPack.pack)
-                    {
-                        TEMPLATEPARAMLIST *pack = params->p->byPack.pack;
-                        while (pack)
-                        {
-                            buf = mangleType(buf, pack->p->byClass.val, TRUE); 
-                            pack = pack->next;
-                        }
-                    }
-                    else
-                    {
-                        *buf++ = 'e';
-                        buf = getName(buf, params->p->sym);
-                    }
-                }
-                else if (bySpecial)
-                {
-                    buf = mangleType(buf, params->p->byClass.dflt, TRUE); 
-                }
-                else if (sym->instantiated && params->p->byClass.val)
-                {
-                    buf = mangleType(buf, params->p->byClass.val, TRUE); 
-                }
-                else
-                {
-                    if (params->p->byClass.dflt)
-                    {
-                        buf = mangleType(buf, params->p->byClass.dflt, TRUE); 
-                    }
-                    else
-                    {
-                        buf = getName(buf, params->p->sym);
-                    }
-                }
-                break;
-            case kw_template:
-                if (params->p->packed)
-                    *buf++ = 'e';
-                if (bySpecial && params->p->byTemplate.dflt && params->p->byTemplate.val)
-                {
-                    buf = mangleTemplate(buf, params->p->byTemplate.dflt, params->p->byTemplate.val->templateParams);
-                }
-                else if (sym->instantiated && params->p->byTemplate.val)
-                {
-                    buf = mangleTemplate(buf, params->p->byTemplate.val, params->p->byTemplate.val->templateParams);
-                }
-                else if (params->p->sym)
-                {
-                    buf = getName(buf, params->p->sym);
-                }
-                else
-                {
-                    buf = getName(buf, params->p->byTemplate.dflt);
-                }
-                break;
-            case kw_int:
-                if (params->p->packed)
-                    *buf++ = 'e';
-                buf = mangleType(buf, params->p->byNonType.tp, TRUE);
-                if (bySpecial || sym->instantiated)
-                {
-                    EXPRESSION *exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
-                    if (exp)
-                    {
-                        *buf++= '$';
-                        if (isintconst(exp))
-                        {
-                            sprintf(buf, "%lld", exp->v.i);
-                            if (buf[0] == '-')
-                                buf[0] = '_';
-                        }
-                        else
-                        {
-                            buf[0] = 0;
-                            while (lvalue(exp))
-                                exp = exp->left;
-                            switch (exp->type)
-                            {
-                                case en_func:
-                                        *buf++ = 'e';
-                                        *buf++ = '&';
-                                        strcpy(buf, exp->v.func->sp->name);
-                                        buf += strlen(buf);
-                                        *buf++ = '$';
-                                        buf = mangleType( buf, exp->v.func->sp->tp, TRUE);
-                                        break;
-                                case en_pc:
-                                case en_global:
-                                case en_label:
-                                    if (isfunction(exp->v.sp->tp))
-                                    {
-                                        *buf++ = 'e';
-                                        *buf++ = '&';
-                                        strcpy(buf, exp->v.sp->name);
-                                        buf += strlen(buf);
-                                        *buf++ = '$';
-                                        buf = mangleType( buf, exp->v.sp->tp, TRUE);
-                                    }
-                                    else
-                                    {
-                                        *buf++ = 'g';
-                                        if (ispointer(params->p->byNonType.tp))
-                                            *buf++ = '&';
-                                        strcpy(buf, exp->v.sp->name);
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }    
-                        buf += strlen(buf);                    
-                        *buf++= '$';
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-        params = params->next;
-    }
-    *buf++ = '~';
-    *buf = 0;
+	if (sym->isConstructor || sym->isDestructor)
+	{
+		strcpy(buf, sym->name);
+		buf += strlen(buf);
+	}
+	else
+	{
+		*buf++ = '#';
+		strcpy(buf, sym->name);
+		strcat(buf, "$");
+		buf += strlen(buf);
+		while (params)
+		{
+			switch(params->p->type)
+			{
+				case kw_typename:
+					if (params->p->packed)
+					{
+						if (params->p->byPack.pack)
+						{
+							TEMPLATEPARAMLIST *pack = params->p->byPack.pack;
+							while (pack)
+							{
+								buf = mangleType(buf, pack->p->byClass.val, TRUE); 
+								pack = pack->next;
+							}
+						}
+						else
+						{
+							*buf++ = 'e';
+							buf = getName(buf, params->p->sym);
+						}
+					}
+					else if (bySpecial)
+					{
+						buf = mangleType(buf, params->p->byClass.dflt, TRUE); 
+					}
+					else if (sym->instantiated && params->p->byClass.val)
+					{
+						buf = mangleType(buf, params->p->byClass.val, TRUE); 
+					}
+					else
+					{
+						if (params->p->byClass.dflt)
+						{
+							buf = mangleType(buf, params->p->byClass.dflt, TRUE); 
+						}
+						else
+						{
+							buf = getName(buf, params->p->sym);
+						}
+					}
+					break;
+				case kw_template:
+					if (params->p->packed)
+						*buf++ = 'e';
+					if (bySpecial && params->p->byTemplate.dflt && params->p->byTemplate.val)
+					{
+						buf = mangleTemplate(buf, params->p->byTemplate.dflt, params->p->byTemplate.val->templateParams);
+					}
+					else if (sym->instantiated && params->p->byTemplate.val)
+					{
+						buf = mangleTemplate(buf, params->p->byTemplate.val, params->p->byTemplate.val->templateParams);
+					}
+					else if (params->p->sym)
+					{
+						buf = getName(buf, params->p->sym);
+					}
+					else
+					{
+						buf = getName(buf, params->p->byTemplate.dflt);
+					}
+					break;
+				case kw_int:
+					if (params->p->packed)
+						*buf++ = 'e';
+					buf = mangleType(buf, params->p->byNonType.tp, TRUE);
+					if (bySpecial || sym->instantiated)
+					{
+						EXPRESSION *exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
+						if (exp)
+						{
+							*buf++= '$';
+							if (isintconst(exp))
+							{
+								sprintf(buf, "%lld", exp->v.i);
+								if (buf[0] == '-')
+									buf[0] = '_';
+							}
+							else
+							{
+								buf[0] = 0;
+								while (lvalue(exp))
+									exp = exp->left;
+								switch (exp->type)
+								{
+									case en_func:
+											*buf++ = 'e';
+											*buf++ = '&';
+											strcpy(buf, exp->v.func->sp->name);
+											buf += strlen(buf);
+											*buf++ = '$';
+											buf = mangleType( buf, exp->v.func->sp->tp, TRUE);
+											break;
+									case en_pc:
+									case en_global:
+									case en_label:
+										if (isfunction(exp->v.sp->tp))
+										{
+											*buf++ = 'e';
+											*buf++ = '&';
+											strcpy(buf, exp->v.sp->name);
+											buf += strlen(buf);
+											*buf++ = '$';
+											buf = mangleType( buf, exp->v.sp->tp, TRUE);
+										}
+										else
+										{
+											*buf++ = 'g';
+											if (ispointer(params->p->byNonType.tp))
+												*buf++ = '&';
+											strcpy(buf, exp->v.sp->name);
+										}
+										break;
+									default:
+										break;
+								}
+							}    
+							buf += strlen(buf);                    
+							*buf++= '$';
+						}
+					}
+					break;
+				default:
+					break;
+			}
+			params = params->next;
+		}
+		*buf++ = '~';
+	    *buf = 0;
+	}
     return buf;
 }
 static char *lookupName(char *in, char *name)
@@ -438,7 +446,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 }
                 else
                 {
-                    sprintf(in,"A%ld",tp->size / tp->btp->size);
+                    sprintf(in,"A%ld",tp->btp->size ? tp->size / tp->btp->size : 0);
                     in += strlen(in);
                 }
                 in = mangleType(in, tp->btp, FALSE);

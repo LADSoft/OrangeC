@@ -1537,7 +1537,6 @@ void rewrite_icode(void)
 
 void gen_vtt(VTABENTRY *entry, SYMBOL *func, SYMBOL *name)
 {
-    gen_strlab(name);
     if (chosenAssembler->gen->gen_vtt)
         chosenAssembler->gen->gen_vtt(entry, func);
     if (!icdFile)

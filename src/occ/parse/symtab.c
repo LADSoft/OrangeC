@@ -213,7 +213,7 @@ HASHREC *AddName(SYMBOL *item, HASHTABLE *table)
     }
     return (0);
 }
-static HASHREC *AddOverloadName(SYMBOL *item, HASHTABLE *table)
+HASHREC *AddOverloadName(SYMBOL *item, HASHTABLE *table)
 {
     HASHREC **p = GetHashLink(table, item->decoratedName);
     HASHREC *newRec;
@@ -296,19 +296,7 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
         }
         tnew = basetype(snew->tp);
         told = basetype(sold->tp);
-        if (tnew->type == bt_templateparam)
-        {
-            if (told->type != bt_templateparam || 
-                tnew->templateParam->p->type != told->templateParam->p->type ||
-                tnew->templateParam->p->type != kw_typename ||
-                (((tnew->templateParam->p->byClass.dflt && tnew->templateParam->p->byClass.dflt->type != bt_templateparam)
-                  || (told->templateParam->p->byClass.dflt && told->templateParam->p->byClass.dflt->type != bt_templateparam))
-                 && (!tnew->templateParam->p->byClass.dflt || !told->templateParam->p->byClass.dflt ||
-                !comparetypes(told->templateParam->p->byClass.dflt, tnew->templateParam->p->byClass.dflt, TRUE))))
-                
-                    break;                    
-        }
-        else if (told->type == bt_any || tnew->type == bt_any) // packed template param
+        if (told->type == bt_any || tnew->type == bt_any) // packed template param
             break;
         else if ((!comparetypes(told, tnew, TRUE) && !sameTemplatePointedTo(told, tnew)) || told->type != tnew->type)
             break;
@@ -320,14 +308,37 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
                 tps = basetype(tps)->btp;
             if (isref(tpn))
                 tpn = basetype(tpn)->btp;
+            while (ispointer(tpn) && ispointer(tps))
+            {
+                if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                    return FALSE;
+                tpn= basetype(tpn)->btp;
+                tps = basetype(tps)->btp;
+            }
             if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
-                break;                
+                return FALSE;
+            tnew = tpn;
+            told = tps;
+            if (tnew->type == bt_templateparam)
+            {
+                if (told->type != bt_templateparam || 
+                    tnew->templateParam->p->type != told->templateParam->p->type ||
+                    tnew->templateParam->p->type != kw_typename ||
+                    (((tnew->templateParam->p->byClass.dflt && tnew->templateParam->p->byClass.dflt->type != bt_templateparam)
+                      || (told->templateParam->p->byClass.dflt && told->templateParam->p->byClass.dflt->type != bt_templateparam))
+                     && (!tnew->templateParam->p->byClass.dflt || !told->templateParam->p->byClass.dflt ||
+                    !comparetypes(told->templateParam->p->byClass.dflt, tnew->templateParam->p->byClass.dflt, TRUE))))
+                    
+                        break;                    
+            }
         }
         hold = hold->next;
         hnew = hnew->next;
     }
     if (!hold && !hnew)
+    {        
         return TRUE;
+    }
     return FALSE;
 }
 SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
@@ -339,7 +350,11 @@ SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
         {
             SYMBOL *spp = (SYMBOL *)p->p;
             if (matchOverload(sp->tp, spp->tp))
-                return spp;
+            {
+                if (!spp->templateParams || !!spp->templateParams == !!sp->templateParams)
+                    if (!spp->templateParams || exactMatchOnTemplateArgs(spp->templateParams, sp->templateParams))
+                        return spp;
+            }
             p = p->next;
         }
     }

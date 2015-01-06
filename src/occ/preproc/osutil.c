@@ -614,12 +614,13 @@ void setglbdefs(void)
     }
     sscanf(STRING_VERSION, "%d.%d", &major, &minor);
     sprintf(buf, "%d", major *100+minor);
-    glbdefine("__CCDL__", buf,TRUE);
+    glbdefine("__ORANGEC__", buf,TRUE);
+    glbdefine("__WIN32", "",FALSE);
     if (cparams.prm_cplusplus)
     {
         glbdefine("__cplusplus", "",TRUE);
         if (cparams.prm_xcept)
-            glbdefine("__RTTI__", "",TRUE);
+            glbdefine("__RTTI__", "1",TRUE);
     }
     glbdefine("__STDC__", "1",TRUE);
     if (cparams.prm_c99)

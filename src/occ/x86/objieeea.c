@@ -1057,9 +1057,9 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                 xseg = segxlattab[iseg];
             {
                 SYMBOL *sp = fixup->sym;
-                if ((xseg & 0xc0000000) || sp->storage_class == sc_global || sp->storage_class ==
-                    sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads
-                    || ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt))
+                if ((isfunction(sp->tp) && sp->inlineFunc.stmt) || (!isfunction(sp->tp) && sp->linkage == lk_virtual) ||
+                    sp->storage_class == sc_global || sp->storage_class ==
+                    sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads)
                 {
                     if (rel)
                     {

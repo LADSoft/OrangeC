@@ -168,27 +168,30 @@ static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
         while (hr && args) // args might go to NULL for a destructor, which currently has a VOID at the end of the arg list
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            IMODE *src, *ap1, *idest;
-            EXPRESSION *dest;
-            SYMBOL *sym2 = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
-            LIST *lst = Alloc(sizeof(LIST));
-            sym2->allocate = TRUE;
-            sym2->inAllocTable = TRUE;
-            lst->data = sym2;
-            lst->next = temporarySymbols;
-            temporarySymbols = lst;
-            dest = varNode(en_auto, sym2);
-            deref(sym->tp, &dest);
-            list[cnt++] = dest;
-            idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
-            src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
-            ap1 = LookupLoadTemp(NULL, src);
-            if (ap1 != src)
+            if (!isvoid(sym->tp))
             {
-                gen_icode(i_assn, ap1, src, NULL);
-                src = ap1;
+                IMODE *src, *ap1, *idest;
+                EXPRESSION *dest;
+                SYMBOL *sym2 = makeID(sc_auto, sym->tp, NULL, AnonymousName()); 
+                LIST *lst = Alloc(sizeof(LIST));
+                sym2->allocate = TRUE;
+                sym2->inAllocTable = TRUE;
+                lst->data = sym2;
+                lst->next = temporarySymbols;
+                temporarySymbols = lst;
+                dest = varNode(en_auto, sym2);
+                deref(sym->tp, &dest);
+                list[cnt++] = dest;
+                idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
+                src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
+                ap1 = LookupLoadTemp(NULL, src);
+                if (ap1 != src)
+                {
+                    gen_icode(i_assn, ap1, src, NULL);
+                    src = ap1;
+                }
+                gen_icode(i_assn, idest, src, NULL);
             }
-            gen_icode(i_assn, idest, src, NULL);
             args = args->next;
             hr = hr->next;
         }
@@ -199,7 +202,10 @@ static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            sym->inlineFunc.stmt = (STATEMENT *)list[cnt++];
+            if (!isvoid(sym->tp))
+            {
+                sym->inlineFunc.stmt = (STATEMENT *)list[cnt++];
+            }
             hr = hr->next;
         }
     }
@@ -296,7 +302,7 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
         return NULL;
     if (f->sp->allocaUsed)
         return NULL;
-    if (f->sp->templateParams && !f->sp->specialized)
+    if (f->sp->templateParams && !f->sp->instantiated) //specialized)
         return NULL;
     if (!f->sp->inlineFunc.syms)
         return NULL;

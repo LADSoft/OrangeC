@@ -101,7 +101,8 @@ void displayLexeme(LEXEME *lex);
                               /* Declare.c */
 
 BOOLEAN intcmp(TYPE *t1, TYPE *t2);
-int templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
+BOOLEAN equalTemplateIntNode(EXPRESSION *exp1, EXPRESSION *exp2);
+BOOLEAN templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
 BOOLEAN hasVTab(SYMBOL *sp);
 BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told);
 BOOLEAN sameTemplate(TYPE *P, TYPE *A);
@@ -134,7 +135,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
 void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms);
 void createAssignment(SYMBOL *sym, SYMBOL *asnfunc);
 void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count);
-void callDestructor(SYMBOL *sp, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, 
+void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, 
                     BOOLEAN pointer, BOOLEAN skipAccess);
 BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
@@ -163,7 +164,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BOOLEAN isTemplate, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
-                    enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, BOOLEAN isTypedef);
+                    enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, BOOLEAN *templateArg, BOOLEAN isTypedef);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
                       NAMESPACEVALUES **nsv, BOOLEAN isTemplate, enum e_sc storage_class,
 							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN asFriend,
@@ -184,9 +185,9 @@ void TemplateRegisterDeferred(LEXEME *lex);
 BOOLEAN exactMatchOnTemplateArgs(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
 BOOLEAN exactMatchOnTemplateParams(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
 SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams);
-SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp, TEMPLATEPARAMLIST *templateParams);
+SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp);
 TEMPLATEPARAMLIST * TemplateMatching(LEXEME *lex, TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym, SYMBOL *sp, BOOLEAN definition);
-LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST **lst);
+LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLATEPARAMLIST **lst);
 BOOLEAN TemplateIntroduceArgs(TEMPLATEPARAMLIST *sym, TEMPLATEPARAMLIST *args);
 TYPE *SynthesizeType(TYPE *tp,TEMPLATEPARAMLIST *enclosing,  BOOLEAN alt);
 SYMBOL *SynthesizeResult(SYMBOL *sym, TEMPLATEPARAMLIST *params);
@@ -201,7 +202,8 @@ SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN i
 void TemplateDataInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
 void SetTemplateNamespace(SYMBOL *sym);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
-SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class, BOOLEAN superIsFullySpecialized);
+BOOLEAN allTemplateArgsSpecified(TEMPLATEPARAMLIST *args);
+SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr);
 void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, BOOLEAN isExtern);
 void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
@@ -229,6 +231,7 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *fu
 BOOLEAN doConstCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
 BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOLEAN checkconst);
 BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other);
+BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOLEAN implicit);
 void castToArithmetic(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOLEAN implicit);
 BOOLEAN cppCast(TYPE *src, TYPE **dest, EXPRESSION **exp);
 LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, BOOLEAN packed);
@@ -911,10 +914,10 @@ TEMPLATEPARAMLIST *getTemplateStruct(char *name);
 LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly);
 SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOLEAN tagsOnly);
 SYMBOL *templatesearch(char *name, TEMPLATEPARAMLIST *arg);
-SYMBOL *classsearch(char *name, BOOLEAN tagsOnly);
+SYMBOL *classsearch(char *name, BOOLEAN tagsOnly, BOOLEAN toErr);
 LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, BOOLEAN *throughPath, BOOLEAN tagsOnly, enum e_sc storage_class);
 LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *destructor, 
-                     BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class);
+                     BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN errIfNotFound);
 LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
 LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *isTemplate, BOOLEAN tagsOnly, BOOLEAN membersOnly, char *name);
 BOOLEAN isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOLEAN asAddress);
@@ -927,10 +930,12 @@ SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args);
+SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOLEAN toErr, 
                               BOOLEAN maybeConversion, BOOLEAN toInstantiate);
 void insert(SYMBOL *in, HASHTABLE *table);
+HASHREC *AddOverloadName(SYMBOL *item, HASHTABLE *table);
 void insertOverload(SYMBOL *in, HASHTABLE *table);
 
                                /* Types.c */

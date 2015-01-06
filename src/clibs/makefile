@@ -119,18 +119,18 @@ DISTRIBUTE:
 	$(COPYDIR) cpp\stdinc\*. $(DISTINC)
 	$(COPYDIR) cpp\stdinc\*.h $(DISTINC)
 ifdef OLDSGL
-	$(COPYDIR) cpp\sgiinc\*. $(DISTINC)
-	$(COPYDIR) cpp\sgiinc\*.h $(DISTINC)
-	$(COPYDIR) cpp\sgiinc\stl\*. $(DISTINC)\stl
-	$(COPYDIR) cpp\sgiinc\stl\*.h $(DISTINC)\stl
+#	$(COPYDIR) cpp\sgiinc\*. $(DISTINC)
+#	$(COPYDIR) cpp\sgiinc\*.h $(DISTINC)
+#	$(COPYDIR) cpp\sgiinc\stl\*. $(DISTINC)\stl
+#	$(COPYDIR) cpp\sgiinc\stl\*.h $(DISTINC)\stl
 else
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\*.* $(DISTROOT)\stlport
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\*.* $(DISTROOT)\stlport\stl
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\config\*.* $(DISTROOT)\stlport\stl\config
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\debug\*.* $(DISTROOT)\stlport\stl\debug
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\pointers\*.* $(DISTROOT)\stlport\stl\pointers
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\*.* $(DISTROOT)\stlport\using
-	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\h\*.* $(DISTROOT)\stlport\using\h
+#	$(COPYDIR) cpp\stlport-5.2.1\stlport\*.* $(DISTROOT)\stlport
+#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\*.* $(DISTROOT)\stlport\stl
+#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\config\*.* $(DISTROOT)\stlport\stl\config
+#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\debug\*.* $(DISTROOT)\stlport\stl\debug
+#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\pointers\*.* $(DISTROOT)\stlport\stl\pointers
+#	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\*.* $(DISTROOT)\stlport\using
+#	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\h\*.* $(DISTROOT)\stlport\using\h
 endif
 	$(COPYDIR) stdinc\*.h $(DISTINC)
 	$(COPYDIR) stdinc\sys\*.h $(DISTINC)\sys

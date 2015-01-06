@@ -279,7 +279,7 @@ KEYWORD keywords[] = {
     { "int", 3,  kw_int, 0, TT_BASETYPE | TT_INT | TT_BASE },
     { "long", 4,  kw_long, 0, TT_BASETYPE | TT_INT },
     { "mutable", 7,  kw_mutable, KW_CPLUSPLUS, TT_STORAGE_CLASS},
-    { "namespace", 9,  kw_namespace, KW_CPLUSPLUS, TT_STORAGE_CLASS },
+    { "namespace", 9,  kw_namespace, KW_CPLUSPLUS, 0 },
 //	{ "near", 4,  kw__near, KW_NONANSI | KW_ALL, TT_POINTERQUAL | TT_TYPEQUAL},
     { "new", 3,  kw_new, KW_CPLUSPLUS, TT_OPERATOR | TT_UNARY },
     { "noexcept", 8,  kw_noexcept, KW_CPLUSPLUS, TT_CONTROL},
@@ -1215,10 +1215,10 @@ LEXEME *SkipToNextLine(void)
 }
 LEXEME *getGTSym(LEXEME *in)
 {
-    static unsigned char *pgreater = (unsigned char *)">";
     static LEXEME lex;
+    char pgreater[2] = { '>', 0 }, *ppgreater=pgreater;
     KEYWORD *kw;
-    kw = searchkw(&pgreater);
+    kw = searchkw(&ppgreater);
     lex = *in;
     lex.type = l_kw;
     lex.kw = kw;

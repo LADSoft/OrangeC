@@ -94,7 +94,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         SYMBOL *sp, *strSym = NULL;
         LEXEME *placeholder = lex;
         BOOLEAN dest = FALSE;
-        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global);
+        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global, FALSE);
         if (cparams.prm_cplusplus)
             prevsym(placeholder);
         return (sp && istype(sp)) || (assumeType && strSym && strSym->tp->type == bt_templateselector);
@@ -139,6 +139,7 @@ BOOLEAN isunsigned(TYPE *tp)
         case bt_unsigned_char:
         case bt_unsigned_long:
         case bt_unsigned_long_long:
+        case bt_wchar_t:
             return TRUE;
         default:
             return FALSE;
@@ -1538,6 +1539,10 @@ TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLE
             t1= bt_int;
         if (t2 == bt_enum)
             t2= bt_int;
+        if (t1 == bt_wchar_t)
+            t1 = bt_unsigned;
+        if (t2 == bt_wchar_t)
+            t2 = bt_unsigned;
         if (t1 < bt_int)
             t1= bt_int;
         if (t2 < bt_int)

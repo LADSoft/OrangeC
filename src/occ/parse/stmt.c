@@ -41,7 +41,7 @@
 #include <assert.h>
 extern ARCH_DEBUG *chosenDebugger;
 extern ARCH_ASM *chosenAssembler;
-extern TYPE stdint, stdvoid;
+extern TYPE stdint, stdvoid, stdpointer;
 extern int stdpragmas;
 extern INCLUDES *includes;
 extern HASHTABLE *labelSyms;
@@ -227,7 +227,10 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
         
     if (cparams.prm_cplusplus && isstructured(tp) && kw != kw_for)
     {
-        castToArithmetic(FALSE, &tp, exp, (enum e_kw)-1, &stdint, TRUE);
+        if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw)-1, &stdint, TRUE))
+            if (!castToPointer(&tp, exp, (enum e_kw)-1, &stdpointer))
+                errortype(ERR_CANNOT_CONVERT_TYPE, tp, &stdint);
+
     }
     if (!tp)
         error(ERR_EXPRESSION_SYNTAX);
@@ -712,7 +715,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                        callDestructor(fcb.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
                                         initInsert(&dest, iteratorType, exp, 0, TRUE);
                                         fcb.returnSP->dest = dest;
                                        
@@ -720,7 +723,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                        callDestructor(fce.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
                                         initInsert(&dest, iteratorType, exp, 0, TRUE);
                                         fce.returnSP->dest = dest;
                                     }
@@ -810,7 +813,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fcb.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                            callDestructor(fcb.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
                                             initInsert(&dest, iteratorType, exp, 0, TRUE);
                                             fcb.returnSP->dest = dest;
                                             
@@ -818,7 +821,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fce.returnSP, &exp, NULL, TRUE, FALSE, FALSE);
+                                            callDestructor(fce.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
                                             initInsert(&dest, iteratorType, exp, 0, TRUE);
                                             fce.returnSP->dest = dest;
                                         }
@@ -965,7 +968,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
                             }
                             else if (isarray(selectTP))
                             {
@@ -1008,7 +1011,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                    callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star,
@@ -1041,7 +1044,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
                             }
                         }
                         
@@ -1082,7 +1085,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, &declDest, NULL, TRUE, FALSE, FALSE);
+                                    callDestructor(st->select->v.func->returnSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -1605,67 +1608,38 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 {
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     TYPE *ctype = tp;
-                    if (startOfType(lex, FALSE))
+                    // shortcut for conversion from single expression
+                    EXPRESSION *exp1 = NULL;
+                    TYPE *tp1 = NULL;
+                    lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, _F_INRETURN);
+                    if (tp1)
                     {
-                        TYPE *tp1 = NULL;
-                        enum e_lk linkage, linkage2, linkage3;
-                        BOOLEAN defd = FALSE;
-                        lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, NULL, &defd, NULL, FALSE);
-                        if (!tp1 || (!comparetypes(basetype(tp1), basetype(tp), TRUE) && !sameTemplate(tp1, tp)))
-                        {
-                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                            errskim(&lex, skim_semi);
-                            return lex;
-                        }
-                        else if (MATCHKW(lex, openpa))
-                        {
-                            // conversion constructor params
-                            lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
-                        }
-                        else
-                        {
-                            // default constructor without param list
-                            errorsym(ERR_IMPROPER_USE_OF_TYPEDEF, basetype(tp)->sp);
-                        }
-                        ctype = tp1;
-                        returntype = tp1;
-                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE); 
-                        returnexp = en;
+                        optimize_for_constants(&exp1);
                     }
-                    else
-                    {
-                        // shortcut for conversion from single expression
-                        EXPRESSION *exp1 = NULL;
-                        TYPE *tp1 = NULL;
-                        lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, _F_INRETURN);
-                        if (tp1)
+                    if (exp1->type == en_func && exp1->v.func->returnSP)
+                    {   
+                        if ((comparetypes(tp1, tp, TRUE) || sameTemplate(tp, tp1)) 
+                            || exp1->type == en_stmt)
                         {
-                            optimize_for_constants(&exp1);
-                        }
-                        if (exp1->type == en_func && exp1->v.func->returnSP)
-                        {   
-                            if ((comparetypes(tp1, tp, TRUE) || sameTemplate(tp, tp1)) 
-                                || exp1->type == en_stmt)
-                            {
-                                returnexp = exp1;
-                            }
-                            else
-                            {
-                                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
-                            }
                             returnexp = exp1;
                         }
                         else
                         {
-                            funcparams->arguments = Alloc(sizeof(INITLIST));
-                            funcparams->arguments->tp = tp1;
-                            funcparams->arguments->exp = exp1;
-                            maybeConversion = FALSE;
-                            returntype = tp1;
-                            implicit = TRUE;
-                            callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE); 
-                            returnexp = en;
+                            errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
                         }
+                        returntype = tp1;
+                        returnexp = exp1;
+                    }
+                    else
+                    {
+                        funcparams->arguments = Alloc(sizeof(INITLIST));
+                        funcparams->arguments->tp = tp1;
+                        funcparams->arguments->exp = exp1;
+                        maybeConversion = FALSE;
+                        returntype = tp;
+                        implicit = TRUE;
+                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE); 
+                        returnexp = en;
                     }
                 }
             }
@@ -1745,16 +1719,16 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     {
         st->returntype = &stdvoid;
     }
-    if (returnexp && basetype(funcsp->tp)->btp->type != bt_auto)
+    if (returnexp && returntype->type != bt_auto)
     {
         if (!tp) // some error...
             tp = &stdint;
         if (tp->type == bt_void)
         {
-            if (!cparams.prm_cplusplus || basetype(funcsp->tp)->btp->type != bt_void)
+            if (!cparams.prm_cplusplus || returntype->type != bt_void)
                 error(ERR_CANNOT_RETURN_VOID_VALUE);                                                 
         }
-        else if (basetype(funcsp->tp)->btp && basetype(funcsp->tp)->btp->type == bt_void)
+        else if (returntype && returntype->type == bt_void)
             error(ERR_RETURN_NO_VALUE);
         else
         {
@@ -1762,33 +1736,33 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             {
                 error(ERR_CONSTRUCTOR_HAS_RETURN);
             }
-            else if (isstructured(basetype(funcsp->tp)->btp) || isstructured(tp))
+            else if (isstructured(returntype) || isstructured(tp))
             {
-                if (!comparetypes(basetype(funcsp->tp)->btp, tp, FALSE))
+                if (!comparetypes(returntype, tp, FALSE) && !sameTemplate(returntype, tp))
                     error(ERR_RETMISMATCH);
             }
-            else if (basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr || basetype(tp)->type == bt_memberptr)
+            else if (basetype(returntype)->type == bt_memberptr || basetype(tp)->type == bt_memberptr)
             {
                 if (isconstzero(tp,st->select))
                 {
-                    int lbl = dumpMemberPtr(NULL, basetype(funcsp->tp)->btp, TRUE);
+                    int lbl = dumpMemberPtr(NULL, returntype, TRUE);
                     st->select = intNode(en_labcon, lbl);
                 }
                 else 
                 {
                     if (st->select->type == en_memberptr)
                     {
-                        int lbl = dumpMemberPtr(st->select->v.sp, basetype(funcsp->tp)->btp, TRUE);
+                        int lbl = dumpMemberPtr(st->select->v.sp, returntype, TRUE);
                         st->select = intNode(en_labcon, lbl);
                     }
-                    if (!comparetypes(basetype(funcsp->tp)->btp, tp, TRUE))
+                    if (!comparetypes(returntype, tp, TRUE))
                         error(ERR_RETMISMATCH);
                 }
             }
             else 
             {
-                cast(basetype(funcsp->tp)->btp, &st->select);
-                if (ispointer(basetype(funcsp->tp)->btp))
+                cast(returntype, &st->select);
+                if (ispointer(returntype))
                 {
                     if (isarithmetic(tp))
                     {
@@ -1798,7 +1772,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             error(ERR_ILL_USE_OF_FLOATING);
                         else if (isarithmeticconst(returnexp))
                         {
-                            if (!isintconst(returnexp) || !isconstzero(basetype(funcsp->tp)->btp, returnexp))
+                            if (!isintconst(returnexp) || !isconstzero(returntype, returnexp))
                                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
                         }
                         else if (returnexp->type != en_func || returnexp->v.func->fcall->type != en_l_p)
@@ -1806,24 +1780,24 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     }
                     else if (ispointer(tp))
                     {
-                        if (!comparetypes(basetype(funcsp->tp)->btp, tp, TRUE))
+                        if (!comparetypes(returntype, tp, TRUE))
                         {
-                            if (!isvoidptr(basetype(funcsp->tp)->btp) && !isvoidptr(tp))
+                            if (!isvoidptr(returntype) && !isvoidptr(tp))
                             {
-                                if (!matchingCharTypes(basetype(funcsp->tp)->btp, tp))
+                                if (!matchingCharTypes(returntype, tp))
                                     error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                             }
                             else 
                             {
-                                if (cparams.prm_cplusplus && !isvoidptr(basetype(funcsp->tp)->btp) && returnexp->type != en_nullptr && isvoidptr(tp))
+                                if (cparams.prm_cplusplus && !isvoidptr(returntype) && returnexp->type != en_nullptr && isvoidptr(tp))
                                     error(ERR_ANSI_FORBIDS_IMPLICIT_CONVERSION_FROM_VOID);
                             }
                         }
                     }
                     else if (isfunction(tp))
                     {
-                        if (!isvoidptr(basetype(funcsp->tp)->btp) && 
-                            (!isfunction(basetype(basetype(funcsp->tp)->btp)->btp) || !comparetypes(basetype(funcsp->tp)->btp, tp, TRUE)))
+                        if (!isvoidptr(returntype) && 
+                            (!isfunction(basetype(returntype)->btp) || !comparetypes(returntype, tp, TRUE)))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                     }
                     else 
@@ -1831,20 +1805,20 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else if (ispointer(tp))
                 {
-                    if (iscomplex(basetype(funcsp->tp)->btp))
+                    if (iscomplex(returntype))
                         error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (isfloat(basetype(funcsp->tp)->btp) || isimaginary(basetype(funcsp->tp)->btp))
+                    else if (isfloat(returntype) || isimaginary(returntype))
                         error(ERR_ILL_USE_OF_FLOATING);
-                    else if (isint(basetype(funcsp->tp)->btp))
+                    else if (isint(returntype))
                         error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 }
                 else if (ispointer(tp))
                 {
-                    if (iscomplex(basetype(funcsp->tp)->btp))
+                    if (iscomplex(returntype))
                         error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (isfloat(basetype(funcsp->tp)->btp) || isimaginary(basetype(funcsp->tp)->btp))
+                    else if (isfloat(returntype) || isimaginary(returntype))
                         error(ERR_ILL_USE_OF_FLOATING);
-                    else if (isint(basetype(funcsp->tp)->btp))
+                    else if (isint(returntype))
                         error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 }
             }
@@ -2060,7 +2034,7 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             {
                 INITIALIZER *init = NULL;
                 EXPRESSION *exp = select->v.func->returnEXP;
-                callDestructor(basetype(tp)->sp, &exp, NULL, TRUE, FALSE, FALSE);
+                callDestructor(basetype(tp)->sp, NULL, &exp, NULL, TRUE, FALSE, FALSE);
                 initInsert(&init, sp->tp, exp, 0, FALSE);                
                 sp->dest = init;
             }
@@ -2996,7 +2970,7 @@ static void checkUndefinedStructures(SYMBOL *funcsp)
     TYPE *tp = basetype(funcsp->tp)->btp;
     if (isstructured(tp) && !basetype(tp)->sp->tp->syms)
     {
-        PerformDeferredInitialization(tp, funcsp);
+        tp = PerformDeferredInitialization(tp, funcsp);
         if (!basetype(tp)->sp->tp->syms)
         {
             currentErrorLine = 0;
@@ -3010,7 +2984,7 @@ static void checkUndefinedStructures(SYMBOL *funcsp)
         TYPE *tp = basetype(sp->tp);
         if (isstructured(tp) && !basetype(tp)->sp->tp->syms)
         {
-            PerformDeferredInitialization(tp, funcsp);
+            tp = PerformDeferredInitialization(tp, funcsp);
             if (!basetype(tp)->sp->tp->syms)
             {
                 currentErrorLine = 0;
@@ -3107,7 +3081,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     checkGotoPastVLA(block->head, TRUE);
     funcsp->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;
-    if (!funcsp->templateLevel || funcsp->instantiated)
+    if (!funcsp->templateLevel || funcsp->instantiated || funcsp->instantiated2)
     {
         funcsp->inlineFunc.stmt = stmtNode(lex, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = block->head;

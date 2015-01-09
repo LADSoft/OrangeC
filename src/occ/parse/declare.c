@@ -1102,7 +1102,7 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
 {
     LLONG_TYPE enumval = 0;
     TYPE *unfixedType;
-    BOOLEAN fixed = TRUE;
+    BOOLEAN fixed = cparams.prm_cplusplus ? TRUE : FALSE;
     unfixedType = spi->tp->btp;
     if (!unfixedType)
         unfixedType = &stdint;

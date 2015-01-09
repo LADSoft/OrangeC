@@ -4868,7 +4868,9 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             }
             if (!done)
             {
-                destSize(*tp, tp1, exp, &exp1, TRUE, NULL);
+                if (!(chosenAssembler->arch->preferopts & OPT_BYTECOMPARE)
+                    || (!fittedConst(*tp, *exp) && !fittedConst(tp1, exp1)))
+                    destSize(*tp, tp1, exp, &exp1, TRUE, NULL);
                 *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
             }
             if (cparams.prm_cplusplus)

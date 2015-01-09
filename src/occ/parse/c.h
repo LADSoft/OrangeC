@@ -847,7 +847,10 @@ typedef struct _string
 #define OPT_LSTRENGTH 2
 #define OPT_GLOBAL 4
 #define OPT_CONSTANT 8
-#define OPT_INVARIANT 16
+#define OPT_INVARIANT 0x10
+
+
+#define OPT_BYTECOMPARE 0x10000
 
 // must match stdatomic.h
 enum e_mo {

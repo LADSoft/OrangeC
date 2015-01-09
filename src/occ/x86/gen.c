@@ -59,6 +59,7 @@ static IMODE *switch_ip;
 static enum {swm_enumerate, swm_compactstart, swm_compact, swm_tree} switch_mode;
 static int switch_lastcase;
 static AMODE *switch_apl, *switch_aph;
+static int switch_live;
 static int *switchTreeLabels, *switchTreeBranchLabels ;
 static LLONG_TYPE *switchTreeCases;
 static int switchTreeLabelCount;
@@ -1841,9 +1842,11 @@ void bingen(int lower, int avg, int higher)
         oa_gen_label(switchTreeBranchLabels[avg]);
     gen_coden(op_cmp, switch_apl->length, switch_apl, ap2);
     gen_branch(op_je, switchTreeLabels[avg]);
+    peep_tail->oper1->liveRegs = switch_live;
     if (avg == lower)
     {
         gen_branch(op_jmp, switch_deflab);
+        peep_tail->oper1->liveRegs = switch_live;
     }
     else
     {
@@ -1858,6 +1861,7 @@ void bingen(int lower, int avg, int higher)
             gen_branch(op_jg, lab);
         else
             gen_branch(op_ja, lab);
+        peep_tail->oper1->liveRegs = switch_live;
         bingen(lower, avg1, avg);
         if (avg + 1 < higher)
             bingen(avg + 1, avg2, higher);
@@ -3701,6 +3705,11 @@ void asm_coswitch(QUAD *q)           /* switch characteristics */
     switch_case_max = switch_case_count = q->ans->offset->v.i;
     switch_ip = q->dc.left;
     getAmodes(q, &op, switch_ip, &switch_apl, &switch_aph);
+    switch_live = 0;
+    if (switch_apl->mode == am_dreg)
+        switch_live |= 1 << switch_apl->preg;
+    if (switch_aph && switch_aph->mode == am_dreg)
+        switch_live |= 1 << switch_aph->preg;
     if (switch_ip->size == ISZ_ULONGLONG || switch_ip->size == - ISZ_ULONGLONG || switch_case_max <= 5)
     {
         switch_mode = swm_enumerate;
@@ -3749,6 +3758,7 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
                 int nxlab = beGetLabel;
                 gen_codes(op_cmp, ISZ_UINT, switch_apl, aimmed(swcase));
                 gen_branch(op_jne, nxlab);
+                peep_tail->oper1->liveRegs = switch_live;
 #ifdef USE_LONGLONG
                 gen_codes(op_cmp, ISZ_UINT, switch_aph, aimmed(swcase >> 32));
 #else
@@ -3758,16 +3768,19 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
                     gen_codes(op_cmp, ISZ_UINT, switch_aph, aimmed(0));
 #endif
                 gen_branch(op_je, lab);
+                peep_tail->oper1->liveRegs = switch_live;
                 oa_gen_label(nxlab);		
             }
             else
             {
                 gen_codes(op_cmp, switch_ip->size, switch_apl, aimmed(swcase));
                 gen_branch(op_je, lab);
-            }			
+                peep_tail->oper1->liveRegs = switch_live;
+            }
             if (-- switch_case_count == 0)
             {
                 gen_branch(op_jmp, switch_deflab);
+                peep_tail->oper1->liveRegs = switch_live;
             }
             break ;
         case swm_compact:

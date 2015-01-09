@@ -1341,6 +1341,42 @@ BOOLEAN isconstzero(TYPE *tp, EXPRESSION *exp)
     (void)tp;
     return (isintconst(exp) && exp->v.i == 0);
 }
+BOOLEAN fittedConst(TYPE *tp, EXPRESSION *exp)
+{
+    int n;
+    if (!isint(tp) || !isintconst(exp))
+        return FALSE;
+    n = getSize(basetype(tp)->type);
+    switch (n)
+    {
+        case 8:
+            if (isunsigned(tp))
+            {
+                if (exp->v.i < 0 || exp->v.i > 255)
+                    return FALSE;
+            }
+            else
+            {
+                if (exp->v.i < - 128 || exp->v.i > 127)
+                    return FALSE;
+            }
+            break;
+        case 16:
+            if (isunsigned(tp))
+            {
+                if (exp->v.i < 0 || exp->v.i > 65535)
+                    return FALSE;
+            }
+            else
+            {
+                if (exp->v.i < - 32768 || exp->v.i > 32767)
+                    return FALSE;
+            }
+            break;
+        default:
+            return TRUE;
+    }
+}
 BOOLEAN isarithmeticconst(EXPRESSION *exp)
 {
     return isintconst(exp) || isfloatconst(exp) || isimaginaryconst(exp) ||

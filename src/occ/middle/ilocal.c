@@ -55,6 +55,7 @@ extern BOOLEAN setjmp_used;
 extern int exitBlock;
 extern BOOLEAN functionHasAssembly;
 extern LIST *temporarySymbols;
+extern QUAD *intermed_tail;
 
 TEMP_INFO **tempInfo;
 int tempSize;
@@ -103,17 +104,18 @@ static void renameOneSym(SYMBOL *sp)
     if (tp->type == bt_typedef)
         tp = tp->btp;
     tp = basetype(tp);
-    if (!sp->pushedtotemp && sp->storage_class != sc_parameter && !sp->imaddress && !sp->inasm && !sp->inCatch
+    if (!sp->pushedtotemp && !sp->imaddress && !sp->inasm && !sp->inCatch
         && (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void)  
             || (tp->type == bt_pointer && tp->btp->type != bt_func)
             || isref(tp)) 
-        && (sp->storage_class == sc_auto || sp->storage_class == sc_register)
+        && (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
         && !sp->usedasbit)
     {
         /* this works because all IMODES refering to the same
          * variable are the same, at least until this point
          * that will change when we start inserting temps
          */
+        IMODE *parmName;
         EXPRESSION *ep = tempenode();
         ep->v.sp->tp = sp->tp;
         ep->right = (EXPRESSION *)sp;
@@ -121,6 +123,11 @@ static void renameOneSym(SYMBOL *sp)
         sp->pushedtotemp = TRUE ;
         ep->v.sp->pushedtotemp = TRUE;
         sp->allocate = FALSE;
+        if (sp->storage_class == sc_parameter)
+        {
+            parmName = (IMODE *)Alloc(sizeof(IMODE));
+            *parmName = *sp->imvalue;
+        }
         if (sp->imvalue)
         {
             ep->isvolatile = sp->imvalue->offset->isvolatile;
@@ -139,6 +146,22 @@ static void renameOneSym(SYMBOL *sp)
             }
         }
         ep->v.sp->imvalue = sp->imvalue;
+        if (sp->storage_class == sc_parameter)
+        {
+            QUAD *q;
+            QUAD *bl1 = blockArray[1]->head;
+            while (bl1->fwd->dc.opcode == i_line || bl1->fwd->dc.opcode == i_label)
+                bl1 = bl1->fwd;
+            gen_icode(i_assn, sp->imvalue, parmName, 0);
+            q = intermed_tail;
+            q->back->fwd = NULL;
+            intermed_tail = q->back;
+            q->block = bl1->block;
+            q->fwd = bl1->fwd;
+            q->back = bl1;
+            q->fwd->back = q;
+            q->back->fwd = q;
+        }
     }
 }
 static void renameToTemps(SYMBOL *funcsp)

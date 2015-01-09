@@ -231,7 +231,7 @@ void SetunMoveableTerms(void)
                     {
                         int n = head->ans->offset->v.sp->value.i;
                         if ((!chosenAssembler->arch->hasFloatRegs
-                                &&head->ans->size >= ISZ_FLOAT) || head->ans->bits || head->ans->vol)
+                                &&head->ans->size >= ISZ_FLOAT) || head->ans->bits || head->ans->vol || head->ans->offset->v.sp->loadTemp)
                             clearbit(unMoveableTerms,n );
 /*                            
                         if (head->dc.left && head->dc.left->bits)

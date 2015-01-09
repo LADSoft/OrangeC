@@ -270,7 +270,7 @@ static ARCH_CHARACTERISTICS architecture = {
     &regCosts,
     allocOrder,
     peeps,   /* defines peephole information */
-    0,             /* preferred optimizations */
+    OPT_BYTECOMPARE, /* preferred optimizations */
     0,             /* optimizations we don't want */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */

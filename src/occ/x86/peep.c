@@ -814,31 +814,48 @@ void peep_cmp(OCODE *ip)
             OCODE *ip2 = ip->back;
             ip->opcode = op_and;
             ip->oper2 = copy_addr(ip->oper1);
-            /*
-            if (ip2->opcode == op_and && equal_address(ip2->oper1, ip->oper1) && ip2->oper2->mode == am_immed)
+            if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1) && ip2->oper2->mode != am_dreg
+                && (ip1->opcode == op_je || ip1->opcode == op_jne) )
             {
-                if (!live(ip->oper1->liveRegs, ip->oper1->preg))
+                if (!live(ip1->oper1->liveRegs, ip->oper1->preg))
                 {
-                    OCODE *ip3 = ip2->back;
-                    if (ip3->opcode == op_movzx)
+                    int m;
+                    switch (ip->oper1->length)
                     {
-                        ip2->oper1 = ip3->oper2;
-                        ip2->opcode = op_test;
-                        remove_peep_entry(ip3);
-                        remove_peep_entry(ip);
+                        case ISZ_UCHAR:
+                        case -ISZ_UCHAR:
+                        case ISZ_BOOLEAN:
+                            m = 255;
+                            break;
+                        case ISZ_USHORT:
+                        case -ISZ_USHORT:
+                        case ISZ_U16:
+                        case -ISZ_U16:
+                        case ISZ_WCHAR:
+                            m = 0xffff;
+                            break;
+                        default:
+                            m = -1;
+                            break;
                     }
-                }
-            }
-            else 
-            */
-            if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1) && ip->oper1->length == ISZ_UCHAR)
-            {
-                if (!live(ip->oper2->liveRegs, ip->oper1->preg))
-                {
                     ip2->opcode = op_test;
                     ip2->oper1 = ip2->oper2;
-                    ip2->oper2 = aimmed(255);
+                    ip2->oper2 = aimmed(m);
                     remove_peep_entry(ip);
+                    return;
+                }
+            }
+        }
+        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed && ip->oper2
+            ->offset->v.i != 0 && (ip1->opcode == op_je || ip1->opcode == op_jne)) 
+        {
+            OCODE *ip2 = ip->back;
+            if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1))
+            {
+                if (!live(ip1->oper1->liveRegs, ip->oper1->preg))
+                {
+                    ip->oper1 = ip2->oper2;
+                    remove_peep_entry(ip2);
                     return;
                 }
             }

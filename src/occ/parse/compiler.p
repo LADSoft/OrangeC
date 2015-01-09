@@ -359,6 +359,7 @@ BOOLEAN xvalue(EXPRESSION *exp);
 EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN isdest);
 BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source);
 BOOLEAN isconstzero(TYPE *tp, EXPRESSION *exp);
+BOOLEAN fittedConst(TYPE *tp, EXPRESSION *exp);
 BOOLEAN isarithmeticconst(EXPRESSION *exp);
 BOOLEAN isconstaddress(EXPRESSION *exp);
 SYMBOL *clonesym(SYMBOL *sym);

@@ -27,7 +27,7 @@ int main(int argc, char **argv)
         printf("Invalid file");
         exit(2);
     }
-    head = buf;
+    head = (struct PEHeader *)buf;
     head->dll_flags = 0x8140;
     head->os_major_version = 5;
     head->os_minor_version = 1;

@@ -40,6 +40,7 @@
 #include <string>
 #include <fstream>
 #include <stdio.h>
+#include <string.h>
 #include "exefmt\MZHeader.h"
 #include "exefmt\peHeader.h"
 
@@ -122,10 +123,10 @@ bool LoadStub(const std::string &stubName)
     if (relocSize)
     {
         file->seekg(oldReloc, std::ios::beg);
-        file->read(stubData + 0x40, relocSize);
+        file->read((char *)stubData + 0x40, relocSize);
     }
     file->seekg(oldHeader, std::ios::beg);
-    file->read(stubData + totalHeader, bodySize);
+    file->read((char *)stubData + totalHeader, bodySize);
     if (!file->eof() && file->fail())
     {
         delete file;

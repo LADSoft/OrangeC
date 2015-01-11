@@ -166,7 +166,7 @@ export DISTMAKE
 
 define filesdef
 
-cleanDISTRIBUTE:
+cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 	-mkdir $(DISTROOT) >> $(NULLDEV)
 #	-del /Q $(DISTROOT) >> $(NULLDEV)
 	-mkdir $(DISTROOT)\rule >> $(NULLDEV)
@@ -242,6 +242,7 @@ clean:
 endef
 
 else
+
 define filesdef
 ifdef LIBRARY
 files: mkdir compile
@@ -260,8 +261,8 @@ clean: del rmdir
 	$(foreach dir, $(DIRS), $(DOCLEAN))
 endef
 endif
-define distdef
 
+define distdef
 
 exeDISTRIBUTE:
 ifndef BUILDENV

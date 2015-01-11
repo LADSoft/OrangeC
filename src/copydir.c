@@ -41,6 +41,7 @@
 #include <stdio.h>
 int main(int argc, char **argv)
 {
+    char filename[MAX_PATH], *f;
     HANDLE handle;
     WIN32_FIND_DATA blk;
     if (argc != 3)
@@ -48,8 +49,11 @@ int main(int argc, char **argv)
         printf("wrong number of args");
         return 1;
     }
+    strcpy(filename, argv[1]);
+    while ((f = strchr(filename, '%')))
+           *f = '*';
     memset(&blk, 0, sizeof(blk));
-    if ((handle = FindFirstFile(argv[1], &blk)) != INVALID_HANDLE_VALUE)
+    if ((handle = FindFirstFile(filename, &blk)) != INVALID_HANDLE_VALUE)
     {
         do
         {
@@ -61,7 +65,7 @@ int main(int argc, char **argv)
                 if (newFile[strlen(newFile)-1] != '\\')
                     strcat(newFile, "\\");
                 strcat(newFile, blk.cFileName);
-                strcpy(existingFile, argv[1]);
+                strcpy(existingFile, filename);
                 p = strrchr(existingFile, '\\');
                 if (p)
                     p++;

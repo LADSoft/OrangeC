@@ -40,6 +40,7 @@
 #include <string>
 #include <fstream>
 #include <stdio.h>
+#include <string.h>
 #include "exefmt\MZHeader.h"
 #include "exefmt\peHeader.h"
 
@@ -75,7 +76,7 @@ bool Load(const std::string &exeName)
             if (!memcmp(buf + 0x148,"UPX2", 4))
                 memcpy(buf + 0x148, ".bss", 4);
             file.seekp(datapos);
-            file.write((unsigned char *)buf, 512);
+            file.write((char *)buf, 512);
             return true;
         }
     }

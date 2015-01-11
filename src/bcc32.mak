@@ -128,4 +128,10 @@ $(DEF_DEPENDENCIES)
 $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
 |
 
+%.exe: %.c
+	$(CC) -o$@ $^
+
+%.exe: %.cpp
+	$(CC) -o$@ $^
+
 endif

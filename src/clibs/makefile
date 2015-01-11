@@ -111,36 +111,36 @@ endef
 $(eval $(clibdef))
 $(eval $(dlldef))
 
-OLDSGL := 1
+#OLDSGL := 1
 ifdef DISTMAKE
 include $(DISTMAKE)
 
 DISTRIBUTE:
-	$(COPYDIR) cpp\stdinc\*. $(DISTINC)
-	$(COPYDIR) cpp\stdinc\*.h $(DISTINC)
+	$(COPYDIR) cpp\stdinc\%. $(DISTINC)
+	$(COPYDIR) cpp\stdinc\%.h $(DISTINC)
 ifdef OLDSGL
-#	$(COPYDIR) cpp\sgiinc\*. $(DISTINC)
-#	$(COPYDIR) cpp\sgiinc\*.h $(DISTINC)
-#	$(COPYDIR) cpp\sgiinc\stl\*. $(DISTINC)\stl
-#	$(COPYDIR) cpp\sgiinc\stl\*.h $(DISTINC)\stl
+	$(COPYDIR) cpp\sgiinc\%. $(DISTINC)
+	$(COPYDIR) cpp\sgiinc\%.h $(DISTINC)
+	$(COPYDIR) cpp\sgiinc\stl\%. $(DISTINC)\stl
+	$(COPYDIR) cpp\sgiinc\stl\%.h $(DISTINC)\stl
 else
-#	$(COPYDIR) cpp\stlport-5.2.1\stlport\*.* $(DISTROOT)\stlport
-#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\*.* $(DISTROOT)\stlport\stl
-#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\config\*.* $(DISTROOT)\stlport\stl\config
-#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\debug\*.* $(DISTROOT)\stlport\stl\debug
-#	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\pointers\*.* $(DISTROOT)\stlport\stl\pointers
-#	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\*.* $(DISTROOT)\stlport\using
-#	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\h\*.* $(DISTROOT)\stlport\using\h
+	$(COPYDIR) cpp\stlport-5.2.1\stlport\%.% $(DISTROOT)\stlport
+	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\%.% $(DISTROOT)\stlport\stl
+	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\config\%.% $(DISTROOT)\stlport\stl\config
+	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\debug\%.% $(DISTROOT)\stlport\stl\debug
+	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\pointers\%.% $(DISTROOT)\stlport\stl\pointers
+	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\%.% $(DISTROOT)\stlport\using
+	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\h\%.% $(DISTROOT)\stlport\using\h
 endif
-	$(COPYDIR) stdinc\*.h $(DISTINC)
-	$(COPYDIR) stdinc\sys\*.h $(DISTINC)\sys
-	$(COPYDIR) platform\win32\wininc\*.h $(DISTINC)
-	$(COPYDIR) platform\win32\wininc\win32\*.h $(DISTINC)\win32
+	$(COPYDIR) stdinc\%.h $(DISTINC)
+	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\sys
+	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)
+	$(COPYDIR) platform\win32\wininc\win32\%.h $(DISTINC)\win32
 ifndef BUILDENV
-	$(COPYDIR) object\startup\*.l $(DISTLIB)
-	$(COPYDIR) object\startup\*.o $(DISTLIB)
-	$(COPYDIR) object\startup\*.exe $(DISTLIB)
-#	$(COPYDIR) object\startup\*.dll $(DISTBIN)
+	$(COPYDIR) object\startup\%.l $(DISTLIB)
+	$(COPYDIR) object\startup\%.o $(DISTLIB)
+	$(COPYDIR) object\startup\%.exe $(DISTLIB)
+#	$(COPYDIR) object\startup\%.dll $(DISTBIN)
 	$(MAKE) /Cplatform DISTRIBUTE
 endif
 endif

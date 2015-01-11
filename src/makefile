@@ -66,34 +66,23 @@ buildenv:
 
 else
 # when called from TREETOP.MAK do the below
-copydir.exe: copydir.c
-	$(CC) $^
 
-restub.exe: restub.cpp
-	$(CC) $^
-
-renseg.exe:renseg.cpp
-	$(CC) $^
-
-pepatch.exe:pepatch.c
-	$(CC) -Idlpe $^
-
-DISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
-	$(COPYDIR) examples\*.* $(DISTEXAM)
-	$(COPYDIR) examples\msdos\*.* $(DISTEXAM)\msdos
-	$(COPYDIR) examples\system\*.* $(DISTEXAM)\system
-	$(COPYDIR) examples\win32\*.* $(DISTEXAM)\win32
-	$(COPYDIR) examples\win32\listview\*.* $(DISTEXAM)\win32\listview
-	$(COPYDIR) examples\win32\xmlview\*.* $(DISTEXAM)\win32\xmlview
-	$(COPYDIR) examples\win32\RCDemo\*.* $(DISTEXAM)\win32\RCDemo
-	$(COPYDIR) examples\win32\Huff\*.* $(DISTEXAM)\win32\Huff
-	$(COPYDIR) doc\*.* $(DISTDOC)
-	$(COPYDIR) doc\general\*.* $(DISTDOC)\general
-	$(COPYDIR) doc\oasm\*.* $(DISTDOC)\oasm
-	$(COPYDIR) doc\occ\*.* $(DISTDOC)\occ
-	$(COPYDIR) doc\ogrep\*.* $(DISTDOC)\ogrep
-	$(COPYDIR) doc\olink\*.* $(DISTDOC)\olink
-	$(COPYDIR) doc\omake\*.* $(DISTDOC)\omake
+DISTRIBUTE:
+	$(COPYDIR) examples\%.% $(DISTEXAM)
+	$(COPYDIR) examples\msdos\%.% $(DISTEXAM)\msdos
+	$(COPYDIR) examples\system\%.% $(DISTEXAM)\system
+	$(COPYDIR) examples\win32\%.% $(DISTEXAM)\win32
+	$(COPYDIR) examples\win32\listview\%.% $(DISTEXAM)\win32\listview
+	$(COPYDIR) examples\win32\xmlview\%.% $(DISTEXAM)\win32\xmlview
+	$(COPYDIR) examples\win32\RCDemo\%.% $(DISTEXAM)\win32\RCDemo
+	$(COPYDIR) examples\win32\Huff\%.% $(DISTEXAM)\win32\Huff
+	$(COPYDIR) doc\%.% $(DISTDOC)
+	$(COPYDIR) doc\general\%.% $(DISTDOC)\general
+	$(COPYDIR) doc\oasm\%.% $(DISTDOC)\oasm
+	$(COPYDIR) doc\occ\%.% $(DISTDOC)\occ
+	$(COPYDIR) doc\ogrep\%.% $(DISTDOC)\ogrep
+	$(COPYDIR) doc\olink\%.% $(DISTDOC)\olink
+	$(COPYDIR) doc\omake\%.% $(DISTDOC)\omake
 	copy license.txt $(DISTROOT)
 	copy readme.txt $(DISTROOT)
 	copy relnotes.txt $(DISTROOT)

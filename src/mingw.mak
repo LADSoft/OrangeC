@@ -124,4 +124,10 @@ $(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
 $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
 |
 
+%.exe: %.c
+	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)
+
+%.exe: %.cpp
+	$(CC) $(LFLAGS) -o $@ $^ $(COMPLIB)
+
 endif

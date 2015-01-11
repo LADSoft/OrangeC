@@ -133,4 +133,34 @@ option stack=0x100000
 file $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
 library $(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix $(FUDGE)$(_LIBDIR)\,$(LIB_DEPENDENCIES)) $(addprefix $(FUDGE),$(COMPLIB))
 |
+
+
+%.exe: %.cpp
+	$(CC) $(CFLAGS) -Fo$*.obj $^
+	$(LINK) $(TYPE) $(LFLAGS) @&&|
+system nt
+name .\$@
+option map $(RESOURCE_OPTION)
+import SetLayeredWindowAttributes_ USER32.SetLayeredWindowAttributes
+import AllowSetForegroundWindow_ USER32.AllowSetForegroundWindow
+import AddFontResourceExA_ gdi32.AddFontResourceExA
+option stack=0x100000
+file .\$*.obj
+library comctl32 $(addprefix $(FUDGE),$(COMPLIB)
+|
+
+%.exe: %.c
+	$(CC) $(CFLAGS) -Fo$*.obj $^
+	$(LINK) $(TYPE) $(LFLAGS) @&&|
+system nt
+name .\$@
+option map $(RESOURCE_OPTION)
+import SetLayeredWindowAttributes_ USER32.SetLayeredWindowAttributes
+import AllowSetForegroundWindow_ USER32.AllowSetForegroundWindow
+import AddFontResourceExA_ gdi32.AddFontResourceExA
+option stack=0x100000
+file .\$*.obj
+library comctl32 $(addprefix $(FUDGE),$(COMPLIB)
+|
+
 endif

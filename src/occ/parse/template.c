@@ -3565,6 +3565,7 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                         SYMBOL *ss2 = (SYMBOL *)ns2->p;
                         if (ts2->defaulted || ss2->defaulted)
                             break;
+                        ss2->copiedTemplateFunction = TRUE;
                         if (os2)
                         {
                             HASHREC *tsf = basetype(ts2->tp)->syms->table[0];
@@ -4727,6 +4728,17 @@ void propagateTemplateMemberDefinition(SYMBOL *sym)
                     if (cur && !cur->deferredCompile)
                     {
                         cur->deferredCompile = lex;
+                        if (sym->tp->syms && cur->tp->syms)
+                        {
+                            HASHREC *src = sym->tp->syms->table[0];
+                            HASHREC *dest = cur->tp->syms->table[0];
+                            while (src && dest)
+                            {
+                                dest->p->name = src->p->name;
+                                src = src->next;
+                                dest = dest->next;
+                            }
+                        }
                     }
                 }
             }

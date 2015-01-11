@@ -1353,7 +1353,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     {
         errorsym(ERR_ORIGINAL_TYPE_NOT_ENUMERATION, sp);
     }
-    else if (scoped != sp->tp->scoped || !!fixedType != sp->tp->fixed)
+    else if (scoped != sp->tp->scoped || (fixedType && sp->tp->type != fixedType->type))
     {
         error(ERR_REDEFINITION_OF_ENUMERATION_SCOPE_OR_BASE_TYPE);
     }
@@ -4896,7 +4896,8 @@ jointemplate:
                             }
                             else
                             {
-                                if (isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile) && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
+                                if (isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile) && (MATCHKW(lex, begin) || MATCHKW(lex, colon))
+                                    && (!spi->parentClass || !spi->parentClass->instantiated || !spi->copiedTemplateFunction))
                                 {
                                     errorsym(ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION, sp);
                                 }

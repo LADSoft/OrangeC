@@ -41,6 +41,7 @@
 #include "Errors.h"
 #include "UTF8.h"
 #include <fstream>
+#include <limits.h>
 
 bool asmMode = false;
 bool IsSymbolStartChar(const char *data)

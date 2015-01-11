@@ -503,7 +503,7 @@ static EXPRESSION *createLambda(BOOLEAN noinline)
     {
         INITIALIZER *init = NULL;
         EXPRESSION *exp = clsThs;
-        callDestructor(cls, &exp, NULL, NULL, TRUE, FALSE, FALSE);
+        callDestructor(cls, NULL, &exp, NULL, TRUE, FALSE, FALSE);
         initInsert(&init, cls->tp, exp, 0, TRUE);
         if (cls->storage_class != sc_auto)
         {

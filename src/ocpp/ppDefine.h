@@ -135,7 +135,7 @@ protected:
     int  InsertReplacementString(std::string &macro, int end, int begin, std::string text, std::string etext);
     bool NotSlashed(const std::string &macro, int pos);
     bool ppNumber(const std::string &macro, int begin, int pos);
-    bool ppDefine::ReplaceArgs(std::string &macro, 
+    bool ReplaceArgs(std::string &macro, 
                  const DefinitionArgList &oldargs, const DefinitionArgList &newArgs,
                  const DefinitionArgList &expandedargs,  const std::string varargs);
     void SetupAlreadyReplaced(std::string &macro);

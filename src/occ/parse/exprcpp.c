@@ -587,7 +587,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOLEAN defd = FALSE;
-    BOOLEAN consdest = FALSE;
+    int consdest = FALSE;
     BOOLEAN notype = FALSE;
     *tp = NULL;
     lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, &consdest, NULL, FALSE);

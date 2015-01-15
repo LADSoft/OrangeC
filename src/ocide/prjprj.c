@@ -153,8 +153,8 @@ static int ParseNewProjectData(HWND hwnd)
                        strcat(newName, ".exe");
                     break;
                 case BT_LIBRARY:
-                    if (strlen(newName) < 5 || stricmp(newName + strlen(newName)-4, ".lib") != 0)
-                       strcat(newName, ".exe");
+                    if (strlen(newName) < 3 || stricmp(newName + strlen(newName)-2, ".l") != 0)
+                       strcat(newName, ".l");
                     break;
             }
         }

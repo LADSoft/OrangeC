@@ -42,6 +42,7 @@
 #include "ObjFile.h"
 #include "ObjIeee.h"
 #include "ObjFactory.h"
+#include "CmdFiles.h"
 #include <iostream>
 #include <string.h>
 
@@ -59,8 +60,12 @@ void LibFiles::Add(ObjFile &obj)
 }
 void LibFiles::Add(const ObjString &Name)
 {
+    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    std::string internalName = Name;
+    if (npos != std::string::npos)
+        internalName = Name.substr(npos+1);
     for (int i=0; i < files.size(); i++)
-        if (files[i]->name == Name)
+        if (files[i]->name == internalName)
         {
             std::cout << "Warning: module '" << Name.c_str() << "' already exists in library, it won't be added" << std:: endl;
             return;
@@ -70,9 +75,13 @@ void LibFiles::Add(const ObjString &Name)
 }
 void LibFiles::Remove(const ObjString &Name)
 {
+    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    std::string internalName = Name;
+    if (npos != std::string::npos)
+        internalName = Name.substr(npos+1);
     for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
     {
-        if ((*it)->name == Name)
+        if ((*it)->name == internalName)
         {
             FileDescriptor *t = *it;
             delete t;
@@ -84,12 +93,16 @@ void LibFiles::Remove(const ObjString &Name)
 }
 void LibFiles::Extract(FILE *stream, const ObjString &Name)
 {
+    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    std::string internalName = Name;
+    if (npos != std::string::npos)
+        internalName = Name.substr(npos+1);
     int count = 0;
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
     for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
     {
-        if ((*it)->name == Name)
+        if ((*it)->name == internalName)
         {
             ObjFile *p = LoadModule(stream, count, &fact1);
             if (p)
@@ -114,11 +127,15 @@ void LibFiles::Extract(FILE *stream, const ObjString &Name)
     }
     std::cout << "Warning: Module '" << Name.c_str() << "' not in library and could not be extracted" << std::endl;
 }
-void LibFiles::Replace(const ObjString &name)
+void LibFiles::Replace(const ObjString &Name)
 {
+    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    std::string internalName = Name;
+    if (npos != std::string::npos)
+        internalName = Name.substr(npos+1);
     for (FileIterator it = FileBegin(); it != FileEnd(); ++it)
     {
-        if ((*it)->name == name)
+        if ((*it)->name == internalName)
         {
             if ((*it)->data)
             {
@@ -129,8 +146,8 @@ void LibFiles::Replace(const ObjString &name)
             return;
         }
     }
-    std::cout << "Warning: Module '" << name.c_str() << "' not in library and could not be replaced" << std::endl;
-        
+    std::cout << "Warning: Module '" << Name.c_str() << "' not in library and will be added" << std::endl;
+    Add(Name);        
 }
 void LibFiles::WriteData(FILE *stream, ObjFile *file, const ObjString &name)
 {

@@ -1765,10 +1765,10 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
 }
 static BOOLEAN ellipsed(SYMBOL *sym)
 {
-    HASHREC *hr = sym->tp->syms->table[0];
+    HASHREC *hr = basetype(sym->tp)->syms->table[0];
     while (hr->next)
         hr = hr->next;
-    return ((SYMBOL *)hr->p)->tp->type == bt_ellipse;
+    return basetype(((SYMBOL *)hr->p)->tp)->type == bt_ellipse;
 }
 static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList, 
                                 int **lenList, FUNCTIONCALL *funcparams,
@@ -3264,6 +3264,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
 {
     STRUCTSYM s;
     s.tmpl = 0;
+        
     if (atp && ispointer(atp))
         atp = basetype(atp)->btp;
     if (atp && !isfunction(atp))

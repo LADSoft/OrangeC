@@ -2820,15 +2820,16 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     if ((ispointer(tp) && tp->array) || isref(tp))
         tp = basetype(basetype(tp)->btp);
     if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !isref(sp->tp) && !tp->syms)
-    {
+	{
         tp = PerformDeferredInitialization(tp, funcsp);
-        if (!tp->syms)
-        {
-            if (MATCHKW(lex, assign))
-                errskim(&lex, skim_semi);
-            if (!templateNestingCount)
-                errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
-        }
+		sp->tp = tp = tp->sp->tp;
+	}
+    if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(tp) && !isref(sp->tp) && !tp->syms)
+    {
+        if (MATCHKW(lex, assign))
+            errskim(&lex, skim_semi);
+        if (!templateNestingCount)
+            errorsym(ERR_STRUCT_NOT_DEFINED, tp->sp);
     }
     // if not in a constructor, any openpa() will be eaten by an expression parser
     else if (MATCHKW(lex, assign) || (cparams.prm_cplusplus && (MATCHKW(lex, openpa) || MATCHKW(lex, begin))))

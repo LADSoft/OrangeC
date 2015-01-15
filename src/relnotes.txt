@@ -1,6 +1,19 @@
 Release notes
 
-version 5.20.1:
+version 5.21.1:
+    occ:    invariant code motion optimization fixed and put back in the code
+    occ:    the constant '0 || 0' would not be evaluated at compile time and
+            in some contexts would cause an error about needing a constant value
+            (compiles lpng now)
+    occ:    allow #defines to be utilized properly inside the quotes on #includes
+    occ:    make some improvements that speed up the comparison part of generated loops
+    olib:   fix 'replace' mode to add a file if it doesn't already exist
+    ocide:  fix problems with building static libraries
+    oasm:   update preprocessor
+    orc:    update preprocessor
+    clibs:  add InterlockedCompareExchange
+    
+version 5.20.1: 12/7/14
     general: use fflush() liberally throughout to speed disk access
     general: fix sources to compile with OPENWATCOM & MINGW compilers
     general: switch to #include <sstream> instead of #include <strstream> when 

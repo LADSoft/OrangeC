@@ -2911,7 +2911,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 sizeQualifiers(tp1);
                 if (cparams.prm_cplusplus && MATCHKW(lex, assign))
                 {
-                    if (storage_class == sc_member || storage_class == sc_mutable || templateNestingCount == 1)
+                    if (storage_class == sc_member || storage_class == sc_mutable || (templateNestingCount == 1 && !instantiatingTemplate))
                     {
                         lex = getDeferredData(lex, spi, FALSE);
                     }    

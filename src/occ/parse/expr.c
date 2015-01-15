@@ -3461,6 +3461,8 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp)
 {
     tp = PerformDeferredInitialization(basetype(tp), NULL);
+    if (isstructured(tp))
+        tp = basetype(tp)->sp->tp;
     if (isref(tp))
         tp = basetype(tp)->btp;
     if (exp)

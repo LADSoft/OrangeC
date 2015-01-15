@@ -1556,7 +1556,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     {
         if (!isvoid(basetype(funcsp->tp)->btp))
         {
-            error(ERR_RETURN_MUST_RETURN_VALUE);
+            if (!basetype(funcsp->tp)->sp->isConstructor && !basetype(funcsp->tp)->sp->isDestructor)
+                error(ERR_RETURN_MUST_RETURN_VALUE);
         }
     }
     else

@@ -652,6 +652,7 @@ typedef struct _templateParam
             SYMBOL *dflt;
             SYMBOL *val;
             struct lexeme *txtdflt;
+            LIST *txtargs;
             SYMBOL *temp;
             struct _templateParamList *args;
         } byTemplate;
@@ -659,12 +660,14 @@ typedef struct _templateParam
             TYPE *dflt;
             TYPE *val;
             struct lexeme *txtdflt;
+            LIST *txtargs;
             TYPE *temp;
         } byClass;
         struct {
             EXPRESSION *dflt;
             EXPRESSION *val;
             struct lexeme *txtdflt;
+            LIST *txtargs;
             EXPRESSION *temp;
             TYPE *tp;
         }byNonType;  

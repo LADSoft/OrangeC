@@ -182,11 +182,10 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     std::string errName = Errors::GetFileName();
     line = args;
     std::string op;
-    prefixes.clear();
     for (std::deque<Coding *>::iterator it = CleanupValues.begin(); it != CleanupValues.end(); ++ it)
     {
         Coding *aa = (*it);
-        delete aa; 
+        delete []aa; 
     }
     for (std::deque<Numeric *>::iterator it = operands.begin(); it != operands.end(); ++it)
     {
@@ -199,8 +198,17 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
         delete t;
     }
     inputTokens.clear();
-    CleanupValues.clear();
-    operands.clear();
+    // can't use clear in openwatcom, it is buggy
+    
+//    CleanupValues.clear();
+//    operands.clear();
+//    prefixes.clear();
+    while (CleanupValues.size())
+        CleanupValues.pop_back();
+    while (operands.size())
+        operands.pop_back();
+    while (prefixes.size())
+        prefixes.pop_back(); 
     numeric = NULL;
 //	std::cout << line << std::endl;
     while (true)

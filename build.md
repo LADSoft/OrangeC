@@ -1,6 +1,7 @@
 Building Orange C
+-----------------
 
-These instructions are for building on WIN32.  I actually build on WINDOWS 7 64-bit.
+These instructions are for building on WIN32.  I actually build on Windows 7 64-bit.
 
 You will need either Borland C++ 5.5, Visual Studio 2010, OpenWatcom, or MINGW to compile this set of applications.  This program does not currently compile itself (although it does successfully compile the compiler itself I haven't fully vetted it with the C++ language used by virtually every other application).
 
@@ -10,13 +11,13 @@ When you install these programs install them to their default directories, or al
 
 The distribution directories are meant to go in a subdirectory.  I name mine OrangeC and put it in the root, then put the SRC and DOC directories in there.  Later, the build steps may create other directories such as a BIN directory and an INCLUDE directory.  
 
-The build may not work completely if you don't put orangec in the root of C: So for example C:\ORANGEC\SRC is where all the source files go.  If you want to change it go into src/treetop.mak and change the definition of DISTROOT.  You may have to fiddle with other makefiles if you do change it
+The build may not work completely if you don't put orangec in the root of `C:`. So for example `C:\ORANGEC\SRC` is where all the source files go.  If you want to change it go into src/treetop.mak and change the definition of DISTROOT.  You may have to fiddle with other makefiles if you do change it.
 
 There is a master makefile, and then there are multiple *.mak files which perform various subtasks.  In particulare there is a platform-specific make file for each compiler, and a makefile called 'treetop.mak' which performs most common tasks.
 
 Note that treetop.mak does not automatically check dependencies for .h files.   That is something I will add at a later date.
 
-You can change the version number by editing SRC\VERSION.H then rebuilding everything.
+You can change the version number by editing `SRC\VERSION.H` then rebuilding everything.
 
 Building orange C happens in three steps.  First, the executables are built.  Then, the C Runtime library is built.  After that, the distribution release files are built.
 
@@ -24,38 +25,38 @@ To build the executables you can either install borland C++ 5.5, the free versio
 
 The first time you build various steps have to be taken to bootstrap the build.   For a first time build or if you want to make sure the entire thing gets built, cd to the source directory and type:
 
-omake fullbuild
+    omake fullbuild
 
 Note: on a first time build it can take a while to compile all the programs and libraries so get a cup of coffee!
 
 In general if you want to build the tools you would cd to the src directory and type:
 
-omake tools
+    omake tools
 
 which builds a library for each tool then links the libraries into executable files, which are located in the program directory.  for example oasm.exe resides in orangec\src\oasm at this point.
 
 If you want to clean up object files type:
 
-omake clean
+    omake clean
 
 If you want to build the run-time library you would cd to the src directory and type:
 
-omake library
+    omake library
 
 Which builds the run-time library but doesn't copy the info to the release directories.  If you want to do a distribution you would type:
 
-omake distribute
+    omake distribute
 
 which copies all files to the distribution directories and creates the distribution packages into \orangec\dist.  I use visual studio 2010 to generate the binaries for release, so after building the programs I type:
 
-omake -DMS distribute
+    omake -DMS distribute
 
-which copies the visual studio binaries from \orangec\src\release instead of the binaries that are built by the make program in each destination directory.
+which copies the Visual Studio binaries from `\orangec\src\release` instead of the binaries that are built by the make program in each destination directory.
 
-omake has an added function called 'tree' make.   Basically this mode is like a normal make mode, except it looks for a file called 'treetop.mak' in successively higher directories until it finds it.   Then it sets a couple of environment variables related to where it found treetop.mak and the current working directory, and invokes treetop.mak.
+`omake` has an added function called 'tree' make.   Basically this mode is like a normal make mode, except it looks for a file called 'treetop.mak' in successively higher directories until it finds it.   Then it sets a couple of environment variables related to where it found `treetop.mak` and the current working directory, and invokes `treetop.mak`.
 
-you invoke treetop.mak by using:
+You invoke treetop.mak by using:
 
-omake /T
+    omake /T
 
-from either the source directory or one of the tools directories.   This means you can compile either the entire package, or you can compile each of the tools individually, depending on what path you have cd'd to.  In fact, omake /T is exactly what happens when you type 'omake tools'.
+from either the source directory or one of the tools directories.   This means you can compile either the entire package, or you can compile each of the tools individually, depending on what path you have cd'd to.  In fact, `omake /T` is exactly what happens when you type `omake tools`.

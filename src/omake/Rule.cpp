@@ -54,7 +54,7 @@ CommandContainer *CommandContainer::Instance()
 }
 void CommandContainer::Clear()
 {
-    for (std::deque<Command *>::iterator it = commands.begin(); it != commands.end(); ++it)
+    for (std::list<Command *>::iterator it = commands.begin(); it != commands.end(); ++it)
     {
         Command *p = *it;
         delete p;
@@ -87,7 +87,7 @@ RuleList::RuleList(const std::string &Target)
 RuleList::~RuleList()
 {
     relatedPatternRules = "";
-    for (std::deque<Rule *>:: iterator it = rules.begin();
+    for (std::list<Rule *>:: iterator it = rules.begin();
              it != rules.end(); ++it)
     {
         Rule *p = *it;
@@ -142,13 +142,13 @@ void RuleList::operator +=(Variable *variable)
 }
 void RuleList::SecondaryEval()
 {
-    for (std::deque<Rule *>::iterator it = rules.begin(); it != rules.end(); ++it)
+    for (std::list<Rule *>::iterator it = rules.begin(); it != rules.end(); ++it)
         (*it)->SecondaryEval(this);
 }
 bool RuleList::IsUpToDate()
 {
     bool rv = true;
-    for (std::deque<Rule *>::iterator it = rules.begin(); it != rules.end()&& rv; ++it)
+    for (std::list<Rule *>::iterator it = rules.begin(); it != rules.end()&& rv; ++it)
         rv &= (*it)->IsUpToDate();
     return rv;
 }
@@ -214,7 +214,7 @@ void RuleContainer::SecondaryEval()
         RuleList *p = it->second;
         p->SecondaryEval();
     }
-    for (std::deque<RuleList *>::iterator it = implicitRules.begin(); it != implicitRules.end(); ++it)
+    for (std::list<RuleList *>::iterator it = implicitRules.begin(); it != implicitRules.end(); ++it)
         (*it)->SecondaryEval();
 }
 void RuleContainer::Clear()
@@ -226,7 +226,7 @@ void RuleContainer::Clear()
         delete p;
     }
     namedRules.clear();
-    for(std::deque<RuleList *>::iterator it = implicitRules.begin(); it !=implicitRules.end(); ++it)
+    for(std::list<RuleList *>::iterator it = implicitRules.begin(); it !=implicitRules.end(); ++it)
     {
         RuleList *p = (*it);
         delete p;

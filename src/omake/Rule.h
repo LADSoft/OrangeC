@@ -41,7 +41,7 @@
 #define RULE_H
 
 #include <string>
-#include <deque>
+#include <list>
 #include <map>
 #include "Spawner.h"
 
@@ -56,7 +56,7 @@ public:
 protected:
     CommandContainer()  { }
 private:
-    std::deque<Command *> commands;
+    std::list<Command *> commands;
     
     static CommandContainer *instance;
 } ;
@@ -109,7 +109,7 @@ public:
     bool IsImplicit() const { return target.find_first_of('%') != std::string::npos; }
     bool HasCommands();
     void SetRelated(const std::string &related) { relatedPatternRules = related; }
-    typedef std::deque<Rule *>::iterator iterator;
+    typedef std::list<Rule *>::iterator iterator;
     iterator begin() { return rules.begin(); }
     iterator end() { return rules.end(); }
     struct rllt
@@ -130,7 +130,7 @@ private:
     std::string targetPatternStem;
     std::string target;
     std::string relatedPatternRules;
-    std::deque<Rule *> rules;
+    std::list<Rule *> rules;
     std::map<const std::string *, Variable *, rllt> specificVariables;
     std::string newerPrerequisites;
     bool doubleColon;
@@ -161,7 +161,7 @@ public:
     {
         return namedRules.find(str);
     }
-    typedef std::deque<RuleList *>::iterator ImplicitIterator;
+    typedef std::list<RuleList *>::iterator ImplicitIterator;
     const ImplicitIterator ImplicitBegin() { return implicitRules.begin(); }
     const ImplicitIterator ImplicitEnd() { return implicitRules.end(); }
     void Clear();
@@ -170,7 +170,7 @@ protected:
     RuleContainer() { }
 private:
     std::map<const std::string *, RuleList *, rllt> namedRules;
-    std::deque<RuleList *> implicitRules;
+    std::list<RuleList *> implicitRules;
     static RuleContainer *instance;
 };
 #endif

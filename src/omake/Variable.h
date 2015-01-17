@@ -42,7 +42,7 @@
 
 #include <string>
 #include <map>
-#include <deque>
+#include <list>
 
 class Variable
 {
@@ -113,7 +113,7 @@ public:
     const iterator begin() { return variables.begin(); }
     const iterator end() { return variables.end(); }
 
-    typedef std::deque<Variable *>::iterator PatternIterator;
+    typedef std::list<Variable *>::iterator PatternIterator;
     const PatternIterator PatternBegin() { return patternVariables.begin(); }
     const PatternIterator PatternEnd() { return patternVariables.end(); }
 protected:	
@@ -121,7 +121,7 @@ protected:
     
 private:
     std::map<const std::string *, Variable *, vlt> variables;
-    std::deque<Variable *> patternVariables;
+    std::list<Variable *> patternVariables;
     static VariableContainer *instance;
 };
 

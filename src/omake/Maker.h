@@ -42,7 +42,7 @@
 
 #include <string>
 #include <map>
-#include <deque>
+#include <list>
 #include <set>
 #include "Spawner.h"
 
@@ -79,7 +79,7 @@ class Maker
         void SetSecondary(bool flag) { isSecondary = flag; }
         bool IsSecondary() { return isSecondary; }
         std::string GetGoal() const { return goal; }
-        typedef std::deque<Depends *>::iterator iterator;
+        typedef std::list<Depends *>::iterator iterator;
         const iterator begin() { return subgoals.begin(); }
         const iterator end() { return subgoals.end(); }
         
@@ -95,7 +95,7 @@ class Maker
         bool toDelete;
         bool ordered;
         bool isSecondary;
-        std::deque<Depends *> subgoals;		
+        std::list<Depends *> subgoals;		
         static std::map<std::string, Depends *> all;
     };
 public:
@@ -126,10 +126,10 @@ protected:
     void CancelOne(Depends *depend);
     void EnterSuffixTerminals();
 private:
-    typedef std::deque<std::string> Goals;
+    typedef std::list<std::string> Goals;
     Goals goals;
     static std::string firstGoal;
-    std::deque<Depends *> depends;
+    std::list<Depends *> depends;
     bool silent;
     bool displayOnly;
     bool ignoreResults;

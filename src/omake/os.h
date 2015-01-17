@@ -40,7 +40,7 @@
 #ifndef OS_H
 #define OS_H
 
-#include <deque>
+#include <list>
 #include <string>
 
 #undef GetCurrentTime
@@ -63,7 +63,7 @@ struct EnvEntry {
     std::string name;
     std::string value;
 } ;
-typedef std::deque<EnvEntry> EnvironmentStrings;
+typedef std::list<EnvEntry> EnvironmentStrings;
 
 class OS
 {

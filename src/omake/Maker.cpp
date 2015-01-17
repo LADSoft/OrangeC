@@ -54,7 +54,7 @@ std::map<std::string, std::string> Maker::filePaths;
 
 Maker::Depends::~Depends()
 {
-    for (std::deque<Depends *>::iterator it = subgoals.begin(); it != subgoals.end(); ++it)
+    for (std::list<Depends *>::iterator it = subgoals.begin(); it != subgoals.end(); ++it)
     {
         Depends *x = *it;
         delete x;
@@ -113,7 +113,7 @@ bool Maker::CreateDependencyTree()
     {
         intermediate = v->GetValue();
     }
-    for (std::deque<std::string>::iterator it = goals.begin(); it != goals.end(); ++it)
+    for (std::list<std::string>::iterator it = goals.begin(); it != goals.end(); ++it)
     {
         Time tv1, tv2;
         Depends *t = Dependencies(*it, "", tv1);
@@ -731,17 +731,17 @@ int Maker::RunCommands(bool keepGoing)
     EnvironmentStrings env;
     GetEnvironment(env);
     int count;
-    for (std::deque<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
+    for (std::list<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
     {
         CancelOne(*it);
     }
-    for (std::deque<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
+    for (std::list<Depends *>::iterator it = depends.begin(); (rv == 0 || keepGoing) && it != depends.end(); ++it)
     {
         rv = RunOne(*it, env, keepGoing);
         if (rv)
             stop = true;
     }
-    for (std::deque<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
+    for (std::list<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
     {
         DeleteOne(*it);
     }
@@ -753,7 +753,7 @@ int Maker::RunCommands(bool keepGoing)
 void Maker::Clear() 
 { 
     goals.clear(); 
-    for (std::deque<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
+    for (std::list<Depends *>::iterator it = depends.begin(); it != depends.end(); ++it)
     {
         Depends *d = *it;
         delete d;

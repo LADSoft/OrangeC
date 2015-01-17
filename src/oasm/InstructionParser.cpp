@@ -182,12 +182,12 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     std::string errName = Errors::GetFileName();
     line = args;
     std::string op;
-    for (std::deque<Coding *>::iterator it = CleanupValues.begin(); it != CleanupValues.end(); ++ it)
+    for (std::list<Coding *>::iterator it = CleanupValues.begin(); it != CleanupValues.end(); ++ it)
     {
         Coding *aa = (*it);
         delete []aa; 
     }
-    for (std::deque<Numeric *>::iterator it = operands.begin(); it != operands.end(); ++it)
+    for (std::list<Numeric *>::iterator it = operands.begin(); it != operands.end(); ++it)
     {
         Numeric *aa = (*it);
         delete aa;
@@ -200,15 +200,9 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
     inputTokens.clear();
     // can't use clear in openwatcom, it is buggy
     
-//    CleanupValues.clear();
-//    operands.clear();
-//    prefixes.clear();
-    while (CleanupValues.size())
-        CleanupValues.pop_back();
-    while (operands.size())
-        operands.pop_back();
-    while (prefixes.size())
-        prefixes.pop_back(); 
+    CleanupValues.clear();
+    operands.clear();
+    prefixes.clear();
     numeric = NULL;
 //	std::cout << line << std::endl;
     while (true)
@@ -280,7 +274,7 @@ Instruction *InstructionParser::Parse(const std::string args, int PC)
                     throw new std::runtime_error("Extra characters at end of line");
                 s = new Instruction(buf, (bits.GetBits() + 7)/8);
     //			std::cout << bits.GetBits() << std::endl;
-                for (std::deque<Numeric *>::iterator it = operands.begin(); it != operands.end(); ++it)
+                for (std::list<Numeric *>::iterator it = operands.begin(); it != operands.end(); ++it)
                 {
                     if ((*it)->used && (*it)->size)
                     {

@@ -43,7 +43,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <deque>
+#include <list>
 #include <set>
 
 class RuleList;
@@ -143,8 +143,8 @@ private:
     static bool internalWarnings;
     static int lineno;
     static std::string file;
-    static std::deque<RuleList *> ruleStack;
-    static std::deque<Variable *> foreachVars;
+    static std::list<RuleList *> ruleStack;
+    static std::list<Variable *> foreachVars;
     static std::set<std::string> macroset;
     static std::string GPath;
     std::vector<std::string> args;

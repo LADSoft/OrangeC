@@ -1,7 +1,7 @@
 #include "InstructionParser.h"
 #include "x86Operand.h"
 #include "x86Parser.h"
-
+#include <stdio.h>
 InstructionParser *InstructionParser::GetInstance()
 {
 	return static_cast<InstructionParser *>(new x86Parser());
@@ -23782,7 +23782,7 @@ bool x86Parser::MatchesToken(int token, int tokenPos)
 bool x86Parser::ParseAddresses(x86Operand &operand, int addrClass, int &tokenPos)
 {
 	int level = 0;
-	bool rv = false;
+   	bool rv = false;
 	x86Token *t = tokenBranches1;
 	while (t->type != x86Token::EOT)
 	{
@@ -23825,7 +23825,9 @@ bool x86Parser::ParseAddresses(x86Operand &operand, int addrClass, int &tokenPos
 		if (matches)
 		{
 			if (t->tokenFunc)
+            {
 				(this->*(t->tokenFunc))(operand, tokenPos);
+            }
 			if (t->eos && (tokenPos == inputTokens.size()-1 || !t->next))
 			{
 				rv = true;
@@ -23911,6 +23913,7 @@ bool x86Parser::ParseOperands2(x86Token *tokenList, x86Operand &operand, int tok
 
 bool x86Parser::ParseOperands(x86Token *tokenList, x86Operand &operand)
 {
+    
 	return ParseOperands2(tokenList, operand, 0, 0);
 }
 
@@ -23957,7 +23960,7 @@ bool x86Parser::ProcessCoding(CodingHelper &base, x86Operand &operand, Coding *c
 		else if (coding->type & Coding::number)
 		{
 			int n = coding->val;
-			std::deque<Numeric *>::iterator it = operands.begin();
+			std::list<Numeric *>::iterator it = operands.begin();
 			for (int i=0; i < n; i++)
 			{
 				++it;
@@ -24001,7 +24004,7 @@ bool x86Parser::DispatchOpcode(int opcode)
 		rv = true;
 		x86Operand operand;
 		CodingHelper base;
-		for (std::deque<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)
+		for (std::list<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)
 			rv &= ProcessCoding(base, operand, prefixCodings[*it]);
 	}
 	else
@@ -24012,7 +24015,7 @@ bool x86Parser::DispatchOpcode(int opcode)
 		if (rv)
 		{
 			CodingHelper base;
-			for (std::deque<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)
+			for (std::list<int>::iterator it = prefixes.begin(); rv && it !=prefixes.end(); ++it)
 				rv &= ProcessCoding(base, operand, prefixCodings[*it]);
 			if (rv)
 			{

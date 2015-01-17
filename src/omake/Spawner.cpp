@@ -47,7 +47,7 @@
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 int Spawner::lineLength = 500;
-std::deque<std::string> Spawner::cmdList;
+std::list<std::string> Spawner::cmdList;
 
 int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
 {
@@ -126,7 +126,7 @@ int Spawner::Run(const std::string &cmd, bool ignoreErrors, bool silent, bool do
     }
     else
     {
-        for (std::deque<std::string>::iterator it = cmdList.begin(); it != cmdList.end(); ++it)
+        for (std::list<std::string>::iterator it = cmdList.begin(); it != cmdList.end(); ++it)
         {
             std::string command = *it;
             if (!silent)

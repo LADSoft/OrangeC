@@ -41,7 +41,7 @@
 #define INCLUDE_H
 
 #include <string>
-#include <deque>
+#include <list>
 #include <set>
 
 class Include
@@ -54,7 +54,7 @@ public:
     bool AddFileList(const std::string &name, bool ignoreOk = false, bool MakeFile = false);
     bool MakeMakefiles(bool Silent);
     
-    typedef std::deque<std::string>::iterator iterator;
+    typedef std::list<std::string>::iterator iterator;
     iterator begin() { return files.begin(); }
     iterator end() { return files.end(); }
 protected:
@@ -62,7 +62,7 @@ protected:
     bool Parse(const std::string &name, bool ignoreOk, bool MakeFile = false);
     
 private:
-    std::deque<std::string> files;
+    std::list<std::string> files;
     std::set<std::string> ignoredFiles;
     
     static Include *instance;

@@ -55,8 +55,8 @@ std::map<std::string, std::string> Eval::vpaths;
 bool Eval::internalWarnings;
 int Eval::lineno;
 std::string Eval::file;
-std::deque<RuleList *> Eval::ruleStack;
-std::deque<Variable *> Eval::foreachVars;
+std::list<RuleList *> Eval::ruleStack;
+std::list<Variable *> Eval::foreachVars;
 std::set<std::string> Eval::macroset;
 std::string Eval::GPath;
 int Eval::errcount;
@@ -150,7 +150,7 @@ void Eval::StripLeadingSpaces(std::string &value)
 }
 int Eval::MacroSpan(const std::string line, int pos)
 {
-    std::deque<char> stack;
+    std::list<char> stack;
     int pos1 = pos;
     while (line[pos1] == '$')
         pos1++;
@@ -216,14 +216,14 @@ std::string Eval::ParseMacroLine(const std::string &in)
 Variable *Eval::LookupVariable(const std::string &name)
 {
     Variable *v = NULL;
-    for (std::deque<Variable *>::iterator it = foreachVars.begin(); it != foreachVars.end() && v == NULL; ++it)
+    for (std::list<Variable *>::iterator it = foreachVars.begin(); it != foreachVars.end() && v == NULL; ++it)
     {
         if ((*it)->GetName() == name)
             v = (*it);
     }
     if (!v)
     {
-        for (std::deque<RuleList *>::iterator it = ruleStack.begin(); it != ruleStack.end() && v == NULL; ++it)
+        for (std::list<RuleList *>::iterator it = ruleStack.begin(); it != ruleStack.end() && v == NULL; ++it)
             
         {
             v = (*it)->Lookup(name);
@@ -238,6 +238,7 @@ Variable *Eval::LookupVariable(const std::string &name)
 bool Eval::AutomaticVar(const std::string &name, std::string &rv)
 {
     bool found = false;
+    std::set<std::string> set; // has to be at this scope to make openwatcom happy
     if (ruleList && name.size () <= 2)
     {
         std::string extra;
@@ -264,7 +265,6 @@ bool Eval::AutomaticVar(const std::string &name, std::string &rv)
         }
         else if (name[0] == '^') // all prereq or prereq of rules that have appeared
         {
-            std::set<std::string> set;
             for (RuleList::iterator it = ruleList->begin(); it != ruleList->end(); ++it)
             {
                 if ((*it) == rule)

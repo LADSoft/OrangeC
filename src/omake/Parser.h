@@ -41,7 +41,7 @@
 #define PARSER_H
 
 #include <string>
-#include <deque>
+#include <list>
 #include "Variable.h"
 
 class Command;
@@ -83,7 +83,7 @@ private:
     int lineno;
     std::string remaining;
     Command *lastCommand;
-    std::deque<bool> skips;
+    std::list<bool> skips;
     bool secondaryExpansionEnabled;
     std::string file;
     bool incrementLineno;

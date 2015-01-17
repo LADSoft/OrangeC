@@ -41,7 +41,7 @@
 #define SPAWNER_H
 
 #include <string>
-#include <deque>
+#include <list>
 
 #include "os.h"
 
@@ -53,13 +53,13 @@ public:
     void operator += (const std::string &cmd) { commands.push_back(cmd); }
 
     size_t size() const { return commands.size(); }	
-    typedef std::deque<std::string>::iterator iterator;
-    typedef std::deque<std::string>::const_iterator const_iterator;
+    typedef std::list<std::string>::iterator iterator;
+    typedef std::list<std::string>::const_iterator const_iterator;
     iterator begin() { return commands.begin(); }
     iterator end() { return commands.end(); }
 
 private:
-    std::deque<std::string> commands;
+    std::list<std::string> commands;
     std::string file;
     int lineno;
 };
@@ -84,7 +84,7 @@ class Spawner
         std::string QualifyFiles(const std::string &cmd);
     private:
         static int lineLength;
-        static std::deque<std::string> cmdList;
+        static std::list<std::string> cmdList;
         EnvironmentStrings environment;
         bool ignoreErrors;
         bool silent;

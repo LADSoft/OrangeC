@@ -42,7 +42,7 @@
 
 #include <string>
 #include <map>
-#include <deque>
+#include <list>
 #include <vector>
 #include <stdlib.h>
 #include "AsmExpr.h"
@@ -169,9 +169,9 @@ protected:
     std::map<std::string, int,lt> tokenTable;
     std::map<std::string, int,lt> opcodeTable;
     std::map<std::string, int,lt> prefixTable;
-    std::deque<Numeric *> operands;
-    std::deque<Coding *>CleanupValues;
-    std::deque<int>prefixes;
+    std::list<Numeric *> operands;
+    std::list<Coding *>CleanupValues;
+    std::list<int>prefixes;
     std::vector<InputToken *>inputTokens;
     BitStream bits;
     AsmExpr expr;

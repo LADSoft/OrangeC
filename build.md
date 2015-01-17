@@ -21,7 +21,7 @@ You can change the version number by editing `SRC\VERSION.H` then rebuilding eve
 
 Building orange C happens in three steps.  First, the executables are built.  Then, the C Runtime library is built.  After that, the distribution release files are built.
 
-To build the executables you can either install borland C++ 5.5, the free version, or you you can install Visual Studio Express.  The build files for Visual Studio Express assume VC2010, I don't know if they will port forward.
+To build the executables you can either install Borland C++ 5.5, the free version, or you you can install Visual Studio Express.  The build files for Visual Studio Express assume VC2010, I don't know if they will port forward.
 
 The first time you build various steps have to be taken to bootstrap the build.   For a first time build or if you want to make sure the entire thing gets built, cd to the source directory and type:
 
@@ -47,7 +47,7 @@ Which builds the run-time library but doesn't copy the info to the release direc
 
     omake distribute
 
-which copies all files to the distribution directories and creates the distribution packages into \orangec\dist.  I use visual studio 2010 to generate the binaries for release, so after building the programs I type:
+which copies all files to the distribution directories and creates the distribution packages into `\orangec\dist`.  I use Visual Studio 2010 to generate the binaries for release, so after building the programs I type:
 
     omake -DMS distribute
 

@@ -185,9 +185,9 @@ WORKAREAMENU MENUEX
     	 MENUITEM "&Existing Project...",           IDM_EXISTINGPROJECT
 	}
 	 MENUITEM "",0,MFT_SEPARATOR
-    MENUITEM "&Make...\tF7",                       IDM_MAKE
+    MENUITEM "&Make...\tF7",                       IDM_MAKE_RIGHTCLICK
 	 MENUITEM "Make &Active Project\tShift+F7",	   IDM_BUILDSELECTED
-    MENUITEM "&Rebuild All...",                  IDM_BUILDALL
+    MENUITEM "&Rebuild All...",                  IDM_BUILDALL_RIGHTCLICK
     MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "S&top Build",                       IDM_STOPBUILD
 	 MENUITEM "",0,MFT_SEPARATOR
@@ -219,8 +219,8 @@ PROJECTMENU MENUEX
 		 MENUITEM "New &Folder",							IDM_NEWFOLDER
 	}
 	 MENUITEM "",0,MFT_SEPARATOR
-    MENUITEM "&Make...",                       IDM_MAKE
-    MENUITEM "&Rebuild...",                  IDM_BUILDALL
+    MENUITEM "&Make...",                       IDM_MAKE_RIGHTCLICK
+    MENUITEM "&Rebuild...",                  IDM_BUILDALL_RIGHTCLICK
 	 MENUITEM "",0,MFT_SEPARATOR
     MENUITEM "S&top Build",                       IDM_STOPBUILD
 	 MENUITEM "",0,MFT_SEPARATOR

@@ -1034,8 +1034,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case IDM_COMPILEFILE:
             case IDM_COMPILEFILEFROMTREE:
             case IDM_MAKE:
+            case IDM_MAKE_RIGHTCLICK:
             case IDM_BUILDSELECTED:
             case IDM_BUILDALL:
+            case IDM_BUILDALL_RIGHTCLICK:
                 if (uState != notDebugging)
                 {
                     if (ExtendedMessageBox("Make", MB_OKCANCEL, 

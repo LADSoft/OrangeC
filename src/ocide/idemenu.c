@@ -639,6 +639,8 @@ void InitMenuPopup(HMENU menu)
     EnableMenuItem(menu, IDM_VIEWPROJECT, MF_ENABLED);
     if (making || hwndGeneralProps)
         mf_state = MF_GRAYED;
+    else
+        mf_state = MF_ENABLED;
     EnableMenuItem(menu, IDM_CLOSEWS, mf_state);
     EnableMenuItem(menu, IDM_GENMAKE, mf_state);
     EnableMenuItem(menu, IDM_MAKE, mf_state);

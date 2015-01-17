@@ -738,8 +738,43 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         Maker(workArea, FALSE);
                 else
                     Maker(workArea, FALSE);
+                break;                
+            case IDM_MAKE_RIGHTCLICK:
+                if (HIWORD(wParam))
+                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                        SendMessage(hwnd, WM_COMMAND, IDM_COMPILEFILE, 0);
+                    else if (GetKeyState(VK_SHIFT) &0x80000000)
+                        Maker(activeProject, FALSE);
+                    else
+                        Maker(workArea, FALSE);
+                else
+                {
+                    if (prjSelectedItem)
+                    {
+                        PROJECTITEM *data = GetItemInfo(prjSelectedItem);
+                        if (data)
+                        {
+                            Maker(data, FALSE);
+                            break;
+                        }
+                    }
+            
+                    Maker(workArea, FALSE);
+                }
                 break;
             case IDM_BUILDALL:
+                Maker(workArea, TRUE);
+                break;                
+            case IDM_BUILDALL_RIGHTCLICK:
+                if (prjSelectedItem)
+                {
+                    PROJECTITEM *data = GetItemInfo(prjSelectedItem);
+                    if (data)
+                    {
+                        Maker(data, TRUE);
+                        break;
+                    }
+                }
                 Maker(workArea, TRUE);
                 break;
             case IDM_BUILDSELECTED:

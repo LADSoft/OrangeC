@@ -562,7 +562,10 @@ void CreateBuiltinProjectMacros(PROJECTITEM *pj, BOOL rel)
     if (p)
         *p = 0;
     if (rel)
+    {
         p = relpathmake(buf, pj->realName);
+        strcpy(buf, p);
+    }
     AddMakeSymbol("PROJECTDIR", buf, TRUE, FALSE);	
     AddMakeSymbol("OUTPUTEXT", pj->outputExt, TRUE, FALSE);
     strcpy(buf, pj->realName);

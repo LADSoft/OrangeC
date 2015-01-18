@@ -51,7 +51,7 @@ extern HWND hwndProject;
 extern int making;
 extern PROJECTITEM *activeProject;
 
-static char szFileName[256];
+static char szFileName[MAX_PATH];
 
 char *relpathmake(char *name, char *path)
 {
@@ -231,7 +231,7 @@ static int GenProjDepends(FILE *out, PROJECTITEM *pj, PROJECTITEM *fi, int pos)
                     }
                     rp = nodotslash(relpathmake(outFile, pj->realName));
                     pos += strlen(rp);
-                    fprintf(out, "%s ", rp);
+                    fprintf(out, "\"%s\" ", rp);
                     free(outFile);
                 }
                 break;
@@ -261,7 +261,7 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
                 char buf[MAX_PATH];
                 while (proj && proj->type != PJ_PROJ)
                     proj = proj->parent;
-                fprintf(out, "%s: ", nodotslash(relpathmake(pj->realName, proj->realName)));
+                fprintf(out, "\"%s\": ", nodotslash(relpathmake(pj->realName, proj->realName)));
                 for (i=0; depends; depends = depends->next)
                 {
                     char *rp;
@@ -273,7 +273,7 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
                     strcpy(buf, depends->item->realName);
                     rp = nodotslash(relpathmake(buf, proj->realName));
                     i += strlen(rp);
-                    fprintf(out, "%s ", rp);
+                    fprintf(out, "\"%s\" ", rp);
                 }
                 if (deps[0])
                 {
@@ -301,11 +301,11 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
                         }
                         rp = nodotslash(relpathmake(buf, proj->realName));
                         i += strlen(rp);
-                        fprintf(out, "%s ", rp);
+                        fprintf(out, "\"%s\" ", rp);
                     }
                 }
-                fprintf(out, "\n\n%s: ", nodotslash(relpathmake(outFile, proj->realName)));
-                fprintf(out, "%s\n", nodotslash(relpathmake(pj->realName, proj->realName)));
+                fprintf(out, "\n\n\"%s\": ", nodotslash(relpathmake(outFile, proj->realName)));
+                fprintf(out, "\"%s\"\n", nodotslash(relpathmake(pj->realName, proj->realName)));
                 free(outFile);
                 free(deps);
             }
@@ -316,7 +316,7 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
             char *outFile = Lookup("OUTPUTFILE",pj, NULL);
             char *rp;
             rp = nodotslash(relpathmake(outFile, pj->realName));
-            fprintf(out, "%s: ", rp);
+            fprintf(out, "\"%s\": ", rp);
             GenProjDepends(out, pj, pj->children, 0);
             fprintf(out, "\n");
             free(outFile);
@@ -454,7 +454,7 @@ static void GenAllRule(FILE *out, PROJECTITEM *pj, BOOL first)
             }
             else
             {
-                fprintf(out, "\\\n\t%s", rp);
+                fprintf(out, "\\\n\t\"%s\"", rp);
             }
             RemoveSymbolTable();
             free(outFile);

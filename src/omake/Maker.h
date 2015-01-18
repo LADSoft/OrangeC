@@ -140,5 +140,6 @@ private:
     std::string oldFiles;
     std::set<std::string> ignoreFailedTargets;
     static std::map<std::string, std::string> filePaths;
+    int dependsNesting;
 } ;
 #endif

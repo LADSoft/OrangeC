@@ -128,18 +128,27 @@ std::string Eval::ExtractFirst(std::string &value, const std::string &seps)
 {
     StripLeadingSpaces(value);
     int n = value.size();
-    for (int i =0; i < seps.size(); i++)
+    if (seps == " " && value[0] == '"')
     {
-        int m = value.find_first_of(seps[i]);
-        if (m != std::string::npos && m < n)
-            n = m;
+        int m = value.find_first_of("\"", 1);
+        if (m != std::string::npos)
+            n = m+1;
+    }
+    else
+    {
+        for (int i =0; i < seps.size(); i++)
+        {
+            int m = value.find_first_of(seps[i]);
+            if (m != std::string::npos && m < n)
+                n = m;
+        }
     }
     std::string rv = value.substr(0, n);
     if (value.find_first_not_of(' ') == std::string::npos)
         value.replace(0,value.size(),"");
     else
         value.replace(0,n+1,"");
-        
+    
     return rv;
 }
 void Eval::StripLeadingSpaces(std::string &value)

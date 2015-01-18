@@ -116,6 +116,7 @@ bool Maker::CreateDependencyTree()
     for (std::list<std::string>::iterator it = goals.begin(); it != goals.end(); ++it)
     {
         Time tv1, tv2;
+        dependsNesting = 0;        
         Depends *t = Dependencies(*it, "", tv1);
         if (t || OnList(*it,".PHONY"))
         {
@@ -133,6 +134,11 @@ bool Maker::CreateDependencyTree()
 }
 Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &preferredPath, Time &timeval)
 {
+    if (++dependsNesting > 200)
+    {
+        Eval::error("depency nesting is too deep: possible recursive rule");
+        exit(1);
+    }
     Time goalTime;
     Time dependsTime;
     Depends *rv = Depends::Lookup(goal);
@@ -263,6 +269,7 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
         if (goalTime > timeval)
             timeval = goalTime;
     }
+    dependsNesting--;
     return rv;
 }
 std::string Maker::GetFileTime(const std::string &goal, const std::string &preferredPath, Time &timeval)

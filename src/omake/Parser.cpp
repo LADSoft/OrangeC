@@ -166,10 +166,25 @@ void UnTab(std::string value)
 size_t Parser::UnfetteredChar(const std::string &line, char ch) const
 {
     int charInWord = 0;
+    bool instr = false;
     for (int i=0; i < line.size(); i++)
     {
-        if (line[i] == ' ')
+        if (instr)
+        {
+            if (line[i] == '"')
+            {
+                charInWord = 0;
+                instr = false;
+            }
+        }
+        else if (line[i] == '"')
+        {
+            instr = true;
+        }
+        else if (line[i] == ' ')
+        {
             charInWord = 0;
+        }
         else if (line[i] == '$')
         {
             i += Eval::MacroSpan(line, i+1);

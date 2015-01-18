@@ -338,12 +338,8 @@ void MakeMain::ShowDatabase()
         ShowRule(*it);
     }
 }
-void vv() 
-{
-}
 void MakeMain::SetTreePath(std::string &files)
 {
-    vv();
     // will get the working dir possibly modified by a 'C' command
     std::string wd = OS::GetWorkingDir() + CmdFiles::DIR_SEP;
     int pos = wd.find_last_of(CmdFiles::DIR_SEP);

@@ -557,13 +557,12 @@ void CreateBuiltinWorkspaceMacros(PROJECTITEM *wa)
 void CreateBuiltinProjectMacros(PROJECTITEM *pj, BOOL rel)
 {
     char buf[MAX_PATH], *p, *q;
-    if (rel)
-        strcpy(buf, ".");
-    else
-        strcpy(buf, pj->realName);
+    strcpy(buf, pj->realName);
     p = strrchr(buf, '\\');
     if (p)
         *p = 0;
+    if (rel)
+        p = relpathmake(buf, pj->realName);
     AddMakeSymbol("PROJECTDIR", buf, TRUE, FALSE);	
     AddMakeSymbol("OUTPUTEXT", pj->outputExt, TRUE, FALSE);
     strcpy(buf, pj->realName);

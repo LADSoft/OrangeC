@@ -119,11 +119,17 @@ const ObjString &LinkerMain::GetMapFile(CmdFiles &files)
     }
     return mapFile;
 }
+#include <stdio.h>
 void LinkerMain::AddFile(LinkManager &linker, std::string &name)
 {
     if (!TargetConfig.InterceptFile(name))
     {
-        if (strstr(name.c_str(), ".l") || strstr(name.c_str(), ".L"))
+        bool found = false;
+        if (name.size() > 1 && name.find(".l")== name.size()-2)
+            found = true;
+        else if (name.size() > 1 && name.find(".L")== name.size()-2)
+            found = true;
+        if (found)
             linker.AddLibrary(name);
         else
             linker.AddObject(name);

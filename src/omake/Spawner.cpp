@@ -134,6 +134,7 @@ int Spawner::Run(const std::string &cmd, bool ignoreErrors, bool silent, bool do
             int rv = 0;
             if (!dontrun)
                 rv = OS::Spawn(command, environment);
+            std::cout << " "; // fix for openwatcom...
 //			if (!silent)
 //				std::cout << std::endl;
             if (!ignoreErrors && rv != 0)

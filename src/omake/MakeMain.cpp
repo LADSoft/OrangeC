@@ -406,6 +406,12 @@ int MakeMain::Run(int argc, char **argv)
     {
         std::cout << OS::GetWorkingDir().c_str() << std::endl;
     }
+#ifdef OPENWATCOM
+    else
+    {
+        std::cout << std::endl;
+    }
+#endif
     if (cancelKeep.GetValue())
     {
         cancelKeep.SetValue(false);
@@ -531,5 +537,11 @@ int MakeMain::Run(int argc, char **argv)
     {
         std::cout << OS::GetWorkingDir().c_str() << std::endl;
     }
+#ifdef OPENWATCOM
+    else
+    {
+        std::cout << std::endl;
+    }
+#endif
     return rv;
 }

@@ -1,6 +1,34 @@
 Release notes
 
-version 5.21.1:
+version 5.22.1: 01/19/15
+    general:    increase compatibility when building the tools with openwatcom
+    ocide:  ungray 'make' and 'rebuild' and 'build active project' in menus
+    ocide:  adjust right click version of 'make' and 'rebuild' to make the 
+            selected project instead of making/building everything
+    ocide:  fix 'generate make file' to work with non-relative paths and paths 
+            with spaces in them
+    ocide:  stepping over a function such as gets() that asks for console input 
+            would leave the 'stop debugging' icon available, and if you pressed 
+            it the IDE would lock up.
+    ocide:  make '.l' files in projects a dependency of the project EXE to help 
+            the make process work better
+    ocide:  editor: only need to click once on the tabs at the top of the screen, 
+            to change the file being viewed
+    ocide:  editor: holding shift down and left-clicking will select lines from 
+            the old cursor position to the new one.
+    occ:    alloca and _alloca changed to __alloca in the compiler keyword list, 
+            then defined again as a preprocessor define in 'malloc.h' to match GNU-C
+    occ:    more work done on C++ STL compatibility (work in progress)
+    omake:  exit if the dependency nesting is too deep, as it is likely due to recursive rules
+    omake:  support quotes on rules and dependencies - the quotes are part of the name
+    olink:  fix bug where a ".l" inside a file name (not at the end) would cause a crash
+    olib:   fix bug where debug info of structures inside a library would cause 
+            the link stage to fail
+    olib:   fix bug where +- with fully specified paths could fail
+    clibs:  make adjustments for having changed 'alloca' to a #define    
+    documentation:  document predefined preprocessor definitions in various places
+
+version 5.21.1: 01/14/15
     occ:    invariant code motion optimization fixed and put back in the code
     occ:    the constant '0 || 0' would not be evaluated at compile time and
             in some contexts would cause an error about needing a constant value

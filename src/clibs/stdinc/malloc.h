@@ -71,6 +71,9 @@ void        _RTL_FUNC _FAR *farmalloc(size_t __size) ;
 void        _RTL_FUNC farfree(void _FAR *__block) ;
 #endif
 
+#define _alloca(x) __alloca((x))
+#define alloca(x) __alloca((x))
+
 #ifdef __cplusplus
 } ;
 } ;

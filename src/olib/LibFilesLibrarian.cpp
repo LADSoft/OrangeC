@@ -142,6 +142,7 @@ void LibFiles::Replace(const ObjString &Name)
                 delete (*it)->data;
                 (*it)->data = NULL;
             }
+            (*it)->name = Name;
             (*it)->offset = 0;
             return;
         }

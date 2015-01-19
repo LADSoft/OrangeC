@@ -132,12 +132,18 @@ void ObjIeeeAscii::RenderStructure(ObjType *Type)
     ObjString lastIndex;
     while (fields.size())
     {
-        unsigned n = min(MaxPerLine, (int)fields.size());
+        int bottom;
         ObjString index;
         ObjString baseType;
+        ObjField *current = fields.front();
+        for (bottom=1; bottom < fields.size() ; bottom++)
+        {
+            if (fields[bottom]->GetTypeIndex() != current->GetTypeIndex())
+                break;
+        }
         // the problem with this is if they output the file twice
         // the types won't match
-        if (n == fields.size())
+        if (fields.size() - bottom == 0)
         {
             index = ObjUtil::ToHex(Type->GetIndex());
             baseType = ObjUtil::ToHex(Type->GetType());
@@ -145,13 +151,13 @@ void ObjIeeeAscii::RenderStructure(ObjType *Type)
         }
         else
         {
-            index = ObjUtil::ToHex(GetFactory()->GetIndexManager()->NextType());
+            index = ObjUtil::ToHex(current->GetTypeIndex());
             baseType = ObjUtil::ToHex(ObjType::eField);
             RenderString("ATT" + index + ",T" + baseType);
         }
-        for (unsigned j=0; j < n; j++)
+        for (unsigned j=0; j < bottom; j++)
         {
-            ObjField *currentField = fields[n-1-j];
+            ObjField *currentField = fields[bottom-j-1];
             RenderString(",T" + GetTypeIndex(currentField->GetBase()) + ",");
             RenderString(ToString(currentField->GetName()));
             RenderString("," + ObjUtil::ToHex(currentField->GetConstVal()));
@@ -159,7 +165,7 @@ void ObjIeeeAscii::RenderStructure(ObjType *Type)
         RenderString(lastIndex + ".");
         endl();
         lastIndex = ",T" + index;
-        for (unsigned j=0; j < n; j++)
+        for (unsigned j=0; j < bottom; j++)
             fields.pop_front();
     }
 }

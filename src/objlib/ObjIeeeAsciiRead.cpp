@@ -691,7 +691,7 @@ void ObjIeeeAscii::DefineStruct(ObjType::eType stype, int index, const char *buf
             if (buffer[(*pos)++] != ',')
                 ThrowSyntax(buffer, eAll);
             val = ObjUtil::FromHex(buffer, pos);
-            ObjField *field = factory->MakeField(fieldName, fieldTypeBase, val);
+            ObjField *field = factory->MakeField(fieldName, fieldTypeBase, val, index);
             type->Add(field);			
         }
     }

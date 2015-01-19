@@ -133,8 +133,8 @@ private:
 class ObjField: public ObjWrapper
 {
 public:
-    ObjField(ObjString Name, ObjType *Base, ObjInt ConstVal)
-        : name(Name), base(Base), constVal(ConstVal) {}
+    ObjField(ObjString Name, ObjType *Base, ObjInt ConstVal, ObjInt index)
+        : name(Name), base(Base), constVal(ConstVal), typeIndex(index) {}
         
     ObjString GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
@@ -144,12 +144,15 @@ public:
     
     ObjInt GetConstVal() { return constVal; }
     void SetConstVal(ObjInt ConstVal) { constVal = ConstVal; }
+
+    ObjInt GetTypeIndex() { return typeIndex; }
+    void SetTypeIndex(ObjInt index) { typeIndex = index; }
     
 private:
     ObjString name;
     ObjType *base;
     ObjInt constVal;
-    
+    ObjInt typeIndex;
 };
 
 #endif

@@ -276,9 +276,9 @@ public:
         Tag(t);
         return t;
     }
-    virtual ObjField *MakeField(ObjString Name, ObjType *Base, ObjInt ConstVal)
+    virtual ObjField *MakeField(ObjString Name, ObjType *Base, ObjInt ConstVal, ObjInt index)
     {
-        ObjField *f = new ObjField(Name, Base, ConstVal);
+        ObjField *f = new ObjField(Name, Base, ConstVal, index);
         Tag(f);
         return f;
     }

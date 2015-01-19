@@ -731,4 +731,9 @@ typedef struct tagNMTTCUSTOMDRAW
 
 #endif
 
+#ifdef OPENWATCOM
+#undef TreeView_GetItemRect
+#define TreeView_GetItemRect(hwnd, hitem, prc, code) \
+    (*(HTREEITEM FAR *)prc = (hitem), (BOOL)SendMessage((hwnd), TVM_GETITEMRECT, (WPARAM)(code), (LPARAM)(RECT FAR*)(prc)))
+#endif
 #pragma pack()

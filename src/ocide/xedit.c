@@ -6044,8 +6044,33 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 p->cd->buttondown = TRUE;
                 pt.x = LOWORD(lParam);
                 pt.y = HIWORD(lParam);
-                p->selstartcharpos = p->selendcharpos = charfrompos(hwnd, p,
-                    &pt);
+                if (GetKeyState(VK_SHIFT) &0x80000000)
+                {
+                    int n = charfrompos(hwnd, p, &pt);
+                    if (n != p->selstartcharpos)
+                    {
+                        if (n < p->selstartcharpos)
+                        {
+                            p->selstartcharpos = n;
+                        }
+                        else
+                        {
+                            p->selendcharpos = n;
+                        }
+                        while (p->selstartcharpos && p->cd->text[p->selstartcharpos-1].ch != '\n')
+                            p->selstartcharpos--;
+                        while (p->cd->text[p->selendcharpos].ch && p->cd->text[p->selendcharpos+1].ch != '\n')
+                            p->selendcharpos++;
+                        if (p->cd->text[p->selendcharpos].ch)
+                            p->selendcharpos++;
+                    }
+                }
+                else
+                {
+
+                    p->selstartcharpos = p->selendcharpos = charfrompos(hwnd, p,
+                        &pt);
+                }
                 MoveCaret(hwnd, p);
                 setcurcol(p);
                 SetCapture(hwnd);

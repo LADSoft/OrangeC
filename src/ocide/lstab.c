@@ -1162,6 +1162,7 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
     PAINTSTRUCT ps;
     HDC dc;
     LRESULT rv;
+    BOOLEAN notDragging;
     struct _tabStruct *ptr;
     struct _singleTab *tab;
     switch (iMessage)
@@ -1246,16 +1247,18 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
         case WM_LBUTTONUP:
             ptr = (struct _tabStruct *)GetWindowLong(hwnd, 0);
             tab = FindTabByPos(hwnd, ptr, lParam);
+            notDragging = TRUE;
             if (ptr->dragging && ptr->oldCursor)
             {
                 if (tab && tab != ptr->dragSrc)
                 {
+                    notDragging = FALSE;
                     DragTo(hwnd, ptr, tab);
                 }
                 SetCursor(ptr->oldCursor);
                 ptr->oldCursor = NULL;
             }
-            else if (tab)
+            if (tab && notDragging)
             {
                 if (IsCloseButton(hwnd, ptr, tab, lParam))
                 {

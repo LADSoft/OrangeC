@@ -692,7 +692,7 @@ void RedrawToolBar(void)
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_STEPOUT, MAKELONG
         (mf_state, 0));
     
-    mf_state = uState != notDebugging && uState != Running && !making && activeProject;
+    mf_state = uState != notDebugging && (uState == atBreakpoint || uState == atException) && !making && activeProject;
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_STOPDEBUGGING, MAKELONG
         (mf_state, 0));
 
@@ -700,7 +700,7 @@ void RedrawToolBar(void)
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_REMOVEALLBREAKPOINTS, MAKELONG
         (mf_state, 0));
 
-    mf_state = uState == Running;
+    mf_state = uState != notDebugging && uState != atBreakpoint && uState != atException;
     SendMessage(hwndToolDebug, TB_ENABLEBUTTON, IDM_STOP, MAKELONG
         (mf_state, 0));
     

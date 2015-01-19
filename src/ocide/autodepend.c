@@ -267,6 +267,14 @@ static void CalculateFiles(PROJECTITEM *pj, PROJECTITEM *fi)
                 SetStatusMessage(buf, FALSE);
                 FindDepends(pj, fi);
             }
+            else
+            {
+                if (strstr(fi->realName, ".l") == fi->realName + strlen(fi->realName) -2 ||
+                    strstr(fi->realName, ".L") == fi->realName + strlen(fi->realName) -2)
+                {
+                    InsertDepend(pj, fi);
+                }
+            }
         fi = fi->next;
     }
 }

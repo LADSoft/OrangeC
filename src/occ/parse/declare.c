@@ -616,7 +616,8 @@ void calculateStructOffsets(SYMBOL *sp)
         if (cparams.prm_cplusplus)
         {
             // make it non-zero size to avoid further errors...
-            size = getSize(bt_int);
+            if (!templateNestingCount)
+                size = getSize(bt_int);
         }
         else
         {
@@ -1053,9 +1054,24 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
             }
             else
             {
+                LIST *instants;
                 TEMPLATEPARAMLIST *templateParams = TemplateGetParams(sp);
                 sp->templateParams = TemplateMatching(lex, sp->templateParams, templateParams, sp,
                                                       MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                instants = sp->parentTemplate->instantiations;
+                while (instants)
+                {
+                    SYMBOL *instant = (SYMBOL *)instants->data;
+                    TEMPLATEPARAMLIST *tpln = instant->templateParams->next;
+                    TEMPLATEPARAMLIST *tpl = templateParams->next;
+                    while (tpl && tpln)
+                    {
+                        tpln->p->sym->name = tpl->p->sym->name;
+                        tpln = tpln->next;
+                        tpl = tpl->next;
+                    } 
+                    instants = instants->next;
+                }                
             }
             SetLinkerNames(sp, lk_cdecl);
         }

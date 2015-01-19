@@ -935,6 +935,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     funcparams->thistp->size = getSize(bt_pointer);
                     funcparams->thistp->type = bt_pointer;
                     funcparams->thistp->btp = basetp;
+                    
                     if (!points)
                         funcparams->novtab = TRUE;
                     *exp = varNode(en_func, NULL);
@@ -2189,6 +2190,18 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE);
             if (sp)
             {
+                if (funcparams->astemplate && sp->templateLevel)
+                {
+                    TEMPLATEPARAMLIST *tpln = funcparams->templateParams;
+                    TEMPLATEPARAMLIST *tplo = sp->parentTemplate->templateParams->next;
+                    while (tpln && tplo)
+                    {
+                        tpln = tpln->next;
+                        tplo = tplo->next;
+                    }
+                    if (tpln)
+                        errorsym(ERR_TOO_MANY_ARGS_PASSED_TO_TEMPLATE, sp);
+                }
                 sp->throughClass = funcparams->sp->throughClass;
                 funcparams->sp = sp;
                 if (funcparams->noobject && ismember(sp))

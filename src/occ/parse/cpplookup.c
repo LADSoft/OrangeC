@@ -2961,6 +2961,18 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                         tpx.size = getSize(bt_pointer);
                         tpx.btp = f->arguments->tp;
                     }
+                    else if (theCurrentFunc 
+                             && (f->thisptr && f->thisptr->type == en_l_p && f->thisptr->left->type == en_auto && f->thisptr->left->v.sp->thisPtr)
+                             && (theCurrentFunc->parentClass == sp->parentClass || sameTemplate(theCurrentFunc->parentClass->tp, sp->parentClass->tp)
+                                           || classRefCount(sp->parentClass, theCurrentFunc->parentClass) == 1)
+                             && (isconst(theCurrentFunc->tp) || isvolatile(theCurrentFunc->tp)))
+                    {
+                        tpthis = &tpx;
+                        tpx.type = bt_pointer;
+                        tpx.size = getSize(bt_pointer);
+                        tpx.btp = basetype(f->thistp)->btp;
+                        qualifyForFunc(theCurrentFunc, &tpx.btp, FALSE);
+                    }
                     m = 0;
                     getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL, TRUE);
                     m1 = m;

@@ -2252,6 +2252,7 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
 static TYPE *FixConsts(TYPE *P, TYPE *A)
 {
     int pn=0, an=0;
+    TYPE *Pb = P;
     TYPE *q = P , **last = &q;
     int i;
     while (ispointer(q))
@@ -2294,6 +2295,24 @@ static TYPE *FixConsts(TYPE *P, TYPE *A)
                 *last = NULL;
             }
             P = P->btp;
+        }
+        while (A != basetype(A))
+        {
+            if (A->type == bt_const && !isconst(Pb))
+            {
+                *last = Alloc(sizeof(TYPE));
+                **last = *A;
+                last = &(*last)->btp;
+                *last = NULL;
+            }
+            else if (A->type == bt_volatile && !isvolatile(Pb))
+            {
+                    *last = Alloc(sizeof(TYPE));
+                    **last = *A;
+                    last = &(*last)->btp;
+                    *last = NULL;
+            }
+            A = A->btp;
         }
         A = basetype(A);
         *last = Alloc(sizeof(TYPE));
@@ -2599,6 +2618,8 @@ static BOOLEAN ValidArg(TYPE *tp)
                  if (tp->templateParam->p->byClass.val == NULL)
                      return FALSE;
                  if (tp->templateParam->p->byClass.val->type == bt_void)
+                     return FALSE;
+                 if (tp->templateParam->p->byClass.val == tp) // error catcher
                      return FALSE;
                 return ValidArg(tp->templateParam->p->byClass.val);
             default:
@@ -4421,7 +4442,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
     TEMPLATEPARAMLIST *unspecialized = sp->templateParams->next;
     SYMBOL *found1 = NULL, *found2 = NULL;
     SYMBOL **spList, **origList;
-    TEMPLATEPARAMLIST *orig = sp->templateParams->next, *search = args;
+    TEMPLATEPARAMLIST *orig = sp->templateParams->p->bySpecialization.types ? sp->templateParams->p->bySpecialization.types : sp->templateParams->next, *search = args;
     int count;
     LIST *l;
     if (sp->parentTemplate)

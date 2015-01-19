@@ -507,7 +507,7 @@ Writing
 
 
 FALSE
-18
+33
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}}
 {\colortbl ;\red0\green0\blue255;}
 \viewkind4\uc1\pard\cf1\b\fs32 Defining Macros\cf0\b0\f1\fs20 
@@ -524,6 +524,21 @@ FALSE
 \par 
 \par \f2\tab #define ORANGE \f1 
 \par 
+\par \f0 In addition to standards compliant macros, the following macros are pre-defined by the compiler:
+\par 
+\par \pard\fi-320\li320\tx2040 __ORANGEC__\tab always defined
+\par __RTTI__\tab defined when C++ rtti/exception handling info is present\f1 
+\par \f0 __386__\tab always defined
+\par __i386__\tab always defined
+\par _i386_\tab always defined
+\par __i386\tab always defined
+\par __DOS__\tab defined for MSDOS
+\par __WIN32__\tab defined for WIN32
+\par _WIN32\tab defined for WIN32
+\par __RAW_IMAGE__\tab defined if building a raw image
+\par __LSCRTL_DLL\tab defined when LSCRTL.dll is in use
+\par __MSVCRT_DLL\tab defined when MSVCRT.dll is in use
+\par __CRTDLL_DLL\tab defined when CRTDLL.dll is in use
 \par 
 \par }
 110

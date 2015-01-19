@@ -1,10 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
+<html><head>
   <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
-  <title>Tools - Table Of Contents</title>
-  <meta content="david" name="author">
-</head>
+  
+  <title>Tools - Table Of Contents</title><meta content="david" name="author"></head>
+
 <body>
 <span style="font-family: Helvetica,Arial,sans-serif;"></span>
 <h1 style="text-align: center; font-family: Helvetica,Arial,sans-serif;">Tools
@@ -15,8 +14,7 @@ serves as a table of contents, for the documentation on the Orange
 toolchain.<br>
 <br>
 </span><span style="font-family: Times New Roman,Times,serif;"></span>
-<h2 style="text-align: center;"><span
- style="font-family: Helvetica,Arial,sans-serif;">General Tools</span></h2>
+<h2 style="text-align: center;"><span style="font-family: Helvetica,Arial,sans-serif;">General Tools</span></h2>
 <br>
 General tools compile or assemble code, and manage the resulting object
 files.<br>
@@ -32,8 +30,7 @@ is an object file librarian.<br>
 - object file linker.<br>
 <br>
 </span><span style="font-family: Times New Roman,Times,serif;"></span>
-<h2 style="text-align: center;"><span
- style="font-family: Helvetica,Arial,sans-serif;">Linker Postprocessing
+<h2 style="text-align: center;"><span style="font-family: Helvetica,Arial,sans-serif;">Linker Postprocessing
 Tools</span><br>
 </h2>
 <span style="font-family: Times New Roman,Times,serif;">Linker
@@ -50,8 +47,7 @@ to make 32-bit MSDOS executables that aren't windows compatible.<br>
 &nbsp;&nbsp;&nbsp; <a href="general/DLPE.html">DLPE</a> is the utility
 to make Windows 32-bit executables.<br>
 <br>
-<h2 style="text-align: center;"><span
- style="font-family: Helvetica,Arial,sans-serif;">Utilities</span></h2>
+<h2 style="text-align: center;"><span style="font-family: Helvetica,Arial,sans-serif;">Utilities</span></h2>
 <br>
 Utilities are external utilites that aren't really needed for
 developing programs, but are somewhat useful.<br>
@@ -64,8 +60,7 @@ regular expressions within source code files.<br>
 &nbsp;&nbsp;&nbsp; <a href="omake/OMake.html">OMake</a> is a make
 utility similar to GNU make.<br>
 <br>
-<h2 style="text-align: center;"><span
- style="font-family: Helvetica,Arial,sans-serif;">WIN32 Specific tools</span><br>
+<h2 style="text-align: center;"><span style="font-family: Helvetica,Arial,sans-serif;">WIN32 Specific tools</span><br>
 </h2>
 <br>
 WIN32 specific tools are tools that aid in the development of WIN32
@@ -74,8 +69,13 @@ programs.<br>
 &nbsp;&nbsp;&nbsp; <a href="general/OImpLib.html">OImpLib</a> is a
 WIN32 import librarian.<br>
 &nbsp;&nbsp;&nbsp; <a href="general/ORC.html">ORC</a> is a WIN32
-resource compiler.<br>
+resource compiler.<br><br><h2 style="text-align: center;"><span style="font-family: Helvetica,Arial,sans-serif;">Tools Setup</span></h2><br>
 <br>
-<br>
-</body>
-</html>
+The tools come with configuration files that set up their run-time
+enviroment, however there are a couple of external dependencies.
+&nbsp;First, the tools bin directory must be on the path. &nbsp;Second,
+an environment variable ORANGEC must be set up to point to the tools
+directory.<br><br>For example, if the tools are installed in
+c:\orangec, the following command line commands could be used to set up
+their environment:<br><br>set ORANGEC=c:\orangec<br>PATH=c:\orangec\bin;%PATH%<br><br>
+</body></html>

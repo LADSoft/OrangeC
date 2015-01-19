@@ -624,7 +624,7 @@ Writing
 
 
 FALSE
-84
+88
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Macro Expansion\f1\fs20 
@@ -703,11 +703,15 @@ FALSE
 \par __DATE__\tab The date the file is being processed, as a string.
 \par __TIME__\tab The time the file is being processed, as a string.
 \par 
-\par __CCDL__\tab The LADSoft compiler is being used. No value.
+\par __ORANGEC__\tab The LADSoft compiler is being used. No value.
 \par __386__\tab This is an x86 compiler. No value.
 \par __i386__\tab This is an x86 compiler.  No value.
 \par __STDC__\tab The value 1, this compiler is ANSI compliant.
-\par __STDC_VERSION__\tab The numeric value 199901L, only defined when compiling in C99 mode.\cf1\b\f1 
+\par __STDC_VERSION__\tab The numeric value 199901L, only defined when compiling in C99 mode.
+\par 
+\par This compiler also defines _WIN32 and __WIN32__ if appropriate.
+\par 
+\par \cf1\b\f1 
 \par }
 100
 Scribble100

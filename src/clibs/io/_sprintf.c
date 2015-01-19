@@ -39,6 +39,7 @@
 #include "_locale.h"
 #include "libp.h"
 #include "_lfloat.h"
+#include "malloc.h"
 
 int _e_min_exp_digit = 2;  /* min exp digits for %e (stdc, MS is 3) */
 

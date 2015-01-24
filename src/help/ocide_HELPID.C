@@ -1,5 +1,5 @@
 /*
- * CCIDE Help
+ * OCIDE Help
  * LADSoft
  *
  * This help file was created with HelpScribble 7.8.8
@@ -73,6 +73,7 @@
 #define  Scribble560            (560)       // General Project Configuration Properties
 #define  Scribble570            (570)       // Debug Project Config Properties
 #define  IDH_PROJECT_PROPERTIES_DIALOG (580) // Project Properties Dialog
+#define  IDH_PROJECT_DEPENDENCIES_DIALOG (582) // Project Dependencies Dialog
 #define  Scribble585            (585)       // Profiles
 #define  Scribble587            (587)       // New Profile Dialog
 #define  IDH_SELECT_PROFILE_DIALOG (589)    // Select Profile Dialog

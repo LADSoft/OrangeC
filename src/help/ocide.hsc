@@ -3,7 +3,7 @@ HelpScribble project file.
 YNQ`bsg-113363
 0
 2
-CCIDE Help
+OCIDE Help
 
 
 LADSoft
@@ -43,7 +43,7 @@ Previous
 Next
 FALSE
 
-115
+116
 10
 Scribble10
 index
@@ -548,7 +548,7 @@ FALSE
 110
 Scribble110
 Project Menu
-
+dependencies;
 
 
 
@@ -557,7 +557,7 @@ Writing
 
 
 FALSE
-16
+18
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red128\green0\blue0;\red0\green128\blue0;\red0\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Project Menu\cf0\b0\f1\fs20 
@@ -570,7 +570,9 @@ FALSE
 \par 
 \par \b Add Existing Project\b0  brings up an \cf3\strike Open File Dialog\cf2\strike0\{linkID=350\} \cf0 to allow locating an existing project to load into the current workarea.
 \par 
-\par \cf4\b Select Profile\b0  opens the \cf3\strike Select Profile dialog\cf2\strike0\{linkID=589\}\cf4  to allow selection of the current \cf3\strike profile\cf2\strike0\{linkID=585\}\cf4\b 
+\par \cf4\b Project Dependencies\b0  brings up the \cf3\strike Project Dependencies dialog\cf2\strike0\{linkID=582\}\cf4  to allow selection of which projects depend on other projects.
+\par 
+\par \b Select Profile\b0  opens the \cf3\strike Select Profile dialog\cf2\strike0\{linkID=589\}\cf4  to allow selection of the current \cf3\strike profile\cf2\strike0\{linkID=585\}\cf4\b 
 \par \cf0\b0 
 \par \b Project Properties\b0  opens the \cf3\strike project properties dialog\cf2\strike0\{linkID=580\}\cf0  for the active project.\f1 
 \par }
@@ -914,7 +916,7 @@ FALSE
 210
 Scribble210
 Workarea Context Menu
-context;menu;workspace context menu;
+context;dependencies;menu;workspace context menu;
 
 
 
@@ -923,7 +925,7 @@ Writing
 
 
 FALSE
-29
+31
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Workarea Context Menu\cf2\b0\f1\fs20 
@@ -948,6 +950,8 @@ FALSE
 \par Run/Continue \b0 starts the debugger if it isn't running, at the active project.  \cf3\strike Debugging Windows\cf4\strike0\{linkID=320\}\cf2  are opened at this point.  The program will stop at the first break point it encounters, or at the start of the \i main()\i0  or \i WinMain() \i0 function if no breakpoints exist.\b 
 \par 
 \par Close Work Area \b0 closes the workarea.
+\par 
+\par \b Project Dependencies\b0  brings up the \cf3\strike Project Dependencies dialog\cf4\strike0\{linkID=582\}\cf2  to allow selection of which projects depend on other projects.
 \par 
 \par \b Select Profile\b0  opens the \cf3\strike Select Profile dialog\cf4\strike0\{linkID=589\}\cf2  to allow selection of the current \cf3\strike profile\cf4\strike0\{linkID=585\}\cf2\b 
 \par 
@@ -989,7 +993,7 @@ FALSE
 230
 Scribble230
 Project Context Menu
-
+dependencies;
 
 
 
@@ -998,7 +1002,7 @@ Writing
 
 
 FALSE
-34
+36
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;\red0\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Project Context Menu\cf0\b0\f1\fs20 
@@ -1029,7 +1033,9 @@ FALSE
 \par 
 \par \b Build Window\b0  is an alternate way to build the project that performs the build using a make file, in a separate console window.  Errors shown in this window will not be readily accessible for locating corresponding lines in source files. 
 \par 
-\par \b Set As Active Project\b0  sets the current project as the active project, which selects it as the default project the debugger will use.
+\par \cf4\b Project Dependencies\b0  brings up the \cf2\strike Project Dependencies dialog\cf3\strike0\{linkID=582\}\cf4  to allow selection of which projects depend on other projects.
+\par 
+\par \cf0\b Set As Active Project\b0  sets the current project as the active project, which selects it as the default project the debugger will use.
 \par 
 \par \b Properties\b0  opens the project properties window\f1 
 \par }
@@ -2339,6 +2345,45 @@ FALSE
 \par 
 \par 
 \par Global setup such as that for the editor is found in the \cf2\strike General Properties\cf3\strike0\{linkID=550\}\cf0  settings.
+\par }
+582
+IDH_PROJECT_DEPENDENCIES_DIALOG
+Project Dependencies Dialog
+dependencies;
+
+
+
+Writing
+
+
+
+FALSE
+26
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;}
+\viewkind4\uc1\pard\cf1\b\fs32 Project Dependencies Dialog\cf0\b0\f1\fs20 
+\par 
+\par \f0 Generally the IDE keeps track of header file dependencies automatically, by parsing source files when something is added or changed and using the embedded #include statements to keep track of the header files the file depends on.
+\par 
+\par However, when there are multiple projects in the WorkArea some of them may depend on each other.   For example, an executable may depend on one more more static libraries.
+\par 
+\par The IDE cannot determine these types of dependencies without help.   The Project Dependencies dialog allows you to set these dependencies.   It appears as follows:
+\par \cf2 
+\par \pard\qc\cf3\{bmc projdepends.png\}\cf0 
+\par \pard 
+\par In this dialog, select the project whose dependencies are to be set in the upper combo box.   Then a list of the other projects in the WorkArea
+\par will appear and it is possible to select which other projects this project depends on.
+\par 
+\par Note that sometimes, a project in this list will be grayed out and will not be selectable.   This happens because these screens create a dependency tree, and clicking on that item would cause a loop in the tree as that item already depends on the item being worked on.  The IDE does not allow this situation to occur.
+\par 
+\par The dependency tree is eventually flattened.   This is to make a list of projects in the order they should be built in order to make sure that dependencies of a project are always built before the project.   To view the projects in the order they will be built select 'View Build Order'.  The dependencies dialog will then look as follows:
+\par \cf2 
+\par \pard\qc\cf3\{bmc projbuildorder.png\}\cf0 
+\par \pard 
+\par If a project depends on a static library, the project will be linked against that static library after the library is built.
+\par 
+\par When done setting dependencies, select 'OK'.
+\par 
 \par }
 585
 Scribble585
@@ -4243,7 +4288,7 @@ FALSE
 0
 0
 0
-177
+178
 1 General Information
 2 Welcome=Scribble10
 2 Getting Started=IDH_GETTING_STARTED
@@ -4282,6 +4327,7 @@ FALSE
 2 New Project Dialog=IDH_NEW_PROJECT_DIALOG
 2 New Work Area Dialog=IDH_NEW_WORKAREA_DIALOG
 2 Open File Dialog=Scribble350
+2 Project Dependencies Dialog=IDH_PROJECT_DEPENDENCIES_DIALOG
 2 Project Properties Dialog=IDH_PROJECT_PROPERTIES_DIALOG
 2 Reload File Dialog=IDH_RELOAD_FILE_DIALOG
 2 Replace Dialog=Scribble320

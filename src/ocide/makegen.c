@@ -59,7 +59,7 @@ char *relpathmake(char *name, char *path)
     {
         static char buf[MAX_PATH];
         strcpy(buf, name);
-        abspath(buf, path);
+        abspath(buf, szFileName);
         return relpath(buf, szFileName);
     }
     else 
@@ -163,6 +163,7 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
                     char exp[MAX_PATH], *r;
                     strncpy(exp, p, q-p);
                     exp[q-p] = '\0';
+                    abspath(exp, pj->realName);
                     r = nodotslash(relpathmake(exp, pj->realName));
                     if (buf[0])
                         strcat(buf, ";");

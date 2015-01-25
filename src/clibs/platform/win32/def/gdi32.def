@@ -338,6 +338,6 @@ EXPORTS
     AddFontMemResourceEx
     RemoveFontMemResourceEx
     AddFontResourceExA
-    RemoveFontResourceExaA
+    RemoveFontResourceExA
     AddFontResourceExW
     RemoveFontResourceExW

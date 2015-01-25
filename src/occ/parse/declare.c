@@ -4726,7 +4726,7 @@ jointemplate:
                                 {
                                     p = LookupName(sp->name, ssp->tp->syms);				
                                 }
-                                else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external)
+                                else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external && !isfunction(sp->tp))
                                 {
                                     p = LookupName(sp->name, localNameSpace->syms);
                                 }

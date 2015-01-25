@@ -165,6 +165,8 @@ char *relpath(char *name, char *path)
     {
         p++, q++;
     }
+    while (q != path && q[-1] != '\\')
+        p--, q--;
     if (!(*p |  *q))
         return r;
     else if (*(p - 1) == '\\' && *(p - 2) == ':')

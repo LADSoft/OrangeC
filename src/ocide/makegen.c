@@ -145,7 +145,39 @@ static char *Find(char *str, PROJECTITEM *pj, PROJECTITEM **found, int mode)
         }
         mm = calloc(1, sizeof(NameValuePair));
         mm->name = strdup(buf2);
-        mm->value = strdup(nodotslash(rv));
+        if (strcmp(str, "INCLUDE") != 0)
+        {
+            mm->value = strdup(nodotslash(rv));
+        }
+        else
+        {
+            char buf[10000],*p=rv, *q;
+            buf[0] = 0;
+            while (*p)
+            {
+                q = strchr(p, ';');
+                if (!q)
+                    q = p + strlen(p);
+                if (p != q)
+                {
+                    char exp[MAX_PATH], *r;
+                    strncpy(exp, p, q-p);
+                    exp[q-p] = '\0';
+                    r = nodotslash(relpathmake(exp, pj->realName));
+                    if (buf[0])
+                        strcat(buf, ";");
+                    strcat(buf, r);
+                    p = q;
+                    if (*p)
+                        p++;
+                }
+                else
+                {
+                    p++;
+                }
+            }
+            mm->value = strdup(buf);
+        }
         switch(mode)
         {
             case 2:
@@ -313,11 +345,35 @@ static void GenFileDepends(FILE *out, PROJECTITEM *pj)
         }                        
         case PJ_PROJ:
         {
+            PROJECTITEMLIST *list;
+            int pos = 0;
             char *outFile = Lookup("OUTPUTFILE",pj, NULL);
             char *rp;
             rp = nodotslash(relpathmake(outFile, pj->realName));
             fprintf(out, "\"%s\": ", rp);
             GenProjDepends(out, pj, pj->children, 0);
+            list = pj->depends;
+            while (list)
+            {
+                if (list->item->outputExt[0])
+                {
+                    char *outFile;
+                    char *rp;
+                    AddSymbolTable(list->item, TRUE);
+                    outFile = Lookup("OUTPUTFILE",list->item, NULL);
+                    if (pos > 60)
+                    {
+                        fprintf(out, " \\\n\t");
+                        pos = 0;
+                    }
+                    rp = nodotslash(relpathmake(outFile, pj->realName));
+                    pos += strlen(rp);
+                    fprintf(out, "\"%s\" ", rp);
+                    free(outFile);
+                    RemoveSymbolTable();
+                }
+                list = list->next;
+            }
             fprintf(out, "\n");
             free(outFile);
             break;
@@ -501,6 +557,8 @@ static DWORD genMake(PROJECTITEM *l)
     FILE *out;
     OPENFILENAME ofn;
     PROJECTITEM *pj = activeProject;
+    char vpath[10000];
+    vpath[0] = 0;
     activeProject = NULL;
     if (!SaveFileDialog(&ofn, "makefile", hwndProject, FALSE, 0,
         "Save Makefile As"))

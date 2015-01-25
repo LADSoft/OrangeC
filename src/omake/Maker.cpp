@@ -275,18 +275,23 @@ Maker::Depends *Maker::Dependencies(const std::string &goal, const std::string &
 std::string Maker::GetFileTime(const std::string &goal, const std::string &preferredPath, Time &timeval)
 {
     std::string rv;
-    if (goal.find_first_of(CmdFiles::DIR_SEP) != std::string::npos)
+    std::string internalGoal = goal;
+    if (internalGoal.size() > 1 && internalGoal[0] == '"')
     {
-        std::fstream fil(goal.c_str(), std::ios::in);
+        internalGoal = internalGoal.substr(1, internalGoal.size()-2);
+    }
+    if (internalGoal.find_first_of(CmdFiles::DIR_SEP) != std::string::npos)
+    {
+        std::fstream fil(internalGoal.c_str(), std::ios::in);
         if (fil != NULL)
         {
             fil.close();
-            timeval = OS::GetFileTime(goal);
+            timeval = OS::GetFileTime(internalGoal);
         }
     }
     else
     {
-        std::string vpath = preferredPath + std::string(" .\\ ") + Eval::GetVPATH(goal);
+        std::string vpath = preferredPath + std::string(" .\\ ") + Eval::GetVPATH(internalGoal);
         std::string sep = std::string(" ") + CmdFiles::PATH_SEP;
         while (vpath.size())
         {
@@ -294,12 +299,12 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
             if (cur[cur.size() -1] != CmdFiles::DIR_SEP[0])
                 cur += CmdFiles::DIR_SEP;
             std::string name ;
-            if (goal[0] != CmdFiles::DIR_SEP[0] && goal[1] != ':')
-                name = cur + goal;
+            if (internalGoal[0] != CmdFiles::DIR_SEP[0] && internalGoal[1] != ':')
+                name = cur + internalGoal;
             else
-                name = goal;
+                name = internalGoal;
             if (cur != ".\\")
-                filePaths[goal] = cur; // tentatively enter this as the goal path
+                filePaths[internalGoal] = cur; // tentatively enter this as the goal path
                                     // this will collide if there are multiple paths and no file exists
                                     // and choose the last one
             std::fstream fil(name.c_str(), std::ios::in);
@@ -308,7 +313,7 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
                 fil.close();
                 rv = cur; // return value is the path, with a slash on the end
                 timeval = OS::GetFileTime(name);
-                filePaths[goal] = cur;
+                filePaths[internalGoal] = cur;
                 break;
             }
         }

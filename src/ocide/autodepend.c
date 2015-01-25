@@ -62,17 +62,35 @@ static char *sourceTypes[] = {
 
 static void DependsGetPath(PROJECTITEM *pj, PROJECTITEM *fi, char *path, int len)
 {
-    char *q = path, *r;
-    q += strlen(q);
-    strcpy(q, pj->realName);
-    r = strrchr(q, '\\');
-    if (r && *(r - 1) != ':')
+    char buf[10000], *p, *q;
+    PropGetString(fi, "__INCLUDE", path, len);
+    p = path;
+    buf[0] = 0;
+    while (*p)
     {
-        *r = ';';
-        *++r = 0;
-        q = r;
+        q = strchr(p, ';');
+        if (!q)
+            q = p + strlen(p);
+        if (p != q)
+        {
+            char exp[MAX_PATH], *r;
+            strncpy(exp, p, q-p);
+            exp[q-p] = '\0';
+            abspath(exp, pj->realName);
+            if (buf[0])
+                strcat(buf, ";");
+            strcat(buf, exp);
+            p = q;
+            if (*p)
+                p++;
+        }
+        else
+        {
+            p++;
+        }
     }
-    PropGetString(fi, "__INCLUDE", q, len - strlen(path));
+    strncpy(path, buf, len-1);
+    path[len-1] =0;
 }
 static void InsertDepend(PROJECTITEM *fi, PROJECTITEM *dep)
 {

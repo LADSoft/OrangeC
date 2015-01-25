@@ -1445,6 +1445,11 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
             }
             return 0;
         case WM_CLOSE:
+            pd = (struct _propsData *)GetWindowLong(hwnd, GWL_USERDATA);
+            if (pd != &generalProps)
+            {
+                CalculateProjectDepends(pd->saveTo);
+            }
             ResyncProjectIcons();
             break;
         case WM_DESTROY:

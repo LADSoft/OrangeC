@@ -517,6 +517,8 @@ static void WriteQuotedResId(FILE *outputFile, IDENT *id)
         {
             char buf[256];
             StringWToA(buf, id->origName, wcslen(id->origName));
+            if (buf[0] && buf[strlen(buf)-1] == '\n')
+                buf[strlen(buf)-1] = 0;
             fprintf(outputFile, "%s ", buf);
         }
         else

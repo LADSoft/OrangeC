@@ -337,3 +337,7 @@ EXPORTS
     pfnSelectPalette               @438 
     AddFontMemResourceEx
     RemoveFontMemResourceEx
+    AddFontResourceExA
+    RemoveFontResourceExaA
+    AddFontResourceExW
+    RemoveFontResourceExW

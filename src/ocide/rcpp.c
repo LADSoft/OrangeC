@@ -479,7 +479,7 @@ int dodefine(void)
     WCHAR *args[40], count = 0;
     WCHAR *olptr;
     int p;
-    LIST *prevLines = GetCachedLines();
+    LIST *prevLines = inSymFile ? GetCachedLines() : NULL;
 
     getsym(); /* get past #define */
     if (ifskip)
@@ -519,7 +519,7 @@ int dodefine(void)
     while (iswhitespacechar(*olptr))
         olptr++;
     p = pstrlen(olptr);
-    if (olptr[p - 1] == 0x0a)
+    if (olptr[p - 1] == '\n')
         olptr[p - 1] = 0;
     def->string = prcStrdup(olptr);
     sp->value.s = (char*)def;

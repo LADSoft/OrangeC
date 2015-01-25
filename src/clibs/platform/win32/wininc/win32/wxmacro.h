@@ -551,6 +551,10 @@ extern "C" {
     HIWORD(wp)
 #define GET_WPARAM(wp, lp) \
     (wp)
+#define GET_X_LPARAM(lp) \
+    ((int)(short)LOWORD(lp))
+#define GET_Y_LPARAM(lp) \
+    ((int)(short)HIWORD(lp))
 
 #define GetFirstChild(hwnd) \
     GetTopWindow(hwnd)

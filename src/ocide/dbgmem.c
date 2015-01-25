@@ -250,16 +250,17 @@ static void CopyText(HWND hwnd)
 }
 void MemDoPaint(HWND hwnd, int focussed)
 {
+    PAINTSTRUCT ps;
+    HDC dc;
+    dc = BeginPaint(hwnd, &ps);
     if (activeProcess)
     {
         int i;
         char buf[256];
         char charbuf[1000];
-        PAINTSTRUCT ps;
-        CONTEXT context;
-        HDC dc;
         HFONT oldFont;
         COLORREF oldbk, oldtxt;
+        CONTEXT context;
         RECT rect;
         int lines;
         int chars;
@@ -267,97 +268,98 @@ void MemDoPaint(HWND hwnd, int focussed)
         GetClientRect(hwnd, &rect);
         lines = (rect.bottom - rect.top)/ 16;
         chars = (rect.right/8 - 10) / 4; 
-        dc = BeginPaint(hwnd, &ps);
-        oldFont = SelectObject(dc, MemFont);
-        for (i = 0; i < lines; i++)
+        if (lines > 0 && chars > 0)
         {
-            int j;
-            sprintf(buf, "%08X: ", MemAddress[index] + i * chars);
-            TextOut(dc, 0, i *16+rect.top, buf, strlen(buf));
-            for (j = 0; j < chars; j+= memoryWordSize)
+            oldFont = SelectObject(dc, MemFont);
+            for (i = 0; i < lines; i++)
             {
-                int k;
-                if (i == cursrow[index] && j == curscol[index] && focussed)
+                int j;
+                sprintf(buf, "%08X: ", MemAddress[index] + i * chars);
+                TextOut(dc, 0, i *16+rect.top, buf, strlen(buf));
+                for (j = 0; j < chars; j+= memoryWordSize)
                 {
-                    oldbk = GetBkColor(dc);
-                    oldtxt = SetTextColor(dc, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
-    //                if (modifying)
-                        SetBkColor(dc, RetrieveSysColor(COLOR_HIGHLIGHT));
-    //                else
-    //                    SetBkColor(dc, oldtxt);
-                }
-                if (ReadProcessMemory(activeProcess->hProcess, (LPVOID)(MemAddress[index] +
-                    i * chars + j), (LPVOID)(charbuf + j), memoryWordSize, 0))
-                {
-                    switch(memoryWordSize)
+                    int k;
+                    if (i == cursrow[index] && j == curscol[index] && focussed)
                     {
-                            case 1:
-                    sprintf(buf, "%02X ", (unsigned char)charbuf[j]);
-                                    break;
-                            case 2:
-                    sprintf(buf, "%04X ", (*(unsigned short *)(charbuf+j)));
-                                    break;
-                            case 4:
-                    sprintf(buf, "%08X ", (*(unsigned int *)(charbuf+j)));
-                                    break;
+                        oldbk = GetBkColor(dc);
+                        oldtxt = SetTextColor(dc, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
+        //                if (modifying)
+                            SetBkColor(dc, RetrieveSysColor(COLOR_HIGHLIGHT));
+        //                else
+        //                    SetBkColor(dc, oldtxt);
                     }
-                    if (i == cursrow[index] && j == curscol[index])
-                        if (modifying)
-                            strcpy(buf, cursmod);
-                }
-                else
-                {
-                    if (i == cursrow[index] && j == curscol[index])
+                    if (ReadProcessMemory(activeProcess->hProcess, (LPVOID)(MemAddress[index] +
+                        i * chars + j), (LPVOID)(charbuf + j), memoryWordSize, 0))
                     {
-                        modifying = FALSE;
-                        curpos = 0;
-                        SetCursMode();
+                        switch(memoryWordSize)
+                        {
+                                case 1:
+                        sprintf(buf, "%02X ", (unsigned char)charbuf[j]);
+                                        break;
+                                case 2:
+                        sprintf(buf, "%04X ", (*(unsigned short *)(charbuf+j)));
+                                        break;
+                                case 4:
+                        sprintf(buf, "%08X ", (*(unsigned int *)(charbuf+j)));
+                                        break;
+                        }
+                        if (i == cursrow[index] && j == curscol[index])
+                            if (modifying)
+                                strcpy(buf, cursmod);
                     }
-                    switch(memoryWordSize)
+                    else
                     {
-                            case 1:
-                    strcpy(buf, "?? ");
-                                    break;
-                            case 2:
-                    strcpy(buf, "???? ");
-                                    break;
-                            case 4:
-                    strcpy(buf, "???????? ");
-                                    break;
+                        if (i == cursrow[index] && j == curscol[index])
+                        {
+                            modifying = FALSE;
+                            curpos = 0;
+                            SetCursMode();
+                        }
+                        switch(memoryWordSize)
+                        {
+                                case 1:
+                        strcpy(buf, "?? ");
+                                        break;
+                                case 2:
+                        strcpy(buf, "???? ");
+                                        break;
+                                case 4:
+                        strcpy(buf, "???????? ");
+                                        break;
+                        }
+                        charbuf[j] = '.';
                     }
-                    charbuf[j] = '.';
+                    if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
+                        TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8-4, 
+                                                        i *16+rect.top, buf, 2 * memoryWordSize);
+                    else
+                        TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, 
+                                                        i *16+rect.top, buf, 2 * memoryWordSize);
+                                
+                    for (k=0; k < memoryWordSize; k++)
+                        if (charbuf[j+k] < 32 || charbuf[j+k] > 126)
+                            charbuf[j+k] = '.';
+                    if (i == cursrow[index] && j == curscol[index] && focussed)
+                    {
+                        SetTextColor(dc, oldtxt);
+                        SetBkColor(dc, oldbk);
+                    }
+                    if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
+                        TextOut(dc, (10 + memoryWordSize * 2 + 
+                                    (j * 2 + j/memoryWordSize)) *8-4, 
+                                     i *16+rect.top, " ", 1);
+                    else
+                        TextOut(dc, (10 + memoryWordSize * 2 + 
+                                    (j * 2 + j/memoryWordSize)) *8, 
+                                     i *16+rect.top, " ", 1);
                 }
-                if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
-                    TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8-4, 
-                                                    i *16+rect.top, buf, 2 * memoryWordSize);
-                else
-                    TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, 
-                                                    i *16+rect.top, buf, 2 * memoryWordSize);
-                            
-                for (k=0; k < memoryWordSize; k++)
-                    if (charbuf[j+k] < 32 || charbuf[j+k] > 126)
-                        charbuf[j+k] = '.';
-                if (i == cursrow[index] && j == curscol[index] && focussed)
-                {
-                    SetTextColor(dc, oldtxt);
-                    SetBkColor(dc, oldbk);
-                }
-                if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
-                    TextOut(dc, (10 + memoryWordSize * 2 + 
-                                (j * 2 + j/memoryWordSize)) *8-4, 
-                                 i *16+rect.top, " ", 1);
-                else
-                    TextOut(dc, (10 + memoryWordSize * 2 + 
-                                (j * 2 + j/memoryWordSize)) *8, 
-                                 i *16+rect.top, " ", 1);
+                TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, &charbuf[0], strlen(charbuf));
             }
-            TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, &charbuf[0], strlen(charbuf));
-        }
-    
+        }    
         SelectObject(dc, oldFont);
     
-        EndPaint(hwnd, &ps);
     }
+    EndPaint(hwnd, &ps);
 }
 //-------------------------------------------------------------------------
 

@@ -448,6 +448,8 @@ extern "C" {
 #define WM_NCMBUTTONDOWN        (167)
 #define WM_NCMBUTTONUP  (168)
 #define WM_NCMOUSEMOVE  (160)
+#define WM_NCMOUSEHOVER (672)
+#define WM_NCMOUSELEAVE  (674)
 #define WM_NCPAINT      (133)
 #define WM_NCRBUTTONDBLCLK      (166)
 #define WM_NCRBUTTONDOWN        (164)

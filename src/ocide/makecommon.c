@@ -222,22 +222,36 @@ static void PutFilePath(PROJECTITEM *rel, char **dest, char *name, int escaped, 
     if (escaped)
         *(*dest)++ = '"';
 }
+static int GetOneFilenamePath(PROJECTITEM *pj, char **dest, char *ext, int len, BOOL first, int escaped, int spacing, PROJECTITEM **lcd)
+{
+    if (pj->type != PJ_PROJ && strlen(pj->realName) > len && !stricmp(pj->realName + strlen(pj->realName) - len, ext))
+    {
+        PutFilePath(lcd ? pj : NULL, dest, pj->realName, escaped, spacing);
+        spacing = TRUE;
+    }
+    if (pj->outputExt[0] && !stricmp(pj->outputExt, ext))
+    {
+        PutFilePath(lcd ? pj : NULL, dest, pj->outputName, escaped, spacing);
+        spacing = TRUE;
+    }
+    return spacing;
+}
 int GetFilenamePaths(PROJECTITEM *pj, char **dest, char *ext, int len, BOOL first, int escaped, int spacing, PROJECTITEM **lcd)
 {
     do
     {
         if (pj->children)
             spacing = GetFilenamePaths(pj->children, dest, ext, len, FALSE, escaped, spacing, lcd);
-        if (strlen(pj->realName) > len && !stricmp(pj->realName + strlen(pj->realName) - len, ext))
+        if (pj->type == PJ_PROJ)
         {
-            PutFilePath(lcd ? pj : NULL, dest, pj->realName, escaped, spacing);
-            spacing = TRUE;
+            PROJECTITEMLIST *list = pj->depends;
+            while (list)
+            {
+                spacing = GetOneFilenamePath(list->item, dest, ext, len, FALSE, escaped, spacing, lcd);
+                list = list->next;
+            }
         }
-        if (pj->outputExt[0] && !stricmp(pj->outputExt, ext))
-        {
-            PutFilePath(lcd ? pj : NULL, dest, pj->outputName, escaped, spacing);
-            spacing = TRUE;
-        }
+        spacing = GetOneFilenamePath(pj, dest, ext, len, FALSE, escaped, spacing, lcd);
         pj = pj->next;
     }
     while (pj && !first);
@@ -1009,7 +1023,7 @@ int Execute(char *cmd, char *wdp, int window)
     si.hStdInput = INVALID_HANDLE_VALUE;
     si.hStdOutput = stdoutWr;
     si.hStdError = stdoutWr;
-
+    
     retcode = CreateProcess(0, cmd, 0, 0, TRUE, DETACHED_PROCESS | CREATE_SUSPENDED, 
                             0, path, &si, &pi);
 

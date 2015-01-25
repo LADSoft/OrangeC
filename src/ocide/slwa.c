@@ -878,6 +878,69 @@ void RestoreProjectNames(struct xmlNode *node, int version, PROJECTITEM *wa)
         children = children->next ;
     }
 }
+void RestoreProjectDependencies(struct xmlNode *node, int version, PROJECTITEM *wa)
+{
+    struct xmlNode *children = node->children, *dependsChildren;
+    while (children)
+    {
+        if (IsNode(children, "FILE"))
+        {
+            char parentName[MAX_PATH], dependsName[MAX_PATH];
+            struct xmlAttr * attribs = children->attribs ;
+            parentName[0] = 0;
+            while (attribs)
+            {
+                if (IsAttrib(attribs, "NAME"))
+                {
+                    strcpy(parentName, attribs->value);
+                    abspath(parentName, wa->realName);
+                }
+                attribs = attribs->next ;
+            }
+            dependsChildren = children->children;
+            while (dependsChildren)
+            {
+                attribs = dependsChildren->attribs;
+                dependsName[0] = 0;
+                while (attribs)
+                {
+                    if (IsAttrib(attribs, "NAME"))
+                    {
+                        strcpy(dependsName, attribs->value);
+                        abspath(dependsName, wa->realName);
+                    }
+                    attribs = attribs->next ;
+                }
+                if (parentName[0] && dependsName[0])
+                {
+                    PROJECTITEM *parent = wa->children, *depends = wa->children;
+                    while (parent)
+                    {
+                        if (!xstricmpz(parent->realName, parentName))
+                            break;
+                        parent = parent->next;
+                    }
+                    while (depends)
+                    {
+                        if (!xstricmpz(depends->realName, dependsName))
+                            break;
+                        depends = depends->next;
+                    }
+                    if (parent && depends)
+                    {
+                        PROJECTITEMLIST **list = &parent->depends;
+                        while (*list)
+                            list = &(*list)->next;
+                        *list = (PROJECTITEMLIST *)calloc(1, sizeof(PROJECTITEMLIST));
+                        (*list)->item = depends;
+                    }
+                }
+                dependsChildren = dependsChildren->next;
+            }
+        }
+        children = children->next ;
+    }
+}
 void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
 {
     char *selected = NULL;
@@ -1032,6 +1095,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
                 attribs = attribs->next;
             } 
             RestoreProjectNames(nodes, version, wa);
+            RestoreProjectDependencies(nodes, version, wa);
         }
         nodes = nodes->next;
     }
@@ -1281,9 +1345,27 @@ void SaveProjectNames(FILE *out, PROJECTITEM *wa)
             activeProject ? activeProject->displayName : "");
     while (l)
     {
-        fprintf(out,
-            "\t\t<FILE NAME=\"%s\" CLEAN=\"%x\"/>\n", 
-            relpath(l->realName, wa->realName), l->clean);
+        if (l->depends)
+        {
+            PROJECTITEMLIST *depends = l->depends;
+            fprintf(out,
+                "\t\t<FILE NAME=\"%s\" CLEAN=\"%x\">\n", 
+                relpath(l->realName, wa->realName), l->clean);
+            while (depends)
+            {
+                fprintf(out,
+                    "\t\t\t<DEPENDENCY NAME=\"%s\" />\n", 
+                    relpath(depends->item->realName, wa->realName));
+                depends = depends->next;
+            }
+            fprintf(out, "\t\t</FILE>\n");
+        }
+        else
+        {
+            fprintf(out,
+                "\t\t<FILE NAME=\"%s\" CLEAN=\"%x\"/>\n", 
+                relpath(l->realName, wa->realName), l->clean);
+        }
         l = l->next ;
     }
     fprintf(out,"\t</PROJECTS>\n");

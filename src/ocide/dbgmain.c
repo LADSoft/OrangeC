@@ -777,18 +777,6 @@ void StartDebug(char *cmd)
                 case EXIT_PROCESS_DEBUG_EVENT:
                     {
                         PROCESS *pr = GetProcess(stDE.dwProcessId);
-                        if (uState != Aborting && !bShownExitCode)
-                            if (stDE.dwProcessId == stProcessInfo.dwProcessId)
-                            {
-                                if (PropGetBool(activeProject, "__SHOW_RETURN_CODE"))
-                                {
-                                    if (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE)
-                                    {
-                                        ProcessToTop(stDE.dwProcessId);
-                                    }
-                                    ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Process complete. Exit code: %d", stDE.u.ExitProcess.dwExitCode);
-                                }
-                            }
                         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
 
                         if (!debugProcessList->next)
@@ -799,7 +787,9 @@ void StartDebug(char *cmd)
                         if (pr)
                         {
                             char buf[512];
-                            sprintf(buf, "Process Unloading: %s\r\n", pr->name) ;
+                            DWORD exitCode;
+                            GetExitCodeProcess(pr->hProcess, &exitCode);
+                            sprintf(buf, "Process Unloading: %s with exitCode %d\r\n", pr->name, exitCode) ;
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                             DeleteProcess(pr->idProcess);
                         }
@@ -923,25 +913,10 @@ void StartDebug(char *cmd)
                         THREAD *th = GetThread(stDE.dwProcessId, stDE.dwThreadId);
                         if (th)
                         {
-                            sprintf(buf, "Thread exit: %d %s : exit code %d\r\n", th
+                            sprintf(buf, "Thread exit: %d %s with exit code %d\r\n", th
                                 ->idThread, th->name, stDE.u.ExitProcess.dwExitCode);
                             SendInfoMessage(ERR_DEBUG_WINDOW, buf);
                             DeleteThread(stDE.dwProcessId, stDE.dwThreadId);
-                        }
-                        if (stDE.u.ExitThread.dwExitCode == STATUS_CONTROL_C_EXIT)
-                        {
-                            if (stDE.dwProcessId == stProcessInfo.dwProcessId)
-                            {
-                                if (PropGetBool(activeProject, "__SHOW_RETURN_CODE"))
-                                {
-                                     if (PropGetInt(activeProject, "__PROJECTTYPE") == BT_CONSOLE)
-                                   {
-                                        ProcessToTop(stDE.dwProcessId);
-                                    }
-                                    ExtendedMessageBox("Debugger", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Process complete. Exit code: %d", stDE.u.ExitProcess.dwExitCode);
-                                    bShownExitCode = TRUE;
-                                }
-                            }
                         }
                         dwContinueStatus = DBG_CONTINUE;
                     }

@@ -657,6 +657,7 @@ void InitMenuPopup(HMENU menu)
         mf_state = MF_GRAYED;
     EnableMenuItem(menu, IDM_ACTIVEPROJECTPROPERTIES, mf_state);
     EnableMenuItem(menu, IDM_PROJECTPROPERTIES, mf_state);
+    EnableMenuItem(menu, IDM_PROJECTDEPENDS, mf_state);
     if (making)
         mf_state = MF_ENABLED;
     else
@@ -670,6 +671,15 @@ void InitMenuPopup(HMENU menu)
             EnableMenuItem(menu, IDM_REDO, SendMessage(win, EM_CANREDO,
                 0, 0) ? MF_ENABLED : MF_GRAYED);
     }
+    if (uState == notDebugging)
+        mf_state = MF_ENABLED;
+    else
+        mf_state = MF_GRAYED;
+    EnableMenuItem(menu, IDM_OPENWS, mf_state);
+    EnableMenuItem(menu, IDM_CLOSEWS, mf_state);
+    EnableMenuItem(menu, IDM_NEWWS, mf_state);
+    EnableMenuItem(menu, IDM_REOPENWS, mf_state);
+    EnableMenuItem(menu, IDM_IMPORTWS, mf_state);
 
     mf_state = ((uState == notDebugging || uState == atException || uState == atBreakpoint) && !making && activeProject) ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, IDM_RUN, mf_state);

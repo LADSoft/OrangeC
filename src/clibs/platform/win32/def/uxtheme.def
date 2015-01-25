@@ -1,0 +1,7 @@
+LIBRARY     UXTHEME.DLL
+
+EXPORTS
+	OpenThemeData
+	CloseThemeData
+	GetThemeSysColor
+	SetWindowTheme

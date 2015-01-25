@@ -803,6 +803,10 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 data = GetItemInfo(prjSelectedItem);
                 ShowBuildProperties(data);
                 break;
+            case IDM_PROJECTDEPENDS:
+                data = GetItemInfo(prjSelectedItem);
+                EditProjectDependencies(data);
+                break;
             case IDM_OPENFILES:
                 data = GetItemInfo(prjSelectedItem);
                 if (data)

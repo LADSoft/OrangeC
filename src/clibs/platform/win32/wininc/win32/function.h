@@ -103,6 +103,7 @@
 #define EnumDisplaySettings  EnumDisplaySettingsW
 #define SystemParametersInfo  SystemParametersInfoW
 #define AddFontResource  AddFontResourceW
+#define AddFontResourceEx  AddFontResourceExW
 #define CopyMetaFile  CopyMetaFileW
 #define CreateDC  CreateDCW
 #define CreateFontIndirect  CreateFontIndirectW
@@ -128,6 +129,7 @@
 #define GetCharacterPlacement  GetCharacterPlacementW
 #define ResetDC  ResetDCW
 #define RemoveFontResource  RemoveFontResourceW
+#define RemoveFontResourceEx  RemoveFontResourceExW
 #define CopyEnhMetaFile  CopyEnhMetaFileW
 #define CreateEnhMetaFile  CreateEnhMetaFileW
 #define GetEnhMetaFile  GetEnhMetaFileW
@@ -498,6 +500,7 @@
 #define MessageBoxEx  MessageBoxExA
 #define MessageBoxIndirect  MessageBoxIndirectA
 #define AddFontResource  AddFontResourceA
+#define AddFontResourceEx  AddFontResourceExA
 #define CopyMetaFile  CopyMetaFileA
 #define CreateDC  CreateDCA
 #define CreateFontIndirect  CreateFontIndirectA
@@ -523,6 +526,7 @@
 #define GetCharacterPlacement  GetCharacterPlacementA
 #define ResetDC  ResetDCA
 #define RemoveFontResource  RemoveFontResourceA
+#define RemoveFontResourceEx  RemoveFontResourceExA
 #define CopyEnhMetaFile  CopyEnhMetaFileA
 #define CreateEnhMetaFile  CreateEnhMetaFileA
 #define GetEnhMetaFile  GetEnhMetaFileA

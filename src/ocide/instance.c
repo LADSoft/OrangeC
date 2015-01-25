@@ -46,6 +46,7 @@
 #include "header.h"
 #include <ctype.h>
 #include <process.h>
+#include <stdlib.h>
 //extern int __argc;
 //extern char **__argv;
 extern HWND hwndFrame;

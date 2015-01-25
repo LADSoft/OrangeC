@@ -223,8 +223,8 @@ CCW_params *CreateContainerWindow(HWND parent, CCW_params *child, RECT *r)
     {
         p->child = child;
         p->hwnd = CreateMDIWindow(szContainerClassName, "",  WS_VISIBLE|	  
-        WS_CHILD | WS_OVERLAPPEDWINDOW | WS_SYSMENU | MDIS_ALLCHILDSTYLES | 
-        WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
+        WS_CHILD | WS_OVERLAPPEDWINDOW | MDIS_ALLCHILDSTYLES | 
+        WS_CLIPSIBLINGS | WS_CLIPCHILDREN | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU) |
         WS_SIZEBOX | WS_MINIMIZEBOX,
             r->left,
             r->top,

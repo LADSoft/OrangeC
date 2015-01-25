@@ -133,7 +133,7 @@ DWORD DosWindowThread(void *xx)
         while (TRUE == bContinue)
         {
             // Pause until a debug event notification happens.
-            bContinue = WaitForDebugEvent(&stDE, 500);
+            bContinue = WaitForDebugEvent(&stDE, 200);
             if (bContinue)
             {
                 switch (stDE.dwDebugEventCode)
@@ -159,7 +159,6 @@ DWORD DosWindowThread(void *xx)
                             {
                                 if (vdata->rvTitle)
                                 {
-                                    ProcessToTop(stProcessInfo.dwProcessId);
                                     ExtendedMessageBox(vdata->rvTitle, MB_SETFOREGROUND | MB_SYSTEMMODAL, vdata->rvBody, stDE.u.ExitProcess.dwExitCode);
                                     bShownExitCode = TRUE;
                                 }
@@ -173,7 +172,6 @@ DWORD DosWindowThread(void *xx)
                         {
                             if (vdata->rvTitle)
                             {
-                                ProcessToTop(stProcessInfo.dwProcessId);
                                 ExtendedMessageBox(vdata->rvTitle, MB_SETFOREGROUND | MB_SYSTEMMODAL, vdata->rvBody, stDE.u.ExitProcess.dwExitCode);
                                 bShownExitCode = TRUE;
                             }

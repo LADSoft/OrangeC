@@ -446,7 +446,6 @@ LRESULT CALLBACK ValueComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     if (count < sizeof(buf)-1)
                     {
                         int pos;
-                        MessageBeep(0);
                         buf[count++] = wParam;
                         buf[count] = 0;
                         SetStatusMessage(buf , 0);

@@ -100,7 +100,7 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
     while (pj)
     {
         AddSymbolTable(pj, FALSE);
-        if (pj->type == PJ_FILE)
+        if (pj->type == PJ_FILE || pj->type == PJ_PROJ)
         {
             char *p;
             p = Lookup("OUTPUTFILE", pj, NULL);
@@ -114,12 +114,6 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
                 RemoveSymbolTable();
                 break;
             }
-        }
-        else if (pj->type == PJ_PROJ)
-        {
-            char *p = strrchr(pj->realName, '.');
-            if (p)
-                strcpy(pj->outputExt, p);
         }
         if (pj->children)
         {
@@ -291,10 +285,11 @@ static BOOL DependsChanged(PROJECTITEM *pj)
     BOOL rv = FALSE;
     PROJECTITEMLIST *depends = pj->depends;
     PROJECTITEM *proj = pj;
+    BOOL isProj = pj->type == PJ_PROJ;
     while (proj->type != PJ_PROJ) proj = proj->parent;
     while (depends)
     {
-        if (CompareTimes(&pj->outputTime, &depends->item->fileTime))
+        if (CompareTimes(&pj->outputTime, isProj ? &depends->item->outputTime : &depends->item->fileTime))
             return TRUE;
         depends = depends->next;
     }
@@ -461,7 +456,7 @@ static int Make(PROJECTITEM *pj, BOOL first)
               
             if (pj->type == PJ_PROJ)
                 MakeMessage("Building Project %s", pj->displayName);
-            rv |= Make(pj->children, FALSE);
+            rv |= Make(pj->type == PJ_WS ? pj->projectBuildList : pj->children, FALSE);
             if (!stopBuild)
             {
                 if (pj->type == PJ_PROJ)
@@ -479,7 +474,10 @@ static int Make(PROJECTITEM *pj, BOOL first)
             }
         }
         RemoveSymbolTable();
-        pj = pj->next;
+        if (pj->type == PJ_PROJ || pj->type == PJ_WS)
+            pj = pj->projectBuildList;
+        else
+            pj = pj->next;
     } while (pj && !stopBuild && !first);
     return rv;
 }
@@ -496,15 +494,17 @@ static BOOL CheckChanged(PROJECTITEM *pj)
         }
         else if (pj->children)
         {
-                
-            rv = CheckChanged(pj->children);
+            rv = CheckChanged(pj->type == PJ_WS ? pj->projectBuildList : pj->children);
             if (!rv && pj->type == PJ_PROJ)
             {
                 rv = pj->outputExt[0] && DependsChanged(pj);
             }
         }
         RemoveSymbolTable();
-        pj = pj->next;
+        if (pj->type == PJ_PROJ || pj->type == PJ_WS)
+            pj = pj->projectBuildList;
+        else
+            pj = pj->next;
     } while (pj && !rv);
     return rv;
 }
@@ -576,6 +576,7 @@ void Maker(PROJECTITEM *pj, BOOL clean)
     SaveDrawAll();
     ResSaveAll();
     SaveAllProjects(workArea, FALSE);
+    CreateProjectDependenciesList();
     pj->clean |= clean;
     _beginthread((BEGINTHREAD_FUNC)MakerThread, 0, (LPVOID)pj);
 }
@@ -592,6 +593,7 @@ void dbgRebuildMainThread(int cmd)
         SaveDrawAll();
         ResSaveAll();
         SaveAllProjects(workArea, FALSE);
+        CreateProjectDependenciesList();
         if (BuildModified(workArea))
         {
             if (ExtendedMessageBox("Debugger", MB_YESNO, 

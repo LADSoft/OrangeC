@@ -89,6 +89,15 @@ static void InsertDepend(PROJECTITEM *fi, PROJECTITEM *dep)
 }
 //-------------------------------------------------------------------------
 
+static void EraseDepends(PROJECTITEM *fi)
+{
+    while (fi->depends)
+    {
+        PROJECTITEMLIST *list = fi->depends;
+        fi->depends = fi->depends->next;
+        free(list);
+    }
+}
 static void FindDepends(PROJECTITEM *pj, PROJECTITEM *fi)
 {
     BOOL rcFile = FALSE;
@@ -265,15 +274,8 @@ static void CalculateFiles(PROJECTITEM *pj, PROJECTITEM *fi)
                 char buf[MAX_PATH + 100];
                 sprintf(buf,"Scanning dependencies for %s...", fi->displayName);
                 SetStatusMessage(buf, FALSE);
+                EraseDepends(fi);
                 FindDepends(pj, fi);
-            }
-            else
-            {
-                if (strstr(fi->realName, ".l") == fi->realName + strlen(fi->realName) -2 ||
-                    strstr(fi->realName, ".L") == fi->realName + strlen(fi->realName) -2)
-                {
-                    InsertDepend(pj, fi);
-                }
             }
         fi = fi->next;
     }
@@ -304,6 +306,7 @@ void CalculateProjectDepends(PROJECTITEM *pj)
                 item = pj;
                 while (item && item->type != PJ_PROJ)
                     item = item->parent ;
+                EraseDepends(pj);
                 FindDepends(item, pj);
                 break;
             case PJ_FOLDER:

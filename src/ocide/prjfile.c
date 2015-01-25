@@ -194,6 +194,7 @@ PROJECTITEM *AddFile(PROJECTITEM *data, char *name, BOOL automatic)
         ExpandParents(file);
         MarkChanged(file, FALSE);
         ResAddItem(file);
+        CalculateFileAutoDepends(name);
     }
     return file;
 }

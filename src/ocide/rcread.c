@@ -784,7 +784,7 @@ static void ReadQuotedResID(IDENT *id)
             lptr = p;
             getch();
             cantnewline = FALSE;
-            wcscpy(id->origName, nbuf);
+            id->origName = WStrDup(nbuf);
 //            StringAsciiToWChar(&id->origName, nbuf, wcslen(nbuf));
             return;
         }        

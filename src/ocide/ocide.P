@@ -881,6 +881,11 @@ int Print(HWND win);
 
 void printwmsg(HWND hwnd, int message, WPARAM wParam, LPARAM lParam);
 
+                             /* PrjDepends.c */
+
+void CreateProjectDependenciesList(void);
+void EditProjectDependencies(PROJECTITEM *pj);
+
                               /* Prjfile.c */
 
 int VerifyPath(char *path);

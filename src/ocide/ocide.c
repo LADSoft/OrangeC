@@ -49,6 +49,7 @@
 #include "splash.h"
 #include "..\version.h"
 #include <sys\stat.h>
+#include <stdlib.h>
 /* timer identifiers
  *
  * note that the current timer implementation assumes only one timer
@@ -201,7 +202,7 @@ int ExtendedMessageBox(char *title, int flag, char *fmt, ...)
     va_start(argptr, fmt);
     vsprintf(string, fmt, argptr);
     va_end(argptr);
-    return MessageBox(GetFocus(), string, title, flag | MB_SETFOREGROUND | MB_APPLMODAL);
+    return MessageBox(GetFocus(), string, title, flag | MB_SETFOREGROUND);
 }
 
 //-------------------------------------------------------------------------
@@ -423,9 +424,9 @@ void LoadFirstWorkArea(void)
     if (argv)
     {
         int todo = parse_args(&argc, argv, 1) && argc > 1 ;
+        CloseWorkArea();
         if (!bCmdLineWS)
         {
-            CloseWorkArea();
             if (bCmdLineProj)
             {
                 LoadProject(szNewProj);
@@ -1050,6 +1051,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case IDM_NEWFILE_P:
             case IDM_SELECTPROFILE:
             case IDM_PROJECTPROPERTIES:
+            case IDM_PROJECTDEPENDS:
             case IDM_OPENFILES:
             case IDM_EXISTINGFILE:
             case IDM_NEWFOLDER:
@@ -1125,8 +1127,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SendMessage(hwnd, WM_REDRAWTOOLBAR, 0, 0);
                 break;
             case IDM_REMOVEBOOKMARKS:
-                TagRemoveAll(TAG_BOOKMARK);
-                SendMessage(hwnd, WM_REDRAWTOOLBAR, 0, 0);
+                if (ExtendedMessageBox("Debugger", MB_YESNO, 
+                    "Do you want to remove all bookmarks?") == IDYES)
+                {
+                    TagRemoveAll(TAG_BOOKMARK);
+                    SendMessage(hwnd, WM_REDRAWTOOLBAR, 0, 0);
+                }
                 break;
             case IDM_FORWARD:
                 FileBrowseRight();
@@ -1583,7 +1589,7 @@ static void GetSystemDialogFont(void)
     OSVERSIONINFO osvi;
     NONCLIENTMETRICS ncm;
     ncm.cbSize = sizeof(NONCLIENTMETRICS);
-#if !defined(GNUC) && !defined(BORLAND) && !defined(OPENWATCOM)
+#if !defined(GNUC) && !defined(BORLAND) && !defined(OPENWATCOM) && !defined(__ORANGEC__)
     memset(&osvi,0,sizeof(osvi));
     osvi.dwOSVersionInfoSize = sizeof(osvi);
     GetVersionEx(&osvi);

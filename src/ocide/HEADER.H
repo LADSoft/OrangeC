@@ -237,6 +237,7 @@ typedef struct _projectItem
 	struct _projectItem *next;
 	struct _projectItem *parent;
 	struct _projectItem *children;
+    struct _projectItem *projectBuildList;
     struct _projectItemList *depends;
     struct _projectItem *internalDependsLink;
 	char displayName[256];

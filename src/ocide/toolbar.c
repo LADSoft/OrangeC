@@ -88,7 +88,7 @@ static char *edithints[] =
 
 static char *makehints[] = 
 {
-    "Compile [Ctl+F7]", "Build All [F7]", "Build Active [Shift+F7]", "Rebuild All", "Stop Build", "Customize"
+    "Compile [Ctl+F7]", "Make [F7]", "Build Active [Shift+F7]", "Rebuild All", "Stop Build", "Customize"
 };
 static char *debughints[] = 
 {

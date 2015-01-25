@@ -27,6 +27,7 @@ SHFOLDER.def
 TAPI32.def
 URL.def
 USER32.def
+UXTHEME.def
 VDMDBG.def
 VERSION.def
 WINMM.def

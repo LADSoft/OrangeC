@@ -211,8 +211,19 @@ void DoneRenaming(void)
                     strcpy(buf3, editItem->realName);
                     if (editItem->type == PJ_PROJ)
                     {
-                        strcat(buf2, ".cpj");
-                        strcat(buf3, ".cpj");
+                        char *q = strrchr(editItem->realName, '.');
+                        if (q)
+                        {
+                            strcat(buf, q);
+                            strcat(buf2, q);
+                            strcat(buf2, ".cpj");
+                            strcat(buf3, ".cpj");
+                        }
+                        else
+                        {
+                            DestroyWindow(hwndEdit);
+                            return;
+                        }
                     }
                     if (!MoveFileEx( buf3, buf2, 0))
                     {
@@ -233,6 +244,11 @@ void DoneRenaming(void)
                 strcpy(p, buf);
             }
             strcpy(editItem->displayName, buf);
+            if (editItem->type == PJ_PROJ)
+            {
+                char *q = strrchr(editItem->displayName, '.');
+                *q = 0;
+            }
             while (*rmv && (*rmv) != editItem)
                 rmv = &(*rmv)->next;
             if (*rmv)

@@ -690,6 +690,15 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     HMENU menu = LoadMenuGeneric(hInstance, "WATCHMENU");
                     HMENU popup = GetSubMenu(menu, 0);
+                    TV_HITTESTINFO t;
+                    HTREEITEM titem;
+                    GetCursorPos(&t.pt);
+                    ScreenToClient(hwndTree[selected], &t.pt);
+                    titem = TreeView_HitTest(hwndTree[selected], &t);
+                    if (!titem || TreeView_GetParent(hwndTree[selected], titem))
+                    {
+                        EnableMenuItem(popup, IDM_DELETEWATCH, MF_GRAYED);
+                    }
                     InsertBitmapsInMenu(popup);
                     GetCursorPos(&menupos);
                     TrackPopupMenuEx(popup, TPM_BOTTOMALIGN | TPM_LEFTBUTTON,
@@ -756,7 +765,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 doit = SendMessage(win, WM_WORDUNDERPOINT, (WPARAM)&rightclickPos, (LPARAM)buf);
                 if (!doit)
                 {
-                    SendMessage(hwndFrame, IDM_ADDWATCH, 0, 0);
+                    PostMessage(hwndFrame, WM_COMMAND, IDM_ADDWATCH, 0);
                     break;
                 }
             }

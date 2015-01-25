@@ -1,5 +1,38 @@
 Release notes
 
+version 5.23.1:
+    ocide: new feature: project auto dependencies and calculate build order
+    ocide: update documentation/pictures to latest gui and add project auto dependencies
+    ocide: when a file was edited, old dependencies weren't being removed.
+            This could cause compilation where none was needed when the old dependency was modified
+    ocide: dependencies weren't being calculated properly, when they were on the include
+            path rather than in the project.
+    ocide: when adding an existing file, immediately scan it for dependencies
+    ocide: when changing project properties (e.g. the include path) recalculate the project
+            dependencies
+    ocide: remove 'exit process' dialog from debugger, show exit status in information window
+            'exit process' is still in the 'run without debug' view.
+    ocide: on the right-click from the edit window 'add to watch',
+            pop up the add watch dialog if the word under the cursor isn't a known variable
+    ocide: gray out the 'remove from watch' item if you didn't click on an item 
+            that could be removed
+    ocide: change text of a button from 'build all' to 'make' in the toolbar.
+    ocide: resource files with non-standard control names couldn't be reloaded after save
+    ocide: some resource file comments disappearing
+    ocide: don't allow workarea to be reloaded while debugging
+    ocide: when 'remove all bookmarks' is pressed, prompt to see if that is the intended activity
+    ocide: fix crash when trying to rename a project in the workarea window
+    ocide: fix crash while loading resource file
+    ocide: fix crash when loading invalid work area from command line
+    ocide: opening the debug/memory window could crash the IDE
+    ocide: when using tabbed windows, don't switch back to nontabbed mode0
+    ocide: generated makefile did not work with 'include' paths
+    ocide: generated makefile can be saved in more locations than before
+    occ:   prototyping a function, then prototyping it again inside another function body
+           would fail with an error
+    omake: quoting an existing file as a dependency results in the dependency not being resolved
+    clibs: add more to win32 headers
+
 version 5.22.1: 01/19/15
     general:    increase compatibility when building the tools with openwatcom
     ocide:  ungray 'make' and 'rebuild' and 'build active project' in menus

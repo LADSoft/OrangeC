@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.20.0.1
+AppVerName=Orange C Version 5.23.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -18,7 +18,7 @@ LicenseFile=License.txt
 ;BackColor=clRed
 ;BackColor2=clAqua
 ;WindowVisible= yes
-AppCopyright=Copyright(C) LADSoft 1994-2014, All Rights Reserved.
+AppCopyright=Copyright(C) LADSoft 1994-2015, All Rights Reserved.
 WizardSmallImageFile=ladsoft1.bmp
 WizardImageFile=ladsoftl.bmp
 WizardImageBackColor=clAqua
@@ -46,9 +46,9 @@ Name: "main\desktop"; Description: "Desktop"; types: desktop; flags: exclusive
 Name: "main\memstick"; Description: "Memory Stick"; types: memstick; flags: exclusive
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4; Flags: unchecked; Components: main\desktop
+Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4; Components: main\desktop
 Name: "projectassociation"; Description: "Add file association for workspace files (.cwa, .cpj)"; GroupDescription: "General:";  Components: main\desktop
-Name: "fileassociation"; Description: "Add file association for .C, .CPP, .H files"; GroupDescription: "General:"; Flags: unchecked;  Components: main\desktop
+Name: "fileassociation"; Description: "Add file association for .C, .CPP, .H files"; GroupDescription: "General:"; Components: main\desktop
 Name: "addtopath"; Description: "Add Orange C to the path"; GroupDescription: "General:"; Flags: checkedonce;  Components: main\desktop
 
 [Dirs]

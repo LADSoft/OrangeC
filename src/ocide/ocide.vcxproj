@@ -163,6 +163,7 @@
     <ClCompile Include="POPUP.c" />
     <ClCompile Include="print.c" />
     <ClCompile Include="PRINTWM.c" />
+    <ClCompile Include="prjdepends.c" />
     <ClCompile Include="prjfile.c" />
     <ClCompile Include="prjfolder.c" />
     <ClCompile Include="prjprj.c" />

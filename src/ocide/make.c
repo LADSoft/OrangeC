@@ -109,7 +109,7 @@ void SetOutputNames(PROJECTITEM *pj, BOOL first)
                 strcpy(pj->outputName, p);
         free(p);
             }
-            if (first)
+            if (pj->type == PJ_FILE && first)
             {
                 RemoveSymbolTable();
                 break;

@@ -1850,6 +1850,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                     BOOLEAN sameType = FALSE;
                     EXPRESSION *temp = p->exp;
                     TYPE *tpx = p->tp;
+                    sym->tp = sym->tp->sp->tp; // make sure arg is filled out
                     if (isref(tpx))
                         tpx = basetype(tpx)->btp;
                     // result of a nested constructor

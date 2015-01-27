@@ -667,6 +667,74 @@ TEMPLATEPARAMLIST **expandArgs(TEMPLATEPARAMLIST **lst, TEMPLATEPARAMLIST *selec
     }
     return lst;
 }
+BOOLEAN allTemplateArgsNonTemplate(TEMPLATEPARAMLIST *args);
+static BOOLEAN checkArgNonTemplate(TEMPLATEPARAMLIST *args)
+{
+    if (!args->p->byClass.val)
+        return FALSE;
+    switch(args->p->type)
+    {
+        case kw_int:
+            if (!isarithmeticconst(args->p->byNonType.val))
+            {
+                EXPRESSION *exp = args->p->byNonType.val; 
+                if (exp && args->p->byNonType.tp->type !=bt_templateparam)
+                {
+                    while (castvalue(exp) || lvalue(exp))
+                        exp = exp->left;
+                    switch (exp->type)
+                    {
+                        case en_pc:
+                        case en_global:
+                        case en_label:
+                        case en_func:
+                            return TRUE;
+                        default:
+                            break;
+                    }
+                }
+                return FALSE;
+            }
+            break;
+        case kw_template:
+        {
+            TEMPLATEPARAMLIST *tpl = tpl->p->byTemplate.args;
+            while (tpl)
+            {
+                if (!allTemplateArgsNonTemplate(tpl))
+                    return FALSE;
+                tpl = tpl->next;
+            }
+            break;
+        }
+        case kw_typename:
+        {
+            TYPE *tp = args->p->byClass.val;
+            if (tp->type == bt_templateparam || tp->type == bt_templateselector)
+                return FALSE;
+            while (ispointer(tp))
+                tp = basetype(tp)->btp;
+            if (isstructured(tp) && basetype(tp)->sp->templateLevel)
+            {
+                return allTemplateArgsNonTemplate(basetype(tp)->sp->templateParams->next);
+            }
+        }
+    }
+    return TRUE;
+}
+BOOLEAN allTemplateArgsNonTemplate(TEMPLATEPARAMLIST *args)
+{    
+    while (args)
+    {
+        if (!checkArgNonTemplate(args))
+        {
+            return FALSE;
+        }
+        args = args->next;
+    }
+                               
+    return TRUE;
+}
 LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLATEPARAMLIST **lst)
 {
     TEMPLATEPARAMLIST **start = lst;
@@ -698,12 +766,14 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
                     inTemplateArgs--;
                     lex = get_type_id(lex, &tp, funcsp, FALSE);
                     inTemplateArgs++;
+                    if (!templateNestingCount)
+                        tp = PerformDeferredInitialization(tp, NULL);
                     if (MATCHKW(lex, ellipse))
                     {
                         lex = getsym();
                         lst = expandArgs(lst, tp->templateParam, TRUE);
                     }
-                    else if ((inTemplateArgs == 1 || inTemplateSpecialization) && tp && tp->type == bt_templateparam)
+                    else if (tp && tp->type == bt_templateparam)
                     {
                         TEMPLATEPARAMLIST **last = lst;
                         lst = expandArgs(lst, tp->templateParam, FALSE);

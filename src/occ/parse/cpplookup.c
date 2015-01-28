@@ -394,7 +394,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 }
             }
             if (sp)
-                PerformDeferredInitialization (sp->tp, NULL);
+                sp->tp = PerformDeferredInitialization (sp->tp, NULL);
             lex = getsym();
             finalPos = lex;
             if (deferred)

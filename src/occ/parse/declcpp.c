@@ -773,6 +773,10 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
             if (sp)
                 *tpx = sp->tp;
         }
+        else if (sp->instantiated)
+        {
+            *tpx = sp->tp;
+        }
     }
     return tp;
 }

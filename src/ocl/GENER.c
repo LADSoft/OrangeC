@@ -1,5 +1,10 @@
 #include "afx.h"
 
+#ifdef MICROSOFT
+#define system(x) winsystem(x)
+extern int winsystem(const char *);
+#endif
+
 static char args[LINE_MAX];
 
 static void wasm(void );
@@ -36,8 +41,15 @@ static void exec( char *program, char *param ) {
 #if DEBUG
     printf("*** Run '%s' '%s'\n", args[0], args[1] );
 #endif
+    /*
     retcode = spawnvp( P_WAIT, args[0], (void *)args );
-
+    */
+    {
+        char buf[256];
+        sprintf(buf, "\"%s\" %s", args[0], args[1]);
+        retcode = system(buf);
+    }
+    
     if ( retcode > 0 ) {
         fprintf( stderr, "\n'%s' exitcode = %d\n", program, retcode );
         if (! get_option(OPT_KEEPRSP) )

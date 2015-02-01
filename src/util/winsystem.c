@@ -11,6 +11,7 @@ int winsystem(char *cmd)
     PROCESS_INFORMATION stProcessInfo;
     DWORD exitCode;
     BOOL bRet;
+
     memset(&stStartInfo, 0, sizeof(STARTUPINFO));
     memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
@@ -22,6 +23,7 @@ int winsystem(char *cmd)
     stStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE) ;
     bRet = CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, NULL, 
             NULL,  &stStartInfo, &stProcessInfo);
+
     if (!bRet)
     {
         return -1;

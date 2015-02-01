@@ -423,8 +423,24 @@ bool dlPeMain::LoadStub(const std::string &exeName)
         int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
         if (npos != std::string::npos)
         {
-            val = exeName.substr(0, npos + 1) + "..\\lib\\" + val;
-            file = new std::fstream(val.c_str(), std::ios::in | std::ios::binary);
+            std::string val1 = exeName.substr(0, npos + 1) + "..\\lib\\" + val;
+            file = new std::fstream(val1.c_str(), std::ios::in | std::ios::binary);
+        }
+        // look in bin directory if not there
+        if (!file || !file->is_open())
+        {
+            if (file)
+            {
+                delete file;
+                file = NULL;
+            }
+            // look in lib directory if not there
+            int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
+            if (npos != std::string::npos)
+            {
+                std::string val1 = exeName.substr(0, npos + 1) + "..\\bin\\" + val;
+                file = new std::fstream(val1.c_str(), std::ios::in | std::ios::binary);
+            }
         }
     }
     if (!file || !file->is_open())

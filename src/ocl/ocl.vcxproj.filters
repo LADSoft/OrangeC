@@ -54,6 +54,9 @@
     <ClCompile Include="XPATH.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\util\winsystem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AFX.H">

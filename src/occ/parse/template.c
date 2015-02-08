@@ -1065,19 +1065,54 @@ static BOOLEAN matchTemplatedType(TYPE *old, TYPE *sym, BOOLEAN strict)
 SYMBOL *SynthesizeResult(SYMBOL *sym, TEMPLATEPARAMLIST *params);
 static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym, TEMPLATEPARAMLIST *dest, TEMPLATEPARAMLIST *src, TEMPLATEPARAMLIST *enclosing);
 static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, INITLIST *args);
+static void saveParams(SYMBOL **table, int count)
+{
+    int i;
+    for (i=0; i < count; i++)
+    {
+        if (table[i])
+        {
+            TEMPLATEPARAMLIST *params = table[i]->templateParams;
+            while (params)
+            {
+                params->p->hold = params->p->byClass.val;
+                params = params->next;
+            }
+        }
+    }
+}
+static void restoreParams(SYMBOL **table, int count)
+{
+    int i;
+    for (i=0; i < count; i++)
+    {
+        if (table[i])
+        {
+            TEMPLATEPARAMLIST *params = table[i]->templateParams;
+            while (params)
+            {
+                params->p->byClass.val = params->p->hold;
+                params = params->next;
+            }
+        }
+    }
+}
 SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp)
 {
 	SYMBOL *found1=NULL, *found2= NULL;
 	int n = 0,i;
 	SYMBOL **spList;
 	HASHREC *hr = overloads->tp->syms->table[0];
+    SYMBOL *sd = getStructureDeclaration();
+    saveParams(&sd, 1);
 	while (hr)
 	{
 		SYMBOL *sym = (SYMBOL *)hr->p;
-		if (sym->templateLevel)
+		if (sym->templateLevel && (!sym->parentClass || sym->parentClass->templateLevel != sym->templateLevel))
 			n++;
 		hr = hr->next;
 	}
+    
 	spList = (SYMBOL **)Alloc(n * sizeof(SYMBOL *));
 	n = 0;
 	hr = overloads->tp->syms->table[0];
@@ -1085,7 +1120,7 @@ SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp)
 	while (hr)
 	{
 		SYMBOL *sym = (SYMBOL *)hr->p;
-		if (sym->templateLevel)
+		if (sym->templateLevel && (!sym->parentClass || sym->parentClass->templateLevel != sym->templateLevel))
 			spList[n++] = detemplate(sym, NULL, sp->tp);
 		hr = hr->next;
 	}
@@ -1110,6 +1145,7 @@ SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp)
 	{
 		found1 = NULL;
 	}
+    restoreParams(&sd, 1);
     return found1;
 }
 LEXEME *TemplateArgGetDefault(LEXEME **lex)
@@ -3308,38 +3344,6 @@ int TemplatePartialDeduceArgsFromType(SYMBOL *syml, SYMBOL *symr, TYPE *tpl, TYP
     }
     return which;
 }
-static void saveParams(SYMBOL **table, int count)
-{
-    int i;
-    for (i=0; i < count; i++)
-    {
-        if (table[i])
-        {
-            TEMPLATEPARAMLIST *params = table[i]->templateParams;
-            while (params)
-            {
-                params->p->hold = params->p->byClass.val;
-                params = params->next;
-            }
-        }
-    }
-}
-static void restoreParams(SYMBOL **table, int count)
-{
-    int i;
-    for (i=0; i < count; i++)
-    {
-        if (table[i])
-        {
-            TEMPLATEPARAMLIST *params = table[i]->templateParams;
-            while (params)
-            {
-                params->p->byClass.val = params->p->hold;
-                params = params->next;
-            }
-        }
-    }
-}
 void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams, TYPE *atype, BOOLEAN asClass, BOOLEAN save)
 {
     int i,j, n = 47, c = 0;
@@ -4788,6 +4792,54 @@ BOOLEAN TemplateFullySpecialized(SYMBOL *sp)
     }
     return FALSE;
 }
+static SYMBOL *matchTemplateFunc(SYMBOL *sym, SYMBOL *check)
+{
+    if ((sym->templateParams && !allTemplateArgsSpecified(sym->templateParams->next))
+        || (sym->parentClass && sym->parentClass->templateParams && 
+                                  !allTemplateArgsSpecified(sym->parentClass->templateParams->next)))
+    if (isconst(check->tp) == isconst(sym->tp) && isvolatile(check->tp) == isvolatile(sym->tp))
+    {
+        HASHREC *hrnew = basetype(sym->tp)->syms->table[0];
+        HASHREC *hrold = basetype(check->tp)->syms->table[0];
+        while (hrnew && hrold)
+        {
+            SYMBOL *snew = (SYMBOL *)hrnew->p;
+            SYMBOL *sold = (SYMBOL *)hrold->p;
+            TYPE *tnew = snew->tp;
+            TYPE *told = sold->tp;
+            BOOLEAN done = FALSE;
+            while ((ispointer(tnew) || isref(tnew)) && (ispointer(told) || isref(told)))
+            {
+                if (isconst(tnew) != isconst(told) || isvolatile(tnew) != isvolatile(told))
+                {
+                    done = TRUE;
+                    break;
+                }
+                if (basetype(tnew) != basetype(told))
+                    break;
+                tnew = tnew->btp;
+                told = told->btp;
+            }
+            if (done)
+                break;
+            if (isconst(tnew) != isconst(told) || isvolatile(tnew) != isvolatile(told))
+                break;
+            tnew = basetype(tnew);
+            told = basetype(told);
+            if (tnew->type != bt_templateparam && !comparetypes(tnew, told, TRUE) && tnew->type != told->type)
+                break;                    
+            if (told->type == bt_templateparam)
+                break;
+            hrnew = hrnew->next;
+            hrold = hrold->next;
+        }
+        if (!hrnew && !hrold)
+        {
+            return check;
+        }
+    }
+    return NULL;
+}
 void propagateTemplateMemberDefinition(SYMBOL *sym)
 {
     LEXEME *lex = sym->deferredCompile;
@@ -4803,22 +4855,46 @@ void propagateTemplateMemberDefinition(SYMBOL *sym)
                 HASHREC **p = LookupName(sym->name, cur->tp->syms);				
                 if (p)
                 {
+                    HASHREC *hr;
                     cur =(SYMBOL *)(*p)->p;
-                    cur = searchOverloads(sym, cur->tp->syms);
-                    if (cur && !cur->deferredCompile)
+                    hr = basetype(cur->tp)->syms->table[0];
+                    while (hr)
                     {
-                        cur->deferredCompile = lex;
-                        if (sym->tp->syms && cur->tp->syms)
+                        SYMBOL *cur = (SYMBOL *)hr->p;
+                        if (0 && matchTemplateFunc(sym, cur))
                         {
-                            HASHREC *src = sym->tp->syms->table[0];
-                            HASHREC *dest = cur->tp->syms->table[0];
-                            while (src && dest)
+                            if (!cur->deferredCompile && !cur->inlineFunc.stmt)
                             {
-                                dest->p->name = src->p->name;
-                                src = src->next;
-                                dest = dest->next;
+                                cur->deferredCompile = lex;
+                                if (sym->tp->syms && cur->tp->syms)
+                                {
+                                    HASHREC *src = sym->tp->syms->table[0];
+                                    HASHREC *dest = cur->tp->syms->table[0];
+                                    while (src && dest)
+                                    {
+                                        dest->p->name = src->p->name;
+                                        src = src->next;
+                                        dest = dest->next;
+                                    }
+                                }
+                                {
+                                    STRUCTSYM s;
+                                    SYMBOL *thsprospect = (SYMBOL *)basetype(cur->tp)->syms->table[0]->p;
+                                    s.tmpl = NULL;
+                                    if (thsprospect && thsprospect->thisPtr)
+                                    {
+                                        SYMBOL *spt = basetype (basetype(thsprospect->tp)->btp)->sp;
+                                        s.tmpl = spt->templateParams;
+                                        if (s.tmpl)
+                                            addTemplateDeclaration(&s);
+                                    }
+                                    deferredCompileOne(cur);
+                                    if (s.tmpl)
+                                        dropStructureDeclaration();
+                                }
                             }
                         }
+                        hr = hr->next;
                     }
                 }
             }

@@ -4703,6 +4703,8 @@ jointemplate:
                                 errorsym(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, sp);
                             }
                         }
+                        if (cparams.prm_cplusplus)
+                            ConsDestDeclarationErrors(sp, notype);
                         spi = NULL;
                         if (nsv)
                         {
@@ -4740,13 +4742,15 @@ jointemplate:
                                 }
                             }
                         }
-                        if (cparams.prm_cplusplus)
-                            ConsDestDeclarationErrors(sp, notype);
                         if (spi && spi->storage_class == sc_overloads)
                         {
                             SYMBOL *sym = NULL;
                             if (isfunction(sp->tp))
+                            {
                                 sym = searchOverloads(sp, spi->tp->syms);
+                                if (sym && sym->templateParams && !exactMatchOnTemplateParams(sym->templateParams, sp->templateParams))
+                                    sym = NULL;
+                            }
                             if (sym && cparams.prm_cplusplus)
                             {
                                 if (sym->linkage == lk_c && sp->linkage == lk_cdecl)
@@ -5106,6 +5110,8 @@ jointemplate:
                                         {
                                             if (!sp->templateLevel || asFriend)
                                                 InsertExtern(sp);
+                                            if (getStructureDeclaration() && getStructureDeclaration()->templateLevel)
+                                                InsertInline(sp);
                                         }
                                     }
                                 }

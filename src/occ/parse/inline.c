@@ -124,7 +124,7 @@ void dumpInlines(void)
                 SYMBOL *sym = (SYMBOL *)funcList->data;
                 if (sym->linkage == lk_virtual && sym->genreffed && sym->inlineFunc.stmt)
                 {
-                    if (!sym->didinline)// && !inSearch(sym))
+                    if (!sym->didinline)
                     {
                         SYMBOL *srch = inSearch(sym);
                         if (srch)

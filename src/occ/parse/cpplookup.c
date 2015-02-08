@@ -3556,12 +3556,14 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             }
             if (found1)
             {
+                found1->genreffed = TRUE;
                 if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                 {
                     found1 = TemplateFunctionInstantiate(found1, FALSE, FALSE);
                 }
                 else
                 {
+                    /*
                     if (found1->templateLevel && !templateNestingCount)
                     {
                         if (!found1->instantiated && !found1->instantiated2)
@@ -3574,6 +3576,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                             found1->instantiated2 = TRUE;
                         }
                     }
+                    */
                     if (toInstantiate && found1->deferredCompile && !found1->inlineFunc.stmt)
                     {
                         deferredCompileOne(found1);

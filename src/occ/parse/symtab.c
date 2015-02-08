@@ -275,6 +275,8 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
 //        return FALSE;
     if (isconst(tnew) != isconst(told))
         return FALSE;
+    if (isvolatile(tnew) != isvolatile(told))
+        return FALSE;
     while (hnew && hold)
     {
         SYMBOL *snew = (SYMBOL *)hnew->p;
@@ -317,8 +319,8 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
             }
             if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                 return FALSE;
-            tnew = tpn;
-            told = tps;
+            tnew = basetype(tpn);
+            told = basetype(tps);
             if (tnew->type == bt_templateparam)
             {
                 if (told->type != bt_templateparam || 
@@ -352,8 +354,7 @@ SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
             if (matchOverload(sp->tp, spp->tp))
             {
                 if (!spp->templateParams || !!spp->templateParams == !!sp->templateParams)
-                    if (!spp->templateParams || exactMatchOnTemplateArgs(spp->templateParams, sp->templateParams))
-                        return spp;
+                    return spp;
             }
             p = p->next;
         }

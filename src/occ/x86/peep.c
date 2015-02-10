@@ -799,6 +799,7 @@ void peep_cmp(OCODE *ip)
             ip->opcode = op_and;
             ip->oper2 = copy_addr(ip->oper1);
             if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1) && ip2->oper2->mode != am_dreg
+                && ip2->oper2->mode != am_immed
                 && (ip1->opcode == op_je || ip1->opcode == op_jne) )
             {
                 if (!live(ip->oper1->liveRegs, ip->oper1->preg))

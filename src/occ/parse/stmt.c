@@ -1590,7 +1590,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             if (cparams.prm_cplusplus && isstructured(tp))
             {
                 BOOLEAN implicit = FALSE;
-                if (basetype(tp)->sp->templateLevel && basetype(tp)->sp->templateParams)
+                if (basetype(tp)->sp->templateLevel && basetype(tp)->sp->templateParams && !basetype(tp)->sp->instantiated)
                 {
                     tp = TemplateClassInstantiate(basetype(tp)->sp, basetype(tp)->sp->templateParams, FALSE, sc_global)->tp;
                 }

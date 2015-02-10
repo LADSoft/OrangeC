@@ -1779,11 +1779,11 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                 }
                 else
                 {
-                    if (ts->tp->templateParam->p->type != kw_typename)
+                    tp = basetype(ts->tp);
+                    if (tp->templateParam->p->type != kw_typename)
                     {
                         return &stdany;
                     }
-                    tp = ts->tp;
                     tp = alt ? tp->templateParam->p->byClass.temp : tp->templateParam->p->byClass.val;
                     if (!tp)
                         return &stdany;
@@ -4799,8 +4799,8 @@ static SYMBOL *matchTemplateFunc(SYMBOL *sym, SYMBOL *check)
                                   !allTemplateArgsSpecified(sym->parentClass->templateParams->next)))
     if (isconst(check->tp) == isconst(sym->tp) && isvolatile(check->tp) == isvolatile(sym->tp))
     {
-        HASHREC *hrnew = basetype(sym->tp)->syms->table[0];
-        HASHREC *hrold = basetype(check->tp)->syms->table[0];
+        HASHREC *hrnew = basetype(check->tp)->syms->table[0];
+        HASHREC *hrold = basetype(sym->tp)->syms->table[0];
         while (hrnew && hrold)
         {
             SYMBOL *snew = (SYMBOL *)hrnew->p;
@@ -4808,15 +4808,21 @@ static SYMBOL *matchTemplateFunc(SYMBOL *sym, SYMBOL *check)
             TYPE *tnew = snew->tp;
             TYPE *told = sold->tp;
             BOOLEAN done = FALSE;
-            while ((ispointer(tnew) || isref(tnew)) && (ispointer(told) || isref(told)))
+            if (isref(tnew))
+                tnew = basetype(tnew)->btp;
+            if (isref(told))
+                told = basetype(told)->btp;
+            while (ispointer(tnew) && ispointer(told))
             {
                 if (isconst(tnew) != isconst(told) || isvolatile(tnew) != isvolatile(told))
                 {
                     done = TRUE;
                     break;
                 }
-                if (basetype(tnew) != basetype(told))
-                    break;
+                while (isconst(tnew) || isvolatile(tnew))
+                    tnew = tnew->btp;
+                while (isconst(told) || isvolatile(told))
+                    told = told->btp;
                 tnew = tnew->btp;
                 told = told->btp;
             }
@@ -4826,9 +4832,9 @@ static SYMBOL *matchTemplateFunc(SYMBOL *sym, SYMBOL *check)
                 break;
             tnew = basetype(tnew);
             told = basetype(told);
-            if (tnew->type != bt_templateparam && !comparetypes(tnew, told, TRUE) && tnew->type != told->type)
-                break;                    
-            if (told->type == bt_templateparam)
+            if (tnew->type == bt_templateparam)
+                break;
+            if (told->type != bt_templateparam && !comparetypes(tnew, told, TRUE) && tnew->type != told->type)
                 break;
             hrnew = hrnew->next;
             hrold = hrold->next;
@@ -4861,11 +4867,12 @@ void propagateTemplateMemberDefinition(SYMBOL *sym)
                     while (hr)
                     {
                         SYMBOL *cur = (SYMBOL *)hr->p;
-                        if (0 && matchTemplateFunc(sym, cur))
+                        if (cur->parentClass && matchTemplateFunc(sym, cur))
                         {
-                            if (!cur->deferredCompile && !cur->inlineFunc.stmt)
+                            if (!cur->deferredCompile && !cur->inlineFunc.stmt && !cur->isConstructor && !cur->isDestructor)
                             {
                                 cur->deferredCompile = lex;
+                                cur->pushedTemplateSpecializationDefinition = 1;
                                 if (sym->tp->syms && cur->tp->syms)
                                 {
                                     HASHREC *src = sym->tp->syms->table[0];
@@ -4878,18 +4885,20 @@ void propagateTemplateMemberDefinition(SYMBOL *sym)
                                     }
                                 }
                                 {
-                                    STRUCTSYM s;
+                                    STRUCTSYM t;
                                     SYMBOL *thsprospect = (SYMBOL *)basetype(cur->tp)->syms->table[0]->p;
-                                    s.tmpl = NULL;
+                                    t.tmpl = NULL;
                                     if (thsprospect && thsprospect->thisPtr)
                                     {
                                         SYMBOL *spt = basetype (basetype(thsprospect->tp)->btp)->sp;
-                                        s.tmpl = spt->templateParams;
-                                        if (s.tmpl)
-                                            addTemplateDeclaration(&s);
+                                        t.tmpl = spt->templateParams;
+                                        if (t.tmpl)
+                                            addTemplateDeclaration(&t);
                                     }
+//                                    TemplateFunctionInstantiate(cur, FALSE, FALSE);
                                     deferredCompileOne(cur);
-                                    if (s.tmpl)
+                                    InsertInline(cur);
+                                    if (t.tmpl)
                                         dropStructureDeclaration();
                                 }
                             }

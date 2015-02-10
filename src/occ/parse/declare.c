@@ -2952,7 +2952,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 tpb = basetype(tp1);
                 if (tpb->array)
                 {
-                    if (cparams.prm_cplusplus && isstructured(tpb->btp))
+                    if (cparams.prm_cplusplus && isstructured(tpb->btp) && !basetype(tpb->btp)->sp->trivialCons)
                         error(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG);
                     if (tpb->vla)
                     {
@@ -4755,7 +4755,8 @@ jointemplate:
                             {
                                 if (sym->linkage == lk_c && sp->linkage == lk_cdecl)
                                     sp->linkage = lk_c;
-                                if (sp->linkage != sym->linkage && !sp->isInline && !sym->isInline)
+                                if (sp->linkage != sym->linkage && ( (sp->linkage != lk_cdecl && sp->linkage != lk_virtual) || (sym->linkage != lk_cdecl && sym->linkage != lk_virtual))
+                                                                    && !sp->isInline && !sym->isInline)
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->declfile, spi->declline);
                                 }
@@ -4916,6 +4917,12 @@ jointemplate:
                             }
                             else
                             {
+                                if (spi->pushedTemplateSpecializationDefinition && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
+                                {
+                                    spi->pushedTemplateSpecializationDefinition = NULL;
+                                    spi->inlineFunc.stmt = NULL;
+                                    spi->deferredCompile = NULL;
+                                }
                                 if (isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile) && (MATCHKW(lex, begin) || MATCHKW(lex, colon))
                                     && (!spi->parentClass || !spi->parentClass->instantiated || !spi->copiedTemplateFunction))
                                 {

@@ -61,6 +61,7 @@ int *_RTL_FUNC __GetSignGam(void);
 
 #endif
 
+#ifndef __cplusplus
 #if  __STDC_VERSION__ != 0 && __STDC_VERSION__ < 199901L
 struct complex      /* as used by "_cabs" function */
 {
@@ -77,6 +78,7 @@ struct _complexl    /* as used by "_cabsl" function */
 #define _cabsl cabsl
 #define _hypotl(z)  (hypotl ((z).x, (z).y))
 
+#endif
 #endif
 typedef enum
 {
@@ -653,10 +655,6 @@ long double  _RTL_FUNC ynl(int, long double);
         using __STD_NS_QUALIFIER atof;
         using __STD_NS_QUALIFIER _matherrl;
         using __STD_NS_QUALIFIER _atold;
-#if  __STDC_VERSION__ >= 199901L
-    using __STD_NS_QUALIFIER complex;
-    using __STD_NS_QUALIFIER _complexl;
-#endif
     using __STD_NS_QUALIFIER float_t;
     using __STD_NS_QUALIFIER double_t;
     using __STD_NS_QUALIFIER DOMAIN;        /* argument domain error -- log (-1)        */

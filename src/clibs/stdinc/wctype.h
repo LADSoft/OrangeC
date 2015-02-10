@@ -147,7 +147,6 @@ extern const wchar_t *__ctype_u_toupper; /* Case conversions.  */
 	using __STD_NS_QUALIFIER iswspace;
 	using __STD_NS_QUALIFIER iswupper;
 	using __STD_NS_QUALIFIER iswxdigit;
-	using __STD_NS_QUALIFIER iswbank;
 	using __STD_NS_QUALIFIER wctype;
 	using __STD_NS_QUALIFIER iswctype;
 	using __STD_NS_QUALIFIER towlower;

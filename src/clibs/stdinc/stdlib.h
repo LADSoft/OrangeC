@@ -418,8 +418,8 @@ void _RTL_FUNC _seterrormode(int);
     using __STD_NS_QUALIFIER itoa;
     using __STD_NS_QUALIFIER ltoa;
 #if  __STDC_VERSION__ >= 199901L
-    using __STD_NS_QUALIFIER lltoa:
-    using __STD_NS_QUALIFIER _lltoa:
+    using __STD_NS_QUALIFIER lltoa;
+    using __STD_NS_QUALIFIER _lltoa;
 #endif
     using __STD_NS_QUALIFIER _itoa;
     using __STD_NS_QUALIFIER _ltoa;
@@ -443,7 +443,7 @@ void _RTL_FUNC _seterrormode(int);
     using __STD_NS_QUALIFIER _ui64toa;
 #if  __STDC_VERSION__ >= 199901L
     using __STD_NS_QUALIFIER ulltoa;
-    using __STD_NS_QUALIFIER _ulltoa:
+    using __STD_NS_QUALIFIER _ulltoa;
 #endif
     using __STD_NS_QUALIFIER utoa;
     using __STD_NS_QUALIFIER _utoa;

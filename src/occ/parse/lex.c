@@ -831,6 +831,23 @@ static LLONG_TYPE getbase(int b, char **ptr)
     return i;
 }
 
+static void getfloatingbase(int b, FPF *rval, char **ptr)
+{
+    int j;
+    FPF temp, temp1;
+    SetFPFZero(rval, 0);
+    while ((j = radix36(**ptr)) < b)
+    {
+        (*ptr)++;
+        UnsignedLongLongToFPF(&temp, j);
+        if (b == 10)
+            FPFMultiplyPowTen(rval, 1);
+        else
+            rval->exp += 4 * 1;
+        AddSubFPF(0,rval,&temp,&temp1);
+        *rval = temp1;
+    }
+}
 /*
  *      getfrac - get fraction part of a floating number.
  */
@@ -905,7 +922,6 @@ int getNumber(unsigned char **ptr, unsigned char **end, unsigned char *suffix, F
     int floatradix = 0;
     int frac = 0;
     BOOLEAN hasdot = FALSE;
-    BOOLEAN floating = FALSE;
     enum e_lexType lastst ;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
         return  INT_MIN;
@@ -995,9 +1011,11 @@ int getNumber(unsigned char **ptr, unsigned char **end, unsigned char *suffix, F
         }
     }
     p = buf;
-    /* at this point the next char is any qualifier after the number*/
-
-    if (radix36(*p) < radix)
+    if (floatradix || hasdot)
+    {
+        getfloatingbase(radix, rval, &p);
+    }
+    else if (radix36(*p) < radix)
     {
         *ival = getbase(radix, &p);
     }
@@ -1008,18 +1026,11 @@ int getNumber(unsigned char **ptr, unsigned char **end, unsigned char *suffix, F
     if (*p == '.')
     {
         p++;
-        UnsignedLongLongToFPF(rval,*ival);
         frac = getfrac(radix, &p, rval); // rval needs to be adjusted down by ival to make it fractional
         *ival = 0;
-        floating = TRUE;
     }
     if (*p == 'e' ||  *p == 'E' ||  *p == 'p' ||  *p == 'P')
     {
-        if (!floating)
-        {
-            UnsignedLongLongToFPF(rval, *ival);
-            floating = TRUE;
-        }
         p++;
         *ival = getexp(&p); // total exponent takes into account that rval is an integer that needs to be divided down
     }
@@ -1032,7 +1043,7 @@ int getNumber(unsigned char **ptr, unsigned char **end, unsigned char *suffix, F
             *ufd++ = *(*ptr)++;
         *ufd = 0;
     }
-    if (!floating)
+    if (!floatradix && !hasdot)
     {
         lastst = l_i;
         if (!stricmp((char *)suffix, "L"))

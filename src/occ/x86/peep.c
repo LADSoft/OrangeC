@@ -45,6 +45,7 @@
  * and some of the things in this module re-cisc it :)
  */
 extern COMPILER_PARAMS cparams;
+extern int regmap[REG_MAX][2];
 
 extern int prm_assembler;
 extern int prm_asmfile;
@@ -57,6 +58,7 @@ extern int funcstackheight;
 #define live(mask, reg) (mask & (1 << reg))
 
 OCODE *peep_head = 0, *peep_tail = 0, *peep_insert;
+void insert_peep_entry(OCODE *after, enum e_op opcode, int size, AMODE *ap1, AMODE *ap2);
 
 void o_peepini(void)
 {
@@ -772,33 +774,15 @@ void peep_cmp(OCODE *ip)
                 {
                     if (!live(ip->oper1->liveRegs, ip->oper1->preg))
                     {
-                        if (ip1->oper2->mode == am_dreg || ip->oper2->mode == am_dreg || ip->oper2->mode == am_immed)
+                        if (ip1->oper2->mode == am_dreg || (ip1->oper2->mode != am_immed && (ip->oper2->mode == am_dreg || ip->oper2->mode == am_immed)))
                         {
                             if (ip->oper1->length == ip1->oper2->length)
                             {
+                                
+                                ip1->oper2->liveRegs = ip->oper1->liveRegs;
                                 ip->oper1 = ip1->oper2;
                                 remove_peep_entry(ip1);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        ip1 = ip->back;
-        if (ip1->opcode == op_mov)
-        {
-            if (ip1->oper1->mode == am_dreg)
-            {
-                if (ip->oper2->mode == am_dreg && ip->oper2->preg == ip1->oper1->preg)
-                {
-                    if (!live(ip->oper2->liveRegs, ip->oper2->preg))
-                    {
-                        if (ip1->oper2->mode == am_dreg || ip->oper1->mode == am_dreg)
-                        {
-                            if (ip->oper2->length == ip1->oper2->length)
-                            {
-                                ip->oper2 = ip1->oper2;
-                                remove_peep_entry(ip1);
+                                return;
                             }
                         }
                     }
@@ -817,7 +801,7 @@ void peep_cmp(OCODE *ip)
             if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1) && ip2->oper2->mode != am_dreg
                 && (ip1->opcode == op_je || ip1->opcode == op_jne) )
             {
-                if (!live(ip1->oper1->liveRegs, ip->oper1->preg))
+                if (!live(ip->oper1->liveRegs, ip->oper1->preg))
                 {
                     int m;
                     switch (ip->oper1->length)
@@ -1401,10 +1385,177 @@ void peep_mul(OCODE *ip)
             }
         }
 }
+void peep_fmath(OCODE *ip)
+{
+    if (ip->back->opcode == op_fld)
+    {
+        if (ip->back->oper1->length != ISZ_LDOUBLE)
+        {
+            if (ip->opcode == op_faddp)
+                ip->opcode = op_fadd;
+            else
+                ip->opcode = op_fmul;
+            ip->oper1 = ip->back->oper1;
+            remove_peep_entry(ip->back);
+        }
+    }
+    else if (ip->back->opcode == op_fild)
+    {
+        if (ip->opcode == op_faddp)
+            ip->opcode = op_fiadd;
+        else
+            ip->opcode = op_fimul;
+        ip->oper1 = ip->back->oper1;
+        remove_peep_entry(ip->back);
+    }
+}
 void peep_fstp(OCODE *ip)
 {
-    if (ip->fwd->opcode == op_fld)
+    // prefer integer registers for what are essentially copies
+    if (ip->back->opcode == op_fld)
     {
+        if (ip->back->oper1->length == ip->oper1->length)
+        {
+            int sz = ip->oper1->length;
+            AMODE *apl = ip->back->oper1;
+            AMODE *apal = ip->oper1;
+            AMODE *ax;
+            ULLONG_TYPE live = ip->oper1->liveRegs;
+            int ofsl = 0, ofsa = 0, reg = -1, push = FALSE, i;
+            if (sz >= ISZ_IFLOAT)
+                sz = sz - ISZ_IFLOAT + ISZ_FLOAT;
+            sz = sizeFromISZ(sz);
+            ip = ip->fwd;
+            remove_peep_entry(ip->back->back);
+            remove_peep_entry(ip->back);
+            for (i=0; i < 4; i++)
+            {
+                if (regmap[i][0] < 3 && !(live & ((ULLONG_TYPE)1 << i)))
+                {
+                    if ((apl->mode != am_indisp || apl->preg != regmap[i][0])
+                         && (apl->mode != am_indispscale  || ( apl->preg != regmap[i][0] && apl->sreg != regmap[i][0]))
+                        && (apal->mode != am_indisp || apal->preg != regmap[i][0])
+                         && (apal->mode != am_indispscale  || ( apal->preg != regmap[i][0] && apal->sreg != regmap[i][0])))
+                    {
+                        reg = regmap[i][0];
+                        break;
+                    }
+                }		
+            }
+            if (reg == -1)
+            {
+                for (i=0; i < 6; i++)
+                {
+                    if ((apl->mode != am_indisp || apl->preg != regmap[i][0])
+                         && (apal->mode != am_indispscale  || ( apl->preg != regmap[i][0] && apl->sreg != regmap[i][0]))
+                        && (apal->mode != am_indisp || apal->preg != regmap[i][0])
+                         && (apal->mode != am_indispscale  || ( apal->preg != regmap[i][0] && apal->sreg != regmap[i][0])))
+                    {
+                        reg = regmap[i][0];
+                        push = TRUE;
+                        break ;
+                    }
+                }
+            }
+            ax = makedreg(reg);
+            ax->liveRegs = live;
+            if (push)
+            {
+                if ((apl->mode == am_indisp || apl->mode == am_indispscale) && apl->preg == ESP)
+                    ofsl = 4;
+                if ((apal->mode == am_indisp || apal->mode == am_indispscale) && apal->preg == ESP)
+                    ofsa = 4;
+                insert_peep_entry(ip, op_push, ISZ_UINT, ax, 0);
+            }
+            switch(sz)
+            {
+                AMODE *apl1, *apa1;
+                case 10:
+                    apl1 = copy_addr(apl);
+                    apl1->length = ISZ_UINT;
+                    apl1->offset = exprNode(en_add, apl1->offset, intNode(en_c_i, 8+ofsl));
+                    apa1 = copy_addr(apal);
+                    apa1->length = ISZ_UINT;
+                    apa1->offset = exprNode(en_add, apa1->offset, intNode(en_c_i, 8+ofsa));
+                    insert_peep_entry(ip, op_mov, ISZ_UINT, ax, apl1);
+                    insert_peep_entry(ip, op_mov, ISZ_UINT, apa1, ax);
+                    // fallthrough
+                case 8:
+                    apl1 = copy_addr(apl);
+                    apl1->length = ISZ_UINT;
+                    apl1->offset = exprNode(en_add, apl1->offset, intNode(en_c_i, 4+ofsl));
+                    apa1 = copy_addr(apal);
+                    apa1->length = ISZ_UINT;
+                    apa1->offset = exprNode(en_add, apa1->offset, intNode(en_c_i, 4+ofsa));
+                    insert_peep_entry(ip, op_mov, ISZ_UINT, ax, apl1);
+                    insert_peep_entry(ip, op_mov, ISZ_UINT, apa1, ax);
+                    // fallthrough
+                case 4:
+                    apl1 = copy_addr(apl);
+                    apl1->length = ISZ_UINT;
+                    apl1->offset = exprNode(en_add, apl1->offset, intNode(en_c_i, ofsl));
+                    apa1 = copy_addr(apal);
+                    apa1->length = ISZ_UINT;
+                    apa1->offset = exprNode(en_add, apa1->offset, intNode(en_c_i, ofsa));
+                    insert_peep_entry(ip, op_mov, ISZ_UINT, ax, apl1);
+                    insert_peep_entry(ip, op_mov, ISZ_UINT, apa1, ax);
+                    
+                    break;
+            }
+            if (push)
+            {
+                insert_peep_entry(ip, op_pop, ISZ_UINT, ax, 0);
+            }
+        }
+    }
+    else if (ip->oper1->mode == am_indisp && ip->oper1->preg == ESP
+        && ip->back->back->opcode == op_fld
+        && ip->back->opcode == op_sub && ip->back->oper1->mode == am_dreg && ip->back->oper1->preg == ESP)
+    {
+        if (ip->back->back->oper1->length == ip->oper1->length)
+        {
+            int sz = ip->oper1->length;
+            AMODE *apl = ip->back->back->oper1;
+            int ofs = 0;
+            if (sz >= ISZ_IFLOAT)
+                sz = sz - ISZ_IFLOAT + ISZ_FLOAT;
+            sz = sizeFromISZ(sz);
+            ip = ip->fwd;
+            remove_peep_entry(ip->back->back->back);
+            remove_peep_entry(ip->back->back);
+            remove_peep_entry(ip->back);
+            switch(sz)
+            {
+                AMODE *apl1;
+                case 10:
+                    apl1 = copy_addr(apl);
+                    apl1->length = ISZ_UINT;
+                    apl1->offset = exprNode(en_add, apl1->offset, intNode(en_c_i, 8+ofs));
+                    insert_peep_entry(ip, op_push, ISZ_UINT, apl1, 0);
+                    if ((apl->mode == am_indisp || apl->mode == am_indispscale) && apl->preg == ESP)
+                        ofs += 4;
+                    // fallthrough
+                case 8:
+                    apl1 = copy_addr(apl);
+                    apl1->length = ISZ_UINT;
+                    apl1->offset = exprNode(en_add, apl1->offset, intNode(en_c_i, 4 + ofs));
+                    insert_peep_entry(ip, op_push, ISZ_UINT, apl1, 0);
+                    if ((apl->mode == am_indisp || apl->mode == am_indispscale) && apl->preg == ESP)
+                        ofs += 4;
+                    // fallthrough
+                case 4:
+                    apl1 = copy_addr(apl);
+                    apl1->length = ISZ_UINT;
+                    apl1->offset = exprNode(en_add, apl1->offset, intNode(en_c_i, ofs));
+                    insert_peep_entry(ip, op_push, ISZ_UINT, apl1, 0);
+                    
+                    break;
+            }
+        }
+    }
+    else if (ip->fwd->opcode == op_fld)
+    {
+        // fstp followed by fld == fst followed by nothing
         if (equal_address(ip->fwd->oper1, ip->oper1))
         {
             if (ip->oper1->length != ISZ_LDOUBLE)
@@ -1546,6 +1697,18 @@ void peep_push(OCODE *ip)
         }
     }
 }
+void insert_peep_entry(OCODE *after, enum e_op opcode, int size, AMODE *ap1, AMODE *ap2)
+{
+    OCODE *a = beLocalAlloc(sizeof(OCODE));
+    a->opcode = opcode;
+    a->oper1 = ap1;
+    a->oper2 = ap2;
+    a->size = size;
+    a->back = after->back->back;
+    a->fwd = after;
+    after->back->fwd = a;
+    after->back = a;
+}
 /*
  *  This function removes the specified peep list entry from the
  * peep list. It insures ther is no NULL pointer to cause exceptions.
@@ -1586,6 +1749,10 @@ void oa_peep(void)
             {
                 case op_fstp:
                     peep_fstp(ip);
+                    break;
+                case op_faddp:
+                case op_fmulp:
+                    peep_fmath(ip);
                     break;
                 case op_mul:
                 case op_imul:

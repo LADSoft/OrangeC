@@ -3369,6 +3369,8 @@ static int depth(EXPRESSION *ep)
         case en_nullptr:
         case en_atomic:
             return 1;
+        case en_func:
+            return 10 + imax(depth(ep->left), depth(ep->right));
         case en_cond:
             return 1 + imax(depth(ep->left), imax(depth(ep->right->left), depth(ep->right->right)));
         default:

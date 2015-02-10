@@ -1273,8 +1273,10 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
             
         {
             gen_codes(op_cmp, ISZ_UINT, aplh, aprh);
+            peep_tail->oper1->liveRegs = -1;
             gen_branch(op_jne, lab);
             gen_codes(op_cmp, ISZ_UINT, apll, aprl);
+            peep_tail->oper1->liveRegs = -1;
             oa_gen_label(lab);		
             if (assign)
             {
@@ -1298,8 +1300,10 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
         {
             int lab2 = beGetLabel;
             gen_codes(op_cmp, ISZ_UINT, aplh, aprh);
+            peep_tail->oper1->liveRegs = -1;
             gen_branch(op_jne, lab);
             gen_codes(op_cmp, ISZ_UINT, apll, aprl);
+            peep_tail->oper1->liveRegs = -1;
             if (assign)
             {
                 gen_codes(sop, ISZ_UCHAR, altreg, 0);
@@ -1347,6 +1351,7 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
     else
     {
         gen_codes(op_cmp, left->size, apll, aprl);
+        peep_tail->oper1->liveRegs = q->liveRegs;
     }
     if (assign)
     {
@@ -1490,11 +1495,13 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
             int lab = beGetLabel;
             sop = llinterm;
             gen_codes(op_cmp, ISZ_UINT, aplh, aprh);
+            peep_tail->oper1->liveRegs = -1;
             if (top != op_jne)
                 gen_branch(sop1, q->dc.v.label);
             if (top != op_je)
                 gen_branch(top, lab);
             gen_codes(op_cmp, ISZ_UINT, apll, aprl);
+            peep_tail->oper1->liveRegs = -1;
             gen_branch(sop, q->dc.v.label);
             oa_gen_label(lab);		
         }
@@ -1506,6 +1513,7 @@ void gen_goto(QUAD* q, enum e_op pos, enum e_op neg, enum e_op llpos, enum e_op 
 //			else
                 size = left->size;
             gen_codes(op_cmp, size, apll, aprl);
+            peep_tail->oper1->liveRegs = q->liveRegs;       
             gen_branch(sop, q->dc.v.label);
         }
     }

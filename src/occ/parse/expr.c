@@ -3690,7 +3690,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
         else if ((!ispointer(btp) || !(btp)->array) && !isstructured(btp) &&
             !isfunction(btp) && (exp1)->type != en_memberptr)
         {
-            if ((exp1)->type != en_const)
+            if ((exp1)->type != en_const && exp1->type != en_assign)
                 if (!lvalue(exp1))
                     if (cparams.prm_ansi || !castvalue(exp1))
                         error(ERR_MUST_TAKE_ADDRESS_OF_MEMORY_LOCATION);
@@ -3761,6 +3761,12 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
         {
             while(castvalue(exp1))
                 exp1 = (exp1)->left;
+            if (exp1->type == en_assign)
+            {
+                exp1 = exp1->left;
+                while(castvalue(exp1))
+                    exp1 = (exp1)->left;
+            }
             if (!lvalue(exp1))
             {
                 if (!btp->array && !btp->vla && !isstructured(btp) && basetype(btp)->type != bt_memberptr && basetype(btp)->type != bt_templateparam)

@@ -513,6 +513,8 @@ typedef struct sym
         unsigned temp : 1; // temporary boolean...  
         unsigned noCoalesceImmed : 1; // set to true if temp or memory address which references an immediate is used
                                      // other than as the immediate reference      
+        unsigned pushedTemplateSpecializationDefinition: 1;  // set to true if the current body for the template
+                                     // specialization was pushed from the generalized version of the template
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int labelCount; /* number of code labels within a function body */ 

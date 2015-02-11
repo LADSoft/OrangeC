@@ -52,17 +52,33 @@ static unsigned floating_nan = 0x7fc00000;
                     if (!count) return val; \
                     else count--; }
                     
+static long double tensexp(int n)
+{
+    int table[] = {1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000,10000000000,100000000000,1000000000000 };
+    if (n < sizeof(table)/sizeof(table[0]))
+        if (n < 0)
+        {
+            return 1/(double)table[-n];
+        }
+        else
+        {
+            return 1*(double)table[n];
+        }
+    else
+        return powl(10, n);
+}                    
 long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max, int exp2, int exp10, int full)
 {
 	int sign = 0;
 	long double val = 0.0;
 	int exp=0;
     int radix = 10;
-    wchar_t *bpos = fil->curp;
-
+    char *bpos = fil->curp;
     NUMERIC_DATA *nd = __locale_data[LC_NUMERIC];
+
     count--;    
-    while (iswspace(*ch)) nextchar;
+
+    while (isspace(*ch)) nextchar;
         
     if (*ch == '-') {
 		sign++;
@@ -92,7 +108,7 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
          nextchar ;
          bpos = fil->curp ;
          for (i=0; i < 5; i++) {
-            if (L"inity"[i] != (*ch | 0x20)) {
+            if ("inity"[i] != (*ch | 0x20)) {
                 fil->curp = bpos;
                 break ;
             }
@@ -119,7 +135,7 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
          bpos = fil->curp;
          if (*ch == '(') {
             nextchar;
-            while (iswxdigit(*ch) && shift >= 3) {
+            while (isxdigit(*ch) && shift >= 3) {
                int n = *ch;
                nextchar ;
                if (n >= 'a')
@@ -142,16 +158,15 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
     	   if (sign)
     		val = -val;
          return val;
-    } else if (!iswdigit(*ch) && *ch != nd->decimal_point[0]) {
+    } else if (!isdigit(*ch) && *ch != nd->decimal_point[0]) {
         fil->curp = bpos;
         return 0;
     }
     if (radix == 2) {
         unsigned LLONG_TYPE i = 0;
         int k = 0;
-        FPF rval, temp, temp1;
-        __UnsignedLongLongToFPF(&rval, i);
-        while (iswxdigit(*ch)) {
+        long double rval = 0;
+        while (isxdigit(*ch)) {
             i = i * 16;
             if (*ch <= '9')
                 i += *ch - '0';
@@ -161,23 +176,21 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
                 i += *ch - 'A' + 10;
             if (++k == sizeof(i) * 2)
             {
-                __UnsignedLongLongToFPF(&temp, i);
-                __AddSubFPF(0,&rval,&temp,&temp1);
-                rval = temp1;
+                rval *= 2 << (k * 4);
+                rval += i;
                 k = 0;
                 i = 0;
             }
             nextchar;
         }
-        __UnsignedLongLongToFPF(&temp, i);
-        __AddSubFPF(0,&rval,&temp,&temp1);
-        rval = temp1;
+        rval *= 2 << (k * 4);
+        rval += i;
         if (*ch == nd->decimal_point[0]) {
             int pow = 0;
             k = 0;
             i = 0;
             nextchar;
-            while (iswxdigit(*ch)) {
+            while (isxdigit(*ch)) {
                 i = i * 16;
                 if (*ch <= '9')
                     i += *ch - '0';
@@ -188,24 +201,18 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
                 pow--;
                 if (++k == sizeof(i) * 2)
                 {
-                    __UnsignedLongLongToFPF(&temp, i);
-                    temp.exp += 4 * pow;
-                    __AddSubFPF(0,&rval,&temp,&temp1);
-                    rval = temp1;
+                    rval += ((double)i) / (2 << ((4 * -pow)-1));
                     k = 0;
                     i = 0;
                 }
                 nextchar;
             }
-            __UnsignedLongLongToFPF(&temp, i);
-            temp.exp += 4 * pow;
-            __AddSubFPF(0,&rval,&temp,&temp1);
-            rval = temp1;
+            rval += ((double)i) / (2 << ((4 * -pow)-1));
         }
     	if (sign)
       {
     		val = - val;
-    		rval.sign = 1;
+            rval = - rval;
       }
         if (*ch == 'p' || *ch == 'P') {
     		sign = 0;
@@ -217,11 +224,11 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
             else if (*ch == '+') {
                 nextchar;
     		}
-            if (!iswdigit(*ch)) {
+            if (!isdigit(*ch)) {
                 fil->curp = bpos;
                 return 0;
             }
-            while(iswdigit(*ch)) {
+            while(isdigit(*ch)) {
     			exp*= 10;
                 exp += (*ch-'0');
                 nextchar;
@@ -230,58 +237,50 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
                 goto rangeerr;
             }
 		if (sign)
-		    exp = -exp;
-		rval.exp += exp;
+            rval /= (2 << exp);
+        else
+            rval *= (2 << exp);
     	}
-	__FPFToLongDouble(&val, &rval);
+        val = rval;
     } else {
         unsigned LLONG_TYPE i = 0;
         int k = 0;
-        FPF rval, temp, temp1;
-        __UnsignedLongLongToFPF(&rval, i);
-        while (iswdigit(*ch)) {
+        long double rval = 0;
+        while (isdigit(*ch)) {
             i = i * 10 + (*ch - '0');
-            if (++k == (int)(sizeof(i) * CHAR_BIT * M_LN2 / M_LN10))
+            if (++k == (int)(sizeof(i) * M_LN2 / M_LN10))
             {
-                __UnsignedLongLongToFPF(&temp, i);
-                __AddSubFPF(0,&rval,&temp,&temp1);
-                rval = temp1;
+                rval *= tensexp(k);
+                rval += i;
                 k = 0;
                 i = 0;
             }
             nextchar;
         }
-        __UnsignedLongLongToFPF(&temp, i);
-        __AddSubFPF(0,&rval,&temp,&temp1);
-        rval = temp1;
+        rval *= tensexp(k);
+        rval += i;
         if (*ch == nd->decimal_point[0]) {
             int pow = 0;
             k = 0;
             i = 0;
             nextchar;
-            while(iswdigit(*ch)) {
+            while(isdigit(*ch)) {
                 i = i * 10 + (*ch - '0');
                 pow--;
                 if (++k == (int)(sizeof(i) * CHAR_BIT * M_LN2 / M_LN10))
                 {
-                    __UnsignedLongLongToFPF(&temp, i);
-                    __FPFMultiplyPowTen(&temp, pow);
-                    __AddSubFPF(0,&rval,&temp,&temp1);
-                    rval = temp1;
+                    rval += ((double)i) * tensexp(pow);
                     k = 0;
                     i = 0;
                 }
                 nextchar ;
     	    }
-          __UnsignedLongLongToFPF(&temp, i);
-          __FPFMultiplyPowTen(&temp, pow);
-          __AddSubFPF(0,&rval,&temp,&temp1);
-          rval = temp1;
+            rval += ((double)i) * tensexp(pow);
     	}
     	if (sign)
       {
     		val = - val;
-    		rval.sign = 1;
+            rval = - rval;
       }
         if (*ch == 'e' || *ch == 'E') {
     		sign = 0;
@@ -293,11 +292,11 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
             else if (*ch == '+') {
                 nextchar;
     		}
-            if (!iswdigit(*ch)) {
+            if (!isdigit(*ch)) {
                 fil->curp = bpos;
                 return 0;
             }
-            while(iswdigit(*ch)) {
+            while(isdigit(*ch)) {
     			exp*= 10;
                 exp += (*ch-'0');
                 nextchar;
@@ -306,10 +305,11 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
                 goto rangeerr;
             }
 		if (sign)
-		    exp = -exp;
-		__FPFMultiplyPowTen(&rval, exp);
+            rval /= tensexp(exp);
+        else
+            rval *= tensexp(exp);
     	}
-	__FPFToLongDouble(&val, &rval);
+        val = rval;
     }
     if (val > max || val < - max) {
 rangeerr:

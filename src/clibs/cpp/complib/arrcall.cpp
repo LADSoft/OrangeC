@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <locale.h>
-#include <wchar.h>
+#include <uchar.h>
 #include "libp.h"
 
 typedef void (*CONSDEST)(void *);

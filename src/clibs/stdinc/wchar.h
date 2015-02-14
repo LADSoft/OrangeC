@@ -69,7 +69,6 @@ extern "C" {
 
 #ifndef _MBSTATE_T_DEFINED
 #define _MBSTATE_T_DEFINED
-#define _MBSTATE_T_DEFINED_HERE
 typedef struct __mbstate_t
 {
   size_t left;
@@ -314,8 +313,7 @@ int fwide(FILE *__stream, int __mode);
 	using __STD_NS_QUALIFIER putwchar;
 	using __STD_NS_QUALIFIER ungetwc;
 	using __STD_NS_QUALIFIER fwide;
-#ifdef _MBSTATET_DEFINED_HERE
-#undef _MBSTATET_DEFINED_HERE
+#ifdef _MBSTATE_T_DEFINED
     using __STD_NS_QUALIFIER mbstate_t;
 #endif
 #endif

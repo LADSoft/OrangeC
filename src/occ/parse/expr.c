@@ -1122,7 +1122,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 error(ERR_SCOPED_TYPE_MISMATCH);
             else if (ispointer(*tp))
             {
-                if (!isint(tp2))
+                if (!isint(tp2) && basetype(tp2)->type != bt_enum)
                 {
                     if (ispointer(tp2))
                         error(ERR_NONPORTABLE_POINTER_CONVERSION);
@@ -3980,6 +3980,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                         }
                         else
                         {
+                            cast(*tp, &exp1);
                             *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec,
                                         *exp, exp1);
                         }
@@ -4213,9 +4214,10 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                     }
                     else
                     {
-                        EXPRESSION *dest = *exp;
+                        EXPRESSION *dest = *exp, *exp1 = intNode(en_c_i, 1);
                         *exp = RemoveAutoIncDec(*exp);                            
-                        *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, intNode(en_c_i,1)));
+                        cast(*tp, &exp1);
+                        *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, exp1));
                     }
                 }
             }
@@ -4891,7 +4893,8 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             if (!done)
             {
                 if (!(chosenAssembler->arch->preferopts & OPT_BYTECOMPARE)
-                    || (!fittedConst(*tp, *exp) && !fittedConst(tp1, exp1)))
+                    || (!fittedConst(*tp, *exp) && !fittedConst(tp1, exp1))
+                    || !isint(*tp) || !isint(tp1))
                     destSize(*tp, tp1, exp, &exp1, TRUE, NULL);
                 *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
             }

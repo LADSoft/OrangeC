@@ -694,7 +694,7 @@ void deferredCompileOne(SYMBOL *cur)
     STRUCTSYM l,m, n;
     int count = 0;
     // function body
-    if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams))
+    if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams || cur->instantiated))
     {
         int tns = PushTemplateNamespace(cur->parentClass);
         cur->linkage = lk_virtual;

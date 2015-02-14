@@ -1625,32 +1625,27 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
         switch(kw)
         {
             case kw__cdecl:
-                if (*linkage != lk_none)
+                if (*linkage != lk_none && *linkage != lk_cdecl)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage = lk_cdecl;
                 break;
             case kw__stdcall:
-                if (*linkage != lk_none)
+                if (*linkage != lk_none && *linkage != lk_stdcall)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage = lk_stdcall;
                 break;
-            case kw__pascal:
-                if (*linkage != lk_none)
-                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                *linkage = lk_pascal;
-                break;
             case kw__interrupt:
-                if (*linkage != lk_none)
+                if (*linkage != lk_none && *linkage != lk_interrupt)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage = lk_interrupt;
                 break;
             case kw__fault:
-                if (*linkage != lk_none)
+                if (*linkage != lk_none && *linkage != lk_fault)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage = lk_fault;
                 break;
             case kw_inline:
-                if (*linkage != lk_none)
+                if (*linkage != lk_none && *linkage != lk_inline)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage = lk_inline;
                 break;
@@ -5325,7 +5320,7 @@ jointemplate:
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1)
                                 {
                                     lex = getDeferredData(lex, sp, TRUE);
-                                    propagateTemplateMemberDefinition(sp);
+                                    propagateTemplateDefinition(sp);
                                 }
                                 else
                                 {

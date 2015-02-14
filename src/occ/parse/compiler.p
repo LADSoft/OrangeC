@@ -174,7 +174,7 @@ void SetParams(SYMBOL *cons);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
 void TemplateValidateSpecialization(TEMPLATEPARAMLIST *arg);
-void propagateTemplateMemberDefinition(SYMBOL *sym);
+void propagateTemplateDefinition(SYMBOL *sym);
 int PushTemplateNamespace(SYMBOL *sym);
 void PopTemplateNamespace(int count);
 BOOLEAN typeHasTemplateArg(TYPE *t);

@@ -872,6 +872,7 @@ void genfunc(SYMBOL *funcsp)
     SYMBOL *oldCurrentFunc;
     EXPRESSION *funcexp = varNode(en_global, funcsp);
     SYMBOL *tmpl = funcsp;
+    HASHREC *hr;
     if (total_errors)
         return;
     returnImode = NULL;
@@ -982,6 +983,20 @@ void genfunc(SYMBOL *funcsp)
         maxBlocks = blockCount;
     if (tempCount > maxTemps)
         maxTemps = tempCount;
+        
+    // this is explicitly to clean up the this pointer
+    hr = basetype(funcsp->tp)->syms->table[0];    
+    while (hr)
+    {
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        if (sym->storage_class == sc_parameter)
+        {
+            sym->imind = NULL;
+            sym->imvalue = NULL;
+            sym->imaddress = NULL;
+        }
+        hr = hr->next;
+    }
 }
 void genASM(STATEMENT *st)
 {

@@ -4846,70 +4846,126 @@ static SYMBOL *matchTemplateFunc(SYMBOL *sym, SYMBOL *check)
     }
     return NULL;
 }
-void propagateTemplateMemberDefinition(SYMBOL *sym)
+void propagateTemplateDefinition(SYMBOL *sym)
 {
     LEXEME *lex = sym->deferredCompile;
-    SYMBOL *parent = sym->parentClass;
-    if (lex && parent)
+    int oldCount = templateNestingCount;
+    templateNestingCount = 0;
+    if (lex)
     {
-        LIST *lst = parent->instantiations;
-        while (lst)
+        SYMBOL *parent = sym->parentClass;
+        if (parent)
         {
-            SYMBOL *cur = (SYMBOL *)lst->data;
-            if (cur ->tp->syms)
+            LIST *lst = parent->instantiations;
+            while (lst)
             {
-                HASHREC **p = LookupName(sym->name, cur->tp->syms);				
-                if (p)
+                SYMBOL *cur = (SYMBOL *)lst->data;
+                if (cur ->tp->syms)
                 {
-                    HASHREC *hr;
-                    cur =(SYMBOL *)(*p)->p;
-                    hr = basetype(cur->tp)->syms->table[0];
-                    while (hr)
+                    HASHREC **p = LookupName(sym->name, cur->tp->syms);				
+                    if (p)
                     {
-                        SYMBOL *cur = (SYMBOL *)hr->p;
-                        if (cur->parentClass && matchTemplateFunc(sym, cur))
+                        HASHREC *hr;
+                        cur =(SYMBOL *)(*p)->p;
+                        hr = basetype(cur->tp)->syms->table[0];
+                        while (hr)
                         {
-                            if (!cur->deferredCompile && !cur->inlineFunc.stmt && !cur->isConstructor && !cur->isDestructor)
+                            SYMBOL *cur = (SYMBOL *)hr->p;
+                            if (cur->parentClass && matchTemplateFunc(sym, cur))
                             {
-                                cur->deferredCompile = lex;
-                                cur->pushedTemplateSpecializationDefinition = 1;
-                                if (sym->tp->syms && cur->tp->syms)
+                                if (!cur->deferredCompile && !cur->inlineFunc.stmt && !cur->isConstructor && !cur->isDestructor)
                                 {
-                                    HASHREC *src = sym->tp->syms->table[0];
-                                    HASHREC *dest = cur->tp->syms->table[0];
-                                    while (src && dest)
+                                    cur->deferredCompile = lex;
+                                    cur->pushedTemplateSpecializationDefinition = 1;
+                                    if (sym->tp->syms && cur->tp->syms)
                                     {
-                                        dest->p->name = src->p->name;
-                                        src = src->next;
-                                        dest = dest->next;
+                                        HASHREC *src = sym->tp->syms->table[0];
+                                        HASHREC *dest = cur->tp->syms->table[0];
+                                        while (src && dest)
+                                        {
+                                            dest->p->name = src->p->name;
+                                            src = src->next;
+                                            dest = dest->next;
+                                        }
                                     }
-                                }
-                                {
-                                    STRUCTSYM t;
-                                    SYMBOL *thsprospect = (SYMBOL *)basetype(cur->tp)->syms->table[0]->p;
-                                    t.tmpl = NULL;
-                                    if (thsprospect && thsprospect->thisPtr)
                                     {
-                                        SYMBOL *spt = basetype (basetype(thsprospect->tp)->btp)->sp;
-                                        t.tmpl = spt->templateParams;
+                                        STRUCTSYM t;
+                                        SYMBOL *thsprospect = (SYMBOL *)basetype(cur->tp)->syms->table[0]->p;
+                                        t.tmpl = NULL;
+                                        if (thsprospect && thsprospect->thisPtr)
+                                        {
+                                            SYMBOL *spt = basetype (basetype(thsprospect->tp)->btp)->sp;
+                                            t.tmpl = spt->templateParams;
+                                            if (t.tmpl)
+                                                addTemplateDeclaration(&t);
+                                        }
+    //                                    TemplateFunctionInstantiate(cur, FALSE, FALSE);
+                                        deferredCompileOne(cur);
+                                        InsertInline(cur);
                                         if (t.tmpl)
-                                            addTemplateDeclaration(&t);
+                                            dropStructureDeclaration();
                                     }
-//                                    TemplateFunctionInstantiate(cur, FALSE, FALSE);
-                                    deferredCompileOne(cur);
-                                    InsertInline(cur);
-                                    if (t.tmpl)
-                                        dropStructureDeclaration();
                                 }
                             }
+                            hr = hr->next;
                         }
-                        hr = hr->next;
                     }
                 }
+                lst = lst->next;
             }
-            lst = lst->next;
+        }
+        else
+        {
+            SYMBOL *cur = gsearch(sym->name);				
+            if (cur)
+            {
+                HASHREC *hr;
+                hr = basetype(cur->tp)->syms->table[0];
+                while (hr)
+                {
+                    cur = (SYMBOL *)hr->p;
+                    if (cur->templateLevel && cur->instantiated && matchTemplateFunc(sym, cur))
+                    {
+                        if (!cur->deferredCompile && !cur->inlineFunc.stmt)
+                        {
+                            cur->deferredCompile = lex;
+                            cur->pushedTemplateSpecializationDefinition = 1;
+                            if (sym->tp->syms && cur->tp->syms)
+                            {
+                                HASHREC *src = sym->tp->syms->table[0];
+                                HASHREC *dest = cur->tp->syms->table[0];
+                                while (src && dest)
+                                {
+                                    dest->p->name = src->p->name;
+                                    src = src->next;
+                                    dest = dest->next;
+                                }
+                            }
+                            {
+                                STRUCTSYM t;
+                                SYMBOL *thsprospect = (SYMBOL *)basetype(cur->tp)->syms->table[0]->p;
+                                t.tmpl = NULL;
+                                if (thsprospect && thsprospect->thisPtr)
+                                {
+                                    SYMBOL *spt = basetype (basetype(thsprospect->tp)->btp)->sp;
+                                    t.tmpl = spt->templateParams;
+                                    if (t.tmpl)
+                                        addTemplateDeclaration(&t);
+                                }
+//                                    TemplateFunctionInstantiate(cur, FALSE, FALSE);
+                                deferredCompileOne(cur);
+                                InsertInline(cur);
+                                if (t.tmpl)
+                                    dropStructureDeclaration();
+                            }
+                        }
+                    }
+                    hr = hr->next;
+                }
+            }
         }
     }
+    templateNestingCount = oldCount;
 }
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isExtern)
 {

@@ -990,6 +990,7 @@ static int lastst;
                 }
                 else
                 {
+                    ExpandPointerInfo(*dbg, var1);
                     var2 = var1;
                     var1 = var1->subtype;
                     var1->address = var2->address + var2->itemsize * ival;

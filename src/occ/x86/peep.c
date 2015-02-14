@@ -1448,7 +1448,7 @@ void peep_fstp(OCODE *ip)
                 for (i=0; i < 6; i++)
                 {
                     if ((apl->mode != am_indisp || apl->preg != regmap[i][0])
-                         && (apal->mode != am_indispscale  || ( apl->preg != regmap[i][0] && apl->sreg != regmap[i][0]))
+                         && (apl->mode != am_indispscale  || ( apl->preg != regmap[i][0] && apl->sreg != regmap[i][0]))
                         && (apal->mode != am_indisp || apal->preg != regmap[i][0])
                          && (apal->mode != am_indispscale  || ( apal->preg != regmap[i][0] && apal->sreg != regmap[i][0])))
                     {

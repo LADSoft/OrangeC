@@ -52,21 +52,7 @@ static unsigned floating_nan = 0x7fc00000;
                     if (!count) return val; \
                     else count--; }
                     
-static long double tensexp(int n)
-{
-    int table[] = {1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000,10000000000,100000000000,1000000000000 };
-    if (n < sizeof(table)/sizeof(table[0]))
-        if (n < 0)
-        {
-            return 1/(double)table[-n];
-        }
-        else
-        {
-            return 1*(double)table[n];
-        }
-    else
-        return powl(10, n);
-}                    
+extern long double __tensexp(int n);
 long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max, int exp2, int exp10, int full)
 {
 	int sign = 0;
@@ -250,14 +236,14 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
             i = i * 10 + (*ch - '0');
             if (++k == (int)(sizeof(i) * M_LN2 / M_LN10))
             {
-                rval *= tensexp(k);
+                rval *= __tensexp(k);
                 rval += i;
                 k = 0;
                 i = 0;
             }
             nextchar;
         }
-        rval *= tensexp(k);
+        rval *= __tensexp(k);
         rval += i;
         if (*ch == nd->decimal_point[0]) {
             int pow = 0;
@@ -269,13 +255,13 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
                 pow--;
                 if (++k == (int)(sizeof(i) * CHAR_BIT * M_LN2 / M_LN10))
                 {
-                    rval += ((double)i) * tensexp(pow);
+                    rval += ((double)i) * __tensexp(pow);
                     k = 0;
                     i = 0;
                 }
                 nextchar ;
     	    }
-            rval += ((double)i) * tensexp(pow);
+            rval += ((double)i) * __tensexp(pow);
     	}
     	if (sign)
       {
@@ -305,9 +291,9 @@ long double __xwcstod(FILE *fil, int count, int *ch, int *chars, long double max
                 goto rangeerr;
             }
 		if (sign)
-            rval /= tensexp(exp);
+            rval /= __tensexp(exp);
         else
-            rval *= tensexp(exp);
+            rval *= __tensexp(exp);
     	}
         val = rval;
     }

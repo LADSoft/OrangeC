@@ -36,6 +36,7 @@
 #include <time.h>
 #include <locale.h>
 #include <wchar.h>
+#include <float.h>
 #include "_locale.h"
 #include "libp.h"
 #include "_lfloat.h"
@@ -57,38 +58,85 @@ int fnd(unsigned char *buf, int index)
       return 0;
   return buf[index] - '0';
 }
+long double __tensexp(int n)
+{
+    int table[] = {
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000,
+
+    };
+    long double rval = 1.0;
+    if (n < 0)
+    {
+        n = - n;
+        while (n >= sizeof(table)/sizeof(table[0]))
+        {
+            rval /= table[sizeof(table)/sizeof(table[0])-1];
+            n -= sizeof(table)/sizeof(table[0])-1;
+        }
+        return rval/table[n];
+    }
+    else
+    {
+        while (n >= sizeof(table)/sizeof(table[0]))
+        {
+            rval *= table[sizeof(table)/sizeof(table[0])-1];
+            n -= sizeof(table)/sizeof(table[0])-1;
+        }
+        return rval*table[n];
+    }
+}                    
 
 int fextract(long double *fmant, int *fexp, int *fsign, unsigned char *buf)
 {
-    FPF rval;
+    int count = 0;
+    unsigned char *q = buf;
+    long double rval = *fmant;
     int exp, type, i;
-    __LongDoubleToFPF(&rval, fmant);
-    type = rval.type;
-    *fsign = rval.sign ? -1 : 1;
-    rval.sign = 0;
-    exp = __FPFTensExponent(&rval);
-    __FPFToString(buf, &rval);
-//    __FPFMultiplyPowTen(&rval, -exp);
-//    __FPFToLongDouble(fmant, &rval);
-    for (i = 1; buf[i]; i++)
-        buf[i] = buf[i + 1];  /* Remove '.' */
-    for (i = 0; buf[i] && buf[i] != 'E'; i++)
-        ;
-    if (buf[i] == 'E')
-        buf[i] = 0;  /* Remove exp */
-    if (type != IFPF_IS_ZERO) {
-        for (i = 0; buf[i] && buf[i] == '0'; i++)
-            ;
-        if (i) {
-            int j;
-            for (j = 0; buf[j + i]; j++)
-                buf[j] = buf[j + i];  /* Remove leading '0's */
-            buf[j] = 0;
-            exp -= i;
+    *fsign = rval < 0 ? -1 : 1;
+    rval = fabsl(rval);
+    if (rval)
+    {
+        exp = (int)log10l(rval);
+        rval /= __tensexp(exp);
+        if (rval >= 10)
+        {
+            *q++ = '1';
+            rval-= 10;
+            exp++;
+        }
+        else if (rval < 1)
+        {
+            rval = rval * 10;
+            exp--;
+        }
+        while (rval != 0 && count < LDBL_DIG)
+        {
+            int val;
+            val = rval;
+            rval -= val;
+            *q++ = val + '0';     
+            rval = rval * 10;
+            count++;
         }
     }
+    else
+    {
+        
+        exp = 0;
+        *q++ = '0';
+    }        
+    *q = 0;
     *fexp = exp;
-    return type;
+    return exp == 0;
 }
 
 static char * getnum(char *string, LLONG_TYPE num,int radix,int lc,int unsign)
@@ -448,9 +496,9 @@ doinf:
                 else
                     strcpy(fbp,"INF");
             } else {
-                int bcdIndex = 0, ftype;
+                int bcdIndex = 0, isZero;
                 unsigned char bcdBuf[32];
- 			    ftype = fextract(&fmant,&fexp,&fsign, bcdBuf);
+ 			    isZero = fextract(&fmant,&fexp,&fsign, bcdBuf);
 				/* sign */
 				if (issigned || spaced || fsign < 0)
 					if (fsign < 0)
@@ -546,7 +594,7 @@ doinf:
                         int digits = prec;
 						*fbp++ = fnd(bcdBuf,bcdIndex++) + '0';
                         if (isg && *(fbp - 1) != '0') digits--;
-						if (ftype != IFPF_IS_ZERO)
+						if (!isZero)
 							while (!isg && *(fbp-1) == '0')
 							{
 								fexp--;

@@ -144,7 +144,7 @@ int strcasecmp(const char *left, const char *right)
 void AddExt(char *buffer, char *ext)
 {
     char *pos = strrchr(buffer, '.');
-    if (!pos || (*(pos - 1) == '.'))
+    if (!pos || (*(pos - 1) == '.') || (*(pos+1) == '\\'))
         strcat(buffer, ext);
 }
 

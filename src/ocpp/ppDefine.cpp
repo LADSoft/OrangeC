@@ -297,12 +297,13 @@ void ppDefine::DoDefine(std::string &line, bool caseInsensitive)
 			// the below is ok because the first one gets the '(' and the next one gets the next token
             next = tk.Next(); // get '('
             next = tk.Next(); // past '(' 
-            if (!next->IsIdentifier() && next->GetKeyword() != closepa)
+            if (!next->IsIdentifier() && next->GetKeyword() != closepa && next->GetKeyword() != ellipses)
             {
                 failed = true;
             }
             else
             {
+                bool hascomma = true;
                 da = new DefinitionArgList();
                 bool done = false;
                 while (next->IsIdentifier())
@@ -311,16 +312,19 @@ void ppDefine::DoDefine(std::string &line, bool caseInsensitive)
                     next = tk.Next();
                     if (next->GetKeyword() != comma)
                     {
+                        hascomma = false;
                         break;
                     }
                     next = tk.Next();
+                }
+                if (hascomma) 
+                { 
                     if (next->GetKeyword() == ellipses)
                     {
                         if (c89)
                             Errors::Error("Macro variable argument specifier only allowed in C99");
                         hasEllipses = true;
                         next = tk.Next();
-                        break;
                     }
                 }
                 if (next->GetKeyword() != closepa)
@@ -620,7 +624,12 @@ bool ppDefine::ReplaceArgs(std::string &macro,
             if (!c89 && name == "__VA_ARGS__")
             {
                 if (!varargs.size()) {
-                    SyntaxError(macro);
+                    int rv;
+                    if ((rv = InsertReplacementString(macro, p, q, "", ""))
+                            < -MACRO_REPLACE_SIZE)
+                        return (false);
+                    else
+                        p = q + rv-1;
                 }
                 else
                 {
@@ -681,9 +690,6 @@ void ppDefine::SetupAlreadyReplaced(std::string &macro)
             }
         }
     }	
-}
-void vv()
-{
 }
 int ppDefine::ReplaceSegment(std::string &line, int begin, int end, int &pptr)
 {
@@ -784,7 +790,6 @@ int ppDefine::ReplaceSegment(std::string &line, int begin, int end, int &pptr)
                                     nestedparen--;
                                 p++;
                             }
-                            vv();
                             q1 = p;
                             while (q1 && isspace(line[q1-1])) q1--;
                             std::string temp = line.substr(pb, q1 - pb);
@@ -817,13 +822,14 @@ int ppDefine::ReplaceSegment(std::string &line, int begin, int end, int &pptr)
                                 if (line[p] == '(')nestedparen++;
                                 if (line[p] == ')' && nestedparen)
                                     nestedparen--;
+                                p++; 
                             }
                             varargs = line.substr(q1, p - q1);
                             p++ ;
                         }
                         if (line[p - 1] != ')' || count != d->GetArgCount())
                         {
-                            if (p == line.size())
+                            if (p >= line.size())
                             {
                                 // continues on the next line, get more text
                                 return  INT_MIN + 1;
@@ -831,10 +837,6 @@ int ppDefine::ReplaceSegment(std::string &line, int begin, int end, int &pptr)
                             SyntaxError(name);
                             return  INT_MIN;
                         }
-                    }
-                    else if (d->HasVarArgs())
-                    {
-                        SyntaxError(name);
                     }
 
                     macro = d->GetValue();

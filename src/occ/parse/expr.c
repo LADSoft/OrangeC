@@ -3193,7 +3193,8 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
             switch(KW(lex))
             {
                 case openbr:
-                    lex = expression_lambda(lex, funcsp, atp, tp, exp, flags);
+                    if (cparams.prm_cplusplus)
+                        lex = expression_lambda(lex, funcsp, atp, tp, exp, flags);
                     break;
                 case classsel:
                 case kw_operator:
@@ -4267,6 +4268,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
         {
             if (!cparams.prm_cplusplus || resolveToDeclaration(lex))
             {
+                BOOLEAN done = FALSE;
                 lex = get_type_id(lex, tp, funcsp, FALSE);
                 (*tp)->used = TRUE;
                 needkw(&lex, closepa);
@@ -4284,6 +4286,83 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                     }
                     lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, *tp, sp, FALSE, flags );
                     *exp = convertInitToExpression(*tp, NULL, funcsp, init, NULL, FALSE);
+                    while (!done && lex)
+                    {
+                        enum e_kw kw;
+                        switch(KW(lex))
+                        {
+                            case openbr:
+                                lex = expression_bracket(lex, funcsp, tp, exp, flags);
+                                break;
+                            case openpa:
+                                lex = expression_arguments(lex, funcsp, tp, exp, flags);
+                                break;
+                            case pointsto:
+                            case dot:
+                                lex = expression_member(lex, funcsp, tp, exp, ismutable, flags);
+                                break;
+                            case autoinc:
+                            case autodec:
+                
+                                kw = KW(lex);
+                                lex = getsym();
+                                if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_postfix, kw,
+                                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                {
+                                }
+                                else
+                                {
+                                    castToArithmetic(FALSE, tp, exp, kw, NULL, TRUE);
+                                    if (isstructured(*tp))
+                                        error(ERR_ILL_STRUCTURE_OPERATION);
+                                    else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
+                                        error(ERR_LVALUE);
+                                    else
+                                    {
+                                        EXPRESSION *exp1 = NULL;
+                                        if (basetype(*tp)->type == bt_pointer)
+                                        {
+                                            TYPE *btp = basetype(*tp)->btp;
+                                            exp1 = nodeSizeof(btp, *exp);
+                                        }
+                                        else
+                                        {
+                                            if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+                                                error(ERR_NOT_AN_ALLOWED_TYPE);
+                                            if (basetype(*tp)->scoped)
+                                                error(ERR_SCOPED_TYPE_MISMATCH);
+                                            if (basetype(*tp)->type == bt_memberptr)
+                                                error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                                            exp1 = intNode(en_c_i, 1);
+                                        }
+                                        if (basetype(*tp)->type == bt_bool)
+                                        {
+                                            /* autoinc of a BOOLEAN sets it true.  autodec not allowed
+                                             * these aren't spelled out in the C99 standard, we are
+                                             * following the C++ standard here
+                                             */
+                                            if (kw== autodec)
+                                                error(ERR_CANNOT_USE_BOOLEAN_HERE);
+                                            *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
+                                        }
+                                        else
+                                        {
+                                            cast(*tp, &exp1);
+                                            *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec,
+                                                        *exp, exp1);
+                                        }
+                                        while (lvalue(exp1))
+                                            exp1 = exp1->left;
+                                        if (exp1->type == en_auto)
+                                            exp1->v.sp->altered = TRUE;
+                                    }
+                                }
+                                break;
+                            default:
+                                done = TRUE;
+                                break;
+                        }
+                    }
                 }
                 else
                 { 
@@ -5588,8 +5667,10 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 {
                     int n = natural_size(*exp);
                     if (natural_size(exp1) != n)
-                        cast(*tp, &exp1);
+                        destSize(*tp, tp1, exp, &exp1, FALSE, NULL);
                     *exp = exprNode(op, *exp, exp1);
+                    if (natural_size(*exp) != n)
+                        cast(*tp, exp);
                     *exp = exprNode(en_assign, dest, *exp);
                 }
             }

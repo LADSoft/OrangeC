@@ -546,6 +546,7 @@ static void ReduceStrengthPhi(QUAD *head)
                 else
                 {
                     (*newpb)->Tn = HandlePhiInitVar(head, sl, pb->Tn);
+                    tempInfo[(*newpb)->Tn]->inductionLoop = -1; // no invariant code motion
                 }
                 newpb = &(*newpb)->next;
                 pb = pb->next;

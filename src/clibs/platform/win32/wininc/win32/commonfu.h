@@ -776,6 +776,17 @@ extern VOID
 		      LPCRITICAL_SECTION lpCriticalSection
 		      );
 
+extern BOOL
+ PASCAL WINBASEAPI InitializeCriticalSectionAndSpinCount(
+    LPCRITICAL_SECTION lpCriticalSection,
+    DWORD dwSpinCount
+    );
+
+extern DWORD
+ PASCAL WINBASEAPI SetCriticalSectionSpinCount(
+    LPCRITICAL_SECTION lpCriticalSection,
+    DWORD dwSpinCount
+    );
 
 extern WINBOOL
  PASCAL WINBASEAPI SetEvent(

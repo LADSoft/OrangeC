@@ -609,8 +609,13 @@ QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
  */
 {
     QUAD *newQuad;
-    if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
+    if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)\
+    {
+        IMODE *newRight = Alloc(sizeof(IMODE));
+        *newRight = *right;
+        right = newRight;
         right->size = left->size;
+    }
     switch (op)
     {
         case i_ret:

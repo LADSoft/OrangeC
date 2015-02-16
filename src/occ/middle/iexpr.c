@@ -86,6 +86,7 @@ static LIST *incdecList;
 static LIST *incdecListLast;
 static int push_nesting;
 static EXPRESSION *this_bound;
+static int inline_level;
 
 IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size);
 IMODE *gen_void(EXPRESSION *node, SYMBOL *funcsp);
@@ -100,6 +101,7 @@ void iexpr_init(void)
     push_nesting = 0;
     this_bound = 0;
     memset(&immed_list, 0, sizeof(immed_list));
+    inline_level = 0;
 }
 void iexpr_func_init(void)
 {
@@ -607,7 +609,7 @@ IMODE *indnode(IMODE *ap1, int size)
                 {
                     if (sp->imvalue && sp->imvalue->size == ap->size)
                         ap = sp->imvalue;
-                    else if (sp && sizeFromType(sp->tp) == ap->size)
+                    else if (sp && !isstructured(sp->tp) && sizeFromType(sp->tp) == ap->size)
                         sp->imvalue = ap;
                 }
             }

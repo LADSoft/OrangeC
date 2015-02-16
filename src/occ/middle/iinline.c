@@ -180,7 +180,14 @@ static void inlineBindArgs(SYMBOL *funcsp, HASHREC *hr, INITLIST *args)
                 lst->next = temporarySymbols;
                 temporarySymbols = lst;
                 dest = varNode(en_auto, sym2);
-                deref(sym->tp, &dest);
+                if (isarray(sym->tp))
+                {
+                    dest = exprNode(en_l_p, dest, NULL);
+                }
+                else
+                {
+                    deref(sym->tp, &dest);
+                }
                 list[cnt++] = dest;
                 idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                 src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));

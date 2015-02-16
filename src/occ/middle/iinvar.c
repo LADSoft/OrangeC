@@ -254,7 +254,7 @@ void ScanForInvariants(BLOCK *b)
             else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->ans->size < ISZ_FLOAT)
             {
                 tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = b;
-                if (head->temps & (TEMP_LEFT | TEMP_RIGHT))
+                if (!tempInfo[head->ans->offset->v.sp->value.i]->inductionLoop && ( head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
                     BOOLEAN canMove = TRUE;
                     BLOCK *pbl = NULL, *pbr = NULL;

@@ -1698,6 +1698,18 @@ void peep_push(OCODE *ip)
         }
     }
 }
+void peep_call(OCODE *ip)
+{
+    if (ip->oper1->mode == am_dreg)
+    {
+        OCODE *ip1 = ip->back;
+        if (ip1->opcode == op_mov && equal_address(ip->oper1, ip1->oper1))
+        {
+            ip->oper1 = ip1->oper2;
+			remove_peep_entry(ip1);
+        }
+    }
+}
 void insert_peep_entry(OCODE *after, enum e_op opcode, int size, AMODE *ap1, AMODE *ap2)
 {
     OCODE *a = beLocalAlloc(sizeof(OCODE));
@@ -1764,6 +1776,9 @@ void oa_peep(void)
                     break;
                 case op_lea:
                     peep_lea(ip);
+                    break;
+                case op_call:
+                    peep_call(ip);
                     break;
                 case op_push:
                     peep_push(ip);

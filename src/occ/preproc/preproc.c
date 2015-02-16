@@ -1509,16 +1509,24 @@ int defreplaceargs(unsigned char *macro, int count, unsigned char **oldargs, uns
             defid(name, &p);
             if (cparams.prm_c99 && !strcmp(name,"__VA_ARGS__")) 
             {
-                if (!varargs[0]) {
-                    pperrorstr(ERR_WRONGMACROARGS,"___VA_ARGS__");
-                }
-                else
-                {
+                if (varargs[0]) {
                     if ((rv = definsert(macro, p, q, varargs, varargs, MACRO_REPLACE_SIZE-(q - macro), p - q))
                             < -MACRO_REPLACE_SIZE)
                         return (FALSE);
                     else
+                    {
                         p = q + rv-1;
+                    }
+                }
+                else
+                {
+                    if ((rv = definsert(macro, p, q, "", "", MACRO_REPLACE_SIZE-(q - macro), p - q)) 
+                        < - MACRO_REPLACE_SIZE)
+                        return (FALSE);
+                    else
+                    {
+                        p = q + rv-1;
+                    }
                 }
             }
             else for (i = 0; i < count; i++) 
@@ -1856,17 +1864,13 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                         }
                         if (*(p - 1) != ')' || count != sp->argcount - 1)
                         {
-                            if (!*(p))
+                            if (!*(p) || !(*(p-1)))
                             {
                                 return  INT_MIN + 1;
                             }
                             pperrorstr(ERR_WRONGMACROARGS, name);
                             return  INT_MIN;
                         }
-                    }
-                    else if (sp->varargs)
-                    {
-                        pperrorstr(ERR_WRONGMACROARGS, name);
                     }
                     strcpy((char *)macro,sp->string);
                     if (count != 0 || varargs[0])

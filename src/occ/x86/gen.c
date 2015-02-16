@@ -1169,17 +1169,17 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
             {
                 switch(flt)
                 {
-                    case op_ja:
-                        flt = op_jb;
+                    case op_seta:
+                        flt = op_setb;
                         break;
-                    case op_jae:
-                        flt = op_jbe;
+                    case op_setae:
+                        flt = op_setbe;
                         break;
-                    case op_jb:
-                        flt = op_ja;
+                    case op_setb:
+                        flt = op_seta;
                         break;
-                    case op_jbe:
-                        flt = op_jae;
+                    case op_setbe:
+                        flt = op_setae;
                         break;
                     default:
                         break;

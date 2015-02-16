@@ -770,18 +770,21 @@ static void Infer(IMODE *ans, IMODE *reg, ALIASLIST *pointsto)
         ALIASLIST *result = NULL;
         int c = InferOffset(reg);
         int l = InferStride(reg);
-        BOOLEAN xchanged = changed;
-        while (pointsto)
+        if (l)
         {
-            ALIASADDRESS *addr = LookupAddress(pointsto->address->name, pointsto->address->offset + c);
-            ALIASLIST *al = aAlloc(sizeof(ALIASLIST));
-            al->address = addr;
-            AliasUnion(&result, al);
-            SetStride(pointsto->address, l);
-            pointsto = pointsto->next;
+            BOOLEAN xchanged = changed;
+            while (pointsto)
+            {
+                ALIASADDRESS *addr = LookupAddress(pointsto->address->name, pointsto->address->offset + c);
+                ALIASLIST *al = aAlloc(sizeof(ALIASLIST));
+                al->address = addr;
+                AliasUnion(&result, al);
+                SetStride(pointsto->address, l);
+                pointsto = pointsto->next;
+            }
+            changed = xchanged;
+            AliasUnion(&tempInfo[ans->offset->v.sp->value.i]->pointsto, result);
         }
-        changed = xchanged;
-        AliasUnion(&tempInfo[ans->offset->v.sp->value.i]->pointsto, result);
     }
 }
 static void HandleAdd(QUAD *head)

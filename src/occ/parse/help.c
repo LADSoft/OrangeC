@@ -989,7 +989,13 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         if (thisptr)
             expsym = thisptr;
         else if (funcsp)
-            expsym = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
+        {
+            SYMBOL *sp = (SYMBOL *)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p : NULL;
+            if (sp && sp->thisPtr)
+                expsym = varNode(en_auto, sp ); // this ptr
+            else
+                expsym = anonymousVar(sc_auto, tp);
+        }
         else
         {
             expsym = intNode(en_c_i, 0);
@@ -1250,7 +1256,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
         init = init->next;
     }
-    if (sp->storage_class == sc_localstatic)
+    if (sp && sp->storage_class == sc_localstatic)
     {
         if (isdest)
         {
@@ -1267,6 +1273,13 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                                               exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))), intNode(en_c_i, 0));        
             sp->localInitGuard = guard;
         }
+    }
+    // plop in a clear block if necessary
+    if (sp && isstructured(tp) && (!cparams.prm_cplusplus || basetype(sp->tp)->sp->trivialCons))
+    {
+        EXPRESSION *exp = exprNode(en_blockclear, expsym, NULL); 
+        exp->size = sp->tp->size;
+        rv = exprNode(en_void, exp, rv);
     }
     if (isstructured(tp) && !cparams.prm_cplusplus)
     {

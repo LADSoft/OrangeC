@@ -1601,7 +1601,7 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
                     }
                     tp = tp->btp;
                     (*desc)->reloffset = index * tp->size;
-                    if (isarray(tp) || isstructured(tp))
+                    if ((isarray(tp) && MATCHKW(*lex, openbr)) || (isstructured(tp) && MATCHKW(*lex, dot)))
                         allocate_desc(tp, (*desc)->reloffset + (*desc)->offset, desc, cache);
                     else 
                         done = TRUE;
@@ -1619,13 +1619,14 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
                         {
                             hr2 = hr2->next;
                         }
+                        *lex = getsym();
                         if (hr2)
                         {
                             SYMBOL *sym = (SYMBOL *)hr2->p;
                             TYPE *tp = sym->tp;
                             (*desc)->reloffset = sym->offset;
                             (*desc)->hr = hr2;
-                            if (isarray(tp) || isstructured(tp))
+                            if ((isarray(tp) && MATCHKW(*lex, openbr)) || (isstructured(tp) && MATCHKW(*lex, dot)))
                                 allocate_desc(tp, (*desc)->reloffset + (*desc)->offset, desc, cache);
                             else
                                 done = TRUE;
@@ -1635,9 +1636,9 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
                     }
                     else
                     {
+                        *lex = getsym();
                         errorNotMember(basetype((*desc)->tp)->sp, NULL, (*lex)->value.s.a);
                     }
-                    *lex = getsym();
                 }
                 else
                 {
@@ -3012,7 +3013,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             if (!asExpression)
                 errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
         }
-        else if (isintconst(sp->init->exp) && isint(sp->tp))
+        else if (isintconst(sp->init->exp) && isint(sp->tp) && sp->storage_class == sc_static)
             {
                 sp->value.i = sp->init->exp->v.i ;
                 sp->storage_class = sc_constant;

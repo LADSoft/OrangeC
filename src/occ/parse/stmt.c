@@ -1129,12 +1129,12 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             else
             {
-                if (declaration)
+                if (declaration && cparams.prm_cplusplus)
                 {
                     SYMBOL *declSP = (SYMBOL *)localNameSpace->syms->table[0]->p;
                     if (!declSP->init)
                     {
-                        error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);                        
+                        error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);
                     }
                 }
             }
@@ -2995,6 +2995,57 @@ static void checkUndefinedStructures(SYMBOL *funcsp)
         hr = hr->next;
     }
 }
+static int inlineStatementCount(STATEMENT *block)
+{
+    int rv = 0;
+    while (block != NULL)
+    {
+        switch (block->type)
+        {
+            case st__genword:
+                break;
+            case st_try:
+            case st_catch:
+                rv += 1000;
+                break;
+            case st_return:
+            case st_expr:
+            case st_declare:
+                rv ++;
+                break;
+            case st_goto:
+            case st_label:
+                rv++;
+                break;
+            case st_select:
+            case st_notselect:
+                rv ++;
+                break;
+            case st_switch:
+                rv++;
+                rv += inlineStatementCount(block->lower);
+                break;
+            case st_block:
+                rv++;
+                rv += inlineStatementCount(block->lower) + inlineStatementCount(block->blockTail);
+                break;
+            case st_passthrough:
+                
+                break;
+            case st_datapassthrough:
+                break;
+            case st_line:
+            case st_varstart:
+            case st_dbgblock:
+                break;
+            default:
+                diag("Invalid block type in inlinestmtCount");
+                break;
+        }
+        block = block->next;
+    }
+    return rv;
+}
 static void handleInlines(SYMBOL *funcsp)
 {
     /* so it will get instantiated as a virtual function */
@@ -3040,6 +3091,10 @@ static void handleInlines(SYMBOL *funcsp)
                 hr = hr->next;
             }
         }
+        if (inlineStatementCount(funcsp->inlineFunc.stmt) > 100)
+        {
+            funcsp->noinline = TRUE;
+        }
     }
 }
 LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
@@ -3077,7 +3132,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     browse_startfunc(funcsp, funcsp->declline);
     lex = compound(lex, funcsp, block, TRUE);
     browse_endfunc(funcsp, lex?lex->line : endline);
-    handleInlines(funcsp);
     checkUnlabeledReferences(block);
     checkGotoPastVLA(block->head, TRUE);
     funcsp->labelCount = codeLabel - INT_MIN;
@@ -3126,6 +3180,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
 #ifndef PARSER_ONLY
     localFree();
 #endif
+    handleInlines(funcsp);
     declareAndInitialize = oldDeclareAndInitialize;
     theCurrentFunc = oldtheCurrentFunc;
     hasXCInfo = oldHasXCInfo;

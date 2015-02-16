@@ -69,11 +69,11 @@ typedef unsigned short wchar_t;
 
 /* POSIX file type test macros.  The parameter is an st_mode value.
  */
-#define S_ISDIR(m)  ((m) & S_IFDIR)
-#define S_ISCHR(m)  ((m) & S_IFCHR)
-#define S_ISBLK(m)  ((m) & S_IFBLK)
-#define S_ISREG(m)  ((m) & S_IFREG)
-#define S_ISFIFO(m) ((m) & S_IFIFO)
+#define S_ISDIR(m)  (!!((m) & S_IFDIR))
+#define S_ISCHR(m)  (!!((m) & S_IFCHR))
+#define S_ISBLK(m)  (!!((m) & S_IFBLK))
+#define S_ISREG(m)  (!!((m) & S_IFREG))
+#define S_ISFIFO(m) (!!((m) & S_IFIFO))
 
 /* owner permission */
 #define S_IRWXU 	0000700

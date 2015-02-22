@@ -720,7 +720,7 @@ void InsertAnyFile(char *filename, char *path, int drive)
     if (n != -1)
     {
         do {
-            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'c' : -1);
+            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'a' : -1);
         } while (_findnext(n, &findbuf) != -1);
         _findclose(n);
     }

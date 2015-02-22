@@ -2515,7 +2515,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
 
 IMODE *gen_void(EXPRESSION *node, SYMBOL *funcsp)
 {
-    gen_expr( funcsp, node, F_NOVALUE, natural_size(node));
+    if (node->type != en_auto)
+        gen_expr( funcsp, node, F_NOVALUE, natural_size(node));
     /*   gen_code(op_void,0,0);*/
     return 0;
 }

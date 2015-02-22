@@ -866,7 +866,8 @@ int link_getseg(SYMBOL *sp)
                 return sp->value.i | 0xc0000000;
             else
                 return codeseg;
-                
+        case sc_constant:
+            return constseg;                
         case sc_type:
         case sc_typedef:
 //            if (sp->gennedvirtfunc)
@@ -932,7 +933,7 @@ void link_Publics(void)
     while (lf)
     {
         SYMBOL *sp = lf->data;
-        if ((sp->storage_class == sc_global || 
+        if ((sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent) ||
              ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)) && !sp->isInline)
         {
             link_putpub(sp, 'I');

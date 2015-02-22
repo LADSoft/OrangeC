@@ -526,6 +526,7 @@ static struct {
 {"Constructor '%s' is not allowed", ERROR },
 {"Constant member '%s' in a class without constructors", ERROR },
 {"Delete of pointer to undefined type '%s'", WARNING },
+{"Arithmetic with pointer of type 'void *'", WARNING },
 
 #endif
 } ;

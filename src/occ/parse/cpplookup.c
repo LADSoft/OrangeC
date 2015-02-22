@@ -2823,7 +2823,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
                 funcparams.thistp = &thistp;
                 funcparams.thisptr = &exp;
                 funcparams.ascall = TRUE;
-                cons = GetOverloadedFunction(&ctype, &expp, cons, & funcparams, NULL, FALSE, TRUE, TRUE);
+                cons = GetOverloadedFunction(&ctype, &expp, cons, & funcparams, NULL, FALSE, TRUE, TRUE,0 );
                 if (!cons)    
                 {
                     seq[(*n)++] = CV_NONE;
@@ -3049,7 +3049,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                             hrp = hrp->next;
                         }
                         fpargs.ascall = TRUE;
-                        GetOverloadedFunction(&a->tp, &a->exp, a->tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
+                        GetOverloadedFunction(&a->tp, &a->exp, a->tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                     }
                     getSingleConversion(argsym->tp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
                                     sp, userFunc ? &userFunc[n] : NULL, TRUE);
@@ -3272,7 +3272,7 @@ static void doNames(SYMBOL *sym)
 }
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOLEAN toErr, 
-                              BOOLEAN maybeConversion, BOOLEAN toInstantiate)
+                              BOOLEAN maybeConversion, BOOLEAN toInstantiate, int flags)
 {
     STRUCTSYM s;
     s.tmpl = 0;
@@ -3556,7 +3556,8 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             }
             if (found1)
             {
-                found1->genreffed = TRUE;
+                if (!(flags & _F_SIZEOF))
+                    found1->genreffed = TRUE;
                 if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                 {
                     found1 = TemplateFunctionInstantiate(found1, FALSE, FALSE);

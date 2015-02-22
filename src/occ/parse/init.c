@@ -866,7 +866,7 @@ void dumpInitializers(void)
                 int al ;
                 while (isarray(stp))
                     stp = basetype(stp)->btp;
-                if (IsConstWithArr(sp->tp) && !isvolatile(sp->tp))
+                if (IsConstWithArr(sp->tp) && !isvolatile(sp->tp) || sp->storage_class == sc_constant)
                 {
                     xconstseg();
                     sizep = &sconst;
@@ -895,11 +895,11 @@ void dumpInitializers(void)
                 }
                 sp->offset = *sizep;
                 *sizep += basetype(tp)->size;
-                if (sp->storage_class == sc_global)
+                if (sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent))
                     globaldef(sp);
                 else if (sp->storage_class == sc_static)
                     localdef(sp);
-                if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
+                if (sp->storage_class == sc_localstatic || (sp->storage_class == sc_constant && sp->parent))
                     put_label(sp->label);
                 else
                     gen_strlab(sp);
@@ -1040,7 +1040,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                         hrp = hrp->next;
                     }
                     fpargs.ascall = TRUE;
-                    GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
+                    GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                 }
                 if (cparams.prm_cplusplus && (isarithmetic(itype) || basetype(itype)->type == bt_enum) && isstructured(tp))
                 {
@@ -1202,7 +1202,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                         hrp = hrp->next;
                     }
                     fpargs.ascall = TRUE;
-                    GetOverloadedFunction(ispointer(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
+                    GetOverloadedFunction(ispointer(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                 }
             }
             if (tp->type == bt_memberptr)
@@ -2082,7 +2082,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     implicit = TRUE;
                     if (MATCHKW(lex, begin))
                     {
-                        lex = getArgs(lex, funcsp, funcparams, end, TRUE);
+                        lex = getArgs(lex, funcsp, funcparams, end, TRUE,0);
                         maybeConversion = FALSE;
                     }
                     else
@@ -2100,7 +2100,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             else if (MATCHKW(lex, openpa) || MATCHKW(lex, begin))
             {
                 // conversion constructor params
-                lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end, TRUE);
+                lex = getArgs(lex, funcsp, funcparams,MATCHKW(lex, openpa) ? closepa : end, TRUE, 0);
             }
             else
             {
@@ -3013,8 +3013,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             if (!asExpression)
                 errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
         }
-        else if (isintconst(sp->init->exp) && isint(sp->tp) && sp->storage_class == sc_static)
+        else if (isintconst(sp->init->exp) && isint(sp->tp))
             {
+                if (sp->storage_class != sc_static && !funcsp)
+                    insertInitSym(sp);
                 sp->value.i = sp->init->exp->v.i ;
                 sp->storage_class = sc_constant;
             }

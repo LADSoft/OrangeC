@@ -109,7 +109,7 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                         hr = hr->next;
                     }
                     fcall.ascall = TRUE;
-                    sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, NULL, TRUE, FALSE, TRUE);
+                    sp = GetOverloadedFunction(&tp, &exp, sp, &fcall, NULL, TRUE, FALSE, TRUE, 0);
                     if (sp)
                         vf->func = sp;
                 }

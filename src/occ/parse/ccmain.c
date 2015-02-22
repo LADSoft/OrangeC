@@ -533,8 +533,8 @@ void compile(void)
 #endif
     if (!total_errors)
     {
-        dumpInitializers();
         dumpInlines();
+        dumpInitializers();
         dumpStartups();
 #ifndef PARSER_ONLY
         dumpLits();

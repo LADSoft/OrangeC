@@ -209,6 +209,7 @@ enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 #define _F_INTEMPLATEPARAMS 8
 #define _F_INRETURN 16
 #define _F_INARGS 32
+#define _F_SIZEOF 64
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2

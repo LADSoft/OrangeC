@@ -690,13 +690,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             fcb.thisptr = rangeExp;
                             fcb.ascall = TRUE;
                             ctp = rangeSP->tp;
-                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, FALSE, FALSE, TRUE);
+                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, FALSE, FALSE, TRUE, 0);
                             memset(&fce, 0, sizeof(fce));
                             fce.thistp = &thisTP;
                             fce.thisptr = rangeExp;
                             fce.ascall = TRUE;
                             ctp = rangeSP->tp;
-                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, FALSE, FALSE, TRUE);
+                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, FALSE, FALSE, TRUE, 0);
                             if (beginFunc && endFunc)
                             {
                                 if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, TRUE))
@@ -786,12 +786,12 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 fcb.arguments = &args;
                                 fcb.ascall = TRUE;
                                 ctp = rangeSP->tp;
-                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, FALSE, FALSE, TRUE);
+                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, FALSE, FALSE, TRUE, 0);
                                 memset(&fce, 0, sizeof(fce));
                                 fce.arguments = &args;
                                 fce.ascall = TRUE;
                                 ctp = rangeSP->tp;
-                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, FALSE, FALSE, TRUE);
+                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, FALSE, FALSE, TRUE, 0);
                                 if (beginFunc && endFunc)
                                 {
                                     TYPE *it2;
@@ -930,7 +930,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             TYPE *eqType = iteratorType;
                             compare = eBegin;
                             if (!insertOperatorFunc(ovcl_unary_prefix, eq,
-                                                   funcsp, &eqType, &compare, iteratorType, eEnd, NULL))
+                                                   funcsp, &eqType, &compare, iteratorType, eEnd, NULL, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_EQ_FORRANGE_ITERATOR);
                                 
@@ -1015,7 +1015,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star,
-                                                   funcsp, &starType, &st->select, NULL,NULL, NULL))
+                                                   funcsp, &starType, &st->select, NULL,NULL, NULL, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_STAR_FORRANGE_ITERATOR);
                                 
@@ -1074,7 +1074,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 st->select = exprNode(en_assign, eBegin, exprNode(en_add, eBegin, intNode(en_c_i, basetype(iteratorType)->btp->size)));
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, autoinc,
-                                                   funcsp, &ppType, &st->select, NULL,NULL, NULL))
+                                                   funcsp, &ppType, &st->select, NULL,NULL, NULL, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_PLUSPLUS_FORRANGE_ITERATOR);
                             }

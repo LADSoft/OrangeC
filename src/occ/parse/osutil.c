@@ -41,6 +41,9 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include "..\..\version.h"
+#if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
+#include <io.h>
+#endif
 
 #ifdef __CCDL__
     int _stklen = 100 * 1024;
@@ -662,7 +665,7 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertAnyFile(char *filename, char *path, int drive)
+void InsertOneFile(char *filename, char *path, int drive)
 /*
  * Insert a file name onto the list of files to process
  */
@@ -706,7 +709,29 @@ void InsertAnyFile(char *filename, char *path, int drive)
         s->data = newbuffer;
     }
 }
-
+void InsertAnyFile(char *filename, char *path, int drive)
+{
+    char drv[256],dir[256],name[256],ext[256];
+#if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
+    struct _finddata_t findbuf;
+    int n;
+    _splitpath(filename, drv, dir, name, ext);
+    n = _findfirst(filename, &findbuf);
+    if (n != -1)
+    {
+        do {
+            InsertOneFile(findbuf.name, dir[0] ? dir : 0, drv[0] ? tolower(drv[0])-'c' : -1);
+        } while (_findnext(n, &findbuf) != -1);
+        _findclose(n);
+    }
+    else
+    {
+        InsertOneFile(filename, path, drive);
+    }
+#else
+    InsertOneFile(filename, path, drive);
+#endif
+}
 /*-------------------------------------------------------------------------*/
 
 void dumperrs(FILE *file);
@@ -1000,27 +1025,32 @@ void ccinit(int argc, char *argv[])
     }
 
 #ifndef PARSER_ONLY
-    if ((clist && clist->next) && has_output_file)
-        fatal("Cannot specify output file for multiple input files\n");
 
-    if (has_output_file && !cparams.prm_compileonly)
-    {
-#ifndef CPREPROCESSOR
-        if (chosenAssembler->insert_output_file)
-            chosenAssembler->insert_output_file(outfile);
-#endif
-        has_output_file = FALSE;
-    }
-#else
-    {
-        LIST *t = clist;
-        while (t)
+    if (has_output_file)
+        if (!cparams.prm_compileonly)
         {
-            t->data = litlate(fullqualify(t->data));
-            t = t->next;
+    #ifndef CPREPROCESSOR
+            if (chosenAssembler->insert_output_file)
+                chosenAssembler->insert_output_file(outfile);
+    #endif
+            has_output_file = FALSE;
         }
-    }
-#endif
+        else
+        {
+            if (clist && clist->next)
+                fatal("Cannot specify output file for multiple input files\n");
+        }
+    #else
+        {
+            LIST *t = clist;
+            while (t)
+            {
+                t->data = litlate(fullqualify(t->data));
+                t = t->next;
+            }
+        }
+    #endif
+            
     /* Set up a ctrl-C handler so we can exit the prog */
     signal(SIGINT, ctrlchandler);
     if (setjmp(ctrlcreturn))

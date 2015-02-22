@@ -2297,7 +2297,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = base->tp;
     params->ascall = TRUE;
-    asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, NULL, TRUE, FALSE, TRUE);
+    asn1 = GetOverloadedFunction(&tp, &params->fcall, cons, params, NULL, TRUE, FALSE, TRUE, 0);
         
     if (asn1)
     {
@@ -2542,7 +2542,7 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
     arg4->tp = &stdint;
     
     params->ascall = TRUE;
-    asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, NULL, TRUE, FALSE, TRUE);
+    asn1 = GetOverloadedFunction(tp, &params->fcall, ovl, params, NULL, TRUE, FALSE, TRUE, 0);
     if (!asn1)
     {
         diag("makeArrayConsDest: Can't call array iterator");
@@ -2584,7 +2584,7 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
     params->ascall = TRUE;
-    dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE);
+    dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE, 0);
     if (dest1)
     {
         if (!skipAccess && dest1 && !isAccessible(against,sp, dest1, theCurrentFunc, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
@@ -2655,7 +2655,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     params->thistp->size = getSize(bt_pointer);
     params->ascall = TRUE;
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, 
-                                  maybeConversion, TRUE);
+                                  maybeConversion, TRUE, 0);
         
     if (cons1)
     {
@@ -2718,7 +2718,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
                 params->thistp->size = getSize(bt_pointer);
                 params->thistp->btp = sp->tp;
                 params->ascall = TRUE;
-                dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE);
+                dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE, 0);
                 if (dest1 && !isAccessible(against,sp, dest1, NULL, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
                 {
                     errorsym(ERR_CANNOT_ACCESS, dest1);

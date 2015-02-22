@@ -4823,8 +4823,8 @@ static SYMBOL *matchTemplateFunc(SYMBOL *sym, SYMBOL *check)
                     tnew = tnew->btp;
                 while (isconst(told) || isvolatile(told))
                     told = told->btp;
-                tnew = tnew->btp;
-                told = told->btp;
+                tnew = basetype(tnew)->btp;
+                told = basetype(told)->btp;
             }
             if (done)
                 break;

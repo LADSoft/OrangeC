@@ -44,7 +44,7 @@ extern int stdpragmas;
 extern enum e_kw skim_closepa[], skim_end[];
 extern enum e_kw skim_closebr[];
 extern enum e_kw skim_semi[];
-extern TYPE stdpointer, stdnullpointer;
+extern TYPE stdpointer, stdnullpointer, stdchar;
 extern TYPE stdint;
 extern TYPE stddouble;
 extern TYPE stdvoid;
@@ -244,7 +244,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         if (!MATCHKW(lex, openpa))
                         {
                             BOOLEAN throughClass = sp->throughClass;
-                            SYMBOL *sp1 = GetOverloadedFunction(tp, &funcparams->fcall, sp, funcparams->templateParams ? funcparams : NULL, atp,TRUE, FALSE);
+                            SYMBOL *sp1 = GetOverloadedFunction(tp, &funcparams->fcall, sp, funcparams->templateParams ? funcparams : NULL, atp,TRUE, FALSE, flags);
                             if (sp1)
                             {
                                 SYMBOL *tpl = sp1;
@@ -368,7 +368,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     break;
                 
                 case sc_localstatic:
-                    sp->genreffed = TRUE;
+                    if (!(flags & _F_SIZEOF))
+                        sp->genreffed = TRUE;
                     if (funcsp && funcsp->isInline 
                         && funcsp->storage_class == sc_global)
                         errorsym(ERR_INLINE_CANNOT_REFER_TO_STATIC, sp);
@@ -385,7 +386,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     sp->used = TRUE;
                 case sc_global:
                 case sc_external:
-                    sp->genreffed = TRUE;
+                    if (!(flags & _F_SIZEOF))
+                        sp->genreffed = TRUE;
                     if (sp->parentClass && !isExpressionAccessible(NULL, sp, funcsp, NULL, FALSE))
                         errorsym(ERR_CANNOT_ACCESS, sp);		
                     if (sp->linkage3 == lk_threadlocal)
@@ -559,7 +561,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 DecGlobalFlag();
                 funcparams = Alloc(sizeof(FUNCTIONCALL));
                 funcparams->ascall = TRUE;    
-                 sym = GetOverloadedFunction(tp, &funcparams->fcall, sp, NULL, atp, TRUE, FALSE, TRUE);
+                 sym = GetOverloadedFunction(tp, &funcparams->fcall, sp, NULL, atp, TRUE, FALSE, TRUE, flags);
                  if (sym)
                  {
                      sym->throughClass = sp->throughClass;
@@ -639,7 +641,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             }
         }
         while (cparams.prm_cplusplus && insertOperatorFunc(ovcl_pointsto, pointsto,
-                               funcsp, tp, exp, NULL,NULL, NULL));
+                               funcsp, tp, exp, NULL,NULL, NULL, flags));
         typein = *tp;
         if (ispointer(*tp))
         {
@@ -824,14 +826,14 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         SYMBOL *match;
                         TYPE *tp1 = NULL;
                         EXPRESSION *exp1 = NULL;
-                        lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
+                        lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
                         funcparams->thisptr = intNode(en_c_i, 0);
                         funcparams->thistp = Alloc(sizeof(TYPE));
                         funcparams->thistp->type = bt_pointer;
                         funcparams->thistp->size = getSize(bt_pointer);
                         funcparams->thistp->btp = *tp;
                         funcparams->ascall = TRUE;    
-                        match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams,NULL,TRUE, FALSE, TRUE);
+                        match = GetOverloadedFunction(&tp1, &exp1, sp2, funcparams,NULL,TRUE, FALSE, TRUE, flags);
                         if (match)
                         {
                             funcparams->sp = match;
@@ -1096,7 +1098,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         INITLIST *args = NULL;
         lex = getInitList(lex, funcsp, &args);
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_openbr, openbr,
-                               funcsp, tp, exp, NULL, NULL, args))
+                               funcsp, tp, exp, NULL, NULL, args, flags))
         {
         }
         else
@@ -1111,7 +1113,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
         if (tp2)
         {
             if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_openbr, openbr,
-                                   funcsp, tp, exp, tp2, expr2, NULL))
+                                   funcsp, tp, exp, tp2, expr2, NULL, flags))
             {
             }
             else if (isvoid(*tp) || isvoid(tp2) || (*tp)->type == bt_aggregate || tp2->type == bt_aggregate)
@@ -1390,7 +1392,7 @@ join:
     else if (tooshort)
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
 }
-static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enum e_kw finish, BOOLEAN allowNesting, BOOLEAN allowPack, BOOLEAN toErr)
+static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enum e_kw finish, BOOLEAN allowNesting, BOOLEAN allowPack, BOOLEAN toErr, int flags)
 {
     *lptr = NULL;
     lex = getsym(); /* past ( */
@@ -1399,7 +1401,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
         INITLIST *p = Alloc(sizeof(INITLIST));
         if (MATCHKW(lex, begin))
         {
-            lex = getInitInternal(lex, funcsp, &p->nested, end, FALSE, FALSE, FALSE);
+            lex = getInitInternal(lex, funcsp, &p->nested, end, FALSE, FALSE, FALSE, flags);
             *lptr = p;
             lptr = &(*lptr)->next;
             if (!allowNesting)
@@ -1408,7 +1410,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
         else
         {
             LEXEME *start = lex;
-            lex = expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE | (finish == closepa ? _F_INARGS : 0));
+            lex = expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE | (finish == closepa ? _F_INARGS : 0) | (flags & _F_SIZEOF));
             if (p->tp && isvoid(p->tp))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             optimize_for_constants(&p->exp);
@@ -1457,20 +1459,20 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
 }
 LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner)
 {
-    return getInitInternal(lex, funcsp, owner, end, FALSE, TRUE, TRUE);
+    return getInitInternal(lex, funcsp, owner, end, FALSE, TRUE, TRUE, 0);
 }
-LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack)
+LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack, int flags)
 {
     LEXEME *rv;
     int old = packIndex;
     packIndex = -1;
-    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, TRUE);
+    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, TRUE, flags);
     packIndex = old;
     return rv;
 }
 LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack)
 {
-    return getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, FALSE);
+    return getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, FALSE, 0);
 }
 static int simpleDerivation(EXPRESSION *exp)
 {
@@ -2148,7 +2150,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     }
     if (lex)
     {
-        lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
+        lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
     }
     if (*tp)
         getFunctionSP(tp);
@@ -2188,7 +2190,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be added after we select a member function that needs it.
             funcparams->ascall = TRUE;    
-            sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE);
+            sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE, flags);
             if (sp)
             {
                 if (funcparams->astemplate && sp->templateLevel)
@@ -2290,7 +2292,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         {
             EXPRESSION *exp_arg = exp_cpp;
             TYPE *tp_arg = tp_cpp;
-            if (insertOperatorParams(funcsp, &tp_cpp, &exp_cpp, funcparams))
+            if (insertOperatorParams(funcsp, &tp_cpp, &exp_cpp, funcparams, flags))
             {
                 hasThisPtr = funcparams->thisptr != NULL;
                 *tp = tp_cpp;
@@ -3568,7 +3570,7 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         else
         {
             EXPRESSION *exp1 = NULL;
-            lex = variableName(lex, funcsp, NULL, tp, &exp1, NULL, _F_PACKABLE);
+            lex = variableName(lex, funcsp, NULL, tp, &exp1, NULL, _F_PACKABLE | _F_SIZEOF);
             if (!*tp || !(*tp)->templateParam || !(*tp)->templateParam->p->packed)
             {
                 error(ERR_SIZEOFELLIPSE_NEEDS_TEMPLATE_PACK);
@@ -3599,11 +3601,11 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         {
             if (paren)
             {
-                lex = expression_comma(lex, funcsp, NULL, tp, exp, NULL, 0);
+                lex = expression_comma(lex, funcsp, NULL, tp, exp, NULL, _F_SIZEOF);
             }
             else
             {
-                lex = expression_unary(lex, funcsp, NULL, tp, exp, NULL, 0);
+                lex = expression_unary(lex, funcsp, NULL, tp, exp, NULL, _F_SIZEOF);
             }
             if (!*tp)
             {
@@ -3678,7 +3680,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             exp1 = exp1->left;
         btp = basetype(*tp);
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_any, and,
-                               funcsp, tp, exp, NULL,NULL, NULL))
+                               funcsp, tp, exp, NULL,NULL, NULL, flags))
         {
             return lex;
         }
@@ -3722,36 +3724,48 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
              * but the constant will still be used inline when possible
              */
             SYMBOL *sp = (*exp)->v.sp;
-            if (!sp->label)
-            {
-                TYPE *tp, *tpb, *tpn,**tpnp = &tpn;
-                BOOLEAN done = FALSE;
-                sp->label = nextLabel++;
-                IncGlobalFlag();
-                sp = clonesym(sp);
-                tp = sp->tp;
-                tpb = basetype(tp);
-                do
+            if (!sp->indecltable)
+            { 
+                if (!sp->label)
                 {
-                    *tpnp = Alloc(sizeof(TYPE));
-                    **tpnp = *tp;
-                    tpnp = &(*tpnp)->btp;
-                    if (tp != tpb)
-                        tp = tp->btp;
-                    else
-                        done = TRUE;
-                } while (!done);
-                sp->tp = tpn;
-                insertInitSym(sp);
-                DecGlobalFlag();
+                    TYPE *tp, *tpb, *tpn,**tpnp = &tpn;
+                    BOOLEAN done = FALSE;
+                    sp->label = nextLabel++;
+                    IncGlobalFlag();
+                    sp = clonesym(sp);
+                    tp = sp->tp;
+                    tpb = basetype(tp);
+                    do
+                    {
+                        *tpnp = Alloc(sizeof(TYPE));
+                        **tpnp = *tp;
+                        tpnp = &(*tpnp)->btp;
+                        if (tp != tpb)
+                            tp = tp->btp;
+                        else
+                            done = TRUE;
+                    } while (!done);
+                    sp->tp = tpn;
+                    insertInitSym(sp);
+                    DecGlobalFlag();
+                }
+                else
+                {
+                    IncGlobalFlag();
+                    insertInitSym(sp);
+                    DecGlobalFlag();
+                }
+                if (!sp->parent)
+                    sp->parent = funcsp; // this promotion of a global to local is necessary to not make it linkable
+                *exp = varNode(en_label, sp);
             }
             else
             {
-                IncGlobalFlag();
-                insertInitSym(sp);
-                DecGlobalFlag();
+                if (sp->parent)
+                    *exp = varNode(en_label, sp);
+                else
+                    *exp = varNode(en_global, sp);
             }
-            *exp = varNode(en_label, sp);
             tp1 = Alloc(sizeof(TYPE));
             tp1->type = bt_pointer;
             tp1->size = getSize(bt_pointer);
@@ -3808,7 +3822,7 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
     lex = getsym();
     lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
     if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_pointer, star,
-                           funcsp, tp, exp, NULL,NULL, NULL))
+                           funcsp, tp, exp, NULL,NULL, NULL, flags))
     {
         return lex;
     }
@@ -3939,7 +3953,7 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                 kw = KW(lex);
                 lex = getsym();
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_postfix, kw,
-                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
                 else
@@ -3957,7 +3971,16 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                         if (basetype(*tp)->type == bt_pointer)
                         {
                             TYPE *btp = basetype(*tp)->btp;
-                            exp1 = nodeSizeof(btp, *exp);
+                            if (basetype(btp)->type == bt_void)
+                            {
+                                if (cparams.prm_cplusplus)
+                                    error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                                exp1 = nodeSizeof(&stdchar, *exp);
+                            }
+                            else
+                            {
+                                exp1 = nodeSizeof(btp, *exp);
+                            }
                         }
                         else
                         {
@@ -4020,7 +4043,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numeric, plus,
-                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }                                       
                 else 
@@ -4056,7 +4079,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numeric, minus,
-                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
                 else {
@@ -4098,7 +4121,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_numericptr, not,
-                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
                 else 
@@ -4141,7 +4164,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_int, compl,
-                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
                 else {
@@ -4182,7 +4205,7 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
             if (*tp)
             {
                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_prefix, kw,
-                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
                 {
                 }
                 else 
@@ -4206,8 +4229,19 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                         error(ERR_LVALUE);
                     else if (ispointer(*tp))
                     {
+                        TYPE *tpx;
+                        if (basetype(basetype(*tp)->btp)->type == bt_void)
+                        {
+                            if (cparams.prm_cplusplus)
+                                error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                            tpx = &stdchar;
+                        }
+                        else
+                        {
+                            tpx = basetype(*tp)->btp;
+                        }
                         *exp = exprNode(en_assign, *exp, exprNode(kw == autoinc ? en_add : en_sub, 
-                                                                  *exp, nodeSizeof(basetype(*tp)->btp, *exp)));
+                                                                  *exp, nodeSizeof(tpx, *exp)));
                     }
                     else if (kw == autoinc && basetype(*tp)->type == bt_bool)
                     {
@@ -4307,7 +4341,7 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                                 kw = KW(lex);
                                 lex = getsym();
                                 if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_postfix, kw,
-                                                       funcsp, tp, exp, NULL,NULL, NULL))
+                                                       funcsp, tp, exp, NULL,NULL, NULL, flags))
                                 {
                                 }
                                 else
@@ -4427,7 +4461,7 @@ static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
           lex = getsym();
         lex = expression_cast(lex, funcsp, NULL, &tp1, &exp1, NULL, flags);
         if (cparams.prm_cplusplus && kw == pointstar && insertOperatorFunc(ovcl_binary_any, pointstar,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             continue;
         }
@@ -4551,7 +4585,7 @@ static LEXEME *expression_times(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         }
         if (cparams.prm_cplusplus
             && insertOperatorFunc(kw == mod ? ovcl_binary_int : ovcl_binary_numeric, kw,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
         }
         else 
@@ -4611,7 +4645,7 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             continue;
         }
@@ -4652,7 +4686,17 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
         }
         if (ispointer(*tp))
         {
-            EXPRESSION *ns = nodeSizeof(basetype(*tp)->btp, *exp);
+            EXPRESSION *ns;
+            if (basetype(basetype(*tp)->btp)->type == bt_void)
+            {
+                if (cparams.prm_cplusplus)
+                    error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                ns = nodeSizeof(&stdchar, *exp);
+            }
+            else
+            {
+                ns = nodeSizeof(basetype(*tp)->btp, *exp);
+            }
             if (ispointer(tp1))
             {
                 *exp = exprNode(en_sub, *exp, exp1);
@@ -4670,7 +4714,17 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
         }
         else if (ispointer (tp1))
         {
-            EXPRESSION *ns = nodeSizeof(basetype(tp1)->btp, *exp);
+            EXPRESSION *ns;
+            if (basetype(basetype(tp1)->btp)->type == bt_void)
+            {
+                if (cparams.prm_cplusplus)
+                    error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                ns = nodeSizeof(&stdchar, *exp);
+            }
+            else
+            {
+                ns  = nodeSizeof(basetype(tp1)->btp, *exp);
+            }
 /*			*tp = tp1 = destSize(*tp, tp1, exp, &exp1, FALSE, NULL); */
             if (basetype(*tp)->type < bt_int)
                 cast(&stdint, exp);
@@ -4705,7 +4759,7 @@ static LEXEME *expression_shift(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_int, kw,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
         }
         else {
@@ -4783,7 +4837,7 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
                 return lex;
             }
             if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
-                                   funcsp, tp, exp, tp1, exp1, NULL))
+                                   funcsp, tp, exp, tp1, exp1, NULL, flags))
             {
             }
             else
@@ -4881,7 +4935,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_binary_numericptr, kw,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
         }
         else
@@ -5005,7 +5059,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
         }
         if (cparams.prm_cplusplus 
             && insertOperatorFunc(kw == lor || kw == land ? ovcl_binary_numericptr : ovcl_binary_int, kw,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             continue;
         }
@@ -5259,7 +5313,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             return lex;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(selovcl, kw,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             // unallocated var for destructor
             if (asndest)
@@ -5327,7 +5381,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 hrp = hrp->next;
             }
             fpargs.ascall = TRUE;
-            GetOverloadedFunction(isfuncptr(*tp) ? & tp1 : &tp2, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE); 
+            GetOverloadedFunction(isfuncptr(*tp) ? & tp1 : &tp2, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
         }
         if (isconstraw(*tp, TRUE) && !localMutable)
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
@@ -5364,14 +5418,26 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                         error(ERR_ILL_POINTER_ADDITION);
                     else
                     {
+                        EXPRESSION *ns;
                         if (iscomplex(tp1))
                             error(ERR_ILL_USE_OF_COMPLEX);
                         else if (isfloat(tp1) || isimaginary(tp1))
                             error(ERR_ILL_USE_OF_FLOATING);
                         else if (isstructured(tp1))
                             error(ERR_ILL_STRUCTURE_OPERATION);
-                        cast((*tp), &exp1);
-                        exp1 = exprNode(en_umul, exp1, nodeSizeof(basetype(*tp)->btp, exp1));
+                        if (basetype(basetype(*tp)->btp)->type == bt_void)
+                        {
+                            if (cparams.prm_cplusplus)
+                                error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                            cast(&stdcharptr, &exp1);
+                            ns = nodeSizeof(&stdchar, exp1);
+                        }
+                        else
+                        {
+                            cast((*tp), &exp1);
+                            ns = nodeSizeof(basetype(*tp)->btp, exp1);
+                        }
+                        exp1 = exprNode(en_umul, exp1, ns);
                     }
                 }
                 else if (ispointer(tp1))
@@ -5394,8 +5460,20 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                     error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
                 else if (ispointer(*tp))
                 {
-                    cast((*tp), &exp1);
-                    exp1 = exprNode(en_umul, exp1, nodeSizeof(basetype(*tp)->btp, exp1));
+                    EXPRESSION *ns;
+                    if (basetype(basetype(*tp)->btp)->type == bt_void)
+                    {
+                        if (cparams.prm_cplusplus)
+                            error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                        cast(&stdcharptr, &exp1);
+                        ns = nodeSizeof(&stdchar, exp1);
+                    }
+                    else
+                    {
+                        cast((*tp), &exp1);
+                        ns = nodeSizeof(basetype(*tp)->btp, exp1);
+                    }
+                    exp1 = exprNode(en_umul, exp1, ns);
                 }
                 break;
             case assign:
@@ -5694,7 +5772,7 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
             break;
         }
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_comma, comma,
-                               funcsp, tp, exp, tp1, exp1, NULL))
+                               funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
             continue;
         }

@@ -633,7 +633,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL)); 
             EXPRESSION *exp1;
             ctype = PerformDeferredInitialization(ctype, funcsp);
-            lex = getArgs(lex, funcsp, funcparams, closepa, TRUE);
+            lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
             exp1 = *exp = anonymousVar(sc_auto, basetype(*tp)->sp->tp);
             sp = exp1->v.sp;
             callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE); 
@@ -1165,7 +1165,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     }
     return lex;
 }
-BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcparams)
+BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcparams, int flags)
 {
     SYMBOL *s2 = NULL, *s3;
     HASHREC **hrd, *hrs;
@@ -1214,7 +1214,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         }
     }
     funcparams->ascall = TRUE;    
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE, flags);
     if (s3)
     {
         if (!isExpressionAccessible(NULL, s3, funcsp, funcparams->thisptr, FALSE))
@@ -1232,7 +1232,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
     return FALSE;
 }
 BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
-                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args)
+                        TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args, int flags)
 {
     SYMBOL *s1 = NULL, *s2 = NULL, *s3, *s4 = NULL, *s5 = NULL;
     HASHREC **hrd, *hrs;
@@ -1468,7 +1468,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
             break;
     }
     funcparams->ascall = TRUE;    
-    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE);
+    s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE, flags);
     if (s3)
     {
         if (!isExpressionAccessible(NULL, s3, funcsp, funcparams->thisptr, FALSE))
@@ -1524,7 +1524,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             // placement new
             lex = backupsym();
-            lex = getArgs(lex, funcsp, placement, closepa, TRUE);
+            lex = getArgs(lex, funcsp, placement, closepa, TRUE, 0);
         }
     }
     if (!*tp)
@@ -1623,7 +1623,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
     }
     // should have always found something
     placement->ascall = TRUE;    
-    s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE, TRUE);
+    s1 = GetOverloadedFunction(&tpf, &placement->fcall, s1, placement, NULL, TRUE, FALSE, TRUE, flags);
     if (s1)
     {
         SYMBOL *sp;
@@ -1653,7 +1653,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         if (isstructured(*tp))
         {
             initializers = Alloc(sizeof(FUNCTIONCALL));
-            lex = getArgs(lex, funcsp, initializers, closepa, TRUE);
+            lex = getArgs(lex, funcsp, initializers, closepa, TRUE, 0);
             if (s1)
             {
                 *exp = val;
@@ -1665,7 +1665,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             exp1 = NULL;
             initializers = Alloc(sizeof(FUNCTIONCALL));
-            lex = getArgs(lex, funcsp, initializers, closepa, TRUE);
+            lex = getArgs(lex, funcsp, initializers, closepa, TRUE, 0);
             if (initializers->arguments)
             {
                 if (!isarithmetic(initializers->arguments->tp) || initializers->arguments->next)
@@ -1854,7 +1854,7 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     one->tp = &stdpointer;
     funcparams->arguments = one;
     funcparams->ascall = TRUE;
-    s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, NULL, TRUE, FALSE, TRUE);
+    s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, NULL, TRUE, FALSE, TRUE, flags);
     if (s1)
     {
         s1->throughClass = s1->parentClass != NULL;

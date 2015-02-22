@@ -150,8 +150,9 @@ void GetDefaultProjectsPath(LPSTR pszPath)
     hndl = FindFirstFile(ispth, &data);
     if (hndl != INVALID_HANDLE_VALUE)
     {
-    sprintf(pszPath, "%s\\Orange C Projects", szInstallPath);
+        sprintf(pszPath, "%s\\Orange C Projects", szInstallPath);
         FindClose(hndl);
+        CreateDirectory(pszPath, NULL);
     }
     else if (SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, pszPath) == S_OK)
     {

@@ -83,6 +83,7 @@ BITARRAY *allocbit(int size);
 BITARRAY *tallocbit(int size);
 BITARRAY *sallocbit(int size);
 BITARRAY *aallocbit(int size);
+BITARRAY *callocbit(int size);
 BOOLEAN isset(BITARRAY *arr, int bit);
 void setbit(BITARRAY *arr, int bit);
 void clearbit(BITARRAY *arr, int bit);
@@ -97,6 +98,7 @@ typedef BITINT BITARRAY;
 #define tallocbit(size)	 ((BITINT *)tAlloc(((size) +(BITINTBITS-1))/BITINTBITS * sizeof(BITINT)))
 #define sallocbit(size)	 ((BITINT *)sAlloc(((size) +(BITINTBITS-1))/BITINTBITS * sizeof(BITINT)))
 #define aallocbit(size)	 ((BITINT *)aAlloc(((size) +(BITINTBITS-1))/BITINTBITS * sizeof(BITINT)))
+#define callocbit(size)	 ((BITINT *)cAlloc(((size) +(BITINTBITS-1))/BITINTBITS * sizeof(BITINT)))
 #define isset(array,bit) ((array)[((unsigned)(bit))/BITINTBITS] & bittab[((unsigned)(bit)) & (BITINTBITS - 1)])
 #define setbit(array,bit)   (array)[((unsigned)(bit))/BITINTBITS] |= bittab[((unsigned)(bit)) & (BITINTBITS - 1)]
 #define clearbit(array,bit)   (array)[((unsigned)(bit))/BITINTBITS] &= ~bittab[((unsigned)(bit)) & (BITINTBITS - 1)]

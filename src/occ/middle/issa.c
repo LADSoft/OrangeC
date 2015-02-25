@@ -1156,4 +1156,5 @@ void TranslateFromSSA(BOOLEAN all)
         else
             tempInfo[i]->postSSATemp = tempInfo[findPartition(i)]->postSSATemp;
     }
+    cFree();
 }

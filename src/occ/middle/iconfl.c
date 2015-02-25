@@ -60,7 +60,7 @@ void resetConflict(void)
     int i;
     for (i=0; i < tempCount; i++)
     {
-        tempInfo[i]->conflicts = allocbit(tempCount);
+        tempInfo[i]->conflicts = callocbit(tempCount);
         tempInfo[i]->neighbors = 0;
     }
 }
@@ -115,7 +115,7 @@ BOOLEAN isConflicting(int T0, int T1)
 void CalculateConflictGraph(BRIGGS_SET *nodes, BOOLEAN optimize)
 {
     int i, j;
-    BRIGGS_SET *live = briggsAlloc(tempCount);
+    BRIGGS_SET *live = briggsAllocc(tempCount);
     resetConflict();
     for (i=0 ; i < blockCount; i++)
     {

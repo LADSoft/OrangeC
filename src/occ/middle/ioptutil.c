@@ -65,6 +65,14 @@ BRIGGS_SET *briggsAlloct(int size)
     p->size = size ;
     return p;
 }
+BRIGGS_SET *briggsAllocc(int size)
+{
+    BRIGGS_SET *p = cAlloc(sizeof(BRIGGS_SET));
+    p-> indexes = cAlloc(sizeof(*p->indexes) * size);
+    p->data = cAlloc(sizeof(*p->data) * size);
+    p->size = size ;
+    return p;
+}
 BRIGGS_SET *briggsAllocs(int size)
 {
     BRIGGS_SET *p = sAlloc(sizeof(BRIGGS_SET));
@@ -178,6 +186,12 @@ BITARRAY *sallocbit(int size)
 BITARRAY *aallocbit(int size)
 {
     BITARRAY *rv = aAlloc(sizeof(BITARRAY) - 1 + (size + (BITINTBITS-1))/BITINTBITS * sizeof(BITINT));
+    rv->count = size;
+    return rv;
+}
+BITARRAY *callocbit(int size)
+{
+    BITARRAY *rv = cAlloc(sizeof(BITARRAY) - 1 + (size + (BITINTBITS-1))/BITINTBITS * sizeof(BITINT));
     rv->count = size;
     return rv;
 }

@@ -55,7 +55,7 @@ typedef ULLONG_TYPE PPUINT;
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
 #define SYMBOL_NAME_LEN 256
-#define MACRO_REPLACE_SIZE 32768
+#define MACRO_REPLACE_SIZE (128 * 1024)
 #define MAX_PACK_DATA 256
 #define DEFINELIST_MAX 256
 
@@ -91,7 +91,6 @@ typedef struct _includes_
     unsigned char 	*ibufPtr;
     int		inputlen;
     char	*fname;
-    int     typed_id;
     unsigned char inputline[MACRO_REPLACE_SIZE];
     unsigned char inputbuffer[32768];
 } INCLUDES;
@@ -117,4 +116,9 @@ typedef struct _filelist
     int hascode;
 } FILELIST;
 
+typedef struct _macbuflist
+{
+    char buf[MACRO_REPLACE_SIZE];
+    char *next; // MUST BE LAST!!!
+} MACROLIST;
 #endif /* PREPROC_H */

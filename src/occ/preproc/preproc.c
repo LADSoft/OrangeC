@@ -69,6 +69,8 @@ FILELIST *incfiles = 0,  *lastinc;
 LIST *libincludes = 0;
 void ppdefcheck(unsigned char *line);
 
+MACROLIST *macroBuffers = NULL;
+
 int packdata[MAX_PACK_DATA] = 
 {
     1
@@ -130,6 +132,7 @@ void preprocini(char *name, FILE *fil)
     nonSysIncludeFiles = NULL;
     stdpragmas = STD_PRAGMA_FCONTRACT ;
     defsyms = CreateHashTable(GLOBALHASHSIZE);
+    macroBuffers = NULL;
 #ifndef CPREPROCESSOR
     packlevel  = 0;
     packdata[0] = chosenAssembler->arch->packSize;
@@ -921,12 +924,32 @@ void dopragma(void)
 #endif
 }
 
+char *getMacroBuffer()
+{
+    MACROLIST *rv;
+    if (macroBuffers)
+    {
+        rv = macroBuffers;
+        macroBuffers = macroBuffers->next;
+    }
+    else
+    {
+        rv = Alloc(sizeof(MACROLIST));
+    }
+    return rv;
+}
+void freeMacroBuffer(char *buf)
+{
+    MACROLIST *item = (MACROLIST *)buf;
+    item->next = macroBuffers;
+    macroBuffers = item;
+}
 #ifndef CPREPROCESSOR
 /* parses the _Pragma directive*/
 void Compile_Pragma(void)
 {
     /* fixme, save context */
-    unsigned char buf[MACRO_REPLACE_SIZE],  *q = buf;
+    unsigned char *buf = getMacroBuffer(),  *q = buf;
     unsigned char *last;
     skipspace();
     if (*includes->lptr != '(')
@@ -952,6 +975,7 @@ void Compile_Pragma(void)
     else
     {
         pperror(ERR_NEEDSTRING, 0);
+        freeMacroBuffer(buf);
         return ;
     }
     if (*includes->lptr != ')')
@@ -964,6 +988,7 @@ void Compile_Pragma(void)
     dopragma();
     skipspace();
     includes->lptr = last;
+    freeMacroBuffer(buf);
 }
 #endif
 /*-------------------------------------------------------------------------*/
@@ -1431,7 +1456,7 @@ static int oddslash(unsigned char *start, unsigned char *p)
 }
 void defstringizing(unsigned char *macro)
 {
-    unsigned char replmac[MACRO_REPLACE_SIZE];
+    unsigned char *replmac = getMacroBuffer();
     unsigned char *p = replmac, *q = macro;
     int waiting = 0;
     while (*q)
@@ -1482,6 +1507,7 @@ void defstringizing(unsigned char *macro)
     }	
     *p = 0;
     strcpy((char *)macro, (char *)replmac);
+    freeMacroBuffer(replmac);
 }
 /* replace macro args */
 int defreplaceargs(unsigned char *macro, int count, unsigned char **oldargs, unsigned char **newargs, 
@@ -1688,7 +1714,7 @@ void defmacroreplace(char *macro, char *name)
 /*-------------------------------------------------------------------------*/
 void SetupAlreadyReplaced(unsigned char *macro)
 {
-    unsigned char nn[MACRO_REPLACE_SIZE], *src = nn;
+    unsigned char *nn = getMacroBuffer(), *src = nn;
     char name[256];
     int instr = FALSE;
     strcpy((char *)nn, (char *)macro);
@@ -1713,6 +1739,7 @@ void SetupAlreadyReplaced(unsigned char *macro)
         }
     }	
     *macro = 0;
+    freeMacroBuffer(nn);
 }
 //
 // a preprocessing number starts with a digit or '.' followed by a digit, then
@@ -1746,7 +1773,7 @@ int ppNumber(unsigned char *start, unsigned char *pos)
 int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int totallen, unsigned char **pptr)
 {
     unsigned char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
-    unsigned char macro[MACRO_REPLACE_SIZE],varargs[4096];
+    unsigned char *macro = getMacroBuffer(),varargs[4096];
     char name[256];
     BOOLEAN waiting = FALSE;
     int rv;
@@ -1788,6 +1815,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     while (isspace((unsigned char)*q) || *q == MACRO_PLACEHOLDER) q++ ;
                     if (q > start && *(q - 1) == '\n')
                     {
+                        freeMacroBuffer(macro);
                         return INT_MIN + 1;
                     }
                     if (*q++ != '(')
@@ -1828,7 +1856,8 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                             size = strlen((char *)macro) ;
                             rv = replacesegment(macro, macro + size, &insize, totallen,0);
                             if (rv <-MACRO_REPLACE_SIZE) {
-                                return rv;
+                               freeMacroBuffer(macro);
+                               return rv;
                             }
                             macro[rv+size] = 0;
                             expandedargs[count++] = (unsigned char *)litlate((char *)macro);
@@ -1851,6 +1880,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                             int nestedparen=0;
                             if (!(sp->varargs))
                             {
+                                freeMacroBuffer(macro);
                                 return INT_MIN;
                             }
                             while (*p != '\n' && *p && (*p != ')' || nestedparen)) {
@@ -1866,15 +1896,18 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                         {
                             if (!*(p) || !(*(p-1)))
                             {
+                                freeMacroBuffer(macro);
                                 return  INT_MIN + 1;
                             }
                             pperrorstr(ERR_WRONGMACROARGS, name);
+                            freeMacroBuffer(macro);
                             return  INT_MIN;
                         }
                     }
                     strcpy((char *)macro,sp->string);
                     if (count != 0 || varargs[0])
                         if (!defreplaceargs(macro, count, (unsigned char **)sp->args, args, expandedargs, varargs)) {
+                            freeMacroBuffer(macro);
                             return  INT_MIN;
                         }
                     deftokenizing(macro);
@@ -1898,6 +1931,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     p - q)) < -MACRO_REPLACE_SIZE)
                 {
                     sp->preprocessing = FALSE;
+                    freeMacroBuffer(macro);
                     return  rv1;
                 }
                 insize = rv1 - (p - q);
@@ -1908,6 +1942,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                 rv = replacesegment(q, p, &insize, totallen, &p);
                 sp->preprocessing = FALSE;
                 if (rv <-MACRO_REPLACE_SIZE) {
+                    freeMacroBuffer(macro);
                     return rv;
                 }
                 *inbuffer += rv;
@@ -1920,8 +1955,11 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                 if (macro[0])
                 {
                     if ((rv = definsert(start, p, q, macro, macro, totallen -  *inbuffer, p -
-                        q)) < - MACRO_REPLACE_SIZE)
+                        q)) < - MACRO_REPLACE_SIZE) {
+                        
+                        freeMacroBuffer(macro);
                         return  rv;
+                    }
                     end += rv - (p - q);
                     *inbuffer += rv - (p - q);
                     p += rv - (p-q); 
@@ -1933,6 +1971,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
     }
     if (pptr)
         *pptr = p ;
+    freeMacroBuffer(macro);
     return end - orig_end ;
 }
 void ppdefcheck(unsigned char *line)

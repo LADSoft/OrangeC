@@ -609,7 +609,7 @@ void SqueezeInit(void)
             if (tempInfo[i]->rawSqueeze)
                 memset(tempInfo[i]->rawSqueeze, 0, sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
             else
-                tempInfo[i]->rawSqueeze = tAlloc(sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
+                tempInfo[i]->rawSqueeze = aAlloc(sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
             tempInfo[i]->degree = 0;
         }
     for (i=0; i < tempCount; i++)
@@ -795,7 +795,7 @@ static void CountInstructions(BOOLEAN first)
     instructionCount += 1000;
     workingMoves = tallocbit(instructionCount);
     activeMoves = tallocbit(instructionCount);
-    coalescedMoves = tallocbit(instructionCount);
+    coalescedMoves = aallocbit(instructionCount);
     constrainedMoves = tallocbit(instructionCount);
     frozenMoves = tallocbit(instructionCount);
     tempMoves[0] = tallocbit(instructionCount);
@@ -2235,7 +2235,7 @@ void AllocateRegisters(QUAD *head)
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
         spilledNodes = briggsAlloct(tempCount);
-        coalescedNodes = tallocbit(tempCount);
+        coalescedNodes = aallocbit(tempCount);
         adjacent = tallocbit(tempCount);
         adjacent1 = tallocbit(tempCount);
         stackedTemps = tallocbit(tempCount);
@@ -2297,6 +2297,8 @@ void AllocateRegisters(QUAD *head)
         {
             break;
         }
+        tFree();
+        cFree();
     }
     KeepCoalescedNodes();
     CopyLocalColors();
@@ -2308,5 +2310,7 @@ void AllocateRegisters(QUAD *head)
         maxAllocationAccesses = accesses;
 //	printf("%s:%d\n", theCurrentFunc->name, tempCount);
     tFree();
+    aFree();
+    cFree();
 }
 

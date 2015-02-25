@@ -37,7 +37,6 @@
 */
 #include "compiler.h"
 
-static MEMBLK *freemem;
 static MEMBLK *freestdmem;
 static MEMBLK *globals;
 static MEMBLK *locals;
@@ -46,15 +45,15 @@ static MEMBLK *alias;
 static MEMBLK *temps;
 static MEMBLK *live;
 static MEMBLK *templates;
+static MEMBLK *conflicts;
 
 static int globalFlag;
-static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak;
+static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
-#define MINALLOC (128 * 1024)
+#define MINALLOC (128 *1024)
 #define MALIGN (4)
 
 //#define DEBUG
-
 void mem_summary(void)
 {
     printf("Memory used:\n");
@@ -65,7 +64,8 @@ void mem_summary(void)
     printf("\tTemporary peak %dK\n", (tempsPeak+ 1023)/1024);
     printf("\tAlias peak %dK\n", (aliasPeak + 1023)/1024);
     printf("\tLive peak %dK\n", (livePeak + 1023)/1024);
-    globalPeak = localPeak = optPeak = tempsPeak = aliasPeak = livePeak = 0;
+    printf("\tConflict peak %dK\n", (conflictPeak + 1023)/1024);
+    globalPeak = localPeak = optPeak = tempsPeak = aliasPeak = livePeak = conflictPeak = 0;
 }
 static MEMBLK *galloc(MEMBLK **arena, int size)
 {
@@ -80,21 +80,6 @@ static MEMBLK *galloc(MEMBLK **arena, int size)
             freestdmem = freestdmem->next;
             selected->left = selected->size;
         }
-    }
-    else
-    {
-        MEMBLK **free = &freemem;
-        while (*free)
-        {
-            if (((*free)->size) >=  allocsize)
-            {
-                selected = *free;
-                *free = (*free)->next;
-                selected->left = selected->size;
-                break;
-            }
-            free = &(*free)->next;
-        }	
     }
     if (!selected)
     {
@@ -147,8 +132,7 @@ void memFree(MEMBLK **arena, int *peak)
         }
         else
         {
-            freefind->next = freemem;
-            freemem = freefind;
+            free(freefind);
         }		
         freefind = next;
     }
@@ -205,6 +189,14 @@ void *tAlloc(int size)
 void tFree(void)
 {
     memFree(&temps, &tempsPeak);
+}
+void *cAlloc(int size)
+{
+    return memAlloc(&conflicts, size);
+}
+void cFree(void)
+{
+    memFree(&conflicts, &conflictPeak);
 }
 void *sAlloc(int size)
 {

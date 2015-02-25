@@ -785,7 +785,6 @@ void optimize(SYMBOL *funcsp)
         //printf("to ssa\n");
     TranslateToSSA();
     CalculateInduction();
-
     /* lower for backend, e.g. do transformations that will improve the eventual
      * code gen, such as picking scaled indexed modes, moving constants, etc...
      */

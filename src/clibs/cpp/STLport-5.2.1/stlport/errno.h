@@ -26,7 +26,7 @@
 #    pragma message("eMbedded Visual C++ 3 and .NET don't have a errno.h header; STLport won't include native errno.h here")
 #  endif
 #else
-#  if !defined(__cplusplus) && defined (errno)
+#  if !defined(__cplusplus) && defined (errno) && !defined(_STLP_NATIVE_ERRNO_H_INCLUDED)
 #     undef errno
 #  endif
 #  ifndef errno

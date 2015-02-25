@@ -114,24 +114,26 @@ static void InsertFile(LIST **r, char *name, char *ext)
 
 int InsertExternalFile(char *name)
 {
-    if (HasExt(name, ".ASM") || HasExt(name,".NAS"))
+    char buf[260], *p;
+    
+    if (HasExt(name, ".asm") || HasExt(name,".nas"))
     {
         InsertFile(&objlist, name, ".o");
         InsertFile(&asmlist, name, 0);
         return 1; /* compiler shouldn't process it*/
     }
-    else if (HasExt(name, ".L"))
+    else if (HasExt(name, ".l"))
     {
         InsertFile(&liblist, name, 0);
         return 1;
     }
-    else if (HasExt(name, ".RC"))
+    else if (HasExt(name, ".rc"))
     {
-        InsertFile(&reslist, name, ".RES");
+        InsertFile(&reslist, name, ".res");
         InsertFile(&rclist, name, 0);
         return 1;
     }
-    else if (HasExt(name, ".RES"))
+    else if (HasExt(name, ".res"))
     {
         InsertFile(&reslist, name, 0);
         return 1;
@@ -141,13 +143,18 @@ int InsertExternalFile(char *name)
         InsertFile(&objlist, name, 0);
         return 1;
     }
-
-    InsertFile(&objlist, name, ".O");
+    p = strrchr(name, '\\');
+    if (!p)
+        p = name;
+    else
+        p++;
+    strcpy(buf, p);
+    InsertFile(&objlist, buf, ".o");
     
     // compiling via assembly
     if (cparams.prm_asmfile && !cparams.prm_compileonly)
     {
-        InsertFile(&asmlist, name, ".ASM");
+        InsertFile(&asmlist, buf, ".asm");
     }
     return 0; /* compiler should process it*/
 }

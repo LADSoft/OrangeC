@@ -2165,7 +2165,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             needend = TRUE;
         }
     }
-    if (cparams.prm_cplusplus && needend && MATCHKW(lex, end))
+    if (needend && MATCHKW(lex, end))
     {
         // empty braces
         lex = getsym();
@@ -3013,7 +3013,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             if (!asExpression)
                 errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
         }
-        else if (isintconst(sp->init->exp) && isint(sp->tp))
+        else if (sp->init->exp && isintconst(sp->init->exp) && isint(sp->tp))
             {
                 if (sp->storage_class != sc_static && !funcsp)
                     insertInitSym(sp);

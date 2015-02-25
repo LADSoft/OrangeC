@@ -3493,7 +3493,7 @@ static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp)
         error(ERR_SIZEOF_UNFIXED_ENUMERATION);
     if (isfunction(tp))
         error(ERR_SIZEOF_NO_FUNCTION);
-    if (tp->size == 0 && (tp->type != bt_templateparam || !templateNestingCount) )
+    if (cparams.prm_cplusplus && tp->size == 0 && (tp->type != bt_templateparam || !templateNestingCount) )
         errortype(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
     /* this tosses exp...  sizeof expressions don't get evaluated at run time */
     /* unless they are size of a vla... */

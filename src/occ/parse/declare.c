@@ -140,27 +140,7 @@ char *AnonymousName(void)
 char *AnonymousTypeName(void)
 {
     char buf[512], *p, *q;
-    strcpy(buf,"__anontype_");
-    p = strrchr(includes->fname, '\\');
-    if (p)
-        p++;
-    else
-        p = includes->fname;
-    q = buf + strlen(buf);
-    while (*p)
-    {
-        if (isalnum(*p))
-        {
-            *q++ = *p++;
-        }
-        else
-        {
-            *q++ = '_';
-            p++;
-        }
-    }
-    *q = 0;
-    sprintf(buf+strlen(buf),"_%d", ++includes->typed_id);
+    sprintf(buf,"__anontype_%x_%x", clock(), rand());
     return litlate(buf);
 }
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
@@ -618,10 +598,6 @@ void calculateStructOffsets(SYMBOL *sp)
             // make it non-zero size to avoid further errors...
             if (!templateNestingCount)
                 size = getSize(bt_int);
-        }
-        else
-        {
-            error(ERR_STRUCTURE_BODY_NO_MEMBERS);
         }
     }
     sp->tp->size = size ;
@@ -5428,11 +5404,11 @@ jointemplate:
                                 }
                             }
                         }
-                        if (sp->tp->size == 0 && sp->tp->type != bt_templateparam)
+                        if (sp->tp->size == 0 && sp->tp->type != bt_templateparam && !isarray(sp->tp))
                         {
                             if (storage_class_in == sc_auto && sp->storage_class != sc_external && !isfunction(sp->tp))
                                 errorsym(ERR_UNSIZED, sp);
-                            if (storage_class_in == sc_parameter && !basetype(sp->tp)->array)
+                            if (storage_class_in == sc_parameter)
                                 errorsym(ERR_UNSIZED, sp);
                         }
                         sp->tp->used = TRUE;

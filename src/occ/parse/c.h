@@ -55,7 +55,7 @@
 #define STD_PRAGMA_FCONTRACT 2
 #define STD_PRAGMA_CXLIMITED 4
 
-#define MACRO_REPLACE_SIZE 32768
+#define MACRO_REPLACE_SIZE (128 * 1024)
 
 typedef struct
 {

@@ -755,9 +755,13 @@ void setfile(char *buf, char *orgbuf, char *ext)
 void outputfile(char *buf, char *orgbuf, char *ext)
 {
     if (has_output_file)
+    {
         AddExt(buf, ext);
+    }
     else
+    {
         setfile(buf, orgbuf, ext);
+    }
 }
 
 /*-------------------------------------------------------------------------*/

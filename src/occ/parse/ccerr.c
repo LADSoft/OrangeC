@@ -1458,7 +1458,7 @@ void findUnusedStatics(NAMESPACEVALUES *nameSpace)
                         if (sp->storage_class == sc_global || sp->storage_class == sc_static
                             || sp->storage_class == sc_localstatic)
                             /* void will be caught earlier */
-                            if (!isfunction(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) && sp->tp->type != bt_any)
+                            if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) && sp->tp->type != bt_any)
                                 errorsym(ERR_UNSIZED, sp);
                     }
                 }

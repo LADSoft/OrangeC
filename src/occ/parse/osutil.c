@@ -682,7 +682,7 @@ void InsertOneFile(char *filename, char *path, int drive)
     if (path)
     {
         strcpy(p, path);
-        strcat(p, "\\");
+//        strcat(p, "\\");
     }
     else
         *p = 0;

@@ -80,6 +80,7 @@ int structLevel;
 
 static int unnamed_tag_id, unnamed_id, anonymous_id;
 static char *importFile;
+static int anonid;
 #define CT_NONE 0
 #define CT_CONS 1
 #define CT_DEST 2
@@ -140,7 +141,7 @@ char *AnonymousName(void)
 char *AnonymousTypeName(void)
 {
     char buf[512], *p, *q;
-    sprintf(buf,"__anontype_%x_%x", clock(), rand());
+    sprintf(buf,"__anontype_%x_%x", anonid++, rand());
     return litlate(buf);
 }
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)

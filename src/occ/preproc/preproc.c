@@ -1836,7 +1836,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                             {
                                 if (nestedstring)
                                 {
-                                    if (*p == nestedstring && !oddslash(macro, p-1))
+                                    if (*p == nestedstring && !oddslash(start, p-1))
                                         nestedstring = 0;
                                 }
                                 else if ((*p == '\'' ||  *p == '"') 

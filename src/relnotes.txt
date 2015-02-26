@@ -1,6 +1,66 @@
 Release notes
 
-version 5.23.1:
+version 5.28.1: 02/25/2015
+    occ:    fix memory allocation in register allocator to not grow without bounds
+    occ:    increase macro buffer size to 128k - openjpeg.l used > 64K in an input sequence
+    occ:    make anonymous type names random to support reuse of same declaration in same header file
+    occ:    if specifying a file to compile that is in another directory, put the output files in the current directory
+    occ:    debug info was broken
+
+version 5.27.1: 2/21/2015
+    occ:    add wildcard processing to command line
+    occ:    allow arithmetic on 'void *' (treat as char *)
+    occ:    c99:  if an index variable was defined in a for statement, it would not get optimized into a register
+    occ:    variables referenced inside a sizeof() expression should not be marked as externs
+    occ:    c language: allow structures without members (but they have size 0)
+    occ:    allow empty initializers for structures and arrays
+    ocide:      create the orange c projects directory if installing from ZIPPED executables file
+    install:    fix so that OCIDE would work if installed from the ZIPPED executables file
+    install:    add the appdata directory to the ZIPPED executables file 
+
+version 5.26.1: 2/16/2015
+    occ:    package now compiles 'lame' and 'x264' correctly
+    occ:    allow linkage specifiers to be specified multiple times.
+    occ:    autoincrement/decrement of floating point numbers did not work properly
+    occ:    fixed minor bug in optimizer for floating point, introduced last version
+    occ:    in c++ mode using a variable with an enumerated type as an array index didn't work
+    occ:    fix problem with loop invariant code motion being too liberal
+    occ:    fix problem with floating point comparisions that were not part of a control statement
+    occ:    c99: allow variable length macro arguments list to be length zero
+    occ:    replacing __VA_ARGS__ would terminate a replacement sequence
+    occ:    inline functions with parameters of type 'array' crashed the compiler
+    occ:    fix c99 designator syntax to compile properly
+    occ:    fix c99 cast to structure initialization not to crash
+    occ:    macro invocations that spanned lines could fail with an error
+    occ:    fix pointer aliasing code to deal with multiplies by zero making it through from the front end
+    occ:    relax the requirement that an index variable declared in a for statement be immediately initialized
+    occ:    promotion of integer initializations to constant values won't occur unless the declaration is static storage class
+    occ:    initializing an auto variable of structured type didn't erase the uninitialized portions of the structure
+    occ:    put a limit on the size of functions that may be inlined.
+    occ:    fix problem in constant propagation: size of constant could change, disrupting function calls
+    occ:    c *= a * b would convert the rhs to the type of c before doing the *= (sometimes resulting in truncation)
+    occ:    when the compiler invoked the linker, files on the command line specified with .\ 
+            (e.g. .\test.c) wouldn't be passed to the linker properly
+    ocide:  fix crash when trying to add an array element to the watch window (example: argv[0])
+    clibs:  add InitializeCriticalSectionAndSpinCount
+    clibs:  update printf of floating point numbers to make it faster
+    clibs:  fix definition of S_ISREG & friends to make it more friendly
+
+version 5.25.1: 2/10/2015
+    occ:    some floating point optimizations - moves without involving FPU, reordering
+    occ:    reduced register pressure during calls embedded in expressions
+    occ:    minor loop optimization - register was getting copied to another register
+    occ:    allow floating point parsing to parse constants with very large mantissas
+    occ:    allow taking the address of an assignment, preincrement, or predecrement expression
+    clibs:  sanitize C language headers for use with C++
+    clibs:  speed up an very slow atof
+
+version 5.24.1:  2/2/2015
+    ocide:  'make' of a project wouldn't work unless a full make had been done first.
+    ocl:    wouldn't run on DOS properly
+    dlpe:   wouldn't find dpmist32.bin
+
+version 5.23.1: 1/25/2015
     ocide: new feature: project auto dependencies and calculate build order
     ocide: update documentation/pictures to latest gui and add project auto dependencies
     ocide: when a file was edited, old dependencies weren't being removed.

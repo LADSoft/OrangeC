@@ -3015,7 +3015,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else if (sp->init->exp && isintconst(sp->init->exp) && isint(sp->tp))
             {
-                if (sp->storage_class != sc_static && !funcsp)
+                if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
                     insertInitSym(sp);
                 sp->value.i = sp->init->exp->v.i ;
                 sp->storage_class = sc_constant;

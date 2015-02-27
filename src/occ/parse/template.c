@@ -4873,9 +4873,10 @@ void propagateTemplateDefinition(SYMBOL *sym)
                             SYMBOL *cur = (SYMBOL *)hr->p;
                             if (cur->parentClass && matchTemplateFunc(sym, cur))
                             {
-                                if (!cur->deferredCompile && !cur->inlineFunc.stmt && !cur->isConstructor && !cur->isDestructor)
+                                if (!cur->deferredCompile && !cur->inlineFunc.stmt)
                                 {
                                     cur->deferredCompile = lex;
+                                    cur->memberInitializers = sym->memberInitializers;
                                     cur->pushedTemplateSpecializationDefinition = 1;
                                     if (sym->tp->syms && cur->tp->syms)
                                     {

@@ -432,6 +432,7 @@ typedef struct sym
 #ifdef PARSER_ONLY
     int      ccEndLine;      /* end line for code completion */
     ULLONG_TYPE   ccStructId;     /* code completion struct id */
+    int     parserSet: 1;      /* sent to parser already*/
 #endif
     unsigned declaring: 1; /* currently being declared */
     unsigned hasproto: 1; /* C/90 language prototype was encountered */

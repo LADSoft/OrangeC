@@ -49,7 +49,7 @@
 #include <ctype.h>
 #define FROMIDE
 
-#define DBVersion 100
+#define DBVersion 110
 
 extern PROJECTITEM *workArea;
 extern DWINFO *editWindows;

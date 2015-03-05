@@ -385,7 +385,11 @@ void insert(SYMBOL *in, HASHTABLE *table)
     {
 #ifdef PARSER_ONLY
         if (table != defsyms && table != kwhash && table != labelSyms && table != ccHash)
-            ccSetSymbol(in);
+            if (!in->parserSet)
+            {
+                in->parserSet = TRUE;
+                ccSetSymbol(in);
+            }
 #endif
         if (cparams.prm_extwarning)
             if (in->storage_class == sc_parameter || in->storage_class == sc_auto ||

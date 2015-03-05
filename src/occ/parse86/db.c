@@ -44,7 +44,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define STRINGVERSION "100"
+#define STRINGVERSION "110"
 
 #define DBVersion atoi(STRINGVERSION)
 
@@ -74,6 +74,11 @@ char *tables=
     " id INTEGER PRIMARY KEY AUTOINCREMENT"
     " ,name VARCHAR(260) UNIQUE"
     " ,fileDate DATE"
+    " );"
+    "CREATE TABLE SymbolTypes ("
+    " mainid INTEGER"
+    " ,symbolid INTEGER"
+    " ,type INTEGER"
     " );"
     "CREATE TABLE LineData ("
     " fileId INTEGER"
@@ -152,11 +157,12 @@ char *tables=
 } ;
 static char *deletion =
 {
-    "DELETE FROM MethodArgs WHERE mainId = %Ld;"
-    "DELETE FROM GlobalArgs WHERE mainId = %Ld;"
-    "DELETE FROM StructFields WHERE mainId = %Ld;"
-    "DELETE FROM LineNumbers WHERE mainId = %Ld;"
-    "DELETE FROM LineData WHERE mainId = %Ld;"
+    "DELETE FROM SymbolTypes WHERE mainId = %d;"
+    "DELETE FROM MethodArgs WHERE mainId = %d;"
+    "DELETE FROM GlobalArgs WHERE mainId = %d;"
+    "DELETE FROM StructFields WHERE mainId = %d;"
+    "DELETE FROM LineNumbers WHERE mainId = %d;"
+    "DELETE FROM LineData WHERE mainId = %d;"
 };
 static sqlite3 *dbPointer;
 static sqlite3_stmt *whndln;
@@ -273,6 +279,7 @@ int ccDBOpen(char *name)
         if (dbPointer)
             sqlite3_close(dbPointer);
         dbPointer = NULL;
+        remove(name);
         if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL) == SQLITE_OK)
         {
 #ifdef TEST
@@ -314,7 +321,7 @@ int ccDBDeleteForFile(sqlite3_int64 id)
 {
     int rv = TRUE;
     char buf[10000];
-    sprintf(buf, deletion, (int)id, (int)id, (int)id, (int)id, (int)id);
+    sprintf(buf, deletion, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id);
     if (!create_exec(buf))
     {
         rv = FALSE;
@@ -756,6 +763,48 @@ int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char *data, int 
                     break;
             }
         }                        
+    }
+    return rc == SQLITE_OK;
+}
+int ccWriteSymbolType( char *symname, sqlite3_int64 file_id, int type)
+{
+    int rc = SQLITE_ERROR;
+    sqlite3_int64 sym_id;
+    if (ccWriteName(symname, &sym_id))
+    {
+        static char *query = "INSERT INTO SymbolTypes (mainid, symbolid, type)"
+                             " VALUES (?,?,?)";
+        static sqlite3_stmt *handle;
+        rc = SQLITE_OK;
+        if (!handle)
+        {
+            rc = sqlite3_prepare_v2(dbPointer, query, strlen(query)+1, &handle, NULL);
+        }
+        if (rc == SQLITE_OK)
+        {
+            int done = FALSE;
+            
+            sqlite3_reset(handle);
+            sqlite3_bind_int64(handle, 1, file_id);
+            sqlite3_bind_int64(handle, 2, sym_id);
+            sqlite3_bind_int64(handle, 3, type);
+            while (!done)
+            {
+                switch(rc = sqlite3_step(handle))
+                {
+                    case SQLITE_BUSY:
+                        done = TRUE;
+                        break;
+                    case SQLITE_DONE:
+                        rc = SQLITE_OK;
+                        done = TRUE;
+                        break;
+                    default:
+                        done = TRUE;
+                        break;
+                }
+            }                        
+        }
     }
     return rc == SQLITE_OK;
 }

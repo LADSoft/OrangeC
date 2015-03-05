@@ -37,6 +37,9 @@
 */
 #include "compiler.h"
 #include "db.h"
+#include "symtypes.h"
+
+extern HASHTABLE *defsyms;
 
 typedef struct
 {
@@ -123,12 +126,55 @@ static void DumpStructs(void)
         item = item->next;
     }
 }
+static void DumpSymbolType(SYMBOL *sym)
+{
+    int type = ST_UNKNOWN;
+    if (isfunction(sym->tp))
+        type = ST_FUNCTION;
+    else switch (sym->storage_class)
+    {
+        case sc_overloads:
+            return;
+        case sc_typedef:
+            type = ST_TYPEDEF;
+            break;
+        case sc_type:
+            type = ST_TAG;
+            break;
+        case sc_auto:
+        case sc_register:
+            type = ST_AUTO;
+            break;
+        case sc_parameter:
+            type = ST_PARAMETER;
+            break;
+        case sc_localstatic:
+            type = ST_LOCALSTATIC;
+            break;
+        case sc_static:
+            type = ST_STATIC;
+            break;
+        case sc_global:
+            type = ST_GLOBAL;
+            break;
+        case sc_external:
+            type = ST_EXTERN;
+            break;
+    }
+    if (isconst(sym->tp))
+        type |= ST_CONST;
+    if (isvolatile(sym->tp))
+        type |= ST_VOLATILE;
+    ccWriteSymbolType( sym->name, main_id, type);
+}
 static void DumpSymbols(void)
 {
     LIST *item = symList;
+    int i;
     while (item)
     {
         SYMBOL *sym = item->data;
+        DumpSymbolType(sym);
         if ((!istype(sym) || sym->storage_class == sc_typedef) && sym->storage_class != sc_overloads && sym->tp->type != bt_any)
         {
             char type_name[10000];
@@ -197,6 +243,15 @@ static void DumpSymbols(void)
             }
         }
         item = item->next;
+    }
+    for (i=0; i < GLOBALHASHSIZE; i++)
+    {
+        HASHREC *hr = defsyms->table[i];
+        while (hr)
+        {
+            ccWriteSymbolType(hr->p->name, main_id, ST_DEFINE);
+            hr = hr->next;
+        }
     }
 }
 static void DumpLines(void)

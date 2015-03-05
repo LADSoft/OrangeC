@@ -88,7 +88,7 @@ static void __closeTempFiles(void)
         int i;
         for (i= __maxfiles-1; i >=3; i--)
         {
-            if (!strcmp(_pstreams[i]->name, rmv->name))
+            if (!strcmp(_pstreams[i]->extended->name, rmv->name))
             {
                 fclose(_pstreams[i]);
                 break;

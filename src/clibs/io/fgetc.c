@@ -101,11 +101,11 @@ int _RTL_FUNC fgetc(FILE *stream)
         errno = _dos_errno = ENOENT;
         return EOF;
     }
-    if (stream->orient == __or_wide) {
+    if (stream->extended->orient == __or_wide) {
         errno = EINVAL;
         return EOF;
     }
-    stream->orient = __or_narrow;
+    stream->extended->orient = __or_narrow;
     if (stream->flags & _F_EOF)
         return EOF;
     stream->flags &= ~_F_VBUF;

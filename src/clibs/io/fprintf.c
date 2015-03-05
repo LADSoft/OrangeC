@@ -47,11 +47,11 @@ int _RTL_FUNC vfprintf(FILE *restrict stream, const char *restrict format,
         errno = _dos_errno = ENOENT;
         return 0;
     }
-    if (stream->orient == __or_wide) {
+    if (stream->extended->orient == __or_wide) {
         errno = EINVAL;
         return 0;
     }
-    stream->orient = __or_narrow;
+    stream->extended->orient = __or_narrow;
     while (*format) {
         char *p = strchr(format, '%');
         if (!p)

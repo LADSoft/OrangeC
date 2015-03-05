@@ -63,7 +63,7 @@ int _RTL_FUNC fgetpos(FILE *restrict stream, fpos_t *restrict pos)
         if (stream->flags & _F_UNGETC)
             curpos--;
         pos->pos = curpos;
-        memcpy(pos->mbstate,stream->mbstate,sizeof(pos->mbstate));
+        memcpy(pos->mbstate,stream->extended->mbstate,sizeof(pos->mbstate));
         return 0;
     }
     _dos_errno = errno = ENOENT;

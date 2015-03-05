@@ -45,11 +45,11 @@ char *_RTL_FUNC fgets(char *restrict buf, int num, FILE *restrict stream)
         errno = _dos_errno = ENOENT;
         return 0;
     }
-    if (stream->orient == __or_wide) {
+    if (stream->extended->orient == __or_wide) {
         errno = EINVAL;
         return 0;
     }
-    stream->orient = __or_narrow;
+    stream->extended->orient = __or_narrow;
     stream->flags &= ~_F_VBUF;
     if (!(stream->flags & _F_READ)) {
         stream->flags |= _F_ERR;

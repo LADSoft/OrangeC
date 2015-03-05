@@ -48,10 +48,10 @@ FILE *_RTL_FUNC freopen(const char *restrict name, const char *restrict mode, FI
        return 0;
    }
    if (!name)
-      strcpy(buf,stream->name);
+      strcpy(buf,stream->extended->name);
    else
       strcpy(buf,name);
-   free(stream->name);
+   free(stream->extended->name);
    __basefclose(stream,0);
    stream->flags &= ~(_F_READ | _F_WRIT | _F_APPEND | _F_EOF | _F_ERR | _F_XEOF | _F_VBUF | _F_IN | _F_OUT);
    if (!__basefopen(buf,mode,stream, -1, SH_COMPAT)) {

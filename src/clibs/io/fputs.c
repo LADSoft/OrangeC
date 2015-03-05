@@ -49,11 +49,11 @@ int _RTL_FUNC fputs(const char *restrict string, FILE *restrict stream)
         errno = _dos_errno = ENOENT;
         return EOF;
     }
-    if (stream->orient == __or_wide) {
+    if (stream->extended->orient == __or_wide) {
         errno = EINVAL;
         return EOF;
     }
-    stream->orient = __or_narrow;
+    stream->extended->orient = __or_narrow;
     if (!(stream->flags & _F_WRIT)) {
         stream->flags |= _F_ERR;
         errno = EFAULT;

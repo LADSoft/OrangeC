@@ -160,3 +160,7 @@ int _RTL_FUNC stat(char *path, struct stat *__statbuf)
 {
    return _stat(path, (struct _stat *)__statbuf) ;
 }
+int _RTL_FUNC _stat32(char *path, struct stat *__statbuf)
+{
+   return _stat(path, (struct _stat *)__statbuf) ;
+}

@@ -40,12 +40,12 @@ int fwide(FILE *stream, int mode)
     }
     if (mode > 0) {
         if (fflush(stream) != EOF)
-            stream->orient = __or_wide;
+            stream->extended->orient = __or_wide;
     } else if (mode < 0) {
         if (fflush(stream) != EOF)
-            stream->orient = __or_narrow;
+            stream->extended->orient = __or_narrow;
     }
-    switch(stream->orient) {
+    switch(stream->extended->orient) {
         case __or_narrow:
             mode = -1;
             break;

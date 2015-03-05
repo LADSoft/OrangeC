@@ -34,6 +34,9 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <fenv.h>
+
+int _fltused;
+
 static fenv_t dfltenv;
 
 fenv_t _RTL_DATA * const __fe_default_env = &dfltenv;

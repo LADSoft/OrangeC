@@ -46,11 +46,11 @@ int _RTL_FUNC vfwprintf(FILE *restrict stream, const wchar_t *restrict format,
 		errno = _dos_errno = ENOENT;
 		return 0;
 	}
-    if (stream->orient == __or_narrow) {
+    if (stream->extended->orient == __or_narrow) {
         errno = EINVAL;
         return 0;
     }
-    stream->orient = __or_wide;
+    stream->extended->orient = __or_wide;
 	while (*format) {
 		short *p = wcschr(format, '%');
 		if (!p)

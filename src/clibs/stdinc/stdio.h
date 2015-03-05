@@ -54,21 +54,25 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
+#pragma pack(4)
 typedef struct  __file__{
-        int             level;          /* fill/empty level of buffer */
-        unsigned        flags;          /* File status flags          */
-        int             fd;             /* File descriptor            */
+        short           token;          /* Used for validity checking */
+        unsigned short        flags;          /* File status flags          */
         unsigned char   hold;           /* Ungetc char if no buffer   */
+        int             fd;             /* File descriptor            */
+        int             level;          /* fill/empty level of buffer */
         int             bsize;          /* Buffer size                */
         unsigned char   *buffer;   /* Data transfer buffer       */
         unsigned char   *curp;     /* Current active pointer     */
-        char            *name;           /* filename */
-        short           token;          /* Used for validity checking */
-        enum { __or_unspecified,
+        struct __file2{
+            char            *name;           /* filename */
+            enum { __or_unspecified,
                __or_narrow, 
                __or_wide } orient;       /* stream orientation */
-        int mbstate[2];                 /* space for mbstate_t structure */
+            int mbstate[2];                 /* space for mbstate_t structure */
+        } *extended;
 }       FILE;                           /* This is the FILE object    */
+#pragma pack()
 
 
 #ifdef __cplusplus

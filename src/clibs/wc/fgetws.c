@@ -45,11 +45,11 @@ wchar_t *_RTL_FUNC fgetws(wchar_t *restrict buf, int num, FILE *restrict stream)
         errno = _dos_errno = ENOENT;
         return 0;
     }
-    if (stream->orient == __or_narrow) {
+    if (stream->extended->orient == __or_narrow) {
         errno = EINVAL;
         return 0;
     }
-    stream->orient = __or_wide;
+    stream->extended->orient = __or_wide;
     stream->flags &= ~_F_VBUF;
     if (!(stream->flags & _F_READ)) {
         stream->flags |= _F_ERR;

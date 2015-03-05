@@ -84,3 +84,7 @@ int _RTL_FUNC utime (const char * path, struct utimbuf * times)
 {
     return _utime(path, times);
 }
+int _RTL_FUNC _utime32 (const char * path, struct utimbuf * times)
+{
+    return _utime(path, times);
+}

@@ -39,11 +39,11 @@ int _RTL_FUNC (ungetc)(int c, FILE *stream)
 		errno = _dos_errno = ENOENT;
 		return EOF;
 	}
-    if (stream->orient == __or_wide) {
+    if (stream->extended->orient == __or_wide) {
         errno = EINVAL;
         return EOF;
     }
-    stream->orient = __or_narrow;
+    stream->extended->orient = __or_narrow;
     stream->flags &= ~_F_VBUF;
     if (c == EOF)
         return EOF;

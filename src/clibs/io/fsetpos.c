@@ -38,7 +38,7 @@ int _RTL_FUNC fsetpos(FILE *restrict stream, const fpos_t *restrict currentpos)
     if (stream->token == FILTOK) {
         stream->flags &= ~(_F_EOF | _F_XEOF | _F_VBUF);
         __uio_clearerr(fileno(stream));
-        memcpy(stream->mbstate,currentpos->mbstate,sizeof(currentpos->mbstate));
+        memcpy(stream->extended->mbstate,currentpos->mbstate,sizeof(currentpos->mbstate));
     }
     return fseek(stream,currentpos->pos,SEEK_SET);
 }

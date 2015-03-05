@@ -133,11 +133,11 @@ wint_t _RTL_FUNC fgetwc(FILE *stream)
 		errno = _dos_errno = ENOENT;
 		return WEOF;
 	}
-    if (stream->orient == __or_narrow) {
+    if (stream->extended->orient == __or_narrow) {
         errno = EINVAL;
         return WEOF;
     }
-    stream->orient = __or_wide;
+    stream->extended->orient = __or_wide;
     stream->flags &= ~_F_VBUF;
     if (stream->flags & _F_EOF)
         return WEOF;

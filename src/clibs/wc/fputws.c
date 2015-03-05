@@ -41,11 +41,11 @@ int _RTL_FUNC fputws(const wchar_t *string, FILE *stream)
 	int rv;
 	if (stream->token != FILTOK)
 		return WEOF;
-    if (stream->orient == __or_narrow) {
+    if (stream->extended->orient == __or_narrow) {
         errno = EINVAL;
         return WEOF;
     }
-    stream->orient = __or_wide;
+    stream->extended->orient = __or_wide;
 	if (!(stream->flags & _F_WRIT)) {
 		stream->flags |= _F_ERR;
 		errno = EFAULT;

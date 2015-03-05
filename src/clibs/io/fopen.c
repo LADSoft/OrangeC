@@ -124,7 +124,17 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
 			return 0;
 		}
 		else
+        {
 			memset(file,0,sizeof(FILE));
+            if ((file->extended = malloc(sizeof(struct __file2))) == 0) {
+    			free(fname);
+                free(file);
+                __ll_exit_critical() ;
+    			return 0;
+            }
+            memset(file->extended, 0, sizeof(file->extended));
+        }
+            
 	file->flags = 0;
 	if (append)
 		flags |= _F_APPEND;
@@ -160,8 +170,8 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
     if (id < 0) {
 		goto nofile;
     }
-    file->orient = __or_unspecified;
-    memset(file->mbstate,0,sizeof(file->mbstate));
+    file->extended->orient = __or_unspecified;
+    memset(file->extended->mbstate,0,sizeof(file->extended->mbstate));
 	file->token = FILTOK;
 	file->level = 0;
 	file->fd = id;
@@ -198,7 +208,7 @@ nofile:
 			return 0;
 		}
 	}
-    file->name = fname;
+    file->extended->name = fname;
 	_pstreams[__maxfiles++] = file;
    __ll_exit_critical() ;
 	return file;

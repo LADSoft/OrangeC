@@ -580,6 +580,7 @@ VARINFO *EvalExpr(DEBUG_INFO **dbg, SCOPE *sc,
 
 int InitHelp(void);
 void RundownHelp(void);
+int WebHelp(char *string);
 int SpecifiedHelp(char *string);
 int RTLHelp(char *string);
 int LanguageHelp(char *string);

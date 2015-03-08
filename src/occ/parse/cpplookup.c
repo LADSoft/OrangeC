@@ -40,7 +40,7 @@
 extern COMPILER_PARAMS cparams;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern HASHTABLE *labelSyms;
-extern TYPE stdint;
+extern TYPE stdint, stdpointer;
 extern SYMBOL *enumSyms;
 extern char *overloadNameTab[];
 extern LAMBDA *lambdas;

@@ -240,36 +240,6 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     }
                     if (hr->next || cparams.prm_cplusplus)
                     {
-                        /*
-                        if (!MATCHKW(lex, openpa))
-                        {
-                            BOOLEAN throughClass = sp->throughClass;
-                            SYMBOL *sp1 = GetOverloadedFunction(tp, &funcparams->fcall, sp, funcparams->templateParams ? funcparams : NULL, atp,TRUE, FALSE, flags);
-                            if (sp1)
-                            {
-                                SYMBOL *tpl = sp1;
-                                while (tpl)
-                                {
-                                    if (tpl->templateLevel)
-                                        break;
-                                    tpl = tpl->parentClass;
-                                }
-                                if (tpl && tpl->instantiated)
-                                {
-                                    if (!sp1->genreffed)
-                                    {
-                                        InsertInline(sp1);
-                                        sp1->genreffed = TRUE;
-                                    }
-                                }
-                                sp = sp1;
-                                sp->throughClass = throughClass;
-                                if (!isExpressionAccessible(sp, funcsp, NULL, FALSE))
-                                    errorsym(ERR_CANNOT_ACCESS, sp);		
-                            }
-                        }
-                        else
-                        */
                         {
                             
                             SYMBOL *sym = getStructureDeclaration();
@@ -285,12 +255,6 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         // argument based lookup in C++...
                         funcparams->sp = (SYMBOL *)hr->p;
                         funcparams->fcall = varNode(en_pc, funcparams->sp);
-    //					if (((SYMBOL *)hr->p)->linkage2 == lk_import)
-    //					{
-        //					*exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
-        //					deref(&stdpointer, exp);
-    //						deref(&stdpointer, exp);
-    //					}
                     }
                     funcparams->functp = funcparams->sp->tp;
                     *tp = funcparams->sp->tp;
@@ -396,8 +360,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         *exp = varNode(en_global, sp);
                     if (sp->linkage2 == lk_import)
                     {
-                        *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
-                        deref(&stdpointer, exp);
+//                        *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
+//                        deref(&stdpointer, exp);
                         deref(&stdpointer, exp);
                     }
                     break;

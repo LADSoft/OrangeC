@@ -1679,18 +1679,24 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 //		if (ap != ap3)
 //			gen_icode(i_assn, ap, ap3, NULL);
         if (ap->mode == i_immed && ap->offset->type == en_pc) {
-            if (ap->offset->v.sp->indirect) {
+            if (f->sp && f->sp->linkage2 == lk_import) {
                 IMODE *ap1 = (IMODE *)Alloc(sizeof(IMODE));
                 *ap1 = *ap;
                 ap1->retval = FALSE;
                 ap = ap1;
                 ap->mode = i_direct;
             }
-/*            if (type == i_gosub)
-                if (ap->offset->v.sp->farproc)
-                    type = i_fargosub;
-*/
         }
+        else if (f->sp && f->sp->linkage2 == lk_import)
+        {
+            IMODE *ap1 = ap;
+            gen_icode(i_assn, ap = tempreg(ISZ_ADDR, 0), ap1, 0);
+            ap1 = (IMODE *)Alloc(sizeof(IMODE));
+            *ap1 = *ap;
+            ap1->retval = FALSE;
+            ap = ap1;
+            ap->mode = i_ind;
+        }            
         if (f->callLab && xcexp)
         {
             xcexp->right->v.i = f->callLab;

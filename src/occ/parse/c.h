@@ -445,7 +445,6 @@ typedef struct sym
     unsigned regmode: 2; /* 0 = pure var, 1 = addr in reg, 2 = value in reg*/
     unsigned loadds: 1; /* to load data seg (limited) */
     unsigned farproc: 1; /* this procedure should be terminated with retf */
-    unsigned indirect: 1; /* This procedure is to be called indirectly. */
     unsigned calleenearret: 1; /* true if callee provided a place for the return
         value */
     unsigned hasunnamed: 1; /* structure has unnamed substructs */

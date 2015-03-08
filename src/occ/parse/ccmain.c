@@ -74,7 +74,9 @@ static int stoponerr = 0;
 COMPILER_PARAMS cparams = {
     25,    /* int  prm_maxerr;*/
     0,		/* prm_stackalign */
-    TRUE,  /* optimize */
+    TRUE,  /* optimize_for_speed */
+    FALSE,  /* optimize_for_size */
+    FALSE,  /* optimize_for_float_access */
     FALSE, /* char prm_quieterrors;*/
     TRUE,  /* char prm_warning;*/
     FALSE, /* char prm_extwarning;*/
@@ -255,11 +257,9 @@ void bool_setup(char select, char *string)
     {
         cparams.prm_debug = v;
         if (v)
-            cparams.prm_optimize = FALSE;
-    }
-    if (select == 'O')
-    {
-        cparams.prm_optimize = v;
+        {
+            cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;
+        }
     }
     if (select == 'c')
     {
@@ -280,60 +280,25 @@ void optimize_setup(char select, char *string)
     (void)select;
     if (!*string || (*string == '+' && string[1] == '\0'))
     {
-        cparams.prm_optimize = TRUE;
+        cparams.prm_optimize_for_speed = TRUE;
+        cparams.prm_optimize_for_size = FALSE;
         cparams.prm_debug = FALSE;
     }
     else if (*string == '-' && string[1] == '\0')
-        cparams.prm_optimize = FALSE;
+        cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = cparams.prm_optimize_float_access = FALSE;
     else
     {
-        cparams.prm_optimize = TRUE;
         cparams.prm_debug = FALSE;
-#ifndef PARSER_ONLY
-        while (*string)
+        if (*string == '0')
         {
-            switch(*string)
-            {
-                case 'c':
-                    if (v)
-                        optflags |= OPT_CONSTANT;
-                    else
-                        optflags &= ~OPT_CONSTANT;
-                    break;
-                case 'r':
-                    if (v)
-                        optflags |= OPT_RESHAPE;
-                    else
-                        optflags &= ~OPT_RESHAPE;
-                    break;
-                case 's':
-                    if (v)
-                        optflags |= OPT_LSTRENGTH;
-                    else
-                        optflags &= ~OPT_LSTRENGTH;
-                    break;
-                case 'g':
-                    if (v)
-                        optflags |= OPT_GLOBAL;
-                    else
-                        optflags &= ~OPT_GLOBAL;
-                    break;
-                case 'i':
-                    if (v)
-                        optflags |= OPT_INVARIANT;
-                    else
-                        optflags &= ~OPT_INVARIANT;
-                    break;
-                case '-':
-                    v = FALSE;
-                    break;
-                case '+':
-                    v = TRUE;
-                    break;
-            }
-            string++;
+            cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;
         }
-#endif
+        else if (*string == 'f')
+            cparams.prm_optimize_float_access = TRUE;
+        else if (*string == '2')
+            cparams.prm_optimize_for_speed = TRUE;
+        else if (*string == '1')
+            cparams.prm_optimize_for_size = TRUE;
     }
 }
 /*-------------------------------------------------------------------------*/

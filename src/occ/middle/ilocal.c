@@ -168,7 +168,7 @@ static void renameToTemps(SYMBOL *funcsp)
 {
     LIST *lst;
     HASHTABLE *temp = funcsp->inlineFunc.syms;
-    if (!cparams.prm_optimize || functionHasAssembly)
+    if ((!cparams.prm_optimize_for_speed && !cparams.prm_optimize_for_size) || functionHasAssembly)
         return;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     if (setjmp_used)

@@ -1188,7 +1188,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         st = stmtNode(lex, forstmt, st_expr);
                         st->select = init;
                     }
-                    if (cparams.prm_debug)
+                    if (cparams.prm_debug || cparams.prm_optimize_for_size)
                     {
     					st = stmtNode(lex, forstmt, st_goto);
     					st->label = testlabel;
@@ -1307,7 +1307,7 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 st = stmtNode(lex, parent, st_goto);
                 st->label = elsebr;
-                if (cparams.prm_optimize)
+                if (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)
                 {
                     st2 = sti;
                     st1 = sti->next;
@@ -1335,7 +1335,7 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 lex = getsym();
                 parent->needlabel = FALSE;
                 lex = statement(lex, funcsp, parent, TRUE);
-                if (cparams.prm_optimize && !optimized)
+                if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !optimized)
                 {
                     st1 = st->next;
                     st2 = st;
@@ -1363,7 +1363,7 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             else
             {
-                if (cparams.prm_optimize)
+                if (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)
                 {
                     st2 = sti;
                     st1 = sti->next;
@@ -1926,7 +1926,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         else
         {
             lex = getsym();
-            if (cparams.prm_debug)
+            if (cparams.prm_debug || cparams.prm_optimize_for_size)
             {
     			st = stmtNode(lex, whilestmt, st_goto);
     			st->label = whilestmt->continuelabel;

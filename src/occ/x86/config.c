@@ -494,7 +494,7 @@ void SetUsesESP(BOOLEAN yes)
 }
 void adjustUsesESP()
 {
-    if (cparams.prm_debug || cparams.prm_stackalign || !cparams.prm_optimize)
+    if (cparams.prm_debug || cparams.prm_stackalign || !cparams.prm_optimize_for_speed)
     {
         prm_useesp = FALSE;
     }

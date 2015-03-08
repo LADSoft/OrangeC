@@ -456,7 +456,7 @@ static QUAD * add_dag(QUAD *newQuad)
     if (!node || (newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size)
          || node->ans->bits != newQuad->ans->bits)
     {
-        if (cparams.prm_optimize)
+        if (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)
         {
         /* take care of volatiles by not registering volatile expressions
          * in the CSE table.  At this point a temp var will already exist
@@ -492,12 +492,12 @@ static QUAD * add_dag(QUAD *newQuad)
      * always save constants even when no LCSE is to be done because it
      * is needed for constant-folding in subsequent instructions
      */
-    if (cparams.prm_optimize)
+    if (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)
     {
         if (newQuad->ans && (newQuad->ans->mode == i_ind || newQuad->ans->offset->type != en_tempref))
             flush_dag();
         else if (newQuad->ans /* &&  (newQuad->dc.opcode != i_assn || (newQuad->livein & IM_LIVELEFT)) */
-            && (cparams.prm_optimize  && ((newQuad->ans->offset->type == en_tempref && newQuad->ans->mode == i_direct) 
+            && ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)  && ((newQuad->ans->offset->type == en_tempref && newQuad->ans->mode == i_direct) 
                 || node->dc.opcode == i_icon || node->dc.opcode
             == i_fcon || node->dc.opcode == i_imcon || node->dc.opcode == i_cxcon)))
         {

@@ -47,7 +47,9 @@
 typedef struct {
     int  prm_maxerr;        /* number of errors at which the compiler stops*/
     int prm_stackalign;		/* stack alignment */
-    BOOLEAN prm_optimize;
+    BOOLEAN prm_optimize_for_speed;
+    BOOLEAN prm_optimize_for_size;
+    BOOLEAN prm_optimize_float_access;
     BOOLEAN prm_quiet;         /* no warnings/errors on console */
     BOOLEAN prm_warning;       /* display warnings */
     BOOLEAN prm_extwarning;    /* display extended warnings */

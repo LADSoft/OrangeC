@@ -717,7 +717,7 @@ void optimize(SYMBOL *funcsp)
     
     flows_and_doms();
     gatherLocalInfo(funcsp);
-    if (cparams.prm_optimize && !functionHasAssembly)
+    if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
         Precolor();
         RearrangePrecolors();
@@ -734,10 +734,10 @@ void optimize(SYMBOL *funcsp)
 //		if (optflags & OPT_RESHAPE)
 //			Reshape();		/* loop expression reshaping */
     //printf("stren\n");
-        if (optflags & OPT_LSTRENGTH)
+        if ((cparams.prm_optimize_for_speed) && (optflags & OPT_LSTRENGTH))
             ReduceLoopStrength(); /* loop index variable strength reduction */
     //printf("invar\n");
-        if (optflags & OPT_INVARIANT)
+        if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
             MoveLoopInvariants();	/* move loop invariants out of loops */
         if (optflags & OPT_GLOBAL)
         {

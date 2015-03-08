@@ -206,6 +206,10 @@ bool CoffLibrary::ConvertNormalMods()
                     return false;
                 }
             }
+			else
+			{
+				it->second->ignore = true;
+			}
         }
     }
     return true;
@@ -225,8 +229,30 @@ bool CoffLibrary::ConvertImportMods()
                 return false;
             char buf[512], *p = buf;
             inputFile->read(buf, hdr.Size);
-            it->second->importName = buf;
             p = buf + strlen(buf)+1;
+            switch(hdr.ImportNameType)
+            {
+                case 0:
+                    Utils::fatal("Can't import by ordinal");
+                    exit(1);
+                    break;
+                case 1: // identical to public
+                    break;
+                case 2: // strip leading char
+                    if (buf[0] == '@' || buf[0] == '?' || buf[0] == '_')
+                        strcpy(buf, buf+1);
+                    break;
+                case 3: // undecorate
+                    {
+                        char *p = strchr(buf, '@');
+                        if (p)
+                            *p = 0;
+                        if (buf[0] == '@' || buf[0] == '?' || buf[0] == '_')
+                            strcpy(buf, buf+1);
+                    } 
+                    break;
+            }
+            it->second->importName = buf;
             it->second->importDLL = p;
         }
     }
@@ -246,6 +272,7 @@ bool CoffLibrary::ConvertImportMods()
                 }
             }
         }
+        importFile = file;
     }
     return true;
 }

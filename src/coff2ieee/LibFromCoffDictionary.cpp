@@ -136,7 +136,8 @@ void LibDictionary::CreateDictionary(std::map<int, Module *> &Modules)
                 total += n;
                 symbols++;                
             }
-            files++;
+            if (!it->second->import)
+                files++;
         }
     }
     int dictpages2, dictpages1;

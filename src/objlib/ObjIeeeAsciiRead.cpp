@@ -669,7 +669,7 @@ void ObjIeeeAscii::DefineStruct(ObjType::eType stype, int index, const char *buf
             fieldTypeBase = GetType(fieldTypeIndex);
         if (!fieldTypeBase)
         {
-            fieldTypeBase = factory->MakeType((ObjType::eType)ObjType::eNone, 0);
+            fieldTypeBase = factory->MakeType((ObjType::eType)ObjType::eNone, fieldTypeIndex);
             PutType(fieldTypeIndex, fieldTypeBase);
         }
                 

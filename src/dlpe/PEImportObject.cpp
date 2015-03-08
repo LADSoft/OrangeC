@@ -154,6 +154,7 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
             }
             // next up we make a thunk that will get us from the rel calls genned by
             // the compiler to the import table;		
+            /*
             ObjSymbol *sym = externs[it->second->publicNames[i]];
             int en = sym->GetIndex();
             for (std::deque<PEObject *>::iterator it1 = objects.begin(); it1 != objects.end(); ++ it1)
@@ -162,6 +163,10 @@ void PEImportObject::Setup(ObjInt &endVa, ObjInt &endPhys)
                 if ((val = (*it1)->SetThunk(en, ((unsigned char *)lookupPos) - data + virtual_addr + imageBase)) != -1)
                     sym->SetOffset(new ObjExpression(val));
             }
+            */
+            ObjSymbol *sym = externs[it->second->publicNames[i]];
+            sym->SetOffset(new ObjExpression(((unsigned char *)lookupPos) - data + virtual_addr + imageBase));
+
             lookupPos++;
             addressPos++;
         }

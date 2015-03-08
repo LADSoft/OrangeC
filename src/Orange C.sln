@@ -88,9 +88,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ocide", "ocide\ocide.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ocpp", "occ\preproc\occp.vcxproj", "{1C54F254-041D-4A6F-B379-5A6F08B96775}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obj", "ObjLib\obj.vcxproj", "{22E147D5-E684-4B10-9CB4-D6CD8EF02118}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "obj", "objlib\obj.vcxproj", "{22E147D5-E684-4B10-9CB4-D6CD8EF02118}"
 	ProjectSection(ProjectDependencies) = postProject
 		{72430015-06C0-42A2-B9EC-D0E5E2EAE83D} = {72430015-06C0-42A2-B9EC-D0E5E2EAE83D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "coff2ieee", "coff2ieee\coff2ieee.vcxproj", "{A65080A0-FDE6-4169-A35A-8D123FE4680E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{72430015-06C0-42A2-B9EC-D0E5E2EAE83D} = {72430015-06C0-42A2-B9EC-D0E5E2EAE83D}
+		{15B031AC-A404-4064-BE4E-CD5705B6293C} = {15B031AC-A404-4064-BE4E-CD5705B6293C}
+		{22E147D5-E684-4B10-9CB4-D6CD8EF02118} = {22E147D5-E684-4B10-9CB4-D6CD8EF02118}
 	EndProjectSection
 EndProject
 Global
@@ -183,6 +190,10 @@ Global
 		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Debug|Win32.Build.0 = Debug|Win32
 		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Release|Win32.ActiveCfg = Release|Win32
 		{22E147D5-E684-4B10-9CB4-D6CD8EF02118}.Release|Win32.Build.0 = Release|Win32
+		{A65080A0-FDE6-4169-A35A-8D123FE4680E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A65080A0-FDE6-4169-A35A-8D123FE4680E}.Debug|Win32.Build.0 = Debug|Win32
+		{A65080A0-FDE6-4169-A35A-8D123FE4680E}.Release|Win32.ActiveCfg = Release|Win32
+		{A65080A0-FDE6-4169-A35A-8D123FE4680E}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

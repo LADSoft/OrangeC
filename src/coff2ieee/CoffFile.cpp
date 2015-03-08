@@ -67,7 +67,7 @@ bool CoffFile::Load()
     if (name.size())
         inputFile = new std::fstream(name.c_str(), std::ios::binary | std::ios::in);
     if (inputFile && inputFile->is_open())
-    {
+    {   
         inputFile->read((char *)&header, sizeof(header));
         if (!inputFile->fail() && !inputFile->eof())
         {
@@ -139,14 +139,17 @@ bool CoffFile::ScanSymbols()
     sectionSymbols.resize(header.NumberOfSections + 1);
     for (int i=0; i < header.NumberOfSymbols; i+= symbols[i].NumberOfAuxSymbols + 1)
     {
-        if (symbols[i].StorageClass == IMAGE_SYM_CLASS_STATIC && symbols[i].SectionNumber)
+        if ((symbols[i].StorageClass == IMAGE_SYM_CLASS_STATIC || symbols[i].StorageClass == IMAGE_SYM_CLASS_SECTION) && symbols[i].SectionNumber)
         {
             int n = strlen(symbols[i].Name);
-            if (n > 8)
-                n = 8;
-            if (!strncmp(symbols[i].Name, sections[symbols[i].SectionNumber-1].Name, n))
+            if (n)
             {
-                sectionSymbols[symbols[i].SectionNumber-1] = (symbols +i);
+                if (n > 8)
+                    n = 8;
+                if (!strncmp(symbols[i].Name, sections[symbols[i].SectionNumber-1].Name, n))
+                {
+                    sectionSymbols[symbols[i].SectionNumber-1] = (symbols +i);
+                }
             }
         }
     }
@@ -176,7 +179,7 @@ std::string CoffFile::GetSectionName(int sect)
                 break;
             sym += sym->NumberOfAuxSymbols + 1;
         }
-        if (sym >= symbols + header.NumberOfSymbols)
+        if (sym > symbols + header.NumberOfSymbols)
         {
             Utils::fatal("Comdat symbol name not found, exiting");
         }
@@ -229,22 +232,16 @@ ObjInt CoffFile::GetSectionQualifiers(int sect)
                 sel = ObjSection::unique;
                 break;
             case 2:
-                sel = ObjSection::max;
-                break;
             case 3:
-                sel = ObjSection::max;
-                break;
             case 4:
+            case 6:
                 sel = ObjSection::max;
-                std::cout << "warning : comdat style 'min' not supported, replacing with 'max'" << std::endl;
-                break;
             case 5:
                 sel = ObjSection::max;
-                std::cout << "warning : comdat style 'with' not supported, replacing with 'max'" << std::endl;
                 break;
             default:
                 sel = ObjSection::max;
-                std:: cout << "warning: unknown comdat style #" << ((CoffSectionAux *)&sectionSymbols[sect][1])->Selection << std::endl;
+                std:: cout << "warning: unknown comdat style #" << (int)((CoffSectionAux *)&sectionSymbols[sect][1])->Selection << std::endl;
                 break;
         } 
         if (sections[sect].Characteristics & (IMAGE_SCN_MEM_EXECUTE | IMAGE_SCN_CNT_CODE))
@@ -330,7 +327,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
     {
         if (symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].SectionNumber <= header.NumberOfSections)
         {
-            if (symbols[i].SectionNumber == 0 || !(((CoffSectionAux *)&sectionSymbols[symbols[i].SectionNumber-1][1])->Selection))
+            if (symbols[i].SectionNumber <= 0 || !(((CoffSectionAux *)&sectionSymbols[symbols[i].SectionNumber-1][1])->Selection))
             {
                 char *sname = symbols[i].Name;
                 std::string symbolName;
@@ -344,7 +341,14 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                     if (symbolName.size() > 8)
                         symbolName = symbolName.substr(0, 8);
                 }
-                if (symbols[i].SectionNumber)
+                if (symbols[i].SectionNumber == -1)
+                {
+                    ObjSymbol *symbol = factory.MakePublicSymbol(symbolName);
+                    ObjExpression *exp = new ObjExpression(symbols[i].Value);
+                    symbol->SetOffset(exp);       
+                    fil->Add(symbol);
+                }
+                else if (symbols[i].SectionNumber)
                 {
                     ObjSymbol *symbol = factory.MakePublicSymbol(symbolName);
                     ObjExpression *exp = new ObjExpression(ObjExpression::eAdd, new ObjExpression(objectSections[symbols[i].SectionNumber-1]), new ObjExpression(symbols[i].Value));

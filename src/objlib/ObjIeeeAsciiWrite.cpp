@@ -407,7 +407,7 @@ void ObjIeeeAscii::RenderMemory(ObjMemoryManager *Memory)
                 endl();
                 n = 2;
             }
-            if (GetDebugInfoFlag())
+            if (GetDebugInfoFlag() && memory->HasDebugTags())
             {
                 ObjMemory::DebugTagIterator it;
                 for (it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)

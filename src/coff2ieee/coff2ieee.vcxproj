@@ -50,7 +50,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\util;..\objlib;..\exefmt</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\util;..\objlib;..\exefmt;..\olib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -68,7 +68,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\util;..\objlib;..\exefmt</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\util;..\objlib;..\exefmt;..\olib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -82,12 +82,20 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\olib\LibDictionaryLinker.cpp" />
+    <ClCompile Include="..\olib\LibFilesLibrarian.cpp" />
+    <ClCompile Include="..\olib\LibFilesLinker.cpp" />
     <ClCompile Include="Coff2ieeeMain.cpp" />
     <ClCompile Include="CoffFile.cpp" />
+    <ClCompile Include="CoffLibrary.cpp" />
+    <ClCompile Include="LibFromCoffDictionary.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\olib\LibFiles.h" />
     <ClInclude Include="Coff2ieeeMain.h" />
     <ClInclude Include="CoffFile.h" />
+    <ClInclude Include="CoffLibrary.h" />
+    <ClInclude Include="LibFromCoffDictionary.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\util\util.vcxproj">

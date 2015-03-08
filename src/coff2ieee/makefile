@@ -37,9 +37,9 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 NAME=Coff2ieee
 MAIN_FILE=Coff2ieeeMain.cpp
-INCLUDES=..\util ..\objlib ..\exefmt
+INCLUDES=..\util ..\objlib ..\exefmt ..\olib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util objlib
+LIB_DEPENDENCIES=util objlib olib
 
 redirect:
 	@$(MAKE) /T

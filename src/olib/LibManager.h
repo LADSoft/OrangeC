@@ -75,8 +75,6 @@ class LibManager
         bool IsOpen() const { return stream != NULL; }
         void Close() { if (stream) fclose(stream); }
         enum { ALIGN = 512 };
-    protected:
-        void Align(FILE *ostr, ObjInt align = ALIGN);
         struct LibHeader
         {
             enum { LIB_SIG = 0x4442494c };
@@ -89,6 +87,8 @@ class LibManager
             unsigned dictionaryBlocks;
             unsigned reserved;
         } ;
+    protected:
+        void Align(FILE *ostr, ObjInt align = ALIGN);
         void InitHeader();
         void WriteHeader() { fseek(stream, 0, SEEK_SET); fwrite((char *)&header, sizeof(header), 1, stream); }
         void ReadHeader() { fseek(stream, 0, SEEK_SET); fread((char *)&header, sizeof(header), 1, stream); }

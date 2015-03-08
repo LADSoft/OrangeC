@@ -150,7 +150,7 @@ struct CoffReloc
 #define IMAGE_SYM_CLASS_LABEL       6
 #define IMAGE_SYM_CLASS_FUNCTION	101
 #define IMAGE_SYM_CLASS_FILE	    103
-
+#define IMAGE_SYM_CLASS_SECTION     104
 
 struct CoffSymbol
 {

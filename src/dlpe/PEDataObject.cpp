@@ -43,6 +43,7 @@
 #include "ObjFile.h"
 #include "ObjUtil.h"
 #include "Utils.h"
+#include "ObjSymbol.h"
 #include <string.h>
 
 void PEDataObject::Setup(ObjInt &endVa, ObjInt &endPhys)
@@ -60,6 +61,76 @@ void PEDataObject::Setup(ObjInt &endVa, ObjInt &endPhys)
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
     data = new unsigned char[initSize];
+}
+bool PEDataObject::hasPC(ObjExpression *exp)
+{
+    if (exp->GetOperator() == ObjExpression::ePC)
+        return true;
+    if (exp->GetLeft() && hasPC(exp->GetLeft()))
+        return true;
+    if (exp->GetRight() && hasPC(exp->GetRight()))
+        return true;
+    return false;
+}
+ObjExpression* PEDataObject::getExtern(ObjExpression *exp)
+{
+    if (exp->GetOperator() == ObjExpression::eSymbol)
+        return exp;
+    if (exp->GetLeft())
+    {
+        ObjExpression *s = getExtern(exp->GetLeft());
+        if (s)
+            return s;
+    }
+    if (exp->GetRight())
+    {
+        ObjExpression *s = getExtern(exp->GetRight());
+        if (s)
+            return s;
+    }
+    return NULL;
+}
+void PEDataObject::GetImportNames()
+{
+    if (!importNames.size())
+    {
+        for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
+        {
+            importNames.insert((*it)->GetName());
+        }
+    }
+}
+ObjInt PEDataObject::EvalFixup(ObjExpression *fixup, ObjInt base)
+{
+    // all this is so that we can thunk relative branches so they can still
+    // use the import table.
+    // note I'm not reviewing how the thunk table space gets allocated, but, I
+    // think it is allocated in the linker and is likely to be sparse with the
+    // current implementation that minimizes its use.
+    if (hasPC(fixup))
+    {
+        ObjExpression * ext = getExtern(fixup);
+        if (ext)
+        {
+            ObjSymbol *sym = ext->GetSymbol();
+            if (sym->GetType() == ObjSymbol::eExternal)
+            {
+                GetImportNames();
+                if (importNames.find(sym->GetName()) != importNames.end())
+                {
+                    ObjInt val1 = fixup->Eval(base);
+                    ObjInt val;
+                    int en = sym->GetIndex();
+                    if ((val = SetThunk(en, sym->GetOffset()->Eval(0))) != -1)
+                    {
+                        val1 = val1 - sym->GetOffset()->Eval(0) + val;
+                        return val1;
+                    }
+                }   
+            }
+        }
+    }
+    return fixup->Eval(base);
 }
 void PEDataObject::Fill()
 {
@@ -81,7 +152,7 @@ void PEDataObject::Fill()
             if (fixup)
             {
                 int sbase = sect->GetOffset()->Eval(0);
-                int n = fixup->Eval(sbase + ofs);
+                int n = EvalFixup(fixup, sbase + ofs);
                 int bigEndian = file->GetBigEndian();
                 if (msize == 1)
                 {

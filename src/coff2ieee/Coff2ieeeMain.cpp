@@ -39,6 +39,7 @@
 */
 #include "Coff2ieeeMain.h"
 #include "CoffFile.h"
+#include "CoffLibrary.h"
 #include "CmdSwitch.h"
 #include "CmdFiles.h"
 #include "Utils.h"
@@ -132,22 +133,40 @@ int Coff2ieeeMain::Run(int argc, char **argv)
         std::cout << "input file must be a COFF object or library file" << std::endl;
         exit(1);
     }
-    CoffFile object(argv[1]);
-    outputName = GetOutputName(argv[1]);
-    if (object.Load())
+    if (mode == obj)
     {
-        ObjIeeeIndexManager im1;
-        ObjFactory factory(&im1);
-        ObjFile *file = object.ConvertToObject(outputName, factory);
-        if (file)
+        std::cout << "converting object file" << std::endl;
+        CoffFile object(argv[1]);
+        outputName = GetOutputName(argv[1]);
+        if (object.Load())
         {
-            ObjIeee il = outputName;
-			il.SetTranslatorName("Coff2ieee");
-			il.SetDebugInfoFlag(false);
-            FILE *c = fopen(outputName.c_str(), "w");
-            il.Write(c, file, &factory);    
-            fclose(c);
-            return 0;
+            ObjIeeeIndexManager im1;
+            ObjFactory factory(&im1);
+            ObjFile *file = object.ConvertToObject(outputName, factory);
+            if (file)
+            {
+                ObjIeee il = outputName;
+    			il.SetTranslatorName("Coff2ieee");
+    			il.SetDebugInfoFlag(false);
+                FILE *c = fopen(outputName.c_str(), "w");
+                il.Write(c, file, &factory);    
+                fclose(c);
+                return 0;
+            }
+        }
+    }
+    else
+    {
+        std::cout << "converting library file" << std::endl;
+        CoffLibrary library(argv[1]);
+        outputName = GetOutputName(argv[1]);
+        if (library.Load())
+        {
+            if (library.Convert())
+            {
+                if (library.Write(outputName))
+                    return 0;
+            }
         }
     }
     printf("failed");

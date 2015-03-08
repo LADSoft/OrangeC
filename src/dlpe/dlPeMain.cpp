@@ -268,7 +268,7 @@ bool dlPeMain::ReadSections(const std::string &path)
             PEObject::SetFile(file);
             for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
             {
-                PEDataObject *p = new PEDataObject(*it);
+                PEDataObject *p = new PEDataObject(file, *it);
                 objects.push_back(p);
                 (*it)->ResolveSymbols(factory);
             }

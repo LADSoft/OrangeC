@@ -52,10 +52,12 @@
 class ObjFile;
 
 class ResourceContainer;
+class ObjExpression;
 inline ObjInt ObjectAlign(ObjInt alignment, ObjInt value)
 {
     return (value + alignment - 1) & ~(alignment - 1);
 }
+
 
 class PEObject
 {
@@ -102,13 +104,19 @@ private:
 class PEDataObject : public PEObject
 {
 public:
-    PEDataObject(ObjSection *Sect) : PEObject(Sect->GetName()), sect(Sect) { InitFlags(); }
+    PEDataObject(ObjFile *File, ObjSection *Sect) : file(File), PEObject(Sect->GetName()), sect(Sect) { InitFlags(); }
     virtual void Setup(ObjInt &endVa, ObjInt &endPhys);
     virtual void Fill();
     void InitFlags();
     virtual ObjInt SetThunk(int index, unsigned va);
+    bool PEDataObject::hasPC(ObjExpression *exp);
+    ObjExpression* PEDataObject::getExtern(ObjExpression *exp);
+    ObjInt EvalFixup(ObjExpression *fixup, ObjInt base);
+    void GetImportNames();
 private:
+    ObjFile *file;
     ObjSection *sect;
+    std::set<std::string> importNames;
 };
 class PEImportObject : public PEObject
 {

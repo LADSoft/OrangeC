@@ -80,8 +80,28 @@ void RundownHelp(void)
     StringToProfile("HelpPath", szHelpPath);
 }
 
-//-------------------------------------------------------------------------
+//http://msdn.microsoft.com/query/dev10.query?appId=Dev10IDEF1&l=EN-US&k=k(%22WINUSER%2fMESSAGEBOX%22);k(MESSAGEBOX)&rd=true
+int WebHelp(char *string)
+{
+    char search[256];
+    char cmd[1024];
+    STARTUPINFO stStartInfo;
+    PROCESS_INFORMATION stProcessInfo;
+    strncpy(search, string, sizeof(search));
+    search[sizeof(search)-1] = 0;
+    strupr(search);
+    sprintf(cmd, "explorer \"http://msdn.microsoft.com/query/dev10.query?appId=Dev10IDEF1&l=EN-US&k=k(%%22WINUSER%%2f%s%%22);k(%s)&rd=true\"", search, search);
+    memset(&stStartInfo, 0, sizeof(STARTUPINFO));
+    memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
+    stStartInfo.cb = sizeof(STARTUPINFO);
+    CreateProcess(NULL, cmd, NULL, NULL, TRUE, DETACHED_PROCESS, NULL, 
+            NULL,  &stStartInfo, &stProcessInfo);
+    CloseHandle(stProcessInfo.hProcess);
+    CloseHandle(stProcessInfo.hThread);
+            
+}
+//-------------------------------------------------------------------------
 int SpecifiedHelp(char *string)
 {
     HH_AKLINK hl;

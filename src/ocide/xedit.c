@@ -82,6 +82,18 @@ static COLORREF selectedTextColor = 0xffffff;
 static COLORREF selectedBackgroundColor = 0xff0000;
 static COLORREF columnbarColor = 0xccccff;
 
+static COLORREF defineColor = 0x00c0c0;
+static COLORREF functionColor = 0xc00000;
+static COLORREF parameterColor = 0x44ccff;
+static COLORREF typedefColor = 0xc0c000;
+static COLORREF tagColor = 0xc0c000;
+static COLORREF autoColor = 0x0080ff;
+static COLORREF localStaticColor = 0x00e0e0;
+static COLORREF staticColor = 0x00e0e0;
+static COLORREF globalColor = 0xffff00;
+static COLORREF externColor = 0xe0e000;
+static COLORREF memberColor = 0x00e0ff;
+
 #define C_BACKGROUND 0
 #define C_READONLYBACKGROUND 1
 #define C_TEXT 2
@@ -91,9 +103,25 @@ static COLORREF columnbarColor = 0xccccff;
 #define C_NUMBER 6
 #define C_STRING 7
 #define C_ESCAPE 8
-#define C_SYS_WINDOWBACKGROUND 15
+#define C_DEFINE 9
+#define C_FUNCTION 10
+#define C_PARAMETER 11
+#define C_TYPEDEF 12
+#define C_TAG 13
+#define C_AUTO 14
+#define C_LOCALSTATIC 15
+#define C_STATIC 16
+#define C_GLOBAL 17
+#define C_EXTERNAL 18
+#define C_MEMBER 19
+#define C_SYS_WINDOWBACKGROUND 31
 static COLORREF *colors[] = { &backgroundColor, &readonlyBackgroundColor, &textColor, &highlightColor, &keywordColor,
-                        &commentColor, &numberColor, &stringColor, &directiveColor };
+                        &commentColor, &numberColor, &stringColor, &directiveColor ,
+                        &defineColor, &functionColor, &parameterColor, &typedefColor, &tagColor, &autoColor,
+                        &localStaticColor, &staticColor, &globalColor, &externColor, &memberColor
+                        };
+
+
 LOGFONT EditFont = 
 {
      - 13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
@@ -837,10 +865,14 @@ static void DoHelp(HWND edwin, int speced)
     if (!GetWordFromPos(edwin, buf,  - 1, 0, 0, 0))
         return ;
     else
-        if (speced)
+    {
+        if (GetKeyState(VK_CONTROL) &0x80000000)
+            WebHelp(buf);
+        else if (speced)
             SpecifiedHelp(buf);
         else
             RTLHelp(buf);
+    }
 }
 
 

@@ -55,13 +55,16 @@ public:
     ~LinkLibrary() { Close() ;}
     ObjString GetName() { return name; }
     ObjInt GetSymbol(const ObjString &name) { return manager.Lookup(name); }
-    ObjFile *LoadSymbol(ObjInt objNum, ObjFactory *factory) { return manager.LoadModule(objNum, factory); }
+    ObjFile *LoadSymbol(ObjInt objNum, ObjFactory *factory) { loadedModules.insert(objNum); return manager.LoadModule(objNum, factory); }
     void Close() { manager.Close(); }
     bool IsOpen() { return manager.IsOpen(); }
     bool fail() { return manager.fail(); }
     bool Load() { return manager.LoadLibrary(); }
+    bool HasModule(ObjInt objNum) { return loadedModules.find(objNum) != loadedModules.end(); }
+
 private:
     ObjString name;
     LibManager manager;
+    std::set<ObjInt> loadedModules;
 };
 #endif

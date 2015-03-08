@@ -328,7 +328,7 @@ void LinkManager::ScanLibraries()
         for (std::set<LinkLibrary *>::iterator it = dictionaries.begin(); it != dictionaries.end(); ++it)
         {
             ObjInt objNum = (*it)->GetSymbol((*extit)->GetSymbol()->GetName());
-            if (objNum >= 0)
+            if (objNum >= 0 && !(*it)->HasModule(objNum))
             {
                 ObjFile *file = (*it)->LoadSymbol(objNum, factory);
                 if (!file)

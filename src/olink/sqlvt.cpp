@@ -35,6 +35,9 @@ int SQL3VirtualTable::Exec(char *str)
     {
       fprintf(stderr, "SQL error: %s\n", zErrMsg);
       sqlite3_free(zErrMsg);
+      rc = sqlite3_exec(db, "ROLLBACK; " , 0, 0, &zErrMsg);
+        if( rc!=SQLITE_OK )
+            sqlite3_free(zErrMsg);
     }
     return rc;
 }

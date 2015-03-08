@@ -462,7 +462,6 @@ bool LinkDebugFile::WriteVariableTypes()
         }
        
     }
-    
     LinkerColumnsWithNameVirtualTable types(v, n, 11, true);
     types.Start(dbPointer);
     types.InsertIntoFrom("types");

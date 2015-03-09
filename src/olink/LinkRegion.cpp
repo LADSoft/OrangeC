@@ -462,7 +462,7 @@ ObjInt LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
         int i;
         for (i=0; i < curSection->GetName().size(); i++)
         {
-            if (curSection->GetName()[i] == '@')
+            if (curSection->GetName()[i] == '@' || curSection->GetName()[i] == '_')
                 break;
         }
         if (i < curSection->GetName().size())

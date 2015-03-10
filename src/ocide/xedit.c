@@ -507,7 +507,7 @@ static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf,
                     *p++ = t1++->ch;
                 }
                 *p = 0;
-                if (t[-1].ch == '.' || (t[-1].ch == '>' && t[-2].ch == '-'))
+                if ((t != buf && t[-1].ch == '.') || (t > buf + 1 && t[-1].ch == '>' && t[-2].ch == '-'))
                 {
                         len = p - name;
                         Colorize(buf, t - buf, len,  (bkColor << 5) + C_MEMBER, FALSE);
@@ -1796,7 +1796,7 @@ void insertchar(HWND hwnd, EDITDATA *p, int ch)
             VScrollPos(hwnd,  - temp, FALSE);
             len -= temp;
             memcpy(p->cd->text + p->selendcharpos, p->cd->text + p->selstartcharpos, (p
-                ->cd->textlen - p->selendcharpos + 1) *sizeof(INTERNAL_CHAR));
+                ->cd->textlen - p->selstartcharpos + 1) *sizeof(INTERNAL_CHAR));
             p->selstartcharpos = p->selendcharpos;
             p->cd->textlen += i;
             UpdateSiblings(p, p->selstartcharpos, i);

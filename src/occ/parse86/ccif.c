@@ -165,7 +165,7 @@ static void DumpSymbolType(SYMBOL *sym)
         type |= ST_CONST;
     if (isvolatile(sym->tp))
         type |= ST_VOLATILE;
-    ccWriteSymbolType( sym->name, main_id, type);
+    ccWriteSymbolType( sym->name, main_id, sym->declfile ? sym->declfile : "$$$", sym->declline, sym->ccEndLine, type);
 }
 static void DumpSymbols(void)
 {
@@ -249,7 +249,7 @@ static void DumpSymbols(void)
         HASHREC *hr = defsyms->table[i];
         while (hr)
         {
-            ccWriteSymbolType(hr->p->name, main_id, ST_DEFINE);
+            ccWriteSymbolType(hr->p->name, main_id, "$$$", 1, 0, ST_DEFINE);
             hr = hr->next;
         }
     }

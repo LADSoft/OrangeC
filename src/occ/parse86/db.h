@@ -59,5 +59,6 @@ int ccWriteStructField( sqlite3_int64 name_id, char *symname, char *typename,
                        sqlite3_int64 file_id, sqlite3_int64 main_id, 
                        int *order, sqlite_int64 *id);
 int ccWriteMethodArg( sqlite_int64 struct_id, char *typename, int *order);
+int ccWriteSymbolType( char *symname, sqlite3_int64 file_id, char *declFile, int startLine, int endLine, int type);
 
 #endif //DB_H

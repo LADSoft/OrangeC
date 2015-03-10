@@ -430,9 +430,11 @@ struct tagfile
 typedef struct
 {
 //    COLORREF color;
-    short effect;
-    char ch;
-	unsigned char Color;
+	unsigned short Color:10;
+    unsigned short effect:3;
+    unsigned short pad1:3;
+    unsigned char pad2;
+    unsigned char ch;
 //    char pad;
 } INTERNAL_CHAR;
 
@@ -510,6 +512,19 @@ typedef struct
     char colorizing;
 } COREDATA;
 
+#define COLORIZE_HASH_SIZE 32
+typedef struct _colorize_hash_entry
+{
+    struct _colorize_hash_entry *next;
+    char *name;
+    struct _colorize_lines_entry
+    {
+        struct _colorize_lines_entry *next;
+        int start;
+        int end;
+        int type;
+    } *lines;
+} COLORIZE_HASH_ENTRY;
 typedef struct {
 	COREDATA *cd ;
 	HWND self ;
@@ -524,6 +539,7 @@ typedef struct {
 	int wheelIncrement;
     char hasfocus;
     char hiddenCaret;
+    COLORIZE_HASH_ENTRY *colorizeEntries[COLORIZE_HASH_SIZE];
 } EDITDATA ;
 
 
@@ -640,6 +656,16 @@ typedef struct hashTable
 #include "lstab.h"
 #include "ocide.p"
 
+#ifndef LVN_BEGINSCROLL
+#define LVN_BEGINSCROLL (LVN_FIRST-80)
+#define LVN_ENDSCROLL (LVN_FIRST-81)
+typedef struct tagNMLVSCROLL
+{
+    NMHDR   hdr;
+    int     dx;
+    int     dy;
+} NMLVSCROLL, *LPNMLVSCROLL;
+#endif
 
 #ifdef BORLAND
 #define UNNAMED_UNION u.

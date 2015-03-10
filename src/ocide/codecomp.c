@@ -49,7 +49,7 @@
 #include <ctype.h>
 #define FROMIDE
 
-#define DBVersion 110
+#define DBVersion 120
 
 extern PROJECTITEM *workArea;
 extern DWINFO *editWindows;
@@ -1009,6 +1009,60 @@ BYTE * ccGetLineData(char *file, int *max)
                         *max = sqlite3_column_int(handle, 0);
                     }   
                     done = TRUE;
+                    rc = SQLITE_OK;
+                }
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        finalize(handle);
+    }
+    return rv;
+}
+int ccGetColorizeData(char *file, COLORIZE_HASH_ENTRY *entries[])
+{
+    BYTE *rv = NULL;
+    char buf[MAX_PATH], *p = buf;
+    static char *query = {
+       "SELECT Names.Name, FileNames.id, fileid, startline, endline, type From SymbolTypes"
+       " JOIN Names on names.id = SymbolTypes.symbolId"
+       " JOIN FileNames on SymbolTypes.mainId = FileNames.id OR SymbolTypes.fileId=FileNames.id"
+       " WHERE FileNames.name = ?"
+    } ;
+    sqlite3_stmt *handle;
+    int rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        while (*file)
+            *p++ = tolower(*file++);
+        *p = 0;
+        sqlite3_bind_text(handle, 1, buf, strlen(buf), SQLITE_STATIC);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                {
+                    char name[256];
+                    int mainid, fileid, start, end, type;
+                    strncpy(name, (char *)sqlite3_column_text(handle, 0), 250);
+                    name[250] = 0;
+                    mainid = sqlite3_column_int64(handle, 1);
+                    fileid = sqlite3_column_int64(handle, 2);
+                    start = sqlite3_column_int64(handle, 3);
+                    end = sqlite3_column_int64(handle, 4);
+                    type = sqlite3_column_int64(handle, 5);
+                    InsertColorizeEntry(entries, name, fileid == mainid ? start : 1, fileid == mainid ? end : 0, type);
                     rc = SQLITE_OK;
                 }
                     break;

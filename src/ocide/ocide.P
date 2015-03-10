@@ -101,6 +101,7 @@ void deleteFileData(char *name);
 char ** ccGetMatchingNames(char *name, char **names, int *size, int *max);
 int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags);
 BYTE * ccGetLineData(char *file, int *max);
+void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type);
 void StartCodeCompletionServer(void);
 
                               /* Dbgasm.c */

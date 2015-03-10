@@ -49,7 +49,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <process.h>
-
+#include "symtypes.h"
 extern SCOPE *activeScope;
 extern LOGFONT systemDialogFont;
 
@@ -153,6 +153,7 @@ static BOOL inStructBox;
 static HWND hwndShowFunc;
 
 void SendUpdate(HWND hwnd);
+static int LookupColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int line);
 // The C_keywordList is a list of all keywords, with colorization info
 static KEYLIST C_keywordList[] = 
 {
@@ -180,6 +181,19 @@ void LoadColors(void)
     selectedTextColor = PropGetColor(NULL, "COLOR_SELECTEDTEXT");
     highlightColor = PropGetColor(NULL, "COLOR_HIGHLIGHT");
     columnbarColor = PropGetColor(NULL, "COLOR_COLUMNBAR");
+
+    defineColor = PropGetColor(NULL, "COLOR_DEFINE");
+    functionColor = PropGetColor(NULL, "COLOR_FUNCTION");
+    parameterColor = PropGetColor(NULL, "COLOR_PARAMETER");
+    typedefColor = PropGetColor(NULL, "COLOR_TYPEDEF");
+    tagColor = PropGetColor(NULL, "COLOR_TAG");
+    autoColor = PropGetColor(NULL, "COLOR_AUTO");
+    localStaticColor = PropGetColor(NULL, "COLOR_LOCALSTATIC");
+    staticColor = PropGetColor(NULL, "COLOR_STATIC");
+    globalColor = PropGetColor(NULL, "COLOR_GLOBAL");
+    externColor = PropGetColor(NULL, "COLOR_EXTERN");
+    memberColor = PropGetColor(NULL, "COLOR_MEMBER");
+
 }
 
 /* using windows to allocate memory because the borland runtime gets confused
@@ -408,11 +422,6 @@ KEYLIST *matchkeyword(KEYLIST *table, int tabsize, int preproc, INTERNAL_CHAR
     int top = tabsize;
     int bottom =  - 1;
     int v;
-    if (t[0].ch == 'c')
-    if (t[1].ch == 'h')
-    if (t[2].ch == 'a')
-    if (t[3].ch == 'r')
-        printf("hi");
     while (top - bottom > 1)
     {
         int mid = (top + bottom) / 2;
@@ -439,7 +448,8 @@ KEYLIST *matchkeyword(KEYLIST *table, int tabsize, int preproc, INTERNAL_CHAR
  * numbers, and strings, and colorizes them
  **********************************************************************/
 
-static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, int bkColor)
+static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, 
+                           int chars, int start, int type, int bkColor)
 {
     int i;
     KEYLIST *sr = C_keywordList;
@@ -447,7 +457,14 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
     int preproc = '#';
     int hexflg = FALSE, binflg = FALSE;
     int xchars = chars;
-    INTERNAL_CHAR *t = buf + start;
+    INTERNAL_CHAR *t = buf;
+    int lineno = 1;
+    while (t < buf + start)
+    {
+        if (t++->ch == '\n')
+            lineno++;
+    }
+    t = buf + start;
     if (type == LANGUAGE_ASM)
     {
         sr = ASM_keywordList;
@@ -463,7 +480,11 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
     while (t->ch && xchars > 0)
     {
         while (t->ch && (t->Color & 0xf) == C_COMMENT && xchars > 0)
+        {
+            if (t->ch == '\n')
+                lineno++;
             t++, xchars--;
+        }
         if (xchars > 0 && (t == buf || (!keysym(t[ - 1].ch) && (keysym(t->ch) ||
             t->ch == preproc))))
         {
@@ -472,21 +493,54 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
                 LANGUAGE_ASM || type == LANGUAGE_RC);
             if (p)
             {
-                Colorize(buf, t - buf, len,  (bkColor << 4) + p->Color, FALSE);
+                Colorize(buf, t - buf, len,  (bkColor << 5) + p->Color, FALSE);
                 t += len;
                 xchars -= len;
             }
             else
             {
-                if (t->Color == (C_HIGHLIGHT << 4) + C_TEXT)
-                    t->Color = (bkColor << 4) + C_TEXT;
-                t++, xchars--;
-            }
+                int type;
+                char name[256],*p=name;
+                INTERNAL_CHAR *t1 = t;
+                while (keysym(t1->ch) && p < name + 250)
+                {
+                    *p++ = t1++->ch;
+                }
+                *p = 0;
+                if (t[-1].ch == '.' || (t[-1].ch == '>' && t[-2].ch == '-'))
+                {
+                        len = p - name;
+                        Colorize(buf, t - buf, len,  (bkColor << 5) + C_MEMBER, FALSE);
+                        t += len;
+                        xchars -= len;
+                }
+                else
+                {
+                    type = LookupColorizeEntry(entries, name, lineno);
+                    if (type >= 0)
+                    {
+                        len = p - name;
+                        Colorize(buf, t - buf, len,  (bkColor << 5) + (type - ST_DEFINE + C_DEFINE), FALSE);
+                        t += len;
+                        xchars -= len;
+                    }
+                    else
+                    {
+                        if (t->ch == '\n')
+                            lineno++;
+                        if (t->Color == (C_HIGHLIGHT << 5) + C_TEXT)
+                            t->Color = (bkColor << 5) + C_TEXT;
+                        t++, xchars--;
+                    }
+                }
+        }
         }
         else
         {
-            if (t->Color == (C_HIGHLIGHT << 4) + C_TEXT)
-                t->Color = (bkColor << 4) + C_TEXT;
+            if (t->ch == '\n')
+                lineno++;
+            if (t->Color == (C_HIGHLIGHT << 5) + C_TEXT)
+                t->Color = (bkColor << 5) + C_TEXT;
             t++, xchars--;
         }
     }
@@ -500,7 +554,7 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
                 && (!highlightWholeWord || (i == 0 || ((!isalnum(buf[i-1].ch)) && buf[i-1].ch != '_' 
 				&& !isalnum(buf[i+len].ch) && buf[i+len].ch != '_'))))
             {
-                Colorize(buf, start + i, len,  (C_HIGHLIGHT << 4) + C_TEXT, FALSE);
+                Colorize(buf, start + i, len,  (C_HIGHLIGHT << 5) + C_TEXT, FALSE);
                 i += len - 1;
             }
             else if (type == LANGUAGE_ASM && buf[start+i].ch == '$')
@@ -508,7 +562,7 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
                 len = 1;
                 while (isxdigit(buf[start + i + len].ch))
                     len++;
-                Colorize(buf, start + i, len, (bkColor << 4) | C_NUMBER, FALSE);
+                Colorize(buf, start + i, len, (bkColor << 5) | C_NUMBER, FALSE);
                 i += len - 1;
             }
             else if (isdigit(buf[start + i].ch))
@@ -560,7 +614,7 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
                             i++;
                     }
                     hexflg = FALSE;
-                    Colorize(buf, start + j, i - j, (bkColor << 4) | C_NUMBER, FALSE);
+                    Colorize(buf, start + j, i - j, (bkColor << 5) | C_NUMBER, FALSE);
                     i--;
                 }
             }
@@ -573,7 +627,7 @@ static void SearchKeywords(INTERNAL_CHAR *buf, int chars, int start, int type, i
                     i].ch != '\n') || (buf[start + i - 1].ch == '\\' && buf[start + i -
                     2].ch != '\\')) && i < chars)
                     i++;
-                Colorize(buf, start + j + 1, i - j - 1, (bkColor << 4) | C_STRING, FALSE);
+                Colorize(buf, start + j + 1, i - j - 1, (bkColor << 5) | C_STRING, FALSE);
             }
         }
 
@@ -609,7 +663,7 @@ static int instring(INTERNAL_CHAR *buf, INTERNAL_CHAR *t1)
 
 //-------------------------------------------------------------------------
 
-static void FormatBuffer(INTERNAL_CHAR *buf, int start, int end, int type, int bkColor)
+static void FormatBuffer(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int type, int bkColor)
 {
     if (type != LANGUAGE_NONE && PropGetBool(NULL, "COLORIZE"))
     {
@@ -633,7 +687,7 @@ static void FormatBuffer(INTERNAL_CHAR *buf, int start, int end, int type, int b
                         {
                             t += 2;
                         }
-                        Colorize(buf, t1 - buf, t - t1, (bkColor << 4) | C_COMMENT, TRUE);
+                        Colorize(buf, t1 - buf, t - t1, (bkColor << 5) | C_COMMENT, TRUE);
                     }
                     else
                         t = t1 + 1;
@@ -666,7 +720,7 @@ static void FormatBuffer(INTERNAL_CHAR *buf, int start, int end, int type, int b
                             t = strpstr(t + 1, "\n",  - 1);
                         }
                     }
-                    Colorize(buf, t1 - buf, t - t1 + 1, (bkColor << 4) | C_COMMENT, TRUE);
+                    Colorize(buf, t1 - buf, t - t1 + 1, (bkColor << 5) | C_COMMENT, TRUE);
                 }
                 else
                     t = t1 + 1;
@@ -686,21 +740,21 @@ static void FormatBuffer(INTERNAL_CHAR *buf, int start, int end, int type, int b
                 {
                     t = t1 + strplen(t1);
                 }
-                Colorize(buf, t1 - buf, t - t1 + 1, (bkColor << 4) | C_COMMENT, TRUE);
+                Colorize(buf, t1 - buf, t - t1 + 1, (bkColor << 5) | C_COMMENT, TRUE);
                 t1 = strpstr(t, ";", end - (t - buf));
             }
         }
-        SearchKeywords(buf, end - start, start, type, bkColor);
+        SearchKeywords(entries, buf, end - start, start, type, bkColor);
     }
     else
     {
-        Colorize(buf, start, end, (bkColor << 4) | C_TEXT, FALSE);
+        Colorize(buf, start, end, (bkColor << 5) | C_TEXT, FALSE);
     }
 }
 
 //-------------------------------------------------------------------------
 
-static void FormatBufferFromScratch(INTERNAL_CHAR *buf, int start, int end, int
+static void FormatBufferFromScratch(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int
     type, int bkColor)
 {
     if (type != LANGUAGE_NONE && PropGetBool(NULL, "COLORIZE"))
@@ -717,8 +771,8 @@ static void FormatBufferFromScratch(INTERNAL_CHAR *buf, int start, int end, int
                     C_COMMENT))
                 xend++;
     
-        Colorize(buf, xstart, xend - xstart, (bkColor << 4) | C_TEXT, FALSE);
-        FormatBuffer(buf, xstart, xend, type, bkColor);
+        Colorize(buf, xstart, xend - xstart, (bkColor << 5) | C_TEXT, FALSE);
+        FormatBuffer(entries, buf, xstart, xend, type, bkColor);
     }
 }
 
@@ -733,8 +787,9 @@ static void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
     {
     
         int start, end;
+        EDITDATA *p = (EDITDATA*)GetWindowLong(hwnd, 0);
         SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, (LPARAM) &end);
-        FormatBufferFromScratch(buf, start, start, type, bkColor);
+        FormatBufferFromScratch(p->colorizeEntries, buf, start, start, type, bkColor);
     }
 }
 static void UpdateSiblings(EDITDATA *p, int pos, int insert)
@@ -1657,12 +1712,12 @@ void Replace(HWND hwnd, EDITDATA *p, char *s, int lens)
         if (*s == '\n')
             len++;
         p->cd->text[p->selstartcharpos + i].ch =  *s++;
-        p->cd->text[p->selstartcharpos + i].Color = (p->cd->defbackground << 4) + p->cd->defforeground;
+        p->cd->text[p->selstartcharpos + i].Color = (p->cd->defbackground << 5) + p->cd->defforeground;
         i++;
         p->cd->textlen++;
     }
     VScrollLen(hwnd, len, FALSE);
-    FormatBufferFromScratch(p->cd->text, p->selstartcharpos - 1, p
+    FormatBufferFromScratch(p->colorizeEntries, p->cd->text, p->selstartcharpos - 1, p
         ->selstartcharpos + lens + 1, p->cd->language, p->cd->defbackground);
     SendUpdate(hwnd);
     p->cd->sendchangeonpaint = TRUE;
@@ -1769,7 +1824,7 @@ void insertchar(HWND hwnd, EDITDATA *p, int ch)
             (p->cd->textlen - p->selstartcharpos + 1) *sizeof(INTERNAL_CHAR));
         p->cd->text[p->selstartcharpos].ch = ch;
         if (p->cd->text[p->selstartcharpos].Color == 0)
-            p->cd->text[p->selstartcharpos].Color = (p->cd->defbackground << 4) + C_TEXT;
+            p->cd->text[p->selstartcharpos].Color = (p->cd->defbackground << 5) + C_TEXT;
         p->cd->textlen++;
         UpdateSiblings(p, p->selstartcharpos, 1);		
         VScrollLen(hwnd, len, FALSE);
@@ -2525,7 +2580,7 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert)
     p->cd->selecting = TRUE;
     MoveCaret(hwnd, p);
     p->cd->selecting = oldselect;
-    FormatBuffer(p->cd->text, olds, end + decd, p->cd->language, p->cd->defbackground);
+    FormatBuffer(p->colorizeEntries, p->cd->text, olds, end + decd, p->cd->language, p->cd->defbackground);
     InvalidateRect(hwnd, 0, 0);
 }
 //-------------------------------------------------------------------------
@@ -2872,7 +2927,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     {
                         Replace(hwnd, ptr, mem, q - mem);
                         ScrollCaretIntoView(hwnd, ptr, FALSE);
-                        FormatBufferFromScratch(ptr->cd->text, ptr
+                        FormatBufferFromScratch(ptr->colorizeEntries, ptr->cd->text, ptr
                             ->selstartcharpos - 1, ptr->selendcharpos + 1,
                             ptr->cd->language, ptr->cd->defbackground);
                         SendUpdate(hwnd);
@@ -2976,7 +3031,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         int count = 0;
         int found = FALSE;
         int attribs = 0;
-        int color = (p->cd->defbackground << 4) + C_TEXT;
+        int color = (p->cd->defbackground << 5) + C_TEXT;
         int selecting;
         int start, end;
         int matched = FALSE;
@@ -3076,7 +3131,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 *bcolor = RetrieveSysColor(COLOR_WINDOW);
             }
             else
-                *bcolor = *(colors[(color >> 4) & 0xf]);
+                *bcolor = *(colors[(color >> 5) & 0x1f]);
         }
         else if (selecting)
         {
@@ -3088,13 +3143,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             if (attribs &CFE_AUTOCOLOR)
                 *fcolor = *(colors[p->cd->defforeground]);
             else
-                *fcolor = *(colors[color & 0xf]);
+                *fcolor = *(colors[color & 0x1f]);
             if (p->cd->defbackground == C_SYS_WINDOWBACKGROUND)
             {
                 *bcolor = RetrieveSysColor(COLOR_WINDOW);
             }
             else
-                *bcolor = *(colors[(color >> 4) & 0xf]);
+                *bcolor = *(colors[(color >> 5) & 0x1f]);
         }
         switch (attribs &~CFE_AUTOCOLOR)
         {
@@ -4056,7 +4111,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             info->ed->cd->sendchangeonpaint = TRUE;
             SendUpdate(info->wnd);
         }
-        FormatBufferFromScratch(info->ed->cd->text, 0, info->ed->cd->textlen, info->ed->cd
+        FormatBufferFromScratch(info->ed->colorizeEntries, info->ed->cd->text, 0, info->ed->cd->textlen, info->ed->cd
             ->language, info->ed->cd->defbackground);
         InvalidateRect(info->wnd, 0, 1);
         info->ed->cd->colorizing--;
@@ -5022,6 +5077,96 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         }
         return count;
     }
+    static int getColorizeHashKey(char *name)
+    {
+        unsigned n = 0;
+        while (*name)
+        {
+            n = (n << 7) + (n << 1) + n + *name++;
+        }
+        return n % COLORIZE_HASH_SIZE;
+    }
+    static COLORIZE_HASH_ENTRY *lookupColorizeName(COLORIZE_HASH_ENTRY *entries[], char *name)
+    {
+        int key = getColorizeHashKey(name);
+        COLORIZE_HASH_ENTRY *entry = entries[key];
+        while (entry)
+        {
+            if (!strcmp(entry->name, name))
+                return entry;
+            entry = entry->next;
+        }
+        return entry;
+    }
+    static int LookupColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int line)
+    {
+        int rv = -1;
+        COLORIZE_HASH_ENTRY *entry = lookupColorizeName(entries, name);
+        if (entry)
+        {
+            int lastlargest = 1;
+            struct _colorize_lines_entry *lines = entry->lines;
+            while (lines)
+            {
+                if (lines->start >= lastlargest && lines->start <= line && (lines->end == 0 || lines->end >= line))
+                {
+                    lastlargest = lines->start;
+                    rv = lines->type;
+                }
+                lines = lines->next;
+            }
+        }
+        return rv;
+    }
+    void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type)
+    {
+        COLORIZE_HASH_ENTRY *entry = lookupColorizeName(entries, name);
+        struct _colorize_lines_entry *lines;
+        if (!entry)
+        {
+            int key = getColorizeHashKey(name);
+            entry = (COLORIZE_HASH_ENTRY *)calloc(sizeof(COLORIZE_HASH_ENTRY),1);
+            entry->name = strdup(name);
+            entry->next = entries[key];
+            entries[key] = entry;
+        }
+        lines = entry->lines;
+        while (lines)
+        {
+            if (lines->start == start && lines->end == end)
+                return;
+            lines = lines->next;
+        }
+        lines = calloc(sizeof(struct _colorize_lines_entry),1);
+        lines->start = start;
+        lines->end = end;
+        lines->type = type;
+        lines->next = entry->lines;
+        entry->lines = lines;
+    }
+    void FreeColorizeEntries(COLORIZE_HASH_ENTRY *entries[])
+    {
+        int i;
+        for (i=0; i < COLORIZE_HASH_SIZE; i++)
+        {
+            COLORIZE_HASH_ENTRY *he = entries[i];
+            entries[i] = NULL;
+            while (he)
+            {
+                COLORIZE_HASH_ENTRY *next = he->next;
+                struct _colorize_lines_entry *le = he->lines;
+                while (le)
+                {
+                    struct _colorize_lines_entry *lnext = le->next;
+                    free(le);
+                    le = lnext;
+                }
+                free(he->name);
+                free(he);
+                he = next;
+            }
+        }
+    }
     LRESULT CALLBACK funcProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
         lParam)
     {
@@ -5291,7 +5436,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 return 0;
             case WM_PAINT:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                EditPaint(hwnd, p);
+                if (!p->cd->colorizing)
+                    EditPaint(hwnd, p);
                 return 0;
             case EM_GETINSERTSTATUS:
                 return ((EDITDATA*)GetWindowLong(hwnd, 0))->cd->inserting;
@@ -5436,7 +5582,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         {
                             removechar(hwnd, p, wParam == VK_DELETE ?
                                 UNDO_DELETE : UNDO_BACKSPACE);
-                            FormatBufferFromScratch(p->cd->text, p
+                            FormatBufferFromScratch(p->colorizeEntries, p->cd->text, p
                                 ->selstartcharpos, p->selstartcharpos, p
                                 ->cd->language, p->cd->defbackground);
                         }
@@ -5447,7 +5593,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     if (!p->cd->readonly)
                     {
                         insertcr(hwnd, p, TRUE);
-                        FormatBufferFromScratch(p->cd->text, p->selstartcharpos
+                        FormatBufferFromScratch(p->colorizeEntries, p->cd->text, p->selstartcharpos
                             - 1, p->selstartcharpos, p->cd->language, p->cd->defbackground);
                         setcurcol(p);
                         if (IsWindowVisible(hwndShowFunc))
@@ -5736,7 +5882,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     for (i = 0; i < p->cd->textlen; i++)
                     {
                         p->cd->text[i].ch = ((char*)lParam)[i];
-                        p->cd->text[i].Color = (p->cd->defbackground << 4) + p->cd->defforeground;
+                        p->cd->text[i].Color = (p->cd->defbackground << 5) + p->cd->defforeground;
                     }
                     FullColorize(hwnd, p, TRUE);
                 }
@@ -5787,6 +5933,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
                         p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
                     }
+                    FreeColorizeEntries(p->colorizeEntries);
+                    {
+                        HWND t = GetParent(p->self);
+                        DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
+                        ccGetColorizeData(x->dwName, p->colorizeEntries);
+                        FullColorize(hwnd, p, FALSE);
+                    }
                 }
                 break;
             case WM_CREATE:
@@ -5820,7 +5973,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     p->cd->hbrBackground = CreateSolidBrush(backgroundColor);
                     p->cd->tabs = PropGetInt(NULL, "TAB_INDENT");
                     p->cd->leftmargin = EC_LEFTMARGIN;
-                    PostMessage(hwnd, EM_LOADLINEDATA, 0, 0);
                     
                     getPageSize() ;
                     if (allocmem(p, page_size * 20) && commitmem(p, page_size))
@@ -5828,7 +5980,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         p->cd->textlen = 0;
                         for (i = 0; i < p->cd->textlen; i++)
                         {
-                            p->cd->text[i].Color = (p->cd->defbackground << 4) + p->cd->defforeground;
+                            p->cd->text[i].Color = (p->cd->defbackground << 5) + p->cd->defforeground;
                         }
                     }
                 }
@@ -5848,6 +6000,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         l->data = p;
                     }
                 }
+                PostMessage(hwnd, EM_LOADLINEDATA, 0, 0);
                 SetScrollRange(hwnd, SB_HORZ, 0, MAX_HSCROLL, TRUE);
                 break;
             case WM_SETEDITORSETTINGS:
@@ -5859,7 +6012,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 {
                     stop = p->cd->tabs *4;
                     SendMessage(hwnd, EM_SETTABSTOPS, 1, (LPARAM) &stop);
-                    Colorize(p->cd->text, 0, p->cd->textlen, (p->cd->defbackground << 4) + p->cd->defforeground, FALSE);
+                    Colorize(p->cd->text, 0, p->cd->textlen, (p->cd->defbackground << 5) + p->cd->defforeground, FALSE);
                     FullColorize(hwnd, p, FALSE);
                 }
                 InvalidateRect(hwnd, 0, 1);
@@ -5894,6 +6047,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         free((void*)p->cd);
                     }
                 }
+                FreeColorizeEntries(&p->colorizeEntries);
                 free((void*)p);
                 break;
             case WM_VSCROLL:
@@ -6435,7 +6589,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 p->cd->language = lParam;
                 if (lParam == LANGUAGE_NONE || !PropGetBool(NULL, "COLORIZE"))
                 {
-                    Colorize(p->cd->text, 0, p->cd->textlen, (p->cd->defbackground << 4) + C_TEXT, FALSE);
+                    Colorize(p->cd->text, 0, p->cd->textlen, (p->cd->defbackground << 5) + C_TEXT, FALSE);
                     InvalidateRect(hwnd, 0, 0);
                 }
                 else

@@ -57,6 +57,7 @@ extern char szWorkAreaFilter[];
 extern PROJECTITEM *activeProject;
 extern CRITICAL_SECTION projectMutex;
 extern HWND prjTreeWindow;
+extern DWINFO *editWindows;
 
 char szWorkAreaName[MAX_PATH] = "Default.cwa";
 char szWorkAreaTitle[256];
@@ -99,6 +100,7 @@ void LoadWorkArea(char *name, BOOL existing)
 {
     PROJECTITEM *oldWorkArea;
     sqlite3 *db;
+    DWINFO *ptr;
     if (workArea)
     {
         SaveAllProjects(workArea, TRUE);
@@ -168,6 +170,15 @@ void LoadWorkArea(char *name, BOOL existing)
     db = ccDBOpen(workArea);
     ccDBVacuum(db);
     ccDBSetDB(db);
+    ptr = editWindows;
+    while (ptr)
+    {
+        if (ptr->active)
+        {
+            SendMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
+        }
+        ptr = ptr->next;
+    }
 }
 void CloseWorkArea(void)
 {

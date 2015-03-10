@@ -910,6 +910,28 @@ void ApplyCurrentValues(SETTING *setting, PROJECTITEM *saveTo)
         setting = setting->next;
     }
 }
+static void PerformListViewScroll(HWND hwndLV, SETTING *setting, int delta)
+{
+    RECT r;
+    ListView_GetSubItemRect(hwndLV, 1, 1, LVIR_BOUNDS, &r);
+    setting = setting->children;
+    delta *= - (r.bottom - r.top);
+    while (setting)
+    {
+        if (setting->hWnd)
+        {
+            RECT pr;
+            RECT r;
+            GetWindowRect(hwndLV, &pr);
+            GetWindowRect(setting->hWnd, &r);
+            r.left -= pr.left+1;
+            r.top -= pr.top+1;
+            r.top += delta;
+            MoveWindow(setting->hWnd, r.left, r.top, r.right - r.left, r.bottom-r.top, TRUE);
+        }
+        setting = setting->next;
+    }
+}
 void RemoveCurrentValues(SETTING *setting)
 {
     while (setting)
@@ -1047,6 +1069,14 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 NM_TREEVIEW *nm;
                 TV_ITEM xx ;
                 LPNMCUSTOMDRAW cd;
+                NMLVSCROLL *sc;
+                case LVN_BEGINSCROLL:
+                    sc = (NMLVSCROLL *)lParam;
+                    break;
+                case LVN_ENDSCROLL:
+                    sc = (NMLVSCROLL *)lParam;
+                    PerformListViewScroll(hwndLV, current, sc->dy);
+                    break;
                 case LVN_ITEMCHANGING:
                     return TRUE; // disable selection
                 case NM_CUSTOMDRAW:
@@ -1505,6 +1535,7 @@ struct buttonWindow
     HWND button;
     HWND edit;
     HWND list;
+    HBRUSH brush;
     HFONT font;
     int lfHeight;
     DWORD color;
@@ -1578,8 +1609,11 @@ static LRESULT CALLBACK ColorWndProc(HWND hwnd, UINT iMessage,
         {
             HBRUSH br;
             ptr = (struct buttonWindow *)GetWindowLong(hwnd, 0);
-            br = CreateSolidBrush(ptr->color);
-            return (LRESULT)br;
+            if (ptr->brush)
+                DeleteObject(ptr->brush);
+            ptr->brush = CreateSolidBrush(ptr->color);
+            SetBkColor((HDC)wParam, ptr->color);
+            return (LRESULT)ptr->brush;
         }
         case WM_SETCOLOR:
             ptr = (struct buttonWindow *)GetWindowLong(hwnd, 0);
@@ -1593,6 +1627,10 @@ static LRESULT CALLBACK ColorWndProc(HWND hwnd, UINT iMessage,
             ptr = CreateButtonWnd(hwnd, TRUE, FALSE);
             SetWindowLong(hwnd, 0, (long)ptr);
             InvalidateRect(hwnd, 0, 0);
+            break;
+        case WM_DESTROY:
+            ptr = (struct buttonWindow *)GetWindowLong(hwnd, 0);
+            DeleteObject(ptr->brush);
             break;
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);

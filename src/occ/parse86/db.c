@@ -44,7 +44,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define STRINGVERSION "110"
+#define STRINGVERSION "120"
 
 #define DBVersion atoi(STRINGVERSION)
 
@@ -76,8 +76,11 @@ char *tables=
     " ,fileDate DATE"
     " );"
     "CREATE TABLE SymbolTypes ("
-    " mainid INTEGER"
+    " fileid INTEGER"
+    " ,mainid INTEGER"
     " ,symbolid INTEGER"
+    " ,startline INTEGER"
+    " ,endline INTEGER"
     " ,type INTEGER"
     " );"
     "CREATE TABLE LineData ("
@@ -766,14 +769,14 @@ int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char *data, int 
     }
     return rc == SQLITE_OK;
 }
-int ccWriteSymbolType( char *symname, sqlite3_int64 file_id, int type)
+int ccWriteSymbolType( char *symname, sqlite3_int64 file_id, char *declFile, int startLine, int endLine, int type)
 {
     int rc = SQLITE_ERROR;
-    sqlite3_int64 sym_id;
-    if (ccWriteName(symname, &sym_id))
+    sqlite3_int64 sym_id, localFileId;
+    if (ccWriteName(symname, &sym_id) && ccWriteFileName( declFile, &localFileId))
     {
-        static char *query = "INSERT INTO SymbolTypes (mainid, symbolid, type)"
-                             " VALUES (?,?,?)";
+        static char *query = "INSERT INTO SymbolTypes (mainid, fileid, symbolid, startline, endline, type)"
+                             " VALUES (?,?,?,?,?,?)";
         static sqlite3_stmt *handle;
         rc = SQLITE_OK;
         if (!handle)
@@ -786,8 +789,11 @@ int ccWriteSymbolType( char *symname, sqlite3_int64 file_id, int type)
             
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, file_id);
-            sqlite3_bind_int64(handle, 2, sym_id);
-            sqlite3_bind_int64(handle, 3, type);
+            sqlite3_bind_int64(handle, 2, localFileId);
+            sqlite3_bind_int64(handle, 3, sym_id);
+            sqlite3_bind_int64(handle, 4, startLine);
+            sqlite3_bind_int64(handle, 5, endLine);
+            sqlite3_bind_int64(handle, 6, type);
             while (!done)
             {
                 switch(rc = sqlite3_step(handle))

@@ -82,17 +82,17 @@ static COLORREF selectedTextColor = 0xffffff;
 static COLORREF selectedBackgroundColor = 0xff0000;
 static COLORREF columnbarColor = 0xccccff;
 
-static COLORREF defineColor = 0x00c0c0;
+static COLORREF defineColor = 0x208080;
 static COLORREF functionColor = 0xc00000;
-static COLORREF parameterColor = 0x44ccff;
+static COLORREF parameterColor = 0x0080ff;
 static COLORREF typedefColor = 0xc0c000;
 static COLORREF tagColor = 0xc0c000;
 static COLORREF autoColor = 0x0080ff;
-static COLORREF localStaticColor = 0x00e0e0;
-static COLORREF staticColor = 0x00e0e0;
+static COLORREF localStaticColor = 0x00e0ff;
+static COLORREF staticColor = 0x00e0ff;
 static COLORREF globalColor = 0xffff00;
 static COLORREF externColor = 0xe0e000;
-static COLORREF memberColor = 0x00e0ff;
+static COLORREF memberColor = 0xc0c000;
 
 #define C_BACKGROUND 0
 #define C_READONLYBACKGROUND 1
@@ -169,6 +169,7 @@ static KEYLIST RC_keywordList[] =
 };
 void LoadColors(void)
 {
+    static int aa;
     keywordColor = PropGetColor(NULL, "COLOR_KEYWORD");
     numberColor = PropGetColor(NULL, "COLOR_NUMBER");
     commentColor = PropGetColor(NULL, "COLOR_COMMENT");
@@ -459,6 +460,7 @@ static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf,
     int xchars = chars;
     INTERNAL_CHAR *t = buf;
     int lineno = 1;
+    BOOLEAN hashed;
     while (t < buf + start)
     {
         if (t++->ch == '\n')
@@ -544,8 +546,23 @@ static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf,
             t++, xchars--;
         }
     }
-
     for (i = 0; i < chars; i++)
+	{
+        if (i ==0 || buf[start+i].ch =='\n')
+        {
+            hashed = FALSE;
+            while (i < chars && isspace(buf[start+i].ch)) i++;
+            if (i >= chars)
+                break;
+            if (buf[start+i].ch == '#') 
+            {
+                i ++;
+                while (i < chars && isspace(buf[start+i].ch)) i++;
+                if (i >= chars)
+                    break;
+                hashed = buf[start+i].ch == 'i' && buf[start + i + 1].ch == 'n'; // check for #include
+            }
+        }
         if ((buf[start + i].Color & 0xf) != C_COMMENT)
         {
             int len;
@@ -629,8 +646,16 @@ static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf,
                     i++;
                 Colorize(buf, start + j + 1, i - j - 1, (bkColor << 5) | C_STRING, FALSE);
             }
+            else if (hashed && buf[start + i].ch == '<')
+            {
+                int j = i++;
+                while (buf[start + i].ch && (buf[start + i].ch != '>' && buf[start +
+                    i].ch != '\n'))
+                    i++;
+                Colorize(buf, start + j + 1, i - j - 1, (bkColor << 5) | C_STRING, FALSE);
+            }
         }
-
+    }
 
 }
 
@@ -4096,7 +4121,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         SendMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)(EN_UPDATE | 
             (GetWindowLong(hwnd, GWL_ID) << 16)), (LPARAM)hwnd);
     }
-    typedef struct
+    typedef struct qq
     {
         EDITDATA *ed;
         HWND wnd;

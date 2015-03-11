@@ -928,6 +928,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     SYMBOL *strSym;
     enum e_ac defaultAccess;
     BOOLEAN addedNew = FALSE;
+    int declline = lex->line;
     *defd = FALSE;
     switch(KW(lex))
     {
@@ -978,7 +979,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         sp->tp->type = type;
         sp->tp->sp = sp;
         sp->declcharpos = charindex;
-        sp->declline = lex->line;
+        sp->declline = declline;
         sp->declfile = lex->file;
         sp->declfilenum = lex->filenum;
         if ((storage_class == sc_member || storage_class == sc_mutable) && (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
@@ -1261,6 +1262,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     SYMBOL *sp;
     NAMESPACEVALUES *nsv;
     SYMBOL *strSym;
+    int declline = lex->line;
     *defd = FALSE;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
@@ -1330,7 +1332,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         sp->tp->scoped = scoped;
         sp->tp->size = sp->tp->btp->size;
         sp->declcharpos = charindex;
-        sp->declline = lex->line;
+        sp->declline = declline;
         sp->declfile = lex->file;
         sp->declfilenum = lex->filenum;
         if (storage_class == sc_member || storage_class == sc_mutable)

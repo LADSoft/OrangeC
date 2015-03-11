@@ -47,6 +47,8 @@
 #include <process.h>
 #include <time.h>
 #include <ctype.h>
+#include "symtypes.h"
+
 #define FROMIDE
 
 #define DBVersion 120
@@ -1062,7 +1064,7 @@ int ccGetColorizeData(char *file, COLORIZE_HASH_ENTRY *entries[])
                     start = sqlite3_column_int64(handle, 3);
                     end = sqlite3_column_int64(handle, 4);
                     type = sqlite3_column_int64(handle, 5);
-                    InsertColorizeEntry(entries, name, fileid == mainid ? start : 1, fileid == mainid ? end : 0, type);
+                    InsertColorizeEntry(entries, name, fileid == mainid && type != ST_FUNCTION ? start : 1, fileid == mainid && type != ST_FUNCTION ? end : 0, type);
                     rc = SQLITE_OK;
                 }
                     break;

@@ -94,7 +94,9 @@ ifdef BUILDENV
 	@$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE /DBUILDENV
 else
 	@$(MAKE) /C$(DISTROOT)\src\clibs DISTRIBUTE
-ifdef WITHCC386
+ifdef WITHMSDOS
+# this requires CC386 be installed since it relies on far pointer support
+# so I don't make it a part of the default install
 	@$(MAKE) /C$(DISTROOT)\src\..\ -f$(realpath .\doszip.mak)
 	@$(MAKE) /C$(DISTROOT)\src\dos\install -fmakefile.le
 endif

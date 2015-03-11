@@ -37,4 +37,4 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 
 DIRS = sqlite3 util objlib obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-    oimplib omake orc ocl ocide occ help
+    oimplib omake orc ocl ocide occ coff2ieee help

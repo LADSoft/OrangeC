@@ -376,6 +376,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
 #ifndef USE_FLOAT
 				fprintf(stderr,"FP not linked");
 #else
+				struct __file2 fil2;
                 FILE fil1;
                 char buf[256], *p;
                 int ch1, chars1;
@@ -383,6 +384,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                 fil1.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING;
                 fil1.buffer = fil1.curp = buf;
                 fil1.token = FILTOK;
+				fil1.extended = &fil2;
 		         while (*ch != EOF && isspace(*ch)) {
 		            *ch = fgetc(fil) ;
 		            (*chars)++ ;

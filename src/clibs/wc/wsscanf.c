@@ -46,12 +46,15 @@ int _RTL_FUNC vswscanf(wchar_t *restrict buf, const wchar_t *restrict format,
 {
    int rv ;
    FILE fil ;
+   struct __file2 fil2;
    memset(&fil,0,sizeof(fil)) ;
+   memset(&fil2,0,sizeof(fil2)) ;
    fil.level = wcslen(buf)*sizeof(wchar_t) + sizeof(wchar_t) ;
    fil.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING ;
    fil.bsize = wcslen(buf) * sizeof(wchar_t);
    fil.buffer = fil.curp = buf ;
    fil.token = FILTOK ;
+   fil.extended = &fil2;
    return __wscanf(&fil,format,list);
 }
 int _RTL_FUNC swscanf(wchar_t *restrict buf, const wchar_t *restrict format, ...)

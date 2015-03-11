@@ -150,13 +150,16 @@ static LLONG_TYPE __xstrtol(const char *buf, int width, char **endptr,
    LLONG_TYPE rv ;
    int ch ;
    FILE fil ;
+   struct __file2 fil2;
    int chars = 0;
    memset(&fil,0,sizeof(fil)) ;
+   memset(&fil2,0,sizeof(fil2)) ;
    fil.level = strlen(buf)+2 ;
    fil.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING ;
    fil.bsize = strlen(buf) ;
    fil.buffer = fil.curp = buf ;
    fil.token = FILTOK ;
+   fil.extended = &fil2;
    ch = fgetc(&fil) ;
    rv = __xstrtoimax(&fil,width,&ch,& chars,radix,max,full, errmode) ;
    if (endptr) {

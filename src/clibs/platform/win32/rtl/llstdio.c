@@ -63,7 +63,7 @@ FILE _istreams[3] = {
 #define stdout (&_istreams[1])
 #define stderr (&_istreams[2])
 
-int __iob_func() 
+void *__iob_func() 
 { 
     return _istreams; 
 }

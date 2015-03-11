@@ -150,13 +150,16 @@ static LLONG_TYPE __xwcstol(const wchar_t *buf, int width, wchar_t **endptr,
    LLONG_TYPE rv ;
    int ch ;
    FILE fil ;
+   struct __file2 fil2;
    int chars = 0;
    memset(&fil,0,sizeof(fil)) ;
+   memset(&fil2,0,sizeof(fil2)) ;
    fil.level = (wcslen(buf) + sizeof(wchar_t)) * sizeof(wchar_t);
    fil.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING ;
    fil.bsize = wcslen(buf) * sizeof(wchar_t);
    fil.buffer = fil.curp = buf ;
    fil.token = FILTOK ;
+   fil.extended = &fil2;
    ch = fgetwc(&fil) ;
    rv = __xwcstoimax(&fil,width,&ch,& chars,radix,max,full, errmode) ;
    if (endptr) {

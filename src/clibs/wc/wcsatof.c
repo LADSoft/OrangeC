@@ -315,12 +315,15 @@ static long double __wcstod(const wchar_t *buf, wchar_t **endptr, int width,
    long double rv ;
    int ch,chars ;
    FILE fil ;
+   struct __file2 fil2;
    memset(&fil,0,sizeof(fil)) ;
+   memset(&fil2,0,sizeof(fil2)) ;
    fil.level = (wcslen(buf) + sizeof(wchar_t)) * sizeof(wchar_t);
    fil.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING ;
    fil.bsize = wcslen(buf) * sizeof(wchar_t);
    fil.buffer = fil.curp = buf ;
    fil.token = FILTOK ;
+   fil.extended = &fil2;
    ch = fgetwc(&fil) ;
    rv = __xwcstod(&fil,width,&ch,&chars,max,exp2,exp10,full) ;
    if (endptr) {

@@ -42,13 +42,16 @@ int _RTL_FUNC vsnprintf(char *restrict buf, size_t n,
 {
    char buffer[8192];
    FILE fil ;
+   struct __file2 fil2;
    int written;
    memset(&fil,0,sizeof(fil)) ;
+   memset(&fil2,0,sizeof(fil2)) ;
    fil.level = -sizeof(buffer);
    fil.flags = _F_OUT | _F_WRIT | _F_BUFFEREDSTRING ;
    fil.bsize = sizeof(buffer)-1;
    fil.buffer = fil.curp = buffer;
    fil.token = FILTOK ;
+   fil.extended = &fil2;
    written = vfprintf(&fil, format, arglist);
    if (buf && n)
    {

@@ -360,12 +360,15 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
 				fprintf(stderr,"FP not linked");
 #else
                 FILE fil1;
+				struct __file2 fil2;
                 wchar_t buf[256], *p;
                 int ch1, chars1;
                 memset(&fil1, 0, sizeof (fil1));
+                memset(&fil2, 0, sizeof (fil2));
                 fil1.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING;
                 fil1.buffer = fil1.curp = buf;
                 fil1.token = FILTOK;
+				fil1.extended = &fil2;
 		         while (*ch != EOF && iswspace(*ch)) {
 		            *ch = fgetwc(fil) ;
 		            (*chars)++ ;

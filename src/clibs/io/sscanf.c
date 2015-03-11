@@ -45,12 +45,15 @@ int _RTL_FUNC vsscanf(char *restrict buf, const char *restrict format, va_list l
 {
    int rv ;
    FILE fil ;
+   struct __file2 fil2;
    memset(&fil,0,sizeof(fil)) ;
+   memset(&fil2,0,sizeof(fil2)) ;
    fil.level = strlen(buf)+1 ;
    fil.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING ;
    fil.bsize = strlen(buf) ;
    fil.buffer = fil.curp = buf ;
    fil.token = FILTOK ;
+   fil.extended = &fil2;
    return __scanf(&fil,format,list);
 }
 int _RTL_FUNC sscanf(char *restrict buf, const char *restrict format, ...)

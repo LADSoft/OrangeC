@@ -316,12 +316,15 @@ static long double __strtod(const char *buf, char **endptr, int width,
    long double rv ;
    int ch,chars ;
    FILE fil ;
+   struct __file2 fil2;
    memset(&fil,0,sizeof(fil)) ;
+   memset(&fil2,0,sizeof(fil2)) ;
    fil.level = strlen(buf)+2 ;
    fil.flags = _F_IN | _F_READ | _F_BUFFEREDSTRING ;
    fil.bsize = strlen(buf) ;
    fil.buffer = fil.curp = buf ;
    fil.token = FILTOK ;
+   fil.extended = &fil2;
    ch = fgetc(&fil) ;
    rv = __xstrtod(&fil,width,&ch,&chars,max,exp2,exp10,full) ;
    if (endptr) {

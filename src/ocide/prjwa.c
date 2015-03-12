@@ -173,9 +173,17 @@ void LoadWorkArea(char *name, BOOL existing)
     ptr = editWindows;
     while (ptr)
     {
+        BOOL ccExistsInDB(char *fileName);
         if (ptr->active)
         {
-            SendMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
+            if (ccExistsInDB(ptr->dwName))
+            {
+                SendMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
+            }
+            else
+            {
+                InstallForParse(ptr->self);
+            }
         }
         ptr = ptr->next;
     }

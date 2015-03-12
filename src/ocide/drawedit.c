@@ -83,8 +83,16 @@ DWINFO *editWindows;
 
 HIMAGELIST tagImageList;
 
+struct _ccList {
+    struct _ccList *next;
+    char *name;
+    int remove;
+};
+
+struct _ccList *codeCompList;
+
 static unsigned int ccThreadId;
-static HANDLE ccThreadExit;
+static HANDLE ccThreadExit, ccThreadGuard;
 static BOOL stopCCThread;
 static DWINFO *ewQueue;
 void recolorize(DWINFO *ptr);
@@ -879,7 +887,16 @@ static void installparse(char *name, BOOL remove)
     char *p = (char *)calloc(1, strlen(name) + 1);
     if (p)
     {
+        struct _ccList **v = &codeCompList;
+        struct _ccList *list = (struct _ccList *)calloc(1, sizeof(struct _ccList));
         strcpy(p, name);
+        list->remove = remove;
+        list->name = p;
+        WaitForSingleObject(ccThreadGuard, INFINITE);
+        while (*v)
+            v = &(*v)->next;
+        *v = list;
+        SetEvent(ccThreadGuard);
         PostThreadMessage(ccThreadId, WM_USER, remove, (LPARAM)p);
     }
 }
@@ -937,19 +954,23 @@ unsigned __stdcall ScanParse(void *aa)
 {
     while (1)
     {
-        MSG msg;
-        GetMessage(&msg, NULL, 0, 0);
-        if (msg.message == WM_USER)
+        if (codeCompList)
         {
-            if (msg.wParam)
-                deleteFileData((char *)msg.lParam);
+            struct _ccList *list;
+            WaitForSingleObject(ccThreadGuard, INFINITE);
+            list = codeCompList;
+            codeCompList = codeCompList->next;
+            SetEvent(ccThreadGuard);
+            if (list->remove)
+                deleteFileData(list->name);
             else
-                DoParse((char *)msg.lParam);
-            free((void *)msg.lParam);
+                DoParse(list->name);
+            free(list->name);
+            free(list);
         }
         if (stopCCThread)
             break;
-        Sleep(50);
+        Sleep(100);
     }
     SetEvent(ccThreadExit);
     return 0;
@@ -1522,6 +1543,7 @@ void RegisterDrawWindow(void)
     DeleteObject(bitmap);
     
     ccThreadExit = CreateEvent(0,0,0,0);
+    ccThreadGuard = CreateEvent(0,0,TRUE,0);
     ewSem = CreateEvent(NULL, FALSE, TRUE, NULL);
     _beginthreadex(NULL, 0, ScanParse, NULL, 0, &ccThreadId);
 }

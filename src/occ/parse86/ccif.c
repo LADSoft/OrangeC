@@ -129,7 +129,7 @@ static void DumpStructs(void)
 static void DumpSymbolType(SYMBOL *sym)
 {
     int type = ST_UNKNOWN;
-    if (isfunction(sym->tp))
+    if (sym->tp && isfunction(sym->tp))
         type = ST_FUNCTION;
     else switch (sym->storage_class)
     {
@@ -160,11 +160,16 @@ static void DumpSymbolType(SYMBOL *sym)
         case sc_external:
             type = ST_EXTERN;
             break;
+        case sc_label:
+            type = ST_LABEL;
+            break;
     }
+    /*
     if (isconst(sym->tp))
         type |= ST_CONST;
     if (isvolatile(sym->tp))
         type |= ST_VOLATILE;
+        */
     ccWriteSymbolType( sym->name, main_id, sym->declfile ? sym->declfile : "$$$", sym->declline, sym->ccEndLine, type);
 }
 static void DumpSymbols(void)
@@ -175,7 +180,7 @@ static void DumpSymbols(void)
     {
         SYMBOL *sym = item->data;
         DumpSymbolType(sym);
-        if ((!istype(sym) || sym->storage_class == sc_typedef) && sym->storage_class != sc_overloads && sym->tp->type != bt_any)
+        if (sym->storage_class != sc_label && (!istype(sym) || sym->storage_class == sc_typedef) && sym->storage_class != sc_overloads && sym->tp->type != bt_any)
         {
             char type_name[10000];
             int indirectCount = 0;

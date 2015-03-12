@@ -359,9 +359,9 @@ void DoParse(char *name)
             ReleaseSymbolTables();
             ReleaseSemaphore(makeSem, 1, NULL);
         }
-        ReloadLineData(name);
         if (db == NULL && !vacuuming)
             ccDBSetDB(ccDBOpen(pj));
+        ReloadLineData(name);
     }
 }
 void deleteFileData(char *name)
@@ -1077,7 +1077,49 @@ int ccGetColorizeData(char *file, COLORIZE_HASH_ENTRY *entries[])
     }
     return rv;
 }
-
+BOOL ccExistsInDB(char *file)
+{
+    BOOL rv = FALSE;
+    char buf[MAX_PATH], *p = buf;
+    static char *query = {
+       "SELECT Count(id) From FileNames where FileNames.name = ?"
+    } ;
+    sqlite3_stmt *handle;
+    int rc = prepare(db, query, strlen(query)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        while (*file)
+            *p++ = tolower(*file++);
+        *p = 0;
+        sqlite3_bind_text(handle, 1, buf, strlen(buf), SQLITE_STATIC);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                {
+                    rv = sqlite3_column_int64(handle, 0) != 0;
+                    rc = SQLITE_OK;
+                    done = TRUE;
+                }
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        finalize(handle);
+    }
+    return rv;
+}
 static unsigned int __stdcall Start(void *);
 static BOOL started;
 

@@ -92,6 +92,7 @@ static COLORREF localStaticColor = 0x00e0ff;
 static COLORREF staticColor = 0x00e0ff;
 static COLORREF globalColor = 0xffff00;
 static COLORREF externColor = 0xe0e000;
+static COLORREF labelColor = 0xc00000;
 static COLORREF memberColor = 0xc0c000;
 
 #define C_BACKGROUND 0
@@ -113,12 +114,13 @@ static COLORREF memberColor = 0xc0c000;
 #define C_STATIC 16
 #define C_GLOBAL 17
 #define C_EXTERNAL 18
-#define C_MEMBER 19
+#define C_LABEL 19
+#define C_MEMBER 20
 #define C_SYS_WINDOWBACKGROUND 31
 static COLORREF *colors[] = { &backgroundColor, &readonlyBackgroundColor, &textColor, &highlightColor, &keywordColor,
                         &commentColor, &numberColor, &stringColor, &directiveColor ,
                         &defineColor, &functionColor, &parameterColor, &typedefColor, &tagColor, &autoColor,
-                        &localStaticColor, &staticColor, &globalColor, &externColor, &memberColor
+                        &localStaticColor, &staticColor, &globalColor, &externColor, &labelColor, &memberColor
                         };
 
 
@@ -169,7 +171,6 @@ static KEYLIST RC_keywordList[] =
 };
 void LoadColors(void)
 {
-    static int aa;
     keywordColor = PropGetColor(NULL, "COLOR_KEYWORD");
     numberColor = PropGetColor(NULL, "COLOR_NUMBER");
     commentColor = PropGetColor(NULL, "COLOR_COMMENT");
@@ -193,6 +194,7 @@ void LoadColors(void)
     staticColor = PropGetColor(NULL, "COLOR_STATIC");
     globalColor = PropGetColor(NULL, "COLOR_GLOBAL");
     externColor = PropGetColor(NULL, "COLOR_EXTERN");
+    labelColor = PropGetColor(NULL, "COLOR_LABEL");
     memberColor = PropGetColor(NULL, "COLOR_MEMBER");
 
 }
@@ -5948,7 +5950,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             case EM_LOADLINEDATA:
                 if (PropGetInt(NULL, "CODE_COMPLETION") != 0)
                 {
-                    p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                   p = (EDITDATA*)GetWindowLong(hwnd, 0);
                     free(p->cd->lineData);
                     p->cd->lineData = NULL;
                     p->cd->lineDataMax = 0;

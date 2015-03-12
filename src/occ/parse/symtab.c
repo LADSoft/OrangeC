@@ -384,7 +384,7 @@ void insert(SYMBOL *in, HASHTABLE *table)
     if (table)
     {
 #ifdef PARSER_ONLY
-        if (table != defsyms && table != kwhash && table != labelSyms && table != ccHash)
+        if (table != defsyms && table != kwhash && table != ccHash)
             if (!in->parserSet)
             {
                 in->parserSet = TRUE;

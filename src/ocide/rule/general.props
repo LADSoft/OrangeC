@@ -38,6 +38,11 @@
 				<ITEM NAME="Typedef Color" ID="COLOR_TYPEDEF" TYPE="COLOR" DEFAULT="0xc0c000" />
 				<ITEM NAME="Tag Color" ID="COLOR_TAG" TYPE="COLOR" DEFAULT="0xc0c000" />
 				<ITEM NAME="Automatic symbol Color" ID="COLOR_AUTO" TYPE="COLOR" DEFAULT="0x0080ff" />
+                <ITEM NAME="Automatic symbol Decoration" ID="DECORATE_AUTO" TYPE="COMBO" DEFAULT="1">
+					<SETTING NAME="None" VALUE="0"/>
+					<SETTING NAME="Italic" VALUE="1"/>
+					<SETTING NAME="Bold" VALUE="2"/>
+                </ITEM>
 				<ITEM NAME="Local static Color" ID="COLOR_LOCALSTATIC" TYPE="COLOR" DEFAULT="0x00e0ff" />
 				<ITEM NAME="Static Color" ID="COLOR_STATIC" TYPE="COLOR" DEFAULT="0x00e0ff" />
 				<ITEM NAME="Global Color" ID="COLOR_GLOBAL" TYPE="COLOR" DEFAULT="0xffff00" />

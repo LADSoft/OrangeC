@@ -4,7 +4,8 @@
     Copyright (c) 1997-2012, David Lindauer, (LADSoft).
     All rights reserved.
     
-    Redistribution and use otion, are permitted provided that the following 
+    Redistribution and use of this software in source and binary forms, 
+    with or without modification, are permitted provided that the following 
     conditions are met:
     
     * Redistributions of source code must retain the above
@@ -3052,7 +3053,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         }
         return TRUE;
     }
-    int getfragment(EDITDATA *p, int pos, char *buf, COLORREF *fcolor, COLORREF *bcolor,
+    int getfragment(EDITDATA *p, int pos, int autoDecoration, char *buf, COLORREF *fcolor, COLORREF *bcolor,
         HFONT *font, int *col, int line)
     {
         int count = 0;
@@ -3189,7 +3190,27 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     buf[count++] = ' ';
                 break;
             case CFE_BOLD | CFE_ITALIC: default:
-                *font = p->cd->hFont;
+                if (color == C_AUTO)
+                {
+                    switch( autoDecoration)
+                    {
+                        case 0: default:
+                            *font = p->cd->hFont;
+                            break;
+                        case 1:
+                            *font = p->cd->hItalicFont;
+                            if (pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
+                                buf[count++] = ' ';
+                            break;
+                        case 2:
+                            *font = p->cd->hBoldFont;
+                            break;
+                    }
+                }
+                else
+                {
+                    *font = p->cd->hFont;
+                }
                 break;
         }
         if (matched)
@@ -3215,6 +3236,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         HBRUSH selBrush = CreateSolidBrush(selectedBackgroundColor);
         HPEN columnbarPen ;
         int colMark = PropGetInt(NULL, "COLUMN_MARK");
+        int autoDecoration = PropGetInt(NULL, "DECORATE_AUTO");
         if (colMark != 0)
         {
             columnbarPen =	CreatePen(PS_SOLID, 0, columnbarColor);
@@ -3264,17 +3286,24 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     int selection = FALSE;
                     COLORREF fcolor, bcolor;
                     HFONT font;
-                    pos = getfragment(p, pos, buf, &fcolor, &bcolor, &font,
+                    int n, i;
+                    int dx[500];
+                    pos = getfragment(p, pos, autoDecoration, buf, &fcolor, &bcolor, &font,
                         &leftcol, baseline + i);
                     if (buf[0] == '\f')
                     {
                         strcpy(buf,"+--------- Page Break ---------+");
                     }
                     SetTextColor(dc, fcolor);
-                       SetBkColor(dc, bcolor);
-                       SelectObject(dc, font);
-                       TextOut(dc, col, r.top, buf, strlen(buf));
-                       col += (p->cd->txtFontWidth) *strlen(buf);
+                    SetBkColor(dc, bcolor);
+                    SelectObject(dc, font);
+                    n = strlen(buf);
+                    for (i=0; i < n; i++)
+                    {
+                        dx[i] = p->cd->txtFontWidth; 
+                    }
+                    ExtTextOut(dc, col, r.top, ETO_OPAQUE, NULL, buf, n,dx);
+                    col += (p->cd->txtFontWidth) * n;
                 }
             }
             while (pos < p->cd->textlen)
@@ -4791,6 +4820,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     }
     int showStruct(HWND hwnd, EDITDATA *p, int ch)
     {
+        if (instring(p->cd->text, &p->cd->text[p->selstartcharpos]))
+            return 0;
         if (ch == '>')
         {
             if (p->selstartcharpos < 2 || p->cd->text[p->selstartcharpos-2].ch != '-')
@@ -4924,6 +4955,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     }
     void showVariableOrKeyword(HWND hwnd, EDITDATA *p)
     {
+        if (instring(p->cd->text, &p->cd->text[p->selstartcharpos]))
+            return;
         if (inStructBox || PropGetInt(NULL, "CODE_COMPLETION") < 2)
             return;
         {
@@ -5329,6 +5362,8 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         POINT cpos;
         SIZE size;
         int curArg = 0;
+        if (instring(p->cd->text, &p->cd->text[p->selstartcharpos]))
+            return;
         p->cd->selecting = FALSE;
         if (pos <= 0 || PropGetInt(NULL, "CODE_COMPLETION") == 0)
             return ;
@@ -6227,7 +6262,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         InvalidateRect(hwnd, 0, 0);
                     }
                     MoveCaret(hwnd, p);
-                }
+               }
                 SendMessage(hwndShowFunc, WM_USER+3, 0, (LPARAM)p);
                 return 0;
             case WM_RBUTTONDOWN:
@@ -6595,8 +6630,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
 
                 ReleaseDC(hwnd, dc);
                 p->cd->txtFontHeight = t.tmHeight;
-                p->cd->txtFontWidth = t.tmAveCharWidth ;
+                p->cd->txtFontWidth = t.tmAveCharWidth;
                 GetObject(p->cd->hFont, sizeof(LOGFONT), &lf);
+                lf.lfWidth = t.tmAveCharWidth-1;
                 lf.lfItalic = TRUE;
                 p->cd->hItalicFont = CreateFontIndirect(&lf);
                 lf.lfItalic = FALSE;

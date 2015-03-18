@@ -53,7 +53,7 @@ extern char szInstallPath[];
 extern char szWorkAreaName[];
 extern int making;
 extern int profileDebugMode;
-extern char *currentProfileName;
+extern char currentProfileName[256];
 
 int errcount, warncount;
 char makeTempFile[MAX_PATH];

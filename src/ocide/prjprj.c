@@ -54,7 +54,7 @@ extern HINSTANCE hInstance;
 extern HWND hwndFrame;
 extern char szProjectFilter[] ;
 extern int profileDebugMode;
-extern char *currentProfileName;
+extern char currentProfileName[256];
 extern char *sysProfileName;
 extern HWND hwndProject;
 extern HWND prjTreeWindow;
@@ -353,26 +353,27 @@ void SetProjectType(PROJECTITEM *pj, int newMode)
 void PropagateAllProjectTypes(void)
 {
     int n = profileDebugMode;
-    char *m = currentProfileName;
+    char m[256];
     PROJECTITEM *pj = workArea->children;
+    strcpy(m, currentProfileName);
     profileDebugMode = 0;
     while (pj)
     {
         SETTING *s;
         char *rls = NULL;
-        currentProfileName = sysProfileName;
+        strcpy(currentProfileName, sysProfileName);
         s = PropFind(GetSettings(pj->profiles), "__PROJECTTYPE");
         if (s)
         {
             rls = s->value;
-            currentProfileName = m;
+            strcpy(currentProfileName, m);
             SetProjectType(pj, atoi(rls));
             MarkChanged(pj, FALSE);
         }
         pj = pj->next;
     }
     profileDebugMode = n;
-    currentProfileName = m;
+    strcpy(currentProfileName, m);
 }
 void ProjectNewProject(void)
 {

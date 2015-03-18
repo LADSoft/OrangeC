@@ -54,7 +54,6 @@
 extern HINSTANCE hInstance;
 extern char szWorkAreaTitle[], szWorkAreaName[];
 extern char *sysProfileName;
-extern char *currentProfileName;
 extern PROJECTITEM *workArea;
 
 static void RestoreOneProp(struct xmlNode *input, SETTING **s)

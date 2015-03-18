@@ -68,7 +68,7 @@ extern unsigned int helpMsg;
 COLORREF custColors[16];
 PROJECTITEM generalProject;
 char *sysProfileName = "WIN32";
-char *currentProfileName ;
+char currentProfileName[256] ;
 int profileDebugMode = 1;
 HWND hwndGeneralProps;
 
@@ -153,7 +153,7 @@ SETTING **GetSettingsAddress(PROJECTITEM *pj)
         {
             PROFILE **q = &pj->profiles;
             p = calloc(1, sizeof(PROFILE));
-            p->name = currentProfileName;
+            p->name = strdup(currentProfileName);
             while (*q)
                 q = &(*q)->next;
             p->next = *q;
@@ -251,8 +251,7 @@ LRESULT CALLBACK SelectProfileDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     {
                         if (n == 0)
                         {
-                            free(currentProfileName);
-                            currentProfileName = strdup(sysProfileName);
+                            strcpy(currentProfileName, sysProfileName);
                         }
                         else
                         {
@@ -261,8 +260,7 @@ LRESULT CALLBACK SelectProfileDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                                 pf = pf->next;
                             if (pf)
                             {
-                                free(currentProfileName);
-                                currentProfileName = strdup(pf->name);
+                                strcpy(currentProfileName, pf->name);
                             }
                         }
                         MarkChanged(workArea, TRUE);
@@ -295,8 +293,7 @@ void InitProps(void)
 {
     PROFILE *pf;
     char name[MAX_PATH];
-    free(currentProfileName);
-    currentProfileName = strdup(sysProfileName);
+    strcpy(currentProfileName, sysProfileName);
     strcpy(name, szInstallPath);
     strcat(name, "\\bin\\");
     strcat(name, GENERALPROPS);
@@ -1035,7 +1032,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
     static int oldProtoCount;
     static SETTING *oldSettings[100];
     static int addProfileIndex;
-    static char *lastProfileName;
+    static char lastProfileName[256];
     static int lastDebugMode;
     int y;
     SETTING *lastSetting;
@@ -1117,8 +1114,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                     {
                         if (n == 0)
                         {
-                            free(currentProfileName);
-                            currentProfileName = strdup(sysProfileName);
+                            strcpy(currentProfileName, sysProfileName);
                         }
                         else if (n < addProfileIndex)
                         {
@@ -1127,8 +1123,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                                 pf = pf->next;
                             if (pf)
                             {
-                                free(currentProfileName);
-                                currentProfileName = strdup(pf->name);
+                                strcpy(currentProfileName, pf->name);
                             }
                         }
                         else if (n == addProfileIndex)
@@ -1157,8 +1152,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                             }
                             else
                             {
-                                free(currentProfileName);
-                                currentProfileName = strdup(name);
+                               strcpy(currentProfileName, name);
                             }
                             SendMessage(hProfileCombo, CB_INSERTSTRING, addProfileIndex, (LPARAM)name);
                             SendMessage(hProfileCombo, CB_SETCURSEL, addProfileIndex++, 0);
@@ -1354,8 +1348,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
         case WM_CREATE:
             cs = ((LPCREATESTRUCT)lParam);
             pd = (struct _propsData *)cs->lpCreateParams;
-            free(lastProfileName);
-            lastProfileName= strdup(currentProfileName);
+            strcpy(lastProfileName, currentProfileName);
             lastDebugMode = profileDebugMode;
             SetWindowLong(hwnd, GWL_USERDATA, (long)pd);
             populating = FALSE;
@@ -1506,8 +1499,7 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 DestroyWindow(hProfileCombo);
                 DestroyWindow(hReleaseTypeCombo);
             }
-            free(currentProfileName);
-            currentProfileName = strdup(lastProfileName);
+            strcpy(currentProfileName, lastProfileName);
             profileDebugMode = lastDebugMode;
             hwndGeneralProps = NULL;
             break;

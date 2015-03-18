@@ -48,7 +48,7 @@
 #include "header.h"
 #include "xml.h"
 
-extern char *currentProfileName;
+extern char currentProfileName[256];
 extern char findText[256];
 extern int profileDebugMode;
 extern HWND hwndTbFind;
@@ -957,8 +957,7 @@ void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
     } 
     if (selected)
     {
-        free(currentProfileName);
-        currentProfileName = strdup(LookupProfileName(selected));
+        strcpy(currentProfileName, LookupProfileName(selected));
     }
     node = node->children;
     while (node)

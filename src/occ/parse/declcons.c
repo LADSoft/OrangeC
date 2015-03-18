@@ -1466,12 +1466,31 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        if (sp->storage_class != sc_localstatic && sp->dest)
+        if (!sp->destructed)
         {
-            
-            EXPRESSION *iexp = sp->dest->exp; 
-            if (iexp)
+            sp->destructed = TRUE;
+            if (sp->storage_class != sc_localstatic && sp->dest)
             {
+                
+                EXPRESSION *iexp = sp->dest->exp; 
+                if (iexp)
+                {
+                    optimize_for_constants(&iexp);
+                    if (*exp)
+                    {
+                        *exp = exprNode(en_void, iexp, *exp);                    
+                    }
+                    else
+                    {
+                        *exp = iexp;
+                    }
+                }
+            }
+            else if (sp->storage_class == sc_parameter && isstructured(sp->tp))
+            {
+                EXPRESSION *iexp = getThisNode(sp);
+                iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
+                callDestructor(basetype(sp->tp)->sp, NULL, &iexp, NULL, TRUE, FALSE, FALSE);
                 optimize_for_constants(&iexp);
                 if (*exp)
                 {
@@ -1481,21 +1500,6 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
                 {
                     *exp = iexp;
                 }
-            }
-        }
-        else if (sp->storage_class == sc_parameter && isstructured(sp->tp))
-        {
-            EXPRESSION *iexp = getThisNode(sp);
-            iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
-            callDestructor(basetype(sp->tp)->sp, NULL, &iexp, NULL, TRUE, FALSE, FALSE);
-            optimize_for_constants(&iexp);
-            if (*exp)
-            {
-                *exp = exprNode(en_void, iexp, *exp);                    
-            }
-            else
-            {
-                *exp = iexp;
             }
         }
         hr = hr->next;

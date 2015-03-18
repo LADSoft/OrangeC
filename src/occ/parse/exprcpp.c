@@ -1817,7 +1817,11 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     }
     lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
     if (!ispointer(*tp))
+    {
         error(ERR_POINTER_TYPE_EXPECTED);
+        *exp = intNode(en_c_i, 0);
+        return lex;
+    }
     if (!templateNestingCount && isstructured(basetype(*tp)->btp))
     {
         if (basetype(basetype(*tp)->btp)->size == 0)

@@ -2783,9 +2783,9 @@ void oa_enterseg(enum e_sg seg)
                 oa_currentSeg = noseg;
 #ifdef IEEE
                 if (virtual_mode)
-                    bePrintf( "\tSECTION vxd%s VIRTUAL\n", sp->decoratedName);
+                    bePrintf( "\tSECTION vsd%s VIRTUAL\n", sp->decoratedName);
                 else
-                    bePrintf( "\tSECTION vxc%s VIRTUAL\n", sp->decoratedName);
+                    bePrintf( "\tSECTION vsc%s VIRTUAL\n", sp->decoratedName);
 #else
                 bePrintf( "\tSECTION @%s VIRTUAL\n", sp->decoratedName);
 #endif

@@ -3596,7 +3596,7 @@ static BOOLEAN TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST *porig, TEMP
     }
     return !porig && !psym;
 }
-static BOOLEAN TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym)
+BOOLEAN TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym)
 {
     if (orig && orig->parentTemplate == sym->parentTemplate)
     {
@@ -3952,17 +3952,8 @@ void TemplateDataInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern)
 {
     if (!sym->gentemplate)
     {
-        if (isExtern)
-        {
-            sym->storage_class = sc_external;
-            InsertExtern(sym);
-        }
-        else
-        {
-            sym->linkage = lk_virtual;
-            InsertInlineData(sym);
-            sym->genreffed = TRUE;
-        }
+        InsertInlineData(sym);
+        InsertExtern(sym);
         sym->gentemplate = TRUE;
     }
     else if (warning)

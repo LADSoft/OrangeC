@@ -5,7 +5,7 @@
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
-    with or without modificatsion, are permitted provided that the following 
+    with or without modification, are permitted provided that the following 
     conditions are met:
     
     * Redistributions of source code must retain the above
@@ -1720,7 +1720,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     {
         st->returntype = &stdvoid;
     }
-    if (returnexp && returntype->type != bt_auto)
+    if (returnexp && returntype && returntype->type != bt_auto)
     {
         if (!tp) // some error...
             tp = &stdint;

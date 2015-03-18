@@ -3045,6 +3045,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 if (tmpl->templateLevel)
                     break;
                 else
+
                     tmpl = tmpl->parentClass;
             if (!tmpl)
             {
@@ -3054,11 +3055,11 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             }
         }       
     }
-    else if (sp->storage_class == sc_external && instantiatingTemplate)
-    {
-        sp->linkage = lk_virtual;
-        InsertInlineData(sp);
-    } 
+//    else if (sp->storage_class == sc_external && instantiatingTemplate)
+//    {
+//        sp->linkage = lk_virtual;
+//        InsertInlineData(sp);
+//    } 
     if (sp->init)
     {
         declareAndInitialize = TRUE;

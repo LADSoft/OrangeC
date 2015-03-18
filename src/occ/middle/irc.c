@@ -397,7 +397,7 @@ void AllocateStackSpace(SYMBOL *funcsp)
     while (*temps)
     {
         SYMBOL *sym = (SYMBOL *)(*temps)->data;
-        if (sym->value.i >= maxlvl)
+        if (sym->storage_class == sc_auto && sym->value.i >= maxlvl)
             maxlvl = sym->value.i + 1;
         temps = &(*temps)->next;
     }
@@ -420,8 +420,8 @@ void AllocateStackSpace(SYMBOL *funcsp)
                                          || sp->storage_class == sc_register)
                                          && sp->allocate && !sp->anonymous)
                     {
-                        int val, align = getAlign(sc_auto, sp->tp);
-                        lc_maxauto += sp->tp->size;
+                        int val, align = getAlign(sc_auto, basetype(sp->tp));
+                        lc_maxauto += basetype(sp->tp)->size;
                         val = lc_maxauto % align;
                         if (val != 0)
                             lc_maxauto += align - val;
@@ -439,10 +439,10 @@ void AllocateStackSpace(SYMBOL *funcsp)
         while (*temps)
         {
             SYMBOL *sp = (SYMBOL *)(*temps)->data;
-            if (sp->value.i == i)
+            if (sp->storage_class == sc_constant || sp->value.i == i)
             {
-                int val, align = getAlign(sc_auto, sp->tp);
-                lc_maxauto += sp->tp->size;
+                int val, align = getAlign(sc_auto, basetype(sp->tp));
+                lc_maxauto += basetype(sp->tp)->size;
                 val = lc_maxauto % align;
                 if (val != 0)
                     lc_maxauto += align - val;
@@ -459,6 +459,7 @@ void AllocateStackSpace(SYMBOL *funcsp)
             }
         }
     }
+
     lc_maxauto = max;
     if (cparams.prm_stackalign)
     {

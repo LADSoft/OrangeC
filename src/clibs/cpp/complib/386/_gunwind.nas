@@ -34,7 +34,7 @@
 [global ___global_unwind]
 
 
-SECTION data CLASS=DATA USE32
+SECTION code CLASS=CODE USE32
 	extern	RtlUnwind
 	global	___global_unwind
 ___global_unwind:

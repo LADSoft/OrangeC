@@ -123,6 +123,15 @@ void DumpIncDec(SYMBOL *funcsp)
         l = l->next;
     }
 }
+void DumpLogicalDestructors(EXPRESSION *node, SYMBOL *funcsp)
+{
+    LIST *listitem = node->destructors;
+    while (listitem)
+    {
+        gen_void((EXPRESSION *)listitem->data, funcsp);
+        listitem = listitem->next;
+    }
+}
 IMODE *LookupExpression(enum i_ops op, int size, IMODE *left, IMODE *right)
 {
     IMODE *ap = NULL;
@@ -816,6 +825,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                     node = (EXPRESSION *)sp->inlineFunc.stmt;
                     sp = node->left->v.sp;
                 }
+                sp->allocate = TRUE;
                 if (catchLevel)
                     sp->inCatch = TRUE;
                 if (!sp->imaddress && catchLevel)
@@ -915,6 +925,7 @@ IMODE *gen_asrhd(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_o
     if (ap2 != ap3)
         gen_icode(i_assn, ap2, ap3, NULL);
     DumpIncDec(funcsp);
+    DumpLogicalDestructors(node, funcsp);            
     gen_icgoto(i_jge, lab, ap, make_immed(ap->size,0));
     gen_icode(i_add, ap, ap, make_immed(ISZ_UINT, n));
     gen_label(lab);
@@ -2825,6 +2836,7 @@ void gen_compare(EXPRESSION *node, SYMBOL *funcsp, int btype, int label)
             ap2 = ap3;
         }
         DumpIncDec(funcsp);
+        DumpLogicalDestructors(node, funcsp);
     }
     gen_icgoto(btype, label, ap1, ap2);
 }
@@ -3030,6 +3042,7 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             ap1 = tempreg(ISZ_UINT, 0);
             gen_icode(i_assn, ap1, ap2, 0);
             DumpIncDec(funcsp);
+            DumpLogicalDestructors(node, funcsp);            
             for (i=0; i < siz1/siz2; i++)
             {
                 ap4 = indnode(ap3, ap3->size);
@@ -3048,6 +3061,7 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             ap3 = tempreg(ISZ_UINT, 0);
             gen_icode(i_assn, ap3, ap2, 0);
             DumpIncDec(funcsp);
+            DumpLogicalDestructors(node, funcsp);            
             for (i=0; i < siz1/siz2; i++)
             {
                 ap2 = indnode(ap3, ap3->size);
@@ -3063,6 +3077,7 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             if (ap1 != ap3)
                 gen_icode(i_assn, ap1, ap3, NULL);
             DumpIncDec(funcsp);
+            DumpLogicalDestructors(node, funcsp);            
             gen_icgoto(i_jne, label, ap1, make_immed(ap1->size,0));
             break;
     }
@@ -3139,6 +3154,7 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             ap1 = tempreg(ISZ_UINT, 0);
             gen_icode(i_assn, ap1, ap2, 0);
             DumpIncDec(funcsp);
+            DumpLogicalDestructors(node, funcsp);            
             for (i=0; i < siz1/siz2-1; i++)
             {
                 ap4 = indnode(ap3, ap3->size);
@@ -3163,6 +3179,7 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             ap3 = tempreg(ISZ_UINT, 0);
             gen_icode(i_assn, ap3, ap2, 0);
             DumpIncDec(funcsp);
+            DumpLogicalDestructors(node, funcsp);            
             for (i=0; i < siz1/siz2-1; i++)
             {
                 ap2 = indnode(ap3, ap3->size);
@@ -3179,6 +3196,7 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             if (ap != ap3)
                 gen_icode(i_assn, ap, ap3, NULL);
             DumpIncDec(funcsp);
+            DumpLogicalDestructors(node, funcsp);            
             gen_icgoto(i_je, label, ap, make_immed(ap->size,0));
             break;
     }

@@ -184,6 +184,7 @@ TEMPLATEPARAMLIST *TemplateGetParams(SYMBOL *sym);
 void TemplateRegisterDeferred(LEXEME *lex);
 BOOLEAN exactMatchOnTemplateArgs(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
 BOOLEAN exactMatchOnTemplateParams(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
+BOOLEAN TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym);
 SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams);
 SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp);
 TEMPLATEPARAMLIST * TemplateMatching(LEXEME *lex, TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym, SYMBOL *sp, BOOLEAN definition);

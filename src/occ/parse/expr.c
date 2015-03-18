@@ -350,6 +350,20 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     sp->used = TRUE;
                 case sc_global:
                 case sc_external:
+                    if (strSym)
+                    {
+                        SYMBOL *tpl = sp;
+                        while (tpl)
+                        {
+                            if (tpl->templateLevel)
+                                break;
+                            tpl = tpl->parentClass;
+                        }
+                        if (tpl && tpl->instantiated)
+                        {
+                            TemplateDataInstantiate(sp, FALSE, FALSE);
+                        }
+                    }
                     if (!(flags & _F_SIZEOF))
                         sp->genreffed = TRUE;
                     if (sp->parentClass && !isExpressionAccessible(NULL, sp, funcsp, NULL, FALSE))
@@ -940,7 +954,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     {
                         errorsym(ERR_NOT_A_TEMPLATE, sp2);
                     }
-                    if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
+                    if (sp2->storage_class == sc_external | sp2->storage_class == sc_static)
                     {
                         SYMBOL *tpl = sp2;
                         while (tpl)
@@ -5003,10 +5017,47 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
     }
     return lex;
 }
+void GetLogicalDestructors(EXPRESSION *top, EXPRESSION *cur)
+{
+    if (cur->type == land || cur->type == lor || cur->type == hook)
+        return;
+    if (cur->type == en_func)
+    {
+        INITLIST *args = cur->v.func->arguments;
+        while (args)
+        {
+            GetLogicalDestructors(top, args->exp);
+            args = args->next;
+        }
+        if (cur->v.func->returnSP)
+        {
+            SYMBOL *sp = cur->v.func->returnSP;
+            if (!sp->destructed && sp->dest && sp->dest->exp)
+            {
+                LIST *listitem;
+                sp->destructed = TRUE;
+                listitem = (LIST *)Alloc(sizeof(LIST));
+                listitem->data = sp->dest->exp;
+                listitem->next = top->destructors;
+                top->destructors = listitem;
+            }
+        }
+    }
+    if (cur->left)
+    {
+        GetLogicalDestructors(top, cur->left);
+    }
+    if (cur->right)
+    {
+        GetLogicalDestructors(top, cur->right);
+    }
+    
+}
 static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESSION **exp, enum e_kw kw, enum e_node type, 
               LEXEME *(nextFunc)(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags), 
               BOOLEAN *ismutable, int flags)
 {
+    BOOLEAN first = TRUE;
     lex = (*nextFunc)(lex, funcsp, atp, tp, exp, ismutable, flags);
     if (*tp == NULL)
         return lex;
@@ -5014,6 +5065,11 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
     {
         TYPE *tp1 = NULL;
         EXPRESSION *exp1 = NULL;
+        if (first)
+        {
+            first = FALSE;
+            GetLogicalDestructors(*exp, *exp);
+        }
         lex = getsym();
         lex = (*nextFunc)(lex, funcsp, atp, &tp1, &exp1, NULL, flags);
         if (!tp1)
@@ -5021,6 +5077,7 @@ static LEXEME *binop(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE ** tp, EXPRESS
             *tp = NULL;
             break;
         }
+        GetLogicalDestructors(exp1, exp1);
         if (cparams.prm_cplusplus 
             && insertOperatorFunc(kw == lor || kw == land ? ovcl_binary_numericptr : ovcl_binary_int, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
@@ -5099,6 +5156,7 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
         TYPE *tph = NULL,*tpc = NULL;
         EXPRESSION *eph=NULL, *epc = NULL;
         castToArithmetic(FALSE, tp, exp, (enum e_kw)-1, &stdint, TRUE);
+        GetLogicalDestructors(*exp, *exp);
         if (isstructured(*tp))
             error(ERR_ILL_STRUCTURE_OPERATION);
         else if (isvoid(*tp) || (*tp)->type == bt_aggregate)

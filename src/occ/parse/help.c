@@ -558,6 +558,8 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
 //        storage_class = sc_static;
 //        insertInitSym(rv);
 //    }
+    if (tp->size == 0 && isstructured(tp))
+        tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;
     rv->tp = tp;
     rv->anonymous = TRUE;

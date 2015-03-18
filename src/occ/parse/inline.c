@@ -163,13 +163,44 @@ void dumpInlines(void)
             }
         } while (!done);
         dataList = inlineDataHead;
+        dseg();
         while (dataList)
         {
             SYMBOL *sym = (SYMBOL *)dataList->data;
-            if (sym->genreffed && !sym->didinline)
+            SYMBOL *parentTemplate = sym->parentClass->parentTemplate;
+            SYMBOL *origsym;
+            LIST *instants = parentTemplate->instantiations;
+            if (!strcmp(sym->name, "id"))
+                printf("%s\n",sym->parentClass->name);
+            while (instants)
+            {
+                if (TemplateInstantiationMatch(instants->data, sym->parentClass))
+                {
+                    parentTemplate = (SYMBOL *)instants->data;
+                    break;
+                }
+                instants = instants->next;
+            }
+            origsym = search(sym->name, parentTemplate->tp->syms);
+            if (origsym && origsym->storage_class == sc_global && !sym->didinline)
             {
                 sym->didinline = TRUE;
                 sym->genreffed = FALSE;
+                if (origsym->deferredCompile)
+                {
+                    STRUCTSYM s1, s;
+                    LEXEME *lex;
+                    s1.str = sym->parentClass;
+                    addStructureDeclaration(&s1);
+                    s.tmpl = sym->templateParams;
+                    addTemplateDeclaration(&s);
+                    lex = SetAlternateLex(origsym->deferredCompile);
+                    sym->init = NULL;
+                    lex = initialize(lex, NULL, sym, sc_global, TRUE, 0);
+                    SetAlternateLex(NULL);
+                    dropStructureDeclaration();
+                    dropStructureDeclaration();
+                }
                 gen_virtual(sym, TRUE);
                 if (sym->init)
                     dumpInit(sym, sym->init);

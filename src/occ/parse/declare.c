@@ -4841,6 +4841,11 @@ jointemplate:
                                 errorNotMember(strSym, nsv, sp->name);
                             }
                         }
+                        else
+                        {
+                            if (sp->storage_class == sc_member && spi->storage_class == sc_external)
+                                sp->storage_class = sc_global;
+                        }
                         if ((!spi || (spi->storage_class != sc_member && spi->storage_class != sc_mutable))
                              && sp->storage_class == sc_global && sp->isInline)
                             sp->storage_class = sc_static;
@@ -4875,7 +4880,8 @@ jointemplate:
                             if (sp->parentClass)
                             {
                                 if (spi->storage_class != sc_member && sp->storage_class != sc_member && spi->storage_class != sc_mutable && sp->storage_class != sc_mutable)
-                                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
+                                    if (spi->storage_class != sc_external && sp->storage_class != sc_external)
+                                        preverrorsym(ERR_DUPLICATE_IDENTIFIER, spi, spi->declfile, spi->declline);
                             }
                             else
                             {

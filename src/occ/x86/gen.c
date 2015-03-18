@@ -2613,7 +2613,7 @@ void asm_mul(QUAD *q)               /* signed multiply */
             if (aprl->mode == am_immed)
             {
                 apll = aimmed(apll->offset->v.i * aprl->offset->v.i);
-                gen_codes(op_imul, q->ans->size, apal, apll);
+                gen_codes(op_mov, q->ans->size, apal, apll);
             }
             else
             {

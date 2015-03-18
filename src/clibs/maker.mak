@@ -36,7 +36,7 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 CC=occ
-CFLAGS = $(C_FLAGS) $(DEFINES)
+CFLAGS = /O0 $(C_FLAGS) $(DEFINES)
 
 LINK=olink
 LINKFLAGS= -c+

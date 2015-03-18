@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.28.0.1
+AppVerName=Orange C Version 5.31.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -74,6 +74,14 @@ Source: "C:\orangec\doc\occ\*.*"; DestDir: "{app}\doc\occ\"; Flags: IgnoreVersio
 Source: "C:\orangec\doc\ogrep\*.*"; DestDir: "{app}\doc\ogrep\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\olink\*.*"; DestDir: "{app}\doc\olink\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\omake\*.*"; DestDir: "{app}\doc\omake\"; Flags: IgnoreVersion; Components: main
+
+Source: "C:\orangec\stlport\*.*"; DestDir: "{app}\stlport\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\stlport\stl\*.*"; DestDir: "{app}\stlport\stl\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\stlport\stl\config\*.*"; DestDir: "{app}\stlport\stl\config\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\stlport\stl\debug\*.*"; DestDir: "{app}\stlport\stl\debug\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\stlport\stl\pointers\*.*"; DestDir: "{app}\stlport\stl\pointers\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\stlport\using\*.*"; DestDir: "{app}\stlport\using\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\stlport\using\h\*.*"; DestDir: "{app}\stlport\using\h\"; Flags: IgnoreVersion; Components: main
 
 ;Source: "C:\orangec\bin\lscrtl.dll"; DestDir: "{sys}"; Components: main\desktop
 

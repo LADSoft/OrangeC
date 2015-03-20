@@ -50,6 +50,22 @@ msvcrt.l: .\msvcrdm.o .\c0.o
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\$@ + .\c0.o .\msvcrdm.o
 	$(LIB) $(LIBFLAGS) $(SYSOBJECT)\$@ + @&&|
 $(CLIBOBJECT)\srproc.o $(CLIBOBJECT)\lxsar.o $(CLIBOBJECT)\lxshr.o $(CLIBOBJECT)\lxshl.o $(CLIBOBJECT)\lxmul.o $(CLIBOBJECT)\lxdiv.o $(CLIBOBJECT)\substk.o $(CLIBOBJECT)\stkchk.o $(WINOBJECT)\vsconio.o
+$(CLIBOBJECT)\nan.o $(CLIBOBJECT)\signbit.o $(CLIBOBJECT)\nancomp.o $(CLIBOBJECT)\acosh.o $(CLIBOBJECT)\asinh.o
+$(CLIBOBJECT)\atanh.o $(CLIBOBJECT)\cbrt.o $(CLIBOBJECT)\copysign.o $(CLIBOBJECT)\erf.o $(CLIBOBJECT)\exp2.o
+$(CLIBOBJECT)\expm1.o $(CLIBOBJECT)\fdim.o $(CLIBOBJECT)\fma.o $(CLIBOBJECT)\fmax.o $(CLIBOBJECT)\fmin.o
+$(CLIBOBJECT)\ilogb.o $(CLIBOBJECT)\lgamma.o $(CLIBOBJECT)\lrint.o $(CLIBOBJECT)\llrint.o $(CLIBOBJECT)\logb.o
+$(CLIBOBJECT)\log1p.o $(CLIBOBJECT)\log2.o $(CLIBOBJECT)\lround.o $(CLIBOBJECT)\llround.o $(CLIBOBJECT)\nearbyin.o
+$(CLIBOBJECT)\next.o $(CLIBOBJECT)\remain.o $(CLIBOBJECT)\remquo.o $(CLIBOBJECT)\rint.o $(CLIBOBJECT)\round.o
+$(CLIBOBJECT)\scalbn.o $(CLIBOBJECT)\signif.o $(CLIBOBJECT)\tgamma.o $(CLIBOBJECT)\trunc.o $(CLIBOBJECT)\abs.o
+$(CLIBOBJECT)\lldiv.o $(CLIBOBJECT)\i64toa.o $(CLIBOBJECT)\_matherr.o $(CLIBOBJECT)\genmerr.o
+$(CLIBOBJECT)\acos.o $(CLIBOBJECT)\asin.o $(CLIBOBJECT)\atan2.o $(CLIBOBJECT)\atan.o $(CLIBOBJECT)\ceil.o $(CLIBOBJECT)\cos.o $(CLIBOBJECT)\cosh.o
+$(CLIBOBJECT)\exp.o $(CLIBOBJECT)\fabs.o $(CLIBOBJECT)\floor.o $(CLIBOBJECT)\fmod.o $(CLIBOBJECT)\frexp.o $(CLIBOBJECT)\ldexp.o $(CLIBOBJECT)\log.o
+$(CLIBOBJECT)\log10.o $(CLIBOBJECT)\modf.o $(CLIBOBJECT)\pow.o $(CLIBOBJECT)\sin.o $(CLIBOBJECT)\sinh.o $(CLIBOBJECT)\sqrt.o
+$(CLIBOBJECT)\tan.o $(CLIBOBJECT)\tanh.o $(CLIBOBJECT)\fpclass.o $(CLIBOBJECT)\copysign.o
+$(CLIBOBJECT)\hypot.o $(CLIBOBJECT)\polyf.o $(CLIBOBJECT)\poly.o $(CLIBOBJECT)\polyl.o $(CLIBOBJECT)\pow10.o
+$(CLIBOBJECT)\del1.o $(CLIBOBJECT)\new1.o $(CLIBOBJECT)\del2.o $(CLIBOBJECT)\new2.o $(CLIBOBJECT)\rnew.o
+$(CLIBOBJECT)\_ixb.o $(CLIBOBJECT)\cpphandler.o $(CLIBOBJECT)\_term.o $(CLIBOBJECT)\_gunwind.o $(CLIBOBJECT)\arrcall.o
+$(WINOBJECT)\llxcept.o
 |
 	$(IMPLIB) $(SYSOBJECT)\$@ .\msvcrt.def
 

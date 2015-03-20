@@ -56,14 +56,14 @@ typedef struct __mbstate_t
 typedef __char16_t char16_t;
 typedef __char32_t char32_t;
 
-size_t _RTL_FUNC mbrtoc16(char16_t * restrict pc16, const char * restrict s, 
+size_t _RTL_FUNC _IMPORT mbrtoc16(char16_t * restrict pc16, const char * restrict s, 
                           size_t n, mbstate_t * restrict ps);
 
-size_t _RTL_FUNC c16rtomb(char * restrict s, char16_t c16, mbstate_t * restrict ps);
-size_t _RTL_FUNC mbrtoc32(char32_t * restrict pc32, const char * restrict s, 
+size_t _RTL_FUNC _IMPORT c16rtomb(char * restrict s, char16_t c16, mbstate_t * restrict ps);
+size_t _RTL_FUNC _IMPORT mbrtoc32(char32_t * restrict pc32, const char * restrict s, 
                           size_t n, mbstate_t * restrict ps);
 
-size_t _RTL_FUNC c32rtomb(char * restrict s, char32_t c32, mbstate_t * restrict ps);
+size_t _RTL_FUNC _IMPORT c32rtomb(char * restrict s, char32_t c32, mbstate_t * restrict ps);
 
 #ifdef	__cplusplus
 }

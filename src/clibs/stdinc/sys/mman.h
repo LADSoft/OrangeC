@@ -110,28 +110,28 @@ extern "C"
 {
 #endif
 /* [ML] */
-int	_RTL_FUNC mlockall(int);
-int	_RTL_FUNC munlockall(void);
+int	_RTL_FUNC _IMPORT mlockall(int);
+int	_RTL_FUNC _IMPORT munlockall(void);
 /* [MR] */
-int	_RTL_FUNC mlock(const void *, size_t);
+int	_RTL_FUNC _IMPORT mlock(const void *, size_t);
 #ifndef _MMAP
 #define	_MMAP
 /* [MC3]*/
-void _RTL_FUNC *	mmap(void *, size_t, int, int, int, off_t);
+void _RTL_FUNC _IMPORT *	mmap(void *, size_t, int, int, int, off_t);
 #endif
 /* [MPR] */
-int	_RTL_FUNC mprotect(void *, size_t, int);
+int	_RTL_FUNC _IMPORT mprotect(void *, size_t, int);
 /* [MF|SIO] */
-int	_RTL_FUNC msync(void *, size_t, int);
+int	_RTL_FUNC _IMPORT msync(void *, size_t, int);
 /* [MR] */
-int	_RTL_FUNC munlock(const void *, size_t);
+int	_RTL_FUNC _IMPORT munlock(const void *, size_t);
 /* [MC3]*/
-int	_RTL_FUNC munmap(void *, size_t);
+int	_RTL_FUNC _IMPORT munmap(void *, size_t);
 /* [SHM] */
-int	_RTL_FUNC shm_open(const char *, int, ...);
-int	_RTL_FUNC shm_unlink(const char *);
+int	_RTL_FUNC _IMPORT shm_open(const char *, int, ...);
+int	_RTL_FUNC _IMPORT shm_unlink(const char *);
 /* [ADV] */
-int	_RTL_FUNC posix_madvise(void *, size_t, int);
+int	_RTL_FUNC _IMPORT posix_madvise(void *, size_t, int);
 
 #ifdef __cplusplus
 }

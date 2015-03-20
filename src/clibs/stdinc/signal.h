@@ -62,8 +62,8 @@ typedef void (* sighandler_t)(int);
 #define SIGBREAK        21              /* Control-Break interrupt */
 
 
-int  _RTL_FUNC raise(int __sig);
-sighandler_t _RTL_FUNC signal(int __sig, sighandler_t __func);
+int  _RTL_FUNC _IMPORT raise(int __sig);
+sighandler_t _RTL_FUNC _IMPORT signal(int __sig, sighandler_t __func);
 
 #define NSIG   23      /* highest defined signal no. + 1 */
 

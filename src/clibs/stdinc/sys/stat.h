@@ -164,11 +164,11 @@ struct  _stat
 };
 
 
-int  _RTL_FUNC  _fstat(int __handle, struct _stat  *__statbuf);
-int  _RTL_FUNC  fstat(int __handle, struct stat  *__statbuf);
-int  _RTL_FUNC  _wstat(const wchar_t *__path, struct _stat *__statbuf);
-int  _RTL_FUNC  _stat(const char  *__path, struct _stat  *__statbuf);
-int  _RTL_FUNC  stat(const char *__path, struct stat  *__statbuf);
+int  _RTL_FUNC _IMPORT  _fstat(int __handle, struct _stat  *__statbuf);
+int  _RTL_FUNC _IMPORT  fstat(int __handle, struct stat  *__statbuf);
+int  _RTL_FUNC _IMPORT  _wstat(const wchar_t *__path, struct _stat *__statbuf);
+int  _RTL_FUNC _IMPORT  _stat(const char  *__path, struct _stat  *__statbuf);
+int  _RTL_FUNC _IMPORT  stat(const char *__path, struct stat  *__statbuf);
 
 #ifdef __cplusplus
 } ;

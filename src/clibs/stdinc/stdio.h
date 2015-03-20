@@ -176,121 +176,121 @@ typedef struct __fpos_t {
 */
 
 extern  unsigned     _RTL_DATA _nfile;
-FILE *   _RTL_FUNC __getStream(int stream) ;
+FILE *   _RTL_FUNC _IMPORT __getStream(int stream) ;
 
 #define _IOFBF  1
 #define _IOLBF  2
 #define _IONBF  4
 
 
-void      _RTL_FUNC clearerr(FILE *__stream);
-int       _RTL_FUNC fclose(FILE *__stream);
-int       _RTL_FUNC fflush(FILE *__stream);
-int       _RTL_FUNC fgetc(FILE *__stream);
-int       _RTL_FUNC fgetpos(FILE *__stream, fpos_t *__pos);
-char   *  _RTL_FUNC fgets(char *__s, int __n, FILE *__stream);
-int 	  _RTL_FUNC fileno(FILE *);
-int 	  _RTL_FUNC _fileno(FILE *);
-FILE   *  _RTL_FUNC fopen(const char *__path, const char *__mode);
-int       _RTL_FUNC fprintf(FILE *restrict __stream, const char *restrict __format, ...);
-int       _RTL_FUNC fputc(int __c, FILE *__stream);
-int       _RTL_FUNC fputs(const char *__s, FILE *__stream);
-size_t    _RTL_FUNC fread(void *__ptr, size_t __size, size_t __n,
+void      _RTL_FUNC _IMPORT clearerr(FILE *__stream);
+int       _RTL_FUNC _IMPORT fclose(FILE *__stream);
+int       _RTL_FUNC _IMPORT fflush(FILE *__stream);
+int       _RTL_FUNC _IMPORT fgetc(FILE *__stream);
+int       _RTL_FUNC _IMPORT fgetpos(FILE *__stream, fpos_t *__pos);
+char   *  _RTL_FUNC _IMPORT fgets(char *__s, int __n, FILE *__stream);
+int 	  _RTL_FUNC _IMPORT fileno(FILE *);
+int 	  _RTL_FUNC _IMPORT _fileno(FILE *);
+FILE   *  _RTL_FUNC _IMPORT fopen(const char *__path, const char *__mode);
+int       _RTL_FUNC _IMPORT fprintf(FILE *restrict __stream, const char *restrict __format, ...);
+int       _RTL_FUNC _IMPORT fputc(int __c, FILE *__stream);
+int       _RTL_FUNC _IMPORT fputs(const char *__s, FILE *__stream);
+size_t    _RTL_FUNC _IMPORT fread(void *__ptr, size_t __size, size_t __n,
                      FILE *__stream);
-FILE   *  _RTL_FUNC freopen(const char *__path, const char *__mode,
+FILE   *  _RTL_FUNC _IMPORT freopen(const char *__path, const char *__mode,
                             FILE *restrict __stream);
-int       _RTL_FUNC fscanf(FILE *restrict __stream, const char *restrict __format, ...);
-int       _RTL_FUNC fseek(FILE *__stream, long __offset, int __whence);
-int       _RTL_FUNC fsetpos(FILE *__stream, const fpos_t *__pos);
-long      _RTL_FUNC ftell(FILE *__stream);
-size_t    _RTL_FUNC fwrite(const void *__ptr, size_t __size, size_t __n,
+int       _RTL_FUNC _IMPORT fscanf(FILE *restrict __stream, const char *restrict __format, ...);
+int       _RTL_FUNC _IMPORT fseek(FILE *__stream, long __offset, int __whence);
+int       _RTL_FUNC _IMPORT fsetpos(FILE *__stream, const fpos_t *__pos);
+long      _RTL_FUNC _IMPORT ftell(FILE *__stream);
+size_t    _RTL_FUNC _IMPORT fwrite(const void *__ptr, size_t __size, size_t __n,
                       FILE *__stream);
-char   *  _RTL_FUNC gets(char *__s);
-void      _RTL_FUNC perror(const char *__s);
-int       _RTL_FUNC printf(const char *restrict __format, ...);
-int       _RTL_FUNC puts(const char *__s);
-int       _RTL_FUNC remove(const char *__path);
-int       _RTL_FUNC rename(const char *__oldname,const char *__newname);
-void      _RTL_FUNC rewind(FILE *__stream);
+char   *  _RTL_FUNC _IMPORT gets(char *__s);
+void      _RTL_FUNC _IMPORT perror(const char *__s);
+int       _RTL_FUNC _IMPORT printf(const char *restrict __format, ...);
+int       _RTL_FUNC _IMPORT puts(const char *__s);
+int       _RTL_FUNC _IMPORT remove(const char *__path);
+int       _RTL_FUNC _IMPORT rename(const char *__oldname,const char *__newname);
+void      _RTL_FUNC _IMPORT rewind(FILE *__stream);
 int               scanf(const char *__format, ...);
 void              setbuf(FILE *restrict __stream, char *restrict __buf);
-int       _RTL_FUNC setvbuf(FILE *restrict __stream, char *restrict __buf,
+int       _RTL_FUNC _IMPORT setvbuf(FILE *restrict __stream, char *restrict __buf,
                                    int __type, size_t __size);
-int       _RTL_FUNC snprintf(char *restrict __buffer, size_t n, 
+int       _RTL_FUNC _IMPORT snprintf(char *restrict __buffer, size_t n, 
                                 const char *restrict __format, ...);
-int       _RTL_FUNC _snprintf(char *restrict __buffer, size_t n, 
+int       _RTL_FUNC _IMPORT _snprintf(char *restrict __buffer, size_t n, 
                                 const char *restrict __format, ...);
-int       _RTL_FUNC sprintf(char *restrict __buffer, const char *restrict __format, ...);
-int       _RTL_FUNC sscanf(const char *restrict __buffer,
+int       _RTL_FUNC _IMPORT sprintf(char *restrict __buffer, const char *restrict __format, ...);
+int       _RTL_FUNC _IMPORT sscanf(const char *restrict __buffer,
                                   const char *restrict __format, ...);
-char   *  _RTL_FUNC strerror(int __errnum);
-char    * _RTL_FUNC tempnam(char *__dir, char *__prefix);
-char    * _RTL_FUNC _tempnam(char *__dir, char *__prefix);
-FILE   *  _RTL_FUNC tmpfile(void);
-char   *  _RTL_FUNC tmpnam(char *__s);
-int       _RTL_FUNC ungetc(int __c, FILE *__stream);
-int       _RTL_FUNC vfprintf(FILE *restrict __stream, const char *restrict __format,
+char   *  _RTL_FUNC _IMPORT strerror(int __errnum);
+char    * _RTL_FUNC _IMPORT tempnam(char *__dir, char *__prefix);
+char    * _RTL_FUNC _IMPORT _tempnam(char *__dir, char *__prefix);
+FILE   *  _RTL_FUNC _IMPORT tmpfile(void);
+char   *  _RTL_FUNC _IMPORT tmpnam(char *__s);
+int       _RTL_FUNC _IMPORT ungetc(int __c, FILE *__stream);
+int       _RTL_FUNC _IMPORT vfprintf(FILE *restrict __stream, const char *restrict __format,
                                     va_list __arglist);
-int       _RTL_FUNC vfscanf(FILE *restrict __stream, const char *restrict __format,
+int       _RTL_FUNC _IMPORT vfscanf(FILE *restrict __stream, const char *restrict __format,
                                    va_list __arglist);
-int       _RTL_FUNC vprintf(const char *restrict __format, void *restrict __arglist);
-int       _RTL_FUNC vscanf(const char *restrict __format, void *restrict__arglist);
-int       _RTL_FUNC vsnprintf(char *restrict __buffer, size_t __n,
+int       _RTL_FUNC _IMPORT vprintf(const char *restrict __format, void *restrict __arglist);
+int       _RTL_FUNC _IMPORT vscanf(const char *restrict __format, void *restrict__arglist);
+int       _RTL_FUNC _IMPORT vsnprintf(char *restrict __buffer, size_t __n,
                                     const char *restrict __format,
                                     va_list __arglist);
-int       _RTL_FUNC _vsnprintf(char *restrict __buffer, size_t __n,
+int       _RTL_FUNC _IMPORT _vsnprintf(char *restrict __buffer, size_t __n,
                                     const char *restrict __format,
                                     va_list __arglist);
-int       _RTL_FUNC vsprintf(char *__buffer, const char *__format,
+int       _RTL_FUNC _IMPORT vsprintf(char *__buffer, const char *__format,
                                     va_list __arglist);
-int       _RTL_FUNC vsscanf(const char *__buffer, const char *__format,
+int       _RTL_FUNC _IMPORT vsscanf(const char *__buffer, const char *__format,
                                    va_list __arglist);
-int       _RTL_FUNC unlink(const char *__path);
-int       _RTL_FUNC _unlink(const char *__path);
-int       _RTL_FUNC getc(FILE *__fp);
+int       _RTL_FUNC _IMPORT unlink(const char *__path);
+int       _RTL_FUNC _IMPORT _unlink(const char *__path);
+int       _RTL_FUNC _IMPORT getc(FILE *__fp);
 
-int       _RTL_FUNC getchar(void);
-int       _RTL_FUNC putchar(const int __c);
+int       _RTL_FUNC _IMPORT getchar(void);
+int       _RTL_FUNC _IMPORT putchar(const int __c);
 
-int       _RTL_FUNC putc(const int __c, FILE *__fp);
-int       _RTL_FUNC feof(FILE *__fp);
-int       _RTL_FUNC ferror(FILE *__fp);
+int       _RTL_FUNC _IMPORT putc(const int __c, FILE *__fp);
+int       _RTL_FUNC _IMPORT feof(FILE *__fp);
+int       _RTL_FUNC _IMPORT ferror(FILE *__fp);
 
-int       _RTL_FUNC fcloseall(void);
-int       _RTL_FUNC _fcloseall(void);
-FILE    * _RTL_FUNC fdopen(int __handle, const char *restrict __type);
-FILE    * _RTL_FUNC _fdopen(int __handle, const char *restrict __type);
-int       _RTL_FUNC fgetchar(void);
-int       _RTL_FUNC _fgetchar(void);
-int       _RTL_FUNC flushall(void);
-int       _RTL_FUNC _flushall(void);
-int       _RTL_FUNC fputchar(int __c);
-int       _RTL_FUNC _fputchar(int __c);
-FILE    * _RTL_FUNC _fsopen (const char *__path, const char *__mode,
+int       _RTL_FUNC _IMPORT fcloseall(void);
+int       _RTL_FUNC _IMPORT _fcloseall(void);
+FILE    * _RTL_FUNC _IMPORT fdopen(int __handle, const char *restrict __type);
+FILE    * _RTL_FUNC _IMPORT _fdopen(int __handle, const char *restrict __type);
+int       _RTL_FUNC _IMPORT fgetchar(void);
+int       _RTL_FUNC _IMPORT _fgetchar(void);
+int       _RTL_FUNC _IMPORT flushall(void);
+int       _RTL_FUNC _IMPORT _flushall(void);
+int       _RTL_FUNC _IMPORT fputchar(int __c);
+int       _RTL_FUNC _IMPORT _fputchar(int __c);
+FILE    * _RTL_FUNC _IMPORT _fsopen (const char *__path, const char *__mode,
                   int __shflag);
-int       _RTL_FUNC getw(FILE *__stream);
-int       _RTL_FUNC _getw(FILE *__stream);
-int       _RTL_FUNC putw(int __w, FILE *__stream);
-int       _RTL_FUNC _putw(int __w, FILE *__stream);
-int       _RTL_FUNC rmtmp(void);
-int		  _RTL_FUNC _rmtmp(void);
-char    * _RTL_FUNC _strerror(const char *__s);
+int       _RTL_FUNC _IMPORT getw(FILE *__stream);
+int       _RTL_FUNC _IMPORT _getw(FILE *__stream);
+int       _RTL_FUNC _IMPORT putw(int __w, FILE *__stream);
+int       _RTL_FUNC _IMPORT _putw(int __w, FILE *__stream);
+int       _RTL_FUNC _IMPORT rmtmp(void);
+int		  _RTL_FUNC _IMPORT _rmtmp(void);
+char    * _RTL_FUNC _IMPORT _strerror(const char *__s);
 
 #if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
 #define fileno(f)       ((f)->fd)
 #define _fileno(f)		((f)->fd)
 #endif
 
-int       _RTL_FUNC _fgetc(FILE *__stream);           /* used by getc() macro */
-int       _RTL_FUNC _fputc(int __c, FILE *__stream); /* used by putc() macro */
+int       _RTL_FUNC _IMPORT _fgetc(FILE *__stream);           /* used by getc() macro */
+int       _RTL_FUNC _IMPORT _fputc(int __c, FILE *__stream); /* used by putc() macro */
 
 #if 0
 /*
-int _RTL_FUNC _filbuf(FILE *);
-int _RTL_FUNC _flsbuf(int, FILE *);
-FILE * _RTL_FUNC _fsopen(const char *, const char *, int);
-int _RTL_FUNC _getmaxstdio(void);
-int _RTL_FUNC _setmaxstdio(int);
+int _RTL_FUNC _IMPORT _filbuf(FILE *);
+int _RTL_FUNC _IMPORT _flsbuf(int, FILE *);
+FILE * _RTL_FUNC _IMPORT _fsopen(const char *, const char *, int);
+int _RTL_FUNC _IMPORT _getmaxstdio(void);
+int _RTL_FUNC _IMPORT _setmaxstdio(int);
 */
 #endif
 

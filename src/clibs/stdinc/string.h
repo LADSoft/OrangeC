@@ -72,14 +72,14 @@ void *       _RTL_INTRINS memmove(void *__dest, const void *__src,
                                         size_t __n);
 void *       _RTL_INTRINS memset(void *__s, int __c, size_t __n);
 char *       _RTL_INTRINS strcat(char *restrict __dest, const char *restrict __src);
-size_t 		 _RTL_FUNC strlcat (char * dst, const char * src, size_t n);
+size_t 		 _RTL_FUNC _IMPORT strlcat (char * dst, const char * src, size_t n);
 int          _RTL_INTRINS strcmp(const char *__s1, const char *__s2);
 char *       _RTL_INTRINS strcpy(char *restrict __dest, const char *restrict __src);
 size_t       _RTL_INTRINS strlcpy (char * dst, const char * src, size_t n);
 char *       _RTL_INTRINS stpcpy(char *restrict __dest, const char *restrict __src);
-size_t       _RTL_FUNC strcspn(const char *__s1, const char *__s2);
-char *       _RTL_FUNC strdup(const char *__string);
-char *       _RTL_FUNC strerror(int __errnum);
+size_t       _RTL_FUNC _IMPORT strcspn(const char *__s1, const char *__s2);
+char *       _RTL_FUNC _IMPORT strdup(const char *__string);
+char *       _RTL_FUNC _IMPORT strerror(int __errnum);
 size_t       _RTL_INTRINS strlen(const char *__s);
 char *       _RTL_INTRINS strncat(char *restrict __dest, const char *restrict __src,
                                         size_t __maxlen);
@@ -89,49 +89,49 @@ char *       _RTL_INTRINS strncpy(char *restrict __dest, const char *restrict __
                                         size_t __maxlen);
 char *       _RTL_INTRINS stpncpy(char *restrict __dest, const char *restrict __src,
                                         size_t __maxlen);
-size_t       _RTL_FUNC strspn(const char *__s1, const char *__s2);
-char *       _RTL_FUNC strtok(char *restrict __s1, const char *restrict __s2);
-char *       _RTL_FUNC _strerror(const char *__s);
+size_t       _RTL_FUNC _IMPORT strspn(const char *__s1, const char *__s2);
+char *       _RTL_FUNC _IMPORT strtok(char *restrict __s1, const char *restrict __s2);
+char *       _RTL_FUNC _IMPORT _strerror(const char *__s);
 
 
 void *       _RTL_INTRINS memchr(const void *__s, int __c, size_t __n);
 char *       _RTL_INTRINS strchr(const char * __s, int __c);
 char *       _RTL_INTRINS strrchr(const char *__s, int __c);
-char *       _RTL_FUNC strpbrk(const char *__s1, const char *__s2);
-char *       _RTL_FUNC strstr(const char *__s1, const char *__s2);
+char *       _RTL_FUNC _IMPORT strpbrk(const char *__s1, const char *__s2);
+char *       _RTL_FUNC _IMPORT strstr(const char *__s1, const char *__s2);
 
-int          _RTL_FUNC _lstrcoll(const char *__s1, const char *__s2);
-size_t       _RTL_FUNC _lstrxfrm(char *restrict __s1, const char *restrict __s2,
+int          _RTL_FUNC _IMPORT _lstrcoll(const char *__s1, const char *__s2);
+size_t       _RTL_FUNC _IMPORT _lstrxfrm(char *restrict __s1, const char *restrict __s2,
                                             size_t __n );
-int          _RTL_FUNC strcoll(const char *__s1, const char *__s2);
-size_t       _RTL_FUNC strxfrm(char *restrict __s1, const char *restrict __s2,
+int          _RTL_FUNC _IMPORT strcoll(const char *__s1, const char *__s2);
+size_t       _RTL_FUNC _IMPORT strxfrm(char *restrict __s1, const char *restrict __s2,
                                           size_t __n );
 
-int    		 _RTL_FUNC memicmp(const void *, const void *, size_t);
-void *       _RTL_FUNC memccpy(void *, const void *, int, size_t);
-char * 		 _RTL_FUNC strset(char *, int);
-char *  	 _RTL_FUNC strnset(char *, int, size_t);
-char *		 _RTL_FUNC strrev(char *);
-char *       _RTL_FUNC strupr(char * __s);
-char *       _RTL_FUNC strlwr(char * __s);
-int          _RTL_FUNC strnicmp(const char *__s1, const char *__s2, size_t __n);
-int          _RTL_FUNC stricmp(const char *__s1, const char *__s2);
-int          _RTL_FUNC strncmpi(const char *__s1, const char *__s2, size_t __n);
-int          _RTL_FUNC strcmpi(const char *__s1, const char *__s2);
+int    		 _RTL_FUNC _IMPORT memicmp(const void *, const void *, size_t);
+void *       _RTL_FUNC _IMPORT memccpy(void *, const void *, int, size_t);
+char * 		 _RTL_FUNC _IMPORT strset(char *, int);
+char *  	 _RTL_FUNC _IMPORT strnset(char *, int, size_t);
+char *		 _RTL_FUNC _IMPORT strrev(char *);
+char *       _RTL_FUNC _IMPORT strupr(char * __s);
+char *       _RTL_FUNC _IMPORT strlwr(char * __s);
+int          _RTL_FUNC _IMPORT strnicmp(const char *__s1, const char *__s2, size_t __n);
+int          _RTL_FUNC _IMPORT stricmp(const char *__s1, const char *__s2);
+int          _RTL_FUNC _IMPORT strncmpi(const char *__s1, const char *__s2, size_t __n);
+int          _RTL_FUNC _IMPORT strcmpi(const char *__s1, const char *__s2);
 
-int    		 _RTL_FUNC _memicmp(const void *, const void *, unsigned int);
-void *       _RTL_FUNC _memccpy(void *, const void *, int, unsigned int);
-char * 		 _RTL_FUNC _strset(char *, int);
-char * 		 _RTL_FUNC _strnset(char *, int, size_t);
-char * 		 _RTL_FUNC _strrev(char *);
+int    		 _RTL_FUNC _IMPORT _memicmp(const void *, const void *, unsigned int);
+void *       _RTL_FUNC _IMPORT _memccpy(void *, const void *, int, unsigned int);
+char * 		 _RTL_FUNC _IMPORT _strset(char *, int);
+char * 		 _RTL_FUNC _IMPORT _strnset(char *, int, size_t);
+char * 		 _RTL_FUNC _IMPORT _strrev(char *);
 
-char *       _RTL_FUNC _strdup(const char *string);
-int    		 _RTL_FUNC _stricmp(const char *, const char *);
-int    		 _RTL_FUNC _strcmpi(const char *, const char *);
-int    		 _RTL_FUNC _strnicmp(const char *, const char *, size_t);
-int    		 _RTL_FUNC _strncmpi(const char *, const char *, size_t);
-char * 		 _RTL_FUNC _strlwr(char *);
-char * 		 _RTL_FUNC _strupr(char *);
+char *       _RTL_FUNC _IMPORT _strdup(const char *string);
+int    		 _RTL_FUNC _IMPORT _stricmp(const char *, const char *);
+int    		 _RTL_FUNC _IMPORT _strcmpi(const char *, const char *);
+int    		 _RTL_FUNC _IMPORT _strnicmp(const char *, const char *, size_t);
+int    		 _RTL_FUNC _IMPORT _strncmpi(const char *, const char *, size_t);
+char * 		 _RTL_FUNC _IMPORT _strlwr(char *);
+char * 		 _RTL_FUNC _IMPORT _strupr(char *);
 
 #if defined(__USELOCALES__)
 #define  strupr   _lstrupr

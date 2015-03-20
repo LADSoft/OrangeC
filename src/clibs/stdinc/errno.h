@@ -96,8 +96,8 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
-int  *_RTL_FUNC __GetErrno(void);
-int  *_RTL_FUNC __GetDosErrno(void);
+int  *_RTL_FUNC _IMPORT __GetErrno(void);
+int  *_RTL_FUNC _IMPORT __GetDosErrno(void);
 
 #define errno (*__GetErrno())
 #define _dos_errno (*__GetDosErrno())

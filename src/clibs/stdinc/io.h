@@ -104,66 +104,66 @@ struct _finddata_t
 #define W_OK    2
 #define R_OK    4
 
-int  _RTL_FUNC  access  (const char *__path, int __amode);
-int  _RTL_FUNC   chmod   (const char *__path, int __amode);
-int  _RTL_FUNC   chsize  (int __handle, long __size);
-int  _RTL_FUNC  close   (int __handle);
-int  _RTL_FUNC  creat   (const char *__path, int __amode);
-int  _RTL_FUNC   dup   (int __handle);
-int  _RTL_FUNC   dup2  (int __oldhandle, int __newhandle);
-int  _RTL_FUNC  eof     (int __handle);
-long _RTL_FUNC  filelength(int __handle);
-int  _RTL_FUNC   getftime(int __handle, struct ftime *__ftimep);
+int  _RTL_FUNC _IMPORT  access  (const char *__path, int __amode);
+int  _RTL_FUNC _IMPORT   chmod   (const char *__path, int __amode);
+int  _RTL_FUNC _IMPORT   chsize  (int __handle, long __size);
+int  _RTL_FUNC _IMPORT  close   (int __handle);
+int  _RTL_FUNC _IMPORT  creat   (const char *__path, int __amode);
+int  _RTL_FUNC _IMPORT   dup   (int __handle);
+int  _RTL_FUNC _IMPORT   dup2  (int __oldhandle, int __newhandle);
+int  _RTL_FUNC _IMPORT  eof     (int __handle);
+long _RTL_FUNC _IMPORT  filelength(int __handle);
+int  _RTL_FUNC _IMPORT   getftime(int __handle, struct ftime *__ftimep);
 
-int  _RTL_FUNC   isatty(int __handle);
-int  _RTL_FUNC     lock  (int __handle, long __offset, long __length);
-int  _RTL_FUNC     locking(int __handle, int __mode, long __length);
-long _RTL_FUNC  lseek (int __handle, long __offset, int __fromwhere);
-char * _RTL_FUNC  mktemp( char *__template );
-int  _RTL_FUNC    mkstemp (char * __template);
-int  _RTL_FUNC     open  (const char *__path, int __access,... /*unsigned mode*/);
-int  _RTL_FUNC    read  (int __handle, void *__buf, unsigned __len);
-int  _RTL_FUNC  remove(const char *__path);
-int  _RTL_FUNC    rename(const char *__oldname,const char *__newname);
-int  _RTL_FUNC   setftime(int __handle, struct ftime *__ftimep);
-int  _RTL_FUNC     setmode(int __handle, int __amode);
+int  _RTL_FUNC _IMPORT   isatty(int __handle);
+int  _RTL_FUNC _IMPORT     lock  (int __handle, long __offset, long __length);
+int  _RTL_FUNC _IMPORT     locking(int __handle, int __mode, long __length);
+long _RTL_FUNC _IMPORT  lseek (int __handle, long __offset, int __fromwhere);
+char * _RTL_FUNC _IMPORT  mktemp( char *__template );
+int  _RTL_FUNC _IMPORT    mkstemp (char * __template);
+int  _RTL_FUNC _IMPORT     open  (const char *__path, int __access,... /*unsigned mode*/);
+int  _RTL_FUNC _IMPORT    read  (int __handle, void *__buf, unsigned __len);
+int  _RTL_FUNC _IMPORT  remove(const char *__path);
+int  _RTL_FUNC _IMPORT    rename(const char *__oldname,const char *__newname);
+int  _RTL_FUNC _IMPORT   setftime(int __handle, struct ftime *__ftimep);
+int  _RTL_FUNC _IMPORT     setmode(int __handle, int __amode);
 
-int  _RTL_FUNC   sopen (const char *__path, int __access, int __shflag,
+int  _RTL_FUNC _IMPORT   sopen (const char *__path, int __access, int __shflag,
                       ... /* unsigned mode */);
-int  _RTL_FUNC  rmdir(const char *__path);
-long _RTL_FUNC   tell  (int __handle);
-int  _RTL_FUNC  umask(int perm);
-int  _RTL_FUNC  unlink(const char *__path);
-int  _RTL_FUNC     unlock(int __handle, long __offset, long __length);
-int  _RTL_FUNC    write (int __handle, const void *__buf, unsigned __len);
+int  _RTL_FUNC _IMPORT  rmdir(const char *__path);
+long _RTL_FUNC _IMPORT   tell  (int __handle);
+int  _RTL_FUNC _IMPORT  umask(int perm);
+int  _RTL_FUNC _IMPORT  unlink(const char *__path);
+int  _RTL_FUNC _IMPORT     unlock(int __handle, long __offset, long __length);
+int  _RTL_FUNC _IMPORT    write (int __handle, const void *__buf, unsigned __len);
 
-long _RTL_FUNC _get_osfhandle(int __handle);
-int  _RTL_FUNC _open_osfhandle(long __osfhandle, int __oflag);
+long _RTL_FUNC _IMPORT _get_osfhandle(int __handle);
+int  _RTL_FUNC _IMPORT _open_osfhandle(long __osfhandle, int __oflag);
 
-int _RTL_FUNC _access(const char *, int);
-int _RTL_FUNC _chmod(const char *, int);
-int _RTL_FUNC _chsize(int, long);
-int _RTL_FUNC _close(int);
-int _RTL_FUNC _creat(const char *, int);
-int _RTL_FUNC _dup(int);
-int _RTL_FUNC _dup2(int, int);
-int _RTL_FUNC _eof(int);
-long _RTL_FUNC _filelength(int);
-long _RTL_FUNC _findfirst(const char *, struct _finddata_t *);
-int _RTL_FUNC _findnext(long, struct _finddata_t *);
-int _RTL_FUNC _findclose(long);
-int _RTL_FUNC _isatty(int);
-int _RTL_FUNC _locking(int, int, long);
-long _RTL_FUNC _lseek(int, long, int);
-char * _RTL_FUNC _mktemp(char *);
-int _RTL_FUNC _open(const char *, int, ...);
-int _RTL_FUNC _read(int, void *, unsigned int);
-int _RTL_FUNC _setmode(int, int);
-int _RTL_FUNC _sopen(const char *, int, int, ...);
-long _RTL_FUNC _tell(int);
-int  _RTL_FUNC _umask(int perm);
-int _RTL_FUNC _unlink(const char *);
-int _RTL_FUNC _write(int, const void *, unsigned int);
+int _RTL_FUNC _IMPORT _access(const char *, int);
+int _RTL_FUNC _IMPORT _chmod(const char *, int);
+int _RTL_FUNC _IMPORT _chsize(int, long);
+int _RTL_FUNC _IMPORT _close(int);
+int _RTL_FUNC _IMPORT _creat(const char *, int);
+int _RTL_FUNC _IMPORT _dup(int);
+int _RTL_FUNC _IMPORT _dup2(int, int);
+int _RTL_FUNC _IMPORT _eof(int);
+long _RTL_FUNC _IMPORT _filelength(int);
+long _RTL_FUNC _IMPORT _findfirst(const char *, struct _finddata_t *);
+int _RTL_FUNC _IMPORT _findnext(long, struct _finddata_t *);
+int _RTL_FUNC _IMPORT _findclose(long);
+int _RTL_FUNC _IMPORT _isatty(int);
+int _RTL_FUNC _IMPORT _locking(int, int, long);
+long _RTL_FUNC _IMPORT _lseek(int, long, int);
+char * _RTL_FUNC _IMPORT _mktemp(char *);
+int _RTL_FUNC _IMPORT _open(const char *, int, ...);
+int _RTL_FUNC _IMPORT _read(int, void *, unsigned int);
+int _RTL_FUNC _IMPORT _setmode(int, int);
+int _RTL_FUNC _IMPORT _sopen(const char *, int, int, ...);
+long _RTL_FUNC _IMPORT _tell(int);
+int  _RTL_FUNC _IMPORT _umask(int perm);
+int _RTL_FUNC _IMPORT _unlink(const char *);
+int _RTL_FUNC _IMPORT _write(int, const void *, unsigned int);
 
 #ifdef __cplusplus
 } ;

@@ -63,8 +63,8 @@ struct diskinfo_t
 #define _DISK_VERIFY    4   /* verify sectors */
 #define _DISK_FORMAT    5   /* format track */
 
-unsigned _RTL_FUNC _bios_disk(unsigned __cmd, struct diskinfo_t *__dinfo);
-int      _RTL_FUNC biosdisk(int __cmd, int __drive, int __head, int __track,
+unsigned _RTL_FUNC _IMPORT _bios_disk(unsigned __cmd, struct diskinfo_t *__dinfo);
+int      _RTL_FUNC _IMPORT biosdisk(int __cmd, int __drive, int __head, int __track,
                             int __sector, int __nsects, void *__buffer);
 
 
@@ -108,13 +108,13 @@ int      _RTL_FUNC biosdisk(int __cmd, int __drive, int __head, int __track,
 #define _COM_4800       0xc0    /* 4800 baud */
 #define _COM_9600       0xe0    /* 9600 baud */
 
-unsigned _RTL_FUNC _bios_keybrd(unsigned __cmd);
-unsigned _RTL_FUNC _bios_printer(unsigned __cmd, unsigned __port, unsigned __abyte);
-unsigned _RTL_FUNC _bios_serialcom(unsigned __cmd, unsigned __port, unsigned __abyte);
+unsigned _RTL_FUNC _IMPORT _bios_keybrd(unsigned __cmd);
+unsigned _RTL_FUNC _IMPORT _bios_printer(unsigned __cmd, unsigned __port, unsigned __abyte);
+unsigned _RTL_FUNC _IMPORT _bios_serialcom(unsigned __cmd, unsigned __port, unsigned __abyte);
 
-int      _RTL_FUNC bioscom(int __cmd, char __abyte, int __port);
-int      _RTL_FUNC bioskey(int __cmd);
-int      _RTL_FUNC biosprint(int __cmd, int __abyte, int __port);
+int      _RTL_FUNC _IMPORT bioscom(int __cmd, char __abyte, int __port);
+int      _RTL_FUNC _IMPORT bioskey(int __cmd);
+int      _RTL_FUNC _IMPORT biosprint(int __cmd, int __abyte, int __port);
 
 /* cmd values for _bios_timeofday() */
 
@@ -224,15 +224,15 @@ union REGPACK {
 
 #endif /* _REG_DEFS */
 
-unsigned _RTL_FUNC _bios_equiplist(void);
-unsigned _RTL_FUNC _bios_memsize(void);
-unsigned _RTL_FUNC _bios_timeofday(unsigned __cmd, long *__timeval);
+unsigned _RTL_FUNC _IMPORT _bios_equiplist(void);
+unsigned _RTL_FUNC _IMPORT _bios_memsize(void);
+unsigned _RTL_FUNC _IMPORT _bios_timeofday(unsigned __cmd, long *__timeval);
 
-int      _RTL_FUNC biosequip(void);
-int      _RTL_FUNC biosmemory(void);
-long     _RTL_FUNC biostime(int __cmd, long __newtime);
+int      _RTL_FUNC _IMPORT biosequip(void);
+int      _RTL_FUNC _IMPORT biosmemory(void);
+long     _RTL_FUNC _IMPORT biostime(int __cmd, long __newtime);
 
-int      _RTL_FUNC _int386(int __intno,
+int      _RTL_FUNC _IMPORT _int386(int __intno,
                          union REGS *__inregs,
                          union REGS *__outregs );
 

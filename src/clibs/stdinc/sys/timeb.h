@@ -64,8 +64,8 @@ struct _timeb {
       short dstflag;
       };
 
-void _RTL_FUNC _ftime(struct _timeb *);
-void _RTL_FUNC ftime(struct timeb *);
+void _RTL_FUNC _IMPORT _ftime(struct _timeb *);
+void _RTL_FUNC _IMPORT ftime(struct timeb *);
 #ifdef __cplusplus
 } ;
 } ;

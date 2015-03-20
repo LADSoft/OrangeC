@@ -45,7 +45,7 @@
 extern "C" {
 #endif
 
-void _RTL_FUNC __assertfail( const char *__who, const char *__file, 
+void _RTL_FUNC _IMPORT __assertfail( const char *__who, const char *__file, 
                             int __line, const char *__func, const char *__msg );
 #ifdef __cplusplus
 };

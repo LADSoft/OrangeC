@@ -37,15 +37,27 @@
 #if defined(__BUILDING_LSCRTL_DLL)
 #define _RTL_FUNC  _export
 #define _RTL_DATA  _export
+#define _IMPORT
+#define _IMPORTMM
 #define _RTL_CLASS
-#elif defined( __LSCRTL_DLL) || defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL)
-#define _RTL_FUNC _import
-#define _RTL_DATA _import
+#elif defined( __LSCRTL_DLL) || defined(__CRTDLL_DLL)
+#define _RTL_FUNC
+#define _RTL_DATA
+#define _IMPORT _import
+#define _IMPORTMM _import
+#define _RTL_CLASS
+#elif defined(__MSVCRT_DLL)
+#define _RTL_FUNC
+#define _RTL_DATA
+#define _IMPORT _import
+#define _IMPORTMM
 #define _RTL_CLASS
 #else
 #define _RTL_FUNC
 #define _RTL_DATA
 #define _RTL_CLASS
+#define _IMPORT
+#define _IMPORTMM
 #endif
 
 #if !defined(__STDC__) || defined(__STDC_VERSION__)

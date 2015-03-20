@@ -80,34 +80,34 @@ struct  ffblk   {
 #define MAXEXT    256
 
 
-int         _RTL_FUNC    chdir( const char  *__path );
-int         _RTL_FUNC    findfirst( const char  *__path,
+int         _RTL_FUNC _IMPORT    chdir( const char  *__path );
+int         _RTL_FUNC _IMPORT    findfirst( const char  *__path,
                                     struct ffblk  *__ffblk,
                                     int __attrib );
-int         _RTL_FUNC    findnext( struct ffblk  *__ffblk );
-void        _RTL_FUNC    fnmerge( char  *__path,
+int         _RTL_FUNC _IMPORT    findnext( struct ffblk  *__ffblk );
+void        _RTL_FUNC _IMPORT    fnmerge( char  *__path,
                                     const char  *__drive,
                                     const char  *__dir,
                                     const char  *__name,
                                     const char  *__ext );
-int         _RTL_FUNC    fnsplit(const char  *__path,
+int         _RTL_FUNC _IMPORT    fnsplit(const char  *__path,
                                     char  *__drive,
                                     char  *__dir,
                                     char  *__name,
                                     char  *__ext );
-int         _RTL_FUNC    getcurdir( int __drive, char  *__directory );
-char  *     _RTL_FUNC    getcwd( char  *__buf, int __buflen );
-int         _RTL_FUNC    getdisk( void );
-int         _RTL_FUNC    mkdir( const char  *__path );
-char  *     _RTL_FUNC    mktemp( char  *__template );
-int         _RTL_FUNC    rmdir( const char  *__path );
-char  *     _RTL_FUNC    searchpath( const char  *__file );
-int         _RTL_FUNC    setdisk( int __drive );
+int         _RTL_FUNC _IMPORT    getcurdir( int __drive, char  *__directory );
+char  *     _RTL_FUNC _IMPORT    getcwd( char  *__buf, int __buflen );
+int         _RTL_FUNC _IMPORT    getdisk( void );
+int         _RTL_FUNC _IMPORT    mkdir( const char  *__path );
+char  *     _RTL_FUNC _IMPORT    mktemp( char  *__template );
+int         _RTL_FUNC _IMPORT    rmdir( const char  *__path );
+char  *     _RTL_FUNC _IMPORT    searchpath( const char  *__file );
+int         _RTL_FUNC _IMPORT    setdisk( int __drive );
 
-int _RTL_FUNC _chdir(const char *);
-char * _RTL_FUNC _getcwd(char *, int);
-int _RTL_FUNC _mkdir(const char *);
-int _RTL_FUNC _rmdir(const char *);
+int _RTL_FUNC _IMPORT _chdir(const char *);
+char * _RTL_FUNC _IMPORT _getcwd(char *, int);
+int _RTL_FUNC _IMPORT _mkdir(const char *);
+int _RTL_FUNC _IMPORT _rmdir(const char *);
 
 #ifdef __cplusplus
 } ;

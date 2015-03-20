@@ -55,7 +55,7 @@ extern "C" {
 #endif
 
 #if  __STDC_VERSION__ >= 199901L
-int *_RTL_FUNC __GetSignGam(void);
+int *_RTL_FUNC _IMPORT __GetSignGam(void);
 
 #define signgam (*__GetSignGam())
 
@@ -146,19 +146,19 @@ struct  _exceptionl
 #define HUGE_VALL            0x1P+16384L
 #define _LHUGE_VAL  HUGE_VALL
 
-int _RTL_FUNC __fpclassifyf(float __x);
-int _RTL_FUNC __fpclassify(double __x);
-int _RTL_FUNC __fpclassifyl(long double __x);
+int _RTL_FUNC _IMPORTMM __fpclassifyf(float __x);
+int _RTL_FUNC _IMPORTMM __fpclassify(double __x);
+int _RTL_FUNC _IMPORTMM __fpclassifyl(long double __x);
 
 #if  __STDC_VERSION__ >= 199901L
-float _RTL_FUNC nanf(const char *tagp);
-double _RTL_FUNC nan(const char *tagp);
-long double _RTL_FUNC nanl(const char *tagp);
+float _RTL_FUNC _IMPORTMM nanf(const char *tagp);
+double _RTL_FUNC _IMPORTMM nan(const char *tagp);
+long double _RTL_FUNC _IMPORTMM nanl(const char *tagp);
 
-int _RTL_FUNC __signbitf(float __x);
-int _RTL_FUNC __signbit(double __x);
-int _RTL_FUNC __signbitl(long double __x);
-int _RTL_FUNC __nancompare(long double __x, long double __y, int type);
+int _RTL_FUNC _IMPORTMM __signbitf(float __x);
+int _RTL_FUNC _IMPORTMM __signbit(double __x);
+int _RTL_FUNC _IMPORTMM __signbitl(long double __x);
+int _RTL_FUNC _IMPORTMM __nancompare(long double __x, long double __y, int type);
 
 
 #define fpclassify(x) \
@@ -185,263 +185,263 @@ int _RTL_FUNC __nancompare(long double __x, long double __y, int type);
 
 #endif
 
-float _RTL_FUNC acosf  (float __x);
-float _RTL_FUNC asinf  (float __x);
-float _RTL_FUNC atan2f (float __y, float __x);
-float _RTL_FUNC atanf  (float __x);
-float _RTL_FUNC ceilf  (float __x);
-float _RTL_FUNC cosf   (float __x);
-float _RTL_FUNC coshf  (float __x);
-float _RTL_FUNC expf   (float __x);
-float _RTL_FUNC fabsf  (float __x);
-float _RTL_FUNC floorf (float __x);
-float _RTL_FUNC fmodf  (float __x, float __y);
-float _RTL_FUNC frexpf (float __x, int *__exponent);
-float _RTL_FUNC ldexpf (float __x, int __exponent);
-float _RTL_FUNC log10f (float __x);
-float _RTL_FUNC logf   (float __x);
-float _RTL_FUNC modff  (float __x, float *__y);
-float _RTL_FUNC powf   (float __x, float __y);
-float _RTL_FUNC sinhf  (float __x);
-float _RTL_FUNC sinf   (float __x);
-float _RTL_FUNC sqrtf  (float __x);
-float _RTL_FUNC tanhf  (float __x);
-float _RTL_FUNC tanf   (float __x);
+float _RTL_FUNC _IMPORTMM acosf  (float __x);
+float _RTL_FUNC _IMPORTMM asinf  (float __x);
+float _RTL_FUNC _IMPORTMM atan2f (float __y, float __x);
+float _RTL_FUNC _IMPORTMM atanf  (float __x);
+float _RTL_FUNC _IMPORTMM ceilf  (float __x);
+float _RTL_FUNC _IMPORTMM cosf   (float __x);
+float _RTL_FUNC _IMPORTMM coshf  (float __x);
+float _RTL_FUNC _IMPORTMM expf   (float __x);
+float _RTL_FUNC _IMPORTMM fabsf  (float __x);
+float _RTL_FUNC _IMPORTMM floorf (float __x);
+float _RTL_FUNC _IMPORTMM fmodf  (float __x, float __y);
+float _RTL_FUNC _IMPORTMM frexpf (float __x, int *__exponent);
+float _RTL_FUNC _IMPORTMM ldexpf (float __x, int __exponent);
+float _RTL_FUNC _IMPORTMM log10f (float __x);
+float _RTL_FUNC _IMPORTMM logf   (float __x);
+float _RTL_FUNC _IMPORTMM modff  (float __x, float *__y);
+float _RTL_FUNC _IMPORTMM powf   (float __x, float __y);
+float _RTL_FUNC _IMPORTMM sinhf  (float __x);
+float _RTL_FUNC _IMPORTMM sinf   (float __x);
+float _RTL_FUNC _IMPORTMM sqrtf  (float __x);
+float _RTL_FUNC _IMPORTMM tanhf  (float __x);
+float _RTL_FUNC _IMPORTMM tanf   (float __x);
 
 
 
-double      _RTL_FUNC acos  (double __x);
-double      _RTL_FUNC asin  (double __x);
-double      _RTL_FUNC atan2 (double __y, double __x);
-double      _RTL_FUNC atan  (double __x);
-double      _RTL_FUNC ceil    (double __x);
-double      _RTL_FUNC cos     (double __x);
-double      _RTL_FUNC cosh    (double __x);
-double      _RTL_FUNC exp     (double __x);
-double      _RTL_FUNC fabs    (double __x);
-double      _RTL_FUNC floor   (double __x);
-double      _RTL_FUNC fmod    (double __x, double __y);
-double      _RTL_FUNC frexp   (double __x, int *__exponent);
-double      _RTL_FUNC ldexp   (double __x, int __exponent);
-double      _RTL_FUNC log     (double __x);
-double      _RTL_FUNC log10   (double __x);
-double      _RTL_FUNC modf    (double __x, double *__ipart);
-double      _RTL_FUNC pow     (double __x, double __y);
-double      _RTL_FUNC sin     (double __x);
-double      _RTL_FUNC sinh    (double __x);
-double      _RTL_FUNC sqrt    (double __x);
-double      _RTL_FUNC tan     (double __x);
-double      _RTL_FUNC tanh    (double __x);
+double      _RTL_FUNC _IMPORTMM acos  (double __x);
+double      _RTL_FUNC _IMPORTMM asin  (double __x);
+double      _RTL_FUNC _IMPORTMM atan2 (double __y, double __x);
+double      _RTL_FUNC _IMPORTMM atan  (double __x);
+double      _RTL_FUNC _IMPORTMM ceil    (double __x);
+double      _RTL_FUNC _IMPORTMM cos     (double __x);
+double      _RTL_FUNC _IMPORTMM cosh    (double __x);
+double      _RTL_FUNC _IMPORTMM exp     (double __x);
+double      _RTL_FUNC _IMPORTMM fabs    (double __x);
+double      _RTL_FUNC _IMPORTMM floor   (double __x);
+double      _RTL_FUNC _IMPORTMM fmod    (double __x, double __y);
+double      _RTL_FUNC _IMPORTMM frexp   (double __x, int *__exponent);
+double      _RTL_FUNC _IMPORTMM ldexp   (double __x, int __exponent);
+double      _RTL_FUNC _IMPORTMM log     (double __x);
+double      _RTL_FUNC _IMPORTMM log10   (double __x);
+double      _RTL_FUNC _IMPORTMM modf    (double __x, double *__ipart);
+double      _RTL_FUNC _IMPORTMM pow     (double __x, double __y);
+double      _RTL_FUNC _IMPORTMM sin     (double __x);
+double      _RTL_FUNC _IMPORTMM sinh    (double __x);
+double      _RTL_FUNC _IMPORTMM sqrt    (double __x);
+double      _RTL_FUNC _IMPORTMM tan     (double __x);
+double      _RTL_FUNC _IMPORTMM tanh    (double __x);
 
-long double _RTL_FUNC acosl  (long double __x);
-long double _RTL_FUNC asinl  (long double __x);
-long double _RTL_FUNC atan2l (long double __y, long double __x);
-long double _RTL_FUNC atanl  (long double __x);
-long double _RTL_FUNC ceill  (long double __x);
-long double _RTL_FUNC coshl  (long double __x);
-long double _RTL_FUNC cosl   (long double __x);
-long double _RTL_FUNC expl   (long double __x);
-long double _RTL_FUNC fabsl  (long double __x);
-long double _RTL_FUNC floorl (long double __x);
-long double _RTL_FUNC fmodl  (long double __x, long double __y);
-long double _RTL_FUNC frexpl (long double __x, int *__exponent);
-long double _RTL_FUNC ldexpl (long double __x, int __exponent);
-long double _RTL_FUNC log10l (long double __x);
-long double _RTL_FUNC logl   (long double __x);
-long double _RTL_FUNC modfl  (long double __x, long double *__ipart);
-long double _RTL_FUNC powl   (long double __x, long double __y);
-long double _RTL_FUNC sinhl  (long double __x);
-long double _RTL_FUNC sinl   (long double __x);
-long double _RTL_FUNC sqrtl  (long double __x);
-long double _RTL_FUNC tanhl  (long double __x);
-long double _RTL_FUNC tanl   (long double __x);
+long double _RTL_FUNC _IMPORTMM acosl  (long double __x);
+long double _RTL_FUNC _IMPORTMM asinl  (long double __x);
+long double _RTL_FUNC _IMPORTMM atan2l (long double __y, long double __x);
+long double _RTL_FUNC _IMPORTMM atanl  (long double __x);
+long double _RTL_FUNC _IMPORTMM ceill  (long double __x);
+long double _RTL_FUNC _IMPORTMM coshl  (long double __x);
+long double _RTL_FUNC _IMPORTMM cosl   (long double __x);
+long double _RTL_FUNC _IMPORTMM expl   (long double __x);
+long double _RTL_FUNC _IMPORTMM fabsl  (long double __x);
+long double _RTL_FUNC _IMPORTMM floorl (long double __x);
+long double _RTL_FUNC _IMPORTMM fmodl  (long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM frexpl (long double __x, int *__exponent);
+long double _RTL_FUNC _IMPORTMM ldexpl (long double __x, int __exponent);
+long double _RTL_FUNC _IMPORTMM log10l (long double __x);
+long double _RTL_FUNC _IMPORTMM logl   (long double __x);
+long double _RTL_FUNC _IMPORTMM modfl  (long double __x, long double *__ipart);
+long double _RTL_FUNC _IMPORTMM powl   (long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM sinhl  (long double __x);
+long double _RTL_FUNC _IMPORTMM sinl   (long double __x);
+long double _RTL_FUNC _IMPORTMM sqrtl  (long double __x);
+long double _RTL_FUNC _IMPORTMM tanhl  (long double __x);
+long double _RTL_FUNC _IMPORTMM tanl   (long double __x);
 
-double      _RTL_FUNC _copysign(double __x, double __y);
+double      _RTL_FUNC _IMPORTMM _copysign(double __x, double __y);
 
 #if  __STDC_VERSION__ >= 199901L
 
-float _RTL_FUNC acoshf  (float __x);
-float _RTL_FUNC asinhf  (float __x);
-float _RTL_FUNC atanhf  (float __x);
-float _RTL_FUNC cbrtf  (float __x);
-float _RTL_FUNC copysignf(float __x, float __y);
-float _RTL_FUNC erff   (float __x);
-float _RTL_FUNC erfcf  (float __x);
-float _RTL_FUNC exp2f  (float __x);
-float _RTL_FUNC expm1f (float __x);
-float _RTL_FUNC fdimf  (float __x, float __y);
-float _RTL_FUNC fmaf   (float __x, float __y, float __z);
-float _RTL_FUNC fmaxf  (float __x, float __y);
-float _RTL_FUNC fminf  (float __x, float __y);
-int _RTL_FUNC ilogbf (float __x);
-float _RTL_FUNC lgammaf(float __x);
-long _RTL_FUNC lrintf (float __x);
-long long _RTL_FUNC llrintf(float __x);
-float _RTL_FUNC log1pf (float __x);
-float _RTL_FUNC log2f  (float __x);
-float _RTL_FUNC logbf  (float __x);
-long _RTL_FUNC lroundf(float __x);
-long long _RTL_FUNC llroundf(float __x);
-float _RTL_FUNC nearbyintf(float __x);
-float _RTL_FUNC nextafterf  (float __x, float __y);
-float _RTL_FUNC nexttowardf  (float __x, long double __y);
-float _RTL_FUNC remainderf(float __x, float __y);
-float _RTL_FUNC remquof(float __x, float __y, int *quo);
-float _RTL_FUNC rintf  (float __x);
-float _RTL_FUNC roundf (float __x);
-float _RTL_FUNC scalbnf (float __x, int __y);
-float _RTL_FUNC scalblnf (float __x, long int __y);
-float _RTL_FUNC significandf(float __x);
-float _RTL_FUNC tgammaf(float __x);
-float _RTL_FUNC truncf (float __x);
+float _RTL_FUNC _IMPORTMM acoshf  (float __x);
+float _RTL_FUNC _IMPORTMM asinhf  (float __x);
+float _RTL_FUNC _IMPORTMM atanhf  (float __x);
+float _RTL_FUNC _IMPORTMM cbrtf  (float __x);
+float _RTL_FUNC _IMPORTMM copysignf(float __x, float __y);
+float _RTL_FUNC _IMPORTMM erff   (float __x);
+float _RTL_FUNC _IMPORTMM erfcf  (float __x);
+float _RTL_FUNC _IMPORTMM exp2f  (float __x);
+float _RTL_FUNC _IMPORTMM expm1f (float __x);
+float _RTL_FUNC _IMPORTMM fdimf  (float __x, float __y);
+float _RTL_FUNC _IMPORTMM fmaf   (float __x, float __y, float __z);
+float _RTL_FUNC _IMPORTMM fmaxf  (float __x, float __y);
+float _RTL_FUNC _IMPORTMM fminf  (float __x, float __y);
+int _RTL_FUNC _IMPORTMM ilogbf (float __x);
+float _RTL_FUNC _IMPORTMM lgammaf(float __x);
+long _RTL_FUNC _IMPORTMM lrintf (float __x);
+long long _RTL_FUNC _IMPORTMM llrintf(float __x);
+float _RTL_FUNC _IMPORTMM log1pf (float __x);
+float _RTL_FUNC _IMPORTMM log2f  (float __x);
+float _RTL_FUNC _IMPORTMM logbf  (float __x);
+long _RTL_FUNC _IMPORTMM lroundf(float __x);
+long long _RTL_FUNC _IMPORTMM llroundf(float __x);
+float _RTL_FUNC _IMPORTMM nearbyintf(float __x);
+float _RTL_FUNC _IMPORTMM nextafterf  (float __x, float __y);
+float _RTL_FUNC _IMPORTMM nexttowardf  (float __x, long double __y);
+float _RTL_FUNC _IMPORTMM remainderf(float __x, float __y);
+float _RTL_FUNC _IMPORTMM remquof(float __x, float __y, int *quo);
+float _RTL_FUNC _IMPORTMM rintf  (float __x);
+float _RTL_FUNC _IMPORTMM roundf (float __x);
+float _RTL_FUNC _IMPORTMM scalbnf (float __x, int __y);
+float _RTL_FUNC _IMPORTMM scalblnf (float __x, long int __y);
+float _RTL_FUNC _IMPORTMM significandf(float __x);
+float _RTL_FUNC _IMPORTMM tgammaf(float __x);
+float _RTL_FUNC _IMPORTMM truncf (float __x);
 
-double      _RTL_FUNC acosh  (double __x);
-double      _RTL_FUNC asinh  (double __x);
-double      _RTL_FUNC atanh  (double __x);
-double      _RTL_FUNC cbrt    (double __x);
-double      _RTL_FUNC copysign(double __x, double __y);
-double      _RTL_FUNC erf     (double __x);
-double      _RTL_FUNC erfc    (double __x);
-double      _RTL_FUNC exp2    (double __x);
-double      _RTL_FUNC expm1   (double __x);
-double      _RTL_FUNC fdim    (double __x, double __y);
-double      _RTL_FUNC fma     (double __x, double __y, double __z);
-double      _RTL_FUNC fmax    (double __x, double __y);
-double      _RTL_FUNC fmin    (double __x, double __y);
-int         _RTL_FUNC ilogb   (double __x);
-double      _RTL_FUNC lgamma  (double __x);
-long        _RTL_FUNC lrint   (double __x);
-long long   _RTL_FUNC llrint  (double __x);
-double      _RTL_FUNC logb    (double __x);
-double      _RTL_FUNC log1p   (double __x);
-double      _RTL_FUNC log2    (double __x);
-long        _RTL_FUNC lround  (double __x);
-long long   _RTL_FUNC llround (double __x);
-double      _RTL_FUNC nearbyint(double __x);
-double      _RTL_FUNC nextafter    (double __x, double __y);
-double      _RTL_FUNC nexttoward(double __x, long double __y);
-double      _RTL_FUNC remainder(double __x, double __y);
-double      _RTL_FUNC remquo  (double __x, double __y, int *quo);
-double      _RTL_FUNC rint    (double __x);
-double      _RTL_FUNC round   (double __x);
-double      _RTL_FUNC scalbn  (double __x, int __y);
-double      _RTL_FUNC scalbln (double __x, long int __y);
-double      _RTL_FUNC significand  (double __x);
-double      _RTL_FUNC tgamma  (double __x);
-double      _RTL_FUNC trunc   (double __x);
+double      _RTL_FUNC _IMPORTMM acosh  (double __x);
+double      _RTL_FUNC _IMPORTMM asinh  (double __x);
+double      _RTL_FUNC _IMPORTMM atanh  (double __x);
+double      _RTL_FUNC _IMPORTMM cbrt    (double __x);
+double      _RTL_FUNC _IMPORTMM copysign(double __x, double __y);
+double      _RTL_FUNC _IMPORTMM erf     (double __x);
+double      _RTL_FUNC _IMPORTMM erfc    (double __x);
+double      _RTL_FUNC _IMPORTMM exp2    (double __x);
+double      _RTL_FUNC _IMPORTMM expm1   (double __x);
+double      _RTL_FUNC _IMPORTMM fdim    (double __x, double __y);
+double      _RTL_FUNC _IMPORTMM fma     (double __x, double __y, double __z);
+double      _RTL_FUNC _IMPORTMM fmax    (double __x, double __y);
+double      _RTL_FUNC _IMPORTMM fmin    (double __x, double __y);
+int         _RTL_FUNC _IMPORTMM ilogb   (double __x);
+double      _RTL_FUNC _IMPORTMM lgamma  (double __x);
+long        _RTL_FUNC _IMPORTMM lrint   (double __x);
+long long   _RTL_FUNC _IMPORTMM llrint  (double __x);
+double      _RTL_FUNC _IMPORTMM logb    (double __x);
+double      _RTL_FUNC _IMPORTMM log1p   (double __x);
+double      _RTL_FUNC _IMPORTMM log2    (double __x);
+long        _RTL_FUNC _IMPORTMM lround  (double __x);
+long long   _RTL_FUNC _IMPORTMM llround (double __x);
+double      _RTL_FUNC _IMPORTMM nearbyint(double __x);
+double      _RTL_FUNC _IMPORTMM nextafter    (double __x, double __y);
+double      _RTL_FUNC _IMPORTMM nexttoward(double __x, long double __y);
+double      _RTL_FUNC _IMPORTMM remainder(double __x, double __y);
+double      _RTL_FUNC _IMPORTMM remquo  (double __x, double __y, int *quo);
+double      _RTL_FUNC _IMPORTMM rint    (double __x);
+double      _RTL_FUNC _IMPORTMM round   (double __x);
+double      _RTL_FUNC _IMPORTMM scalbn  (double __x, int __y);
+double      _RTL_FUNC _IMPORTMM scalbln (double __x, long int __y);
+double      _RTL_FUNC _IMPORTMM significand  (double __x);
+double      _RTL_FUNC _IMPORTMM tgamma  (double __x);
+double      _RTL_FUNC _IMPORTMM trunc   (double __x);
 
-long double _RTL_FUNC acoshl  (long double __x);
-long double _RTL_FUNC asinhl  (long double __x);
-long double _RTL_FUNC atanhl  (long double __x);
-long double _RTL_FUNC cbrtl  (long double __x);
-long double _RTL_FUNC copysignl(long double __x, long double __y);
-long double _RTL_FUNC erfl   (long double __x);
-long double _RTL_FUNC erfcl  (long double __x);
-long double _RTL_FUNC exp2l  (long double __x);
-long double _RTL_FUNC expm1l (long double __x);
-long double _RTL_FUNC fdiml  (long double __x, long double __y);
-long double _RTL_FUNC fmal  (long double __x, long double __y, long double __z);
-long double _RTL_FUNC fmaxl  (long double __x, long double __y);
-long double _RTL_FUNC fminl  (long double __x, long double __y);
-int         _RTL_FUNC ilogbl (long double __x);
-long double _RTL_FUNC lgammal(long double __x);
-long        _RTL_FUNC lrintl (long double __x);
-long long   _RTL_FUNC llrintl(long double __x);
-long double _RTL_FUNC log1pl (long double __x);
-long double _RTL_FUNC log2l  (long double __x);
-long double _RTL_FUNC logbl   (long double __x);
-long        _RTL_FUNC lroundl(long double __x);
-long long   _RTL_FUNC llroundl(long double __x);
-long double _RTL_FUNC nearbyintl(long double __x);
-long double _RTL_FUNC nextafterl  (long double __x, long double __y);
-long double _RTL_FUNC nexttowardl  (long double __x, long double __y);
-long double _RTL_FUNC remainderl(long double __x, long double __y);
-long double _RTL_FUNC remquol (long double __x, long double __y, int *quo);
-long double _RTL_FUNC rintl  (long double __x);
-long double _RTL_FUNC roundl (long double __x);
-long double _RTL_FUNC scalbnl (long double __x, int __y);
-long double _RTL_FUNC scalblnl (long double __x, long int __y);
-long double _RTL_FUNC significandl(long double __x);
-long double _RTL_FUNC tgammal (long double __x);
-long double _RTL_FUNC truncl (long double __x);
+long double _RTL_FUNC _IMPORTMM acoshl  (long double __x);
+long double _RTL_FUNC _IMPORTMM asinhl  (long double __x);
+long double _RTL_FUNC _IMPORTMM atanhl  (long double __x);
+long double _RTL_FUNC _IMPORTMM cbrtl  (long double __x);
+long double _RTL_FUNC _IMPORTMM copysignl(long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM erfl   (long double __x);
+long double _RTL_FUNC _IMPORTMM erfcl  (long double __x);
+long double _RTL_FUNC _IMPORTMM exp2l  (long double __x);
+long double _RTL_FUNC _IMPORTMM expm1l (long double __x);
+long double _RTL_FUNC _IMPORTMM fdiml  (long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM fmal  (long double __x, long double __y, long double __z);
+long double _RTL_FUNC _IMPORTMM fmaxl  (long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM fminl  (long double __x, long double __y);
+int         _RTL_FUNC _IMPORTMM ilogbl (long double __x);
+long double _RTL_FUNC _IMPORTMM lgammal(long double __x);
+long        _RTL_FUNC _IMPORTMM lrintl (long double __x);
+long long   _RTL_FUNC _IMPORTMM llrintl(long double __x);
+long double _RTL_FUNC _IMPORTMM log1pl (long double __x);
+long double _RTL_FUNC _IMPORTMM log2l  (long double __x);
+long double _RTL_FUNC _IMPORTMM logbl   (long double __x);
+long        _RTL_FUNC _IMPORTMM lroundl(long double __x);
+long long   _RTL_FUNC _IMPORTMM llroundl(long double __x);
+long double _RTL_FUNC _IMPORTMM nearbyintl(long double __x);
+long double _RTL_FUNC _IMPORTMM nextafterl  (long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM nexttowardl  (long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM remainderl(long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM remquol (long double __x, long double __y, int *quo);
+long double _RTL_FUNC _IMPORTMM rintl  (long double __x);
+long double _RTL_FUNC _IMPORTMM roundl (long double __x);
+long double _RTL_FUNC _IMPORTMM scalbnl (long double __x, int __y);
+long double _RTL_FUNC _IMPORTMM scalblnl (long double __x, long int __y);
+long double _RTL_FUNC _IMPORTMM significandl(long double __x);
+long double _RTL_FUNC _IMPORTMM tgammal (long double __x);
+long double _RTL_FUNC _IMPORTMM truncl (long double __x);
 
 #endif
 
 int         _RTL_FUNC _matherr (struct _exception *__e);
 
 #if  __STDC_VERSION__ >= 199901L
-float       _RTL_FUNC hypotf (float __x, float __y);
-float       _RTL_FUNC p1evlf  (float __x, float *__coeffs, int __degree);
-float       _RTL_FUNC polevlf  (float __x, float *__coeffs, int __degree);
-float       _RTL_FUNC polyf  (float __x, int __degree, float *__coeffs);
-float       _RTL_FUNC pow10f (int __p);
+float       _RTL_FUNC _IMPORTMM hypotf (float __x, float __y);
+float       _RTL_FUNC _IMPORTMM p1evlf  (float __x, float *__coeffs, int __degree);
+float       _RTL_FUNC _IMPORTMM polevlf  (float __x, float *__coeffs, int __degree);
+float       _RTL_FUNC _IMPORTMM polyf  (float __x, int __degree, float *__coeffs);
+float       _RTL_FUNC _IMPORTMM pow10f (int __p);
 #endif
 
-double      _RTL_FUNC hypot (double __x, double __y);
-double      _RTL_FUNC p1evl  (double __x, double *__coeffs, int __degree);
-double      _RTL_FUNC polevl  (double __x, double *__coeffs, int __degree);
-double      _RTL_FUNC poly  (double __x, int __degree, double *__coeffs);
-double      _RTL_FUNC pow10 (int __p);
+double      _RTL_FUNC _IMPORTMM hypot (double __x, double __y);
+double      _RTL_FUNC _IMPORTMM p1evl  (double __x, double *__coeffs, int __degree);
+double      _RTL_FUNC _IMPORTMM polevl  (double __x, double *__coeffs, int __degree);
+double      _RTL_FUNC _IMPORTMM poly  (double __x, int __degree, double *__coeffs);
+double      _RTL_FUNC _IMPORTMM pow10 (int __p);
 
-long double _RTL_FUNC hypotl (long double __x, long double __y);
-long double _RTL_FUNC p1evll  (long double __x, long double *__coeffs, int __degree);
-long double _RTL_FUNC polevll  (long double __x, long double *__coeffs, int __degree);
-long double _RTL_FUNC polyl  (long double __x, int __degree, long double *__coeffs);
-long double _RTL_FUNC pow10l (int __p);
+long double _RTL_FUNC _IMPORTMM hypotl (long double __x, long double __y);
+long double _RTL_FUNC _IMPORTMM p1evll  (long double __x, long double *__coeffs, int __degree);
+long double _RTL_FUNC _IMPORTMM polevll  (long double __x, long double *__coeffs, int __degree);
+long double _RTL_FUNC _IMPORTMM polyl  (long double __x, int __degree, long double *__coeffs);
+long double _RTL_FUNC _IMPORTMM pow10l (int __p);
 
 #if !defined(__ABS_DEFINED)
 #define __ABS_DEFINED
-int         _RTL_INTRINS abs(int __x);
-long        _RTL_INTRINS labs(long __x);
+int         _RTL_INTRINS _IMPORTMM abs(int __x);
+long        _RTL_INTRINS _IMPORTMM labs(long __x);
 #if  __STDC_VERSION__ >= 199901L
-long long   _RTL_FUNC llabs(long long __x);
+long long   _RTL_FUNC _IMPORTMM llabs(long long __x);
 #endif
 
 #endif /* __ABS_DEFINED */
 
-double      _RTL_FUNC atof  (const char *__s);
+double      _RTL_FUNC _IMPORT atof  (const char *__s);
 int         _matherrl (struct _exceptionl *__e);
 
-long double  _RTL_FUNC _atold (const char *__s);
+long double  _RTL_FUNC _IMPORT _atold (const char *__s);
 
 #if 0
 /*
-double  _RTL_FUNC _j0(double);
-double  _RTL_FUNC _j1(double);
-double  _RTL_FUNC _jn(int, double);
-double  _RTL_FUNC _y0(double);
-double  _RTL_FUNC _y1(double);
-double  _RTL_FUNC _yn(int, double);
-float  _RTL_FUNC _j0f(float);
-float  _RTL_FUNC _j1f(float);
-float  _RTL_FUNC _jnf(int, float);
-float  _RTL_FUNC _y0f(float);
-float  _RTL_FUNC _y1f(float);
-float  _RTL_FUNC _ynf(int, float);
-long double  _RTL_FUNC _j0l(long double);
-long double  _RTL_FUNC _j1l(long double);
-long double  _RTL_FUNC _jnl(int, long double);
-long double  _RTL_FUNC _y0l(long double);
-long double  _RTL_FUNC _y1l(long double);
-long double  _RTL_FUNC _ynl(int, long double);
-double  _RTL_FUNC j0(double);
-double  _RTL_FUNC j1(double);
-double  _RTL_FUNC jn(int, double);
-double  _RTL_FUNC y0(double);
-double  _RTL_FUNC y1(double);
-double  _RTL_FUNC yn(int, double);
-float  _RTL_FUNC j0f(float);
-float  _RTL_FUNC j1f(float);
-float  _RTL_FUNC jnf(int, float);
-float  _RTL_FUNC y0f(float);
-float  _RTL_FUNC y1f(float);
-float  _RTL_FUNC ynf(int, float);
-long double  _RTL_FUNC j0l(long double);
-long double  _RTL_FUNC j1l(long double);
-long double  _RTL_FUNC jnl(int, long double);
-long double  _RTL_FUNC y0l(long double);
-long double  _RTL_FUNC y1l(long double);
-long double  _RTL_FUNC ynl(int, long double);
+double  _RTL_FUNC _IMPORT _j0(double);
+double  _RTL_FUNC _IMPORT _j1(double);
+double  _RTL_FUNC _IMPORT _jn(int, double);
+double  _RTL_FUNC _IMPORT _y0(double);
+double  _RTL_FUNC _IMPORT _y1(double);
+double  _RTL_FUNC _IMPORT _yn(int, double);
+float  _RTL_FUNC _IMPORT _j0f(float);
+float  _RTL_FUNC _IMPORT _j1f(float);
+float  _RTL_FUNC _IMPORT _jnf(int, float);
+float  _RTL_FUNC _IMPORT _y0f(float);
+float  _RTL_FUNC _IMPORT _y1f(float);
+float  _RTL_FUNC _IMPORT _ynf(int, float);
+long double  _RTL_FUNC _IMPORT _j0l(long double);
+long double  _RTL_FUNC _IMPORT _j1l(long double);
+long double  _RTL_FUNC _IMPORT _jnl(int, long double);
+long double  _RTL_FUNC _IMPORT _y0l(long double);
+long double  _RTL_FUNC _IMPORT _y1l(long double);
+long double  _RTL_FUNC _IMPORT _ynl(int, long double);
+double  _RTL_FUNC _IMPORT j0(double);
+double  _RTL_FUNC _IMPORT j1(double);
+double  _RTL_FUNC _IMPORT jn(int, double);
+double  _RTL_FUNC _IMPORT y0(double);
+double  _RTL_FUNC _IMPORT y1(double);
+double  _RTL_FUNC _IMPORT yn(int, double);
+float  _RTL_FUNC _IMPORT j0f(float);
+float  _RTL_FUNC _IMPORT j1f(float);
+float  _RTL_FUNC _IMPORT jnf(int, float);
+float  _RTL_FUNC _IMPORT y0f(float);
+float  _RTL_FUNC _IMPORT y1f(float);
+float  _RTL_FUNC _IMPORT ynf(int, float);
+long double  _RTL_FUNC _IMPORT j0l(long double);
+long double  _RTL_FUNC _IMPORT j1l(long double);
+long double  _RTL_FUNC _IMPORT jnl(int, long double);
+long double  _RTL_FUNC _IMPORT y0l(long double);
+long double  _RTL_FUNC _IMPORT y1l(long double);
+long double  _RTL_FUNC _IMPORT ynl(int, long double);
 */
 #endif
 #ifdef __cplusplus

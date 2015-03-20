@@ -110,61 +110,61 @@ typedef ULONG DPMI_MEM_HANDLE;
 
 
 /* group 0 */
-int   _RTL_FUNC dpmi_alloc_descriptors(SELECTOR *,UWORD);
-int   _RTL_FUNC dpmi_free_selector(SELECTOR);
-int   _RTL_FUNC dpmi_get_sel_increment(ULONG *);
-int     _RTL_FUNC dpmi_get_sel_base(ULONG *, SELECTOR);
-int   _RTL_FUNC dpmi_set_sel_base(SELECTOR, ULONG);
-int   _RTL_FUNC dpmi_get_sel_limit(ULONG *, SELECTOR);
-int   _RTL_FUNC dpmi_set_sel_limit(SELECTOR, ULONG);
-int   _RTL_FUNC dpmi_get_sel_access_rights(UWORD *, SELECTOR);
-int   _RTL_FUNC dpmi_set_sel_access_rights(SELECTOR, UWORD);
-int   _RTL_FUNC dpmi_get_alias_descriptor(SELECTOR *, SELECTOR);
-int   _RTL_FUNC dpmi_set_descriptor(SELECTOR, DESCRIPTOR *);
-int   _RTL_FUNC dpmi_get_descriptor(DESCRIPTOR *, SELECTOR);
-int   _RTL_FUNC dpmi_set_multiple_descriptors(MULTIPLE_DESCRIPTOR *, UWORD);
-int   _RTL_FUNC dpmi_get_multiple_descriptors(MULTIPLE_DESCRIPTOR *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_alloc_descriptors(SELECTOR *,UWORD);
+int   _RTL_FUNC _IMPORT dpmi_free_selector(SELECTOR);
+int   _RTL_FUNC _IMPORT dpmi_get_sel_increment(ULONG *);
+int     _RTL_FUNC _IMPORT dpmi_get_sel_base(ULONG *, SELECTOR);
+int   _RTL_FUNC _IMPORT dpmi_set_sel_base(SELECTOR, ULONG);
+int   _RTL_FUNC _IMPORT dpmi_get_sel_limit(ULONG *, SELECTOR);
+int   _RTL_FUNC _IMPORT dpmi_set_sel_limit(SELECTOR, ULONG);
+int   _RTL_FUNC _IMPORT dpmi_get_sel_access_rights(UWORD *, SELECTOR);
+int   _RTL_FUNC _IMPORT dpmi_set_sel_access_rights(SELECTOR, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_get_alias_descriptor(SELECTOR *, SELECTOR);
+int   _RTL_FUNC _IMPORT dpmi_set_descriptor(SELECTOR, DESCRIPTOR *);
+int   _RTL_FUNC _IMPORT dpmi_get_descriptor(DESCRIPTOR *, SELECTOR);
+int   _RTL_FUNC _IMPORT dpmi_set_multiple_descriptors(MULTIPLE_DESCRIPTOR *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_get_multiple_descriptors(MULTIPLE_DESCRIPTOR *, UWORD);
 
 /* group 1 */
-int   _RTL_FUNC dpmi_alloc_real_memory(SELECTOR *, UWORD *, UWORD);
-int   _RTL_FUNC dpmi_dealloc_real_memory(SELECTOR);
-int   _RTL_FUNC dpmi_realloc_real_memory(SELECTOR, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_alloc_real_memory(SELECTOR *, UWORD *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_dealloc_real_memory(SELECTOR);
+int   _RTL_FUNC _IMPORT dpmi_realloc_real_memory(SELECTOR, UWORD);
 
-int   _RTL_FUNC dpmi_arbitrary_copy( SELECTOR, ULONG, SELECTOR, ULONG, ULONG);
-int   _RTL_FUNC dpmi_copy_from_ds(SELECTOR,ULONG,void *, ULONG);
-int   _RTL_FUNC dpmi_copy_to_ds(void *, SELECTOR, ULONG, ULONG);
+int   _RTL_FUNC _IMPORT dpmi_arbitrary_copy( SELECTOR, ULONG, SELECTOR, ULONG, ULONG);
+int   _RTL_FUNC _IMPORT dpmi_copy_from_ds(SELECTOR,ULONG,void *, ULONG);
+int   _RTL_FUNC _IMPORT dpmi_copy_to_ds(void *, SELECTOR, ULONG, ULONG);
 
 /* group 2 */
-int   _RTL_FUNC dpmi_get_real_interrupt(UWORD *, UWORD *, UWORD);
-int   _RTL_FUNC dpmi_set_real_interrupt(UWORD,UWORD,UWORD);
-int   _RTL_FUNC dpmi_get_protected_except(SELECTOR *, ULONG *, UWORD);
-int   _RTL_FUNC dpmi_set_protected_except(UWORD,SELECTOR,ULONG);
-int   _RTL_FUNC dpmi_get_protected_interrupt(SELECTOR *, ULONG *, UWORD);
-int   _RTL_FUNC dpmi_set_protected_interrupt(UWORD,SELECTOR,ULONG);
+int   _RTL_FUNC _IMPORT dpmi_get_real_interrupt(UWORD *, UWORD *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_set_real_interrupt(UWORD,UWORD,UWORD);
+int   _RTL_FUNC _IMPORT dpmi_get_protected_except(SELECTOR *, ULONG *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_set_protected_except(UWORD,SELECTOR,ULONG);
+int   _RTL_FUNC _IMPORT dpmi_get_protected_interrupt(SELECTOR *, ULONG *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_set_protected_interrupt(UWORD,SELECTOR,ULONG);
 
 /* group 3 */
-int   _RTL_FUNC dpmi_simulate_real_interrupt(UWORD, DPMI_REGS *);
-int   _RTL_FUNC dpmi_simulate_proc_far_ret_frame(DPMI_REGS *);
-int   _RTL_FUNC dpmi_simulate_proc_int_frame(DPMI_REGS *);
-int   _RTL_FUNC dpmi_get_real_callback(void *, void *, UWORD *, UWORD *);
-int   _RTL_FUNC dpmi_free_real_callback(UWORD, UWORD);
-int   _RTL_FUNC dpmi_get_state_save_restore(SELECTOR *, void *, UWORD *, UWORD *, UWORD);
-int   _RTL_FUNC dpmi_call_state_save_restore(SELECTOR, void *, void *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_simulate_real_interrupt(UWORD, DPMI_REGS *);
+int   _RTL_FUNC _IMPORT dpmi_simulate_proc_far_ret_frame(DPMI_REGS *);
+int   _RTL_FUNC _IMPORT dpmi_simulate_proc_int_frame(DPMI_REGS *);
+int   _RTL_FUNC _IMPORT dpmi_get_real_callback(void *, void *, UWORD *, UWORD *);
+int   _RTL_FUNC _IMPORT dpmi_free_real_callback(UWORD, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_get_state_save_restore(SELECTOR *, void *, UWORD *, UWORD *, UWORD);
+int   _RTL_FUNC _IMPORT dpmi_call_state_save_restore(SELECTOR, void *, void *, UWORD);
 
 /* group 4 */
-int   _RTL_FUNC dpmi_get_version(DPMI_VER *);
+int   _RTL_FUNC _IMPORT dpmi_get_version(DPMI_VER *);
 
 /* group 5 */
-int   _RTL_FUNC dpmi_get_memory_info( DPMI_FREEMEM_INFO *);
-int   _RTL_FUNC dpmi_get_memory( ULONG *, DPMI_MEM_HANDLE *, ULONG);     
-int   _RTL_FUNC dpmi_free_memory(DPMI_MEM_HANDLE);
-int   _RTL_FUNC dpmi_resize_memory( ULONG *, DPMI_MEM_HANDLE *, ULONG);     
-int   _RTL_FUNC dpmi_get_memory_params(ULONG *, ULONG *, DPMI_MEM_HANDLE);
+int   _RTL_FUNC _IMPORT dpmi_get_memory_info( DPMI_FREEMEM_INFO *);
+int   _RTL_FUNC _IMPORT dpmi_get_memory( ULONG *, DPMI_MEM_HANDLE *, ULONG);     
+int   _RTL_FUNC _IMPORT dpmi_free_memory(DPMI_MEM_HANDLE);
+int   _RTL_FUNC _IMPORT dpmi_resize_memory( ULONG *, DPMI_MEM_HANDLE *, ULONG);     
+int   _RTL_FUNC _IMPORT dpmi_get_memory_params(ULONG *, ULONG *, DPMI_MEM_HANDLE);
 
 /* group 9 */
-int   _RTL_FUNC dpmi_enable_virtual_flag(ULONG *);
-int   _RTL_FUNC dpmi_disable_virtual_flag(ULONG *);
-int   _RTL_FUNC dpmi_return_virtual_flag(ULONG *);
+int   _RTL_FUNC _IMPORT dpmi_enable_virtual_flag(ULONG *);
+int   _RTL_FUNC _IMPORT dpmi_disable_virtual_flag(ULONG *);
+int   _RTL_FUNC _IMPORT dpmi_return_virtual_flag(ULONG *);
 
 extern SELECTOR _RTL_DATA __seg0000 ;
 extern SELECTOR _RTL_DATA __seg0040 ;

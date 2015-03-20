@@ -43,13 +43,13 @@ extern "C" {
 #endif
 
 
-void       _RTL_FUNC __clearxcept(void);
-int        _RTL_FUNC __setxcept(int num, void *routine);
-void       _RTL_FUNC __lockregion(void *start, void *end); 
-int        _RTL_FUNC __nametodta(char *name, int pos);
-int        _RTL_FUNC __buftodta(unsigned char *buf, int len);
-int        _RTL_FUNC __dtatobuf(unsigned char *buf, int len);
-int        _RTL_FUNC __doscall(int func, DPMI_REGS *regs);
+void       _RTL_FUNC _IMPORT __clearxcept(void);
+int        _RTL_FUNC _IMPORT __setxcept(int num, void *routine);
+void       _RTL_FUNC _IMPORT __lockregion(void *start, void *end); 
+int        _RTL_FUNC _IMPORT __nametodta(char *name, int pos);
+int        _RTL_FUNC _IMPORT __buftodta(unsigned char *buf, int len);
+int        _RTL_FUNC _IMPORT __dtatobuf(unsigned char *buf, int len);
+int        _RTL_FUNC _IMPORT __doscall(int func, DPMI_REGS *regs);
 void __swPutChar(void **buf, wchar_t ch, int wide);
 wchar_t __swGetChar(void **buf, int wide);
 void __swMovePointer(void **buf, int offs, int wide);

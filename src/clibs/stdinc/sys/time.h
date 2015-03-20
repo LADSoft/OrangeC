@@ -19,6 +19,6 @@ struct timezone {
 };
 #endif /* _TIMEVAL_DEFINED */
 
-int _RTL_FUNC gettimeofday (struct timeval * tv, struct timezone * tz);
+int _RTL_FUNC _IMPORT gettimeofday (struct timeval * tv, struct timezone * tz);
 
 #endif

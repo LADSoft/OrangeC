@@ -60,68 +60,68 @@
 namespace __STD_NS__ {
 extern "C" {
 #endif
-void       _RTL_FUNC abort(void);
-void       _RTL_FUNC _cexit(void);
-void       _RTL_FUNC _c_exit(void);
-void       _RTL_FUNC exit(int __status);
-void       _RTL_FUNC _Exit(int __status);
-void       _RTL_FUNC _exit(int __status);
+void       _RTL_FUNC _IMPORT abort(void);
+void       _RTL_FUNC _IMPORT _cexit(void);
+void       _RTL_FUNC _IMPORT _c_exit(void);
+void       _RTL_FUNC _IMPORT exit(int __status);
+void       _RTL_FUNC _IMPORT _Exit(int __status);
+void       _RTL_FUNC _IMPORT _exit(int __status);
 
-int		   _RTL_FUNC cwait(int *, int, int);
-int        _RTL_FUNC execl(const char *__path, const char *__argv0,...);
-int        _RTL_FUNC execle(const char *__path, const char *__argv0,...);
-int        _RTL_FUNC execlp(const char *__path, const char *__argv0,...);
-int        _RTL_FUNC execlpe(const char *__path, const char *__argv0,...);
-int        _RTL_FUNC execv(const char *__path, const char **__argv);
-int        _RTL_FUNC execve(const char *__path, const char **__argv, const char **__env);
-int        _RTL_FUNC execvp(const char *__path, const char **__argv);
-int        _RTL_FUNC execvpe(const char *__path, const char **__argv, const char **__env);
+int		   _RTL_FUNC _IMPORT cwait(int *, int, int);
+int        _RTL_FUNC _IMPORT execl(const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT execle(const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT execlp(const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT execlpe(const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT execv(const char *__path, const char **__argv);
+int        _RTL_FUNC _IMPORT execve(const char *__path, const char **__argv, const char **__env);
+int        _RTL_FUNC _IMPORT execvp(const char *__path, const char **__argv);
+int        _RTL_FUNC _IMPORT execvpe(const char *__path, const char **__argv, const char **__env);
 
-int        _RTL_FUNC spawnl(int __mode,const char *__path, const char *__argv0,...);
-int        _RTL_FUNC spawnle(int __mode,const char *__path, const char *__argv0,...);
-int        _RTL_FUNC spawnlp(int __mode,const char *__path, const char *__argv0,...);
-int        _RTL_FUNC spawnlpe(int __mode,const char *__path, const char *__argv0,...);
-int        _RTL_FUNC spawnv(int __mode,const char *__path, const char **__argv);
-int        _RTL_FUNC spawnve(int __mode,const char *__path, const char **__argv, const char **__env);
-int        _RTL_FUNC spawnvp(int __mode,const char *__path, const char **__argv);
-int        _RTL_FUNC spawnvpe(int __mode,const char *__path, const char **__argv, const char **__env);
+int        _RTL_FUNC _IMPORT spawnl(int __mode,const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT spawnle(int __mode,const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT spawnlp(int __mode,const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT spawnlpe(int __mode,const char *__path, const char *__argv0,...);
+int        _RTL_FUNC _IMPORT spawnv(int __mode,const char *__path, const char **__argv);
+int        _RTL_FUNC _IMPORT spawnve(int __mode,const char *__path, const char **__argv, const char **__env);
+int        _RTL_FUNC _IMPORT spawnvp(int __mode,const char *__path, const char **__argv);
+int        _RTL_FUNC _IMPORT spawnvpe(int __mode,const char *__path, const char **__argv, const char **__env);
 
-int _RTL_FUNC _cwait(int *, int, int);
-int _RTL_FUNC _execl(const char *, const char *, ...);
-int _RTL_FUNC _execle(const char *, const char *, ...);
-int _RTL_FUNC _execlp(const char *, const char *, ...);
-int _RTL_FUNC _execlpe(const char *, const char *, ...);
-int _RTL_FUNC _execv(const char *, const char * const *);
-int _RTL_FUNC _execve(const char *, const char * const *, const char * const *);
-int _RTL_FUNC _execvp(const char *, const char * const *);
-int _RTL_FUNC _execvpe(const char *, const char * const *, const char * const *);
-int _RTL_FUNC _spawnl(int, const char *, const char *, ...);
-int _RTL_FUNC _spawnle(int, const char *, const char *, ...);
-int _RTL_FUNC _spawnlp(int, const char *, const char *, ...);
-int _RTL_FUNC _spawnlpe(int, const char *, const char *, ...);
-int _RTL_FUNC _spawnv(int, const char *, const char * const *);
-int _RTL_FUNC _spawnve(int, const char *, const char * const *,
+int _RTL_FUNC _IMPORT _cwait(int *, int, int);
+int _RTL_FUNC _IMPORT _execl(const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _execle(const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _execlp(const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _execlpe(const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _execv(const char *, const char * const *);
+int _RTL_FUNC _IMPORT _execve(const char *, const char * const *, const char * const *);
+int _RTL_FUNC _IMPORT _execvp(const char *, const char * const *);
+int _RTL_FUNC _IMPORT _execvpe(const char *, const char * const *, const char * const *);
+int _RTL_FUNC _IMPORT _spawnl(int, const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _spawnle(int, const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _spawnlp(int, const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _spawnlpe(int, const char *, const char *, ...);
+int _RTL_FUNC _IMPORT _spawnv(int, const char *, const char * const *);
+int _RTL_FUNC _IMPORT _spawnve(int, const char *, const char * const *,
         const char * const *);
-int _RTL_FUNC _spawnvp(int, const char *, const char * const *);
-int _RTL_FUNC _spawnvpe(int, const char *, const char * const *,
+int _RTL_FUNC _IMPORT _spawnvp(int, const char *, const char * const *);
+int _RTL_FUNC _IMPORT _spawnvpe(int, const char *, const char * const *,
         const char * const *);
 
 #ifdef _WIN32
-uintptr_t _RTL_FUNC _beginthread(void( __cdecl *__start_address )( void * ),
+uintptr_t _RTL_FUNC _IMPORT _beginthread(void( __cdecl *__start_address )( void * ),
    unsigned __stack_size,
    void *__arglist 
 );
-uintptr_t _RTL_FUNC _beginthreadex(void *__security, unsigned __stack_size,
+uintptr_t _RTL_FUNC _IMPORT _beginthreadex(void *__security, unsigned __stack_size,
    unsigned ( __stdcall *__start_address )( void * ),
    void *__arglist, unsigned __initflag, unsigned *__thrdaddr);
 
-void _RTL_FUNC _endthread( void );
-void _RTL_FUNC _endthreadex(unsigned retval);
+void _RTL_FUNC _IMPORT _endthread( void );
+void _RTL_FUNC _IMPORT _endthreadex(unsigned retval);
 
-int _RTL_FUNC getpid(void);
-int _RTL_FUNC _getpid(void);
-int _RTL_FUNC _threadid(void);
-int _RTL_FUNC __threadid(void);
+int _RTL_FUNC _IMPORT getpid(void);
+int _RTL_FUNC _IMPORT _getpid(void);
+int _RTL_FUNC _IMPORT _threadid(void);
+int _RTL_FUNC _IMPORT __threadid(void);
 #endif
    
 #ifdef __cplusplus

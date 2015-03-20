@@ -312,18 +312,18 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
-intmax_t _RTL_FUNC imaxabs(intmax_t __val);
+intmax_t _RTL_FUNC _IMPORT imaxabs(intmax_t __val);
 
-imaxdiv_t _RTL_FUNC imaxdiv(intmax_t __numer, intmax_t __denom);
+imaxdiv_t _RTL_FUNC _IMPORT imaxdiv(intmax_t __numer, intmax_t __denom);
 
-intmax_t _RTL_FUNC strtoimax(const char * restrict __nptr, 
+intmax_t _RTL_FUNC _IMPORT strtoimax(const char * restrict __nptr, 
                               char ** restrict __endptr, int __base);
-uintmax_t _RTL_FUNC strtoumax(const char * restrict __nptr, 
+uintmax_t _RTL_FUNC _IMPORT strtoumax(const char * restrict __nptr, 
                                char ** restrict __endptr, int __base);
 
-intmax_t _RTL_FUNC wcstoimax(const wchar_t * restrict __nptr,
+intmax_t _RTL_FUNC _IMPORT wcstoimax(const wchar_t * restrict __nptr,
                    wchar_t ** restrict __endptr, int __base);
-uintmax_t _RTL_FUNC wcstoumax(const wchar_t * restrict __nptr,
+uintmax_t _RTL_FUNC _IMPORT wcstoumax(const wchar_t * restrict __nptr,
                     wchar_t ** restrict __endptr, int __base);
 
 #ifdef __cplusplus

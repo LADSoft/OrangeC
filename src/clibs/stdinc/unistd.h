@@ -44,12 +44,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int _RTL_FUNC sysconf(int);
+int _RTL_FUNC _IMPORT sysconf(int);
 
-int _RTL_FUNC fsync(int fd);
+int _RTL_FUNC _IMPORT fsync(int fd);
 
-ssize_t _RTL_FUNC pread(int fd, void *buf, size_t nbyte, off_t offset);
-ssize_t _RTL_FUNC pwrite(int fd, const void *buf, size_t nbyte, off_t offset);
+ssize_t _RTL_FUNC _IMPORT pread(int fd, void *buf, size_t nbyte, off_t offset);
+ssize_t _RTL_FUNC _IMPORT pwrite(int fd, const void *buf, size_t nbyte, off_t offset);
 
 #ifdef __cplusplus
 }

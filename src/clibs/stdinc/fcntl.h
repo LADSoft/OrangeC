@@ -47,7 +47,7 @@
 namespace __STD_NS__ {
 extern "C" {
 #endif
-int _RTL_FUNC _pipe(int *phandles, unsigned int psize, int textmode);
+int _RTL_FUNC _IMPORT _pipe(int *phandles, unsigned int psize, int textmode);
 
 extern int _RTL_DATA _fmode;
 

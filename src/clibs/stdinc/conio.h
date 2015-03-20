@@ -97,15 +97,15 @@ enum text_modes {  LASTMODE=-1,
                    C4350=64 };
 
 
-void         _RTL_FUNC clreol( void );
-void         _RTL_FUNC clrscr( void );
-void         _RTL_FUNC gotoxy( int __x, int __y );
-int          _RTL_FUNC getch( void );
-int          _RTL_FUNC getche( void );
-int          _RTL_FUNC kbhit( void );
-int          _RTL_FUNC putch( int __c );
-int          _RTL_FUNC wherex( void );
-int          _RTL_FUNC wherey( void );
+void         _RTL_FUNC _IMPORT clreol( void );
+void         _RTL_FUNC _IMPORT clrscr( void );
+void         _RTL_FUNC _IMPORT gotoxy( int __x, int __y );
+int          _RTL_FUNC _IMPORT getch( void );
+int          _RTL_FUNC _IMPORT getche( void );
+int          _RTL_FUNC _IMPORT kbhit( void );
+int          _RTL_FUNC _IMPORT putch( int __c );
+int          _RTL_FUNC _IMPORT wherex( void );
+int          _RTL_FUNC _IMPORT wherey( void );
 
 unsigned char    _RTL_INTRINS inportb( unsigned __portid );
 unsigned         _RTL_INTRINS inport ( unsigned __portid );
@@ -118,50 +118,50 @@ void             _RTL_INTRINS outportd ( unsigned __portid, unsigned __value );
 int              _RTL_INTRINS outp( unsigned __portid, int __value );
 unsigned         _RTL_INTRINS outpw( unsigned __portid, unsigned __value );
 
-void         _RTL_FUNC delline( void );
-int          _RTL_FUNC gettext( int __left, int __top,
+void         _RTL_FUNC _IMPORT delline( void );
+int          _RTL_FUNC _IMPORT gettext( int __left, int __top,
                            int __right, int __bottom,
                            void *__destin);
-void         _RTL_FUNC gettextinfo (struct text_info *__r );
-void         _RTL_FUNC highvideo( void );
-void         _RTL_FUNC insline( void );
-void         _RTL_FUNC lowvideo( void );
-int          _RTL_FUNC movetext( int __left, int __top,
+void         _RTL_FUNC _IMPORT gettextinfo (struct text_info *__r );
+void         _RTL_FUNC _IMPORT highvideo( void );
+void         _RTL_FUNC _IMPORT insline( void );
+void         _RTL_FUNC _IMPORT lowvideo( void );
+int          _RTL_FUNC _IMPORT movetext( int __left, int __top,
                             int __right, int __bottom,
                             int __destleft, int __desttop );
-void         _RTL_FUNC normvideo( void );
-int          _RTL_FUNC puttext( int __left, int __top,
+void         _RTL_FUNC _IMPORT normvideo( void );
+int          _RTL_FUNC _IMPORT puttext( int __left, int __top,
                            int __right, int __bottom,
                            void *__source );
-void         _RTL_FUNC textattr( int __newattr );
-void         _RTL_FUNC textbackground( int __newcolor );
-void         _RTL_FUNC textcolor( int __newcolor );
-void         _RTL_FUNC textmode( int __newmode );
-void         _RTL_FUNC window( int __left, int __top, int __right, int __bottom);
+void         _RTL_FUNC _IMPORT textattr( int __newattr );
+void         _RTL_FUNC _IMPORT textbackground( int __newcolor );
+void         _RTL_FUNC _IMPORT textcolor( int __newcolor );
+void         _RTL_FUNC _IMPORT textmode( int __newmode );
+void         _RTL_FUNC _IMPORT window( int __left, int __top, int __right, int __bottom);
 
-void         _RTL_FUNC _setcursortype( int __cur_t );
-char *       _RTL_FUNC cgets( char *__str );
-int          _RTL_FUNC cprintf( const char *__format, ... );
-int          _RTL_FUNC cputs( const char *__str );
-int          _RTL_FUNC cscanf( const char *__format, ... );
-char *       _RTL_FUNC getpass( const char *__prompt );
-int          _RTL_FUNC ungetch( int __ch );
+void         _RTL_FUNC _IMPORT _setcursortype( int __cur_t );
+char *       _RTL_FUNC _IMPORT cgets( char *__str );
+int          _RTL_FUNC _IMPORT cprintf( const char *__format, ... );
+int          _RTL_FUNC _IMPORT cputs( const char *__str );
+int          _RTL_FUNC _IMPORT cscanf( const char *__format, ... );
+char *       _RTL_FUNC _IMPORT getpass( const char *__prompt );
+int          _RTL_FUNC _IMPORT ungetch( int __ch );
 
-char * 		 _RTL_FUNC _cgets(char *);
-int			 _RTL_FUNC _cprintf(const char *, ...);
-int			 _RTL_FUNC _cputs(const char *);
-int			 _RTL_FUNC _cscanf(const char *, ...);
-int			 _RTL_FUNC _getch(void);
-int			 _RTL_FUNC _getche(void);
-int 		 _RTL_FUNC _inp(unsigned short);
-unsigned short _RTL_FUNC _inpw(unsigned short);
-unsigned long _RTL_FUNC _inpd(unsigned short);
-int 		 _RTL_FUNC _kbhit(void);
-int			 _RTL_FUNC _outp(unsigned short, int);
-unsigned short _RTL_FUNC _outpw(unsigned short, unsigned short);
-unsigned long _RTL_FUNC _outpd(unsigned short, unsigned long);
-int			 _RTL_FUNC _putch(int);
-int			 _RTL_FUNC _ungetch(int);
+char * 		 _RTL_FUNC _IMPORT _cgets(char *);
+int			 _RTL_FUNC _IMPORT _cprintf(const char *, ...);
+int			 _RTL_FUNC _IMPORT _cputs(const char *);
+int			 _RTL_FUNC _IMPORT _cscanf(const char *, ...);
+int			 _RTL_FUNC _IMPORT _getch(void);
+int			 _RTL_FUNC _IMPORT _getche(void);
+int 		 _RTL_FUNC _IMPORT _inp(unsigned short);
+unsigned short _RTL_FUNC _IMPORT _inpw(unsigned short);
+unsigned long _RTL_FUNC _IMPORT _inpd(unsigned short);
+int 		 _RTL_FUNC _IMPORT _kbhit(void);
+int			 _RTL_FUNC _IMPORT _outp(unsigned short, int);
+unsigned short _RTL_FUNC _IMPORT _outpw(unsigned short, unsigned short);
+unsigned long _RTL_FUNC _IMPORT _outpd(unsigned short, unsigned long);
+int			 _RTL_FUNC _IMPORT _putch(int);
+int			 _RTL_FUNC _IMPORT _ungetch(int);
 
 #ifdef __cplusplus
 }

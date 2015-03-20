@@ -48,22 +48,22 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
-void *    _RTL_FUNC memccpy(void *__dest, const void *__src,
+void *    _RTL_FUNC _IMPORT memccpy(void *__dest, const void *__src,
                                         int __c, size_t __n);
-int       _RTL_FUNC memcmp(const void *__s1, const void *__s2,
+int       _RTL_FUNC _IMPORT memcmp(const void *__s1, const void *__s2,
                                        size_t __n);
-void *    _RTL_FUNC memcpy(void *__dest, const void *__src,
+void *    _RTL_FUNC _IMPORT memcpy(void *__dest, const void *__src,
                                        size_t __n);
-int       _RTL_FUNC memicmp(const void *__s1, const void *__s2,
+int       _RTL_FUNC _IMPORT memicmp(const void *__s1, const void *__s2,
                                         size_t __n);
-void *    _RTL_FUNC memmove(void *__dest, const void *__src,
+void *    _RTL_FUNC _IMPORT memmove(void *__dest, const void *__src,
                                         size_t __n);
-void *    _RTL_FUNC memset(void *__s, int __c, size_t __n);
+void *    _RTL_FUNC _IMPORT memset(void *__s, int __c, size_t __n);
 
-void *    _RTL_FUNC memchr(const void *__s, int __c, size_t __n);
+void *    _RTL_FUNC _IMPORT memchr(const void *__s, int __c, size_t __n);
 
-int    		 _RTL_FUNC _memicmp(const void *, const void *, unsigned int);
-void *       _RTL_FUNC _memccpy(void *, const void *, int, unsigned int);
+int    		 _RTL_FUNC _IMPORT _memicmp(const void *, const void *, unsigned int);
+void *       _RTL_FUNC _IMPORT _memccpy(void *, const void *, int, unsigned int);
 
 #ifdef __cplusplus
 };

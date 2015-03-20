@@ -106,10 +106,10 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
-unsigned int _RTL_FUNC            _clear87(void);
-unsigned int _RTL_FUNC            _control87(unsigned int __newcw, unsigned int __mask);
-void         _RTL_FUNC            _fpreset(void);
-unsigned int _RTL_FUNC            _status87(void);
+unsigned int _RTL_FUNC _IMPORT            _clear87(void);
+unsigned int _RTL_FUNC _IMPORT            _control87(unsigned int __newcw, unsigned int __mask);
+void         _RTL_FUNC _IMPORT            _fpreset(void);
+unsigned int _RTL_FUNC _IMPORT            _status87(void);
 
 #define      _controlfp(__a, __b) _control87((__a), ((__b)& (~EM_DENORMAL)))
 #define      _statusfp            _status87

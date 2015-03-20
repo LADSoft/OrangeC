@@ -57,93 +57,93 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
-float complex _RTL_FUNC cacosf(float complex) ;
-double complex _RTL_FUNC cacos(double complex) ;
-long double complex _RTL_FUNC cacosl(long double complex) ;
+float complex _RTL_FUNC _IMPORT cacosf(float complex) ;
+double complex _RTL_FUNC _IMPORT cacos(double complex) ;
+long double complex _RTL_FUNC _IMPORT cacosl(long double complex) ;
 
-float complex _RTL_FUNC casinf(float complex) ;
-double complex _RTL_FUNC casin(double complex) ;
-long double complex _RTL_FUNC casinl(long double complex) ;
+float complex _RTL_FUNC _IMPORT casinf(float complex) ;
+double complex _RTL_FUNC _IMPORT casin(double complex) ;
+long double complex _RTL_FUNC _IMPORT casinl(long double complex) ;
 
-float complex _RTL_FUNC catanf(float complex) ;
-double complex _RTL_FUNC catan(double complex) ;
-long double complex _RTL_FUNC catanl(long double complex) ;
+float complex _RTL_FUNC _IMPORT catanf(float complex) ;
+double complex _RTL_FUNC _IMPORT catan(double complex) ;
+long double complex _RTL_FUNC _IMPORT catanl(long double complex) ;
 
-float complex _RTL_FUNC ccosf(float complex) ;
-double complex _RTL_FUNC ccos(double complex) ;
-long double complex _RTL_FUNC ccosl(long double complex) ;
+float complex _RTL_FUNC _IMPORT ccosf(float complex) ;
+double complex _RTL_FUNC _IMPORT ccos(double complex) ;
+long double complex _RTL_FUNC _IMPORT ccosl(long double complex) ;
 
-float complex _RTL_FUNC csinf(float complex) ;
-double complex _RTL_FUNC csin(double complex) ;
-long double complex _RTL_FUNC csinl(long double complex) ;
+float complex _RTL_FUNC _IMPORT csinf(float complex) ;
+double complex _RTL_FUNC _IMPORT csin(double complex) ;
+long double complex _RTL_FUNC _IMPORT csinl(long double complex) ;
 
-float complex _RTL_FUNC ctanf(float complex) ;
-double complex _RTL_FUNC ctan(double complex) ;
-long double complex _RTL_FUNC ctanl(long double complex) ;
+float complex _RTL_FUNC _IMPORT ctanf(float complex) ;
+double complex _RTL_FUNC _IMPORT ctan(double complex) ;
+long double complex _RTL_FUNC _IMPORT ctanl(long double complex) ;
 
-float complex _RTL_FUNC cacoshf(float complex) ;
-double complex _RTL_FUNC cacosh(double complex) ;
-long double complex _RTL_FUNC cacoshl(long double complex) ;
+float complex _RTL_FUNC _IMPORT cacoshf(float complex) ;
+double complex _RTL_FUNC _IMPORT cacosh(double complex) ;
+long double complex _RTL_FUNC _IMPORT cacoshl(long double complex) ;
 
-float complex _RTL_FUNC casinhf(float complex) ;
-double complex _RTL_FUNC casinh(double complex) ;
-long double complex _RTL_FUNC casinhl(long double complex) ;
+float complex _RTL_FUNC _IMPORT casinhf(float complex) ;
+double complex _RTL_FUNC _IMPORT casinh(double complex) ;
+long double complex _RTL_FUNC _IMPORT casinhl(long double complex) ;
 
-float complex _RTL_FUNC catanhf(float complex) ;
-double complex _RTL_FUNC catanh(double complex) ;
-long double complex _RTL_FUNC catanhl(long double complex) ;
+float complex _RTL_FUNC _IMPORT catanhf(float complex) ;
+double complex _RTL_FUNC _IMPORT catanh(double complex) ;
+long double complex _RTL_FUNC _IMPORT catanhl(long double complex) ;
 
-float complex _RTL_FUNC ccoshf(float complex) ;
-double complex _RTL_FUNC ccosh(double complex) ;
-long double complex _RTL_FUNC ccoshl(long double complex) ;
+float complex _RTL_FUNC _IMPORT ccoshf(float complex) ;
+double complex _RTL_FUNC _IMPORT ccosh(double complex) ;
+long double complex _RTL_FUNC _IMPORT ccoshl(long double complex) ;
 
-float complex _RTL_FUNC csinhf(float complex) ;
-double complex _RTL_FUNC csinh(double complex) ;
-long double complex _RTL_FUNC csinhl(long double complex) ;
+float complex _RTL_FUNC _IMPORT csinhf(float complex) ;
+double complex _RTL_FUNC _IMPORT csinh(double complex) ;
+long double complex _RTL_FUNC _IMPORT csinhl(long double complex) ;
 
-float complex _RTL_FUNC ctanhf(float complex) ;
-double complex _RTL_FUNC ctanh(double complex) ;
-long double complex _RTL_FUNC ctanhl(long double complex) ;
+float complex _RTL_FUNC _IMPORT ctanhf(float complex) ;
+double complex _RTL_FUNC _IMPORT ctanh(double complex) ;
+long double complex _RTL_FUNC _IMPORT ctanhl(long double complex) ;
 
-float complex _RTL_FUNC cexpf(float complex) ;
-double complex _RTL_FUNC cexp(double complex) ;
-long double complex _RTL_FUNC cexpl(long double complex) ;
+float complex _RTL_FUNC _IMPORT cexpf(float complex) ;
+double complex _RTL_FUNC _IMPORT cexp(double complex) ;
+long double complex _RTL_FUNC _IMPORT cexpl(long double complex) ;
 
-float complex _RTL_FUNC clogf(float complex) ;
-double complex _RTL_FUNC clog(double complex) ;
-long double complex _RTL_FUNC clogl(long double complex) ;
+float complex _RTL_FUNC _IMPORT clogf(float complex) ;
+double complex _RTL_FUNC _IMPORT clog(double complex) ;
+long double complex _RTL_FUNC _IMPORT clogl(long double complex) ;
 
-float _RTL_FUNC cabsf(float complex) ;
-double _RTL_FUNC cabs(double complex) ;
-long double _RTL_FUNC cabsl(long double complex) ;
+float _RTL_FUNC _IMPORT cabsf(float complex) ;
+double _RTL_FUNC _IMPORT cabs(double complex) ;
+long double _RTL_FUNC _IMPORT cabsl(long double complex) ;
 
-float complex _RTL_FUNC cpowf(float complex, float complex) ;
-double complex _RTL_FUNC cpow(double complex, double complex) ;
-long double complex _RTL_FUNC cpowl(long double complex, long double complex) ;
+float complex _RTL_FUNC _IMPORT cpowf(float complex, float complex) ;
+double complex _RTL_FUNC _IMPORT cpow(double complex, double complex) ;
+long double complex _RTL_FUNC _IMPORT cpowl(long double complex, long double complex) ;
 
-float complex _RTL_FUNC csqrtf(float complex) ;
-double complex _RTL_FUNC csqrt(double complex) ;
-long double complex _RTL_FUNC csqrtl(long double complex) ;
+float complex _RTL_FUNC _IMPORT csqrtf(float complex) ;
+double complex _RTL_FUNC _IMPORT csqrt(double complex) ;
+long double complex _RTL_FUNC _IMPORT csqrtl(long double complex) ;
 
-float _RTL_FUNC cargf(float complex) ;
-double _RTL_FUNC carg(double complex) ;
-long double _RTL_FUNC cargl(long double complex) ;
+float _RTL_FUNC _IMPORT cargf(float complex) ;
+double _RTL_FUNC _IMPORT carg(double complex) ;
+long double _RTL_FUNC _IMPORT cargl(long double complex) ;
 
-float _RTL_FUNC cimagf(float complex) ;
-double _RTL_FUNC cimag(double complex) ;
-long double _RTL_FUNC cimagl(long double complex) ;
+float _RTL_FUNC _IMPORT cimagf(float complex) ;
+double _RTL_FUNC _IMPORT cimag(double complex) ;
+long double _RTL_FUNC _IMPORT cimagl(long double complex) ;
 
-float complex _RTL_FUNC conjf(float complex) ;
-double complex _RTL_FUNC conj(double complex) ;
-long double complex _RTL_FUNC conjl(long double complex) ;
+float complex _RTL_FUNC _IMPORT conjf(float complex) ;
+double complex _RTL_FUNC _IMPORT conj(double complex) ;
+long double complex _RTL_FUNC _IMPORT conjl(long double complex) ;
 
-float complex _RTL_FUNC cprojf(float complex) ;
-double complex _RTL_FUNC cproj(double complex) ;
-long double complex _RTL_FUNC cprojl(long double complex) ;
+float complex _RTL_FUNC _IMPORT cprojf(float complex) ;
+double complex _RTL_FUNC _IMPORT cproj(double complex) ;
+long double complex _RTL_FUNC _IMPORT cprojl(long double complex) ;
 
-float _RTL_FUNC crealf(float complex) ;
-double _RTL_FUNC creal(double complex) ;
-long double _RTL_FUNC creall(long double complex) ;
+float _RTL_FUNC _IMPORT crealf(float complex) ;
+double _RTL_FUNC _IMPORT creal(double complex) ;
+long double _RTL_FUNC _IMPORT creall(long double complex) ;
 
 #ifdef __cplusplus
 } ;

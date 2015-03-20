@@ -51,7 +51,7 @@ struct _utimbuf
 
 #define utimbuf _utimbuf
 
-int _RTL_FUNC utime (const char*, struct utimbuf*);
+int _RTL_FUNC _IMPORT utime (const char*, struct utimbuf*);
 int _RTL_FUNC _utime (const char*, struct _utimbuf*);
 int _RTL_FUNC _futime (int, struct _utimbuf*);
 int _RTL_FUNC _wutime (const wchar_t*, struct _utimbuf*);

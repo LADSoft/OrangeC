@@ -72,31 +72,31 @@ extern unsigned short const _RTL_DATA * _pctype;
 #define _IS_PRINT    (_IS_GRAPH | _IS_BLK)
 #endif
 
-int      _RTL_FUNC isalnum (int __c);
-int      _RTL_FUNC isalpha (int __c);
-int      _RTL_FUNC isblank (int __c);
-int      _RTL_FUNC iscntrl (int __c);
-int      _RTL_FUNC isdigit (int __c);
-int      _RTL_FUNC isgraph (int __c);
-int      _RTL_FUNC islower (int __c);
-int      _RTL_FUNC isprint (int __c);
-int      _RTL_FUNC ispunct (int __c);
-int      _RTL_FUNC isspace (int __c);
-int      _RTL_FUNC isupper (int __c);
-int      _RTL_FUNC isxdigit(int __c);
-int      _RTL_FUNC isascii (int __c);
-int 	 _RTL_FUNC toascii(int);
-int		 _RTL_FUNC __isascii(int);
-int		 _RTL_FUNC __toascii(int);
+int      _RTL_FUNC _IMPORT isalnum (int __c);
+int      _RTL_FUNC _IMPORT isalpha (int __c);
+int      _RTL_FUNC _IMPORT isblank (int __c);
+int      _RTL_FUNC _IMPORT iscntrl (int __c);
+int      _RTL_FUNC _IMPORT isdigit (int __c);
+int      _RTL_FUNC _IMPORT isgraph (int __c);
+int      _RTL_FUNC _IMPORT islower (int __c);
+int      _RTL_FUNC _IMPORT isprint (int __c);
+int      _RTL_FUNC _IMPORT ispunct (int __c);
+int      _RTL_FUNC _IMPORT isspace (int __c);
+int      _RTL_FUNC _IMPORT isupper (int __c);
+int      _RTL_FUNC _IMPORT isxdigit(int __c);
+int      _RTL_FUNC _IMPORT isascii (int __c);
+int 	 _RTL_FUNC _IMPORT toascii(int);
+int		 _RTL_FUNC _IMPORT __isascii(int);
+int		 _RTL_FUNC _IMPORT __toascii(int);
 
-int      _RTL_FUNC tolower(int __ch);
-int      _RTL_FUNC _ltolower(int __ch);
-int      _RTL_FUNC toupper(int __ch);
-int      _RTL_FUNC _ltoupper(int __ch);
+int      _RTL_FUNC _IMPORT tolower(int __ch);
+int      _RTL_FUNC _IMPORT _ltolower(int __ch);
+int      _RTL_FUNC _IMPORT toupper(int __ch);
+int      _RTL_FUNC _IMPORT _ltoupper(int __ch);
 
-int		 _RTL_FUNC _isctype(int, int);
-int		 _RTL_FUNC __iscsymf(int);
-int		 _RTL_FUNC __iscsym(int);
+int		 _RTL_FUNC _IMPORT _isctype(int, int);
+int		 _RTL_FUNC _IMPORT __iscsymf(int);
+int		 _RTL_FUNC _IMPORT __iscsym(int);
 #ifdef __cplusplus
 };
 };

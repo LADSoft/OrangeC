@@ -209,13 +209,13 @@ typedef void _interrupt (*_vectorType)(...) ;
 void _RTL_INTRINS __disable( void );
 void _RTL_INTRINS __enable( void );
 
-void    _RTL_FUNC _delay(unsigned int __milliseconds);
-int  _RTL_FUNC _int386( int, union REGS *, union REGS * );
+void    _RTL_FUNC _IMPORT _delay(unsigned int __milliseconds);
+int  _RTL_FUNC _IMPORT _int386( int, union REGS *, union REGS * );
 
-void    _RTL_FUNC _intr( int, union REGPACK * );
-void    _RTL_FUNC _nosound( void );
-void    _RTL_FUNC _sound( unsigned __frequency );
-void    _RTL_FUNC _segread(struct SREGS *__segp);
+void    _RTL_FUNC _IMPORT _intr( int, union REGPACK * );
+void    _RTL_FUNC _IMPORT _nosound( void );
+void    _RTL_FUNC _IMPORT _sound( unsigned __frequency );
+void    _RTL_FUNC _IMPORT _segread(struct SREGS *__segp);
 
 _vectorType setvect(int _num, _vectorType _vect) ;
 

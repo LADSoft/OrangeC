@@ -4415,7 +4415,7 @@ jointemplate:
                             linkage = lk_none;
                         sp->isInline = TRUE;
                     }
-                    if (linkage == lk_none)
+                    if (linkage == lk_none || ((defaultLinkage == lk_c || defaultLinkage == lk_cpp) && linkage == lk_cdecl))
                         linkage = defaultLinkage; 
                     // defaultLinkage may also be lk_none...
                     if (linkage == lk_none)

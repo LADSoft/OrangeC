@@ -334,6 +334,8 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
                 if (*(unsigned *)sname == 0)
                 {
                     symbolName = strings + *(unsigned *)(sname + 4); 
+                    if (symbolName == "_WinMain@16")
+                        symbolName = "WinMain";
                 }            
                 else
                 {

@@ -183,6 +183,8 @@ void LibDictionary::CreateDictionary(std::map<int, Module *> &Modules)
 bool LibDictionary::InsertInDictionary(const char *name, int index)
 {
     bool put = false;
+    if (!strcmp(name, "_WinMain@16"))
+        name = "WinMain";
     ComputeHash(name);
     int l = strlen(name);
     int n = l + 1;

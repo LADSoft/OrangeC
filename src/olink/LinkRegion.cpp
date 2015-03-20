@@ -131,7 +131,7 @@ bool LinkRegion::ParseName(LinkTokenizer &spec)
 {
     char buf[4096], *q = buf;
     const char *p = spec.GetData();
-    while (isspace(*p) || UTF8::IsAlnum(p) || *p == '*' || *p == '?' ||
+    while (isspace(*p) || UTF8::IsAlnum(p) || *p == '*' || *p == '?' || *p == '.' ||
            *p == '|' || *p == '&' || *p == '!' || *p == '(' || *p == ')')
     {
         int v = UTF8::CharSpan(p);

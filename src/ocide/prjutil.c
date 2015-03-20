@@ -151,6 +151,13 @@ void ProjectRemove(void)
             MarkChanged(data, data->type == PJ_PROJ);
             TreeView_DeleteItem(prjTreeWindow, data->hTreeItem);
             ResDeleteItem(data);
+            if (data->type != PJ_PROJ)
+            {
+                PROJECTITEM *p = data;
+                while (p->type != PJ_PROJ)
+                    p = p->parent;
+                p->clean = TRUE;
+            }
             if (data->type != PJ_FILE || !RetrieveInternalDepend(data->realName))
                 FreeSubTree(data, TRUE);
             if (data == activeProject)

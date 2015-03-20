@@ -3286,8 +3286,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     int selection = FALSE;
                     COLORREF fcolor, bcolor;
                     HFONT font;
-                    int n, i;
+                    int n, i, z=0;
                     int dx[500];
+                    int ofs = 0;
                     pos = getfragment(p, pos, autoDecoration, buf, &fcolor, &bcolor, &font,
                         &leftcol, baseline + i);
                     if (buf[0] == '\f')
@@ -3302,7 +3303,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     {
                         dx[i] = p->cd->txtFontWidth; 
                     }
-                    ExtTextOut(dc, col, r.top, ETO_OPAQUE, NULL, buf, n,dx);
+                    if (col > 1 && font == p->cd->hItalicFont)
+                        z = -1;
+                    ExtTextOut(dc, col+z, r.top, ETO_OPAQUE, NULL, buf, n,dx);
                     col += (p->cd->txtFontWidth) * n;
                 }
             }

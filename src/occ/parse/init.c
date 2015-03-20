@@ -1216,7 +1216,13 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             else if (isint(tp) && !isconstzero(tp, exp))
                 error(ERR_NONPORTABLE_POINTER_CONVERSION);
             else if ((ispointer(tp) || isfunction(tp) || tp->type == bt_aggregate)&& !comparetypes(itype, tp, TRUE))
-                if (!isvoidptr(tp) && !isvoidptr(itype))
+                if (cparams.prm_cplusplus)
+                {
+                    if (!isvoidptr(itype))
+                        if (!ispointer(itype) || !isstructured(basetype(tp)->btp) || !isstructured(basetype(itype)->btp) || classRefCount(basetype(basetype(itype)->btp)->sp, basetype(basetype(tp)->btp)->sp) != 1)
+                            errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
+                }
+                else if (!isvoidptr(tp) && !isvoidptr(itype))
                     if (!matchingCharTypes(tp, itype))
                        error(ERR_SUSPICIOUS_POINTER_CONVERSION);
             /* might want other types of conversion checks */

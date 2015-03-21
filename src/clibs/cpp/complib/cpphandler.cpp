@@ -62,7 +62,7 @@ static void destroyone(XCTAB *record, XCEPT *blk, XCEPT *catchBlock)
                     RTTI *base = blk->xt;
                     while (base-> flags & XD_ARRAY)
                     {
-                        BYTE *elempos = base->name;
+                        BYTE *elempos = (BYTE *)base->name;
                         while (*elempos)
                             elempos++;
                         elempos++;
@@ -117,7 +117,7 @@ static BOOL canThrow(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
     }
     else
     {
-        RTTI **list = throwRec->thrownClasses;
+        RTTI **list = &throwRec->thrownClasses;
         while (*list)
         {
             if (matchXT(*list, record->thrownxt))

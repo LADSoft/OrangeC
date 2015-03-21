@@ -44,12 +44,22 @@
 #include <stdexcept>
 #include <iostream>
 #include <stdlib.h>
+#include "UTF8.h"
 
 bool DefFile::initted;
 KeywordHash DefFile::keywords;
 
 #define SPACES " \t\v\f\r\n"
 #define COMMA ","
+bool IsSymbolStartChar(const char *data)
+{
+    return *data == '_' || *data == '$' || *data == '?' || *data == '.' || UTF8::IsAlpha(data);
+}
+bool IsSymbolChar(const char *data)
+{
+    return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' ||
+        *data == '?' || *data == '.' || UTF8::IsAlnum(data);
+}
 DefFile::~DefFile()
 {
     while (exports.size())

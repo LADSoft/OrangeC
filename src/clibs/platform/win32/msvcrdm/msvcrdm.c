@@ -61,11 +61,13 @@ void __crtexit(int n)
 {
     exit(n);
 }
-static int PASCAL _xceptionhandle(PEXCEPTION_RECORD er, void *frame,
+LONG ___xceptionhandle(PEXCEPTION_RECORD er, void *frame,
             PCONTEXT context, void *dispatchercontext)
 {
 
     int signum = -1,rv = 0;
+    if (er->ExceptionFlags == 2) // unwinding
+   		return 1 ;
     switch(er->ExceptionCode) {
         case EXCEPTION_ACCESS_VIOLATION:
         case EXCEPTION_DATATYPE_MISALIGNMENT:
@@ -115,7 +117,7 @@ void PASCAL __xceptinit(int *block)
     int newmode = 0;
     _xceptblkptr = block ;
     asm mov eax,[block]
-   asm mov [eax+4],offset _xceptionhandle
+   asm mov [eax+4],offset ___xceptionhandle
     asm mov	ecx,fs:[0]
     asm mov [eax],ecx
     asm mov fs:[0],eax

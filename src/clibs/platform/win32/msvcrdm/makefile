@@ -61,11 +61,10 @@ $(CLIBOBJECT)\lldiv.o $(CLIBOBJECT)\i64toa.o $(CLIBOBJECT)\_matherr.o $(CLIBOBJE
 $(CLIBOBJECT)\acos.o $(CLIBOBJECT)\asin.o $(CLIBOBJECT)\atan2.o $(CLIBOBJECT)\atan.o $(CLIBOBJECT)\ceil.o $(CLIBOBJECT)\cos.o $(CLIBOBJECT)\cosh.o
 $(CLIBOBJECT)\exp.o $(CLIBOBJECT)\fabs.o $(CLIBOBJECT)\floor.o $(CLIBOBJECT)\fmod.o $(CLIBOBJECT)\frexp.o $(CLIBOBJECT)\ldexp.o $(CLIBOBJECT)\log.o
 $(CLIBOBJECT)\log10.o $(CLIBOBJECT)\modf.o $(CLIBOBJECT)\pow.o $(CLIBOBJECT)\sin.o $(CLIBOBJECT)\sinh.o $(CLIBOBJECT)\sqrt.o
-$(CLIBOBJECT)\tan.o $(CLIBOBJECT)\tanh.o $(CLIBOBJECT)\fpclass.o $(CLIBOBJECT)\copysign.o
+$(CLIBOBJECT)\tan.o $(CLIBOBJECT)\tanh.o $(CLIBOBJECT)\fpclass.o
 $(CLIBOBJECT)\hypot.o $(CLIBOBJECT)\polyf.o $(CLIBOBJECT)\poly.o $(CLIBOBJECT)\polyl.o $(CLIBOBJECT)\pow10.o
 $(CLIBOBJECT)\del1.o $(CLIBOBJECT)\new1.o $(CLIBOBJECT)\del2.o $(CLIBOBJECT)\new2.o $(CLIBOBJECT)\rnew.o
 $(CLIBOBJECT)\_ixb.o $(CLIBOBJECT)\cpphandler.o $(CLIBOBJECT)\_term.o $(CLIBOBJECT)\_gunwind.o $(CLIBOBJECT)\arrcall.o
-$(WINOBJECT)\llxcept.o
 |
 	$(IMPLIB) $(SYSOBJECT)\$@ .\msvcrt.def
 

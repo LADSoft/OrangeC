@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 
 CmdSwitchParser LinkerMain::SwitchParser;
 
-CmdSwitchBool LinkerMain::CaseSensitive(SwitchParser, 'c', false);
+CmdSwitchBool LinkerMain::CaseSensitive(SwitchParser, 'c', true);
 CmdSwitchCombo LinkerMain::Map(SwitchParser, 'm', "x");
 CmdSwitchBool LinkerMain::DebugInfo(SwitchParser, 'v', false);
 CmdSwitchBool LinkerMain::LinkOnly(SwitchParser, 'l', false);

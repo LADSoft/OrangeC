@@ -1,5 +1,34 @@
 Release notes
 
+version 5.31.1:
+    occ:        if a multiply of two constants made it to the back end (e.g. when not optimizing), 
+                code generation would be incorrect
+    occ/occpr:  could crash if a return statement was incomplete, e.g. for 'return( }'
+    occ:        using __cdecl on a function in an extern "C" block turned it into a C++ function
+    olink:      default case sensitivity to TRUE
+    coff2ieee:  automatically rename _WinMain@16 to WinMain to handle the difference in name mangling
+    ocide:      took care of an allocation error that could cause project settings to change randomly
+    ocide:      disable code completion inside strings
+    ocide:      add an option to allow automatic variables to be bolded or italicized
+    ocide:      cause a project to be rebuilt if files have been removed from it
+    oimplib:    allow '@' to be inside names in the def file.   But not at the beginning...
+    rtl:        global_unwind was in the data segment
+    rtl:        add many C99 and C++ functions to msvcrt.l
+    rtl:        added more imports from msvcrt.dll, kernel32.dll and user32.dll to allow linking with microsoft files
+
+version 5.30.1: 3/12/2015
+    rtl:        sscanf was broken for floating point numbers
+
+version 5.29.1: 03/12/2015
+    create new program 'coff2ieee' to convert msvc object files to ieee format
+    occ/dlpe:   minimize import thunking to support the import format in microsoft object files
+    olib/olink: debug information in a library was sometimes parsed incorrectly
+    olink:      optimized library searches, much faster when parsing libraries now
+    ocide:      add CTL-F1 to navigate to the help documentation for a windows function
+    ocide:      add more colorization options
+	ocide:		fix problem with sometimes crashing when selecting text backwards in the editor and deleting it
+    rtl:        add minimal support for vs2010 object files
+
 version 5.28.1: 02/25/2015
     occ:    fix memory allocation in register allocator to not grow without bounds
     occ:    increase macro buffer size to 128k - openjpeg.l used > 64K in an input sequence

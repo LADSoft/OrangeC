@@ -170,8 +170,6 @@ void dumpInlines(void)
             SYMBOL *parentTemplate = sym->parentClass->parentTemplate;
             SYMBOL *origsym;
             LIST *instants = parentTemplate->instantiations;
-            if (!strcmp(sym->name, "id"))
-                printf("%s\n",sym->parentClass->name);
             while (instants)
             {
                 if (TemplateInstantiationMatch(instants->data, sym->parentClass))
@@ -182,10 +180,20 @@ void dumpInlines(void)
                 instants = instants->next;
             }
             origsym = search(sym->name, parentTemplate->tp->syms);
+//            printf("%s\n", origsym->decoratedName);
+
+            if (!origsym || origsym->storage_class != sc_global)
+            {
+                parentTemplate = sym->parentClass->parentTemplate;
+                origsym = search(sym->name, parentTemplate->tp->syms);
+            }
+
             if (origsym && origsym->storage_class == sc_global && !sym->didinline)
             {
                 sym->didinline = TRUE;
                 sym->genreffed = FALSE;
+                sym->storage_class = sc_global;
+                sym->linkage = lk_virtual;
                 if (origsym->deferredCompile)
                 {
                     STRUCTSYM s1, s;

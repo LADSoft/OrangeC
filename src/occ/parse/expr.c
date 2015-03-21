@@ -164,7 +164,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         HASHREC *hr;
         *tp = sp->tp;
         lex = getsym();
-        switch (sp->storage_class)
+       switch (sp->storage_class)
         {	
             case sc_member:
             case sc_mutable:

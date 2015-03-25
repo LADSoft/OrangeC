@@ -32,8 +32,15 @@
 [export ___substackp]
 %endif
 [global ___substackp]
-
+[global __alloca_probe]
+[global __alloca_probe_8]
+[global __alloca_probe_16]
 SECTION code CLASS=CODE USE32
+__alloca_probe_8:
+__alloca_probe_16: ; these work because __substackp does a paragraph align already
+__alloca_probe:
+    xchg    dword [esp],eax
+    push    eax
 ___substackp:
     push    eax
     push    ecx

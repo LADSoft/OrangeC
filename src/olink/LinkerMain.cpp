@@ -70,7 +70,7 @@ CmdSwitchBool LinkerMain::RelFile(SwitchParser, 'r', false);
 CmdSwitchFile LinkerMain::File(SwitchParser, '@');
 CmdSwitchString LinkerMain::Specification(SwitchParser, 's');
 CmdSwitchDefine LinkerMain::Defines(SwitchParser, 'D');
-CmdSwitchString LinkerMain::LibPath(SwitchParser, 'L');
+CmdSwitchString LinkerMain::LibPath(SwitchParser, 'L',';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 char *LinkerMain::usageText = "[options] inputfiles\n"
@@ -119,7 +119,6 @@ const ObjString &LinkerMain::GetMapFile(CmdFiles &files)
     }
     return mapFile;
 }
-#include <stdio.h>
 void LinkerMain::AddFile(LinkManager &linker, std::string &name)
 {
     if (!TargetConfig.InterceptFile(name))

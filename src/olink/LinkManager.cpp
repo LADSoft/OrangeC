@@ -239,8 +239,29 @@ void LinkManager::LoadFiles()
         FILE *infile = fopen(name.c_str(), "rb");
         if (!infile)
         {
-            name = Utils::FullPath(libPath, *(*it));
-            infile = fopen(name.c_str(), "rb");
+            std::string hold = libPath;
+            while (hold.size())
+            {
+                std::string next;
+                size_t npos = hold.find(";");
+                if (npos == std::string::npos)
+                {
+                    next = hold;
+                    hold = "";
+                }
+                else
+                {
+                    next = hold.substr(0, npos);
+                    if (npos +1 < hold.size())
+                        hold = hold.substr(npos+1);
+                    else
+                        hold = "";
+                }
+                name = Utils::FullPath(next, *(*it));
+                infile = fopen(name.c_str(), "rb");
+                if (infile)
+                    hold = "";
+            }
         }
         if (infile)
         {
@@ -279,7 +300,33 @@ LinkLibrary *LinkManager::OpenLibrary(const ObjString &name)
             delete rv;
             rv = NULL;
         }
-        rv = new LinkLibrary(Utils::FullPath(libPath, name), caseSensitive);
+        std::string hold = libPath;
+        std::string next;
+        while (hold.size())
+        {
+            size_t npos = hold.find(";");
+            if (npos == std::string::npos)
+            {
+                next = hold;
+                hold = "";
+            }
+            else
+            {
+                next = hold.substr(0, npos);
+                if (npos +1 < hold.size())
+                    hold = hold.substr(npos+1);
+                else
+                    hold = "";
+            }
+            std::string name1 = Utils::FullPath(next, name);
+            FILE *infile = fopen(name1.c_str(), "rb");
+            if (infile)
+            {
+                hold = "";
+                fclose(infile);
+            }
+        }
+        rv = new LinkLibrary(Utils::FullPath(next, name), caseSensitive);
     }
     if (rv)
     {

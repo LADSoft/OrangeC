@@ -169,7 +169,7 @@ bool CoffFile::AddComdefs()
 }
 std::string CoffFile::GetSectionName(int sect)
 {
-    if (((CoffSectionAux *)&sectionSymbols[sect][1])->Selection)
+    if (((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
     {
         std::string name;
         CoffSymbol *sym = sectionSymbols[sect] + sectionSymbols[sect]->NumberOfAuxSymbols + 1;
@@ -223,13 +223,13 @@ std::string CoffFile::GetSectionName(int sect)
 }
 ObjInt CoffFile::GetSectionQualifiers(int sect)
 {
-    if (((CoffSectionAux *)&sectionSymbols[sect][1])->Selection)
+    if (((CoffSectionAux *)&sectionSymbols[sect][1])->Selection > 1)
     {
         ObjInt sel = 0;
         switch(((CoffSectionAux *)&sectionSymbols[sect][1])->Selection)
         {
-            case 1:
-                sel = ObjSection::unique;
+//            case 1:
+//                sel = ObjSection::unique;
                 break;
             case 2:
             case 3:
@@ -327,7 +327,7 @@ ObjFile *CoffFile::ConvertToObject(std::string outputName, ObjFactory &factory)
     {
         if (symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].SectionNumber <= header.NumberOfSections)
         {
-            if (symbols[i].SectionNumber <= 0 || !(((CoffSectionAux *)&sectionSymbols[symbols[i].SectionNumber-1][1])->Selection))
+            if (symbols[i].SectionNumber <= 0 || (((CoffSectionAux *)&sectionSymbols[symbols[i].SectionNumber-1][1])->Selection <= 1))
             {
                 char *sname = symbols[i].Name;
                 std::string symbolName;

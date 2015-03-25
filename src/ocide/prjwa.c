@@ -52,6 +52,7 @@
 #define N_EDITDONE -4001
 
 extern HINSTANCE hInstance;
+extern HANDLE ewSem;
 extern HWND hwndClient, hwndFrame;
 extern char szWorkAreaFilter[];
 extern PROJECTITEM *activeProject;
@@ -178,11 +179,13 @@ void LoadWorkArea(char *name, BOOL existing)
         {
             if (ccExistsInDB(ptr->dwName))
             {
-                SendMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
+                if (ptr->active)
+                    SendMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
             }
             else
             {
-                InstallForParse(ptr->self);
+                if (ptr->active)
+                    InstallForParse(ptr->self);
             }
         }
         ptr = ptr->next;

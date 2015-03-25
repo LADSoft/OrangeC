@@ -1,6 +1,13 @@
 Release notes
 
-version 5.31.1:
+version 5.32.1: 03/24/2015
+    olink:      add the system library path to the front of the include path list, instead of replacing it
+    ocide:      fix potential crash condition when switching projects
+    ocide:      fix several compiler properties that would show as blanks when the IDE was reopened
+    coff2ieee:  handle unique COMDATS like normal sections, and define their symbols
+    rtl:        add __alloca_probe and friends; add security stuff to msvcrt.l
+
+version 5.31.1: 03/21/2015
     occ:        if a multiply of two constants made it to the back end (e.g. when not optimizing), 
                 code generation would be incorrect
     occ/occpr:  could crash if a return statement was incomplete, e.g. for 'return( }'

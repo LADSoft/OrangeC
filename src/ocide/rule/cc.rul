@@ -89,19 +89,19 @@ $$(DEFINE)
 			<ITEM CLASS="File" NAME="Output File" TYPE="TEXT" ID="OUTPUTFILE">
 				$(OUTPUTDIR)\$(OUTPUTNAME)$(OUTPUTEXT)
 			</ITEM>
-			<ITEM NAME="Compatibility" TYPE="COMBO" ID="__C99" DEFAULT=" /9">
+			<ITEM NAME="Compatibility" TYPE="COMBO" ID="__C99" DEFAULT="/9">
 				<SETTING NAME="C89" VALUE=""/>
-				<SETTING NAME="C99" VALUE=" /9"/>
-				<SETTING NAME="C11" VALUE=" /1"/>
+				<SETTING NAME="C99" VALUE="/9"/>
+				<SETTING NAME="C11" VALUE="/1"/>
 			</ITEM>
 			<ITEM NAME="Ansi" TYPE="COMBO" ID="__ANSI" DEFAULT="">
 				<SETTING NAME="No" VALUE=""/>
-				<SETTING NAME="Yes" VALUE=" /A"/>
+				<SETTING NAME="Yes" VALUE="/A"/>
 			</ITEM>
 			<ITEM NAME="Show Warnings" TYPE="COMBO" ID="__WARNINGS" DEFAULT=" /E-100">
-				<SETTING NAME="No" VALUE=" /E-100"/>
-				<SETTING NAME="Yes" VALUE=" /E100"/>
-				<SETTING NAME="Extended" VALUE=" /E+100"/>
+				<SETTING NAME="No" VALUE="/E-100"/>
+				<SETTING NAME="Yes" VALUE="/E100"/>
+				<SETTING NAME="Extended" VALUE="/E+100"/>
 			</ITEM>
 			<ITEM NAME="Align Stack" TYPE="COMBO" ID="__ALIGNSTACK" DEFAULT="">
 				<SETTING NAME="No" VALUE=""/>

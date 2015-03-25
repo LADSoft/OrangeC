@@ -70,7 +70,7 @@ public:
     
     ObjSection(ObjString Name, ObjInt Index) :name(Name), externalName(""), 
             alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), 
-            size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL) {}
+            size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL), used(false) {}
     virtual ~ObjSection() { };
     ObjString GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
@@ -84,6 +84,8 @@ public:
     ObjInt GetQuals() { return quals; }
     void SetQuals(ObjInt Quals) { quals = Quals; }
     ObjInt GetIndex() { return index; }
+    void SetUsed(bool state) { used = state; }
+    bool GetUsed() const { return used; }
     void SetIndex(ObjInt Index)	{ index = Index; }
     void Add(ObjMemory *Memory) { memoryManager.Add(Memory); }
     void SetBase(ObjInt Base) { memoryManager.SetBase(Base); }
@@ -113,6 +115,7 @@ private:
     ObjMemoryManager memoryManager;
     ObjString sectionClass;
     bool utilityFlag;
+    bool used; // for the linker
     ObjInt genOffset;
     ObjInt virtualOffset;
 } ;

@@ -982,6 +982,23 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
         cast(*newType, exp);
         return TRUE;
     }
+    if (oldType->type == bt_aggregate)
+    {
+        // function to int
+        if (isint(*newType) || ispointer(*newType))
+        {
+            if ((*exp)->type == en_func)
+            {
+                HASHREC *hr = oldType->syms->table[0];
+                SYMBOL *sp = (SYMBOL *)hr->p;
+                if (hr->next)
+                    errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, sp->name);
+                (*exp) = varNode(en_pc, sp);
+                cast(*newType, exp);
+                return TRUE;
+            }
+        }
+    }
     // one function pointer type to another
     if (isfuncptr(oldType) && isfuncptr(*newType))
     {
@@ -1075,9 +1092,16 @@ BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBO
 LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, BOOLEAN packed)
 {
     lex = getsym();
+    *oldExp = NULL;
+    *oldType = NULL;
     if (needkw(&lex, lt))
     {
         lex = get_type_id(lex, newType, funcsp, FALSE);
+        if (!*newType)
+        {
+            error(ERR_TYPE_NAME_EXPECTED);
+            *newType = &stdpointer;
+        }
         if (needkw(&lex, gt))
         {
             if (needkw(&lex, openpa))

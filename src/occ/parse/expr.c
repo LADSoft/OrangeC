@@ -3662,14 +3662,14 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
         {
             return lex;
         }
-        else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
+        else if (isvoid(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         else if (btp->hasbits)
             error(ERR_CANNOT_TAKE_ADDRESS_OF_BIT_FIELD);
         else if (inreg(*exp, TRUE))
                 error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
         else if ((!ispointer(btp) || !(btp)->array) && !isstructured(btp) &&
-            !isfunction(btp) && (exp1)->type != en_memberptr)
+            !isfunction(btp) && btp->type != bt_aggregate && (exp1)->type != en_memberptr)
         {
             if ((exp1)->type != en_const && exp1->type != en_assign)
                 if (!lvalue(exp1))
@@ -3750,7 +3750,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
             tp1->btp = *tp;
             *tp = tp1;
         }	
-        else if (!isfunction(*tp))
+        else if (!isfunction(*tp) && (*tp)->type != bt_aggregate)
         {
             while(castvalue(exp1))
                 exp1 = (exp1)->left;

@@ -509,7 +509,6 @@ typedef struct sym
         unsigned instantiated:1; // instantiated template
         unsigned instantiated2:1; // instantiated template
         unsigned copiedTemplateFunction:1;
-        unsigned performedDeferred : 1; // structured type has deferred compilation done already
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
         unsigned isInline : 1; /* function is a candidate for inline functionality */
         unsigned temp : 1; // temporary boolean...  

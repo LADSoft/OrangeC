@@ -76,7 +76,6 @@ STRUCTSYM *structSyms;
 int expandingParams;
 int noSpecializationError;
 LIST *deferred;
-int structLevel;
 
 static int unnamed_tag_id, unnamed_id, anonymous_id;
 static char *importFile;
@@ -101,7 +100,6 @@ void declare_init(void)
     anonymousNameSpaceName[0] = 0;	
     noSpecializationError = 0;
     deferred = NULL;
-    structLevel = 0;
     inDefaultParam = 0;
 }
 
@@ -851,7 +849,6 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
         SetTemplateNamespace(sp);
     if (sp->structAlign == 0)
         sp->structAlign = 1;
-    structLevel++;
     if (hasBody)
     {
         if (sp->tp->syms || sp->tp->tags)
@@ -893,27 +890,6 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
         noSpecializationError--;
         TemplateGetDeferred(sp);
     }
-    if (!templateNestingCount && hasBody)
-    {
-        if (sp->tp->syms && !sp->performedDeferred)
-        {
-            LIST *entry = (LIST *)Alloc(sizeof(LIST));
-            entry->next = deferred;
-            deferred = entry;
-            entry->data = sp;
-            sp->performedDeferred = TRUE;
-        }
-        if (structLevel == 1)
-        {
-            while (deferred)
-            {
-                SYMBOL *sp = deferred->data;
-                deferredCompile();
-                deferred = deferred->next;
-            }
-        }
-    }
-    --structLevel;
     return lex;
 }
 static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class, enum e_ac access, BOOLEAN *defd)

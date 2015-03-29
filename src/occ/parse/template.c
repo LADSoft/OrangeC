@@ -43,7 +43,6 @@ extern NAMESPACEVALUES *globalNameSpace;
 extern TYPE stdany;
 extern STRUCTSYM *structSyms;
 extern LIST *deferred;
-extern int structLevel;
 extern LIST *nameSpaceList;
 extern INCLUDES *includes;
 extern int inDefaultParam;
@@ -3858,7 +3857,6 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
         {
 			int oldHeaderCount = templateHeaderCount;
             LIST *oldDeferred = deferred;
-            int oldStructLevel = structLevel;
             BOOLEAN defd = FALSE;
             SYMBOL old;
             struct templateListData l;
@@ -3895,7 +3893,6 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
 			dontRegisterTemplate-= templateNestingCount != 0;
             instantiatingTemplate --;
             deferred = oldDeferred;
-            structLevel = oldStructLevel;
             cls->instantiated = TRUE;
             cls->genreffed = TRUE;
 			templateHeaderCount = oldHeaderCount;
@@ -4567,7 +4564,6 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
             found1->tp->sp = found1;
             found1->gentemplate = TRUE;
             found1->instantiated = TRUE;
-            found1->performedDeferred = FALSE;
             found1->templateParams = copyParams(found1->templateParams, TRUE);
             if (found1->templateParams->p->bySpecialization.types)
             {

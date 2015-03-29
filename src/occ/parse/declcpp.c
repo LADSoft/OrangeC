@@ -60,7 +60,6 @@ extern int inTemplateSpecialization;
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
 
-static LIST *deferredBackfill;
 static LIST *deferred;
 
 typedef struct 
@@ -737,24 +736,6 @@ void deferredCompileOne(SYMBOL *cur)
         }
         PopTemplateNamespace(tns);
     }
-}
-void deferredCompile(void)
-{
-    static int inFunc;
-    if (inFunc)
-        return;
-    inFunc++;
-//    if (!theCurrentFunc)
-    {
-        while (deferredBackfill)
-        {
-            SYMBOL *cur = (SYMBOL *)deferredBackfill->data;
-            if (!cur->parentClass->templateLevel)
-                deferredCompileOne(cur);
-            deferredBackfill = deferredBackfill->next;
-        }
-    }
-    inFunc--;
 }
 TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 {

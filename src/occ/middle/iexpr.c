@@ -1445,7 +1445,7 @@ static int sizeParam(INITLIST *a, SYMBOL *funcsp)
     if (ispointer(a->tp) || isref(a->tp) || a->tp->type == bt_func || a->tp->type == bt_ifunc || a->byRef)
         rv = sizeFromISZ(ISZ_ADDR);
     else
-        rv = a->tp->size;
+        rv = basetype(a->tp)->size;
     if (rv % chosenAssembler->arch->stackalign)
         rv += chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
     return rv;

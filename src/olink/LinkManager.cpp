@@ -93,6 +93,80 @@ void LinkManager::AddLibrary(const ObjString &name)
 { 
     libFiles.Add(name); 
 }
+void LinkManager::LoadExterns(ObjFile *file, ObjExpression *exp)
+{
+    if (exp->GetOperator() == ObjExpression::eSymbol)
+    {
+        if (exp->GetSymbol()->GetType()== ObjSymbol::eExternal)
+        {
+            LinkSymbolData test(file, exp->GetSymbol());
+            if (externals.find(&test) == externals.end())
+            {
+                SymbolIterator it = publics.find(&test);
+                if (it != publics.end())
+                {
+                    (*it)->SetUsed(true);
+                }
+                else
+                {
+                    it = virtsections.find(&test);
+                    if (it == virtsections.end() || !(*it)->GetUsed())
+                    {                    
+                        LinkSymbolData *newSymbol = new LinkSymbolData(file, exp->GetSymbol());
+                        externals.insert(newSymbol);
+                    }
+                }
+            }
+        }
+    }
+    else if (exp->GetOperator() == ObjExpression::eSection)
+    {
+        ObjSection *sect = exp->GetSection();
+        if (sect->GetQuals() & ObjSection::virt)
+        {
+            int n = sect->GetName().find('@');
+            if (n != std::string::npos)
+            {
+                std::string name = sect->GetName().substr(n);
+                ObjSymbol sym(name, ObjSymbol::ePublic, -1);
+                LinkSymbolData test(file, &sym);
+                SymbolIterator it = virtsections.find(&test);
+                if (it == virtsections.end() || !(*it)->GetUsed())
+                {                    
+                    LinkSymbolData *newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
+                    externals.insert(newSymbol);
+                }
+            }
+        }
+    }
+    else
+    {
+        if (exp->GetLeft())
+        {
+            LoadExterns(file, exp->GetLeft());
+        }
+        if (exp->GetRight())
+        {
+            LoadExterns(file, exp->GetRight());
+        }
+    }
+}
+void LinkManager::LoadSectionExternals(ObjFile *file, ObjSection *section)
+{
+    if (section)
+    {
+        section->SetUsed(true);
+        ObjMemoryManager &memManager = section->GetMemoryManager();
+        for (ObjMemoryManager::MemoryIterator it = memManager.MemoryBegin();
+             it != memManager.MemoryEnd(); ++it)
+        {
+            if ((*it)->GetFixup())
+            {
+                LoadExterns(file, (*it)->GetFixup());
+            }
+        }
+    }
+}
 void LinkManager::MergePublics(ObjFile *file, bool toerr)
 {
     for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)
@@ -107,50 +181,11 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
         {
             LinkSymbolData *newSymbol = new LinkSymbolData(file, *it);
             publics.insert(newSymbol);
-            SymbolIterator its = externals.find(newSymbol);
-            if (its != externals.end())
+            SymbolIterator it = exports.find(newSymbol);
+            if (it != exports.end())
             {
-                
+                (*it)->SetUsed(true);
                 newSymbol->SetUsed(true);
-                LinkSymbolData *p = *its;
-                externals.erase(its);
-                delete p;
-            }
-            its = exports.find(newSymbol);
-            if (its != exports.end())
-            {
-                (*its)->SetUsed(true);
-            }
-        }
-    }
-    for (ObjFile::SymbolIterator it = file->ExternalBegin(); it != file->ExternalEnd(); ++it)
-    {
-        LinkSymbolData test(file, *it);
-        if (externals.find(&test) == externals.end())
-        {
-            SymbolIterator it1 = publics.find(&test);
-            if (it1 != publics.end())
-            {
-                (*it1)->SetUsed(true);
-            }
-            else 
-            {
-                it1 = virtsections.find(&test);
-                if (it1 != virtsections.end())
-                {
-                    (*it1)->SetUsed(true);
-                }
-                else
-                {
-                    LinkSymbolData *newSymbol = new LinkSymbolData(file, *it);
-                    SymbolIterator its = imports.find(newSymbol);
-                    if (its != imports.end())
-                    {
-                        newSymbol->SetUsed(true);
-                        (*its)->SetUsed(true);
-                    }
-                    externals.insert(newSymbol);
-                }
             }
         }
     }
@@ -161,12 +196,6 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
         {
             LinkSymbolData *newSymbol = new LinkSymbolData(file, *it);
             imports.insert(newSymbol);
-            SymbolIterator it = externals.find(newSymbol);
-            if (it != externals.end())
-            {
-                (*it)->SetUsed(true);
-                newSymbol->SetUsed(true);
-            }
         }
     }
     for (ObjFile::SymbolIterator it = file->ExportBegin(); it != file->ExportEnd(); ++it)
@@ -186,7 +215,11 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
     }
     for (ObjFile::SectionIterator it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
-        if ((*it)->GetQuals() & ObjSection::virt)
+        if (!((*it)->GetQuals() & ObjSection::virt))
+        {
+            LoadSectionExternals(file, *it);
+        }
+        else
         {
             int n = (*it)->GetName().find('@');
             if (n != std::string::npos)
@@ -199,31 +232,109 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
                     if (toerr)
                         LinkError("Duplicate public " + (*it)->GetName() + " in module " + file->GetName());
                 }
-                else if (virtsections.find(&test) != virtsections.end())
-                {
-                }
                 else
                 {
-                    LinkSymbolData *newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
-                    virtsections.insert(newSymbol);
-                    SymbolIterator its = externals.find(newSymbol);
-                    if (its != externals.end())
+                    SymbolIterator it1 = virtsections.find(&test);
+                    if (it1 == virtsections.end())
                     {
-                        
-                        newSymbol->SetUsed(true);
-                        LinkSymbolData *p = *its;
-                        externals.erase(its);
-                        delete p;
+                        LinkSymbolData *newSymbol = new LinkSymbolData(file, new ObjSymbol(sym));
+                        newSymbol->SetAuxData(*it);
+                        virtsections.insert(newSymbol);
                     }
-                    its = exports.find(newSymbol);
-                    if (its != exports.end())
+                    else
                     {
-                        (*its)->SetUsed(true);
+                        ObjSection *last = (ObjSection *)(*it1)->GetAuxData();
+                        if (last->GetAbsSize() < (*it)->GetAbsSize())
+                        {
+                            if ((*it1)->GetUsed())
+                            {
+                                (*it1)->SetRemapped(true);
+                            }
+                            (*it1)->SetAuxData(*it);
+                        }
                     }
                 }
             }
         }
     }
+    for (SymbolIterator it = externals.begin(); it != externals.end();)
+    {
+        SymbolIterator it1 = publics.find(*it);
+        if (it1 != publics.end())
+        {
+            (*it)->SetUsed(true);
+            (*it1)->SetUsed(true);
+            LinkSymbolData *p = *it;
+            externals.erase(it++);
+            delete p;
+        }
+        else 
+        {
+            SymbolIterator its = imports.find(*it);
+            if (its != imports.end())
+            {
+                (*it)->SetUsed(true);
+                (*its)->SetUsed(true);
+                ++it;
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+}
+bool LinkManager::HasVirtual(std::string name)
+{
+    int n = name.find('@');
+    if (n != std::string::npos)
+    {
+        name = name.substr(n);
+        ObjSymbol sym(name, ObjSymbol::ePublic, -1);
+        ObjFile file(name);
+        LinkSymbolData test(&file, &sym);
+        SymbolIterator it = virtsections.find(&test);
+        if (it != virtsections.end())
+        {
+            return (*it)->GetUsed();
+        }
+    }
+    return false;
+}
+bool LinkManager::ScanVirtuals()
+{
+    bool rv = false;
+    for (SymbolIterator it = virtsections.begin(); it !=  virtsections.end(); ++it)
+    {
+        if ((*it)->GetRemapped())
+        {
+            (*it)->SetRemapped(false);
+            LoadSectionExternals((*it)->GetFile(), (ObjSection *)(*it)->GetAuxData());
+            rv = true;
+        }
+    }
+    for (SymbolIterator it = externals.begin(); it !=  externals.end();)
+    {
+        SymbolIterator it1 = virtsections.find(*it);
+        if (it1 != virtsections.end())
+        {
+            if (!(*it1)->GetUsed())
+            {
+                (*it1)->SetUsed(true);
+                LoadSectionExternals((*it1)->GetFile(), (ObjSection *)(*it1)->GetAuxData());
+            }
+            (*it)->SetUsed(true);
+            LinkSymbolData *p = *it;
+            externals.erase(it++);
+            delete p;
+            rv = true;
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    return rv;
 }
 void LinkManager::LoadFiles()
 {
@@ -590,7 +701,7 @@ void LinkManager::PlaceSections()
             }
             else
             {
-                bottom = (*it)->GetPartition()->PlacePartition(bottom, completeLink, overlayNum);
+                bottom = (*it)->GetPartition()->PlacePartition(this, bottom, completeLink, overlayNum);
             }
         }
     }
@@ -625,6 +736,7 @@ bool LinkManager::ExternalErrors()
             }
         }
     }
+    int n = 0;
     for (SymbolIterator pt = externals.begin(); pt != externals.end(); pt++)
     {
         bool found = false;
@@ -701,7 +813,10 @@ void LinkManager::Link()
         if (externals.size())
         {
             LoadLibraries();
-            ScanLibraries();
+            do
+            {
+                ScanLibraries();
+            } while (ScanVirtuals());
         }
     }
     if (!specName.size())

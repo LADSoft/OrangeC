@@ -190,7 +190,7 @@ bool LinkOverlay::ParseOverlaySpec(LinkManager *manager, CmdFiles &files, LinkTo
         return false;
     return ParseAttributes(spec);
 }
-ObjInt LinkOverlay::PlaceOverlay(LinkAttribs &partitionAttribs, bool completeLink, int overlayNum)
+ObjInt LinkOverlay::PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAttribs, bool completeLink, int overlayNum)
 {
     ObjInt size = 0;
     ObjInt base = partitionAttribs.GetAddress();
@@ -229,7 +229,7 @@ ObjInt LinkOverlay::PlaceOverlay(LinkAttribs &partitionAttribs, bool completeLin
         }
         else
         {
-            size += (*it)->GetRegion()->PlaceRegion(attribs, base + size);
+            size += (*it)->GetRegion()->PlaceRegion(manager, attribs, base + size);
         }
     }	
 //	if (attribs.GetAlign() > partitionAttribs.GetAlign())

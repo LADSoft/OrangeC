@@ -432,8 +432,17 @@ void LinkRegion::CheckAttributes()
             attribs.SetAlign(new LinkExpression(maxAlign));
     }
 }
-ObjInt LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
+#include <stdio.h>
+ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, SectionDataIterator it, ObjInt address)
 {
+    // weeding
+    OneSectionIterator test1 = (*it)->sections.begin();
+    ObjSection *test2 = (*test1).section;
+    if (!manager->HasVirtual(test2->GetName()))
+    {
+        (*it)->sections.clear();
+        return 0;
+    }    
     ObjSection *curSection = NULL;
     ObjFile *curFile = NULL;
     for (OneSectionIterator it1 = (*it)->sections.begin(); it1 != (*it)->sections.end(); ++it1)
@@ -480,7 +489,7 @@ ObjInt LinkRegion::ArrangeOverlayed(SectionDataIterator it, ObjInt address)
         return curSection->GetAbsSize();
     return 0;
 }
-ObjInt LinkRegion::ArrangeSections()
+ObjInt LinkRegion::ArrangeSections(LinkManager *manager)
 {
     ObjInt address = attribs.GetAddress(), oldAddress = address;
     ObjInt size;
@@ -533,21 +542,21 @@ ObjInt LinkRegion::ArrangeSections()
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(it, address);
+            address += ArrangeOverlayed(manager, it, address);
         }
         for (SectionDataIterator it = normalData.begin(); it != normalData.end(); ++it)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(it, address);
+            address += ArrangeOverlayed(manager, it, address);
         }
         for (SectionDataIterator it = postponeData.begin(); it != postponeData.end(); ++it)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(it, address);
+            address += ArrangeOverlayed(manager, it, address);
         }
         size = address - oldAddress;
     }
@@ -608,7 +617,7 @@ ObjInt LinkRegion::ArrangeSections()
         LinkManager::LinkError("Region " + QualifiedRegionName() + " overflowed region size");
     return size;
 }
-ObjInt LinkRegion::PlaceRegion(LinkAttribs &partitionAttribs, ObjInt base)
+ObjInt LinkRegion::PlaceRegion(LinkManager *manager, LinkAttribs &partitionAttribs, ObjInt base)
 {
     int alignAdjust = 0;
     if (!attribs.GetVirtualOffsetSpecified())
@@ -638,7 +647,7 @@ ObjInt LinkRegion::PlaceRegion(LinkAttribs &partitionAttribs, ObjInt base)
             LinkManager::LinkError("Region " + QualifiedRegionName() + " overlaps other regions ");
     }
     CheckAttributes();
-    int size = ArrangeSections();
+    int size = ArrangeSections(manager);
     if (size < attribs.GetSize())
         size = attribs.GetSize();
 

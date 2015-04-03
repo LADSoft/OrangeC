@@ -73,7 +73,7 @@ class LinkPartition
         bool ParsePartitionSpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec);
         
         void Add(LinkOverlaySpecifier *ov) { overlays.push_back(ov); }
-        ObjInt PlacePartition(ObjInt bottom, bool completeLink, int &overlayNum);
+        ObjInt PlacePartition(LinkManager *manager, ObjInt bottom, bool completeLink, int &overlayNum);
         
     private:
         bool ParseValue(LinkTokenizer &spec, LinkExpression **rv, bool alreadyassign = false);

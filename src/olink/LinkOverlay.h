@@ -74,7 +74,7 @@ class LinkOverlay
         void Add(LinkRegionSpecifier *region) { regions.push_back(region); }
         bool ParseOverlaySpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec);
 
-        ObjInt PlaceOverlay(LinkAttribs &partitionAttribs, bool completeLink, int overlayNum);
+        ObjInt PlaceOverlay(LinkManager *manager, LinkAttribs &partitionAttribs, bool completeLink, int overlayNum);
         
     private:
         bool ParseAssignment(LinkTokenizer &spec);

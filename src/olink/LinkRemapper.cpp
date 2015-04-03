@@ -279,8 +279,7 @@ ObjExpression *LinkRemapper::RewriteExpression(LinkExpression *exp, LinkExpressi
     }
     return rv;
 }
-#include <fstream>
-
+#include <stdio.h>
 ObjExpression *LinkRemapper::ScanExpression(ObjExpression *offset, LinkSymbolData *d)
 {
     switch(offset->GetOperator())

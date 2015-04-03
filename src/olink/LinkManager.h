@@ -59,27 +59,35 @@ class ObjFactory;
 class ObjIOBase;
 class ObjFile;
 class ObjIndexManager;
+class ObjExpression;
+class ObjSection;
 
 void HookError(int);
 class LinkSymbolData
 {
     public:
-        LinkSymbolData(ObjFile *File, ObjSymbol *Symbol): file(File), symbol(Symbol), used(false) {}
-        LinkSymbolData(ObjSymbol *Symbol): file(NULL), symbol(Symbol), used(false) {}
-        LinkSymbolData(): file(NULL), symbol(NULL), used(false) {}
+        LinkSymbolData(ObjFile *File, ObjSymbol *Symbol): file(File), symbol(Symbol), used(false), remapped(false), auxData(NULL) {}
+        LinkSymbolData(ObjSymbol *Symbol): file(NULL), symbol(Symbol), used(false), remapped(false), auxData(NULL) {}
+        LinkSymbolData(): file(NULL), symbol(NULL), used(false), remapped(false), auxData(NULL) {}
         ~LinkSymbolData() {}
         
-        ObjFile *GetFile() { return file; }
+        ObjFile *GetFile() const { return file; }
         void SetFile(ObjFile *File) { file = File; }
-        ObjSymbol *GetSymbol() { return symbol; }
+        ObjSymbol *GetSymbol() const { return symbol; }
         void SetSymbol(ObjSymbol *sym) { symbol = sym; }
-        bool GetUsed() { return used; }
+        void SetAuxData(void *data) { auxData = data; }
+        void *GetAuxData() const { return auxData; }
+        bool GetUsed() const { return used; }
         void SetUsed(bool Used) { used = Used; }
+        bool GetRemapped() const { return remapped; }
+        void SetRemapped(bool Remapped) { remapped=Remapped; }
         
     private:
         bool used;
+        bool remapped;
         ObjFile *file;
         ObjSymbol *symbol;
+        void *auxData;
 };
 struct linkltcompare
 {
@@ -148,8 +156,12 @@ class LinkManager
         }
         int ErrCount() const { return errors; }
         int WarnCount() const { return warnings; }		
+        bool HasVirtual(std::string name);
     private:
+        void LoadExterns(ObjFile *file, ObjExpression *exp);
+        void LoadSectionExternals(ObjFile * file, ObjSection *section);
         void MergePublics(ObjFile *file, bool toerr);
+        bool ScanVirtuals();
         void LoadFiles();
         LinkLibrary *OpenLibrary(const ObjString &name);
         void LoadLibraries();

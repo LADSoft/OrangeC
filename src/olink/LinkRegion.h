@@ -1,9 +1,7 @@
 /*
     Software License Agreement (BSD License)
     
-    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
-    All rights reserved.
-    
+
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
@@ -106,7 +104,7 @@ class LinkRegion
         
         bool ParseRegionSpec(LinkManager *manager, CmdFiles &files, LinkTokenizer &spec);
         
-        ObjInt PlaceRegion(LinkAttribs &partitionAttribs, ObjInt base);
+        ObjInt PlaceRegion(LinkManager *manager, LinkAttribs &partitionAttribs, ObjInt base);
         
         void AddNowData(ObjFile *file, ObjSection *section) { AddData(nowData, file, section); }
         void AddNormalData(ObjFile *file, ObjSection *section) { AddData(normalData, file, section); }
@@ -115,7 +113,7 @@ class LinkRegion
         void AddData(SectionData &data, ObjFile *file, ObjSection *section);
     private:
         std::map<std::string, int> equalSections;
-        ObjInt ArrangeOverlayed(SectionDataIterator it, ObjInt address);
+        ObjInt ArrangeOverlayed(LinkManager *manager, SectionDataIterator it, ObjInt address);
         void AddFile(ObjFile *file);
         bool ParseFiles(CmdFiles &files, LinkTokenizer &spec);
         bool ParseName(LinkTokenizer &spec);
@@ -125,7 +123,7 @@ class LinkRegion
         void CheckAttributes();
         bool Matches(const ObjString &name, const ObjString &spec);
         LinkRegionFileSpecContainer &Split(ObjString &spec);
-        ObjInt ArrangeSections();
+        ObjInt ArrangeSections(LinkManager *manager);
         ObjString name;
         bool common ;
         bool overlayed;

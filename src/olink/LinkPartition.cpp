@@ -265,7 +265,7 @@ bool LinkPartition::ParsePartitionSpec(LinkManager *manager, CmdFiles &files, Li
     return ParseAttributes(spec);
 }
 #define max(x,y) (((x)>(y)) ? (x) : (y))
-ObjInt LinkPartition::PlacePartition(ObjInt bottom, bool completeLink, int &overlayNum)
+ObjInt LinkPartition::PlacePartition(LinkManager *manager, ObjInt bottom, bool completeLink, int &overlayNum)
 {
     ObjInt maxSize = 0;
     if (!attribs.GetAddressSpecified())
@@ -285,7 +285,7 @@ ObjInt LinkPartition::PlacePartition(ObjInt bottom, bool completeLink, int &over
         }
         else
         {
-            size = (*it)->GetOverlay()->PlaceOverlay(attribs, completeLink, overlayNum++);
+            size = (*it)->GetOverlay()->PlaceOverlay(manager, attribs, completeLink, overlayNum++);
             maxSize = max(size, maxSize);
         }
     }

@@ -3680,10 +3680,6 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                         }
                     }
                 }
-                else
-                {
-                    ss->deferredCompile = ts->deferredCompile;
-                }
             }
             ns = ns->next;
             os = os->next;
@@ -4564,6 +4560,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
             found1->tp->sp = found1;
             found1->gentemplate = TRUE;
             found1->instantiated = TRUE;
+            found1->performedStructInitialization = FALSE;
             found1->templateParams = copyParams(found1->templateParams, TRUE);
             if (found1->templateParams->p->bySpecialization.types)
             {

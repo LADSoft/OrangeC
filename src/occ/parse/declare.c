@@ -76,6 +76,8 @@ STRUCTSYM *structSyms;
 int expandingParams;
 int noSpecializationError;
 LIST *deferred;
+int structLevel;
+LIST *openStructs;
 
 static int unnamed_tag_id, unnamed_id, anonymous_id;
 static char *importFile;
@@ -100,7 +102,9 @@ void declare_init(void)
     anonymousNameSpaceName[0] = 0;	
     noSpecializationError = 0;
     deferred = NULL;
+    structLevel = 0;
     inDefaultParam = 0;
+    openStructs = NULL;
 }
 
 void InsertGlobal(SYMBOL *sp)
@@ -747,6 +751,10 @@ static void resolveAnonymousUnions(SYMBOL *sp)
 }
 void FinishStruct(SYMBOL *sp, SYMBOL *funcsp)
 {
+    if (cparams.prm_cplusplus)
+    {
+        deferredInitializeStruct(sp);
+    }
     sp->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
     if (cparams.prm_cplusplus)
@@ -766,10 +774,77 @@ void FinishStruct(SYMBOL *sp, SYMBOL *funcsp)
         }
     }
 }
+static BOOLEAN usesClass(SYMBOL *cls, SYMBOL *internal)
+{
+    if (cls->tp->syms)
+    {
+        HASHREC *hr = cls->tp->syms->table[0];
+        while (hr)
+        {
+            SYMBOL *sym = (SYMBOL *)hr->p;
+            TYPE *tp = sym->tp;
+            if (istype(sym))
+            { 
+                if (sym->storage_class != sc_typedef)
+                {
+                    tp = NULL;
+                }
+            }
+            if (tp)
+            {
+                while (isarray(tp))
+                    tp = basetype(tp)->btp;
+                if (comparetypes(internal->tp, tp, TRUE) || sameTemplate(internal->tp, tp))
+                    return TRUE;
+            }
+            hr = hr->next;
+        }
+    }
+    return FALSE;
+}
+static void baseFinishDeclareStruct(SYMBOL *funcsp)
+{
+    int n = 0,i,j;
+    LIST *lst = openStructs;
+    SYMBOL ** syms;
+    while (lst) n++, lst = lst->next;
+    syms = (SYMBOL *)Alloc(sizeof(SYMBOL *)*n); 
+    n = 0;
+    lst = openStructs;
+    while (lst)
+        syms[n++] =  (SYMBOL *)lst->data, lst = lst->next;
+    for (i=0; i < n; i++)
+        for (j = i+1; j < n; j++)
+            if ((syms[i] != syms[j] && !sameTemplate(syms[i]->tp, syms[j]->tp) && classRefCount(syms[j], syms[i])) || usesClass(syms[i], syms[j]))
+            {
+                SYMBOL *x = syms[j];
+                memmove(&syms[i+1], &syms[i], sizeof(SYMBOL *) * (j - i));
+                syms[i] = x;
+                if (j != i + 1)
+                    j = i;
+            }
+    for (i=0; i < n; i++)
+    {
+        if (!syms[i]->performedStructInitialization)
+        {
+            syms[i]->performedStructInitialization = TRUE;
+            FinishStruct(syms[i], funcsp);
+            createDefaultConstructors(syms[i]);
+            resolveAnonymousUnions(syms[i]);
+        }
+    }
+}
 static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac currentAccess)
 {
     STRUCTSYM sl;
     (void)funcsp;
+    if (cparams.prm_cplusplus)
+    {
+        LIST *lst = Alloc(sizeof(LIST));
+        lst->next = openStructs;
+        openStructs = lst;
+        lst->data = sp;
+    }
     lex = getsym();
     sp->declaring = TRUE;
     sl.str = sp;
@@ -806,7 +881,27 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         }
     }
     dropStructureDeclaration();
-    FinishStruct(sp, funcsp);
+    if (!cparams.prm_cplusplus || structLevel == 1)
+    {
+        structLevel--;
+        if (cparams.prm_cplusplus && openStructs->next)
+        {
+            baseFinishDeclareStruct(funcsp);
+        }
+        else
+        {
+            if (!sp->performedStructInitialization)
+            {
+                sp->performedStructInitialization = TRUE;
+                FinishStruct(sp, funcsp);
+            	if (cparams.prm_cplusplus)
+	                createDefaultConstructors(sp);
+                resolveAnonymousUnions(sp);
+            }
+        }
+        structLevel++;
+        openStructs = NULL;
+    }
     if (cparams.prm_cplusplus && sp->tp->syms && !templateNestingCount)
     {
         SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
@@ -831,9 +926,6 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
             }
         }
     }
-	if (cparams.prm_cplusplus)
-	    createDefaultConstructors(sp);
-    resolveAnonymousUnions(sp);
     if (!lex)
         error (ERR_UNEXPECTED_EOF);
     else
@@ -849,6 +941,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
         SetTemplateNamespace(sp);
     if (sp->structAlign == 0)
         sp->structAlign = 1;
+    structLevel++;
     if (hasBody)
     {
         if (sp->tp->syms || sp->tp->tags)
@@ -890,6 +983,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
         noSpecializationError--;
         TemplateGetDeferred(sp);
     }
+    --structLevel;
     return lex;
 }
 static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class, enum e_ac access, BOOLEAN *defd)
@@ -2877,7 +2971,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 sizeQualifiers(tp1);
                 if (cparams.prm_cplusplus && MATCHKW(lex, assign))
                 {
-                    if (storage_class == sc_member || storage_class == sc_mutable || (templateNestingCount == 1 && !instantiatingTemplate))
+                    if (storage_class == sc_member || storage_class == sc_mutable || structLevel || (templateNestingCount == 1 && !instantiatingTemplate))
                     {
                         lex = getDeferredData(lex, spi, FALSE);
                     }    
@@ -5344,6 +5438,7 @@ jointemplate:
                         else
                         {
                             LEXEME *hold = lex;
+                            BOOLEAN structuredArray = FALSE;
                             if (notype)
                                 error(ERR_MISSING_TYPE_SPECIFIER);
                             if (sp->storage_class == sc_virtual)
@@ -5364,28 +5459,42 @@ jointemplate:
                                 else if (!sp->label)
                                     sp->label = nextLabel++;
                             }
-                            lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
-                            if (sp->storage_class == sc_auto || sp->storage_class == sc_register || (sp->storage_class == sc_localstatic && sp->init))
+                            if (cparams.prm_cplusplus)
                             {
-                                BOOLEAN doit = TRUE;
-                                if (sp->storage_class == sc_localstatic)
+                                TYPE *tp2= sp->tp;
+                                while (isarray(tp2))
+                                    tp2 = basetype(tp2)->btp;
+                                structuredArray = isstructured(tp2);
+                            }
+                            if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef && structLevel && (MATCHKW(lex,assign) || structuredArray) )
+                            {
+                                lex = getDeferredData(lex, sp, FALSE);
+                            }
+                            else
+                            {
+                                lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
+                                if (sp->storage_class == sc_auto || sp->storage_class == sc_register || (sp->storage_class == sc_localstatic && sp->init))
                                 {
-                                    INITIALIZER *init = sp->init;
-                                    while (init)
+                                    BOOLEAN doit = TRUE;
+                                    if (sp->storage_class == sc_localstatic)
                                     {
-                                        if (init->exp && !IsConstantExpression(init->exp, FALSE))
-                                            break;
-                                        init = init->next;
+                                        INITIALIZER *init = sp->init;
+                                        while (init)
+                                        {
+                                            if (init->exp && !IsConstantExpression(init->exp, FALSE))
+                                                break;
+                                            init = init->next;
+                                        }
+                                        if (!init)
+                                            doit = FALSE;
                                     }
-                                    if (!init)
-                                        doit = FALSE;
-                                }
-                                if (doit && sp->init)
-                                {
-                                    STATEMENT *st ;
-                                    currentLineData(block, hold,0);
-                                    st = stmtNode(hold, block, st_expr);
-                                    st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE);
+                                    if (doit && sp->init)
+                                    {
+                                        STATEMENT *st ;
+                                        currentLineData(block, hold,0);
+                                        st = stmtNode(hold, block, st_expr);
+                                        st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, NULL, FALSE);
+                                    }
                                 }
                             }
                         }

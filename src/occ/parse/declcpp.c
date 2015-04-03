@@ -52,6 +52,7 @@ extern int total_errors;
 extern TYPE stdvoid, stdfunc;
 extern int currentErrorLine;
 extern int templateNestingCount;
+extern int instantiatingTemplate;
 extern int packIndex;
 extern int expandingParams;
 extern int dontRegisterTemplate;
@@ -736,6 +737,79 @@ void deferredCompileOne(SYMBOL *cur)
         }
         PopTemplateNamespace(tns);
     }
+}
+static void RecalcArraySize(TYPE *tp)
+{
+    if (isarray(tp->btp))
+        RecalcArraySize(tp->btp);
+    tp->size = basetype(tp->btp)->size * tp->esize->v.i;
+}
+void deferredInitializeStruct(SYMBOL *cur)
+{
+    HASHREC *hr;
+    SYMBOL *sp;
+    LEXEME *lex;
+    STRUCTSYM l,m, n;
+    int count = 0;
+    int tns = PushTemplateNamespace(cur);
+    l.str = cur;
+    addStructureDeclaration(&l);
+    count++;
+    if (cur->templateParams)
+    {
+        n.tmpl = cur->templateParams;
+        addTemplateDeclaration(&n);
+        count++;
+    }
+    dontRegisterTemplate++;
+    hr = cur->tp->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (isarray(sp->tp))
+        {
+            RecalcArraySize(sp->tp);
+        }
+        if (sp->storage_class == sc_overloads)
+        {
+            if (templateNestingCount != 1 || instantiatingTemplate)
+            {
+                HASHREC *hr1 = sp->tp->syms->table[0];
+                while (hr1)
+                {
+                    SYMBOL *sp1 = (SYMBOL *)hr1->p;
+                    HASHREC *hr2 = basetype(sp1->tp)->syms->table[0];
+                    while (hr2)
+                    {
+                        SYMBOL *sp2 = (SYMBOL *)hr2->p;
+                        if (sp2->deferredCompile && !sp2->init)
+                        {
+                            lex = SetAlternateLex(sp2->deferredCompile);
+                            lex = initialize(lex, theCurrentFunc, sp2, sc_member, FALSE, 0);
+                            SetAlternateLex(NULL);
+                            sp2->deferredCompile = NULL;
+                        }
+                        hr2 = hr2->next;
+                    }
+                    hr1 = hr1->next;
+                }
+            }
+        }
+        else if (sp->deferredCompile && !sp->init)
+        {
+            lex = SetAlternateLex(sp->deferredCompile);
+            sp->deferredCompile = NULL;
+            lex = initialize(lex, theCurrentFunc, sp, sc_member, FALSE, 0);
+            SetAlternateLex(NULL);
+        }
+        hr = hr->next;
+    }
+    dontRegisterTemplate--;
+    while (count--)
+    {
+        dropStructureDeclaration();
+    }
+    PopTemplateNamespace(tns);
 }
 TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
 {

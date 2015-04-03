@@ -1340,16 +1340,17 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
         //    consfunc->inlineFunc.stmt->blockTail = b.tail;
             InsertInline(consfunc);
 //            match->genreffed;
-            if (match->deferredCompile && !match->inlineFunc.stmt)
-                deferredCompileOne(match);
-            localNameSpace->syms = syms;
-                    
-            
             // now get rid of the first default arg
             // leave others so the old constructor can be considered
             // under other circumstances
             hr = hr->next;
             ((SYMBOL*)hr->p)->init = NULL;
+
+            if (match->deferredCompile && !match->inlineFunc.stmt)
+                deferredCompileOne(match);
+            localNameSpace->syms = syms;
+                    
+            
         }
         
     }

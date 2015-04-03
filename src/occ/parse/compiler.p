@@ -155,6 +155,7 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
 void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOLEAN isvirtual, int offset);
 void deferredCompileOne(SYMBOL *cur);
 void deferredCompile(void);
+void deferredInitializeStruct(SYMBOL *cur);
 TYPE * PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp);
 void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings);
 BOOLEAN usesVTab(SYMBOL *sym);

@@ -3510,7 +3510,37 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 }
                 else if (!sp)
                 {
-                    errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
+                    if (*tp && isstructured(*tp))
+                    {
+                        char buf[1024], *p;
+                        int n;
+                        INITLIST *a;
+                        unmangle(buf, basetype(*tp)->sp->decoratedName);
+                        n = strlen(buf);
+                        p = strrchr(buf, ':');
+                        if (p)
+                            p++;
+                        else
+                            p = buf;
+                        strcpy(buf + n + 2, p);
+                        buf[n] = buf[n+1] = ':';
+                        strcat(buf, "(");
+                        a = args->arguments;
+                        while (a)
+                        {
+                            typeToString(buf + strlen(buf), a->tp);
+                            if (a->next)
+                                strcat(buf, ",");
+                            a = a->next;
+                        }
+                        strcat(buf, ")");
+                        errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, buf);                        
+                    }
+                    else
+                    {
+                        errorstr(ERR_NO_OVERLOAD_MATCH_FOUND, "unknown");
+                    }
+                        
                 }
                 else
                 {

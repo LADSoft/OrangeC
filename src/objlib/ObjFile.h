@@ -87,7 +87,7 @@ public:
             sourceFiles.push_back(SourceFile);
     }
     void ResolveSymbols(ObjFactory *Factory);
-    ObjString GetName() { return name; }
+    ObjString &GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
     ObjSourceFile *GetInputFile() { return inputFile; }
     void SetInputFile(ObjSourceFile *InputFile) { inputFile = InputFile; }

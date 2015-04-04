@@ -75,7 +75,7 @@ class LinkRegion
                                          parent(Parent), overlayed(false) {}
         ~LinkRegion();
 
-        ObjString GetName() { return name; }
+        ObjString &GetName() { return name; }
         void SetName(const ObjString &Name) { name = Name; }
         ObjString QualifiedRegionName() ;		
 

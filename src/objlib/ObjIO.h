@@ -55,7 +55,7 @@ public:
     ObjIOBase(const ObjString Name, bool CaseSensitive) : name(Name), translatorName(""),bitsPerMAU(8),
                 MAUS(4), debugInfo(true), startAddress(NULL), caseSensitive(CaseSensitive), absolute(false) {}
     virtual ~ObjIOBase() { }
-    ObjString GetName() { return name; }
+    ObjString &GetName() { return name; }
     virtual bool Write(FILE *fil, ObjFile *File, ObjFactory *Factory) = 0;
     virtual ObjFile *Read(FILE *fil, eParseType ParseType, ObjFactory *Factory) = 0;
     ObjString GetTranslatorName() { return translatorName; }

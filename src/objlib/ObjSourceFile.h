@@ -52,7 +52,7 @@ public:
         RetrieveFileTime(name);
     }
     virtual ~ObjSourceFile() {}
-    ObjString GetName() { return name; }
+    ObjString &GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
     ObjInt GetIndex() { return index; }
     void SetIndex(ObjInt Index)	{ index = Index; }

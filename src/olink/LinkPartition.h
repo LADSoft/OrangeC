@@ -59,7 +59,7 @@ class LinkPartition
         LinkPartition(LinkManager *Parent) : name(""), parent(Parent) { }
         ~LinkPartition();
 
-        ObjString GetName() { return name; }
+        ObjString &GetName() { return name; }
         void SetName(const ObjString &Name) { name = Name; }
 
         LinkAttribs &GetAttribs() { return attribs; }

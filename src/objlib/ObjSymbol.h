@@ -58,7 +58,7 @@ public:
     virtual ~ObjSymbol() { }
     bool IsSectionRelative() { return sectionRelative; }
     void SetSectionRelative(bool flag) { sectionRelative = flag; }
-    ObjString GetName() { return name; }
+    ObjString &GetName() { return name; }
     ObjString GetDisplayName();
     void SetName(ObjString Name ) {name = Name; }
     eType GetType() { return type; }

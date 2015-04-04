@@ -72,7 +72,7 @@ public:
             alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), 
             size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL), used(false) {}
     virtual ~ObjSection() { };
-    ObjString GetName() { return name; }
+    ObjString &GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
     ObjString GetDisplayName();
     ObjString GetExternalName() { return externalName; }

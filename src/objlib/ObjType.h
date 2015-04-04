@@ -80,7 +80,7 @@ public:
                 constVal(0), baseType(BaseType), 
                 indexType(&defaultIndexType) {}
     virtual ~ObjType() {}
-    ObjString GetName() { return name; }
+    ObjString &GetName() { return name; }
     void SetName(ObjString Name) {name = Name; }
     ObjInt GetIndex() { return index; }
     void SetIndex(ObjInt Index) { index = Index; }
@@ -136,7 +136,7 @@ public:
     ObjField(ObjString Name, ObjType *Base, ObjInt ConstVal, ObjInt index)
         : name(Name), base(Base), constVal(ConstVal), typeIndex(index) {}
         
-    ObjString GetName() { return name; }
+    ObjString &GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
         
     ObjType *GetBase() { return base; }

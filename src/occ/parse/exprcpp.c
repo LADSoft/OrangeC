@@ -266,7 +266,6 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOO
             {
                 if (toError)
                 {
-                    isExpressionAccessible(NULL, memberSym, funcsp, en, FALSE);
                     errorsym(ERR_CANNOT_ACCESS, memberSym);
                 }
             }
@@ -590,7 +589,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     int consdest = FALSE;
     BOOLEAN notype = FALSE;
     *tp = NULL;
-    lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, &consdest, NULL, FALSE);
+    lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, &consdest, NULL, FALSE, TRUE);
     if (!MATCHKW(lex, openpa))
     {
         if (MATCHKW(lex, begin))
@@ -1567,7 +1566,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             BOOLEAN defd = FALSE;
             SYMBOL *sp = NULL;
             BOOLEAN notype = FALSE;
-            lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
+            lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;

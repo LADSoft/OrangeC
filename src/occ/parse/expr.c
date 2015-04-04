@@ -638,7 +638,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         BOOLEAN notype = FALSE;
         TYPE *tp1 = NULL;
         lex = getsym();
-        lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
+        lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -689,7 +689,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             SYMBOL *sp = NULL;
             BOOLEAN notype = FALSE;
             TYPE *tp1 = NULL;
-            lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
+            lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -713,7 +713,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 {
                     lex = getsym();
                     tp1 = NULL;
-                    lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
+                    lex = getBasicType(lex, funcsp, &tp1, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
@@ -2229,7 +2229,8 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         {
             operands = !ismember(funcparams->sp) && funcparams->thisptr;
             if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, funcparams->sp, funcsp, funcparams->thisptr, FALSE))
-                errorsym(ERR_CANNOT_ACCESS, funcparams->sp);		
+                if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, funcparams->sp, funcsp, funcparams->thisptr, FALSE))
+                    errorsym(ERR_CANNOT_ACCESS, funcparams->sp);		
         }
         if (sp)
         {
@@ -3942,10 +3943,20 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     else if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
+                    {
                         error(ERR_LVALUE);
+                    }
                     else
                     {
-                        EXPRESSION *exp1 = NULL;
+                        EXPRESSION *exp3 = NULL, *exp1 = NULL;
+                        if ((*exp)->left->type == en_func || (*exp)->left->type == en_thisref)
+                        {
+                            EXPRESSION *exp2 = anonymousVar(sc_auto, *tp);
+                            deref(&stdpointer, &exp2);
+                            exp3 = exprNode(en_assign, exp2, (*exp)->left);
+                            deref(*tp, &exp2);
+                            *exp = exp2;
+                        }
                         if (basetype(*tp)->type == bt_pointer)
                         {
                             TYPE *btp = basetype(*tp)->btp;
@@ -3986,6 +3997,8 @@ static LEXEME *expression_postfix(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                             *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec,
                                         *exp, exp1);
                         }
+                        if (exp3)
+                            *exp = exprNode(en_void, exp3, *exp);
                         while (lvalue(exp1))
                             exp1 = exp1->left;
                         if (exp1->type == en_auto)
@@ -4204,33 +4217,49 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                     else if (basetype(*tp)->scoped)
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (!lvalue(*exp) && basetype(*tp)->type != bt_templateparam)
-                        error(ERR_LVALUE);
-                    else if (ispointer(*tp))
                     {
-                        TYPE *tpx;
-                        if (basetype(basetype(*tp)->btp)->type == bt_void)
+                        error(ERR_LVALUE);
+                    }
+                    else 
+                    {
+                        EXPRESSION *exp3 = NULL;
+                        if ((*exp)->left->type == en_func || (*exp)->left->type == en_thisref)
                         {
-                            if (cparams.prm_cplusplus)
-                                error(ERR_ARITHMETIC_WITH_VOID_STAR);
-                            tpx = &stdchar;
+                            EXPRESSION *exp2 = anonymousVar(sc_auto, *tp);
+                            deref(&stdpointer, &exp2);
+                            exp3 = exprNode(en_assign, exp2, (*exp)->left);
+                            deref(*tp, &exp2);
+                            *exp = exp2;
+                        }
+                        if (ispointer(*tp))
+                        {
+                            TYPE *tpx;
+                            if (basetype(basetype(*tp)->btp)->type == bt_void)
+                            {
+                                if (cparams.prm_cplusplus)
+                                    error(ERR_ARITHMETIC_WITH_VOID_STAR);
+                                tpx = &stdchar;
+                            }
+                            else
+                            {
+                                tpx = basetype(*tp)->btp;
+                            }
+                            *exp = exprNode(en_assign, *exp, exprNode(kw == autoinc ? en_add : en_sub, 
+                                                                      *exp, nodeSizeof(tpx, *exp)));
+                        }
+                        else if (kw == autoinc && basetype(*tp)->type == bt_bool)
+                        {
+                            *exp = exprNode(en_assign, *exp, intNode(en_c_i, 1)); // set to true as per C++
                         }
                         else
                         {
-                            tpx = basetype(*tp)->btp;
+                            EXPRESSION *dest = *exp, *exp1 = intNode(en_c_i, 1);
+                            *exp = RemoveAutoIncDec(*exp);                            
+                            cast(*tp, &exp1);
+                            *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, exp1));
                         }
-                        *exp = exprNode(en_assign, *exp, exprNode(kw == autoinc ? en_add : en_sub, 
-                                                                  *exp, nodeSizeof(tpx, *exp)));
-                    }
-                    else if (kw == autoinc && basetype(*tp)->type == bt_bool)
-                    {
-                        *exp = exprNode(en_assign, *exp, intNode(en_c_i, 1)); // set to true as per C++
-                    }
-                    else
-                    {
-                        EXPRESSION *dest = *exp, *exp1 = intNode(en_c_i, 1);
-                        *exp = RemoveAutoIncDec(*exp);                            
-                        cast(*tp, &exp1);
-                        *exp = exprNode(en_assign, dest, exprNode(kw == autoinc ? en_add : en_sub, *exp, exp1));
+                        if (exp3)
+                            *exp = exprNode(en_void, exp3, *exp);
                     }
                 }
             }

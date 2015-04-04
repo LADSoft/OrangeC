@@ -18,6 +18,10 @@
 #ifndef _STLP_INTERNAL_ISTREAM
 #define _STLP_INTERNAL_ISTREAM
 
+#ifndef _STLP_CTYPE_H
+#  include <ctype.h>
+#endif
+
 // this block is included by _ostream.h, we include it here to lower #include level
 #if defined (_STLP_HAS_WCHAR_T) && !defined (_STLP_INTERNAL_CWCHAR)
 #  include <stl/_cwchar.h>

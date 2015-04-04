@@ -446,6 +446,7 @@ void compile(void)
     setglbdefs();
     templateInit();
 #ifndef PARSER_ONLY
+    SSAInit();
     outcodeini();
     conflictini();
     iexpr_init();

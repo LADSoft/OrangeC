@@ -60,6 +60,7 @@ extern int instantiatingTemplate;
 extern int total_errors;
 extern int templateNestingCount;
 extern int codeLabel;
+extern INCLUDES *includes;
 
 typedef struct _startups_
 {
@@ -2041,6 +2042,8 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     BOOLEAN implicit = FALSE;
     allocate_desc(itype, offset, &desc, &cache);
     desc->stopgap = TRUE;
+    if (includes->line == 843)
+        printf("hi");
     if (MATCHKW(lex, assign))
     {
         assn = TRUE;

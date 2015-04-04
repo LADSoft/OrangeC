@@ -1397,7 +1397,7 @@ static LEXEME *TemplateArg(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST *arg, 
             tp = NULL;
             sp = NULL;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
-            lex = getBasicType(lex, funcsp, &tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
+            lex = getBasicType(lex, funcsp, &tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
             lex = getBeforeType(lex, funcsp, &tp, &sp, NULL, NULL, FALSE, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE, FALSE); /* fixme at file scope init */
             sizeQualifiers(tp);
@@ -2902,11 +2902,9 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
             {
                 case kw_typename:
                 {
-                    LEXEME *xx = lex;
                     lex = get_type_id(lex, &dest->p->byClass.val, NULL, FALSE);
                     if (!dest->p->byClass.val)    
                     {
-                        get_type_id(xx, &dest->p->byClass.val, NULL, FALSE);
                         error(ERR_CLASS_TEMPLATE_DEFAULT_MUST_REFER_TO_TYPE);
                         dropStructureDeclaration();
                         return FALSE;
@@ -3830,6 +3828,64 @@ void PopTemplateNamespace(int n)
     } 
     
 }
+static void SetTemplateArgAccess(SYMBOL *sym, BOOLEAN accessible)
+{
+    if (accessible)
+    {
+        if (!instantiatingTemplate && !isExpressionAccessible(theCurrentFunc ? theCurrentFunc->parentClass : NULL, sym, theCurrentFunc, NULL, FALSE))
+            errorsym(ERR_CANNOT_ACCESS, sym);
+
+        sym->accessibleTemplateArgument ++;
+    }
+    else
+    {
+        sym->accessibleTemplateArgument --;
+    }
+}
+static void SetAccessibleTemplateArgs(TEMPLATEPARAMLIST *args, BOOLEAN accessible)
+{
+    while (args)
+    {
+        switch (args->p->type)
+        {
+            case kw_int:
+            {
+                EXPRESSION *exp = args->p->byNonType.val;
+#ifndef PARSER_ONLY
+                exp = GetSymRef(exp);
+                if (exp)
+                {
+                    SetTemplateArgAccess(exp->v.sp, accessible);
+                }
+#endif
+                break;
+            }
+            case kw_template:
+            {
+                TEMPLATEPARAMLIST *tpl = args->p->byTemplate.args;
+                while (tpl)
+                {
+                    if (!allTemplateArgsSpecified(tpl))
+                        return FALSE;
+                    tpl = tpl->next;
+                }
+                SetTemplateArgAccess(args->p->byTemplate.val, accessible);
+            }
+                break;
+            case kw_typename:
+                if (isstructured(args->p->byClass.val))
+                {
+                    SetTemplateArgAccess(basetype(args->p->byClass.val)->sp, accessible);
+                }
+                else if (basetype(args->p->byClass.val) == bt_enum)
+                {
+                    SetTemplateArgAccess(basetype(args->p->byClass.val)->sp, accessible);
+                }                    
+                break;
+        }
+        args = args->next;
+    }
+}
 SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN isExtern)
 {
     LEXEME *lex = NULL;
@@ -3858,6 +3914,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             struct templateListData l;
             int nsl = PushTemplateNamespace(sym);
             LEXEME *reinstateLex = lex;
+            SetAccessibleTemplateArgs(cls->templateParams, TRUE);
             deferred = NULL;
 			templateHeaderCount = 0;
             old = *cls;
@@ -3883,6 +3940,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
                 lex->registered = FALSE;
                 lex = lex->next;
             }
+            SetAccessibleTemplateArgs(cls->templateParams, FALSE);
             if (old.tp->syms)
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
@@ -4330,7 +4388,9 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                 params = params->next;
             }
             if (params)
+            {
                 rv = NULL;
+            }
         }
     }
     return rv;
@@ -4514,7 +4574,9 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
     if (!found1 && !templateNestingCount)
     {
         if (!noErr)
+        {
             errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
+        }
         // might get more error info by procedeing;
         if (!sp->specializations)
         {
@@ -5108,7 +5170,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
             SYMBOL *strSym = NULL;
             STRUCTSYM s;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
-            lex = getBasicType(lex, funcsp, &tp, &strSym, TRUE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
+            lex = getBasicType(lex, funcsp, &tp, &strSym, TRUE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
             lex = getBeforeType(lex, funcsp, &tp, &sym, &strSym, &nsv, TRUE, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE, FALSE);
             sizeQualifiers(tp);

@@ -68,9 +68,14 @@ extern BITINT bittab[BITINTBITS];
 extern BOOLEAN functionHasAssembly;
 /* don't make this too large, we are stacking a copy... */
 static BOOLEAN changed;
+static LIST *savedDag;
 
 IMODE *trueName, *falseName;
 
+void SSAInit(void)
+{
+	savedDag = NULL;
+}
 /*
  * this is an internal calculation needed to locate where to put PHI nodes
  */
@@ -258,6 +263,21 @@ static DAGLIST *InsertHash(QUAD *rv, UBYTE *key, int size, DAGLIST **table)
     *table = newDag;
     return newDag;
 }
+DAGLIST *getSavedDAG(void)
+{
+	if (savedDag)
+	{
+		DAGLIST **rv = (DAGLIST *)savedDag;
+		savedDag = (LIST *)rv[0];
+		return rv;
+	}
+	return (DAGLIST **)Alloc(DAGSIZE * sizeof(DAGLIST *));
+}
+void releaseSavedDAG(DAGLIST **dag)
+{
+	dag[0] = (DAGLIST *)savedDag;
+	savedDag = dag;
+}
 /*
  * after the phi nodes are in place, we start renaming all related temps
  * accordingly
@@ -267,8 +287,8 @@ static void renameToPhi(BLOCK *b)
     QUAD *head = b->head, *tail;
     BLOCKLIST *bl;
     BOOLEAN done = FALSE;
-    DAGLIST *saved_ins[DAGSIZE];
-    DAGLIST *saved_name[DAGSIZE];
+    DAGLIST **saved_ins = getSavedDAG();
+    DAGLIST **saved_name = getSavedDAG();
     if (b->visiteddfst)
         return;
     b->visiteddfst = TRUE;
@@ -502,6 +522,8 @@ static void renameToPhi(BLOCK *b)
     }
     memcpy(ins_hash, saved_ins, sizeof(ins_hash));
     memcpy(name_hash, saved_name, sizeof(name_hash));
+	releaseSavedDAG(saved_ins);
+	releaseSavedDAG(saved_name);
 }
 void TranslateToSSA(void)
 {

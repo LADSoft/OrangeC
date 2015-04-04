@@ -368,7 +368,7 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOLEAN beforeOnly)
     BOOLEAN notype = FALSE;
     *tp = NULL;
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
-    lex = getBasicType(lex, funcsp, tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE);
+    lex = getBasicType(lex, funcsp, tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, FALSE);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
     lex = getBeforeType(lex, funcsp, tp, &sp, NULL, NULL, FALSE, sc_cast, &linkage, &linkage2, &linkage3, FALSE, FALSE, beforeOnly); /* fixme at file scope init */
     sizeQualifiers(*tp);
@@ -1192,6 +1192,8 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
                     *tp = *unfixedType;
                 tp->scoped = scoped; // scoped the constants type as well for error checking
                 tp->btp = spi->tp; // the integer type gets a base type which is the enumeration for error checking
+                tp->enumConst = TRUE;
+                tp->sp = spi;
             }
             else
             {
@@ -1775,7 +1777,8 @@ static BOOLEAN isPointer(LEXEME *lex)
 }
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out, BOOLEAN inTemplate, enum e_sc storage_class, 
                      enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3_in, 
-                     enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, BOOLEAN *templateArg, BOOLEAN isTypedef)
+                     enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, 
+                     BOOLEAN *templateArg, BOOLEAN isTypedef, BOOLEAN templateErr)
 {
     enum e_bt type = bt_none;
     TYPE *tn = NULL ;
@@ -2301,7 +2304,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                                 lex = GetTemplateArguments(lex, funcsp, sp1, &lst);
                                 if (sp1)
                                 {
-                                    sp1 = GetClassTemplate(sp1, lst, FALSE);
+                                    sp1 = GetClassTemplate(sp1, lst, !templateErr);
                                     tn = NULL;
                                     if (sp1)
                                         tn = sp1->tp;
@@ -2395,7 +2398,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                             if (sp->parentTemplate)
                                 sp = sp->parentTemplate;
                             lex = GetTemplateArguments(lex, funcsp, sp, &lst);
-                            sp = GetClassTemplate(sp, lst, FALSE);
+                            sp = GetClassTemplate(sp, lst, !templateErr);
                         }
                         else
                         {
@@ -4188,7 +4191,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL ** strSym, 
             if (MATCHKW(lex, kw_atomic))
             {
                 foundType = TRUE;
-                lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest, templateArg, *storage_class == sc_typedef);
+                lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest, templateArg, *storage_class == sc_typedef, TRUE);
             }
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
@@ -4200,7 +4203,7 @@ static LEXEME *getStorageAndType(LEXEME *lex, SYMBOL *funcsp, SYMBOL ** strSym, 
         else
         {
             foundType = TRUE;
-            lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest, templateArg, *storage_class == sc_typedef);
+            lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype, defd, consdest, templateArg, *storage_class == sc_typedef, TRUE);
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
         }
@@ -4713,6 +4716,7 @@ jointemplate:
                         if (sp->isConstructor && ispointer(sp->tp))
                             sp->tp = basetype(sp->tp)->btp;
 
+/*
                         if (sp->isConstructor)
                         {
                             HASHREC *hr = basetype(sp->tp)->syms->table[0];
@@ -4740,6 +4744,7 @@ jointemplate:
                                 }
                             }
                         }
+                        */
                         if (ssp && strSym && strSym->tp->type != bt_templateselector)
                         {
                             if (strSym != ssp && strSym->mainsym != ssp)
@@ -4768,13 +4773,13 @@ jointemplate:
                             {
                                 HASHREC **p;
                                 ssp = getStructureDeclaration();
-                                if (ssp && ssp->tp->syms && (strSym || !asFriend))
-                                {
-                                    p = LookupName(sp->name, ssp->tp->syms);				
-                                }
-                                else if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external && !isfunction(sp->tp))
+                                if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external && !isfunction(sp->tp))
                                 {
                                     p = LookupName(sp->name, localNameSpace->syms);
+                                }
+                                else if (ssp && ssp->tp->syms && (strSym || !asFriend))
+                                {
+                                    p = LookupName(sp->name, ssp->tp->syms);				
                                 }
                                 else
                                 {

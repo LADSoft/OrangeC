@@ -300,6 +300,7 @@ typedef    struct type
         int templateTop : 1;
         int templateConst : 1;
         int templateVol : 1;
+        int enumConst:1; /* is an enumeration constant */
         char bits; /* -1 for not a bit val, else bit field len */
         char startbit; /* start of bit field */
         struct sym *sp; /* pointer to a symbol which describes the type */
@@ -408,8 +409,8 @@ typedef struct sym
     char *errname; /* name to be used in errors */
     char *declfile ; /* file symbol was declared in */
     int  declline ; /* line number symbol was declared at */
-    int declcharpos ; /* character position symbol was declared at */
-    int declfilenum; /* the file number */
+    short declcharpos ; /* character position symbol was declared at */
+    short declfilenum; /* the file number */
     int sizeNoVirtual; /* size without virtual classes and thunks */
     struct sym *parent;
     struct sym *parentClass;
@@ -524,9 +525,11 @@ typedef struct sym
     int nextid; /* ID to use for nextage purposes (binary output) */
     int offset; /* address offset of data in the given seg, or optimize register */
     int label; /* label number for statics */
-    int paramsize; /* Size of parameter list for stdcall functions */
+    short paramsize; /* Size of parameter list for stdcall functions */
+    short structAlign; /* alignment of structures/ unions */
+    short accessibleTemplateArgument; /* something used as a template argument was validated for
+                                        * accessibility before instantiating the template */
     int retcount; /* number of return statements in a function */
-    int structAlign; /* alignment of structures/ unions */
     /* Also name for CPP overload lists */
     /* also default for template parameters, is a TYP */
     char *importfile; /* import name */

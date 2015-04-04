@@ -165,7 +165,8 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
 LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BOOLEAN isTemplate, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
-                    enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, BOOLEAN *templateArg, BOOLEAN isTypedef);
+                    enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, 
+                    BOOLEAN *templateArg, BOOLEAN isTypedef, BOOLEAN templateErr);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
                       NAMESPACEVALUES **nsv, BOOLEAN isTemplate, enum e_sc storage_class,
 							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN asFriend,
@@ -683,6 +684,7 @@ void CalculateBackendLives(void);
 
                                 /* Issa.c */
 
+void SSAInit(void);
 void AddToWipeList(DAGLIST *head);
 void TranslateToSSA(void);
 void RemoveCriticalThunks(void);

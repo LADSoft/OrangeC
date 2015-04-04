@@ -19,6 +19,10 @@
 #ifndef _STLP_INTERNAL_STRING_H
 #define _STLP_INTERNAL_STRING_H
 
+#ifndef _STLP_CTYPE_H
+#  include <ctype.h>
+#endif
+
 #ifndef _STLP_INTERNAL_ALLOC_H
 #  include <stl/_alloc.h>
 #endif

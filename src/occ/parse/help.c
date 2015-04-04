@@ -979,6 +979,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
     EXPRESSION *expsym;
+    BOOLEAN noClear = FALSE;
     if (isstructured(tp) || isarray(tp))
     {
         INITIALIZER **i2 = &init;
@@ -1097,6 +1098,14 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         exp2->v.func->returnSP->allocate = FALSE;
                         exp2->v.func->returnEXP = expsym;
                         exp = exp2;
+                        noClear = TRUE;
+                    }
+                    else if (exp2->type == en_thisref && exp2->left->v.func->returnSP)
+                    {
+                        exp2->left->v.func->returnSP->allocate = FALSE;
+                        exp2->left->v.func->returnEXP = expsym;
+                        exp = exp2;
+                        noClear = TRUE;
                     }
                     else if (cparams.prm_cplusplus)
                     {
@@ -1157,7 +1166,10 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                                 cast(init->basetp, &right);
                                 right = exprNode(en_assign, asn, right);
                             }
-                            *expp = exprNode(en_void, *expp, right);
+                            if (*expp)
+                                *expp = exprNode(en_void, *expp, right);
+                            else
+                                *expp = right;
                             expp = &(*expp)->right;
                         }
                     }
@@ -1277,7 +1289,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
     }
     // plop in a clear block if necessary
-    if (sp && isstructured(tp) && (!cparams.prm_cplusplus || basetype(sp->tp)->sp->trivialCons))
+    if (sp && !noClear && isstructured(tp) && (!cparams.prm_cplusplus || basetype(tp)->sp->trivialCons))
     {
         EXPRESSION *exp = exprNode(en_blockclear, expsym, NULL); 
         exp->size = sp->tp->size;

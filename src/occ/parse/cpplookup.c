@@ -70,7 +70,7 @@ HASHTABLE *CreateHashTable(int size);
 static const int rank[] = 
 {
 //    0,0,0,0,0,1,1,2,2,2,2,2,2,3,4,5,6,6,7
-    0,1,1,1,1,2,2,3,3,3,3,3,3,4,5,6,7,7,8
+    0,1,1,1,1,2,2,3,3,3,3,3,3,4,4,5,6,7,7,8
 };
 enum e_cvsrn
 {
@@ -88,6 +88,7 @@ enum e_cvsrn
     CV_POINTERCONVERSION,
     CV_POINTERTOMEMBERCONVERSION,
     CV_BOOLCONVERSION, 
+    CV_ENUMINTEGRALCONVERSION,
     CV_DERIVEDFROMBASE,
     // tier 2
     CV_USER,
@@ -1154,7 +1155,7 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
     if (matched)
     {
         SYMBOL *sym = member;
-        return friendly || (level <= 1 && (minAccess < ac_public || sym->access == ac_public) 
+        return friendly || ((level == 0 || level == 1 && (minAccess < ac_public || sym->access == ac_public))
         &&(derived == currentBase || sym->access != ac_private)) || sym->access >= minAccess;
     }
     lst = currentBase->baseClasses;
@@ -1166,7 +1167,7 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
         // lookup wouldn't work, so we can check their friends lists...
         if (sym == member || sameTemplate(sym->tp, member->tp))
         {
-            return (level <= 1 && (minAccess < ac_public || sym->access == ac_public) 
+            return ((level == 0 || level == 1 && (minAccess < ac_public || sym->access == ac_public))
                 &&(derived == currentBase || sym->access != ac_private))|| sym->access >= minAccess;
         }
         if (isAccessibleInternal(derived, sym, member, funcsp, level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none : minAccess, level+1, asAddress, friendly))
@@ -1179,7 +1180,8 @@ BOOLEAN isAccessible(SYMBOL *derived, SYMBOL *currentBase,
                                  SYMBOL *member, SYMBOL *funcsp, 
                                  enum e_ac minAccess, BOOLEAN asAddress)
 {
-    return isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress, FALSE);
+    return member->accessibleTemplateArgument || 
+        isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress, FALSE);
 }
 BOOLEAN isExpressionAccessible(SYMBOL *derived, SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOLEAN asAddress)
 {
@@ -1229,7 +1231,7 @@ BOOLEAN checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp)
                     if (!isAccessible(sym->parentClass, sym->parentClass, sym, funcsp, ac_public, FALSE))
                     {
                         currentErrorLine = 0;
-                        errorsym(ERR_CANNOT_ACCESS, tp->sp);		
+                        errorsym(ERR_CANNOT_ACCESS, basetype(tp)->sp);		
                         return FALSE;
                     }
                 }
@@ -2189,11 +2191,11 @@ static SYMBOL *getUserConversion(int flags,
             }
             if (found1)
             {
-                if (found2)
-                {
-                     errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
-                }
-                else
+                if (!found2)
+//                {
+//                     errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
+//                }
+ //               else
                 {
                     if (seq)
                     {
@@ -2706,16 +2708,22 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             if (basetype(tpp)->type == bt_enum)
             {
                 if (basetype(tpa)->sp != basetype(tpp)->sp)
+                {
                     seq[(*n)++] = CV_NONE;
-                else if ((isconst(tpax) != isconst(tppx))
+                }
+                else 
+                {
+                    if ((isconst(tpax) != isconst(tppx))
                     || (isvolatile(tpax) != isvolatile(tppx)))
-                    seq[(*n)++] = CV_QUALS;
+                        seq[(*n)++] = CV_QUALS;
+                    seq[(*n)++] = CV_IDENTITY;
+                }
             }
             else
             { 
                 if (isint(tpp) && !basetype(tpa)->scoped)
                 {
-                    seq[(*n)++] = CV_INTEGRALPROMOTION;
+                    seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
                 }
                 else
                 {
@@ -2727,9 +2735,16 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
         {
             if (isint(tpa))
             {
-                if (basetype(tpp)->btp->type != basetype(tpa)->type)
+                if (tpa->enumConst)
                 {
-                    seq[(*n)++] = CV_INTEGRALPROMOTION;
+                    if (tpa->sp == basetype(tpp)->sp)
+                        seq[(*n)++] = CV_IDENTITY;
+                    else
+                        seq[(*n)++] = CV_NONE;
+                }
+                else
+                {
+                    seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
                 }
             }
             else
@@ -2742,7 +2757,11 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             if ((isconst(tpax) != isconst(tppx))
                 || (isvolatile(tpax) != isvolatile(tppx)))
                 seq[(*n)++] = CV_QUALS;
-            if (basetype(tpp)->type != basetype(tpa)->type)
+            if (tpa->enumConst)
+            {
+                seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
+            }
+            else if (basetype(tpp)->type != basetype(tpa)->type)
             {
                 if (isint(tpa))
                     if (basetype(tpp)->type == bt_bool)

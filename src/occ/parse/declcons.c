@@ -1470,7 +1470,25 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
         if (!sp->destructed)
         {
             sp->destructed = TRUE;
-            if (sp->storage_class != sc_localstatic && sp->dest)
+            if (sp->storage_class == sc_parameter)
+            {
+                if (isstructured(sp->tp))
+                {
+                    EXPRESSION *iexp = getThisNode(sp);
+//                    iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
+                    callDestructor(basetype(sp->tp)->sp, NULL, &iexp, NULL, TRUE, FALSE, FALSE);
+                    optimize_for_constants(&iexp);
+                    if (*exp)
+                    {
+                        *exp = exprNode(en_void, iexp, *exp);                    
+                    }
+                    else
+                    {
+                        *exp = iexp;
+                    }
+                }
+            }
+            else if (sp->storage_class != sc_localstatic && sp->dest)
             {
                 
                 EXPRESSION *iexp = sp->dest->exp; 
@@ -1485,21 +1503,6 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
                     {
                         *exp = iexp;
                     }
-                }
-            }
-            else if (sp->storage_class == sc_parameter && isstructured(sp->tp))
-            {
-                EXPRESSION *iexp = getThisNode(sp);
-                iexp = exprNode(en_add, iexp, intNode(en_c_i, chosenAssembler->arch->retblocksize));
-                callDestructor(basetype(sp->tp)->sp, NULL, &iexp, NULL, TRUE, FALSE, FALSE);
-                optimize_for_constants(&iexp);
-                if (*exp)
-                {
-                    *exp = exprNode(en_void, iexp, *exp);                    
-                }
-                else
-                {
-                    *exp = iexp;
                 }
             }
         }
@@ -1665,6 +1668,7 @@ static void virtualBaseThunks(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *thisptr)
     STATEMENT *st;
     while (entries)
     {
+        BASECLASS *bc;
         if (entries->alloc)
         {
             EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, entries->pointerOffset));
@@ -1680,6 +1684,37 @@ static void virtualBaseThunks(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *thisptr)
             {
                 *pos = exprNode(en_void, *pos, asn);
                 pos = &(*pos)->right;
+            }
+            bc = sp->baseClasses;
+            while (bc)
+            {
+                if (!bc->isvirtual)
+                {
+                    VBASEENTRY *subentries = bc->cls->vbaseEntries;
+                    while (subentries)
+                    {
+                        if (subentries->cls == entries->cls || sameTemplate(subentries->cls->tp, entries->cls->tp))
+                        {
+                            EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, subentries->pointerOffset));
+                            EXPRESSION *right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
+                            EXPRESSION *asn;
+                            left = exprNode(en_add, left, intNode(en_c_i, bc->offset));
+                            deref(&stdpointer, &left);
+                            asn = exprNode(en_assign, left, right);
+                            if (!*pos)
+                            {
+                                *pos = asn;
+                            }
+                            else
+                            {
+                                *pos = exprNode(en_void, *pos, asn);
+                                pos = &(*pos)->right;
+                            }
+                        }
+                        subentries = subentries->next;
+                    }
+                }
+                bc = bc->next;
             }
         }
         entries = entries->next;

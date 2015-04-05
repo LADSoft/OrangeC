@@ -894,6 +894,22 @@ void dumpInitializers(void)
                     genstorage(n);
                     *sizep += n;
                 }
+                //  have to thunk in a size for __arrCall
+                if (cparams.prm_cplusplus)
+                {
+                    if (isarray(tp))
+                    {
+                        TYPE *tp1 = tp;
+                        while (isarray(tp1))
+                            tp1 = basetype(tp1)->btp;
+                        tp1 = basetype(tp1);
+                        if (isstructured(tp1) && !tp1->sp->trivialCons)
+                        {
+                            genint(basetype(tp)->size);
+                            *sizep += getSize(bt_int);
+                        }   
+                    }
+                }
                 sp->offset = *sizep;
                 *sizep += basetype(tp)->size;
                 if (sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent))
@@ -2042,8 +2058,6 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     BOOLEAN implicit = FALSE;
     allocate_desc(itype, offset, &desc, &cache);
     desc->stopgap = TRUE;
-    if (includes->line == 843)
-        printf("hi");
     if (MATCHKW(lex, assign))
     {
         assn = TRUE;

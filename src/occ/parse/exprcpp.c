@@ -1612,9 +1612,9 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         int n = (*tp)->size;
         if (arrSize && isstructured(*tp))
         {
-            int al = n % (*tp)->sp->structAlign;
+            int al = n % basetype(*tp)->sp->structAlign;
             if (al != 0)
-                n += (*tp)->sp->structAlign - al;
+                n += basetype(*tp)->sp->structAlign - al;
         }
         sz = intNode(en_c_i, n);
         if (arrSize)

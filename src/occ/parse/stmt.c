@@ -1762,7 +1762,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             else 
             {
-                cast(returntype, &st->select);
+                if (!isref(basetype(funcsp->tp)->btp))
+                    cast(returntype, &st->select);
                 if (ispointer(returntype))
                 {
                     if (isarithmetic(tp))

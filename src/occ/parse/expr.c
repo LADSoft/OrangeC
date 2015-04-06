@@ -2388,7 +2388,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 {
                     exp_in = funcparams->thisptr;
                     deref(&stdpointer, &exp_in);
-                    exp_in = exprNode(en_add, exp_in, intNode(en_c_i, funcparams->sp->offset));
+                    exp_in = exprNode(en_add, exp_in, intNode(en_c_i, funcparams->sp->vtaboffset));
                     deref(&stdpointer, &exp_in);
                     funcparams->fcall = exp_in;
                 }

@@ -524,6 +524,7 @@ typedef struct sym
     int labelCount; /* number of code labels within a function body */ 
     int nextid; /* ID to use for nextage purposes (binary output) */
     int offset; /* address offset of data in the given seg, or optimize register */
+    int vtaboffset; /* vtab offset for virtual functions */
     int label; /* label number for statics */
     short paramsize; /* Size of parameter list for stdcall functions */
     short structAlign; /* alignment of structures/ unions */

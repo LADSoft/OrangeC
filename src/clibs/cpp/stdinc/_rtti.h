@@ -125,7 +125,8 @@ typedef struct _xctab
     // things beyond this are used by throw()
     int flags; /* reserved */
     int eip; /* eip this function where the catch occurred */
-    void *instance; /* instance pointer to thrown class */
+    void *instance; /* instance pointer to thrown class or reference to a base class */
+    void *throwninstance; /* instance point to current thrown class */
     void *baseinstance; /* instance pointer to orig version of thrown class */
     void *cons; /* constructor */
     int elems; /* number of array elements thrown */

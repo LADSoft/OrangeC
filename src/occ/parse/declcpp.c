@@ -584,7 +584,7 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
         {
             if (vf->func->parentClass == sp)
             {
-                vf->func->offset = ofs;
+                vf->func->vtaboffset = ofs;
             }
             ofs += getSize(bt_pointer);
             vf = vf->next;

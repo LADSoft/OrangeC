@@ -1235,9 +1235,9 @@ void gen_xset(QUAD *q, enum e_op pos, enum e_op neg, enum e_op flt)
         int i;
         for (i=0; i < 4; i++)
         {
-            if (regmap[i][0] < 4 && !(q->liveRegs & ((ULLONG_TYPE)1 << i)))
+            if (!live(apal->liveRegs, i))
             {
-                altreg = makedreg(regmap[i][0]);
+                altreg = makedreg(i);
                 assign = TRUE;
                 break;
             }

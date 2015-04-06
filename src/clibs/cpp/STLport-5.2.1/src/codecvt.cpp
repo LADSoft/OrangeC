@@ -54,22 +54,32 @@ codecvt<char, char, mbstate_t>::do_unshift(state_type& /* __state */,
 codecvt_base::result
 codecvt<char, char, mbstate_t>::do_in (state_type&  /* __state */ ,
                                        const char*  __from,
-                                       const char*  /* __from_end */,
+                                       const char*  __from_end ,
                                        const char*& __from_next,
                                        char*        __to,
-                                       char*        /* __to_end */,
+                                       char*        __to_end,
                                        char*&       __to_next) const
-{ __from_next = __from; __to_next   = __to; return noconv; }
+{ 
+    ptrdiff_t len = (min)(__from_end - __from, __to_end - __to);
+    copy(__from, __from + len, __to);
+    __from_next = __from + len; __to_next   = __to + len; 
+    return ok; 
+}
 
 codecvt_base::result
 codecvt<char, char, mbstate_t>::do_out(state_type&  /* __state */,
                                        const char*  __from,
-                                       const char*  /* __from_end */,
+                                       const char*  __from_end,
                                        const char*& __from_next,
                                        char*        __to,
-                                       char*        /* __to_limit */,
+                                       char*        __to_limit,
                                        char*&       __to_next) const
-{ __from_next = __from; __to_next   = __to; return noconv; }
+{ 
+    ptrdiff_t len = (min)(__from_end - __from, __to_limit - __to);
+    copy(__from, __from + len, __to);
+    __from_next = __from + len; __to_next   = __to + len; 
+    return ok; 
+}
 
 
 #if !defined (_STLP_NO_WCHAR_T)

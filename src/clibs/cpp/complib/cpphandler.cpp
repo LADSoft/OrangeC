@@ -91,14 +91,48 @@ static void destroy(XCTAB *record, XCEPT *catchBlock)
     XCEPT *blk = (XCEPT *)(head+1);
     destroyone(record, blk, catchBlock);
 }
-static BOOL matchXT(RTTI *xt, RTTI *thrown)
+static size_t recurseMatchXT(RTTI *xt, RTTI *thrown, size_t offs)
 {
+    if (!(thrown->flags & XD_ARRAY))
+    {
+        RTTISTRUCT *rttis = (RTTISTRUCT*)((char *)thrown + (unsigned)&thrown->name - (unsigned)thrown + strlen(thrown->name)+1);
+        while (rttis->flags)
+        {
+            if ((rttis->flags & XD_CL_BASE) && !(rttis->flags & XD_CL_VIRTUAL))
+            {
+                int offs1;
+                if (rttis->xt == xt)
+                {
+                    return offs + rttis->offset;
+                }
+                offs1 = recurseMatchXT(xt, rttis->xt, offs + rttis->offset);
+                if (offs1 != (size_t)-1)
+                    return offs1;
+                    
+            }
+            rttis++; 
+        }
+    }
+    return (size_t)-1;
+}
+static BOOL matchXT(RTTI *xt, RTTI *thrown, size_t *offs, BOOL recurse)
+{
+    *offs = 0;
     if (!xt)
         return TRUE;
     if (xt == thrown)
         return TRUE;
-    if ((xt->flags & XD_REF) && xt->base == thrown)
-        return TRUE;
+    if (xt->flags & XD_REF)
+    {
+        if (xt->base == thrown)
+            return TRUE;
+    }
+    if (recurse)
+    {
+        *offs = recurseMatchXT(xt, thrown, 0);
+        if (*offs != (size_t)-1)
+            return TRUE;
+    }
     return FALSE;       
 }
 static BOOL canThrow(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
@@ -120,7 +154,8 @@ static BOOL canThrow(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
         RTTI **list = &throwRec->thrownClasses;
         while (*list)
         {
-            if (matchXT(*list, record->thrownxt))
+            size_t offs;
+            if (matchXT(*list, record->thrownxt, &offs, FALSE))
                 return TRUE;
             list++;
         }
@@ -143,7 +178,7 @@ static void instantiate(XCTAB *record, void *dest1 , void *src1)
     }
     else
     {
-        memcpy(record->instance, record->baseinstance, record->elems * record->thrownxt->size);
+        memcpy(record->throwninstance, record->baseinstance, record->elems * record->thrownxt->size);
     }
 }
 static BOOL matchBlock(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
@@ -153,13 +188,14 @@ static BOOL matchBlock(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
     XCEPT *blk = (XCEPT *)(head+1);
     THROWREC *throwRec = head->throwRecord;
     XCTAB *orig = (XCTAB *)p->ExceptionInformation[0];
+    size_t offs = 0;
     while (blk->flags)
     {
         if (blk->flags & XD_CL_TRYBLOCK)
         {
             if (blk->startOffs <= record->funcIndex && record->funcIndex < blk->endOffs)
             {
-                if (matchXT(blk->xt, orig->thrownxt))
+                if (matchXT(blk->xt, orig->thrownxt, &offs, TRUE))
                 {
                     if (candidate)
                     {
@@ -184,10 +220,11 @@ static BOOL matchBlock(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
         record->cons = orig->cons;
         record->eip = candidate->trylabel;
         record->flags = CAUGHT;
-        record->instance = malloc(record->thrownxt->size * record->elems);
+        record->throwninstance = malloc(record->thrownxt->size * record->elems);
+        record->instance = (char *)record->throwninstance + offs;
         if (!record->instance)
             __call_terminate();
-        instantiate(record, record->instance, record->baseinstance);
+        instantiate(record, record->throwninstance, record->baseinstance);
         __global_unwind(0, record);
         destroy(record, candidate);
         record->funcIndex = candidate->endOffs;
@@ -267,7 +304,7 @@ void _RethrowException(void *r)
     asm mov [fs:0],eax
     if (!(record->flags & CAUGHT))
         __call_terminate();
-    uninstantiate(record, record->instance);    
+    uninstantiate(record, record->throwninstance);    
     params[0] = (ULONG_PTR)record;
 	RaiseException(OUR_CPP_EXC_CODE,EXCEPTION_CONTINUABLE,1,(DWORD *)&params[0]) ;    
 }
@@ -280,6 +317,6 @@ void _CatchCleanup(void *r)
     if (!(record->flags & CAUGHT))
         __call_terminate();
     record->flags = 0;
-    uninstantiate(record, record->instance);    
+    uninstantiate(record, record->throwninstance);    
     uninstantiate(record, record->baseinstance);
 }

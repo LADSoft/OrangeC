@@ -21,7 +21,7 @@
 #  include <stl/_prolog.h>
 #endif
 
-#if defined (__BORLANDC__) || defined (_MSC_VER)
+#if defined (__BORLANDC__) || defined (_MSC_VER) || defined (__ORANGEC__)
 #  include <exception>
 #else
 #  if defined (_STLP_HAS_INCLUDE_NEXT)

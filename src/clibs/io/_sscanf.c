@@ -283,7 +283,10 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                         *((wchar_t *)arg)++ = fbuf[0];
                     }
                     (*chars)++ ;
-                    *ch = fgetc(fil);
+                    if (width)
+        				*ch = fgetc(fil) ;
+                    else
+                        *ch = EOF;
                 }
             }
 			else {
@@ -292,8 +295,11 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
               while (width-- && *ch != EOF) {
 				if (!ignore) {
                    *((char *)arg)++ = (char)*ch;
-				}		
-				*ch = fgetc(fil) ;
+				}	
+                if (width)
+    				*ch = fgetc(fil) ;
+                else
+                    *ch = EOF;
 				(*chars)++;
               }
 			}
@@ -521,7 +527,7 @@ int __scanf(FILE *restrict fil, const char *restrict format,void *restrict argli
    int i = 0, j = 0, k = 0;
    int ch = fgetc(fil) ;
    if (ch == EOF) return EOF;
-   while (format && *format /* && ch != EOF */) {
+   while (format && *format) {
       while (format && *format != '%' && *format) {
         if (isspace(*format)) {
             while (ch != EOF && isspace(ch)) {
@@ -533,15 +539,12 @@ int __scanf(FILE *restrict fil, const char *restrict format,void *restrict argli
 		else  {
             if (*format++ != ch) {
                 goto __scanf_end;
-//                if (ch != EOF)
-//                    ungetc(ch,fil);
-//                return i;
             }
             ch = fgetc(fil) ;
             j++;
 		}
 	  }
-      if (*format /* && ch != EOF */) {
+      if (*format) {
 	      format++;
           format = __strtoone(fil,format,((char **)arglist)[k],&i,&j,&k,&ch);
 	  }

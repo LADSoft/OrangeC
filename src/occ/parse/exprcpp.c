@@ -115,66 +115,71 @@ EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en)
     EXPRESSION *rv = en;
     if (base != derived)
     {
-        BASECLASS *lst = derived->baseClasses;
-        while(lst)
+        VBASEENTRY *vbase = derived->vbaseEntries;
+        BASECLASS *lst;
+        while (vbase)
         {
-            // start by looking at all the explicit base clases
-            // this doesn't need to do a deep search as all existing base classes
-            // of all other base classes are listed here.
-            if (lst->cls == base)
-            {                
-                if (lst->isvirtual)
-                {
-                    VBASEENTRY *p = derived->vbaseEntries;
-                    while (p && lst->cls != p->cls)
-                        p = p->next;
-                    if (p)
-                    {
-                        EXPRESSION *ec = intNode(en_c_i, p->pointerOffset);
-                        rv = exprNode(en_add, en, ec);
-                        deref(&stdpointer, &rv);
-                    }
-                }
-                else 
-                {
-                    EXPRESSION *ec = intNode(en_c_i, lst->offset);
-                    rv = exprNode(en_add, en, ec);
-                }
+            // this will get all virtual bases since they are all listed on each deriviation
+            if (vbase->alloc && vbase->cls == base)
+            {
+                EXPRESSION *ec = intNode(en_c_i, vbase->pointerOffset);
+                rv = exprNode(en_add, en, ec);
+                deref(&stdpointer, &rv);
                 break;
             }
-            lst = lst->next;
+            vbase = vbase->next;
         }
-        if (!lst)
+        if (!vbase)
         {
-            // if not found, look through the virtual base entries
-            VBASEENTRY *vbase = derived->vbaseEntries;
-            while (vbase)
+            BASECLASS *lst = derived->baseClasses;
+            if (lst)
             {
-                if (vbase->alloc && vbase->cls == base)
+                BASECLASS *stack[200];
+                int top=0,i;
+                stack[top++] = lst;
+                while (lst)
                 {
-                    EXPRESSION *ec = intNode(en_c_i, vbase->pointerOffset);
-                    rv = exprNode(en_add, en, ec);
-                    deref(&stdpointer, &rv);
-                    break;
-                }
-                vbase = vbase->next;
-            }
-            if (!vbase)
-            {
-                // if still not found do a deep search through vbase entries
-                vbase = derived->vbaseEntries;
-                while (vbase)
-                {
-                    rv = baseClassOffset(base, vbase->cls, en);
-                    if (rv != en )
-                    {
-                        EXPRESSION **p = findPointerToExpression(&rv, en);
-                        EXPRESSION *ec = intNode(en_c_i, vbase->pointerOffset);
-                        *p = exprNode(en_add, *p, ec);
-                        deref(&stdpointer, p);
+                    if (lst->cls == base)
                         break;
+                    if (lst->cls->baseClasses)
+                    {
+                        lst = lst->cls->baseClasses;
+                        stack[top++] = lst;
                     }
-                    vbase = vbase->next;
+                    else if (lst->next)
+                    {
+                        lst = lst->next;
+                        stack[top-1] = lst;
+                    }
+                    else if (top)
+                    {
+                        do {
+                            lst = stack[--top]->next;
+                        } while (top && !lst);
+                        stack[top++] = lst;
+                    }
+                }
+                if (top && stack[0])
+                {
+                    for (i=0; i < top; i++)
+                    {
+                        if (stack[i]->isvirtual)
+                        {
+                            int offset;
+                            VBASEENTRY *cur = i ? stack[i-1]->cls->vbaseEntries : derived->vbaseEntries;
+                            while (cur && cur->cls != stack[i]->cls)
+                                cur = cur->next;
+                            offset = cur->pointerOffset;
+                            rv = exprNode(en_add, rv, intNode(en_c_i, offset));
+                           if (stack[i]->isvirtual)
+                                deref(&stdpointer, &rv);
+                        }
+                        else
+                        {
+                            int offset = stack[i]->offset;
+                            rv = exprNode(en_add, rv, intNode(en_c_i, offset));
+                        }
+                    }
                 }
             }
         }

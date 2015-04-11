@@ -760,7 +760,7 @@ void FinishStruct(SYMBOL *sp, SYMBOL *funcsp)
     if (cparams.prm_cplusplus)
     {
         calculateStructAbstractness(sp, sp);
-        calculateVirtualBaseOffsets(sp, sp, FALSE, 0);
+        calculateVirtualBaseOffsets(sp);
         calculateVTabEntries(sp, sp, &sp->vtabEntries, 0);
         if (sp->vtabEntries)
         {

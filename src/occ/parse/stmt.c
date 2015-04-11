@@ -1617,17 +1617,10 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     {
                         optimize_for_constants(&exp1);
                     }
-                    if (exp1->type == en_func && exp1->v.func->returnSP)
+                    if ((exp1->type == en_func && exp1->v.func->returnSP || exp1->type == en_thisref && exp1->left->v.func->returnSP)
+                        &&  (comparetypes(tp1, tp, TRUE) || sameTemplate(tp, tp1)) )
+
                     {   
-                        if ((comparetypes(tp1, tp, TRUE) || sameTemplate(tp, tp1)) 
-                            || exp1->type == en_stmt)
-                        {
-                            returnexp = exp1;
-                        }
-                        else
-                        {
-                            errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
-                        }
                         returntype = tp1;
                         returnexp = exp1;
                     }

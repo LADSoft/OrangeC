@@ -2286,6 +2286,19 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
     }
     return FALSE;
 }
+static BOOLEAN DeduceFromBaseTemplates(TYPE *P, SYMBOL *A, BOOLEAN change, BOOLEAN byClass)
+{
+    BASECLASS *lst = A->baseClasses;
+    while (lst)
+    {
+        if (DeduceFromBaseTemplates(P, lst->cls, change, byClass))
+            return TRUE;
+        if (DeduceFromTemplates(P, lst->cls->tp, change, byClass))
+            return TRUE;
+        lst = lst->next;
+    }
+    return FALSE;
+}
 static TYPE *FixConsts(TYPE *P, TYPE *A)
 {
     int pn=0, an=0;
@@ -2419,7 +2432,10 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
         TYPE *Ab = basetype(A);
         TYPE *Pb = basetype(P);
         if (isstructured(Pb) && Pb->sp->templateLevel && isstructured(Ab))
-            return DeduceFromTemplates(P, A, change, byClass);
+            if (DeduceFromTemplates(P, A, change, byClass))
+                return TRUE;
+            else
+                return DeduceFromBaseTemplates(P, basetype(A)->sp, change, byClass);
         if (Ab->type != Pb->type && Pb->type != bt_templateparam)
             return FALSE;
         switch(Pb->type)

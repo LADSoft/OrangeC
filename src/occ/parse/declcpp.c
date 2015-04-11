@@ -591,101 +591,139 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
         }
     }
 }
-void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOLEAN isvirtual, int offset)
+void calculateVirtualBaseOffsets(SYMBOL *sp)
 {
-    BASECLASS *lst = base->baseClasses;
+    BASECLASS *lst = sp->baseClasses;
+    VBASEENTRY **pos = &sp->vbaseEntries, *vbase;
+    // copy all virtual base classes of direct base classes
     while (lst)
     {
-        calculateVirtualBaseOffsets(sp, lst->cls, lst->isvirtual, offset + lst->offset);
+        VBASEENTRY *cur = lst->cls->vbaseEntries;
+        while (cur)
+        {
+            VBASEENTRY *search;
+            vbase = (VBASEENTRY *)Alloc(sizeof(VBASEENTRY));
+            vbase->alloc = FALSE;
+            vbase->cls = cur->cls;
+            vbase->pointerOffset = cur->pointerOffset + lst->offset;        
+            vbase->structOffset = 0;
+            *pos = vbase;
+            pos = &(*pos)->next;
+
+            search = sp->vbaseEntries;
+            while (search)
+            {
+                if (search->cls == vbase->cls && search->alloc)
+                    break;
+                search = search->next;
+            }            
+            if (!search)
+            {
+                // copy for the derived class's vbase table
+                vbase = (VBASEENTRY *)Alloc(sizeof(VBASEENTRY));
+                vbase->alloc = TRUE;
+                vbase->cls = cur->cls;
+                vbase->pointerOffset = 0    ;        
+                vbase->structOffset = 0;
+                *pos = vbase;
+                pos = &(*pos)->next;
+            }            
+            cur = cur->next;
+        }
         lst = lst->next;
     }
-    if (isvirtual)
+    // now add any new base classes for this derived class
+    lst = sp->baseClasses;
+    while (lst)
     {
-        VBASEENTRY *vbase = (VBASEENTRY *)Alloc(sizeof(VBASEENTRY));
-        VBASEENTRY **cur;
-        vbase->alloc = TRUE;
-        vbase->cls = base;
-        vbase->pointerOffset = offset;        
-        cur = &sp->vbaseEntries;
-        while (*cur)
+        if (lst->isvirtual)
         {
-            if ((*cur)->cls == vbase->cls)
+            VBASEENTRY *search = sp->vbaseEntries;
+            while (search)
             {
-                vbase->alloc = FALSE;
+                if (search->cls == lst->cls && search->alloc)
+                    break;
+                search = search->next;
             }
-            cur = &(*cur)->next;
+            if (!search)
+            {
+                vbase = (VBASEENTRY *)Alloc(sizeof(VBASEENTRY));
+                vbase->alloc = TRUE;
+                vbase->cls = lst->cls;
+                vbase->pointerOffset = 0;        
+                vbase->structOffset = 0;
+                *pos = vbase;
+                pos = &(*pos)->next;
+            }
         }
-        *cur = vbase;
+        lst = lst->next;
     }
-    if (base == sp) // at top
+    // modify virtual base thunks for self
+    vbase = sp->vbaseEntries;
+    while (vbase)
     {
-        BASECLASS *base;
-        VBASEENTRY *lst = sp->vbaseEntries, *cur;
-        HASHREC *hr = sp->tp->syms->table[0];
-        VTABENTRY **pos;
-        // add virtual base thunks for self
-        VBASEENTRY *vbase = sp->vbaseEntries;
-        while (vbase)
+        if (vbase->alloc)
         {
-            if (vbase->alloc)
+            int align;
+            BASECLASS *base;
+            align = getBaseAlign(bt_pointer);
+            sp->structAlign = imax(sp->structAlign, align );
+            if (align != 1)
             {
-                int align = getBaseAlign(bt_pointer);
-                sp->structAlign = imax(sp->structAlign, align );
-                if (align != 1)
+                int al = sp->tp->size % align;
+                if (al != 0)
                 {
-                    int al = sp->tp->size % align;
-                    if (al != 0)
-                    {
-                        sp->tp->size += align - al;
-                    }
+                    sp->tp->size += align - al;
                 }
-                base = sp->baseClasses;
-                while (base)
-                {
-                    if (base->isvirtual && base->cls == vbase->cls)
-                    {
-                        if (base != sp->baseClasses)
-                            base->offset = sp->tp->size;
-                        break;
-                    }
-                    base = base->next;
-                }
-                vbase->pointerOffset = sp->tp->size;
-                sp->tp->size += getSize(bt_pointer);
             }
-            vbase = vbase->next;
+            base = sp->baseClasses;
+            while (base)
+            {
+                if (base->isvirtual && base->cls == vbase->cls)
+                {
+                    if (base != sp->baseClasses)
+                        base->offset = sp->tp->size;
+                    break;
+                }
+                base = base->next;
+            }
+            vbase->pointerOffset = sp->tp->size;
+            sp->tp->size += getSize(bt_pointer);
         }
-        sp->sizeNoVirtual = sp->tp->size;
-        // now add space for virtual base classes
-        while (lst)
+        vbase = vbase->next;
+    }
+    sp->sizeNoVirtual = sp->tp->size;
+    vbase = sp->vbaseEntries;
+    // now add space for virtual base classes
+    while (vbase)
+    {
+        if (vbase->alloc)
         {
-            if (lst->alloc)
+            int align = vbase->cls->structAlign;
+            VBASEENTRY *cur;
+            VTABENTRY *old = vbase->cls->vtabEntries;
+            sp->structAlign = imax(sp->structAlign, align );
+            if (align != 1)
             {
-                int align = lst->cls->structAlign;
-                VTABENTRY *old = lst->cls->vtabEntries;
-                sp->structAlign = imax(sp->structAlign, align );
-                if (align != 1)
+                int al = sp->tp->size % align;
+                if (al != 0)
                 {
-                    int al = sp->tp->size % align;
-                    if (al != 0)
-                    {
-                        sp->tp->size += align - al;
-                    }
+                    sp->tp->size += align - al;
                 }
-                cur = sp->vbaseEntries;
-                while (cur)
-                {
-                    if (cur->cls == lst->cls)
-                    {
-                        cur->structOffset = sp->tp->size;
-                    }
-                    cur = cur->next;
-                }
-                sp->tp->size += lst->cls->sizeNoVirtual;
             }
-            lst = lst->next;
+            cur = sp->vbaseEntries;
+            while (cur)
+            {
+                if (cur->cls == vbase->cls)
+                {
+                    cur->structOffset = sp->tp->size;
+                }
+                cur = cur->next;
+            }
+            sp->tp->size += vbase->cls->sizeNoVirtual;
         }
-    }    
+        vbase = vbase->next;
+    }
 }
 void deferredCompileOne(SYMBOL *cur)
 {

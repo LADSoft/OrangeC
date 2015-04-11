@@ -152,7 +152,6 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces);
 LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOLEAN beforeOnly);
 int classRefCount(SYMBOL *base, SYMBOL *derived);
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset);
-void calculateVirtualBaseOffsets(SYMBOL *sp, SYMBOL *base, BOOLEAN isvirtual, int offset);
 void deferredCompileOne(SYMBOL *cur);
 void deferredCompile(void);
 void deferredInitializeStruct(SYMBOL *cur);

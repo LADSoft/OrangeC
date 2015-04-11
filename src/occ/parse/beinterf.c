@@ -563,6 +563,7 @@ int getBaseAlign(enum e_bt type)
     if (type == bt_auto)
         type = bt_struct;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
+    tp.array = tp.vla = FALSE;
     return basesize(chosenAssembler->arch->type_align, &tp);    
 }
 long getautoval(long val)

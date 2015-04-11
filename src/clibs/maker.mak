@@ -36,7 +36,7 @@
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
 CC=occ
-CFLAGS = /O0 $(C_FLAGS) $(DEFINES)
+CFLAGS = $(C_FLAGS) $(DEFINES)
 
 LINK=olink
 LINKFLAGS= -c+
@@ -55,12 +55,12 @@ IMPLIB=oimplib
 IMPLIBFLAGS=
 
 %.o: %.cpp
-	$(CC) /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /C-E /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $*
 
 %.o: %.c
-	$(CC) /1 /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /C-E /1 /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $*
 

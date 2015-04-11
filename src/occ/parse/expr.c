@@ -2191,42 +2191,45 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 }
                 sp->throughClass = funcparams->sp->throughClass;
                 funcparams->sp = sp;
-                if (funcparams->noobject && ismember(sp))
+                if (ismember(sp))
                 {
-                    if (!funcsp->parentClass || classRefCount(sp->parentClass, funcsp->parentClass) == 0)
+                    if (funcparams->noobject)
                     {
-                        errorsym(ERR_USE_DOT_OR_POINTSTO_TO_CALL, sp);
-                    }
-                    else if (classRefCount(sp->parentClass, funcsp->parentClass) != 1)
-                    {
-                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp->parentClass, funcsp->parentClass);
-                    }
-                    else if (funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual)
-                    {
-                        TYPE **cur;
-                        funcparams->thisptr = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p);
-                        deref(&stdpointer, &funcparams->thisptr);
-                        funcparams->thisptr = DerivedToBase(sp->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp, funcparams->thisptr, _F_VALIDPOINTER);
-                        funcparams->thistp = Alloc(sizeof(TYPE));
-                        cur = &funcparams->thistp->btp;
-                        funcparams->thistp->type = bt_pointer;
-                        funcparams->thistp->size = getSize(bt_pointer);
-                        if (isconst(sp->tp))
+                        if (!funcsp->parentClass || classRefCount(sp->parentClass, funcsp->parentClass) == 0)
                         {
-                            (*cur) = Alloc(sizeof(TYPE));
-                            (*cur)->type = bt_const;
-                            (*cur)->size = sp->parentClass->tp->size;
-                            cur = &(*cur)->btp;
+                            errorsym(ERR_USE_DOT_OR_POINTSTO_TO_CALL, sp);
                         }
-                        if (isvolatile(sp->tp))
+                        else if (classRefCount(sp->parentClass, funcsp->parentClass) != 1)
                         {
-                            (*cur) = Alloc(sizeof(TYPE));
-                            (*cur)->type = bt_volatile;
-                            (*cur)->size = sp->parentClass->tp->size;
-                            cur = &(*cur)->btp;
+                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp->parentClass, funcsp->parentClass);
                         }
-                        *cur = sp->parentClass->tp;
-                        cppCast(((SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp, &funcparams->thisptr);
+                        else if (funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual)
+                        {
+                            TYPE **cur;
+                            funcparams->thisptr = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p);
+                            deref(&stdpointer, &funcparams->thisptr);
+                            funcparams->thisptr = DerivedToBase(sp->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp, funcparams->thisptr, _F_VALIDPOINTER);
+                            funcparams->thistp = Alloc(sizeof(TYPE));
+                            cur = &funcparams->thistp->btp;
+                            funcparams->thistp->type = bt_pointer;
+                            funcparams->thistp->size = getSize(bt_pointer);
+                            if (isconst(sp->tp))
+                            {
+                                (*cur) = Alloc(sizeof(TYPE));
+                                (*cur)->type = bt_const;
+                                (*cur)->size = sp->parentClass->tp->size;
+                               cur = &(*cur)->btp;
+                            }
+                            if (isvolatile(sp->tp))
+                            {
+                                (*cur) = Alloc(sizeof(TYPE));
+                                (*cur)->type = bt_volatile;
+                                (*cur)->size = sp->parentClass->tp->size;
+                                cur = &(*cur)->btp;
+                            }
+                            *cur = sp->parentClass->tp;
+                            cppCast(((SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp, &funcparams->thisptr);
+                        }
                     }
                 }
             }
@@ -2290,6 +2293,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         if (temp)
         {
             HASHREC *hr = temp->table[0];
+            
             if (funcparams->sp && !ismember(funcparams->sp))
             {
                 if (operands)
@@ -2341,7 +2345,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     SYMBOL *base = funcparams->sp->parentClass;
                     SYMBOL *derived = basetype(basetype(funcparams->thistp)->btp)->sp;
                     if (base != derived)
+                    {
                         funcparams->thisptr = DerivedToBase(base->tp, derived->tp, funcparams->thisptr, _F_VALIDPOINTER);
+                    }
                 }
                 if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {

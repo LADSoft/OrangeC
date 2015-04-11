@@ -1668,54 +1668,20 @@ static void virtualBaseThunks(BLOCKDATA *b, SYMBOL *sp, EXPRESSION *thisptr)
     STATEMENT *st;
     while (entries)
     {
-        BASECLASS *bc;
-        if (entries->alloc)
+        EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, entries->pointerOffset));
+        EXPRESSION *right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
+        EXPRESSION *asn;
+        VBASEENTRY *subentries;
+        deref(&stdpointer, &left);
+        asn = exprNode(en_assign, left, right);
+        if (!*pos)
         {
-            EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, entries->pointerOffset));
-            EXPRESSION *right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
-            EXPRESSION *asn;
-            deref(&stdpointer, &left);
-            asn = exprNode(en_assign, left, right);
-            if (!*pos)
-            {
-                *pos = asn;
-            }
-            else
-            {
-                *pos = exprNode(en_void, *pos, asn);
-                pos = &(*pos)->right;
-            }
-            bc = sp->baseClasses;
-            while (bc)
-            {
-                if (!bc->isvirtual)
-                {
-                    VBASEENTRY *subentries = bc->cls->vbaseEntries;
-                    while (subentries)
-                    {
-                        if (subentries->cls == entries->cls || sameTemplate(subentries->cls->tp, entries->cls->tp))
-                        {
-                            EXPRESSION *left = exprNode(en_add, thisptr, intNode(en_c_i, subentries->pointerOffset));
-                            EXPRESSION *right = exprNode(en_add, thisptr, intNode(en_c_i, entries->structOffset));
-                            EXPRESSION *asn;
-                            left = exprNode(en_add, left, intNode(en_c_i, bc->offset));
-                            deref(&stdpointer, &left);
-                            asn = exprNode(en_assign, left, right);
-                            if (!*pos)
-                            {
-                                *pos = asn;
-                            }
-                            else
-                            {
-                                *pos = exprNode(en_void, *pos, asn);
-                                pos = &(*pos)->right;
-                            }
-                        }
-                        subentries = subentries->next;
-                    }
-                }
-                bc = bc->next;
-            }
+            *pos = asn;
+        }
+        else
+        {
+            *pos = exprNode(en_void, *pos, asn);
+            pos = &(*pos)->right;
         }
         entries = entries->next;
     }

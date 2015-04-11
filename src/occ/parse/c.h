@@ -613,8 +613,9 @@ typedef struct _baseClass
     struct _baseClass *next;
     SYMBOL *cls;
     enum e_ac accessLevel;
-    BOOLEAN isvirtual;
     unsigned offset;
+    int isvirtual:1;
+    int top:1;
 } BASECLASS;
 typedef struct _virtualFunc
 {

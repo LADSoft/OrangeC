@@ -2315,7 +2315,7 @@ static void getPointerConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *exp, int *n,
                 }
                 else
                 {
-                    seq[(*n)++]= CV_POINTERCONVERSION;
+                    seq[(*n)++]= CV_DERIVEDFROMBASE;
                 }
             }
             else

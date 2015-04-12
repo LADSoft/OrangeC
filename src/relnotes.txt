@@ -1,5 +1,18 @@
 Release notes
 
+version 5.33.1: 4/11/2015
+	general:	fix errors when compiling the package with various compilers
+    occ:        C++ fixes
+	ocide:		don't colorize #if #else #endif blocks if colorizing is turned off
+	ocide:		if an edit window is resized that has line numbers, redraw the line numbers
+	ocide:		fix problem where #if #else #endif block processing could result in
+				random lines becoming grey
+    olink:      speed up linker
+    olink:      optimize C++ programs for size
+    rtl:        C++ fixes
+    rtl:        fix scanf("%c", &c); it would look ahead one character which required that something be typed at 
+                the console if processing the '\n' character at the end of a line.
+
 version 5.32.1: 03/24/2015
     olink:      add the system library path to the front of the include path list, instead of replacing it
     ocide:      fix potential crash condition when switching projects

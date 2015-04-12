@@ -3048,12 +3048,12 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             {
                 if (p->cd->lineDataMax < line)
                     line = p->cd->lineDataMax;
-                return p->cd->lineData[line/8] & (1 << (line & 7));
+                return !!(p->cd->lineData[line/8] & (1 << (line & 7)));
             }
         }
         return TRUE;
     }
-    int getfragment(EDITDATA *p, int pos, int autoDecoration, char *buf, COLORREF *fcolor, COLORREF *bcolor,
+    int getfragment(EDITDATA *p, int pos, int autoDecoration, int colorizing, char *buf, COLORREF *fcolor, COLORREF *bcolor,
         HFONT *font, int *col, int line)
     {
         int count = 0;
@@ -3064,7 +3064,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         int start, end;
         int matched = FALSE;
         int taboffs = p->leftshownindex % p->cd->tabs;
-        int parsed = lineParsed(p, line);
+        int parsed = !colorizing || lineParsed(p, line);
         if (p->cd->nosel)
             start = end = 0;
         else if (p->selstartcharpos <= p->selendcharpos)
@@ -3237,6 +3237,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         HPEN columnbarPen ;
         int colMark = PropGetInt(NULL, "COLUMN_MARK");
         int autoDecoration = PropGetInt(NULL, "DECORATE_AUTO");
+		int colorizing = PropGetBool(NULL, "COLORIZE");
         if (colMark != 0)
         {
             columnbarPen =	CreatePen(PS_SOLID, 0, columnbarColor);
@@ -3286,10 +3287,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     int selection = FALSE;
                     COLORREF fcolor, bcolor;
                     HFONT font;
-                    int n, i, z=0;
+                    int n, j, z=0;
                     int dx[500];
                     int ofs = 0;
-                    pos = getfragment(p, pos, autoDecoration, buf, &fcolor, &bcolor, &font,
+                    pos = getfragment(p, pos, autoDecoration, colorizing, buf, &fcolor, &bcolor, &font,
                         &leftcol, baseline + i);
                     if (buf[0] == '\f')
                     {
@@ -3299,9 +3300,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     SetBkColor(dc, bcolor);
                     SelectObject(dc, font);
                     n = strlen(buf);
-                    for (i=0; i < n; i++)
+                    for (j=0; j < n; j++)
                     {
-                        dx[i] = p->cd->txtFontWidth; 
+                        dx[j] = p->cd->txtFontWidth; 
                     }
                     if (col > 1 && font == p->cd->hItalicFont)
                         z = -1;

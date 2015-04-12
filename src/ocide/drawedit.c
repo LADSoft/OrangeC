@@ -1415,6 +1415,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             ptr = (DWINFO*)GetWindowLong(hwnd, 0);
             MoveWindow(GetDlgItem(hwnd, ID_EDITCHILD), ptr->editorOffset, 0, 
                 (lParam &65535) - ptr->editorOffset, lParam >> 16, 1);
+			InvalidateRect(hwnd, 0, 0); // for line numbers
             break;
         // timer being used to prevent a click in the margin which activates
         // the window from setting a breakpoint...

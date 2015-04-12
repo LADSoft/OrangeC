@@ -159,7 +159,7 @@ private:
 };
 
 #  if defined (_STLP_EXPOSE_STREAM_IMPLEMENTATION) && !defined (_STLP_LINK_TIME_INSTANTIATION)
-#    if !defined (__BORLANDC__) || (__BORLANDC__ >= 0x590)
+#    if (!defined (__BORLANDC__) || (__BORLANDC__ >= 0x590)) && !defined(__ORANGEC__)
 template <class _InternT, class _ExternT, class _StateT>
 locale::id codecvt<_InternT, _ExternT, _StateT>::id;
 #    endif

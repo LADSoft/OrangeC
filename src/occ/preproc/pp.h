@@ -119,6 +119,6 @@ typedef struct _filelist
 typedef struct _macbuflist
 {
     char buf[MACRO_REPLACE_SIZE];
-    char *next; // MUST BE LAST!!!
+    struct _macbuflist *next; // MUST BE LAST!!!
 } MACROLIST;
 #endif /* PREPROC_H */

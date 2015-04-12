@@ -4974,7 +4974,7 @@ jointemplate:
                             {
                                 if (spi->pushedTemplateSpecializationDefinition && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
                                 {
-                                    spi->pushedTemplateSpecializationDefinition = NULL;
+                                    spi->pushedTemplateSpecializationDefinition = FALSE;
                                     spi->inlineFunc.stmt = NULL;
                                     spi->deferredCompile = NULL;
                                 }

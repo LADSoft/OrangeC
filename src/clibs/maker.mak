@@ -55,7 +55,7 @@ IMPLIB=oimplib
 IMPLIBFLAGS=
 
 %.o: %.cpp
-	$(CC) /C-E /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
+	$(CC) /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@F $*
 

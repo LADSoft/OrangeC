@@ -3882,7 +3882,7 @@ static void SetAccessibleTemplateArgs(TEMPLATEPARAMLIST *args, BOOLEAN accessibl
                 while (tpl)
                 {
                     if (!allTemplateArgsSpecified(tpl))
-                        return FALSE;
+                        return;
                     tpl = tpl->next;
                 }
                 SetTemplateArgAccess(args->p->byTemplate.val, accessible);

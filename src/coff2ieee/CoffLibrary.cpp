@@ -42,6 +42,8 @@
 #include "ObjIeee.h"
 #include "ObjFactory.h"
 #include <stdio.h>
+#include <stdlib.h>
+
 CoffLibrary::~CoffLibrary()
 {
     for (std::map<int, Module *>::iterator it = modules.begin(); it != modules.end(); ++it)
@@ -144,6 +146,7 @@ bool CoffLibrary::LoadHeaders()
             return false;
         }
     }
+	return true;
 }
 bool CoffLibrary::ScanIntegrity()
 {

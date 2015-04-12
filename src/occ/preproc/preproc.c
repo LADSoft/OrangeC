@@ -926,15 +926,15 @@ void dopragma(void)
 
 char *getMacroBuffer()
 {
-    MACROLIST *rv;
+    char *rv;
     if (macroBuffers)
     {
-        rv = macroBuffers;
+        rv = (char *)macroBuffers;
         macroBuffers = macroBuffers->next;
     }
     else
     {
-        rv = Alloc(sizeof(MACROLIST));
+        rv = (char *)Alloc(sizeof(MACROLIST));
     }
     return rv;
 }

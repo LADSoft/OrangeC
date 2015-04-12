@@ -109,8 +109,8 @@ public:
     virtual void Fill();
     void InitFlags();
     virtual ObjInt SetThunk(int index, unsigned va);
-    bool PEDataObject::hasPC(ObjExpression *exp);
-    ObjExpression* PEDataObject::getExtern(ObjExpression *exp);
+    bool hasPC(ObjExpression *exp);
+    ObjExpression* getExtern(ObjExpression *exp);
     ObjInt EvalFixup(ObjExpression *fixup, ObjInt base);
     void GetImportNames();
 private:

@@ -1847,12 +1847,14 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                         TYPE *tp;
                         if (sameType && !temp->v.func->returnEXP)
                         {
+#ifndef PARSER_ONLY
                             if (temp->v.func->thisptr)
                             {
                                 EXPRESSION *exp1 = GetSymRef(temp->v.func->thisptr);
                                 if (exp1)
                                     exp1->v.sp->dest = NULL;
                             }
+#endif
                             p->exp = temp;
                             exp = &p->exp->v.func->thisptr;
                             tp = p->exp->v.func->thistp->btp;

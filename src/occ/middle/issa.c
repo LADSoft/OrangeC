@@ -276,7 +276,7 @@ DAGLIST *getSavedDAG(void)
 void releaseSavedDAG(DAGLIST **dag)
 {
 	dag[0] = (DAGLIST *)savedDag;
-	savedDag = dag;
+	savedDag = (LIST *)dag;
 }
 /*
  * after the phi nodes are in place, we start renaming all related temps

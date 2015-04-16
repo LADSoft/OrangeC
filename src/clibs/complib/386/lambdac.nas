@@ -29,11 +29,11 @@
 ;TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ;ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 %ifdef __BUILDING_LSCRTL_DLL
-[export @__lambdaCall$qpv$]
-[export @__lambdaPtrCall$qpvpv$]
+[export @__lambdaCall$qpv]
+[export @__lambdaPtrCall$qpvpv]
 %endif
-[global @__lambdaCall$qpv$]
-[global @__lambdaPtrCall$qpvpv$]
+[global @__lambdaCall$qpv]
+[global @__lambdaPtrCall$qpvpv]
 
 ; frame in
 ;    args
@@ -48,7 +48,7 @@
 ;     rv1
 ;     this
 SECTION code CLASS=CODE USE32
-@__lambdaCall$qpv$:
+@__lambdaCall$qpv:
     pop ecx
     xchg ecx,[esp + 8]
     xchg ecx,[esp]
@@ -69,7 +69,7 @@ SECTION code CLASS=CODE USE32
 ;     rv1
 ;     rv2
 ;     this
-@__lambdaPtrCall$qpvpv$:
+@__lambdaPtrCall$qpvpv:
     pop ecx
     xchg ecx,[esp + 4]
     call ecx

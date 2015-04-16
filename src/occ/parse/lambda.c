@@ -350,7 +350,7 @@ static void createCaller(void)
     lambdaCall = (SYMBOL *)lambdaCall->tp->syms->table[0]->p;
     func->parentClass = lambdas->cls;
     func->linkage = lk_virtual;
-    func->isInline = TRUE;
+    func->isInline = FALSE;
     func->omitFrame = TRUE;
     memset(&block1, 0, sizeof(BLOCKDATA));
     memset(&block2, 0, sizeof(BLOCKDATA));
@@ -389,7 +389,7 @@ static SYMBOL *createPtrCaller(SYMBOL *self)
     lambdaCall = (SYMBOL *)lambdaCall->tp->syms->table[0]->p;
     func->parentClass = lambdas->cls;
     func->linkage = lk_virtual;
-    func->isInline = TRUE;
+    func->isInline = FALSE;
     func->omitFrame = TRUE;
     deref(&stdpointer, &exp);
     memset(&block1, 0, sizeof(BLOCKDATA));
@@ -435,7 +435,7 @@ static void createConverter(SYMBOL *self)
     func->tp->btp->btp = args;
     func->tp->syms = CreateHashTable(1);
     func->linkage = lk_virtual;
-    func->isInline = TRUE;
+    func->isInline = FALSE;
     hr->p = (struct _hrintern_ *)sym;
     func->tp->syms->table[0] = hr;
     func->parentClass = lambdas->cls;

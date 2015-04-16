@@ -2982,7 +2982,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             }   
         }
     }
-    if (sp->tp->type == bt_auto)
+    if (sp->tp->type == bt_auto && !MATCHKW(lex, colon))
     {
         errorsym(ERR_AUTO_NEEDS_INITIALIZATION, sp);
         sp->tp = &stdint;

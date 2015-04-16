@@ -927,9 +927,14 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         }
     }
     if (!lex)
+    {
         error (ERR_UNEXPECTED_EOF);
+    }
     else
+    {
         lex = getsym();
+        FlushLineData("", 0);
+    }
     sp->declaring = FALSE;
     return lex;
 }

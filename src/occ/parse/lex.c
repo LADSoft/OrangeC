@@ -56,6 +56,7 @@ extern INCLUDES *includes;
 int endline;
 LEXCONTEXT *context;
 
+static LINEDATA *lexLinesHead, *lexLinesTail;
 static LEXEME *pool;
 static ULLONG_TYPE llminus1;
 static int nextFree;
@@ -353,6 +354,22 @@ void lexini(void)
     context = Alloc(sizeof(LEXCONTEXT));
     nextFree = 0;
     pool = Alloc (sizeof (LEXEME) * MAX_LOOKBACK);
+    lexLinesHead = lexLinesTail = NULL;
+}
+void InsertLineData(int lineno, int fileindex, char *fname, char *line)
+{
+    LINEDATA *ld ;
+    IncGlobalFlag();
+    ld = Alloc(sizeof(LINEDATA));
+    ld->file = fname;
+    ld->line = litlate(line);
+    ld->lineno = lineno;
+    ld->fileindex = fileindex;
+    if (lexLinesHead)
+        lexLinesTail = lexLinesTail->next = ld;
+    else
+        lexLinesHead = lexLinesTail = ld;
+    DecGlobalFlag();
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1256,6 +1273,7 @@ LEXEME *getsym(void)
             TemplateRegisterDeferred(context->last);
         context->last = rv;
         context->cur = context->cur->next;
+        CacheLineData(rv->linedata);
         return rv;
     }
     else if (context->next)
@@ -1294,6 +1312,9 @@ LEXEME *getsym(void)
         lex->line = includes->line;
         lex->file = includes->fname;
         lex->filenum = includes->fileindex;
+        lex->linedata = lexLinesHead;
+        lexLinesHead = lexLinesTail = NULL;
+        CacheLineData(lex->linedata);
         if ((cval = getChar(&includes->lptr, &tp)) != INT_MIN)
         {
                if (tp == l_achr && !cparams.prm_charisunsigned && !(cval & 0xffffff00))

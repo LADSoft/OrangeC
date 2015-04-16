@@ -67,7 +67,7 @@ BOOLEAN setjmp_used;
 BOOLEAN functionHasAssembly;
 BOOLEAN declareAndInitialize;
 
-static LINEDATA *linesHead, *linesTail;
+LINEDATA *linesHead, *linesTail;
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
                            BLOCKDATA *parent, BOOLEAN asExpression);
 static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
@@ -79,20 +79,23 @@ void statement_ini()
     nextLabel = 1;
     linesHead = linesTail = NULL;
 }
-void InsertLineData(int lineno, int fileindex, char *fname, char *line)
+void CacheLineData(LINEDATA *ld)
 {
-    LINEDATA *ld ;
-    IncGlobalFlag();
-    ld = Alloc(sizeof(LINEDATA));
-    ld->file = fname;
-    ld->line = litlate(line);
-    ld->lineno = lineno;
-    ld->fileindex = fileindex;
+    while (ld)
+    {
+        if (linesHead)
+        {
+            linesTail = linesTail->stmtNext = ld;
+        }
+        else
+        {
+            linesHead = linesTail = ld;
+        }
+        
+        ld = ld->next;
+    }
     if (linesHead)
-        linesTail = linesTail->next = ld;
-    else
-        linesHead = linesTail = ld;
-    DecGlobalFlag();
+        linesTail->stmtNext = NULL;
 }
 void FlushLineData(char *file, int lineno)
 {
@@ -908,10 +911,12 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         }
                         else
                         {
-                            EXPRESSION *eBegin = anonymousVar(sc_auto, iteratorType);
-                            EXPRESSION *eEnd = anonymousVar(sc_auto, iteratorType);
-                            SYMBOL *sBegin = eBegin->v.sp;
-                            SYMBOL *sEnd = eEnd->v.sp;
+                            SYMBOL *sBegin;
+                            SYMBOL *sEnd;
+                            eBegin = anonymousVar(sc_auto, iteratorType);
+                            eEnd = anonymousVar(sc_auto, iteratorType);
+                            sBegin = eBegin->v.sp;
+                            sEnd = eEnd->v.sp;
                             deref(&stdpointer, &eBegin);
                             deref(&stdpointer, &eEnd);
                             st = stmtNode(lex, forstmt, st_expr);
@@ -947,11 +952,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         st->label = loopLabel;
 
                         AllocateLocalContext(parent, funcsp, codeLabel++);
-                        
+
                         // initialize var here
                         st = stmtNode(lex, forstmt, st_expr);
                         if (!isstructured(selectTP))
                         {
+                            if (declSP->tp->type == bt_auto)
+                                declSP->tp = basetype(selectTP)->btp;
                             if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
                             {
                                 error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -986,6 +993,8 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {
+                                if (declSP->tp->type == bt_auto)
+                                    declSP->tp = basetype(selectTP)->btp;
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1020,31 +1029,35 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 error(ERR_MISSING_OPERATOR_STAR_FORRANGE_ITERATOR);
                                 
                             }
-                            else if (!comparetypes(declSP->tp, starType, TRUE))
-                            {
-                                error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
-                            }
-                            else if (!isstructured(declSP->tp))
-                            {
-                                EXPRESSION *decl = declExp;
-                                deref(declSP->tp, &decl);
-                                if (!isref(declSP->tp))
-                                    deref(basetype(iteratorType)->btp, &st->select);
-                                st->select = exprNode(en_assign, decl, st->select);
-                            }
-                            else
-                            {
-                                EXPRESSION *decl = declExp;
-                                TYPE *ctype = declSP->tp;
-                                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                                INITLIST *args = Alloc(sizeof(INITLIST));
-                                funcparams->arguments = args;
-                                args->tp = declSP->tp;
-                                args->exp = st->select;
-                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
-                                st->select = decl;
-                                declDest = declExp;
-                                callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
+                            else {
+                                if (declSP->tp->type == bt_auto)
+                                    declSP->tp = starType;
+                                if (!comparetypes(declSP->tp, starType, TRUE))
+                                {
+                                    error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
+                                }
+                                else if (!isstructured(declSP->tp))
+                                {
+                                    EXPRESSION *decl = declExp;
+                                    deref(declSP->tp, &decl);
+                                    if (!isref(declSP->tp))
+                                        deref(basetype(iteratorType)->btp, &st->select);
+                                    st->select = exprNode(en_assign, decl, st->select);
+                                }
+                                else
+                                {
+                                    EXPRESSION *decl = declExp;
+                                    TYPE *ctype = declSP->tp;
+                                    FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                                    INITLIST *args = Alloc(sizeof(INITLIST));
+                                    funcparams->arguments = args;
+                                    args->tp = declSP->tp;
+                                    args->exp = st->select;
+                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
+                                    st->select = decl;
+                                    declDest = declExp;
+                                    callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
+                                }
                             }
                         }
                         

@@ -316,7 +316,7 @@ typedef    struct type
     } TYPE;
 typedef struct _linedata
 {
-    struct _linedata *next;
+    struct _linedata *next, *stmtNext;
     char *line;
     char *file;
     int lineno;
@@ -821,6 +821,7 @@ typedef struct lexeme
     char *litaslit;
     char *suffix;
     char *file;
+    LINEDATA *linedata;
     int line;
     int charindex;
     int filenum;

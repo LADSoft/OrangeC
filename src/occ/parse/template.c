@@ -46,6 +46,7 @@ extern LIST *deferred;
 extern LIST *nameSpaceList;
 extern INCLUDES *includes;
 extern int inDefaultParam;
+extern LINEDATA *linesHead, *linesTail;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -4092,8 +4093,11 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
         lex = sym->deferredCompile;
         if (lex)
         {
+            int oldLinesHead = linesHead;
+            int oldLinesTail = linesTail;
 			int oldHeaderCount = templateHeaderCount;
             int nsl = PushTemplateNamespace(sym);
+            linesHead = linesTail = NULL;
             if (sym->storage_class != sc_member && sym->storage_class != sc_mutable)
                 sym->storage_class = sc_global;
             sym->linkage = lk_virtual;
@@ -4127,6 +4131,8 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             }
             SetAlternateLex(NULL);
             PopTemplateNamespace(nsl);
+            linesHead = oldLinesHead;
+            linesTail = oldLinesTail;
             instantiatingTemplate --;
             sym->genreffed |= warning;
         }

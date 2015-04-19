@@ -1673,7 +1673,6 @@ OCODE * peep_div(OCODE *ip)
             {
                 oper = make_muldivval(oper);
             }
-            printf("%d\n", ip->oper1->liveRegs);
             if (!live(ip->oper1->liveRegs, ip2->oper1->preg))
                 remove_peep_entry(ip2);
             oper->liveRegs = ip->oper1->liveRegs;

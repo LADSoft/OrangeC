@@ -108,7 +108,7 @@ static void renameOneSym(SYMBOL *sp)
         && (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void)  
             || (tp->type == bt_pointer && tp->btp->type != bt_func)
             || isref(tp)) 
-        && (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
+        && (sp->storage_class == sc_auto || sp->storage_class == sc_register /*|| sp->storage_class == sc_parameter*/)
         && !sp->usedasbit)
     {
         /* this works because all IMODES refering to the same
@@ -123,11 +123,13 @@ static void renameOneSym(SYMBOL *sp)
         sp->pushedtotemp = TRUE ;
         ep->v.sp->pushedtotemp = TRUE;
         sp->allocate = FALSE;
+        /*
         if (sp->storage_class == sc_parameter)
         {
             parmName = (IMODE *)Alloc(sizeof(IMODE));
             *parmName = *sp->imvalue;
         }
+        */
         if (sp->imvalue)
         {
             ep->isvolatile = sp->imvalue->offset->isvolatile;
@@ -146,6 +148,7 @@ static void renameOneSym(SYMBOL *sp)
             }
         }
         ep->v.sp->imvalue = sp->imvalue;
+        /*
         if (sp->storage_class == sc_parameter)
         {
             QUAD *q;
@@ -162,6 +165,7 @@ static void renameOneSym(SYMBOL *sp)
             q->fwd->back = q;
             q->back->fwd = q;
         }
+        */
     }
 }
 static void renameToTemps(SYMBOL *funcsp)

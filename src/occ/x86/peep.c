@@ -1655,6 +1655,33 @@ void peep_prefixes(OCODE *ip)
             ip->oper2->length = ISZ_UINT;
     }
 }
+OCODE * peep_div(OCODE *ip)
+{
+    if (ip->oper1->mode == am_dreg)
+    {
+        OCODE *ip2 = ip->back;
+        while (ip2 && ip2->opcode != op_label)
+        {
+            if (ip2->opcode == op_mov && ip2->oper1->mode == am_dreg && ip2->oper1->preg == ip->oper1->preg)
+                break;
+            ip2 = ip2->back;
+        }
+        if (ip2 && ip2->opcode != op_label)
+        {
+            AMODE *oper = ip2->oper2;
+            if (oper->mode == am_immed)
+            {
+                oper = make_muldivval(oper);
+            }
+            printf("%d\n", ip->oper1->liveRegs);
+            if (!live(ip->oper1->liveRegs, ip2->oper1->preg))
+                remove_peep_entry(ip2);
+            oper->liveRegs = ip->oper1->liveRegs;
+            ip->oper1 = oper;
+        }
+    }
+    return ip;
+}
 /*
  * treat move reg, value followed by push reg when value is an int or constant
  */
@@ -1844,6 +1871,14 @@ void oa_peep(void)
                     break;
                 case op_neg:
                     ip = peep_neg(ip);
+                    break;
+                case op_cdq:
+                    if (ip->fwd->opcode == op_cdq)
+                        remove_peep_entry(ip->fwd);
+                    break;
+                case op_div:
+                case op_idiv:
+                    ip = peep_div(ip);
                     break;
                 default:
                     break;

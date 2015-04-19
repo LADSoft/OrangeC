@@ -1556,6 +1556,7 @@ static void gen_div(QUAD *q, enum e_op op)               /* unsigned division */
         {
             gen_code(op_cdq, 0, 0);
         }
+        divby->liveRegs = q->liveRegs;
         gen_codes(op, q->ans->size, divby, 0);
     }
 }
@@ -3688,8 +3689,15 @@ addrupjn:
             {
                 if (q->dc.left->size < 0)
                 {
-                    gen_codes(op_mov, ISZ_UINT, apa1, apa);
-                    gen_codes(op_sar, ISZ_UINT, apa1, aimmed(31));
+                    if (apa1->mode == am_dreg && apa->mode == am_dreg && apa1->preg == EDX && apa->preg == EAX)
+                    {
+                        gen_code(op_cdq, NULL, NULL);
+                    }
+                    else
+                    {
+                        gen_codes(op_mov, ISZ_UINT, apa1, apa);
+                        gen_codes(op_sar, ISZ_UINT, apa1, aimmed(31));
+                    }
                 }
                 else
                     if (apa->mode == am_dreg)

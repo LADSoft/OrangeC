@@ -527,6 +527,8 @@ static struct {
 {"Constant member '%s' in a class without constructors", ERROR },
 {"Delete of pointer to undefined type '%s'", WARNING },
 {"Arithmetic with pointer of type 'void *'", WARNING },
+{"Overloaded function '%s' is ambiguous in this context", ERROR },
+{"Use of an initializer-list requires '#include <initializer_list>'", ERROR },
 
 #endif
 } ;
@@ -650,8 +652,8 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
     }
     if (total_errors > cparams.prm_maxerr)
         return FALSE;
-    if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, file) && 
-        line == currentErrorLine)
+    if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, includes->fname) && 
+        includes->line == currentErrorLine )
         return FALSE;
     if (err >= sizeof(errors)/sizeof(errors[0]))
     {
@@ -675,8 +677,8 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
 #endif
         listerr = "ERROR";
         total_errors++;
-        currentErrorFile = file;
-        currentErrorLine = line;
+        currentErrorFile = includes->fname;
+        currentErrorLine = includes->line;
     }
     else
     {
@@ -1395,7 +1397,6 @@ void checkUnused(HASHTABLE *syms)
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            currentErrorLine = 0;
             if (sp->storage_class == sc_overloads)
                 sp = (SYMBOL *)sp->tp->syms->table[0]->p;
             if (!sp->used && !sp->anonymous)
@@ -1475,7 +1476,6 @@ static void usageErrorCheck(SYMBOL *sp)
         errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
     }
     sp->used = TRUE;
-    currentErrorLine = 0;
 }
 static SYMBOL *getAssignSP(EXPRESSION *exp)
 {

@@ -94,7 +94,7 @@ enum e_kw
         kw_typeid, kw_typename, kw_explicit, kw_decltype,
         kw_export, kw_static_assert, kw_alignas, kw_alignof, kw_char16_t,
         kw_char32_t, kw_mutable, kw_nullptr, kw_noexcept, kw_thread_local, kw_constexpr,
-        kw_final, kw_override,
+        kw_final, kw_override, kw_rangefor, 
     /* Extended */
     kw_atomic_flag_test_set, kw_atomic_flag_clear, kw_atomic_fence, kw_atomic_kill_dependency,
         kw_atomic_load, kw_atomic_store, kw_atomic_modify, kw_atomic_cmpswp, kw_atomic_var_init,
@@ -210,9 +210,12 @@ enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 #define _F_INRETURN 16
 #define _F_INARGS 32
 #define _F_SIZEOF 64
+#define _F_INITLIST 128
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
+
+#define _F_NOCHECKAUTO 0x80
 
 typedef struct expr
 {
@@ -519,6 +522,7 @@ typedef struct sym
         unsigned pushedTemplateSpecializationDefinition: 1;  // set to true if the current body for the template
                                      // specialization was pushed from the generalized version of the template
         unsigned destructed:1;  // the c++ class instance has had a destructor generated
+        unsigned initializer_list:1; // constructor with initializer_list parameter
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int labelCount; /* number of code labels within a function body */ 

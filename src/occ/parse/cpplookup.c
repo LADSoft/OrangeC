@@ -103,7 +103,8 @@ static SYMBOL *getUserConversion(int flags,
                               TYPE *tpp, TYPE *tpa, EXPRESSION *expa,
                               int *n, enum e_cvsrn *seq, SYMBOL *candidate_in, SYMBOL **userFunc);
 static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *parent, 
-                                  enum e_cvsrn arr[], int *sizes, int count, SYMBOL **userFunc);
+                                  enum e_cvsrn arr[], int *sizes, int count, 
+                                  SYMBOL **userFunc, BOOLEAN usesInitList);
 static void WeedTemplates(SYMBOL **table, int count, FUNCTIONCALL *args, TYPE *atp);
 
 LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly)
@@ -1336,7 +1337,8 @@ static void weedToFunctions(LIST **lst)
     }
 }
 static void  GatherConversions(SYMBOL *sp, SYMBOL **spList, int n, FUNCTIONCALL *args, 
-                               TYPE *atp, enum e_cvsrn **icsList, int **lenList, int argCount, SYMBOL ***funcList)
+                               TYPE *atp, enum e_cvsrn **icsList, int **lenList, 
+                               int argCount, SYMBOL ***funcList, BOOLEAN usesInitList)
 {
     int i;
     for (i=0; i < n; i++)
@@ -1353,7 +1355,7 @@ static void  GatherConversions(SYMBOL *sp, SYMBOL **spList, int n, FUNCTIONCALL 
                 if (spList[i] == spList[j])
                     spList[j] = 0;
             memset(funcs, 0, sizeof(funcs));
-            t = getFuncConversions(spList[i], args, atp, sp->parentClass, (enum e_cvsrn *)arr, counts, argCount, funcs);
+            t = getFuncConversions(spList[i], args, atp, sp->parentClass, (enum e_cvsrn *)arr, counts, argCount, funcs, usesInitList);
             if (!t)
             {
                 spList[i] = NULL;
@@ -1784,6 +1786,19 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
     {
         for (j=i+1; j < funcCount && spList[i]; j++)
         {
+            if (spList[i] && spList[j])
+            {
+                if (spList[i]->initializer_list != spList[j]->initializer_list)
+                    if (spList[i]->initializer_list)
+                    {
+                        spList[i] = NULL;
+                        break;
+                    }
+                    else
+                    {
+                        spList[j] = NULL;
+                    }
+            }
             if (spList[j])
             {
                 int left=0, right=0;
@@ -2792,7 +2807,7 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
 }
 static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, enum e_cvsrn *seq, SYMBOL *candidate, SYMBOL **userFunc)
 {
-    INITLIST *a = list->nested;
+    INITLIST *a = list;
     if (isstructured(tp) || (isref(tp) && isstructured(basetype(tp)->btp)))
     {
         if (isref(tp))
@@ -2819,7 +2834,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
         }
         else
         {
-            SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], tp->syms);
+            SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
             if (!cons)
             {
                 // should never happen
@@ -2872,14 +2887,15 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
     }
     else
     {
-        a = list->nested;
         if (a && a->next)
             seq[(*n)++] = CV_NONE;
         else if (a)
             getSingleConversion(tp, a ? a->tp : tpp, a ? a->exp : NULL, n, seq, candidate, userFunc, TRUE);
     }
 }
-static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL *parent, enum e_cvsrn arr[], int *sizes, int count, SYMBOL **userFunc)
+static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, 
+                                  SYMBOL *parent, enum e_cvsrn arr[], int *sizes, 
+                                  int count, SYMBOL **userFunc, BOOLEAN usesInitList)
 {
     int pos = 0;
     int n = 0;
@@ -2888,9 +2904,11 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
     HASHREC **hr;
     HASHREC **hrt = NULL;
     enum e_cvsrn seq[100], cur;
+    TYPE *initializerListType = NULL;
     int m = 0,m1;
     if (sp->tp->type == bt_any)
         return FALSE;
+        
     hr = basetype(sp->tp)->syms->table;
     if (f)
         a = f->arguments;
@@ -2992,6 +3010,13 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                         tpx.btp = basetype(f->thistp)->btp;
                         qualifyForFunc(theCurrentFunc, &tpx.btp, FALSE);
                     }
+                    else if (sp->isDestructor)
+                    {
+                        tpthis = &tpx;
+                        tpx.type = bt_pointer;
+                        tpx.size = getSize(bt_pointer);
+                        tpx.btp = basetype(basetype(f->thistp)->btp);
+                    }
                     m = 0;
                     getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL, TRUE);
                     m1 = m;
@@ -3030,6 +3055,32 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                 }
             }
         }
+        // before matching the args see if  this function is a constructor and uses initializer-list 
+        // as the first and only undefaulted param, and has at least one argument passed
+        if (sp->isConstructor && (a || (hrt && *hrt)))
+        {
+            HASHREC *hr = basetype(sp->tp)->syms->table[0];
+            if (((SYMBOL *)hr->p)->thisPtr)
+                hr = hr->next;
+            if (!hr->next ||  ((SYMBOL *)hr->next->p)->init)
+            {
+                TYPE *tp = ((SYMBOL *)hr->p)->tp;
+                if (basetype(tp)->type == bt_lref)
+                    tp = basetype(tp)->btp;
+                if (isstructured(tp))
+                {
+                    SYMBOL *sym = (basetype(tp)->sp);
+                    if (sym->parentNameSpace && !strcmp(sym->parentNameSpace->name , "std")) 
+                    {
+                        if (!strcmp(sym->name, "initializer_list") && sym->templateLevel)
+                        {
+                            initializerListType = sym->templateParams->next->p->byClass.val;
+                            sp->initializer_list = TRUE;
+                        }
+                    }
+                }
+            }
+        }
         while (*hr && (a || (hrt && *hrt)))
         {
             SYMBOL *argsym = (SYMBOL *)(*hr)->p;
@@ -3046,9 +3097,25 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                     return TRUE;
                 }
                 m = 0;
-                if (a && !a->tp)
+                if (initializerListType)
                 {
-                    getInitListConversion(basetype(argsym->tp), a, a ? NULL : ((SYMBOL *)(*hrt)->p)->tp, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+                    if (a && a->nested)
+                    {
+                        getInitListConversion(initializerListType, a->nested, NULL, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+                    }
+//                    else if (isstructured(initializerListType))
+//                    {
+//                        getInitListConversion(initializerListType, a, NULL, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+//                    }
+                    else
+                    {
+                        getSingleConversion(initializerListType, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
+                                        sp, userFunc ? &userFunc[n] : NULL, TRUE);
+                    }
+                }
+                else if (a && a->nested)
+                {
+                    getInitListConversion(basetype(argsym->tp), a->nested, NULL, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
                 }
                 else
                 {
@@ -3087,13 +3154,14 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp, SYMBOL
                 sizes[n++] = m;
                 pos += m;
             }
-            hr = &(*hr)->next;
+            if (!initializerListType)
+                hr = &(*hr)->next;
             if (a)
                 a = a->next;
             else
                 hrt = &(*hrt)->next;
         }
-        if (*hr)
+        if (*hr && !initializerListType)
         {
             SYMBOL *sym = (SYMBOL *)(*hr)->p;
             if (sym->init || sym->deferredCompile)
@@ -3300,6 +3368,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         atp = basetype(atp)->btp;
     if (atp && !isfunction(atp))
         atp = NULL;
+        
     if (args && args->thisptr)
     {
         SYMBOL *spt = basetype (basetype(args->thistp)->btp)->sp;
@@ -3397,7 +3466,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             INITLIST *argl = args->arguments;
             while (argl)
             {
-                if (argl->tp->type == bt_aggregate)
+                if (argl->tp && argl->tp->type == bt_aggregate)
                 {
                     HASHREC *hr = argl->tp->syms->table[0];
                     SYMBOL *func = (SYMBOL *)hr->p;
@@ -3473,7 +3542,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 {
                     if (atp || args->ascall)
                     {
-                        GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList);
+                        GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
                         SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
                     }
                     WeedTemplates(spList, n, args, atp);
@@ -3497,7 +3566,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         n = insertFuncs(spList, spFilterList, gather, args, atp);
                         if (atp || args->ascall)
                         {
-                            GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList);
+                            GatherConversions(sp, spList, n, args, atp, icsList, lenList, argCount, funcList, flags & _F_INITLIST);
                             SelectBestFunc(spList, icsList, lenList, args, argCount, n, funcList);
                         }
                         WeedTemplates(spList, n, args, atp);

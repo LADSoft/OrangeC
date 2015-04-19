@@ -2075,6 +2075,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             INITIALIZER *it = NULL;
             BOOLEAN maybeConversion = TRUE;
             BOOLEAN isconversion;
+            BOOLEAN isList = MATCHKW(lex, begin);
             exp = baseexp= exprNode(en_add, getThisNode(base), intNode(en_c_i, offset));
             if (assn || arrayMember)
             {
@@ -2129,7 +2130,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             {
                 // default constructor without param list
             }
-            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE); 
+            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE, isList); 
             initInsert(&it, itype, exp, offset, TRUE);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {
@@ -2335,7 +2336,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         tn->size = n * s;
                         tn->btp = btp;
                     }
-                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, FALSE);
+                    callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, FALSE, FALSE);
                     initInsert(push, tn, exp, last, TRUE);
                     push = &(*push)->next;
                     last += n * s;
@@ -2946,7 +2947,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
                 EXPRESSION *baseexp = getThisNode(sp);
                 EXPRESSION *exp = baseexp;
-                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, FALSE);
+                callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, FALSE, FALSE);
                 initInsert(&it, z, exp, 0, TRUE);
                 if (storage_class_in != sc_auto && storage_class_in != sc_localstatic && storage_class_in != sc_parameter && storage_class_in != sc_member && storage_class_in != sc_mutable)
                 {

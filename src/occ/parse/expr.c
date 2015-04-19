@@ -72,7 +72,7 @@ extern int instantiatingTemplate;
 extern int currentErrorLine;
 extern int templateNestingCount;
 extern INCLUDES *includes;
-
+extern NAMESPACEVALUES *globalNameSpace;
 int packIndex;
 
 /* lvaule */
@@ -1372,6 +1372,16 @@ join:
 }
 static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enum e_kw finish, BOOLEAN allowNesting, BOOLEAN allowPack, BOOLEAN toErr, int flags)
 {
+    if (finish == end)
+    {
+        SYMBOL *sp = namespacesearch("std", globalNameSpace, FALSE, FALSE);
+        if (sp->storage_class == sc_namespace)
+        {
+            sp = namespacesearch("initializer_list", sp->nameSpaceValues, TRUE, FALSE);
+            if (!sp || !sp->tp->syms)
+                error(ERR_NEED_INITIALIZER_LIST_H);
+        }
+    }
     *lptr = NULL;
     lex = getsym(); /* past ( */
     while (!MATCHKW(lex,finish))
@@ -1672,6 +1682,114 @@ static BOOLEAN cloneTempExpr(EXPRESSION **expr, SYMBOL **found, SYMBOL **replace
     }
     return rv;
 }
+void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListType, 
+                           INITLIST **lptr, BOOLEAN operands, BOOLEAN asref)
+{
+    INITLIST **initial = lptr;
+    EXPRESSION *rv = NULL , **pos = &rv;
+    int count = 0, i;
+    INITLIST *searchx = *lptr;
+    TYPE *tp = Alloc(sizeof(TYPE));
+    EXPRESSION *data, *initList;
+    SYMBOL *start, *end;
+    EXPRESSION *dest;
+    start = search("_M_start", basetype(initializerListTemplate)->syms);
+    end = search("_M_end", basetype(initializerListTemplate)->syms);
+    if (!start || !end)
+        fatal("Invalid definition of initializer-list");
+    tp->type = bt_pointer;
+    tp->array = TRUE;
+    while (searchx)
+        count++, searchx = searchx->next;
+    tp->btp = initializerListType;
+    tp->size = count * (initializerListType->size + initializerListType->arraySkew);
+    data = anonymousVar(sc_auto, tp);
+    if (isstructured(initializerListType))
+    {
+        EXPRESSION *exp = data;
+        EXPRESSION *elms = intNode(en_c_i, count);
+        callDestructor(initializerListType->sp, NULL, &exp, elms, TRUE, FALSE, FALSE );
+        initInsert(&data->v.sp->dest, tp, exp, 0, FALSE);
+        
+    }
+    for (i=0 ; i < count; i++, lptr = &(*lptr)->next)
+    {
+        EXPRESSION *node;
+        dest = exprNode(en_add, data, intNode(en_c_i, i * (initializerListType->size + initializerListType->arraySkew)));
+        if (isstructured(initializerListType))
+        {
+            TYPE *ctype = initializerListType;
+            EXPRESSION *cdest = dest;
+            FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
+            INITLIST *arg = Alloc(sizeof(INITLIST));
+            params->arguments = arg;
+            *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
+            if (!(*lptr)->nested)
+            {
+                arg->next = NULL;
+            }
+            
+            callConstructor(&ctype, &cdest, params, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, TRUE);
+            node = cdest;
+
+        }
+        else
+        {
+            EXPRESSION *src = (*lptr)->exp;
+            deref(initializerListType, &dest);
+            node = exprNode(en_assign, dest, src);
+        }
+        if (rv)
+        {
+            *pos = exprNode(en_void, *pos, node);
+            pos = &(*pos)->right;
+        }
+        else
+        {
+            rv = node;
+        }
+    }
+    initList = anonymousVar(sc_auto, initializerListTemplate);
+    dest = exprNode(en_add, initList, intNode( en_c_i, start->offset));
+    deref(&stdpointer, &dest);
+    dest = exprNode(en_assign, dest, data);
+    if (rv)
+    {
+        *pos = exprNode(en_void, *pos, dest);
+        pos = &(*pos)->right;
+    }
+    else
+    {
+        rv = dest;
+    }
+    dest = exprNode(en_add, initList, intNode( en_c_i, end->offset));
+    deref(&stdpointer, &dest);
+    dest = exprNode(en_assign, dest, exprNode(en_add, data, intNode(en_c_i, tp->size)));
+    if (rv)
+    {
+        *pos = exprNode(en_void, *pos, dest);
+        pos = &(*pos)->right;
+    }
+    else
+    {
+        rv = dest;
+    }
+    *initial = Alloc(sizeof(INITLIST));
+    if (asref)
+    {
+        (*initial)->tp = Alloc(sizeof(TYPE));
+        (*initial)->tp->size = getSize(bt_pointer);
+        (*initial)->tp->type = bt_lref;
+        (*initial)->tp->btp =  initializerListTemplate;
+        (*initial)->exp = exprNode(en_void, rv, initList);
+    }
+    else
+    {
+        (*initial)->tp =  initializerListTemplate;
+        (*initial)->exp = exprNode(en_stackblock, exprNode(en_void, rv, initList), NULL);
+        (*initial)->exp->size = basetype(initializerListTemplate)->size;
+    }
+}
 void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
 {
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
@@ -1708,7 +1826,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
         if (cparams.prm_cplusplus)
         {
             BOOLEAN done = FALSE;
-            if (!p->tp)
+            if (!done && !p->tp)
             {
                 // initlist
                 INITLIST *pinit = p->nested;
@@ -1753,7 +1871,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                         EXPRESSION *dexp = thisptr;
                         funcparams->arguments = pinit;
                         p->exp = thisptr;
-                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE);
+                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE);
                         if (!isref(sym->tp))
                         {
                             sp->stackblock = TRUE;
@@ -1879,7 +1997,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                             arg->tp = sym->tp;
                             arg->exp = DerivedToBase(sym->tp, tpx, arg->exp, _F_VALIDPOINTER);
                             funcparams->arguments = arg;
-                            callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE);
+                            callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE);
                             p->exp = exprNode(en_void, p->exp, consexp);
                         }
                     }
@@ -1897,7 +2015,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                         arg->exp = p->exp;
                         arg->tp = p->tp;
                         funcparams->arguments = arg;
-                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE);
+                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE);
                         p->exp=consexp;
                     }
                     p->tp = sym->tp;
@@ -1923,7 +2041,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                             arg->tp = basetype(p->tp);
                             funcparams->arguments = arg;
                             p->exp = consexp;
-                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE); 
+                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE); 
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL *spx = p->exp->v.func->sp;
@@ -2106,6 +2224,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     EXPRESSION *exp_in = *exp;
     BOOLEAN operands = FALSE;
     BOOLEAN hasThisPtr = FALSE;
+    TYPE *initializerListType = NULL;
+    TYPE *initializerListTemplate = NULL;
+    BOOLEAN initializerRef = FALSE;
     if (exp_in->type != en_func || isfuncptr(*tp) || isstructured(*tp))
     {
         TYPE *tpx = *tp;
@@ -2315,7 +2436,41 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 operands = FALSE;
             }
             lptr = &funcparams->arguments;
-            AdjustParams(hr, lptr, operands);
+            if (funcparams->sp && funcparams->sp->isConstructor)
+            {
+                hr = basetype(funcparams->sp->tp)->syms->table[0];
+                if (((SYMBOL *)hr->p)->thisPtr)
+                    hr = hr->next;
+                if (!hr->next ||  ((SYMBOL *)hr->next->p)->init)
+                {
+                    TYPE *tp = ((SYMBOL *)hr->p)->tp;
+                    if (isref(tp))
+                    {
+                        initializerRef = TRUE;
+                        tp = basetype(tp)->btp;
+                    }
+                    if (isstructured(tp))
+                    {
+                        SYMBOL *sym = (basetype(tp)->sp);
+                        if (sym->parentNameSpace && !strcmp(sym->parentNameSpace->name , "std")) 
+                        {
+                            if (!strcmp(sym->name, "initializer_list") && sym->templateLevel)
+                            {
+                                initializerListTemplate = sym->tp;
+                                initializerListType = sym->templateParams->next->p->byClass.val;
+                            }
+                        }
+                    }
+                }
+            }
+            if (initializerListType)
+            {
+                CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef); 
+            }
+            else
+            {
+                AdjustParams(hr, lptr, operands);
+            }
             if (cparams.prm_cplusplus)
             {
                 lptr = &funcparams->arguments;

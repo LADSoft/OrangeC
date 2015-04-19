@@ -2871,6 +2871,36 @@ INITLIST *TemplateDeduceArgList(HASHREC *templateArgs, INITLIST *symArgs)
                 symArgs = symArgs->next;
             }
         }    
+        else if (symArgs->nested)
+        {
+            TEMPLATEPARAMLIST *a = symArgs->nested;
+            int count = 0;
+            while (a)
+                count ++, a = a->next;
+            if (count == 2)
+            {
+                SYMBOL *sym = namespacesearch("stlpmtx_std", globalNameSpace, FALSE, FALSE);
+                if (sym->storage_class == sc_namespace)
+                {
+                    sym = namespacesearch("pair", sym->nameSpaceValues, TRUE, FALSE);
+                    if (sym && sym->tp->syms && sym->templateLevel)
+                    {
+                        TEMPLATEPARAMLIST *l1 = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        TEMPLATEPARAMLIST *l2 = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        l1->next = l2;
+                        l1->p = Alloc(sizeof(TEMPLATEPARAM));
+                        l2->p = Alloc(sizeof(TEMPLATEPARAM));
+                        l1->p->type = kw_typename;
+                        l2->p->type = kw_typename;
+                        l1->p->byClass.dflt = symArgs->nested->tp;
+                        l2->p->byClass.dflt = symArgs->nested->next->tp;
+                        sym = GetClassTemplate(sym, l1, FALSE);
+                        TemplateDeduceFromArg(sp->tp, sym->tp, NULL, FALSE);
+                    }
+                }
+            }
+            symArgs = symArgs->next;
+        }
         else
         {
             TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, FALSE);
@@ -3097,7 +3127,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
                         symArgs = symArgs->next;
                     }
                 }
-            }
+           }
         }
         else
         {

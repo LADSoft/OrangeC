@@ -139,7 +139,8 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
                     BOOLEAN pointer, BOOLEAN skipAccess);
 BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                     BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
-                    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer);
+                    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
+                    BOOLEAN usesInitList);
 LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);
 LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOLEAN hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
@@ -212,7 +213,7 @@ TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
 BOOLEAN TemplateFullySpecialized(SYMBOL *sp);
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isextern);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
-					   BLOCKDATA *parent, BOOLEAN needsemi, BOOLEAN asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
+					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
 
                                /* Expr.c */
 
@@ -253,6 +254,8 @@ LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner);
 LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack, int flags);
 LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack);
 EXPRESSION *DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION *exp, int flags);
+void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListType, 
+                           INITLIST **lptr, BOOLEAN operands, BOOLEAN asref);
 void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);

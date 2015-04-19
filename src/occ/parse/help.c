@@ -980,6 +980,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
     EXPRESSION *exp = NULL, **expp;
     EXPRESSION *expsym;
     BOOLEAN noClear = FALSE;
+    if (sp)
+        sp->destructed = FALSE;
     if (isstructured(tp) || isarray(tp))
     {
         INITIALIZER **i2 = &init;
@@ -1114,7 +1116,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = ctype;
                         funcparams->arguments->exp = exp2;
-                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE); 
+                        callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE); 
                         exp = expsym;
                     }
                     else
@@ -1194,7 +1196,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                                 funcparams->arguments = Alloc(sizeof(INITLIST));
                                 funcparams->arguments->tp = ctype;
                                 funcparams->arguments->exp = exp;
-                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE); 
+                                callConstructor(&ctype, &expsym, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE); 
                                 exp = expsym;
                             }
                             else

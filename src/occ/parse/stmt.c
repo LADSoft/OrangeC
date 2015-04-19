@@ -191,7 +191,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
     {
         if (declaration)
             *declaration = TRUE;
-        if ((cparams.prm_cplusplus && kw != kw_do && kw != kw_else) || (cparams.prm_c99 && kw == kw_for))
+        if ((cparams.prm_cplusplus && kw != kw_do && kw != kw_else) || (cparams.prm_c99 && (kw == kw_for || kw == kw_rangefor)))
         {
             // empty
         }
@@ -200,7 +200,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
             error(ERR_NO_DECLARATION_HERE);
         }
         /* fixme need type */
-        lex = autodeclare(lex, funcsp, &tp, exp, parent, kw != kw_for);
+        lex = autodeclare(lex, funcsp, &tp, exp, parent, kw != kw_for | (kw == kw_rangefor ? _F_NOCHECKAUTO : 0));
         if (tp->type == bt_memberptr)
         {
             *exp = exprNode(en_mp_as_bool, *exp, NULL);
@@ -215,7 +215,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
 /*		BOOLEAN openparen = MATCHKW(lex, openpa); */
         if (declaration)
             *declaration = FALSE;
-        lex = expression(lex, funcsp, NULL, &tp, exp, kw != kw_for ? _F_SELECTOR : 0);
+        lex = expression(lex, funcsp, NULL, &tp, exp, kw != kw_for && kw != kw_rangefor? _F_SELECTOR : 0);
         if (tp)
         {
             if (tp->type == bt_memberptr)
@@ -228,7 +228,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
         }
     }
         
-    if (cparams.prm_cplusplus && isstructured(tp) && kw != kw_for)
+    if (cparams.prm_cplusplus && isstructured(tp) && kw != kw_for && kw != kw_rangefor)
     {
         if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw)-1, &stdint, TRUE))
             if (!castToPointer(&tp, exp, (enum e_kw)-1, &stdpointer))
@@ -239,7 +239,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
         error(ERR_EXPRESSION_SYNTAX);
     else if (kw == kw_switch && !isint(tp) && basetype(tp)->type != bt_enum)
         error(ERR_SWITCH_SELECTION_INTEGRAL);
-    else if (kw != kw_for && isstructured(tp))
+    else if (kw != kw_for && kw != kw_rangefor && isstructured(tp))
     {
         error(ERR_ILL_STRUCTURE_OPERATION);
     }
@@ -603,7 +603,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 AllocateLocalContext(parent, funcsp, codeLabel++);
             }
        
-            lex = selection_expression(lex, forstmt, &init, funcsp, kw_for, &declaration);
+            lex = selection_expression(lex, forstmt, &init, funcsp, kw_rangefor, &declaration);
             if (cparams.prm_cplusplus && !cparams.prm_oldfor && declaration && MATCHKW(lex, colon))
             {
                 // range based for statement
@@ -622,6 +622,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     {
                         error(ERR_FORRANGE_DECLARATOR_NO_INIT);
                     }
+                    declSP->dest = NULL;
                     declExp = varNode(en_auto, declSP);
                     declSP->assigned = declSP->used = TRUE;
                 }
@@ -650,7 +651,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     needkw(&lex, closepa);
                     while (castvalue(select))
                         select = select->left;
-                    if (lvalue(select))
+                    if (lvalue(select) && select->type != en_l_ref)
                         select = select->left;
                     tpref->size = getSize(bt_pointer);
                     tpref->type = bt_rref;
@@ -844,7 +845,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             esp->stackblock = TRUE;
                                             funcparams->arguments = Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, TRUE, FALSE);
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, TRUE, FALSE, FALSE);
                                             fc->arguments->exp = consexp;                                                             
                                         }
                                         else
@@ -872,7 +873,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                             esp->stackblock = TRUE;
                                             funcparams->arguments = Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, TRUE, FALSE);
+                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0,TRUE, FALSE, TRUE, FALSE, FALSE);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -972,7 +973,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = eBegin;
-                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
+                                callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE, FALSE);
                                 st->select = decl;
                                 declDest = declExp;
                                 callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
@@ -994,7 +995,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             if (ispointer(iteratorType))
                             {
                                 if (declSP->tp->type == bt_auto)
-                                    declSP->tp = basetype(selectTP)->btp;
+                                    declSP->tp = basetype(iteratorType)->btp;
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1017,7 +1018,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = eBegin;
-                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
+                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE, FALSE);
                                     st->select = decl;
                                     declDest = declExp;
                                     callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
@@ -1040,8 +1041,6 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 {
                                     EXPRESSION *decl = declExp;
                                     deref(declSP->tp, &decl);
-                                    if (!isref(declSP->tp))
-                                        deref(basetype(iteratorType)->btp, &st->select);
                                     st->select = exprNode(en_assign, decl, st->select);
                                 }
                                 else
@@ -1053,7 +1052,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = st->select;
-                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE);
+                                    callConstructor(&ctype, &decl,funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE, FALSE);
                                     st->select = decl;
                                     declDest = declExp;
                                     callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
@@ -1645,7 +1644,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         maybeConversion = FALSE;
                         returntype = tp;
                         implicit = TRUE;
-                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE); 
+                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE, FALSE); 
                         returnexp = en;
                     }
                 }

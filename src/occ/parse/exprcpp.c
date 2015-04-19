@@ -640,7 +640,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
             exp1 = *exp = anonymousVar(sc_auto, basetype(*tp)->sp->tp);
             sp = exp1->v.sp;
-            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE); 
+            callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE); 
             if (funcparams->sp && funcparams->sp->constexpression)
             {
                 if (basetype(*tp)->sp->baseClasses)
@@ -688,6 +688,7 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             {
                 callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
                 initInsert(&sp->dest, *tp, exp1, 0, TRUE);
+                sp->destructed = TRUE; // in case we don't actually use this instantiation
             }
         }
         else
@@ -1686,7 +1687,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             {
                 *exp = val;
                 tpf = *tp;
-                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE);
+                callConstructor(&tpf, exp, initializers, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE, FALSE);
             }
         }
         else
@@ -1781,7 +1782,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;
-                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE);
+                    callConstructor(&tpf, &exp1, NULL, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE, FALSE);
                     if (*exp)
                     {
                         *exp = exprNode(en_void, *exp, exp1);
@@ -1801,7 +1802,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             // call default constructor
             *exp = val;
             tpf = *tp;
-            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE);
+            callConstructor(&tpf, exp, NULL, FALSE, arrSize, TRUE, FALSE, FALSE, TRUE, FALSE);
         }
     }
     tpf = Alloc(sizeof(TYPE));

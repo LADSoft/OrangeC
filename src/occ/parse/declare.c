@@ -4279,7 +4279,7 @@ static BOOLEAN hasTemplateParent(SYMBOL *sp)
     return FALSE;
 }
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_class, enum e_lk defaultLinkage, 
-                       BLOCKDATA *block, BOOLEAN needsemi, BOOLEAN asExpression, BOOLEAN asFriend, BOOLEAN inTemplate, enum e_ac access)
+                       BLOCKDATA *block, BOOLEAN needsemi, int asExpression, BOOLEAN asFriend, BOOLEAN inTemplate, enum e_ac access)
 {
     BOOLEAN isExtern = FALSE;
     TYPE *btp;
@@ -5455,7 +5455,7 @@ jointemplate:
                             {
                                 errorsym(ERR_NONFUNCTION_CANNOT_BE_DECLARED_VIRTUAL, sp);
                             }
-                            if (asExpression)
+                            if (asExpression && !(asExpression & _F_NOCHECKAUTO))
                                 checkauto(sp->tp);
                             if (sp->storage_class == sc_auto || sp->storage_class == sc_register)
                             {

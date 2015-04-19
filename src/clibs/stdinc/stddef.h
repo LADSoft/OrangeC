@@ -45,6 +45,9 @@
 
 #ifdef __cplusplus
 namespace __STD_NS__ {
+
+typedef decltype(nullptr) nullptr_t; 
+   
 #endif
 
 #ifndef _PTRDIFF_T

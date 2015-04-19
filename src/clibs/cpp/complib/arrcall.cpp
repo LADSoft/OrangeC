@@ -71,8 +71,11 @@ void __arrCall(void *instance, void *cons, void *dest, int elems, int size)
     }
     else if (dest)
     {
-        // if we get here it was a new'd array...
-        elems = (((FREELIST *)instance)[-1].size - 8)/size;  // get #elems from the RTL's size field
+        if (!elems)
+        {
+            // if we get here it was a new'd array...
+            elems = (((FREELIST *)instance)[-1].size - 8)/size;  // get #elems from the RTL's size field
+        }
         pos = (void *)((BYTE *)pos + (elems-1) * size);
         while (pos >= instance)
         {

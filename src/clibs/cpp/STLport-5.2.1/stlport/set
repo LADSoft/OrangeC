@@ -31,6 +31,10 @@
 #  define _STLP_SET
 #endif
 
+#  ifdef _STLP_HAS_INITIALIZER_LIST
+#    include <initializer_list>
+#  endif /* _STLP_HAS_INITIALIZER_LIST */
+
 #if (_STLP_OUTERMOST_HEADER_ID == 0x55)
 #  ifndef _STLP_INTERNAL_SET_H
 #    include <stl/_set.h>

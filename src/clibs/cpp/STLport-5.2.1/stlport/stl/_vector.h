@@ -243,6 +243,24 @@ public:
     : _STLP_PRIV _Vector_base<_Tp, _Alloc>(__n, __a)
   { this->_M_finish = _STLP_PRIV __uninitialized_fill_n(this->_M_start, __n, __val); }
 
+
+#  ifdef _STLP_HAS_INITIALIZER_LIST
+#if !defined (_STLP_DONT_SUP_DFLT_PARAM)
+  explicit vector(initializer_list<_Tp> __lst, const allocator_type& __a = allocator_type())
+#else
+  vector(initializer_list<_Tp> __lst)
+    : _STLP_PRIV _Vector_base<_Tp, _Alloc>(allocator_type()) {
+            for (auto __el :__lst)
+                push_back(__el);
+        }
+  vector(initializer_list<_Tp> __lst, const allocator_type& __a)
+#endif
+    : _STLP_PRIV _Vector_base<_Tp, _Alloc>(__a) {
+            for (auto __el :__lst)
+                push_back(__el);
+    }
+#  endif /* _STLP_HAS_INITIALIZER_LIST */
+                
   vector(const _Self& __x)
     : _STLP_PRIV _Vector_base<_Tp, _Alloc>(__x.size(), __x.get_allocator()) {
     typedef typename __type_traits<_Tp>::has_trivial_copy_constructor _TrivialUCopy;

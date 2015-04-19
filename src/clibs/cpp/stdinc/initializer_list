@@ -1,0 +1,37 @@
+#ifndef __STD_INITIALIZER_LIST
+#define __STD_INITIALIZER_LIST
+
+#include <stddef.h>
+
+namespace __STD_NS__
+{ 
+
+    template<class _TYPE> 
+    _RTL_CLASS class initializer_list 
+    { 
+    public: 
+        typedef _TYPE value_type; 
+        typedef const _TYPE& reference; 
+        typedef const _TYPE& const_reference; 
+        typedef size_t size_type;
+        typedef const _TYPE* iterator; 
+        typedef const _TYPE* const_iterator;
+    
+        _RTL_FUNC initializer_list() __NOTHROW : _M_start(0), _M_end(0) { }
+        _RTL_FUNC size_t size() const __NOTHROW { return _M_end - _M_start; }
+        _RTL_FUNC const _TYPE* begin() const __NOTHROW { return _M_start; } 
+        _RTL_FUNC const _TYPE* end() const __NOTHROW { return _M_end; }
+
+    private:
+        _RTL_FUNC const _TYPE *_M_start;
+        _RTL_FUNC const _TYPE *_M_end;
+    };
+
+    template<class _TYPE> 
+    _RTL_FUNC const _TYPE* begin(initializer_list<_TYPE> il) __NOTHROW { return il.begin(); }
+
+    template<class _TYPE> 
+    _RTL_FUNC const _TYPE* end(initializer_list<_TYPE> il) __NOTHROW { return il.end(); }
+} 
+
+#endif

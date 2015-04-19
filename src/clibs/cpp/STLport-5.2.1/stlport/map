@@ -31,7 +31,13 @@
 #  define _STLP_MAP
 #endif
 
+
 #if (_STLP_OUTERMOST_HEADER_ID == 0x43)
+
+#  ifdef _STLP_HAS_INITIALIZER_LIST
+#    include <initializer_list>
+#  endif /* _STLP_HAS_INITIALIZER_LIST */
+
 #  ifndef _STLP_INTERNAL_MAP_H
 #    include <stl/_map.h>
 #  endif

@@ -169,5 +169,7 @@
 #define _STLP_CALL
 #define _STLP_MARK_PARAMETER_AS_UNUSED(X)
 
+#define _STLP_HAS_INITIALIZER_LIST
+
 //==========================================================
 #endif

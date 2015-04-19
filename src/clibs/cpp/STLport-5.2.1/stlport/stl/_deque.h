@@ -512,6 +512,23 @@ public:
     : _STLP_PRIV _Deque_base<_Tp, _Alloc>(__a, __n)
   { _M_fill_initialize(__val, __false_type()); }
 
+#  ifdef _STLP_HAS_INITIALIZER_LIST
+#if !defined (_STLP_DONT_SUP_DFLT_PARAM)
+  explicit deque(initializer_list<_Tp> __lst, const allocator_type& __a = allocator_type())
+#else
+  deque(initializer_list<_Tp> __lst)
+    : _STLP_PRIV _Deque_base<_Tp, _Alloc>(allocator_type(), 0) {
+            for (auto __el :__lst)
+                push_back(__el);
+        }
+  deque(initializer_list<_Tp> __lst, const allocator_type& __a)
+#endif
+    : _STLP_PRIV _Deque_base<_Tp, _Alloc>(__a, 0) {
+            for (auto __el :__lst)
+                push_back(__el);
+    }
+#  endif /* _STLP_HAS_INITIALIZER_LIST */
+
 #if defined (_STLP_MEMBER_TEMPLATES)
 protected:
   template <class _Integer>

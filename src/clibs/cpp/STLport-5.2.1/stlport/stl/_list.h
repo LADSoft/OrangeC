@@ -317,6 +317,23 @@ public:
     : _STLP_PRIV _List_base<_Tp, _Alloc>(__a)
     { this->insert(begin(), __n, __val); }
 
+#  ifdef _STLP_HAS_INITIALIZER_LIST
+#if !defined (_STLP_DONT_SUP_DFLT_PARAM)
+  explicit list(initializer_list<_Tp> __lst, const allocator_type& __a = allocator_type())
+#else
+  list(initializer_list<_Tp> __lst)
+    : _STLP_PRIV _List_base<_Tp, _Alloc>(allocator_type()) {
+            for (auto __el :__lst)
+                push_back(__el);
+        }
+  list(initializer_list<_Tp> __lst, const allocator_type& __a)
+#endif
+    : _STLP_PRIV _List_base<_Tp, _Alloc>(__a) {
+            for (auto __el :__lst)
+                push_back(__el);
+    }
+#  endif /* _STLP_HAS_INITIALIZER_LIST */
+
 #if defined (_STLP_MEMBER_TEMPLATES)
   // We don't need any dispatching tricks here, because insert does all of
   // that anyway.

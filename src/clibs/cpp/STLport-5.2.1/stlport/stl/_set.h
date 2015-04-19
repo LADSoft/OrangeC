@@ -138,6 +138,23 @@ public:
     : _M_t(__move_source<_Rep_type>(src.get()._M_t)) {}
 #endif
 
+#  ifdef _STLP_HAS_INITIALIZER_LIST
+#if !defined (_STLP_DONT_SUP_DFLT_PARAM)
+  explicit set(initializer_list<value_type> __lst, const allocator_type& __a = allocator_type())
+#else
+  set(initializer_list<value_type> __lst)
+       : _M_t(_Compare(), allocator_type()) {
+            for (auto __el :__lst)
+                insert(__el);
+        }
+  set(initializer_list<value_type> __lst, const allocator_type& __a)
+#endif
+       : _M_t(_Compare(), __a) {
+            for (auto __el :__lst)
+                insert(__el);
+    }
+#  endif /* _STLP_HAS_INITIALIZER_LIST */
+
   _Self& operator=(const _Self& __x) {
     _M_t = __x._M_t;
     return *this;

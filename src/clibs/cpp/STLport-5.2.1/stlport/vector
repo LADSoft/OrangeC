@@ -33,9 +33,14 @@
 #    include <stl/_algobase.h>
 #  endif
 
+#  ifdef _STLP_HAS_INITIALIZER_LIST
+#    include <initializer_list>
+#  endif /* _STLP_HAS_INITIALIZER_LIST */
+
 #  ifndef _STLP_INTERNAL_VECTOR_H
 #    include <stl/_vector.h>
 #  endif
+
 #endif
 
 #if (_STLP_OUTERMOST_HEADER_ID != 0x77) || defined (_STLP_IMPORT_VENDOR_STD)

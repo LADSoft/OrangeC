@@ -51,7 +51,7 @@ DOSOBJECT:=$(realpath object\dos)
 export DOSOBJECT
 WINOBJECT:=$(realpath object\windows)
 export WINOBJECT
-STDINCLUDE:=$(realpath stdinc);$(realpath cpp\stdinc)
+STDINCLUDE:=$(realpath cpp\stlport\stl);$(realpath cpp\stdinc);$(realpath stdinc)
 export STDINCLUDE
 
 define CLIB

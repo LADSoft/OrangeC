@@ -3922,10 +3922,12 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
         }	
         else if (!isfunction(*tp) && (*tp)->type != bt_aggregate)
         {
+            EXPRESSION *expasn = NULL;
             while(castvalue(exp1))
                 exp1 = (exp1)->left;
             if (exp1->type == en_assign)
             {
+                expasn = exp1;
                 exp1 = exp1->left;
                 while(castvalue(exp1))
                     exp1 = (exp1)->left;
@@ -3958,7 +3960,10 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 tp1->size = getSize(bt_pointer);
                 tp1->btp = *tp;
                 *tp = tp1;
-                *exp = exp1;
+                if (expasn)
+                    *exp = exprNode(en_void, expasn, exp1);
+                else
+                    *exp = exp1;
             }
         }
     }

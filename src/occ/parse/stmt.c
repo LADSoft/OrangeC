@@ -597,13 +597,22 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         lex = getsym();
         if (!MATCHKW(lex, semicolon))
         {
+            BOOLEAN hasColon = FALSE;
             if ((cparams.prm_cplusplus && !cparams.prm_oldfor) || cparams.prm_c99)
             {
                 addedBlock++;
                 AllocateLocalContext(parent, funcsp, codeLabel++);
             }
-       
-            lex = selection_expression(lex, forstmt, &init, funcsp, kw_rangefor, &declaration);
+            if (cparams.prm_cplusplus)
+            {
+                LEXEME *origLex = lex;
+                while (lex && !MATCHKW(lex, semicolon) && !MATCHKW(lex, colon))
+                    lex = getsym();
+                hasColon = MATCHKW(lex, colon);
+                lex = prevsym(origLex);
+            }
+
+            lex = selection_expression(lex, forstmt, &init, funcsp, hasColon ? kw_rangefor : kw_for, &declaration);
             if (cparams.prm_cplusplus && !cparams.prm_oldfor && declaration && MATCHKW(lex, colon))
             {
                 // range based for statement
@@ -1146,7 +1155,14 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     SYMBOL *declSP = (SYMBOL *)localNameSpace->syms->table[0]->p;
                     if (!declSP->init)
                     {
-                        error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);
+                        if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->trivialCons)
+                        {
+                            lex = initialize(lex, funcsp, declSP, sc_auto, FALSE, 0);
+                        }
+                        else
+                        {
+                            error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);
+                        }
                     }
                 }
             }

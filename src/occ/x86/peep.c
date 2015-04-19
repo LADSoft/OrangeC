@@ -1657,26 +1657,32 @@ void peep_prefixes(OCODE *ip)
 }
 OCODE * peep_div(OCODE *ip)
 {
+//    return ip;
     if (ip->oper1->mode == am_dreg)
     {
         OCODE *ip2 = ip->back;
-        while (ip2 && ip2->opcode != op_label)
+        while (ip2 && ip2->opcode != op_label && ip2->opcode < op_ja && ip2->opcode > op_jmp)
         {
             if (ip2->opcode == op_mov && ip2->oper1->mode == am_dreg && ip2->oper1->preg == ip->oper1->preg)
                 break;
             ip2 = ip2->back;
         }
-        if (ip2 && ip2->opcode != op_label)
+        if (ip2 && ip2->opcode != op_label && ip2->opcode < op_ja && ip2->opcode > op_jmp)
         {
             AMODE *oper = ip2->oper2;
-            if (oper->mode == am_immed)
-            {
-                oper = make_muldivval(oper);
-            }
-            if (!live(ip->oper1->liveRegs, ip2->oper1->preg))
-                remove_peep_entry(ip2);
-            oper->liveRegs = ip->oper1->liveRegs;
-            ip->oper1 = oper;
+            if (oper->mode != am_indisp || oper->preg != EAX && oper->preg != EDX && oper->preg != ESP)
+                if (oper->mode != am_indispscale || oper->preg != EAX && oper->preg != EDX && oper->preg != ESP && oper->sreg != EAX && oper->sreg != EDX)
+                    if (oper->mode != am_dreg || oper->preg != EAX && oper->preg != EDX && oper->preg != ESP)
+                    {
+                        if (oper->mode == am_immed)
+                        {
+                            oper = make_muldivval(oper);
+                        }
+                        if (!live(ip->oper1->liveRegs, ip2->oper1->preg))
+                            remove_peep_entry(ip2);
+                        oper->liveRegs = ip->oper1->liveRegs;
+                        ip->oper1 = oper;
+                    }
         }
     }
     return ip;

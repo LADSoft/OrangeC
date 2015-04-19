@@ -2848,7 +2848,7 @@ void NormalizePacked(TYPE *tpo)
     if (basetype(tp)->templateParam)
         tpo->templateParam = basetype(tp)->templateParam;
 }
-INITLIST *TemplateDeduceArgList(HASHREC *templateArgs, INITLIST *symArgs)
+static INITLIST *TemplateDeduceArgList(HASHREC *funcArgs, HASHREC *templateArgs, INITLIST *symArgs)
 {
     while (templateArgs && symArgs)
     {
@@ -2864,47 +2864,43 @@ INITLIST *TemplateDeduceArgList(HASHREC *templateArgs, INITLIST *symArgs)
                     TemplateDeduceFromArg(params->p->byClass.val, symArgs->tp, symArgs->exp, FALSE);
                     params = params->next;
                     symArgs = symArgs->next;
+                    if (funcArgs)
+                        funcArgs = funcArgs->next;
                 }
             }
             else
             {
                 symArgs = symArgs->next;
+                if (funcArgs)
+                    funcArgs = funcArgs->next;
             }
         }    
-        else if (symArgs->nested)
+        else if (symArgs->nested && funcArgs)
         {
-            TEMPLATEPARAMLIST *a = symArgs->nested;
-            int count = 0;
-            while (a)
-                count ++, a = a->next;
-            if (count == 2)
+            INITLIST *a = symArgs->nested;
+            TEMPLATEPARAMLIST *b = ((SYMBOL *)funcArgs->p)->templateParams;
+            while (a && b)
             {
-                SYMBOL *sym = namespacesearch("stlpmtx_std", globalNameSpace, FALSE, FALSE);
-                if (sym->storage_class == sc_namespace)
-                {
-                    sym = namespacesearch("pair", sym->nameSpaceValues, TRUE, FALSE);
-                    if (sym && sym->tp->syms && sym->templateLevel)
-                    {
-                        TEMPLATEPARAMLIST *l1 = Alloc(sizeof(TEMPLATEPARAMLIST));
-                        TEMPLATEPARAMLIST *l2 = Alloc(sizeof(TEMPLATEPARAMLIST));
-                        l1->next = l2;
-                        l1->p = Alloc(sizeof(TEMPLATEPARAM));
-                        l2->p = Alloc(sizeof(TEMPLATEPARAM));
-                        l1->p->type = kw_typename;
-                        l2->p->type = kw_typename;
-                        l1->p->byClass.dflt = symArgs->nested->tp;
-                        l2->p->byClass.dflt = symArgs->nested->next->tp;
-                        sym = GetClassTemplate(sym, l1, FALSE);
-                        TemplateDeduceFromArg(sp->tp, sym->tp, NULL, FALSE);
-                    }
-                }
+                a = a->next;
+                b = b->next;
+            }
+            if (!a && !b)
+            {
+                // this only works with one level of nesting...
+                INITLIST *a = symArgs->nested;
+                TEMPLATEPARAMLIST *b = ((SYMBOL *)funcArgs->p)->templateParams;
+                TemplateDeduceArgList(NULL, b, a);
             }
             symArgs = symArgs->next;
+            if (funcArgs)
+                funcArgs = funcArgs->next;
         }
         else
         {
             TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, FALSE);
             symArgs = symArgs->next;
+            if (funcArgs)
+                funcArgs = funcArgs->next;
         }
         templateArgs = templateArgs->next;
     }
@@ -3131,7 +3127,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
         }
         else
         {
-            TemplateDeduceArgList(templateArgs, symArgs);
+            TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs);
         }
         // set up default values for non-deduced and non-initialized args
         params = nparams->next;

@@ -1,5 +1,14 @@
 Release notes
 
+version 5.34.1:
+    occ:        lambda functions didn't work in conjunction with STL templates such as std::for_each
+    occ:        fix lambda helper functions to use correct naming convention
+    occ:        for (auto n : mycollection) didn't compile - complained n was not initialized
+    occ:        for ( type n : mycollection) was buggy for various edge cases
+    occ:        add initializer_list support
+    occ:        in '&(a += b)'  it would take the address of a, but not add b in first.
+    rtl:        add initializer_list header and constructors to containers
+
 version 5.33.1: 4/11/2015
 	general:	fix errors when compiling the package with various compilers
     occ:        C++ fixes

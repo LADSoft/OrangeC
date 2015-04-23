@@ -39,6 +39,7 @@
 #include "compiler.h"
 #include <limits.h>
 #include <assert.h>
+extern TYPE stdint;
 extern ARCH_DEBUG *chosenDebugger;
 extern ARCH_ASM *chosenAssembler;
 extern TYPE stdint, stdvoid, stdpointer;
@@ -79,23 +80,20 @@ void statement_ini()
     nextLabel = 1;
     linesHead = linesTail = NULL;
 }
-void CacheLineData(LINEDATA *ld)
+void InsertLineData(int lineno, int fileindex, char *fname, char *line)
 {
-    while (ld)
-    {
-        if (linesHead)
-        {
-            linesTail = linesTail->stmtNext = ld;
-        }
-        else
-        {
-            linesHead = linesTail = ld;
-        }
-        
-        ld = ld->next;
-    }
+    LINEDATA *ld ;
+    IncGlobalFlag();
+    ld = Alloc(sizeof(LINEDATA));
+    ld->file = fname;
+    ld->line = litlate(line);
+    ld->lineno = lineno;
+    ld->fileindex = fileindex;
     if (linesHead)
-        linesTail->stmtNext = NULL;
+        linesTail = linesTail->next = ld;
+    else
+        linesHead = linesTail = ld;
+    DecGlobalFlag();
 }
 void FlushLineData(char *file, int lineno)
 {
@@ -967,7 +965,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         st = stmtNode(lex, forstmt, st_expr);
                         if (!isstructured(selectTP))
                         {
-                            if (declSP->tp->type == bt_auto)
+                            if (declSP->tp->type == bt_auto && basetype(selectTP)->btp)
                                 declSP->tp = basetype(selectTP)->btp;
                             if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
                             {
@@ -1003,7 +1001,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {
-                                if (declSP->tp->type == bt_auto)
+                                if (declSP->tp->type == bt_auto && basetype(iteratorType)->btp)
                                     declSP->tp = basetype(iteratorType)->btp;
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
                                 {
@@ -1040,7 +1038,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 
                             }
                             else {
-                                if (declSP->tp->type == bt_auto)
+                                if (declSP->tp->type == bt_auto && starType)
                                     declSP->tp = starType;
                                 if (!comparetypes(declSP->tp, starType, TRUE))
                                 {

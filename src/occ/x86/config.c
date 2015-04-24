@@ -584,6 +584,8 @@ ARCH_GEN outputfunctions = {
     asm_umod,               /* unsigned modulous */
     asm_sdiv,               /* signed division */
     asm_smod,               /* signed modulous */
+    asm_muluh,               /* multiply highword unsigned*/
+    asm_mulsh,               /* multiply highword signed*/
     asm_mul,               /* multiply */
     asm_lsl,                /* unsigned shift left */
     asm_lsr,                /* unsigned shift right */

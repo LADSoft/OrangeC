@@ -324,6 +324,18 @@ static void iop_smod(QUAD *q)
 }
 
 /*-------------------------------------------------------------------------*/
+static void iop_muluh(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_muluh)
+        chosenAssembler->gen->asm_muluh(q);
+    putbin(q, "U*H");
+}
+static void iop_mulsh(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_mulsh)
+        chosenAssembler->gen->asm_mulsh(q);
+    putbin(q, "S*H");
+}
 
 static void iop_mul(QUAD *q)
 {
@@ -1125,7 +1137,7 @@ static void(*oplst[])(QUAD *q) =
         iop_nop, iop_phi, iop_line, iop_passthrough, iop_datapassthrough, iop_skipcompare,
         iop_label, iop_asmgoto, iop_goto, iop_directbranch,
         iop_gosub, iop_fargosub, iop_trap, iop_int, iop_ret,
-        iop_fret, iop_rett, iop_add, iop_sub, iop_udiv, iop_umod, iop_sdiv, iop_smod, iop_mul,
+        iop_fret, iop_rett, iop_add, iop_sub, iop_udiv, iop_umod, iop_sdiv, iop_smod, iop_muluh, iop_mulsh, iop_mul,
         iop_lsl, iop_lsr, iop_asr, iop_neg, iop_not, iop_and, iop_or, iop_eor, 
         iop_setne, iop_sete, iop_setc, iop_seta, iop_setnc, iop_setbe, iop_setl, iop_setg, iop_setle, iop_setge,
         iop_asmcond, iop_jne, iop_je, iop_jc, iop_ja, iop_jnc, iop_jbe, iop_jl, iop_jg, iop_jle, iop_jge,  

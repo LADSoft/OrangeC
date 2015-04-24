@@ -305,6 +305,8 @@ typedef struct _arch_gen {
     CGFUNC asm_umod;        /* unsigned modulous */
     CGFUNC asm_sdiv;        /* signed division */
     CGFUNC asm_smod;        /* signed modulous */
+    CGFUNC asm_muluh;        /* multiply highword unsigned*/
+    CGFUNC asm_mulsh;        /* multiply highword signed*/
     CGFUNC asm_mul;        /* multiply */
     CGFUNC asm_lsl;         /* unsigned shift left */
     CGFUNC asm_lsr;         /* unsigned shift right */

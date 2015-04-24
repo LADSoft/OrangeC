@@ -55,7 +55,7 @@ enum i_ops
         i_nop, i_phi, i_line, i_passthrough, i_datapassthrough, i_skipcompare,
         i_label, i_asmgoto, i_goto, i_directbranch, 
         i_gosub, i_fargosub, i_trap, i_int, i_ret,
-        i_fret, i_rett, i_add, i_sub, i_udiv, i_umod, i_sdiv, i_smod, i_mul,
+        i_fret, i_rett, i_add, i_sub, i_udiv, i_umod, i_sdiv, i_smod, i_muluh, i_mulsh, i_mul,
         i_lsl, i_lsr, i_asr, i_neg, i_not, i_and, i_or, i_eor, 
         i_setne, i_sete, i_setc, i_seta, i_setnc, i_setbe, i_setl, i_setg, i_setle, i_setge,
         i_asmcond, i_jne, i_je, i_jc, i_ja, i_jnc, i_jbe, i_jl, i_jg, i_jle, i_jge,  
@@ -183,6 +183,7 @@ typedef struct quad
     int OCPGenned:1; /* node was generated already in an OCP sort */
     int spill:1;
     int ignoreMe:1;
+    int genConflict:1; /* assignment node the ans conflicts with left */
     char novalue;
     char temps;
     char precolored;

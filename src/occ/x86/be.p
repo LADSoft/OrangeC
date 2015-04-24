@@ -43,6 +43,8 @@ void asm_udiv(QUAD *q)               ;
 void asm_umod(QUAD *q)               ;
 void asm_sdiv(QUAD *q)               ;
 void asm_smod(QUAD *q)               ;
+void asm_muluh(QUAD *q)               ;
+void asm_mulsh(QUAD *q)               ;
 void asm_mul(QUAD *q)               ;
 void asm_lsl(QUAD *q)                ;
 void asm_lsr(QUAD *q)                ;

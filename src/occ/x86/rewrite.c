@@ -149,6 +149,31 @@ void precolor(QUAD *head)			/* precolor an instruction */
             }
         }
     }
+    else if (head->dc.opcode == i_muluh || head->dc.opcode == i_mulsh)
+    {
+        if (head->temps & TEMP_ANS)
+        {
+            int ta = head->ans->offset->v.sp->value.i;
+            if (tempInfo[ta]->size < ISZ_FLOAT)
+            {
+                tempInfo[ta]->precolored = TRUE;
+                tempInfo[ta]->enode->v.sp->regmode = 2;
+                tempInfo[ta]->color = R_EDX;
+                head->precolored |= TEMP_ANS;
+            }
+        }
+        if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
+        {
+            int tl = head->dc.left->offset->v.sp->value.i;
+            if (tempInfo[tl]->size < ISZ_FLOAT)
+            {
+                tempInfo[tl]->precolored = TRUE;
+                tempInfo[tl]->enode->v.sp->regmode = 2;
+                tempInfo[tl]->color = R_EAX;
+                head->precolored |= TEMP_LEFT;
+            }
+        }
+    }
     else if (head->dc.opcode == i_lsr || head->dc.opcode == i_asr || head->dc.opcode == i_lsl)
     {
         if (head->temps & TEMP_RIGHT)
@@ -834,6 +859,8 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
             case i_udiv:
             case i_smod:
             case i_umod:
+            case i_muluh:
+            case i_mulsh:
                 if (ins->ans->size <= ISZ_ULONG && ins->dc.right->mode == i_immed && isintconst(ins->dc.right->offset))
                 {
                     t = InitTempOpt(ins->dc.right->size, ins->dc.right->size);
@@ -1923,6 +1950,8 @@ void cg_internal_conflict(QUAD *head)
         case i_sdiv:
         case i_umod:
         case i_smod:
+        case i_muluh:
+        case i_mulsh:
             /* for divs we have to make sure the answer node conflicts with anything
              * that was used to load the numerator...
              */
@@ -1947,7 +1976,14 @@ void cg_internal_conflict(QUAD *head)
                 int t2 = head->dc.right->offset->v.sp->value.i;
                 insertConflict(t1, t2);
             }
-            break ;
+            break ;            
+        case i_assn:
+            if (head->genConflict)
+            {
+                int t1 = head->ans->offset->v.sp->value.i;
+                int t2 = head->dc.left->offset->v.sp->value.i;
+                insertConflict(t1, t2);
+            }
         default:
             break;
     }

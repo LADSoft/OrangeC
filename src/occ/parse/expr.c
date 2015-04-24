@@ -4881,7 +4881,7 @@ static LEXEME *expression_add(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp,
             if (ispointer(tp1))
             {
                 *exp = exprNode(en_sub, *exp, exp1);
-                *exp = exprNode(en_udiv, *exp, ns);
+                *exp = exprNode(en_arraydiv, *exp, ns);
                 *tp = &stdint; /* ptrdiff_t */
             }
             else

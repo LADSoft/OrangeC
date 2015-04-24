@@ -1560,6 +1560,35 @@ static void gen_div(QUAD *q, enum e_op op)               /* unsigned division */
         gen_codes(op, q->ans->size, divby, 0);
     }
 }
+static void gen_mulxh(QUAD *q, enum e_op op)               /* unsigned division */
+{
+    enum e_op opa, opl, opr;
+    AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
+    int mod = q->dc.opcode == i_umod || q->dc.opcode == i_smod;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    getAmodes(q, &opa, q->ans, &apal, &apah);
+    if (q->ans->size >= ISZ_FLOAT)
+    {
+        diag("gen_mulxh: floating point");
+    }
+    else if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
+    {
+        diag("gen_mulxh: long long");
+    }
+    else
+    {
+        AMODE *mulby = aprl;
+        if (apal->mode != am_dreg)
+            diag("asm_mulxh: answer not a dreg");
+        if (aprl->mode == am_immed)
+        {
+            mulby = make_muldivval(aprl);
+        }
+        mulby->liveRegs = q->liveRegs;
+        gen_codes(op, q->ans->size, mulby, 0);
+    }
+}
 static void gen_shift(QUAD *q, enum e_op op, AMODE *apal, AMODE *apll, AMODE *aprl)
 {
     AMODE *cx = makedreg(ECX);
@@ -2584,6 +2613,14 @@ void asm_sdiv(QUAD *q)               /* signed division */
 void asm_smod(QUAD *q)               /* signed modulous */
 {
     gen_div(q, op_idiv);
+}
+void asm_muluh(QUAD *q)
+{
+    gen_mulxh( q, op_mul);
+}
+void asm_mulsh(QUAD *q)
+{
+    gen_mulxh( q, op_imul);
 }
 void asm_mul(QUAD *q)               /* signed multiply */
 {

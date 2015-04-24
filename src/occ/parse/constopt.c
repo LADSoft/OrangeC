@@ -1655,33 +1655,6 @@ int opt0(EXPRESSION **node)
                         *node = ep->right;
                     else if (val ==  - 1)
                         *node = exprNode(negtype, ep->right, 0);
-                    else
-                    {
-                        sc = pwrof2(val);
-                        if (sc !=  - 1)
-                        {
-                            EXPRESSION *temp = ep->left;
-                            ep->left = ep->right;
-                            ep->right = temp;
-                            ep->right->v.i = sc;
-                            rv = TRUE;
-                            switch (ep->type)
-                            {
-                            case en_mul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_umul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_arraymul:
-                                ep->type = en_arraylsh;
-                                break;
-                            default:
-                                break;
-                            }
-                            break;
-                        }
-                    }
                 }
                 dooper(node, mode);
                 rv = TRUE;
@@ -1720,30 +1693,6 @@ int opt0(EXPRESSION **node)
                     else if (val ==  - 1)
                     {
                         *node = exprNode(negtype, ep->left, 0);
-                    }
-                    else
-                    {
-                        sc = pwrof2(val);
-                        if (sc !=  - 1)
-                        {
-                            rv = TRUE;
-                            ep->right->v.i = sc;
-                            switch (ep->type)
-                            {
-                            case en_mul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_umul:
-                                ep->type = en_lsh;
-                                break;
-                            case en_arraymul:
-                                ep->type = en_arraylsh;
-                                break;
-                            default:
-                                break;
-                            }
-                            break;
-                        }
                     }
                 }
                 dooper(node, mode);
@@ -1816,28 +1765,6 @@ int opt0(EXPRESSION **node)
                         *node = ep->left;
                     else if (val ==  - 1)
                         *node = exprNode(negtype, ep->left, 0);
-                    else
-                    {
-                        sc = pwrof2(val);
-                        if (sc !=  - 1)
-                        {
-                            rv = TRUE;
-                            ep->right->v.i = sc;
-                            switch (ep->type)
-                            {
-                            case en_div:
-                                ep->type = en_rshd;
-                                break;
-                            case en_arraydiv:
-                            case en_udiv:
-                                ep->type = en_ursh;
-                                break;
-                            default:
-                                break;
-                            }
-                            break;
-                        }
-                    }
                 }
                 dooper(node, mode);
                 rv = TRUE;

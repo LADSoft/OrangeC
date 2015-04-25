@@ -60,6 +60,7 @@ int _RTL_FUNC fseek (FILE *stream, long offset, int origin)
                 errno = EIO;
                 return EOF;
             }
+            memset(stream->extended->mbstate,0,sizeof(stream->extended->mbstate));
             stream->level = 0;
             stream->flags &= ~(_F_EOF | _F_XEOF | _F_IN | _F_OUT) ;            
             __uio_clearerr(fileno(stream));

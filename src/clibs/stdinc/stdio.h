@@ -105,16 +105,7 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
-//  this isn't the way people usually implement fpos_t...
-typedef struct __fpos_t {
-    long pos;
-    int mbstate[2];
-#ifdef __cplusplus
-    __fpos_t() : pos(0) { mbstate[0] = mbstate[1] = 0; }
-    __fpos_t(long Pos) : pos(Pos) { mbstate[0] = mbstate[1] = 0; }
-    operator long() { return pos; }
-#endif
-} fpos_t;
+typedef long fpos_t;
 
 #define FILTOK	0x444c
 #define STACKPAD 512

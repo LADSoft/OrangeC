@@ -41,5 +41,5 @@ long _RTL_FUNC ftell(FILE *stream)
     fpos_t rv;
     if (fgetpos(stream,&rv))
         return -1;
-    return rv.pos;
+    return rv;
 }

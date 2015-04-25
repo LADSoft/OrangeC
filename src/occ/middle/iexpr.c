@@ -1001,7 +1001,7 @@ static int ChooseMultiplier(unsigned d, int prec, ULLONG_TYPE *m, int *sh, int *
     return 0;
 }
 
-IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op)
+IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op, BOOLEAN mod)
 {
     int n = natural_size(node);
     if ((n == ISZ_UINT || n == -ISZ_UINT || n == ISZ_ULONG || n == -ISZ_ULONG) && isintconst(node->right))
@@ -1037,6 +1037,11 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
                 return num;
             else if (d == 1 << l)
             {
+                if (mod)
+                {
+                    gen_icode(i_and, ap, num, make_immed(ISZ_UINT, (1 << l)-1));
+                    return ap; 
+                }
                 gen_icode(i_lsr, ap, num, make_immed(ISZ_UINT, l));
 //                return n >> l;
             }
@@ -1075,12 +1080,17 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
                 return t1 >> post;
                 */
             }
+            if (mod)
+            {
+                gen_icode(i_mul, ap, ap, make_immed(ISZ_UINT, d));
+                gen_icode(i_sub, ap, num, ap);           
+            }
             return ap;
         }
     }
     return gen_binary(funcsp, node, flags, size, op);
 }
-IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op)
+IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op, BOOLEAN mod)
 {
     int n = natural_size(node);
     if ((n == ISZ_UINT || n == -ISZ_UINT) && node->right->type == en_c_i)
@@ -1150,6 +1160,11 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             if (d < 0)
             {
                 gen_icode(i_neg, ap, ap, NULL);
+            }
+            if (mod)
+            {
+                gen_icode(i_mul, ap, ap, make_immed(ISZ_UINT, d));
+                gen_icode(i_sub, ap, num, ap);           
             }
             return ap;
         }
@@ -2576,16 +2591,16 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             rv = gen_binary( funcsp, node, flags, size, i_mul);
             break;
         case en_div:
-            rv = gen_sdivide( funcsp, node, flags, size, i_sdiv);
+            rv = gen_sdivide( funcsp, node, flags, size, i_sdiv, FALSE);
             break;
         case en_udiv:
-            rv = gen_udivide( funcsp, node, flags, size, i_udiv);
+            rv = gen_udivide( funcsp, node, flags, size, i_udiv, FALSE);
             break;
         case en_mod:
-            rv = gen_binary( funcsp, node, flags, size, i_smod);
+            rv = gen_sdivide( funcsp, node, flags, size, i_smod, TRUE);
             break;
         case en_umod:
-            rv = gen_binary( funcsp, node, flags, size, i_umod);
+            rv = gen_udivide( funcsp, node, flags, size, i_umod, TRUE);
             break;
         case en_lsh:
             rv = gen_binary( funcsp, node, flags, size, i_lsl);

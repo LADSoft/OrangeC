@@ -1808,17 +1808,6 @@ int opt0(EXPRESSION **node)
             default:
                 break;
             case 7:
-                if (!hasFloats(ep->left))
-                {
-                    sc = pwrof2(ep->right->v.i);
-                    if (sc !=  - 1)
-                    {
-                        rv = TRUE;
-                        ep->right->v.i = mod_mask(sc);
-                        ep->type = en_and;
-                        break;
-                    }
-                }
             case 1:
             case 2:
             case 3:

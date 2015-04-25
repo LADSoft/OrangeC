@@ -859,6 +859,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
             case i_udiv:
             case i_smod:
             case i_umod:
+                /*
                 if (ins->ans->size <= ISZ_ULONG && ins->dc.right->mode == i_immed && isintconst(ins->dc.right->offset))
                 {
                     t = InitTempOpt(ins->dc.right->size, ins->dc.right->size);
@@ -870,6 +871,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
                     ins->temps |= TEMP_RIGHT;
                     InsertInstruction(ins->back, newIns);
                 }
+                */
             case i_muluh:
             case i_mulsh:
                 t = InitTempOpt(ins->ans->size, ins->ans->size);

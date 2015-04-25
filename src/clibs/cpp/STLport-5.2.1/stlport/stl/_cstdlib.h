@@ -80,6 +80,14 @@ using _STLP_VENDOR_CSTD::mbstowcs;
 using _STLP_VENDOR_CSTD::strtod;
 using _STLP_VENDOR_CSTD::strtol;
 using _STLP_VENDOR_CSTD::strtoul;
+using _STLP_VENDOR_CSTD::itoa;
+using _STLP_VENDOR_CSTD::ltoa;
+using _STLP_VENDOR_CSTD::ultoa;
+using _STLP_VENDOR_CSTD::utoa;
+using _STLP_VENDOR_CSTD::ecvt;
+using _STLP_VENDOR_CSTD::fcvt;
+using _STLP_VENDOR_CSTD::gcvt;
+using _STLP_VENDOR_CSTD::onexit;
 
 #    if !(defined (_STLP_NO_NATIVE_WIDE_STREAMS) || defined (_STLP_NO_NATIVE_MBSTATE_T))
 using _STLP_VENDOR_CSTD::wcstombs;

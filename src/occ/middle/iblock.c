@@ -470,13 +470,14 @@ static QUAD * add_dag(QUAD *newQuad)
                         (!(newQuad->livein & IM_LIVELEFT) || newQuad->dc.left->mode != i_immed)
                         || (!(newQuad->livein & IM_LIVERIGHT) || newQuad->dc.right->mode != i_immed))
                     {
-                        if (newQuad->dc.opcode != i_assn || (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size))
+                        if (newQuad->dc.opcode != i_assn || !newQuad->genConflict && (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size))
                             ReplaceHash(newQuad, (UBYTE *)newQuad, DAGCOMPARE, ins_hash);
                     }
         }
         /* convert back to a quad structure and generate code */
         node = newQuad;
         outnode = liveout(node);
+        outnode->genConflict = newQuad->genConflict;
         add_intermed(outnode);
     }
     else
@@ -485,6 +486,7 @@ static QUAD * add_dag(QUAD *newQuad)
         outnode->dc.opcode = i_assn;
         outnode->ans = newQuad->ans;
         outnode->dc.left = node->ans;
+        outnode->genConflict = newQuad->genConflict;
         if (outnode->ans != outnode->dc.left)
             add_intermed(outnode);
     }
@@ -603,7 +605,7 @@ void gen_label(int labno)
 }
 /*-------------------------------------------------------------------------*/
 
-QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
+QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, BOOLEAN conflicting)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -628,6 +630,7 @@ QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
             break;
     }
     newQuad = (QUAD *)Alloc(sizeof(QUAD));
+    newQuad->genConflict = conflicting;
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -644,6 +647,10 @@ QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
     }
     wasgoto = FALSE;
     return newQuad;
+}
+QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right)
+{
+    return gen_icode_with_conflict(op, res,left, right, FALSE);
 }
 
 /*-------------------------------------------------------------------------*/

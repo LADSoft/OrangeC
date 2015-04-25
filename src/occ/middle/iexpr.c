@@ -984,7 +984,7 @@ static int ChooseMultiplier(unsigned d, int prec, ULLONG_TYPE *m, int *sh, int *
     if (d != 0)
     {
         ULLONG_TYPE ml, mh;
-        int n = d;
+        unsigned n = d;
         int l1 = 0;
         while (n != 1)
             l1++, n>>=1;
@@ -1004,7 +1004,7 @@ static int ChooseMultiplier(unsigned d, int prec, ULLONG_TYPE *m, int *sh, int *
 IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op)
 {
     int n = natural_size(node);
-    if ((n == ISZ_UINT || n == -ISZ_UINT) && node->right->type == en_c_i)
+    if ((n == ISZ_UINT || n == -ISZ_UINT || n == ISZ_ULONG || n == -ISZ_ULONG) && isintconst(node->right))
     {
         ULLONG_TYPE m;
         int post, l,pre=0;
@@ -1043,8 +1043,7 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             else if (m >= oneshl32)
             {
                 ap3 = tempreg(n, 0);
-                q = gen_icode(i_assn, ap3, num, NULL);
-                q->genConflict = TRUE;
+                gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
                 ap1 = tempreg(n, 0);
                 gen_icode(i_muluh, ap1, ap3, make_immed(ISZ_UINT, m - oneshl32));
                 ap2 = tempreg(n, 0);
@@ -1062,8 +1061,7 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             else
             {
                 ap3 = tempreg(n, 0);
-                q = gen_icode(i_assn, ap3, num, NULL);
-                q->genConflict = TRUE;
+                gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
                 if (pre)
                 {
                     gen_code(i_lsr, ap3, ap3, make_immed(ISZ_UINT, pre));
@@ -1121,8 +1119,7 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             else if (m < oneshl32/2)
             {
                 ap3 = tempreg(n, 0);
-                q = gen_icode(i_assn, ap3, num, NULL);
-                q->genConflict = TRUE;
+                gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
                 gen_icode(i_mulsh, ap, ap3, make_immed(ISZ_UINT, m));
                 if (post)
                     gen_icode(i_asr, ap, ap, make_immed(ISZ_UINT, post));
@@ -1137,8 +1134,7 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             else
             {
                 ap3 = tempreg(n, 0);
-                q = gen_icode(i_assn, ap3, num, NULL);
-                q->genConflict = TRUE;
+                gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
                 gen_icode(i_mulsh, ap, ap3, make_immed(ISZ_UINT, m-oneshl32));
                 gen_icode(i_add, ap, ap, num);
                 if (post)

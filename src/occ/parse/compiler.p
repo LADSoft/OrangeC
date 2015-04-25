@@ -394,6 +394,7 @@ void addblock(int val);
 BOOLEAN usesAddress(IMODE *im);
 void gen_label(int labno);
 void flush_dag(void);
+QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, BOOLEAN conflicting);
 QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right);
 void gen_iiconst(IMODE *res, LLONG_TYPE val);
 void gen_ifconst(IMODE *res, FPF val);

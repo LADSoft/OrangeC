@@ -2108,7 +2108,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                         TYPE *etp = basetype(sym->tp)->btp;
                         if (cppCast(p->tp, &etp, &p->exp))
                             p->tp = etp;
-                        p->exp = createTemporary(sym->tp, p->exp);                        
+                        p->exp = createTemporary(sym->tp, p->exp);
                     }
                     else
                     {
@@ -2119,10 +2119,18 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                 }
                 else if (isstructured(p->tp))
                 {
-                    // arithmetic or pointer
-                    TYPE *etp = sym->tp;
-                    if (cppCast(p->tp, &etp, &p->exp))
-                        p->tp = etp;
+                    if (sym->tp->type == bt_ellipse)
+                    {
+                        p->exp = exprNode(en_stackblock, p->exp, NULL);
+                        p->exp->size = p->tp->size;
+                    }
+                    else
+                    {
+                        // arithmetic or pointer
+                        TYPE *etp = sym->tp;
+                        if (cppCast(p->tp, &etp, &p->exp))
+                            p->tp = etp;
+                    }
                 }
                 else if (isvoidptr(sym->tp) && p->tp->type == bt_aggregate)
                 {

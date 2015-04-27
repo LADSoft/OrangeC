@@ -2314,6 +2314,45 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                                     if (sp1)
                                         tn = sp1->tp;
                                 }
+                                else if (templateNestingCount)
+                                {
+                                    TEMPLATEPARAMLIST *told, **tnew;
+                                    sp1 = clonesym(sp);
+                                    sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
+                                    *sp1->tp = *sp->tp;
+                                    sp1->tp->sp = sp1;
+                                    sp1->tp->templateParam = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                    sp1->tp->templateParam->next = sp->tp->templateParam->next;
+                                    sp1->tp->templateParam->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+                                    *sp1->tp->templateParam->p = *sp->tp->templateParam->p;
+                                    tnew = &sp1->tp->templateParam->p->byTemplate.args;
+                                    told = *tnew;
+                                    sp1->tp->templateParam->p->byTemplate.orig = sp->tp->templateParam;
+                                    while (told && lst)
+                                    {
+                                        *tnew = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                        if (told->p->type == kw_new)
+                                        {
+                                            (*tnew)->p = told->p;
+                                        }
+                                        else
+                                        {
+                                            SYMBOL *sp = classsearch(lst->p->sym->name, FALSE, FALSE);
+                                            if (sp && sp->tp->type == bt_templateparam)
+                                            {
+                                                (*tnew)->p = sp->tp->templateParam->p;
+                                            }
+                                            else
+                                            {
+                                                (*tnew)->p = lst->p;
+                                            }
+                                            lst = lst->next;
+                                        }
+                                        told = told->next;
+                                        tnew = &(*tnew)->next;
+                                    }
+                                    sp = sp1;
+                                }
                             }
                             else
                             {
@@ -2943,6 +2982,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 enum e_lk linkage3 = lk_none;
                 BOOLEAN defd = FALSE;
                 BOOLEAN notype = FALSE;
+                BOOLEAN clonedParams = FALSE;
                 spi = NULL;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, NULL, FALSE, TRUE, &storage_class, &storage_class,
@@ -2963,78 +3003,121 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                         lex = getsym();
                     }
                 }
-                if (spi->packed)
-                    checkPackedType(spi);
-                
+                spi->tp = tp1;
                 spi->linkage = linkage;
                 spi->linkage2 = linkage2;
-                if (tp1 && isfunction(tp1))
+                if (spi->packed)
                 {
-                    TYPE *tp2 = Alloc(sizeof(TYPE));
-                    tp2->type = bt_pointer;
-                    tp2->size = getSize(bt_pointer);
-                    tp2->btp = tp1;
-                    tp1 = tp2;
-                }
-                sizeQualifiers(tp1);
-                if (cparams.prm_cplusplus && MATCHKW(lex, assign))
-                {
-                    if (storage_class == sc_member || storage_class == sc_mutable || structLevel || (templateNestingCount == 1 && !instantiatingTemplate))
+                    checkPackedType(spi);
+                    if (!templateNestingCount)
                     {
-                        lex = getDeferredData(lex, spi, FALSE);
-                    }    
-                    else
-                    {
-                        inDefaultParam++;
-                        lex = initialize(lex, funcsp, spi, sc_auto, TRUE, 0); /* also reserves space */
-                        if (spi->init)
+                        if (tp1->templateParam && tp1->templateParam->p->packed)
                         {
-                            checkDefaultArguments(spi);
-                        }
-                        inDefaultParam--;
-                    }
-                    if (isfuncptr(spi->tp) && spi->init && lvalue(spi->init->exp))
-                        error(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT);
-                    if (sp->storage_class == sc_typedef)
-                        error(ERR_NO_DEFAULT_ARGUMENT_IN_TYPEDEF);
-                }
-                SetLinkerNames(spi, lk_none);
-                spi->tp = tp1;
-                insert(spi, (*tp)->syms);
-                tpb = basetype(tp1);
-                if (tpb->array)
-                {
-                    if (cparams.prm_cplusplus && isstructured(tpb->btp) && !basetype(tpb->btp)->sp->trivialCons)
-                        error(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG);
-                    if (tpb->vla)
-                    {
-                        TYPE *tpx = Alloc(sizeof(TYPE));
-                        TYPE *tpn = tpb;
-                        tpx->type = bt_pointer;
-                        tpx->btp = tpb;
-                        tpx->size = tpb->size = getSize(bt_pointer) + getSize(bt_unsigned) * 2;
-                        while (tpn->vla)
-                        {
-                            tpx->size += getSize(bt_unsigned);
-                            tpb->size += getSize(bt_unsigned);
-                            tpn->sp = spi;
-                            tpn = tpn->btp;
+                            TEMPLATEPARAMLIST *templateParams = tp1->templateParam->p->byPack.pack;
+                            BOOLEAN first = TRUE;
+                            tp1->templateParam->p->index = 0;
+                            if (templateParams)
+                            {
+                                while (templateParams)
+                                {
+                                    SYMBOL *clone = clonesym(spi);
+                                    clone->tp = templateParams->p->byClass.val;
+                                    sizeQualifiers(clone->tp);
+                                    if (!first)
+                                    {
+                                        clone->name = clone->decoratedName = clone->errname = AnonymousName();
+                                        clone->packed = FALSE;
+                                    }
+                                    else
+                                    {
+                                        clone->tp->templateParam = tp1->templateParam;
+                                    }
+                                    templateParams->p->packsym = clone;
+                                    insert(clone, (*tp)->syms);
+                                    first = FALSE;
+                                    templateParams = templateParams->next;
+                                    tp1->templateParam->p->index++;
+                                }
+                            }
+                            else
+                            {
+                                SYMBOL *clone = clonesym(spi);
+                                clone->tp->templateParam = tp1->templateParam;
+                                sizeQualifiers(clone->tp);
+                                insert(clone, (*tp)->syms);
+                            }
+                            clonedParams = TRUE;
                         }
                     }
-                    else
-                    {
-//						tpb->array = FALSE;
-//						tpb->size = getSize(bt_pointer);
-                    }
                 }
-                sizeQualifiers(tp1);
-                if (tpb->type == bt_void)
-                    if (pastfirst || !spi->anonymous)
+                if (!clonedParams)
+                {
+                    if (tp1 && isfunction(tp1))
+                    {
+                        TYPE *tp2 = Alloc(sizeof(TYPE));
+                        tp2->type = bt_pointer;
+                        tp2->size = getSize(bt_pointer);
+                        tp2->btp = tp1;
+                        tp1 = tp2;
+                    }
+                    if (cparams.prm_cplusplus && MATCHKW(lex, assign))
+                    {
+                        if (storage_class == sc_member || storage_class == sc_mutable || structLevel || (templateNestingCount == 1 && !instantiatingTemplate))
+                        {
+                            lex = getDeferredData(lex, spi, FALSE);
+                        }    
+                        else
+                        {
+                            inDefaultParam++;
+                            lex = initialize(lex, funcsp, spi, sc_auto, TRUE, 0); /* also reserves space */
+                            if (spi->init)
+                            {
+                                checkDefaultArguments(spi);
+                            }
+                            inDefaultParam--;
+                        }
+                        if (isfuncptr(spi->tp) && spi->init && lvalue(spi->init->exp))
+                            error(ERR_NO_POINTER_TO_FUNCTION_DEFAULT_ARGUMENT);
+                        if (sp->storage_class == sc_typedef)
+                            error(ERR_NO_DEFAULT_ARGUMENT_IN_TYPEDEF);
+                    }
+                    SetLinkerNames(spi, lk_none);
+                    spi->tp = tp1;
+                    insert(spi, (*tp)->syms);
+                    tpb = basetype(tp1);
+                    if (tpb->array)
+                    {
+                        if (cparams.prm_cplusplus && isstructured(tpb->btp) && !basetype(tpb->btp)->sp->trivialCons)
+                            error(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG);
+                        if (tpb->vla)
+                        {
+                            TYPE *tpx = Alloc(sizeof(TYPE));
+                            TYPE *tpn = tpb;
+                            tpx->type = bt_pointer;
+                            tpx->btp = tpb;
+                            tpx->size = tpb->size = getSize(bt_pointer) + getSize(bt_unsigned) * 2;
+                            while (tpn->vla)
+                            {
+                                tpx->size += getSize(bt_unsigned);
+                                tpb->size += getSize(bt_unsigned);
+                                tpn->sp = spi;
+                                tpn = tpn->btp;
+                            }
+                        }
+                        else
+                        {
+    //						tpb->array = FALSE;
+    //						tpb->size = getSize(bt_pointer);
+                        }
+                    }
+                    if (tpb->type == bt_void)
+                        if (pastfirst || !spi->anonymous)
+                            voiderror = TRUE;
+                        else
+                            isvoid = TRUE;
+                    else if (isvoid)
                         voiderror = TRUE;
-                    else
-                        isvoid = TRUE;
-                else if (isvoid)
-                    voiderror = TRUE;
+                }
             }
             if (!MATCHKW(lex, comma) && (!cparams.prm_cplusplus || !MATCHKW(lex, ellipse)))
                 break;
@@ -4721,35 +4804,6 @@ jointemplate:
                         if (sp->isConstructor && ispointer(sp->tp))
                             sp->tp = basetype(sp->tp)->btp;
 
-/*
-                        if (sp->isConstructor)
-                        {
-                            HASHREC *hr = basetype(sp->tp)->syms->table[0];
-                            if (hr) // error handling
-                            {
-                                SYMBOL *sp1 = (SYMBOL *)hr->p;
-                                SYMBOL *sp2 = NULL;
-                                if (hr->next)
-                                    sp2= (SYMBOL *)(hr->next)->p;
-                                if (isstructured(sp1->tp) && (!sp2 || sp2->init))
-                                {
-                                    SYMBOL *sp3 = basetype(sp1->tp)->sp;
-                                    if (sp3 == sp->parentClass || sameTemplate(sp3->tp, sp->parentClass->tp))
-                                    {
-                                        // this is an error because it can become a recursive
-                                        // constructor, we fix it before generating the error
-                                        // to refrain from propagating further errors.
-                                        TYPE *tpx = Alloc(sizeof(TYPE));
-                                        tpx->type = bt_lref;
-                                        tpx->size = getSize(bt_pointer);
-                                        tpx->btp = sp1->tp;
-                                        sp1->tp = tpx;
-                                        errorsym(ERR_CONSTRUCTOR_NOT_ALLOWED, sp);
-                                    }                                
-                                }
-                            }
-                        }
-                        */
                         if (ssp && strSym && strSym->tp->type != bt_templateselector)
                         {
                             if (strSym != ssp && strSym->mainsym != ssp)

@@ -45,7 +45,7 @@ extern enum e_kw skim_closepa[], skim_end[];
 extern enum e_kw skim_closebr[];
 extern enum e_kw skim_semi[];
 extern TYPE stdpointer, stdnullpointer, stdchar;
-extern TYPE stdint;
+extern TYPE stdint, stdany;
 extern TYPE stddouble;
 extern TYPE stdvoid;
 extern TYPE stdwcharptr;
@@ -205,7 +205,34 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         { 
             if (sp->tp->type == bt_templateparam)
             {
-                *exp = varNode(en_templateparam, sp);   
+                if (sp->storage_class == sc_parameter && sp->tp->templateParam->p->packed)
+                {
+                    if (packIndex >= 0)
+                    {
+                        TEMPLATEPARAMLIST *templateParam = sp->tp->templateParam->p->byPack.pack;
+                        int i;
+                        for (i=0; i < packIndex && templateParam; i++)
+                            templateParam = templateParam->next;
+                        if (templateParam)
+                        {
+                            sp = templateParam->p->packsym;
+                            *tp = sp->tp;
+                            *exp = varNode(en_auto, sp);
+                        }
+                        else
+                        {
+                            *exp = intNode(en_packedempty, 0);
+                        }
+                    }
+                    else
+                    {
+                        *exp = varNode(en_auto, sp);
+                    }
+                }
+                else
+                {
+                    *exp = varNode(en_templateparam, sp);   
+                }
             }
             else switch (sp->storage_class)
             {	
@@ -314,7 +341,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                             }
                             else
                             {
-                                *exp = intNode(en_c_i, 0);
+                                *exp = intNode(en_packedempty, 0);
                             }
                         }
                         else
@@ -401,11 +428,14 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         {
             if (sp->tp->type == bt_templateparam)
             {
-                if (sp->tp->templateParam->p->type == kw_int)
-                    *tp = sp->tp->templateParam->p->byNonType.tp;
-                else
-                    *tp = &stdint;
-                *exp = intNode(en_c_i, 0);
+                if ((*exp)->type != en_packedempty)
+                {
+                    if (sp->tp->templateParam->p->type == kw_int)
+                        *tp = sp->tp->templateParam->p->byNonType.tp;
+                    else
+                        *tp = &stdint;
+                    *exp = intNode(en_c_i, 0);
+                }
             }
             else if (sp->tp->type == bt_any)
                 deref(&stdint, exp);
@@ -1411,10 +1441,13 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                 {
                     // lose p
                     lex = getsym();
-                    checkPackedExpression(p->exp);  
-                    // this is going to presume that the expression involved
-                    // is not too long to be cached by the LEXEME mechanism.          
-                    lptr = expandPackedInitList(lptr, funcsp, start, p->exp);
+                    if (p->exp->type != en_packedempty)
+                    {
+                        checkPackedExpression(p->exp);  
+                        // this is going to presume that the expression involved
+                        // is not too long to be cached by the LEXEME mechanism.          
+                        lptr = expandPackedInitList(lptr, funcsp, start, p->exp);
+                    }
                 }
                 else
                 {
@@ -2516,20 +2549,8 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 }
                 if (isstructured(basetype(*tp)->btp) || basetype(basetype(*tp)->btp)->type == bt_memberptr)
                 {
-                    if (flags & _F_INRETURN)
-                    {
-                        funcparams->returnEXP = varNode(en_auto, makeID(sc_auto, basetype(*tp)->btp, NULL, AnonymousName()));
-                        funcparams->returnSP = funcparams->returnEXP->v.sp;
-                        funcparams->returnEXP = exprNode(en_l_p, funcparams->returnEXP, NULL);
-                        funcparams->returnSP->allocate = FALSE; // static var
-                        funcparams->returnSP->offset = chosenAssembler->arch->retblocksize;
-                        funcparams->returnSP->structuredReturn = TRUE;
-                    }
-                    else
-                    {
-                        funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
-                        funcparams->returnSP = funcparams->returnEXP->v.sp;
-                    }
+                    funcparams->returnEXP = anonymousVar(sc_auto, basetype(*tp)->btp);
+                    funcparams->returnSP = funcparams->returnEXP->v.sp;
                 }
                 funcparams->ascall = TRUE;    
                 funcparams->functp = *tp;
@@ -3825,7 +3846,7 @@ static LEXEME *expression_alignof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
 static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags)
 {
     lex = getsym();
-    lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, flags | _F_AMPERSAND);
+    lex = expression_cast(lex, funcsp, atp, tp, exp, NULL, (flags) | _F_AMPERSAND);
     if (*tp)
     {
         TYPE *btp, *tp1;
@@ -6007,7 +6028,7 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
         if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_comma, comma,
                                funcsp, tp, exp, tp1, exp1, NULL, flags))
         {
-            continue;
+            continue; 
         }
         else
         {

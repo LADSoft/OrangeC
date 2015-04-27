@@ -152,7 +152,7 @@ enum e_node
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_literalclass, en_templateparam
+        en_literalclass, en_templateparam, en_packedempty
 };
 /*      statement node descriptions     */
 
@@ -207,10 +207,9 @@ enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 #define _F_PACKABLE 2
 #define _F_SELECTOR 4
 #define _F_INTEMPLATEPARAMS 8
-#define _F_INRETURN 16
-#define _F_INARGS 32
-#define _F_SIZEOF 64
-#define _F_INITLIST 128
+#define _F_INARGS 16
+#define _F_SIZEOF 32
+#define _F_INITLIST 64
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
@@ -669,6 +668,7 @@ typedef struct _templateParam
             LIST *txtargs;
             SYMBOL *temp;
             struct _templateParamList *args;
+            struct _templateParamList *orig;
         } byTemplate;
         struct {
             TYPE *dflt;

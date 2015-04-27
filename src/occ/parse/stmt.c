@@ -965,8 +965,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         st = stmtNode(lex, forstmt, st_expr);
                         if (!isstructured(selectTP))
                         {
-                            if (declSP->tp->type == bt_auto && basetype(selectTP)->btp)
-                                declSP->tp = basetype(selectTP)->btp;
+                            TYPE **tp = &declSP->tp;
+                            if (isref(*tp))
+                                tp = &(*tp)->btp;
+                            while (isconst(*tp) || isvolatile(*tp))
+                                tp = &(*tp)->btp;
+                            if ((*tp)->type == bt_auto && basetype(selectTP)->btp)
+                                (*tp) = basetype(selectTP)->btp;
                             if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
                             {
                                 error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1001,8 +1006,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {
-                                if (declSP->tp->type == bt_auto && basetype(iteratorType)->btp)
-                                    declSP->tp = basetype(iteratorType)->btp;
+                                TYPE **tp = &declSP->tp;
+                                if (isref(*tp))
+                                    tp = &(*tp)->btp;
+                                while (isconst(*tp) || isvolatile(*tp))
+                                    tp = &(*tp)->btp;
+                                if ((*tp)->type == bt_auto && basetype(iteratorType)->btp)
+                                    (*tp) = basetype(iteratorType)->btp;
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1038,8 +1048,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 
                             }
                             else {
-                                if (declSP->tp->type == bt_auto && starType)
-                                    declSP->tp = starType;
+                                TYPE **tp = &declSP->tp;
+                                if (isref(*tp))
+                                    tp = &(*tp)->btp;
+                                while (isconst(*tp) || isvolatile(*tp))
+                                    tp = &(*tp)->btp;
+                                if ((*tp)->type == bt_auto && starType)
+                                    (*tp) = starType;
                                 if (!comparetypes(declSP->tp, starType, TRUE))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1638,29 +1653,19 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     // shortcut for conversion from single expression
                     EXPRESSION *exp1 = NULL;
                     TYPE *tp1 = NULL;
-                    lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, _F_INRETURN);
+                    lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, 0);
                     if (tp1)
                     {
                         optimize_for_constants(&exp1);
                     }
-                    if ((exp1->type == en_func && exp1->v.func->returnSP || exp1->type == en_thisref && exp1->left->v.func->returnSP)
-                        &&  (comparetypes(tp1, tp, TRUE) || sameTemplate(tp, tp1)) )
-
-                    {   
-                        returntype = tp1;
-                        returnexp = exp1;
-                    }
-                    else
-                    {
-                        funcparams->arguments = Alloc(sizeof(INITLIST));
-                        funcparams->arguments->tp = tp1;
-                        funcparams->arguments->exp = exp1;
-                        maybeConversion = FALSE;
-                        returntype = tp;
-                        implicit = TRUE;
-                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE, FALSE); 
-                        returnexp = en;
-                    }
+                    funcparams->arguments = Alloc(sizeof(INITLIST));
+                    funcparams->arguments->tp = tp1;
+                    funcparams->arguments->exp = exp1;
+                    maybeConversion = FALSE;
+                    returntype = tp;
+                    implicit = TRUE;
+                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE, FALSE); 
+                    returnexp = en;
                 }
             }
             else

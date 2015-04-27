@@ -1962,7 +1962,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         FUNCTIONCALL shim;
                         lex = SetAlternateLex(init->initData);
                         shim.arguments = NULL;
-                        lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                        lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
                         if (!lex || !MATCHKW(lex, ellipse))
                             error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                         SetAlternateLex(NULL);
@@ -2002,7 +2002,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                             init->sp = sp;
                             lex = SetAlternateLex(init->initData);
                             shim.arguments = NULL;
-                            lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                            lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
                             if (lex && MATCHKW(lex, ellipse))
                                 error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                             SetAlternateLex(NULL);
@@ -2060,7 +2060,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     sp->offset = offset;
                     init->sp = sp;
                     shim.arguments = NULL;
-                    lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
+                    lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
                     if (lex && MATCHKW(lex, ellipse))
                         error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                     SetAlternateLex(NULL);

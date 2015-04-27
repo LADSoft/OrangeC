@@ -793,6 +793,7 @@ void deferredInitializeStruct(SYMBOL *cur)
     l.str = cur;
     addStructureDeclaration(&l);
     count++;
+
     if (cur->templateParams)
     {
         n.tmpl = cur->templateParams;
@@ -968,6 +969,7 @@ BASECLASS *innerBaseClass(SYMBOL *declsym, SYMBOL *bcsym, BOOLEAN isvirtual, enu
     if (!t)
     {
         SYMBOL *injected = clonesym(bcsym); 
+        injected->name = injected->decoratedName; // for nested templates
         injected->mainsym = bcsym;
         injected->parentClass = declsym;
         injected->access = currentAccess;

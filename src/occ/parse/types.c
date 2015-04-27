@@ -491,6 +491,9 @@ TYPE *typenum(char *buf, TYPE *tp)
                 ts = ts->next;
             }
             break;
+        case bt_auto:
+            strcpy(buf, "auto ");
+            break;
         }
         default:
             strcpy(buf, "\?\?\?");

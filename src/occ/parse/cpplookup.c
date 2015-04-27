@@ -2906,6 +2906,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
     enum e_cvsrn seq[100], cur;
     TYPE *initializerListType = NULL;
     int m = 0,m1;
+    TEMPLATEPARAMLIST *tr = NULL;
     if (sp->tp->type == bt_any)
         return FALSE;
         
@@ -3086,12 +3087,18 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
             SYMBOL *argsym = (SYMBOL *)(*hr)->p;
             if (argsym->tp->type != bt_any)
             {
-                
+                TYPE *tp;
                 if (argsym->constop)
                     break;
                 if (argsym->storage_class != sc_parameter)
                     return FALSE;
-                if (argsym->tp->type == bt_ellipse)
+                if (!tr && argsym->tp->type == bt_templateparam &&  argsym->tp->templateParam->p->packed)
+                    tr = argsym->tp->templateParam->p->byPack.pack;
+                if (tr)
+                    tp = tr->p->byClass.val;
+                else
+                    tp = argsym->tp;
+                if (tp->type == bt_ellipse)
                 {
                     arr[n++] = CV_ELLIPSIS;
                     return TRUE;
@@ -3103,10 +3110,6 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                     {
                         getInitListConversion(initializerListType, a->nested, NULL, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
                     }
-//                    else if (isstructured(initializerListType))
-//                    {
-//                        getInitListConversion(initializerListType, a, NULL, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
-//                    }
                     else
                     {
                         getSingleConversion(initializerListType, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
@@ -3115,13 +3118,13 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                 }
                 else if (a && a->nested)
                 {
-                    getInitListConversion(basetype(argsym->tp), a->nested, NULL, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
+                    getInitListConversion(basetype(tp), a->nested, NULL, &m, seq, sp, userFunc ? &userFunc[n] : NULL);
                 }
                 else
                 {
-                    if (a && a->tp->type == bt_aggregate && isfuncptr(argsym->tp))
+                    if (a && a->tp->type == bt_aggregate && isfuncptr(tp))
                     {
-                        HASHREC *hrp = basetype(basetype(argsym->tp)->btp)->syms->table[0];
+                        HASHREC *hrp = basetype(basetype(tp)->btp)->syms->table[0];
                         FUNCTIONCALL fpargs;
                         INITLIST **args = &fpargs.arguments;
                         memset(&fpargs, 0, sizeof(fpargs));
@@ -3137,7 +3140,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                         fpargs.ascall = TRUE;
                         GetOverloadedFunction(&a->tp, &a->exp, a->tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                     }
-                    getSingleConversion(argsym->tp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
+                    getSingleConversion(tp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
                                     sp, userFunc ? &userFunc[n] : NULL, TRUE);
                 }
                 m1 = m;
@@ -3154,7 +3157,9 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                 sizes[n++] = m;
                 pos += m;
             }
-            if (!initializerListType)
+            if (tr)
+                tr = tr->next;
+            if (!initializerListType && !tr)
                 hr = &(*hr)->next;
             if (a)
                 a = a->next;
@@ -3164,7 +3169,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
         if (*hr && !initializerListType)
         {
             SYMBOL *sym = (SYMBOL *)(*hr)->p;
-            if (sym->init || sym->deferredCompile)
+            if (sym->init || sym->deferredCompile || sym->packed)
             {
                 return TRUE;
             }

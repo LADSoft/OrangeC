@@ -2058,6 +2058,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
     BOOLEAN implicit = FALSE;
     allocate_desc(itype, offset, &desc, &cache);
     desc->stopgap = TRUE;
+
     if (MATCHKW(lex, assign))
     {
         assn = TRUE;

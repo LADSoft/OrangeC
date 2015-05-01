@@ -815,9 +815,12 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
                     pos += dumpBits(&init);
                 }
                 else {
+                    INITIALIZER *next = init->next;
                     if (init->basetp && init->exp)
                     {
-                        int s = dumpInit(sp, init);
+                        int s;
+                        init->next = NULL;
+                        s = dumpInit(sp, init);
                         if (s < init->basetp->size)
                         {
                             
@@ -827,7 +830,7 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
                             
                         pos += s;
                     }
-                    init = init->next;
+                    init = next;
                 }
             }
         }

@@ -1310,7 +1310,7 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             params->functp = match->tp;
             params->sp = match;
             params->ascall = TRUE;
-            AdjustParams(basetype(match->tp)->syms->table[0], &params->arguments, FALSE);
+            AdjustParams(basetype(match->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
             if (sp->vbaseEntries)
             {
                 INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
@@ -2297,7 +2297,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
     params->arguments->tp = tp;
     params->arguments->exp = right;
-    AdjustParams(basetype(cons->tp)->syms->table[0], &params->arguments, FALSE);
+    AdjustParams(basetype(cons->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
     params->thisptr = left;
     params->thistp = Alloc(sizeof(TYPE));
     params->thistp->type = bt_pointer;
@@ -2738,7 +2738,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             }
             else
             {
-                AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE);
+                AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, implicit);
             }
             params->functp = cons1->tp;
             params->sp = cons1;

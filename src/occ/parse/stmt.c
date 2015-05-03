@@ -1097,7 +1097,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         if (!isstructured(selectTP))
                         {
                             if (isarray(selectTP))
-                                st->select = exprNode(en_assign, eBegin, exprNode(en_add, eBegin, intNode(en_c_i, basetype(selectTP)->btp->size)));
+                                st->select = exprNode(en_assign, eBegin, exprNode(en_add, eBegin, intNode(en_c_i, basetype(basetype(selectTP)->btp)->size)));
                         }
                         else
                         {
@@ -1105,7 +1105,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {
-                                st->select = exprNode(en_assign, eBegin, exprNode(en_add, eBegin, intNode(en_c_i, basetype(iteratorType)->btp->size)));
+                                st->select = exprNode(en_assign, eBegin, exprNode(en_add, eBegin, intNode(en_c_i, basetype(basetype(iteratorType)->btp)->size)));
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, autoinc,
                                                    funcsp, &ppType, &st->select, NULL,NULL, NULL, 0))

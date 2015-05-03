@@ -1420,7 +1420,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
         INITLIST *p = Alloc(sizeof(INITLIST));
         if (MATCHKW(lex, begin))
         {
-            lex = getInitInternal(lex, funcsp, &p->nested, end, FALSE, FALSE, FALSE, flags);
+            lex = getInitInternal(lex, funcsp, &p->nested, end, TRUE, FALSE, FALSE, flags);
             *lptr = p;
             lptr = &(*lptr)->next;
             if (!allowNesting)
@@ -1824,7 +1824,7 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
         (*initial)->exp->size = basetype(initializerListTemplate)->size;
     }
 }
-void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
+void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit)
 {
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
         hr = hr->next;
@@ -1905,7 +1905,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                         EXPRESSION *dexp = thisptr;
                         funcparams->arguments = pinit;
                         p->exp = thisptr;
-                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE);
+                        callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE);
                         if (!isref(sym->tp))
                         {
                             sp->stackblock = TRUE;
@@ -2031,7 +2031,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                             arg->tp = sym->tp;
                             arg->exp = DerivedToBase(sym->tp, tpx, arg->exp, _F_VALIDPOINTER);
                             funcparams->arguments = arg;
-                            callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE);
+                            callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE);
                             p->exp = exprNode(en_void, p->exp, consexp);
                         }
                     }
@@ -2049,7 +2049,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                         arg->exp = p->exp;
                         arg->tp = p->tp;
                         funcparams->arguments = arg;
-                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE);
+                        callConstructor(&ctype, &consexp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE);
                         p->exp=consexp;
                     }
                     p->tp = sym->tp;
@@ -2075,7 +2075,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands)
                             arg->tp = basetype(p->tp);
                             funcparams->arguments = arg;
                             p->exp = consexp;
-                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, TRUE, FALSE, FALSE); 
+                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE); 
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL *spx = p->exp->v.func->sp;
@@ -2511,7 +2511,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             else
             {
-                AdjustParams(hr, lptr, operands);
+                AdjustParams(hr, lptr, operands, TRUE);
             }
             if (cparams.prm_cplusplus)
             {

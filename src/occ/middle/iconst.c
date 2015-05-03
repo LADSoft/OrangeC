@@ -1691,7 +1691,7 @@ static void iterateConstants(void)
             /* we don't remove the definition because it may be used
             * if it isnt the dead code analysis will get it later
             */
-        }
+       }
     }
 }
 static void removePhiEntry(BLOCK *b, int n)

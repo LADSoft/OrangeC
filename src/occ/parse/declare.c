@@ -366,6 +366,7 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOLEAN beforeOnly)
     BOOLEAN defd = FALSE;
     SYMBOL *sp = NULL;
     BOOLEAN notype = FALSE;
+    BOOLEAN oldTemplateType = inTemplateType;
     *tp = NULL;
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
     lex = getBasicType(lex, funcsp, tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, FALSE);
@@ -377,6 +378,7 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOLEAN beforeOnly)
     else if (sp && !sp->anonymous)
         if (sp->tp->type != bt_templateparam)
             error(ERR_TOO_MANY_IDENTIFIERS);
+    inTemplateType = oldTemplateType;
     return lex;
 }
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp)

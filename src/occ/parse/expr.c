@@ -434,7 +434,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         *tp = sp->tp->templateParam->p->byNonType.tp;
                     else
                         *tp = &stdint;
-                    *exp = intNode(en_c_i, 0);
+                    if (!templateNestingCount)
+                        *exp = intNode(en_c_i, 0);
                 }
             }
             else if (sp->tp->type == bt_any)

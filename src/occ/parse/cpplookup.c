@@ -1914,6 +1914,29 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                 {
                     spList[i] = NULL;
                 }
+                else
+                {
+                    SYMBOL *asym;
+                    HASHREC *hrleft = basetype(spList[i]->tp)->syms->table[0];
+                    HASHREC *hrright = basetype(spList[j]->tp)->syms->table[0];
+                    while (hrleft && hrright)
+                    {
+                        hrleft = hrleft->next;
+                        hrright = hrright->next;
+                    }
+                    if (hrleft)
+                    {
+                        asym = (SYMBOL *)hrleft->p;
+                        if (asym->packed)
+                            spList[i] = NULL;
+                    }
+                    else if (hrright)
+                    {
+                        asym = (SYMBOL *)hrright->p;
+                        if (asym->packed)
+                            spList[j] = NULL;
+                    }
+                }
             }
         }
     }
@@ -2445,11 +2468,11 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
                 else if (PL->p->type == kw_int)
                 {
                     EXPRESSION *plt = PL->p->byNonType.val && !PL->p->byNonType.dflt ? PL->p->byNonType.val : PL->p->byNonType.dflt;
-                    EXPRESSION *pat = PA->p->byNonType.val && !PL->p->byNonType.dflt ? PA->p->byNonType.val : PA->p->byNonType.dflt;
+                    EXPRESSION *pat = PA->p->byNonType.val && !PA->p->byNonType.dflt ? PA->p->byNonType.val : PA->p->byNonType.dflt;
                     if (!templatecomparetypes(PL->p->byNonType.tp, PA->p->byNonType.tp, TRUE))
                         break;
 #ifndef PARSER_ONLY
-                    if ((plt || pat) && !equalTemplateIntNode(plt, pat))
+                    if ((!plt || !pat) || !equalTemplateIntNode(plt, pat))
                         break;
 #endif
                 }

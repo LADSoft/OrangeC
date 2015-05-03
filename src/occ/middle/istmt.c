@@ -714,7 +714,7 @@ void optimize(SYMBOL *funcsp)
      * we do separate dead-code passes occasionally to clean it up
      */
     /* Global opts */
-    
+
     flows_and_doms();
     gatherLocalInfo(funcsp);
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)

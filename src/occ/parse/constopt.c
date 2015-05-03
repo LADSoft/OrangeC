@@ -50,6 +50,8 @@ extern ARCH_ASM *chosenAssembler;
 extern TYPE stdvoid;
 extern BOOLEAN initializingGlobalVar;
 extern int total_errors;
+extern STRUCTSYM *structSyms;
+extern int templateNestingCount;
 
 static EXPRESSION *asidehead,  **asidetail;
 ULLONG_TYPE reint(EXPRESSION *node);
@@ -2289,8 +2291,31 @@ join_lor:
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
         case en_templateparam:
-            if ((*node)->v.sp->tp->templateParam->p->type == kw_int)
-                *node = (*node)->v.sp->tp->templateParam->p->byNonType.val;
+            if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
+            {
+                SYMBOL *sym = (*node)->v.sp;
+                TEMPLATEPARAMLIST *found = NULL;
+                STRUCTSYM *search = structSyms;
+                while (search && !found)
+                {
+                    if (search->tmpl)
+                    {
+                        TEMPLATEPARAMLIST *tpl = search->tmpl;
+                        while (tpl && !found)
+                        {
+                            if (tpl->p->sym && !strcmp(tpl->p->sym->name, sym->name))
+                                found = tpl;
+                            tpl = tpl->next;
+                        }
+                    }
+                    search = search->next;
+                }
+                if (found && found->p->type == kw_int)
+                {
+                    if (found->p->byNonType.val)
+                        *node = found->p->byNonType.val;
+                }
+            }
             break;
         default:
             break;
@@ -2797,11 +2822,6 @@ int fold_const(EXPRESSION *node)
                 }
             }
             break;
-        case en_templateparam:
-            if (node->v.sp->tp->templateParam->p->type == kw_int)
-                if (node->v.sp->tp->templateParam->p->byNonType.val)
-                    rv |= fold_const(node->v.sp->tp->templateParam->p->byNonType.val);
-            break;
         default:
             break;
     }
@@ -3238,11 +3258,6 @@ int typedconsts(EXPRESSION *node1)
                 }
                 node1->type = en_c_ldc;
             }
-            break;
-        case en_templateparam:
-            if (node1->v.sp->tp->templateParam->p->type == kw_int)
-                if (node1->v.sp->tp->templateParam->p->byNonType.val)
-                    rv |= typedconsts(node1->v.sp->tp->templateParam->p->byNonType.val);
             break;
 /*#endif */
     }

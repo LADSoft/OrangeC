@@ -2521,7 +2521,7 @@ static void createDestructor(SYMBOL *sp)
 }
 void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count)
 {
-    EXPRESSION *size = intNode(en_c_i, (*tp)->size + (*tp)->arraySkew);
+    EXPRESSION *size = intNode(en_c_i, (*tp)->size);
     EXPRESSION *econs = (cons ? varNode(en_pc, cons) : NULL), *edest = varNode(en_pc, dest);
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
     SYMBOL *asn1;

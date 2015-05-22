@@ -618,7 +618,7 @@ void setglbdefs(void)
     glbdefine("__WIN32", "",FALSE);
     if (cparams.prm_cplusplus)
     {
-        glbdefine("__cplusplus", "",TRUE);
+        glbdefine("__cplusplus", "201103",TRUE);
         if (cparams.prm_xcept)
             glbdefine("__RTTI__", "1",TRUE);
     }

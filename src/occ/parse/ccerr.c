@@ -63,6 +63,7 @@ extern LEXCONTEXT *context;
 extern int templateNestingCount;
 extern LIST *externals;
 
+int no_errors;
 int currentErrorLine;
 SYMBOL *theCurrentFunc;
 
@@ -538,6 +539,7 @@ int diagcount ;
 
 void errorinit(void)
 {
+    no_errors = 0;
     total_errors = diagcount = 0;
     currentErrorFile = NULL;
 }
@@ -626,7 +628,7 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
     char infunc[1024];
     char *listerr;
     char nameb[265], *name = nameb;
-    if (templateNestingCount && ignoreErrtemplateNestingCount(err))
+    if (no_errors || templateNestingCount && ignoreErrtemplateNestingCount(err))
         return FALSE;
     if (!file)
     {

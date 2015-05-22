@@ -178,63 +178,73 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 					break;
 				case kw_int:
 					if (params->p->packed)
+                    {
 						*buf++ = 'e';
-					buf = mangleType(buf, params->p->byNonType.tp, TRUE);
-					if (bySpecial || sym->instantiated)
-					{
-						EXPRESSION *exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
-						if (exp)
-						{
-							*buf++= '$';
-							if (isintconst(exp))
-							{
-								sprintf(buf, "%lld", exp->v.i);
-								if (buf[0] == '-')
-									buf[0] = '_';
-							}
-							else
-							{
-								buf[0] = 0;
-								while (lvalue(exp))
-									exp = exp->left;
-								switch (exp->type)
-								{
-									case en_func:
-											*buf++ = 'e';
-											*buf++ = '&';
-											strcpy(buf, exp->v.func->sp->name);
-											buf += strlen(buf);
-											*buf++ = '$';
-											buf = mangleType( buf, exp->v.func->sp->tp, TRUE);
-											break;
-									case en_pc:
-									case en_global:
-									case en_label:
-										if (isfunction(exp->v.sp->tp))
-										{
-											*buf++ = 'e';
-											*buf++ = '&';
-											strcpy(buf, exp->v.sp->name);
-											buf += strlen(buf);
-											*buf++ = '$';
-											buf = mangleType( buf, exp->v.sp->tp, TRUE);
-										}
-										else
-										{
-											*buf++ = 'g';
-											if (ispointer(params->p->byNonType.tp))
-												*buf++ = '&';
-											strcpy(buf, exp->v.sp->name);
-										}
-										break;
-									default:
-										break;
-								}
-							}    
-							buf += strlen(buf);                    
-							*buf++= '$';
-						}
-					}
+                        if (params->p->byPack.pack)
+                        {
+                            params = params->p->byPack.pack;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+    					buf = mangleType(buf, params->p->byNonType.tp, TRUE);
+    					if (bySpecial || sym->instantiated)
+    					{
+    						EXPRESSION *exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
+    						if (exp)
+    						{
+    							*buf++= '$';
+    							if (isintconst(exp))
+    							{
+    								sprintf(buf, "%lld", exp->v.i);
+    								if (buf[0] == '-')
+    									buf[0] = '_';
+    							}
+    							else
+    							{
+    								buf[0] = 0;
+    								while (lvalue(exp))
+    									exp = exp->left;
+    								switch (exp->type)
+    								{
+    									case en_func:
+    											*buf++ = 'e';
+    											*buf++ = '&';
+    											strcpy(buf, exp->v.func->sp->name);
+    											buf += strlen(buf);
+    											*buf++ = '$';
+    											buf = mangleType( buf, exp->v.func->sp->tp, TRUE);
+    											break;
+    									case en_pc:
+    									case en_global:
+    									case en_label:
+    										if (isfunction(exp->v.sp->tp))
+    										{
+    											*buf++ = 'e';
+    											*buf++ = '&';
+    											strcpy(buf, exp->v.sp->name);
+    											buf += strlen(buf);
+    											*buf++ = '$';
+    											buf = mangleType( buf, exp->v.sp->tp, TRUE);
+    										}
+    										else
+    										{
+    											*buf++ = 'g';
+    											if (ispointer(params->p->byNonType.tp))
+    												*buf++ = '&';
+    											strcpy(buf, exp->v.sp->name);
+    										}
+    										break;
+    									default:
+    										break;
+    								}
+    							}    
+    							buf += strlen(buf);                    
+    							*buf++= '$';
+    						}
+    					}
+                    }
 					break;
 				default:
 					break;

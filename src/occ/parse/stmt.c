@@ -2159,7 +2159,7 @@ LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             arg1->tp = &stdpointer;
             arg2->exp = exp;
             arg2->tp = &stdpointer;
-            arg3->exp = isarray(tp) ? intNode(en_c_i, tp->size/(basetype(tp)->btp->size + basetype(tp)->btp->arraySkew)) : intNode(en_c_i, 1);
+            arg3->exp = isarray(tp) ? intNode(en_c_i, tp->size/(basetype(tp)->btp->size)) : intNode(en_c_i, 1);
             arg3->tp = &stdint;
             arg4->exp = cons ? varNode(en_pc, cons) : intNode(en_c_i, 0);
             arg4->tp = &stdpointer;

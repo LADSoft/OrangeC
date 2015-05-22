@@ -196,6 +196,10 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 case kw_int:
                     *exp = sp->tp->templateParam->p->byNonType.val;
                     *tp = sp->tp->templateParam->p->byNonType.tp;
+                    if ((*tp)->type == bt_templateparam)
+                    {
+                        *tp = (*tp)->templateParam->p->byClass.val;
+                    }
                     return lex;
                 default:
                     break;
@@ -436,6 +440,13 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         *tp = &stdint;
                     if (!templateNestingCount)
                         *exp = intNode(en_c_i, 0);
+                    if (MATCHKW(lex, openpa))
+                    {
+                        lex = prevsym(placeholder);
+                        *tp = NULL;
+                        lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
+                        return lex;
+                    }
                 }
             }
             else if (sp->tp->type == bt_any)
@@ -590,7 +601,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 sp->tp = Alloc(sizeof(TYPE));
                 sp->tp->type = bt_any;
                 *tp = sp->tp;
-                if (!nsv)
+                if (!nsv && (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector ))
                 {
                     errorstr(ERR_UNDEFINED_IDENTIFIER, name);
                 }
@@ -602,7 +613,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 SetLinkerNames(sp, lk_c);
                 if (sp->storage_class != sc_overloads)
                 {
-                    if (localNameSpace->syms || sp->storage_class != sc_auto)
+                    if ((localNameSpace->syms || sp->storage_class != sc_auto ) &&  (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector ))
                         InsertSymbol(sp, sp->storage_class, FALSE, FALSE);
                     *exp = varNode(sp->storage_class ==sc_auto ? en_auto : en_global, sp);
                 }
@@ -1163,7 +1174,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                         *tp = PerformDeferredInitialization(*tp, funcsp);
                     cast( &stdint, &expr2);
                     exp1 = exprNode(en_umul, expr2, 
-                                   intNode(en_c_i, (*tp)->size + (*tp)->arraySkew));
+                                   intNode(en_c_i, (*tp)->size));
                     *exp = exprNode(en_add, *exp, exp1);
                 }
                 if (!(*tp)->array && !(*tp)->vla)
@@ -1196,7 +1207,7 @@ static LEXEME *expression_bracket(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                     *tp = basetype(tp2)->btp;
                     cast(&stdint, exp);
                     exp1 = exprNode(en_umul, *exp, 
-                                   intNode(en_c_i, (*tp)->size + (*tp)->arraySkew));
+                                   intNode(en_c_i, (*tp)->size));
                     *exp = exprNode(en_add, expr2, exp1);
                 }
                 if (!(*tp)->array && !(*tp)->vla)
@@ -1736,7 +1747,7 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
     while (searchx)
         count++, searchx = searchx->next;
     tp->btp = initializerListType;
-    tp->size = count * (initializerListType->size + initializerListType->arraySkew);
+    tp->size = count * (initializerListType->size);
     data = anonymousVar(sc_auto, tp);
     if (isstructured(initializerListType))
     {
@@ -1749,7 +1760,7 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
     for (i=0 ; i < count; i++, lptr = &(*lptr)->next)
     {
         EXPRESSION *node;
-        dest = exprNode(en_add, data, intNode(en_c_i, i * (initializerListType->size + initializerListType->arraySkew)));
+        dest = exprNode(en_add, data, intNode(en_c_i, i * (initializerListType->size)));
         if (isstructured(initializerListType))
         {
             TYPE *ctype = initializerListType;
@@ -2075,7 +2086,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implic
                             arg->tp = basetype(p->tp);
                             funcparams->arguments = arg;
                             p->exp = consexp;
-                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, implicit, FALSE, FALSE); 
+                            callConstructor(&ctype, &p->exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE); 
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL *spx = p->exp->v.func->sp;
@@ -3671,7 +3682,7 @@ static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp)
         error(ERR_SIZEOF_UNFIXED_ENUMERATION);
     if (isfunction(tp))
         error(ERR_SIZEOF_NO_FUNCTION);
-    if (cparams.prm_cplusplus && tp->size == 0 && (tp->type != bt_templateparam || !templateNestingCount) )
+    if (cparams.prm_cplusplus && tp->size == 0 && !templateNestingCount)
         errortype(ERR_UNSIZED_TYPE, tp, tp); /* second will be ignored in this case */
     /* this tosses exp...  sizeof expressions don't get evaluated at run time */
     /* unless they are size of a vla... */
@@ -3716,7 +3727,7 @@ static EXPRESSION *nodeSizeof(TYPE *tp, EXPRESSION *exp)
     }
     if (!exp)
     {
-        exp = intNode(en_c_i, tp->size + tp->arraySkew); 
+        exp = intNode(en_c_i, tp->size); 
     }
     return exp;			  
 }
@@ -3797,7 +3808,13 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         }
         else
         {
-            lex = get_type_id(lex, tp, funcsp, FALSE);
+            LEXEME *prev = lex;            
+            lex = get_type_id(lex, tp, funcsp, cparams.prm_cplusplus);
+            if (cparams.prm_cplusplus && MATCHKW(lex, openpa))
+            {
+                lex = prevsym(prev);
+                lex = expression_func_type_cast(lex, funcsp, tp, exp, 0);
+            }
             if (!*tp)
             {
                 *exp = intNode(en_c_i, 1);

@@ -118,6 +118,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN isTempl
 void checkPackedType(SYMBOL *sp);
 void checkPackedExpression(EXPRESSION *sp);
 void checkUnpackedExpression(EXPRESSION *sp);
+void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp);
 INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, EXPRESSION *packedExp);
 void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLIST *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list);
 void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend);
@@ -923,12 +924,13 @@ SYMBOL *gsearch(char *name);
 SYMBOL *tsearch(char *name);
 TEMPLATEPARAMLIST *getTemplateStruct(char *name);
 LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly);
+LIST *tablesearchinline(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly);
 SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOLEAN tagsOnly);
 SYMBOL *templatesearch(char *name, TEMPLATEPARAMLIST *arg);
 SYMBOL *classsearch(char *name, BOOLEAN tagsOnly, BOOLEAN toErr);
-LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, BOOLEAN *throughPath, BOOLEAN tagsOnly, enum e_sc storage_class);
+LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, BOOLEAN *throughPath, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN isType);
 LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *destructor, 
-                     BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN errIfNotFound);
+                     BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN errIfNotFound, BOOLEAN isType);
 LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
 LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *isTemplate, BOOLEAN tagsOnly, BOOLEAN membersOnly, char *name);
 BOOLEAN isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOLEAN asAddress);

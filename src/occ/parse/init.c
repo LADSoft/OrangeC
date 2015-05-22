@@ -1722,7 +1722,7 @@ static void increment_desc(AGGREGATE_DESCRIPTOR **desc, AGGREGATE_DESCRIPTOR **c
         else // array element
         {
             TYPE *tp = (*desc)->tp;
-            (*desc)->reloffset += basetype(tp)->btp->size + basetype(tp)->btp->arraySkew;
+            (*desc)->reloffset += basetype(tp)->btp->size;
             if (atend(*desc) && !(*desc)->stopgap)
             {
                 free_desc(desc, cache);
@@ -1979,7 +1979,7 @@ static TYPE *nexttp(AGGREGATE_DESCRIPTOR *desc)
         }
         else
         {
-            rv = desc->tp;
+            rv = basetype(desc->tp);
         }
     }
     else
@@ -2314,7 +2314,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
         btp = basetype(btp);
         if (isstructured(btp) && !btp->sp->trivialCons)
         {
-            int s = (btp->size + btp->arraySkew);
+            int s = (btp->size);
             INITIALIZER *test = *init;
             INITIALIZER *testd = *dest;
             INITIALIZER *first = NULL, **push = &first;
@@ -2946,7 +2946,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             if (isstructured(z) && !z->sp->trivialCons)
             {
                 INITIALIZER *init = NULL, *it = NULL;
-                int n = sp->tp->size/(z->size + z->arraySkew);
+                int n = sp->tp->size/(z->size);
                 TYPE *ctype = z;
                 EXPRESSION *sz = n > 1 ? intNode(en_c_i, n) : NULL;
                 EXPRESSION *baseexp = getThisNode(sp);
@@ -3003,7 +3003,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         tp = tp->btp;
     }
-    if (sp->constexpression)
+    if (sp->constexpression && !templateNestingCount)
     {
         if (!ispointer(tp) && !isarithmetic(tp) && basetype(tp)->type != bt_enum)
         {

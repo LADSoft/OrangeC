@@ -122,7 +122,7 @@ LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly)
     }
     return NULL;
 }
-static LIST *tablesearchinline(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly)
+LIST *tablesearchinline(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly)
 {
     // main namespace
     LIST *rv = tablesearchone(name, ns, tagsOnly);
@@ -150,6 +150,7 @@ static LIST *tablesearchinline(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly
     if (ns->name && !ns->name->visited && ns->name->linkage == lk_inline)
     {
         LIST *rv1;
+        ns->name->visited = TRUE;
         rv1 = tablesearchinline(name, ns->name->nameSpaceValues, tagsOnly);
         if (rv1)
         {
@@ -228,7 +229,7 @@ SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOL
     return NULL;
 }
 LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, 
-                   BOOLEAN *throughClass, BOOLEAN tagsOnly, enum e_sc storage_class)
+                   BOOLEAN *throughClass, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN isType)
 {
     NAMESPACEVALUES *nssym = globalNameSpace;
     SYMBOL *strSym = NULL;
@@ -388,11 +389,26 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 }
                 else
                 {
-                    SYMBOL *sp1 = sp;
-                    sp = GetClassTemplate(sp, current, FALSE);
-                    if (!sp)
-                        errorsym(ERR_NO_TEMPLATE_MATCHES, sp1);
-
+                    if (isType)
+                    {
+                        TEMPLATEPARAMLIST *p = current;
+                        while (p)
+                        {
+                            if (!p->p->byClass.dflt)
+                                break;
+                                
+                            p = p->next;
+                        }
+                        if (p)
+                            deferred = TRUE;
+                    }
+                    if (!deferred)
+                    {
+                        SYMBOL *sp1 = sp;
+                        sp = GetClassTemplate(sp, current, FALSE);
+                        if (!sp)
+                            errorsym(ERR_NO_TEMPLATE_MATCHES, sp1);
+                    }
                 }
             }
             if (sp)
@@ -680,7 +696,9 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
         }
         else
         {
-            LIST *rvl = tablesearchinline(name, ns, tagsOnly);
+            LIST *rvl;
+            unvisitUsingDirectives(ns);
+            rvl = tablesearchinline(name, ns, tagsOnly);
             if (rvl)
             {
                 rv = rvl->data;
@@ -691,7 +709,7 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
     return rv;
 }
 LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, 
-                     BOOLEAN *destructor, BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN errIfNotFound)
+                     BOOLEAN *destructor, BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN errIfNotFound, BOOLEAN isType)
 {
     SYMBOL *encloser = NULL;
     NAMESPACEVALUES *ns = NULL;
@@ -711,7 +729,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
         }
         return lex;
     }
-    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class);
+    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType);
     if (cparams.prm_cplusplus)
     {
             
@@ -743,7 +761,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
             l = encloser->templateSelector;
             while (l->next)
                 l = l->next;
-            if (*destructor)
+            if (destructor && *destructor)
             {
                 l->next = Alloc(sizeof(TEMPLATESELECTOR));
                 l->next->name = l->sym->name;
@@ -939,7 +957,7 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
         }
         return lex;
     }
-    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, sc_global);
+    lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, sc_global, FALSE);
     if (MATCHKW(lex, compl))
     {
         lex = getsym();

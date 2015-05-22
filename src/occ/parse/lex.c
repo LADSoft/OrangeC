@@ -249,6 +249,8 @@ KEYWORD keywords[] = {
     { "catch", 5,  kw_catch, KW_CPLUSPLUS, TT_CONTROL },
     { "cdecl", 5,  kw__cdecl, 0, TT_LINKAGE },
     { "char", 4,  kw_char, 0, TT_BASETYPE | TT_INT },
+    { "char16_t", 8,  kw_char16_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT },
+    { "char32_t", 8,  kw_char32_t, KW_CPLUSPLUS, TT_BASETYPE | TT_INT },
     { "class", 5,  kw_class, KW_CPLUSPLUS, TT_BASETYPE | TT_STRUCT },
     { "compl", 5,  compl, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "const", 5,  kw_const, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL },

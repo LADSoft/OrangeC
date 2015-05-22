@@ -997,7 +997,7 @@ LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defa
         if (MATCHKW(lex,classsel) || ISID(lex))
         {
             bcsym = NULL;
-            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, FALSE, sc_global, FALSE);
+            lex = nestedSearch(lex, &bcsym, NULL, NULL, NULL, NULL, FALSE, sc_global, FALSE, FALSE);
             if (bcsym && bcsym->storage_class == sc_typedef)
             {
                 // in case typedef is being used as a base class specifier
@@ -1026,7 +1026,7 @@ restart:
                     if (bcsym && bcsym->instantiated && allTemplateArgsSpecified(bcsym->templateParams->next))
                         bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, FALSE);
                 }
-                else
+                else if (!bcsym->instantiated)
                 {
                     errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
                 }
@@ -1318,7 +1318,7 @@ void checkUnpackedExpression(EXPRESSION *exp)
     if (hasPackedExpression(exp))
         error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
 }
-static void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
+void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
 {
     if (!packedExp)
         return;
@@ -1923,7 +1923,7 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
             {
                 char buf1[512];
                 strcpy(buf1, lex->value.s.a);
-                lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global, TRUE);
+                lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global, TRUE, FALSE);
                 if (sp)
                 {
                     if (sp->storage_class != sc_namespace)
@@ -2129,7 +2129,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
             // the namespace at all times... so we cache pointers to
             // related namespaces
             HASHREC **hr;
-            lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global, TRUE);
+            lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global, TRUE, FALSE);
             if (sp)
             {
                 if (sp->storage_class != sc_namespace && sp->storage_class != sc_namespacealias)
@@ -2197,7 +2197,7 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
                 lex = backupsym();
             }
         }
-        lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global, TRUE);
+        lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, sc_global, TRUE, FALSE);
         if (sp)
         {
             if (!templateNestingCount)

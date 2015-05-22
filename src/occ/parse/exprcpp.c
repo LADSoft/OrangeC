@@ -1243,6 +1243,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         }
     }
     funcparams->ascall = TRUE;    
+    
     s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE, flags);
     if (s3)
     {
@@ -1263,6 +1264,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
 BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
                         TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args, int flags)
 {
+    static SYMBOL *s30;
     SYMBOL *s1 = NULL, *s2 = NULL, *s3, *s4 = NULL, *s5 = NULL;
     HASHREC **hrd, *hrs;
     FUNCTIONCALL *funcparams;
@@ -1497,6 +1499,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
             break;
     }
     funcparams->ascall = TRUE;    
+    s30 = s3;
     s3 = GetOverloadedFunction(tp, &funcparams->fcall, s3, funcparams, NULL, FALSE, FALSE, TRUE, flags);
     if (s3)
     {
@@ -1778,7 +1781,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                         INITIALIZER *it = init;
                         while (it && it->exp)
                             it= it->next;
-                        arrSize = exprNode(en_sub, arrSize, intNode(en_c_i, it->offset/(basetype(*tp)->size + basetype(*tp)->arraySkew)));
+                        arrSize = exprNode(en_sub, arrSize, intNode(en_c_i, it->offset/(basetype(*tp)->size)));
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;

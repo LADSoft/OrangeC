@@ -267,7 +267,7 @@ static LEXEME *tagsearch(LEXEME *lex, char *name, SYMBOL **rsp, HASHTABLE **tabl
     *rsp = NULL;
     if (ISID(lex) || MATCHKW(lex, classsel))
     {
-        lex = nestedSearch(lex, rsp, &strSym, &nsv, NULL, NULL, TRUE, storage_class, FALSE);
+        lex = nestedSearch(lex, rsp, &strSym, &nsv, NULL, NULL, TRUE, storage_class, FALSE, FALSE);
         if (*rsp)
         {
             lex = getsym();
@@ -366,8 +366,11 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOLEAN beforeOnly)
     BOOLEAN defd = FALSE;
     SYMBOL *sp = NULL;
     BOOLEAN notype = FALSE;
+    BOOLEAN typeName;
     BOOLEAN oldTemplateType = inTemplateType;
     *tp = NULL;
+    typeName = MATCHKW(lex, kw_typename);
+        
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
     lex = getBasicType(lex, funcsp, tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, FALSE);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3);
@@ -376,7 +379,7 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, BOOLEAN beforeOnly)
     if (notype)
         *tp = NULL;
     else if (sp && !sp->anonymous)
-        if (sp->tp->type != bt_templateparam)
+        if (!typeName && sp->tp->type != bt_templateparam)
             error(ERR_TOO_MANY_IDENTIFIERS);
     inTemplateType = oldTemplateType;
     return lex;
@@ -494,7 +497,7 @@ void calculateStructOffsets(SYMBOL *sp)
         SYMBOL *p = (SYMBOL *)hr->p;
         TYPE *tp = basetype(p->tp);
         if (p->storage_class != sc_static && p->storage_class != sc_external && p->storage_class != sc_overloads
-            && !istype(p) && p != sp && p->parentClass == sp) 
+            && p->storage_class != sc_enumconstant && !istype(p) && p != sp && p->parentClass == sp) 
                     // not function, also not injected self or base class or static variable
         {
             int align ;
@@ -607,11 +610,16 @@ void calculateStructOffsets(SYMBOL *sp)
     }
     sp->tp->size = size ;
     sp->structAlign = totalAlign;
-    if (cparams.prm_cplusplus)
+//    if (cparams.prm_cplusplus)
     {
-        sp->tp->arraySkew = sp->tp->size % (totalAlign ? totalAlign : 1);
-        if (sp->tp->arraySkew && totalAlign)
-            sp->tp->arraySkew = totalAlign - sp->tp->arraySkew;
+        // align the size of the structure to make the structure alignable when used as an array element
+        if (totalAlign)
+        {
+            int skew = sp->tp->size % totalAlign;
+            if (skew)
+                skew = totalAlign - skew;
+            sp->tp->size += skew;
+        }
     }
 }
 static BOOLEAN validateAnonymousUnion(SYMBOL *parent, TYPE *unionType)
@@ -848,7 +856,6 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         lst->data = sp;
     }
     lex = getsym();
-    sp->declaring = TRUE;
     sl.str = sp;
     addStructureDeclaration(&sl);
     while (lex && KW(lex) != end)
@@ -937,7 +944,6 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         lex = getsym();
         FlushLineData("", 0);
     }
-    sp->declaring = FALSE;
     return lex;
 }
 LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTemplate, enum e_ac defaultAccess, BOOLEAN isfinal, BOOLEAN *defd)
@@ -949,6 +955,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
     if (sp->structAlign == 0)
         sp->structAlign = 1;
     structLevel++;
+    sp->declaring = TRUE;
     if (hasBody)
     {
         if (sp->tp->syms || sp->tp->tags)
@@ -990,6 +997,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
         noSpecializationError--;
         TemplateGetDeferred(sp);
     }
+    sp->declaring = FALSE;
     --structLevel;
     return lex;
 }
@@ -1267,7 +1275,8 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
                 }
                 else
                 {
-                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                    if (!templateNestingCount)
+                        error(ERR_CONSTANT_VALUE_EXPECTED);
                     errskim(&lex, skim_end);
                 }
             }
@@ -1628,6 +1637,8 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOLEAN allowstatic)
             continue;
         }
         tpn = Alloc(sizeof(TYPE));
+        if (*tp)
+            tpn->size = (*tp)->size;
         switch(KW(lex))
         {
             case kw_static:
@@ -1761,7 +1772,7 @@ LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *lin
 static LEXEME *nestedTypeSearch(LEXEME *lex, SYMBOL **sym)
 {
     *sym = NULL;
-    lex = nestedSearch(lex, sym, NULL, NULL, NULL, NULL, FALSE, sc_global, FALSE);
+    lex = nestedSearch(lex, sym, NULL, NULL, NULL, NULL, FALSE, sc_global, FALSE, TRUE);
     if (!*sym || !istype((*sym)))
     {
         error(ERR_TYPE_NAME_EXPECTED);
@@ -2185,7 +2196,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                 else if (ISID(lex) || MATCHKW(lex, classsel))
                 {
                     SYMBOL *sp;
-                    lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, storage_class, TRUE);
+                    lex = nestedSearch(lex, &sp, NULL, NULL, NULL, NULL, FALSE, storage_class, TRUE, TRUE);
                     if (sp)
                         *tp = sp->tp;
                 }
@@ -2263,7 +2274,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
             BOOLEAN destructor = FALSE;
             LEXEME *placeholder = lex;
             BOOLEAN inTemplate = FALSE;
-            lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, FALSE, storage_class, FALSE);
+            lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, FALSE, storage_class, FALSE, TRUE);
             if (sp && istype(sp))
             {
                 SYMBOL *ssp = getStructureDeclaration();
@@ -2685,12 +2696,12 @@ static LEXEME *getArrayType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc st
                         error(ERR_ARRAY_INVALID_INDEX);
                 if (tpc->type == bt_templateparam)
                 {
-                    tpp->size = basetype(tpp->btp)->size + basetype(tpp->btp)->arraySkew;
+                    tpp->size = basetype(tpp->btp)->size;
                     tpp->esize = intNode(en_c_i, 1);
                 }
                 else if (isarithmeticconst(constant))
                 {
-                    tpp->size = basetype(tpp->btp)->size + basetype(tpp->btp)->arraySkew;
+                    tpp->size = basetype(tpp->btp)->size;
                     tpp->size *= constant->v.i;
                     tpp->esize = intNode(en_c_i, constant->v.i);
                 }
@@ -2863,6 +2874,8 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces)
 {
     LEXEME **cur = &sym->deferredCompile, *last = NULL;
     int paren = 0;
+    int brack = 0;
+    int ltgt = 0;
     while (lex != NULL)
     {
         enum e_kw kw= KW(lex);
@@ -2894,14 +2907,31 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces)
             }
             else if (kw == closepa)
             {
-                if (paren-- == 0)
+                if (paren-- == 0 && !brack)
                 {
                     break;
                 }
             }
-            else if (kw == comma && !paren)
+            else if (kw == openbr)
+            {
+                brack++;
+            }
+            else if (kw == closebr)
+            {
+                brack--;
+            }
+            else if (kw == comma && !paren && !brack && !ltgt)
             {
                 break;
+            }
+            // there is some ambiguity between templates and <
+            else if (kw == lt)
+            {
+                ltgt++;
+            }
+            else if (kw == gt)
+            {
+                ltgt--;
             }
         }
         *cur = Alloc(sizeof(LEXEME));
@@ -3718,7 +3748,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 pack = TRUE;
                 lex = getsym();
             }
-            lex = nestedPath(lex, &strSymX, &nsvX, &throughClass, FALSE, storage_class);
+            lex = nestedPath(lex, &strSymX, &nsvX, &throughClass, FALSE, storage_class, FALSE);
             if (strSymX)
             {
                 if (strSym)
@@ -4818,9 +4848,14 @@ jointemplate:
                         spi = NULL;
                         if (nsv)
                         {
-                            LIST *rvl = tablesearchone(sp->name, nsv, FALSE);
+                            LIST *rvl;
+                            unvisitUsingDirectives(nsv);
+                            rvl = tablesearchinline(sp->name, nsv, FALSE);
                             if (rvl)
-                                spi = (SYMBOL *)rvl->data;
+                                if (rvl->next)
+                                    errorsym2(ERR_AMBIGUITY_BETWEEN, rvl->data, rvl->next->data);
+                                else
+                                    spi = (SYMBOL *)rvl->data;
                             else
                                 errorNotMember(strSym, nsv, sp->name);
                         }

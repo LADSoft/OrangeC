@@ -188,7 +188,7 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
     {
         genaddress(0);
     }
-    genint(tp->size + tp->arraySkew);
+    genint(tp->size);
     genint(flags);
     RTTIGetDisplayName(name, tp);
     for (p = name; *p; p++)
@@ -306,7 +306,7 @@ static void RTTIDumpStruct(SYMBOL *xtSym, TYPE *tp)
 static void RTTIDumpArray(SYMBOL *xtSym, TYPE *tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_ARRAY | getSize(bt_int));
-    genint(tp->size/(tp->btp->size + tp->btp->arraySkew));
+    genint(tp->size/(tp->btp->size));
     gen_endvirtual(xtSym);
 }
 static void RTTIDumpPointer(SYMBOL *xtSym, TYPE *tp)

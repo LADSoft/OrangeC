@@ -125,6 +125,7 @@ void preprocini(char *name, FILE *fil)
     INCLUDES *p = globalAlloc(sizeof(INCLUDES));
     p->fname = litlate(name);
     p->handle = fil;
+    p->first = TRUE;
     includes = p;
     inclData = NULL;
     incfiles = NULL;
@@ -470,6 +471,15 @@ int getstring(unsigned char *s, int len, FILE *file)
             *s = 0;
             includes->inputlen = 0;
             return s == olds;
+        }
+        if (includes->first)
+        {
+            includes->first = FALSE;
+            if (includes->inputlen >= 3 && includes->ibufPtr[0] == 0xef && includes->ibufPtr[1] == 0xbb && includes->ibufPtr[2] == 0xbf)
+            {
+                includes->ibufPtr += 3;
+                includes->inputlen -= 3;
+            }
         }
     }
 }
@@ -1043,6 +1053,7 @@ void doinclude(void)
         return;
     inc = GetIncludeData();
     inc->sys_inc = FALSE;
+    inc->first = TRUE;
     if (*includes->lptr != '"' && *includes->lptr != '<')
     {
         ppdefcheck(includes->lptr);
@@ -1253,7 +1264,7 @@ void dodefine(void)
             includes->lptr++;
             skipspace();
         }
-        if (cparams.prm_c99 && (gotcomma || nullargs)) 
+        if ((cparams.prm_c99 ||cparams.prm_cplusplus) && (gotcomma || nullargs)) 
         {
             if (includes->lptr[0] == '.' && includes->lptr[1] == '.' && includes->lptr[2] == '.')
             {
@@ -1533,7 +1544,7 @@ int defreplaceargs(unsigned char *macro, int count, unsigned char **oldargs, uns
         {
             q = p;
             defid(name, &p);
-            if (cparams.prm_c99 && !strcmp(name,"__VA_ARGS__")) 
+            if ((cparams.prm_c99 || cparams.prm_cplusplus) && !strcmp(name,"__VA_ARGS__")) 
             {
                 if (varargs[0]) {
                     if ((rv = definsert(macro, p, q, varargs, varargs, MACRO_REPLACE_SIZE-(q - macro), p - q))
@@ -1874,7 +1885,7 @@ int replacesegment(unsigned char *start, unsigned char *end, int *inbuffer, int 
                     }
                     if (*(p - 1) != ')' || count != sp->argcount - 1)
                     {
-                        if (count == sp->argcount-1 && cparams.prm_c99 && (sp->varargs)) 
+                        if (count == sp->argcount-1 && (cparams.prm_c99 || cparams.prm_cplusplus) && (sp->varargs)) 
                         {
                             unsigned char *q = varargs ;
                             int nestedparen=0;

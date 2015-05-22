@@ -95,7 +95,7 @@ typedef unsigned int wint_t;
 } ;
 #endif
 #endif  /* __STDDEF_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STDDEF_H_USING_LIST)
+#if defined(__cplusplus) /*&& !defined(__USING_CNAME__)*/ && !defined(__STDDEF_H_USING_LIST)
 #define __STDDEF_H_USING_LIST
 using __STD_NS_QUALIFIER ptrdiff_t ;
 #ifdef _USING_STDDEF_SIZE_T

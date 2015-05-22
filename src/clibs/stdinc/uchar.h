@@ -53,8 +53,10 @@ typedef struct __mbstate_t
 } mbstate_t;
 #endif
 
+#ifndef __cplusplus
 typedef __char16_t char16_t;
 typedef __char32_t char32_t;
+#endif
 
 size_t _RTL_FUNC _IMPORT mbrtoc16(char16_t * restrict pc16, const char * restrict s, 
                           size_t n, mbstate_t * restrict ps);

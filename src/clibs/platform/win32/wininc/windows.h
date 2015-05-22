@@ -46,6 +46,7 @@
 /* microsoft includes these in WINNT.H and we have to too for compatibility */
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* Base definitions */
 #include <win32/Base.h>

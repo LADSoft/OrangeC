@@ -952,12 +952,15 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
             char s =  *++p;
             int wc = warncount, ec = errcount;
             *p = 0;
-            countErrors(buf);
-            if (ec != errcount)
-                SetInfoColor(window, 0x0000ff); // red
-            else if (wc != warncount)
-                SetInfoColor(window, 0xff0000); // blue
-            SendInfoMessage(window, buf);
+            if (window != ERR_NO_WINDOW)
+            {
+                countErrors(buf);
+                if (ec != errcount)
+                    SetInfoColor(window, 0x0000ff); // red
+                else if (wc != warncount)
+                    SetInfoColor(window, 0xff0000); // blue
+                SendInfoMessage(window, buf);
+            }
             *p = s;
             memcpy(buf, p, 512-(p - buf));
             pos -= p - buf;
@@ -967,12 +970,15 @@ int ParsePipeData(HANDLE handle, int window, HANDLE hProcess)
         {
             int wc = warncount, ec = errcount;
             buf[pos] = 0;
-            countErrors(buf);
-            if (ec != errcount)
-                SetInfoColor(window, 0x0000ff); // red
-            else if (wc != warncount)
-                SetInfoColor(window, 0xff0000); // blue
-            SendInfoMessage(window, buf);
+            if (window != ERR_NO_WINDOW)
+            {
+                countErrors(buf);
+                if (ec != errcount)
+                    SetInfoColor(window, 0x0000ff); // red
+                else if (wc != warncount)
+                    SetInfoColor(window, 0xff0000); // blue
+                SendInfoMessage(window, buf);
+            }
             pos = 0;
         }
         if (!read || !rv)
@@ -1045,7 +1051,7 @@ int Execute(char *cmd, char *wdp, int window)
             ;
         SetThreadPriority(GetCurrentThread(), prio);
     }
-    else
+    else if (window != ERR_NO_WINDOW)
     {
         sprintf(buf, "\r\n%d: Can't spawn %s\r\n", GetLastError(), filename);
         SendInfoMessage(window, buf);

@@ -310,6 +310,7 @@
 			2 = stdcall style function call
 			3 = pascall style function call
 			4 = C++ object method
+			5 = C++ object method (static) same as C style
 
 		the argument list is a comma-delimited list of T#, which gives the types of the parameters
 
@@ -319,6 +320,8 @@
 		in the case of integers it will be implicitly cast to (DWORD) and aligned
 		as such according to the little/big endianness of the processor as assigned in the
 		AD record.
+
+		if the linkage is C++ object, the first argument will be the this pointer
 	
 	3: bit field
 		ATT$,T3,sz,TB,bitno,bits.

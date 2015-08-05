@@ -207,7 +207,7 @@ KEYWORD keywords[] = {
     { "__export", 8,  kw__export, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__func__", 8,  kw___func__, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR },
     { "__import", 8,  kw__import, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    { "__inline", 8,  kw__inline, KW_NONANSI | KW_ALL, TT_LINKAGE },
+    { "__inline", 8,  kw_inline, KW_NONANSI | KW_ALL, TT_LINKAGE },
     { "__int16", 7,  kw_short, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT },
     { "__int32", 7,  kw_int, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT | TT_BASE },
     { "__int64", 7,  kw___int64, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT },

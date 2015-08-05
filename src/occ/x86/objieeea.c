@@ -133,7 +133,7 @@ void omfInit(void)
 }
 static void emit_record_ieee(char *format, ...)
 {
-    char buffer[512];
+    char buffer[2048];
     int i, l;
     va_list ap;
 
@@ -351,7 +351,7 @@ void link_Files(void)
 
 void link_Segs(void)
 {
-    char buf[512];
+    char buf[2048];
     int i;
     VIRTUAL_LIST *v = virtualFirst;
     firstVirtualSeg = 1;
@@ -731,7 +731,7 @@ void link_types()
 void link_putext(SYMBOL *sp)
 {
 
-    char buf[512];
+    char buf[2048];
     beDecorateSymName(buf, sp);
     sp->value.i = extIndex++;
     emit_record_ieee("NX%X,%03X%s.\r\n", (int)sp->value.i, strlen(buf), buf);

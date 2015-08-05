@@ -1037,7 +1037,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
         }
         else
         {
-            if (itype->type != bt_templateparam)
+            if (itype->type != bt_templateparam && !templateNestingCount)
             {
                 EXPRESSION **exp2;
                 exp2 = &exp;
@@ -1441,19 +1441,20 @@ EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val)
     errortype(ERR_CREATE_TEMPORARY, tp, tp);
     return rv;
 }
-static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, enum e_sc sc)
+static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, TYPE*boundTP, enum e_sc sc)
 {
     if (exp->type == en_cond)
     {
-        exp->right->left = ConvertInitToRef(exp->right->left, tp, sc);
-        exp->right->right = ConvertInitToRef(exp->right->right, tp, sc);
+        exp->right->left = ConvertInitToRef(exp->right->left, tp, boundTP, sc);
+        exp->right->right = ConvertInitToRef(exp->right->right, tp, boundTP, sc);
     }
     else
     {
-        if (!templateNestingCount && referenceTypeError(tp, exp) != exp->type && (!isstructured(basetype(tp)->btp) || exp->type != en_lvalue))
+        EXPRESSION *exp1 = exp;
+        if (!templateNestingCount && (referenceTypeError(tp, exp) != exp->type || (tp->type == bt_rref && lvalue(exp))) && (!isstructured(basetype(tp)->btp) || exp->type != en_lvalue))
         {
-            if (!isarithmeticconst(exp))
-                errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
+            if (!isarithmeticconst(exp) && exp->type != en_thisref && exp->type != en_func)
+                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
             if (sc != sc_parameter)
                 exp = createTemporary(tp, exp);
         }
@@ -1490,14 +1491,35 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
              || (!isarithmetic(tp) && basetype(tp)->type == bt_enum)) 
             && !comparetypes(itype, tp, TRUE) 
             && (!isstructured(itype->btp) || !isstructured(tp) || classRefCount(basetype(itype->btp)->sp, basetype(tp)->sp) != 1))
-            errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, itype->btp, itype->btp);
+            errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp->btp);
         else if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
         else if (!isref(tp) && !isstructured(tp) && !isfunction(tp) && (!ispointer(tp) || !tp->array))
             {
-                exp = ConvertInitToRef(exp, itype, sc);
+                exp = ConvertInitToRef(exp, itype, tp, sc);
                 
             }
+        else if (itype->type == bt_rref && isstructured(itype->btp) && exp->type != en_lvalue)
+        {
+            EXPRESSION *expx = exp;
+            BOOLEAN lref = FALSE;
+            if (expx->type == en_thisref)
+                expx = expx->left;
+            if (expx->type == en_func)
+            {
+                if (expx->v.func->returnSP)
+                {
+                    if (!expx->v.func->returnSP->anonymous)
+                        lref = TRUE;
+                }
+            }
+            else
+            {
+                lref = TRUE;
+            }
+            if (lref)
+                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp);
+        }
     }
     initInsert(init, itype, exp, offset, FALSE);
     if (needend)
@@ -2897,11 +2919,17 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
             else if (sp->storage_class == sc_external)
                 sp->storage_class = sc_global;
             {
-                if (MATCHKW(lex, assign) && !isstructured(sp->tp))
-                    lex = getsym(); /* past = */
+                BOOLEAN assigned = FALSE;
+                if (MATCHKW(lex, assign))
+                {
+                    if (!isstructured(sp->tp))
+                        lex = getsym(); /* past = */
+                    else
+                        assigned = TRUE;
+                }
                 lex = initType(lex, funcsp, 0, sp->storage_class, &sp->init, &sp->dest, sp->tp, sp, FALSE, flags);
                 /* set up an end tag */
-                if (sp->init)
+                if (sp->init || assigned)
                 {
                     init = &sp->init;			
                     while (*init)
@@ -3005,7 +3033,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (sp->constexpression && !templateNestingCount)
     {
-        if (!ispointer(tp) && !isarithmetic(tp) && basetype(tp)->type != bt_enum)
+        if (!ispointer(tp) && !isarithmetic(tp) && basetype(tp)->type != bt_enum && (!isstructured(tp) || !basetype(tp)->sp->trivialCons))
         {
             error(ERR_CONSTEXPR_SIMPLE_TYPE);
         }
@@ -3013,6 +3041,20 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         {
             if (sp->storage_class != sc_external)
                 error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
+        }
+        else if (isstructured(tp))
+        {
+            INITLIST *l = sp->init;
+            while (l)
+            {
+                if (l->next || l->exp)
+                    if (!IsConstantExpression(sp->init->exp, FALSE))
+                    {
+                        error(ERR_CONSTANT_EXPRESSION_EXPECTED);
+                        break;
+                    }
+                l = l->next;
+            }
         }
         else
         {
@@ -3025,23 +3067,33 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     }
     if (isconst(tp))
     {
-        if  (!sp->init)
+        if (!templateNestingCount)
         {
-            if (!asExpression)
+            if  (!sp->init)
             {
-                if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
+                if (!asExpression)
                 {
-                    if (!isstructured(tp) || !cparams.prm_cplusplus || (basetype(tp)->sp->trivialCons && hasData(tp)))
-                       errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                    if (sp->storage_class != sc_external && sp->storage_class != sc_typedef && sp->storage_class != sc_member && sp->storage_class != sc_mutable)
+                    {
+                        if (!isstructured(tp) || !cparams.prm_cplusplus || (basetype(tp)->sp->trivialCons && hasData(tp)))
+                           errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+                    }
                 }
             }
+            else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp))
+            {
+                if (!asExpression)
+                    errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
+            }
+            else if (sp->init->exp && isintconst(sp->init->exp) && isint(sp->tp))
+                {
+                    if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
+                        insertInitSym(sp);
+                    sp->value.i = sp->init->exp->v.i ;
+                    sp->storage_class = sc_constant;
+                }
         }
-        else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp))
-        {
-            if (!asExpression)
-                errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
-        }
-        else if (sp->init->exp && isintconst(sp->init->exp) && isint(sp->tp))
+        else if (sp->init && sp->init->exp && isintconst(sp->init->exp) && isint(sp->tp))
             {
                 if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
                     insertInitSym(sp);

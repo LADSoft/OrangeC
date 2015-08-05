@@ -60,7 +60,7 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL *sym = item->data;
-        if (istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef)
+        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef)
         {
             sqlite3_int64 struct_id;
             if (ccWriteStructName(sym->name, &struct_id))
@@ -72,7 +72,7 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL *sym = item->data;
-        if (istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef && sym->tp->syms)
+        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef && sym->tp->syms)
         {
             sqlite3_int64 struct_id = sym->ccStructId, file_id;
             if (ccWriteFileName(sym->declfile, &file_id))

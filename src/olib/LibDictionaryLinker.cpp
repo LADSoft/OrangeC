@@ -40,11 +40,12 @@
 #include "LibDictionary.h"
 #include "ObjFile.h"
 #include <ctype.h>
+#include <iostream>
 
-ObjInt LibDictionary::casecmp(const char *str1, const char *str2, int n)
+bool DictCompare::caseSensitive;
+
+ObjInt DictCompare::casecmp(const char *str1, const char *str2, int n) const
 {
-    if (n != strlen(str2))
-        return 1;
     while (*str1 && *str2 && n)
     {
         int u1 = *str1;
@@ -55,95 +56,55 @@ ObjInt LibDictionary::casecmp(const char *str1, const char *str2, int n)
             u2 = toupper(u2);
         }
         if (u1 != u2)
-            return 1;
+            break;
         str1++, str2++, n--;
     }
-    return n != 0;
+    if (n == 0)
+    {
+        if (!*str2)
+            return 0;
+        return -1;
+    }
+    else if (!*str2)
+        return 1;
+    else
+        return *str1 < *str2 ? -1 : 1;
 }
 ObjInt LibDictionary::Lookup(FILE *stream, ObjInt dictionaryOffset, ObjInt dictionarySize, const ObjString &name)
 {
-    DICTPAGE thispage;
-    ComputeHash(name.c_str());
-      int current_block=-1;
-
-
-      while (true) {
-        if (block_x != current_block) {
-            fseek(stream, block_x *LIB_PAGE_SIZE+dictionaryOffset, SEEK_SET);
-            fread((char *)&thispage, LIB_PAGE_SIZE, 1, stream);
-//            if (stream.fail())
-//                return -1;
-            current_block = block_x;
-        }
-        if (thispage.f.htab[bucket_x] == 0)
+    if (!dictionary.size())
+    {
+        fseek(stream, 0, SEEK_END);
+        int end = ftell(stream);
+        int size = end - dictionaryOffset;
+        ObjByte *buf = new ObjByte[size];
+        fseek(stream, dictionaryOffset, SEEK_SET);
+        fread(buf, size,1, stream);
+        ObjByte *q = buf;
+        char sig[4] = { '1','0',0,0 }, sig1[4];
+        if (!memcmp(sig, buf, 4))
         {
-            if (thispage.f.fflag == 0xff) {
-                block_x = (block_x+block_d) %dictionarySize ;
-                if (block_x == oblock_x)
-                    return -1;
-            }
-            else
-                return -1;
-        }
-        else {
-            ObjByte *pos = &thispage.bytes[thispage.f.htab[bucket_x]*2];
-            if (!casecmp((char *)pos+1, name.c_str(), *(unsigned char *)pos)) {
-                //int namehash;
-                unsigned char *dataoffset = pos + 1 + *pos;
-                if ((1 + *pos) & 1)
-                    dataoffset++;
-                return *(unsigned short *)dataoffset;
-            }
-            else {
-                bucket_x = (bucket_x + bucket_d) %LIB_BUCKETS;
-                if (bucket_x == obucket_x) {
-                    if (thispage.f.fflag != 0xff)
-                        return -1;
-                    else {
-                        block_x = (block_x+block_d) %dictionarySize ;
-                        if (block_x == oblock_x)
-                            return -1;
-                    }
-                }
+            int len;
+            q += 4;
+            len = *(short *)q;
+            while (len)
+            {
+                q += 2;
+                int fileNum = *(int *)(q + len);
+                q[len] = 0;
+                dictionary[(char *)q] = fileNum;
+                q += len + 4;
+                len = *(short *)q;
             }
         }
+        else
+        {
+            std::cout << "Old format library detected, please rebuild libraries" << std::endl;
+        }
+        delete [] buf;
     }
-}
-int LibDictionary::ROTL(int x, int by)
-{
-    return ((x << by) | (x >> (16 - by))) & 0xffff;
-}
-int LibDictionary::ROTR(int x, int by)
-{
-    return ((x >> by) | (x << (16 - by))) & 0xffff;
-}
-#define max(x, y)  (((x)>(y)) ? (x) : (y))
-void LibDictionary::ComputeHash(const char * name)
-{
-  int len = strlen(name);
-  const char *pb = name, *pe = name + len;
-  int blank = ' ';
-
-  block_x = len | blank;
-  bucket_d = len | blank;
-  block_d = 0, 
-  bucket_x = 0;
-
-  while (1) {
-    int cback = *(--pe) | blank;	/* This is a cute way to get lowercase */
-                    /* And uppercase names to hash the same way */
-    int cfront = *(pb++) | blank;
-    bucket_x = ROTR(bucket_x, 2) ^ cback;
-    block_d = ROTL(block_d, 2) ^ cback;
-    if (--len == 0)
-        break;
-    block_x = ROTL(block_x,2) ^ cfront;
-    bucket_d = ROTR(bucket_d,2) ^ cfront;
-  }
-  oblock_x = block_x = block_x % blockCount;
-  block_d = block_d % blockCount;
-  block_d = max(block_d, 1);
-  obucket_x = bucket_x = bucket_x % LIB_BUCKETS;
-  bucket_d = bucket_d % LIB_BUCKETS;
-  bucket_d = max(bucket_d, 1);
+    std::map<ObjString, ObjInt, DictCompare>::iterator it= dictionary.find(name);
+    if (it != dictionary.end())
+        return it->second;
+    return -1;
 }

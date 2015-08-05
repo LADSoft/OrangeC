@@ -157,17 +157,18 @@ static KEYWORD prockeywords[] =
 };
 static ARCH_DEFINES defines[] = { 
     /* must come first in this order */
-    {"__WIN32__","",FALSE, TRUE },
-    {"__LSCRTL_DLL","",FALSE, TRUE },
-    {"__DOS__","",FALSE, TRUE },
-    {"_WIN32","",FALSE, TRUE },
-    {"__MSVCRT_DLL","",FALSE, TRUE },
-    {"__CRTDLL_DLL","",FALSE, TRUE },
-    {"__RAW_IMAGE__","",FALSE, TRUE },
+    {"__WIN32__","1",FALSE, TRUE },
+    {"__LSCRTL_DLL","1",FALSE, TRUE },
+    {"__DOS__","1",FALSE, TRUE },
+    {"_WIN32","1",FALSE, TRUE },
+    {"__MSVCRT_DLL","1",FALSE, TRUE },
+    {"__CRTDLL_DLL","1",FALSE, TRUE },
+    {"__RAW_IMAGE__","1",FALSE, TRUE },
     /* end ordered */
-    {"__386__","",TRUE,TRUE },
-    {"__i386__","",TRUE,TRUE },
-    {"_i386_","",TRUE,TRUE },
+    {"__386__","1",TRUE,TRUE },
+    {"__i386__","1",TRUE,TRUE },
+    {"_i386_","1",TRUE,TRUE },
+    {"__i386","1",TRUE,TRUE },
     {0 },
 };
 static ARCH_SIZING sizes = {
@@ -369,6 +370,10 @@ ARCH_GEN outputfunctions ;
             architecture.libsasimports = TRUE;
         }
     }
+static int init(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
+{
+    WinmodeSetup(0, "c");
+}
 static int parse_param(char select, char *string)
 {
     if (select == 'W') {
@@ -422,7 +427,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
-    NULL,  /* return 1 to proceed */
+    init,  /* return 1 to proceed */
     NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     NULL,          /* insert the output (executable name) into the backend */
@@ -459,7 +464,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
-    NULL,  /* return 1 to proceed */
+    init,  /* return 1 to proceed */
     NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     NULL,          /* insert the output (executable name) into the backend */
@@ -496,7 +501,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
-    NULL,  /* return 1 to proceed */
+    init,  /* return 1 to proceed */
     NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     NULL,          /* insert the output (executable name) into the backend */

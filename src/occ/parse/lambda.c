@@ -848,7 +848,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         if (MATCHKW(lex, pointsto))
         {
             lex = getsym();
-            lex = get_type_id(lex, &self->functp, funcsp, FALSE);
+            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, FALSE);
         }
     }
     else

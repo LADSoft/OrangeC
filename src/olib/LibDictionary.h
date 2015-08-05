@@ -47,44 +47,30 @@
 class ObjFile;
 class LibFiles;
 
+struct DictCompare
+{
+    ObjInt casecmp(const char *str1, const char *str2, int n) const;
+
+    bool operator ()(ObjString left, ObjString right) const
+    {
+        return casecmp(left.c_str(), right.c_str(), left.size()) < 0;
+    }
+    static bool caseSensitive;
+};
 class LibDictionary
 {
 public:
-    typedef std::map<ObjString, ObjInt> Dictionary;
-    enum { LIB_PAGE_SIZE = 512 } ;
-    enum { LIB_BUCKETS = 37 } ;
-    union DICTPAGE {
-      ObjByte bytes[LIB_PAGE_SIZE];		/* Either 512 ObjBytes */
-      struct {
-          ObjByte htab[LIB_BUCKETS];		/* Or the 37 buckets */
-        ObjByte fflag;					/* followed by the next free position */
-        ObjByte names[LIB_PAGE_SIZE-LIB_BUCKETS-1];	/* followed by names section */
-      } f;
-    };
-    LibDictionary(bool CaseSensitive = true) :blockCount(0), data(NULL), caseSensitive(CaseSensitive) { }
-    ~LibDictionary() { delete [] data; }
+    typedef std::map<ObjString, ObjInt, DictCompare> Dictionary;
+    LibDictionary(bool CaseSensitive = true) :caseSensitive(CaseSensitive) { DictCompare::caseSensitive = CaseSensitive; }
+    ~LibDictionary() { }
     ObjInt Lookup(FILE *stream, ObjInt dictOffset, ObjInt dictPages, const ObjString &str);
     void Write(FILE *stream);
     void CreateDictionary(LibFiles &files);
-    void Clear() { dictionary.clear(); if (data) { delete [] data; data = NULL; } blockCount = 0; }
-    ObjInt GetBlockCount() const { return blockCount; }
-    void SetBlockCount(ObjInt BlockCount) { blockCount = BlockCount; }
-    ObjInt casecmp(const char *str1, const char *str2, int n);
-
-protected:	
-    int ROTL(int x, int by);
-    int ROTR(int x, int by);
-    void ComputeHash(const char * name);
-    bool InsertInDictionary(const char *name, int index);
+    void Clear() { dictionary.clear(); }
+protected:
+    void InsertInDictionary(const char *name, int index);
 private:
     Dictionary dictionary;
-    int blockCount;
-    DICTPAGE *data;
-    int block_d, bucket_d, block_x, bucket_x;
-    int oblock_x;
-    int obucket_x;
     bool caseSensitive;
-    
-    static int primes[] ;
 } ;
 #endif //LIBDICTIONARY_H

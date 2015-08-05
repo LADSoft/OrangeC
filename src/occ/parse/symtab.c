@@ -43,6 +43,8 @@ extern int codeLabel;
 extern ARCH_DEBUG *chosenDebugger;
 extern FILE *listFile;
 extern INCLUDES *includes;
+extern int structLevel;
+extern int templateNestingCount;
 #endif
 
 NAMESPACEVALUES *globalNameSpace, *localNameSpace;
@@ -277,6 +279,10 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
         return FALSE;
     if (isvolatile(tnew) != isvolatile(told))
         return FALSE;
+    if (islrqual(tnew) != islrqual(told))
+        return FALSE;
+    if (isrrqual(tnew) != isrrqual(told))
+        return FALSE;
     while (hnew && hold)
     {
         SYMBOL *snew = (SYMBOL *)hnew->p;
@@ -409,7 +415,12 @@ void insert(SYMBOL *in, HASHTABLE *table)
 #if defined(CPREPROCESSOR) || defined(PARSER_ONLY)
             pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
 #else
-            preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
+            if (!structLevel || !templateNestingCount)
+            {
+                SYMBOL *sym = search(in->name, table);
+                if (!sym || !sym->wasUsing || !in->wasUsing)
+                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
+            }   
 #endif
         }
     }

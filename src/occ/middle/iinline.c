@@ -304,39 +304,75 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
 //    return NULL;
 
     if (cparams.prm_debug)
-        return NULL;    
+    {
+        f->sp->dumpInlineToFile = TRUE;
+        return NULL;
+    }
     if (f->sp == theCurrentFunc)
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (f->sp->allocaUsed)
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (f->sp->templateParams && !f->sp->instantiated) //specialized)
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (!f->sp->inlineFunc.syms)
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (!f->sp->inlineFunc.stmt)
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (inlinesym_count >= MAX_INLINE_NESTING)
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (f->thisptr)
     {
         if (f->thisptr->type == en_auto && f->thisptr->v.sp->stackblock)
+        {
+            f->sp->dumpInlineToFile = TRUE;
             return NULL;
+        }
     }
     if (f->returnEXP)
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     // if it has a structured return value or structured arguments we don't try to inline it
     if (isstructured(basetype(f->sp->tp)->btp))
+    {
+        f->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     hr = basetype(f->sp->tp)->syms->table[0];
     while (hr)
     {
         if (isstructured(((SYMBOL *)hr->p)->tp))
+        {
+            f->sp->dumpInlineToFile = TRUE;
             return NULL;
+        }
         hr = hr->next;
     }
     for (i=0; i < inlinesym_count; i++)
         if (f->sp == inlinesym_list[i])
-            return FALSE;
+        {
+            f->sp->dumpInlineToFile = TRUE;
+            return NULL;
+        }
     codeLabelOffset = nextLabel - INT_MIN ;
     nextLabel += f->sp->labelCount + 10;
     retcount = 0;

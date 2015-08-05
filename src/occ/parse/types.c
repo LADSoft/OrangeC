@@ -37,6 +37,7 @@
 */
 #include "compiler.h"
 
+extern int templateNestingCount;
 extern TYPE stdvoid;
 
 extern char *tn_void;
@@ -71,7 +72,7 @@ TYPE *typenum(char *buf, TYPE *tp);
 
 static TYPE *replaceTemplateSelector (TYPE *tp)
 {
-    if (tp->type == bt_templateselector && tp->sp->templateSelector->next->isTemplate)
+    if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->templateSelector->next->isTemplate)
     {
         SYMBOL *sp2 = tp->sp->templateSelector->next->sym;
         if (sp2)
@@ -103,6 +104,10 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         typ1 = basetype(typ1)->btp;
     if (isref(typ2))
         typ2 = basetype(typ2)->btp;
+    if (typ1->type == bt_templateselector && typ2->type == bt_templateselector)
+        return templateselectorcompare(typ1->sp->templateSelector, typ2->sp->templateSelector);
+    if (typ1->type == bt_templatedecltype && typ2->type == bt_templatedecltype)
+        return templatecompareexpressions(typ1->templateDeclType, typ2->templateDeclType);
     if (ispointer(typ1) && ispointer(typ2))
     {
         if (exact)
@@ -265,6 +270,12 @@ static TYPE *enumConst(char *buf, TYPE *tp)
     {
         switch(tp->type)
         {
+            case bt_lrqual:
+                strcat(buf, "& ");
+                break;
+            case bt_rrqual:
+                strcat(buf, "&& ");
+                break;
             case bt_const:
                 strcat(buf, tn_const);
                 break;
@@ -294,6 +305,10 @@ void typenumptr(char *buf, TYPE *tp)
     }
     typenum(buf, tp);
     strcat(buf, bf);
+}
+void RenderExpr(char *buf, EXPRESSION *exp)
+{
+    strcpy (buf, "decltype(...)");
 }
 TYPE *typenum(char *buf, TYPE *tp)
 {
@@ -491,10 +506,13 @@ TYPE *typenum(char *buf, TYPE *tp)
                 ts = ts->next;
             }
             break;
+        }
+        case bt_templatedecltype:
+            RenderExpr(buf, tp->templateDeclType);
+            break;
         case bt_auto:
             strcpy(buf, "auto ");
             break;
-        }
         default:
             strcpy(buf, "\?\?\?");
     }

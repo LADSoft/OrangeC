@@ -706,7 +706,11 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 if (throwaway && (*tp)->type == bt_auto)
                     *tp = throwaway;
                 if ((*exp)->type == en_func)
+                {
                     *exp = (*exp)->v.func->fcall;
+                    if (!*exp)
+                        *exp = intNode(en_c_i, 0);
+                }
                 if (throwaway)
                 {
                     if (isvoid(throwaway) && !isvoid(*tp))
@@ -734,6 +738,10 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                     }
                 }
             }
+            // this would normally be handled by getArgs()
+            // a structured type might not be counted as a structured type while initially gathering the template...
+            if (templateNestingCount && MATCHKW(lex, ellipse))
+                lex = getsym();
             needkw(&lex, closepa);
         }
     }
@@ -1101,7 +1109,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
     *oldType = NULL;
     if (needkw(&lex, lt))
     {
-        lex = get_type_id(lex, newType, funcsp, FALSE);
+        lex = get_type_id(lex, newType, funcsp, sc_cast, FALSE);
         if (!*newType)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1136,7 +1144,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     {
         if (startOfType(lex, FALSE))
         {
-            lex = get_type_id(lex, tp, funcsp, FALSE);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
         }
         else
         {
@@ -1549,7 +1557,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         if (startOfType(lex, FALSE))
         {
             // type in parenthesis
-            lex = get_type_id(lex, tp, funcsp, FALSE);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
             needkw(&lex, closepa);
         }
         else
@@ -1565,7 +1573,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             // type in parenthesis
             lex = getsym();
-            lex = get_type_id(lex, tp, funcsp, FALSE);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
             needkw(&lex, closepa);
         }
         else

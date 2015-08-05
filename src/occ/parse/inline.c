@@ -122,7 +122,7 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL *sym = (SYMBOL *)funcList->data;
-                if (sym->linkage == lk_virtual && sym->genreffed && sym->inlineFunc.stmt)
+                if (((sym->isInline && sym->dumpInlineToFile) || (sym->linkage == lk_virtual && sym->genreffed)) && sym->inlineFunc.stmt)
                 {
                     if (!sym->didinline)
                     {
@@ -1013,21 +1013,39 @@ EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp)
     BOOLEAN allocated = FALSE;
 
     if (function_list_count >= MAX_INLINE_NESTING)
+    {
+        params->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (!isfunction(params->functp))
+    {
+        params->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (!params->sp->isInline)
+    {
+        params->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (params->sp->templateParams)
+    {
+        params->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (params->sp->noinline)
+    {
+        params->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (!params->sp->inlineFunc.syms)
+    {
+        params->sp->dumpInlineToFile = TRUE;
         return NULL;
+    }
     if (!params->sp->inlineFunc.stmt)
     {
-        // recursive...
-//        params->sp->linkage = lk_cdecl;
+        // recursive
+        params->sp->dumpInlineToFile = TRUE;
         return NULL;
     }
     if (!localNameSpace->syms)

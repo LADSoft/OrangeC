@@ -1798,11 +1798,18 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         if (ap)
             return ap;
     }
-    if (!f->sp->noinline && f->sp->isInline)
+    if (f->sp->isInline)
     {
-        ap = gen_inline(funcsp, node, flags);
-        if (ap)
-            return ap;
+        if (f->sp->noinline)
+        {
+            f->sp->dumpInlineToFile = TRUE;
+        }
+        else
+        {
+            ap = gen_inline(funcsp, node, flags);
+            if (ap)
+                return ap;
+        }
     }
     {
         int n = sizeParams(f->arguments, funcsp);
@@ -2979,6 +2986,7 @@ int natural_size(EXPRESSION *node)
         case en_const:
             return sizeFromType(node->v.sp->tp);
         case en_templateparam: // may get this during the initial parsing of the template
+        case en_templateselector:
             return -ISZ_UINT;
         default:
             diag("natural size error.");

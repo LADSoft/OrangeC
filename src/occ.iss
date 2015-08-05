@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.34.0.1
+AppVerName=Orange C Version 5.39.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -99,6 +99,7 @@ Source: "C:\orangec\examples\win32\*.*"; DestDir: "{app}\Orange C Projects\examp
 Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\memstick
+Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
 
 [Icons]
 Name: "{group}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; Components: main\desktop;

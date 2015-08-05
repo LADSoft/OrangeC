@@ -1532,7 +1532,7 @@ static LEXEME *statement_label(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     parent->needlabel = FALSE;
     return lex;
 }
-static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp)
+static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp, TYPE *boundTP)
 {
     if (lvalue(exp))
     {
@@ -1556,15 +1556,15 @@ static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp)
         else
         {
              if (referenceTypeError(tp, exp2) != exp2->type && (!isstructured(basetype(tp)->btp) || exp2->type != en_lvalue))
-                errortype(ERR_REF_INIT_TYPE_REQUIRES_LVALUE_OF_TYPE, tp, tp);
+                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
         }
     }
     else
     {
         if (exp->type == en_cond)
         {
-            exp->right->left = ConvertReturnToRef(exp->right->left, tp);
-            exp->right->right = ConvertReturnToRef(exp->right->right, tp);
+            exp->right->left = ConvertReturnToRef(exp->right->left, tp, boundTP);
+            exp->right->right = ConvertReturnToRef(exp->right->right, tp, boundTP);
         }
         else if (!isstructured(basetype(tp)->btp))
         {
@@ -1717,7 +1717,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
         if (isref(basetype(funcsp->tp)->btp))
         {
-            returnexp=ConvertReturnToRef(returnexp, basetype(funcsp->tp)->btp);
+            returnexp=ConvertReturnToRef(returnexp, basetype(funcsp->tp)->btp, returntype);
         }
         else if (returnexp && returnexp->type == en_auto && 
             returnexp->v.sp->storage_class == sc_auto)
@@ -2430,6 +2430,7 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
         prevsym(placeholder);
         return FALSE;
     }
+
     if (MATCHKW(lex, lt))
     {
         int level = 1;
@@ -2583,7 +2584,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
             return lex;
         default:
             if ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
-                 || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using))
+                 || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) )
             {
                 if (!cparams.prm_c99 && !cparams.prm_cplusplus)
                 {
@@ -2651,7 +2652,7 @@ static void thunkThisReturns(STATEMENT *st, EXPRESSION *thisptr)
 }
 static void insertXCInfo(SYMBOL *funcsp)
 {
-    char name[512];
+    char name[2048];
     SYMBOL *sp; 
     makeXCTab(funcsp);
     sprintf(name, "@$xc%s", funcsp->decoratedName);
@@ -3167,7 +3168,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         funcsp->inlineFunc.stmt->lower = block->head;
         funcsp->inlineFunc.stmt->blockTail = block->blockTail;
         funcsp->declaring = FALSE;
-        if (funcsp->linkage == lk_virtual)
+        if (funcsp->linkage == lk_virtual || funcsp->isInline)
         {
             InsertInline(funcsp);
             if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)

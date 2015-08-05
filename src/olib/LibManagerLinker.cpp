@@ -56,7 +56,6 @@ bool LibManager::LoadLibrary()
     files.ReadNames(stream, header.filesInModule);
     fseek(stream, header.offsetsOffset, SEEK_SET);
     files.ReadOffsets(stream, header.filesInModule);
-    dictionary.SetBlockCount(header.dictionaryBlocks);
     return true;
 }
 ObjInt LibManager::Lookup(const ObjString &name)

@@ -100,7 +100,7 @@ enum e_kw
         kw_atomic_load, kw_atomic_store, kw_atomic_modify, kw_atomic_cmpswp, kw_atomic_var_init,
         kw__pascal, kw__stdcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
-        kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__inline, 
+        kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, 
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -152,7 +152,7 @@ enum e_node
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_literalclass, en_templateparam, en_packedempty
+        en_literalclass, en_templateparam, en_templateselector, en_packedempty
 };
 /*      statement node descriptions     */
 
@@ -190,10 +190,10 @@ enum e_bt
     bt_void, 
     /* end of debug needs */
     bt_signed, bt_static, bt_atomic, bt_const, bt_volatile, bt_restrict, bt_far, bt_near, bt_seg,
-    bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_struct,
+    bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_lrqual, bt_rrqual, bt_struct,
         bt_union, bt_func, bt_class, bt_ifunc, bt_any, bt_auto,
         bt_match_none, bt_ellipse, bt_memberptr, bt_cond,
-        bt_consplaceholder, bt_templateparam, bt_templateselector, bt_string, 
+        bt_consplaceholder, bt_templateparam, bt_templateselector, bt_templatedecltype, bt_string, 
         /* last */
         bt_none
 };
@@ -233,6 +233,7 @@ typedef struct expr
         struct _atomicData *ad;
         struct stmt *stmt;
         struct _imode_ *imode;
+        struct _templateSelector *templateSelector;
         HASHTABLE *syms;
                 
         struct {
@@ -251,7 +252,6 @@ typedef struct expr
     int atomicinit:1;
     int unionoffset:1;
     int isfunc:1;
-    int rref:1;
     int dest:1; // for thisref
     int noexprerr: 1;
 } EXPRESSION;
@@ -302,6 +302,8 @@ typedef    struct type
         int templateConst : 1;
         int templateVol : 1;
         int enumConst:1; /* is an enumeration constant */
+        int lref:1;
+        int rref:1;
         char bits; /* -1 for not a bit val, else bit field len */
         char startbit; /* start of bit field */
         struct sym *sp; /* pointer to a symbol which describes the type */
@@ -314,6 +316,7 @@ typedef    struct type
         EXPRESSION *esize; /* enode version of size */
         struct type *etype; /* type of size field  when size isn't constant */
         int vlaindex; /* index into the vararray */
+        EXPRESSION *templateDeclType; /* for bt_templatedecltype, used in templates */
     } TYPE;
 typedef struct _linedata
 {
@@ -514,6 +517,7 @@ typedef struct sym
         unsigned performedStructInitialization:1; // function performed structured initialization
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
         unsigned isInline : 1; /* function is a candidate for inline functionality */
+        unsigned dumpInlineToFile : 1; /* inline function needs to be placed in the output file */
         unsigned temp : 1; // temporary boolean...  
         unsigned noCoalesceImmed : 1; // set to true if temp or memory address which references an immediate is used
                                      // other than as the immediate reference      

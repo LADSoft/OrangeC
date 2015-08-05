@@ -77,7 +77,7 @@ std::map<const char *, ObjIeeeAscii::ParseData *, ObjIeeeAscii::ParseDataLT> Obj
 ObjString ObjIeeeAscii::ParseString(const char *buffer, int *pos)
 {
     int len = ObjUtil::FromHex(buffer, pos, 3);
-    char name[512];
+    char name[4096];
     if (len > strlen(buffer+*pos))
         ThrowSyntax(buffer, eAll);
     memcpy(name, buffer + *pos, len);
@@ -104,7 +104,7 @@ ObjString ObjIeeeAscii::GetSymbolName(const char *buffer, int *index)
     CheckTerm(buffer + pos);
     if (!GetCaseSensitiveFlag())
     {
-        char buf[256];
+        char buf[2048];
         strncpy(buf, rv.c_str(), sizeof(buf));
         buf[sizeof(buf) - 1] = 0;
         char *p = buf;

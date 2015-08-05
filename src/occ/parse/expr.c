@@ -75,6 +75,8 @@ extern INCLUDES *includes;
 extern NAMESPACEVALUES *globalNameSpace;
 int packIndex;
 
+int argument_nesting;
+
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -130,7 +132,7 @@ void checkauto(TYPE *tp1)
     if (basetype(tp1)->type == bt_auto)
     {
         error(ERR_AUTO_NOT_ALLOWED);
-        while (tp1->type == bt_const || tp1->type == bt_volatile)
+        while (tp1->type == bt_const || tp1->type == bt_volatile || tp1->type == bt_lrqual || tp1->type == bt_rrqual)
         {
             tp1->size = getSize(bt_int);
             tp1 = tp1->btp;
@@ -187,12 +189,11 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
             switch (sp->tp->templateParam->p->type)
             {
                 case kw_typename:
+                case kw_template:
                     lex = prevsym(placeholder);
                     *tp = NULL;
                     lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
                     return lex;
-                case kw_template:
-                    break;
                 case kw_int:
                     *exp = sp->tp->templateParam->p->byNonType.val;
                     *tp = sp->tp->templateParam->p->byNonType.tp;
@@ -209,7 +210,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         { 
             if (sp->tp->type == bt_templateparam)
             {
-                if (sp->storage_class == sc_parameter && sp->tp->templateParam->p->packed)
+                if ((sp->storage_class == sc_parameter || sp->tp->templateParam->p->type == kw_int) && sp->tp->templateParam->p->packed)
                 {
                     if (packIndex >= 0)
                     {
@@ -219,9 +220,17 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                             templateParam = templateParam->next;
                         if (templateParam)
                         {
-                            sp = templateParam->p->packsym;
-                            *tp = sp->tp;
-                            *exp = varNode(en_auto, sp);
+                            if (templateParam->p->type == kw_int && !templateParam->p->packsym)
+                            {
+                                *tp = templateParam->p->byNonType.tp;
+                                *exp = templateParam->p->byNonType.val;
+                            }
+                            else
+                            {
+                                sp = templateParam->p->packsym;
+                                *tp = sp->tp;
+                                *exp = varNode(en_auto, sp);
+                            }
                         }
                         else
                         {
@@ -230,6 +239,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     }
                     else
                     {
+                        sp->packed = TRUE;
                         *exp = varNode(en_auto, sp);
                     }
                 }
@@ -432,7 +442,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         {
             if (sp->tp->type == bt_templateparam)
             {
-                if ((*exp)->type != en_packedempty)
+                if (*exp && (*exp)->type != en_packedempty && !sp->tp->templateParam->p->packed)
                 {
                     if (sp->tp->templateParam->p->type == kw_int)
                         *tp = sp->tp->templateParam->p->byNonType.tp;
@@ -453,15 +463,13 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 deref(&stdint, exp);
             else
             {
-                BOOLEAN rref = FALSE;
                 if (isref(*tp))
                 {
+                    TYPE *tp1 = *tp;
                     deref(*tp, exp);
-                    if ((*tp)->type == bt_rref)
-                    {
-                        rref = TRUE;
-                    }
-                    *tp = basetype(*tp)->btp;
+                    *tp = Alloc(sizeof(TYPE));
+                    **tp = *(basetype(tp1)->btp);
+                    
                 }
                 if (sp->storage_class != sc_overloads)
                 {
@@ -477,8 +485,6 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                             error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
                     }
                 }
-                if (rref && !isfunction(*tp))
-                    *exp = exprNode(en_not_lvalue, *exp, 0);
             }
     
             if (lvalue(*exp))
@@ -505,6 +511,14 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     else
     {
         char *name ;
+        if (strSym && strSym->tp->type == bt_templateselector)
+        {
+            *exp = exprNode(en_templateselector, NULL, NULL);
+            (*exp)->v.templateSelector = strSym->tp->sp->templateSelector;
+            *tp = &stdany;
+            lex = getsym();
+            return lex;
+        }
         IncGlobalFlag();
         if (ISID(lex))
             name = litlate(lex->value.s.a);
@@ -601,7 +615,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 sp->tp = Alloc(sizeof(TYPE));
                 sp->tp->type = bt_any;
                 *tp = sp->tp;
-                if (!nsv && (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector ))
+                if (!nsv && (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector && strSym->tp->type != bt_templatedecltype ))
                 {
                     errorstr(ERR_UNDEFINED_IDENTIFIER, name);
                 }
@@ -613,7 +627,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 SetLinkerNames(sp, lk_c);
                 if (sp->storage_class != sc_overloads)
                 {
-                    if ((localNameSpace->syms || sp->storage_class != sc_auto ) &&  (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector ))
+                    if ((localNameSpace->syms || sp->storage_class != sc_auto ) &&  (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector && strSym->tp->type != bt_templatedecltype ))
                         InsertSymbol(sp, sp->storage_class, FALSE, FALSE);
                     *exp = varNode(sp->storage_class ==sc_auto ? en_auto : en_global, sp);
                 }
@@ -687,7 +701,8 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         }
         else if (!comparetypes(*tp, tp1, TRUE))
         {
-            error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
+            if (!templateNestingCount)
+                error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
         }
         else if (isstructured(*tp))
         {
@@ -1453,7 +1468,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                 {
                     // lose p
                     lex = getsym();
-                    if (p->exp->type != en_packedempty)
+                    if (p->exp && p->exp->type != en_packedempty)
                     {
                         checkPackedExpression(p->exp);  
                         // this is going to presume that the expression involved
@@ -1499,7 +1514,9 @@ LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw
     LEXEME *rv;
     int old = packIndex;
     packIndex = -1;
-    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, TRUE, flags);
+    argument_nesting++;
+    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, argument_nesting == 1, flags);
+    argument_nesting--;
     packIndex = old;
     return rv;
 }
@@ -2296,7 +2313,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             *exp = varNode(en_func, NULL);
             (*exp)->v.func = funcparams;
         }
-        else
+        else if (!templateNestingCount)
             error(ERR_CALL_OF_NONFUNCTION);
     }
     else {
@@ -2311,6 +2328,18 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
+    }
+    if (funcparams->astemplate)
+    {
+        // if we hit a packed template param here, then this is going to be a candidate
+        // for some other function's packed expression
+        TEMPLATEPARAMLIST *tl = funcparams->templateParams;
+        while (tl)
+        {
+            if (tl->p->packed)
+                return lex;
+            tl = tl->next;
+        }
     }
     if (*tp)
         getFunctionSP(tp);
@@ -2570,7 +2599,20 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     TYPE **tp1;
                     *tp = basetype(*tp)->btp;
                     if (isref(*tp))
-                        *tp = basetype(*tp)->btp;
+                    {
+                        TYPE *tp1 = *tp;
+                        *tp = Alloc(sizeof(TYPE));
+                        **tp = *(tp1->btp);
+                        
+                        if ((*tp)->type == bt_rref)
+                        {
+                            (*tp)->rref = TRUE;
+                        }
+                        else
+                        {
+                            (*tp)->lref = TRUE;
+                        }
+                    }
                     tp1 = tp;
                     while (ispointer(*tp1))
                         tp1 = &basetype(*tp1)->btp;
@@ -2629,7 +2671,10 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 }
                 if (funcparams->sp && isref(basetype(funcparams->sp->tp)->btp))
                 {
+                    TYPE **tp1;
                     deref(basetype(basetype(funcparams->sp->tp)->btp)->btp, exp);
+                    tp1 = &basetype(funcparams->sp->tp)->btp;
+                    *tp = basetype(*tp1)->btp;
                 }
             }
             else
@@ -2813,7 +2858,7 @@ static LEXEME *expression_generic(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 }
                 else
                 {
-                    lex = get_type_id(lex, &next->selector, funcsp, FALSE);
+                    lex = get_type_id(lex, &next->selector, funcsp, sc_cast, FALSE);
                     if (!next->selector)
                     {
                         error(ERR_GENERIC_MISSING_TYPE);
@@ -3763,6 +3808,7 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             if (!*tp || !(*tp)->templateParam || !(*tp)->templateParam->p->packed)
             {
                 error(ERR_SIZEOFELLIPSE_NEEDS_TEMPLATE_PACK);
+                *tp = &stdunsigned;
                 *exp = intNode(en_c_i, 0);
             }
             else
@@ -3778,6 +3824,8 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 *exp = intNode(en_c_i, n);
             }
         }
+        if (paren)
+            needkw(&lex, closepa);
     }
     else
     {
@@ -3791,6 +3839,7 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             if (paren)
             {
                 lex = expression_comma(lex, funcsp, NULL, tp, exp, NULL, _F_SIZEOF);
+                needkw(&lex, closepa);
             }
             else
             {
@@ -3809,11 +3858,37 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
         else
         {
             LEXEME *prev = lex;            
-            lex = get_type_id(lex, tp, funcsp, cparams.prm_cplusplus);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, cparams.prm_cplusplus);
             if (cparams.prm_cplusplus && MATCHKW(lex, openpa))
             {
                 lex = prevsym(prev);
                 lex = expression_func_type_cast(lex, funcsp, tp, exp, 0);
+            }
+            if (paren)
+                needkw(&lex, closepa);
+            if (MATCHKW(lex, ellipse))
+            {
+                lex = getsym();
+                if ((*tp)->type == bt_templateparam)
+                {
+                    if (!(*tp)->templateParam->p->packed)
+                    {
+                        error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
+                    }
+                    else if (packIndex != -1)
+                    {
+                        TEMPLATEPARAMLIST *tpl = (*tp)->templateParam->p->byPack.pack;
+                        int i;
+                        for (i=0;tpl && i < packIndex;i++)
+                            tpl = tpl->next;
+                        if (tpl)
+                            *tp = tpl->p->byClass.val;
+                    }
+                }
+                else
+                {
+                    error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                }
             }
             if (!*tp)
             {
@@ -3831,8 +3906,6 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             
            *tp = &stdint; /* other compilers use sizeof as a signed value so we do too... */
     }
-    if (paren)
-        needkw(&lex, closepa);
     return lex;
 }
 static LEXEME *expression_alignof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp)
@@ -3841,7 +3914,32 @@ static LEXEME *expression_alignof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        lex = get_type_id(lex, tp, funcsp, FALSE);
+        lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
+        needkw(&lex, closepa);
+        if (MATCHKW(lex, ellipse))
+        {
+            lex = getsym();
+            if ((*tp)->type == bt_templateparam)
+            {
+                if (!(*tp)->templateParam->p->packed)
+                {
+                    error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
+                }
+                else if (packIndex != -1)
+                {
+                    TEMPLATEPARAMLIST *tpl = (*tp)->templateParam->p->byPack.pack;
+                    int i;
+                    for (i=0;tpl && i < packIndex;i++)
+                        tpl = tpl->next;
+                    if (tpl)
+                        *tp = tpl->p->byClass.val;
+                }
+            }
+            else
+            {
+                error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+            }
+        }
         if (!*tp)
         {
             *exp = intNode(en_c_i, 1);
@@ -3856,7 +3954,6 @@ static LEXEME *expression_alignof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
                 itp = itp->btp;
             *exp = intNode(en_c_i, getAlign(sc_global, *tp));
         }
-        needkw(&lex, closepa);
     }
        *tp = &stdint;
     return lex;
@@ -4027,7 +4124,9 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
         return lex;
     }
     if (*tp && (isvoid(*tp) || (*tp)->type == bt_aggregate))
+    {
         error(ERR_NOT_AN_ALLOWED_TYPE);
+    }
     else if (*tp && basetype(*tp)->type == bt_memberptr)
         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
     if (*tp && !isfunction(*tp) && !isfuncptr(*tp))
@@ -4035,7 +4134,9 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
         TYPE *btp = basetype(*tp), *btp2, *btp3;;
         if (!ispointer(*tp))
         {
-            error(ERR_DEREF);
+            if (!templateNestingCount || instantiatingTemplate)
+                error(ERR_DEREF);
+            deref(&stdpointer, exp);
         }
         else
         {
@@ -4044,6 +4145,7 @@ static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSI
             if (btp2->type == bt_void)
             {
                 error(ERR_DEREF);
+                deref(&stdpointer, exp);
             }
             else if (isstructured(btp2))
             {
@@ -4525,13 +4627,14 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
     TYPE *throwaway;
     if (MATCHKW(lex, openpa))
     {
+        LEXEME *start = lex;
         lex = getsym();
         if (startOfType(lex, FALSE))
         {
             if (!cparams.prm_cplusplus || resolveToDeclaration(lex))
             {
                 BOOLEAN done = FALSE;
-                lex = get_type_id(lex, tp, funcsp, FALSE);
+                lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
                 (*tp)->used = TRUE;
                 needkw(&lex, closepa);
                 checkauto(*tp);
@@ -4658,13 +4761,13 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
             }
             else // expression in parenthesis
             {
-                lex = backupsym();
+                lex = prevsym(start);
                 lex = expression_unary(lex, funcsp, atp, tp, exp, ismutable, flags);
             }
         }
         else
         {
-            lex = backupsym();
+            lex = prevsym(start);
             lex = expression_unary(lex, funcsp, atp, tp, exp, ismutable, flags);
         }
     }
@@ -5057,7 +5160,9 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
         }
         if (!done)
         {
+            LEXEME *current = lex;
             lex = getsym();
+            
             lex = expression_shift(lex, funcsp, NULL, &tp1, &exp1, NULL, flags);
             if (!tp1)
             {

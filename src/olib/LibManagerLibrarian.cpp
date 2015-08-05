@@ -66,7 +66,7 @@ bool LibManager::SaveLibrary()
     files.WriteOffsets(ostr);
     Align(ostr);
     header.dictionaryOffset = ftell(ostr);
-    header.dictionaryBlocks = dictionary.GetBlockCount();
+    header.dictionaryBlocks = 0;
     dictionary.Write(ostr);
     fseek(ostr, 0, SEEK_SET);
     fwrite(&header, sizeof(header), 1, ostr);

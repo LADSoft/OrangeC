@@ -2290,6 +2290,42 @@ join_lor:
             rv |= opt0(&((*node)->v.ad->address));
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
+        case en_templateselector:
+            if (!templateNestingCount)
+            {
+                TEMPLATESELECTOR *tsl = (*node)->v.templateSelector;
+                SYMBOL *ts = tsl->next->sym;
+                SYMBOL *sp = ts;
+                TEMPLATESELECTOR *find = tsl->next->next;
+                if (tsl->next->isTemplate)
+                {
+                    TEMPLATEPARAMLIST *current = tsl->next->templateParams;
+                    sp = GetClassTemplate(ts, current, FALSE);
+                }
+                if (sp)
+                {
+                    sp = basetype(PerformDeferredInitialization (sp->tp, NULL))->sp;
+                    while (find && sp)
+                    {
+                        if (!isstructured(sp->tp))
+                            break;
+                        
+                        sp = search(find->name, sp->tp->syms);
+                        find = find->next;
+                    }
+                    if (!find && sp)
+                    {
+                        if (sp->storage_class == sc_constant)
+                        {
+                            *node = intNode(en_c_i, sp->value.i);
+                            return TRUE;
+                        }
+                    }
+                }
+                return FALSE;                
+                
+            }
+            break;
         case en_templateparam:
             if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {

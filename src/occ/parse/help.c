@@ -79,7 +79,7 @@ BOOLEAN istype(SYMBOL *sym)
     {
         return sym->tp->templateParam->p->type == kw_typename || sym->tp->templateParam->p->type == kw_template;
     }
-    return sym->storage_class == sc_type || sym->storage_class == sc_typedef;
+    return sym->tp->type != bt_templateselector && (sym->storage_class == sc_type || sym->storage_class == sc_typedef);
 }
 BOOLEAN ismemberdata(SYMBOL *sp)
 {
@@ -97,7 +97,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global, FALSE, FALSE);
         if (cparams.prm_cplusplus)
             prevsym(placeholder);
-        return (sp && istype(sp)) || (assumeType && strSym && strSym->tp->type == bt_templateselector);
+        return (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
     else 
     {
@@ -119,6 +119,8 @@ TYPE *basetype(TYPE *tp)
             case bt_static:
             case bt_atomic:
             case bt_typedef:
+            case bt_lrqual:
+            case bt_rrqual:
                 tp = tp->btp;
                 break;
             default:
@@ -244,6 +246,8 @@ BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
             case bt_typedef:
             case bt_far:
             case bt_near:
+            case bt_lrqual:
+            case bt_rrqual:
                 tp = tp->btp;
                 break;
             case bt_const:
@@ -274,9 +278,59 @@ BOOLEAN isvolatile(TYPE *tp)
             case bt_typedef:
             case bt_far:
             case bt_near:
+            case bt_lrqual:
+            case bt_rrqual:
                 tp = tp->btp;
                 break;
             case bt_volatile:
+                return TRUE;
+            default:
+                return FALSE;
+        }
+    }
+}
+BOOLEAN islrqual(TYPE *tp)
+{
+    while (TRUE)
+    {
+        switch(tp->type)
+        {
+            case bt_volatile:
+            case bt_const:
+            case bt_static:
+            case bt_atomic:
+            case bt_typedef:
+            case bt_far:
+            case bt_near:
+            case bt_rrqual:
+            case bt_restrict:
+                tp = tp->btp;
+                break;
+            case bt_lrqual:
+                return TRUE;
+            default:
+                return FALSE;
+        }
+    }
+}
+BOOLEAN isrrqual(TYPE *tp)
+{
+    while (TRUE)
+    {
+        switch(tp->type)
+        {
+            case bt_volatile:
+            case bt_const:
+            case bt_static:
+            case bt_atomic:
+            case bt_typedef:
+            case bt_far:
+            case bt_near:
+            case bt_lrqual:
+            case bt_restrict:
+                tp = tp->btp;
+                break;
+            case bt_rrqual:
                 return TRUE;
             default:
                 return FALSE;
@@ -296,6 +350,8 @@ BOOLEAN isrestrict(TYPE *tp)
             case bt_typedef:
             case bt_far:
             case bt_near:
+            case bt_lrqual:
+            case bt_rrqual:
                 tp = tp->btp;
                 break;
             case bt_restrict:
@@ -318,6 +374,8 @@ BOOLEAN isatomic(TYPE *tp)
             case bt_typedef:
             case bt_far:
             case bt_near:
+            case bt_lrqual:
+            case bt_rrqual:
                 tp = tp->btp;
                 break;
             case bt_atomic:
@@ -579,7 +637,6 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
 void deref(TYPE *tp, EXPRESSION **exp)
 {
     enum e_node en = en_l_i;
-    BOOLEAN rref = FALSE;
     tp = basetype(tp);
     switch ((tp->type == bt_enum && tp->btp ) ? tp->btp->type : tp->type)
     {
@@ -588,7 +645,6 @@ void deref(TYPE *tp, EXPRESSION **exp)
             break;
         case bt_rref: /* only used during initialization */
             en = en_l_ref;
-            rref = TRUE;
             break;
         case bt_bit:
             en = en_l_bit;
@@ -681,13 +737,13 @@ void deref(TYPE *tp, EXPRESSION **exp)
         case bt_any:
         case bt_templateparam:
         case bt_templateselector:
+        case bt_templatedecltype:
             return;
         default:
             diag("deref error");
             break;
     }
     *exp = exprNode(en, *exp, NULL);
-    (*exp)->rref = rref;
 }
 int sizeFromType(TYPE *tp)
 {
@@ -698,6 +754,7 @@ int sizeFromType(TYPE *tp)
         case bt_void:
         case bt_templateparam:
         case bt_templateselector:
+        case bt_templatedecltype:
             rv = ISZ_UINT;
             break;
         case bt_bool:
@@ -888,6 +945,7 @@ void cast(TYPE *tp, EXPRESSION **exp)
             return;
         case bt_templateparam:
         case bt_templateselector:
+        case bt_templatedecltype:
             break;
         default:
             diag("cast error");
@@ -969,7 +1027,7 @@ BOOLEAN lvalue(EXPRESSION *exp)
         case en_l_p:
             return TRUE;
         case en_l_ref:
-            return !exp->rref;
+            return TRUE;
         default:
             return FALSE;
     }
@@ -1332,6 +1390,8 @@ BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
                 case bt_volatile:
                 case bt_static:
                 case bt_typedef:
+                case bt_lrqual:
+                case bt_rrqual:
                     dest = dest->btp;
                     break;
                 default:
@@ -1350,6 +1410,8 @@ BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
                 case bt_volatile:
                 case bt_static:
                 case bt_typedef:
+                case bt_lrqual:
+                case bt_rrqual:
                     source = source->btp;
                     break;
                 default:

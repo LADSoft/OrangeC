@@ -281,7 +281,7 @@ static struct {
 {"Array of references is not allowed", ERROR },
 {"Reference variable '%s' must be initialized", ERROR },
 {"Reference initialization requires Lvalue", ERROR },
-{"Reference initialization of type '%s' requires Lvalue of type '%s'", ERROR},
+{"Reference initialization of type '%s' cannot be bound to type '%s'", ERROR},
 {"Reference member '%s' in a class without constructors", ERROR },
 {"Reference member '%s' not initialized in class constructor", ERROR },
 {"Qualified reference variable not allowed", WARNING },
@@ -625,7 +625,7 @@ static BOOLEAN ignoreErrtemplateNestingCount(int err)
 BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
 {
     char buf[2048];
-    char infunc[1024];
+    char infunc[2048];
     char *listerr;
     char nameb[265], *name = nameb;
     if (no_errors || templateNestingCount && ignoreErrtemplateNestingCount(err))
@@ -747,7 +747,7 @@ void preverror(int err, char *name, char *origfile, int origline)
 #ifndef CPREPROCESSOR
 void preverrorsym(int err, SYMBOL *sp, char *origfile, int origline)
 {
-    char buf[1024];
+    char buf[2048];
     unmangle(buf, sp->errname);
     if (origfile && origline)
         preverror(err, buf, origfile, origline);
@@ -786,10 +786,10 @@ void getcls(char *buf, SYMBOL *clssym)
 }
 void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
 {
-    char buf[1024];
-    char unopped[256];
+    char buf[2048];
+    char unopped[2048];
     char *last = "typename";
-    char lastb[512];
+    char lastb[2048];
     if (strSym)
     {
         unmangle(lastb, strSym->decoratedName);
@@ -848,7 +848,7 @@ void errorstr(int err, char *val)
 }
 void errorsym(int err, SYMBOL *sym)
 {
-    char buf[1024];
+    char buf[2048];
 #ifdef CPREPROCESSOR
     strcpy(buf, sym->name);
 #else
@@ -863,14 +863,14 @@ void errorsym(int err, SYMBOL *sym)
 #ifndef CPREPROCESSOR
 void errorsym2(int err, SYMBOL *sym1, SYMBOL *sym2)
 {
-    char one[1024], two[1024];
+    char one[2048], two[2048];
     unmangle(one, sym1->errname);
     unmangle(two, sym2->errname);
     printerr(err, preprocFile, preprocLine, one, two);
 }
 void errorstrsym(int err, char *name, SYMBOL *sym2)
 {
-    char two[1024];
+    char two[2048];
     unmangle(two, sym2->errname);
     printerr(err, preprocFile, preprocLine, name, two);
 }
@@ -901,8 +901,8 @@ void errorabstract(int error, SYMBOL *sp)
 }
 void errorarg(int err, int argnum, SYMBOL *declsp, SYMBOL *funcsp)
 {
-    char argbuf[1024];
-    char buf[1024];
+    char argbuf[2048];
+    char buf[2048];
     if (declsp->anonymous)
         sprintf(argbuf,"%d",argnum);
     else
@@ -1732,6 +1732,8 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
             break;
         case en_stmt:
         case en_templateparam:
+        case en_templateselector:
+        case en_packedempty:
             break;
         default:
             diag("assignmentUsages");
@@ -1934,6 +1936,7 @@ static int checkDefaultExpression(EXPRESSION *node)
             break;
         case en_stmt:
         case en_templateparam:
+        case en_templateselector:
             break;
         default:
             diag("rv |= checkDefaultExpression");

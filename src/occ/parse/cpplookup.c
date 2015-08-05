@@ -317,7 +317,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                                 break;
                         }
                     }
-                    if (sp)
+                    if (sp && throughClass)
                         *throughClass = TRUE;
                 }
                 else
@@ -336,7 +336,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 if (sp && sp->tp->type == bt_typedef)
                 {
                     istypedef = TRUE;
-                    if (isstructured(sp->tp))
+                    if (isstructured(sp->tp) && throughClass)
                     {
                         sp = basetype(sp->tp)->sp;
                         *throughClass = TRUE;
@@ -407,7 +407,12 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                         SYMBOL *sp1 = sp;
                         sp = GetClassTemplate(sp, current, FALSE);
                         if (!sp)
-                            errorsym(ERR_NO_TEMPLATE_MATCHES, sp1);
+                            if (templateNestingCount)
+                            {
+                                sp = sp1;
+                            }
+                            else
+                                errorsym(ERR_NO_TEMPLATE_MATCHES, sp1);
                     }
                 }
             }
@@ -777,6 +782,8 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
                 int ovdummy;
                 lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
                 *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass);
+                if (!*sym)
+                    encloser = NULL;
                 if (errIfNotFound && !*sym)
                 {
                     errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
@@ -785,6 +792,8 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
             else
             {
                 *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass);
+                if (!*sym)
+                    encloser = NULL;
                 if (errIfNotFound && !*sym)
                 {
                     errorstr(ERR_UNDEFINED_IDENTIFIER, lex->value.s.a);
@@ -799,7 +808,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
     }
     if (*sym && hasTemplate)
     {
-        if (!(*sym)->templateLevel && ((*sym)->tp->type != bt_templateparam || (*sym)->tp->templateParam->p->type != kw_template) && (*sym)->tp->type != bt_templateselector)
+        if (!(*sym)->templateLevel && ((*sym)->tp->type != bt_templateparam || (*sym)->tp->templateParam->p->type != kw_template) && (*sym)->tp->type != bt_templateselector && (*sym)->tp->type != bt_templatedecltype)
         {
             if ((*sym)->storage_class == sc_overloads)
             {
@@ -888,7 +897,7 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
         else if (startOfType(lex, FALSE) || ISID(lex)) // potential cast operator
         {
             TYPE *tp = NULL;
-            lex = get_type_id(lex, &tp, funcsp, TRUE);
+            lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE);
             if (castType)
                 *castType = tp;
             strcpy(buf, overloadNameTab[*ov = CI_CAST]);
@@ -1695,8 +1704,8 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
             
             if (isref(rtype) && isref(ltype) && basetype(ltype)->type != basetype(rtype)->type)
             {
-                int lref = expa && (lvalue(expa) && (expa->left->type != en_l_ref || !expa->left->rref));
-                int rref = expa && ((expa->type == en_l_ref && expa->left->rref) || (!lvalue(expa) && (!isstructured(rtype) || !ismem(expa))) );
+                int lref = expa && lvalue(expa);
+                int rref = expa && (!lvalue(expa) && (!isstructured(rtype) || !ismem(expa)) );
                 if (expa && expa->type == en_func)
                 {
                     TYPE *tp = basetype(expa->v.func->sp->tp)->btp;
@@ -2518,8 +2527,8 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
          seq[(*n)++] = CV_NONE;
          return;
     }
-    lref = expa && ((lvalue(expa) && (expa->left->type != en_l_ref || !expa->left->rref)) || isarithmeticconst(expa)) ;
-    rref = expa && ((expa->type == en_l_ref && expa->left->rref) || (!lvalue(expa) && !isarithmeticconst(expa) && (!isstructured(tpa) || !ismem(expa)) ));
+    lref = expa && (lvalue(expa) || isarithmeticconst(expa)) ;
+    rref = expa && (!lvalue(expa) && (!isstructured(tpa) || !ismem(expa)) );
     if (expa && expa->type == en_func)
     {
         TYPE *tp = basetype(expa->v.func->sp->tp)->btp;
@@ -2554,16 +2563,33 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
     if (isref(tpp))
     {
         TYPE *tppp = basetype(tpp)->btp;
-        lref |= expa && isstructured(tppp) && expa->type != en_not_lvalue;
+        if (expa && isstructured(tppp) && expa->type != en_not_lvalue)
+        {
+            EXPRESSION *expx = expa;
+            if (expx->type == en_thisref)
+                expx = expx->left;
+            if (expx->type == en_func)
+            {
+                if (expx->v.func->returnSP)
+                {
+                    if (!expx->v.func->returnSP->anonymous)
+                        lref = TRUE;
+                }
+            }
+            else
+            {
+                lref = TRUE;
+            }
+        }
         if ((isconst(tpax) && !isconst(tppp))
             || (isvolatile(tpax) && !isvolatile(tppp)))
             seq[(*n)++] = CV_NONE;
         else if ((isconst(tpax) != isconst(tppp))
             || (isvolatile(tpax) != isvolatile(tppp)))
             seq[(*n)++] = CV_QUALS;
-        if (lref && tppp->type == bt_rref)
+        if (lref && !rref && tpp->type == bt_rref)
             seq[(*n)++] = CV_LVALUETORVALUE;
-        if (tpp->type == bt_rref && lref && !isfunction(tpa))
+        if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isarithmeticconst(expa))
         {
             // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
             seq[(*n)++] = CV_NONE;
@@ -3058,6 +3084,35 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                         tpx.type = bt_pointer;
                         tpx.size = getSize(bt_pointer);
                         tpx.btp = basetype(basetype(f->thistp)->btp);
+                    }
+                    if (islrqual(sp->tp) || isrrqual(sp->tp))
+                    {
+                        BOOLEAN lref = lvalue(f->thisptr);
+                        if (isstructured(basetype(f->thistp)->btp) && f->thisptr->type != en_not_lvalue)
+                        {
+                            EXPRESSION *expx = f->thisptr;
+                            if (expx->type == en_thisref)
+                                expx = expx->left;
+                            if (expx->type == en_func)
+                            {
+                                if (expx->v.func->returnSP)
+                                {
+                                    if (!expx->v.func->returnSP->anonymous)
+                                        lref = TRUE;
+                                }
+                            }
+                            else
+                            {
+                                lref = TRUE;
+                            }
+                        }
+                        if (isrrqual(sp->tp))
+                        {
+                            if (lref)
+                                return FALSE;
+                        }
+                        else if (!lref)
+                            return FALSE;
                     }
                     m = 0;
                     getSingleConversion(tpp, tpthis, f->thisptr, &m, seq, sp, userFunc ? &userFunc[n] : NULL, TRUE);
@@ -3714,7 +3769,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             {
                 errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
             }
-            else if (found1->deleted)
+            else if (found1->deleted && !templateNestingCount)
             {
                 errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
             }

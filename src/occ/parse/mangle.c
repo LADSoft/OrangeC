@@ -7,7 +7,7 @@
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
-    
+    '
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
       following disclaimer.
@@ -37,6 +37,7 @@
 */
 #include "compiler.h"
 
+extern INCLUDES *includes;
 extern SYMBOL *theCurrentFunc;
 
     char *overloadNameTab[] = 
@@ -66,6 +67,8 @@ extern SYMBOL *theCurrentFunc;
 static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
 int mangledNamesCount ;
 
+static int declTypeIndex;
+static char *lookupName(char *in, char *name);
 static char *mangleNameSpaces(char *in, SYMBOL *sp)
 {
     if (!sp)
@@ -95,15 +98,286 @@ static char *mangleClasses(char *in, SYMBOL *sp)
         sprintf(in, "@%s", sp->name);
     return in + strlen(in);
 }
+static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
+{
+    while (castvalue(exp))
+        exp = exp->left;
+	if (isintconst(exp))
+	{
+		sprintf(buf, "%lld&", exp->v.i);
+		if (buf[0] == '-')
+			buf[0] = '_';
+	}
+	else
+	{
+        BOOLEAN nonpointer = FALSE;
+		while (lvalue(exp))
+        {
+            nonpointer = TRUE;
+			exp = exp->left;
+        }
+		switch (exp->type)
+		{
+            case en_nullptr:
+                *buf++ = 'n';
+                break;
+            case en_arrayadd:
+            case en_structadd:
+            case en_add:
+                *buf++ = 'p';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_sub:
+                *buf++ = 's';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_mul:
+            case en_umul:
+            case en_arraymul:
+                *buf++ = 'm';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_umod:
+            case en_mod:
+                *buf++ = 'o';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_div:
+            case en_udiv:
+            case en_arraydiv:                
+                *buf++ = 'd';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_lsh:
+            case en_arraylsh:
+                *buf++ = 'h';
+                *buf++ = 'l';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_rsh:
+            case en_ursh:
+                *buf++ = 'h';
+                *buf++ = 'r';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_cond:
+                *buf++ = 'C';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right->left);
+                buf = mangleExpressionInternal(buf, exp->right->right);
+                break;
+            case en_assign:
+                *buf++ = 'a';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_eq:
+                *buf++ = 'c';
+                *buf++ = 'e';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_ne:
+                *buf++ = 'c';
+                *buf++ = 'n';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_uminus:
+                *buf++ = 'u';
+                buf = mangleExpressionInternal(buf, exp->left);
+                break;
+            case en_not:
+                *buf++ = 'l';
+                *buf++ = 'n';
+                buf = mangleExpressionInternal(buf, exp->left);
+                break;
+            case en_compl:
+                *buf++ = 'b';
+                *buf++ = 'n';
+                buf = mangleExpressionInternal(buf, exp->left);
+                break;
+            case en_ascompl:
+                *buf++ = 'a';
+                *buf++ = 'n';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_ult:
+            case en_lt:
+                *buf++ = 'c';
+                *buf++ = 'l';
+                *buf++ = 't';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_ule:
+            case en_le:
+                *buf++ = 'c';
+                *buf++ = 'l';
+                *buf++ = 'e';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_ugt:
+            case en_gt:
+                *buf++ = 'c';
+                *buf++ = 'g';
+                *buf++ = 't';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_uge:
+            case en_ge:
+                *buf++ = 'c';
+                *buf++ = 'g';
+                *buf++ = 'e';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_and:
+                *buf++ = 'b';
+                *buf++ = 'a';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_land:
+                *buf++ = 'l';
+                *buf++ = 'a';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_or:
+                *buf++ = 'b';
+                *buf++ = 'o';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_lor:
+                *buf++ = 'l';
+                *buf++ = 'o';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_xor:
+                *buf++ = 'b';
+                *buf++ = 'x';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_autoinc:
+                *buf++ = 'i';
+                *buf++ = 'p';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_autodec:
+                *buf++ = 'i';
+                *buf++ = 's';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                break;
+            case en_templateselector:
+            {
+                TEMPLATESELECTOR *tsl = exp->v.templateSelector, *find = tsl->next->next;
+                SYMBOL *ts = tsl->next->sym;
+                *buf++ = 't';
+                *buf++ = 's';
+                if (tsl->next->isTemplate)
+                {
+                    buf = mangleTemplate(buf, ts, tsl->next->templateParams);
+                }
+                while (find)
+                {
+                    *buf++ = 't';
+                    buf = lookupName(buf, find->name);
+                    find = find->next;
+                }
+                break;
+            }
+            case en_templateparam:
+                *buf++ = 't';
+                *buf++ = 'p';
+                buf = lookupName(buf,exp->v.sp->name);
+                break;
+                
+			case en_func:
+                if (exp->v.func->ascall)
+                {
+                    INITLIST *args = exp->v.func->arguments;
+                    *buf++ = 'f';
+                    buf = lookupName(buf, exp->v.func->sp->name);
+                    while(args)
+                    {
+                        *buf++='f';
+                        buf = mangleExpressionInternal(buf, args->exp);
+                        args = args->next;
+                    }
+                }
+                else
+                {
+					*buf++ = 'e';
+					*buf++ = '&';
+					strcpy(buf, exp->v.func->sp->name);
+					buf += strlen(buf);
+					*buf++ = '$';
+					buf = mangleType( buf, exp->v.func->sp->tp, TRUE);
+                }
+                break;
+			case en_pc:
+			case en_global:
+			case en_label:
+            case en_const:
+				if (isfunction(exp->v.sp->tp))
+				{
+					*buf++ = 'e';
+					*buf++ = '&';
+					strcpy(buf, exp->v.sp->name);
+					buf += strlen(buf);
+					*buf++ = '$';
+					buf = mangleType( buf, exp->v.sp->tp, TRUE);
+				}
+				else
+				{
+					*buf++ = 'g';
+					if (!nonpointer)
+						*buf++ = '&';
+					strcpy(buf, exp->v.sp->name);
+					*buf++ = '$';
+				}
+				break;
+			default:
+				break;
+		}
+	}    
+	buf += strlen(buf);                    
+    return buf;
+}
+static char * mangleExpression(char *buf, EXPRESSION *exp)
+{
+	if (exp)
+	{
+		*buf++= '$';
+        buf = mangleExpressionInternal(buf, exp);
+		*buf++= '$';
+	}
+}
 static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 {
     BOOLEAN bySpecial = FALSE;
-    if ((sym->instantiated && !sym->templateLevel) || (params && params->p->bySpecialization.types))
+    if (params->p->type == kw_new && ((sym->instantiated && !sym->templateLevel) || (params && params->p->bySpecialization.types)))
     {
         params = params->p->bySpecialization.types;
         bySpecial = TRUE;
     }
-	if (sym->isConstructor || sym->isDestructor)
+	if ((sym->isConstructor || sym->isDestructor) && sym->templateLevel == sym->parentClass->templateLevel)
 	{
 		strcpy(buf, sym->name);
 		buf += strlen(buf);
@@ -192,58 +466,12 @@ static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
     					if (bySpecial || sym->instantiated)
     					{
     						EXPRESSION *exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
-    						if (exp)
-    						{
-    							*buf++= '$';
-    							if (isintconst(exp))
-    							{
-    								sprintf(buf, "%lld", exp->v.i);
-    								if (buf[0] == '-')
-    									buf[0] = '_';
-    							}
-    							else
-    							{
-    								buf[0] = 0;
-    								while (lvalue(exp))
-    									exp = exp->left;
-    								switch (exp->type)
-    								{
-    									case en_func:
-    											*buf++ = 'e';
-    											*buf++ = '&';
-    											strcpy(buf, exp->v.func->sp->name);
-    											buf += strlen(buf);
-    											*buf++ = '$';
-    											buf = mangleType( buf, exp->v.func->sp->tp, TRUE);
-    											break;
-    									case en_pc:
-    									case en_global:
-    									case en_label:
-    										if (isfunction(exp->v.sp->tp))
-    										{
-    											*buf++ = 'e';
-    											*buf++ = '&';
-    											strcpy(buf, exp->v.sp->name);
-    											buf += strlen(buf);
-    											*buf++ = '$';
-    											buf = mangleType( buf, exp->v.sp->tp, TRUE);
-    										}
-    										else
-    										{
-    											*buf++ = 'g';
-    											if (ispointer(params->p->byNonType.tp))
-    												*buf++ = '&';
-    											strcpy(buf, exp->v.sp->name);
-    										}
-    										break;
-    									default:
-    										break;
-    								}
-    							}    
-    							buf += strlen(buf);                    
-    							*buf++= '$';
-    						}
+                            buf = mangleExpression(buf, exp);
     					}
+                        else if (params->p->byNonType.dflt)
+                        {
+                            buf = mangleExpression(buf, params->p->byNonType.dflt);
+                        }
                     }
 					break;
 				default:
@@ -270,9 +498,9 @@ static char *lookupName(char *in, char *name)
     {
         if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
             strcpy(mangledNames[mangledNamesCount++], name);                    
-        if (isdigit(in[-1]))
-            *in++ = '_';
         sprintf(in, "%d%s", strlen(name), name);
+        if (in[-1] > 0 && in[-1] <= 127 && isdigit(in[-1]))
+            *in++ = '_';
     }
     return in;
 }
@@ -304,7 +532,7 @@ static char *getName(char *in, SYMBOL *sp)
 }
 char *mangleType (char *in, TYPE *tp, BOOLEAN first)
 {
-    char nm[512];
+    char nm[1024];
     int i;
     HASHREC *hr ;
     if(!tp)
@@ -316,6 +544,8 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
     {
        in = mangleType(in, tp->btp, FALSE);
     }
+    else if (isstructured(tp) && basetype(tp)->sp->templateLevel)
+        in = mangleTemplate(in, basetype(tp)->sp, basetype(tp)->sp->templateParams);
     else
     {
 //        if (ispointer(tp) || isref(tp))
@@ -334,6 +564,10 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 *in++ = 'x';
             if (isvolatile(tp))
                 *in++ = 'y';
+            if (islrqual(tp))
+                *in++ = 'r';
+            if (isrrqual(tp))
+                *in++ = 'R';
         }
         tp = basetype(tp);
         switch (tp->type)
@@ -486,8 +720,12 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
             case bt_templateselector:
             {
                 TEMPLATESELECTOR *s = tp->sp->templateSelector;
+                char *p;
                 s = s->next;
-                strcpy(nm, s->sym->name);
+                if (s->isTemplate)
+                    p = mangleTemplate(nm, s->sym, s->templateParams);
+                else
+                    p = getName(nm, s->sym);
                 s = s->next ;
                 while (s)
                 {
@@ -498,6 +736,14 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 sprintf(in, "%d%s", strlen(nm), nm);
                 in += strlen(in);
             }
+                break;
+            case bt_templatedecltype:
+                // the index is being used to make names unique so two decltypes won't collide when storing them
+                // in a symbol table...
+                declTypeIndex = (declTypeIndex + 1) %1000;
+                *in++ = 'E';
+                sprintf(in, "%03d", declTypeIndex);
+                in += 3;
                 break;
             case bt_aggregate:
                 in = getName(in, tp->sp);
@@ -512,7 +758,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
 }
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
 {
-    char errbuf[1024], *p = errbuf;
+    char errbuf[2048], *p = errbuf;
     mangledNamesCount = 0;
     if (linkage == lk_none || linkage == lk_cdecl)
     {

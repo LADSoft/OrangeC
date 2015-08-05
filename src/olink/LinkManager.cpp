@@ -167,6 +167,7 @@ void LinkManager::LoadSectionExternals(ObjFile *file, ObjSection *section)
         }
     }
 }
+#include <stdio.h>
 void LinkManager::MergePublics(ObjFile *file, bool toerr)
 {
     for (ObjFile::SymbolIterator it = file->PublicBegin(); it != file->PublicEnd(); ++it)

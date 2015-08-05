@@ -1,6 +1,79 @@
 Release notes
 
-version 5.34.1:
+version 5.39.1:
+
+in this version, the name mangling for C++ has changed, and the object library file format has changed.
+Please completely rebuild your projects.
+
+    system:     recompile with various compilers
+    occ:        fix name unmangling of references and pointers to template names
+    occ:        fix __inline keyword to work properly
+    occ:        C99 inlines didn't inline
+    occ:        prototyping a function after it has an inline body resulted in inlining not working
+    occ:        add reference qualified functions
+    occ:        fix various C++11 parsing bugs
+    occ:        add errors when trying to bind an lvalue to an rvalue reference
+    occ:        int f(int &&);  f(5); did not resolve the function call
+    occ:        in some cases 'decltype' was being treated as an expression
+    occ:        int nn (int (int)) didn't resolve the parameter of 'nn' to a function pointer.
+    occ:        decltype((*x)()) wouldn't parse correctly
+    occ:        enable decltype(some template expression) as a return value from a template function
+    occ:        static_assert:  allow string concatenation
+    occ:        static_assert:  don't emit an error while initially parsing a template
+    occ:        disable various errors while initially parsing templates
+    occ:        enable the 'enable_if' style template expansions when used as a default in template parameter list
+    occ:        don't make an error if a using statement appears more than once
+    occ:        various variadic template fixes
+    ocide:      fix problems with the code completion compiler crashing
+    ocide:      fix annoying problem where focus could be 'stolen' while code completion compiler is running
+    olib, oimplib, olink: rewrite dictionary handling
+    coff2ieee:  rewrite dictionary handling
+
+version 5.38.1: 05/14/2015
+    occ:        when a structure or union is inside another structure or union, the
+                size of the inner structure or union could be miscalculated in C++ mode.
+    occ:        an enumeration defined inside a structure got allocated twice
+    occ:        ignore utf8 file marker instead of making an error
+    occ:        allow non-type template parameters to go unnamed
+    occ:        fix problem where instantiated templates used as base classes
+                would cause a 'needs specialization' error
+    occ:        fix crash when placing things into inline namespaces
+    occ:        search inline namespaces properly
+    occ:        allow __VA_ARGS__ for C++ preprocessor
+    occ:        add char16_t and char32_t as keywords for C++
+    occ:        'typename templatename<T>::vv' was not properly interpreted as a type
+    rtl:        fix cassert to not cause an error
+
+version 5.37.1: 5/3/2015
+    occ:        global arrays of objects could get initialized more than once/
+                compiler could run out of memory when compiling them
+    occ:        an stl container used for the first time inside a class could cause a hang when
+                for-each was used to iterate through it.
+    occ:        clean up variadic template support
+    occ:        allow more than one level of nesting for initializer-lists.
+    occ:        modulus of a negative integer by a power of two resulted in a number with the wrong sign
+    occ:        use multiplicative inverse for modulus functions as well
+    occ:        'for (const auto& v : c)' generated errors because of the const and the reference
+    occ:        statements such as 'return a + myfunc(b,c)' would not work when a,b,c 
+                are all structures and myfunc returns a structure and the return returns a structure
+    occ:        initializations of a typedef'd structure could get into an infinite loop, 
+                running the compiler out of memory
+    rtl:        improvements to win32 structures and include stdlib.h in windows.h
+    rtl:        copy size_t to root namespace when it is defined
+
+version 5.36.1: 4/25/2015
+    occ:        replace divide by constant with multiplicative inverse
+    occ:        fix problem with implicit casting:  using an int constant as an 
+                argument wouldn't be cast to float or double properly
+    occ:        fix problem with passing a structure as an argument to a function declared with ...
+    rtl:        correct definition of fpos_t for standard usage
+    rtl:        add itoa and friends to cstdlib.h
+
+version 5.35.1: 4/22/2015
+    occ:        fix crash when using auto in a forrange statement and the selection type is undefined
+    occ:        fix crash when compiling with debug information
+
+version 5.34.1: 4/19/2015
     occ:        lambda functions didn't work in conjunction with STL templates such as std::for_each
     occ:        fix lambda helper functions to use correct naming convention
     occ:        for (auto n : mycollection) didn't compile - complained n was not initialized

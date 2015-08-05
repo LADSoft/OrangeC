@@ -283,7 +283,7 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
     if (internalGoal.find_first_of(CmdFiles::DIR_SEP) != std::string::npos)
     {
         std::fstream fil(internalGoal.c_str(), std::ios::in);
-        if (fil != NULL)
+        if (!fil.fail())
         {
             fil.close();
             timeval = OS::GetFileTime(internalGoal);
@@ -308,7 +308,7 @@ std::string Maker::GetFileTime(const std::string &goal, const std::string &prefe
                                     // this will collide if there are multiple paths and no file exists
                                     // and choose the last one
             std::fstream fil(name.c_str(), std::ios::in);
-            if (fil != NULL)
+            if (!fil.fail())
             {
                 fil.close();
                 rv = cur; // return value is the path, with a slash on the end

@@ -180,7 +180,7 @@ int CmdSwitchFile::Parse(const char *data)
     if (n < 0 || argv)
         return n;
     std::fstream in(CmdSwitchString::GetValue().c_str(), std::ios::in);
-    if (in != NULL)
+    if (!in.fail())
     {
         in.seekg(0, std::ios::end);
         size_t size = in.tellg();

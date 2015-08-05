@@ -293,7 +293,7 @@ int dlHexMain::Run(int argc, char **argv)
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);
-    if (configTest != NULL)
+    if (!configTest.fail())
     {
         configTest.close();
         if (!internalConfig.Parse(configName.c_str()))
@@ -321,7 +321,7 @@ int dlHexMain::Run(int argc, char **argv)
             break;
     }
     std::fstream out(outputName.c_str(), o->GetOpenFlags());
-    if (out != NULL)
+    if (!out.fail())
     {
         int addr = 0;
         o->WriteHeader(out);

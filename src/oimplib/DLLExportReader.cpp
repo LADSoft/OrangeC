@@ -88,7 +88,7 @@ bool DLLExportReader::Read()
 {
     bool rv = false;
     std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
-    if (in != NULL)
+    if (!in.fail())
     {
         MZHeader mzh;
         in.read((char *)&mzh, sizeof(mzh));

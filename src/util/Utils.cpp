@@ -115,7 +115,7 @@ char *Utils::GetModuleName()
 std::string Utils::FullPath(const std::string &path, const std::string &name)
 {
     std::fstream in(name.c_str(), std::ios::in);
-    if (in != NULL)
+    if (!in.fail())
     {
         return name;
     }
@@ -129,7 +129,7 @@ std::string Utils::FullPath(const std::string &path, const std::string &name)
         }
         fpath += name;
         std::fstream in(fpath.c_str(), std::ios::in);
-        if (in != NULL)
+        if (!in.fail())
         {
             return fpath;
         }

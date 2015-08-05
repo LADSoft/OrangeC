@@ -189,7 +189,7 @@ int SwitchConfig::Parse(const char *data)
 bool SwitchConfig::ReadConfigFile(const std::string& file)
 {
     std::fstream in(file.c_str(), std::ios::in);
-    if (in != NULL)
+    if (!in.fail())
     {
         xmlNode *node = new xmlNode();
         if (!node->Read(in) || *node != "LinkerConfig")

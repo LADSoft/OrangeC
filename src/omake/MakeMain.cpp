@@ -350,7 +350,7 @@ void MakeMain::SetTreePath(std::string &files)
         do {
             path = wd.substr(0, pos+1) + files;
             std::fstream check(path.c_str(), std::ios::in);
-            if (check != NULL)
+            if (!check.fail())
             {
                 found = true;
             }

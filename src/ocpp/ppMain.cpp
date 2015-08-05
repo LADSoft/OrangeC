@@ -74,7 +74,7 @@ int ppMain::Run(int argc, char *argv[])
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);
-    if (configTest != NULL)
+    if (!configTest.fail())
     {
         configTest.close();
         if (!internalConfig.Parse(configName.c_str()))

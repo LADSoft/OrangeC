@@ -73,7 +73,7 @@ void ResourceData::ReadRC(RCFile &rcFile)
     {
         std::string name = rcFile.GetFileName();
         std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
-        if (in != NULL)
+        if (!in.fail())
         {
             in.seekg(0, std::ios::end);
             len = in.tellg();

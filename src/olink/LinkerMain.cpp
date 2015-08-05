@@ -155,7 +155,7 @@ std::string LinkerMain::SpecFileContents(const std::string &specFile)
     if (specFile.size() != 0)
     {
         std::fstream fil(specFile.c_str(), std::ios::in);
-        if (fil != NULL)
+        if (!fil.fail())
         {
             fil.seekg(0, std::ios::end);
             size_t n = fil.tellg();
@@ -185,7 +185,7 @@ int LinkerMain::Run(int argc, char **argv)
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(modName, ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);
-    if (configTest != NULL)
+    if (!configTest.fail())
     {
         configTest.close();
         if (!internalConfig.Parse(configName.c_str()))

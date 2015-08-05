@@ -68,7 +68,7 @@ bool Include::Parse(const std::string &name, bool ignoreOk, bool MakeFiles)
 {
     bool rv = false;
     std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
-    if (in != NULL)
+    if (!in.fail())
     {
         in.seekg(0, std::ios::end);
         size_t len = in.tellg();

@@ -105,7 +105,7 @@ void DefFile::Init()
 bool DefFile::Read()
 {
     stream = new std::fstream(fileName.c_str(), std::ios::in);
-    if (stream != NULL)
+    if (!stream->fail())
     {
         try
         {
@@ -177,7 +177,7 @@ bool DefFile::Read()
 bool DefFile::Write()
 {
     stream = new std::fstream(fileName.c_str(), std::ios::out);
-    //if (stream != NULL)
+    //if (!stream->fail())
     {
         WriteName();
         WriteLibrary();

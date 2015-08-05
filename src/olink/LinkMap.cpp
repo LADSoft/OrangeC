@@ -246,7 +246,7 @@ void LinkMap::Publics(std::fstream &stream)
 void LinkMap::WriteMap()
 {
     std::fstream stream(name.c_str(), std::ios::out | std::ios::trunc);
-    if (stream != NULL)
+    if (!stream.fail())
     {
         if (type == eDetailed)
             DetailedSections(stream);

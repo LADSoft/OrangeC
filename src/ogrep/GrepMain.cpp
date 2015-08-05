@@ -201,7 +201,7 @@ void GrepMain::FindLine(const std::string fileName, int &matchCount, int &matchL
 void GrepMain::OneFile(RegExpContext &regexp, const std::string &fileName, int &openCount)
 {
     std::fstream fil(fileName.c_str(), std::ios::in | std::ios::binary);
-    if (fil != NULL)
+    if (!fil.fail())
     {
         openCount ++;
         fil.seekg(0, std::ios::end);

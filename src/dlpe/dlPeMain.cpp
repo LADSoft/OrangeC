@@ -530,7 +530,7 @@ int dlPeMain::Run(int argc, char **argv)
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);
-    if (configTest != NULL)
+    if (!configTest.fail())
     {
         configTest.close();
         if (!internalConfig.Parse(configName.c_str()))
@@ -576,7 +576,7 @@ int dlPeMain::Run(int argc, char **argv)
     }
     InitHeader(headerSize, endVa);
     std::fstream out(outputName.c_str(), std::ios::out | std::ios::binary);
-    if (out != NULL)
+    if (!out.fail())
     {
         WriteStub(out);
         out.write((char *)&header, sizeof(header));

@@ -148,27 +148,30 @@ void Listing::ListLine(std::fstream &out, std::string &line, ListedLine *cur, bo
                         out << outputLine.c_str() << std::endl;
                         outputLine = blanks.substr(0, 10);
                     }
-                    if (bigEndian)
+//                    if (bigEndian)
                     {
                         for (int j=0; j < fsize; j++)
                         {
-                            ss = Utils::NumberToStringHex(buf[i]);
-                            if (ss.size() == 1)
-                                ss = std::string("0") + ss;
-                            outputLine += ss;
-                        }
-                    }
-                    else
-                    {
-                        for (int j=fsize-1; j >= 0; j--)
-                        {
-                            ss = Utils::NumberToStringHex(buf[i]);
+                            ss = Utils::NumberToStringHex(buf[j+i]);
                             if (ss.size() == 1)
                                 ss = std::string("0") + ss;
                             outputLine += ss;
                         }
                         i += fsize-1;
                     }
+                    /*
+                    else
+                    {
+                        for (int j=fsize-1; j >= 0; j--)
+                        {
+                            ss = Utils::NumberToStringHex(buf[fsize-j+i]);
+                            if (ss.size() == 1)
+                                ss = std::string("0") + ss;
+                            outputLine += ss;
+                        }
+                        i += fsize-1;
+                    }
+                    */
                     if ((*fixups)[z]->IsResolved())
                     {
                         outputLine += " ";

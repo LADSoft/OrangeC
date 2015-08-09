@@ -2993,13 +2993,13 @@ void oa_header(char *filename, char *compiler_version)
     {
         if (!prm_nodos)
         {
-            bePrintf( "\tSECTION code align=2 CLASS=CODE USE32\n");
+            bePrintf( "\tSECTION code align=16 CLASS=CODE USE32\n");
             bePrintf( "\tSECTION data align=8 CLASS=DATA USE32\n");
             bePrintf( "\tSECTION bss  align=8 CLASS=BSS USE32\n");
             bePrintf( "\tSECTION const  align=8 CLASS=CONST USE32\n");
             bePrintf( "\tSECTION string  align=2 CLASS=STRING USE32\n")
                 ;
-            bePrintf( "\tSECTION tls  align=2 CLASS=TLS USE32\n")
+            bePrintf( "\tSECTION tls  align=8 CLASS=TLS USE32\n")
                 ;
             bePrintf( 
                 "\tSECTION cstartup align=2 CLASS=INITDATA USE32\n");

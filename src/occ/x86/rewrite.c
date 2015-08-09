@@ -1986,6 +1986,7 @@ void cg_internal_conflict(QUAD *head)
                 int t2 = head->dc.left->offset->v.sp->value.i;
                 insertConflict(t1, t2);
             }
+            break;
         default:
             break;
     }

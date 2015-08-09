@@ -1001,6 +1001,24 @@ void peep_mov(OCODE *ip)
             }
         }
     }
+    while (ip1 && ip1->opcode == op_line)
+        ip1 = ip1->back;
+        
+    if (!ip1)
+        return;  
+    if (ip1->opcode == op_mov)
+    {
+        if (ip->oper1->mode == am_dreg && ip1->oper2->mode == am_dreg)
+        {
+            if (equal_address(ip1->oper1, ip->oper2))
+            {
+                if (ip->oper1->preg == ip1->oper2->preg)
+                    remove_peep_entry(ip);
+                else
+                    ip->oper2 = ip1->oper2;
+            }
+        }
+    }      
 }
 void peep_movzx(OCODE *ip)
 {

@@ -4003,7 +4003,17 @@ void outcode_func_init(void)
 {
     int i;
     /*   memset(labelbuf,0,400 * sizeof(LABEL *)) ;*/
+#define NOP 0x90
 
+/*    
+    if (cparams.prm_optimize_for_speed)
+    {
+        while (segs[codeseg].curlast % 16)
+        {
+            oa_genint(chargen, NOP);
+        }
+    }
+    */
     for (i = 0; i < MAX_SEGS; i++)
         segs[i].curbase = segs[i].curlast;
 
@@ -4754,7 +4764,7 @@ int AOP4(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int temp = 0, reg;
     AMODE *rm;
-    if (data->oper3)
+    if (data->oper3 || !data->oper2)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;
@@ -5078,7 +5088,7 @@ int AOP13(OPCODE *descript, OCODE *data, UBYTE **p)
 int AOP14(OPCODE *descript, OCODE *data, UBYTE **p)
 {
     int val;
-    if (data->oper3)
+    if (data->oper3 || !data->oper2)
         return 0;
     if (data->oper1->length > ISZ_ADDR || data->oper1->length == ISZ_ULONGLONG)
         return 0;

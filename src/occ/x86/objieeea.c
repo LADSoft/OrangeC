@@ -934,7 +934,7 @@ void link_Publics(void)
     {
         SYMBOL *sp = lf->data;
         if ((sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent) ||
-             ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)) && !sp->isInline)
+             ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)))
         {
             link_putpub(sp, 'I');
         }

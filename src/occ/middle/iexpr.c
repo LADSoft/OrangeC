@@ -1117,6 +1117,11 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             {
                 if (l > 1)
                     gen_icode(i_asr, ap, num, make_immed(ISZ_UINT, l-1));
+                else
+                {
+                    ap = tempreg(n, 0);
+                    gen_icode(i_assn, ap, num, NULL);
+                }
                 gen_icode(i_lsr, ap, ap, make_immed(ISZ_UINT, N-l));
                 gen_icode(i_add, ap, ap, num);
                 gen_icode(i_asr, ap, ap, make_immed(ISZ_UINT, l));
@@ -1226,7 +1231,7 @@ IMODE *gen_pmul(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     ap1 = LookupLoadTemp(NULL, ap3);
     if (ap1 != ap3)
         gen_icode(i_assn, ap1, ap3, NULL);
-    ap3 = gen_expr(funcsp, node->right, 0, ISZ_UINT);
+    ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
         gen_icode(i_assn, ap2, ap3, NULL);

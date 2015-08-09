@@ -81,12 +81,12 @@ static void InsertFile(LIST **r, char *name, char *ext)
     {
         strcpy(outputFileName, name);
         StripExt(outputFileName);
-        AddExt(outputFileName, ".EXE");
+        strcat(outputFileName, ".exe");
     }
     if (ext)
     {
         StripExt(buf);
-        AddExt(buf, ext);
+        strcat(buf, ext);
     }
     lst = *r;
     while (lst)
@@ -183,9 +183,9 @@ int RunExternalFiles(char *rootPath)
         p++;
     *p = 0;
     strcpy(outName, outputFileName);
-    p = strrchr(outName, '.');
-    if (p && p[1] != '\\')
-        *p = 0;
+//    p = strrchr(outName, '.');
+//    if (p && p[1] != '\\')
+//        *p = 0;
     while (asmlist)
     {
         sprintf(spname, "\"%soasm.exe\" %s \"%s\"", root, !showBanner ? "-!" : "", asmlist->data);

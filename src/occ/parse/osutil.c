@@ -747,7 +747,7 @@ void setfile(char *buf, char *orgbuf, char *ext)
         p++;
     strcpy(buf, p);
     StripExt(buf);
-    AddExt(buf, ext);
+    strcat(buf, ext);
 }
 
 /*-------------------------------------------------------------------------*/

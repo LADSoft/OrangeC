@@ -296,9 +296,15 @@ void optimize_setup(char select, char *string)
         else if (*string == 'f')
             cparams.prm_optimize_float_access = TRUE;
         else if (*string == '2')
+        {
             cparams.prm_optimize_for_speed = TRUE;
+            cparams.prm_optimize_for_size = FALSE;
+        }
         else if (*string == '1')
+        {
+            cparams.prm_optimize_for_speed = FALSE;
             cparams.prm_optimize_for_size = TRUE;
+        }
     }
 }
 /*-------------------------------------------------------------------------*/

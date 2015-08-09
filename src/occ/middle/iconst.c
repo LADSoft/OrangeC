@@ -276,7 +276,9 @@ static int xgetmode(QUAD *d, EXPRESSION **left, EXPRESSION **right)
                     mode = iccn;
             }
         }
-    } else if (*right) {
+    } 
+    if (mode == icnone && *right) 
+    {
         if (isintconst((*right)))
             mode = icnl;
         else if (!((*right)->pragmas & STD_PRAGMA_FENV))
@@ -1896,7 +1898,7 @@ void ConstantFlow(void)
     insWorkHead = insWorkTail = NULL;
     listHolder = NULL;
     blockWorkHead = blockWorkTail = tAlloc(sizeof(BLOCKLIST));
-    
+
     /* value defaults to top */
     /* now reassign any temp which is a parameter to bottom */
     for (i=0; i < tempCount; i++)

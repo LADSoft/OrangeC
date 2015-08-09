@@ -861,6 +861,11 @@ static void removeDeadBlock(BLOCK *b)
             unlinkBlock(bl->block, b);
             bl = bl->next;
         }
+		if (b->critical)
+		{
+			b->critical = FALSE;
+			blockArray[b->blocknum] = 0;
+		}
         if (b->head != b->tail && b->head->fwd != b->tail)
         {   QUAD *p = b->head->fwd;
             QUAD *q = b->tail->fwd;
@@ -1185,8 +1190,11 @@ void doms_only(BOOLEAN always)
         if (blockArray[i])
         {
             removeDeadBlock(blockArray[i]);
-            blockArray[i]->idom = 0;
-            blockArray[i]->dominates = NULL;
+			if (blockArray[i])
+			{
+	            blockArray[i]->idom = 0;
+		        blockArray[i]->dominates = NULL;
+			}
         }
     }
     Dominators();

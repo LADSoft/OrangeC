@@ -1686,14 +1686,15 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
         else
         {
+            TYPE *tp1 = NULL;
             BOOLEAN needend = FALSE;
             if (MATCHKW(lex, begin))
             {
                 needend = TRUE;
                 lex = getsym();
             }
-            lex = optimized_expression(lex, funcsp, NULL, &tp, &returnexp, TRUE);
-            if (!tp)
+            lex = optimized_expression(lex, funcsp, NULL, &tp1, &returnexp, TRUE);
+            if (!tp1)
             {
                 error(ERR_EXPRESSION_SYNTAX);
             }
@@ -3168,6 +3169,20 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         funcsp->inlineFunc.stmt->lower = block->head;
         funcsp->inlineFunc.stmt->blockTail = block->blockTail;
         funcsp->declaring = FALSE;
+        if (funcsp->isInline && functionHasAssembly)
+            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+        // if it is variadic don't allow it to be inline
+        if (funcsp->isInline)
+        {
+            HASHREC *hr = basetype(funcsp->tp)->syms->table[0];
+            if (hr)
+            {
+                while (hr->next)
+                    hr = hr->next;
+                if (((SYMBOL *)hr->p)->tp->type == bt_ellipse)
+                    funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+            }
+        }
         if (funcsp->linkage == lk_virtual || funcsp->isInline)
         {
             InsertInline(funcsp);

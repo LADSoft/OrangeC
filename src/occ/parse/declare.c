@@ -2856,8 +2856,11 @@ static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo, BOOLE
                             }
                             last = so;
                             if (so->init)
-                                s->init = so->init;    
-                            hro1->p = hr1->p;
+                                s->init = so->init;
+                            if (MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, begin))
+                                hro1->p = hr1->p;
+                            else
+                                hr1->p = hro1->p;
                             hro1 = hro1->next;
                             hr1 = hr1->next;
                         }
@@ -4709,6 +4712,17 @@ jointemplate:
                             linkage = lk_none;
                         sp->isInline = TRUE;
                     }
+                    else if (cparams.prm_optimize_for_speed && isfunction(tp1) && storage_class_in != sc_member && storage_class_in != sc_mutable)
+                    {
+                        if (MATCHKW(lex,colon) ||
+                                MATCHKW(lex, begin) || MATCHKW(lex, kw_try))
+                        {
+                            if (strcmp(sp->name, "main") != 0)
+                            {
+                                sp->isInline = sp->dumpInlineToFile = sp->promotedToInline = TRUE;
+                            }
+                        }
+                    }
                     if (linkage == lk_none || ((defaultLinkage == lk_c || defaultLinkage == lk_cpp) && linkage == lk_cdecl))
                         linkage = defaultLinkage; 
                     // defaultLinkage may also be lk_none...
@@ -5146,7 +5160,7 @@ jointemplate:
                                 sp->storage_class = sc_global;
                         }
                         if ((!spi || (spi->storage_class != sc_member && spi->storage_class != sc_mutable))
-                             && sp->storage_class == sc_global && sp->isInline)
+                             && sp->storage_class == sc_global && sp->isInline && !sp->promotedToInline)
                             sp->storage_class = sc_static;
                         if (spi)
                         {

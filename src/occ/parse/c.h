@@ -518,6 +518,7 @@ typedef struct sym
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
         unsigned isInline : 1; /* function is a candidate for inline functionality */
         unsigned dumpInlineToFile : 1; /* inline function needs to be placed in the output file */
+        unsigned promotedToInline : 1; /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1; // temporary boolean...  
         unsigned noCoalesceImmed : 1; // set to true if temp or memory address which references an immediate is used
                                      // other than as the immediate reference      

@@ -296,6 +296,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         // argument based lookup in C++...
                         funcparams->sp = (SYMBOL *)hr->p;
                         funcparams->fcall = varNode(en_pc, funcparams->sp);
+                        if (!MATCHKW(lex, openpa))
+                            funcparams->sp->dumpInlineToFile = funcparams->sp->isInline;
                     }
                     funcparams->functp = funcparams->sp->tp;
                     *tp = funcparams->sp->tp;
@@ -377,7 +379,16 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         sp->genreffed = TRUE;
                     if (funcsp && funcsp->isInline 
                         && funcsp->storage_class == sc_global)
-                        errorsym(ERR_INLINE_CANNOT_REFER_TO_STATIC, sp);
+                    {
+                        if (funcsp->promotedToInline)
+                        {
+                            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+                        }
+                        else
+                        {
+                            errorsym(ERR_INLINE_CANNOT_REFER_TO_STATIC, sp);
+                        }
+                    }
                     if (sp->linkage3 == lk_threadlocal)
                         *exp = varNode(en_threadlocal, sp);
                     else

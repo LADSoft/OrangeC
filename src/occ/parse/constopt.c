@@ -1657,6 +1657,33 @@ int opt0(EXPRESSION **node)
                         *node = ep->right;
                     else if (val ==  - 1)
                         *node = exprNode(negtype, ep->right, 0);
+                    else
+                    {
+                        LLONG_TYPE i = pwrof2(val);
+                        if (i != -1)
+                        {
+                            EXPRESSION *x = ep->left;
+                            ep->left = ep->right;
+                            ep->right = x;
+                            ep->right->v.i = i;
+                            rv = TRUE;
+                            switch (ep->type)
+                            {
+                            case en_mul:
+                                ep->type = en_lsh;
+                                break;
+                            case en_umul:
+                                ep->type = en_lsh;
+                                break;
+                            case en_arraymul:
+                                ep->type = en_arraylsh;
+                                break;
+                            default:
+                                break;
+                            }
+                            break;
+                        }
+                    }
                 }
                 dooper(node, mode);
                 rv = TRUE;
@@ -1695,6 +1722,30 @@ int opt0(EXPRESSION **node)
                     else if (val ==  - 1)
                     {
                         *node = exprNode(negtype, ep->left, 0);
+                    }
+                    else
+                    {
+                        LLONG_TYPE i = pwrof2(val);
+                        if (i != -1)
+                        {
+                            ep->right->v.i = i;
+                            rv = TRUE;
+                            switch (ep->type)
+                            {
+                            case en_mul:
+                                ep->type = en_lsh;
+                                break;
+                            case en_umul:
+                                ep->type = en_lsh;
+                                break;
+                            case en_arraymul:
+                                ep->type = en_arraylsh;
+                                break;
+                            default:
+                                break;
+                            }
+                            break;
+                        }
                     }
                 }
                 dooper(node, mode);

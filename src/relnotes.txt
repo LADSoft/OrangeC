@@ -1,6 +1,25 @@
-Release notes
+Release notes:
 
-version 5.39.1:
+Version 5.40.1:
+
+    occ:        multiplies were not being converted to shifts for powers of two
+    occ:        optimize a sequence of store to memory followed by load from same memory
+    occ:        perform aggressive inlining as a speed optimization
+    occ:        fix problems where backend constant folding did not always fold constants
+    occ:        fix problems with taking the address of an inlined function
+                the function was not instantiated
+    occ:        fix problems with prototyping an inline function after it has a body
+                the code generation would be incorrect
+    occ:        fix problems with not adding extensions when the file name had extra '.' characters
+                the compiler would use incorrect file names and become confused
+    occ:        fix bug in divide signed value by power of two (could result in the wrong answer)
+    occ:        fix bug where complicated critical sections that had been removed 
+                as dead code were later processed again
+    occ:        returning 0 from a function returning long long was broken
+    occ:        don't allow inlining of functions with variadic parameter lists
+    oasm:       fix problem with fixed up values not being displayed correctly in the listing file
+
+version 5.39.1: 8/4/15
 
 in this version, the name mangling for C++ has changed, and the object library file format has changed.
 Please completely rebuild your projects.

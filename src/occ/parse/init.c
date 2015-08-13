@@ -1334,15 +1334,20 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                         int lbl = dumpMemberPtr(funcsp, itype, TRUE);
                         exp = intNode(en_labcon, lbl);
                     }
+                    if (!comparetypes(itype->btp, tp1, TRUE))
+                    {
+                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, itype);
+                    }
                 }
             }
             else if (exp->type == en_memberptr)
             {
                 if (exp->v.sp->parentClass != basetype(itype)->sp 
                     && exp->v.sp->parentClass != basetype(itype)->sp->mainsym 
-                    && !sameTemplate(itype, exp->v.sp->parentClass->tp))
-                    if (classRefCount(exp->v.sp->parentClass, basetype(itype)->sp) != 1)
-                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                    && !sameTemplate(itype, exp->v.sp->parentClass->tp)
+                    ||!comparetypes(basetype(itype)->btp, basetype(exp->v.sp->tp), TRUE))
+
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
     
             }
             else 

@@ -89,7 +89,7 @@ extern char anonymousNameSpaceName[512];
 #define IT_SIZE (sizeof(cpp_funcname_tab)/sizeof(char *))
 
 static char *unmangcpptype(char *buf, char *name, char *last);
-char *unmang1(char *buf, char *name, char *last);
+char *unmang1(char *buf, char *name, char *last, BOOLEAN tof);
 static char *unmangTemplate(char *buf, char *name, char *last);
 
 #define MAX_MANGLE_NAME_COUNT 36
@@ -121,7 +121,7 @@ char *unmang_intrins(char *buf, char *name, char *last)
                         if (*name == '$')
                         {
                             buf += strlen(buf);
-                            name = unmang1(buf, name+2, last);
+                            name = unmang1(buf, name+2, last, FALSE);
                         }
                         break;
                     case 1: // delete
@@ -203,7 +203,7 @@ static char *unmangptr(char *buf , char *name, char *last)
         }
         else
         {
-            name = unmang1(basetp, name, last);
+            name = unmang1(basetp, name, last, FALSE);
         }
         l = strlen(basetp);
         memmove(buf + l, buf, strlen(buf)+1);
@@ -457,7 +457,7 @@ char *unmangleExpression(char *dest, char *name)
                 {
                     char bft[512];
                     name ++;
-                    unmang1(bft, name, "");
+                    unmang1(bft, name, "", FALSE);
                 }
                 break;
            case 'g':
@@ -522,7 +522,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                             strcpy(tname, "...");
                             name++;
                         }
-                        name = unmang1(tname+strlen(tname), name, last);
+                        name = unmang1(tname+strlen(tname), name, last, FALSE);
                         if (*name == '$')
                         {
                             name++;
@@ -548,7 +548,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
     return name;
 }
 /* Argument unmangling for C++ */
-char *unmang1(char *buf, char *name, char *last)
+char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
 {
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
@@ -596,7 +596,7 @@ char *unmang1(char *buf, char *name, char *last)
             else if (name[0] == '$')
             {
                 name++;
-                newname = unmang1(buf, name, last);
+                newname = unmang1(buf, name, last, FALSE);
                 v -= newname - name-1;
                 name = newname;
                 buf += strlen(buf);
@@ -658,15 +658,12 @@ char *unmang1(char *buf, char *name, char *last)
         case 'Q':
         case 'q':
             p = buf1;
-            *p++ = '(';
-            if (name[-1] == 'Q')
+            if (!tof)
             {
-            }
-            else
-            {
+                *p++ = '(';
                 *p++ = '*';
+                *p++ = ')';
             }
-            *p++ = ')';
             *p++ = '(';
             *p = 0;
             if (*name == 'v')
@@ -687,7 +684,7 @@ char *unmang1(char *buf, char *name, char *last)
                     }
                     else
                     {
-                        name = unmang1(p, name, last);
+                        name = unmang1(p, name, last, FALSE);
                     }
                     p += strlen(p);
                     *p++ = ',';
@@ -704,7 +701,7 @@ char *unmang1(char *buf, char *name, char *last)
             {
                 // discard return value
 				buf2[0] = 0;
-                name = unmang1(buf2, name, last);
+                name = unmang1(buf2, name, last, FALSE);
             }            
             strcpy(buf, buf1);
             strcat(buf, ")");
@@ -790,16 +787,16 @@ char *unmang1(char *buf, char *name, char *last)
             buf3[0] = 0;
             if (name[0] == 'q')
             {
-                name = unmang1(buf3, name, last);
+                name = unmang1(buf3, name, last, TRUE);
             }
             buf1[0] = 0;
             if (name[0] == '$')
             {
-                name = unmang1(buf1, ++name, last);
+                name = unmang1(buf1, ++name, last, FALSE);
             }
             if (buf3[0])
             {
-                sprintf(buf, "%s (%s)%s", buf1, buf2, buf3);
+                sprintf(buf, "%s((%s)%s)", buf1, buf2, buf3);
             }
             else
             {
@@ -862,7 +859,7 @@ char *unmang1(char *buf, char *name, char *last)
                     strcat(buf, tn_volatile);
                 strcat(buf, ")");
                 buf += strlen(buf);
-                name = unmang1(buf, name, last);
+                name = unmang1(buf, name, last, FALSE);
                 if (clrqual)
                     strcat(buf, "& ");
                 if (crrqual)
@@ -893,7 +890,7 @@ char *unmang1(char *buf, char *name, char *last)
             }
             else
             {
-                name = unmang1(buf, name, last);
+                name = unmang1(buf, name, last, FALSE);
             }
             buf = buf + strlen(buf);
             *buf++ = '&';
@@ -916,7 +913,7 @@ char *unmang1(char *buf, char *name, char *last)
             }
             else
             {
-                name = unmang1(buf, name, last);
+                name = unmang1(buf, name, last, FALSE);
             }
             buf = buf + strlen(buf);
             *buf++ = '&';
@@ -939,7 +936,7 @@ static char *unmangcpptype(char *buf, char *name, char *last)
     *buf++ = '<';
     while (*name &&  *name != '$' &&  *name != '@' &&  *name != '#')
     {
-        name = unmang1(buf, name, last);
+        name = unmang1(buf, name, last, FALSE);
         buf = buf + strlen(buf);
         if (*name &&  *name != '$' &&  *name != '@' &&  *name != '#')
         {
@@ -1003,7 +1000,7 @@ char *unmangle(char *val, char *name)
                     }
                     else
                     {
-                        name = unmang1(buf, name+1, last);
+                        name = unmang1(buf, name+1, last, TRUE);
                     }
                     buf += strlen(buf);
                 }

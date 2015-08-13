@@ -2778,7 +2778,10 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             }
             else if (isfunction(tpa))
             {
-                if (basetype(tpa)->sp->parentClass != basetype(tpp)->sp)
+                if (!comparetypes(basetype(tpp)->btp, tpa, TRUE))
+                    seq[(*n)++] = CV_NONE;
+                    
+                else if (basetype(tpa)->sp->parentClass != basetype(tpp)->sp)
                 {
                     if (classRefCount(basetype(tpa)->sp->parentClass, basetype(tpp)->sp) == 1)
                     {

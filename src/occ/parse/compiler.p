@@ -757,7 +757,7 @@ void list_table(HASHTABLE *t, int j);
 
 char *mangleType (char *in, TYPE *tp, BOOLEAN first);
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage);
-char *unmang1(char *buf, char *name, char *last);
+char *unmang1(char *buf, char *name, char *last, BOOLEAN tof);
 char *unmang_intrins(char *buf, char *name, char *last);
 char *unmangle(char *name, char *source);
 

@@ -341,11 +341,24 @@ TYPE *typenum(char *buf, TYPE *tp)
         case bt_ifunc:
             typenum(buf, tp->btp);
             buf = buf + strlen(buf);
-            strcat(buf," (*)(");
-            buf += strlen(buf);
             if (tp->syms)
             {
                 hr = tp->syms->table[0];
+                if (((SYMBOL *)hr->p)->thisPtr)
+                {
+                    SYMBOL *thisptr = (SYMBOL *)hr->p;
+                    *buf++ = ' ';
+                    *buf++='(';
+                    strcpy(buf, basetype (basetype(thisptr->tp)->btp)->sp->name);
+                    strcat(buf, "::*)(");
+                    buf += strlen(buf);
+                    hr = hr->next;
+                }
+                else
+                {
+                    strcat(buf," (*)(");
+                    buf += strlen(buf);
+                }
                 while (hr)
                 {
                     sp = (SYMBOL *)hr->p;
@@ -356,6 +369,11 @@ TYPE *typenum(char *buf, TYPE *tp)
                     if (hr)
                         *buf++ = ',';
                 }
+            }
+            else
+            {
+                strcat(buf," (*)(");
+                buf += strlen(buf);
             }
             *buf++ = ')';
             *buf = 0;
@@ -444,9 +462,42 @@ TYPE *typenum(char *buf, TYPE *tp)
             typenumptr(buf, tp);
             break;
         case bt_memberptr:
-            getcls(buf, tp->sp);
-            buf += strlen(buf);
-            strcpy(buf, "::*");
+            if (isfunction(basetype(tp)->btp))
+            {
+                TYPE *func = basetype(tp)->btp;
+                typenum(buf, basetype(func)->btp);
+                strcat(buf, " (");
+                buf += strlen(buf);
+                getcls(buf, tp->sp);
+                buf += strlen(buf);
+                strcpy(buf, "::*)(");
+                buf += strlen(buf);
+                if (basetype(func)->syms)
+                {
+                    hr = basetype(func)->syms->table[0];
+                    while (hr)
+                    {
+                        sp = (SYMBOL *)hr->p;
+                        *buf = 0;
+                        typenum(buf, sp->tp);
+                        buf = buf + strlen(buf);
+                        hr = hr->next;
+                        if (hr)
+                            *buf++ = ',';
+                    }
+                }
+                *buf++ = ')';
+                *buf = 0;
+            }
+            else
+            {
+                typenum(buf, tp->btp);
+                strcat(buf, " ");
+                buf += strlen(buf);
+                getcls(buf, tp->sp);
+                buf += strlen(buf);
+                strcpy(buf, "::*");
+            }
             break;
         case bt_seg:
             typenum(buf, tp->btp);

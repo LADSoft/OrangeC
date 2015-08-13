@@ -301,6 +301,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     }
                     funcparams->functp = funcparams->sp->tp;
                     *tp = funcparams->sp->tp;
+                    if (!MATCHKW(lex, openpa) && funcparams->sp->parentClass && !(flags & _F_AMPERSAND))
+                        error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                     if (cparams.prm_cplusplus 
                         && ismember(basetype(*tp)->sp)
                         && !MATCHKW(lex, openpa))
@@ -5789,6 +5791,10 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 int lbl = dumpMemberPtr(funcsp, *tp, TRUE);
                 exp1 = intNode(en_labcon, lbl);
             }
+            if (!comparetypes((*tp)->btp, tp1, TRUE))
+            {
+                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+            }
         }
         if (isconstraw(*tp, TRUE) && !localMutable)
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
@@ -5998,14 +6004,13 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 {
                     if (exp1->type == en_memberptr)
                     {
-                        if (exp1->v.sp->parentClass != basetype(*tp)->sp 
-                            && exp1->v.sp->parentClass != basetype(*tp)->sp->mainsym 
-                            && !sameTemplate(exp1->v.sp->parentClass, basetype(*tp)->sp))
-                            if (classRefCount(exp1->v.sp->parentClass, basetype(*tp)->sp) != 1)
-                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        if (exp1->v.sp != basetype(*tp)->sp 
+                            && exp1->v.sp != basetype(*tp)->sp->mainsym 
+                            && !sameTemplate(exp1->v.sp, basetype(*tp)->sp))
+                                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
 
                     }
-                    else if (!isfunction(basetype(*tp)->btp) && !isconstzero(tp1, *exp) && !comparetypes(*tp, tp1, TRUE))
+                    else if ((!isfunction(basetype(*tp)->btp) || !comparetypes(basetype(*tp)->btp, tp1, TRUE)) && !isconstzero(tp1, *exp) && !comparetypes(*tp, tp1, TRUE))
                     {
                         errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
                     }

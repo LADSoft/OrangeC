@@ -530,7 +530,7 @@ static struct {
 {"Arithmetic with pointer of type 'void *'", WARNING },
 {"Overloaded function '%s' is ambiguous in this context", ERROR },
 {"Use of an initializer-list requires '#include <initializer_list>'", ERROR },
-
+{"Use '&' to take the address of a member function", ERROR },
 #endif
 } ;
 
@@ -679,8 +679,8 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
 #endif
         listerr = "ERROR";
         total_errors++;
-        currentErrorFile = includes->fname;
-        currentErrorLine = includes->line;
+        currentErrorFile = file;
+        currentErrorLine = line;
     }
     else
     {
@@ -808,7 +808,7 @@ void errorqualified(int err, SYMBOL *strSym, NAMESPACEVALUES *nsv, char *name)
         }
         else
         {
-            unmang1(unopped, name+1, last);
+            unmang1(unopped, name+1, last, FALSE);
         }
     }
     else

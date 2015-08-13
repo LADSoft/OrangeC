@@ -851,6 +851,14 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
                                 tmplCount++;
                             else if (*p == '#')
                                 tmplCount--;
+                        if (basetype(sym->tp)->btp->type == bt_memberptr)
+                        {
+                            while (p > errbuf && (*--p != '$' || tmplCount)) 
+                                if (*p == '~')
+                                    tmplCount++;
+                                else if (*p == '#')
+                                    tmplCount--;
+                        }
                         p[1] = 0;
                     }
                 }            

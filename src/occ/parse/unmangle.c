@@ -659,6 +659,15 @@ char *unmang1(char *buf, char *name, char *last)
         case 'q':
             p = buf1;
             *p++ = '(';
+            if (name[-1] == 'Q')
+            {
+            }
+            else
+            {
+                *p++ = '*';
+            }
+            *p++ = ')';
+            *p++ = '(';
             *p = 0;
             if (*name == 'v')
             {
@@ -670,13 +679,8 @@ char *unmang1(char *buf, char *name, char *last)
             }
             else
             {
-                while (*name && (*name != '$' || name[1] == 'q' || name[1] == 't'))
+                while (*name && *name != '$')
                 {
-                    if (name[0] == '$'&&name[1] == 'q')
-                    {
-                        strcpy(p, "(*)");
-                        p += 3;
-                    }
                     if (*name == '#')
                     {
                         name = unmangTemplate(p, name, last);

@@ -1612,7 +1612,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             LEXEME *placeholder = lex;
             lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, NULL, FALSE, FALSE, lex->value.s.a);
             lex = prevsym(placeholder);
-            if (sp && isstructured(sp->tp))
+            if (sp && (isstructured(sp->tp) || basetype(sp->tp)->type == bt_memberptr))
                 tp = sp->tp;
         }
         if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
@@ -1671,13 +1671,73 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             else
             {
                     
-                lex = optimized_expression(lex, funcsp, NULL, &tp, &returnexp, TRUE);
-                if (!tp)
+                TYPE *tp1;
+                lex = optimized_expression(lex, funcsp, NULL, &tp1, &returnexp, TRUE);
+                if (!tp1)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
                 else
                 {
+                    if (returnexp->type == en_func)
+                    {
+                        if (returnexp->v.func->sp->storage_class == sc_overloads)
+                        {
+                            FUNCTIONCALL fpargs;
+                            INITLIST **args = &fpargs.arguments;
+                            TYPE *tp2;
+                            HASHREC *hrp ;
+                            SYMBOL *funcsp;
+                            if (isfuncptr(tp))
+                            {
+                                hrp = basetype(basetype(tp)->btp)->syms->table[0];
+                            }
+                            else
+                            {
+                                hrp = NULL;
+                                if (returnexp->v.func->sp->tp->syms)
+                                {
+                                    HASHTABLE *syms = returnexp->v.func->sp->tp->syms;
+                                    hrp  = syms->table[0];
+                                    if (hrp && ((SYMBOL *)hrp->p)->tp->syms)
+                                        hrp = ((SYMBOL *)hrp->p)->tp->syms->table[0];
+                                    else
+                                        hrp = NULL;
+                                }
+                            }
+                            memset(&fpargs, 0, sizeof(fpargs));
+                            if (((SYMBOL *)hrp->p)->thisPtr)
+                            {
+                                fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
+                                fpargs.thisptr = intNode(en_c_i, 0);
+                                hrp = hrp->next;
+                            }
+                            while (hrp)
+                            {
+                                *args = Alloc(sizeof(INITLIST));
+                                (*args)->tp = ((SYMBOL *)hrp->p)->tp;
+                                if (isref((*args)->tp))
+                                    (*args)->tp = basetype((*args)->tp)->btp;
+                                args = &(*args)->next;
+                                hrp = hrp->next;
+                            }
+                            fpargs.ascall = TRUE;
+                            funcsp = GetOverloadedFunction(&tp1, &returnexp, returnexp->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                            if (funcsp && basetype(tp)->type == bt_memberptr)
+                            {
+                                int lbl = dumpMemberPtr(funcsp, tp, TRUE);
+                                returnexp = intNode(en_labcon, lbl);
+                            }
+                        }
+                        else
+                        {
+                            returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.func->sp, tp, TRUE));
+                        }
+                    }
+                    else  if (returnexp->type == en_pc || returnexp->type == en_memberptr)
+                    {
+                        returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, TRUE));
+                    }
                     returnexp = exprNode(en_blockassign, en, returnexp);
                     returnexp->size = basetype(tp)->size;
                     returntype = tp;

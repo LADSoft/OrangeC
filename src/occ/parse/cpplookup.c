@@ -2776,6 +2776,27 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             {
                 seq[(*n)++] = CV_POINTERCONVERSION;
             }
+            else if (isfunction(tpa))
+            {
+                if (basetype(tpa)->sp->parentClass != basetype(tpp)->sp)
+                {
+                    if (classRefCount(basetype(tpa)->sp->parentClass, basetype(tpp)->sp) == 1)
+                    {
+                        seq[(*n)++] = CV_POINTERTOMEMBERCONVERSION;
+                    }
+                    else
+                    {
+                        if (allowUser)
+                            getUserConversion(F_WITHCONS, tpp, tpa, expa, n, seq, candidate, userFunc);
+                        else
+                            seq[(*n)++] = CV_NONE;
+                    }
+                }
+                else
+                {
+                    seq[(*n)++] = CV_IDENTITY;
+                }
+            }
             else
             {
                 seq[(*n)++] = CV_NONE;            
@@ -3749,6 +3770,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         sym->tp->size = getSize(bt_pointer);
                         sym->tp->btp = &stdint;
                         sym->tp->syms = CreateHashTable(1);
+                        sym->tp->sp = sym;
                         while (a)
                         {
                             SYMBOL *sym1 = Alloc(sizeof(SYMBOL));

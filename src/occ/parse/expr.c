@@ -2241,15 +2241,15 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implic
                         p->exp = exprNode(en_void, p->exp, dest);
                         p->exp = exprNode(en_stackblock, p->exp, NULL);
                         p->exp->size = sym->tp->size;
-                        p->tp = sym->tp;
                     }
                     else if (p->exp->type == en_func && p->exp->v.func->returnSP)
                     {
                         EXPRESSION *dest = anonymousVar(sc_auto, sym->tp);
                         SYMBOL *esp = dest->v.sp;
+                        int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, TRUE);
                         esp->stackblock = TRUE;
-                        p->exp->v.func->returnSP->allocate = FALSE;
-                        p->exp->v.func->returnEXP = dest;
+                        p->exp = intNode(en_labcon, lbl);
+                        p->exp = exprNode(en_stackblock, p->exp, NULL);
                         p->exp->size = sym->tp->size;
                         /*
                         EXPRESSION *dest = createTemporary(sym->tp, NULL);
@@ -2260,12 +2260,19 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implic
                         p->exp->size = sym->tp->size;
                         */
                     }
+                    else if (p->exp->type == en_pc)
+                    {
+                        int lbl = dumpMemberPtr(p->exp->v.sp, sym->tp, TRUE);
+                        p->exp = intNode(en_labcon, lbl);
+                        p->exp = exprNode(en_stackblock, p->exp, NULL);
+                        p->exp->size = sym->tp->size;
+                    }
                     else
                     {
                         p->exp = exprNode(en_stackblock, p->exp, NULL);
                         p->exp->size = sym->tp->size;
                     }
-                    p->tp->size = sym->tp->size;
+                    p->tp = sym->tp;
                 }
             }
         }
@@ -2510,7 +2517,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         {
             HASHREC *hr = temp->table[0];
             
-            if (funcparams->sp && !ismember(funcparams->sp))
+            if (funcparams->sp && !ismember(funcparams->sp) && basetype(funcparams->sp->tp)->type != bt_memberptr)
             {
                 if (operands)
                 {
@@ -2590,7 +2597,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             if (isfunction(*tp))
             {
-                if (funcparams->thisptr)
+                if (funcparams->thisptr && basetype(funcparams->sp->tp)->type != bt_memberptr)
                 {
                     SYMBOL *base = funcparams->sp->parentClass;
                     SYMBOL *derived = basetype(basetype(funcparams->thistp)->btp)->sp;
@@ -2625,7 +2632,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                         }
                     }
                     tp1 = tp;
-                    while (ispointer(*tp1))
+                    while (ispointer(*tp1) || basetype(*tp1)->type == bt_memberptr)
                         tp1 = &basetype(*tp1)->btp;
                     while ((*tp1)->btp)
                         tp1 = &(*tp1)->btp;
@@ -5740,6 +5747,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             INITLIST **args = &fpargs.arguments;
             TYPE *tp2;
             HASHREC *hrp ;
+            SYMBOL *funcsp;
             if (isfuncptr(*tp))
             {
                 hrp = basetype(basetype(*tp)->btp)->syms->table[0];
@@ -5759,6 +5767,12 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 }
             }
             memset(&fpargs, 0, sizeof(fpargs));
+            if (((SYMBOL *)hrp->p)->thisPtr)
+            {
+                fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
+                fpargs.thisptr = intNode(en_c_i, 0);
+                hrp = hrp->next;
+            }
             while (hrp)
             {
                 *args = Alloc(sizeof(INITLIST));
@@ -5769,7 +5783,12 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 hrp = hrp->next;
             }
             fpargs.ascall = TRUE;
-            GetOverloadedFunction(isfuncptr(*tp) ? & tp1 : &tp2, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
+            funcsp = GetOverloadedFunction(isfuncptr(*tp) || basetype(*tp)->type == bt_memberptr ? & tp1 : &tp2, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
+            if (funcsp && basetype(*tp)->type == bt_memberptr)
+            {
+                int lbl = dumpMemberPtr(funcsp, *tp, TRUE);
+                exp1 = intNode(en_labcon, lbl);
+            }
         }
         if (isconstraw(*tp, TRUE) && !localMutable)
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
@@ -5986,7 +6005,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
 
                     }
-                    else if (!isconstzero(tp1, *exp) && !comparetypes(*tp, tp1, TRUE))
+                    else if (!isfunction(basetype(*tp)->btp) && !isconstzero(tp1, *exp) && !comparetypes(*tp, tp1, TRUE))
                     {
                         errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
                     }

@@ -499,7 +499,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
     {
         memset(&expx, 0, sizeof(expx));
         expx.type = en_c_i;
-        exp = baseClassOffset(sp->parentClass, membertp->sp, &expx);
+        exp = baseClassOffset(sp->parentClass, basetype(membertp)->sp, &expx);
         optimize_for_constants(&exp);
         if (isfunction(sp->tp))
         {
@@ -1258,8 +1258,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
         {
             errskim(&lex, skim_end);
             skip(&lex, closebr);
-        }
-    }
+        }    }
     return lex;
 }
 static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
@@ -1282,7 +1281,62 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
         lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
         if (!isconstzero(tp, exp) && exp->type != en_nullptr)
         {
-            if (exp->type == en_memberptr)
+            EXPRESSION **exp2;
+            if (cparams.prm_cplusplus && isstructured(tp))
+            {
+                castToPointer(&tp, &exp, (enum e_kw)-1, itype);
+            }
+            exp2 = &exp;
+            while (castvalue(*exp2))
+                exp2 = &(*exp2)->left;
+            if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads)
+            {
+                FUNCTIONCALL fpargs;
+                INITLIST **args = &fpargs.arguments;
+                TYPE *tp1 = NULL;
+                HASHREC *hrp;
+                memset(&fpargs, 0, sizeof(fpargs));
+                if (isfuncptr(itype))
+                {
+                    hrp = basetype(basetype(itype)->btp)->syms->table[0];
+                }
+                else if ((*exp2)->v.func->sp->tp->syms->table[0])
+                {
+                    hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
+                }
+                else
+                {
+                    hrp = NULL;
+                }
+                if (hrp)
+                {
+                    SYMBOL *memsp = (*exp2)->v.func->sp, *funcsp;
+                    memset(&fpargs, 0, sizeof(fpargs));
+                    if (((SYMBOL *)hrp->p)->thisPtr)
+                    {
+                        fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
+                        fpargs.thisptr = intNode(en_c_i, 0);
+                        hrp = hrp->next;
+                    }
+                    while (hrp)
+                    {
+                        *args = Alloc(sizeof(INITLIST));
+                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
+                        if (isref((*args)->tp))
+                            (*args)->tp = basetype((*args)->tp)->btp;
+                        args = &(*args)->next;
+                        hrp = hrp->next;
+                    }
+                    fpargs.ascall = TRUE;
+                    funcsp = GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    if (funcsp)
+                    {
+                        int lbl = dumpMemberPtr(funcsp, itype, TRUE);
+                        exp = intNode(en_labcon, lbl);
+                    }
+                }
+            }
+            else if (exp->type == en_memberptr)
             {
                 if (exp->v.sp->parentClass != basetype(itype)->sp 
                     && exp->v.sp->parentClass != basetype(itype)->sp->mainsym 

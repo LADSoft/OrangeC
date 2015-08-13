@@ -1940,7 +1940,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         }
         gosub = gen_igosub(type, ap);
     }
-    if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp))
+    if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
     {
         gosub->novalue = sizeFromType(basetype(f->functp)->btp);
     }

@@ -3153,7 +3153,7 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
                 return TRUE;
             else
                 return DeduceFromBaseTemplates(P, basetype(A)->sp, change, byClass);
-        if (Ab->type != Pb->type && Pb->type != bt_templateparam)
+        if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != bt_templateparam)
             return FALSE;
         switch(Pb->type)
         {
@@ -3204,7 +3204,7 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
                 
                 while (hra && hrp)
                 {
-                    if (!Deduce(((SYMBOL *)hra->p)->tp, ((SYMBOL *)hra->p)->tp, FALSE, byClass))
+                    if (!Deduce(((SYMBOL *)hrp->p)->tp, ((SYMBOL *)hra->p)->tp, FALSE, byClass))
                         return FALSE;
                     hrp = hrp->next;
                     hra = hra->next;
@@ -3220,7 +3220,7 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
                 
                 while (hra && hrp)
                 {
-                    Deduce(((SYMBOL *)hra->p)->tp, ((SYMBOL *)hra->p)->tp, TRUE, byClass);
+                    Deduce(((SYMBOL *)hrp->p)->tp, ((SYMBOL *)hra->p)->tp, TRUE, byClass);
                     hrp = hrp->next;
                     hra = hra->next;
                 }

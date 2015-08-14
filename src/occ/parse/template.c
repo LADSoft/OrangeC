@@ -2422,12 +2422,17 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                 
                 *last = Alloc(sizeof(TYPE));
                 **last = *tp;
-                last = &(*last)->btp;
-                if (tp->sp->tp->type == bt_templateparam)
                 {
-                    tp->sp = basetype(tp->sp->tp->templateParam->p->byClass.val)->sp;
-                    tp->size = tp->sp->tp->size;
+                    TYPE *tp1 = tp->sp->tp;
+                    if (tp1->type == bt_templateselector)
+                        tp1 = tp1->sp->templateSelector->next->sym->tp;
+                    if (tp1->type == bt_templateparam)
+                    {
+                        tp1 = tp1->templateParam->p->byClass.val;
+                        (*last)->sp = tp1->sp;
+                    }
                 }
+                last = &(*last)->btp;
                 tp = tp->btp;
                 break;
             case bt_func:
@@ -3004,6 +3009,32 @@ static BOOLEAN DeduceFromBaseTemplates(TYPE *P, SYMBOL *A, BOOLEAN change, BOOLE
     }
     return FALSE;
 }
+static BOOLEAN DeduceFromMemberPointer(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
+{
+    TYPE *Pb = basetype(P);
+    TYPE *Ab = basetype(A);
+    if (Ab->type == bt_memberptr)
+    {
+        if (Pb->sp->tp->type != bt_templateselector ||
+             !Deduce(Pb->sp->templateSelector->next->sym->tp, Ab->sp->tp, change, byClass))
+            return FALSE;
+        if (!Deduce(Pb->btp, Ab->btp, change, byClass))
+            return FALSE;
+        return TRUE;
+    }
+    else // should only get here for functions
+    {
+         if (!isfuncptr(Ab))
+             return FALSE;
+         if (basetype(Ab->btp)->sp->parentClass == NULL || Pb->sp->tp->type != bt_templateselector ||
+             !Deduce(Pb->sp->templateSelector->next->sym->tp, basetype(Ab->btp)->sp->parentClass->tp, change, byClass))
+                 return FALSE;
+         if (!Deduce(Pb->btp, Ab->btp, change, byClass))
+             return FALSE;
+         return TRUE;
+    }
+    return FALSE;
+}
 static TYPE *FixConsts(TYPE *P, TYPE *A)
 {
     int pn=0, an=0;
@@ -3153,6 +3184,8 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
                 return TRUE;
             else
                 return DeduceFromBaseTemplates(P, basetype(A)->sp, change, byClass);
+        if (Pb->type == bt_memberptr)
+            return DeduceFromMemberPointer(P, A, change, byClass); 
         if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != bt_templateparam)
             return FALSE;
         switch(Pb->type)
@@ -3191,21 +3224,33 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
                 P = Pb->btp;
                 A = Ab->btp;
                 break;
-            case bt_memberptr:
-                return Deduce(Pb->sp->tp, Ab->sp->tp, change, byClass) && Deduce(Pb->btp, Ab->btp, change, byClass);
             case bt_func:
             case bt_ifunc:
             {
                 HASHREC *hrp = Pb->syms->table[0];
                 HASHREC *hra = Ab->syms->table[0];
+                if (((SYMBOL *)hrp->p)->thisPtr)
+                    hrp = hrp->next;
+                if (((SYMBOL *)hra->p)->thisPtr)
+                    hra = hra->next;
                 clearoutDeduction(P);
                 if (!Deduce(Pb->btp, Ab->btp, FALSE, byClass))
                     return FALSE;
                 
                 while (hra && hrp)
                 {
-                    if (!Deduce(((SYMBOL *)hrp->p)->tp, ((SYMBOL *)hra->p)->tp, FALSE, byClass))
+                    SYMBOL *sp = (SYMBOL *)hrp->p;
+                    if (!Deduce(sp->tp, ((SYMBOL *)hra->p)->tp, FALSE, byClass))
                         return FALSE;
+                    if (sp->tp->type == bt_templateparam)
+                    {
+                        if (sp->tp->templateParam->p->packed)
+                        {
+                            hrp = NULL;
+                            hra = NULL;
+                            break;
+                        }
+                    }
                     hrp = hrp->next;
                     hra = hra->next;
                 }
@@ -3215,12 +3260,27 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
                     return FALSE;
                 hrp = Pb->syms->table[0];
                 hra = Ab->syms->table[0];
+                if (((SYMBOL *)hrp->p)->thisPtr)
+                    hrp = hrp->next;
+                if (((SYMBOL *)hra->p)->thisPtr)
+                    hra = hra->next;
                 clearoutDeduction(P);
                 Deduce(Pb->btp, Ab->btp, TRUE, byClass);
                 
                 while (hra && hrp)
                 {
-                    Deduce(((SYMBOL *)hrp->p)->tp, ((SYMBOL *)hra->p)->tp, TRUE, byClass);
+                    SYMBOL *sp = (SYMBOL *)hrp->p;
+                    if (!Deduce(sp->tp, ((SYMBOL *)hra->p)->tp, TRUE, byClass))
+                        return FALSE;
+                    if (sp->tp->type == bt_templateparam)
+                    {
+                        if (sp->tp->templateParam->p->packed)
+                        {
+                            hrp = NULL;
+                            hra = NULL;
+                            break;
+                        }
+                    }
                     hrp = hrp->next;
                     hra = hra->next;
                 }
@@ -3369,17 +3429,21 @@ static BOOLEAN ValidArg(TYPE *tp)
                     return FALSE;
                 break;
             case bt_memberptr:
-                tp = tp->sp->tp;
-                if (tp->type == bt_templateparam)
                 {
-                    if (tp->templateParam->p->type != kw_typename)
-                        return FALSE;
-                    tp = tp->templateParam->p->byClass.val;
-                    if (!tp)
+                    TYPE *tp1 = tp->sp->tp;
+                    if (tp1->type == bt_templateselector)
+                        tp1 = tp1->sp->templateSelector->next->sym->tp;
+                    if (tp1->type == bt_templateparam)
+                    {
+                        if (tp1->templateParam->p->type != kw_typename)
+                            return FALSE;
+                        tp1 = tp1->templateParam->p->byClass.val;
+                        if (!tp1)
+                            return FALSE;
+                    }
+                    if (!isstructured(tp1))
                         return FALSE;
                 }
-                if (!isstructured(tp))
-                    return FALSE;
                 tp = tp->btp;
                 break;
             case bt_const:

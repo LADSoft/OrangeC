@@ -503,10 +503,12 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
         optimize_for_constants(&exp);
         if (isfunction(sp->tp))
         {
+            SYMBOL *genned;
             if (sp->storage_class == sc_virtual)            
-                genref(getvc1Thunk(sp->offset), 0);
+                genned = getvc1Thunk(sp->offset);
             else
-                genref(sp, 0);
+                genned = sp;
+            genref(genned, 0);
             if (exp->type == en_add)
             {
                 if (exp->left->type == en_l_p)
@@ -529,6 +531,11 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
             {
                 genint(exp->v.i);
                 genint(0);
+            }
+            genned->genreffed = TRUE;
+            if (genned->deferredCompile && !genned->inlineFunc.stmt)
+            {
+                deferredCompileOne(genned);
             }
         }
         else

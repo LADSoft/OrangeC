@@ -3156,13 +3156,16 @@ static IMODE *truerelat(EXPRESSION *node, SYMBOL *funcsp)
             break;
         case en_mp_compare:
         case en_mp_as_bool:
+            ap1 = tempreg(ISZ_UINT,0);
             lab0 = nextLabel++;
             lab1 = nextLabel++;
             truejp(node, funcsp, lab0);
-            ap1 = make_immed(ISZ_UINT, 0);
+            ap3 = make_immed(ISZ_UINT, 0);
+            gen_icode(i_assn, ap1, ap3, NULL);
             gen_igoto(i_goto, lab1);
             gen_label(lab0);
-            ap1 = make_immed(ISZ_UINT, 1);
+            ap3 = make_immed(ISZ_UINT, 1);
+            gen_icode(i_assn, ap1, ap3, NULL);
             gen_label(lab1);
             break;
         default:
@@ -3259,6 +3262,7 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             falsejp(node->left, funcsp, label);
             break;
         case en_mp_compare:
+            lab0 = nextLabel++;
             siz1 = node->size;
             siz2 = getSize(bt_int);
             ap2 = gen_expr( funcsp, node->left, 0, ISZ_UINT);
@@ -3269,14 +3273,18 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             gen_icode(i_assn, ap1, ap2, 0);
             DumpIncDec(funcsp);
             DumpLogicalDestructors(node, funcsp);            
-            for (i=0; i < siz1/siz2; i++)
+            for (i=0; i < siz1/siz2-1; i++)
             {
                 ap4 = indnode(ap3, ap3->size);
                 ap2 = indnode(ap1, ap1->size);
-                gen_icgoto(i_jne, label, ap4, ap2);
+                gen_icgoto(i_jne, lab0, ap4, ap2);
                 gen_icode(i_add, ap3, ap3, make_immed(ap3->size, siz2));
                 gen_icode(i_add, ap1, ap1, make_immed(ap3->size, siz2));
             }
+            ap4 = indnode(ap3, ap3->size);
+            ap2 = indnode(ap1, ap1->size);
+            gen_icgoto(i_je, label, ap4, ap2);
+            gen_label(lab0);
             break;
         case en_mp_as_bool:
             nnode = *node;
@@ -3292,7 +3300,8 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             {
                 ap2 = indnode(ap3, ap3->size);
                 gen_icgoto(i_jne, label, ap2, make_immed(ap3->size,0));
-                gen_icode(i_add, ap3, ap3, make_immed(ap3->size, siz2));
+                if (i < siz1/siz2-1)
+                    gen_icode(i_add, ap3, ap3, make_immed(ap3->size, siz2));
                 
             }
             break;
@@ -3370,7 +3379,6 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             truejp(node->left, funcsp, label);
             break;
         case en_mp_compare:
-            lab0 = nextLabel++;
             siz1 = node->size;
             siz2 = getSize(bt_int);
             ap2 = gen_expr( funcsp, node->left, 0, ISZ_UINT);
@@ -3381,19 +3389,17 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             gen_icode(i_assn, ap1, ap2, 0);
             DumpIncDec(funcsp);
             DumpLogicalDestructors(node, funcsp);            
-            for (i=0; i < siz1/siz2-1; i++)
+            for (i=0; i < siz1/siz2; i++)
             {
                 ap4 = indnode(ap3, ap3->size);
                 ap2 = indnode(ap1, ap1->size);
-                gen_icgoto(i_jne, lab0, ap4, ap2);
-                gen_icode(i_add, ap3, ap3, make_immed(ap3->size, siz2));
-                gen_icode(i_add, ap1, ap1, make_immed(ap3->size, siz2));
-
+                gen_icgoto(i_jne, label, ap4, ap2);
+                if (i < siz1/siz2-1)
+                {
+                    gen_icode(i_add, ap3, ap3, make_immed(ap3->size, siz2));
+                    gen_icode(i_add, ap1, ap1, make_immed(ap3->size, siz2));
+                }
             }
-            ap4 = indnode(ap3, ap3->size);
-            ap2 = indnode(ap1, ap1->size);
-            gen_icgoto(i_je, label, ap4, ap2);
-            gen_label(lab0);
             break;
         case en_mp_as_bool:
             nnode = *node;

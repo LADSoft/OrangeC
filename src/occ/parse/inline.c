@@ -40,7 +40,7 @@
 extern ARCH_ASM *chosenAssembler;
 extern TYPE stdint;
 extern NAMESPACEVALUES *localNameSpace;
-extern TYPE stdpointer;
+extern TYPE stdpointer, stdvoid;
 extern int startlab, retlab;
 extern int total_errors;
 extern INCLUDES *includes;
@@ -122,7 +122,7 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL *sym = (SYMBOL *)funcList->data;
-                if (((sym->isInline && sym->dumpInlineToFile) || (sym->linkage == lk_virtual && sym->genreffed)) && sym->inlineFunc.stmt)
+                if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
                     if (!sym->didinline)
                     {
@@ -130,19 +130,28 @@ void dumpInlines(void)
                         if (srch)
                         {
                             sym->mainsym = srch;
+                            sym->didinline = TRUE;
                         }
                         else
                         {
-                            inInsert(sym);
-                            sym->genreffed = FALSE;
-                            UndoPreviousCodegen(sym);
-                            startlab = nextLabel++;
-                            retlab = nextLabel++;
-                            genfunc(sym);
-                            done = FALSE;
+                            if (isfunction(sym->tp) && !sym->inlineFunc.stmt && cparams.prm_cplusplus)
+                            {
+                                propagateTemplateDefinition(sym);
+
+                            }
+                            if ((sym->isInline || sym->linkage == lk_virtual) && sym->inlineFunc.stmt)
+                            {
+                                inInsert(sym);
+                                sym->genreffed = FALSE;
+                                UndoPreviousCodegen(sym);
+                                startlab = nextLabel++;
+                                retlab = nextLabel++;
+                                genfunc(sym);
+                                done = FALSE;
+                                sym->didinline = TRUE;
+                            }
                         }
                     }
-                    sym->didinline = TRUE;
                 }
                 funcList = funcList->next;
             }
@@ -246,7 +255,10 @@ SYMBOL *getvc1Thunk(int offset)
     {
         rv = Alloc(sizeof(SYMBOL));
         rv->name = rv->errname = rv->decoratedName = litlate(name);
+        rv->storage_class = sc_static;
+        rv->linkage = lk_virtual;
         rv->offset = offset;
+        rv->tp = &stdvoid;
         insert(rv, vc1Thunks);
     }
     return rv;

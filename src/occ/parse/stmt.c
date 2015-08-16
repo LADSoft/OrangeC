@@ -1659,12 +1659,12 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         optimize_for_constants(&exp1);
                     }
                     funcparams->arguments = Alloc(sizeof(INITLIST));
-                    funcparams->arguments->tp = tp1;
+                    funcparams->arguments->tp = tp;
                     funcparams->arguments->exp = exp1;
                     maybeConversion = FALSE;
                     returntype = tp;
                     implicit = TRUE;
-                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE, FALSE); 
+                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE); 
                     returnexp = en;
                 }
             }
@@ -1688,6 +1688,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             TYPE *tp2;
                             HASHREC *hrp ;
                             SYMBOL *funcsp;
+                            if (returnexp->v.func->sp->parentClass && !returnexp->v.func->asaddress)
+                                error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                             if (isfuncptr(tp))
                             {
                                 hrp = basetype(basetype(tp)->btp)->syms->table[0];
@@ -1706,7 +1708,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 }
                             }
                             memset(&fpargs, 0, sizeof(fpargs));
-                            if (((SYMBOL *)hrp->p)->thisPtr)
+                            if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
                             {
                                 fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
                                 fpargs.thisptr = intNode(en_c_i, 0);
@@ -1767,6 +1769,55 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
             }
             returntype = tp;
+            if (returnexp->type == en_func)
+            {
+                if (returnexp->v.func->sp->storage_class == sc_overloads)
+                {
+                    FUNCTIONCALL fpargs;
+                    INITLIST **args = &fpargs.arguments;
+                    TYPE *tp2;
+                    HASHREC *hrp ;
+                    SYMBOL *funcsp;
+                    EXPRESSION *exp1;
+                    if (returnexp->v.func->sp->parentClass && !returnexp->v.func->asaddress)
+                        error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                    if (isfuncptr(tp))
+                    {
+                        hrp = basetype(basetype(tp)->btp)->syms->table[0];
+                    }
+                    else
+                    {
+                        hrp = NULL;
+                        if (returnexp->v.func->sp->tp->syms)
+                        {
+                            HASHTABLE *syms = returnexp->v.func->sp->tp->syms;
+                            hrp  = syms->table[0];
+                            if (hrp && ((SYMBOL *)hrp->p)->tp->syms)
+                                hrp = ((SYMBOL *)hrp->p)->tp->syms->table[0];
+                            else
+                                hrp = NULL;
+                        }
+                    }
+                    memset(&fpargs, 0, sizeof(fpargs));
+                    if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
+                    {
+                        fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
+                        fpargs.thisptr = intNode(en_c_i, 0);
+                        hrp = hrp->next;
+                    }
+                    while (hrp)
+                    {
+                        *args = Alloc(sizeof(INITLIST));
+                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
+                        if (isref((*args)->tp))
+                            (*args)->tp = basetype((*args)->tp)->btp;
+                        args = &(*args)->next;
+                        hrp = hrp->next;
+                    }
+                    fpargs.ascall = TRUE;
+                    returnexp->v.func->sp = GetOverloadedFunction(&tp1, &exp1, returnexp->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                }
+            }
             if (cparams.prm_cplusplus && isstructured(returntype))
             {
                 TYPE *tp1 = basetype(funcsp->tp)->btp; 

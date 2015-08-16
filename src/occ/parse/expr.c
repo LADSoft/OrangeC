@@ -301,8 +301,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     }
                     funcparams->functp = funcparams->sp->tp;
                     *tp = funcparams->sp->tp;
-                    if (!MATCHKW(lex, openpa) && funcparams->sp->parentClass && !(flags & _F_AMPERSAND))
-                        error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                    funcparams->asaddress = !!(flags & _F_AMPERSAND);
                     if (cparams.prm_cplusplus 
                         && ismember(basetype(*tp)->sp)
                         && !MATCHKW(lex, openpa))
@@ -885,6 +884,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         if (match)
                         {
                             funcparams->sp = match;
+                            funcparams->functp = match->tp;
                             *exp = substitute_params_for_function(funcparams, (*exp)->v.syms);
                             optimize_for_constants(exp);
                             *tp = basetype(match->tp)->btp;
@@ -1092,6 +1092,14 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         (*exp) = exprNode(en_bits, *exp, 0);
                         (*exp)->bits = tpb->bits;
                         (*exp)->startbit = tpb->startbit;
+                    }
+                    if (isref(*tp))
+                    {
+                        TYPE *tp1 = *tp;
+                        deref(*tp, exp);
+                        *tp = Alloc(sizeof(TYPE));
+                        **tp = *(basetype(tp1)->btp);
+                        
                     }
                     deref(*tp, exp);
                     (*exp)->v.sp = sp2; // caching the member symbol in the enode for constexpr handling
@@ -1476,6 +1484,11 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                 assignmentUsages(p->exp, FALSE);
             if (p->tp)
             {
+                if (p->exp && p->exp->type == en_func && 
+                    p->exp->v.func->sp->parentClass && !p->exp->v.func->ascall && !p->exp->v.func->asaddress)
+                {
+                    error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                }
                 
                 if (allowPack && cparams.prm_cplusplus && MATCHKW(lex, ellipse))
                 {
@@ -4816,14 +4829,13 @@ static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
         {
             continue;
         }
-        if (MATCHKW(lex, pointstar))
+        if (kw == pointstar)
         {
             points = TRUE;
             if (ispointer(*tp))
             {
                 *tp = basetype(*tp);
                 *tp = (*tp)->btp;
-                deref(&stdpointer, exp);
                 if (!isstructured(*tp))
                 {
                     errorstr(ERR_POINTER_TO_STRUCTURE_EXPECTED, lex->kw->name);
@@ -5750,6 +5762,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             TYPE *tp2;
             HASHREC *hrp ;
             SYMBOL *funcsp;
+            if ((*exp2)->v.func->sp->parentClass && !(*exp2)->v.func->asaddress)
+                error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
             if (isfuncptr(*tp))
             {
                 hrp = basetype(basetype(*tp)->btp)->syms->table[0];
@@ -5769,7 +5783,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 }
             }
             memset(&fpargs, 0, sizeof(fpargs));
-            if (((SYMBOL *)hrp->p)->thisPtr)
+            if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
             {
                 fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
                 fpargs.thisptr = intNode(en_c_i, 0);
@@ -5791,7 +5805,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 int lbl = dumpMemberPtr(funcsp, *tp, TRUE);
                 exp1 = intNode(en_labcon, lbl);
             }
-            if (!comparetypes((*tp)->btp, tp1, TRUE))
+            if (!comparetypes(basetype(*tp)->btp, tp1, TRUE))
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
             }

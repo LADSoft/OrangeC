@@ -173,7 +173,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BO
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
                       NAMESPACEVALUES **nsv, BOOLEAN isTemplate, enum e_sc storage_class,
 							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN asFriend,
-                        int consdest, BOOLEAN beforeOnly);
+                        int consdest, BOOLEAN beforeOnly, BOOLEAN funcptr);
 void sizeQualifiers(TYPE *tp);
 void SetParams(SYMBOL *cons);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);

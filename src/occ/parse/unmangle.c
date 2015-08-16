@@ -752,7 +752,11 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             }
             break;
         case 'M':
-            if (*name == 'n')
+            if (*name == '#')
+            {
+                name = unmangTemplate(buf2, name, last);
+            }
+            else if (*name == 'n')
             {
                 name++;
                 v =  *name++ - '0';

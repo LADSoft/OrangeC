@@ -37,6 +37,7 @@
 */
 #include "compiler.h"
 #include <assert.h>
+#include "rtti.h"
 
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM *chosenAssembler;
@@ -1142,9 +1143,11 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
     lex = getsym();
     if (needkw(&lex, openpa))
     {
+        BOOLEAN byType = FALSE;
         if (startOfType(lex, FALSE))
         {
             lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
+            byType = TRUE;
         }
         else
         {
@@ -1159,7 +1162,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                 INITLIST *arg = Alloc(sizeof(INITLIST));
                 INITLIST *arg2 = Alloc(sizeof(INITLIST));
-                SYMBOL *rtti = RTTIDumpType(*tp);
+                SYMBOL *rtti;
                 SYMBOL *val;
                 TYPE *valtp = Alloc(sizeof(TYPE)); // space for the virtual pointer and a pointer to the class data
                 valtp->type = bt_pointer;
@@ -1179,7 +1182,18 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 arg->exp = varNode(en_auto, val);
                 arg->next = arg2;
                 arg2->tp = &stdpointer;
-                arg2->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
+                if (!byType && isstructured(*tp) && basetype(*tp)->sp->hasvtab)
+                {
+                    deref(&stdpointer, exp);
+                    *exp = exprNode(en_sub, *exp, intNode(en_c_i, VTAB_XT_OFFS));
+                    deref(&stdpointer, exp);
+                    arg2->exp = *exp;
+                }
+                else
+                {
+                    rtti = RTTIDumpType(*tp);
+                    arg2->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
+                }
                 *exp = exprNode(en_func, 0, 0);
                 (*exp)->v.func = funcparams;
                 sp = namespacesearch("std", globalNameSpace, FALSE, FALSE);

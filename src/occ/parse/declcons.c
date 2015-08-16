@@ -2738,7 +2738,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             }
             else
             {
-                AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, implicit);
+                AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, implicit && !cons1->isExplicit);
             }
             params->functp = cons1->tp;
             params->sp = cons1;

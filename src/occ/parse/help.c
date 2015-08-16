@@ -738,6 +738,7 @@ void deref(TYPE *tp, EXPRESSION **exp)
         case bt_templateparam:
         case bt_templateselector:
         case bt_templatedecltype:
+        case bt_memberptr:
             return;
         default:
             diag("deref error");

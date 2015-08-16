@@ -3493,7 +3493,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         atp = basetype(atp)->btp;
     if (atp && !isfunction(atp))
         atp = NULL;
-        
+
     if (args && args->thisptr)
     {
         SYMBOL *spt = basetype (basetype(args->thistp)->btp)->sp;

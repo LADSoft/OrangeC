@@ -466,7 +466,7 @@ typedef struct sym
         unsigned assigned: 1; /* value has been assigned */
         unsigned altered: 1;
         unsigned used: 1; /* value has been fetched */
-        unsigned genreffed : 1; /* reffed in codegen */
+        unsigned genreffed: 1; /* reffed in codegen */
         unsigned gentemplate: 1; /* template instantiation or reference generated */
         unsigned allocaUsed: 1;
         unsigned oldstyle : 1; /* pointer to a names list if an old style function arg */
@@ -755,6 +755,7 @@ typedef struct functioncall
     int ascall:1;
     int astemplate:1;
     int noobject:1;
+    int asaddress:1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN      16384

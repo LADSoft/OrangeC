@@ -505,7 +505,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
         {
             SYMBOL *genned;
             if (sp->storage_class == sc_virtual)            
-                genned = getvc1Thunk(sp->offset);
+                genned = getvc1Thunk(sp->vtaboffset);
             else
                 genned = sp;
             genref(genned, 0);
@@ -1302,6 +1302,8 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                 INITLIST **args = &fpargs.arguments;
                 TYPE *tp1 = NULL;
                 HASHREC *hrp;
+                if ((*exp2)->v.func->sp->parentClass && !(*exp2)->v.func->asaddress)
+                    error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                 memset(&fpargs, 0, sizeof(fpargs));
                 if (isfuncptr(itype))
                 {
@@ -1319,7 +1321,7 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                 {
                     SYMBOL *memsp = (*exp2)->v.func->sp, *funcsp;
                     memset(&fpargs, 0, sizeof(fpargs));
-                    if (((SYMBOL *)hrp->p)->thisPtr)
+                    if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
                     {
                         fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
                         fpargs.thisptr = intNode(en_c_i, 0);
@@ -2222,7 +2224,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             {
                 // default constructor without param list
             }
-            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, implicit, FALSE, isList); 
+            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, isList); 
             initInsert(&it, itype, exp, offset, TRUE);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {

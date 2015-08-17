@@ -360,7 +360,7 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
     hr = basetype(f->sp->tp)->syms->table[0];
     while (hr)
     {
-        if (isstructured(((SYMBOL *)hr->p)->tp) || basetype(((SYMBOL *)hr->p)->tp)->type == bt_memberptr);
+        if (isstructured(((SYMBOL *)hr->p)->tp) || basetype(((SYMBOL *)hr->p)->tp)->type == bt_memberptr)
         {
             f->sp->dumpInlineToFile = TRUE;
             return NULL;

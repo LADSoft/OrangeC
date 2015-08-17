@@ -94,9 +94,9 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
 {
     if (typ1->type == bt_any || typ2->type == bt_any)
         return TRUE;
-    if (typ1->type == bt_typedef)
+    while (typ1->type == bt_typedef)
         typ1 = basetype(typ1);
-    if (typ2->type == bt_typedef)
+    while (typ2->type == bt_typedef)
         typ2 = basetype(typ2);
     typ1 = replaceTemplateSelector(typ1);
     typ2 = replaceTemplateSelector(typ2);

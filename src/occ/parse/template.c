@@ -3117,7 +3117,7 @@ static BOOLEAN DeduceTemplateParam(TEMPLATEPARAMLIST *Pt, TYPE *P, TYPE *A, BOOL
         TYPE **tp = change ? &Pt->p->byClass.val : &Pt->p->byClass.temp;
         if (*tp)
         {
-            if (!Pt->p->initialized && !templatecomparetypes(*tp, A, TRUE))
+            if (/*!Pt->p->initialized &&*/ !templatecomparetypes(*tp, A, TRUE))
                 return FALSE;
         }
         else
@@ -6012,7 +6012,10 @@ static SYMBOL *matchTemplateFunc(SYMBOL *old, SYMBOL *instantiated)
             if (src->p->type != dest->p->type)
                 return FALSE;
             if (src->p->type != kw_new)
+            {
                 dest->p->byClass.val = src->p->byClass.val;
+                dest->p->initialized = FALSE;
+            }
             src = src->next;
             dest = dest->next;
         }

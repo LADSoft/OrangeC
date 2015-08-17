@@ -1659,7 +1659,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         optimize_for_constants(&exp1);
                     }
                     funcparams->arguments = Alloc(sizeof(INITLIST));
-                    funcparams->arguments->tp = tp;
+                    funcparams->arguments->tp = tp1;
                     funcparams->arguments->exp = exp1;
                     maybeConversion = FALSE;
                     returntype = tp;

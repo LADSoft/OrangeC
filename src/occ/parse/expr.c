@@ -1095,10 +1095,10 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     }
                     if (isref(*tp))
                     {
-                        TYPE *tp1 = *tp;
+//                        TYPE *tp1 = *tp;
                         deref(*tp, exp);
-                        *tp = Alloc(sizeof(TYPE));
-                        **tp = *(basetype(tp1)->btp);
+//                        *tp = Alloc(sizeof(TYPE));
+//                        **tp = *(basetype(tp1)->btp);
                         
                     }
                     deref(*tp, exp);

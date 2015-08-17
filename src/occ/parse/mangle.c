@@ -368,6 +368,7 @@ static char * mangleExpression(char *buf, EXPRESSION *exp)
         buf = mangleExpressionInternal(buf, exp);
 		*buf++= '$';
 	}
+	return buf;
 }
 static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 {
@@ -500,7 +501,10 @@ static char *lookupName(char *in, char *name)
             strcpy(mangledNames[mangledNamesCount++], name);                    
         sprintf(in, "%d%s", strlen(name), name);
         if (in[-1] > 0 && in[-1] <= 127 && isdigit(in[-1]))
+		{
             *in++ = '_';
+			*in = 0;
+		}
     }
     return in;
 }

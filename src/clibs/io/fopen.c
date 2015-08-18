@@ -179,6 +179,7 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
 	file->hold = 0;
     if (!stream) {
     	if (!isatty(id))
+        {
 	    	if (setvbuf(file,0,_IOFBF,BUFSIZ))
 			{
 				free(fname);
@@ -186,6 +187,7 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
 	         __ll_exit_critical() ;
 				return 0;
 			}
+        }
 	    else {
             file->flags |= _F_TERM;
 		    if (setvbuf(file,0,_IOLBF,BUFSIZ))

@@ -43,21 +43,36 @@
 #include <locale.h>
 #include "libp.h"
 
+extern int __uimodes[HANDLE_MAX],__uiflags[HANDLE_MAX], __uihandles[HANDLE_MAX] ;
 int _RTL_FUNC open  (const char *__path, int __access,... /*unsigned mode*/)
 {
    int amode ;
+   int rv,h;
    va_list ap ;
    va_start(ap, __access) ;
    amode = *(int *)ap ;
    va_end(ap) ;
-   return sopen(__path,__access & ~0x70,__access & 0x70,amode) ;
+   rv = sopen(__path,__access & ~0x70,__access & 0x70,amode) ;
+   if (rv != -1)
+   {
+       h = __uinewhandpos() ;
+       __uiflags[h] &= ~UIF_RO ;
+   }
+   return rv;
 }
 int _RTL_FUNC _open  (const char *__path, int __access,... /*unsigned mode*/)
 {
    int amode ;
+   int rv,h;
    va_list ap ;
    va_start(ap, __access) ;
    amode = *(int *)ap ;
    va_end(ap) ;
-   return sopen(__path,__access & ~0x70,__access & 0x70,amode) ;
+   rv = sopen(__path,__access & ~0x70,__access & 0x70,amode) ;
+   if (rv != -1)
+   {
+       h = __uinewhandpos() ;
+       __uiflags[h] &= ~UIF_RO ;
+   }
+   return rv;
 }

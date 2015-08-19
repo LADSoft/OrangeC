@@ -80,10 +80,12 @@ int __readbuf(FILE *stream)
                 /* look for CTRL-Z */
                 unsigned char *p = stream->buffer ;
                 int i ;
-                for (i=0; i < stream->level && *p != 0x1a; i++) p++ ;
-                stream->level = i;
-                if (*p == 0x1a)
+                p = memchr(stream->buffer, 0x1a, stream->level);
+                if (p)
+                {
+                    stream->level = p-stream->buffer;
                     stream->flags |= _F_XEOF ;
+                }
             } else
                 if (stream->hold == 0x1a) {
                     stream->flags |= _F_EOF ;

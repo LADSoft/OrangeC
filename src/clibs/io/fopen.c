@@ -180,7 +180,7 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
     if (!stream) {
     	if (!isatty(id))
         {
-	    	if (setvbuf(file,0,_IOFBF,BUFSIZ))
+	    	if (setvbuf(file,0,_IOFBF,8192))
 			{
 				free(fname);
 				free(file);

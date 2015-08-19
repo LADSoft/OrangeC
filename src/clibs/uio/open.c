@@ -55,8 +55,7 @@ int _RTL_FUNC open  (const char *__path, int __access,... /*unsigned mode*/)
    rv = sopen(__path,__access & ~0x70,__access & 0x70,amode) ;
    if (rv != -1)
    {
-       h = __uinewhandpos() ;
-       __uiflags[h] &= ~UIF_RO ;
+       __uiflags[rv] &= ~UIF_RO ;
    }
    return rv;
 }
@@ -71,8 +70,7 @@ int _RTL_FUNC _open  (const char *__path, int __access,... /*unsigned mode*/)
    rv = sopen(__path,__access & ~0x70,__access & 0x70,amode) ;
    if (rv != -1)
    {
-       h = __uinewhandpos() ;
-       __uiflags[h] &= ~UIF_RO ;
+       __uiflags[rv] &= ~UIF_RO ;
    }
    return rv;
 }

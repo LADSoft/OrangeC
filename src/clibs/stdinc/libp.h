@@ -53,7 +53,7 @@
 extern "C" {
 #endif
 
-#define _DTA_BUF_DEFAULT 2048 /* must be a power of two <= 64K */
+#define _DTA_BUF_DEFAULT 8192 /* must be a power of two <= 64K */
 
 #if  __STDC_VERSION__ >= 199901L
 #define LLONG_TYPE long long

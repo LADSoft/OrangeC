@@ -46,31 +46,31 @@ extern new_handler _RTL_FUNC set_new_handler( new_handler __p );
 void * _RTL_FUNC  operator new (size_t);
 void * _RTL_FUNC  operator new [] (size_t) ;
 
-void   _RTL_FUNC  operator delete (void *);
-void   _RTL_FUNC  operator delete[] (void *) ;
+void   _RTL_FUNC  operator delete (void *) noexcept;
+void   _RTL_FUNC  operator delete[] (void *) noexcept ;
 
 inline void * _RTL_FUNC  operator new(size_t, void *ptr)
  { return ptr; }
 inline void*  _RTL_FUNC operator new[] ( size_t, void* ptr)
  { return ptr; }
 
-inline void * _RTL_FUNC operator new (size_t size, const std::nothrow_t &nt)
+inline void * _RTL_FUNC operator new (size_t size, const std::nothrow_t &nt) noexcept
 {
     size = size ? size : 1;
     return malloc(size);
 }
-inline void * _RTL_FUNC operator new[] (size_t size, const std::nothrow_t &nt)
+inline void * _RTL_FUNC operator new[] (size_t size, const std::nothrow_t &nt) noexcept
 {
     void *rv = ::operator new (size + sizeof(size_t), nt);
 	if (rv)
 		rv = (void *)((char *)rv + sizeof(size_t));
 	return rv;
 }
-inline void _RTL_FUNC operator delete (void *v, const std::nothrow_t &nt)
+inline void _RTL_FUNC operator delete (void *v, const std::nothrow_t &nt) noexcept
 {
    free(v) ;
 }
-inline void _RTL_FUNC operator delete[] (void *v, const std::nothrow_t &nt)
+inline void _RTL_FUNC operator delete[] (void *v, const std::nothrow_t &nt) noexcept
 {
    ::operator delete ((void *)((char *)v - sizeof(size_t)),nt);  
 }

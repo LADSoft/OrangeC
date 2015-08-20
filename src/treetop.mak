@@ -119,6 +119,8 @@ DISTINC=$(DISTROOT)\include
 export DISTINC
 DISTINCWIN=$(DISTINC)\win32
 export DISTINCWIN
+DISTINCSTL=$(DISTROOT)\stlport
+export DISTINCSTL
 DISTLIB=$(DISTROOT)\lib
 export DISTLIB
 DISTSTARTUP=$(DISTROOT)\lib\startup
@@ -181,6 +183,20 @@ cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 	-del /Q $(DISTINC)\sys >> $(NULLDEV)
 	-mkdir $(DISTINCWIN) >> $(NULLDEV)
 	-del /Q $(DISTINCWIN) >> $(NULLDEV)
+	-mkdir $(DISTINCSTL) >> $(NULLDEV)
+	-del /Q $(DISTINCSTL) >> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stl >> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stl >> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stl\config >> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stl\config >> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stl\debug >> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stl\debug >> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\stl\pointers >> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\stl\pointers >> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\using >> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\using >> $(NULLDEV)
+	-mkdir $(DISTINCSTL)\using\h >> $(NULLDEV)
+	-del /Q $(DISTINCSTL)\using\h >> $(NULLDEV)
 	-mkdir $(DISTINC)\stl >> $(NULLDEV)
 	-del /Q $(DISTINC)\stl >> $(NULLDEV)
 	-mkdir $(DISTLIB) >> $(NULLDEV)

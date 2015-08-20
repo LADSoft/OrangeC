@@ -626,7 +626,7 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
     char infunc[2048];
     char *listerr;
     char nameb[265], *name = nameb;
-    if (templateNestingCount && ignoreErrtemplateNestingCount(err))
+    if (cparams.prm_makestubs || templateNestingCount && ignoreErrtemplateNestingCount(err))
         return FALSE;
     if (!file)
     {

@@ -2319,6 +2319,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                 if (tp->sp->templateSelector->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST *current = tp->sp->templateSelector->next->templateParams;
+                    TEMPLATEPARAMLIST *symtp = ts->templateParams->next;
                     void *defaults[200];
                     int count = 0;
                     while (current)
@@ -2336,6 +2337,12 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                             {
                                 current->p->byNonType.dflt = copy_expression(current->p->byNonType.dflt);
                                 optimize_for_constants(&current->p->byNonType.dflt);
+                            }
+                            if (symtp)
+                            {
+                                if (!current->p->sym)
+                                    current->p->sym = symtp->p->sym;
+                                symtp = symtp->next;
                             }
                             current = current->next;
                         }
@@ -3862,6 +3869,7 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
     // rework
 //    if (currents)
 //        currents->bodyHead = currents->bodyTail = NULL;
+    // end rework
     dropStructureDeclaration();
     return TRUE;
 }
@@ -5786,6 +5794,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
 			found1->templateParams->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
 			*found1->templateParams->p = *sym->templateParams->p;
             found1->templateParams->next = args;
+            /* end rework */
         }
     }
     restoreParams(origList, n);

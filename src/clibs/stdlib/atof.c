@@ -235,7 +235,7 @@ long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max
         long double rval = 0;
         while (isdigit(*ch)) {
             i = i * 10 + (*ch - '0');
-            if (++k == (int)(sizeof(i) * M_LN2 / M_LN10))
+            if (++k == (int)(sizeof(i) * CHAR_BIT * M_LN2 / M_LN10))
             {
                 rval *= __tensexp(k);
                 rval += i;

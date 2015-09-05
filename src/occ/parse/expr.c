@@ -5805,7 +5805,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 int lbl = dumpMemberPtr(funcsp, *tp, TRUE);
                 exp1 = intNode(en_labcon, lbl);
             }
-            if (!comparetypes(basetype(*tp)->btp, tp1, TRUE))
+            if (basetype(*tp)->btp && !comparetypes(basetype(*tp)->btp, tp1, TRUE))
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
             }

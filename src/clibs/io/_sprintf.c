@@ -41,8 +41,11 @@
 #include "libp.h"
 #include "_lfloat.h"
 #include "malloc.h"
+#include <stdlib.h>
 
 int _e_min_exp_digit = 2;  /* min exp digits for %e (stdc, MS is 3) */
+
+int fextractdouble(double fmant, int *fexp, int *fsign, unsigned char *buf);   
 
 #ifdef _i386_
 #define USE_FLOAT
@@ -58,6 +61,7 @@ int fnd(unsigned char *buf, int index)
       return 0;
   return buf[index] - '0';
 }
+
 long double __tensexp(int n)
 {
     int table[] = {
@@ -138,30 +142,93 @@ int fextract(long double *fmant, int *fexp, int *fsign, unsigned char *buf)
     *fexp = exp;
     return exp == 0;
 }
-
 static char * getnum(char *string, LLONG_TYPE num,int radix,int lc,int unsign)
 {
+    static const char digitsArray[] =
+    "00010203040506070809"
+    "10111213141516171819"
+    "20212223242526272829"
+    "30313233343536373839"
+    "40414243444546474849"
+    "50515253545556575859"
+    "60616263646566676869"
+    "70717273747576777879"
+    "80818283848586878889"
+    "90919293949596979899";
 	int i,sz=0;
    unsigned LLONG_TYPE unum;
-	for (i=0; i < NUM_SIZE-1; i++)
-		string[i] = '0';
+    string[NUM_SIZE-2] = '0';
 	string[NUM_SIZE-1] = 0;
 	if (num < 0 && !unsign)
 		unum = - num;
 	else
 		unum = num;
 	i = NUM_SIZE-2;
-	while (unum) {
-   		string[i] = (char)((unum % radix)+ '0');
-		if (string[i] > '9') {
-			string[i] += 7;
-			if (lc)
-				string[i] += 32;
-		}
-		i--;
-		unum /= radix;
-		sz++;
-	}
+    switch (radix)
+    {
+        case 10:
+        	while (unum >= 100) {
+                lldiv_t aa = lldiv(unum, 100);
+                int val = ((int)aa.rem) * 2;
+                unum = aa.quot;
+                string[i--] = digitsArray[val + 1];
+                string[i--] = digitsArray[val];
+        		sz+=2;
+        	}
+            if (unum > 9)
+            {
+                int val = ((int)unum) * 2;
+                string[i--] = digitsArray[val + 1];
+                string[i--] = digitsArray[val];
+                sz += 2;
+            }
+            else
+            {
+                string[i--] = '0' + ((int)unum);
+                sz++;
+            }
+            break;
+        case 8:
+        	while (unum) {
+           		string[i--] = (char)((unum % 8)+ '0');
+        		unum /= 8;
+        		sz++;
+        	}
+            break;
+        case 2:
+        	while (unum) {
+           		string[i--] = (char)((unum % 2)+ '0');
+        		unum /= 2;
+        		sz++;
+        	}
+            break;
+        case 16:
+        	while (unum) {
+           		string[i] = (char)((unum % 16)+ '0');
+        		if (string[i] > '9') {
+        			string[i] += 7;
+        			if (lc)
+        				string[i] += 32;
+        		}
+                i--;
+        		unum /= 16;
+        		sz++;
+        	}
+            break;
+        default:
+        	while (unum) {
+           		string[i] = (char)((unum % radix)+ '0');
+        		if (string[i] > '9') {
+        			string[i] += 7;
+        			if (lc)
+        				string[i] += 32;
+        		}
+        		i--;
+        		unum /= radix;
+        		sz++;
+        	}
+            break;
+    }
 	if (sz == 0)
 		return &string[NUM_SIZE - 2] ;
         
@@ -435,6 +502,7 @@ char *__onetostr(FILE *__stream, const char *restrict format, void *restrict arg
 			isf = 0;
 			goto dofloat;
 		case 'f':
+        {
 dofloat:
              if (mode == 'L') {
                 (*count)+=3 ;
@@ -498,7 +566,16 @@ doinf:
             } else {
                 int bcdIndex = 0, isZero;
                 unsigned char bcdBuf[32];
- 			    isZero = fextract(&fmant,&fexp,&fsign, bcdBuf);
+                int exp;
+                
+                if (mode == 'L')
+     			    isZero = fextract(&fmant,&fexp,&fsign, bcdBuf);
+                else
+                {
+                    isZero = fextractdouble(*(double *)arg, &fexp, &fsign, bcdBuf);
+                    if (fexp == INT_MAX)
+         			    isZero = fextract(&fmant,&fexp,&fsign, bcdBuf);
+                }
 				/* sign */
 				if (issigned || spaced || fsign < 0)
 					if (fsign < 0)
@@ -661,7 +738,11 @@ doinf:
 							*fbp++='+';
                         sz = getnum(locbuf,fexp,10,0,0);
                         if (strlen(sz) < (isg ? 2 : _e_min_exp_digit))
-                            sz -= (isg ? 2 : _e_min_exp_digit) - strlen(sz);
+                        {
+                            int n = (isg ? 2 : _e_min_exp_digit) - strlen(sz);
+                            for (int i=0; i < n; i++)
+                                *(--sz) = '0';
+                        }
                         strcpy(fbp,sz);
                         fbp += strlen(fbp);
 					}
@@ -685,6 +766,7 @@ doinf:
 			justifiedOutput(__stream, fbuf, ljustify, width, ' ', written);
                
 #endif
+        }
 			break;
 		case 'n':
 			(*count)++;

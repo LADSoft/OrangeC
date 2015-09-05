@@ -1,6 +1,25 @@
 Release notes:
 
-Version 5.40.1:
+Version 5.41.1:
+    occ:        fix member pointer handling in general - both parsing and code gen was broken
+    occ:        add an error if trying to implicitly take the address of a member function
+    occ:        allow matching of the arguments to pointers to function in template matching
+    occ:        allow matching of pointers to class members and any arguments in template matching
+    occ:        fix some problems where explicit use of explicit constructors still caused an error
+    occ:        fix typeid with class types to use the XT table of the object instance when available
+    occ:        instantiation of multiple functions in a class with packed template args 
+                could result in bad code
+    occ:        &cls->memberdata returned the wrong value when memberdata was a reference type
+                (not dereferenced)
+    occ:        fix problem compiling declarations like int (*(xx))() where the pointer 
+                variable is surrounded by parenthesis
+    occ:        anonymous structures and unions declared inside functions resulted in an error.
+    clibs:      problem with fopen caused problems if you opened a TTY, and put all other files
+                in linebuffered mode which resulted in a significant performance penalty
+    clibs:      creat() without S_IWRITE made the file readonly
+    clibs:      speed up printf() and friends with ints and doubles by using better algorithms
+    clibs:      speed up atof() by fixing a bug that made it flush the mantissa to float too soon
+Version 5.40.1:  8/9/15
 
     occ:        multiplies were not being converted to shifts for powers of two
     occ:        optimize a sequence of store to memory followed by load from same memory

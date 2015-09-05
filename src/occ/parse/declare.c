@@ -4120,8 +4120,13 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
             lex = getsym();
             if (funcptr && MATCHKW(lex, openpa))
             {
-                inparen = TRUE;
                 lex = getsym();
+                // this isn't perfect, it doesn't work with nested parens around the identifier
+                
+                if (!ISID(lex))
+                    lex = backupsym();
+                else
+                    inparen = TRUE;
             }
             ParseAttributeSpecifiers(&lex, funcsp, TRUE);
             ptype = *tp;

@@ -65,7 +65,7 @@
 #define INT_MAX         LONG_MAX        /* maximum signed   int value */
 #define UINT_MAX        ULONG_MAX       /* maximum unsigned int value */
 
-#if  __STDC_VERSION__ >= 199901L
+#if  defined(__cplusplus) || __STDC_VERSION__ >= 199901L
 #define LLONG_MIN     (-9223372036854775807LL-1) /* minimum signed   long long value */
 #define LLONG_MAX       9223372036854775807LL    /* maximum signed   long long value */
 #define ULLONG_MAX      18446744073709551615ULL  /* maximum unsigned long long  value */

@@ -1982,9 +1982,12 @@ void cg_internal_conflict(QUAD *head)
         case i_assn:
             if (head->genConflict)
             {
-                int t1 = head->ans->offset->v.sp->value.i;
-                int t2 = head->dc.left->offset->v.sp->value.i;
-                insertConflict(t1, t2);
+                if (head->temps == (TEMP_ANS | TEMP_LEFT))
+                {
+                    int t1 = head->ans->offset->v.sp->value.i;
+                    int t2 = head->dc.left->offset->v.sp->value.i;
+                    insertConflict(t1, t2);
+                }
             }
             break;
         default:

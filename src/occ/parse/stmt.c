@@ -2536,6 +2536,14 @@ static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **
 BOOLEAN resolveToDeclaration(LEXEME * lex)
 {
     LEXEME *placeholder = lex;
+    if (ISKW(lex))
+        switch (KW(lex))
+        {
+            case kw_struct:
+            case kw_union:
+            case kw_class:
+                return TRUE;
+        }
     lex = getsym();
     if (MATCHKW(lex, begin))
     {

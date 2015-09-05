@@ -60,7 +60,7 @@ typedef struct {
 } ldiv_t;
 #endif
 
-#if  __STDC_VERSION__ >= 199901L
+#if  defined(__cplusplus) || __STDC_VERSION__ >= 199901L
 #ifndef _LLDIV_T
 #define _LLDIV_T
 typedef struct {

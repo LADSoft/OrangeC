@@ -32,36 +32,45 @@
 [export _strcat]
 %endif
 [global _strcat]
+[extern strcat_fin]
+
 SECTION code CLASS=CODE USE32
 
 _strcat:
-    mov	eax,[esp+4]
-    dec	eax
-llp1:
-    inc	eax
-    test al,3
-    jnz lx1
-llp2:
-    mov	ecx,[eax]
-    add	eax,4
-    mov edx,ecx
-    sub	edx,001010101h
-    not ecx
-    and edx,080808080h
-    and edx,ecx
-    jz llp2
-    sub eax,4
-lx1:
-    cmp	byte [eax],0
-    jne	llp1
-    dec eax
-    mov	edx,[esp+8]
-lp:
-    inc	eax
-    mov	cl,[edx]
-    inc edx
-    mov [eax],cl
-    or	cl,cl
-    jnz	lp
-    mov eax,[esp+4]
-    ret	
+		mov	ah,3
+		mov	edx,[esp+4]	;	str1
+TestEdx:
+		test	dl,ah
+		jnz	DoAlign
+
+		;
+		; do multiple of 4 bytes at a time
+		;
+QuadLoop:
+		mov	eax,[edx]	;	Load the bytes
+		test	al,al	;	Look for null
+		jz	CpyDone
+        inc edx
+		test	ah,ah
+		jz	CpyDone
+        inc edx
+		test eax,0xFF0000
+		jz	CpyDone
+        inc edx
+		test eax,0xFF000000
+        jz  CpyDone
+        inc edx
+        jmp QuadLoop
+    
+CpyDone:
+        mov ecx,edx
+		Jmp strcat_fin
+
+
+DoAlign:
+		mov	al,[edx]
+		inc	edx
+		test	al,al
+		jnz	TestEdx
+        mov ecx,edx
+		Jmp strcat_fin

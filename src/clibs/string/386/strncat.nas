@@ -32,47 +32,64 @@
 [export _strncat]
 %endif
 [global _strncat]
-section code CLASS=CODE USE32
+[extern strncat_fin]
+
+SECTION code CLASS=CODE USE32
 
 _strncat:
-	push	ebx
-	mov		ecx,[esp+16]
-	jecxz	x2
-	mov	ebx,[esp+8]
-	dec	ebx
-lp1:
-	inc	ebx
-	test bl,3
-	jnz x1
-lp2:
-	mov	ecx,[ebx]
-	add	ebx,4
-	mov edx,ecx
-	sub	edx,001010101h
-	not ecx
-	and edx,080808080h
-	and edx,ecx
-	jz lp2
-	sub ebx,4
-x1:
-	cmp	byte [ebx],0
-	jne	lp1
+		mov	ah,3
+		mov	edx,[esp+4]	;	str1
+        mov ecx,[esp+12]
+        jecxz exit
+TestEdx:
+		test	dl,ah
+		jnz	DoAlign
 
-	dec		ebx
-	mov		edx,[esp+12]
-	mov		ecx,[esp+16]
-lp:
-	inc		ebx
-	mov		al,[edx]
-	inc		edx
-	mov		[ebx],al
-	or		al,al
-	loopnz	lp
-	jz		x2
-	inc		ebx
-	mov		byte [ebx],0
-x2:	
-	mov	eax,[esp+8]
-	pop	ebx
-	ret
-	
+		;
+		; do multiple of 4 bytes at a time
+		;
+QuadLoop:
+        cmp ecx,4
+        jc  exit
+		mov	eax,[edx]	;	Load the bytes
+		test	al,al	;	Look for null
+		jz	CpyDone
+        dec ecx
+        jecxz exit
+        inc edx
+		test	ah,ah
+		jz	CpyDone
+        dec ecx
+        jecxz exit
+        inc edx
+		test eax,0xFF0000
+		jz	CpyDone
+        dec ecx
+        jecxz exit
+        inc edx
+		test eax,0xFF000000
+        jz  CpyDone
+        dec ecx
+        jecxz exit
+        inc edx
+        jmp QuadLoop
+    
+CpyDone:
+        mov [esp+12],ecx
+        mov ecx,edx
+		Jmp strncat_fin
+
+
+DoAlign:
+        dec ecx
+        jecxz   exit
+		mov	al,[edx]
+		inc	edx
+		test	al,al
+		jnz	TestEdx
+        mov [esp+12],ecx
+        mov ecx,edx
+		Jmp strncat_fin
+exit:
+        mov eax,[esp+4]
+        ret

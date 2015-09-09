@@ -32,18 +32,66 @@
 [export _strcpy]
 %endif
 [global _strcpy]
+[global strcat_fin]
+
 SECTION code CLASS=CODE USE32
 
 _strcpy:
-    mov	eax,[esp+4]
-    dec eax
-    mov	edx,[esp+8]
-lp:
-    inc	eax
-    mov	cl,[edx]
-    inc edx
-    mov [eax],cl
-    or	cl,cl
-    jnz	lp
-    mov eax,[esp+4]
-    ret
+		mov	ecx,[esp+4]	;	str1
+strcat_fin:
+		mov	ah,3
+		mov	edx,[esp+8]	;  str2
+TestEdx:
+		test	dl,ah
+		jnz	DoAlign
+
+		;
+		; do multiple of 4 bytes at a time
+		;
+QuadLoop:
+		mov	eax,[edx]	;	Load the bytes
+		add	edx,4		;	Update pointer
+		test	al,al	;	Look for null
+		jz	CpyDoneLoLo
+		test	ah,ah
+		jz	CpyDoneLoHi
+		test eax,0xFF0000
+		jz	CpyDoneHiLo
+		mov	[ecx],eax
+		add	ecx,4		;	(or 4 if misaligned)
+		test eax,0xFF000000
+		jnz	QuadLoop
+    
+CpyDone:
+		mov	eax,[esp+4]
+		ret
+
+CpyDoneLoLo:
+		mov	[ecx],al	; this is a zero
+		mov	eax,[esp+4]
+		ret
+
+CpyDoneLoHi:
+		xor	dl,dl
+		mov	[ecx],al
+		mov	[ecx+1],dl
+		mov	eax,[esp+4]
+		ret
+
+CpyDoneHiLo:
+		mov	[ecx],al
+		xor	dl,dl
+		mov	[ecx+1],ah
+		mov	eax,[esp+4]
+		mov	[ecx+2],dl
+		ret
+
+DoAlign:
+		mov	al,[edx]
+		inc	edx
+		mov	[ecx],al
+		inc	ecx
+		test	al,al
+		jnz	TestEdx
+		mov	eax,[esp+4]
+		ret

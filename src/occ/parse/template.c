@@ -1336,62 +1336,33 @@ SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp)
 LEXEME *TemplateArgGetDefault(LEXEME **lex, BOOLEAN isExpression)
 {
     LEXEME *rv = NULL, **cur = &rv;
+    LEXEME *current = *lex, *end = current;
+    // this presumes that the template or expression is small enough to be cached...
+    // may have to adjust it later
+    // have to properly parse the default value, because it may have
+    // embedded expressions that use '<'
     if (isExpression)
     {
         TYPE *tp;
         EXPRESSION *exp;
-        // we need to parse the expression properly, however, this presumes
-        // the expression is small enough to be cached.   Shouldn't be a big 
-        // problem unless the expression is huge
-        LEXEME *current = *lex;
-        LEXEME *end = expression_no_comma(current,NULL, NULL, &tp, &exp, NULL, _F_INTEMPLATEPARAMS);
-        while (current != end)
-        {
-            *cur = Alloc(sizeof(LEXEME));
-            **cur = *current;
-            (*cur)->next = NULL;
-            if (ISID(current))
-                (*cur)->value.s.a = litlate((*cur)->value.s.a);
-            current = current->next;
-            cur = &(*cur)->next;
-        }
-        *lex = end;
+        end = expression_no_comma(current,NULL, NULL, &tp, &exp, NULL, _F_INTEMPLATEPARAMS);
     }
     else
     {
-        int inbracket = 0;
-        int inparen = 0;
-        while (*lex != NULL)
-        {
-            if (!inparen)
-            {
-                if (!inbracket && MATCHKW(*lex, comma))
-                    break;
-                if (MATCHKW(*lex, gt) || MATCHKW(*lex, rightshift))
-                {
-                    if (!inbracket--)
-                        break;
-                }   
-                if (MATCHKW(*lex, lt))
-                    inbracket++;
-            }
-            if (MATCHKW(*lex, openpa))
-            {
-                inparen++;
-            }
-            if (MATCHKW(*lex, closepa) && inparen)
-                inparen--;
-            *cur = Alloc(sizeof(LEXEME));
-            **cur = **lex;
-            if (ISID(*lex))
-                (*cur)->value.s.a = litlate((*cur)->value.s.a);
-            cur = &(*cur)->next;
-            if (MATCHKW(*lex, rightshift))
-                *lex = getGTSym(*lex);
-            else
-                *lex = getsym();
-        }
+        TYPE *tp;
+        end = get_type_id(current, &tp, NULL, sc_cast, FALSE);
     }
+    while (current != end)
+    {
+        *cur = Alloc(sizeof(LEXEME));
+        **cur = *current;
+        (*cur)->next = NULL;
+        if (ISID(current))
+            (*cur)->value.s.a = litlate((*cur)->value.s.a);
+        current = current->next;
+        cur = &(*cur)->next;
+    }
+    *lex = end;
     return rv;
 }
 static LEXEME *TemplateHeader(LEXEME *lex, SYMBOL *funcsp, TEMPLATEPARAMLIST **args)
@@ -6190,8 +6161,6 @@ void propagateTemplateDefinition(SYMBOL *sym)
 }
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isExtern)
 {
-	if (lex->line == 626)
-		printf("%d\n", lex->line);
     lex = getsym();
     if (MATCHKW(lex, lt))
     {

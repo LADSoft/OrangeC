@@ -22,7 +22,7 @@
 ;
 ;THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
 ;WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-;PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+;PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIAahE FOR
 ;ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
 ;LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 ;INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
@@ -38,18 +38,58 @@ _strcmp:
     mov		ecx,[esp+4]
     mov		edx,[esp+8]
 strcmp_x:		; from strstr
-    dec		edx
-lp:
-    inc		edx
-    mov		al,[ecx]
-    inc		ecx
-    mov		ah,al
-    sub		al,[edx]
-    jnz		x1
-    or		ah,ah
-    jnz		lp
-    sub		eax,eax
-    ret
-x1:
-    movsx	eax,al
+
+	;
+	; do multiple of 4 bytes at a time
+	;
+QuadLoop:
+	mov	al,[ecx]	;	Load the bytes (different base
+	mov	ah,[edx]	;	registers on purpose)
+	
+
+	cmp	al,ah		;	Compare bytes
+	jnz	Unequal		
+
+	test	al,al	;	Check end of string
+	jz	Equal		
+
+	mov	al,[ecx+1]	;	Repeat 3 more times
+	mov	ah,[edx+1]	
+
+	cmp	al,ah
+	jnz	Unequal		
+
+	test	al,al
+	jz	Equal		
+
+	mov	al,[ecx+2]
+	mov	ah,[edx+2]	
+
+	cmp	al,ah
+	jnz	Unequal		
+
+	test	al,al
+	jz	Equal		
+
+	mov	al,[ecx+3]
+	mov	ah,[edx+3]	
+
+	cmp	al,ah
+	jnz	Unequal		
+
+    
+	add	ecx,4		;	Update pointers
+	add	edx,4		
+	
+	test	al,al
+	jnz	QuadLoop	
+Equal:
+	xor	eax,eax
+	jmp End			
+
+Unequal:
+	sbb	eax,eax
+    or  eax,1
+    
+End:
     ret

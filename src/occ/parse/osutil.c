@@ -633,6 +633,7 @@ void setglbdefs(void)
     sscanf(STRING_VERSION, "%d.%d", &major, &minor);
     sprintf(buf, "%d", major *100+minor);
     glbdefine("__ORANGEC__", buf, TRUE);
+    glbdefine("__CHAR_BIT__", "8", TRUE);
     if (cparams.prm_cplusplus)
     {
         glbdefine("__cplusplus", "201103",TRUE);

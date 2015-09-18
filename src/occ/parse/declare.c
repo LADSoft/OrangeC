@@ -3834,7 +3834,9 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
     {
         SYMBOL *strSymX = NULL;
         STRUCTSYM s;
+        BOOLEAN oldTemplateSpecialization = inTemplateSpecialization;
         s.tmpl = NULL;
+        inTemplateSpecialization = inTemplateType;
         inTemplateType = FALSE;
         if (cparams.prm_cplusplus)
         {
@@ -3848,6 +3850,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 lex = getsym();
             }
             lex = nestedPath(lex, &strSymX, &nsvX, &throughClass, FALSE, storage_class, FALSE);
+            inTemplateSpecialization = oldTemplateSpecialization;
             if (strSymX)
             {
                 if (strSym)
@@ -3958,6 +3961,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         }
         else
         {
+            inTemplateSpecialization = oldTemplateSpecialization;
             sp = makeID(storage_class, *tp, *spi, litlate(lex->value.s.a));
             sp->declcharpos = lex->charindex;
             *spi = sp;
@@ -5723,7 +5727,7 @@ jointemplate:
                                         sp->ispure = TRUE;
                                     }
                                 }
-                                else if (sp->constexpression && sp->storage_class != sc_external)
+                                else if (sp->constexpression && sp->storage_class != sc_external && !isfunction(sp->tp))
                                 {
                                     error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
                                 }

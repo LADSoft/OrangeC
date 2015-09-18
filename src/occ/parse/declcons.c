@@ -2571,16 +2571,21 @@ void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, 
 void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, 
                     BOOLEAN pointer, BOOLEAN skipAccess)
 {
-    SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
+    SYMBOL *dest;
     SYMBOL *dest1;
-    TYPE *tp = NULL, *stp = sp->tp;
+    TYPE *tp = NULL, *stp;
     FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-    SYMBOL *sym = basetype(sp->tp)->sp;
+    SYMBOL *sym;
     if (!against)
        against = sp;
+    if (sp->tp->size == 0)
+        sp = PerformDeferredInitialization(sp->tp, NULL)->sp;
+    stp = sp->tp;
+    dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
     // if it isn't already defined get out, there will be an error from somewhere else..
     if (!basetype(sp->tp)->syms || !dest)
         return;
+    sym = basetype(sp->tp)->sp;
     if (!*exp)
     {
         diag("callDestructor: no this pointer");

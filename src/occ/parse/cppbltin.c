@@ -60,7 +60,28 @@ static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigne
     "namespace std { "
     "class type_info; "
     "} "
-    "typedef std::type_info typeinfo; ";
+    "typedef std::type_info typeinfo; "
+    "extern \"C\" {"
+    "int __builtin_ctz(unsigned x);"
+    "int __builtin_ctzl(unsigned long x);"
+    "int __builtin_ctzll(unsigned long long x);"
+    "int __builtin_clz(unsigned x);"
+    "int __builtin_clzl(unsigned long x);"
+    "int __builtin_clzll(unsigned long long x);"
+    "int __builtin_popcount(unsigned x);"
+    "int __builtin_popcountl(unsigned long x);"
+    "int __builtin_popcountll(unsigned long long x);"
+    "float __builtin_huge_valf();"
+    "double __builtin_huge_val();"
+    "long double __builtin_huge_vall();"
+    "float __builtin_nanf(const char *x);"
+    "double __builtin_nan(const char *x);"
+    "long double __builtin_nanl(const char *x);"
+    "float __builtin_nansf(const char *x);"
+    "double __builtin_nans(const char *x);"
+    "long double __builtin_nansl(const char *x);"
+    "}"
+    ;
 TYPE stdXC = { 
     bt_struct, sizeof(XCTAB)
 };

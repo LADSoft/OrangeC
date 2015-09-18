@@ -329,14 +329,8 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
             told = basetype(tps);
             if (tnew->type == bt_templateparam)
             {
-                if (told->type != bt_templateparam || 
-                    tnew->templateParam->p->type != told->templateParam->p->type ||
-                    tnew->templateParam->p->type != kw_typename ||
-                    (((tnew->templateParam->p->byClass.dflt && tnew->templateParam->p->byClass.dflt->type != bt_templateparam)
-                      || (told->templateParam->p->byClass.dflt && told->templateParam->p->byClass.dflt->type != bt_templateparam))
-                     && (!tnew->templateParam->p->byClass.dflt || !told->templateParam->p->byClass.dflt ||
-                    !comparetypes(told->templateParam->p->byClass.dflt, tnew->templateParam->p->byClass.dflt, TRUE))))
-                    
+                if (told->type != bt_templateparam ||
+                    strcmp(told->templateParam->p->sym->name, tnew->templateParam->p->sym->name))
                         break;                    
             }
         }

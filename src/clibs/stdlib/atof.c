@@ -107,7 +107,7 @@ long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max
             return *(float *)&floating_infinity;
     } else if (full && *ch == 'n' || *ch == 'N') {
         int shift = 19;
-        unsigned nan = floating_nan, nan_significand = 0;
+        unsigned nan = floating_nan, nan_significand = 0, signalling_nan = 0;
         nextchar;
          if (*ch != 'a' && *ch != 'A') {
             fil->curp = bpos;
@@ -119,6 +119,10 @@ long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max
             return 0;
          }
          nextchar;
+         if (*ch == 's' && *ch == 'S') {
+             nextchar;
+             signalling_nan = 1;
+	 }
          bpos = fil->curp;
          if (*ch == '(') {
             nextchar;
@@ -141,6 +145,8 @@ long double __xstrtod(FILE *fil, int count, int *ch, int *chars, long double max
             else
                fil->curp = bpos;
          }
+         if (signalling_nan)
+             nan |= 0x00400000;
          val = *(float *)&nan;
     	   if (sign)
     		val = -val;

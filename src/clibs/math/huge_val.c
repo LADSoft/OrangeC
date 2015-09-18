@@ -32,33 +32,16 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-float nanf(const char *tagp)
+#include <float.h>
+float __builtin_huge_valf()
 {
-    char buf[256];
-    sprintf(buf,"NAN(%.250s)",tagp);
-    return strtof(buf,NULL);
+    return FLT_MAX;
 }
-long double nanl(const char *tagp)
+long double __builtin_huge_vall()
 {
-    char buf[256];
-    sprintf(buf,"NAN(%.250s)",tagp);
-    return strtold(buf,NULL);
+    return LDBL_MAX;
 }
-double nan(const char *tagp)
+double __builtin_huge_val()
 {
-    char buf[256];
-    sprintf(buf,"NAN(%.250s)",tagp);
-    return strtod(buf,NULL);
-}
-float __builtin_nanf(const char *tagp)
-{
-    return nanf(tagp);
-}
-long double __builtin_nanl(const char *tagp)
-{
-    return nanl(tagp);
-}
-float __builtin_nan(const char *tagp)
-{
-    return nan(tagp);
+    return DBL_MAX;
 }

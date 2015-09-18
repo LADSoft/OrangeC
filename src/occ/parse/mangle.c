@@ -290,7 +290,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 SYMBOL *ts = tsl->next->sym;
                 *buf++ = 't';
                 *buf++ = 's';
-                if (tsl->next->isTemplate)
+                if (tsl->next->isTemplate && tsl->next->templateParams) // may be an empty variadic
                 {
                     buf = mangleTemplate(buf, ts, tsl->next->templateParams);
                 }
@@ -500,11 +500,6 @@ static char *lookupName(char *in, char *name)
         if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
             strcpy(mangledNames[mangledNamesCount++], name);                    
         sprintf(in, "%d%s", strlen(name), name);
-        if (in[-1] > 0 && in[-1] <= 127 && isdigit(in[-1]))
-		{
-            *in++ = '_';
-			*in = 0;
-		}
     }
     return in;
 }

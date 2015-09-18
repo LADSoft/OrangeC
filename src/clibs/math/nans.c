@@ -32,33 +32,21 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-float nanf(const char *tagp)
+float __builtin_nansf(const char *tagp)
 {
     char buf[256];
-    sprintf(buf,"NAN(%.250s)",tagp);
+    sprintf(buf,"NANS(%.250s)",tagp);
     return strtof(buf,NULL);
 }
-long double nanl(const char *tagp)
+long double __builtin_nansl(const char *tagp)
 {
     char buf[256];
-    sprintf(buf,"NAN(%.250s)",tagp);
+    sprintf(buf,"NANS(%.250s)",tagp);
     return strtold(buf,NULL);
 }
-double nan(const char *tagp)
+double __builtin_nans(const char *tagp)
 {
     char buf[256];
-    sprintf(buf,"NAN(%.250s)",tagp);
+    sprintf(buf,"NANS(%.250s)",tagp);
     return strtod(buf,NULL);
-}
-float __builtin_nanf(const char *tagp)
-{
-    return nanf(tagp);
-}
-long double __builtin_nanl(const char *tagp)
-{
-    return nanl(tagp);
-}
-float __builtin_nan(const char *tagp)
-{
-    return nan(tagp);
 }

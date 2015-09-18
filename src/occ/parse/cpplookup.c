@@ -237,6 +237,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     TEMPLATESELECTOR *templateSelector = NULL, **last = &templateSelector;
     LEXEME *placeholder = lex, *finalPos;
     BOOLEAN hasTemplate = FALSE;
+    TEMPLATEPARAM *templateParamAsTemplate = NULL;
     TYPE *dependentType = NULL;
     if (sym)
         *sym = NULL;
@@ -311,6 +312,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                             }
                             else if (params->p->type == kw_template)
                             {
+                                templateParamAsTemplate = params->p;
                                 sp = params->p->byTemplate.val;
                             }
                             else
@@ -324,7 +326,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                 {
                     sp = NULL;
                 }
-                if (!sp)
+                if (!sp && !templateParamAsTemplate)
                 {
                     if (!qualified)
                         sp = namespacesearch(buf, localNameSpace, qualified, FALSE);
@@ -375,8 +377,28 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                     }
                 }
             }
+            else if (templateParamAsTemplate)
+            {
+                hasTemplateArgs = TRUE;
+                if (MATCHKW(lex, lt))
+                {
+                    lex = GetTemplateArguments(lex, NULL, sp, &current);
+                }
+                else if (MATCHKW(lex, classsel))
+                {
+                    currentsp = sp;
+                    if (!istypedef && !noSpecializationError)// && !instantiatingTemplate)
+                        errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                }
+                if (!MATCHKW(lex, classsel))
+                    break;
+            }
             else if (!MATCHKW(lex, classsel))
                 break;
+            if (templateParamAsTemplate)
+            {
+                matchTemplateSpecializationToParams(current, templateParamAsTemplate->byTemplate.args, templateParamAsTemplate->sym);
+            }
             if (hasTemplateArgs)
             {
                 if (currentsp)
@@ -2427,14 +2449,15 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
     if (P->sp->templateLevel != A->sp->templateLevel)
         return FALSE;
     // this next if stmt is a horrible hack.
-    if (P->size == 0 &&!strcmp(P->sp->decoratedName, A->sp->decoratedName))
-        return TRUE;
     PL= P->sp->templateParams;
     PA = A->sp->templateParams;
-    if (!PL || !PA) // errors
+    if (!PL || !PA || P->sp->specialized != A->sp->specialized) // errors
+    {
+        if (P->size == 0 &&!strcmp(P->sp->decoratedName, A->sp->decoratedName))
+            return TRUE;
         return FALSE;
-    if (P->sp->specialized != A->sp->specialized)
-        return FALSE;
+        
+    }
     PLd = PAd = FALSE;
     if (PL->p->bySpecialization.types)
     {
@@ -2462,7 +2485,7 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
             {
                 break;
             }
-            else if (P->sp->instantiated || A->sp->instantiated)
+            else if (P->sp->instantiated || A->sp->instantiated || PL->p->byClass.dflt && PA->p->byClass.dflt)
             {
                 if (PL->p->type == kw_typename)
                 {

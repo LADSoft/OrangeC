@@ -2570,7 +2570,7 @@ void putexterns(void)
         while (externals)
         {
             SYMBOL *sp = externals->data;
-            if (!sp->inlineFunc.stmt && !sp->init && (sp->parentClass || sp->storage_class == sc_external) && sp->genreffed)
+            if ((sp->dontinstantiate || !sp->inlineFunc.stmt && !sp->init && (sp->parentClass || sp->storage_class == sc_external)) && sp->genreffed)
             {
                 notyet = put_exfunc(sp, notyet);
                 sp->genreffed = FALSE;

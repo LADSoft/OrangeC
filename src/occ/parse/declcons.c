@@ -1358,107 +1358,104 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
 }
 void createDefaultConstructors(SYMBOL *sp)
 {
-    if (!total_errors)
+    SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+    SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
+    SYMBOL *asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+    if (!dest)
+        declareDestructor(sp);
+    else
+        sp->hasDest = TRUE;
+    if (cons)
     {
-        SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-        SYMBOL *dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
-        SYMBOL *asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
-        if (!dest)
-            declareDestructor(sp);
-        else
-            sp->hasDest = TRUE;
-        if (cons)
+        sp->hasUserCons = TRUE;
+        shimDefaultConstructor(sp, cons);
+    }
+    else
+    {
+        SYMBOL *newcons;
+        // first see if the default constructor could be trivial
+        if (!hasVTab(sp) && sp->vbaseEntries == NULL && !dest)
         {
-            sp->hasUserCons = TRUE;
-            shimDefaultConstructor(sp, cons);
-        }
-        else
-        {
-            SYMBOL *newcons;
-            // first see if the default constructor could be trivial
-            if (!hasVTab(sp) && sp->vbaseEntries == NULL && !dest)
+            BASECLASS *base = sp->baseClasses;
+            while (base)
             {
-                BASECLASS *base = sp->baseClasses;
-                while (base)
+                if (!base->cls->trivialCons)
+                    break;
+                base = base->next;
+            }
+            if (!base)
+            {
+                HASHREC *p = basetype(sp->tp)->syms->table[0];
+                while (p)
                 {
-                    if (!base->cls->trivialCons)
-                        break;
-                    base = base->next;
-                }
-                if (!base)
-                {
-                    HASHREC *p = basetype(sp->tp)->syms->table[0];
-                    while (p)
+                    SYMBOL *pcls = (SYMBOL *)p->p;
+                    if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable)
                     {
-                        SYMBOL *pcls = (SYMBOL *)p->p;
-                        if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable)
+                        if (isstructured(pcls->tp))
                         {
-                            if (isstructured(pcls->tp))
-                            {
-                                if (!basetype(pcls->tp)->sp->trivialCons)
-                                    break;
-                            }
-                            else if (pcls->init) // brace or equal initializer goes here
-                                break;       
+                            if (!basetype(pcls->tp)->sp->trivialCons)
+                                break;
                         }
-                        p = p->next;
+                        else if (pcls->init) // brace or equal initializer goes here
+                            break;       
                     }
-                    if (!p)
-                    {
-                        sp->trivialCons = TRUE;
-                    }
+                    p = p->next;
+                }
+                if (!p)
+                {
+                    sp->trivialCons = TRUE;
                 }
             }
-            // now create the default constructor
-            newcons = declareConstructor(sp, TRUE, FALSE);
-            newcons->trivialCons = sp->trivialCons;
-            cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
         }
-        conditionallyDeleteDefaultConstructor(cons);
-        // now if there is no copy constructor or assignment operator declare them
-        if (!hasCopy(cons, FALSE))
+        // now create the default constructor
+        newcons = declareConstructor(sp, TRUE, FALSE);
+        newcons->trivialCons = sp->trivialCons;
+        cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+    }
+    conditionallyDeleteDefaultConstructor(cons);
+    // now if there is no copy constructor or assignment operator declare them
+    if (!hasCopy(cons, FALSE))
+    {
+        SYMBOL *newcons = declareConstructor(sp, FALSE, FALSE);
+        newcons->trivialCons = hasTrivialCopy(sp, FALSE);
+        if (hasCopy(cons, TRUE) || (asgn && hasCopy(asgn, TRUE)))
+            newcons->deleted = TRUE;
+        if (!asgn)
+            asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+    }
+    conditionallyDeleteCopyConstructor(cons, FALSE);
+    if (!asgn || !hasCopy(asgn, FALSE))
+    {
+        SYMBOL *newsp = declareAssignmentOp(sp, FALSE);
+        newsp->trivialCons = hasTrivialAssign(sp, FALSE);
+        if (hasCopy(cons, TRUE) || (asgn && hasCopy(asgn, TRUE)))
+            newsp->deleted = TRUE;            
+        if (!asgn)
+            asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+    }
+    conditionallyDeleteCopyAssignment(asgn,FALSE);
+    // now if there is no move constructor, no copy constructor,
+        // no copy assignment, no move assignment, no destructor
+        // and wouldn't be defined as deleted
+        // declare a move constructor and assignment operator
+    if (!dest && !hasCopy(cons,FALSE ) && !hasCopy(cons,TRUE) &&
+        !hasCopy(asgn, FALSE) && (!asgn || !hasCopy(asgn, TRUE)))
+    {
+        BOOLEAN b = isMoveConstructorDeleted(sp);
+        SYMBOL *newcons;
+        if (!b)
         {
-            SYMBOL *newcons = declareConstructor(sp, FALSE, FALSE);
-            newcons->trivialCons = hasTrivialCopy(sp, FALSE);
-            if (hasCopy(cons, TRUE) || (asgn && hasCopy(asgn, TRUE)))
-                newcons->deleted = TRUE;
-            if (!asgn)
-                asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+            newcons = declareConstructor(sp, FALSE, TRUE);
+            newcons->trivialCons = hasTrivialCopy(sp, TRUE);
         }
-        conditionallyDeleteCopyConstructor(cons, FALSE);
-        if (!asgn || !hasCopy(asgn, FALSE))
-        {
-            SYMBOL *newsp = declareAssignmentOp(sp, FALSE);
-            newsp->trivialCons = hasTrivialAssign(sp, FALSE);
-            if (hasCopy(cons, TRUE) || (asgn && hasCopy(asgn, TRUE)))
-                newsp->deleted = TRUE;            
-            if (!asgn)
-                asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
-        }
-        conditionallyDeleteCopyAssignment(asgn,FALSE);
-        // now if there is no move constructor, no copy constructor,
-            // no copy assignment, no move assignment, no destructor
-            // and wouldn't be defined as deleted
-            // declare a move constructor and assignment operator
-        if (!dest && !hasCopy(cons,FALSE ) && !hasCopy(cons,TRUE) &&
-            !hasCopy(asgn, FALSE) && (!asgn || !hasCopy(asgn, TRUE)))
-        {
-            BOOLEAN b = isMoveConstructorDeleted(sp);
-            SYMBOL *newcons;
-            if (!b)
-            {
-                newcons = declareConstructor(sp, FALSE, TRUE);
-                newcons->trivialCons = hasTrivialCopy(sp, TRUE);
-            }
-            newcons = declareAssignmentOp(sp, TRUE);
-            newcons->trivialCons = hasTrivialAssign(sp, TRUE);
-            newcons->deleted = isMoveAssignmentDeleted(sp);
-        }
-        else
-        {
-            conditionallyDeleteCopyConstructor(cons,TRUE);
-            conditionallyDeleteCopyAssignment(asgn,TRUE);
-        }
+        newcons = declareAssignmentOp(sp, TRUE);
+        newcons->trivialCons = hasTrivialAssign(sp, TRUE);
+        newcons->deleted = isMoveAssignmentDeleted(sp);
+    }
+    else
+    {
+        conditionallyDeleteCopyConstructor(cons,TRUE);
+        conditionallyDeleteCopyAssignment(asgn,TRUE);
     }
 }
 void destructBlock(EXPRESSION **exp, HASHREC *hr)

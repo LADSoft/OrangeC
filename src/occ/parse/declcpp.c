@@ -865,9 +865,9 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
         if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual) 
             && sp->templateParams && allTemplateArgsSpecified(sp->templateParams->next))
         {
-            sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-            if (sp)
-                *tpx = sp->tp;
+	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+		    if (sp)
+			    *tpx = sp->tp;
         }
         else if (sp->instantiated)
         {
@@ -1317,6 +1317,7 @@ static BOOLEAN hasPackedTemplate(TYPE *tp)
         case bt_rref:
         case bt_lrqual:
         case bt_rrqual:
+        case bt_derivedfromtemplate:
             return hasPackedTemplate(tp->btp);
         case bt_seg:
             break;
@@ -1376,7 +1377,7 @@ BOOLEAN hasPackedExpression(EXPRESSION *exp)
 }
 void checkPackedExpression(EXPRESSION *exp)
 {
-    if (!hasPackedExpression(exp))
+    if (!hasPackedExpression(exp) && !templateNestingCount)
         error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_FUNCTION_PARAMETER);
 }
 void checkUnpackedExpression(EXPRESSION *exp)

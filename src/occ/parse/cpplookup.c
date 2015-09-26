@@ -306,7 +306,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                             {
                                 if (params->p->byClass.val)
                                 {
-                                    sp = params->p->byClass.val->sp;
+                                    sp = basetype(params->p->byClass.val)->sp;
                                     dependentType = params->p->byClass.val;
                                 }
                             }
@@ -347,7 +347,9 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             }
             else
             {
-                sp = search(buf, strSym->tp->tags);
+                sp = search(buf, basetype(strSym->tp)->syms);
+                if (!sp)
+                    sp = search(buf, basetype(strSym->tp)->tags);
             }
             if (sp)
             {
@@ -525,7 +527,7 @@ static SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOLEAN isvirtua
         cls = basetype(cls->tp)->sp;
     if (cls->templateLevel && cls->templateParams)
     {
-        if (!cls->tp->syms)
+        if (!basetype(cls->tp)->syms)
         {
             TemplateClassInstantiate(cls, cls->templateParams, FALSE, sc_global);
         }
@@ -541,9 +543,9 @@ static SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOLEAN isvirtua
 	}
 
     if (!rv && !tagsOnly)
-        rv = search(name, cls->tp->syms);
+        rv = search(name, basetype(cls->tp)->syms);
     if (!rv)
-        rv = search(name, cls->tp->tags);
+        rv = search(name, basetype(cls->tp)->tags);
     if (rv)
     {
         if (!last || ((last == rv || sameTemplate(last->tp, rv->tp) || (rv->mainsym && rv->mainsym == last->mainsym)) && (((isvirtual && isvirtual == last->temp) || 
@@ -1179,7 +1181,7 @@ static BOOLEAN isAccessibleInternal(SYMBOL *derived, SYMBOL *currentBase,
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            if (sym == member || sym == member->mainsym)
+            if (sym == member || sym == member->mainsym || sameTemplate(sym->tp, member->tp))
             {
                 matched = TRUE;
                 break;
@@ -2615,7 +2617,10 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
         if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isarithmeticconst(expa))
         {
             // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
-            seq[(*n)++] = CV_NONE;
+            if (!isDerivedFromTemplate(tppx))
+            {
+                seq[(*n)++] = CV_NONE;
+            }
         }
         else if (tpp->type == bt_lref && rref)
         {
@@ -3241,9 +3246,10 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                     tp = tr->p->byClass.val;
                 else
                     tp = argsym->tp;
-                if (tp->type == bt_ellipse)
+                if (basetype(tp)->type == bt_ellipse)
                 {
-                    arr[n++] = CV_ELLIPSIS;
+                    arr[pos] = CV_ELLIPSIS;
+                    sizes[n++] = 1;
                     return TRUE;
                 }
                 m = 0;
@@ -3316,7 +3322,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
             {
                 return TRUE;
             }
-            if (sym->tp->type == bt_ellipse)
+            if (basetype(sym->tp)->type == bt_ellipse)
             {
                 sizes[n++] = 1;
                 arr[pos++] = CV_ELLIPSIS;
@@ -3866,6 +3872,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             }
         }
     }
+
     if (s.tmpl)
         dropStructureDeclaration();
     return sp;

@@ -351,6 +351,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
 						*buf++ = '&';
 					strcpy(buf, exp->v.sp->name);
 					*buf++ = '$';
+                    *buf = 0;
 				}
 				break;
 			default:

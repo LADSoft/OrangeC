@@ -530,6 +530,7 @@ static struct {
 {"Overloaded function '%s' is ambiguous in this context", ERROR },
 {"Use of an initializer-list requires '#include <initializer_list>'", ERROR },
 {"Use '&' to take the address of a member function", ERROR },
+{"ISO C++ forbids in-class initialization of non-const static member '%s'", ERROR },
 #endif
 } ;
 

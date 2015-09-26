@@ -331,6 +331,7 @@ BOOLEAN istype(SYMBOL *sym);
 BOOLEAN ismemberdata(SYMBOL *sp);
 BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType);
 TYPE *basetype(TYPE *tp);
+BOOLEAN isDerivedFromTemplate(TYPE *tp);
 BOOLEAN isunsigned(TYPE *tp);
 BOOLEAN isint(TYPE *tp);
 BOOLEAN isfloat(TYPE *tp);

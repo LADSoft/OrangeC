@@ -193,7 +193,7 @@ enum e_bt
     bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_lrqual, bt_rrqual, bt_struct,
         bt_union, bt_func, bt_class, bt_ifunc, bt_any, bt_auto,
         bt_match_none, bt_ellipse, bt_memberptr, bt_cond,
-        bt_consplaceholder, bt_templateparam, bt_templateselector, bt_templatedecltype, bt_string, 
+        bt_consplaceholder, bt_templateparam, bt_templateselector, bt_templatedecltype, bt_derivedfromtemplate, bt_string, 
         /* last */
         bt_none
 };
@@ -513,6 +513,7 @@ typedef struct sym
         unsigned packed:1; // packed template param instance
         unsigned instantiated:1; // instantiated template
         unsigned instantiated2:1; // instantiated template
+        unsigned dontinstantiate:1; // don't instantiate this template (is extern)
         unsigned copiedTemplateFunction:1;
         unsigned performedStructInitialization:1; // function performed structured initialization
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body

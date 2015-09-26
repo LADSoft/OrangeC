@@ -121,6 +121,7 @@ TYPE *basetype(TYPE *tp)
             case bt_typedef:
             case bt_lrqual:
             case bt_rrqual:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             default:
@@ -129,6 +130,33 @@ TYPE *basetype(TYPE *tp)
     }
     while (tp);
     return NULL;
+}
+BOOLEAN isDerivedFromTemplate(TYPE *tp)
+{
+    do 
+    {
+        switch(tp->type)
+        {
+            case bt_far:
+            case bt_near:
+            case bt_const:
+            case bt_volatile:
+            case bt_restrict:
+            case bt_static:
+            case bt_atomic:
+            case bt_typedef:
+            case bt_lrqual:
+            case bt_rrqual:
+                tp = tp->btp;
+                break;
+            case bt_derivedfromtemplate:
+                return TRUE;
+            default:
+                return FALSE;
+        }
+    }
+    while (tp);
+    return FALSE;
 }
 BOOLEAN isunsigned(TYPE *tp)
 {
@@ -248,6 +276,7 @@ BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
             case bt_near:
             case bt_lrqual:
             case bt_rrqual:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_const:
@@ -280,6 +309,7 @@ BOOLEAN isvolatile(TYPE *tp)
             case bt_near:
             case bt_lrqual:
             case bt_rrqual:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_volatile:
@@ -304,6 +334,7 @@ BOOLEAN islrqual(TYPE *tp)
             case bt_near:
             case bt_rrqual:
             case bt_restrict:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_lrqual:
@@ -328,6 +359,7 @@ BOOLEAN isrrqual(TYPE *tp)
             case bt_near:
             case bt_lrqual:
             case bt_restrict:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_rrqual:
@@ -352,6 +384,7 @@ BOOLEAN isrestrict(TYPE *tp)
             case bt_near:
             case bt_lrqual:
             case bt_rrqual:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_restrict:
@@ -376,6 +409,7 @@ BOOLEAN isatomic(TYPE *tp)
             case bt_near:
             case bt_lrqual:
             case bt_rrqual:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_atomic:
@@ -1393,6 +1427,7 @@ BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
                 case bt_typedef:
                 case bt_lrqual:
                 case bt_rrqual:
+                case bt_derivedfromtemplate:
                     dest = dest->btp;
                     break;
                 default:

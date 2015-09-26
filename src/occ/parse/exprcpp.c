@@ -700,50 +700,61 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             {
                 // constructor with no args gets a value of zero...
                 *exp = intNode(en_c_i, 0);
+                needkw(&lex, closepa);
             }
             else
             {
-                lex = expression_no_comma(lex, funcsp, NULL, &throwaway, exp, NULL, flags);
-                if (throwaway && (*tp)->type == bt_auto)
-                    *tp = throwaway;
-                if ((*exp)->type == en_func)
+                FUNCTIONCALL funcParams;
+                funcParams.arguments = NULL;
+                lex = backupsym();
+                lex = getArgs(lex, funcsp, &funcParams, closepa, TRUE, flags);
+                throwaway = NULL;
+                if (funcParams.arguments)
                 {
-                    *exp = (*exp)->v.func->fcall;
-                    if (!*exp)
-                        *exp = intNode(en_c_i, 0);
-                }
-                if (throwaway)
-                {
-                    if (isvoid(throwaway) && !isvoid(*tp))
+                    while (funcParams.arguments->next)
+                        funcParams.arguments = funcParams.arguments->next;
+                    throwaway = funcParams.arguments->tp;
+                    *exp = funcParams.arguments->exp;
+                    if (throwaway && (*tp)->type == bt_auto)
+                        *tp = throwaway;
+                    if ((*exp)->type == en_func)
                     {
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
+                        *exp = (*exp)->v.func->fcall;
+                        if (!*exp)
+                            *exp = intNode(en_c_i, 0);
                     }
-                    else if (isstructured(throwaway))
+                    if (throwaway)
                     {
-                        if (!isvoid(*tp))
+                        if (isvoid(throwaway) && !isvoid(*tp))
                         {
-                            if (!cparams.prm_cplusplus || !cppCast(throwaway, tp, exp))
+                            error(ERR_NOT_AN_ALLOWED_TYPE);
+                        }
+                        else if (isstructured(throwaway))
+                        {
+                            if (!isvoid(*tp))
                             {
-                                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                                if (!cparams.prm_cplusplus || !cppCast(throwaway, tp, exp))
+                                {
+                                    error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                                }
                             }
                         }
-                    }
-                    else if ((basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
-                              && !comparetypes(throwaway, *tp, TRUE))
-                    {
-                        error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
-                    }
-                    else
-                    {
-                        cast(*tp, exp);
+                        else if ((basetype(throwaway)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
+                                  && !comparetypes(throwaway, *tp, TRUE))
+                        {
+                            error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+                        }
+                        else
+                        {
+                            cast(*tp, exp);
+                        }
                     }
                 }
+                else
+                {
+                    *exp = intNode(en_c_i, 0);
+                }
             }
-            // this would normally be handled by getArgs()
-            // a structured type might not be counted as a structured type while initially gathering the template...
-            if (templateNestingCount && MATCHKW(lex, ellipse))
-                lex = getsym();
-            needkw(&lex, closepa);
         }
     }
     return lex;

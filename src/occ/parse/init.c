@@ -2689,6 +2689,10 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_memberptr:
             rv = TRUE;
             break;
+        case en_templateparam:
+        case en_templateselector:
+            rv = TRUE;
+            break;
         case en_c_ll:
         case en_c_ull:
         case en_c_d:

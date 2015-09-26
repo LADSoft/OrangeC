@@ -68,6 +68,7 @@ extern int instantiatingTemplate;
 extern int packIndex;
 extern int inTemplateSpecialization;
 extern int argument_nesting;
+extern int codeLabel;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -3062,6 +3063,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 BOOLEAN defd = FALSE;
                 BOOLEAN notype = FALSE;
                 BOOLEAN clonedParams = FALSE;
+                TYPE *tp2;
                 spi = NULL;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, NULL, FALSE, TRUE, &storage_class, &storage_class,
@@ -3078,11 +3080,14 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                     spi = makeID(sc_parameter, tp1, NULL, NewUnnamedID());
                     spi->anonymous = TRUE;
                     SetLinkerNames(spi, lk_none);
-                    if (tp1->type == bt_templateparam && tp1->templateParam->p->packed && MATCHKW(lex, ellipse))
-                    {
-                        spi->packed = TRUE;
-                        lex = getsym();
-                    }
+                }
+                tp2 = tp1;
+                while (ispointer(tp2) || isref(tp2))
+                    tp2 = basetype(tp2)->btp;
+                tp2 = basetype(tp2);
+                if (tp2->type == bt_templateparam && tp2->templateParam->p->packed)
+                {
+                    spi->packed = TRUE;
                 }
                 spi->tp = tp1;
                 spi->linkage = linkage;
@@ -3092,18 +3097,18 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                     checkPackedType(spi);
                     if (!templateNestingCount)
                     {
-                        if (tp1->templateParam && tp1->templateParam->p->packed)
+                        if (tp2->templateParam && tp2->templateParam->p->packed)
                         {
                             TYPE *newtp1 = Alloc(sizeof(TYPE));
-                            TEMPLATEPARAMLIST *templateParams = tp1->templateParam->p->byPack.pack;
+                            TEMPLATEPARAMLIST *templateParams = tp2->templateParam->p->byPack.pack;
                             TEMPLATEPARAMLIST *tplnew = Alloc(sizeof(TEMPLATEPARAMLIST));
                             TEMPLATEPARAM *tpnew = Alloc(sizeof(TEMPLATEPARAM));
                             TEMPLATEPARAMLIST **newPack;
                             BOOLEAN first = TRUE;
-                            *tplnew = *tp1->templateParam;
-                            *tpnew = *tp1->templateParam->p;
+                            *tplnew = *tp2->templateParam;
+                            *tpnew = *tp2->templateParam->p;
                             tplnew->p = tpnew;
-                            *newtp1 = *tp1;
+                            *newtp1 = *tp2;
                             newtp1->templateParam = tplnew;
                             tp1 = newtp1;
                             newPack = &tp1->templateParam->p->byPack.pack;
@@ -3566,10 +3571,19 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
             lex = getsym();
             if (MATCHKW(lex, openpa))
             {
+                HASHREC *hr = basetype(sp->tp)->syms->table[0];
                 TYPE *tp = NULL;
                 EXPRESSION *exp = NULL;
+                AllocateLocalContext(NULL, NULL, 0);
+                while (hr)
+                {
+                    SYMBOL *sp2 = (SYMBOL *)hr->p;
+                    insert(sp2, localNameSpace->syms);
+                    hr = hr->next;
+                }
                 lex = getsym();
                 lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+                FreeLocalContext(NULL, NULL, 0);
                 if (!IsConstantExpression(exp, FALSE))
                 {
                     if (!templateNestingCount)
@@ -4546,6 +4560,21 @@ static BOOLEAN hasTemplateParent(SYMBOL *sp)
     }
     return FALSE;
 }
+static BOOLEAN differentTemplateNames(TEMPLATEPARAMLIST *a, TEMPLATEPARAMLIST *b)
+{
+    while (a && b)
+    {
+        if (a->p->type != b->p->type)
+            return TRUE;
+        if (!a->p->sym || !b->p->sym)
+            return TRUE;
+        if (strcmp(a->p->sym->name, b->p->sym->name))
+            return TRUE;
+        a = a->next;
+        b = b->next;
+    }
+    return FALSE;
+}
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tprv, enum e_sc storage_class, enum e_lk defaultLinkage, 
                        BLOCKDATA *block, BOOLEAN needsemi, int asExpression, BOOLEAN asFriend, BOOLEAN inTemplate, enum e_ac access)
 {
@@ -5275,8 +5304,9 @@ jointemplate:
                                     spi->inlineFunc.stmt = NULL;
                                     spi->deferredCompile = NULL;
                                 }
-                                if (isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile) && (MATCHKW(lex, begin) || MATCHKW(lex, colon))
+                                if ((isfunction(spi->tp) && (spi->inlineFunc.stmt || spi->deferredCompile) && (MATCHKW(lex, begin) || MATCHKW(lex, colon))
                                     && (!spi->parentClass || !spi->parentClass->instantiated || !spi->copiedTemplateFunction))
+                                     && spi->parentClass && !differentTemplateNames(spi->parentClass->templateParams, sp->parentClass->templateParams))
                                 {
                                     errorsym(ERR_BODY_ALREADY_DEFINED_FOR_FUNCTION, sp);
                                 }
@@ -5767,8 +5797,10 @@ jointemplate:
                                     tp2 = basetype(tp2)->btp;
                                 structuredArray = isstructured(tp2);
                             }
-                            if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef && structLevel && (MATCHKW(lex,assign) || structuredArray) )
+                            if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef && structLevel && (MATCHKW(lex,assign) || MATCHKW(lex, begin) || structuredArray))
                             {
+                                if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member && (sp->storage_class == sc_static ||sp->storage_class == sc_external) && !isconst(sp->tp))
+                                    errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                 lex = getDeferredData(lex, sp, FALSE);
                             }
                             else

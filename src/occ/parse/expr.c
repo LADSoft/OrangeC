@@ -479,8 +479,10 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 {
                     TYPE *tp1 = *tp;
                     deref(*tp, exp);
+                    while (isref(tp1))
+                        tp1 = basetype(tp1)->btp;
                     *tp = Alloc(sizeof(TYPE));
-                    **tp = *(basetype(tp1)->btp);
+                    **tp = *tp1;
                     
                 }
                 if (sp->storage_class != sc_overloads)
@@ -1024,7 +1026,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                     {
                         errorsym(ERR_NOT_A_TEMPLATE, sp2);
                     }
-                    if (sp2->storage_class == sc_external | sp2->storage_class == sc_static)
+                    if (sp2->storage_class == sc_external || sp2->storage_class == sc_static)
                     {
                         SYMBOL *tpl = sp2;
                         while (tpl)
@@ -1059,7 +1061,11 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                             errorsym(ERR_CANNOT_ACCESS, sp2);
                         }
                     }
-                    if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
+                    if (sp2->storage_class == sc_constant)
+                    {
+                        *exp = varNode(en_const, sp2);
+                    }
+                    else if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
                     {
                         EXPRESSION *exp2 = varNode(en_global, sp2);
                         *exp = exprNode(en_void, *exp, exp2);
@@ -1093,15 +1099,18 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         (*exp)->bits = tpb->bits;
                         (*exp)->startbit = tpb->startbit;
                     }
-                    if (isref(*tp))
+                    if (sp2->storage_class != sc_constant)
                     {
-//                        TYPE *tp1 = *tp;
+                        if (isref(*tp))
+                        {
+    //                        TYPE *tp1 = *tp;
+                            deref(*tp, exp);
+    //                        *tp = Alloc(sizeof(TYPE));
+    //                        **tp = *(basetype(tp1)->btp);
+                            
+                        }
                         deref(*tp, exp);
-//                        *tp = Alloc(sizeof(TYPE));
-//                        **tp = *(basetype(tp1)->btp);
-                        
                     }
-                    deref(*tp, exp);
                     (*exp)->v.sp = sp2; // caching the member symbol in the enode for constexpr handling
                     if (isatomic(basetp))
                     {
@@ -1307,7 +1316,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                 decl = (SYMBOL *)hr->p;
                 if (!decl->tp)
                     noproto = TRUE;
-                else if (decl->tp->type == bt_ellipse)
+                else if (basetype(decl->tp)->type == bt_ellipse)
                 {
                     matching = FALSE;
                     decl = NULL;
@@ -2708,6 +2717,8 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     deref(basetype(basetype(funcparams->sp->tp)->btp)->btp, exp);
                     tp1 = &basetype(funcparams->sp->tp)->btp;
                     *tp = basetype(*tp1)->btp;
+                    while (isref(*tp))
+                        *tp = basetype(*tp)->btp;
                 }
             }
             else

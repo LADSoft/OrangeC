@@ -100,6 +100,10 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         typ2 = basetype(typ2);
     typ1 = replaceTemplateSelector(typ1);
     typ2 = replaceTemplateSelector(typ2);
+    if (isDerivedFromTemplate(typ1))
+        typ1 = typ1->btp;
+    if (isDerivedFromTemplate(typ2))
+        typ2 = typ2->btp;
     if (isref(typ1))
         typ1 = basetype(typ1)->btp;
     if (isref(typ2))
@@ -283,6 +287,7 @@ static TYPE *enumConst(char *buf, TYPE *tp)
                 strcat(buf, tn_volatile);
                 break;
             case bt_restrict:
+            case bt_derivedfromtemplate:
 /*				strcat(buf, tn_restrict); */
                 break;
             default:

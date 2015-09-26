@@ -124,7 +124,9 @@ void dumpInlines(void)
                 SYMBOL *sym = (SYMBOL *)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if (!sym->didinline)
+                    if (sym->parentClass && sym->parentClass->dontinstantiate)
+                        sym->dontinstantiate = TRUE;
+                    if (!sym->didinline && !sym->dontinstantiate)
                     {
                         SYMBOL *srch = inSearch(sym);
                         if (srch)
@@ -162,10 +164,18 @@ void dumpInlines(void)
                 SYMBOL *sym = (SYMBOL *)vtabList->data;
                 if (sym->vtabsp->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
                 {
-                    sym->vtabsp->didinline = TRUE;
-                    sym->vtabsp->genreffed = FALSE;
-                    dumpVTab(sym);
-                    done = FALSE;
+                    if (sym->dontinstantiate)
+                    {
+                        InsertExtern(sym->vtabsp);
+                        sym->vtabsp->storage_class = sc_external;
+                    }
+                    else
+                    {
+                        sym->vtabsp->didinline = TRUE;
+                        sym->vtabsp->genreffed = FALSE;
+                        dumpVTab(sym);
+                        done = FALSE;
+                    }
                 }
                 vtabList = vtabList->next;
                 
@@ -197,7 +207,9 @@ void dumpInlines(void)
                 origsym = search(sym->name, parentTemplate->tp->syms);
             }
 
-            if (origsym && origsym->storage_class == sc_global && !sym->didinline)
+            if (sym->parentClass && sym->parentClass->dontinstantiate)
+                sym->dontinstantiate = TRUE;
+            if (origsym && origsym->storage_class == sc_global && !sym->didinline && !sym->dontinstantiate)
             {
                 sym->didinline = TRUE;
                 sym->genreffed = FALSE;

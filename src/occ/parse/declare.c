@@ -3088,6 +3088,8 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 if (tp2->type == bt_templateparam && tp2->templateParam->p->packed)
                 {
                     spi->packed = TRUE;
+                    if (spi->anonymous && MATCHKW(lex, ellipse))
+                        lex = getsym();
                 }
                 spi->tp = tp1;
                 spi->linkage = linkage;

@@ -76,8 +76,8 @@ extern TYPE stdlongdoublecomplex;
 extern TYPE stdfloatimaginary;
 extern TYPE stddoubleimaginary;
 extern TYPE stdlongdoubleimaginary;
-//extern LIST *openStructs;
-//extern int structLevel;
+extern LIST *openStructs;
+extern int structLevel;
 extern TYPE stdnullpointer;
 extern TYPE stdvoid;
 extern int total_errors;
@@ -3848,8 +3848,8 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
                                         TEMPLATEPARAMLIST *src, 
                                         TEMPLATEPARAMLIST *enclosing)
 {
-//	LIST *oldOpenStructs = openStructs;
-//	int oldStructLevel = structLevel;
+	LIST *oldOpenStructs = openStructs;
+	int oldStructLevel = structLevel;
     STRUCTSYM s;
     LEXEME *head;
     LEXEME *tail;
@@ -3860,8 +3860,6 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
     }
     s.tmpl = enclosing;
     addTemplateDeclaration(&s);
-//	openStructs = NULL;
-//	structLevel = 0;
     while (src && dest)
     {
         if (!dest->p->byClass.val && !dest->p->packed)
@@ -3871,8 +3869,6 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
             if (!src->p->byClass.txtdflt)
             {
                 dropStructureDeclaration();
-//				openStructs = oldOpenStructs;
-//				structLevel = oldStructLevel;
                 return FALSE;
             }
             SwapDefaultNames(enclosing, src->p->byClass.txtargs);
@@ -3891,8 +3887,6 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
                         PopTemplateNamespace(n);
                         SetAlternateLex(NULL);
                         dropStructureDeclaration();
-//						openStructs = oldOpenStructs;
-//						structLevel = oldStructLevel;
                         return FALSE;
                     }
                     break;
@@ -3905,8 +3899,6 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
                         PopTemplateNamespace(n);
                         SetAlternateLex(NULL);
                         dropStructureDeclaration();
-//						openStructs = oldOpenStructs;
-//						structLevel = oldStructLevel;
                         return FALSE;
                     }
                     break;
@@ -3914,7 +3906,11 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
                 {
                     TYPE *tp1;
                     EXPRESSION *exp1;
+                	openStructs = NULL;
+                	structLevel = 0;
                     lex = expression_no_comma(lex, NULL, NULL, &tp1, &exp1, NULL, _F_INTEMPLATEPARAMS);
+					openStructs = oldOpenStructs;
+					structLevel = oldStructLevel;
                     dest->p->byNonType.val = exp1;
                     if (!templatecomparetypes(dest->p->byNonType.tp, tp1, TRUE))
                     {
@@ -3939,8 +3935,6 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
         currents->bodyTail = tail;
     }
     dropStructureDeclaration();
-//	openStructs = oldOpenStructs;
-//	structLevel = oldStructLevel;
     return TRUE;
 }
 SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)

@@ -325,6 +325,8 @@ TYPE *typenum(char *buf, TYPE *tp)
         diag("typenum - NULL type");
         return &stdvoid;
     }
+    if (tp->type == bt_derivedfromtemplate)
+        tp = tp->btp;
     tp = enumConst(buf, tp);
     buf += strlen(buf);
     switch (tp->type)

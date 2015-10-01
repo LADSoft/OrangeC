@@ -2358,10 +2358,17 @@ join_lor:
                     sp = basetype(PerformDeferredInitialization (sp->tp, NULL))->sp;
                     while (find && sp)
                     {
-                        if (!isstructured(sp->tp))
+                        SYMBOL *spo = sp;
+                        if (!isstructured(spo->tp))
                             break;
                         
-                        sp = search(find->name, sp->tp->syms);
+                        sp = search(find->name, spo->tp->syms);
+                        if (!sp)
+                        {
+                            sp = classdata(find->name, spo, NULL, FALSE, FALSE);
+                            if (sp == (SYMBOL *)-1)
+                                sp = NULL;
+                        }
                         find = find->next;
                     }
                     if (!find && sp)

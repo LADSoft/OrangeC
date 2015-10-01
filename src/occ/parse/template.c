@@ -760,6 +760,7 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
 {
     TEMPLATEPARAMLIST **start = lst;
     TEMPLATEPARAMLIST *orig = NULL;
+    BOOLEAN first = TRUE;
     if (templ)
         orig = templ->templateParams ? (templ->templateParams->p->bySpecialization.types ? templ->templateParams->p->bySpecialization.types : templ->templateParams->next) : NULL;
     // entered with lex set to the opening <
@@ -801,7 +802,7 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
                         {
                             if ((*last)->p->packed)
                             {
-                                *last = (*last)->p->byPack.pack;
+                                last = &(*last)->p->byPack.pack;
                                 continue;
                             }   
                             if (!(*last)->p->byClass.dflt)
@@ -809,6 +810,25 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
                             last = &(*last)->next;
                         }
                     }
+                }
+                else if (orig && orig->p->packed)
+                {
+                    TEMPLATEPARAMLIST **p;
+                    if (first)
+                    {
+                        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                        (*lst)->p->type = kw_typename;
+                        (*lst)->p->packed = TRUE;
+                        first = FALSE;
+                    }
+                    p = &(*lst)->p->byPack.pack;
+                    while (*p)
+                        p = &(*p)->next;
+                    *p = Alloc(sizeof(TEMPLATEPARAMLIST));
+                    (*p)->p = Alloc(sizeof(TEMPLATEPARAM));
+                    (*p)->p->type = kw_typename;
+                    (*p)->p->byClass.dflt = tp;
                 }
                 else
                 {
@@ -881,7 +901,7 @@ join:
 					{
 						lex = expression_no_comma(lex, funcsp, NULL, &tp, &exp, NULL, _F_INTEMPLATEPARAMS);
 						optimize_for_constants(&exp);
-                        tp = name->tp;
+//                        tp = name->tp;
 					}
 					else
 					{
@@ -960,6 +980,26 @@ join:
                         }
 						lst = &(*lst)->next;
                     }
+                    else if (orig && orig->p->packed)
+                    {
+                        TEMPLATEPARAMLIST **p;
+                        if (first)
+                        {
+                            *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+                            (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                            (*lst)->p->type = kw_int;
+                            (*lst)->p->packed = TRUE;
+                            first = FALSE;
+                        }
+                        p = &(*lst)->p->byPack.pack;
+                        while (*p)
+                            p = &(*p)->next;
+                        *p = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        (*p)->p = Alloc(sizeof(TEMPLATEPARAM));
+                        (*p)->p->type = kw_int;
+    					(*p)->p->byNonType.dflt = exp;
+    					(*p)->p->byNonType.tp = tp;
+                    }
                     else
                     {
                         checkUnpackedExpression(exp);
@@ -976,7 +1016,7 @@ join:
                 lex = getsym();
             else
                 break;
-            if (orig)
+            if (orig && !orig->p->packed)
                 orig = orig->next;
         } while (TRUE);
     }
@@ -2350,6 +2390,12 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                         break;
                     
                     sp = search(find->name, basetype(tp)->syms);
+                    if (!sp)
+                    {
+                        sp = classdata(find->name, basetype(tp)->sp, NULL, FALSE, FALSE);
+                        if (sp == (SYMBOL *)-1)
+                            sp = NULL;
+                    }
                     if (sp)
                         tp = sp->tp;
                     else
@@ -3434,10 +3480,17 @@ static BOOLEAN ValidArg(TYPE *tp)
                     sp = basetype(PerformDeferredInitialization (sp->tp, NULL))->sp;
                     while (find && sp)
                     {
-                        if (!isstructured(sp->tp))
+                        SYMBOL *spo = sp;
+                        if (!isstructured(spo->tp))
                             break;
                         
-                        sp = search(find->name, sp->tp->syms);
+                        sp = search(find->name, spo->tp->syms);
+                        if (!sp)
+                        {
+                            sp = classdata(find->name, spo, NULL, FALSE, FALSE);
+                            if (sp == (SYMBOL *)-1)
+                                sp = NULL;
+                        }
                         find = find->next;
                     }
                     return !find && sp && istype(sp) ;
@@ -5480,7 +5533,7 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                     params = params->next;
                 }
             }
-            params = origParams;
+            params = args;
             while (params && primary)
             {
                 if (!primary->p->byClass.val && !primary->p->packed)
@@ -5488,10 +5541,12 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                     rv = NULL;
                     break;
                 }
+                if (!primary->next && primary->p->packed)
+                    break;
                 primary = primary->next;
                 params = params->next;
             }
-            if (params)
+            if (params && !primary)
             {
                 rv = NULL;
             }
@@ -5761,7 +5816,7 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
         {
             for (i=0; i < n; i++)
             {
-                if (spList[i])
+                if (i == 0 || spList[i])
                     spList[i] = ValidateClassTemplate(origList[i], unspecialized, args);
             }
             TemplateConstMatching(spList, n, args);
@@ -5771,7 +5826,10 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
             if (spList[i])
                 count1++;
         if (count1 > 1)
+        {
+            spList[0] = 0;
             TemplateConstOrdering(spList, n, args);
+        }
         count1 = 0;
         for (i=0; i < n; i++)
             if (spList[i])

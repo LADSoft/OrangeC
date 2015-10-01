@@ -341,25 +341,34 @@ SYMBOL *RTTIDumpType(TYPE *tp)
             xtSym->decoratedName = xtSym->errname = xtSym->name;
             xtSym->xtEntry = TRUE;
             insert(xtSym, rttiSyms);
-            switch (basetype(tp)->type)
+            if (isstructured(tp) && basetype(tp)->sp->dontinstantiate)
             {
-                case bt_lref:
-                case bt_rref:
-                    RTTIDumpRef(xtSym, tp);
-                    break;
-                case bt_pointer:
-                    if (isarray(tp))
-                        RTTIDumpArray(xtSym, tp);
-                    else
-                        RTTIDumpPointer(xtSym, tp);
-                    break;
-                case bt_struct:
-                case bt_class:
-                    RTTIDumpStruct(xtSym, tp);
-                    break;
-                default:
-                    RTTIDumpArithmetic(xtSym, tp);
-                    break;
+                InsertExtern(xtSym);
+                xtSym->genreffed = TRUE;
+                xtSym->dontinstantiate = TRUE;
+            }
+            else
+            {
+                switch (basetype(tp)->type)
+                {
+                    case bt_lref:
+                    case bt_rref:
+                        RTTIDumpRef(xtSym, tp);
+                        break;
+                    case bt_pointer:
+                        if (isarray(tp))
+                            RTTIDumpArray(xtSym, tp);
+                        else
+                            RTTIDumpPointer(xtSym, tp);
+                        break;
+                    case bt_struct:
+                    case bt_class:
+                        RTTIDumpStruct(xtSym, tp);
+                        break;
+                    default:
+                        RTTIDumpArithmetic(xtSym, tp);
+                        break;
+                }
             }
         }
     }

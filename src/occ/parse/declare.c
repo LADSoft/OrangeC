@@ -820,8 +820,11 @@ static void baseFinishDeclareStruct(SYMBOL *funcsp)
     syms = (SYMBOL *)Alloc(sizeof(SYMBOL *)*n); 
     n = 0;
     lst = openStructs;
+    openStructs = NULL;
     while (lst)
+    {
         syms[n++] =  (SYMBOL *)lst->data, lst = lst->next;
+    }
     for (i=0; i < n; i++)
         for (j = i+1; j < n; j++)
             if ((syms[i] != syms[j] && !sameTemplate(syms[i]->tp, syms[j]->tp) && classRefCount(syms[j], syms[i])) || usesClass(syms[i], syms[j]))
@@ -906,9 +909,20 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
 	                createDefaultConstructors(sp);
                 resolveAnonymousUnions(sp);
             }
+            openStructs = NULL;
         }
         structLevel++;
-        openStructs = NULL;
+    }
+    else if (!sp->templateLevel)
+    {
+        if (!sp->performedStructInitialization)
+        {
+            sp->performedStructInitialization = TRUE;
+            FinishStruct(sp, funcsp);
+        	if (cparams.prm_cplusplus)
+                createDefaultConstructors(sp);
+            resolveAnonymousUnions(sp);
+        }
     }
     if (cparams.prm_cplusplus && sp->tp->syms && !templateNestingCount)
     {
@@ -1044,7 +1058,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         charindex = -1;
     }
 
-    lex = tagsearch(lex, lex->value.s.a, &sp, &table, &strSym, &nsv, storage_class);
+    lex = tagsearch(lex, tagname, &sp, &table, &strSym, &nsv, storage_class);
 
     if (charindex != -1 && cparams.prm_cplusplus && MATCHKW(lex, kw_final))
     {
@@ -2118,7 +2132,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     needkw(&lex, openpa);
                     extended = MATCHKW(lex, openpa);
         
-                    lex = expression_no_check(lex, NULL, NULL, &tn, &exp, 0);
+                    lex = expression_no_check(lex, NULL, NULL, &tn, &exp, _F_SIZEOF);
                     if (tn)
                     {
                         optimize_for_constants(&exp);
@@ -4912,7 +4926,7 @@ jointemplate:
                         SYMBOL *ssp = NULL;
                         SYMBOL *spi;
                         BOOLEAN checkReturn = TRUE;
-                        if (storage_class != sc_typedef || !templateNestingCount)
+                        if (storage_class != sc_typedef || !templateNestingCount && !structLevel)
                             tp1 = PerformDeferredInitialization(tp1, funcsp);
                         ssp = getStructureDeclaration();
                         if (!asFriend && (((storage_class_in == sc_member || storage_class_in == sc_mutable) && ssp) 

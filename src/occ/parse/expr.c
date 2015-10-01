@@ -1457,6 +1457,54 @@ join:
     else if (tooshort)
         errorsym(ERR_PARAMETER_LIST_TOO_SHORT, params->sp);
 }
+static LEXEME *getTypeList(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr)
+{
+    *lptr = NULL;
+    do
+    {
+        TYPE *tp = NULL;
+        lex = getsym(); /* past ( or , */
+        lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE);
+        if (!tp)
+            break;
+        if (tp->type != bt_templateparam)
+        {
+            *lptr = Alloc(sizeof(INITLIST));
+            (*lptr)->tp = tp;
+            (*lptr)->exp = intNode(en_c_i, 0);
+            lptr = &(*lptr)->next;
+        }
+        else if (tp->templateParam->p->packed)
+        {
+            TEMPLATEPARAMLIST *tpl = tp->templateParam->p->byPack.pack;
+            needkw(&lex, ellipse);
+            while (tpl)
+            {
+                if (tpl->p->byClass.val)
+                {
+                    *lptr = Alloc(sizeof(INITLIST));
+                    (*lptr)->tp = tpl->p->byClass.val;
+                    (*lptr)->exp = intNode(en_c_i, 0);
+                    lptr = &(*lptr)->next;
+                }
+                tpl = tpl->next;
+            }
+            
+        }
+        else   
+        {
+            if (tp->templateParam->p->byClass.val)
+            {
+                *lptr = Alloc(sizeof(INITLIST));
+                (*lptr)->tp = tp->templateParam->p->byClass.val;
+                (*lptr)->exp = intNode(en_c_i, 0);
+                lptr = &(*lptr)->next;
+            }
+        }
+    } while (MATCHKW(lex, comma));
+    needkw(&lex, closepa);
+    return lex;
+}
 static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enum e_kw finish, BOOLEAN allowNesting, BOOLEAN allowPack, BOOLEAN toErr, int flags)
 {
     if (finish == end)
@@ -2327,6 +2375,105 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implic
         lptr = &(*lptr)->next;
     }
 }
+static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE **tp, EXPRESSION **exp)
+{
+    if (!strcmp(sym->name, "__is_constructible"))
+    {
+        BOOLEAN rv = FALSE;
+        FUNCTIONCALL funcparams;
+        memset(&funcparams, 0, sizeof(funcparams));
+        funcparams.sp = sym;
+        *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+        if (funcparams.arguments)        
+        {
+            TYPE *tp2 = funcparams.arguments->tp;
+            if (isarray(tp2))
+            {
+                while (isarray(tp2) && tp2->size != 0)
+                    tp2 = tp2->btp;
+                    
+                if (isarray(tp2))
+                {
+                    tp2 = FALSE;
+                }
+            }
+            if (tp2)
+            {
+                if (isarithmetic(tp2) || ispointer(tp2) || basetype(tp2)->type == bt_enum)
+                {
+                    if (!funcparams.arguments->next)
+                    {
+                        rv = TRUE;
+                    }
+                    else if (!funcparams.arguments->next->next)
+                    {
+                        rv = comparetypes(tp2, funcparams.arguments->next->tp, TRUE);
+                    }
+                }
+                else if (isref(tp2))
+                {
+                    if (funcparams.arguments->next && !funcparams.arguments->next->next)
+                    {
+                        rv = comparetypes(tp2, funcparams.arguments->next->tp, TRUE);
+                    }
+                }
+                else if (isstructured(tp2))
+                {
+                    TYPE *ctp = tp2;
+                    EXPRESSION *cexp = NULL;
+                    SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
+                    funcparams.thisptr = intNode(en_c_i, 0);
+                    funcparams.thistp = Alloc(sizeof(TYPE));
+                    funcparams.thistp->type = bt_pointer;
+                    funcparams.thistp->btp = tp2;
+                    funcparams.thistp->size = getSize(bt_pointer);
+                    funcparams.ascall = TRUE;
+                    funcparams.arguments = funcparams.arguments->next;
+                    rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, FALSE, 
+                                  FALSE, TRUE, 0) != NULL;
+                    
+                }
+            }
+        }
+        *exp = intNode(en_c_i, rv);
+        *tp = &stdint;
+        return TRUE;
+    }
+    else if (!strcmp(sym->name, "__is_convertible_to"))
+    {
+        BOOLEAN rv = TRUE;
+        FUNCTIONCALL funcparams;
+        memset(&funcparams, 0, sizeof(funcparams));
+        funcparams.sp = sym;
+        *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+        if (funcparams.arguments && funcparams.arguments->next && !funcparams.arguments->next->next) 
+        {
+            TYPE *from = funcparams.arguments->tp;
+            TYPE *to = funcparams.arguments->next->tp;
+            if (isref(from) && isref(to))
+            {
+                if (basetype(to)->type == bt_lref)
+                {
+                    if (basetype(from)->type == bt_rref)
+                        rv = FALSE;
+                }
+            }
+            else if (isref(from))
+                rv = FALSE;
+            if (rv)
+            {
+               rv = comparetypes(from, to, TRUE);
+               if (!rv && isstructured(from) && isstructured(to))
+                   if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
+                       rv = TRUE;
+            }
+        }
+        *exp = intNode(en_c_i, rv);
+        *tp = &stdint;
+        return TRUE;
+    }
+    return FALSE;
+}
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags)
 {
     TYPE *tp_cpp = *tp;
@@ -2367,10 +2514,13 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             funcparams->functp = ss->tp;
         }
     }
+    if (funcparams->sp && funcparams->sp->name[0] == '_' && parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
+        return lex;
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, TRUE, flags);
     }
+        
     if (funcparams->astemplate)
     {
         // if we hit a packed template param here, then this is going to be a candidate
@@ -2717,6 +2867,10 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     deref(basetype(basetype(funcparams->sp->tp)->btp)->btp, exp);
                     tp1 = &basetype(funcparams->sp->tp)->btp;
                     *tp = basetype(*tp1)->btp;
+                    if (basetype(*tp1)->type == bt_rref)
+                        (*tp)->rref = TRUE;
+                    else
+                        (*tp)->lref = TRUE;
                     while (isref(*tp))
                         *tp = basetype(*tp)->btp;
                 }
@@ -6022,7 +6176,10 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                 if (isstructured(*tp) && (!isstructured(tp1) || !comparetypes(*tp, tp1, TRUE)))
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
                 else if (isstructured(*tp) && !(*tp)->size)
-                    errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
+                {
+                    if (!(flags & _F_SIZEOF))
+                        errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
+                }
                 else if (!isstructured(*tp) && isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
                 else if (basetype(*tp)->type == bt_memberptr)
@@ -6126,8 +6283,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         else if (isstructured(*tp))
         {
             EXPRESSION *exp2 = exp1;
-            if ((*exp)->type == en_not_lvalue || (*exp)->type == en_func
-                || (*exp)->type == en_void)
+            if (((*exp)->type == en_not_lvalue || (*exp)->type == en_func
+                || (*exp)->type == en_void) && !(flags & _F_SIZEOF))
                 error(ERR_LVALUE);
             if (lvalue(exp2))
                 exp2 = exp2->left;

@@ -519,7 +519,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     }
     return lex;
 }
-static SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOLEAN isvirtual, BOOLEAN tagsOnly)
+SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOLEAN isvirtual, BOOLEAN tagsOnly)
 {
     SYMBOL *rv = NULL;
 	BASECLASS *bc = cls->baseClasses;
@@ -626,7 +626,6 @@ SYMBOL *classsearch(char *name, BOOLEAN tagsOnly, BOOLEAN toErr)
                 rv = classdata(name, cls, NULL, FALSE, tagsOnly);
                 if (rv == (SYMBOL *)-1)
                 {
-	                rv = classdata(name, cls, NULL, FALSE, tagsOnly);
                     rv = NULL;
                     if (toErr)
                         errorstr(ERR_AMBIGUOUS_MEMBER_DEFINITION, name);
@@ -1461,6 +1460,7 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                               int lenl, int lenr, BOOLEAN fromUser)
 {
     enum e_ct xl=conv, xr=conv;
+    BOOLEAN lderivedfrombase = FALSE, rderivedfrombase = FALSE;
     int rankl, rankr;
     int i,j;
     int n,q;
@@ -1501,6 +1501,9 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                     l++;
                     cont = TRUE;
                     break;
+                case CV_DERIVEDFROMBASE:
+                    lderivedfrombase = TRUE;
+                    break;
                 default:
                     break;
             }
@@ -1511,6 +1514,9 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                 case CV_FUNCTIONTOPOINTER:
                     r++;
                     cont = TRUE;
+                    break;
+                case CV_DERIVEDFROMBASE:
+                    rderivedfrombase = TRUE;
                     break;
                 default:
                     break;
@@ -1643,7 +1649,12 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                return 0;
+                                if (lderivedfrombase && !rderivedfrombase)
+                                    return -1;
+                                else if (rderivedfrombase && !rderivedfrombase)
+                                    return 1;
+                                else
+                                    return 0;
                             return -1;
                         }
                         else if (classRefCount(tr->sp, tl->sp) == 1)
@@ -1659,7 +1670,12 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                return 0;
+                                if (lderivedfrombase && !rderivedfrombase)
+                                    return 1;
+                                else if (rderivedfrombase && !rderivedfrombase)
+                                    return -1;
+                                else
+                                    return 0;
                             return 1;
                         }
                         else if (classRefCount(tr->sp, tl->sp) == 1)
@@ -1681,7 +1697,12 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                return 0;
+                                if (lderivedfrombase && !rderivedfrombase)
+                                    return 1;
+                                else if (rderivedfrombase && !rderivedfrombase)
+                                    return -1;
+                                else
+                                    return 0;
                             return 1;
                         }
                         else if (classRefCount(tr->sp, tl->sp) == 1)
@@ -1697,7 +1718,12 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                return 0;
+                                if (lderivedfrombase && !rderivedfrombase)
+                                    return -1;
+                                else if (rderivedfrombase && !rderivedfrombase)
+                                    return 1;
+                                else
+                                    return 0;
                             return -1;
                         }
                         else if (classRefCount(tr->sp, tl->sp) == 1)
@@ -1750,12 +1776,12 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         return -1;
                 }
                 else 
-                    if (basetype(rtype)->type == bt_lref)
+                    if (basetype(ltype)->type == bt_lref)
                     {
                         if (lref)
-                            return 1;
-                        else if (rref)
                             return -1;
+                        else if (rref)
+                            return 1;
                     }
             }
             // compare qualifiers at top level
@@ -2552,8 +2578,8 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
          seq[(*n)++] = CV_NONE;
          return;
     }
-    lref = expa && (lvalue(expa) || isarithmeticconst(expa)) ;
-    rref = expa && (!lvalue(expa) && (!isstructured(tpa) || !ismem(expa)) );
+    lref = expa && (lvalue(expa) || isarithmeticconst(expa)) && !tpa->rref || tpa->lref ;
+    rref = expa && (!lvalue(expa) && (!isstructured(tpa) || !ismem(expa)) ) && !tpa->lref || tpa->rref;
     if (expa && expa->type == en_func)
     {
         TYPE *tp = basetype(expa->v.func->sp->tp)->btp;
@@ -2584,10 +2610,14 @@ static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             rref = FALSE;
         }
         tpa = basetype(tpa)->btp;
+        while (isref(tpa))
+            tpa = basetype(tpa)->btp;
     }
     if (isref(tpp))
     {
         TYPE *tppp = basetype(tpp)->btp;
+        while (isref(tppp))
+            tppp = basetype(tppp)->btp;
         if (expa && isstructured(tppp) && expa->type != en_not_lvalue)
         {
             EXPRESSION *expx = expa;
@@ -3830,30 +3860,32 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             if (found1)
             {
                 if (!(flags & _F_SIZEOF))
+                {
                     found1->genreffed = TRUE;
-                if (found1->templateLevel && !templateNestingCount && found1->templateParams)
-                {
-                    found1 = TemplateFunctionInstantiate(found1, FALSE, FALSE);
-                }
-                else
-                {
-                    /*
-                    if (found1->templateLevel && !templateNestingCount)
+                    if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                     {
-                        if (!found1->instantiated && !found1->instantiated2)
-                        {
-                            if (found1->deferredCompile && toInstantiate || found1->inlineFunc.stmt)
-                                InsertInline(found1);
-                            else
-                                InsertExtern(found1);
-                            doNames(found1);
-                            found1->instantiated2 = TRUE;
-                        }
+                        found1 = TemplateFunctionInstantiate(found1, FALSE, FALSE);
                     }
-                    */
-                    if (toInstantiate && found1->deferredCompile && !found1->inlineFunc.stmt)
+                    else
                     {
-                        deferredCompileOne(found1);
+                        /*
+                        if (found1->templateLevel && !templateNestingCount)
+                        {
+                            if (!found1->instantiated && !found1->instantiated2)
+                            {
+                                if (found1->deferredCompile && toInstantiate || found1->inlineFunc.stmt)
+                                    InsertInline(found1);
+                                else
+                                    InsertExtern(found1);
+                                doNames(found1);
+                                found1->instantiated2 = TRUE;
+                            }
+                        }
+                        */
+                        if (toInstantiate && found1->deferredCompile && !found1->inlineFunc.stmt)
+                        {
+                            deferredCompileOne(found1);
+                        }
                     }
                 }
             }

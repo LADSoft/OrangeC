@@ -2200,7 +2200,7 @@ LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION *
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        lex = expression_no_check(lex, funcsp, NULL, tp, exp, 0);
+        lex = expression_no_check(lex, funcsp, NULL, tp, exp, _F_SIZEOF);
         *exp = intNode(en_c_i, noexceptExpression(*exp));
         *tp = &stdbool;
         

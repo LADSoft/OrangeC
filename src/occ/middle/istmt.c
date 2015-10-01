@@ -972,7 +972,9 @@ void genfunc(SYMBOL *funcsp)
         chosenAssembler->gen->post_function_gen(funcsp, intermed_head);
     if (funcsp->linkage == lk_virtual || tmpl)
         gen_endvirtual(funcsp);
+    AllocateLocalContext(NULL, funcsp, nextLabel++);
     XTDumpTab(funcsp);
+    FreeLocalContext(NULL, funcsp, nextLabel++);
     intermed_head = NULL;
     dag_rundown();
     oFree();

@@ -923,6 +923,7 @@ void AllocateLocalContext(BLOCKDATA *parent, SYMBOL *sp, int label);
 void FreeLocalContext(BLOCKDATA *parent, SYMBOL *sp, int label);
 HASHREC **GetHashLink(HASHTABLE *t, char *string);
 HASHREC **LookupName(char *name, HASHTABLE *table);
+SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOLEAN isvirtual, BOOLEAN tagsOnly);
 SYMBOL *search(char *name, HASHTABLE *table);
 BOOLEAN matchOverload(TYPE *tnew, TYPE *told);
 SYMBOL *searchOverloads(SYMBOL *sym, HASHTABLE *table);

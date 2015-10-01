@@ -2514,6 +2514,7 @@ static void createDestructor(SYMBOL *sp)
     dest->isInline = TRUE;
 //    dest->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(dest);
+    InsertExtern(dest);
     localNameSpace->syms = syms;
 }
 void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count)
@@ -2593,7 +2594,11 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
     params->ascall = TRUE;
-    dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE, 0);
+    dest1 = basetype(dest->tp)->syms->table[0]->p;
+    if (!dest1 || ! dest1->defaulted)
+        dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, NULL, TRUE, FALSE, TRUE, 0);
+    else
+        params->fcall = varNode(en_pc, dest1);
     if (dest1)
     {
         if (!skipAccess && dest1 && !isAccessible(against,sp, dest1, theCurrentFunc, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))

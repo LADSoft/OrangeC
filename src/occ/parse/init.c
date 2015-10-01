@@ -1245,7 +1245,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
             else if ((ispointer(tp) || isfunction(tp) || tp->type == bt_aggregate)&& !comparetypes(itype, tp, TRUE))
                 if (cparams.prm_cplusplus)
                 {
-                    if (!isvoidptr(itype))
+                    if (!isvoidptr(itype) && !tp->nullptrType)
                         if (!ispointer(itype) || !isstructured(basetype(tp)->btp) || !isstructured(basetype(itype)->btp) || classRefCount(basetype(basetype(itype)->btp)->sp, basetype(basetype(tp)->btp)->sp) != 1)
                             errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
                 }
@@ -3157,7 +3157,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                 if (!asExpression)
                     errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
             }
-            else if (sp->init->exp && isintconst(sp->init->exp) && isint(sp->tp))
+            else if (sp->init->exp && isintconst(sp->init->exp) && (isint(sp->tp) || basetype(sp->tp)->type == bt_enum))
                 {
                     if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
                         insertInitSym(sp);
@@ -3165,7 +3165,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     sp->storage_class = sc_constant;
                 }
         }
-        else if (sp->init && sp->init->exp && isintconst(sp->init->exp) && isint(sp->tp))
+        else if (sp->init && sp->init->exp && isintconst(sp->init->exp) && (isint(sp->tp) || basetype(sp->tp)->type == bt_enum))
             {
                 if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
                     insertInitSym(sp);

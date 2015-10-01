@@ -57,6 +57,8 @@ extern int packIndex;
 extern int expandingParams;
 extern int dontRegisterTemplate;
 extern int inTemplateSpecialization;
+extern LIST *openStructs;
+extern int structLevel;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -865,7 +867,14 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
         if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual) 
             && sp->templateParams && allTemplateArgsSpecified(sp->templateParams->next))
         {
+            TEMPLATEPARAMLIST *tpl = sp->templateParams;
+            int oldStructLevel = structLevel;
+            LIST *oldOpenStructs = openStructs;
+            structLevel = 0;
+            openStructs = NULL;
 	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+            structLevel = oldStructLevel;
+            openStructs = oldOpenStructs;
 		    if (sp)
 			    *tpx = sp->tp;
         }
@@ -1366,11 +1375,19 @@ BOOLEAN hasPackedExpression(EXPRESSION *exp)
     if (exp->type == en_func)
     {
         TEMPLATEPARAMLIST *tpl = exp->v.func->templateParams;
+        INITLIST *il;
         while (tpl)
         {
             if (tpl->p->packed)
                 return TRUE;
             tpl = tpl->next;
+        }
+        il = exp->v.func->arguments;
+        while (il)
+        {
+            if (hasPackedExpression(il->exp))
+                return TRUE;
+            il = il->next;
         }
     }
     return FALSE;

@@ -57,6 +57,8 @@ static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigne
     "void _InitializeException(void *, void *); "
     "void _RundownException(); "
     "void __arrCall(void *, void *, void *, int, int); "
+    "int __is_constructible(...); "
+    "int __is_convertible_to(...); "
     "namespace std { "
     "class type_info; "
     "} "

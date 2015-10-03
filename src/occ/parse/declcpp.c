@@ -865,7 +865,7 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
     {
         SYMBOL *sp = basetype(*tpx)->sp;
         if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual) 
-            && sp->templateParams && allTemplateArgsSpecified(sp->templateParams->next))
+            && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
         {
             TEMPLATEPARAMLIST *tpl = sp->templateParams;
             int oldStructLevel = structLevel;
@@ -1062,7 +1062,7 @@ restart:
                                 inTemplateSpecialization--;
                                 lex = SetAlternateLex(NULL);
                                 temp = GetClassTemplate(bcsym, lst, TRUE);
-                                if (temp && temp->instantiated && allTemplateArgsSpecified(temp->templateParams->next))
+                                if (temp && temp->instantiated && allTemplateArgsSpecified(temp, temp->templateParams->next))
                                     temp  = TemplateClassInstantiateInternal(temp, temp->templateParams->next, FALSE);
                                 *bc = innerBaseClass(declsym, temp, isvirtual, currentAccess);
                                 if (*bc)
@@ -1084,7 +1084,7 @@ restart:
                     else
                     {
                         bcsym = GetClassTemplate(bcsym, lst, TRUE);
-                        if (bcsym && bcsym->instantiated && allTemplateArgsSpecified(bcsym->templateParams->next))
+                        if (bcsym && bcsym->instantiated && allTemplateArgsSpecified(bcsym, bcsym->templateParams->next))
                             bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, FALSE);
                     }
                 }
@@ -2571,4 +2571,76 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
         }
     }
     return rv;
+}
+static BOOLEAN constArgValid(TYPE *tp)
+{
+    while (isarray(tp))
+        tp = basetype(tp)->btp;
+    if (isvoid(tp))
+        return FALSE;
+    if (isfunction(tp))
+        return FALSE;
+    if (tp->type == bt_templateparam || tp->type == bt_templateselector)
+        return TRUE;        
+    if (isstructured(tp))
+    {
+        SYMBOL *sym = basetype(tp)->sp, *sym1;
+        HASHREC *hr;
+        SYMBOL *cpy, *mv;
+        BASECLASS *bc;
+        tp = basetype(tp);
+        if (sym->trivialCons)
+            return TRUE;
+        sym1 = search(overloadNameTab[CI_DESTRUCTOR], tp->syms);
+        if (sym1 && !((SYMBOL *)sym1->tp->syms->table[0]->p)->defaulted)
+            return FALSE;
+        sym1 = search(overloadNameTab[CI_CONSTRUCTOR], tp->syms);
+        cpy = getCopyCons(sym, FALSE); 
+        mv = getCopyCons(sym, TRUE);
+        hr = sym1->tp->syms->table[0];
+        while (hr)
+        {
+            sym1 = (SYMBOL *)hr->p;
+            if (sym1->constexpression && sym1 != cpy && sym1 != mv)
+                break;
+            hr = hr->next;
+        }
+        if (!hr)
+            return FALSE;
+        hr = tp->syms->table[0];
+        while (hr)
+        {
+            sym1 = (SYMBOL *)hr->p;
+            if (sym1->storage_class == sc_member && !isfunction(sym1))
+                if (!constArgValid(sym1->tp))
+                    return FALSE;
+            hr = hr->next;
+        }
+        bc = sym->baseClasses;
+        while (bc)
+        {
+            if (!constArgValid(bc->cls->tp))
+                return FALSE;
+            bc = bc->next;
+        }
+        return TRUE;
+    }
+    return TRUE;
+}
+BOOLEAN MatchesConstFunction(SYMBOL *sp)
+{
+    HASHREC *hr;
+    if (sp->storage_class == sc_virtual)
+        return FALSE;
+    if (!constArgValid(basetype(sp->tp)->btp))
+        return FALSE;
+    hr = basetype(sp->tp)->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sym = (SYMBOL *)hr->p;
+        if (sym->tp->type != bt_void && !constArgValid(sym->tp))
+            return FALSE;
+        hr = hr->next;
+    }
+    return TRUE;
 }

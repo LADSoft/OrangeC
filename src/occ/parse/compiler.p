@@ -209,13 +209,14 @@ SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN i
 void TemplateDataInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
 void SetTemplateNamespace(SYMBOL *sym);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
-BOOLEAN allTemplateArgsSpecified(TEMPLATEPARAMLIST *args);
+BOOLEAN allTemplateArgsSpecified(SYMBOL *sym, TEMPLATEPARAMLIST *args);
 SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr);
 void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, BOOLEAN isExtern);
 void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
 BOOLEAN TemplateFullySpecialized(SYMBOL *sp);
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isextern);
+BOOLEAN MatchesConstFunction(SYMBOL *sp);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
 					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN asfriend, BOOLEAN isTemplate, enum e_ac access );
 
@@ -584,7 +585,6 @@ STATEMENT *inlinefuncargs(FUNCTIONCALL *params);
 void inlinereblock(SYMBOL *sp);
 EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp);
 BOOLEAN IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp);
-EXPRESSION *EvaluateConstFunction(FUNCTIONCALL *funcparams, SYMBOL *funcsp);
 
                              /* Ioptutil.c */
 

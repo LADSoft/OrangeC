@@ -2816,12 +2816,6 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     }
                 }
                 checkArgs(funcparams, funcsp);
-                if (funcparams->sp->constexpression)
-                {
-                    exp_in = EvaluateConstFunction(funcparams, funcsp);
-                    if (exp_in)
-                        *exp = exp_in;
-                }
                 if (!funcparams->novtab && funcparams->sp && funcparams->sp->storage_class == sc_virtual)
                 {
                     exp_in = funcparams->thisptr;

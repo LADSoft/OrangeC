@@ -5665,7 +5665,11 @@ jointemplate:
                                         error(ERR_MISSING_TYPE_SPECIFIER);
                             }
                             if( sp->constexpression)
+                            {
                                 sp->isInline = TRUE;
+                                if (!MatchesConstFunction(sp))
+                                    error(ERR_CONSTANT_FUNCTION_EXPECTED);
+                            }
                             if (cparams.prm_cplusplus)
                             {
                                 if (ismember(sp))

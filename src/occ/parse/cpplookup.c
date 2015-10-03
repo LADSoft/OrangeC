@@ -2113,7 +2113,7 @@ static SYMBOL *getUserConversion(int flags,
             if (isstructured(tppp))
             {
                 SYMBOL *sym = basetype(tppp)->sp;
-                if (sym->templateLevel && !templateNestingCount && allTemplateArgsSpecified(sym->templateParams))
+                if (sym->templateLevel && !templateNestingCount && allTemplateArgsSpecified(sym, sym->templateParams))
                 {
                     sym = TemplateClassInstantiate(sym, sym->templateParams, FALSE, sc_global);
                 }

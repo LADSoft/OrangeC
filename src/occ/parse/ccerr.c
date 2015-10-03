@@ -478,7 +478,7 @@ static struct {
 {"'Class' template parameter missing default" ,ERROR },
 {"'Class' template parameter default must refer to type" ,ERROR },
 {"Template 'template' parameter missing default" ,ERROR },
-{"'Non-type' template paramer has invalid type", ERROR },
+{"'Non-type' template parameter has invalid type", ERROR },
 {"Type mismatch in default for 'non-type' template paramater", ERROR },
 {"'%s' was not previously declared as a template", ERROR },
 {"'%s' was previously declared as a template", ERROR },

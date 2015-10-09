@@ -72,6 +72,16 @@ extern unsigned short const _RTL_DATA * _pctype;
 #define _IS_PRINT    (_IS_GRAPH | _IS_BLK)
 #endif
 
+#define _SPACE _IS_SP
+#define _BLANK _IS_BLK
+#define _PUNCT _IS_PUN
+#define _ALPHA _IS_ALPHA
+#define _DIGIT _IS_DIG
+#define _CONTROL _IS_CTL
+#define _UPPER _IS_UPP
+#define _LOWER _IS_LOW
+#define _HEX _IS_HEX
+
 int      _RTL_FUNC _IMPORT isalnum (int __c);
 int      _RTL_FUNC _IMPORT isalpha (int __c);
 int      _RTL_FUNC _IMPORT isblank (int __c);
@@ -102,6 +112,8 @@ int		 _RTL_FUNC _IMPORT __iscsym(int);
 };
 #endif
 
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
+#ifndef __cplusplus
 #define isalnum(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_ALNUM))
                      
 #define isalpha(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_ALPHA))
@@ -126,12 +138,12 @@ int		 _RTL_FUNC _IMPORT __iscsym(int);
                      
 #define isxdigit(c)  ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_HEX))
 
-
 #define _toupper(c) ((c) + 'A' - 'a')
 #define _tolower(c) ((c) + 'a' - 'A')
 #define isascii(c)  ((unsigned)(c) < 128)
 #define toascii(c)  ((c) & 0x7f)
-
+#endif
+#endif
 
 #endif 
 

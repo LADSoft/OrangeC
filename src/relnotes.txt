@@ -1,5 +1,15 @@
 Release notes:
 
+Version 5.41.2:
+    occ:        many changes made to fix bugs while compiling libcxx
+    occ:        fix problem with bogus code gen when doing an unsigned div of a constant
+    clibs:      strcat() did not work if the destination was an empty string not 
+                on a 4 byte boundary
+    clibs:      ctype macros needed to be turned off when compiling for MSVCRT.DLL 
+                or CRTDLL.DLL (isspace and friends did not work)
+    clibs:      msdos stdio file handling was broken for the default handles, 
+                so for example printf and scanf wouldn't work
+    
 Version 5.41.1:
     occ:        fix member pointer handling in general - both parsing and code gen was broken
     occ:        add an error if trying to implicitly take the address of a member function

@@ -44,10 +44,17 @@ static unsigned char inbuf[512];
 
 extern FILE *_pstreams[] ;
 
+static struct __file2 _iextended[3] = 
+{
+{ "CON:" },
+{ "CON:" },
+{ "CON:" },
+};
+
 FILE _istreams[3] = { 
-   { 0, _F_READ | _F_LBUF | _F_TERM,0,0,512,inbuf,inbuf,"CON:",FILTOK },
-   { 0, _F_WRIT | _F_LBUF | _F_TERM,1,0,0,0,0,"CON:",FILTOK },
-   { 0, _F_WRIT | _F_LBUF | _F_TERM,2,0,0,0,0,"CON:",FILTOK }
+   { FILTOK, _F_READ | _F_LBUF | _F_TERM,0,0,0, 512,inbuf,inbuf,&_iextended[0]},
+   { FILTOK, _F_WRIT | _F_LBUF | _F_TERM,0,1,0, 0,0,0,&_iextended[1] },
+   { FILTOK, _F_WRIT | _F_LBUF | _F_TERM,0,2,0, 0,0,0,&_iextended[2] }
 } ;
 
 #undef stdin

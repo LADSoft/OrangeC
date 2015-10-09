@@ -821,18 +821,21 @@ void deferredInitializeStruct(SYMBOL *cur)
                 while (hr1)
                 {
                     SYMBOL *sp1 = (SYMBOL *)hr1->p;
-                    HASHREC *hr2 = basetype(sp1->tp)->syms->table[0];
-                    while (hr2)
+                    if (!sp1->templateLevel)
                     {
-                        SYMBOL *sp2 = (SYMBOL *)hr2->p;
-                        if (sp2->deferredCompile && !sp2->init)
+                        HASHREC *hr2 = basetype(sp1->tp)->syms->table[0];
+                        while (hr2)
                         {
-                            lex = SetAlternateLex(sp2->deferredCompile);
-                            lex = initialize(lex, theCurrentFunc, sp2, sc_member, FALSE, 0);
-                            SetAlternateLex(NULL);
-                            sp2->deferredCompile = NULL;
+                            SYMBOL *sp2 = (SYMBOL *)hr2->p;
+                            if (sp2->deferredCompile && !sp2->init)
+                            {
+                                lex = SetAlternateLex(sp2->deferredCompile);
+                                lex = initialize(lex, theCurrentFunc, sp2, sc_member, FALSE, 0);
+                                SetAlternateLex(NULL);
+                                sp2->deferredCompile = NULL;
+                            }
+                            hr2 = hr2->next;
                         }
-                        hr2 = hr2->next;
                     }
                     hr1 = hr1->next;
                 }
@@ -870,9 +873,26 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
             TEMPLATEPARAMLIST *tpl = sp->templateParams;
             int oldStructLevel = structLevel;
             LIST *oldOpenStructs = openStructs;
+//            structLevel = 0;
+//            openStructs = NULL;
+	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+//            structLevel = oldStructLevel;
+//            openStructs = oldOpenStructs;
+		    if (sp)
+			    *tpx = sp->tp;
+        }
+        else if (!sp->templateLevel && sp->parentClass && sp->parentClass->templateLevel
+            && (!sp->instantiated || sp->linkage != lk_virtual)
+            && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
+        {
+            TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
+            int oldStructLevel = structLevel;
+            LIST *oldOpenStructs = openStructs;
             structLevel = 0;
             openStructs = NULL;
+            sp->templateParams = tpl;
 	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
+            sp->templateParams = NULL;
             structLevel = oldStructLevel;
             openStructs = oldOpenStructs;
 		    if (sp)
@@ -2043,7 +2063,7 @@ LEXEME *handleStaticAssert(LEXEME *lex)
                 errskim(&lex, skim_closepa);
                 skip(&lex, closepa);
             }
-            else if (!v && (!templateNestingCount || instantiatingTemplate))
+            else if (!v && (!templateNestingCount))// || instantiatingTemplate))
             {
                 errorstr(ERR_PURESTRING, buf);
             }
@@ -2572,6 +2592,47 @@ BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always)
     }
     return rv;
 }
+// these tests fall flat because they don't test the specific constructor
+// used to construct things...
+static BOOLEAN hasNoBody(STATEMENT *stmt)
+{
+    while (stmt)
+    {
+        if (stmt->type != st_line && stmt->type != st_varstart && stmt->type != st_dbgblock)
+            return FALSE;
+        if (stmt->type == st_block && !hasNoBody(stmt))
+            return FALSE;
+        stmt = stmt->next;
+    }
+    return TRUE;
+}
+static BOOLEAN isConstexprConstructor(SYMBOL *sym)
+{
+    HASHREC *hr;
+    if (sym->constexpression)
+        return TRUE;
+    if (!sym->deleted && !sym->defaulted && !hasNoBody(sym->inlineFunc.stmt))
+        return FALSE;
+    hr = sym->parentClass->tp->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (ismemberdata(sp) && !sp->init)
+        {
+            MEMBERINITIALIZERS *memberInit = sym->memberInitializers;
+            while (memberInit)
+            {
+                if (!strcmp(memberInit->name, sp->name))
+                    break;
+                memberInit = memberInit->next;
+            }
+            if (!memberInit)
+                return FALSE;
+        }
+        hr = hr->next;
+    }
+    return TRUE;
+}
 static BOOLEAN constArgValid(TYPE *tp)
 {
     while (isarray(tp))
@@ -2601,7 +2662,7 @@ static BOOLEAN constArgValid(TYPE *tp)
         while (hr)
         {
             sym1 = (SYMBOL *)hr->p;
-            if (sym1->constexpression && sym1 != cpy && sym1 != mv)
+            if (sym1 != cpy && sym1 != mv && isConstexprConstructor(sym1))
                 break;
             hr = hr->next;
         }

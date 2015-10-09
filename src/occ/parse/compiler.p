@@ -130,6 +130,7 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *funcsp, SYMBOL *
 void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons);
 SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
 void lambda_init(void);
+BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move);
 void createConstructorsForLambda(SYMBOL *sp);
 void createConstructor(SYMBOL *sp, SYMBOL *consfunc);
 void createDefaultConstructors(SYMBOL *sp);
@@ -946,8 +947,8 @@ BOOLEAN checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);
 SYMBOL *LookupSym(char *name);
 SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupNonspecificCast(SYMBOL *sp, TYPE *tp);
-SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp);
-SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp);
+SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp, BOOLEAN implicit);
+SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp, BOOLEAN implicit);
 SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args);
 SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp);

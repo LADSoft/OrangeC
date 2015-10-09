@@ -264,7 +264,7 @@ static int dumpBits(INITIALIZER **init)
 }
 void insertDynamicInitializer(SYMBOL *sp, INITIALIZER *init)
 {
-    if (!ignore_global_init)
+    if (!ignore_global_init && !templateNestingCount)
     {
         DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
         di->sp = sp;
@@ -294,7 +294,7 @@ static void insertTLSInitializer(SYMBOL *sp, INITIALIZER *init)
 }
 void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init)
 {
-    if (!ignore_global_init)
+    if (!ignore_global_init && !templateNestingCount)
     {
         DYNAMIC_INITIALIZER *di = Alloc(sizeof(DYNAMIC_INITIALIZER));
         di->sp = sp;
@@ -469,6 +469,8 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
 #ifndef PARSER_ONLY
     int vbase = 0, ofs;
     EXPRESSION expx, *exp = &expx;
+    if (sp->storage_class != sc_member && sp->storage_class != sc_mutable)
+        errortype(ERR_CANNOT_CONVERT_TYPE, sp->tp, membertp);
     if (make_label)
     {
         // well if we wanted we could reuse existing structures, but,
@@ -1246,7 +1248,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                 if (cparams.prm_cplusplus)
                 {
                     if (!isvoidptr(itype) && !tp->nullptrType)
-                        if (!ispointer(itype) || !isstructured(basetype(tp)->btp) || !isstructured(basetype(itype)->btp) || classRefCount(basetype(basetype(itype)->btp)->sp, basetype(basetype(tp)->btp)->sp) != 1)
+                        if (!ispointer(itype) || tp->type == bt_aggregate || !isstructured(basetype(tp)->btp) || !isstructured(basetype(itype)->btp) || classRefCount(basetype(basetype(itype)->btp)->sp, basetype(basetype(tp)->btp)->sp) != 1)
                             errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
                 }
                 else if (!isvoidptr(tp) && !isvoidptr(itype))
@@ -1555,13 +1557,28 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
         error(ERR_EXPRESSION_SYNTAX);
     if (tp)
     {
-        if (((!isarithmetic(basetype(itype)->btp) && basetype(itype)->type != bt_enum) 
+        if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
+            error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
+        else if (((!isarithmetic(basetype(itype)->btp) && basetype(itype)->type != bt_enum) 
              || (!isarithmetic(tp) && basetype(tp)->type == bt_enum)) 
             && !comparetypes(itype, tp, TRUE) 
-            && (!isstructured(itype->btp) || !isstructured(tp) || classRefCount(basetype(itype->btp)->sp, basetype(tp)->sp) != 1))
-            errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp->btp);
-        else if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
-            error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
+            && (!isstructured(itype->btp) || !isstructured(tp) || classRefCount(basetype(itype->btp)->sp, basetype(tp)->sp) != 1)) {
+                if (isstructured(itype->btp))
+                {
+                    FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
+                    EXPRESSION *ths = anonymousVar(sc_auto, tp);
+                    TYPE *ctype = basetype(itype->btp);
+                    funcparams->arguments = Alloc(sizeof(INITLIST));
+                    funcparams->arguments->tp = tp;
+                    funcparams->arguments->exp = exp;
+                    exp = ths;
+                    callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, FALSE); 
+                }
+                else
+                {
+                    errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype->btp, tp);
+                }
+            }
         else if (!isref(tp) && !isstructured(tp) && !isfunction(tp) && (!ispointer(tp) || !tp->array))
             {
                 exp = ConvertInitToRef(exp, itype, tp, sc);
@@ -2586,7 +2603,67 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
                  INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags)
 {
-    TYPE *tp = basetype(itype);
+    TYPE *tp;
+    tp  = basetype(itype);
+    if (tp->type == bt_templateselector)
+    {
+        SYMBOL *ts = tp->sp->templateSelector->next->sym;
+        SYMBOL *sp;
+        TEMPLATESELECTOR *find = tp->sp->templateSelector->next->next;
+        if (tp->sp->templateSelector->next->isTemplate)
+        {
+            TEMPLATEPARAMLIST *current = tp->sp->templateSelector->next->templateParams;
+            sp = GetClassTemplate(ts, current, FALSE);
+            tp = NULL;
+        }
+        else if (basetype(ts->tp)->templateParam->p->type == kw_typename)
+        {
+            tp = basetype(ts->tp)->templateParam->p->byClass.val;
+            if (!tp)
+                return FALSE;
+            sp = tp->sp;
+        }
+        else if (basetype(ts->tp)->templateParam->p->type == kw_delete)
+        {
+            TEMPLATEPARAMLIST *args = basetype(ts->tp)->templateParam->p->byDeferred.args;
+            TEMPLATEPARAMLIST *val = NULL, **lst = &val;
+            sp = tp->templateParam->p->sym;
+            sp = TemplateClassInstantiateInternal(sp, args, TRUE);
+        }
+        if (sp)
+        {
+            sp = basetype(PerformDeferredInitialization (sp->tp, NULL))->sp;
+            while (find && sp)
+            {
+                SYMBOL *spo = sp;
+                if (!isstructured(spo->tp))
+                    break;
+                
+                sp = search(find->name, spo->tp->syms);
+                if (!sp)
+                {
+                    sp = classdata(find->name, spo, NULL, FALSE, FALSE);
+                    if (sp == (SYMBOL *)-1)
+                        sp = NULL;
+                }
+                find = find->next;
+            }
+            if (!find && sp && istype(sp))
+                tp = basetype(sp->tp);
+            else
+                tp = NULL;
+        }
+        else
+            tp = NULL;
+    }
+    if (!tp)
+    {
+        if (!templateNestingCount && !(flags & _F_TEMPLATEARGEXPANSION))
+        {
+            errortype(ERR_CANNOT_INITIALIZE, basetype(itype), NULL);
+        }
+        return lex;
+    }
     switch(tp->type)
     {
         case bt_aggregate:
@@ -3185,8 +3262,12 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
     {
         if (instantiatingTemplate)
         {
-            sp->linkage = lk_virtual;
-            InsertInlineData(sp);
+            if (!sp->parentClass || sp->parentClass && allTemplateArgsSpecified(sp->parentClass,
+                                                                                sp->parentClass->templateParams->next))
+            {
+                sp->linkage = lk_virtual;
+                InsertInlineData(sp);
+            }
         }
         else {
             SYMBOL *tmpl;

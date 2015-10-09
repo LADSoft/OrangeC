@@ -358,7 +358,7 @@ static BOOLEAN hasConstFunc(SYMBOL *sp, int type, BOOLEAN move)
         {
             SYMBOL *func = (SYMBOL *)hr->p;
             HASHREC *hra = func->tp->syms->table[0]->next;
-            if (!hra->next || ((SYMBOL *)hra->next->p)->init)
+            if (hra && (!hra->next || ((SYMBOL *)hra->next->p)->init))
             {
                 SYMBOL *arg = (SYMBOL *)hra->p;
                 if (isref(arg->tp))
@@ -527,7 +527,7 @@ static BOOLEAN matchesDefaultConstructor(SYMBOL *sp)
     }
     return FALSE;
 }
-static BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
+BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
 {
     HASHREC *hr = basetype(sp->tp)->syms->table[0]->next;
     if (hr)
@@ -2665,6 +2665,25 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     if (!params)
     {
         params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    }
+    else
+    {
+        INITLIST *list = params->arguments;
+        while (list)
+        {
+            if (!list->nested && isstructured(list->tp))
+            {
+                SYMBOL *sp1 = basetype(list->tp)->sp;
+                if (!templateNestingCount && sp1->templateLevel && sp1->templateParams && !sp1->instantiated)
+                {
+                    if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
+                        sp1 = GetClassTemplate(sp1, sp1->templateParams->next, FALSE);
+                    if (sp1)
+                        list->tp = TemplateClassInstantiate(sp1, sp1->templateParams, FALSE, sc_global)->tp;
+                }
+            }
+            list = list->next;
+        }
     }
     params->thisptr = *exp;
     params->thistp = Alloc(sizeof(TYPE));

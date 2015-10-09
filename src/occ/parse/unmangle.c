@@ -770,7 +770,7 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
                 v =  *name++ - '0';
                 while (isdigit(*name))
                     v = v * 10+ *name++ - '0';
-                p = buf2;
+                p = buf3;
                 while (v--)
                 {
                     if (*name == '@')
@@ -785,6 +785,15 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
                 }
                 if (manglenamecount < MAX_MANGLE_NAME_COUNT)
                     strcpy(manglenames[manglenamecount++], buf2);
+                if (buf3[0] == '#')
+                {
+                    unmangTemplate(buf2, buf3, last);
+                }
+                else
+                {
+                    strcpy(buf2, buf3);
+                }
+                p = buf2 + strlen(buf2);
             }
 
             strcpy(p, "::*");

@@ -90,6 +90,50 @@
 #define EUCLEAN 47      /* UNIX - not MSDOS         */
 #define ENAMETOOLONG 48 /* Filename too long        */
 #define EILSEQ	1000	/* Defined by C standard, we are leaving space for WIN32 errors */
+// none of these are generated, they are in here for libcxx support.
+#define EAFNOSUPPORT 1001
+#define EADDRINUSE 1002
+#define EADDRNOTAVAIL 1003
+#define EISCONN 1004
+#define EBADMSG 1005
+#define ECONNABORTED 1006
+#define EALREADY 1007
+#define ECONNREFUSED 1008
+#define ECONNRESET 1009
+#define EDESTADDRREQ 1010
+#define ENOTEMPTY 1011
+#define ENOSYS 1012
+#define EHOSTUNREACH 1013
+#define EIDRM 1014
+#define EMSGSIZE 1015
+#define ENETDOWN 1016
+#define ENETRESET 1017
+#define ENETUNREACH 1018
+#define ENOBUFS 1019
+#define ENOLINK 1020
+#define ENOLCK 1021
+#define ENODATA 1022
+#define ENOMSG 1023
+#define ENOPROTOOPT 1024
+#define ENOSR 1025
+#define ENOTSOCK 1026
+#define ENOSTR 1027
+#define ENOTCONN 1028
+#define ENOTSUP 1029
+#define ECANCELED 1030
+#define EINPROGRESS 1031
+#define EOPNOTSUPP 1032
+#define EWOULDBLOCK 1033
+#define EOWNERDEAD 1034
+#define EPROTO 1035
+#define EPROTONOSUPPORT 1036
+#define EDEADLK 1037
+#define ENOTRECOVERABLE 1038
+#define ETIME 1039
+#define ETIMEDOUT 1040
+#define ELOOP 1041
+#define EOVERFLOW 1042
+#define EPROTOTYPE 1043
 
 #ifdef __cplusplus
 namespace __STD_NS__ {

@@ -314,14 +314,12 @@ BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, e
     SYMBOL *sp = basetype(*tp)->sp;
     if (!other || isarithmetic(other))
     {
-        SYMBOL *cst = integer ? lookupIntCast(sp, other ? other : &stdint) 
-                              : lookupArithmeticCast(sp, other ? other : &stddouble);
-        if (cst)
+        SYMBOL *cst = integer ? lookupIntCast(sp, other ? other : &stdint, implicit) 
+                              : lookupArithmeticCast(sp, other ? other : &stddouble, implicit);
+        if (cst)    
         {
             FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
             EXPRESSION *e1;
-            if (cst->isExplicit && implicit)
-                error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             params->fcall = varNode(en_pc, cst);
             params->thisptr = *exp;
             params->thistp = Alloc(sizeof(TYPE));

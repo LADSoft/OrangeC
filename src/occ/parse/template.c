@@ -2194,7 +2194,6 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_ule:
         case en_ult:
             return &stdbool;
-        case en_assign:
         case en_uminus:
         case en_not:
         case en_compl:
@@ -2207,6 +2206,17 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
         case en_autodec:
         case en_bits:
             return LookupTypeFromExpression(exp->left, enclosing, alt);
+        case en_assign:
+        {
+            TYPE *tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
+            while (isref(tp1))
+                tp1 = basetype(tp1)->btp;
+            // there probably ought to be a bunch of such sanity checks throughout this function,
+            // this is the minimum to make LIBCXX happy.
+            if (isconst(tp1))
+                return NULL;
+            return tp1;
+        }
         case en_templateparam:
             if (exp->v.sp->tp->templateParam->p->type == kw_typename)
                 return exp->v.sp->tp->templateParam->p->byClass.val;
@@ -2329,6 +2339,23 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                             if (current->p->type == kw_typename && current->p->byClass.dflt)
                             {
                                 current->p->byClass.dflt = SynthesizeType(current->p->byClass.dflt, enclosing, alt);
+                                if (!current->p->byClass.dflt || current->p->byClass.dflt->type == bt_any)
+                                {
+                                    int i=0;
+                                    current = tp->sp->templateSelector->next->templateParams;
+                                    while (count--)
+                                    {
+                                        if (current->p->packed)
+                                            current = current->p->byPack.pack;
+                                        if (current)
+                                        {
+                                            current->p->byClass.dflt = defaults[i++];
+                                            current = current->next;
+                                        }
+                                    }
+                                    return &stdany;
+                                }
+                                
                             }
                             else if (current->p->type == kw_int)
                                 if (current->p->byNonType.dflt)
@@ -2414,12 +2441,15 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                     {
                         *last = tp;
                     }
-                    tp = Alloc(sizeof(TYPE));
-                    tp->type = bt_derivedfromtemplate;
-                    tp->btp = rv;
-                    tp->size = rv->size;
-                    rv = tp;
-                    SynthesizeQuals(&last, &qual, &lastQual);
+                    if (rv)
+                    {
+                        tp = Alloc(sizeof(TYPE));
+                        tp->type = bt_derivedfromtemplate;
+                        tp->btp = rv;
+                        tp->size = rv->size;
+                        rv = tp;
+                        SynthesizeQuals(&last, &qual, &lastQual);
+                    }
                     return rv;
                 }
                 return &stdany;
@@ -2749,24 +2779,6 @@ SYMBOL *SynthesizeResult(SYMBOL *sym, TEMPLATEPARAMLIST *params)
 }
 static TYPE *removeTLQuals(TYPE *A)
 {
-    /*
-    TYPE *x = A, *rv=NULL, **last = &rv;
-    while (ispointer(x))
-        x = basetype(x)->btp;
-    if (!isconst(x) && !isvolatile(x))
-        return A;
-    x = A;
-    while (ispointer(x))
-    {
-        *last = Alloc(sizeof(TYPE));
-        **last = x;
-        last = &(*last)->next;
-        x = x->btp; // no basetype to get CV quals
-    }
-    x = basetype(x); // ignore CV quals
-    *last = x;
-    return rv;
-    */
     return basetype(A);
 }
 static TYPE *rewriteNonRef(TYPE *A)
@@ -3249,6 +3261,14 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
                 return DeduceFromBaseTemplates(P, basetype(A)->sp, change, byClass);
         if (Pb->type == bt_memberptr)
             return DeduceFromMemberPointer(P, A, change, byClass); 
+        if (Pb->type == bt_enum)
+        {
+            if (Ab->type == bt_enum && Ab->sp == Pb->sp)
+                return TRUE;
+            if (isint(Ab))// && Ab->enumConst)
+                return TRUE;
+            return FALSE;
+        }
         if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != bt_templateparam)
             return FALSE;
         switch(Pb->type)
@@ -3680,10 +3700,13 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
             SYMBOL *sp = (SYMBOL *)hr->p;
             if (sp->deferredCompile)
             {
-                LEXEME *lex = SetAlternateLex(sp->deferredCompile);
+                LEXEME *lex;
+    			dontRegisterTemplate+= templateNestingCount != 0;
+                lex = SetAlternateLex(sp->deferredCompile);
                 sp->init = NULL;
-                lex = initialize(lex, func, sp, sc_parameter, TRUE, 0);
+                lex = initialize(lex, func, sp, sc_parameter, TRUE, _F_TEMPLATEARGEXPANSION);
                 SetAlternateLex(NULL);
+    			dontRegisterTemplate-= templateNestingCount != 0;
                 if (sp->init && sp->init->exp && !ValidExp(&sp->init->exp))
                 {
                     dropStructureDeclaration();
@@ -4619,6 +4642,11 @@ static BOOLEAN TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST *porig, TEMP
                             tsym = basetype(tsym)->btp;
                         if (isconst(torig) != isconst(tsym) || isvolatile(torig) != isvolatile(tsym))
                             return FALSE;
+                        if (basetype(tsym)->type == bt_enum || basetype(tsym)->enumConst)
+                        {
+                            if (basetype(torig)->sp != basetype(tsym)->sp)
+                                return FALSE;
+                        }
                     }
                     break;
                 }
@@ -4657,8 +4685,8 @@ BOOLEAN TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym)
         }
         if (orig->parentClass || sym->parentClass)
             return FALSE;
-        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams))
-            return FALSE;
+//        if (!TemplateInstantiationMatchInternal(orig->templateParams, sym->templateParams))
+//            return FALSE;
         return TRUE;
     }
     return FALSE;
@@ -4697,12 +4725,15 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                         if (os2)
                         {
                             HASHREC *tsf = basetype(ts2->tp)->syms->table[0];
-                            HASHREC *ssf = basetype(ss2->tp)->syms->table[0];
-                            while (tsf && ssf)
+                            if (ts2->deferredCompile && !ss2->deferredCompile)
                             {
-                                ssf->p->name = tsf->p->name;
-                                tsf = tsf->next;
-                                ssf = ssf->next;
+                                HASHREC *ssf = basetype(ss2->tp)->syms->table[0];
+                                while (tsf && ssf)
+                                {
+                                    ssf->p->name = tsf->p->name;
+                                    tsf = tsf->next;
+                                    ssf = ssf->next;
+                                }
                             }
                             ss2->deferredCompile = ts2->deferredCompile;
                             if (!ss2->instantiatedInlineInClass)
@@ -4728,6 +4759,29 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                             os2 = os2->next;
                         }
                     }
+                }
+            }
+            ns = ns->next;
+            os = os->next;
+        }
+        ns = newCls->tp->tags->table[0]->next;
+        os = tmpl->tp->tags->table[0]->next;
+        while (ns && os)
+        {
+            SYMBOL *ss = (SYMBOL *)ns->p;
+            SYMBOL *ts = (SYMBOL *)os->p;
+            if (strcmp(ss->name, ts->name) != 0) 
+            {
+                ts = search(ss->name, tmpl->tp->syms);
+                // we might get here with ts = NULL for example when a using statement inside a template
+                // references base class template members which aren't defined yet.
+            }
+            if (ts)
+            {
+                if (isstructured(ss->tp))
+                {
+                    if (!ss->deferredCompile)
+                        ss->deferredCompile = ts->deferredCompile;
                 }
             }
             ns = ns->next;
@@ -5111,19 +5165,15 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     if (!found)
     {
         BOOLEAN ok = TRUE;
-        if (sym->specialized)
+        HASHREC *hr = sym->overloadName->tp->syms->table[0];
+        while (hr)
         {
-            HASHREC *hr = sym->overloadName->tp->syms->table[0];
-            while (hr)
+            if (matchOverload(sym->tp, ((SYMBOL *)hr->p)->tp))
             {
-                if (matchOverload(sym->tp, ((SYMBOL *)hr->p)->tp))
-                {
-                    hr->p = (struct _hrintern_ *)sym;
-                    ok = FALSE;
-                    break;
-                }
-                hr = hr->next;
+                ok = FALSE;
+                break;
             }
+            hr = hr->next;
         }
         if (ok)
         {
@@ -5510,7 +5560,7 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                         switch (params->p->type)
                         {
                             case kw_typename:
-                                if (!templatecomparetypes(params->p->byClass.val, params->p->byClass.dflt, TRUE))
+                                if (params->p->byClass.dflt->type != bt_templateparam && !templatecomparetypes(params->p->byClass.val, params->p->byClass.dflt, TRUE))
                                     rv = NULL;
                                 break;
                             case kw_int:
@@ -5768,6 +5818,26 @@ static void ChooseShorterParamList(SYMBOL **spList, int n)
         if (counts[i] != z)
             spList[i] = NULL;
 }
+static BOOLEAN constOnly(SYMBOL **spList, SYMBOL **origList, int n)
+{
+    int i;
+    for (i=1; i < n; i++)
+    {
+        if (spList[i])
+        {
+            TEMPLATEPARAMLIST *tpl = origList[i]->templateParams->p->bySpecialization.types;
+            while (tpl)
+            {
+                if (tpl->p->type == kw_typename && tpl->p->byClass.dflt && (!isconst(tpl->p->byClass.dflt) && !isvolatile(tpl->p->byClass.dflt) || basetype(tpl->p->byClass.dflt) != bt_templateparam))
+                    break;
+                tpl = tpl->next;
+            }
+            if (tpl)
+                return FALSE;
+        }
+    }
+    return TRUE;
+}
 SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
 {
     int n = 1, i=0;
@@ -5799,8 +5869,6 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
     {
             spList[i] = ValidateClassTemplate(origList[i], unspecialized, args);
     }
-//    if (n == 1 && spList[0] == 0)
-//        spList[0] = origList[0];
     for (i=0,count=0; i < n; i++)
     {
         if (spList[i])
@@ -5809,7 +5877,8 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
     if (count > 1)
     {
         int count1 = 0;
-        spList[0] = 0;
+        if (!constOnly(spList, origList, n))
+            spList[0] = 0;
         for (i=0; i < n; i++)
             if (spList[i])
                 count1++;
@@ -6436,6 +6505,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                         {
     						instance = TemplateClassInstantiate(instance, templateParams, FALSE, sc_global);
                             referenceInstanceMembers(instance);
+                            instance->dontinstantiate = FALSE;
                         }
                         else
                         {
@@ -6491,6 +6561,10 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                     sp->storage_class = sc_external;
                     InsertExtern(sp);
                 }
+                else
+                {
+                    sp->dontinstantiate = FALSE;
+                }
             }
             else
             {
@@ -6526,8 +6600,7 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
                     if ((tmpl && spi->storage_class == sc_static) || spi->storage_class == sc_external)
                     {
                         TemplateDataInstantiate(spi, TRUE, isExtern);
-                        if (isExtern)
-                            spi->dontinstantiate = TRUE;
+                        spi->dontinstantiate = isExtern;
                         if (!comparetypes(sym->tp, spi->tp, TRUE))
                             preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, spi, sym->declfile, sym->declline);
                     }

@@ -1544,9 +1544,18 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                 if (p->exp && p->exp->type == en_func && 
                     p->exp->v.func->sp->parentClass && !p->exp->v.func->ascall && !p->exp->v.func->asaddress)
                 {
-                    error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                    HASHREC *hr = basetype(p->exp->v.func->functp)->syms->table[0];
+                    while (hr)
+                    {
+                        SYMBOL *sym = (SYMBOL *)hr->p;
+                        if (sym->storage_class == sc_member || sym->storage_class == sc_mutable)
+                        {
+                            error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                            break;
+                        }
+                        hr = hr->next;
+                    }
                 }
-                
                 if (allowPack && cparams.prm_cplusplus && MATCHKW(lex, ellipse))
                 {
                     // lose p
@@ -1842,97 +1851,118 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
     end = search("_M_end", basetype(initializerListTemplate)->syms);
     if (!start || !end)
         fatal("Invalid definition of initializer-list");
-    tp->type = bt_pointer;
-    tp->array = TRUE;
-    while (searchx)
-        count++, searchx = searchx->next;
-    tp->btp = initializerListType;
-    tp->size = count * (initializerListType->size);
-    data = anonymousVar(sc_auto, tp);
-    if (isstructured(initializerListType))
+    if (!(*initial)->nested && comparetypes((*initial)->tp, initializerListTemplate, TRUE))
     {
-        EXPRESSION *exp = data;
-        EXPRESSION *elms = intNode(en_c_i, count);
-        callDestructor(initializerListType->sp, NULL, &exp, elms, TRUE, FALSE, FALSE );
-        initInsert(&data->v.sp->dest, tp, exp, 0, FALSE);
-        
-    }
-    for (i=0 ; i < count; i++, lptr = &(*lptr)->next)
-    {
-        EXPRESSION *node;
-        dest = exprNode(en_add, data, intNode(en_c_i, i * (initializerListType->size)));
-        if (isstructured(initializerListType))
+        *initial = Alloc(sizeof(INITLIST));
+        if (asref)
         {
-            TYPE *ctype = initializerListType;
-            EXPRESSION *cdest = dest;
-            FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
-            INITLIST *arg = Alloc(sizeof(INITLIST));
-            params->arguments = arg;
-            *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
-            if (!(*lptr)->nested)
-            {
-                arg->next = NULL;
-            }
-            
-            callConstructor(&ctype, &cdest, params, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, TRUE);
-            node = cdest;
-
+            (*initial)->tp = Alloc(sizeof(TYPE));
+            (*initial)->tp->size = getSize(bt_pointer);
+            (*initial)->tp->type = bt_lref;
+            (*initial)->tp->btp =  initializerListTemplate;
+            (*initial)->exp = searchx->exp;
         }
         else
         {
-            EXPRESSION *src = (*lptr)->exp;
-            deref(initializerListType, &dest);
-            node = exprNode(en_assign, dest, src);
+            (*initial)->tp =  initializerListTemplate;
+            (*initial)->exp = exprNode(en_stackblock, searchx->exp, NULL);
+            (*initial)->exp->size = basetype(initializerListTemplate)->size;
         }
+    }
+    else
+    {
+        tp->type = bt_pointer;
+        tp->array = TRUE;
+        while (searchx)
+            count++, searchx = searchx->next;
+        tp->btp = initializerListType;
+        tp->size = count * (initializerListType->size);
+        data = anonymousVar(sc_auto, tp);
+        if (isstructured(initializerListType))
+        {
+            EXPRESSION *exp = data;
+            EXPRESSION *elms = intNode(en_c_i, count);
+            callDestructor(initializerListType->sp, NULL, &exp, elms, TRUE, FALSE, FALSE );
+            initInsert(&data->v.sp->dest, tp, exp, 0, FALSE);
+            
+        }
+        for (i=0 ; i < count; i++, lptr = &(*lptr)->next)
+        {
+            EXPRESSION *node;
+            dest = exprNode(en_add, data, intNode(en_c_i, i * (initializerListType->size)));
+            if (isstructured(initializerListType))
+            {
+                TYPE *ctype = initializerListType;
+                EXPRESSION *cdest = dest;
+                FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
+                INITLIST *arg = Alloc(sizeof(INITLIST));
+                params->arguments = arg;
+                *arg = (*lptr)->nested ? *(*lptr)->nested : **lptr;
+                if (!(*lptr)->nested)
+                {
+                    arg->next = NULL;
+                }
+                
+                callConstructor(&ctype, &cdest, params, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, TRUE);
+                node = cdest;
+    
+            }
+            else
+            {
+                EXPRESSION *src = (*lptr)->exp;
+                deref(initializerListType, &dest);
+                node = exprNode(en_assign, dest, src);
+            }
+            if (rv)
+            {
+                *pos = exprNode(en_void, *pos, node);
+                pos = &(*pos)->right;
+            }
+            else
+            {
+                rv = node;
+            }
+        }
+        initList = anonymousVar(sc_auto, initializerListTemplate);
+        dest = exprNode(en_add, initList, intNode( en_c_i, start->offset));
+        deref(&stdpointer, &dest);
+        dest = exprNode(en_assign, dest, data);
         if (rv)
         {
-            *pos = exprNode(en_void, *pos, node);
+            *pos = exprNode(en_void, *pos, dest);
             pos = &(*pos)->right;
         }
         else
         {
-            rv = node;
+            rv = dest;
         }
-    }
-    initList = anonymousVar(sc_auto, initializerListTemplate);
-    dest = exprNode(en_add, initList, intNode( en_c_i, start->offset));
-    deref(&stdpointer, &dest);
-    dest = exprNode(en_assign, dest, data);
-    if (rv)
-    {
-        *pos = exprNode(en_void, *pos, dest);
-        pos = &(*pos)->right;
-    }
-    else
-    {
-        rv = dest;
-    }
-    dest = exprNode(en_add, initList, intNode( en_c_i, end->offset));
-    deref(&stdpointer, &dest);
-    dest = exprNode(en_assign, dest, exprNode(en_add, data, intNode(en_c_i, tp->size)));
-    if (rv)
-    {
-        *pos = exprNode(en_void, *pos, dest);
-        pos = &(*pos)->right;
-    }
-    else
-    {
-        rv = dest;
-    }
-    *initial = Alloc(sizeof(INITLIST));
-    if (asref)
-    {
-        (*initial)->tp = Alloc(sizeof(TYPE));
-        (*initial)->tp->size = getSize(bt_pointer);
-        (*initial)->tp->type = bt_lref;
-        (*initial)->tp->btp =  initializerListTemplate;
-        (*initial)->exp = exprNode(en_void, rv, initList);
-    }
-    else
-    {
-        (*initial)->tp =  initializerListTemplate;
-        (*initial)->exp = exprNode(en_stackblock, exprNode(en_void, rv, initList), NULL);
-        (*initial)->exp->size = basetype(initializerListTemplate)->size;
+        dest = exprNode(en_add, initList, intNode( en_c_i, end->offset));
+        deref(&stdpointer, &dest);
+        dest = exprNode(en_assign, dest, exprNode(en_add, data, intNode(en_c_i, tp->size)));
+        if (rv)
+        {
+            *pos = exprNode(en_void, *pos, dest);
+            pos = &(*pos)->right;
+        }
+        else
+        {
+            rv = dest;
+        }
+        *initial = Alloc(sizeof(INITLIST));
+        if (asref)
+        {
+            (*initial)->tp = Alloc(sizeof(TYPE));
+            (*initial)->tp->size = getSize(bt_pointer);
+            (*initial)->tp->type = bt_lref;
+            (*initial)->tp->btp =  initializerListTemplate;
+            (*initial)->exp = exprNode(en_void, rv, initList);
+        }
+        else
+        {
+            (*initial)->tp =  initializerListTemplate;
+            (*initial)->exp = exprNode(en_stackblock, exprNode(en_void, rv, initList), NULL);
+            (*initial)->exp->size = basetype(initializerListTemplate)->size;
+        }
     }
 }
 void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit)
@@ -2379,11 +2409,19 @@ static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
 {
     if (!strcmp(sym->name, "__is_constructible"))
     {
+        INITLIST *lst;
         BOOLEAN rv = FALSE;
         FUNCTIONCALL funcparams;
         memset(&funcparams, 0, sizeof(funcparams));
         funcparams.sp = sym;
         *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+        lst = funcparams.arguments;
+        while (lst)
+        {
+            lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+            lst = lst->next;
+            
+        }
         if (funcparams.arguments)        
         {
             TYPE *tp2 = funcparams.arguments->tp;
@@ -2486,6 +2524,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     TYPE *initializerListType = NULL;
     TYPE *initializerListTemplate = NULL;
     BOOLEAN initializerRef = FALSE;
+    BOOLEAN addedThisPointer = FALSE;
     if (exp_in->type != en_func || isfuncptr(*tp) || isstructured(*tp))
     {
         TYPE *tpx = *tp;
@@ -2563,6 +2602,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 }
             }
             tpx->btp = funcparams->sp->parentClass->tp;
+            addedThisPointer = TRUE;
         }
         // we may get here with the overload resolution already done, e.g.
         // for operator or cast function calls...
@@ -2633,7 +2673,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         }
         else
         {
-            operands = !ismember(funcparams->sp) && funcparams->thisptr;
+            operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
             if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, funcparams->sp, funcsp, funcparams->thisptr, FALSE))
                 if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : NULL, funcparams->sp, funcsp, funcparams->thisptr, FALSE))
                     errorsym(ERR_CANNOT_ACCESS, funcparams->sp);		
@@ -2710,28 +2750,37 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 operands = FALSE;
             }
             lptr = &funcparams->arguments;
-            if (funcparams->sp && funcparams->sp->isConstructor)
+            if (funcparams->sp)
             {
-                hr = basetype(funcparams->sp->tp)->syms->table[0];
-                if (((SYMBOL *)hr->p)->thisPtr)
-                    hr = hr->next;
-                if (!hr->next ||  ((SYMBOL *)hr->next->p)->init)
+                TYPE *tp1 = funcparams->sp->tp;
+                if (ispointer(tp1))
+                    tp1 = basetype(tp1)->btp;
+                if (isfunction(tp1))
                 {
-                    TYPE *tp = ((SYMBOL *)hr->p)->tp;
-                    if (isref(tp))
+                    hr = basetype(tp1)->syms->table[0];
+                    if (hr)
                     {
-                        initializerRef = TRUE;
-                        tp = basetype(tp)->btp;
-                    }
-                    if (isstructured(tp))
-                    {
-                        SYMBOL *sym = (basetype(tp)->sp);
-                        if (sym->parentNameSpace && !strcmp(sym->parentNameSpace->name , "std")) 
+                        if (((SYMBOL *)hr->p)->thisPtr)
+                            hr = hr->next;
+                        if (!hr->next ||  ((SYMBOL *)hr->next->p)->init)
                         {
-                            if (!strcmp(sym->name, "initializer_list") && sym->templateLevel)
+                            TYPE *tp = ((SYMBOL *)hr->p)->tp;
+                            if (isref(tp))
                             {
-                                initializerListTemplate = sym->tp;
-                                initializerListType = sym->templateParams->next->p->byClass.val;
+                                initializerRef = TRUE;
+                                tp = basetype(tp)->btp;
+                            }
+                            if (isstructured(tp))
+                            {
+                                SYMBOL *sym = (basetype(tp)->sp);
+                                if (sym->parentNameSpace && !strcmp(sym->parentNameSpace->name , "std")) 
+                                {
+                                    if (!strcmp(sym->name, "initializer_list") && sym->templateLevel)
+                                    {
+                                        initializerListTemplate = sym->tp;
+                                        initializerListType = sym->templateParams->next->p->byClass.val;
+                                    }
+                                }
                             }
                         }
                     }
@@ -2816,6 +2865,17 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     }
                 }
                 checkArgs(funcparams, funcsp);
+                if (funcparams->returnSP)
+                {
+                    SYMBOL *sp = basetype(funcparams->returnSP->tp)->sp;
+                    if (sp->templateLevel && sp->templateParams && !sp->instantiated)
+                    {
+                        if (!allTemplateArgsSpecified(sp, sp->templateParams))
+                            sp = GetClassTemplate(sp, sp->templateParams->next, FALSE);
+                        if (sp)
+                            funcparams->returnSP->tp = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global)->tp;
+                    }
+                }
                 if (!funcparams->novtab && funcparams->sp && funcparams->sp->storage_class == sc_virtual)
                 {
                     exp_in = funcparams->thisptr;
@@ -5464,9 +5524,15 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
         }
         else
         {
+            extern int total_errors;
             checkscope(*tp, tp1);
             castToArithmetic(FALSE, tp, exp, kw, tp1, TRUE);
             castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
+            if (total_errors)
+            {
+                insertOperatorFunc(ovcl_binary_numericptr, kw,
+                               funcsp, tp, exp, tp1, exp1, NULL, flags);
+            }
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
             else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
@@ -6124,7 +6190,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                             {
                                 if (cparams.prm_cplusplus)
                                 {
-                                    if (!isvoidptr(*tp) || !ispointer(tp1))
+                                    if ((!isvoidptr(*tp) || !ispointer(tp1)) && !tp1->nullptrType)
                                         if (!isTemplatedPointer(*tp))
                                         {
                                             errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);

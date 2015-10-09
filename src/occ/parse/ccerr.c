@@ -47,6 +47,7 @@
 
 extern COMPILER_PARAMS cparams ;
 extern int instantiatingTemplate;
+extern int structLevel;
 
 #ifndef CPREPROCESSOR
 extern char infile[256];
@@ -1474,7 +1475,8 @@ static void usageErrorCheck(SYMBOL *sp)
     if ((sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_localstatic)
         && !sp->assigned && !sp->used && !sp->altered)
     {
-        errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
+        if (!structLevel || !sp->deferredCompile)
+            errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
     }
     sp->used = TRUE;
 }

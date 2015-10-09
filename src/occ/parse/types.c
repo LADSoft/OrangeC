@@ -104,10 +104,14 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
         typ1 = typ1->btp;
     if (isDerivedFromTemplate(typ2))
         typ2 = typ2->btp;
-    if (isref(typ1))
+    while (isref(typ1))
         typ1 = basetype(typ1)->btp;
-    if (isref(typ2))
+    while (isref(typ2))
         typ2 = basetype(typ2)->btp;
+    while (typ1->type == bt_typedef)
+        typ1 = basetype(typ1);
+    while (typ2->type == bt_typedef)
+        typ2 = basetype(typ2);
     if (typ1->type == bt_templateselector && typ2->type == bt_templateselector)
         return templateselectorcompare(typ1->sp->templateSelector, typ2->sp->templateSelector);
     if (typ1->type == bt_templatedecltype && typ2->type == bt_templatedecltype)
@@ -356,7 +360,7 @@ TYPE *typenum(char *buf, TYPE *tp)
                     SYMBOL *thisptr = (SYMBOL *)hr->p;
                     *buf++ = ' ';
                     *buf++='(';
-                    strcpy(buf, basetype (basetype(thisptr->tp)->btp)->sp->name);
+                    getcls(buf, basetype (basetype(thisptr->tp)->btp)->sp);
                     strcat(buf, "::*)(");
                     buf += strlen(buf);
                     hr = hr->next;

@@ -762,7 +762,16 @@ void FinishStruct(SYMBOL *sp, SYMBOL *funcsp)
 {
     if (cparams.prm_cplusplus)
     {
-        deferredInitializeStruct(sp);
+        if (sp->templateParams && !allTemplateArgsSpecified(sp, sp->templateParams->next))
+        {
+            templateNestingCount++;
+            deferredInitializeStruct(sp);
+            templateNestingCount--;
+        }
+        else
+        {
+            deferredInitializeStruct(sp);
+        }
     }
     sp->hasvtab = usesVTab(sp);
     calculateStructOffsets(sp);
@@ -913,6 +922,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         }
         structLevel++;
     }
+    /*
     else if (!sp->templateLevel)
     {
         if (!sp->performedStructInitialization)
@@ -924,6 +934,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
             resolveAnonymousUnions(sp);
         }
     }
+    */
     if (cparams.prm_cplusplus && sp->tp->syms && !templateNestingCount)
     {
         SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
@@ -1112,7 +1123,9 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         // definition or declaration
         if (!sp->templateLevel)
         {
-            errorsym(ERR_NOT_A_TEMPLATE, sp);
+            if (!sp->parentClass || !sp->parentClass->templateLevel)
+                errorsym(ERR_NOT_A_TEMPLATE, sp);
+            SetLinkerNames(sp, lk_cdecl);
         }
         else 
         {
@@ -1268,7 +1281,9 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
                                 if (!comparetypes(tp, unfixedType, TRUE))
                                     fixed = FALSE;
                                 unfixedType = tp;
-                                *sp->tp = *tp;
+                                sp->tp->type = tp->type;
+                                sp->tp->size = tp->size;
+//                                *sp->tp = *tp;
                             }
                         }
                         else
@@ -2133,6 +2148,17 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     extended = MATCHKW(lex, openpa);
         
                     lex = expression_no_check(lex, NULL, NULL, &tn, &exp, _F_SIZEOF);
+                    if (tn && tn->type == bt_aggregate && exp->type == en_func && exp->v.func->asaddress)
+                    {
+                        HASHREC *hr = tn->syms->table[0];
+                        if (hr->next)
+                            errorsym2(ERR_AMBIGUITY_BETWEEN, hr->p, hr->next->p);
+                        exp->v.func->sp = (SYMBOL *)hr->p;
+                        tn = Alloc(sizeof(TYPE));
+                        tn->size = getSize(bt_pointer);
+                        tn->type = bt_pointer;
+                        tn->btp = exp->v.func->functp = exp->v.func->sp->tp;
+                    }
                     if (tn)
                     {
                         optimize_for_constants(&exp);
@@ -3541,41 +3567,50 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
             lex = getsym();
             if (MATCHKW(lex, openpa))
             {
-                sp->xcMode = xc_dynamic;
-                if (!sp->xc)
-                    sp->xc = Alloc(sizeof(struct xcept));
-                do
+                lex = getsym();
+                if (MATCHKW(lex, closepa))
                 {
-                    TYPE *tp = NULL;
-                    lex = getsym();
-                    if (!MATCHKW(lex, closepa))
+                    sp->xcMode = xc_none;
+                }
+                else
+                {
+                    sp->xcMode = xc_dynamic;
+                    if (!sp->xc)
+                        sp->xc = Alloc(sizeof(struct xcept));
+                    lex = backupsym();
+                    do
                     {
-                        lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE);
-                        if (tp->type == bt_templateparam && tp->templateParam->p->packed)
+                        TYPE *tp = NULL;
+                        lex = getsym();
+                        if (!MATCHKW(lex, closepa))
                         {
-                            if (!MATCHKW(lex, ellipse))
+                            lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE);
+                            if (tp->type == bt_templateparam && tp->templateParam->p->packed)
                             {
-                                error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                                if (!MATCHKW(lex, ellipse))
+                                {
+                                    error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                                }
+                                else
+                                {
+                                    lex = getsym();
+                                }
+                            }
+                            if (!tp)
+                            {
+                                error(ERR_TYPE_NAME_EXPECTED);
                             }
                             else
                             {
-                                lex = getsym();
+                                // this is reverse order but who cares?
+                                LIST *p = Alloc(sizeof(LIST));
+                                p->next = sp->xc->xcDynamic;
+                                p->data = tp;
+                                sp->xc->xcDynamic = p;
                             }
                         }
-                        if (!tp)
-                        {
-                            error(ERR_TYPE_NAME_EXPECTED);
-                        }
-                        else
-                        {
-                            // this is reverse order but who cares?
-                            LIST *p = Alloc(sizeof(LIST));
-                            p->next = sp->xc->xcDynamic;
-                            p->data = tp;
-                            sp->xc->xcDynamic = p;
-                        }
-                    }
-                } while (MATCHKW(lex, comma));
+                    } while (MATCHKW(lex, comma));
+                }
                 needkw(&lex, closepa);
             }
             else
@@ -5044,7 +5079,7 @@ jointemplate:
                             if (isfunction(tp1) || (ispointer(tp1) && basetype(tp1)->array))
                                 error(ERR_ATOMIC_NO_FUNCTION_OR_ARRAY);
                         }
-                        if (isstructured(tp1) && basetype(tp1)->sp->isabstract)
+                        if (storage_class != sc_typedef && isstructured(tp1) && basetype(tp1)->sp->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
                         if (sp->packed)
                             error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -5343,7 +5378,7 @@ jointemplate:
                                 }
                                 if (ismember(spi))
                                 {
-                                    if (!asFriend && !isfunction(sp->tp) && sp->storage_class != spi->storage_class)
+                                    if (!asFriend && !isfunction(sp->tp) && sp->storage_class != spi->storage_class && !sp->templateLevel)
                                         errorsym(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
                                     if (strSym)
                                     {
@@ -5782,7 +5817,7 @@ jointemplate:
                                     error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
                                 }
                                 else if (sp->parentClass)
-                                    if (!asFriend && storage_class_in != sc_member && storage_class_in != sc_mutable)
+                                    if (!asFriend && storage_class_in != sc_member && storage_class_in != sc_mutable && !sp->templateLevel)
                                         errorsym(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
                             }
                         }
@@ -5825,6 +5860,17 @@ jointemplate:
                             }
                             else
                             {
+                                if (cparams.prm_cplusplus && isstructured(sp->tp))
+                                {
+                                    SYMBOL *sp1 = basetype(sp->tp)->sp;
+                                    if (!templateNestingCount && sp1->templateLevel && sp1->templateParams && !sp1->instantiated)
+                                    {
+                                        if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
+                                            sp1 = GetClassTemplate(sp1, sp1->templateParams->next, FALSE);
+                                        if (sp1)
+                                            sp->tp = TemplateClassInstantiate(sp1, sp1->templateParams, FALSE, sc_global)->tp;
+                                    }
+                                }
                                 lex = initialize(lex, funcsp, sp, storage_class_in, asExpression, 0); /* also reserves space */
                                 if (sp->storage_class == sc_auto || sp->storage_class == sc_register || (sp->storage_class == sc_localstatic && sp->init))
                                 {
@@ -5853,10 +5899,13 @@ jointemplate:
                         }
                         if (sp->tp->size == 0 && sp->tp->type != bt_templateparam && !isarray(sp->tp))
                         {
-                            if (storage_class_in == sc_auto && sp->storage_class != sc_external && !isfunction(sp->tp))
-                                errorsym(ERR_UNSIZED, sp);
-                            if (storage_class_in == sc_parameter)
-                                errorsym(ERR_UNSIZED, sp);
+                            if (storage_class != sc_typedef)
+                            {
+                                if (storage_class_in == sc_auto && sp->storage_class != sc_external && !isfunction(sp->tp))
+                                    errorsym(ERR_UNSIZED, sp);
+                                if (storage_class_in == sc_parameter)
+                                    errorsym(ERR_UNSIZED, sp);
+                            }
                         }
                         sp->tp->used = TRUE;
                     }

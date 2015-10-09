@@ -1633,7 +1633,11 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 BOOLEAN implicit = FALSE;
                 if (basetype(tp)->sp->templateLevel && basetype(tp)->sp->templateParams && !basetype(tp)->sp->instantiated)
                 {
-                    tp = TemplateClassInstantiate(basetype(tp)->sp, basetype(tp)->sp->templateParams, FALSE, sc_global)->tp;
+                    SYMBOL * sp = basetype(tp)->sp;
+                    if (!allTemplateArgsSpecified(sp, sp->templateParams))
+                        sp = GetClassTemplate(sp, sp->templateParams->next, FALSE);
+                    if (sp)
+                        tp = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global)->tp;
                 }
                 if (MATCHKW(lex, begin))
                 {
@@ -1648,24 +1652,48 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                 {
+                    BOOLEAN oldrref;
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     TYPE *ctype = tp;
                     // shortcut for conversion from single expression
                     EXPRESSION *exp1 = NULL;
                     TYPE *tp1 = NULL;
                     lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, 0);
-                    if (tp1)
+                    if (tp1 && isstructured(tp1))
                     {
+                        if (basetype(tp1)->sp->templateLevel && basetype(tp1)->sp->templateParams && !basetype(tp1)->sp->instantiated)
+                        {
+                            SYMBOL * sp = basetype(tp1)->sp;
+                            if (!allTemplateArgsSpecified(sp, sp->templateParams))
+                                sp = GetClassTemplate(sp, sp->templateParams->next, FALSE);
+                            if (sp)
+                                tp1 = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global)->tp;
+                        }
                         optimize_for_constants(&exp1);
                     }
                     funcparams->arguments = Alloc(sizeof(INITLIST));
                     funcparams->arguments->tp = tp1;
                     funcparams->arguments->exp = exp1;
+                    oldrref = basetype(tp1)->rref;
+                    basetype(tp1)->rref = TRUE;
                     maybeConversion = FALSE;
                     returntype = tp;
                     implicit = TRUE;
                     callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE); 
                     returnexp = en;
+                    basetype(tp1)->rref = oldrref;
+                    if (funcparams->sp && matchesCopy(funcparams->sp, TRUE))
+                    {
+                        switch (exp1->type)
+                        {
+                            case en_global:
+                            case en_label:
+                            case en_auto:
+                            case en_threadlocal:
+                                exp1->v.sp->dest = NULL;
+                                break;
+                        }
+                    }
                 }
             }
             else
@@ -2704,7 +2732,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
             return lex;
         default:
             if ((startOfType(lex, FALSE) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
-                 || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) )
+                 || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert) )
             {
                 if (!cparams.prm_c99 && !cparams.prm_cplusplus)
                 {
@@ -2714,7 +2742,7 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                while (startOfType(lex, FALSE) || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using))
+                while (startOfType(lex, FALSE) || MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_static_assert))
                 {
                     STATEMENT *current = parent->tail;
                     declareAndInitialize = FALSE;

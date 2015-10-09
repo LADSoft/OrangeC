@@ -276,7 +276,7 @@ BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
             case bt_near:
             case bt_lrqual:
             case bt_rrqual:
-            case bt_derivedfromtemplate:
+//            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_const:

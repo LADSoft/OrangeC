@@ -66,7 +66,7 @@ bool StringToken::Start(const std::string &line)
 }
 void StringToken::Parse(std::string &line)
 {
-    wchar_t buf[256],*p = buf;
+    wchar_t buf[1024],*p = buf;
     const char *start = line.c_str();
     if (start[0] == 'L')
     {
@@ -523,7 +523,7 @@ bool IdentifierToken::Start(const std::string &line)
 }
 void IdentifierToken::Parse(std::string &line)
 {
-    char buf[256], *p = buf;
+    char buf[1024], *p = buf;
     int i, n;
     for (i =0; (p == buf || p - buf -1 < sizeof(buf)) && p-buf < line.size() && IsSymbolChar(line.c_str() + i);)
     {

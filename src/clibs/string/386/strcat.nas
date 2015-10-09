@@ -73,4 +73,5 @@ DoAlign:
 		test	al,al
 		jnz	TestEdx
         mov ecx,edx
+        dec ecx
 		Jmp strcat_fin

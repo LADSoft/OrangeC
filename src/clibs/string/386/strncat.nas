@@ -87,8 +87,10 @@ DoAlign:
 		inc	edx
 		test	al,al
 		jnz	TestEdx
+        inc ecx
         mov [esp+12],ecx
         mov ecx,edx
+        dec ecx
 		Jmp strncat_fin
 exit:
         mov eax,[esp+4]

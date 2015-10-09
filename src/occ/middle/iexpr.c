@@ -1069,7 +1069,7 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
                 gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
                 if (pre)
                 {
-                    gen_code(i_lsr, ap3, ap3, make_immed(ISZ_UINT, pre));
+                    gen_icode(i_lsr, ap3, ap3, make_immed(ISZ_UINT, pre));
                 }
                 gen_icode(i_muluh, ap, ap3, make_immed(ISZ_UINT, m - oneshl32));
                 if (post)

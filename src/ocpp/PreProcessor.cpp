@@ -60,7 +60,7 @@ bool IsSymbolChar(const char *data)
     if (asmMode)
     {
         return *data == '_' || *data == '$' || *data == '#' || *data == '@' || *data == '~' ||
-            *data == '?' || *data == '.' || UTF8::IsAlnum(data);
+            *data == '?' || *data == '.' || *data == '&' || UTF8::IsAlnum(data);
     }
     else
     {

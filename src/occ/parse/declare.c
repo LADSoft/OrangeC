@@ -820,12 +820,12 @@ static void baseFinishDeclareStruct(SYMBOL *funcsp)
                 if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams->next))
                 {
                     templateNestingCount++;
-                    deferredInitializeStruct(syms[i]);
+                    deferredInitializeStructFunctions(syms[i]);
                     templateNestingCount--;
                 }
                 else
                 {
-                    deferredInitializeStruct(syms[i]);
+                    deferredInitializeStructFunctions(syms[i]);
                 }
             }
         }
@@ -898,6 +898,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
 	if (cparams.prm_cplusplus)
         createDefaultConstructors(sp);
     resolveAnonymousUnions(sp);
+    deferredInitializeStructMembers(sp);
     if (!cparams.prm_cplusplus || structLevel == 1)
     {
         structLevel--;

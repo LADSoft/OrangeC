@@ -2965,8 +2965,8 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
                     if (TAo->p->bySpecialization.types)
                     {
     #ifndef PARSER_ONLY
-                        if (TA->p->byNonType.dflt && !equalTemplateIntNode(TA->p->byNonType.dflt, TA->p->byNonType.val))
-                            return FALSE;
+//                        if (TA->p->byNonType.dflt && !equalTemplateIntNode(TA->p->byNonType.dflt, TA->p->byNonType.val))
+//                            return FALSE;
     #endif
                     }
                     exp = change ? &TP->p->byNonType.val : &TP->p->byNonType.temp;
@@ -3033,8 +3033,8 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
                                 if (TAo->p->bySpecialization.types)
                                 {
                 #ifndef PARSER_ONLY
-                                    if (TA->p->byNonType.dflt && !equalTemplateIntNode(TA->p->byNonType.dflt, TA->p->byNonType.val))
-                                        return FALSE;
+//                                    if (TA->p->byNonType.dflt && !equalTemplateIntNode(TA->p->byNonType.dflt, TA->p->byNonType.val))
+//                                        return FALSE;
                 #endif
                                 }
                                 break;

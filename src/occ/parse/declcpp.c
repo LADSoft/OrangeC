@@ -786,7 +786,7 @@ static void RecalcArraySize(TYPE *tp)
         RecalcArraySize(tp->btp);
     tp->size = basetype(tp->btp)->size * tp->esize->v.i;
 }
-void deferredInitializeStruct(SYMBOL *cur)
+void deferredInitializeStructFunctions(SYMBOL *cur)
 {
     HASHREC *hr;
     SYMBOL *sp;
@@ -841,6 +841,45 @@ void deferredInitializeStruct(SYMBOL *cur)
                     hr1 = hr1->next;
                 }
             }
+        }
+        hr = hr->next;
+    }
+    dontRegisterTemplate--;
+    while (count--)
+    {
+        dropStructureDeclaration();
+    }
+    PopTemplateNamespace(tns);
+}
+void deferredInitializeStructMembers(SYMBOL *cur)
+{
+    HASHREC *hr;
+    SYMBOL *sp;
+    LEXEME *lex;
+    STRUCTSYM l,m, n;
+    int count = 0;
+    int tns = PushTemplateNamespace(cur);
+    l.str = cur;
+    addStructureDeclaration(&l);
+    count++;
+
+    if (cur->templateParams)
+    {
+        n.tmpl = cur->templateParams;
+        addTemplateDeclaration(&n);
+        count++;
+    }
+    dontRegisterTemplate++;
+    hr = cur->tp->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (isarray(sp->tp))
+        {
+            RecalcArraySize(sp->tp);
+        }
+        if (sp->storage_class == sc_overloads)
+        {
         }
         else if (sp->deferredCompile && !sp->init)
         {

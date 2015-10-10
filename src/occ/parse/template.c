@@ -5828,11 +5828,11 @@ static BOOLEAN constOnly(SYMBOL **spList, SYMBOL **origList, int n)
             TEMPLATEPARAMLIST *tpl = origList[i]->templateParams->p->bySpecialization.types;
             while (tpl)
             {
-                if (tpl->p->type == kw_typename && tpl->p->byClass.dflt && (!isconst(tpl->p->byClass.dflt) && !isvolatile(tpl->p->byClass.dflt) || basetype(tpl->p->byClass.dflt) != bt_templateparam))
+                if (tpl->p->type == kw_typename && tpl->p->byClass.dflt && (isconst(tpl->p->byClass.dflt) || isvolatile(tpl->p->byClass.dflt)))
                     break;
                 tpl = tpl->next;
             }
-            if (tpl)
+            if (!tpl)
                 return FALSE;
         }
     }
@@ -6215,24 +6215,13 @@ static SYMBOL *matchTemplateFunc(SYMBOL *old, SYMBOL *instantiated)
     if (basetype(instantiated->tp)->syms)
     {
         FUNCTIONCALL list;
-        INITLIST **next = &list.arguments;
+        INITLIST **next = &list.arguments , *il;
         HASHREC *hr, *hro, *hrs;
         EXPRESSION *exp = intNode(en_c_i, 0);
         TEMPLATEPARAMLIST *src, *dest;
         memset(&list, 0, sizeof(list));
         hr  = basetype(instantiated->tp)->syms->table[0];
         hro = hrs = basetype(old->tp)->syms->table[0];
-        /*
-        if (hr && (( SYMBOL *)hr->p)->thisPtr)
-        {
-            list.thistp = ((SYMBOL *)hr->p)->tp;
-            list.thisptr = exp;
-            hr = hr->next;
-            if (!hro)
-                return FALSE;
-            hro = hro->next;
-        } 
-        */   
         if (((SYMBOL *)hr->p)->tp->type == bt_void)
             if (((SYMBOL *)hro->p)->tp->type == bt_void)
                 return TRUE;
@@ -6295,38 +6284,41 @@ void propagateTemplateDefinition(SYMBOL *sym)
                         SYMBOL *cur = (SYMBOL *)hr->p;
                         if (cur->parentClass && cur->deferredCompile && matchTemplateFunc(cur, sym))
                         {
-                            sym->deferredCompile = cur->deferredCompile;
-                            sym->memberInitializers = cur->memberInitializers;
-                            sym->pushedTemplateSpecializationDefinition = 1;
-                            if (basetype(sym->tp)->syms && basetype(cur->tp)->syms)
+                            if (matchesCopy(cur, FALSE) == matchesCopy(sym, FALSE) && matchesCopy(cur, TRUE) == matchesCopy(sym, TRUE))
                             {
-                                HASHREC *src = basetype(cur->tp)->syms->table[0];
-                                HASHREC *dest = basetype(sym->tp)->syms->table[0];
-                                while (src && dest)
+                                sym->deferredCompile = cur->deferredCompile;
+                                sym->memberInitializers = cur->memberInitializers;
+                                sym->pushedTemplateSpecializationDefinition = 1;
+                                if (basetype(sym->tp)->syms && basetype(cur->tp)->syms)
                                 {
-                                    dest->p->name = src->p->name;
-                                    ((SYMBOL *)dest->p)->tp = SynthesizeType(((SYMBOL *)src->p)->tp, sym->parentClass->templateParams, FALSE);
-                                    src = src->next;
-                                    dest = dest->next;
+                                    HASHREC *src = basetype(cur->tp)->syms->table[0];
+                                    HASHREC *dest = basetype(sym->tp)->syms->table[0];
+                                    while (src && dest)
+                                    {
+                                        dest->p->name = src->p->name;
+                                        ((SYMBOL *)dest->p)->tp = SynthesizeType(((SYMBOL *)src->p)->tp, sym->parentClass->templateParams, FALSE);
+                                        src = src->next;
+                                        dest = dest->next;
+                                    }
                                 }
-                            }
-                            {
-                                STRUCTSYM t, s;
-                                SYMBOL *thsprospect = (SYMBOL *)basetype(sym->tp)->syms->table[0]->p;
-                                t.tmpl = NULL;
-                                if (thsprospect && thsprospect->thisPtr)
                                 {
-                                    SYMBOL *spt = basetype (basetype(thsprospect->tp)->btp)->sp;
-                                    t.tmpl = spt->templateParams;
-                                    if (t.tmpl)
-                                        addTemplateDeclaration(&t);
-                                }
-                                s.str = sym->parentClass;
-                                addStructureDeclaration(&s);
-                                deferredCompileOne(sym);
-                                dropStructureDeclaration();
-                                if (t.tmpl)
+                                    STRUCTSYM t, s;
+                                    SYMBOL *thsprospect = (SYMBOL *)basetype(sym->tp)->syms->table[0]->p;
+                                    t.tmpl = NULL;
+                                    if (thsprospect && thsprospect->thisPtr)
+                                    {
+                                        SYMBOL *spt = basetype (basetype(thsprospect->tp)->btp)->sp;
+                                        t.tmpl = spt->templateParams;
+                                        if (t.tmpl)
+                                            addTemplateDeclaration(&t);
+                                    }
+                                    s.str = sym->parentClass;
+                                    addStructureDeclaration(&s);
+                                    deferredCompileOne(sym);
                                     dropStructureDeclaration();
+                                    if (t.tmpl)
+                                        dropStructureDeclaration();
+                                }
                             }
                         }
                         hr = hr->next;

@@ -353,23 +353,23 @@ static BOOLEAN hasConstFunc(SYMBOL *sp, int type, BOOLEAN move)
     SYMBOL *ovl = search(overloadNameTab[type], basetype(sp->tp)->syms);
     if (ovl)
     {
-        HASHREC *hr = ovl->tp->syms->table[0];
+        HASHREC *hr = basetype(ovl->tp)->syms->table[0];
         while (hr)
         {
             SYMBOL *func = (SYMBOL *)hr->p;
-            HASHREC *hra = func->tp->syms->table[0]->next;
+            HASHREC *hra = basetype(func->tp)->syms->table[0]->next;
             if (hra && (!hra->next || ((SYMBOL *)hra->next->p)->init))
             {
                 SYMBOL *arg = (SYMBOL *)hra->p;
                 if (isref(arg->tp))
                 {
-                    if (isstructured(arg->tp->btp))
+                    if (isstructured(basetype(arg->tp)->btp))
                     {
-                        if (basetype(arg->tp->btp)->sp == sp || sameTemplate(basetype(arg->tp->btp), sp->tp))
+                        if (basetype(basetype(arg->tp)->btp)->sp == sp || sameTemplate(basetype(basetype(arg->tp)->btp), sp->tp))
                         {
-                            if (arg->tp->type == bt_lref && !move || arg->tp->type == bt_rref && move)
+                            if (basetype(arg->tp)->type == bt_lref && !move || basetype(arg->tp)->type == bt_rref && move)
                             {
-                                return isconst(arg->tp->btp);
+                                return isconst(basetype(arg->tp)->btp);
                             }
                         }
                     }
@@ -404,7 +404,7 @@ static BOOLEAN constCopyConstructor(SYMBOL *sp)
     {
         SYMBOL *cls = (SYMBOL *)hr->p;
         if (isstructured(cls->tp) && cls->storage_class != sc_typedef && !cls->trivialCons)
-            if (!hasConstFunc(cls, CI_CONSTRUCTOR, FALSE))
+            if (!hasConstFunc(basetype(cls->tp)->sp, CI_CONSTRUCTOR, FALSE))
                 return FALSE;
         hr = hr->next;
     }
@@ -535,7 +535,7 @@ BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move)
         SYMBOL *arg1 = (SYMBOL *)hr->p;
         if (!hr->next || ((SYMBOL *)hr->next->p)->init || ((SYMBOL *)hr->next->p)->constop)
         {
-            if (arg1->tp->type == (move ? bt_rref : bt_lref))
+            if (basetype(arg1->tp)->type == (move ? bt_rref : bt_lref))
             {
                 TYPE *tp  = basetype(arg1->tp)->btp;
                 if (isstructured(tp))
@@ -578,7 +578,7 @@ static BOOLEAN checkDefaultCons(SYMBOL *sp, HASHTABLE *syms, enum e_ac access)
     if (cons)
     {
         SYMBOL *dflt = NULL;
-        HASHREC *hr = cons->tp->syms->table[0];
+        HASHREC *hr = basetype(cons->tp)->syms->table[0];
         while (hr)
         {
             SYMBOL *cur = (SYMBOL *)hr->p;
@@ -605,7 +605,7 @@ SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move)
     SYMBOL *ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(base->tp)->syms);
     if (ovl)
     {
-        HASHREC *hr = ovl->tp->syms->table[0];
+        HASHREC *hr = basetype(ovl->tp)->syms->table[0];
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p, *sym1 = NULL;
@@ -646,7 +646,7 @@ static SYMBOL *GetCopyAssign(SYMBOL *base, BOOLEAN move)
     SYMBOL *ovl = search(overloadNameTab[assign - kw_new + CI_NEW ], basetype(base->tp)->syms);
     if (ovl)
     {
-        HASHREC *hr = ovl->tp->syms->table[0];
+        HASHREC *hr = basetype(ovl->tp)->syms->table[0];
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p, *sym1 = NULL;
@@ -829,7 +829,7 @@ static BOOLEAN isDefaultDeleted(SYMBOL *sp)
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-                HASHREC *hr1 = cons->tp->syms->table[0];
+                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
                 while (hr1)
                 {
                     cons = (SYMBOL *)hr1->p;
@@ -860,7 +860,7 @@ static BOOLEAN isDefaultDeleted(SYMBOL *sp)
                 while (hr1)
                 {
                     SYMBOL *member = (SYMBOL *)hr1->p;
-                    if (!isconst(member->tp) && member->tp->type != bt_aggregate)
+                    if (!isconst(member->tp) && basetype(member->tp)->type != bt_aggregate)
                     {
                         break;
                     }
@@ -925,7 +925,7 @@ static BOOLEAN isCopyConstructorDeleted(SYMBOL *sp)
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-                HASHREC *hr1 = cons->tp->syms->table[0];
+                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
                 while (hr1)
                 {
                     cons = (SYMBOL *)hr1->p;
@@ -1003,7 +1003,7 @@ static BOOLEAN isCopyAssignmentDeleted(SYMBOL *sp)
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
-                HASHREC *hr1 = cons->tp->syms->table[0];
+                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
                 while (hr1)
                 {
                     cons = (SYMBOL *)hr1->p;
@@ -1070,7 +1070,7 @@ static BOOLEAN isMoveConstructorDeleted(SYMBOL *sp)
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
-                HASHREC *hr1 = cons->tp->syms->table[0];
+                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
                 while (hr1)
                 {
                     cons = (SYMBOL *)hr1->p;
@@ -1148,7 +1148,7 @@ static BOOLEAN isMoveAssignmentDeleted(SYMBOL *sp)
             if (isstructured(sp->tp))
             {
                 SYMBOL *cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
-                HASHREC *hr1 = cons->tp->syms->table[0];
+                HASHREC *hr1 = basetype(cons->tp)->syms->table[0];
                 while (hr1)
                 {
                     cons = (SYMBOL *)hr1->p;
@@ -1269,7 +1269,7 @@ void createConstructorsForLambda(SYMBOL *sp)
 static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
 {
     SYMBOL *match = NULL;
-    HASHREC *hr = cons->tp->syms->table[0];
+    HASHREC *hr = basetype(cons->tp)->syms->table[0];
     while (hr)
     {
         SYMBOL *sym = (SYMBOL *)hr->p;

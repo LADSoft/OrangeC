@@ -72,33 +72,6 @@ static const int rank[] =
 //    0,0,0,0,0,1,1,2,2,2,2,2,2,3,4,5,6,6,7
     0,1,1,1,1,2,2,3,3,3,3,3,3,4,4,5,6,7,7,8
 };
-enum e_cvsrn
-{
-    // tier 1
-    CV_IDENTITY,
-    CV_LVALUETORVALUE,
-    CV_ARRAYTOPOINTER,
-    CV_FUNCTIONTOPOINTER,
-    CV_QUALS,
-    CV_INTEGRALPROMOTION,
-    CV_FLOATINGPROMOTION,
-    CV_INTEGRALCONVERSION,
-    CV_FLOATINGCONVERSION,
-    CV_FLOATINGINTEGRALCONVERSION,
-    CV_POINTERCONVERSION,
-    CV_POINTERTOMEMBERCONVERSION,
-    CV_BOOLCONVERSION, 
-    CV_ENUMINTEGRALCONVERSION,
-    CV_DERIVEDFROMBASE,
-    // tier 2
-    CV_USER,
-    // tier 3
-    CV_ELLIPSIS,
-    // other
-    CV_PAD,
-    CV_AMBIGUOUS,
-    CV_NONE,
-} ;
 static SYMBOL *getUserConversion(int flags,
                               TYPE *tpp, TYPE *tpa, EXPRESSION *expa,
                               int *n, enum e_cvsrn *seq, SYMBOL *candidate_in, SYMBOL **userFunc, BOOLEAN honorExplicit);
@@ -2094,7 +2067,7 @@ static LIST *GetMemberConstructors(LIST *gather, SYMBOL *sp)
     }
     return gather;
 }
-static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, enum e_cvsrn *seq, 
+void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, enum e_cvsrn *seq, 
                                 SYMBOL *candidate, SYMBOL **userFunc, BOOLEAN allowUser);
 static SYMBOL *getUserConversion(int flags,
                           TYPE *tpp, TYPE *tpa, EXPRESSION *expa,
@@ -2574,7 +2547,7 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
     }
     return FALSE;
 }
-static void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
+void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, 
                                 enum e_cvsrn *seq, SYMBOL *candidate, SYMBOL **userFunc, BOOLEAN allowUser)
 {
     BOOLEAN lref;

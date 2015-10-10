@@ -139,7 +139,6 @@ void dumpInlines(void)
                             if (isfunction(sym->tp) && !sym->inlineFunc.stmt && cparams.prm_cplusplus)
                             {
                                 propagateTemplateDefinition(sym);
-
                             }
                             if ((sym->isInline || sym->linkage == lk_virtual) && sym->inlineFunc.stmt)
                             {

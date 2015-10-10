@@ -203,6 +203,34 @@ enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_c, lk_cpp,
     
 enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 
+enum e_cvsrn
+{
+    // tier 1
+    CV_IDENTITY,
+    CV_LVALUETORVALUE,
+    CV_ARRAYTOPOINTER,
+    CV_FUNCTIONTOPOINTER,
+    CV_QUALS,
+    CV_INTEGRALPROMOTION,
+    CV_FLOATINGPROMOTION,
+    CV_INTEGRALCONVERSION,
+    CV_FLOATINGCONVERSION,
+    CV_FLOATINGINTEGRALCONVERSION,
+    CV_POINTERCONVERSION,
+    CV_POINTERTOMEMBERCONVERSION,
+    CV_BOOLCONVERSION, 
+    CV_ENUMINTEGRALCONVERSION,
+    CV_DERIVEDFROMBASE,
+    // tier 2
+    CV_USER,
+    // tier 3
+    CV_ELLIPSIS,
+    // other
+    CV_PAD,
+    CV_AMBIGUOUS,
+    CV_NONE,
+} ;
+
 #define _F_AMPERSAND 1
 #define _F_PACKABLE 2
 #define _F_SELECTOR 4

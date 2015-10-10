@@ -164,6 +164,7 @@ TYPE * PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp);
 void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings);
 BOOLEAN usesVTab(SYMBOL *sym);
 LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defaultAccess);
+void resolveAnonymousUnions(SYMBOL *sp);
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
 LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class);
 LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
@@ -950,6 +951,8 @@ SYMBOL *lookupNonspecificCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp, BOOLEAN implicit);
 SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp, BOOLEAN implicit);
 SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp);
+void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, enum e_cvsrn *seq, 
+                                SYMBOL *candidate, SYMBOL **userFunc, BOOLEAN allowUser);
 SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args);
 SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 

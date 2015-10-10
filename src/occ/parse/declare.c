@@ -706,7 +706,7 @@ static void resolveAnonymousGlobalUnion(SYMBOL *sp)
         hr = hr->next;
     }
 }
-static void resolveAnonymousUnions(SYMBOL *sp)
+void resolveAnonymousUnions(SYMBOL *sp)
 {
     HASHREC **member = (HASHREC **)&sp->tp->syms->table[0];
     if (total_errors)
@@ -755,40 +755,6 @@ static void resolveAnonymousUnions(SYMBOL *sp)
         else   
         {
             member = &(*member)->next;
-        }
-    }
-}
-void FinishStruct(SYMBOL *sp, SYMBOL *funcsp)
-{
-    if (cparams.prm_cplusplus)
-    {
-        if (sp->templateParams && !allTemplateArgsSpecified(sp, sp->templateParams->next))
-        {
-            templateNestingCount++;
-            deferredInitializeStruct(sp);
-            templateNestingCount--;
-        }
-        else
-        {
-            deferredInitializeStruct(sp);
-        }
-    }
-    sp->hasvtab = usesVTab(sp);
-    calculateStructOffsets(sp);
-    if (cparams.prm_cplusplus)
-    {
-        calculateStructAbstractness(sp, sp);
-        calculateVirtualBaseOffsets(sp);
-        calculateVTabEntries(sp, sp, &sp->vtabEntries, 0);
-        if (sp->vtabEntries)
-        {
-            char buf[512];
-            InsertInline(sp);
-            sprintf(buf, "%s@_$vt", sp->decoratedName);
-            sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
-            sp->vtabsp->linkage = lk_virtual;
-            sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
-            warnCPPWarnings(sp, funcsp != NULL);
         }
     }
 }
@@ -849,9 +815,19 @@ static void baseFinishDeclareStruct(SYMBOL *funcsp)
         if (!syms[i]->performedStructInitialization)
         {
             syms[i]->performedStructInitialization = TRUE;
-            FinishStruct(syms[i], funcsp);
-            createDefaultConstructors(syms[i]);
-            resolveAnonymousUnions(syms[i]);
+            if (cparams.prm_cplusplus)
+            {
+                if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams->next))
+                {
+                    templateNestingCount++;
+                    deferredInitializeStruct(syms[i]);
+                    templateNestingCount--;
+                }
+                else
+                {
+                    deferredInitializeStruct(syms[i]);
+                }
+            }
         }
     }
 }
@@ -901,40 +877,33 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         }
     }
     dropStructureDeclaration();
+    sp->hasvtab = usesVTab(sp);
+    calculateStructOffsets(sp);
+    if (cparams.prm_cplusplus)
+    {
+        calculateStructAbstractness(sp, sp);
+        calculateVirtualBaseOffsets(sp);
+        calculateVTabEntries(sp, sp, &sp->vtabEntries, 0);
+        if (sp->vtabEntries)
+        {
+            char buf[512];
+            InsertInline(sp);
+            sprintf(buf, "%s@_$vt", sp->decoratedName);
+            sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
+            sp->vtabsp->linkage = lk_virtual;
+            sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
+            warnCPPWarnings(sp, funcsp != NULL);
+        }
+    }
+	if (cparams.prm_cplusplus)
+        createDefaultConstructors(sp);
+    resolveAnonymousUnions(sp);
     if (!cparams.prm_cplusplus || structLevel == 1)
     {
         structLevel--;
-        if (cparams.prm_cplusplus && openStructs->next)
-        {
-            baseFinishDeclareStruct(funcsp);
-        }
-        else
-        {
-            if (!sp->performedStructInitialization)
-            {
-                sp->performedStructInitialization = TRUE;
-                FinishStruct(sp, funcsp);
-            	if (cparams.prm_cplusplus)
-	                createDefaultConstructors(sp);
-                resolveAnonymousUnions(sp);
-            }
-            openStructs = NULL;
-        }
+        baseFinishDeclareStruct(funcsp);
         structLevel++;
     }
-    /*
-    else if (!sp->templateLevel)
-    {
-        if (!sp->performedStructInitialization)
-        {
-            sp->performedStructInitialization = TRUE;
-            FinishStruct(sp, funcsp);
-        	if (cparams.prm_cplusplus)
-                createDefaultConstructors(sp);
-            resolveAnonymousUnions(sp);
-        }
-    }
-    */
     if (cparams.prm_cplusplus && sp->tp->syms && !templateNestingCount)
     {
         SYMBOL *cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
@@ -3111,7 +3080,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
                 lex = getBeforeType(lex, funcsp, &tp1, &spi, NULL, NULL, FALSE, storage_class, &linkage, &linkage2, &linkage3, FALSE, FALSE, FALSE, FALSE);
-				if (!templateNestingCount)
+				if (!templateNestingCount && !structLevel)
                 {
 		            tp1 = PerformDeferredInitialization(tp1, funcsp);
                 }
@@ -4961,7 +4930,7 @@ jointemplate:
                         SYMBOL *ssp = NULL;
                         SYMBOL *spi;
                         BOOLEAN checkReturn = TRUE;
-                        if (storage_class != sc_typedef || !templateNestingCount && !structLevel)
+                        if (isstructured(tp1) && storage_class != sc_typedef || !templateNestingCount && !structLevel)
                             tp1 = PerformDeferredInitialization(tp1, funcsp);
                         ssp = getStructureDeclaration();
                         if (!asFriend && (((storage_class_in == sc_member || storage_class_in == sc_mutable) && ssp) 

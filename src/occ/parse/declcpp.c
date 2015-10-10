@@ -827,6 +827,7 @@ void deferredInitializeStruct(SYMBOL *cur)
                         while (hr2)
                         {
                             SYMBOL *sp2 = (SYMBOL *)hr2->p;
+                            sp2->tp = PerformDeferredInitialization(sp2->tp, NULL);
                             if (sp2->deferredCompile && !sp2->init)
                             {
                                 lex = SetAlternateLex(sp2->deferredCompile);
@@ -871,13 +872,7 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
             && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
         {
             TEMPLATEPARAMLIST *tpl = sp->templateParams;
-            int oldStructLevel = structLevel;
-            LIST *oldOpenStructs = openStructs;
-//            structLevel = 0;
-//            openStructs = NULL;
 	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
-//            structLevel = oldStructLevel;
-//            openStructs = oldOpenStructs;
 		    if (sp)
 			    *tpx = sp->tp;
         }
@@ -886,15 +881,9 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
             && sp->parentClass->templateParams && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
         {
             TEMPLATEPARAMLIST *tpl = sp->parentClass->templateParams;
-            int oldStructLevel = structLevel;
-            LIST *oldOpenStructs = openStructs;
-            structLevel = 0;
-            openStructs = NULL;
             sp->templateParams = tpl;
 	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
             sp->templateParams = NULL;
-            structLevel = oldStructLevel;
-            openStructs = oldOpenStructs;
 		    if (sp)
 			    *tpx = sp->tp;
         }

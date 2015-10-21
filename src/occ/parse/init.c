@@ -2241,7 +2241,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             {
                 // default constructor without param list
             }
-            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, isList); 
+            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, isList ? _F_INITLIST : 0); 
             initInsert(&it, itype, exp, offset, TRUE);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {
@@ -2446,6 +2446,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         tn->type = bt_pointer;
                         tn->size = n * s;
                         tn->btp = btp;
+                        tn->esize = sz;
                     }
                     callConstructor(&ctype, &exp, NULL, TRUE, sz, TRUE, FALSE, FALSE, FALSE, FALSE);
                     initInsert(push, tn, exp, last, TRUE);
@@ -2485,6 +2486,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     tn->type = bt_pointer;
                     tn->size = n * s;
                     tn->btp = btp;
+                    tn->esize = sz;
                 }
                 if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
                 {

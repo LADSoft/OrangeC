@@ -888,6 +888,18 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             }
             break;
         case 'R':
+            while (*name == 'x' ||  *name == 'y')
+            {
+                if (*name == 'y')
+                    cvol++;
+                if (*name == 'x')
+                    cconst++;
+                if (*name == 'r')
+                    clrqual++;
+                if (*name == 'R')
+                    crrqual++;
+                name++;
+            }
             if (cconst)
             {
                 strcat(buf, tn_const);
@@ -911,6 +923,18 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             *buf = 0;
             break;
         case 'r':
+            while (*name == 'x' ||  *name == 'y')
+            {
+                if (*name == 'y')
+                    cvol++;
+                if (*name == 'x')
+                    cconst++;
+                if (*name == 'r')
+                    clrqual++;
+                if (*name == 'R')
+                    crrqual++;
+                name++;
+            }
             if (cconst)
             {
                 strcat(buf, tn_const);

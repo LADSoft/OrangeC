@@ -782,9 +782,9 @@ void deferredCompileOne(SYMBOL *cur)
 }
 static void RecalcArraySize(TYPE *tp)
 {
-    if (isarray(tp->btp))
-        RecalcArraySize(tp->btp);
-    tp->size = basetype(tp->btp)->size * tp->esize->v.i;
+    if (isarray(basetype(tp)->btp))
+        RecalcArraySize(basetype(tp)->btp);
+    tp->size = basetype(basetype(tp)->btp)->size * basetype(tp)->esize->v.i;
 }
 void deferredInitializeStructFunctions(SYMBOL *cur)
 {
@@ -809,10 +809,6 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        if (isarray(sp->tp))
-        {
-            RecalcArraySize(sp->tp);
-        }
         if (sp->storage_class == sc_overloads)
         {
             if (templateNestingCount != 1 || instantiatingTemplate)

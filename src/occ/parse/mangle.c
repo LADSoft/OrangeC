@@ -545,7 +545,19 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
        in = mangleType(in, tp->btp, FALSE);
     }
     else if (isstructured(tp) && basetype(tp)->sp->templateLevel)
+    {
+        {
+            if (isconst(tp))
+                *in++ = 'x';
+            if (isvolatile(tp))
+                *in++ = 'y';
+            if (islrqual(tp))
+                *in++ = 'r';
+            if (isrrqual(tp))
+                *in++ = 'R';
+        }
         in = mangleTemplate(in, basetype(tp)->sp, basetype(tp)->sp->templateParams);
+    }
     else
     {
 //        if (ispointer(tp) || isref(tp))

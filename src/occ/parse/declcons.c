@@ -2646,7 +2646,7 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
 BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
                      BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
                      BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer, 
-                     BOOLEAN usesInitList)
+                     BOOLEAN flags)
 {
     TYPE *stp = *tp;
     SYMBOL *sp;
@@ -2692,7 +2692,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
     params->thistp->size = getSize(bt_pointer);
     params->ascall = TRUE;
     cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, NULL, TRUE, 
-                                  maybeConversion, TRUE, usesInitList ? _F_INITLIST : 0);
+                                  maybeConversion, TRUE, flags);
         
     if (cons1 && isfunction(cons1->tp))
     {

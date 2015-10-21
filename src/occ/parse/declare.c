@@ -69,6 +69,7 @@ extern int packIndex;
 extern int inTemplateSpecialization;
 extern int argument_nesting;
 extern int codeLabel;
+extern SYMBOL *instantiatingMemberFuncClass;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -2496,7 +2497,10 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                         else
                         {
                             if (!noSpecializationError && !instantiatingTemplate && (!sp->mainsym || (sp->mainsym != strSym && sp->mainsym != ssp)))
-                                errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                                if (instantiatingMemberFuncClass->parentClass == sp->parentClass)
+                                    sp = instantiatingMemberFuncClass;
+                                else
+                                    errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
                         }
                         tn = NULL;
                         if (sp)

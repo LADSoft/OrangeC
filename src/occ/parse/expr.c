@@ -1877,6 +1877,7 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
             count++, searchx = searchx->next;
         tp->btp = initializerListType;
         tp->size = count * (initializerListType->size);
+        tp->esize = intNode(en_c_i, count);
         data = anonymousVar(sc_auto, tp);
         if (isstructured(initializerListType))
         {
@@ -1903,7 +1904,7 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
                     arg->next = NULL;
                 }
                 
-                callConstructor(&ctype, &cdest, params, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, TRUE);
+                callConstructor(&ctype, &cdest, params, FALSE, NULL, TRUE, FALSE, FALSE, FALSE, _F_INITLIST);
                 node = cdest;
     
             }
@@ -2081,6 +2082,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implic
                         INITLIST *xx = pinit;
                         *gtype = *sym->tp;
                         gtype->array = TRUE;
+                        gtype->esize = intNode(en_c_i, n);
                         while (xx)
                         {
                             n ++;
@@ -2468,7 +2470,7 @@ static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
                     funcparams.ascall = TRUE;
                     funcparams.arguments = funcparams.arguments->next;
                     rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, FALSE, 
-                                  FALSE, TRUE, 0) != NULL;
+                                  FALSE, FALSE, _F_SIZEOF) != NULL;
                     
                 }
             }
@@ -2500,11 +2502,19 @@ static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
                 rv = FALSE;
             if (rv)
             {
-               rv = comparetypes(from, to, TRUE);
-               if (!rv && isstructured(from) && isstructured(to))
+                if (isref(from))
+                    from = basetype(from)->btp;
+                if (isref(to))
+                    to = basetype(to)->btp;
+                rv = comparetypes(from, to, TRUE);
+                if (!rv && isstructured(from) && isstructured(to))
                    if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
                        rv = TRUE;
             }
+        }
+        else
+        {
+            rv = FALSE;
         }
         *exp = intNode(en_c_i, rv);
         *tp = &stdint;
@@ -3048,6 +3058,7 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     *tp = Alloc(sizeof(TYPE));
     (*tp)->type = bt_pointer;
     (*tp)->array = TRUE;
+    (*tp)->esize = intNode( en_c_i, elems +1);
     switch(data->strtype)
     {
         default:

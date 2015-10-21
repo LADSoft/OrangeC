@@ -408,8 +408,6 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
                             {
                                 sp = sp1;
                             }
-                            else
-                                errorsym(ERR_NO_TEMPLATE_MATCHES, sp1);
                     }
                 }
             }
@@ -1471,13 +1469,13 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
             BOOLEAN cont = FALSE;
             switch (seql[l])
             {   
-                case CV_LVALUETORVALUE:
                 case CV_ARRAYTOPOINTER:
                 case CV_FUNCTIONTOPOINTER:
                     l++;
                     cont = TRUE;
                     break;
                 case CV_DERIVEDFROMBASE:
+                case CV_LVALUETORVALUE:
                     lderivedfrombase = TRUE;
                     break;
                 default:
@@ -1485,13 +1483,13 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
             }
             switch (seqr[r])
             {   
-                case CV_LVALUETORVALUE:
                 case CV_ARRAYTOPOINTER:
                 case CV_FUNCTIONTOPOINTER:
                     r++;
                     cont = TRUE;
                     break;
                 case CV_DERIVEDFROMBASE:
+                case CV_LVALUETORVALUE:
                     rderivedfrombase = TRUE;
                     break;
                 default:
@@ -2621,10 +2619,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 lref = TRUE;
             }
         }
-        if ((isconst(tpax) && !isconst(tppp))
-            || (isvolatile(tpax) && !isvolatile(tppp)))
-            seq[(*n)++] = CV_NONE;
-        else if ((isconst(tpax) != isconst(tppp))
+        if ((isconst(tpax) != isconst(tppp))
             || (isvolatile(tpax) != isvolatile(tppp)))
             seq[(*n)++] = CV_QUALS;
         if (lref && !rref && tpp->type == bt_rref)
@@ -2991,7 +2986,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
                 funcparams.thistp = &thistp;
                 funcparams.thisptr = &exp;
                 funcparams.ascall = TRUE;
-                cons = GetOverloadedFunction(&ctype, &expp, cons, & funcparams, NULL, FALSE, TRUE, TRUE,0 );
+                cons = GetOverloadedFunction(&ctype, &expp, cons, & funcparams, NULL, FALSE, TRUE, TRUE, _F_SIZEOF );
                 if (!cons)    
                 {
                     seq[(*n)++] = CV_NONE;
@@ -3495,7 +3490,7 @@ static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUN
                 if (spFilterList[i] == sym || spFilterList[i]->mainsym == sym || spFilterList[i] == sym->mainsym ||
                     matchOverload(sym->tp, spFilterList[i]->tp))
                     break;
-            
+
             if (i >= n && (!args || !args->astemplate || sym->templateLevel) && !sym->instantiated)
             {
                 if (sym->templateLevel && (sym->templateParams || sym->isDestructor))
@@ -3533,7 +3528,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
 {
     STRUCTSYM s;
     s.tmpl = 0;
-        
+
     if (atp && ispointer(atp))
         atp = basetype(atp)->btp;
     if (atp && !isfunction(atp))
@@ -3847,6 +3842,18 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             {
                 if (!(flags & _F_SIZEOF))
                 {
+                    if (found1->templateLevel && (found1->templateParams || found1->isDestructor))
+                    {
+                        found1 = found1->mainsym;
+                        if (found1->castoperator)
+                        {
+                            found1 = detemplate(found1, NULL, basetype(args->thistp)->btp) ;
+                        }
+                        else
+                        {
+                            found1 = detemplate(found1, args, atp) ;
+                        }
+                    }
                     found1->genreffed = TRUE;
                     if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                     {

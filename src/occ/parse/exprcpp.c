@@ -1178,6 +1178,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
                 valtp->array = TRUE;
                 valtp->size = 2 * stdpointer.size;
                 valtp->btp = &stdpointer;
+                valtp->esize = intNode(en_c_i, 2);
                 val = makeID(sc_auto, valtp, NULL, AnonymousName());
                 val->allocate = TRUE;
                 insert(val, localNameSpace->syms);
@@ -1773,6 +1774,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
                 tp1->array = 1;
                 tp1->type = bt_pointer;                
                 tp1->btp = *tp;
+                tp1->esize = arrSize;
             }
             lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, tp1, sp, FALSE, 0);
             if (!isstructured(*tp) && !arrSize)

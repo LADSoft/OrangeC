@@ -470,8 +470,9 @@ static QUAD * add_dag(QUAD *newQuad)
                         (!(newQuad->livein & IM_LIVELEFT) || newQuad->dc.left->mode != i_immed)
                         || (!(newQuad->livein & IM_LIVERIGHT) || newQuad->dc.right->mode != i_immed))
                     {
-                        if (newQuad->dc.opcode != i_assn || !newQuad->genConflict && (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size))
-                            ReplaceHash(newQuad, (UBYTE *)newQuad, DAGCOMPARE, ins_hash);
+                        if (newQuad->dc.opcode != i_parmstack)
+                            if (newQuad->dc.opcode != i_assn || !newQuad->genConflict && (!(newQuad->livein & IM_LIVELEFT) || newQuad->ans->size == newQuad->dc.left->size))
+                                ReplaceHash(newQuad, (UBYTE *)newQuad, DAGCOMPARE, ins_hash);
                     }
         }
         /* convert back to a quad structure and generate code */

@@ -1386,7 +1386,11 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
     // plop in a clear block if necessary
     if (sp && !noClear && isstructured(tp) && (!cparams.prm_cplusplus || basetype(tp)->sp->trivialCons))
     {
-        EXPRESSION *exp = exprNode(en_blockclear, expsym, NULL); 
+        EXPRESSION *fexp = expsym;
+        EXPRESSION *exp;
+        if (fexp->type == en_thisref)
+            fexp = fexp->left->v.func->thisptr;
+        exp = exprNode(en_blockclear, fexp, NULL); 
         exp->size = sp->tp->size;
         rv = exprNode(en_void, exp, rv);
     }

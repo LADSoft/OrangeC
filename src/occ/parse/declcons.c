@@ -1967,7 +1967,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                                                         init->initData, shim.arguments);
                         init->sp = cls;
                     }
-                    else if (isstructured(sp->tp->templateParam->p->byClass.val))
+                    else if (sp->tp->templateParam->p->byClass.val && isstructured(sp->tp->templateParam->p->byClass.val))
                     {
                         TYPE *tp = sp->tp->templateParam->p->byClass.val;
                         int offset = 0;

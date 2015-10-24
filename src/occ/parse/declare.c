@@ -2497,7 +2497,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                         else
                         {
                             if (!noSpecializationError && !instantiatingTemplate && (!sp->mainsym || (sp->mainsym != strSym && sp->mainsym != ssp)))
-                                if (instantiatingMemberFuncClass->parentClass == sp->parentClass)
+                                if (instantiatingMemberFuncClass && instantiatingMemberFuncClass->parentClass == sp->parentClass)
                                     sp = instantiatingMemberFuncClass;
                                 else
                                     errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);

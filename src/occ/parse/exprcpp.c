@@ -829,6 +829,15 @@ BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *f
 }
 BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp, BOOLEAN checkconst)
 {
+    BOOLEAN rref = FALSE;
+    TYPE *orig = *newType;
+    if (isref(*newType))
+    {
+        if (basetype(*newType)->type == bt_rref)
+            rref = TRUE;
+        while (isref(*newType))
+            *newType = basetype(*newType)->btp;
+    }
     // no change or stricter const qualification
     if (comparetypes(*newType, oldType, TRUE))
         return TRUE;
@@ -955,13 +964,25 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
     // class to anything via converwion func
     if (isstructured(oldType))
     {
-        return cppCast(oldType, newType, exp);
+        BOOLEAN rv= cppCast(oldType, newType, exp);
+        if (rv)
+            return TRUE;
     }
+    *newType = orig;
     return FALSE;
     // e to T:  T t(e) for an invented temp t.
 }
 BOOLEAN doConstCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp)
 {
+    TYPE *orig = *newType;
+    BOOLEAN rref = FALSE;
+    if (isref(*newType))
+    {
+        if (basetype(*newType)->type == bt_rref)
+            rref = TRUE;
+        while (isref(*newType))
+            *newType = basetype(*newType)->btp;
+    }
     // as long as the types match except for any changes to const and 
     // it is not a function or memberptr we can convert it.
     if (comparetypes(*newType, oldType, 2))
@@ -969,6 +990,7 @@ BOOLEAN doConstCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fun
         if (!isfunction(oldType) && basetype(oldType)->type != bt_memberptr)
             return TRUE;
     }
+    *newType = orig;
     return FALSE;
 }
 BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *funcsp, BOOLEAN checkconst)

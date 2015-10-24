@@ -3529,6 +3529,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
     STRUCTSYM s;
     s.tmpl = 0;
 
+    
     if (atp && ispointer(atp))
         atp = basetype(atp)->btp;
     if (atp && !isfunction(atp))
@@ -3854,6 +3855,8 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                             found1 = detemplate(found1, args, atp) ;
                         }
                     }
+if (sp && strstr(sp->name, "find_equal"))
+    printf("hi:%x\n", found1);
                     found1->genreffed = TRUE;
                     if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                     {

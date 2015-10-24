@@ -2877,6 +2877,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             SYMBOL *sp2 = (SYMBOL *)hr->p;
             if (!cparams.prm_cplusplus && sp2->tp->type != bt_ellipse && !isvoid(sp2->tp) && sp2->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
+            sp2->destructed = FALSE;
             insert(sp2, localNameSpace->syms);
             browse_variable(sp2);
             n++;

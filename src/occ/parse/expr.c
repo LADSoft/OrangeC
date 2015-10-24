@@ -4344,7 +4344,7 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 if (!btp->array && !btp->vla && !isstructured(btp) && basetype(btp)->type != bt_memberptr && basetype(btp)->type != bt_templateparam)
                     error(ERR_LVALUE);
             }
-            else if (!isstructured(btp))
+            else if (!isstructured(btp) && exp1->type != en_l_ref)
                 exp1 = (exp1)->left;
                 
             switch ((exp1)->type)
@@ -5013,7 +5013,9 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                         {
                             if (!doStaticCast(tp, throwaway, exp, funcsp, FALSE) 
                                 && !doReinterpretCast(tp, throwaway, exp, funcsp, FALSE))
-                                    cast(*tp, exp);
+                            {
+                                cast(*tp, exp);
+                            }
                         }
                         else
                         {

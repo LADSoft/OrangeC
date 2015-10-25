@@ -5161,21 +5161,28 @@ jointemplate:
                                         {
                                             if (!sameTemplatePointedTo(basetype(sym->tp)->btp, basetype(sp->tp)->btp))
                                             {
-                                                if (basetype(sp->tp)->btp->type == bt_templateselector)
+                                                TYPE *tp1 = basetype(sp->tp)->btp;
+                                                TYPE *tp2 = basetype(sym->tp)->btp;
+                                                if (isref(tp1) && isref(tp2))
                                                 {
-                                                    TEMPLATESELECTOR *l = basetype(sp->tp)->btp->sp->templateSelector->next;
+                                                    tp1 = basetype(tp1->btp);
+                                                    tp2 = basetype(tp2->btp);
+                                                }
+                                                if (tp1->type == bt_templateselector)
+                                                {
+                                                    TEMPLATESELECTOR *l = tp1->sp->templateSelector->next;
                                                     SYMBOL *cur = l->sym;
                                                     l = l->next;
                                                     while (l && cur)
                                                     {
                                                         if (l->isTemplate)
                                                             break;
-                                                        cur = search(l->name, cur->tp->syms);
+                                                        cur = search(l->name, basetype(cur->tp)->syms);
                                                         l = l->next;
                                                     }
                                                     if (cur && !l)
                                                     {
-                                                        if (!comparetypes(cur->tp, basetype(sym->tp)->btp, TRUE))
+                                                        if (!comparetypes(cur->tp, basetype(sym->tp)->btp, TRUE) && !sameTemplate(cur->tp, tp2))
                                                             sym = NULL;
                                                         else
                                                             checkReturn = FALSE;

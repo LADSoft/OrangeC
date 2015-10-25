@@ -2152,7 +2152,28 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
         allocInitializers(sym, cons, thisptr);
     if (sym->tp->type == bt_union)
     {
-        genConsData(b, sym, cons->memberInitializers, sym, 0, thisptr, otherptr, cons, doCopy);
+        AllocateLocalContext(NULL, cons, codeLabel++);
+        hr = sym->tp->syms->table[0];
+        while (hr)
+        {
+            SYMBOL *sp = (SYMBOL *)hr->p;
+            if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+            {
+                if (sp->init)
+                {
+                    if (isstructured(sp->tp))
+                    {
+                        genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset,TRUE, thisptr, otherptr, cons, doCopy);
+                    }
+                    else
+                    {
+                        genConsData(b, sym, cons->memberInitializers, sp, sp->offset, thisptr, otherptr, cons, doCopy);
+                    }
+                }
+            }
+            hr = hr->next;
+        }
+        FreeLocalContext(NULL, cons, codeLabel++);
     }
     else
     {
@@ -2761,6 +2782,8 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             if (initializerListType)
             {
                 CreateInitializerList(initializerListTemplate, initializerListType, &params->arguments, FALSE, initializerRef); 
+                if (basetype(cons1->tp)->syms->table[0]->next->next)
+                   AdjustParams(basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, FALSE, implicit && !cons1->isExplicit);
             }
             else
             {

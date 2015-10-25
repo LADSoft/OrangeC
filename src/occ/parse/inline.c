@@ -284,9 +284,6 @@ void InsertInline(SYMBOL *sp)
             inlineTail = inlineTail->next = temp;
         else
             inlineHead = inlineTail = temp;
-        if (!strcmp(sp->name,"__find_equal"))
-            if (strstr(sp->decoratedName, "tree_node_base") && strstr(sp->decoratedName, "tree_const_iterator"))
-                printf("hi");
     }
     else
     {

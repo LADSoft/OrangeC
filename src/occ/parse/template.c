@@ -5289,6 +5289,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
         {
             sym->storage_class = sc_external;
             InsertExtern(sym);
+            InsertInline(sym);
         }
     }
     while (pushCount--)

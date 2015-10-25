@@ -2799,6 +2799,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             if (initializerListType)
             {
                 CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef); 
+                if (hr->next)
+                   AdjustParams(hr->next, &(*lptr)->next, operands, TRUE);
+                
             }
             else
             {

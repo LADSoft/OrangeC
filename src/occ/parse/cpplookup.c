@@ -215,6 +215,7 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     if (sym)
         *sym = NULL;
     if (ns) *ns = NULL;
+        
     if (MATCHKW(lex, classsel))
     {
         while (nssym->next)
@@ -3855,8 +3856,6 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                             found1 = detemplate(found1, args, atp) ;
                         }
                     }
-if (sp && strstr(sp->name, "find_equal"))
-    printf("hi:%x\n", found1);
                     found1->genreffed = TRUE;
                     if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                     {

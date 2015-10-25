@@ -374,7 +374,7 @@ static char * mangleExpression(char *buf, EXPRESSION *exp)
 static char * mangleTemplate(char *buf, SYMBOL *sym, TEMPLATEPARAMLIST *params)
 {
     BOOLEAN bySpecial = FALSE;
-    if (params->p->type == kw_new && ((sym->instantiated && !sym->templateLevel) || (params && params->p->bySpecialization.types)))
+    if (params && params->p->type == kw_new && ((sym->instantiated && !sym->templateLevel) || (params && params->p->bySpecialization.types)))
     {
         params = params->p->bySpecialization.types;
         bySpecial = TRUE;

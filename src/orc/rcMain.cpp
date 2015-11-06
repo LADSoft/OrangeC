@@ -45,6 +45,8 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 
+#include <windows.h>
+
 CmdSwitchParser rcMain::SwitchParser;
 CmdSwitchFile rcMain::File(SwitchParser, '@');
 CmdSwitchBool rcMain::Boolr(SwitchParser, 'r');
@@ -53,13 +55,15 @@ CmdSwitchBool rcMain::Boolv(SwitchParser, 'v');
 CmdSwitchOutput rcMain::OutputFile(SwitchParser, 'o', ".res");
 CmdSwitchDefine rcMain::Defines(SwitchParser, 'D');
 CmdSwitchString rcMain::includePath(SwitchParser, 'i', ';');
+CmdSwitchString rcMain::Language(SwitchParser, 'l');
 
 char *rcMain::usageText = "[options] file"
 "\n"
 "  @filename  use response file\n"
 "  /Dxxx  Define something             /ixxx  Set include file path\n"
-"  /oxxx  Set output file name         /r     reserved for compatability\n"
-"  /t     reserved for compatability   /v     reserved for compatability\n"
+"  /lxx,yy Set default language        /oxxx  Set output file name\n"
+"  /r     reserved for compatability   /t     reserved for compatability\n"
+"  /v     reserved for compatability\n"
 "\n"
 "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -72,6 +76,7 @@ int main(int argc, char *argv[])
 int rcMain::Run(int argc, char *argv[])
 {
     int rv = 0;
+    int language = LANG_ENGLISH + (SUBLANG_ENGLISH_US << 10);
     Utils::banner(argv[0]);
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(Utils::GetModuleName(), ".cfg");
@@ -106,6 +111,12 @@ int rcMain::Run(int argc, char *argv[])
             srchPth = includePath.GetValue().substr(n+1);
         }
     }
+    if (Language.GetValue().size())
+    {
+        int one=LANG_ENGLISH,two=SUBLANG_ENGLISH_US;
+        sscanf(Language.GetValue().c_str(), "%d,%d", &one, &two);
+        language = one + (two << 10);        
+    }
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         std::string inName = Utils::QualifiedFile( (*it)->c_str(), ".rc");
@@ -125,7 +136,7 @@ int rcMain::Run(int argc, char *argv[])
         else
             outName = Utils::QualifiedFile( (*it)->c_str(), ".res");
         ResFile resFile;
-        RCFile rcFile(pp, resFile, srchPth);
+        RCFile rcFile(pp, resFile, srchPth, language);
         if (rcFile.Read())
         {
             if (!resFile.Write(outName))

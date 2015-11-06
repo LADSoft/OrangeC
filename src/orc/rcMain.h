@@ -60,7 +60,8 @@ private:
     static CmdSwitchOutput OutputFile;
     static CmdSwitchDefine Defines;
     static CmdSwitchString includePath;
-    
+    static CmdSwitchString Language;
+        
     static char *usageText;
 } ;
 #endif

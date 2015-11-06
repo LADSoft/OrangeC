@@ -51,8 +51,8 @@ class ResFile;
 class RCFile
 {
 public:
-    RCFile(PreProcessor &PP, ResFile &ResFile, std::string &includes) 
-        : pp(PP), resFile(ResFile), lexer(PP), expr(lexer), language(1033), includePath(includes) { }
+    RCFile(PreProcessor &PP, ResFile &ResFile, std::string &includes, int Language) 
+        : pp(PP), resFile(ResFile), lexer(PP), expr(lexer), language(Language), includePath(includes) { }
     virtual ~RCFile() { }
 
     void NextToken() { lexer.NextToken(); }	

@@ -367,7 +367,6 @@ static char * mangleExpression(char *buf, EXPRESSION *exp)
 	{
 		*buf++= '$';
         buf = mangleExpressionInternal(buf, exp);
-		*buf++= '$';
 	}
 	return buf;
 }

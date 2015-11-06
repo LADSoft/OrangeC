@@ -760,6 +760,32 @@ TEMPLATEPARAMLIST **expandArgs(TEMPLATEPARAMLIST **lst, TEMPLATEPARAMLIST *selec
     }
     return lst;
 }
+static BOOLEAN constructedInt(LEXEME *lex, SYMBOL *funcsp)
+{
+    // depends on this starting a type
+    BOOLEAN rv = FALSE;
+    TYPE *tp;
+    LEXEME *placeholder = lex;
+    enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
+    BOOLEAN defd = FALSE;
+    SYMBOL *sp = NULL;
+    BOOLEAN notype = FALSE;
+    BOOLEAN oldTemplateType = inTemplateType;
+    tp = NULL;
+        
+    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+    lex = getBasicType(lex, funcsp, &tp, NULL, FALSE, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, FALSE);
+    lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3);
+    if (isint(tp))
+    {
+        if (MATCHKW(lex, openpa))
+        {
+            rv = TRUE;
+        }
+    }
+    lex = prevsym(placeholder);
+    return rv;
+}
 LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLATEPARAMLIST **lst)
 {
     TEMPLATEPARAMLIST **start = lst;
@@ -775,8 +801,8 @@ LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLAT
         do
         {
             TYPE *tp = NULL;
-            if ((orig && orig->p->type != kw_int) || !orig && startOfType(lex, TRUE))
-            {        
+            if ((orig && orig->p->type != kw_int) || !orig && startOfType(lex, TRUE) && !constructedInt(lex, funcsp))
+            {
                 SYMBOL *sym = NULL;
                 inTemplateArgs--;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, FALSE);
@@ -911,7 +937,7 @@ join:
 					{
 						lex = expression_no_comma(lex, funcsp, NULL, &tp, &exp, NULL, _F_INTEMPLATEPARAMS);
 						optimize_for_constants(&exp);
-						if (!tp)
+	  					if (!tp)
 						{
 							error(ERR_EXPRESSION_SYNTAX);
                         
@@ -4718,7 +4744,8 @@ static BOOLEAN TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST *porig, TEMP
             porig = porig->next;
             psym = psym->next;
         }
-        return TRUE;
+        if (psym && psym->p->packed)
+            return TRUE;
     }
     return !porig && !psym;
 }
@@ -5597,6 +5624,8 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                 initial = initial->next;
             }
         }
+        if (initial)
+            rv = NULL;
         if (!templateNestingCount)
         {
             primary = spsyms ? spsyms : nparams->next;

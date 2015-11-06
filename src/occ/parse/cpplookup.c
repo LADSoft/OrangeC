@@ -212,6 +212,9 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     BOOLEAN hasTemplate = FALSE;
     TEMPLATEPARAM *templateParamAsTemplate = NULL;
     TYPE *dependentType = NULL;
+
+    if (ISID(lex) && !strcmp(lex->value.s.a, "common_type") && includes->line == 3)
+        printf("hi");
     if (sym)
         *sym = NULL;
     if (ns) *ns = NULL;
@@ -3489,7 +3492,7 @@ static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUN
             SYMBOL *sym = (SYMBOL *)(*hr)->p;
             for (i=0; i < n; i++)
                 if (spFilterList[i] == sym || spFilterList[i]->mainsym == sym || spFilterList[i] == sym->mainsym ||
-                    matchOverload(sym->tp, spFilterList[i]->tp))
+                    matchOverload(sym->tp, spFilterList[i]->tp) && sym->overlayIndex == spFilterList[i]->overlayIndex)
                     break;
 
             if (i >= n && (!args || !args->astemplate || sym->templateLevel) && !sym->instantiated)

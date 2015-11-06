@@ -464,6 +464,7 @@ typedef struct sym
     struct _imode_ *imstore;
     enum e_cm lambdaMode;
     INLINEFUNC inlineFunc;
+    int overlayIndex;        /* differentiating index when function differs only in return type from similar functions */
 #ifdef PARSER_ONLY
     int      ccEndLine;      /* end line for code completion */
     ULLONG_TYPE   ccStructId;     /* code completion struct id */
@@ -585,6 +586,7 @@ typedef struct sym
     struct lexeme *deferredCompile ;
     struct _templateParamList *templateParams;
     LIST *templateNameSpace;
+    LIST *staticAsserts;
     int templateLevel;
     LIST *specializations;
     LIST *instantiations;

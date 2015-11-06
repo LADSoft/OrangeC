@@ -849,6 +849,7 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
 }
 void deferredInitializeStructMembers(SYMBOL *cur)
 {
+    LIST *staticAssert;
     HASHREC *hr;
     SYMBOL *sp;
     LEXEME *lex;
@@ -861,6 +862,20 @@ void deferredInitializeStructMembers(SYMBOL *cur)
 
     if (cur->templateParams)
     {
+        if (cur->parentTemplate)
+        {
+            TEMPLATEPARAMLIST *left = cur->templateParams;
+            TEMPLATEPARAMLIST *right = cur->parentTemplate->templateParams;
+            left = left->next;
+            right = right->next;
+            while (left && right)
+            {
+                if (!left->p->sym)
+                   left->p->sym = right->p->sym;
+                left = left->next;
+                right = right->next;
+            }
+        }
         n.tmpl = cur->templateParams;
         addTemplateDeclaration(&n);
         count++;
@@ -885,6 +900,14 @@ void deferredInitializeStructMembers(SYMBOL *cur)
             SetAlternateLex(NULL);
         }
         hr = hr->next;
+    }
+    staticAssert = cur->staticAsserts;
+    while (staticAssert)
+    {
+        lex = SetAlternateLex((LEXEME *)staticAssert->data);
+        lex = handleStaticAssert(lex);
+        SetAlternateLex(NULL);
+        staticAssert = staticAssert->next;
     }
     dontRegisterTemplate--;
     while (count--)
@@ -1132,10 +1155,10 @@ restart:
                             bcsym = TemplateClassInstantiateInternal(bcsym, bcsym->templateParams->next, FALSE);
                     }
                 }
-                else if (!bcsym->instantiated)
-                {
-                    errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
-                }
+//                else if (!bcsym->instantiated)
+//                {
+//                    errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
+//                }
             }
             if (bcsym && bcsym->tp->templateParam && bcsym->tp->templateParam->p->packed)
             {
@@ -2038,7 +2061,53 @@ void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend)
 }
 LEXEME *handleStaticAssert(LEXEME *lex)
 {
-    if (!needkw(&lex, openpa))
+    if (getStructureDeclaration())
+    {
+        SYMBOL *sym = getStructureDeclaration();
+        LIST *staticAssert = Alloc(sizeof(LIST));
+        LEXEME **cur = &staticAssert->data, *last = NULL;
+        int paren = 0;
+        int brack = 0;
+        int ltgt = 0;
+        staticAssert->next = sym->staticAsserts;
+        sym->staticAsserts = staticAssert;
+        while (lex != NULL)
+        {
+            enum e_kw kw = KW(lex);
+            if (kw == openpa)
+            {
+                paren++;
+            }
+            else if (kw == closepa)
+            {
+                if (paren-- == 0 && !brack)
+                {
+                    break;
+                }
+            }
+            else if (kw == openbr)
+            {
+                brack++;
+            }
+            else if (kw == closebr)
+            {
+                brack--;
+            }
+            *cur = Alloc(sizeof(LEXEME));
+            if (lex->type == l_id)
+                lex->value.s.a = litlate(lex->value.s.a);
+            **cur = *lex;
+            (*cur)->prev = last;
+            last = *cur;
+            cur = &(*cur)->next;
+            if (kw == semicolon)
+            {
+                break;
+            }
+            lex = getsym();
+        }
+    }
+    else if (!needkw(&lex, openpa))
     {
         errskim(&lex, skim_closepa);
         skip(&lex, closepa);

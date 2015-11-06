@@ -779,7 +779,8 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
     }
     else if (node->left->type == en_const)
     {
-            ap1 = make_immed(siz1, node->v.sp->value.i);
+        ap1 = gen_expr(funcsp, node->left->v.sp->init->exp, 0, 0);
+//            ap1 = make_immed(siz1, node->v.sp->value.i);
     }
     /* deref for auto variables */
     else if (node->left->type == en_imode)
@@ -2736,7 +2737,8 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             break;
         case en_const:
             /* should never get here unless the constant optimizer is turned off */
-            ap1 = make_immed(natural_size(node), node->v.sp->value.i);
+                ap1 = gen_expr(funcsp, node->v.sp->init->exp, 0, 0);
+//            ap1 = make_immed(natural_size(node), node->v.sp->value.i);
             rv = ap1;
             break;
         default:

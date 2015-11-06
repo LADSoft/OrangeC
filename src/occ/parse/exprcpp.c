@@ -640,55 +640,9 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             exp1 = *exp = anonymousVar(sc_auto, basetype(*tp)->sp->tp);
             sp = exp1->v.sp;
             callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE); 
-            if (funcparams->sp && funcparams->sp->constexpression)
-            {
-                if (basetype(*tp)->sp->baseClasses)
-                {
-                    error(ERR_CONSTANT_FUNCTION_EXPECTED);
-                }
-                else
-                {
-                    MEMBERINITIALIZERS *init = funcparams->sp->memberInitializers;
-                    if (!IsEmptyFunction(funcparams, funcsp))
-                    {
-                        error(ERR_CONSTANT_FUNCTION_EXPECTED);
-                        *exp = intNode(en_c_i , 0);
-                    }
-                    else
-                    {
-                        *exp = exprNode(en_literalclass, *exp, NULL);
-                        (*exp)->v.syms = CreateHashTable(1);
-                        while (init)
-                        {
-                            if (init->sp->storage_class == sc_member || init->sp->storage_class == sc_mutable)
-                            {
-                                if (!init->init->exp)
-                                {
-                                    diag("expression_func_type_cast: literal class not initialized");
-                                }
-                                else
-                                {
-                                    CONSTEXPRSYM *ces = Alloc(sizeof(CONSTEXPRSYM));
-                                    ces->name = init->sp->name;
-                                    ces->sym = init->sp;
-                                    ces->exp = substitute_params_for_constexpr(init->init->exp, funcparams, NULL);
-                                    optimize_for_constants(&ces->exp);
-                                    if (!IsConstantExpression(ces->exp, FALSE))
-                                        error(ERR_CONSTANT_EXPRESSION_EXPECTED);
-                                    insert((SYMBOL *)ces, (*exp)->v.syms);
-                                }
-                            }
-                            init = init->next;
-                        }     
-                    }           
-                }
-            }
-            else
-            {
-                callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
-                initInsert(&sp->dest, *tp, exp1, 0, TRUE);
-                sp->destructed = TRUE; // in case we don't actually use this instantiation
-            }
+            callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
+            initInsert(&sp->dest, *tp, exp1, 0, TRUE);
+            sp->destructed = TRUE; // in case we don't actually use this instantiation
         }
         else
         {
@@ -881,18 +835,18 @@ BOOLEAN doStaticCast(TYPE **newType, TYPE *oldType, EXPRESSION **exp, SYMBOL *fu
         
     }
     // base to derived pointer or derived to base pointer
-    if ((ispointer(*newType) && ispointer(oldType)) || isref(*newType))
+    if ((ispointer(*newType) && ispointer(oldType)) || isref(orig))
     {
         TYPE *tpo = oldType; 
-        TYPE *tpn = *newType;
+        TYPE *tpn = orig;
         if (isref(tpn))
         {
-            *newType = tpn = basetype(*newType)->btp;
+            *newType = tpn = basetype(orig)->btp;
         }
         else
         {
             tpo = basetype(oldType)->btp;
-            tpn = basetype(*newType)->btp;
+            tpn = basetype(orig)->btp;
         }
         if ((!checkconst || !isconst(tpo) || isconst(tpn)) && (isstructured(tpn) && isstructured(tpo)))
         {

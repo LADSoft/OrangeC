@@ -2375,7 +2375,8 @@ join_lor:
                     {
                         if (sp->storage_class == sc_constant)
                         {
-                            *node = intNode(en_c_i, sp->value.i);
+                            optimize_for_constants(&sp->init->exp);
+                            *node = sp->init->exp;
                             return TRUE;
                         }
                     }
@@ -2936,14 +2937,18 @@ int typedconsts(EXPRESSION *node1)
     {
         case en_nullptr:
             node1->type = en_c_ui; // change the nullptr to an int
+            rv = TRUE;
             break;
         case en_const:
             /* special trap to replace sc_constants */
-            if (basetype(node1->v.sp->tp)->type == bt_long_long || basetype(node1->v.sp->tp)->type == bt_unsigned_long_long)
-                node1->type = en_c_ll;
-            else
-                node1->type = en_c_i;
-            node1->v.i = node1->v.sp->value.i;
+//            if (basetype(node1->v.sp->tp)->type == bt_long_long || basetype(node1->v.sp->tp)->type == bt_unsigned_long_long)
+//                node1->type = en_c_ll;
+//            else
+//                node1->type = en_c_i;
+//            node1->v.i = node1->v.sp->value.i;
+            optimize_for_constants(&node1->v.sp->init->exp);
+            *node1 = *node1->v.sp->init->exp;
+            rv = TRUE;
             break;
         default:
             break;
@@ -3055,7 +3060,19 @@ int typedconsts(EXPRESSION *node1)
         case en_l_ull:
         case en_l_ll:
         case en_bits:
-            rv |= typedconsts(node1->left);
+            if (node1->left->type == en_global)
+            {
+                if (node1->left->v.sp->storage_class == sc_constant && isintconst(node1->left->v.sp->init->exp))
+                {
+                    optimize_for_constants(&node1->v.sp->init->exp);
+                    *node1 = *node1->left->v.sp->init->exp;
+                    rv = TRUE;
+                }
+            }
+            else
+            {
+                rv |= typedconsts(node1->left);
+            }
             break;
         case en_x_p:
             rv |= typedconsts(node1->left);
@@ -3492,6 +3509,7 @@ void optimize_for_constants(EXPRESSION **expr)
     int rv = TRUE, count = 8;
     EXPRESSION * oldasidehead = asidehead;
     EXPRESSION ** oldasidetail = asidetail;
+
     asidehead = 0;
     asidetail = &asidehead;
     while (rv && count--)

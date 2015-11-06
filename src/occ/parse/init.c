@@ -2838,8 +2838,16 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_l_ull:
             if (node->left->type == en_auto)
                 rv = allowParams && node->left->v.sp->storage_class == sc_parameter;
-            else
-                rv = FALSE;
+            else switch (node->left->type)
+            {
+                case en_global:
+                case en_label:
+                case en_pc:
+                case en_labcon:
+                case en_absolute:
+                case en_threadlocal:
+                    return node->left->v.sp->constexpression;
+            }
             break;
         case en_uminus:
         case en_compl:
@@ -2946,7 +2954,7 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
             rv = IsConstantExpression(node->left, allowParams);
             break;
         case en_func:
-            return !node->v.func->ascall;
+            return !node->v.func->ascall || node->v.func->sp->constexpression;
             break;
         case en_stmt:
             rv = FALSE;
@@ -3244,11 +3252,10 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                     sp->storage_class = sc_constant;
                 }
         }
-        else if (sp->init && sp->init->exp && isintconst(sp->init->exp) && (isint(sp->tp) || basetype(sp->tp)->type == bt_enum))
+        else if (sp->init && sp->init->exp && (isint(sp->tp) || basetype(sp->tp)->type == bt_enum))
             {
                 if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
                     insertInitSym(sp);
-                sp->value.i = sp->init->exp->v.i ;
                 sp->storage_class = sc_constant;
             }
     }

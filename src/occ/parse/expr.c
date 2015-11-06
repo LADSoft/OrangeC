@@ -2502,11 +2502,11 @@ static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
                 rv = FALSE;
             if (rv)
             {
-                if (isref(from))
+                while (isref(from))
                     from = basetype(from)->btp;
-                if (isref(to))
+                while (isref(to))
                     to = basetype(to)->btp;
-                rv = comparetypes(from, to, TRUE);
+                rv = comparetypes(to, from, FALSE);
                 if (!rv && isstructured(from) && isstructured(to))
                    if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
                        rv = TRUE;

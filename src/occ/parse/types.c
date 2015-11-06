@@ -274,7 +274,7 @@ static char *putpointer(char *p, TYPE *tp)
 
 static TYPE *enumConst(char *buf, TYPE *tp)
 {
-    while (isconst(tp) || isvolatile(tp) || isrestrict(tp))
+    while (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == bt_derivedfromtemplate)
     {
         switch(tp->type)
         {

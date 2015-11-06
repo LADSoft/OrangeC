@@ -241,7 +241,32 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
             else if (cparams.prm_cplusplus && funcs->storage_class == sc_overloads)
             {
                 table = funcs->tp->syms;
-                AddOverloadName(sp, table);
+                if (AddOverloadName(sp, table))
+                {
+                    // we are going to naively add duplicate overloads on the basis they may
+                    // differ in return type, which may make a difference for example for enable_if as a return type
+                    // but we won't fully implement this at this time, e.g. if it has enable_if it had better be
+                    // defined inline.   If it is defined out of line the lack of matching when we do lookups
+                    // will cause multiply defined references in GetOverloadedFunction
+                    HASHREC **hr = &table->table[0];
+                    int n = 0;
+                    while (*hr)
+                    {
+                        if (!strcmp(sp->decoratedName, ((SYMBOL *)(*hr)->p)->decoratedName))
+                        {
+                            n++;
+                            if (comparetypes(basetype(sp->tp)->btp, basetype(((SYMBOL *)(*hr)->p)->tp)->btp, TRUE))
+                                break;
+                        }
+                        hr = &(*hr)->next;
+                    }
+                    if (!*hr)
+                    {
+                        sp->overlayIndex = n;
+                        *hr = Alloc(sizeof(HASHREC));
+                        (*hr)->p = (struct _hrintern_ *)sp;
+                    }
+                }
                 sp->overloadName = funcs;
                 if (sp->parent != funcs->parent || sp->parentNameSpace != funcs->parentNameSpace)
                     funcs->wasUsing = TRUE;
@@ -899,7 +924,8 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
 	if (cparams.prm_cplusplus)
         createDefaultConstructors(sp);
     resolveAnonymousUnions(sp);
-    deferredInitializeStructMembers(sp);
+    if (cparams.prm_cplusplus)
+        deferredInitializeStructMembers(sp);
     if (!cparams.prm_cplusplus || structLevel == 1)
     {
         structLevel--;
@@ -5835,12 +5861,21 @@ jointemplate:
                             }
                             if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef && structLevel && (MATCHKW(lex,assign) || MATCHKW(lex, begin) || structuredArray))
                             {
-                                if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member && (sp->storage_class == sc_static ||sp->storage_class == sc_external) && !isconst(sp->tp))
-                                    errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
+                                if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member && (sp->storage_class == sc_static ||sp->storage_class == sc_external))
+                                    if (isconst(sp->tp))
+                                    {
+                                        if (isint(sp->tp))
+                                           goto doInitialize;
+                                    }
+                                    else
+                                    {
+                                        errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
+                                    }
                                 lex = getDeferredData(lex, sp, FALSE);
                             }
                             else
                             {
+doInitialize:                                
                                 if (cparams.prm_cplusplus && isstructured(sp->tp))
                                 {
                                     SYMBOL *sp1 = basetype(sp->tp)->sp;

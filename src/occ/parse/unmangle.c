@@ -526,6 +526,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                         if (*name == '$')
                         {
                             name++;
+                            strcat(tname,"=");
                             name = unmangleExpression(tname + strlen(tname), name);
                         }
                         strcpy(buf, tname);
@@ -583,6 +584,8 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             v = v * 10+ *name++ - '0';
         if (name[0] == '@')
             name++,v--;
+        if (v < 0 || v > 200)
+            return unmang1(buf, name, last, tof); // out of sequence, recover
         while (v > 0)
         {
             char *newname;

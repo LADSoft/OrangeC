@@ -152,6 +152,8 @@ extern int _RTL_DATA _sys_nerr ;
 #define sys_errlist _sys_errlist
 extern char _RTL_DATA *_sys_errlist[] ;
 
+typedef int errno_t;
+
 #ifdef __cplusplus
 } ;
 } ;
@@ -165,4 +167,5 @@ using __STD_NS_QUALIFIER __GetErrno ;
 using __STD_NS_QUALIFIER __GetDosErrno ;
 using __STD_NS_QUALIFIER _sys_nerr ;
 using __STD_NS_QUALIFIER _sys_errlist ;
+using __STD_NS_QUALIFIER errno_t;
 #endif           

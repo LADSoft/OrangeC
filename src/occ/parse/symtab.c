@@ -51,6 +51,7 @@ NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 HASHTABLE *labelSyms;
 
 HASHTABLE *CreateHashTable(int size);
+BOOLEAN inMatchOverload;
 
 static LIST *usingDirectives;
 
@@ -69,6 +70,7 @@ void syminit(void)
     globalNameSpace->tags = CreateHashTable(GLOBALHASHSIZE);
     localNameSpace = Alloc(sizeof(NAMESPACEVALUES));
     usingDirectives = NULL;
+    inMatchOverload = FALSE;
 }
 HASHTABLE *CreateHashTable(int size)
 {
@@ -178,6 +180,13 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp, int label)
 }
 #endif
 /* SYMBOL tab hash function */
+static int GetHashValue(char *string)
+{
+    unsigned i;
+    for (i = 0;  *string; string++)
+        i = ((i << 7) + (i << 1) +i )  ^ *string;
+    return i;
+}
 HASHREC **GetHashLink(HASHTABLE *t, char *string)
 {
     unsigned i;
@@ -269,12 +278,14 @@ SYMBOL *search(char *name, HASHTABLE *table)
     }
     return NULL;
 }
-BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
+BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
 {
     HASHREC *hnew = basetype(tnew)->syms->table[0];
     HASHREC *hold = basetype(told)->syms->table[0];
-//    if (snew->templateLevel != sold->templateLevel)
-//        return FALSE;
+    unsigned tableOld[100], tableNew[100];
+    int tCount = 0;
+    if (!cparams.prm_cplusplus)
+        argsOnly = TRUE;
     if (isconst(tnew) != isconst(told))
         return FALSE;
     if (isvolatile(tnew) != isvolatile(told))
@@ -283,6 +294,7 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
         return FALSE;
     if (isrrqual(tnew) != isrrqual(told))
         return FALSE;
+    inMatchOverload++;
     while (hnew && hold)
     {
         SYMBOL *snew = (SYMBOL *)hnew->p;
@@ -304,42 +316,171 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told)
         }
         tnew = basetype(snew->tp);
         told = basetype(sold->tp);
-        if (told->type == bt_any || tnew->type == bt_any) // packed template param
-            break;
-        else if ((!comparetypes(told, tnew, TRUE) && !sameTemplatePointedTo(told, tnew)) || told->type != tnew->type)
-            break;
-        else 
+        if (told->type != bt_any || tnew->type != bt_any) // packed template param
         {
-            TYPE *tps = sold->tp;
-            TYPE *tpn = snew->tp;
-            if (isref(tps))
-                tps = basetype(tps)->btp;
-            if (isref(tpn))
-                tpn = basetype(tpn)->btp;
-            while (ispointer(tpn) && ispointer(tps))
+            if ((!comparetypes(told, tnew, TRUE) && !sameTemplatePointedTo(told, tnew)) || told->type != tnew->type)
+                break;
+            else 
             {
+                TYPE *tps = sold->tp;
+                TYPE *tpn = snew->tp;
+                if (isref(tps))
+                    tps = basetype(tps)->btp;
+                if (isref(tpn))
+                    tpn = basetype(tpn)->btp;
+                while (ispointer(tpn) && ispointer(tps))
+                {
+                    if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                    {
+                        inMatchOverload--;
+                        return FALSE;
+                    }
+                    tpn= basetype(tpn)->btp;
+                    tps = basetype(tps)->btp;
+                }
                 if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                {
+                    inMatchOverload--;
                     return FALSE;
-                tpn= basetype(tpn)->btp;
-                tps = basetype(tps)->btp;
-            }
-            if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
-                return FALSE;
-            tnew = basetype(tpn);
-            told = basetype(tps);
-            if (tnew->type == bt_templateparam)
-            {
-                if (told->type != bt_templateparam ||
-                    strcmp(told->templateParam->p->sym->name, tnew->templateParam->p->sym->name))
-                        break;                    
+                }
+                tpn = basetype(tpn);
+                tps = basetype(tps);
+                if (tpn->type == bt_templateparam)
+                {
+                    if (tps->type != bt_templateparam)
+                        break;
+                    tableOld[tCount] = GetHashValue(tps->templateParam->p->sym->name);
+                    tableNew[tCount] = GetHashValue(tpn->templateParam->p->sym->name);
+                    tCount++;
+                }
             }
         }
         hold = hold->next;
         hnew = hnew->next;
     }
+    inMatchOverload--;
     if (!hold && !hnew)
-    {        
-        return TRUE;
+    {
+        int i;
+        TEMPLATEPARAMLIST *tplNew, *tplOld;
+        if (!argsOnly && basetype(tnew)->sp && basetype(told)->sp)
+        {
+            if (basetype(tnew)->sp->templateLevel != basetype(told)->sp->templateLevel)
+            {
+                return FALSE;
+            }
+            if (basetype(tnew)->sp->templateLevel)
+            {
+                if (!basetype(tnew)->sp->parentClass && !basetype(told)->sp->parentClass)
+                {
+                    tplNew = basetype(tnew)->sp->templateParams;
+                    tplOld = basetype(told)->sp->templateParams;
+                    while (tplNew && tplOld)
+                    {
+                        if (tplNew->p->type != tplOld->p->type || tplNew->p->packed != tplOld->p->packed)
+                            break;
+                        tplNew = tplNew->next;
+                        tplOld = tplOld->next;
+                    }
+                    if (tplNew || tplOld)
+                    {
+                        return FALSE;
+                    }
+                }
+            }
+        }
+        if (tCount)
+        {
+            int i,j;
+            SYMBOL *fnew = basetype(tnew)->sp->parentClass;
+            SYMBOL *fold = basetype(told)->sp->parentClass;
+            TEMPLATEPARAMLIST *tplNew, *tplOld;
+            int iCount = 0;
+            unsigned oldIndex[100], newIndex[100];
+            tplNew = fnew && fnew->templateParams ? fnew->templateParams->next : NULL;
+            tplOld = fold && fold->templateParams ? fold->templateParams->next : NULL;
+            while (tplNew && tplOld)
+            {
+                if (tplOld->p->sym && tplNew->p->sym)
+                {
+                    oldIndex[iCount] = GetHashValue(tplOld->p->sym->name);
+                    newIndex[iCount] = GetHashValue(tplNew->p->sym->name);
+                    iCount++;
+                }
+                tplNew = tplNew->next;
+                tplOld = tplOld->next;
+            }
+            for (i=0; i < tCount; i++)
+            {
+                int k, l;
+                for (k=0; k < iCount; k++)
+                    if (tableOld[i] == oldIndex[k])
+                        break;
+                for (l=0; l < iCount; l++)
+                    if (tableNew[i] == newIndex[l])
+                        break;
+                if (k != l)
+                {
+                    return FALSE;
+                }
+                for (j=i+1; j < tCount; j++)
+                    if (tableOld[i] == tableOld[j])
+                    {
+                        if (tableNew[i] != tableNew[j])
+                            return FALSE;
+                    }
+                    else
+                    {
+                        if (tableNew[i] == tableNew[j])
+                            return FALSE;
+                    }
+            }
+            if (basetype(tnew)->sp->templateLevel || basetype(told)->sp->templateLevel)
+            {
+                TYPE *tps = basetype(told)->btp;
+                TYPE *tpn = basetype(tnew)->btp;
+                if (!templatecomparetypes(tpn, tps, TRUE) && !sameTemplate(tpn, tps))
+                {
+                    if (isref(tps))
+                        tps = basetype(tps)->btp;
+                    if (isref(tpn))
+                        tpn = basetype(tpn)->btp;
+                    while (ispointer(tpn) && ispointer(tps))
+                    {
+                        if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                            return FALSE;
+                        tpn= basetype(tpn)->btp;
+                        tps = basetype(tps)->btp;
+                    }
+                    if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
+                        return FALSE;
+                    tpn = basetype(tpn);
+                    tps = basetype(tps);
+                    if (comparetypes(tpn, tps, TRUE) || tpn->type == bt_templateparam && tps->type == bt_templateparam)
+                    {
+                        return TRUE;
+                    }
+                    else if (tpn->type == bt_templateselector && tps->type == bt_templateselector)
+                    {
+                        return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector);
+                    }
+                    else if (tpn->type == bt_templatedecltype && tps->type == bt_templatedecltype)
+                    {
+                        return templatecompareexpressions(tpn->templateDeclType, tps->templateDeclType);
+                    }
+                    return TRUE; 
+                }
+                if (tpn->type == bt_templateselector && tps->type == bt_templateselector)
+                {
+                    return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector);
+                }
+            }
+            return TRUE;
+        }
+        else
+        {
+            return TRUE;
+        }
     }
     return FALSE;
 }
@@ -351,10 +492,28 @@ SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
         while (p)
         {
             SYMBOL *spp = (SYMBOL *)p->p;
-            if (matchOverload(sp->tp, spp->tp))
+            if (matchOverload(sp->tp, spp->tp, FALSE))
             {
-                if (!spp->templateParams || !!spp->templateParams == !!sp->templateParams)
+                if (!spp->templateParams)
                     return spp;
+                if (!!spp->templateParams == !!sp->templateParams)
+                {
+                    TEMPLATEPARAMLIST *tpl = spp->templateParams->next;
+                    TEMPLATEPARAMLIST *tpr = sp->templateParams->next;
+                    while (tpl && tpr)
+                    {
+                        if (tpl->p->type == kw_int && tpl->p->byNonType.tp->type == bt_templateselector)
+                            break;
+                        if (tpr->p->type == kw_int && tpr->p->byNonType.tp->type == bt_templateselector)
+                            break;
+                        if (tpl->p->sym->compilerDeclared || tpr->p->sym->compilerDeclared)
+                            break;
+                        tpl = tpl->next;
+                        tpr = tpr->next;
+                    }
+                    if (!tpl && !tpr)
+                        return spp;
+                }
             }
             p = p->next;
         }

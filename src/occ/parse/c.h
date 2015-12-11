@@ -152,7 +152,7 @@ enum e_node
         en_blockassign, en_rshd, en_bits,
         en_imode, en_x_p, en_substack, en_alloca,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
-        en_literalclass, en_templateparam, en_templateselector, en_packedempty
+        en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse
 };
 /*      statement node descriptions     */
 
@@ -263,6 +263,7 @@ typedef struct expr
         struct stmt *stmt;
         struct _imode_ *imode;
         struct _templateSelector *templateSelector;
+        struct _templateParamList *templateParam;
         HASHTABLE *syms;
                 
         struct {
@@ -471,6 +472,7 @@ typedef struct sym
     int     parserSet: 1;      /* sent to parser already*/
 #endif
     unsigned declaring: 1; /* currently being declared */
+    unsigned compilerDeclared: 1; /* compiler declared this */
     unsigned hasproto: 1; /* C/90 language prototype was encountered */
     unsigned intagtable: 1; /* it is in a tag table */
     unsigned dontlist: 1; /* it is a system include, don't put in list file */
@@ -645,6 +647,7 @@ typedef struct _memberInitializers
     int line;
     char *file;
     struct lexeme *initData;
+    int packed : 1;
 } MEMBERINITIALIZERS;
 
 typedef struct _baseClass

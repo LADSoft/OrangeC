@@ -144,27 +144,28 @@ int         _RTL_FUNC _IMPORT mbtowc(wchar_t * restrict __pwc,
 void        _RTL_FUNC _IMPORT qsort(void *__base, size_t __nelem, size_t __width,
                        int (* __fcmp)(const void *, const void *));
 int         _RTL_FUNC _IMPORT rand(void);
+int         _RTL_FUNC _IMPORT rand_s(unsigned int *__rand_value);
 void  *     _RTL_FUNC _IMPORT realloc(void *__block, size_t __size);
 void        _RTL_FUNC _IMPORT srand(unsigned __seed);
 char *      _RTL_FUNC _IMPORT strdup(const char *string);
 char *      _RTL_FUNC _IMPORT _strdup(const char *string);
 double      _RTL_FUNC _IMPORT strtod(const char * restrict __s, char ** restrict __endptr);
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 float       _RTL_FUNC _IMPORT strtof(const char * restrict __s, char ** restrict __endptr);
 #endif
 long        _RTL_FUNC _IMPORT strtol(const char *__s, char **restrict __endptr,
                                     int __radix);
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 long long   _RTL_FUNC _IMPORT strtoll(const char *restrict __s, char **restrict __endptr,
                                     int __radix);
 #endif
 long double _RTL_FUNC _IMPORT _strtold(const char *restrict __s, char ** restrict __endptr);
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 long double _RTL_FUNC _IMPORT strtold(const char *restrict __s, char ** restrict __endptr);
 #endif
 unsigned long   _RTL_FUNC _IMPORT strtoul(const char *__s, char **__endptr,
                                        int __radix);
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 long long   _RTL_FUNC _IMPORT strtoull(const char *restrict __s, char **restrict __endptr,
                                     int __radix);
 #endif
@@ -392,19 +393,19 @@ void _RTL_FUNC _IMPORT _seterrormode(int);
     using __STD_NS_QUALIFIER srand;
     using __STD_NS_QUALIFIER strdup;
     using __STD_NS_QUALIFIER strtod;
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     using __STD_NS_QUALIFIER strtof;
 #endif
     using __STD_NS_QUALIFIER strtol;
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     using __STD_NS_QUALIFIER strtoll;
 #endif
     using __STD_NS_QUALIFIER _strtold;
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     using __STD_NS_QUALIFIER strtold;
 #endif
     using __STD_NS_QUALIFIER strtoul;
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L  || defined(__cplusplus) 
     using __STD_NS_QUALIFIER strtoull;
 #endif
     using __STD_NS_QUALIFIER system;

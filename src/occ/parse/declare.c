@@ -70,7 +70,7 @@ extern int inTemplateSpecialization;
 extern int argument_nesting;
 extern int codeLabel;
 extern SYMBOL *instantiatingMemberFuncClass;
-
+extern BOOLEAN parsingSpecializationDeclaration;
 int inDefaultParam;
 LIST *externals, *globalCache;
 char deferralBuf[100000];
@@ -154,6 +154,8 @@ SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
 {
     SYMBOL *sp = Alloc(sizeof(SYMBOL ));
     LEXEME *lex = context->cur ? context->cur->prev : context->last;
+    if (name && strstr(name, "++"))
+        sp->compilerDeclared = TRUE;
     sp->name = name;
     sp->storage_class = storage_class;
     sp->tp = tp;
@@ -387,7 +389,7 @@ static void checkIncompleteArray(TYPE *tp, char *errorfile, int errorline)
         hr = hr->next;
     }
 }
-LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_class, BOOLEAN beforeOnly)
+LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_class, BOOLEAN beforeOnly, BOOLEAN toErr)
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     BOOLEAN defd = FALSE;
@@ -403,7 +405,7 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_cl
     sizeQualifiers(*tp);
     if (notype)
         *tp = NULL;
-    else if (sp && !sp->anonymous)
+    else if (sp && !sp->anonymous && toErr)
         if (sp->tp->type != bt_templateparam)
             error(ERR_TOO_MANY_IDENTIFIERS);
     inTemplateType = oldTemplateType;
@@ -845,9 +847,12 @@ static void baseFinishDeclareStruct(SYMBOL *funcsp)
             {
                 if (syms[i]->templateParams && !allTemplateArgsSpecified(syms[i], syms[i]->templateParams->next))
                 {
+                    int oldInstantiatingTemplate = instantiatingTemplate;
+                    instantiatingTemplate = 0;
                     templateNestingCount++;
                     deferredInitializeStructFunctions(syms[i]);
                     templateNestingCount--;
+                    instantiatingTemplate = oldInstantiatingTemplate;
                 }
                 else
                 {
@@ -861,6 +866,22 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
 {
     STRUCTSYM sl;
     (void)funcsp;
+    /*
+    if (sp->parentTemplate)
+    {
+        TEMPLATEPARAMLIST *left = sp->templateParams;
+        TEMPLATEPARAMLIST *right = sp->parentTemplate->templateParams;
+        left = left->next;
+        right = right->next;
+        while (left && right)
+        {
+            if (!left->p->sym)
+               left->p->sym = right->p->sym;
+            left = left->next;
+            right = right->next;
+        }
+    }
+    */
     if (cparams.prm_cplusplus)
     {
         LIST *lst = Alloc(sizeof(LIST));
@@ -1132,7 +1153,9 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
                 TEMPLATEPARAMLIST *origParams = sp->templateParams;
                 TEMPLATEPARAMLIST *templateParams = TemplateGetParams(sp);
                 inTemplateSpecialization++;
+                parsingSpecializationDeclaration = TRUE;
                 lex = GetTemplateArguments(lex, funcsp, NULL, &templateParams->p->bySpecialization.types);
+                parsingSpecializationDeclaration = FALSE;
                 inTemplateSpecialization--;
                 sp = LookupSpecialization(sp, templateParams);
                 sp->templateParams = TemplateMatching(lex, origParams, templateParams, sp,
@@ -1403,7 +1426,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     if (cparams.prm_cplusplus && KW(lex) == colon)
     {
         lex = getsym();
-        lex = get_type_id(lex, &fixedType, funcsp, sc_cast, FALSE);
+        lex = get_type_id(lex, &fixedType, funcsp, sc_cast, FALSE, TRUE);
         if (!fixedType || !isint(fixedType))
         {
             error(ERR_NEED_INTEGER_TYPE);
@@ -2265,7 +2288,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                 if (needkw(&lex, openpa))
                 {
                     tn = NULL;
-                    lex = get_type_id(lex, &tn, funcsp, sc_cast, FALSE);
+                    lex = get_type_id(lex, &tn, funcsp, sc_cast, FALSE, TRUE);
                     if (tn)
                     {
                         TYPE *tq = Alloc(sizeof(TYPE)), *tz;
@@ -3542,7 +3565,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
             TYPE *tpx= NULL;
             lex = getsym();
             ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-            lex  = get_type_id(lex, &tpx, funcsp, sc_cast, FALSE);
+            lex  = get_type_id(lex, &tpx, funcsp, sc_cast, FALSE, TRUE);
             if (tpx)
             {
                 if (sp->tp->btp->type != bt_auto)
@@ -3584,7 +3607,7 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
                         lex = getsym();
                         if (!MATCHKW(lex, closepa))
                         {
-                            lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE);
+                            lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE, TRUE);
                             if (tp->type == bt_templateparam && tp->templateParam->p->packed)
                             {
                                 if (!MATCHKW(lex, ellipse))
@@ -5121,18 +5144,23 @@ jointemplate:
                             else
                             {
                                 HASHREC **p;
-                                ssp = getStructureDeclaration();
                                 if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) && storage_class != sc_external && !isfunction(sp->tp))
                                 {
                                     p = LookupName(sp->name, localNameSpace->syms);
                                 }
-                                else if (ssp && ssp->tp->syms && (strSym || !asFriend))
+                                else 
                                 {
-                                    p = LookupName(sp->name, ssp->tp->syms);				
-                                }
-                                else
-                                {
-                                    p = LookupName(sp->name, globalNameSpace->syms);
+                                    ssp = getStructureDeclaration();
+                                    if (ssp && !ssp->tp->syms && ssp->templateLevel)
+                                        ssp = FindSpecialization(ssp, ssp->templateParams);
+                                    if (ssp && ssp->tp->syms && (strSym || !asFriend))
+                                    {
+                                        p = LookupName(sp->name, ssp->tp->syms);				
+                                    }
+                                    else
+                                    {
+                                        p = LookupName(sp->name, globalNameSpace->syms);
+                                    }
                                 }
                                 if (p)
                                 {
@@ -5160,72 +5188,8 @@ jointemplate:
                                 }
                                 else if (sym && !sym->isConstructor && !sym->isDestructor && !comparetypes(basetype(sp->tp)->btp, basetype((sym)->tp)->btp, TRUE))
                                 {
-                                    // this is done here becase a templated base class may have filled in
-                                    // something by now...
-                                    // this is a little naive, what about function parameters as part of a
-                                    // return value
-                                    if (isfunction(sym->tp))
-                                    {
-                                        TYPE **ptp = NULL;
-                                        if (!templateNestingCount)
-                                        {
-                                            ptp = &basetype(sym->tp)->btp;
-                                            while (*ptp)
-                                            {
-                                                if ((*ptp)->type == bt_templateparam)
-                                                {
-                                                    if ((*ptp)->templateParam->p->byClass.val)
-                                                    {
-                                                        *ptp = (*ptp)->templateParam->p->byClass.val;
-                                                    }
-                                                    break;
-                                                }
-                                                ptp = & (*ptp)->btp;
-                                            }
-                                        }
-                                        if (!ptp || !*ptp)
-                                        {
-                                            if (!sameTemplatePointedTo(basetype(sym->tp)->btp, basetype(sp->tp)->btp))
-                                            {
-                                                TYPE *tp1 = basetype(sp->tp)->btp;
-                                                TYPE *tp2 = basetype(sym->tp)->btp;
-                                                if (isref(tp1) && isref(tp2))
-                                                {
-                                                    tp1 = basetype(tp1->btp);
-                                                    tp2 = basetype(tp2->btp);
-                                                }
-                                                if (tp1->type == bt_templateselector)
-                                                {
-                                                    TEMPLATESELECTOR *l = tp1->sp->templateSelector->next;
-                                                    SYMBOL *cur = l->sym;
-                                                    l = l->next;
-                                                    while (l && cur)
-                                                    {
-                                                        if (l->isTemplate)
-                                                            break;
-                                                        cur = search(l->name, basetype(cur->tp)->syms);
-                                                        l = l->next;
-                                                    }
-                                                    if (cur && !l)
-                                                    {
-                                                        if (!comparetypes(cur->tp, basetype(sym->tp)->btp, TRUE) && !sameTemplate(cur->tp, tp2))
-                                                            sym = NULL;
-                                                        else
-                                                            checkReturn = FALSE;
-
-                                                    }
-                                                    else
-                                                    {
-                                                        sym = NULL;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    sym = NULL;
-                                                }
-                                            }
-                                        }
-                                    }
+                                    if (cparams.prm_cplusplus && isfunction(sym->tp))
+                                        checkReturn = FALSE;
                                 }
                             }                            
                             if (inTemplate)

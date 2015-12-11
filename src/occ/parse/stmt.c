@@ -1541,8 +1541,20 @@ static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp, TYPE *boundTP)
             exp = exp->left;
         exp2 = exp;
         if (!isstructured(basetype(tp)->btp))
+        {
             exp = exp->left;
-        if (exp->type == en_auto)
+        }
+        else if (basetype(tp)->btp->type == bt_aggregate)
+        {
+            if (!isfunction(basetype(boundTP)->btp))
+                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
+        }
+        else if (isfunction(basetype(tp)->btp))
+        {
+            if (!isfunction(basetype(boundTP)->btp))
+                errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
+        }
+        else if (exp->type == en_auto)
         {
             if (exp->v.sp->storage_class == sc_auto)
             {
@@ -1844,6 +1856,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     }
                     fpargs.ascall = TRUE;
                     returnexp->v.func->sp = GetOverloadedFunction(&tp1, &exp1, returnexp->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    returnexp->v.func->fcall = varNode(en_pc, returnexp->v.func->sp);
                 }
             }
             if (cparams.prm_cplusplus && isstructured(returntype))
@@ -2252,91 +2265,6 @@ static LEXEME *asm_declare(LEXEME *lex)
     } while (lex && MATCHKW(lex, comma));
     return lex;
 }
-LEXEME *statement_throw(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
-{
-    TYPE *tp = NULL;
-    EXPRESSION *exp = NULL;
-    STATEMENT *st = stmtNode(lex, parent, st_expr); // rethow has null expression
-    hasXCInfo = TRUE;
-    lex = getsym();
-    if (!MATCHKW(lex, semicolon))
-    {
-        SYMBOL *sp = namespacesearch("_ThrowException", globalNameSpace, FALSE, FALSE);
-        makeXCTab(funcsp);
-        lex = expression_assign(lex, funcsp, NULL, &tp, &exp, NULL, 0);
-        if (!tp)
-        {
-            error(ERR_EXPRESSION_SYNTAX);
-        }   
-        else if (sp)
-        {
-            FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
-            INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
-            INITLIST *arg2 = Alloc(sizeof(INITLIST)); // instance
-            INITLIST *arg3 = Alloc(sizeof(INITLIST)); // array size
-            INITLIST *arg4 = Alloc(sizeof(INITLIST)); // constructor
-            INITLIST *arg5 = Alloc(sizeof(INITLIST)); // exception block
-            SYMBOL *rtti = RTTIDumpType(tp);
-            SYMBOL *cons = NULL;
-            if (isstructured(tp))
-            {
-                cons = getCopyCons(basetype(tp)->sp, FALSE);
-                if (!cons->inlineFunc.stmt)
-                {
-                    if (cons->defaulted)
-                        createConstructor(basetype(tp)->sp, cons);
-                    else if (cons->deferredCompile)
-                        deferredCompileOne(cons);
-                }
-                cons->genreffed = TRUE;
-            }
-            sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
-            arg1->next = arg2;
-            arg2->next = arg3;
-            arg3->next = arg4;
-            arg4->next = arg5;
-            arg1->exp = varNode(en_auto, funcsp->xc->xctab);
-            arg1->tp = &stdpointer;
-            arg2->exp = exp;
-            arg2->tp = &stdpointer;
-            arg3->exp = isarray(tp) ? intNode(en_c_i, tp->size/(basetype(tp)->btp->size)) : intNode(en_c_i, 1);
-            arg3->tp = &stdint;
-            arg4->exp = cons ? varNode(en_pc, cons) : intNode(en_c_i, 0);
-            arg4->tp = &stdpointer;
-            arg5->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
-            arg5->tp = &stdpointer;
-            params->arguments = arg1;
-            params->ascall = TRUE;
-            params->sp = sp;
-            params->functp = sp->tp;
-            params->fcall = varNode(en_pc, sp);
-            st->select = exprNode(en_func, NULL, NULL);
-            st->select->v.func = params;
-        }
-    }
-    else
-    {
-        SYMBOL *sp = namespacesearch("_RethrowException", globalNameSpace, FALSE, FALSE);
-        if (sp)
-        {
-            FUNCTIONCALL *parms = Alloc(sizeof(FUNCTIONCALL));
-            INITLIST *arg1 = Alloc(sizeof(INITLIST)); // exception table
-            makeXCTab(funcsp);
-            sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
-            parms->ascall = TRUE;
-            parms->sp = sp;
-            parms->functp = sp->tp;
-            parms->fcall = varNode(en_pc, sp);
-            parms->arguments = arg1;
-            arg1->exp = varNode(en_auto, funcsp->xc->xctab);
-            arg1->tp = &stdpointer;
-            st->select = exprNode(en_func, NULL, NULL);
-            st->select->v.func = parms;
-        }
-    }
-    parent->needlabel = TRUE;
-    return lex;
-}
 LEXEME *statement_catch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
                         int label, int startlab, int endlab)
 {
@@ -2655,7 +2583,10 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
         error(ERR_UNREACHABLE_CODE);
 
     if (!MATCHKW(lex,begin))
-        parent->needlabel = FALSE;
+        if (MATCHKW(lex, kw_throw))
+            parent->needlabel = TRUE;
+        else
+            parent->needlabel = FALSE;
     
     parent->nosemi = FALSE;
     switch(KW(lex))
@@ -2666,9 +2597,6 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
         case kw_catch:
             error(ERR_CATCH_WITHOUT_TRY);
             lex = statement_catch(lex, funcsp, parent,1,1,1);
-            break;
-        case kw_throw:
-            lex = statement_throw(lex, funcsp, parent);
             break;
         case begin:
             lex = compound(lex, funcsp, parent, FALSE);
@@ -2883,7 +2811,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             n++;
             hr = hr->next;
         }
-        if (cparams.prm_cplusplus && funcsp->isConstructor)
+        if (cparams.prm_cplusplus && funcsp->isConstructor && funcsp->parentClass)
         {
             ParseMemberInitializers(funcsp->parentClass, funcsp);
             thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, TRUE, FALSE);
@@ -3286,6 +3214,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     STATEMENT *startStmt;
     SYMBOL *spt = funcsp;
     int oldCodeLabel = codeLabel;
+
     codeLabel = INT_MIN;
     hasXCInfo = FALSE;
     localNameSpace->syms = NULL;

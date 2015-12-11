@@ -89,6 +89,15 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
 {
     if (!lex)
         return FALSE;
+       
+    if (lex->type == l_id)
+    { 
+        TEMPLATEPARAM *tparam = TemplateLookupSpecializationParam(lex->value.s.a);
+        if (tparam)
+        {
+            return tparam->type == kw_typename || tparam->type == kw_template;
+        }
+    }
     if (lex->type == l_id || MATCHKW(lex, classsel))
     {
         SYMBOL *sp, *strSym = NULL;
@@ -276,7 +285,7 @@ BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
             case bt_near:
             case bt_lrqual:
             case bt_rrqual:
-//            case bt_derivedfromtemplate:
+            case bt_derivedfromtemplate:
                 tp = tp->btp;
                 break;
             case bt_const:

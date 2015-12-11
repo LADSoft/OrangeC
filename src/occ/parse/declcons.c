@@ -195,13 +195,10 @@ MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex2, SYMBOL *funcsp, SYMBOL 
                 }
                 if (MATCHKW(lex, ellipse))
                 {
-                    *mylex = Alloc(sizeof(*(*cur)->initData));
-                    **mylex = *lex;
-                    (*mylex)->prev = last;
-                    last = *mylex;
-                    mylex = &(*mylex)->next;
+                    (*cur)->packed = TRUE;
                     lex = getsym();
                 }
+                (*mylex)= NULL;
             }
             else
             {
@@ -1940,7 +1937,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     init->init = NULL;
                     lex = initType(lex, cons, 0, sc_auto, &init->init,  NULL, init->sp->tp, init->sp, FALSE, 0);
                 }
-                if (lex && MATCHKW(lex, ellipse))
+                if (init->packed)
                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                 SetAlternateLex(NULL);
             }
@@ -1960,7 +1957,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         lex = SetAlternateLex(init->initData);
                         shim.arguments = NULL;
                         lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
-                        if (!lex || !MATCHKW(lex, ellipse))
+                        if (!init->packed)
                             error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
                         SetAlternateLex(NULL);
                         expandPackedMemberInitializers(cls, cons, sp->tp->templateParam->p->byPack.pack, p,
@@ -2000,7 +1997,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                             lex = SetAlternateLex(init->initData);
                             shim.arguments = NULL;
                             lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
-                            if (lex && MATCHKW(lex, ellipse))
+                            if (init->packed)
                                 error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                             SetAlternateLex(NULL);
                             while (shim.arguments)
@@ -2027,6 +2024,10 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     error(ERR_CLASS_TEMPLATE_PARAMETER_EXPECTED);
                 }
                 
+            }
+            else if (init->packed)
+            {
+                expandPackedBaseClasses(cls, cons, init == cons->memberInitializers ? &cons->memberInitializers : &init, bc, vbase);
             }
             else
             {
@@ -2058,9 +2059,11 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                     init->sp = sp;
                     shim.arguments = NULL;
                     lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
-                    if (lex && MATCHKW(lex, ellipse))
-                        error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
                     SetAlternateLex(NULL);
+                    if (init->packed)
+                    {
+                        error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                    }
                     while (shim.arguments)
                     {
                         *xinit = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
@@ -2070,6 +2073,73 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         shim.arguments = shim.arguments->next;
                     }                
                 }
+            }
+        }
+        if (!init->sp)
+        {
+            // might be a typedef?
+            init->sp = finishSearch(init->name, NULL, NULL, FALSE, FALSE);
+            if (init->sp->storage_class == sc_typedef)
+            {
+                int offset = 0;
+                TYPE *tp = init->sp->tp;
+                tp = basetype(tp);
+                if (isstructured(tp))
+                {
+                    BASECLASS *bc = cls->baseClasses;
+                    while (bc)
+                    {
+                        if (!comparetypes(bc->cls, init->sp, TRUE) || sameTemplate(bc->cls->tp, init->sp->tp))
+                            break;
+                        bc = bc->next;
+                    }
+                    if (bc)
+                    {
+                        // have to make a *real* variable as a fudge...
+                        SYMBOL *sp;
+                        FUNCTIONCALL shim;
+                        INITIALIZER **xinit;
+                        lex = SetAlternateLex(init->initData);
+                        if (MATCHKW(lex, lt))
+                        {
+                            TEMPLATEPARAMLIST *lst = NULL;
+                            lex = GetTemplateArguments(lex, cons, init->sp, &lst);
+                            if (init->sp->templateLevel)
+                            {
+                                init->sp = TemplateClassInstantiate(init->sp, lst, FALSE, sc_global);
+                            }
+                            else
+                            {
+                                errorsym(ERR_NOT_A_TEMPLATE, init->sp);
+                            }
+                        }
+                        sp = makeID(sc_member, init->sp->tp, NULL, init->sp->name);
+                        xinit = &init->init;
+                        sp->offset = offset;
+                        init->sp = sp;
+                        shim.arguments = NULL;
+                        lex = getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, TRUE);
+                        if (init->packed)
+                            error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
+                        SetAlternateLex(NULL);
+                        while (shim.arguments)
+                        {
+                            *xinit = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                            (*xinit)->basetp = shim.arguments->tp;
+                            (*xinit)->exp = shim.arguments->exp;
+                            xinit = &(*xinit)->next;
+                            shim.arguments = shim.arguments->next;
+                        }                
+                    }
+                }    
+                else
+                {
+                    init->sp = NULL;
+                }
+            }
+            else
+            {
+                init->sp = NULL;
             }
         }
         if (!init->sp)

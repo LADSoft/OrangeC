@@ -345,7 +345,8 @@ BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, e
                     cst->genreffed = TRUE;
                 }
                 *exp = e1;
-                cast(other, exp);
+                if (other)
+                    cast(other, exp);
             }
             *tp = basetype(cst->tp)->btp;
             return TRUE;
@@ -1095,7 +1096,7 @@ LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType,
     *oldType = NULL;
     if (needkw(&lex, lt))
     {
-        lex = get_type_id(lex, newType, funcsp, sc_cast, FALSE);
+        lex = get_type_id(lex, newType, funcsp, sc_cast, FALSE, TRUE);
         if (!*newType)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1131,7 +1132,7 @@ LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         BOOLEAN byType = FALSE;
         if (startOfType(lex, FALSE))
         {
-            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE, TRUE);
             byType = TRUE;
         }
         else
@@ -1557,7 +1558,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         if (startOfType(lex, FALSE))
         {
             // type in parenthesis
-            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE, TRUE);
             needkw(&lex, closepa);
         }
         else
@@ -1573,7 +1574,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         {
             // type in parenthesis
             lex = getsym();
-            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE, TRUE);
             needkw(&lex, closepa);
         }
         else
@@ -1708,7 +1709,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             lex = getArgs(lex, funcsp, initializers, closepa, TRUE, 0);
             if (initializers->arguments)
             {
-                if (!isarithmetic(initializers->arguments->tp) || initializers->arguments->next)
+                if (!comparetypes(initializers->arguments->tp, *tp, FALSE) || initializers->arguments->next)
                 {
                     error(ERR_NEED_NUMERIC_EXPRESSION);
                 }

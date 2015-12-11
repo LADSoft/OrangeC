@@ -966,6 +966,10 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             name += 3;
             strcpy(buf, "decltype(...) ");
             break;
+        case '#':
+            buf += strlen(buf);
+            name = unmangTemplate(buf, name-1, last);
+            break;
     }
     return name;
 }

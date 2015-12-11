@@ -532,6 +532,8 @@ static struct {
 {"Use of an initializer-list requires '#include <initializer_list>'", ERROR },
 {"Use '&' to take the address of a member function", ERROR },
 {"ISO C++ forbids in-class initialization of non-const static member '%s'", ERROR },
+{"Need packed template parameter", ERROR },
+
 #endif
 } ;
 
@@ -1736,6 +1738,7 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_templateparam:
         case en_templateselector:
         case en_packedempty:
+        case en_sizeofellipse:
             break;
         default:
             diag("assignmentUsages");

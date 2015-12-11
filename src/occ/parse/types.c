@@ -162,7 +162,7 @@ BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact)
             typ2 = basetype(typ2)->btp;
         if (!comparetypes(typ1->btp, typ2->btp, exact))
             return FALSE;
-        if (!matchOverload(typ1, typ2))
+        if (!matchOverload(typ1, typ2, TRUE))
             return FALSE;
         return TRUE;
     }

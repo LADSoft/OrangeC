@@ -2341,6 +2341,16 @@ join_lor:
             rv |= opt0(&((*node)->v.ad->address));
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
+        case en_sizeofellipse:
+            if (!templateNestingCount)
+            {
+                int n = 0;
+                TEMPLATEPARAMLIST *tpl = (*node)->v.templateParam->p->byPack.pack;
+                while (tpl)
+                    n++, tpl = tpl->next;
+                *node = intNode(en_c_i, n);
+            }
+            break;
         case en_templateselector:
             if (!templateNestingCount)
             {

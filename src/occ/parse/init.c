@@ -1983,8 +1983,9 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
                 size = (size / base) * base;
                 while (temp && temp->size == 0)
                 {
-                    temp->size = size;
-                    temp = temp->btp;
+                     temp->size = size;
+                     temp->esize = intNode(en_c_i, size);
+                     temp = temp->btp;
                 }
             }
         }
@@ -2077,7 +2078,7 @@ static TYPE *nexttp(AGGREGATE_DESCRIPTOR *desc)
     TYPE *rv;
     if (isstructured(desc->tp))
     {
-        if (!cparams.prm_cplusplus  || desc->tp->sp->trivialCons)
+        if (!cparams.prm_cplusplus  || basetype(desc->tp)->sp->trivialCons)
         {
             HASHREC *hr = desc->hr;
             if (!hr)
@@ -3238,11 +3239,6 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
                            errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
                     }
                 }
-            }
-            else if (isstructured(tp) && basetype(tp)->sp->trivialCons && hasData(tp))
-            {
-                if (!asExpression)
-                    errorsym(ERR_CONSTANT_MUST_BE_INITIALIZED, sp);
             }
             else if (sp->init->exp && isintconst(sp->init->exp) && (isint(sp->tp) || basetype(sp->tp)->type == bt_enum))
                 {

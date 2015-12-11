@@ -213,8 +213,6 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
     TEMPLATEPARAM *templateParamAsTemplate = NULL;
     TYPE *dependentType = NULL;
 
-    if (ISID(lex) && !strcmp(lex->value.s.a, "common_type") && includes->line == 3)
-        printf("hi");
     if (sym)
         *sym = NULL;
     if (ns) *ns = NULL;
@@ -267,7 +265,12 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             int level = -1;
             if (!strSym)
             {
-                if (!qualified)
+                TEMPLATEPARAM *tparam = TemplateLookupSpecializationParam(buf);
+                if (tparam)
+                {
+                    sp = tparam->sym;
+                }
+                else if (!qualified)
                 {
                     sp = classsearch(buf, FALSE, FALSE);
                     if (sp && sp->tp->type == bt_templateparam)
@@ -324,9 +327,11 @@ LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns,
             }
             else
             {
-                sp = search(buf, basetype(strSym->tp)->syms);
-                if (!sp)
-                    sp = search(buf, basetype(strSym->tp)->tags);
+                STRUCTSYM s;
+                s.str = strSym;
+                addStructureDeclaration(&s);
+                sp = classsearch(buf, FALSE, FALSE);
+                dropStructureDeclaration();
             }
             if (sp)
             {
@@ -767,7 +772,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
             l = encloser->templateSelector;
             while (l->next)
                 l = l->next;
-            if (destructor && *destructor)
+            if (destructor && *destructor && !encloser->templateSelector->next->next)
             {
                 l->next = Alloc(sizeof(TEMPLATESELECTOR));
                 l->next->name = l->sym->name;
@@ -792,13 +797,21 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
             }
             else
             {
-                *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass);
-                if (!*sym)
-                    encloser = NULL;
-                if (errIfNotFound && !*sym)
+                TEMPLATEPARAM *tparam = TemplateLookupSpecializationParam(lex->value.s.a);
+                if (tparam)
                 {
-                    errorstr(ERR_UNDEFINED_IDENTIFIER, lex->value.s.a);
-                } 
+                    *sym = tparam->sym;
+                }
+                else
+                {
+                    *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass);
+                    if (!*sym)
+                        encloser = NULL;
+                    if (errIfNotFound && !*sym)
+                    {
+                        errorstr(ERR_UNDEFINED_IDENTIFIER, lex->value.s.a);
+                    } 
+                }
             }
         }
     }
@@ -895,10 +908,12 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
             }
             strcpy(buf, overloadNameTab[*ov = kw - kw_new + CI_NEW]);
         }
-        else if (startOfType(lex, FALSE) || ISID(lex)) // potential cast operator
+        else if (ISID(lex) || startOfType(lex, FALSE)) // potential cast operator
         {
             TYPE *tp = NULL;
-            lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE);
+            noSpecializationError++;
+            lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE, TRUE);
+            noSpecializationError--;
             if (castType)
                 *castType = tp;
             strcpy(buf, overloadNameTab[*ov = CI_CAST]);
@@ -1438,7 +1453,7 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                               int lenl, int lenr, BOOLEAN fromUser)
 {
     enum e_ct xl=conv, xr=conv;
-    BOOLEAN lderivedfrombase = FALSE, rderivedfrombase = FALSE;
+    int lderivedfrombase = 0, rderivedfrombase = 0;
     int rankl, rankr;
     int i,j;
     int n,q;
@@ -1468,6 +1483,13 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
     {
         // one seq is a subseq of the other
         int l = 0, r = 0;
+        for (;l < lenl; l++)
+            if (seql[l] == CV_DERIVEDFROMBASE || seql[l] == CV_LVALUETORVALUE)
+                lderivedfrombase++;
+        for (;r < lenr; r++)
+            if (seqr[r] == CV_DERIVEDFROMBASE || seqr[r] == CV_LVALUETORVALUE)
+                rderivedfrombase++;
+        l=0, r = 0;
         for (;l < lenl && r < lenr;)
         {
             BOOLEAN cont = FALSE;
@@ -1478,10 +1500,6 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                     l++;
                     cont = TRUE;
                     break;
-                case CV_DERIVEDFROMBASE:
-                case CV_LVALUETORVALUE:
-                    lderivedfrombase = TRUE;
-                    break;
                 default:
                     break;
             }
@@ -1491,10 +1509,6 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                 case CV_FUNCTIONTOPOINTER:
                     r++;
                     cont = TRUE;
-                    break;
-                case CV_DERIVEDFROMBASE:
-                case CV_LVALUETORVALUE:
-                    rderivedfrombase = TRUE;
                     break;
                 default:
                     break;
@@ -1627,9 +1641,9 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                if (lderivedfrombase && !rderivedfrombase)
+                                if (lderivedfrombase > rderivedfrombase)
                                     return -1;
-                                else if (rderivedfrombase && !rderivedfrombase)
+                                else if (rderivedfrombase > lderivedfrombase)
                                     return 1;
                                 else
                                     return 0;
@@ -1648,9 +1662,9 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                if (lderivedfrombase && !rderivedfrombase)
+                                if (lderivedfrombase > rderivedfrombase)
                                     return 1;
-                                else if (rderivedfrombase && !rderivedfrombase)
+                                else if (rderivedfrombase > lderivedfrombase)
                                     return -1;
                                 else
                                     return 0;
@@ -1675,9 +1689,9 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                if (lderivedfrombase && !rderivedfrombase)
+                                if (lderivedfrombase > rderivedfrombase)
                                     return 1;
-                                else if (rderivedfrombase && !rderivedfrombase)
+                                else if (rderivedfrombase > lderivedfrombase)
                                     return -1;
                                 else
                                     return 0;
@@ -1696,9 +1710,9 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                         if (classRefCount(tl->sp, tr->sp) == 1)
                         {
                             if (classRefCount(tr->sp, tl->sp) == 1)
-                                if (lderivedfrombase && !rderivedfrombase)
+                                if (lderivedfrombase > rderivedfrombase)
                                     return -1;
-                                else if (rderivedfrombase && !rderivedfrombase)
+                                else if (rderivedfrombase > lderivedfrombase)
                                     return 1;
                                 else
                                     return 0;
@@ -2425,7 +2439,7 @@ static void getPointerConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *exp, int *n,
                 seq[(*n)++] = CV_IDENTITY;
             }
         }
-        else if (!comparetypes(tpp, tpa, TRUE))
+        else if (!comparetypes(tpp, tpa, TRUE) && !basetype(tpa)->nullptrType)
         {
             seq[(*n)++] = CV_NONE;
         }
@@ -2638,11 +2652,10 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
         }
         else if (tpp->type == bt_lref && rref)
         {
+            seq[(*n)++] = CV_LVALUETORVALUE;//CV_NONE;
             // rvalue to lvalue ref not allowed unless the lvalue is a function
             if (isconst(tppp) && !isvolatile(tppp))
                 seq[(*n)++] = CV_QUALS;
-            else
-                seq[(*n)++] = CV_LVALUETORVALUE;//CV_NONE;
         }
         tpa = basetype(tpa);
         if (isstructured(tpa))
@@ -2954,7 +2967,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
                 if (ismemberdata(member))
                 {
                     getSingleConversion(member->tp, a->tp, a->exp, n, seq, candidate, userFunc, TRUE); 
-                    if (*n > 5)
+                    if (*n > 10)
                         break;
                     a = a->next;
                 }
@@ -3008,7 +3021,7 @@ static void getInitListConversion(TYPE *tp, INITLIST *list, TYPE *tpp, int *n, e
         while (a)
         {
             getSingleConversion(btp, a->tp, a->exp, n, seq, candidate, userFunc, TRUE);
-            if (*n > 5)
+            if (*n > 10)
                 break;
             if (--x < 0) // too many items...
             {
@@ -3065,7 +3078,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
         m1 = m;
         while (m1 && seq[m1-1] == CV_IDENTITY)
             m1--;
-        if (m1 > 5)
+        if (m1 > 10)
         {
             return FALSE;
         }
@@ -3085,7 +3098,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
         m1 = m;
         while (m1 && seq[m1-1] == CV_IDENTITY)
             m1--;
-        if (m1 > 5)
+        if (m1 > 10)
         {
             return FALSE;
         }
@@ -3185,7 +3198,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                     m1 = m;
                     while (m1 && seq[m1-1] == CV_IDENTITY)
                         m1--;
-                    if (m1 > 5)
+                    if (m1 > 10)
                     {
                         return FALSE;
                     }
@@ -3309,7 +3322,7 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                 m1 = m;
                 while (m1 && seq[m1-1] == CV_IDENTITY)
                     m1--;
-                if (m1 > 5)
+                if (m1 > 10)
                 {
                     return FALSE;
                 }
@@ -3492,7 +3505,7 @@ static int insertFuncs(SYMBOL **spList, SYMBOL **spFilterList, LIST *gather, FUN
             SYMBOL *sym = (SYMBOL *)(*hr)->p;
             for (i=0; i < n; i++)
                 if (spFilterList[i] == sym || spFilterList[i]->mainsym == sym || spFilterList[i] == sym->mainsym ||
-                    matchOverload(sym->tp, spFilterList[i]->tp) && sym->overlayIndex == spFilterList[i]->overlayIndex)
+                    matchOverload(sym->tp, spFilterList[i]->tp, FALSE) && sym->overlayIndex == spFilterList[i]->overlayIndex)
                     break;
 
             if (i >= n && (!args || !args->astemplate || sym->templateLevel) && !sym->instantiated)

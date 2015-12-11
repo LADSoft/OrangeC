@@ -120,6 +120,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
 		{
             case en_nullptr:
                 *buf++ = 'n';
+				*buf = 0;
                 break;
             case en_arrayadd:
             case en_structadd:
@@ -127,11 +128,13 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'p';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_sub:
                 *buf++ = 's';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_mul:
             case en_umul:
@@ -139,12 +142,14 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'm';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_umod:
             case en_mod:
                 *buf++ = 'o';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_div:
             case en_udiv:
@@ -152,6 +157,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'd';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_lsh:
             case en_arraylsh:
@@ -159,6 +165,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'l';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_rsh:
             case en_ursh:
@@ -166,29 +173,34 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'r';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_cond:
                 *buf++ = 'C';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right->left);
                 buf = mangleExpressionInternal(buf, exp->right->right);
+				*buf = 0;
                 break;
             case en_assign:
                 *buf++ = 'a';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_eq:
                 *buf++ = 'c';
                 *buf++ = 'e';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_ne:
                 *buf++ = 'c';
                 *buf++ = 'n';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_uminus:
                 *buf++ = 'u';
@@ -203,12 +215,14 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'b';
                 *buf++ = 'n';
                 buf = mangleExpressionInternal(buf, exp->left);
+				*buf = 0;
                 break;
             case en_ascompl:
                 *buf++ = 'a';
                 *buf++ = 'n';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_ult:
             case en_lt:
@@ -217,6 +231,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 't';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_ule:
             case en_le:
@@ -225,6 +240,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'e';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_ugt:
             case en_gt:
@@ -233,6 +249,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 't';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_uge:
             case en_ge:
@@ -241,48 +258,56 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 *buf++ = 'e';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_and:
                 *buf++ = 'b';
                 *buf++ = 'a';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_land:
                 *buf++ = 'l';
                 *buf++ = 'a';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_or:
                 *buf++ = 'b';
                 *buf++ = 'o';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_lor:
                 *buf++ = 'l';
                 *buf++ = 'o';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_xor:
                 *buf++ = 'b';
                 *buf++ = 'x';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_autoinc:
                 *buf++ = 'i';
                 *buf++ = 'p';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_autodec:
                 *buf++ = 'i';
                 *buf++ = 's';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
+				*buf = 0;
                 break;
             case en_templateselector:
             {
@@ -300,12 +325,14 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                     buf = lookupName(buf, find->name);
                     find = find->next;
                 }
+				*buf = 0;
                 break;
             }
             case en_templateparam:
                 *buf++ = 't';
                 *buf++ = 'p';
                 buf = lookupName(buf,exp->v.sp->name);
+				*buf = 0;
                 break;
                 
 			case en_func:
@@ -355,6 +382,7 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
 				}
 				break;
 			default:
+				*buf = 0;
 				break;
 		}
 	}    
@@ -743,6 +771,9 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                     p = mangleTemplate(nm, s->sym, s->templateParams);
                 else
                     p = getName(nm, s->sym);
+				p[0] =0;
+				if (strlen(nm) > sizeof(nm))
+                    p = mangleTemplate(nm, s->sym, s->templateParams);
                 s = s->next ;
                 while (s)
                 {

@@ -735,19 +735,6 @@ void link_putext(SYMBOL *sp)
     beDecorateSymName(buf, sp);
     sp->value.i = extIndex++;
     emit_record_ieee("NX%X,%03X%s.\r\n", (int)sp->value.i, strlen(buf), buf);
-    #ifdef XXXXX
-        if (prm_debug)
-            if (r->datatype &TY_TYPE)
-                emit_record_ieee("ATX%X,T%lX.\r\n", r->id, r->datatype &~TY_TYPE);
-            else
-                if (r->datatype &TY_NAME)
-                    emit_record_ieee("ATX%X,I%lX.\r\n", r->id, r->datatype &~TY_NAME)
-                        ;
-                else
-                    emit_record_ieee("ATX%X,%lX.\r\n", r->id, r->datatype);
-        q = q->link;
-    }
-#endif 
 }
 
 //-------------------------------------------------------------------------
@@ -1058,9 +1045,9 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                 xseg = segxlattab[iseg];
             {
                 SYMBOL *sp = fixup->sym;
-                if ((isfunction(sp->tp) && sp->inlineFunc.stmt) || (!isfunction(sp->tp) && sp->linkage == lk_virtual) ||
+                if (!sp->dontinstantiate && ((isfunction(sp->tp) && sp->inlineFunc.stmt) || (!isfunction(sp->tp) && sp->linkage == lk_virtual) ||
                     sp->storage_class == sc_global || sp->storage_class ==
-                    sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads)
+                    sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads))
                 {
                     if ((xseg & 0xffffff) == 0)
                         iseg = link_getseg(fixup->sym);

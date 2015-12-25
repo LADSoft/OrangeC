@@ -61,6 +61,7 @@ extern int total_errors;
 extern int templateNestingCount;
 extern int codeLabel;
 extern INCLUDES *includes;
+extern int cppprio;
 
 typedef struct _startups_
 {
@@ -346,7 +347,7 @@ static void dumpDynamicInitializers(void)
         genfunc(funcsp);
         startlab = retlab = 0;
         startupseg();
-        gensrref(funcsp, 32);
+        gensrref(funcsp, 32+cppprio);
     }
 #endif
 }
@@ -476,7 +477,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
         // well if we wanted we could reuse existing structures, but,
         // it doesn't seem like the amount of duplicates there might be is
         // really worth the work.  Borland didn't think so anyway...
-        dseg();
+        cseg();
         lbl = nextLabel++;
         if (sp)
             sp->label = lbl;
@@ -565,6 +566,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
                 genint(exp->v.i+sp->offset+1);
                 genint(0);
             }
+            genint(0); // padding
         }
     }
 #endif
@@ -1068,6 +1070,8 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                         args = &(*args)->next;
                         hrp = hrp->next;
                     }
+                    if (*exp2 && (*exp2)->type == en_func)
+                       fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                 }
@@ -1230,6 +1234,8 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                         args = &(*args)->next;
                         hrp = hrp->next;
                     }
+                    if (*exp2 && (*exp2)->type == en_func)
+                       fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     GetOverloadedFunction(ispointer(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                 }
@@ -1338,12 +1344,13 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                         args = &(*args)->next;
                         hrp = hrp->next;
                     }
+                    if (*exp2 && (*exp2)->type == en_func)
+                       fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     funcsp = GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                     if (funcsp)
                     {
-                        int lbl = dumpMemberPtr(funcsp, itype, TRUE);
-                        exp = intNode(en_labcon, lbl);
+                        exp = varNode(en_memberptr, funcsp);
                     }
                     if (!comparetypes(itype->btp, tp1, TRUE))
                     {
@@ -2952,6 +2959,7 @@ BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams)
         case en_mp_as_bool:
         case en_thisref:
         case en_lvalue:
+        case en_funcret:
             rv = IsConstantExpression(node->left, allowParams);
             break;
         case en_func:

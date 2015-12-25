@@ -61,7 +61,7 @@ char *rcMain::usageText = "[options] file"
 "\n"
 "  @filename  use response file\n"
 "  /Dxxx  Define something             /ixxx  Set include file path\n"
-"  /Lxx,yy Set default language        /oxxx  Set output file name\n"
+"  /Lxx   Set default language id      /oxxx  Set output file name\n"
 "  /r     reserved for compatability   /t     reserved for compatability\n"
 "  /v     reserved for compatability\n"
 "\n"
@@ -113,9 +113,7 @@ int rcMain::Run(int argc, char *argv[])
     }
     if (Language.GetValue().size())
     {
-        int one=LANG_ENGLISH,two=SUBLANG_ENGLISH_US;
-        sscanf(Language.GetValue().c_str(), "%d,%d", &one, &two);
-        language = one + (two << 10);        
+        sscanf(Language.GetValue().c_str(), "%d", &language);
     }
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {

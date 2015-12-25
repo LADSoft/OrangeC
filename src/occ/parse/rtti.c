@@ -371,6 +371,15 @@ SYMBOL *RTTIDumpType(TYPE *tp)
                 }
             }
         }
+        else if (!basetype(tp)->sp->dontinstantiate)
+        {
+            if (xtSym->dontinstantiate)
+            {
+                xtSym->dontinstantiate = FALSE;
+                RTTIDumpStruct(xtSym, tp);
+            }
+        }
+            
     }
 #endif
     return xtSym;
@@ -557,6 +566,7 @@ static void XCExpression(EXPRESSION *node, XCLIST ***listPtr)
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
+        case en_funcret:
             XCExpression(node->left, listPtr);
             break;
         case en_thisref:

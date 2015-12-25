@@ -2326,6 +2326,7 @@ join_lor:
         case en_not_lvalue:
         case en_lvalue:
         case en_thisref:
+        case en_funcret:
             rv |= opt0(&(ep->left));
             break;
         case en_func:
@@ -2361,7 +2362,7 @@ join_lor:
                 if (tsl->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST *current = tsl->next->templateParams;
-                    sp = GetClassTemplate(ts, current, FALSE);
+                    sp = GetClassTemplate(ts, current, TRUE);
                 }
                 if (sp)
                 {
@@ -2885,6 +2886,7 @@ int fold_const(EXPRESSION *node)
         case en_not_lvalue:
         case en_lvalue:
         case en_thisref:
+        case en_funcret:
             rv |= fold_const(node->left);
             break;
         case en_func:
@@ -3036,6 +3038,7 @@ int typedconsts(EXPRESSION *node1)
         case en_mp_as_bool:
         case en_thisref:
         case en_literalclass:
+        case en_funcret:
             rv |= typedconsts(node1->left);
             break;
         case en_func:
@@ -3421,7 +3424,10 @@ static int depth(EXPRESSION *ep)
         case en_nullptr:
         case en_atomic:
             return 1;
+        case en_funcret:
+            return depth(ep->left);
         case en_func:
+            
             return 10 + imax(depth(ep->left), depth(ep->right));
         case en_cond:
             return 1 + imax(depth(ep->left), imax(depth(ep->right->left), depth(ep->right->right)));

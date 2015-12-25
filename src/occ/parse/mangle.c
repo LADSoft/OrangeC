@@ -334,7 +334,11 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
                 buf = lookupName(buf,exp->v.sp->name);
 				*buf = 0;
                 break;
-                
+
+            case en_funcret:
+                buf = mangleExpressionInternal(buf, exp->left);
+				*buf = 0;
+                break;                
 			case en_func:
                 if (exp->v.func->ascall)
                 {

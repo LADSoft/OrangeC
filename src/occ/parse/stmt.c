@@ -516,7 +516,11 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         addedBlock++;
         AllocateLocalContext(parent, funcsp, codeLabel++);
     }
-    lex = statement(lex, funcsp, dostmt,TRUE);
+    do
+    {
+        lex = statement(lex, funcsp, dostmt,TRUE);
+    }
+    while (lex && dostmt->tail->purelabel);
     if (cparams.prm_cplusplus || cparams.prm_c99)
     {
         addedBlock--;
@@ -1049,8 +1053,12 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             }
                             else {
                                 TYPE **tp = &declSP->tp;
+                                BOOLEAN ref = FALSE;
                                 if (isref(*tp))
+                                {
+                                    ref = TRUE;
                                     tp = &(*tp)->btp;
+                                }
                                 while (isconst(*tp) || isvolatile(*tp))
                                     tp = &(*tp)->btp;
                                 if ((*tp)->type == bt_auto && starType)
@@ -1062,6 +1070,13 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 else if (!isstructured(declSP->tp))
                                 {
                                     EXPRESSION *decl = declExp;
+                                    if (ref && (starType->lref || starType ->rref))
+                                    {
+                                        while (castvalue(st->select))
+                                            st->select = st->select->left;
+                                        if (lvalue(st->select))
+                                            st->select = st->select->left;
+                                    }
                                     deref(declSP->tp, &decl);
                                     st->select = exprNode(en_assign, decl, st->select);
                                 }
@@ -1081,8 +1096,11 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 }
                             }
                         }
-                        
-                        lex = statement(lex, funcsp, forstmt, TRUE);
+                        do
+                        {                    
+                            lex = statement(lex, funcsp, forstmt, TRUE);
+                        }
+                        while (lex && forstmt->tail->purelabel);
                         FreeLocalContext(forstmt, funcsp, codeLabel++);
                         if (declDest)
                         {
@@ -1248,7 +1266,11 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         addedBlock++;
                         AllocateLocalContext(parent, funcsp, codeLabel++);
                     }
-                    lex = statement(lex, funcsp, forstmt, TRUE);
+                    do
+                    {
+                        lex = statement(lex, funcsp, forstmt, TRUE);
+                    }
+                    while (lex && forstmt->tail->purelabel);
                     if (cparams.prm_cplusplus || cparams.prm_c99)
                     {
                         addedBlock--;
@@ -1336,7 +1358,11 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 addedBlock++;
                 AllocateLocalContext(parent, funcsp, codeLabel++);
             }
-            lex = statement(lex, funcsp, parent, TRUE);
+            do
+            {
+                lex = statement(lex, funcsp, parent, TRUE);
+            }
+            while (lex && parent->tail->purelabel);
             needlabelif = parent->needlabel;
             if (MATCHKW(lex, kw_else))
             {
@@ -1375,7 +1401,11 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 currentLineData(parent, lex, 0);
                 lex = getsym();
                 parent->needlabel = FALSE;
-                lex = statement(lex, funcsp, parent, TRUE);
+                do
+                {
+                    lex = statement(lex, funcsp, parent, TRUE);
+                }
+                while (lex && parent->tail->purelabel);
                 if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !optimized)
                 {
                     st1 = st->next;
@@ -1763,6 +1793,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                 args = &(*args)->next;
                                 hrp = hrp->next;
                             }
+                            if (returnexp && returnexp->type == en_func)
+                               fpargs.templateParams = returnexp->v.func->templateParams;
                             fpargs.ascall = TRUE;
                             funcsp = GetOverloadedFunction(&tp1, &returnexp, returnexp->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                             if (funcsp && basetype(tp)->type == bt_memberptr)
@@ -1854,6 +1886,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         args = &(*args)->next;
                         hrp = hrp->next;
                     }
+                    if (returnexp && returnexp->type == en_func)
+                       fpargs.templateParams = returnexp->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     returnexp->v.func->sp = GetOverloadedFunction(&tp1, &exp1, returnexp->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
                     returnexp->v.func->fcall = varNode(en_pc, returnexp->v.func->sp);
@@ -2124,7 +2158,11 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 addedBlock++;
                 AllocateLocalContext(parent, funcsp, codeLabel++);
             }
-            lex = statement(lex, funcsp, whilestmt, TRUE);
+            do
+            {
+                lex = statement(lex, funcsp, whilestmt, TRUE);
+            }
+            while (lex && whilestmt->tail->purelabel);
             if (cparams.prm_cplusplus || cparams.prm_c99)
             {
                 addedBlock--;
@@ -2184,6 +2222,7 @@ static void checkNoEffect(EXPRESSION *exp)
             case en_lvalue:
             case en_thisref:
             case en_literalclass:
+            case en_funcret:
                 checkNoEffect(exp->left);
                 break;
             default:

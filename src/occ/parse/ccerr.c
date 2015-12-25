@@ -1710,6 +1710,7 @@ void assignmentUsages(EXPRESSION *node, BOOLEAN first)
         case en_not_lvalue:
         case en_thisref:
         case en_lvalue:
+        case en_funcret:
             assignmentUsages(node->left, FALSE);
             break;
         case en_atomic:

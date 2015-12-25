@@ -2100,9 +2100,8 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
-            rv = noexceptExpression(node->left);
-            break;
         case en_thisref:
+        case en_funcret:
             rv = noexceptExpression(node->left);
             break;
         case en_atomic:

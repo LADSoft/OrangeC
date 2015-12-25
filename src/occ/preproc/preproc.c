@@ -57,6 +57,7 @@ extern char version[];
 
 extern FILE *cppFile;
 
+
 int preprocLine;
 char *preprocFile;
 LIST *nonSysIncludeFiles;
@@ -71,6 +72,7 @@ void ppdefcheck(unsigned char *line);
 
 MACROLIST *macroBuffers = NULL;
 
+int cppprio;
 int packdata[MAX_PACK_DATA] = 
 {
     1
@@ -137,7 +139,9 @@ void preprocini(char *name, FILE *fil)
 #ifndef CPREPROCESSOR
     packlevel  = 0;
     packdata[0] = chosenAssembler->arch->packSize;
+    cppprio = 0;
 #endif
+    
 }
 int defid(char *name, unsigned char **p)
 /*
@@ -752,7 +756,12 @@ void dopragma(void)
     lineToCpp();
     if (!expectid(name))
         return;
-    if (!strncmp(name, "STDC", 4))
+    if (!strncmp(name, "PRIORITYCPP",11))
+    {
+        cppprio++;
+        return;
+    }
+    else if (!strncmp(name, "STDC", 4))
     {
         int on = 0;
         skipspace();

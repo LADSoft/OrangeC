@@ -142,7 +142,7 @@ enum e_node
         en_l_l, en_l_ul, en_l_ll, en_l_ull, en_l_f, en_l_d, en_l_ld,  en_l_p, en_l_ref,
         en_l_fi, en_l_di, en_l_ldi, en_l_fc, en_l_dc, en_l_ldc, en_l_fp, en_l_sp, en_l_bit,
         en_nullptr, en_memberptr, en_mp_as_bool, en_mp_compare,
-        en_trapcall, en_func, en_intcall, en_tempref, 
+        en_trapcall, en_func, en_funcret, en_intcall, en_tempref, 
         en_arraymul, en_arraylsh, en_arraydiv, en_arrayadd, en_structadd,
         en_add, en_sub, en_mul, en_mod, en_div, en_lsh, en_rsh, en_ursh,
         en_cond, en_assign, en_eq, en_ne, 
@@ -499,6 +499,7 @@ typedef struct sym
         unsigned altered: 1;
         unsigned used: 1; /* value has been fetched */
         unsigned genreffed: 1; /* reffed in codegen */
+        unsigned noextern:1; /* no external reference needed, it was inlined */
         unsigned gentemplate: 1; /* template instantiation or reference generated */
         unsigned allocaUsed: 1;
         unsigned oldstyle : 1; /* pointer to a names list if an old style function arg */
@@ -575,6 +576,7 @@ typedef struct sym
     /* also default for template parameters, is a TYP */
     char *importfile; /* import name */
     struct sym *overloadName;
+    struct sym *typedefSym;
     struct sym *mainsym; /* pointer to the global version of a copied symbol */
     struct sym *maintemplate; /* pointer to the global version of a copied symbol */
     struct _memberInitializers *memberInitializers; /* initializers for constructor */
@@ -589,7 +591,7 @@ typedef struct sym
     struct _templateParamList *templateParams;
     LIST *templateNameSpace;
     LIST *staticAsserts;
-    int templateLevel;
+    short templateLevel;
     LIST *specializations;
     LIST *instantiations;
     struct _templateSelector *templateSelector; // first element is the last valid sym found, second element is the template parameter sym

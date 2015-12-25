@@ -119,7 +119,11 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                 vf->func->genreffed = TRUE;
                 InsertInline(vf->func);
                 InsertExtern(vf->func);
-                if (sym == vf->func->parentClass && entry->vtabOffset)
+                if (vf->func->ispure)
+                {
+                    genaddress(0);
+                }
+                else if (sym == vf->func->parentClass && entry->vtabOffset)
                 {
                     char buf[512];
                     SYMBOL *localsp;
@@ -1579,13 +1583,14 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
     packIndex = oldPack;
     return lptr;
 }
-void expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **init, BASECLASS *bc, VBASEENTRY *vbase)
+MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **init, BASECLASS *bc, VBASEENTRY *vbase)
 {
     MEMBERINITIALIZERS *linit = *init;
     int offset;
     SYMBOL *baseSP = findClassName(linit->name, cls, bc, vbase, &offset);
     if (!baseSP->templateLevel)
     {
+        init = &(*init)->next;
         errorsym(ERR_NOT_A_TEMPLATE, linit->sp);
     }
     else
@@ -1617,11 +1622,7 @@ void expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **i
                 }
                 pack = pack->next;
             }
-            if (n == -1)
-            {
-                error(ERR_NEED_PACKED_TEMPLATE_PARAMETER);
-            }
-            else
+            if (n != -1)
             {
                 int i;
                 for (i=0; i < n; i++)
@@ -1631,6 +1632,7 @@ void expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **i
                     lst = NULL;
                     lex = SetAlternateLex(linit->initData);
                     packIndex = i;
+                    added->name = linit->name;
                     added->next = *init;
                     *init = added;
                     init = &added->next;
@@ -1641,7 +1643,7 @@ void expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **i
                     bc1 = bc;
                     while (bc1)
                     {
-                        if (bc1 == added->sp)
+                        if (bc1->cls == added->sp)
                             break;
                         bc1 = bc1->next;
                     }
@@ -1694,6 +1696,7 @@ void expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **i
             error(ERR_NEED_SPECIALIZATION_PARAMETERS);
         }
     }
+    return *init;
 }
 void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLIST *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list)
 {

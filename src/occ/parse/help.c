@@ -782,6 +782,7 @@ void deref(TYPE *tp, EXPRESSION **exp)
         case bt_templateselector:
         case bt_templatedecltype:
         case bt_memberptr:
+        case bt_aggregate:
             return;
         default:
             diag("deref error");
@@ -882,6 +883,7 @@ int sizeFromType(TYPE *tp)
         case bt_lref:
         case bt_rref:
         case bt_memberptr:
+        case bt_aggregate:
             rv = ISZ_ADDR;
             break;
         default:
@@ -983,6 +985,7 @@ void cast(TYPE *tp, EXPRESSION **exp)
             en = en_x_ldi;
             break;
         case bt_pointer:
+        case bt_aggregate:
             en = en_x_p;
             break;
         case bt_void:
@@ -1393,7 +1396,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
     }
     // plop in a clear block if necessary
-    if (sp && !noClear && isstructured(tp) && (!cparams.prm_cplusplus || basetype(tp)->sp->trivialCons))
+    if (sp && !noClear && (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus || basetype(tp)->sp->trivialCons)))
     {
         EXPRESSION *fexp = expsym;
         EXPRESSION *exp;

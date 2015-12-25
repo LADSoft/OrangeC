@@ -123,7 +123,7 @@ void checkPackedExpression(EXPRESSION *sp);
 void checkUnpackedExpression(EXPRESSION *sp);
 void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp);
 INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, EXPRESSION *packedExp);
-void expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **init, BASECLASS *bc, VBASEENTRY *vbase);
+MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **init, BASECLASS *bc, VBASEENTRY *vbase);
 void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLIST *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list);
 void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend);
 SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move);

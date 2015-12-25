@@ -2783,6 +2783,9 @@ int natural_size(EXPRESSION *node)
             return ISZ_ADDR;
         case en_stmt:
             return natural_size(node->left);
+        case en_funcret:
+             while (node->type == en_funcret)
+                 node = node->left;
         case en_func:
         case en_intcall:
             if (!node->v.func->functp || !isfunction(node->v.func->functp))

@@ -439,7 +439,7 @@ void AllocateStackSpace(SYMBOL *funcsp)
         while (*temps)
         {
             SYMBOL *sp = (SYMBOL *)(*temps)->data;
-            if (sp->storage_class == sc_constant || sp->value.i == i)
+            if (sp->storage_class != sc_static && (sp->storage_class == sc_constant || sp->value.i == i))
             {
                 int val, align = getAlign(sc_auto, basetype(sp->tp));
                 lc_maxauto += basetype(sp->tp)->size;

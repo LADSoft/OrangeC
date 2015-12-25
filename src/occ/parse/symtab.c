@@ -363,32 +363,7 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
     {
         int i;
         TEMPLATEPARAMLIST *tplNew, *tplOld;
-        if (!argsOnly && basetype(tnew)->sp && basetype(told)->sp)
-        {
-            if (basetype(tnew)->sp->templateLevel != basetype(told)->sp->templateLevel)
-            {
-                return FALSE;
-            }
-            if (basetype(tnew)->sp->templateLevel)
-            {
-                if (!basetype(tnew)->sp->parentClass && !basetype(told)->sp->parentClass)
-                {
-                    tplNew = basetype(tnew)->sp->templateParams;
-                    tplOld = basetype(told)->sp->templateParams;
-                    while (tplNew && tplOld)
-                    {
-                        if (tplNew->p->type != tplOld->p->type || tplNew->p->packed != tplOld->p->packed)
-                            break;
-                        tplNew = tplNew->next;
-                        tplOld = tplOld->next;
-                    }
-                    if (tplNew || tplOld)
-                    {
-                        return FALSE;
-                    }
-                }
-            }
-        }
+
         if (tCount)
         {
             int i,j;
@@ -435,6 +410,9 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                             return FALSE;
                     }
             }
+        }
+        if (basetype(tnew)->sp && basetype(told)->sp)
+        {
             if (basetype(tnew)->sp->templateLevel || basetype(told)->sp->templateLevel)
             {
                 TYPE *tps = basetype(told)->btp;
@@ -453,16 +431,71 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                         tps = basetype(tps)->btp;
                     }
                     if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
-                        return FALSE;
+                        if (basetype(tpn)->type != bt_templateselector)
+                            return FALSE;
                     tpn = basetype(tpn);
                     tps = basetype(tps);
                     if (comparetypes(tpn, tps, TRUE) || tpn->type == bt_templateparam && tps->type == bt_templateparam)
                     {
                         return TRUE;
                     }
-                    else if (tpn->type == bt_templateselector && tps->type == bt_templateselector)
+                    else if (isarithmetic(tpn) && isarithmetic(tps))
                     {
-                        return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector);
+                        return FALSE;
+                    }
+                    else if (tpn->type == bt_templateselector)
+                    {
+                        if (tps->type == bt_templateselector)
+                        {
+                            if (!templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector))
+                            {
+                                TEMPLATESELECTOR *ts1 = tpn->sp->templateSelector->next, *tss1;
+                                TEMPLATESELECTOR *ts2 = tps->sp->templateSelector->next, *tss2;
+                                if (ts2->sym->typedefSym)
+                                {
+                                    ts1 = ts1->next;
+                                    if (!strcmp(ts1->name, ts2->sym->typedefSym->name))
+                                    {
+                                        ts1 = ts1->next;
+                                        ts2 = ts2->next;
+                                        while (ts1 && ts2)
+                                        {
+                                            if (strcmp(ts1->name, ts2->name))
+                                                return FALSE;
+                                            ts1 = ts1->next;
+                                            ts2 = ts2->next;
+                                        }
+                                        if (ts1 || ts2)
+                                            return FALSE;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            TEMPLATESELECTOR *tpl = basetype(tpn)->sp->templateSelector->next;
+                            SYMBOL *sp = tpl->sym;
+                            TEMPLATESELECTOR *find = tpl->next;
+                            while (sp && find)
+                            {
+                                SYMBOL *fsp;
+                                if (!isstructured(sp->tp))
+                                    break;
+                                
+                                fsp = search(find->name, basetype(sp->tp)->syms);
+                                if (!fsp)
+                                {
+                                    fsp = classdata(find->name, basetype(sp->tp)->sp, NULL, FALSE, FALSE);
+                                    if (fsp == (SYMBOL *)-1)
+                                        fsp = NULL;
+                                }
+                                sp = fsp;
+                                find = find->next;
+                            }
+                            if (find || !sp || !comparetypes(sp->tp, tps, TRUE) && !sameTemplate(sp->tp, tps))
+                                return FALSE;                            
+                        }
+                        return TRUE;
                     }
                     else if (tpn->type == bt_templatedecltype && tps->type == bt_templatedecltype)
                     {
@@ -495,6 +528,8 @@ SYMBOL *searchOverloads(SYMBOL *sp, HASHTABLE *table)
             if (matchOverload(sp->tp, spp->tp, FALSE))
             {
                 if (!spp->templateParams)
+                    return spp;
+                if (sp->templateLevel && !spp->templateLevel && !sp->templateParams->next)
                     return spp;
                 if (!!spp->templateParams == !!sp->templateParams)
                 {

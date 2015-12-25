@@ -1512,7 +1512,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
     {
         thisptr = exprNode(en_add, thisptr, intNode(en_c_i, offset));
         otherptr = exprNode(en_add, otherptr, intNode(en_c_i, offset));
-        if (isstructured(member->tp) || isarray(member->tp))
+        if (isstructured(member->tp) || isarray(member->tp) || member->tp->type == bt_memberptr)
         {
             EXPRESSION *exp = exprNode(en_blockassign, thisptr,otherptr);
             STATEMENT *st = stmtNode(NULL,b, st_expr);
@@ -2027,7 +2027,8 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
             }
             else if (init->packed)
             {
-                expandPackedBaseClasses(cls, cons, init == cons->memberInitializers ? &cons->memberInitializers : &init, bc, vbase);
+                init = expandPackedBaseClasses(cls, cons, init == cons->memberInitializers ? &cons->memberInitializers : &init, bc, vbase);
+                continue;   
             }
             else
             {
@@ -2275,7 +2276,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
         while (bc)
         {
             if (!bc->isvirtual)
-                genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, FALSE, thisptr, otherptr, cons, doCopy);
+                genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, FALSE, thisptr, otherptr, cons, doCopy || !cons->memberInitializers);
             bc = bc->next;
         }
         if (hasVTab(sym))

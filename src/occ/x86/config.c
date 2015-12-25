@@ -188,7 +188,7 @@ static ARCH_SIZING sizes = {
     4, /*char a_addr;*/
     8, /*char a_farptr;*/
     2, /*char a_farseg;*/
-    8, /*char a_memberptr;    */
+    12, /*char a_memberptr;    */
     0, /* char a_struct;  */ /* alignment only */
     4, /*char a_float;*/
     8, /*char a_double;*/

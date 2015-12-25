@@ -866,22 +866,6 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
 {
     STRUCTSYM sl;
     (void)funcsp;
-    /*
-    if (sp->parentTemplate)
-    {
-        TEMPLATEPARAMLIST *left = sp->templateParams;
-        TEMPLATEPARAMLIST *right = sp->parentTemplate->templateParams;
-        left = left->next;
-        right = right->next;
-        while (left && right)
-        {
-            if (!left->p->sym)
-               left->p->sym = right->p->sym;
-            left = left->next;
-            right = right->next;
-        }
-    }
-    */
     if (cparams.prm_cplusplus)
     {
         LIST *lst = Alloc(sizeof(LIST));
@@ -2182,7 +2166,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     if (tn)
                     {
                         optimize_for_constants(&exp);
-                        if (templateNestingCount)
+                        if (templateNestingCount && !instantiatingTemplate)
                         {
                             TYPE *tp2 = Alloc(sizeof(TYPE));
                             tp2->type = bt_templatedecltype;
@@ -3974,7 +3958,7 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
                 {
                     error(ERR_NO_REF_POINTER_REF);
                 }
-                ptype->size = getSize(bt_int) * 2;
+                ptype->size = getSize(bt_pointer) + getSize(bt_int) * 2;
                 if (inparen)
                 {
                     if (!needkw(&lex, closepa))
@@ -5028,7 +5012,7 @@ jointemplate:
                         else if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
                         if (inTemplate || promotedToTemplate)
-                            sp->templateLevel = templateHeaderCount - !!asFriend;
+                            sp->templateLevel = templateHeaderCount - !!asFriend ;
                         sp->constexpression = constexpression;
                         sp->access = access;
                         sp->isExplicit = isExplicit;
@@ -5044,7 +5028,8 @@ jointemplate:
                             tpx->btp = tp1;
                             tp1 = tpx;
                         }
-                        sp->tp = tp1;
+                        if (!asFriend)
+                            sp->tp = tp1;
                         if (!sp->instantiated)
                             sp->linkage = linkage;
                         sp->linkage2 = linkage2;
@@ -5174,7 +5159,7 @@ jointemplate:
                             if (isfunction(sp->tp))
                             {
                                 sym = searchOverloads(sp, spi->tp->syms);
-                                if (sym && sym->templateParams && !exactMatchOnTemplateParams(sym->templateParams, sp->templateParams))
+                                if (sym && sym->templateParams && (!sp->templateParams || sp->templateParams->next) && !exactMatchOnTemplateParams(sym->templateParams, sp->templateParams))
                                     sym = NULL;
                             }
                             if (sym && cparams.prm_cplusplus)
@@ -5188,7 +5173,7 @@ jointemplate:
                                 }
                                 else if (sym && !sym->isConstructor && !sym->isDestructor && !comparetypes(basetype(sp->tp)->btp, basetype((sym)->tp)->btp, TRUE))
                                 {
-                                    if (cparams.prm_cplusplus && isfunction(sym->tp))
+                                    if (cparams.prm_cplusplus && isfunction(sym->tp) && sym->templateLevel)
                                         checkReturn = FALSE;
                                 }
                             }                            
@@ -5229,10 +5214,16 @@ jointemplate:
                                         sp->specialized = TRUE;
                                     sym = LookupFunctionSpecialization(spi, sp);
                                     if (sym == sp && spi->storage_class != sc_overloads)
+                                    {
                                         sym = spi;
+                                    }
+                                    else if (sym)
+                                    {
+                                        InsertSymbol(sym, storage_class == sc_typedef ? storage_class_in : storage_class, linkage, FALSE);                                        
+                                    }
                                     spi = NULL;
                                 }
-                            if (sym && sym->templateLevel != sp->templateLevel && (!strSym || !strSym->templateLevel || sym->templateLevel != sp->templateLevel + 1))
+                            if (sym && sym->templateLevel != sp->templateLevel && (sym->templateLevel || !sp->templateLevel || sp->templateParams->next) && (!strSym || !strSym->templateLevel || sym->templateLevel != sp->templateLevel + 1))
                                 sym = NULL;
                             if (sym)
                                 spi = sym;
@@ -5519,10 +5510,19 @@ jointemplate:
                                         InsertSymbol(sp, storage_class == sc_typedef ? storage_class_in : storage_class, linkage, FALSE);
                                         if (isfunction(sp->tp) && (getStructureDeclaration() || asFriend))
                                         {
+                                            SYMBOL *parent = getStructureDeclaration();
                                             if (!sp->templateLevel || asFriend)
                                                 InsertExtern(sp);
-                                            if (getStructureDeclaration() && getStructureDeclaration()->templateLevel)
-                                                InsertInline(sp);
+                                              
+                                            while (parent)
+                                            {
+                                                if (parent->templateLevel)
+                                                {
+                                                    InsertInline(sp);
+                                                    break;
+                                                }
+                                                parent = parent->parentClass;
+                                            }
                                         }
                                     }
                                 }
@@ -5683,6 +5683,8 @@ jointemplate:
                                     injectThisPtr(sp, basetype(sp->tp)->syms);
                                 }
                             }
+                            if (templateNestingCount && nameSpaceList)
+                                SetTemplateNamespace(sp);
                             if (MATCHKW(lex, begin))
                             {
                                 TYPE *tp = sp->tp;
@@ -5694,8 +5696,6 @@ jointemplate:
                                     tp = tp->btp;
                                 tp->type = bt_ifunc;
                                 hr = tp->syms->table[0];
-                                if (templateNestingCount && nameSpaceList)
-                                    SetTemplateNamespace(sp);
                                     
                                 while (hr)
                                 {
@@ -5787,7 +5787,7 @@ jointemplate:
                                 {
                                     error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
                                 }
-                                else if (sp->parentClass)
+                                else if (sp->parentClass && !sp->templateParams)
                                     if (!asFriend && storage_class_in != sc_member && storage_class_in != sc_mutable && !sp->templateLevel)
                                         errorsym(ERR_CANNOT_REDECLARE_OUTSIDE_CLASS, sp);
                             }

@@ -229,8 +229,14 @@ EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOO
         if (strSym)
         {
             if (!comparetypes(strSym->tp, enclosing->tp, TRUE))
-                errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
-            enclosing = strSym;
+            {
+                int n = classRefCount(strSym, enclosing);
+                if (n == 0)
+                    errorsym(ERR_ACCESS_MEMBER_NO_OBJECT, memberSym);
+                else if (n > 1)
+                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE,strSym, enclosing);
+            }
+//            enclosing = strSym;
         }
         if (funcsp)
             en = varNode(en_auto, (SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p); // this ptr
@@ -339,6 +345,7 @@ BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, e
             else
             {
                 *exp = DerivedToBase(cst->parentClass->tp, *tp, *exp, 0);
+                params->thisptr = *exp;
                 {
                     e1 = varNode(en_func, NULL);
                     e1->v.func = params;

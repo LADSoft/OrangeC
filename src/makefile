@@ -82,12 +82,13 @@ DISTRIBUTE:
 	$(COPYDIR) doc\occ\%.% $(DISTDOC)\occ
 	$(COPYDIR) doc\ogrep\%.% $(DISTDOC)\ogrep
 	$(COPYDIR) doc\olink\%.% $(DISTDOC)\olink
-	$(COPYDIR) doc\omake\%.% $(DISTDOC)\omake
+	$(COPYDIR) doc\omake\%.% $(DISTDOC)\omake    
 	copy license.txt $(DISTROOT)
 	copy readme.txt $(DISTROOT)
 	copy relnotes.txt $(DISTROOT)
 	copy berkely.lic $(DISTLIC)
 	copy copying $(DISTLIC)
+	copy libcxx.lic $(DISTLIC)
 	copy ocl.lic $(DISTLIC)
 	copy addon.txt $(DISTADDON)
 ifdef BUILDENV

@@ -1,6 +1,21 @@
 Release notes:
 
-Version 5.41.2:
+Version 5.50.1: 12/27/15
+    occ:        many changes to templates et.al. made to fix bugs while compiling libcxx
+    occ:        fix problem with control statements: an unbracketed statement
+                right after the control statement could not be preceded by a label
+                (change to compile TCC)
+    occ:        generated copy constructors would not copy members that were member pointers
+    occ:        initialization of an auto array did not result in unused chars being zeroed
+    occ:        cast operators located in a base class did not get the correct THIS pointer when called
+                on a derived object
+    occ:        optimizing out the 'default' clause of a switch statement can result in a crash during inlining
+    occ:        a template function that starts with a switch crashes compiler
+    orc:        add switch to specify default language settings
+    clibs:      add WIN32 support for TCC
+    clibs:      if a memory block was freed twice, a subsequent malloc might enter an infinite loop
+
+Version 5.42.1: 10/09/15
     occ:        many changes made to fix bugs while compiling libcxx
     occ:        fix problem with bogus code gen when doing an unsigned div of a constant
     clibs:      strcat() did not work if the destination was an empty string not 
@@ -10,7 +25,7 @@ Version 5.41.2:
     clibs:      msdos stdio file handling was broken for the default handles, 
                 so for example printf and scanf wouldn't work
     
-Version 5.41.1:
+Version 5.41.1: 09/04/15
     occ:        fix member pointer handling in general - both parsing and code gen was broken
     occ:        add an error if trying to implicitly take the address of a member function
     occ:        allow matching of the arguments to pointers to function in template matching

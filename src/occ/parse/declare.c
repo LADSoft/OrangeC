@@ -917,7 +917,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         calculateVTabEntries(sp, sp, &sp->vtabEntries, 0);
         if (sp->vtabEntries)
         {
-            char buf[512];
+            char buf[1024];
             InsertInline(sp);
             sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
@@ -5823,7 +5823,7 @@ jointemplate:
                                     tp2 = basetype(tp2)->btp;
                                 structuredArray = isstructured(tp2);
                             }
-                            if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef && structLevel && (MATCHKW(lex,assign) || MATCHKW(lex, begin) || structuredArray))
+                            if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef && structLevel && (!instantiatingTemplate) && (MATCHKW(lex,assign) || MATCHKW(lex, begin) || structuredArray))
                             {
                                 if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member && (sp->storage_class == sc_static ||sp->storage_class == sc_external))
                                     if (isconst(sp->tp))

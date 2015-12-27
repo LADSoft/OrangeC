@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.42.0.1
+AppVerName=Orange C Version 5.50.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -18,7 +18,7 @@ LicenseFile=License.txt
 ;BackColor=clRed
 ;BackColor2=clAqua
 ;WindowVisible= yes
-AppCopyright=Copyright(C) LADSoft 1994-2015, All Rights Reserved.
+AppCopyright=Copyright(C) LADSoft 1994-2016, All Rights Reserved.
 WizardSmallImageFile=ladsoft1.bmp
 WizardImageFile=ladsoftl.bmp
 WizardImageBackColor=clAqua
@@ -34,7 +34,7 @@ ChangesEnvironment=yes
 ; MinVersion=4,3.51
 
 [Messages]
-BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2014
+BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2016
 
 [Types]
 Name: "desktop"; Description: "Desktop Installation"
@@ -69,19 +69,10 @@ Source: "C:\orangec\lib\startup\*.*"; DestDir: "{app}\lib\startup\"; Flags: Igno
 Source: "C:\orangec\doc\*.*"; DestDir: "{app}\doc\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\general\*.*"; DestDir: "{app}\doc\general\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\oasm\*.*"; DestDir: "{app}\doc\oasm\"; Flags: IgnoreVersion; Components: main
-
 Source: "C:\orangec\doc\occ\*.*"; DestDir: "{app}\doc\occ\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\ogrep\*.*"; DestDir: "{app}\doc\ogrep\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\olink\*.*"; DestDir: "{app}\doc\olink\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\doc\omake\*.*"; DestDir: "{app}\doc\omake\"; Flags: IgnoreVersion; Components: main
-
-Source: "C:\orangec\stlport\*.*"; DestDir: "{app}\stlport\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\stlport\stl\*.*"; DestDir: "{app}\stlport\stl\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\stlport\stl\config\*.*"; DestDir: "{app}\stlport\stl\config\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\stlport\stl\debug\*.*"; DestDir: "{app}\stlport\stl\debug\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\stlport\stl\pointers\*.*"; DestDir: "{app}\stlport\stl\pointers\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\stlport\using\*.*"; DestDir: "{app}\stlport\using\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\stlport\using\h\*.*"; DestDir: "{app}\stlport\using\h\"; Flags: IgnoreVersion; Components: main
 
 ;Source: "C:\orangec\bin\lscrtl.dll"; DestDir: "{sys}"; Components: main\desktop
 

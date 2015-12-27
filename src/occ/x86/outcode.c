@@ -4407,10 +4407,13 @@ void outcode_genlonglong(LLONG_TYPE val)
 void outcode_align(int size)
 {
     EMIT_TAB *seg = gettab(oa_currentSeg);
-    int adr = seg->last->address + seg->last->filled;
-    adr = size - adr % size;
-    if (size != adr)
-        outcode_genstorage(adr);
+    if (seg->last)
+    {
+        int adr = seg->last->address + seg->last->filled;
+        adr = size - adr % size;
+        if (size != adr)
+            outcode_genstorage(adr);
+    }
 }
 
 /*-------------------------------------------------------------------------*/

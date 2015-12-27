@@ -498,7 +498,7 @@ static LEXEME *statement_default(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
     BLOCKDATA *dostmt = Alloc(sizeof(BLOCKDATA)) ;
-    STATEMENT *st;
+    STATEMENT *st, *lastLabelStmt;
     EXPRESSION *select = NULL;
     int addedBlock = 0;
     int loopLabel = codeLabel++;
@@ -518,9 +518,10 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     }
     do
     {
+        lastLabelStmt = dostmt->tail;
         lex = statement(lex, funcsp, dostmt,TRUE);
     }
-    while (lex && dostmt->tail->purelabel);
+    while (lex && dostmt->tail != lastLabelStmt && dostmt->tail->purelabel);
     if (cparams.prm_cplusplus || cparams.prm_c99)
     {
         addedBlock--;
@@ -580,7 +581,7 @@ static LEXEME *statement_do(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
     BLOCKDATA *forstmt = Alloc(sizeof(BLOCKDATA)) ;
-    STATEMENT *st;
+    STATEMENT *st, *lastLabelStmt;
     STATEMENT *forline ;
     int addedBlock = 0;
     EXPRESSION *init = NULL, *before = NULL, *select = NULL;
@@ -1097,10 +1098,11 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             }
                         }
                         do
-                        {                    
-                            lex = statement(lex, funcsp, forstmt, TRUE);
+                        {
+                            lastLabelStmt = forstmt->tail;
+                            lex = statement(lex, funcsp, forstmt,TRUE);
                         }
-                        while (lex && forstmt->tail->purelabel);
+                        while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
                         FreeLocalContext(forstmt, funcsp, codeLabel++);
                         if (declDest)
                         {
@@ -1183,16 +1185,26 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             {
                 if (declaration && cparams.prm_cplusplus)
                 {
-                    SYMBOL *declSP = (SYMBOL *)localNameSpace->syms->table[0]->p;
-                    if (!declSP->init)
+                    HASHREC *hr = localNameSpace->syms->table[0];
+                    while (hr && ((SYMBOL *)hr->p)->anonymous)
+                        hr = hr->next;
+                    if (!hr)
                     {
-                        if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->trivialCons)
+                        error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);
+                    }
+                    else
+                    {
+                        SYMBOL *declSP = (SYMBOL *)hr->p;
+                        if (!declSP->init)
                         {
-                            lex = initialize(lex, funcsp, declSP, sc_auto, FALSE, 0);
-                        }
-                        else
-                        {
-                            error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);
+                            if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->trivialCons)
+                            {
+                                lex = initialize(lex, funcsp, declSP, sc_auto, FALSE, 0);
+                            }
+                            else
+                            {
+                                error(ERR_FOR_DECLARATOR_MUST_INITIALIZE);
+                            }
                         }
                     }
                 }
@@ -1268,9 +1280,10 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     }
                     do
                     {
-                        lex = statement(lex, funcsp, forstmt, TRUE);
+                        lastLabelStmt = forstmt->tail;
+                        lex = statement(lex, funcsp, forstmt,TRUE);
                     }
-                    while (lex && forstmt->tail->purelabel);
+                    while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
                     if (cparams.prm_cplusplus || cparams.prm_c99)
                     {
                         addedBlock--;
@@ -1326,7 +1339,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 }
 static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
-    STATEMENT *st, *st1, *st2 ;
+    STATEMENT *st, *st1, *st2, *lastLabelStmt ;
     EXPRESSION *select=NULL;
     int addedBlock = 0;
     BOOLEAN needlabelif;
@@ -1360,9 +1373,10 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             do
             {
-                lex = statement(lex, funcsp, parent, TRUE);
+                lastLabelStmt = parent->tail;
+                lex = statement(lex, funcsp, parent,TRUE);
             }
-            while (lex && parent->tail->purelabel);
+            while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
             needlabelif = parent->needlabel;
             if (MATCHKW(lex, kw_else))
             {
@@ -1403,9 +1417,10 @@ static LEXEME *statement_if(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 parent->needlabel = FALSE;
                 do
                 {
-                    lex = statement(lex, funcsp, parent, TRUE);
+                    lastLabelStmt = parent->tail;
+                    lex = statement(lex, funcsp, parent,TRUE);
                 }
-                while (lex && parent->tail->purelabel);
+                while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
                 if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !optimized)
                 {
                     st1 = st->next;
@@ -2107,7 +2122,7 @@ static LEXEME *statement_switch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
     BLOCKDATA *whilestmt = Alloc(sizeof(BLOCKDATA))  ;
-    STATEMENT *st;
+    STATEMENT *st, *lastLabelStmt;
     STATEMENT *whileline;
     EXPRESSION *select = NULL;
     BOOLEAN addedBlock = FALSE;
@@ -2160,9 +2175,10 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             do
             {
-                lex = statement(lex, funcsp, whilestmt, TRUE);
+                lastLabelStmt = whilestmt->tail;
+                lex = statement(lex, funcsp, whilestmt,TRUE);
             }
-            while (lex && whilestmt->tail->purelabel);
+            while (lex && whilestmt->tail != lastLabelStmt && whilestmt->tail->purelabel);
             if (cparams.prm_cplusplus || cparams.prm_c99)
             {
                 addedBlock--;

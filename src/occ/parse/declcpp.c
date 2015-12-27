@@ -499,6 +499,7 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
         }
         lst = lst->next;
     }
+    /*
     while (vb)
     {
         if (vb->alloc)
@@ -527,6 +528,7 @@ void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
         }
         vb = vb->next;
     }
+    */
     while (hr && sp->vtabEntries)
     {
         SYMBOL *cur = (SYMBOL *)hr->p;
@@ -2448,7 +2450,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES *v)
     while (t)
     {
         SYMBOL *sym = t->data;
-        if (sym->visited)
+//        if (sym->visited)
         {
             sym->visited = FALSE;
             unvisitUsingDirectives(sym->nameSpaceValues);
@@ -2459,7 +2461,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES *v)
     while (t)
     {
         SYMBOL *sym = t->data;
-        if (sym->visited)
+//        if (sym->visited)
         {
             sym->visited = FALSE;
             unvisitUsingDirectives(sym->nameSpaceValues);

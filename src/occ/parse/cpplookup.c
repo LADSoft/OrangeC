@@ -2258,10 +2258,13 @@ static SYMBOL *getUserConversion(int flags,
                                         next = (SYMBOL *) args->next->p;
                                     if (!next || next->init)
                                     {
-                                        getSingleConversion(first->tp, tpa, expa, &n2, seq3, candidate, NULL, TRUE);
-                                        if (n2 && seq3[n2-1] == CV_IDENTITY)
+                                        if (first->tp->type != bt_ellipse)
                                         {
-                                            n2--;
+                                            getSingleConversion(first->tp, tpa, expa, &n2, seq3, candidate, NULL, TRUE);
+                                            if (n2 && seq3[n2-1] == CV_IDENTITY)
+                                            {
+                                                n2--;
+                                            }
                                         }
                                         seq3[n2+n3++] = CV_USER;
                                         getSingleConversion(tppp, basetype(basetype(th->tp)->btp)->sp->tp, &exp, &n3, seq3+n2, candidate, NULL, TRUE);
@@ -2538,7 +2541,7 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
                     TYPE *pa = PA->p->byClass.val /*&& !PL->p->byClass.dflt*/ ? PA->p->byClass.val : PA->p->byClass.dflt;
                     if (!pl || !pa)
                         break;
-                    if (!templatecomparetypes(pl, pa, TRUE))
+                    if (!templatecomparetypes(pl, pa, TRUE)|| !templatecomparetypes(pa, pl, TRUE))
                     {
                         if (isref(pl))
                             pl = basetype(pl)->btp;

@@ -810,7 +810,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
 }
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
 {
-    char errbuf[2048], *p = errbuf;
+    char errbuf[4096], *p = errbuf;
     mangledNamesCount = 0;
     if (linkage == lk_none || linkage == lk_cdecl)
     {

@@ -6966,7 +6966,9 @@ void propagateTemplateDefinition(SYMBOL *sym)
 }
 LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isExtern)
 {
+    HASHTABLE *oldSyms = localNameSpace->syms;
     lex = getsym();
+    localNameSpace->syms = NULL;
     if (MATCHKW(lex, lt))
     {
         int lasttemplateHeaderCount = templateHeaderCount;
@@ -7208,5 +7210,6 @@ LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum 
             }
         }
     }
+    localNameSpace->syms = oldSyms;
     return lex;
 }

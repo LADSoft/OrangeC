@@ -1821,30 +1821,6 @@ static void removeForward(BLOCK *start)
                             find = find->fwd;
                         }
                     }
-                    if (tail->block->succ->next)
-                    {
-                        // need to remove the default now
-                        BLOCKLIST *bl1 = tail->block->succ->block->succ;
-                        while (bl1)
-                        {
-                            BLOCKLIST **bl = &bl1->block->pred;
-                            int n = 0;
-                            while (*bl)
-                            {
-                                if ((*bl)->block == tail->block->succ->block)
-                                {
-                                    (*bl) = (*bl)->next;
-                                    removePhiEntry(bl1->block, n);
-                                    break;
-                                }
-                                n++;
-                                bl = &(*bl)->next;
-                            }
-                            bl1 = bl1->next;
-                        }
-                        tail->block->succ->block->pred = NULL;
-                        tail->block->succ = tail->block->succ->next;
-                    }
                     tail->dc.opcode = i_goto; /* normally this branch will be
                                                * to next and will itself
                                                * be optimized away later

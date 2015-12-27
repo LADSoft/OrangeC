@@ -74,6 +74,7 @@ extern int templateNestingCount;
 extern INCLUDES *includes;
 extern NAMESPACEVALUES *globalNameSpace;
 extern BOOLEAN hasXCInfo;
+extern STRUCTSYM *structSyms;
 
 int packIndex;
 
@@ -200,7 +201,24 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                     *tp = sp->tp->templateParam->p->byNonType.tp;
                     if ((*tp)->type == bt_templateparam)
                     {
-                        *tp = (*tp)->templateParam->p->byClass.val;
+                        TYPE *tp1 = (*tp)->templateParam->p->byClass.val;
+                        if (tp1)
+                        {
+                            *tp = tp1;
+                        }
+                        else
+                        {
+                            STRUCTSYM *s = structSyms;
+                            SYMBOL *rv = NULL;
+                            while (s && !rv)
+                            {
+                                if (s->tmpl)
+                                    rv = templatesearch((*tp)->templateParam->p->sym->name, s->tmpl);
+                                s = s->next;
+                            }
+                            if (rv && rv->tp->templateParam->p->type == kw_typename)
+                                *tp = rv->tp->templateParam->p->byClass.val;
+                        }
                     }
                     return lex;
                 default:
@@ -4411,7 +4429,6 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
 }
 static LEXEME *expression_deref(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags)
 {
-/*vla */
     lex = getsym();
     lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
     if (cparams.prm_cplusplus && insertOperatorFunc(ovcl_unary_pointer, star,

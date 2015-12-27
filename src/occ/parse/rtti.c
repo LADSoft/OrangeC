@@ -656,7 +656,7 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
     SYMBOL *xcSym = FALSE;
     if (funcsp->xcMode != xc_unspecified)
     {
-        char name[512];
+        char name[4096];
         SYMBOL *list[1000];
         int count = 0, i;
         if (funcsp->xcMode == xc_dynamic)

@@ -45,8 +45,13 @@ namespace std {
    }
 
 } ;
-       
+
+#ifdef STD_NEWHANDLER
+static std::new_handler _new_handler ;
+namespace std {
+#else
 static new_handler _new_handler ;
+#endif       
 
 new_handler _RTL_FUNC set_new_handler(new_handler __newv)
 {
@@ -54,6 +59,9 @@ new_handler _RTL_FUNC set_new_handler(new_handler __newv)
    _new_handler = __newv ;
    return rv ;
 }
+#ifdef STD_NEWHANDLER
+}
+#endif       
 
 void *__realnew(size_t n)
 {

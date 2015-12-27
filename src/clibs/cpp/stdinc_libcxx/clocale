@@ -1,0 +1,3 @@
+#define __USING_CNAME__
+#include <locale.h>
+#undef __USING_CNAME__

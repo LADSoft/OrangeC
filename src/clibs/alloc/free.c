@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 #include <locale.h>
 #include <wchar.h>
 #include "libp.h"
@@ -54,6 +55,16 @@ void _RTL_FUNC free(void *buf)
         p--;
     }
    __ll_enter_critical() ;
+    if (p->size == INT_MIN)
+        return;
+    c = &__mallocchains[(p->size>>2) % MEMCHAINS];
+    // guard against double frees
+    while (*c)
+    {
+        if (*c == p)
+            return;
+        c = &(*c)->next;
+    }
     c = &__mallocchains[(p->size>>2) % MEMCHAINS];
     p->next = *c;
     (*c) = p;

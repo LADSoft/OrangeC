@@ -1,0 +1,60 @@
+#ifndef __STD_EXCEPTION
+#define __STD_EXCEPTION
+
+#ifndef __DEFS_H__
+#include <_defs.h>
+#endif
+
+
+extern bool _RTL_FUNC uncaught_exception();
+
+namespace __dls {
+  extern const char _RTL_DATA *__dls_NoNamedException;
+  extern const char _RTL_DATA *__dls_BadException;
+} ;
+namespace std {
+
+typedef void (*terminate_handler) ();
+extern terminate_handler _RTL_FUNC set_terminate(terminate_handler f) __NOTHROW ;
+extern void _RTL_FUNC terminate( );
+
+typedef void (*unexpected_handler) ();
+extern unexpected_handler _RTL_FUNC set_unexpected( unexpected_handler f)  __NOTHROW ;
+extern void _RTL_FUNC unexpected();
+
+  _RTL_CLASS class exception     
+  {
+  public:
+    _RTL_FUNC exception () __NOTHROW
+    { ; }
+    _RTL_FUNC exception (const exception&) __NOTHROW 
+    { ; }
+    _RTL_FUNC exception& operator= (const exception& e)  __NOTHROW
+    { return *this; }
+    _RTL_FUNC virtual ~exception ()  __NOTHROW;
+
+    _RTL_FUNC virtual const char * what () const  __NOTHROW
+    { 
+      return __dls::__dls_NoNamedException;
+    }
+  };
+
+  _RTL_CLASS class bad_exception : public exception     
+  { 
+  public:
+    _RTL_FUNC bad_exception () __NOTHROW : exception( )
+    { ; }
+    _RTL_FUNC bad_exception(const bad_exception&) __NOTHROW
+    { ; }
+    _RTL_FUNC bad_exception& operator=(const bad_exception&) __NOTHROW
+    { return *this; }
+    _RTL_FUNC virtual ~bad_exception ()  __NOTHROW;
+
+    _RTL_FUNC virtual const char * what () const  __NOTHROW
+    { 
+      return __dls::__dls_BadException;
+    }
+  };
+}
+
+#endif

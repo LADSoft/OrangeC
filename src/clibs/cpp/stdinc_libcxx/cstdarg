@@ -1,0 +1,3 @@
+#define __USING_CNAME__
+#include <stdarg.h>
+#undef __USING_CNAME__

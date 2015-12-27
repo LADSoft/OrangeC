@@ -35,6 +35,8 @@
 #include <exception>
 #include "_rtti.h"
 
+extern int ___xcflags;
+
 #pragma startup __init_cppdata 119
 #pragma rundown __rundown_cppdata 6
 
@@ -56,6 +58,7 @@ namespace std {
 
 void _RTL_FUNC std::terminate()
 {
+   ___xcflags = 0;;
    abort() ;
 }
 static CPPDATA * getCPPData()
@@ -78,7 +81,8 @@ extern "C" void _RTL_FUNC __call_terminate()
 }
 void _RTL_FUNC std::unexpected()
 {
-   __call_terminate() ;
+    ___xcflags = 0;
+    __call_terminate() ;
 }
 std::terminate_handler _RTL_FUNC std::set_terminate(std::terminate_handler __t)
 {

@@ -45,7 +45,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
+//namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -109,10 +109,9 @@ int		 _RTL_FUNC _IMPORT __iscsymf(int);
 int		 _RTL_FUNC _IMPORT __iscsym(int);
 #ifdef __cplusplus
 };
-};
+//};
 #endif
 
-#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
 #ifndef __cplusplus
 #define isalnum(c)   ( __STD_NS_QUALIFIER  _pctype[ (c) ] & (_IS_ALNUM))
                      
@@ -143,10 +142,11 @@ int		 _RTL_FUNC _IMPORT __iscsym(int);
 #define isascii(c)  ((unsigned)(c) < 128)
 #define toascii(c)  ((c) & 0x7f)
 #endif
-#endif
+
 
 #endif 
 
+/*
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__pctype_H_USING_LIST)
 #define __pctype_H_USING_LIST
     using __STD_NS_QUALIFIER isalnum;
@@ -175,3 +175,4 @@ int		 _RTL_FUNC _IMPORT __iscsym(int);
     using __STD_NS_QUALIFIER __iscsym;
 #endif
 
+*/

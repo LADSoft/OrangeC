@@ -45,6 +45,6 @@ endif
 all: $(DEPENDENCIES)
 
 vsconio.o: vsconio.c
-	$(CC) /c $(CFLAGS) /DVSDLL -o$(OBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@F $^
 
 DISTRIBUTE:

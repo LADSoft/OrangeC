@@ -51,7 +51,15 @@ DOSOBJECT:=$(realpath object\dos)
 export DOSOBJECT
 WINOBJECT:=$(realpath object\windows)
 export WINOBJECT
+ifdef OLDSGL
+STDINCLUDE:=$(realpath cpp\stdinc);$(realpath stdinc)
+else
+ifdef STLPORT
 STDINCLUDE:=$(realpath cpp\stlport\stl);$(realpath cpp\stdinc);$(realpath stdinc)
+else
+STDINCLUDE:=$(realpath cpp\stdinc_libcxx);$(realpath stdinc);$(realpath cpp\libcxx\include);$(realpath platform\win32\wininc);$(realpath platform\win32\wininc\win32)
+endif
+endif
 export STDINCLUDE
 
 define CLIB
@@ -115,14 +123,15 @@ ifdef DISTMAKE
 include $(DISTMAKE)
 
 DISTRIBUTE:
+ifdef OLDSGL
 	$(COPYDIR) cpp\stdinc\%. $(DISTINC)
 	$(COPYDIR) cpp\stdinc\%.h $(DISTINC)
-ifdef OLDSGL
 	$(COPYDIR) cpp\sgiinc\%. $(DISTINC)
 	$(COPYDIR) cpp\sgiinc\%.h $(DISTINC)
 	$(COPYDIR) cpp\sgiinc\stl\%. $(DISTINC)\stl
 	$(COPYDIR) cpp\sgiinc\stl\%.h $(DISTINC)\stl
 else
+ifdef STLPORT
 	$(COPYDIR) cpp\stlport-5.2.1\stlport\%.% $(DISTROOT)\stlport
 	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\%.% $(DISTROOT)\stlport\stl
 	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\config\%.% $(DISTROOT)\stlport\stl\config
@@ -130,6 +139,12 @@ else
 	$(COPYDIR) cpp\stlport-5.2.1\stlport\stl\pointers\%.% $(DISTROOT)\stlport\stl\pointers
 	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\%.% $(DISTROOT)\stlport\using
 	$(COPYDIR) cpp\stlport-5.2.1\stlport\using\h\%.% $(DISTROOT)\stlport\using\h
+else
+	$(COPYDIR) cpp\libcxx\include\%. $(DISTINC)
+	$(COPYDIR) cpp\libcxx\include\%.h $(DISTINC)
+	$(COPYDIR) cpp\stdinc_libcxx\%. $(DISTINC)
+	$(COPYDIR) cpp\stdinc_libcxx\%.h $(DISTINC)
+endif
 endif
 	$(COPYDIR) stdinc\%.h $(DISTINC)
 	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\sys

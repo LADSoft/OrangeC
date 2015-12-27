@@ -47,6 +47,7 @@
 #endif
 
 #define FLT_RADIX           2
+#define __FLT_RADIX__       FLT_RADIX
 #define FLT_ROUNDS          1
 
 #define FLT_GUARD           1
@@ -57,10 +58,16 @@
 #define DBL_MANT_DIG        53
 #define FLT_MANT_DIG        24
 #define LDBL_MANT_DIG       64
+#define __DBL_MANT_DIG__    DBL_MANT_DIG
+#define __FLT_MANT_DIG__    FLT_MANT_DIG
+#define __LDBL_MANT_DIG__   LDBL_MANT_DIG
 
 #define DBL_DIG             15
 #define FLT_DIG             6
 #define LDBL_DIG            18
+#define __DBL_DIG__         DBL_DIG
+#define __FLT_DIG__         FLT_DIG
+#define __LDBL_DIG__        LDBL_DIG
 
 #define DBL_DECIMAL_DIG     DBL_DIG
 #define FLT_DECIMAL_DIG     FLT_DIG
@@ -84,18 +91,30 @@
 #define DBL_MAX_EXP         +1024
 #define FLT_MAX_EXP         +128
 #define LDBL_MAX_EXP        +16384
+#define __DBL_MAX_EXP__     DBL_MAX_EXP
+#define __FLT_MAX_EXP__     FLT_MAX_EXP
+#define __LDBL_MAX_EXP__    LDBL_MAX_EXP
 
 #define DBL_MIN_EXP         -1021
 #define FLT_MIN_EXP         -125
 #define LDBL_MIN_EXP        -16381
+#define __DBL_MIN_EXP__     DBL_MIN_EXP
+#define __FLT_MIN_EXP__     FLT_MIN_EXP
+#define __LDBL_MIN_EXP__    LDBL_MIN_EXP
 
 #define DBL_MAX_10_EXP      +308
 #define FLT_MAX_10_EXP      +38
 #define LDBL_MAX_10_EXP     +4932
+#define __DBL_MAX_10_EXP__   DBL_MAX_10_EXP
+#define __FLT_MAX_10_EXP__   FLT_MAX_10_EXP
+#define __LDBL_MAX_10_EXP__  LDBL_MAX_10_EXP
 
 #define DBL_MIN_10_EXP      -307
 #define FLT_MIN_10_EXP      -37
 #define LDBL_MIN_10_EXP     -4931
+#define __DBL_MIN_10_EXP__   DBL_MIN_10_EXP
+#define __FLT_MIN_10_EXP__   FLT_MIN_10_EXP
+#define __LDBL_MIN_10_EXP__  LDBL_MIN_10_EXP
 
 #define DBL_HAS_SUBNORM     1
 #define FLT_HAS_SUBNORM     1

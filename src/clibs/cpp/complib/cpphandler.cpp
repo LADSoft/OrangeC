@@ -45,6 +45,14 @@ extern "C" LONG ___xceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT co
 #define CAUGHT 1
 #define THROWN 2
 
+int ___xcflags;
+
+bool _RTL_FUNC uncaught_exception()
+{
+    return ___xcflags == THROWN;
+}
+
+
 // have to do the destroys in reverse order...
 static void destroyone(XCTAB *record, XCEPT *blk, XCEPT *catchBlock)
 {
@@ -219,7 +227,7 @@ static BOOL matchBlock(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
         record->elems = orig->elems;
         record->cons = orig->cons;
         record->eip = candidate->trylabel;
-        record->flags = CAUGHT;
+        ___xcflags = record->flags = CAUGHT;
         record->throwninstance = malloc(record->thrownxt->size * record->elems);
         record->instance = (char *)record->throwninstance + offs;
         if (!record->instance)
@@ -271,7 +279,7 @@ void _ThrowException(void *irecord,void *instance,int arraySize,void *cons,void 
     params[0] = (ULONG_PTR)record;
     if (record->flags & THROWN) // in case of nested throws
         __call_terminate();
-    record->flags = THROWN;
+    ___xcflags = record->flags = THROWN;
     record->elems = arraySize;
     record->baseinstance = malloc(xceptBlock->size * arraySize);
     record->thrownxt = xceptBlock;
@@ -316,7 +324,7 @@ void _CatchCleanup(void *r)
     asm mov [fs:0],eax
     if (!(record->flags & CAUGHT))
         __call_terminate();
-    record->flags = 0;
+    ___xcflags = record->flags = 0;
     uninstantiate(record, record->throwninstance);    
     uninstantiate(record, record->baseinstance);
 }

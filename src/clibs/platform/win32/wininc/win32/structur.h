@@ -4221,6 +4221,17 @@ typedef struct _IMAGE_DATA_DIRECTORY {
         DWORD Size;
 } IMAGE_DATA_DIRECTORY,*PIMAGE_DATA_DIRECTORY;
 
+typedef struct _IMAGE_IMPORT_DESCRIPTOR {
+    union {
+        DWORD Characteristics;
+        DWORD OriginalFirstThunk;
+    };
+    DWORD TimeDateStamp;
+    DWORD ForwarderChain;
+    DWORD Name;
+    DWORD FirstThunk;
+} IMAGE_IMPORT_DESCRIPTOR;
+
 typedef struct _IMAGE_OPTIONAL_HEADER {
         WORD Magic;
         BYTE MajorLinkerVersion;
@@ -4253,7 +4264,7 @@ typedef struct _IMAGE_OPTIONAL_HEADER {
         DWORD LoaderFlags;
         DWORD NumberOfRvaAndSizes;
         IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
-} IMAGE_OPTIONAL_HEADER,*PIMAGE_OPTIONAL_HEADER;
+} IMAGE_OPTIONAL_HEADER32, *PIMAGE_OPTIONAL_HEADER23, IMAGE_OPTIONAL_HEADER,*PIMAGE_OPTIONAL_HEADER;
 
 typedef struct _IMAGE_SECTION_HEADER {
         BYTE Name[IMAGE_SIZEOF_SHORT_NAME];

@@ -41,7 +41,7 @@ ASM_DEPENDENCIES = $(wildcard c0*.nas) c0watd.o c0hxd.o
 all: $(DEPENDENCIES)
 
 c0.o: c0.c
-	$(CC) /c $(CFLAGS) /s16 -o$(DOSOBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /s16 -o$(DOSOBJECT)\$@F $^
 
 c0wat.o: c0wat.nas
 	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
@@ -56,7 +56,7 @@ c0hxd.o: c0hx.nas
 	$(ASM) $(ASMFLAGS) -DDEBUG -o$(SYSOBJECT)\$@F $^
 
 wildargs.o: wildargs.c
-	$(CC) /c $(CFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@F $^
 
 DISTRIBUTE:
 	copy *.nas $(DISTSTARTUPDOS)

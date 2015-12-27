@@ -87,6 +87,7 @@
  */
 #if  __STDC_VERSION__ < 199901L
 #define restrict
+#define __restrict restrict
 #endif
 
 #if defined(_WIN32)

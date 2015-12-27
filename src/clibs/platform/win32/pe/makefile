@@ -42,7 +42,7 @@ all: $(DEPENDENCIES)
 all: $(DEPENDENCIES) dfstb32.exe
 
 c0.o: c0.c
-	$(CC) /c $(CFLAGS) /s16 -o$(WINOBJECT)\$@F $^
+	$(CC) /I$(STDINCLUDE) /c $(CFLAGS) /s16 -o$(WINOBJECT)\$@F $^
 
 c0pe.o: c0pe.nas
 	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
@@ -52,7 +52,7 @@ c0dpe.o: c0dpe.nas
 	$(ASM) $(ASMFLAGS) -o$(SYSOBJECT)\$@F $^
 
 wildargsw.o: wildargsw.c
-	$(CC) /c $(CFLAGS) -o$(SYSOBJECT)\$@F $^
+	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) -o$(SYSOBJECT)\$@F $^
 
 .\dfstb32.o: dfstb32.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^

@@ -154,6 +154,10 @@ size_t _RTL_FUNC mbsrtowcs (wchar_t *restrict __dst, const char **restrict __src
 			      size_t __len, mbstate_t *restrict __ps);
 size_t _RTL_FUNC wcsrtombs (char *restrict __dst, const wchar_t **restrict __src,
 			      size_t __len, mbstate_t *restrict __ps);
+size_t _RTL_FUNC mbsnrtowcs (wchar_t *restrict __dst, const char **restrict __src,
+			      size_t __nms, size_t __len, mbstate_t *restrict __ps);
+size_t _RTL_FUNC wcsnrtombs (char *restrict __dst, const wchar_t **restrict __src,
+			      size_t __nms, size_t __len, mbstate_t *restrict __ps);
 
 float _RTL_FUNC wcstof (const wchar_t *restrict __nptr, wchar_t **restrict __endptr);
 double _RTL_FUNC wcstod (const wchar_t *restrict __nptr, wchar_t **restrict __endptr);
@@ -162,7 +166,7 @@ long int _RTL_FUNC wcstol (const wchar_t *restrict __nptr, wchar_t **restrict __
                         int __base);
 unsigned long int _RTL_FUNC wcstoul (const wchar_t *restrict __nptr,
 				       wchar_t **restrict __endptr, int __base);
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 long long int _RTL_FUNC wcstoll (const wchar_t *restrict __nptr, wchar_t **restrict __endptr,
 				  int __base);
 unsigned long long int _RTL_FUNC wcstoull (const wchar_t *restrict __nptr,
@@ -282,7 +286,7 @@ int fwide(FILE *__stream, int __mode);
 	using __STD_NS_QUALIFIER wcstold;
 	using __STD_NS_QUALIFIER wcstol;
 	using __STD_NS_QUALIFIER wcstoul;
-#if  __STDC_VERSION__ >= 199901L
+#if  __STDC_VERSION__ >= 199901L || defined(__cplusplus)
 	using __STD_NS_QUALIFIER wcstoll;
 	using __STD_NS_QUALIFIER wcstoull;
 #endif

@@ -40,5 +40,9 @@ all:
 ifdef OLDSGL
 	$(MAKE) /CSGISRC
 else
+ifdef STLPORT
 	$(MAKE) /CSTLPort-5.2.1/src
+else
+	$(MAKE) /Clibcxx/src
+endif
 endif

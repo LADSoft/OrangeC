@@ -54,6 +54,14 @@ LIBFLAGS=
 IMPLIB=oimplib
 IMPLIBFLAGS=
 
+ifdef OLDSGL
+else
+ifdef STLPORT
+else
+CFLAGS := $(CFLAGS) /DSTD_NEWHANDLER
+endif
+endif
+
 %.o: %.cpp
 	$(CC) /c $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) -o$(OBJECT)\$@F $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) -I$(STDINCLUDE) $^

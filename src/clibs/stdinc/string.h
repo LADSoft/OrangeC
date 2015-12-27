@@ -44,7 +44,7 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
+//namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -142,11 +142,12 @@ char * 		 _RTL_FUNC _IMPORT _strupr(char *);
 
 
 #ifdef __cplusplus
-};
+//};
 };
 #endif
 
 #endif  /* __STRING_H */
+#if 0
 #if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STRING_H_USING_LIST)
 #define __STRING_H_USING_LIST
     using __STD_NS_QUALIFIER memcmp;
@@ -208,3 +209,4 @@ char * 		 _RTL_FUNC _IMPORT _strupr(char *);
     using __STD_NS_QUALIFIER strcasecmp;
     using __STD_NS_QUALIFIER strncasecmp;
 #endif /* __USING_CNAME__ */
+#endif

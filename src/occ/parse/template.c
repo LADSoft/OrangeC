@@ -83,6 +83,7 @@ extern TYPE stdvoid;
 extern int total_errors;
 extern BOOLEAN inMatchOverload;
 extern int codeLabel;
+extern LAMBDA *lambdas;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -5411,9 +5412,11 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             int nsl = PushTemplateNamespace(sym);
             LEXEME *reinstateLex = lex;
             BOOLEAN oldTemplateType = inTemplateType;
+            LAMBDA *oldLambdas = lambdas;
             SetAccessibleTemplateArgs(cls->templateParams, TRUE);
             deferred = NULL;
 			templateHeaderCount = 0;
+            lambdas = NULL;
             old = *cls;
             cls->linkage = lk_virtual;
             cls->parentClass = SynthesizeParentClass(cls->parentClass);
@@ -5456,6 +5459,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
 			dontRegisterTemplate-= templateNestingCount != 0;
+            lambdas = oldLambdas;
             instantiatingTemplate --;
             inTemplateType = oldTemplateType;
             deferred = oldDeferred;
@@ -5534,6 +5538,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     int pushCount ;
     BOOLEAN found = FALSE;
     STRUCTSYM s;
+    LAMBDA *oldLambdas;
     hr = sym->overloadName->tp->syms->table[0];
     while (hr)
     {
@@ -5548,6 +5553,8 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
         }
         hr = hr->next;
     }
+    oldLambdas = lambdas;
+    lambdas = NULL;
     old = structSyms;
     structSyms = 0;
     sym->templateParams = copyParams(sym->templateParams, TRUE);
@@ -5650,6 +5657,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     }
     while (pushCount--)
         dropStructureDeclaration();
+    lambdas = oldLambdas;
     structSyms = old;
     return sym;
 }

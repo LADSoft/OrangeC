@@ -60,6 +60,12 @@ extern SYMBOL *theCurrentFunc;
 extern NAMESPACEVALUES *localNameSpace;
 extern int inDefaultParam;
 
+int anonymousNotAlloc;
+
+void helpinit()
+{
+    anonymousNotAlloc = 0;
+}
 // well this is really only nonstatic data members...
 BOOLEAN ismember(SYMBOL *sym)
 {
@@ -664,7 +670,7 @@ EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp)
     rv->storage_class = storage_class;
     rv->tp = tp;
     rv->anonymous = TRUE;
-    rv->allocate = TRUE;
+    rv->allocate = !anonymousNotAlloc;
     rv->assigned = TRUE;
     rv->used = TRUE;
     if (theCurrentFunc)

@@ -239,6 +239,7 @@ enum e_cvsrn
 #define _F_SIZEOF 32
 #define _F_INITLIST 64
 #define _F_TEMPLATEARGEXPANSION 128
+#define _F_TYPETEST 256
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
@@ -367,7 +368,6 @@ typedef struct stmt
     EXPRESSION *destexp;
     LINEDATA *lineData;
     union {
-        TYPE *returntype;
         TYPE *tp;
         CASEDATA *cases;
         struct blockdata *parent;

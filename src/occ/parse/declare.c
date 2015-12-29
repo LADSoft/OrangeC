@@ -976,7 +976,7 @@ LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN inTempl
 {
     BOOLEAN hasBody = (cparams.prm_cplusplus && KW(lex) == colon) || KW(lex) == begin;
     SYMBOL *injected = NULL;
-    if (templateNestingCount && nameSpaceList)
+    if (/*templateNestingCount &&*/ nameSpaceList)
         SetTemplateNamespace(sp);
     if (sp->structAlign == 0)
         sp->structAlign = 1;
@@ -2150,7 +2150,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                     lex = getsym();
                     needkw(&lex, openpa);
                     extended = MATCHKW(lex, openpa);
-        
+
                     lex = expression_no_check(lex, NULL, NULL, &tn, &exp, _F_SIZEOF);
                     if (tn && tn->type == bt_aggregate && exp->type == en_func && exp->v.func->asaddress)
                     {
@@ -2212,6 +2212,7 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                             tn = tp2;
                         }
                     }
+                    /*
                     else if (tn->lref)
                     {
                         TYPE *tp2 = Alloc(sizeof(TYPE));
@@ -2227,7 +2228,8 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                         tp2->size = getSize(bt_pointer);
                         tp2->btp = tn;
                         tn = tp2;
-                    }                
+                    } 
+                    */               
                 }
                 if (!MATCHKW(lex, closepa))
                     needkw(&lex, closepa);
@@ -2410,6 +2412,10 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                                         if (told->p->type == kw_new)
                                         {
                                             (*tnew)->p = told->p;
+                                        }
+                                        else if (!lst->p->sym)
+                                        {
+                                            (*tnew)->p = lst->p;
                                         }
                                         else
                                         {
@@ -3541,23 +3547,6 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
         }
         skip(&lex, closepa);
     }
-    if (cparams.prm_cplusplus)
-    {
-        ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-        if (MATCHKW(lex, pointsto))
-        {
-            TYPE *tpx= NULL;
-            lex = getsym();
-            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
-            lex  = get_type_id(lex, &tpx, funcsp, sc_cast, FALSE, TRUE);
-            if (tpx)
-            {
-                if (sp->tp->btp->type != bt_auto)
-                    error(ERR_MULTIPLE_RETURN_TYPES_SPECIFIED);
-                sp->tp->btp = tpx;
-            }
-        }
-    }
     localNameSpace->syms = locals;
     DecGlobalFlag();
     if (voiderror)
@@ -3767,6 +3756,30 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                             }
                             if (cparams.prm_cplusplus && *sp)
                                 lex = getExceptionSpecifiers(lex, funcsp, *sp, storage_class);
+
+                            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+                            if (MATCHKW(lex, pointsto))
+                            {
+                                TYPE *tpx= NULL;
+                                HASHTABLE *locals = localNameSpace->syms;
+                                if (inTemplate && templateNestingCount == 1)
+                                    noSpecializationError++;
+                                localNameSpace->syms = basetype(*tp)->syms;
+                                IncGlobalFlag();
+                                lex = getsym();
+                                ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+                                lex  = get_type_id(lex, &tpx, funcsp, sc_cast, FALSE, TRUE);
+                                if (tpx)
+                                {
+                                    if (basetype(*tp)->btp->type != bt_auto)
+                                        error(ERR_MULTIPLE_RETURN_TYPES_SPECIFIED);
+                                    basetype(*tp)->btp = tpx;
+                                }
+                                localNameSpace->syms = locals;
+                                DecGlobalFlag();
+                                if (inTemplate && templateNestingCount == 1)
+                                    noSpecializationError--;
+                            }
                         }
                     }
                 }
@@ -5683,7 +5696,7 @@ jointemplate:
                                     injectThisPtr(sp, basetype(sp->tp)->syms);
                                 }
                             }
-                            if (templateNestingCount && nameSpaceList)
+                            if (/*templateNestingCount &&*/ nameSpaceList)
                                 SetTemplateNamespace(sp);
                             if (MATCHKW(lex, begin))
                             {

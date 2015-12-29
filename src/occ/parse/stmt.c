@@ -59,6 +59,7 @@ extern LEXCONTEXT *context;
 extern TYPE stdXC;
 extern int currentErrorLine;
 extern int total_errors;
+extern LAMBDA *lambdas;
 
 BOOLEAN hasXCInfo;
 int startlab, retlab;
@@ -1661,16 +1662,26 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     else
     {   
         tp = basetype(funcsp->tp)->btp;
-        if (cparams.prm_cplusplus && tp->type == bt_auto && ISID(lex))
+        if (tp->type == bt_auto && lambdas)
         {
-            SYMBOL *sp = NULL;
-            SYMBOL *strSym = NULL;
-            NAMESPACEVALUES *nsv = NULL;
             LEXEME *placeholder = lex;
-            lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, NULL, FALSE, FALSE, lex->value.s.a);
+            TYPE *tp1 = NULL;
+            EXPRESSION *exp1;
+            lex = expression_no_check(lex, funcsp, NULL, &tp1, &exp1, _F_TYPETEST);
             lex = prevsym(placeholder);
-            if (sp && (isstructured(sp->tp) || basetype(sp->tp)->type == bt_memberptr))
-                tp = sp->tp;
+            if (tp1)
+            {
+                tp = tp1;
+                if (lambdas->functp->type == bt_auto)
+                {
+                    lambdas->functp = tp1;
+                }
+                else
+                {
+                    if (!comparetypes(lambdas->functp, tp1, TRUE) && !sameTemplate(lambdas->functp, tp1))
+                        errortype(ERR_MISMATCHED_INFERRED_LAMBDA_TYPES, lambdas->functp, tp1);
+                }
+            }
         }
         if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
         {
@@ -1855,7 +1866,10 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     skip(&lex, end);
                 }
             }
-            returntype = tp;
+            if (tp->type == bt_auto)
+                returntype = tp = tp1;
+            else
+                returntype = tp;
             if (returnexp->type == en_func)
             {
                 if (returnexp->v.func->sp->storage_class == sc_overloads)
@@ -1938,14 +1952,6 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     st->destexp = destexp;
     thunkCatchCleanup(st, funcsp, parent, NULL); // to top level
     // for infering the return type of lambda functions
-    if (tp)
-    {
-        st->returntype = returntype;
-    }
-    else
-    {
-        st->returntype = &stdvoid;
-    }
     if (returnexp && returntype && returntype->type != bt_auto)
     {
         if (!tp) // some error...
@@ -2765,7 +2771,6 @@ static BOOLEAN thunkmainret(SYMBOL *funcsp, BLOCKDATA *parent)
     {
         STATEMENT *s = stmtNode(NULL, parent, st_return);
         s->select = intNode(en_c_i, 0);
-        s->returntype = &stdint;
         return TRUE;
     }
     return FALSE;

@@ -438,6 +438,7 @@ void compile(void)
 {
     LEXEME *lex = NULL ;
     SetGlobalFlag(TRUE);
+    helpinit();
     errorinit();
     constoptinit();
     declare_init();

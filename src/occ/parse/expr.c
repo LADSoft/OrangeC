@@ -75,6 +75,7 @@ extern INCLUDES *includes;
 extern NAMESPACEVALUES *globalNameSpace;
 extern BOOLEAN hasXCInfo;
 extern STRUCTSYM *structSyms;
+extern int anonymousNotAlloc;
 
 int packIndex;
 
@@ -6717,7 +6718,11 @@ LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, 
                    int flags)
 {
+    if (flags & _F_TYPETEST)
+        anonymousNotAlloc++;
     lex = expression_comma(lex, funcsp, atp, tp, exp, NULL, flags);
+    if (flags & _F_TYPETEST)
+        anonymousNotAlloc--;
     return lex;
 }
 

@@ -533,7 +533,7 @@ static struct {
 {"Use '&' to take the address of a member function", ERROR },
 {"ISO C++ forbids in-class initialization of non-const static member '%s'", ERROR },
 {"Need packed template parameter", ERROR },
-
+{"Mismatched types '%s' and '%s' while infering lambda return type", ERROR },
 #endif
 } ;
 

@@ -576,9 +576,17 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
 {
 #ifndef PARSER_ONLY
     TYPE *tp = basetype(init->basetp);
-    int rv = getSize(tp->type);
+    int rv;
     LLONG_TYPE i;
     FPF f, im;
+    if (isstructured(tp))
+    {
+        rv = tp->size + tp->sp->structAlign;
+    }
+    else
+    {
+        rv = getSize(tp->type);
+    }
     if (isfloatconst(init->exp))
     {
         f = init->exp->v.f;
@@ -838,7 +846,6 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
                             genstorage(init->basetp->size - s);
                             s = init->basetp->size;
                         }
-                            
                         pos += s;
                     }
                     init = next;
@@ -1991,7 +1998,7 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
                 while (temp && temp->size == 0)
                 {
                      temp->size = size;
-                     temp->esize = intNode(en_c_i, size);
+                     temp->esize = intNode(en_c_i, size/base);
                      temp = temp->btp;
                 }
             }
@@ -3066,6 +3073,31 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
         }
         else
         {
+            if (sp->tp->type == bt_auto && MATCHKW(lex, assign))
+            {
+                LEXEME *placeholder = lex;
+                TYPE *tp1 = NULL;
+                EXPRESSION *exp1;
+                lex = getsym();
+                if (!MATCHKW(lex, begin) && !MATCHKW(lex, openbr))
+                {
+                    lex = expression_no_check(lex, funcsp, NULL, &tp1, &exp1, _F_TYPETEST);
+                    if (tp1)
+                    {
+                        TYPE **tp2 = &sp->tp;
+                        while (ispointer(*tp2) || isref(*tp2))
+                            tp2 = &basetype(*tp2)->btp;
+                        if (isstructured(*tp2))
+                            *tp2 = (*tp2)->sp->tp;
+                            
+                        if (sp->storage_class != sc_typedef && sp->storage_class != sc_external && isstructured(*tp2) && !isref(sp->tp) && !(*tp2)->syms)
+                    	{
+                            *tp2 = PerformDeferredInitialization((*tp2), funcsp);
+                    	}
+                    }                        
+                }
+                lex = prevsym(placeholder);
+            }
             if (GetGlobalFlag() == 1)
             {
                 /* have to copy the type since it was created

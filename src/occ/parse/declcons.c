@@ -1462,7 +1462,7 @@ void destructBlock(EXPRESSION **exp, HASHREC *hr)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        if (!sp->destructed && !isref(sp->tp))
+        if (sp->allocate && !sp->destructed && !isref(sp->tp))
         {
             sp->destructed = TRUE;
             if (sp->storage_class == sc_parameter)
@@ -1617,7 +1617,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             {
                 while (mi)
                 {
-                    if (mi->sp && isstructured(mi->sp->tp) && mi->sp->tp->sp == member)
+                    if (mi->sp && isstructured(mi->sp->tp) && basetype(mi->sp->tp)->sp == member)
                     {
                         break;
                     }
@@ -2080,7 +2080,7 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
         {
             // might be a typedef?
             init->sp = finishSearch(init->name, NULL, NULL, FALSE, FALSE);
-            if (init->sp->storage_class == sc_typedef)
+            if (init->sp && init->sp->storage_class == sc_typedef)
             {
                 int offset = 0;
                 TYPE *tp = init->sp->tp;

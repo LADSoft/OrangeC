@@ -74,6 +74,7 @@ extern SYMBOL *enumSyms;
 extern LAMBDA *lambdas;
 extern int currentErrorLine;
 extern int templateNestingCount;
+extern LAMBDA *lambdas;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */

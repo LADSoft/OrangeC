@@ -269,50 +269,8 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOLEAN isExplicit)
 static void inferType(void)
 {
     TYPE *tp = lambdas->functp;
-    if (tp->type == bt_auto && lambdas->func->inlineFunc.stmt)
-    {
-        STATEMENT *st = lambdas->func->inlineFunc.stmt;
+    if (tp->type == bt_auto)
         tp = &stdvoid;
-        if (st->type == st_block)
-        {
-            st = st->lower;
-            while (st && st->type != st_block)
-            {
-                st = st->next;
-            }
-            if (st)
-            {
-                st = st->lower;
-                while (st && (st->type == st_label || st->type == st_line || st->type == st_dbgblock) && st->type != st_return)
-                {
-                    st = st->next;
-                }
-                if (st->type == st_return)
-                {
-                    tp = st->returntype;
-                    if (isarray(tp))
-                    {
-                        TYPE *tp2 = Alloc(sizeof(TYPE));
-                        while (isarray(tp))
-                            tp = basetype(tp)->btp;
-                        tp2->type = bt_pointer;
-                        tp2->btp = tp;
-                        tp2->size = getSize(bt_pointer);
-                        tp = tp2;
-            
-                    }
-                    else if (isfunction(tp))
-                    {
-                        TYPE *tp2 = Alloc(sizeof(TYPE));
-                        tp2->type = bt_pointer;
-                        tp2->btp = tp;
-                        tp2->size = getSize(bt_pointer);
-                        tp = tp2;
-                    }
-                }
-            }
-        }   
-    }
     lambdas->func->tp->btp = tp;
 }
 static TYPE * realArgs(SYMBOL *func)
@@ -466,7 +424,6 @@ static void finishClass(void)
     self->label = nextLabel++;
     insert(self, lambdas->cls->tp->syms);    
     insertInitSym(self);
-    inferType();
     createConstructorsForLambda(lambdas->cls);
     insertFunc(lambdas->cls, lambdas->func);
     createConverter(self);
@@ -638,7 +595,8 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     HASHREC *hrl;
     TYPE *ltp;
     STRUCTSYM ssl;
-    funcsp->noinline = TRUE;
+    if (funcsp)
+        funcsp->noinline = TRUE;
     IncGlobalFlag();
     self = Alloc(sizeof(LAMBDA));
     ltp = Alloc(sizeof(TYPE));
@@ -905,6 +863,7 @@ LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
     dropStructureDeclaration();
     localNameSpace->syms = self->oldSyms;
     localNameSpace->tags = self->oldTags;
+    inferType();
     finishClass();
     *exp = createLambda(0);
     *tp = lambdas->cls->tp;

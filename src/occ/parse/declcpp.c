@@ -59,6 +59,7 @@ extern int dontRegisterTemplate;
 extern int inTemplateSpecialization;
 extern LIST *openStructs;
 extern int structLevel;
+extern LAMBDA *lambdas;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -741,6 +742,7 @@ void deferredCompileOne(SYMBOL *cur)
     LEXEME *lex;
     STRUCTSYM l,m, n;
     int count = 0;
+    LAMBDA *oldLambdas;
     // function body
     if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams || cur->instantiated))
     {
@@ -775,10 +777,13 @@ void deferredCompileOne(SYMBOL *cur)
                 cur->memberInitializers = GetMemberInitializers(&lex, NULL, cur);
             }
         }
+        oldLambdas = lambdas;
+        lambdas = NULL;
         cur->deferredCompile = NULL;
         lex = body(lex, cur);
         SetAlternateLex(NULL);
         dontRegisterTemplate--;
+        lambdas = oldLambdas;
         while (count--)
         {
             dropStructureDeclaration();

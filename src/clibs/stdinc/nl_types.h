@@ -1,3 +1,6 @@
+#ifndef _NL_TYPES_H
+#define _NL_TYPES_H
+
 /* libcxx support */
 #include <string.h>
 #include <wchar.h>
@@ -153,4 +156,6 @@ inline struct lconv *  localeconv_l(locale_t)
 { return localeconv(); }
 #ifdef __cplusplus
 }
+#endif
+
 #endif

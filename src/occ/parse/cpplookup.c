@@ -147,10 +147,13 @@ static LIST *namespacesearchone(char *name, NAMESPACEVALUES *ns, LIST *gather, B
         rv->next = gather;
         rv = rv1;
     }
-    else if (allowUsing)
+    else
+    {
+        rv = gather;
+    }
+    if (allowUsing)
     {
         LIST *lst = ns->usingDirectives;
-        rv = gather;
         while (lst)
         {
             SYMBOL *x = lst->data;
@@ -182,6 +185,42 @@ SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOL
     
     if (lst)
     {
+        if (lst->next)
+        {
+            LIST *a = lst;
+            while (a)
+            {
+                if (((SYMBOL *)a->data)->storage_class != sc_overloads)
+                    break;
+                a = a->next;
+            }
+            if (!a)
+            {
+                HASHREC **dest;
+                TYPE *tp = Alloc(sizeof(TYPE));
+                SYMBOL *sp = makeID(sc_overloads, tp, NULL, ((SYMBOL *)lst->data)->name);
+                tp->type = bt_aggregate;
+                tp->sp = sp;
+                tp->syms = CreateHashTable(1);
+                a = lst;
+                dest = &tp->syms->table[0];
+                while (a)
+                {
+                    HASHREC *b = ((SYMBOL *)a->data)->tp->syms->table[0];
+                    
+                    while (b)
+                    {
+                        *dest = Alloc(sizeof(HASHREC));
+                        (*dest)->p = b->p;
+                        dest = &(*dest)->next;
+                        b = b->next;
+                    }
+                    a = a->next;
+                }
+                return sp;
+            }
+            
+        }
         while (lst->next)
         {
             // collision
@@ -189,7 +228,7 @@ SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOL
             LIST *lst1 = lst->next;
             while (lst1)
             {
-                if (test != lst1->data)
+                if (test != lst1->data && test->mainsym != lst1->data && ((SYMBOL *)lst1->data)->mainsym != test)
                 {
                     errorsym2(ERR_AMBIGUITY_BETWEEN, test, (SYMBOL *)lst1->data);
                 }

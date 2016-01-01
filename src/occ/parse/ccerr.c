@@ -192,7 +192,7 @@ static struct {
 {"'inline' not allowed here", ERROR },
 {"'main' may not be declared as inline", ERROR },
 {"Function takes no arguments", ERROR },
-{"Call to function '%s' without a prototype", WARNING },
+{"Call to function '%s' without a prototype", TRIVIALWARNING },
 {"Argument list too long in call to '%s'", ERROR },
 {"Argument list too short in call to '%s'", ERROR },
 {"Call of nonfunction", ERROR },

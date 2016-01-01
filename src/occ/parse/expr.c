@@ -1313,7 +1313,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
  
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
         hr = hr->next;   
-    if (hr != NULL && !hr)
+    if (!hr)
     {
         matching = FALSE;
         noproto = TRUE;
@@ -1322,8 +1322,6 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
     {
         if (params->sp->hasproto)
             noproto = FALSE;
-//		else
-//			params->sp->hasproto = TRUE;
     }
     if (hr && ((SYMBOL *)hr->p)->tp->type == bt_void)
     {

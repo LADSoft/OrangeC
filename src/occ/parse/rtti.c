@@ -174,7 +174,7 @@ static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
             {
                 sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
             }
-            sp->genreffed = TRUE;
+            GENREF(sp);
         }
     }
 
@@ -344,7 +344,7 @@ SYMBOL *RTTIDumpType(TYPE *tp)
             if (isstructured(tp) && basetype(tp)->sp->dontinstantiate)
             {
                 InsertExtern(xtSym);
-                xtSym->genreffed = TRUE;
+                GENREF(xtSym);
                 xtSym->dontinstantiate = TRUE;
             }
             else

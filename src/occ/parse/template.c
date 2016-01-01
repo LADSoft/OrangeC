@@ -5464,7 +5464,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             inTemplateType = oldTemplateType;
             deferred = oldDeferred;
             cls->instantiated = TRUE;
-            cls->genreffed = TRUE;
+            GENREF(cls);
 			templateHeaderCount = oldHeaderCount;
             while (pushCount--)
                 dropStructureDeclaration();
@@ -5647,6 +5647,8 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             linesTail = oldLinesTail;
             instantiatingTemplate --;
             sym->genreffed |= warning;
+            if (sym->mainsym)
+                sym->mainsym->genreffed |= warning;
         }
         else
         {
@@ -6703,13 +6705,13 @@ static void referenceInstanceMembers(SYMBOL *cls)
                             deferredCompileOne(sym);
                         }
                         InsertInline(sym);
-                        sym->genreffed = TRUE;
+                        GENREF(sym);
                     }
                     hr2 = hr2->next;
                 }
             }
             else if (!ismember(sym) && !istype(sym))
-                sym->genreffed = TRUE;
+                GENREF(sym);
             hr = hr->next;
         }
         hr = cls->tp->tags->table[0]->next; // past the definition of self

@@ -3324,7 +3324,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         {
             InsertInline(funcsp);
             if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)
-                funcsp->genreffed = TRUE;
+                GENREF(funcsp);
         }
     #ifndef PARSER_ONLY
         else 

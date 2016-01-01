@@ -684,10 +684,10 @@ SYMBOL *classsearch(char *name, BOOLEAN tagsOnly, BOOLEAN toErr)
     }
     return rv;
 }
-SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN tagsOnly, BOOLEAN throughClass)
+SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN tagsOnly, BOOLEAN throughClass, BOOLEAN namespaceOnly)
 {
     SYMBOL *rv = NULL;
-    if (!encloser && !ns)
+    if (!encloser && !ns && !namespaceOnly)
     {
         SYMBOL *ssp;
         rv = search(name, localNameSpace->syms);
@@ -740,7 +740,13 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
     }
     else
     {
-        if (encloser)
+        if (namespaceOnly)
+        {
+            rv = namespacesearch(name, globalNameSpace, FALSE, tagsOnly);
+            if (rv)
+                rv->throughClass = FALSE;
+        }
+        else if (encloser)
         {
             STRUCTSYM l;
             l.str = (void *)encloser;
@@ -772,6 +778,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
     BOOLEAN throughClass = FALSE;
     LEXEME *placeholder = lex;
     BOOLEAN hasTemplate = FALSE;
+    BOOLEAN namespaceOnly = FALSE;
     *sym = NULL;
     
     if (!cparams.prm_cplusplus)
@@ -785,6 +792,8 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
         }
         return lex;
     }
+    if (MATCHKW(lex, classsel))
+        namespaceOnly = TRUE;
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType);
     if (cparams.prm_cplusplus)
     {
@@ -832,7 +841,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
                 char buf[512];
                 int ovdummy;
                 lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
-                *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass);
+                *sym = finishSearch(buf, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                 if (!*sym)
                     encloser = NULL;
                 if (errIfNotFound && !*sym)
@@ -849,7 +858,7 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
                 }
                 else
                 {
-                    *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass);
+                    *sym = finishSearch(lex->value.s.a, encloser, ns, tagsOnly, throughClass, namespaceOnly);
                     if (!*sym)
                         encloser = NULL;
                     if (errIfNotFound && !*sym)
@@ -959,8 +968,15 @@ LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castTy
             noSpecializationError++;
             lex = get_type_id(lex, &tp, funcsp, sc_cast, TRUE, TRUE);
             noSpecializationError--;
+            if (!tp)
+            {
+                errorstr(ERR_INVALID_AS_OPERATOR,"");
+                tp = &stdint;
+            }
             if (castType)
+            {
                 *castType = tp;
+            }
             strcpy(buf, overloadNameTab[*ov = CI_CAST]);
         }
         else if (lex->type == l_astr)
@@ -1004,8 +1020,12 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
     char buf[512];
     int ov = 0;
     BOOLEAN hasTemplate = FALSE;
+    BOOLEAN namespaceOnly = FALSE;
+    
     *sym = NULL;
     
+    if (MATCHKW(lex, classsel))
+        namespaceOnly = TRUE;
     if (!cparams.prm_cplusplus)
     {
         if (ISID(lex))
@@ -1040,7 +1060,7 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
                     error(ERR_DESTRUCTOR_MUST_MATCH_CLASS);
                 }
                 *sym = finishSearch(overloadNameTab[CI_DESTRUCTOR], 
-                                    encloser, ns, tagsOnly, throughClass);
+                                    encloser, ns, tagsOnly, throughClass, namespaceOnly);
             }
         }
         else
@@ -1063,7 +1083,7 @@ LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym
             if (!encloser && membersOnly)
                 encloser = getStructureDeclaration();
             *sym = finishSearch(ov == CI_CAST ? overloadNameTab[CI_CAST] : buf, 
-                                encloser, ns, tagsOnly, throughClass);
+                                encloser, ns, tagsOnly, throughClass, namespaceOnly);
             if (*sym && hasTemplate)
             {
                 if ((*sym)->storage_class == sc_overloads)
@@ -1363,7 +1383,7 @@ static LIST *searchNS(SYMBOL *sp, SYMBOL *nssp, LIST *in)
 }
 SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp)
 {
-    return getUserConversion(F_STRUCTURE, tp, sp->tp, NULL, NULL, NULL, NULL, NULL, TRUE);
+    return getUserConversion(F_STRUCTURE, tp, sp->tp, NULL, NULL, NULL, NULL, NULL, FALSE);
 }
 SYMBOL *lookupNonspecificCast(SYMBOL *sp, TYPE *tp)
 {
@@ -1877,6 +1897,48 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
         {
             return 0;
 		}
+        l=0, r = 0;
+        for (;l < lenl && seql[l] != CV_USER && r < lenr && seqr[r] != CV_USER;)
+        {
+            BOOLEAN cont = FALSE;
+            switch (seql[l])
+            {   
+                case CV_ARRAYTOPOINTER:
+                case CV_FUNCTIONTOPOINTER:
+                    l++;
+                    cont = TRUE;
+                    break;
+                default:
+                    break;
+            }
+            switch (seqr[r])
+            {   
+                case CV_ARRAYTOPOINTER:
+                case CV_FUNCTIONTOPOINTER:
+                    r++;
+                    cont = TRUE;
+                    break;
+                default:
+                    break;
+            }
+            if (cont)
+                continue;
+            if (seql[l] != seqr[r])
+                break;
+            l++, r++;
+        }
+        while (l < lenl && seql[l] == CV_IDENTITY)
+            l++;
+        while (r < lenr && seqr[r] == CV_IDENTITY)
+            r++;
+        if (seql[l] == CV_USER && seqr[r] != CV_USER)
+        {
+            return -1;
+        }
+        else if (seql[l] != CV_USER && seqr[r] == CV_USER)
+        {
+            return 1;
+        }
     }
     // ellipse always returns 0;
     return 0;
@@ -2164,7 +2226,7 @@ static SYMBOL *getUserConversion(int flags,
             LIST *lst2;
             int funcs = 0;
             int i;
-            SYMBOL **spList;
+            SYMBOL **spList , ** spFilterList;
             enum e_cvsrn **icsList;
             int **lenList;
             int m = 0;
@@ -2199,6 +2261,7 @@ static SYMBOL *getUserConversion(int flags,
                 lst2 = lst2->next;
             }
             spList = (SYMBOL **)Alloc(sizeof(SYMBOL *) * funcs);
+            spFilterList = (SYMBOL **)Alloc(sizeof(SYMBOL *) * funcs);
             icsList = (enum e_cvsrn **)Alloc(sizeof(enum e_cvsrn *) * funcs);
             lenList = (int **)Alloc(sizeof(int *) * funcs);
             lst2 = gather;
@@ -2209,8 +2272,14 @@ static SYMBOL *getUserConversion(int flags,
                 while (*hr)
                 {
                     SYMBOL *sym = (SYMBOL *)(*hr)->p;
-                    if (!sym->instantiated)
+                    int n;
+                    for (n=0; n < i; n++)
+                        if (spFilterList[n] == sym || spFilterList[n]->mainsym == sym || spFilterList[n] == sym->mainsym ||
+                            matchOverload(sym->tp, spFilterList[n]->tp, FALSE) && sym->overlayIndex == spFilterList[n]->overlayIndex)
+                            break;
+                    if (!sym->instantiated && n >= i)
                     {
+                        spFilterList[i] = sym;
                         if (sym->templateLevel && sym->templateParams)
                         {
                             if (sym->castoperator)
@@ -2226,6 +2295,7 @@ static SYMBOL *getUserConversion(int flags,
                         {
                             spList[i++] = sym;
                         }
+                        
                     }
                     hr = &(*hr)->next;
                 }
@@ -2580,19 +2650,9 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
                     TYPE *pa = PA->p->byClass.val /*&& !PL->p->byClass.dflt*/ ? PA->p->byClass.val : PA->p->byClass.dflt;
                     if (!pl || !pa)
                         break;
-                    if (!templatecomparetypes(pl, pa, TRUE)|| !templatecomparetypes(pa, pl, TRUE))
+                    if (!templatecomparetypes(pa, pl, TRUE))
                     {
-                        if (isref(pl))
-                            pl = basetype(pl)->btp;
-                        if (isref(pa))
-                            pa = basetype(pa)->btp;
-                        while (ispointer(pl) && ispointer(pa))
-                        {
-                            pl = basetype(pl)->btp;
-                            pa = basetype(pa)->btp;
-                        }
-                        if (!sameTemplate(pl, pa))
-                            break;
+                        break;
                     }
                 }
                 else if (PL->p->type == kw_template)
@@ -2902,7 +2962,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 if (!comparetypes(basetype(tpp)->btp, tpa, TRUE))
                     seq[(*n)++] = CV_NONE;
                     
-                else if (basetype(tpa)->sp->parentClass != basetype(tpp)->sp)
+                else if (basetype(tpa)->sp->parentClass != basetype(tpp)->sp && basetype(tpa)->sp->parentClass->mainsym != tpp->sp && basetype(tpa)->sp->parentClass != basetype(tpp)->sp->mainsym)
                 {
                     if (classRefCount(basetype(tpa)->sp->parentClass, basetype(tpp)->sp) == 1)
                     {
@@ -3962,7 +4022,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                             found1 = detemplate(found1, args, atp) ;
                         }
                     }
-                    found1->genreffed = TRUE;
+                    GENREF(found1);
                     if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                     {
                         found1 = TemplateFunctionInstantiate(found1, FALSE, FALSE);

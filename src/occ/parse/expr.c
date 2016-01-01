@@ -153,7 +153,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     SYMBOL *strSym = NULL;
     NAMESPACEVALUES *nsv = NULL;
     LEXEME *placeholder = lex;
-    if (ismutable)
+    if (ismutable)        
         *ismutable = FALSE;
     if (cparams.prm_cplusplus)
     {
@@ -402,7 +402,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 
                 case sc_localstatic:
                     if (!(flags & _F_SIZEOF))
-                        sp->genreffed = TRUE;
+                        GENREF(sp);
                     if (funcsp && funcsp->isInline 
                         && funcsp->storage_class == sc_global)
                     {
@@ -443,7 +443,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                         }
                     }
                     if (!(flags & _F_SIZEOF))
-                        sp->genreffed = TRUE;
+                        GENREF(sp);
                     if (sp->parentClass && !isExpressionAccessible(NULL, sp, funcsp, NULL, FALSE))
                         errorsym(ERR_CANNOT_ACCESS, sp);		
                     if (sp->linkage3 == lk_threadlocal)
@@ -1159,6 +1159,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
          */
         if (points && ispointer(typein))
             typein = basetype(typein)->btp;
+
         if (isconst(typein) && !isconst(*tp))
         {
             TYPE *p = Alloc(sizeof(TYPE));
@@ -2727,8 +2728,6 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             if (hasThisPtr)
             {
                 test = isExpressionAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, sp, funcsp, funcparams->thisptr, FALSE );
-                if (!test)
-                    test = isExpressionAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, sp, funcsp, funcparams->thisptr, FALSE );
             }
             else
             {
@@ -2740,11 +2739,6 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             }
             if (ismember(funcparams->sp))
             {
-                if (funcsp && isconst(funcsp->tp)) // the fact it is const makes it a member
-                {
-                    if (!isconst(*tp) && funcparams->sp->parentClass == funcsp->parentClass)
-                        errorsym(ERR_NON_CONST_FUNCTION_CALLED_FOR_CONST_OBJECT, funcparams->sp);
-                }
                 if (funcparams->thistp && isconst(basetype(funcparams->thistp)->btp))
                     if (!isconst(*tp))
                         errorsym(ERR_NON_CONST_FUNCTION_CALLED_FOR_CONST_OBJECT, funcparams->sp);
@@ -5139,7 +5133,7 @@ static LEXEME *expression_pm(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
         {
             if (isstructured(*tp) && basetype(tp1)->type == bt_memberptr)
             {
-                if ((*tp)->sp != basetype(tp1)->sp)
+                if ((*tp)->sp != basetype(tp1)->sp && (*tp)->sp->mainsym != basetype(tp1)->sp && (*tp)->sp != basetype(tp1)->sp->mainsym)
                 {
                     if (classRefCount(basetype(tp1)->sp, (*tp)->sp) != 1)
                     {
@@ -6068,7 +6062,7 @@ LEXEME *expression_throw(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **ex
                     else if (cons->deferredCompile)
                         deferredCompileOne(cons);
                 }
-                cons->genreffed = TRUE;
+                GENREF(cons);
             }
             sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
             arg1->next = arg2;

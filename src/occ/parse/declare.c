@@ -3581,17 +3581,6 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
                         if (!MATCHKW(lex, closepa))
                         {
                             lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE, TRUE);
-                            if (tp->type == bt_templateparam && tp->templateParam->p->packed)
-                            {
-                                if (!MATCHKW(lex, ellipse))
-                                {
-                                    error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
-                                }
-                                else
-                                {
-                                    lex = getsym();
-                                }
-                            }
                             if (!tp)
                             {
                                 error(ERR_TYPE_NAME_EXPECTED);
@@ -3600,6 +3589,17 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
                             {
                                 // this is reverse order but who cares?
                                 LIST *p = Alloc(sizeof(LIST));
+                                if (tp->type == bt_templateparam && tp->templateParam->p->packed)
+                                {
+                                    if (!MATCHKW(lex, ellipse))
+                                    {
+                                        error(ERR_PACK_SPECIFIER_REQUIRED_HERE);
+                                    }
+                                    else
+                                    {
+                                        lex = getsym();
+                                    }
+                                }
                                 p->next = sp->xc->xcDynamic;
                                 p->data = tp;
                                 sp->xc->xcDynamic = p;
@@ -4326,6 +4326,8 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         case comma:
             break;
         default:
+            if (beforeOnly)
+                return lex;
             if (*tp && (isstructured(*tp) || (*tp)->type == bt_enum) && KW(lex) == semicolon)
             {
                 lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
@@ -5387,7 +5389,7 @@ jointemplate:
                                             else if (spi->isInline && basetype(spi->tp)->type == bt_ifunc)
                                             {
                                                 spi->storage_class = sc_global;
-                                                spi->genreffed = TRUE;
+                                                GENREF(spi);
                                             }
                                         }
                                         break;
@@ -5737,7 +5739,7 @@ jointemplate:
                                 }
                                 if (storage_class_in != sc_member && TemplateFullySpecialized(sp->parentClass))
                                 {
-                                    sp->genreffed = TRUE;
+                                    GENREF(sp);
                                     sp->linkage = lk_virtual;
                                     SetGlobalFlag(old + 1);
                                     lex = body(lex, sp);

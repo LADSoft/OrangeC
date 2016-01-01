@@ -535,7 +535,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
                 genint(exp->v.i);
                 genint(0);
             }
-            genned->genreffed = TRUE;
+            GENREF(genned);
             if (genned->deferredCompile && !genned->inlineFunc.stmt)
             {
                 deferredCompileOne(genned);
@@ -950,6 +950,7 @@ void dumpInitializers(void)
         dumpDynamicDestructors();
         dumpTLSDestructors();
         dumpvc1Thunks();
+        dumpInlines(); // second pass at this for any global constructs/destructors
     }
 #endif
 }
@@ -1161,7 +1162,7 @@ static void refExp(EXPRESSION *exp)
         case en_label:
         case en_pc:
         case en_threadlocal:
-            exp->v.sp->genreffed = TRUE;
+            GENREF(exp->v.sp);
             break;
         default:
             break;

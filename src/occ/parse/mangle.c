@@ -563,7 +563,7 @@ static char *getName(char *in, SYMBOL *sp)
 }
 char *mangleType (char *in, TYPE *tp, BOOLEAN first)
 {
-    char nm[1024];
+    char nm[4096];
     int i;
     HASHREC *hr ;
     if(!tp)

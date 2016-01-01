@@ -803,7 +803,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                 break;
             case en_threadlocal:
                 sp = node->left->v.sp;
-                sp->genreffed = TRUE;
+                GENREF(sp);
                 ap1 = make_ioffset(node);
                 ap2 = LookupLoadTemp(ap1, ap1);
                 if (ap1 != ap2)
@@ -843,7 +843,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                 if (!sp->stackblock)
 //    			if (!isstructured(sp->tp))
                 {
-                    sp->genreffed = TRUE;
+                    GENREF(sp);
                     ap1 = make_ioffset(node);
                     if (!store)
                     {
@@ -2408,7 +2408,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         case en_global:
         case en_absolute:
         case en_label:
-            node->v.sp->genreffed = TRUE;
+            GENREF(node->v.sp);
             if (node->v.sp->imaddress)
             {
                ap1 = node->v.sp->imaddress;

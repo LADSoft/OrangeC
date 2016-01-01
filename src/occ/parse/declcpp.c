@@ -117,7 +117,7 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                     if (sp)
                         vf->func = sp;
                 }
-                vf->func->genreffed = TRUE;
+                GENREF(vf->func);
                 InsertInline(vf->func);
                 InsertExtern(vf->func);
                 if (vf->func->ispure)
@@ -135,7 +135,7 @@ static int dumpVTabEntries(int count, THUNK *thunks, SYMBOL *sym, VTABENTRY *ent
                     thunks[count].func = vf->func;
                     thunks[count].name = localsp = makeID(sc_static, &stdfunc, NULL, litlate(buf));
                     localsp->decoratedName = localsp->errname = localsp->name;
-                    localsp->genreffed = TRUE;
+                    GENREF(localsp);
                     localsp->linkage = lk_virtual;
                     genref(localsp, 0);
                     InsertInline(localsp);
@@ -189,9 +189,9 @@ void dumpVTab(SYMBOL *sym)
     }
 #endif
 }
-void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *ccount)
+void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *ccount, BOOLEAN isVirtual)
 {
-    if (base == derived || (base && derived && sameTemplate(base->tp, derived->tp)))
+    if (base == derived || (base && derived && sameTemplate(derived->tp, base->tp)))
         (*ccount)++;
     else
     {
@@ -207,14 +207,14 @@ void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *cco
                 }
                 if (sym == base)
                 {
-                    if (lst->isvirtual)
+                    if (isVirtual || lst->isvirtual)
                         (*vcount)++;
                     else
                         (*ccount)++;
                 }
                 else
                 {
-                    internalClassRefCount(base, sym, vcount, ccount);
+                    internalClassRefCount(base, sym, vcount, ccount, isVirtual | lst->isvirtual);
                 }
                 lst = lst->next;
             }
@@ -225,7 +225,7 @@ void internalClassRefCount (SYMBOL *base, SYMBOL *derived, int *vcount, int *cco
 int classRefCount(SYMBOL *base, SYMBOL *derived)
 {
     int vcount =0, ccount = 0;
-    internalClassRefCount (base, derived, &vcount, &ccount);
+    internalClassRefCount (base, derived, &vcount, &ccount, FALSE);
     if (vcount)
         ccount++;
     return ccount;
@@ -882,7 +882,7 @@ void deferredInitializeStructMembers(SYMBOL *cur)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        if (isarray(sp->tp))
+        if (isarray(sp->tp) && sp->tp->esize)
         {
             RecalcArraySize(sp->tp);
         }
@@ -2591,6 +2591,8 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
                         if (ssp && ismember(sp1))
                             sp1->parentClass = ssp;
                         sp1->mainsym = sym;
+                        while (sp1->mainsym)
+                            sp1->mainsym = sp1->mainsym->mainsym;
                         sp1->access = access;
                         InsertSymbol(sp1, storage_class, sp1->linkage, TRUE);
                         InsertExtern(sp1);

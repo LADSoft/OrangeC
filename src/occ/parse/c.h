@@ -51,6 +51,8 @@
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
+#define GENREF(sym) { sym->genreffed = TRUE; if (sym->mainsym) sym->mainsym->genreffed = TRUE; }
+
 #define STD_PRAGMA_FENV 1
 #define STD_PRAGMA_FCONTRACT 2
 #define STD_PRAGMA_CXLIMITED 4

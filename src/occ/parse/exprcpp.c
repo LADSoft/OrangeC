@@ -350,7 +350,7 @@ BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, e
                 {
                     e1 = varNode(en_func, NULL);
                     e1->v.func = params;
-                    cst->genreffed = TRUE;
+                    GENREF(cst);
                 }
                 *exp = e1;
                 if (other)
@@ -419,7 +419,7 @@ BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other)
                 params->ascall = TRUE;
                 e1 = varNode(en_func, NULL);
                 e1->v.func = params;
-                cst->genreffed = TRUE;
+                GENREF(cst);
                 *exp = e1;
                 if (ispointer(other))
                 {
@@ -475,7 +475,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
                 }
                 e1 = varNode(en_func, NULL);
                 e1->v.func = params;
-                cst->genreffed = TRUE;
+                GENREF(cst);
                 *exp = e1;
                 *exp = DerivedToBase(*tp, basetype(cst->tp)->btp, *exp, 0);
                 return TRUE;
@@ -1592,7 +1592,7 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
             BOOLEAN defd = FALSE;
             SYMBOL *sp = NULL;
             BOOLEAN notype = FALSE;
-            lex = getBasicType(lex, funcsp, tp, NULL, FALSE, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL, FALSE, TRUE);
+            lex = get_type_id(lex, tp, funcsp, sc_auto, TRUE, TRUE);
             if (MATCHKW(lex, openbr))
             {
                 TYPE *tp1 = NULL;

@@ -262,7 +262,9 @@ HASHREC **LookupName(char *name, HASHTABLE *table)
     while (*p)
     {
         if (!strcmp((*p)->p->name, name))
+        {
             return p;
+        }
         p =  (HASHREC **)*p;
     }
     return (0);
@@ -507,6 +509,13 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                 {
                     return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector);
                 }
+            }
+            else if (basetype(tnew)->sp->castoperator)
+            {
+                TYPE *tps = basetype(told)->btp;
+                TYPE *tpn = basetype(tnew)->btp;
+                if (!templatecomparetypes(tpn, tps, TRUE) && !sameTemplate(tpn, tps))
+                    return FALSE;
             }
             return TRUE;
         }

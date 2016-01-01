@@ -190,7 +190,7 @@ IMODE *set_symbol(char *name, int isproc)
         sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
         sp->storage_class = sc_external;
         sp->name = sp->errname = sp->decoratedName = litlate(name);
-        sp->genreffed = TRUE;
+        GENREF(sp);
         sp->tp = (TYPE *)Alloc(sizeof(TYPE));
         sp->tp->type = isproc ? bt_func : bt_int;
         sp->safefunc = TRUE;

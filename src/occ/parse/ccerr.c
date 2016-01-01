@@ -861,7 +861,6 @@ void errorsym(int err, SYMBOL *sym)
     unmangle(buf, sym->errname);
 #endif
     printerr(err, preprocFile, preprocLine, buf);
-    unmangle(buf, sym->errname);
 }
 #ifndef CPREPROCESSOR
 void errorsym2(int err, SYMBOL *sym1, SYMBOL *sym2)

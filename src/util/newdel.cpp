@@ -1,19 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdexcept>
-void *operator new(size_t size) throw(std::bad_alloc)
+void *operator new(size_t size)
 {
     return malloc(size);
 }
-void operator delete(void *buf) throw()
+void operator delete(void *buf)
 {
     return free(buf);
 }
-void * operator new [](size_t size)  throw(std::bad_alloc)
+void * operator new [](size_t size)
 {
     return malloc(size);
 }
-void operator delete [](void *buf) throw()
+void operator delete [](void *buf)
 {
     return free(buf);
 }

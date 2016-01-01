@@ -1,5 +1,36 @@
 Release notes:
 
+Version 5.51.1:
+    occ:        fix a compiler crash when compiling boolinq.h
+    occ:        trailing return did not parse correctly if the function had a qualifier, e.g.
+                if it was a const function (fix for cpplinq.hpp)
+    occ:        lambda functions defined at global scope would crash the compiler
+    occ:        initialized structures involving substructures could crash the compiler
+    occ:        fix some problems with typedefs being used to denote base classes
+    occ:        auto variables of class and template type were problematic when used inside lambda functions
+    occ:        lambda functions without a trailing return would not get an inferred return type
+    occ:        size of an unsized array was calculated as number of bytes not number of elements when used
+                in a template parameter
+    occ:        overloaded functions found in different namespaces would be ambiguous even
+                without the same signatures
+    occ:        if an overloaded symbol was found in the main namespace,
+                'using' namespaces wouldn't be searched.
+    occ:        new of pointer type didn't work (e.g new char *[10])
+    occ:        specifying an exception specifier with an undefined type crashed the compiler
+    occ:        uninitialized unsized arrays found in a structure definition could crash the compiler
+    occ:        class objects at global scope could sometimes generate bad code for the constructor call
+                (would not link)
+    occ:        overloaded cast operators didn't work
+    occ:        there were problems with member pointers in nested classes
+    occ:        nonconst variables declared inside a const function were considered const variables
+    occ:        if the first type in a map declaration was a string, the [] operator didn't work on literals
+    occ:        ::id()   didn't work when id was both a global function and a class member variable
+    occ:        cast operators might not be resolved when duplicates are found due to a
+                virtual base class being included twice 
+    occ:        creating a cast function with an undefined type crashes the compiler
+    clibs:      put the initializer_list definitions into the libcxx inline namespace
+    clibs:      move __argc and __argv to the global namespace
+
 Version 5.50.1: 12/27/15
     occ:        many changes to templates et.al. made to fix bugs while compiling libcxx
     occ:        fix problem with control statements: an unbracketed statement
@@ -11,6 +42,7 @@ Version 5.50.1: 12/27/15
                 on a derived object
     occ:        optimizing out the 'default' clause of a switch statement can result in a crash during inlining
     occ:        a template function that starts with a switch crashes compiler
+    occ:        a non-virtual base class of a virtual base class that was inherited multiple times caused a compiler error
     orc:        add switch to specify default language settings
     clibs:      add WIN32 support for TCC
     clibs:      if a memory block was freed twice, a subsequent malloc might enter an infinite loop

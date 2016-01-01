@@ -1313,7 +1313,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
  
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
         hr = hr->next;   
-    if (!hr)
+    if (hr != NULL && !hr)
     {
         matching = FALSE;
         noproto = TRUE;

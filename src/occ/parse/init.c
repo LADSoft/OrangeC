@@ -470,8 +470,6 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
 #ifndef PARSER_ONLY
     int vbase = 0, ofs;
     EXPRESSION expx, *exp = &expx;
-    if (sp->storage_class != sc_member && sp->storage_class != sc_mutable)
-        errortype(ERR_CANNOT_CONVERT_TYPE, sp->tp, membertp);
     if (make_label)
     {
         // well if we wanted we could reuse existing structures, but,
@@ -500,6 +498,8 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
     }
     else
     {
+        if (sp->storage_class != sc_member && sp->storage_class != sc_mutable)
+            errortype(ERR_CANNOT_CONVERT_TYPE, sp->tp, membertp);
         memset(&expx, 0, sizeof(expx));
         expx.type = en_c_i;
         exp = baseClassOffset(sp->parentClass, basetype(membertp)->sp, &expx);
@@ -848,7 +848,7 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
                         }
                         pos += s;
                     }
-                    init = next;
+                    init = init->next = next;
                 }
             }
         }
@@ -950,7 +950,6 @@ void dumpInitializers(void)
         dumpDynamicDestructors();
         dumpTLSDestructors();
         dumpvc1Thunks();
-        dumpInlines(); // second pass at this for any global constructs/destructors
     }
 #endif
 }

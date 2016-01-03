@@ -331,7 +331,7 @@ SYMBOL *RTTIDumpType(TYPE *tp)
 #ifndef PARSER_ONLY
     if (cparams.prm_xcept)
     {
-        char name[512];
+        char name[4096];
         RTTIGetName(name, tp);
         xtSym = search(name, rttiSyms);
         if (!xtSym)
@@ -371,12 +371,18 @@ SYMBOL *RTTIDumpType(TYPE *tp)
                 }
             }
         }
-        else if (!basetype(tp)->sp->dontinstantiate)
-        {
-            if (xtSym->dontinstantiate)
+        else {
+            while (ispointer(tp) || isref(tp))
+                tp = basetype(tp)->btp;
+            if (isstructured(tp) && !basetype(tp)->sp->dontinstantiate)
             {
-                xtSym->dontinstantiate = FALSE;
-                RTTIDumpStruct(xtSym, tp);
+                // xtSym *should* be there.
+                xtSym = search(basetype(tp)->sp->name, rttiSyms);
+                if (xtSym && xtSym->dontinstantiate)
+                {
+                    xtSym->dontinstantiate = FALSE;
+                    RTTIDumpStruct(xtSym, tp);
+                }
             }
         }
             

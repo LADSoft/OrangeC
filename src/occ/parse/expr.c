@@ -2228,7 +2228,7 @@ void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implic
                         TYPE *tpx = p->tp;
                         if (isref(tpx))
                             tpx = basetype(tpx)->btp;
-                        if ((!isconst(basetype(sym->tp)->btp) && isconst(tpx)) || (!comparetypes(sym->tp, tpx, TRUE) 
+                        if ((!isconst(basetype(sym->tp)->btp) && isconst(tpx)) || (!comparetypes(sym->tp, tpx, TRUE) && !sameTemplate(sym->tp, tpx) 
                             && !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp)))
                         { 
                             // make temp via constructor or conversion function

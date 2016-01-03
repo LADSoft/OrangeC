@@ -747,6 +747,7 @@ void deferredCompileOne(SYMBOL *cur)
     if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams || cur->instantiated))
     {
         int tns = PushTemplateNamespace(cur->parentClass);
+            
         cur->linkage = lk_virtual;
         if (cur->templateParams && cur->templateLevel)
         {
@@ -815,7 +816,7 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
         addTemplateDeclaration(&n);
         count++;
     }
-    dontRegisterTemplate++;
+//    dontRegisterTemplate++;
     hr = cur->tp->syms->table[0];
     while (hr)
     {
@@ -851,7 +852,7 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
         }
         hr = hr->next;
     }
-    dontRegisterTemplate--;
+//    dontRegisterTemplate--;
     while (count--)
     {
         dropStructureDeclaration();

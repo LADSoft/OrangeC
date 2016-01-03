@@ -508,6 +508,7 @@ void compile(void)
     {
         dumpInlines();
         dumpInitializers();
+        dumpInlines();
         dumpStartups();
 #ifndef PARSER_ONLY
         dumpLits();

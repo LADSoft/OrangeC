@@ -71,6 +71,7 @@ extern int argument_nesting;
 extern int codeLabel;
 extern SYMBOL *instantiatingMemberFuncClass;
 extern BOOLEAN parsingSpecializationDeclaration;
+
 int inDefaultParam;
 LIST *externals, *globalCache;
 char deferralBuf[100000];
@@ -917,7 +918,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
         calculateVTabEntries(sp, sp, &sp->vtabEntries, 0);
         if (sp->vtabEntries)
         {
-            char buf[1024];
+            char buf[4096];
             InsertInline(sp);
             sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
@@ -3120,9 +3121,29 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                 spi = NULL;
                 tp1 = NULL;
                 lex = getStorageAndType(lex, funcsp, NULL, FALSE, TRUE, &storage_class, &storage_class,
-                       &address, &blocked, NULL, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL);
+                       &address, &blocked, NULL, & constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, NULL, NULL);                
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
+                else if (cparams.prm_cplusplus && isstructured((*tp)->btp) && MATCHKW(lex, openpa))
+                {
+                    LEXEME *cur = lex;
+                    lex = getsym();
+                    if (!MATCHKW(lex, star) && !startOfType(lex, TRUE))
+                    {
+                        if (*spin)
+                        {
+                            (*spin)->tp = (*tp) = (*tp)->btp;
+                            // constructor initialization
+                            // will do initialization later...
+                        }
+                        localNameSpace->syms = locals;
+                        if (inTemplate && templateNestingCount == 1)
+                            noSpecializationError--;
+                        lex = prevsym(placeholder);
+                        return lex;
+                    }
+                    lex = prevsym(cur);
+                }
                 lex = getBeforeType(lex, funcsp, &tp1, &spi, NULL, NULL, FALSE, storage_class, &linkage, &linkage2, &linkage3, FALSE, FALSE, FALSE, FALSE);
 				if (!templateNestingCount && !structLevel)
                 {
@@ -5027,7 +5048,24 @@ jointemplate:
                         else if (nameSpaceList && storage_class_in != sc_auto)
                             sp->parentNameSpace = nameSpaceList->data;
                         if (inTemplate || promotedToTemplate)
-                            sp->templateLevel = templateHeaderCount - !!asFriend ;
+                        {
+                            if (asFriend)
+                            {
+                                SYMBOL *sp1 = sp->parentClass;
+                                sp->templateLevel = inTemplate;
+                                while (sp1)
+                                {
+                                    if (sp1->templateLevel)
+                                        sp->templateLevel++;
+                                    sp1 = sp1->parentClass;
+                                }
+                                
+                            }
+                            else
+                            {
+                                sp->templateLevel = templateHeaderCount;
+                            }
+                        }
                         sp->constexpression = constexpression;
                         sp->access = access;
                         sp->isExplicit = isExplicit;
@@ -5512,37 +5550,49 @@ jointemplate:
                             {
                                 if (sp->constexpression && sp->storage_class == sc_global)
                                     sp->storage_class = sc_static;
-                                if (!asFriend || !templateNestingCount)
+                                if (!asFriend || !templateNestingCount || inTemplate)
                                 {
-                                    if (sp->storage_class == sc_external)
+                                    if (sp->storage_class == sc_external || asFriend)
                                     {
-                                        InsertSymbol(sp, sp->storage_class, linkage, FALSE);
+                                        InsertSymbol(sp, sc_external, linkage, FALSE);
                                         if (!sp->templateLevel || asFriend)
                                             InsertExtern(sp);
+                                        if (sp->templateLevel)
+                                        {
+                                            InsertInline(sp);
+                                        }
                                     }
                                     else
                                     {
                                         InsertSymbol(sp, storage_class == sc_typedef ? storage_class_in : storage_class, linkage, FALSE);
-                                        if (isfunction(sp->tp) && (getStructureDeclaration() || asFriend))
+                                        if (isfunction(sp->tp))
                                         {
-                                            SYMBOL *parent = getStructureDeclaration();
-                                            if (!sp->templateLevel || asFriend)
-                                                InsertExtern(sp);
-                                              
-                                            while (parent)
+                                            if  (getStructureDeclaration() || asFriend)
                                             {
-                                                if (parent->templateLevel)
+                                                SYMBOL *parent = getStructureDeclaration();
+                                                if (!sp->templateLevel || asFriend)
+                                                    InsertExtern(sp);
+                                                  
+                                                while (parent)
                                                 {
-                                                    InsertInline(sp);
-                                                    break;
+                                                    if (parent->templateLevel)
+                                                    {
+                                                        InsertInline(sp);
+                                                        break;
+                                                    }
+                                                    parent = parent->parentClass;
                                                 }
-                                                parent = parent->parentClass;
                                             }
                                         }
+                                        else 
+                                            if (sp->templateLevel)
+                                            {
+                                                InsertInline(sp);
+                                            }
                                     }
                                 }
                             }
-                            else if (asFriend && !sp->anonymous && !isfunction(sp->tp) && !templateNestingCount)
+                            if (asFriend && !sp->anonymous && !isfunction(sp->tp) && !templateNestingCount)
                             {
                                 error(ERR_DECLARATOR_NOT_ALLOWED_HERE);
                             }

@@ -507,6 +507,27 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                 }
                 if (tpn->type == bt_templateselector && tps->type == bt_templateselector)
                 {
+                    TEMPLATESELECTOR *ts1 = tpn->sp->templateSelector->next, *tss1;
+                    TEMPLATESELECTOR *ts2 = tps->sp->templateSelector->next, *tss2;
+                    if (ts1->isTemplate != ts2->isTemplate || strcmp(ts1->sym->decoratedName, ts2->sym->decoratedName))
+                        return FALSE;
+                    tss1 = ts1->next;
+                    tss2 = ts2->next;
+                    while (tss1 && tss2)
+                    {
+                        if (strcmp(tss1->name, tss2->name))
+                            return FALSE;
+                        tss1 = tss1->next;
+                        tss2 = tss2->next;
+                    }
+                    if (tss1 || tss2)
+                        return FALSE;
+                    if (ts1->isTemplate)
+                    {
+                        if (!exactMatchOnTemplateParams(ts1->templateParams, ts2->templateParams))
+                            return FALSE;
+                    }
+                    return TRUE;
                     return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector);
                 }
             }

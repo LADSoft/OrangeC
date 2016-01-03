@@ -59,7 +59,7 @@ CC=$(COMPILER_PATH)\bin\occ
 CCFLAGS = /c /E- 
 
 LINK=$(COMPILER_PATH)\bin\olink
-LFLAGS=-c -m /$(_LIBDIR)
+LFLAGS=-c -m /L$(_LIBDIR)
 
 LIB=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l
@@ -84,11 +84,11 @@ CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND /DWIN32
 ifeq "$(TARGET)" "GUI"
 STARTUP=C0wpe.o
 TYPE=/T:WIN32
-COMPLIB=clwin(LIB_EXT) climp(LIB_EXT)
+COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
 else
 STARTUP=C0Xpe.o
 TYPE=/T:CON32
-COMPLIB=clwin(LIB_EXT) climp(LIB_EXT)
+COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
 endif
 
 vpath %.o $(_OUTPUTDIR)
@@ -114,11 +114,9 @@ $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 |
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(addprefix $(_LIBDIR)\,$(LIB_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
-	$(LINK) $(TYPE) $(LFLAGS) @&&|
+	$(LINK) /o$(NAME).exe $(TYPE) $(LFLAGS) @&&|
 $(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
-$(NAME)
-$(NAME)
-$(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) import32$(LIB_EXT)
+$(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB)
 $(DEF_DEPENDENCIES)
 $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
 |

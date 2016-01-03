@@ -378,10 +378,10 @@ int MakeMain::Run(int argc, char **argv)
     {
         Variable *v = new Variable("MAKEFLAGS", p, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
-        p = getenv("MAKEOVERRIDES");
+        p = getenv("MAKEDOOVERIDES");
         if (p)
         {
-            Variable *v = new Variable("MAKEOVERRIDES", p, Variable::f_recursive, Variable::o_environ);
+            Variable *v = new Variable("MAKEDOOVERIDES", p, Variable::f_recursive, Variable::o_environ);
             *VariableContainer::Instance() += v;
         }
         Eval r(v->GetValue(), false);

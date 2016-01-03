@@ -236,7 +236,7 @@ bool Parser::ParseLine(const std::string &line)
     else
     {
         size_t n;
-        bool override = false;
+        bool dooverride = false;
         std::string firstWord = FirstWord(line, n);
         if (firstWord == "-include")
         {
@@ -293,7 +293,7 @@ bool Parser::ParseLine(const std::string &line)
         }
         else if (firstWord == "override")
         {
-            override = true;
+            dooverride = true;
             size_t x;
             firstWord = FirstWord(line.substr(n), x);
             if (firstWord == "define")
@@ -314,11 +314,11 @@ bool Parser::ParseLine(const std::string &line)
         {
             if (eq != std::string::npos && colon == eq - 1)
             {
-                rv = ParseAssign(iline.substr(0, colon), iline.substr(eq + 1), override);
+                rv = ParseAssign(iline.substr(0, colon), iline.substr(eq + 1), dooverride);
             }
             else
             {
-                if (override)
+                if (dooverride)
                     Eval::warning("Expected variable assignment with override keyword");
                 rv = ParseRule(iline.substr(0, colon), iline.substr(colon+1));
             }
@@ -327,15 +327,15 @@ bool Parser::ParseLine(const std::string &line)
         {
             if (q != std::string::npos && q == eq - 1)
             {
-                rv = ParseQuestionAssign(iline.substr(0, q), iline.substr(eq + 1), override);
+                rv = ParseQuestionAssign(iline.substr(0, q), iline.substr(eq + 1), dooverride);
             }
             else if (r != std::string::npos && r == eq - 1)
             {
-                rv = ParsePlusAssign(iline.substr(0,r), iline.substr(eq + 1), override);
+                rv = ParsePlusAssign(iline.substr(0,r), iline.substr(eq + 1), dooverride);
             }
             else
             {
-                rv = ParseRecursiveAssign(iline.substr(0, eq), iline.substr(eq + 1), override);
+                rv = ParseRecursiveAssign(iline.substr(0, eq), iline.substr(eq + 1), dooverride);
             }
         }
         else
@@ -343,7 +343,7 @@ bool Parser::ParseLine(const std::string &line)
             Eval l(line, false);
             if (l.Evaluate().size())
             {
-                if (override)
+                if (dooverride)
                     Eval::error("Expected variable assignment");
                 else
                     Eval::error("Expected rule");
@@ -352,7 +352,7 @@ bool Parser::ParseLine(const std::string &line)
     }
     return rv;
 }
-bool Parser::ParseAssign(const std::string &left, const std::string &right, bool override, RuleList *ruleList)
+bool Parser::ParseAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -369,7 +369,7 @@ bool Parser::ParseAssign(const std::string &left, const std::string &right, bool
         v = VariableContainer::Instance()->Lookup(ls);
     if (v)
     {
-        v->AssignValue(rs, origin, override);
+        v->AssignValue(rs, origin, dooverride);
     }
     else
     {
@@ -383,7 +383,7 @@ bool Parser::ParseAssign(const std::string &left, const std::string &right, bool
         v->SetExport(true);
     return true;	
 }
-bool Parser::ParseRecursiveAssign(const std::string &left, const std::string &right, bool override, RuleList *ruleList)
+bool Parser::ParseRecursiveAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -399,7 +399,7 @@ bool Parser::ParseRecursiveAssign(const std::string &left, const std::string &ri
         v = VariableContainer::Instance()->Lookup(ls);
     if (v)
     {
-        v->AssignValue(rs, origin, override);
+        v->AssignValue(rs, origin, dooverride);
     }
     else
     {
@@ -413,7 +413,7 @@ bool Parser::ParseRecursiveAssign(const std::string &left, const std::string &ri
         v->SetExport(true);
     return true;
 }
-bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, bool override, RuleList *ruleList)
+bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -434,7 +434,7 @@ bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, 
             Eval r(rs, false);
             rs = r.Evaluate();
         }
-        v->AppendValue(rs, override);
+        v->AppendValue(rs, dooverride);
     }
     else
     {
@@ -448,7 +448,7 @@ bool Parser::ParsePlusAssign(const std::string &left, const std::string &right, 
         v->SetExport(true);
     return true;
 }
-bool Parser::ParseQuestionAssign(const std::string &left, const std::string &right, bool override, RuleList *ruleList)
+bool Parser::ParseQuestionAssign(const std::string &left, const std::string &right, bool dooverride, RuleList *ruleList)
 {
     if (left == ".VARIABLES")
         return true;
@@ -755,7 +755,7 @@ join:
     }
     return rv;
 }
-bool Parser::ParseDefine(const std::string &line, bool override)
+bool Parser::ParseDefine(const std::string &line, bool dooverride)
 {
     Eval l(line, false);
     std::string ls = l.Evaluate();
@@ -784,7 +784,7 @@ bool Parser::ParseDefine(const std::string &line, bool override)
     Variable *v = VariableContainer::Instance()->Lookup(ls);
     if (v)
     {
-        v->AssignValue(rs, origin, override);
+        v->AssignValue(rs, origin, dooverride);
     }
     else
     {

@@ -47,17 +47,17 @@ Variable::Variable(const std::string &Name, const std::string &Value, Flavor oFl
 {
     exportFlag = origin == o_command_line || origin == o_environ || origin == o_environ_override;
 }
-void Variable::AppendValue(const std::string &Value, bool override)
+void Variable::AppendValue(const std::string &Value, bool dooverride)
 {
-    if (override || (origin != o_command_line && origin != o_environ_override))
+    if (dooverride || (origin != o_command_line && origin != o_environ_override))
     {
         if (!constant)
             value += Value;
     }
 }
-void Variable::AssignValue(const std::string &Value, Origin oOrigin, bool override)
+void Variable::AssignValue(const std::string &Value, Origin oOrigin, bool dooverride)
 {
-    if (override || (origin != o_command_line && origin != o_environ_override))
+    if (dooverride || (origin != o_command_line && origin != o_environ_override))
     {
         if (!constant)
         {

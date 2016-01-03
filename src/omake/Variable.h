@@ -68,8 +68,8 @@ public:
     const std::string &GetName() const  { return name; }
     const std::string &GetValue() const { return value; }
     void SetValue(const std::string &Value) { value = Value; }
-    void AppendValue(const std::string &value, bool override = false);
-    void AssignValue(const std::string &value, Origin origin, bool override = false);
+    void AppendValue(const std::string &value, bool dooverride = false);
+    void AssignValue(const std::string &value, Origin origin, bool dooverride = false);
     void SetExport(bool flag) { exportFlag = flag; }
     bool GetExport() const { return exportFlag; }
     Flavor GetFlavor() const { return flavor; }

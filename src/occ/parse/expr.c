@@ -1399,7 +1399,7 @@ join:
                         {
                             if (!ispointer(list->tp) && (!isarithmeticconst(list->exp) || !isconstzero(decl->tp, list->exp)))
                             {
-                                if (!isfunction(list->tp) || (!isvoidptr(decl->tp) && (!isfunction(basetype(decl->tp)->btp) || !comparetypes(basetype(decl->tp)->btp, list->tp, TRUE))))
+                                if (!isfunction(list->tp) || !isvoidptr(decl->tp) && (!isfuncptr(decl->tp) || cparams.prm_cplusplus && !comparetypes(basetype(decl->tp)->btp, list->tp, TRUE)))
                                     errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                             }
                             else if (!comparetypes(decl->tp, list->tp, TRUE))
@@ -6572,7 +6572,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         }
         if (basetype(*tp)->type == bt_memberptr)
         {
-            if ((*exp)->type == en_not_lvalue || (*exp)->type == en_func
+            if ((*exp)->type == en_not_lvalue || (*exp)->type == en_func && !(*exp)->v.func->ascall
                 || (*exp)->type == en_void || (*exp)->type == en_memberptr)
             {
                 if (basetype(*tp)->type != bt_templateparam)

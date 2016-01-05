@@ -2056,7 +2056,7 @@ void genref(SYMBOL *sp, int offset)
  */
 {
     char sign;
-    char buf[512];
+    char buf[2048];
     if (chosenAssembler->gen->gen_ref)
         chosenAssembler->gen->gen_ref(sp,offset);
     if (!icdFile)

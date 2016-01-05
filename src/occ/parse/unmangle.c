@@ -443,6 +443,7 @@ char *unmangleExpression(char *dest, char *name)
                    dest = unmangleExpression(dest, name);
                 }
                 *dest++=')';
+				*dest = 0;
                 break;
             }
             case 'e':
@@ -514,7 +515,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                     }
                     else
                     {
-                        char tname[2048];
+                        char tname[10000];
                         *buf = 0;
                         tname[0] = 0;
                         if (*name == 'e')
@@ -553,7 +554,7 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
 {
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
-    char buf1[1024],  *p, buf2[1024], buf3[1024];
+    char buf1[10000],  *p, buf2[10000], buf3[1000];
     while (*name == '_')
         name++;
     while (*name == 'x' ||  *name == 'y')

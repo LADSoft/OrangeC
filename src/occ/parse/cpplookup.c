@@ -1859,7 +1859,7 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
     }
     else if (xl == user)
     {
-        int l=0, r=0;
+        int l=0, r=0,llvr=0,rlvr=0;
         if (seql[l] == CV_DERIVEDFROMBASE && seqr[r] == CV_DERIVEDFROMBASE)
         {
             HASHREC *hr = basetype(funcl->tp)->syms->table[0];
@@ -1908,6 +1908,9 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                     l++;
                     cont = TRUE;
                     break;
+                case CV_LVALUETORVALUE:
+                    llvr++;
+                    break;
                 default:
                     break;
             }
@@ -1918,6 +1921,8 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                     r++;
                     cont = TRUE;
                     break;
+                case CV_LVALUETORVALUE:
+                    rlvr++;
                 default:
                     break;
             }
@@ -1927,6 +1932,10 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
                 break;
             l++, r++;
         }
+        if (llvr && !rlvr)
+            return -1;
+        if (!llvr && rlvr)
+            return 1;
         while (l < lenl && seql[l] == CV_IDENTITY)
             l++;
         while (r < lenr && seqr[r] == CV_IDENTITY)
@@ -2139,6 +2148,11 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                 if (spList[i] && ellipsed(spList[i]))
                     spList[i] = 0;
             }
+        }
+        for (i=0,j=0; i < funcCount; i++)
+        {
+            if (spList[i])
+                j++;
         }
     }
 }
@@ -2778,8 +2792,8 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
         }
         else if (tpp->type == bt_lref && rref)
         {
-            seq[(*n)++] = CV_LVALUETORVALUE;//CV_NONE;
             // rvalue to lvalue ref not allowed unless the lvalue is a function
+            seq[(*n)++] = CV_LVALUETORVALUE;//CV_NONE;
             if (isconst(tppp) && !isvolatile(tppp))
                 seq[(*n)++] = CV_QUALS;
         }

@@ -1933,7 +1933,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         }
         if (isref(basetype(funcsp->tp)->btp))
         {
-            returnexp=ConvertReturnToRef(returnexp, basetype(funcsp->tp)->btp, returntype);
+            if (basetype(basetype(tp)->btp)->type != bt_memberptr)
+                returnexp=ConvertReturnToRef(returnexp, basetype(funcsp->tp)->btp, returntype);
         }
         else if (returnexp && returnexp->type == en_auto && 
             returnexp->v.sp->storage_class == sc_auto)

@@ -1537,7 +1537,7 @@ static EXPRESSION *ConvertInitToRef(EXPRESSION *exp, TYPE *tp, TYPE*boundTP, enu
         EXPRESSION *exp1 = exp;
         if (!templateNestingCount && (referenceTypeError(tp, exp) != exp->type || (tp->type == bt_rref && lvalue(exp))) && (!isstructured(basetype(tp)->btp) || exp->type != en_lvalue))
         {
-            if (!isarithmeticconst(exp) && exp->type != en_thisref && exp->type != en_func)
+            if (!isarithmeticconst(exp) && exp->type != en_thisref && exp->type != en_func && basetype(basetype(tp)->btp)->type != bt_memberptr)
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
             if (sc != sc_parameter)
                 exp = createTemporary(tp, exp);
@@ -1573,6 +1573,115 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
     {
         if (!isref(tp) && ((isconst(tp) && !isconst(basetype(itype)->btp)) || (isvolatile(tp) && !isvolatile(basetype(itype)->btp))))
             error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
+        else if (basetype(basetype(itype)->btp)->type == bt_memberptr)
+        {
+            BOOLEAN ref = FALSE;
+            EXPRESSION *exp1 = exp;
+            TYPE *itype1 = basetype(basetype(itype)->btp);
+            if (tp->lref || tp->rref)
+            {
+                tp = basetype(tp)->btp;
+                if (!comparetypes(itype1, tp, TRUE))
+                    errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
+            }
+            else
+            {
+                if (basetype(tp)->nullptrType || isint(tp) && isconstzero(tp,exp))
+                {
+                    int lbl = dumpMemberPtr(NULL, itype1, TRUE);
+                    exp = intNode(en_labcon, lbl);
+                }
+                else if (tp->type == bt_aggregate)
+                {
+                    if (isfunction(itype1->btp))
+                    {
+                        FUNCTIONCALL fpargs;
+                        SYMBOL *funcsp;
+                        INITLIST **args = &fpargs.arguments;
+                        HASHREC *hrp = itype1->btp->syms->table[0];
+                        memset(&fpargs, 0, sizeof(fpargs));
+                        if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
+                        {
+                            fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
+                            fpargs.thisptr = intNode(en_c_i, 0);
+                            hrp = hrp->next;
+                        }
+                        else
+                        {
+                            // in case of typedef
+                            fpargs.thistp = Alloc(sizeof(TYPE));
+                            fpargs.thistp->type = bt_pointer;
+                            fpargs.thistp->size = getSize(bt_pointer);
+                            fpargs.thistp->btp = itype1->sp->tp;
+                            fpargs.thisptr = intNode(en_c_i, 0);
+                            
+                        }
+                        while (hrp)
+                        {
+                            if (((SYMBOL *)hrp->p)->tp->type != bt_void)
+                            {
+                                *args = Alloc(sizeof(INITLIST));
+                                (*args)->tp = ((SYMBOL *)hrp->p)->tp;
+                                if (isref((*args)->tp))
+                                    (*args)->tp = basetype((*args)->tp)->btp;
+                                args = &(*args)->next;
+                            }
+                            hrp = hrp->next;
+                        }
+                        if (exp && (exp)->type == en_func)
+                           fpargs.templateParams = exp->v.func->templateParams;
+                        fpargs.ascall = TRUE;
+                        funcsp = GetOverloadedFunction(& tp, &exp, tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
+                        if (funcsp)
+                        {
+                            int lbl = dumpMemberPtr(funcsp, tp, TRUE);
+                            exp = intNode(en_labcon, lbl);
+                        }
+                        else 
+                        {
+                            exp = intNode(en_c_i, 0);   
+                        }
+                    }
+                    else
+                    {
+                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);                        
+                    }
+                   
+                }
+                else if (isfunction(tp))
+                {
+                    if (!comparetypes(itype1, tp, TRUE))
+                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype1, tp);
+                    else
+                    {
+                        funcsp = basetype(tp->btp)->sp;
+                        if (funcsp)
+                        {
+                            int lbl = dumpMemberPtr(funcsp, tp, TRUE);
+                            exp = intNode(en_labcon, lbl);
+                        }
+                        else 
+                        {
+                            exp = intNode(en_c_i, 0);   
+                        }
+                    }
+                }
+                else
+                {
+                    if (!comparetypes(itype1, tp, TRUE))
+                        errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, itype, tp);                        
+                }
+                if (exp->type == en_labcon)
+                {
+                    if (sc != sc_parameter)
+                        exp1 = createTemporary(itype1, NULL);
+                    exp = exprNode(en_blockassign, exp1, exp);
+                    exp->size = getSize(bt_memberptr);
+                    exp = exprNode(en_void, exp, exp1);
+                }                
+                
+            }
+        }
         else if (((!isarithmetic(basetype(itype)->btp) && basetype(itype)->type != bt_enum) 
              || (!isarithmetic(tp) && basetype(tp)->type == bt_enum)) 
             && !comparetypes(itype, tp, TRUE) 

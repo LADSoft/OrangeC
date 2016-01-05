@@ -667,7 +667,7 @@ typedef struct tagNMLVSCROLL
 } NMLVSCROLL, *LPNMLVSCROLL;
 #endif
 
-#ifdef BORLAND
+#if defined(BORLAND) && !defined(__ORANGEC__)
 #define UNNAMED_UNION u.
 #else
 #define UNNAMED_UNION

@@ -196,7 +196,7 @@ BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle)
     return FALSE;
         
 }
-#ifdef BORLAND
+#if defined(BORLAND) && !defined(__ORANGEC__)
 LLONG_TYPE strtoll(unsigned char *s, char **e, int radix)
 {
     LLONG_TYPE rv = 0;

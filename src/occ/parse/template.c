@@ -1445,7 +1445,8 @@ static void saveParams(SYMBOL **table, int count)
             TEMPLATEPARAMLIST *params = table[i]->templateParams;
             while (params)
             {
-                params->p->hold = params->p->byClass.val;
+                if (params->p->type != kw_new)
+                    params->p->hold = params->p->byClass.val;
                 params = params->next;
             }
         }
@@ -1461,7 +1462,8 @@ static void restoreParams(SYMBOL **table, int count)
             TEMPLATEPARAMLIST *params = table[i]->templateParams;
             while (params)
             {
-                params->p->byClass.val = params->p->hold;
+                if (params->p->type != kw_new)
+                    params->p->byClass.val = params->p->hold;
                 params = params->next;
             }
         }
@@ -2086,6 +2088,28 @@ static EXPRESSION *copy_expression(EXPRESSION *exp)
         rv->right = copy_expression(rv->right);
     return rv;
 }
+static TEMPLATEPARAMLIST *paramsToDefault(TEMPLATEPARAMLIST *templateParams)
+{
+    TEMPLATEPARAMLIST *params = NULL, **pt = &params, *find = templateParams;
+    while (find)
+    {
+        *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
+        (*pt)->p = Alloc(sizeof(TEMPLATEPARAM));
+        *(*pt)->p = *find->p;
+        if (params->p->packed)
+        {
+            params->p->byPack.pack = paramsToDefault(params->p->byPack.pack);
+        }
+        else
+        {
+            (*pt)->p->byClass.dflt = find->p->byClass.val;
+            (*pt)->p->byClass.val = NULL;
+        }
+        pt = &(*pt)->next;
+        find = find->next;
+    }
+    return params;
+}
 static TYPE * SynthesizeStructure(TYPE *tp_in, TEMPLATEPARAMLIST *enclosing)
 {
     TYPE *tp = basetype(tp_in);
@@ -2141,22 +2165,12 @@ static TYPE * SynthesizeStructure(TYPE *tp_in, TEMPLATEPARAMLIST *enclosing)
             }
             else
             {
-                TEMPLATEPARAMLIST *params = NULL, **pt = &params, *find = sp->templateParams->next;
+                TEMPLATEPARAMLIST *params = paramsToDefault(sp->templateParams->next);
                 SYMBOL *sp1 = clonesym(sp);
                 sp1->tp = Alloc(sizeof(TYPE));
                 *sp1->tp = *sp->tp;
                 sp1->tp->sp = sp1;
                 sp = sp1;
-                while (find)
-                {
-                    *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
-                    (*pt)->p = Alloc(sizeof(TEMPLATEPARAM));
-                    *(*pt)->p = *find->p;
-                    (*pt)->p->byClass.dflt = find->p->byClass.val;
-                    (*pt)->p->byClass.val = NULL;
-                    pt = &(*pt)->next;
-                    find = find->next;
-                }
                 sp = GetClassTemplate(sp, params, FALSE);
             }
             if (sp)
@@ -2377,7 +2391,8 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
                 tpl = exp->v.func->templateParams;
                 while (tpl)
                 {
-                    tpl->p->byClass.dflt = NULL;
+                    if (tpl->p->type != kw_new)
+                        tpl->p->byClass.dflt = NULL;
                     tpl = tpl->next;
                 }
                 if (sp)
@@ -2521,6 +2536,27 @@ TYPE *TemplateLookupTypeFromDeclType(TYPE *tp)
     EXPRESSION *exp = tp->templateDeclType;
     return LookupTypeFromExpression(exp, NULL, FALSE);
 }
+static void replaceTemplateParams(EXPRESSION ** exp, TEMPLATEPARAMLIST *enclosing)
+{
+    if ((* exp)->left)
+        replaceTemplateParams(&(*exp)->left, enclosing);
+    if ((* exp)->right)
+        replaceTemplateParams(&(*exp)->right, enclosing);
+    if ((*exp)->type == en_templateparam)
+    {
+        TEMPLATEPARAMLIST *find = enclosing->next;
+        while (find)
+        {
+            if (find->p->sym && !strcmp(find->p->sym->name, (*exp)->v.sp->name))
+            {
+                if (find->p->byNonType.val)
+                    **exp = *find->p->byNonType.val;
+                break;
+            }
+            find = find->next;
+        }
+    }
+}
 TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
 {
     TYPE *rv = &stdany, **last = &rv;
@@ -2593,11 +2629,13 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                                 if (current->p->byNonType.dflt)
                                 {
                                     current->p->byNonType.dflt = copy_expression(current->p->byNonType.dflt);
+                                    replaceTemplateParams(&current->p->byNonType.dflt, enclosing);
                                     optimize_for_constants(&current->p->byNonType.dflt);
                                 }
                                 else if (current->p->byNonType.val)
                                 {
                                     current->p->byNonType.dflt = copy_expression(current->p->byNonType.val);
+                                    replaceTemplateParams(&current->p->byNonType.dflt, enclosing);
                                     optimize_for_constants(&current->p->byNonType.dflt);
                                 }
                             if (symtp)
@@ -4498,7 +4536,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
                         {
                             TEMPLATEPARAMLIST *params = basetype(sp->tp)->sp->templateParams;
                             TEMPLATEPARAMLIST *special = params->p->bySpecialization.types ? params->p->bySpecialization.types : params->next;
-                            TransferClassTemplates(special, special, sym->templateParams->next);
+                           TransferClassTemplates(special, special, sym->templateParams->next);
                         }
                     }
                     symArgs = symArgs->next;
@@ -6995,7 +7033,7 @@ void propagateTemplateDefinition(SYMBOL *sym)
                 while (hr)
                 {
                     SYMBOL *cur = (SYMBOL *)hr->p;
-                    if (cur->templateLevel && cur->deferredCompile && matchTemplateFunc(cur, sym))
+                    if (sym->maintemplate && !strcmp(sym->maintemplate->decoratedName, cur->decoratedName) && cur->deferredCompile)// && matchTemplateFunc(cur, sym))
                     {
                         sym->deferredCompile = cur->deferredCompile;
                         cur->pushedTemplateSpecializationDefinition = 1;

@@ -2932,7 +2932,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     exp_in->v.func = funcparams;
                     if (exp_in && cparams.prm_cplusplus && funcparams->returnEXP)
                     {
-                        if (!funcparams->returnSP->trivialCons)
+                        if (!basetype(funcparams->returnSP->tp)->sp->trivialCons)
                         {
                             EXPRESSION *expx;
                             exp_in = exprNode(en_thisref, exp_in, NULL);

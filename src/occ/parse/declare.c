@@ -5503,8 +5503,11 @@ jointemplate:
                                 {
                                     spi->templateParams = sp->templateParams;
                                 }
-                                spi->tp = sp->tp;
-                                spi->tp->sp = spi;
+                                if (!asFriend || MATCHKW(lex, colon) || MATCHKW(lex, begin))
+                                {
+                                    spi->tp = sp->tp;
+                                    spi->tp->sp = spi;
+                                }
                             }
                             else if (spi->tp->size == 0)
                                 spi->tp = sp->tp;

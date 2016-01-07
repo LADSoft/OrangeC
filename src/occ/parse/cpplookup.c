@@ -2612,7 +2612,7 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
     // this next if stmt is a horrible hack.
     PL= P->sp->templateParams;
     PA = A->sp->templateParams;
-    if (!PL || !PA || P->sp->specialized != A->sp->specialized) // errors
+    if (!PL || !PA || !P->sp->specialized && A->sp->specialized) // errors
     {
         if (P->size == 0 &&!strcmp(P->sp->decoratedName, A->sp->decoratedName))
             return TRUE;

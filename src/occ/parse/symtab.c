@@ -650,6 +650,7 @@ void insert(SYMBOL *in, HASHTABLE *table)
 
 void insertOverload(SYMBOL *in, HASHTABLE *table)
 {
+        
     if (cparams.prm_extwarning)
         if (in->storage_class == sc_parameter || in->storage_class == sc_auto ||
             in->storage_class == sc_register)

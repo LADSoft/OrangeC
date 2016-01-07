@@ -885,7 +885,7 @@ void errorstringtype(int err, char *str, TYPE *tp1)
                                                    
 void errortype (int err, TYPE *tp1, TYPE *tp2)
 {
-    char tpb1[256], tpb2[256];
+    char tpb1[4096], tpb2[4096];
     typeToString(tpb1, tp1);
     if (tp2)
         typeToString(tpb2, tp2);

@@ -1344,7 +1344,7 @@ SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams)
         *candidate->tp = *sym->tp;
         candidate->tp->sp = candidate;
     }
-    candidate->maintemplate = NULL;
+    candidate->maintemplate = candidate;
     candidate->templateParams = templateParams;
     lst = Alloc(sizeof(LIST));
     lst->data = candidate;
@@ -2536,27 +2536,6 @@ TYPE *TemplateLookupTypeFromDeclType(TYPE *tp)
     EXPRESSION *exp = tp->templateDeclType;
     return LookupTypeFromExpression(exp, NULL, FALSE);
 }
-static void replaceTemplateParams(EXPRESSION ** exp, TEMPLATEPARAMLIST *enclosing)
-{
-    if ((* exp)->left)
-        replaceTemplateParams(&(*exp)->left, enclosing);
-    if ((* exp)->right)
-        replaceTemplateParams(&(*exp)->right, enclosing);
-    if ((*exp)->type == en_templateparam)
-    {
-        TEMPLATEPARAMLIST *find = enclosing->next;
-        while (find)
-        {
-            if (find->p->sym && !strcmp(find->p->sym->name, (*exp)->v.sp->name))
-            {
-                if (find->p->byNonType.val)
-                    **exp = *find->p->byNonType.val;
-                break;
-            }
-            find = find->next;
-        }
-    }
-}
 TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
 {
     TYPE *rv = &stdany, **last = &rv;
@@ -2629,13 +2608,11 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                                 if (current->p->byNonType.dflt)
                                 {
                                     current->p->byNonType.dflt = copy_expression(current->p->byNonType.dflt);
-                                    replaceTemplateParams(&current->p->byNonType.dflt, enclosing);
                                     optimize_for_constants(&current->p->byNonType.dflt);
                                 }
                                 else if (current->p->byNonType.val)
                                 {
                                     current->p->byNonType.dflt = copy_expression(current->p->byNonType.val);
-                                    replaceTemplateParams(&current->p->byNonType.dflt, enclosing);
                                     optimize_for_constants(&current->p->byNonType.dflt);
                                 }
                             if (symtp)
@@ -7033,7 +7010,7 @@ void propagateTemplateDefinition(SYMBOL *sym)
                 while (hr)
                 {
                     SYMBOL *cur = (SYMBOL *)hr->p;
-                    if (sym->maintemplate && !strcmp(sym->maintemplate->decoratedName, cur->decoratedName) && cur->deferredCompile)// && matchTemplateFunc(cur, sym))
+                    if (cur->templateLevel && cur->deferredCompile && matchTemplateFunc(cur, sym))
                     {
                         sym->deferredCompile = cur->deferredCompile;
                         cur->pushedTemplateSpecializationDefinition = 1;

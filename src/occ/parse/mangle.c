@@ -544,7 +544,7 @@ static char *getName(char *in, SYMBOL *sp)
     else
     {
         int i;
-        char buf[512], *p;
+        char buf[4096], *p;
         p = mangleClasses(buf, sp->parentClass);
         if (p != buf)
             *p++ = '@';
@@ -810,7 +810,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
 }
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
 {
-    char errbuf[4096], *p = errbuf;
+    char errbuf[8192], *p = errbuf;
     mangledNamesCount = 0;
     if (linkage == lk_none || linkage == lk_cdecl)
     {

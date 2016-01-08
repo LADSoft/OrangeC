@@ -1599,16 +1599,24 @@ static int compareConversions(SYMBOL *spLeft, SYMBOL *spRight, enum e_cvsrn *seq
         // compare ranks
         rankl = CV_IDENTITY;
         for (l=0; l < lenl; l++)
-            if (rank[seql[l]] > rankl)
+            if (rank[seql[l]] > rankl && seql[l] != CV_DERIVEDFROMBASE)
                 rankl = rank[seql[l]];
         rankr = CV_IDENTITY;
         for (r=0; r < lenr; r++)
-            if (rank[seqr[r]] > rankr)
+            if (rank[seqr[r]] > rankr && seqr[r] != CV_DERIVEDFROMBASE)
                 rankr = rank[seqr[r]];
         if (rankl < rankr)
             return -1;
         else if (rankr < rankl)
             return 1;
+        else if (lenl < lenr)
+        {
+            return -1;
+        }
+        else if (lenr < lenl)
+        {
+            return 1;
+        }
         else // ranks are same, do same rank comparisons
         {
             TYPE *tl = ltype, *tr = rtype, *ta = atype;

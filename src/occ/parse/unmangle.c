@@ -99,7 +99,7 @@ static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 char *unmang_intrins(char *buf, char *name, char *last)
 {
-    char cur[512],  *p = cur,  *q;
+    char cur[4096],  *p = cur,  *q;
     int i;
     *p++ = *name++; // past the '$'
     while (*name != '@' &&  *name != '$' &&  *name)
@@ -187,7 +187,7 @@ static char *unmangptr(char *buf , char *name, char *last)
     }
     else if (*name != 'A')
     { 
-        char basetp[512];
+        char basetp[4096];
         int l;
         if (cconst)
         {
@@ -456,7 +456,7 @@ char *unmangleExpression(char *dest, char *name)
                     *dest++ = *name++;
                 if (*name)
                 {
-                    char bft[512];
+                    char bft[4096];
                     name ++;
                     unmang1(bft, name, "", FALSE);
                 }

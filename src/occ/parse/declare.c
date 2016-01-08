@@ -3061,12 +3061,6 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
     s.tmpl = NULL;
     lex = getsym();
     IncGlobalFlag();
-    if (sp)
-    {
-        SYMBOL *sp2 = clonesym(sp);
-        sp2->name = litlate(sp->name);
-        *spin = sp = sp2;
-    }
     if (*tp == NULL)
         *tp = &stdint;
     tp1 = Alloc(sizeof(TYPE));
@@ -5555,7 +5549,7 @@ jointemplate:
                                     sp->storage_class = sc_static;
                                 if (!asFriend || !templateNestingCount || inTemplate)
                                 {
-                                    if (sp->storage_class == sc_external || asFriend)
+                                    if (sp->storage_class == sc_external || asFriend && !MATCHKW(lex, begin) && !MATCHKW(lex, colon))
                                     {
                                         InsertSymbol(sp, sc_external, linkage, FALSE);
                                         if (!sp->templateLevel || asFriend)
@@ -5798,7 +5792,7 @@ jointemplate:
                                     lex = body(lex, sp);
                                     SetGlobalFlag(old);
                                 }
-                                else if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1)
+                                else if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1 || asFriend && templateNestingCount==2)
                                 {
                                     lex = getDeferredData(lex, sp, TRUE);
                                 }

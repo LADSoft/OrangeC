@@ -465,4 +465,5 @@ void _RTL_FUNC _IMPORT _seterrormode(int);
     using __STD_NS_QUALIFIER _sleep;
     using __STD_NS_QUALIFIER __argc;
     using __STD_NS_QUALIFIER __argv;
+    using __STD_NS_QUALIFIER _environ;
 #endif /* __USING_CNAME__ */

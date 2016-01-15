@@ -2772,7 +2772,7 @@ TYPE *SynthesizeType(TYPE *tp, TEMPLATEPARAMLIST *enclosing, BOOLEAN alt)
                                 {
                                     SYMBOL *clone = clonesym(sp);
                                     TYPE *tp1;
-                                    clone->tp = SynthesizeType(sp->tp, enclosing, alt);
+                                    clone->tp = SynthesizeType(templateParams->p->byClass.val, enclosing, alt);
                                     tp1 = Alloc(sizeof(TYPE));
                                     tp1->type = bt_derivedfromtemplate;
                                     tp1->btp = clone->tp;
@@ -3189,7 +3189,7 @@ static void ClearArgValues(TEMPLATEPARAMLIST *params, BOOLEAN specialized)
         params = params->next;
     }
 }
-static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN allowSelectors);
+static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass);
 static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
 {
     TYPE *pP = basetype(P);
@@ -3248,7 +3248,7 @@ static BOOLEAN DeduceFromTemplates(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byC
                     else
                         *tp = TA->p->byClass.val;
                     if (to->byClass.dflt && TA->p->byClass.dflt && 
-                        !Deduce(to->byClass.dflt, TA->p->byClass.dflt, change, byClass, FALSE))
+                        !Deduce(to->byClass.dflt, TA->p->byClass.dflt, change, byClass))
                         return FALSE;
                     break;
                 }
@@ -3429,9 +3429,9 @@ static BOOLEAN DeduceFromMemberPointer(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN
     if (Ab->type == bt_memberptr)
     {
         if (Pb->sp->tp->type != bt_templateselector ||
-             !Deduce(Pb->sp->templateSelector->next->sym->tp, Ab->sp->tp, change, byClass, FALSE))
+             !Deduce(Pb->sp->templateSelector->next->sym->tp, Ab->sp->tp, change, byClass))
             return FALSE;
-        if (!Deduce(Pb->btp, Ab->btp, change, byClass, FALSE))
+        if (!Deduce(Pb->btp, Ab->btp, change, byClass))
             return FALSE;
         return TRUE;
     }
@@ -3440,9 +3440,9 @@ static BOOLEAN DeduceFromMemberPointer(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN
          if (!isfuncptr(Ab))
              return FALSE;
          if (basetype(Ab->btp)->sp->parentClass == NULL || Pb->sp->tp->type != bt_templateselector ||
-             !Deduce(Pb->sp->templateSelector->next->sym->tp, basetype(Ab->btp)->sp->parentClass->tp, change, byClass, FALSE))
+             !Deduce(Pb->sp->templateSelector->next->sym->tp, basetype(Ab->btp)->sp->parentClass->tp, change, byClass))
                  return FALSE;
-         if (!Deduce(Pb->btp, Ab->btp, change, byClass, FALSE))
+         if (!Deduce(Pb->btp, Ab->btp, change, byClass))
              return FALSE;
          return TRUE;
     }
@@ -3583,7 +3583,7 @@ static BOOLEAN DeduceTemplateParam(TEMPLATEPARAMLIST *Pt, TYPE *P, TYPE *A, BOOL
     }
     return FALSE;
 }
-static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN allowSelectors)
+static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass)
 {
     BOOLEAN constant = FALSE;
     if (!P || !A)
@@ -3607,7 +3607,7 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN
                 return TRUE;
             return FALSE;
         }
-        if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != bt_templateparam && (!allowSelectors || Pb->type != bt_templateselector))
+        if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != bt_templateparam && Pb->type != bt_templateselector)
             return FALSE;
         switch(Pb->type)
         {
@@ -3653,13 +3653,13 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN
                 if (((SYMBOL *)hra->p)->thisPtr)
                     hra = hra->next;
                 clearoutDeduction(P);
-                if (!Deduce(Pb->btp, Ab->btp, FALSE, byClass, allowSelectors))
+                if (!Deduce(Pb->btp, Ab->btp, FALSE, byClass))
                     return FALSE;
                 
                 while (hra && hrp)
                 {
                     SYMBOL *sp = (SYMBOL *)hrp->p;
-                    if (!Deduce(sp->tp, ((SYMBOL *)hra->p)->tp, FALSE, byClass, allowSelectors))
+                    if (!Deduce(sp->tp, ((SYMBOL *)hra->p)->tp, FALSE, byClass))
                         return FALSE;
                     if (sp->tp->type == bt_templateparam)
                     {
@@ -3684,12 +3684,12 @@ static BOOLEAN Deduce(TYPE *P, TYPE *A, BOOLEAN change, BOOLEAN byClass, BOOLEAN
                 if (((SYMBOL *)hra->p)->thisPtr)
                     hra = hra->next;
                 clearoutDeduction(P);
-                Deduce(Pb->btp, Ab->btp, TRUE, byClass, allowSelectors);
+                Deduce(Pb->btp, Ab->btp, TRUE, byClass);
                 
                 while (hra && hrp)
                 {
                     SYMBOL *sp = (SYMBOL *)hrp->p;
-                    if (!Deduce(sp->tp, ((SYMBOL *)hra->p)->tp, TRUE, byClass, allowSelectors))
+                    if (!Deduce(sp->tp, ((SYMBOL *)hra->p)->tp, TRUE, byClass))
                         return FALSE;
                     if (sp->tp->type == bt_templateparam)
                     {
@@ -4105,7 +4105,7 @@ static BOOLEAN ValidateArgsSpecified(TEMPLATEPARAMLIST *params, SYMBOL *func, IN
     inDefaultParam--;
     return TRUE;
 }
-static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOOLEAN byClass, BOOLEAN allowSelectors)
+static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOOLEAN byClass)
 {
     TYPE *P=orig, *A=sym;
     if (!isref(P))
@@ -4131,7 +4131,7 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
             x->btp = A;
         }
     }
-    if (Deduce(P, A, TRUE, byClass, allowSelectors))
+    if (Deduce(P, A, TRUE, byClass))
         return TRUE;
     if (isfuncptr(P) || (isref(P) && isfunction(basetype(P)->btp)))
     {
@@ -4154,7 +4154,7 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
                 {
                     SYMBOL *sym = (SYMBOL *)hr->p;
                     clearoutDeduction(P);
-                    if (Deduce(P->btp, sym->tp, FALSE, byClass, allowSelectors))
+                    if (Deduce(P->btp, sym->tp, FALSE, byClass))
                     {
                         if (candidate)
                             return FALSE;
@@ -4164,7 +4164,7 @@ static BOOLEAN TemplateDeduceFromArg(TYPE *orig, TYPE *sym, EXPRESSION *exp, BOO
                     hr = hr->next;
                 }
                 if (candidate)
-                    return Deduce(P, candidate->tp, TRUE, byClass, allowSelectors);
+                    return Deduce(P, candidate->tp, TRUE, byClass);
             }
         }       
     }
@@ -4178,7 +4178,7 @@ void NormalizePacked(TYPE *tpo)
     if (basetype(tp)->templateParam)
         tpo->templateParam = basetype(tp)->templateParam;
 }
-static BOOLEAN TemplateDeduceArgList(HASHREC *funcArgs, HASHREC *templateArgs, INITLIST *symArgs, BOOLEAN allowSelectors)
+static BOOLEAN TemplateDeduceArgList(HASHREC *funcArgs, HASHREC *templateArgs, INITLIST *symArgs)
 {
     BOOLEAN rv = TRUE;
     while (templateArgs && symArgs)
@@ -4192,7 +4192,7 @@ static BOOLEAN TemplateDeduceArgList(HASHREC *funcArgs, HASHREC *templateArgs, I
                 TEMPLATEPARAMLIST *params = sp->tp->templateParam->p->byPack.pack;
                 while (params && symArgs)
                 {
-                    if (!TemplateDeduceFromArg(params->p->byClass.val, symArgs->tp, symArgs->exp, FALSE, allowSelectors))
+                    if (!TemplateDeduceFromArg(params->p->byClass.val, symArgs->tp, symArgs->exp, FALSE))
                     {
                         rv = FALSE;
                     }
@@ -4223,7 +4223,7 @@ static BOOLEAN TemplateDeduceArgList(HASHREC *funcArgs, HASHREC *templateArgs, I
                 // this only works with one level of nesting...
                 INITLIST *a = symArgs->nested;
                 TEMPLATEPARAMLIST *b = ((SYMBOL *)funcArgs->p)->templateParams;
-                rv &= TemplateDeduceArgList(NULL, b, a, allowSelectors);
+                rv &= TemplateDeduceArgList(NULL, b, a);
             }
             symArgs = symArgs->next;
             if (funcArgs)
@@ -4231,7 +4231,7 @@ static BOOLEAN TemplateDeduceArgList(HASHREC *funcArgs, HASHREC *templateArgs, I
         }
         else
         {
-            if (!TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, FALSE, allowSelectors))
+            if (!TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, FALSE))
                 rv = FALSE;
             symArgs = symArgs->next;
             if (funcArgs)
@@ -4305,7 +4305,7 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL *declareSym,
                 case kw_typename:
                 {
                     lex = get_type_id(lex, &dest->p->byClass.val, NULL, sc_cast, FALSE, TRUE);
-                    if (!dest->p->byClass.val)    
+                    if (!dest->p->byClass.val || dest->p->byClass.val->type == bt_any)    
                     {
                         SwapDefaultNames(enclosing, src->p->byClass.txtargs);
                         while (pushCount--)
@@ -4507,7 +4507,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
                     break;
                 if (!params || !params->p->byClass.dflt)
                 {
-                    if (TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, FALSE, FALSE))
+                    if (TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, FALSE))
                     {
                         if (isstructured(sp->tp) && basetype(sp->tp)->sp->templateParams)
                         {
@@ -4547,7 +4547,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
         }
         else
         {
-            BOOLEAN rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, FALSE);
+            BOOLEAN rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs);
             if (!rv)
             {
                 params = nparams->next;
@@ -4595,7 +4595,7 @@ SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args)
 }
 static BOOLEAN TemplateDeduceFromType(TYPE* P, TYPE *A)
 {
-    return Deduce(P, A, TRUE, FALSE, FALSE);    
+    return Deduce(P, A, TRUE, FALSE);    
 }
 SYMBOL *TemplateDeduceWithoutArgs(SYMBOL *sym)
 {
@@ -4715,7 +4715,7 @@ int TemplatePartialDeduceFromType(TYPE *orig, TYPE *sym, BOOLEAN byClass)
     }
     A = removeTLQuals(A);
     P = removeTLQuals(P);
-    if (!Deduce(P, A, TRUE, byClass, FALSE))
+    if (!Deduce(P, A, TRUE, byClass))
         return 0;
     return which;
 }
@@ -5125,7 +5125,7 @@ BOOLEAN TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym)
 static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
 {
     SYMBOL *sym = newCls;
-    if (!newCls->templateParams || !newCls->templateParams->p->bySpecialization.types)
+    if (newCls->tp->syms && (!newCls->templateParams || !newCls->templateParams->p->bySpecialization.types))
     {
         HASHREC *ns = newCls->tp->syms->table[0];
         HASHREC *os = tmpl->tp->syms->table[0];
@@ -5447,6 +5447,20 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
     int pushCount;
     if (cls->linkage == lk_virtual)
         return cls;
+    if (packIndex == -1 && sym->maintemplate)
+    {
+        TEMPLATEPARAMLIST *tl, *ts;
+        tl = sym->templateParams;
+        ts = sym->maintemplate->templateParams;
+        while (tl && ts)
+        {
+            if (tl->p->packed && !ts->p->packed)
+                return cls;
+            tl = tl->next;
+            ts = ts->next;
+        }
+    }
+
     if (!isExtern)
     {
         if (sym->maintemplate && (!sym->specialized || sym->maintemplate->specialized))
@@ -5470,7 +5484,9 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             LEXEME *reinstateLex = lex;
             BOOLEAN oldTemplateType = inTemplateType;
             LAMBDA *oldLambdas = lambdas;
+            int oldPackIndex = packIndex;
             SetAccessibleTemplateArgs(cls->templateParams, TRUE);
+            packIndex = -1;
             deferred = NULL;
 			templateHeaderCount = 0;
             lambdas = NULL;
@@ -5516,6 +5532,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
 			dontRegisterTemplate-= templateNestingCount != 0;
+            packIndex = oldPackIndex;
             lambdas = oldLambdas;
             instantiatingTemplate --;
             inTemplateType = oldTemplateType;
@@ -5596,6 +5613,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
     BOOLEAN found = FALSE;
     STRUCTSYM s;
     LAMBDA *oldLambdas;
+
     hr = sym->overloadName->tp->syms->table[0];
     while (hr)
     {
@@ -5664,7 +5682,9 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             int oldLinesTail = linesTail;
 			int oldHeaderCount = templateHeaderCount;
             BOOLEAN oldTemplateType = inTemplateType;
+            int oldPackIndex = packIndex;
             int nsl = PushTemplateNamespace(sym);
+            packIndex = -1;
             linesHead = linesTail = NULL;
             if (sym->storage_class != sc_member && sym->storage_class != sc_mutable)
                 sym->storage_class = sc_global;
@@ -5699,6 +5719,7 @@ SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExte
             }
             SetAlternateLex(NULL);
             PopTemplateNamespace(nsl);
+            packIndex = oldPackIndex;
             inTemplateType = oldTemplateType;
             linesHead = oldLinesHead;
             linesTail = oldLinesTail;
@@ -6016,7 +6037,7 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                         {
                             if (params->p->type == kw_typename)
                             {
-                                if (params->p->byClass.dflt && !Deduce(params->p->byClass.dflt, params->p->byClass.val, TRUE, TRUE, FALSE))
+                                if (params->p->byClass.dflt && !Deduce(params->p->byClass.dflt, params->p->byClass.val, TRUE, TRUE))
                                     rv = NULL;
                                 else
                                     TransferClassTemplates(params, params, nparams->next);
@@ -6917,7 +6938,7 @@ static SYMBOL *matchTemplateFunc(SYMBOL *old, SYMBOL *instantiated)
             if (src || dest)
                 return FALSE;
         }
-        return TemplateDeduceArgList(hrs, hrs, list.arguments, TRUE);
+        return TemplateDeduceArgList(hrs, hrs, list.arguments);
     }
     else if (!basetype(old->tp)->syms)
         return TRUE;

@@ -2727,8 +2727,8 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
          seq[(*n)++] = CV_NONE;
          return;
     }
-    lref = expa && (lvalue(expa) || isarithmeticconst(expa)) && !tpa->rref || tpa->lref ;
-    rref = expa && (!lvalue(expa) && (!isstructured(tpa) || !ismem(expa)) ) && !tpa->lref || tpa->rref;
+    lref = (isstructured(tpa) || expa && (lvalue(expa) || isarithmeticconst(expa))) && (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref || tpa->lref ;
+    rref = (!isstructured(tpa) || expa && !lvalue(expa) && !ismem(expa) ) && !tpa->lref || tpa->rref;
     if (expa && expa->type == en_func)
     {
         TYPE *tp = basetype(expa->v.func->sp->tp)->btp;
@@ -2798,7 +2798,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 seq[(*n)++] = CV_NONE;
             }
         }
-        else if (tpp->type == bt_lref && rref)
+        else if (tpp->type == bt_lref && rref &&!lref)
         {
             // rvalue to lvalue ref not allowed unless the lvalue is a function
             seq[(*n)++] = CV_LVALUETORVALUE;//CV_NONE;
@@ -3891,7 +3891,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 icsList = (enum e_cvsrn **)Alloc(sizeof(enum e_cvsrn *) * n);
                 lenList = (int **)Alloc(sizeof(int *) * n);
                 funcList = (struct sym ***)Alloc(sizeof(SYMBOL **) * n);
-                    
+
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
                 if (n != 1 || (spList[0] && !spList[0]->isDestructor))
                 {

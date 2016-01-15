@@ -446,6 +446,7 @@ void compile(void)
     inlineinit();
     lambda_init();
     rtti_init();
+    expr_init();
     statement_ini();
     syminit();
     preprocini(infile, inputFile);

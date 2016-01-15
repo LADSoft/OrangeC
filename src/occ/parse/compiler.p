@@ -228,6 +228,7 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class,
 
                                /* Expr.c */
 
+void expr_init(void);
 void checkscope(TYPE *tp1, TYPE *tp2);
 void checkauto(TYPE *tp);
 void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable);

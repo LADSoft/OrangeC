@@ -1527,6 +1527,29 @@ void GatherPackedVars(int *count, SYMBOL **arg, EXPRESSION *packedExp)
         arg[(*count)++] = packedExp->v.sp;
         NormalizePacked(packedExp->v.sp->tp);
     }
+    else if (packedExp->type == en_global && packedExp->v.sp->parentClass)
+    {
+        // undefined 
+        SYMBOL *spx = packedExp->v.sp->parentClass;
+        while (spx)
+        {
+            TEMPLATEPARAMLIST *tpl = spx->templateParams;
+            while (tpl)
+            {
+                if (tpl->p->packed)
+                {
+                    SYMBOL *sym = clonesym(spx);
+                    sym->tp= Alloc(sizeof(TYPE));
+                    sym->tp->type = bt_templateparam;
+                    sym->tp->templateParam = tpl;
+                    arg[(*count)++] = sym;
+                    NormalizePacked(packedExp->v.sp->tp);
+                }
+                tpl = tpl->next;
+            }
+            spx = spx->parentClass;
+        }
+    }
     else if (packedExp->type == en_func)
     {
         TEMPLATEPARAMLIST *tpl = packedExp->v.func->templateParams;
@@ -1585,7 +1608,6 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
                 lptr = &(*lptr)->next;
             }
         }
-        packIndex = 0;
     }
     expandingParams--;
     packIndex = oldPack;
@@ -1633,6 +1655,7 @@ MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERI
             if (n != -1)
             {
                 int i;
+                int oldPack = packIndex;
                 for (i=0; i < n; i++)
                 {
                     BASECLASS *bc1;
@@ -1695,7 +1718,7 @@ MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERI
                     }
                     SetAlternateLex(NULL);
                 }
-                packIndex = -1;
+                packIndex = oldPack;
             }    
         }
         else
@@ -1715,6 +1738,7 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLI
     {
         int count = 0;
         int i;
+        int oldPack;
         SYMBOL *arg[300];
         TEMPLATEPARAMLIST *pack = templatePack;
         while (pack)
@@ -1739,6 +1763,7 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLI
                 break;
             }
         }
+        oldPack = packIndex;
         for (i=0; i < n; i++)
         {
             LEXEME *lex = SetAlternateLex(start);
@@ -1824,7 +1849,7 @@ void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLI
             SetAlternateLex(NULL);
             templatePack = templatePack->next;
         }
-        packIndex = -1;
+        packIndex = oldPack;
     }
 }
 static BOOLEAN classOrEnumParam(SYMBOL *param)

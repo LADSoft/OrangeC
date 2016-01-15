@@ -76,6 +76,7 @@ extern NAMESPACEVALUES *globalNameSpace;
 extern BOOLEAN hasXCInfo;
 extern STRUCTSYM *structSyms;
 extern int anonymousNotAlloc;
+extern int expandingParams;
 
 int packIndex;
 
@@ -89,6 +90,10 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 
+void expr_init(void)
+{
+    packIndex = -1;
+}
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right)
 {
     EXPRESSION *rv = Alloc(sizeof(EXPRESSION));
@@ -167,6 +172,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
     {
         SYMBOL *spx;
         HASHREC *hr;
+        static int count;
         *tp = sp->tp;
         lex = getsym();
         switch (sp->storage_class)
@@ -230,6 +236,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         { 
             if (sp->tp->type == bt_templateparam)
             {
+                
                 if ((sp->storage_class == sc_parameter || sp->tp->templateParam->p->type == kw_int) && sp->tp->templateParam->p->packed)
                 {
                     if (packIndex >= 0)
@@ -366,19 +373,59 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                             error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_ARGUMENT);
                         if (packIndex >= 0)
                         {
-                            TEMPLATEPARAMLIST *templateParam = sp->tp->templateParam->p->byPack.pack;
+                            TYPE *tp1 = sp->tp;
+                            TEMPLATEPARAMLIST *templateParam;
                             int i;
-                            for (i=0; i < packIndex && templateParam; i++)
-                                templateParam = templateParam->next;
-                            if (templateParam)
+                            while (ispointer(tp1) || isref(tp1))
+                                tp1 = basetype(tp1)->btp;
+                            tp1 = basetype(tp1);
+                            if (tp1->type == bt_templateparam)
                             {
-                                sp = templateParam->p->packsym;
-                                *tp = sp->tp;
-                                *exp = varNode(en_auto, sp);
+                                templateParam = tp1->templateParam->p->byPack.pack;
+                                for (i=0; i < packIndex && templateParam; i++)
+                                    templateParam = templateParam->next;
+                                if (templateParam)
+                                {
+                                    sp = templateParam->p->packsym;
+                                    *tp = sp->tp;
+                                    *exp = varNode(en_auto, sp);
+                                }
+                                else
+                                {
+                                    *exp = intNode(en_packedempty, 0);
+                                }
                             }
                             else
                             {
-                                *exp = intNode(en_packedempty, 0);
+                                HASHREC *found = NULL;
+                                HASHTABLE *tables = localNameSpace->syms;
+                                while (tables && !found)
+                                {
+                                    HASHREC *hr = tables->table[0];
+                                    while (hr && !found)
+                                    {
+                                        if (hr->p == sp)
+                                            found = hr;
+                                        hr = hr->next;
+                                    }
+                                    tables = tables->next;
+                                }
+                                if (found)
+                                {
+                                    int i;
+                                    for (i=0; found && i < packIndex; i++)
+                                        found = found->next;
+                                    if (found)
+                                    {
+                                        sp = found->p;
+                                    }
+                                    *exp = varNode(en_auto, sp);
+                                    *tp = sp->tp;
+                                }
+                                else
+                                {
+                                    *exp = intNode(en_packedempty, 0);
+                                }
                             }
                         }
                         else
@@ -653,22 +700,43 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
                 sp->storage_class = funcsp ? sc_auto : sc_global;
                 sp->tp = Alloc(sizeof(TYPE));
                 sp->tp->type = bt_any;
+                sp->parentClass = strSym;
                 *tp = sp->tp;
+                deref(&stdint, exp);
+                SetLinkerNames(sp, lk_c);
                 if (!nsv && (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector && strSym->tp->type != bt_templatedecltype ))
                 {
-                    errorstr(ERR_UNDEFINED_IDENTIFIER, name);
+                    // no error if there are packed templates and we aren't parsing them
+                    BOOLEAN found = FALSE;
+                    if (!expandingParams)
+                    {
+                        SYMBOL *spx = strSym;
+                        while (spx && !found)
+                        {
+                            TEMPLATEPARAMLIST *tpl = spx->templateParams;
+                            while (tpl && !found)
+                            {
+                                if (tpl->p->packed)
+                                    found = TRUE;
+                                tpl = tpl->next;
+                            }
+                            spx = spx->parentClass;
+                        }
+                    }
+                    if (!found)
+                    {
+                        errorstr(ERR_UNDEFINED_IDENTIFIER, name);
+                        if (sp->storage_class != sc_overloads && (localNameSpace->syms || sp->storage_class != sc_auto ) )
+                            InsertSymbol(sp, sp->storage_class, FALSE, FALSE);
+                    }
                 }
                 if (nsv)
                 {
                     errorNotMember(strSym, nsv, sp->name);
                 }
-                deref(&stdint, exp);
-                SetLinkerNames(sp, lk_c);
                 if (sp->storage_class != sc_overloads)
                 {
-                    if ((localNameSpace->syms || sp->storage_class != sc_auto ) &&  (!strSym || !templateNestingCount || !strSym->templateLevel && strSym->tp->type != bt_templateselector && strSym->tp->type != bt_templatedecltype ))
-                        InsertSymbol(sp, sp->storage_class, FALSE, FALSE);
-                    *exp = varNode(sp->storage_class ==sc_auto ? en_auto : en_global, sp);
+                    *exp = varNode(en_global, sp);
                 }
                 else
                 {
@@ -1628,12 +1696,12 @@ LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner)
 LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack, int flags)
 {
     LEXEME *rv;
-    int old = packIndex;
-    packIndex = -1;
+//    int old = packIndex;
+//    packIndex = -1;
     argument_nesting++;
     rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, argument_nesting == 1, flags);
     argument_nesting--;
-    packIndex = old;
+//    packIndex = old;
     return rv;
 }
 LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack)
@@ -2603,7 +2671,9 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         while (tl)
         {
             if (tl->p->packed)
+            {
                 return lex;
+            }
             tl = tl->next;
         }
     }
@@ -2618,7 +2688,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
     if (cparams.prm_cplusplus && funcparams->sp)
     {
         SYMBOL *sp = NULL;
-        // add in this ptr
+        // add this ptr
         if (!funcparams->thisptr && funcparams->sp->parentClass && !isfuncptr(funcparams->sp->tp))
         {
             TYPE *tp = Alloc(sizeof(TYPE)), *tpx;
@@ -2649,10 +2719,16 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
         // for operator or cast function calls...
         if (funcparams->sp->storage_class == sc_overloads)
         {
+            TYPE *tp1;
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be added after we select a member function that needs it.
             funcparams->ascall = TRUE;    
             sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE, flags);
+            tp1 = *tp;
+            while (tp1->btp && tp1->type != bt_bit)
+                tp1 = tp1->btp;
+            if (tp1->type == bt_bit)
+                printf("hi");
             if (sp)
             {
                 if (funcparams->astemplate && sp->templateLevel && !sp->specialized)

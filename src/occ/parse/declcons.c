@@ -1585,6 +1585,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
+			member->tp->lref = TRUE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }
@@ -1608,6 +1609,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
+			member->tp->rref = TRUE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }

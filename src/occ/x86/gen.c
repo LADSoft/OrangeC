@@ -35,7 +35,6 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-    char buf[256];
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

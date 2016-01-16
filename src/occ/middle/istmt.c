@@ -917,7 +917,10 @@ void genfunc(SYMBOL *funcsp)
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
     if (funcsp->linkage == lk_virtual || tmpl)
+    {
+        funcsp->linkage = lk_virtual;
         gen_virtual(funcsp, FALSE);
+    }
     else
     {
         if (funcsp->storage_class == sc_global || ((funcsp->storage_class == sc_member || funcsp->storage_class == sc_virtual) && funcsp->inlineFunc.stmt))

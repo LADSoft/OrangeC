@@ -2109,25 +2109,29 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
                 }
                 else
                 {
-                    SYMBOL *asym;
+                    BOOLEAN leftPacked = FALSE;
+                    BOOLEAN rightPacked = FALSE;
                     HASHREC *hrleft = basetype(spList[i]->tp)->syms->table[0];
                     HASHREC *hrright = basetype(spList[j]->tp)->syms->table[0];
-                    while (hrleft && hrright)
+                    while (hrleft)
                     {
+                        if (((SYMBOL *)hrleft->p)->packed)
+                            leftPacked = TRUE;
                         hrleft = hrleft->next;
+                    }
+                    while (hrright)
+                    {
+                        if (((SYMBOL *)hrright->p)->packed)
+                            rightPacked = TRUE;
                         hrright = hrright->next;
                     }
-                    if (hrleft)
+                    if (leftPacked && !rightPacked)
                     {
-                        asym = (SYMBOL *)hrleft->p;
-                        if (asym->packed)
-                            spList[i] = NULL;
+                        spList[i] = 0;
                     }
-                    else if (hrright)
+                    else if (rightPacked && !leftPacked)
                     {
-                        asym = (SYMBOL *)hrright->p;
-                        if (asym->packed)
-                            spList[j] = NULL;
+                        spList[j] = 0;
                     }
                 }
             }
@@ -2727,7 +2731,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
          seq[(*n)++] = CV_NONE;
          return;
     }
-    lref = (isstructured(tpa) || expa && (lvalue(expa) || isarithmeticconst(expa))) && (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref || tpa->lref ;
+    lref = (/*isstructured(tpa) ||*/ expa && (lvalue(expa) || isarithmeticconst(expa))) && (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref || tpa->lref ;
     rref = (!isstructured(tpa) || expa && !lvalue(expa) && !ismem(expa) ) && !tpa->lref || tpa->rref;
     if (expa && expa->type == en_func)
     {
@@ -2736,13 +2740,19 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
         {
             if (tp->type == bt_rref)
             {
-                rref = TRUE;
-                lref = FALSE;
+                if (!tpa->lref)
+                {
+                    rref = TRUE;
+                    lref = FALSE;
+                }
             }
             else if (tp->type == bt_lref)
             {
-                lref = TRUE;
-                rref = FALSE;
+                if (!tpa->rref)
+                {
+                    lref = TRUE;
+                    rref = FALSE;
+                }
             }
         }
     }

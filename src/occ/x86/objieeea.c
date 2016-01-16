@@ -1027,7 +1027,9 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
         case fm_relsymbol:
             rel = TRUE;
         case fm_symbol:
-            if (fixup->sym->storage_class == sc_absolute)
+        {
+            SYMBOL *sp = fixup->sym;
+            if (sp->storage_class == sc_absolute)
             {
                 if (rel)
                 {
@@ -1038,45 +1040,43 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                     sprintf(buf, "%X", fixup->sym->offset);
                 return ;
             }
-            iseg = link_getseg(fixup->sym);
+            iseg = link_getseg(sp);
             if (iseg & 0xc0000000)
                 xseg = iseg;
             else
                 xseg = segxlattab[iseg];
+            if (sp->wasUsing && sp->mainsym)
+                sp = sp->mainsym;
+            if (!sp->dontinstantiate && ((isfunction(sp->tp) && sp->inlineFunc.stmt) || (!isfunction(sp->tp) && sp->linkage == lk_virtual) ||
+                sp->storage_class == sc_global || sp->storage_class ==
+                sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads))
             {
-                SYMBOL *sp = fixup->sym;
-                if (sp->wasUsing && sp->mainsym)
-                    sp = sp->mainsym;
-                if (!sp->dontinstantiate && ((isfunction(sp->tp) && sp->inlineFunc.stmt) || (!isfunction(sp->tp) && sp->linkage == lk_virtual) ||
-                    sp->storage_class == sc_global || sp->storage_class ==
-                    sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads))
+                if ((xseg & 0xffffff) == 0)
+                    iseg = link_getseg(fixup->sym);
+                if (rel)
                 {
-                    if ((xseg & 0xffffff) == 0)
-                        iseg = link_getseg(fixup->sym);
-                    if (rel)
-                    {
-                        sprintf(buf, "R%X,%X,+,4,-,P,-", xseg & ~0xc0000000, sp->offset + offs);
-                    }
-                    else
-                    {
-                        sprintf(buf, "R%X,%X,+", xseg & ~0xc0000000, sp->offset + offs);
-                    }
-                    /* segment relative */
+                    sprintf(buf, "R%X,%X,+,4,-,P,-", xseg & ~0xc0000000, sp->offset + offs);
                 }
                 else
                 {
-                    if (rel)
-                    {
-                        sprintf(buf, "X%X,4,-,P,-", (int)sp->value.i);
-                    }
-                    else
-                    {
-                        sprintf(buf, "X%X,%X,+", (int)sp->value.i, offs);
-                    }
-                    /* extdef relative */
+                    sprintf(buf, "R%X,%X,+", xseg & ~0xc0000000, sp->offset + offs);
                 }
+                /* segment relative */
+            }
+            else
+            {
+                if (rel)
+                {
+                    sprintf(buf, "X%X,4,-,P,-", (int)sp->value.i);
+                }
+                else
+                {
+                    sprintf(buf, "X%X,%X,+", (int)sp->value.i, offs);
+                }
+                /* extdef relative */
             }
             break;
+        }
         case fm_threadlocal:
             iseg = link_getseg(fixup->sym);
             if (iseg & 0xc0000000)

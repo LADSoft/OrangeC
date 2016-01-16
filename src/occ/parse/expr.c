@@ -2058,15 +2058,46 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
         }
     }
 }
-void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit)
+void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit)
 {
+    if (func->storage_class == sc_overloads)
+        return;
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
         hr = hr->next;
-    while (hr && (*lptr || ((SYMBOL *)hr->p)->init != NULL))
+    while (hr && (*lptr || ((SYMBOL *)hr->p)->init != NULL || ((SYMBOL *)hr->p)->deferredCompile != NULL
+                   && (!templateNestingCount || instantiatingTemplate)))
     {
         SYMBOL *sym= (SYMBOL *)hr->p;
         EXPRESSION *exp = NULL;
         INITLIST *p;
+
+        if (sym->deferredCompile && !sym->init)
+        {
+            LEXEME *lex;
+            STRUCTSYM l,m, n;
+            int count = 0;
+            int tns = PushTemplateNamespace(func);
+            l.str = func;
+            addStructureDeclaration(&l);
+            count++;
+        
+            if (func->templateParams)
+            {
+                n.tmpl = func->templateParams;
+                addTemplateDeclaration(&n);
+                count++;
+            }
+            sym->tp = PerformDeferredInitialization(sym->tp, NULL);
+            lex = SetAlternateLex(sym->deferredCompile);
+            lex = initialize(lex, theCurrentFunc, sym, sc_member, FALSE, 0);
+            SetAlternateLex(NULL);
+            sym->deferredCompile = NULL;
+            while (count--)
+            {
+                dropStructureDeclaration();
+            }
+            PopTemplateNamespace(tns);
+        }            
         if (!*lptr)
         {
             EXPRESSION *q = sym->init->exp;
@@ -2727,8 +2758,6 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             tp1 = *tp;
             while (tp1->btp && tp1->type != bt_bit)
                 tp1 = tp1->btp;
-            if (tp1->type == bt_bit)
-                printf("hi");
             if (sp)
             {
                 if (funcparams->astemplate && sp->templateLevel && !sp->specialized)
@@ -2906,12 +2935,12 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             {
                 CreateInitializerList(initializerListTemplate, initializerListType, lptr, operands, initializerRef); 
                 if (hr->next)
-                   AdjustParams(hr->next, &(*lptr)->next, operands, TRUE);
+                   AdjustParams(funcparams->sp, hr->next, &(*lptr)->next, operands, TRUE);
                 
             }
             else
             {
-                AdjustParams(hr, lptr, operands, TRUE);
+                AdjustParams(funcparams->sp, hr, lptr, operands, TRUE);
             }
             if (cparams.prm_cplusplus)
             {
@@ -2967,10 +2996,12 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                         if ((*tp)->type == bt_rref)
                         {
                             (*tp)->rref = TRUE;
+                            (*tp)->lref = FALSE;
                         }
                         else
                         {
                             (*tp)->lref = TRUE;
+                            (*tp)->rref = FALSE;
                         }
                     }
                     tp1 = tp;
@@ -3041,9 +3072,15 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                     tp1 = &basetype(funcparams->sp->tp)->btp;
                     *tp = basetype(*tp1)->btp;
                     if (basetype(*tp1)->type == bt_rref)
+                    {
                         (*tp)->rref = TRUE;
+                        (*tp)->lref = FALSE;
+                    }
                     else
+                    {
                         (*tp)->lref = TRUE;
+                        (*tp)->rref = FALSE;
+                    }
                     while (isref(*tp))
                         *tp = basetype(*tp)->btp;
                 }

@@ -143,7 +143,7 @@ static char *RTTIGetName(char *buf, TYPE *tp)
 }
 static void RTTIDumpHeader(SYMBOL *xtSym, TYPE *tp, int flags)
 {
-    char name[1024], *p;
+    char name[4096], *p;
     SYMBOL *sp = NULL;
     if (ispointer(tp))
     {
@@ -214,7 +214,7 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
                 else
                 {
                     SYMBOL *xtSym;
-                    char name[512];
+                    char name[4096];
                     RTTIGetName(name, entries->cls->tp);
                     xtSym = search(name, rttiSyms);
                     if (!xtSym)
@@ -244,7 +244,7 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
                 else
                 {
                     SYMBOL *xtSym;
-                    char name[512];
+                    char name[4096];
                     RTTIGetName(name, bc->cls->tp);
                     xtSym = search(name, rttiSyms);
                     genint(XD_CL_BASE);
@@ -282,7 +282,7 @@ static void DumpEnclosedStructs(TYPE *tp, BOOLEAN genXT)
                 else
                 {
                     SYMBOL *xtSym;
-                    char name[512];
+                    char name[4096];
                     RTTIGetName(name, tp);
                     xtSym = search(name, rttiSyms);
                     genint(flags);

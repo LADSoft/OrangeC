@@ -2068,6 +2068,7 @@ static LEXEME *statement_switch(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     STATEMENT *st;
     EXPRESSION *select = NULL;
     int addedBlock = 0;
+    funcsp->noinline = TRUE;
     switchstmt->breaklabel = codeLabel++;
     switchstmt->next = parent;
     switchstmt->defaultlabel = -1; /* no default */

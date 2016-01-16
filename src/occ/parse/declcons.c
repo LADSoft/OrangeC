@@ -1307,7 +1307,7 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             params->functp = match->tp;
             params->sp = match;
             params->ascall = TRUE;
-            AdjustParams(basetype(match->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
+            AdjustParams(match, basetype(match->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
             if (sp->vbaseEntries)
             {
                 INITLIST *x = (INITLIST *)Alloc(sizeof(INITLIST)), **p;
@@ -1585,7 +1585,8 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-			member->tp->lref = TRUE;
+//			member->tp->lref = TRUE;
+//            member->tp->rref = FALSE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }
@@ -1609,7 +1610,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
             params->arguments->tp = tp;
             params->arguments->exp = other;
-			member->tp->rref = TRUE;
+//			member->tp->rref = TRUE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
         }
@@ -2388,7 +2389,6 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
     params->arguments->tp = tp;
     params->arguments->exp = right;
-    AdjustParams(basetype(cons->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
     params->thisptr = left;
     params->thistp = Alloc(sizeof(TYPE));
     params->thistp->type = bt_pointer;
@@ -2399,7 +2399,9 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
         
     if (asn1)
     {
-        SYMBOL *parm = (SYMBOL *)asn1->tp->syms->table[0]->next->p;
+        SYMBOL *parm;
+        AdjustParams(asn1, basetype(asn1->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
+        parm = (SYMBOL *)asn1->tp->syms->table[0]->next->p;
         if (parm && isref(parm->tp))
         {
             TYPE *tp1 = Alloc(sizeof(TYPE));
@@ -2856,11 +2858,11 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
             {
                 CreateInitializerList(initializerListTemplate, initializerListType, &params->arguments, FALSE, initializerRef); 
                 if (basetype(cons1->tp)->syms->table[0]->next->next)
-                   AdjustParams(basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, FALSE, implicit && !cons1->isExplicit);
+                   AdjustParams(cons1, basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, FALSE, implicit && !cons1->isExplicit);
             }
             else
             {
-                AdjustParams(basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, implicit && !cons1->isExplicit);
+                AdjustParams(cons1, basetype(cons1->tp)->syms->table[0], &params->arguments, FALSE, implicit && !cons1->isExplicit);
             }
             params->functp = cons1->tp;
             params->sp = cons1;

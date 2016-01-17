@@ -1612,7 +1612,7 @@ binary_join:
                             }
                             if (second)
                                 first = second; 
-                            if (first)
+                            if (first && !first->dc.left->bits)
                             {
                                 if (head->dc.left == first->ans)
                                 {

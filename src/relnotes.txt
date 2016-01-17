@@ -28,8 +28,27 @@ Version 5.51.1:
     occ:        cast operators might not be resolved when duplicates are found due to a
                 virtual base class being included twice 
     occ:        creating a cast function with an undefined type crashes the compiler
+    occ:        initializing a member pointer with NULL could cause the compiler to crash.
+    occ:        there were problems with instantiating a template that was previously declared 'external'
+                (link errors)
+    occ:        a template class that included template functions did not compile properly if the
+                instantiation took place within an argument in a class member function
+    occ:        'template' and 'friend' together sometimes resulted in unfindable functions
+    occ:        fix some problems compiling manipulators
+    occ:        compiling an argument style class initializer with the first argument being an explicit constructor
+                caused the declaration to parse as a function instead of a class initialization.
+    occ:        allow initialization of references to memberpointers
+    occ:        returning a reference to a member pointer may not work
+    occ:        inlined friend templates were treated as extern when no definition appears outside the class
+    occ:        const and nonconst args were ambiguous when the argument matching involved a derived to base conversion
+    occ:        missing template types e.g. as a result of a 'false' arg to enable if were not always counted as missing
+    occ:        fix problem with sometimes not flagging virtual functions as virtual (caused invalid output file)
+    occ:        fix some problems compiling variabidc template parameters properly
+    occ:        fix problem with optimizer memory being accessed out of range (could rarely crash compiler)
+    omake:      change references to 'override' to 'dooverride' to avoid keyword clash with C++2011
     clibs:      put the initializer_list definitions into the libcxx inline namespace
-    clibs:      move __argc and __argv to the global namespace
+    clibs:      move __argc and __argv and _environ to the global namespace
+    clibs:      add IMAGE_SCN and IMAGE_SUBSYSTEM definitions to win32 headers
 
 Version 5.50.1: 12/27/15
     occ:        many changes to templates et.al. made to fix bugs while compiling libcxx
@@ -43,6 +62,15 @@ Version 5.50.1: 12/27/15
     occ:        optimizing out the 'default' clause of a switch statement can result in a crash during inlining
     occ:        a template function that starts with a switch crashes compiler
     occ:        a non-virtual base class of a virtual base class that was inherited multiple times caused a compiler error
+    occ:        fix problems with initialization by constructor argument being treated as a function
+    occ:        assigning the return value of a function to a member pointer var resulted in a 'need lvalue' diagnostic
+    occ:        when a map is created with a first template parameter of 'const std::string'
+                the bracket operator does not work on arguments of type 'char *'
+    occ:        virtual functions shouldn't be inlined
+    occ:        in C mode don't do an exact match of function arguments for pointers to functions
+    occ:        problems when a variadic template argument varied in both type and value
+    ocide:      adjust sources to compile with OCC
+    occ:        adjust sources to compile with OCC
     orc:        add switch to specify default language settings
     clibs:      add WIN32 support for TCC
     clibs:      if a memory block was freed twice, a subsequent malloc might enter an infinite loop

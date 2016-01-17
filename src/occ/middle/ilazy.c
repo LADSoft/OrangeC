@@ -318,7 +318,7 @@ static void CalculateTransparent(void)
         {
             QUAD *next = tail->fwd;
             setmap(tempBytes3, FALSE);
-            AliasGosub(tail, tempBytes3, tail->transparent, n * sizeof(BITINT));
+            AliasGosub(tail, tempBytes3, tail->transparent, n /** sizeof(BITINT)*/);
             while (next && !next->OCP)
             {
                 if (next->dc.left && next->dc.left->retval && (next->temps & TEMP_ANS) && next->ans->mode == i_direct)

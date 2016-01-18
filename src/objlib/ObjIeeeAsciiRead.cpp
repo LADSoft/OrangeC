@@ -282,13 +282,21 @@ ObjFile *ObjIeeeAscii::HandleRead(eParseType ParseType)
     file = NULL;
     currentTags = new ObjMemory::DebugTagContainer;
     publics.clear();
+    publics.push_back(NULL);
     locals.clear();
+    locals.push_back(NULL);
     autos.clear();
+    autos.push_back(NULL);
     regs.clear();
+    regs.push_back(NULL);
     externals.clear();
+    externals.push_back(NULL);
     types.clear();
+    types.push_back(NULL);
     sections.clear();
+    sections.push_back(NULL);
     files.clear();
+    files.push_back(NULL);
     currentDataSection = NULL;
     lineno = 0;
     while (!done)
@@ -296,7 +304,7 @@ ObjFile *ObjIeeeAscii::HandleRead(eParseType ParseType)
         char inBuf[10000];
         lineno++;
         getline(inBuf,sizeof(inBuf));
-           GatherCS(inBuf);
+        GatherCS(inBuf);
         try
         {
             done = Parse(inBuf, ParseType);

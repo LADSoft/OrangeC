@@ -2311,6 +2311,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             BOOLEAN maybeConversion = TRUE;
             BOOLEAN isconversion;
             BOOLEAN isList = MATCHKW(lex, begin);
+            BOOLEAN constructed = FALSE;
             exp = baseexp= exprNode(en_add, getThisNode(base), intNode(en_c_i, offset));
             if (assn || arrayMember)
             {
@@ -2330,10 +2331,38 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                     }
                     else
                     {
-                        funcparams->arguments = Alloc(sizeof(INITLIST));
-                        funcparams->arguments->tp = tp1;
-                        funcparams->arguments->exp = exp1;
-                        maybeConversion = FALSE;
+                        constructed = TRUE;
+                        if (exp1->left->v.func->thisptr || !exp1->left->v.func->returnEXP)
+                        {
+                            if (!lvalue(exp1->left->v.func->thisptr))
+                            {
+                                EXPRESSION *exp2 = exp1->left->v.func->thisptr;
+                                while (exp2->left)
+                                    exp2 = exp2->left;
+                                if (exp2->type == en_auto)
+                                {
+                                    exp2->v.sp->dest = NULL;
+                                }
+                            }
+                                
+                            exp1->left->v.func->thisptr = exp;
+                        }
+                        else
+                        {
+                            if (!lvalue(exp1->left->v.func->returnEXP))
+                            {
+                                EXPRESSION *exp2 = exp1->left->v.func->returnEXP;
+                                while (exp2->left)
+                                    exp2 = exp2->left;
+                                if (exp2->type == en_auto)
+                                {
+                                    exp2->v.sp->dest = NULL;
+                                }
+                            }
+                            exp1->left->v.func->returnEXP = exp;
+                        }
+                        exp = exp1;
+                        itype = tp1;
                     }
                 }
                 else
@@ -2365,7 +2394,8 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
             {
                 // default constructor without param list
             }
-            callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, isList ? _F_INITLIST : 0); 
+            if (!constructed)
+              callConstructor(&ctype, &exp, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, isList ? _F_INITLIST : 0); 
             initInsert(&it, itype, exp, offset, TRUE);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {

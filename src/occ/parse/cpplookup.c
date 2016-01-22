@@ -1496,7 +1496,10 @@ static BOOLEAN ismem(EXPRESSION *exp)
             return TRUE;
         case en_add:
         case en_sub:
+        case en_structadd:
             return ismem(exp->left) || ismem(exp->right);
+        case en_l_p:
+            return (exp->left->type == en_auto && exp->left->v.sp->thisPtr);
         default:
             return FALSE;
     }
@@ -1994,144 +1997,144 @@ static void SelectBestFunc(SYMBOL ** spList, enum e_cvsrn **icsList,
             }
             if (spList[j])
             {
-                int left=0, right=0;
-                int l=0,r=0;
-                int k=0;
-                INITLIST *args = funcparams ? funcparams->arguments : NULL;
-                HASHREC *hrl = basetype(spList[i]->tp)->syms->table[0];
-                HASHREC *hrr = basetype(spList[j]->tp)->syms->table[0];
-                memset(arr, 0, sizeof(arr));
-                for (k=0; k < argCount; k++)
+                BOOLEAN leftPacked = FALSE;
+                BOOLEAN rightPacked = FALSE;
+                HASHREC *hrleft = basetype(spList[i]->tp)->syms->table[0];
+                HASHREC *hrright = basetype(spList[j]->tp)->syms->table[0];
+                while (hrleft)
                 {
-                    enum e_cvsrn *seql = &icsList[i][l];
-                    enum e_cvsrn *seqr = &icsList[j][r];
-                    int lenl = lenList[i][k];
-                    int lenr = lenList[j][k];
-                    if (!lenl)
+                    if (((SYMBOL *)hrleft->p)->packed)
+                        leftPacked = TRUE;
+                    hrleft = hrleft->next;
+                }
+                while (hrright)
+                {
+                    if (((SYMBOL *)hrright->p)->packed)
+                        rightPacked = TRUE;
+                    hrright = hrright->next;
+                }
+                if (leftPacked && !rightPacked)
+                {
+                    spList[i] = 0;
+                }
+                else if (rightPacked && !leftPacked)
+                {
+                    spList[j] = 0;
+                }
+                if (spList[i] && spList[j])
+                {
+                    int left=0, right=0;
+                    int l=0,r=0;
+                    int k=0;
+                    INITLIST *args = funcparams ? funcparams->arguments : NULL;
+                    HASHREC *hrl = basetype(spList[i]->tp)->syms->table[0];
+                    HASHREC *hrr = basetype(spList[j]->tp)->syms->table[0];
+                    memset(arr, 0, sizeof(arr));
+                    for (k=0; k < argCount; k++)
                     {
-                        seql = &identity;
-                        lenl = 1;
-                    }
-                    if (!lenr)
-                    {
-                        seqr = &identity;
-                        lenr = 1;
-                    }
-                    if (k == 0 && funcparams && funcparams->thisptr)
-                    {
-                        TYPE *tpl, *tpr;
-                        if (spList[i]->castoperator)
+                        enum e_cvsrn *seql = &icsList[i][l];
+                        enum e_cvsrn *seqr = &icsList[j][r];
+                        int lenl = lenList[i][k];
+                        int lenr = lenList[j][k];
+                        if (!lenl)
                         {
-                            tpl = toThis(basetype(spList[i]->tp)->btp);
+                            seql = &identity;
+                            lenl = 1;
                         }
-                        else
+                        if (!lenr)
                         {
-                            tpl = ((SYMBOL *)(hrl->p))->tp;
-                            hrl = hrl->next;
+                            seqr = &identity;
+                            lenr = 1;
                         }
-                        if (spList[j]->castoperator)
+                        if (k == 0 && funcparams && funcparams->thisptr)
                         {
-                            tpr = toThis(basetype(spList[j]->tp)->btp);
-                        }
-                        else
-                        {
-                            tpr = ((SYMBOL *)(hrr->p))->tp;
-                            hrr = hrr->next;
-                        }
-                        arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, 
-                                                    funcparams->thistp, funcparams->thisptr,
-                                                    funcList ? funcList[i][k] : NULL, 
-                                                    funcList ? funcList[j][k] : NULL,
-                                                    lenl, lenr, FALSE);
-                    }
-                    /*
-                    else if (k == 1 && funcparams && funcparams->thisptr)
-                    {
-                        TYPE *tpl, *tpr;
-                        if (spList[i]->castoperator)
-                        {
-                            tpl = ((SYMBOL *)(hrl->p))->tp;
-                            hrl = hrl->next;
-                        }
-                        else
-                        {
-                            tpl = toThis(basetype(spList[i]->tp)->btp);
-                        }
-                        if (spList[j]->castoperator)
-                        {
-                            tpr = ((SYMBOL *)(hrr->p))->tp;
-                            hrr = hrr->next;
-                        }
-                        else
-                        {
-                            tpr = toThis(basetype(spList[j]->tp)->btp);
-                        }
-                        arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, 
-                                                    args ? args->tp : 0 , args ? args->exp : 0,
-                                                    funcList ? funcList[i][k] : NULL, 
-                                                    funcList ? funcList[j][k] : NULL,
-                                                    lenl, lenr, FALSE);
-                    }
-                    */
-                    else
-                    {
-                        TYPE *tpl = hrl ? ((SYMBOL *)hrl->p)->tp : NULL;
-                        TYPE *tpr = hrr ? ((SYMBOL *)hrr->p)->tp : NULL;
-                        if (tpl && tpr)
+                            TYPE *tpl, *tpr;
+                            if (spList[i]->castoperator)
+                            {
+                                tpl = toThis(basetype(spList[i]->tp)->btp);
+                            }
+                            else
+                            {
+                                tpl = ((SYMBOL *)(hrl->p))->tp;
+                                hrl = hrl->next;
+                            }
+                            if (spList[j]->castoperator)
+                            {
+                                tpr = toThis(basetype(spList[j]->tp)->btp);
+                            }
+                            else
+                            {
+                                tpr = ((SYMBOL *)(hrr->p))->tp;
+                                hrr = hrr->next;
+                            }
                             arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, 
-                                                    args? args->tp:0, args?args->exp:0,
-                                                    funcList ? funcList[i][k] : NULL, 
-                                                    funcList ? funcList[j][k] : NULL,
-                                                    lenl, lenr, FALSE);
+                                                        funcparams->thistp, funcparams->thisptr,
+                                                        funcList ? funcList[i][k] : NULL, 
+                                                        funcList ? funcList[j][k] : NULL,
+                                                        lenl, lenr, FALSE);
+                        }
+                        /*
+                        else if (k == 1 && funcparams && funcparams->thisptr)
+                        {
+                            TYPE *tpl, *tpr;
+                            if (spList[i]->castoperator)
+                            {
+                                tpl = ((SYMBOL *)(hrl->p))->tp;
+                                hrl = hrl->next;
+                            }
+                            else
+                            {
+                                tpl = toThis(basetype(spList[i]->tp)->btp);
+                            }
+                            if (spList[j]->castoperator)
+                            {
+                                tpr = ((SYMBOL *)(hrr->p))->tp;
+                                hrr = hrr->next;
+                            }
+                            else
+                            {
+                                tpr = toThis(basetype(spList[j]->tp)->btp);
+                            }
+                            arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, 
+                                                        args ? args->tp : 0 , args ? args->exp : 0,
+                                                        funcList ? funcList[i][k] : NULL, 
+                                                        funcList ? funcList[j][k] : NULL,
+                                                        lenl, lenr, FALSE);
+                        }
+                        */
                         else
-                            arr[k] = 0;
-                        if (hrl) hrl = hrl->next;
-                        if (hrr) hrr = hrr->next;
-                        if (args) args = args->next;
+                        {
+                            TYPE *tpl = hrl ? ((SYMBOL *)hrl->p)->tp : NULL;
+                            TYPE *tpr = hrr ? ((SYMBOL *)hrr->p)->tp : NULL;
+                            if (tpl && tpr)
+                                arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr, 
+                                                        args? args->tp:0, args?args->exp:0,
+                                                        funcList ? funcList[i][k] : NULL, 
+                                                        funcList ? funcList[j][k] : NULL,
+                                                        lenl, lenr, FALSE);
+                            else
+                                arr[k] = 0;
+                            if (hrl) hrl = hrl->next;
+                            if (hrr) hrr = hrr->next;
+                            if (args) args = args->next;
+                        }
+                        l += lenList[i][k];
+                        r += lenList[j][k];
                     }
-                    l += lenList[i][k];
-                    r += lenList[j][k];
-                }
-                for (k=0; k < argCount; k++)
-                {
-                    if (arr[k] > 0)
-                        right++;
-                    else if (arr[k] < 0)
-                        left++;
-                }
-                if (left && !right)
-                {
-                    spList[j] = NULL;
-                }
-                else if (right && !left)
-                {
-                    spList[i] = NULL;
-                }
-                else
-                {
-                    BOOLEAN leftPacked = FALSE;
-                    BOOLEAN rightPacked = FALSE;
-                    HASHREC *hrleft = basetype(spList[i]->tp)->syms->table[0];
-                    HASHREC *hrright = basetype(spList[j]->tp)->syms->table[0];
-                    while (hrleft)
+                    for (k=0; k < argCount; k++)
                     {
-                        if (((SYMBOL *)hrleft->p)->packed)
-                            leftPacked = TRUE;
-                        hrleft = hrleft->next;
+                        if (arr[k] > 0)
+                            right++;
+                        else if (arr[k] < 0)
+                            left++;
                     }
-                    while (hrright)
+                    if (left && !right)
                     {
-                        if (((SYMBOL *)hrright->p)->packed)
-                            rightPacked = TRUE;
-                        hrright = hrright->next;
+                        spList[j] = NULL;
                     }
-                    if (leftPacked && !rightPacked)
+                    else if (right && !left)
                     {
-                        spList[i] = 0;
-                    }
-                    else if (rightPacked && !leftPacked)
-                    {
-                        spList[j] = 0;
+                        spList[i] = NULL;
                     }
                 }
             }
@@ -2712,6 +2715,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
 {
     BOOLEAN lref;
     BOOLEAN rref;
+    EXPRESSION *exp = expa;
     TYPE *tpax = tpa;
     TYPE *tppx = tpp;
     tpa = basetype(tpa);
@@ -2731,27 +2735,32 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
          seq[(*n)++] = CV_NONE;
          return;
     }
-    lref = (/*isstructured(tpa) ||*/ expa && (lvalue(expa) || isarithmeticconst(expa))) && (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref || tpa->lref ;
-    rref = (!isstructured(tpa) || expa && !lvalue(expa) && !ismem(expa) ) && !tpa->lref || tpa->rref;
-    if (expa && expa->type == en_func)
+    lref = (basetype(tpa)->type == bt_lref || isstructured(tpa) && (!expa || expa->type != en_not_lvalue) || expa && (lvalue(expa) || isarithmeticconst(expa))) && (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref || tpa->lref ;
+    rref = (basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) || expa && !lvalue(expa) && !ismem(expa) ) && !tpa->lref || tpa->rref;
+    if (exp && exp->type == en_thisref)
+        exp = exp->left;
+    if (exp && exp->type == en_func)
     {
-        TYPE *tp = basetype(expa->v.func->sp->tp)->btp;
-        if (tp)
+        if (basetype(exp->v.func->sp->tp)->type != bt_aggregate)
         {
-            if (tp->type == bt_rref)
+            TYPE *tp = basetype(basetype(exp->v.func->functp)->btp);
+            if (tp)
             {
-                if (!tpa->lref)
+                if (tp->type == bt_rref)
                 {
-                    rref = TRUE;
-                    lref = FALSE;
+                    if (!tpa->lref)
+                    {
+                        rref = TRUE;
+                        lref = FALSE;
+                    }
                 }
-            }
-            else if (tp->type == bt_lref)
-            {
-                if (!tpa->rref)
+                else if (tp->type == bt_lref)
                 {
-                    lref = TRUE;
-                    rref = FALSE;
+                    if (!tpa->rref)
+                    {
+                        lref = TRUE;
+                        rref = FALSE;
+                    }
                 }
             }
         }
@@ -2940,17 +2949,6 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 seq[(*n)++] = CV_NONE;
             }
         }
-        else if (ispointer(tpa))
-        {
-            if (basetype(tpp)->type == bt_bool)
-            {
-                seq[(*n)++] = CV_BOOLCONVERSION;
-            }
-            else
-            {
-                seq[(*n)++] = CV_NONE;
-            }
-        }
         else if (basetype(tpp)->type == bt_memberptr)
         {
             if (basetype(tpa)->type == bt_memberptr)
@@ -2985,7 +2983,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                     seq[(*n)++] = CV_NONE;            
                 }
             }
-            else if (isint(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr))
+            else if (expa && ((isconstzero(tpa, expa) || expa->type == en_nullptr)))
             {
                 seq[(*n)++] = CV_POINTERCONVERSION;
             }
@@ -3016,6 +3014,17 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
             else
             {
                 seq[(*n)++] = CV_NONE;            
+            }
+        }
+        else if (ispointer(tpa))
+        {
+            if (basetype(tpp)->type == bt_bool)
+            {
+                seq[(*n)++] = CV_BOOLCONVERSION;
+            }
+            else
+            {
+                seq[(*n)++] = CV_NONE;
             }
         }
         else if (basetype(tpa)->type == bt_memberptr)

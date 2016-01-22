@@ -3214,7 +3214,6 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
  *      a true condition.
  */
 {
-    EXPRESSION nnode;
     IMODE *ap1, *ap2, *ap3, *ap4;
     int siz1, siz2;
     int lab0;
@@ -3292,11 +3291,9 @@ void truejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             gen_label(lab0);
             break;
         case en_mp_as_bool:
-            nnode = *node;
-            nnode.type = en_l_i;
             siz1 = node->size;
             siz2 = getSize(bt_int);
-            ap2 = gen_expr( funcsp, &nnode, F_ADDR, ISZ_UINT);
+            ap2 = gen_expr( funcsp, node->left, F_ADDR, ISZ_UINT);
             ap3 = tempreg(ISZ_UINT, 0);
             gen_icode(i_assn, ap3, ap2, 0);
             DumpIncDec(funcsp);
@@ -3332,7 +3329,6 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label)
  */
 {
     IMODE *ap, *ap1, *ap2, *ap3, *ap4;
-    EXPRESSION nnode;
     int siz1, siz2;
     int lab0;
     int i;
@@ -3407,12 +3403,10 @@ void falsejp(EXPRESSION *node, SYMBOL *funcsp, int label)
             }
             break;
         case en_mp_as_bool:
-            nnode = *node;
-            nnode.type = en_l_i;
             lab0 = nextLabel++;
             siz1 = node->size;
             siz2 = getSize(bt_int);
-            ap2 = gen_expr( funcsp, &nnode, F_ADDR, ISZ_UINT);
+            ap2 = gen_expr( funcsp, node->left, F_ADDR, ISZ_UINT);
             ap3 = tempreg(ISZ_UINT, 0);
             gen_icode(i_assn, ap3, ap2, 0);
             DumpIncDec(funcsp);

@@ -793,7 +793,7 @@ void optimize(SYMBOL *funcsp)
         //printf("from ssa\n");
     TranslateFromSSA(TRUE);
     //printf("peep\n");
-      peep_icode(FALSE);			/* peephole optimizations at the ICODE level */
+    peep_icode(FALSE);			/* peephole optimizations at the ICODE level */
     RemoveCriticalThunks();
     removeDead(blockArray[0]);			/* remove dead blocks */
 

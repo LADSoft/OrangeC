@@ -1586,9 +1586,9 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
             params->arguments->tp = tp;
             params->arguments->exp = other;
 //			member->tp->lref = TRUE;
-//            member->tp->rref = FALSE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
+//			member->tp->lref = FALSE;
         }
         else if (doCopy && matchesCopy(parentCons, TRUE))
         {
@@ -1613,6 +1613,7 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
 //			member->tp->rref = TRUE;
             if (!callConstructor(&ctype, &exp, params, FALSE, NULL, top, FALSE, FALSE, FALSE, FALSE))
                 errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
+//			member->tp->rref = FALSE;
         }
         else
         {

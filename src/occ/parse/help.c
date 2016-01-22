@@ -1402,7 +1402,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
     }
     // plop in a clear block if necessary
-    if (sp && !noClear && (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus || basetype(tp)->sp->trivialCons)))
+    if (sp && !noClear && !isdest && (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus || basetype(tp)->sp->trivialCons)))
     {
         EXPRESSION *fexp = expsym;
         EXPRESSION *exp;

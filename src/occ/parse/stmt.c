@@ -1720,7 +1720,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                 {
-                    BOOLEAN oldrref;
+                    BOOLEAN oldrref, oldlref;
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     TYPE *ctype = tp;
                     // shortcut for conversion from single expression
@@ -1743,13 +1743,16 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     funcparams->arguments->tp = tp1;
                     funcparams->arguments->exp = exp1;
                     oldrref = basetype(tp1)->rref;
-                    basetype(tp1)->rref = TRUE;
+                    oldlref = basetype(tp1)->lref;
+                    basetype(tp1)->rref = exp1->type == en_func || exp1->type == en_thisref || exp1->type == en_auto;
+                    basetype(tp1)->lref = !basetype(tp1)->rref;
                     maybeConversion = FALSE;
                     returntype = tp;
                     implicit = TRUE;
                     callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE); 
                     returnexp = en;
                     basetype(tp1)->rref = oldrref;
+                    basetype(tp1)->lref = oldlref;
                     if (funcparams->sp && matchesCopy(funcparams->sp, TRUE))
                     {
                         switch (exp1->type)
@@ -2570,6 +2573,11 @@ BOOLEAN resolveToDeclaration(LEXEME * lex)
         return FALSE;
     }
 
+    while (MATCHKW(lex, classsel))
+    {
+        lex = getsym();
+        lex = getsym();
+    }
     if (MATCHKW(lex, lt))
     {
         int level = 1;

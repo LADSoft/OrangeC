@@ -1,6 +1,33 @@
 Release notes:
 
-Version 5.51.1:
+version 5.52.1:
+    occ:        expressions involving bit fields did not get evaluated properly
+                unless the expression was an assignment or comparison
+    occ:        fix bug with operator-> returning pointer to class: if this was used as
+                a function argument bad code would be generated
+    occ:        move constructors or assignment operators could sometimes be called when unintended
+                when invoked in a return statement.
+                (e.g. it would zero out strings during a construction or copy to another string)
+    occ:        there were bugs comparing a member pointer variable against zero
+    occ:        member pointer function variable could not be compare to a function
+    occ:        for a reference type, it didn't call virtual functions properly
+    occ:        sometimes an object would be considered by-ref when it wasn't really
+                messed up function returns from constructors and other functions that return a pointer
+                to structure
+    occ:        during global destruction of objects, destructor call for an array could zero 
+                out the object before destroying it
+    occ:        constructor calls qualified with class/namespace selectors could be treated as declarations
+    occ:        references to member pointers as function parameters resulted in invalid code
+    occ:        taking the address of a reference to a pointer and passing it to a function resulted in bad code
+    occ:        in initializing a structure from another structure, a this pointer could be inserted when it shouldn't be
+    occ:        temporary classes created during an expression would not get a destructor call
+    occ:        ! and some other unary operators generated code to perform the function even after
+                calling an overloaded operator function. (so the function got applied twice)
+    occ:        when objects that have to be constructed are default parameters, the
+                space for the objects does not get allocated if they are used.
+    libcxx:     fix problem with not enough space being allocated for locale in ios structure
+    clibs:      fix malloc/free to detect doubly freed pointers with more alacrity
+Version 5.51.1: 1/16/16
     occ:        fix a compiler crash when compiling boolinq.h
     occ:        trailing return did not parse correctly if the function had a qualifier, e.g.
                 if it was a const function (fix for cpplinq.hpp)

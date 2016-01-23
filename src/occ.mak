@@ -59,7 +59,7 @@ CC=$(COMPILER_PATH)\bin\occ
 CCFLAGS = /c /E- 
 
 LINK=$(COMPILER_PATH)\bin\olink
-LFLAGS=-c -m /L$(_LIBDIR)
+LFLAGS=-c -mx /L$(_LIBDIR)
 
 LIB=$(COMPILER_PATH)\bin\olib
 LIB_EXT:=.l

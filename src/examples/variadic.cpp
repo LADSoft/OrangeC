@@ -45,7 +45,7 @@ std::ostream& operator<<(std::ostream& out, const std::pair<T, U>& p) {
   return out;
 }
 
-main()
+int main()
 {
     printer("hi %d %d %d\n", 4,5,6);
     std::cout << pair_comparer(5,5,7,8) << std::endl;

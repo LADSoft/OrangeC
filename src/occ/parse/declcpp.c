@@ -60,6 +60,7 @@ extern int inTemplateSpecialization;
 extern LIST *openStructs;
 extern int structLevel;
 extern LAMBDA *lambdas;
+extern int anonymousNotAlloc;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -838,8 +839,31 @@ void deferredInitializeStructFunctions(SYMBOL *cur)
                             sp2->tp = PerformDeferredInitialization(sp2->tp, NULL);
                             if (sp2->deferredCompile && !sp2->init)
                             {
+                                TYPE *tp2;
                                 lex = SetAlternateLex(sp2->deferredCompile);
-                                lex = initialize(lex, theCurrentFunc, sp2, sc_member, FALSE, 0);
+                                tp2 = sp2->tp;
+                                if (isref(tp2))
+                                    tp2 = basetype(tp2)->btp;
+                                if (isstructured(tp2))
+                                {
+                                    SYMBOL *sym;
+                                    anonymousNotAlloc++;
+                                    sym = anonymousVar(sc_auto, tp2)->v.sp;
+                                    anonymousNotAlloc--;
+                                    sym->stackblock = !isref(sp2->tp);
+                                    lex = initialize(lex, theCurrentFunc, sym, sc_auto, FALSE, 0); /* also reserves space */
+                                    sp2->init = sym->init;
+                                    if (sp2->init->exp->type == en_thisref)
+                                    {
+                                        EXPRESSION **expr = &sp2->init->exp->left->v.func->thisptr;
+                                        if ((*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
+                                            sp2->init->exp->v.t.thisptr = (*expr) = (*expr)->left;
+                                    }
+                                }
+                                else
+                                {
+                                    lex = initialize(lex, theCurrentFunc, sp2, sc_member, FALSE, 0);
+                                }
                                 SetAlternateLex(NULL);
                                 sp2->deferredCompile = NULL;
                             }

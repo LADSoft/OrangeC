@@ -71,6 +71,7 @@ extern int argument_nesting;
 extern int codeLabel;
 extern SYMBOL *instantiatingMemberFuncClass;
 extern BOOLEAN parsingSpecializationDeclaration;
+extern int anonymousNotAlloc;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -3244,8 +3245,30 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                         }    
                         else
                         {
+                            TYPE *tp2 = spi->tp;
                             inDefaultParam++;
-                            lex = initialize(lex, funcsp, spi, sc_auto, TRUE, 0); /* also reserves space */
+                            if (isref(tp2))
+                                tp2 = basetype(tp2)->btp;
+                            if (isstructured(tp2))
+                            {
+                                SYMBOL *sym;
+                                anonymousNotAlloc++;
+                                sym = anonymousVar(sc_auto, tp2)->v.sp;
+                                anonymousNotAlloc--;
+                                sym->stackblock = !isref(spi->tp);
+                                lex = initialize(lex, funcsp, sym, sc_auto, TRUE, 0); /* also reserves space */
+                                spi->init = sym->init;
+                                if (spi->init->exp->type == en_thisref)
+                                {
+                                    EXPRESSION **expr = &spi->init->exp->left->v.func->thisptr;
+                                    if ((*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
+                                        spi->init->exp->v.t.thisptr = (*expr) = (*expr)->left;
+                                }
+                            }
+                            else
+                            {
+                                lex = initialize(lex, funcsp, spi, sc_auto, TRUE, 0); /* also reserves space */
+                            }
                             if (spi->init)
                             {
                                 checkDefaultArguments(spi);

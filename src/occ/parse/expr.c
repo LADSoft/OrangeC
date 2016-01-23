@@ -1855,7 +1855,11 @@ static BOOLEAN cloneTempExpr(EXPRESSION **expr, SYMBOL **found, SYMBOL **replace
         *newval = **expr;
         *expr = newval;
     }
-    if ((*expr)->type == en_stmt)
+    if ((*expr)->type == en_thisref)
+    {
+        rv = cloneTempExpr(&(*expr)->left, found, replace);
+    }
+    else if ((*expr)->type == en_stmt)
     {
         rv = cloneTempStmt(&(*expr)->v.stmt, found, replace);
     }
@@ -2076,6 +2080,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
         {
             LEXEME *lex;
             STRUCTSYM l,m, n;
+            TYPE *tp2;
             int count = 0;
             int tns = PushTemplateNamespace(func);
             l.str = func;
@@ -2090,7 +2095,30 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
             }
             sym->tp = PerformDeferredInitialization(sym->tp, NULL);
             lex = SetAlternateLex(sym->deferredCompile);
-            lex = initialize(lex, theCurrentFunc, sym, sc_member, FALSE, 0);
+
+            tp2 = sym->tp;
+            if (isref(tp2))
+                tp2 = basetype(tp2)->btp;
+            if (isstructured(tp2))
+            {
+                SYMBOL *sym2;
+                anonymousNotAlloc++;
+                sym2 = anonymousVar(sc_auto, tp2)->v.sp;
+                anonymousNotAlloc--;
+                sym2->stackblock = !isref(sym->tp);
+                lex = initialize(lex, theCurrentFunc, sym2, sc_auto, FALSE, 0); /* also reserves space */
+                sym->init = sym2->init;
+                if (sym->init->exp->type == en_thisref)
+                {
+                    EXPRESSION **expr = &sym->init->exp->left->v.func->thisptr;
+                    if ((*expr)->type == en_add && isconstzero(&stdint, (*expr)->right))
+                        sym->init->exp->v.t.thisptr = (*expr) = (*expr)->left;
+                }
+            }
+            else
+            {
+                lex = initialize(lex, theCurrentFunc, sym, sc_member, FALSE, 0);
+            }
             SetAlternateLex(NULL);
             sym->deferredCompile = NULL;
             while (count--)
@@ -2120,6 +2148,12 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                         cloneTempExpr(&exp, &ths[0], &newval[0]);
                         (*lptr)->dest = exp;
                     }
+            }
+            if (isstructured(sym->tp))
+            {
+                hr = hr->next;
+                lptr = &(*lptr)->next;
+                continue;
             }
         }
         p = *lptr;
@@ -2415,7 +2449,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                                 }
                                 p->exp = exp;
                             }
-                            else if (ispointer(p->tp))
+                            else if (ispointer(p->tp) && isstructured(basetype(p->tp)->btp))
                             {
                                 // make numeric temp and perform cast
                                 p->exp = createTemporary(sym->tp, exp);
@@ -4860,8 +4894,8 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                             cast(&stdint, exp);
                             *tp = &stdint;
                         }
+                    *exp = exprNode(en_uminus, *exp, NULL);
                 }
-                *exp = exprNode(en_uminus, *exp, NULL);
             }
             break;
         case star:
@@ -4896,16 +4930,16 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                             *tp = &stdint;
                         }
                         */
-                }
-                if ((*tp)->type == bt_memberptr)
-                {
-                       *exp = exprNode(en_mp_as_bool, *exp, NULL);
-                    (*exp)->size = (*tp)->size;
-                       *exp = exprNode(en_not, *exp, NULL);
-                }
-                else
-                {
-                    *exp = exprNode(en_not, *exp, NULL);
+                    if ((*tp)->type == bt_memberptr)
+                    {
+                           *exp = exprNode(en_mp_as_bool, *exp, NULL);
+                        (*exp)->size = (*tp)->size;
+                           *exp = exprNode(en_not, *exp, NULL);
+                    }
+                    else
+                    {
+                        *exp = exprNode(en_not, *exp, NULL);
+                    }
                 }
                 if (cparams.prm_cplusplus)
                     *tp = &stdbool;
@@ -4949,8 +4983,8 @@ LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPR
                             cast(&stdint, exp);
                             *tp = &stdint;
                         }
+                    *exp = exprNode(en_compl, *exp, NULL);
                 }
-                *exp = exprNode(en_compl, *exp, NULL);
             }
             break;
         case autoinc:

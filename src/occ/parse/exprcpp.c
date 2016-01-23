@@ -651,7 +651,8 @@ LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRES
             callConstructor(&ctype, exp, funcparams, FALSE, NULL, TRUE, TRUE, FALSE, FALSE, FALSE); 
             callDestructor(basetype(*tp)->sp, NULL, &exp1, NULL, TRUE, FALSE, FALSE);
             initInsert(&sp->dest, *tp, exp1, 0, TRUE);
-//            sp->destructed = TRUE; // in case we don't actually use this instantiation
+            if (flags & _F_SIZEOF)
+                sp->destructed = TRUE; // in case we don't actually use this instantiation
         }
         else
         {

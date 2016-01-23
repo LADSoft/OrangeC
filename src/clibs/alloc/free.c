@@ -54,17 +54,11 @@ void _RTL_FUNC free(void *buf)
         p = (char *)buf + n;
         p--;
     }
-   __ll_enter_critical() ;
     if (p->size == INT_MIN)
         return;
-    c = &__mallocchains[(p->size>>2) % MEMCHAINS];
-    // guard against double frees
-    while (*c)
-    {
-        if (*c == p)
-            return;
-        c = &(*c)->next;
-    }
+    if (p->next) // already freed
+        return;
+   __ll_enter_critical() ;
     c = &__mallocchains[(p->size>>2) % MEMCHAINS];
     p->next = *c;
     (*c) = p;

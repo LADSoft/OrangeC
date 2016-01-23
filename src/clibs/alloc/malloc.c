@@ -83,6 +83,7 @@ static FREELIST *split(FREELIST *p, int size, FREELIST **slist)
     rv->size = p->size - size ;
     rv->next = 0;
     *slist = rv;
+    p->next = 0;
     p->size = size ;
      return ++p;
 }
@@ -106,6 +107,7 @@ void * _RTL_FUNC malloc(size_t size)
         p = *slist;
         if (p->size == siz1) {
              *slist = p->next;
+             p->next = NULL;
          __ll_exit_critical() ;
              return ++p;
         }
@@ -118,6 +120,7 @@ void * _RTL_FUNC malloc(size_t size)
         if (p) {
             if (p->size == siz1) {
                  head->freemem = 0;
+                 p->next = NULL;
             __ll_exit_critical() ;
                  return ++p;
             }
@@ -138,6 +141,7 @@ void * _RTL_FUNC malloc(size_t size)
     p = _newfree->freemem;
     if (p->size == siz1) {
              _newfree->freemem = p->next ;
+             p->next = NULL;
          __ll_exit_critical() ;
              return ++p;
     }

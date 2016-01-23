@@ -362,7 +362,13 @@ private:
     iostate         __rdstate_;
     iostate         __exceptions_;
     void*           __rdbuf_;
+#ifdef __ORANGEC__
+    // this is a terrible hack to get around a bug in the lib that caused my progs to crash
+    char            __loc_[36];
+#else
+    // original line of code...
     void*           __loc_;
+#endif
     event_callback* __fn_;
     int*            __index_;
     size_t          __event_size_;

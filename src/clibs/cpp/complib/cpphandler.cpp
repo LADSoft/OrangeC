@@ -186,7 +186,7 @@ static void instantiate(XCTAB *record, void *dest1 , void *src1)
     }
     else
     {
-        memcpy(record->throwninstance, record->baseinstance, record->elems * record->thrownxt->size);
+        memcpy(dest1, src1, record->elems * record->thrownxt->size);
     }
 }
 static BOOL matchBlock(XCTAB *record, PEXCEPTION_RECORD p, PCONTEXT context)
@@ -286,14 +286,14 @@ void _ThrowException(void *irecord,void *instance,int arraySize,void *cons,void 
     record->cons = cons;
     if (!record->baseinstance)
         __call_terminate();
-        
+     
     instantiate(record,record->baseinstance, instance);
 	RaiseException(OUR_CPP_EXC_CODE,EXCEPTION_CONTINUABLE,1,(DWORD *)&params[0]) ;
 }
 
 void uninstantiate(XCTAB *record, void *instance)
 {
-    if (record->thrownxt->destructor)
+    if (record->thrownxt->destructor && !(record->thrownxt->flags & (XD_POINTER | XD_ARRAY | XD_REF)))
     {
         BYTE *ptr = (BYTE *)instance + record->thrownxt->size * (record->elems - 1);
         for (int i=0; i < record->elems; i++)

@@ -145,7 +145,7 @@ ObjSection *Section::CreateObject(ObjFactory &factory)
 {
     objectSection = factory.MakeSection(name);
     if (isVirtual)
-        objectSection->SetQuals(objectSection->GetQuals() | ObjSection::equal);
+        objectSection->SetQuals(objectSection->GetQuals() | ObjSection::max | ObjSection::virt);
     return objectSection;
 }
 ObjExpression *Section::ConvertExpression(AsmExprNode *node, AsmFile *fil, ObjFactory &factory)

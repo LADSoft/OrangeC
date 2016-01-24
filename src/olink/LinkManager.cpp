@@ -188,6 +188,14 @@ void LinkManager::MergePublics(ObjFile *file, bool toerr)
                 (*it)->SetUsed(true);
                 newSymbol->SetUsed(true);
             }
+            it = externals.find(newSymbol);
+            if (it != externals.end())
+            {
+                (*it)->SetUsed(true);
+                LinkSymbolData *p = *it;
+                externals.erase(it);
+                delete p;
+            }
         }
     }
     for (ObjFile::SymbolIterator it = file->ImportBegin(); it != file->ImportEnd(); ++it)
@@ -469,6 +477,55 @@ void LinkManager::LoadLibraries()
         }
     }
 }
+bool LinkManager::LoadLibrarySymbol (LinkLibrary *lib, std::string &name)
+{
+    bool found = false;
+    ObjInt objNum = lib->GetSymbol(name);
+    if (objNum >= 0 && !lib->HasModule(objNum))
+    {
+        ObjFile *file = lib->LoadSymbol(objNum, factory);
+        if (!file)
+        {
+            LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + lib->GetName());
+        }
+        else
+        {
+            
+            fileData.push_back(file);
+            MergePublics(file, false);
+        }
+        found = true;
+    }
+    return found;
+}
+bool LinkManager::ResolveLibrary(LinkLibrary *lib, std::string &name)
+{
+    if (LoadLibrarySymbol(lib, name))
+    {
+        bool done = false;
+        for (SymbolIterator it = externals.begin(); it != externals.end(); ++it)
+            (*it)->SetVisited(false);
+        while (!done)
+        {
+            done = true;
+            for (SymbolIterator it = externals.begin(); it != externals.end(); ++it)
+            {
+                if (!(*it)->GetVisited())
+                {
+                    (*it)->SetVisited(true);
+                    LinkSymbolData *a = *it;
+                    if (LoadLibrarySymbol(lib, a->GetSymbol()->GetName()))
+                    {
+                        done = false;
+                        break;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    return false;
+}
 void LinkManager::ScanLibraries()
 {
     SymbolData dt;
@@ -478,7 +535,7 @@ void LinkManager::ScanLibraries()
         SymbolIterator extit = externals.begin();
         for ( ; extit != externals.end(); ++ extit)
         {
-            if (!(*extit)->GetUsed())
+            if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
                 break;
         }
         if (extit == externals.end())
@@ -486,27 +543,15 @@ void LinkManager::ScanLibraries()
         LinkSymbolData *current = *extit;
         for (std::set<LinkLibrary *>::iterator it = dictionaries.begin(); it != dictionaries.end(); ++it)
         {
-            ObjInt objNum = (*it)->GetSymbol((*extit)->GetSymbol()->GetName());
-            if (objNum >= 0 && !(*it)->HasModule(objNum))
-            {
-                ObjFile *file = (*it)->LoadSymbol(objNum, factory);
-                if (!file)
-                {
-                    LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in library " + (*it)->GetName());
-                }
-                else
-                {
-                    fileData.push_back(file);
-                    MergePublics(file, false);
-                }
-                found = true;
+            found = ResolveLibrary(*it, (*extit)->GetSymbol()->GetName());
+            if (found)
                 break;
-            }
         }
         // not resolved?
         if (!found)
         {
             dt.insert(current);
+            extit = externals.find(current);
             externals.erase(extit);
         }
     }

@@ -66,9 +66,9 @@ void HookError(int);
 class LinkSymbolData
 {
     public:
-        LinkSymbolData(ObjFile *File, ObjSymbol *Symbol): file(File), symbol(Symbol), used(false), remapped(false), auxData(NULL) {}
-        LinkSymbolData(ObjSymbol *Symbol): file(NULL), symbol(Symbol), used(false), remapped(false), auxData(NULL) {}
-        LinkSymbolData(): file(NULL), symbol(NULL), used(false), remapped(false), auxData(NULL) {}
+        LinkSymbolData(ObjFile *File, ObjSymbol *Symbol): file(File), symbol(Symbol), used(false), visited(false), remapped(false), auxData(NULL) {}
+        LinkSymbolData(ObjSymbol *Symbol): file(NULL), symbol(Symbol), used(false), visited(false), remapped(false), auxData(NULL) {}
+        LinkSymbolData(): file(NULL), symbol(NULL), used(false), visited(false), remapped(false), auxData(NULL) {}
         ~LinkSymbolData() {}
         
         ObjFile *GetFile() const { return file; }
@@ -79,12 +79,15 @@ class LinkSymbolData
         void *GetAuxData() const { return auxData; }
         bool GetUsed() const { return used; }
         void SetUsed(bool Used) { used = Used; }
+        bool GetVisited() const { return visited; }
+        void SetVisited(bool Visited) { visited=Visited; }
         bool GetRemapped() const { return remapped; }
         void SetRemapped(bool Remapped) { remapped=Remapped; }
         
     private:
         bool used;
         bool remapped;
+        bool visited;
         ObjFile *file;
         ObjSymbol *symbol;
         void *auxData;
@@ -165,6 +168,8 @@ class LinkManager
         void LoadFiles();
         LinkLibrary *OpenLibrary(const ObjString &name);
         void LoadLibraries();
+        bool LoadLibrarySymbol (LinkLibrary *lib, std::string &name);
+        bool ResolveLibrary(LinkLibrary *lib, std::string &name);
         void ScanLibraries();
         void CloseLibraries();
         bool ParseAssignment(LinkTokenizer &spec);

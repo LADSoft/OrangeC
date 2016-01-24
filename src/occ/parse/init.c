@@ -498,7 +498,7 @@ int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label)
     }
     else
     {
-        if (sp->storage_class != sc_member && sp->storage_class != sc_mutable)
+        if (sp->storage_class != sc_member && sp->storage_class != sc_mutable && sp->storage_class != sc_virtual)
             errortype(ERR_CANNOT_CONVERT_TYPE, sp->tp, membertp);
         memset(&expx, 0, sizeof(expx));
         expx.type = en_c_i;

@@ -1197,7 +1197,8 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                         if (isref(*tp))
                         {
     //                        TYPE *tp1 = *tp;
-                            deref(*tp, exp);
+                            if (!isstructured(basetype(*tp)->btp))
+                                deref(*tp, exp);
     //                        *tp = Alloc(sizeof(TYPE));
     //                        **tp = *(basetype(tp1)->btp);
                             
@@ -6302,7 +6303,18 @@ LEXEME *expression_throw(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **ex
             arg4->next = arg5;
             arg1->exp = varNode(en_auto, funcsp->xc->xctab);
             arg1->tp = &stdpointer;
-            arg2->exp = exp1;
+            if (isstructured(tp1))
+            {
+                arg2->exp = exp1;
+            }
+            else
+            {
+                EXPRESSION *exp3 = anonymousVar(sc_auto, tp1);
+                arg2->exp = exp3;
+                deref(tp1->type == bt_pointer ? &stdpointer: tp1, &exp3);
+                exp3 = exprNode(en_assign, exp3, exp1);
+                arg2->exp = exprNode(en_void, exp3, arg2->exp);
+            }
             arg2->tp = &stdpointer;
             arg3->exp = isarray(tp1) ? intNode(en_c_i, tp1->size/(basetype(tp1)->btp->size)) : intNode(en_c_i, 1);
             arg3->tp = &stdint;

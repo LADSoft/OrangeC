@@ -39,6 +39,7 @@
 #include "compiler.h"
 #include "rtti.h"
 extern INCLUDES *includes;
+extern TYPE stdint;
 static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigned size); "
     "void * operator new[](unsigned size); " 
     "void * operator new(unsigned size, void *ptr) noexcept; " 
@@ -107,5 +108,6 @@ void ParseBuiltins(void)
         includes->line = 0;
         stdXC.syms = CreateHashTable(1);
         stdXC.sp = makeID(sc_type, &stdXC, NULL, "$$XCTYPE");
+        stdXC.alignment = getAlign(sc_auto, &stdint);
     }
 }

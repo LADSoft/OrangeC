@@ -1869,10 +1869,18 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     skip(&lex, end);
                 }
             }
+            if (isstructured(tp1) && isarithmetic(tp))
+            {
+                castToArithmetic(FALSE, &tp1, &returnexp, (enum e_kw)-1, tp, TRUE);
+            }
             if (tp->type == bt_auto)
                 returntype = tp = tp1;
             else
+            {
+//                if (!comparetypes(tp, tp1, TRUE))
+//                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
                 returntype = tp;
+            }
             if (returnexp->type == en_func)
             {
                 if (returnexp->v.func->sp->storage_class == sc_overloads)

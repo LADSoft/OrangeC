@@ -376,12 +376,14 @@ SYMBOL *RTTIDumpType(TYPE *tp)
                 tp = basetype(tp)->btp;
             if (isstructured(tp) && !basetype(tp)->sp->dontinstantiate)
             {
+                SYMBOL *xtSym2;
                 // xtSym *should* be there.
-                xtSym = search(basetype(tp)->sp->name, rttiSyms);
-                if (xtSym && xtSym->dontinstantiate)
+                RTTIGetName(name, basetype(tp));
+                xtSym2 = search(name, rttiSyms);
+                if (xtSym2 && xtSym2->dontinstantiate)
                 {
-                    xtSym->dontinstantiate = FALSE;
-                    RTTIDumpStruct(xtSym, tp);
+                    xtSym2->dontinstantiate = FALSE;
+                    RTTIDumpStruct(xtSym2, tp);
                 }
             }
         }

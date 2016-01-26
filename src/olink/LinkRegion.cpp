@@ -242,22 +242,20 @@ void LinkRegion::AddSourceFile(CmdFiles &filelist, const ObjString &spec)
         if (Matches(**it, spec))
             sourceFiles.push_back(*it);
 }
-void LinkRegion::AddData(SectionData &data, ObjFile *file, ObjSection *section)
+void LinkRegion::AddData(SectionData &data, LookasideBuf &lookaside, ObjFile *file, ObjSection *section)
 {
     NamedSection *ns = NULL;
-    for (std::vector<NamedSection *>::iterator it = data.begin(); it != data.end(); ++it)
-    {
-        if ((*it)->name == section->GetName())
-        {
-            ns = *it;
-            break;
-        }
-    }
+    NamedSection aa;
+    aa.name = section->GetName();
+    LookasideBuf::iterator it= lookaside.find(&aa);
+    if (it != lookaside.end())
+        ns = *it;
     if (ns == NULL)
     {
         ns = new NamedSection;
         ns->name = section->GetName();
         data.push_back(ns);
+        lookaside.insert(ns);
     }
     ns->sections.push_back(OneSection(file, section));
 }

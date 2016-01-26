@@ -41,6 +41,7 @@
 #include <vector>
 #include <vector>
 #include <map>
+#include <set>
 #include "LinkAttribs.h"
 
 class LinkOverlay;
@@ -69,6 +70,12 @@ class LinkRegion
             std::string name;
             std::vector<OneSection> sections;
         };
+        struct nslt {
+            bool operator ()(const NamedSection *left, const NamedSection *right)
+            {
+                return strcmp(left->name.c_str(), right->name.c_str()) < 0;
+            }
+        };
         typedef std::vector<ObjString *> SourceFile;
         typedef std::vector<NamedSection *> SectionData;
         LinkRegion(LinkOverlay *Parent) : name(""), common(false), maxSize(-1), 
@@ -91,7 +98,8 @@ class LinkRegion
         SourceFileIterator SourceFileEnd() { return sourceFiles.end(); }
         
         typedef SectionData::iterator SectionDataIterator;
-
+        typedef std::set<NamedSection *,nslt> LookasideBuf;
+        
         SectionDataIterator NowDataBegin() { return nowData.begin(); }
         SectionDataIterator NowDataEnd() { return nowData.end(); }
         SectionDataIterator NormalDataBegin() { return normalData.begin(); }
@@ -106,11 +114,11 @@ class LinkRegion
         
         ObjInt PlaceRegion(LinkManager *manager, LinkAttribs &partitionAttribs, ObjInt base);
         
-        void AddNowData(ObjFile *file, ObjSection *section) { AddData(nowData, file, section); }
-        void AddNormalData(ObjFile *file, ObjSection *section) { AddData(normalData, file, section); }
-        void AddPostponeData(ObjFile *file, ObjSection *section) { AddData(postponeData, file, section); }
+        void AddNowData(ObjFile *file, ObjSection *section) { AddData(nowData, nowLookaside, file, section); }
+        void AddNormalData(ObjFile *file, ObjSection *section) { AddData(normalData, normalLookaside, file, section); }
+        void AddPostponeData(ObjFile *file, ObjSection *section) { AddData(postponeData, postponeLookaside, file, section); }
     protected:
-        void AddData(SectionData &data, ObjFile *file, ObjSection *section);
+        void AddData(SectionData &data, LookasideBuf &lookaside, ObjFile *file, ObjSection *section);
     private:
         std::map<std::string, int> equalSections;
         ObjInt ArrangeOverlayed(LinkManager *manager, SectionDataIterator it, ObjInt address);
@@ -131,6 +139,9 @@ class LinkRegion
         SectionData nowData;
         SectionData normalData;
         SectionData postponeData;
+        LookasideBuf nowLookaside;
+        LookasideBuf normalLookaside;
+        LookasideBuf postponeLookaside;
         LinkAttribs attribs;
         LinkOverlay *parent;
         ObjInt maxSize;

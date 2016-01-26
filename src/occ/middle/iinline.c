@@ -300,10 +300,15 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
     int oldretcount = retcount;
     int oldOffset = codeLabelOffset;
     EXPRESSION *oldthis = inlinesym_thisptr[inlinesym_count];
-
+    
 //    return NULL;
-
     if (cparams.prm_debug)
+    {
+        f->sp->dumpInlineToFile = TRUE;
+        return NULL;
+    }
+    /* measure of complexity */
+    if (f->sp->endLine - f->sp->startLine > 15)
     {
         f->sp->dumpInlineToFile = TRUE;
         return NULL;
@@ -323,7 +328,7 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
         f->sp->dumpInlineToFile = TRUE;
         return NULL;
     }
-    if (f->sp->templateParams && !f->sp->instantiated) //specialized)
+    if (f->sp->templateLevel && f->sp->templateParams && !f->sp->instantiated) //specialized)
     {
         f->sp->dumpInlineToFile = TRUE;
         return NULL;

@@ -552,7 +552,7 @@ typedef struct sym
         unsigned copiedTemplateFunction:1;
         unsigned performedStructInitialization:1; // function performed structured initialization
         unsigned instantiatedInlineInClass :1; // function instantiated inside a class body
-        unsigned isInline : 1; /* function is a candidate for inline functionality */
+        unsigned isInline;// : 1; /* function is a candidate for inline functionality */
         unsigned dumpInlineToFile : 1; /* inline function needs to be placed in the output file */
         unsigned promotedToInline : 1; /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1; // temporary boolean...  
@@ -569,6 +569,7 @@ typedef struct sym
     int offset; /* address offset of data in the given seg, or optimize register */
     int vtaboffset; /* vtab offset for virtual functions */
     int label; /* label number for statics */
+    int startLine, endLine; /* line numbers spanning the function */
     short paramsize; /* Size of parameter list for stdcall functions */
     short structAlign; /* alignment of structures/ unions */
     short accessibleTemplateArgument; /* something used as a template argument was validated for

@@ -90,6 +90,7 @@ static LIST *mpthunklist;
 static int breaklab;
 static int contlab;
 static int tryStart, tryEnd;
+static int plabel;
 
 IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp);
 
@@ -231,6 +232,42 @@ IMODE *call_library(char *lib_name, int size)
     result = tempreg(ISZ_UINT, 0);
     result->retval = TRUE;
     return result;
+}
+static AddProfilerData(SYMBOL *funcsp)
+{
+    LCHAR *pname;
+    if (cparams.prm_profiler)
+    {
+        STRING *string;
+        int i;
+        int l = strlen(funcsp->decoratedName);
+        pname = Alloc(sizeof(LCHAR)*l + 1);
+        for (i=0; i < l+1; i++)
+             pname[i] = funcsp->decoratedName[i];
+        string = (STRING *)Alloc(sizeof(STRING));
+        string->strtype = l_astr;
+        string->size = 1;
+        string->pointers = Alloc(sizeof(SLCHAR * ));
+        string->pointers[0] = Alloc(sizeof(SLCHAR));
+        string->pointers[0]->str = pname;
+        string->pointers[0]->count = l;
+        string->suffix = NULL;
+        stringlit (string);
+        plabel = string->label;
+        gen_icode(i_parm, 0, imake_label(plabel), 0);
+        call_library("__profile_in", getSize(bt_pointer));
+    }
+}
+
+//-------------------------------------------------------------------------
+
+void SubProfilerData(void)
+{
+    if (cparams.prm_profiler)
+    {
+        gen_icode(i_parm, 0, imake_label(plabel), 0);
+        call_library("__profile_out", getSize(bt_pointer));
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -495,6 +532,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
     */
                 if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcRundownFunc)
                     gen_expr(funcsp, funcsp->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
+                SubProfilerData();
                 gen_icode(i_epilogue,0,0,0);
                 if (funcsp->linkage == lk_interrupt || funcsp->linkage == lk_fault) {
     /*				if (funcsp->loadds)
@@ -937,6 +975,7 @@ void genfunc(SYMBOL *funcsp)
     }
     gen_icode(i_prologue,0,0,0);
     gen_label(startlab);
+    AddProfilerData(funcsp);
     if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)
     {
         gen_expr(funcsp, funcsp->xc->xcInitializeFunc, F_NOVALUE, ISZ_UINT);

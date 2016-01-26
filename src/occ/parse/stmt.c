@@ -3292,7 +3292,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     STATEMENT *startStmt;
     SYMBOL *spt = funcsp;
     int oldCodeLabel = codeLabel;
-
     codeLabel = INT_MIN;
     hasXCInfo = FALSE;
     localNameSpace->syms = NULL;
@@ -3301,9 +3300,10 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     declareAndInitialize = FALSE;
     block->type = funcsp->hasTry ? kw_try : begin;
     theCurrentFunc = funcsp;
+
     checkUndefinedStructures(funcsp);
-    if (funcsp->xcMode != xc_unspecified)
-        hasXCInfo = TRUE;
+//    if (funcsp->xcMode != xc_unspecified)
+//        hasXCInfo = TRUE;
     FlushLineData(funcsp->declfile, funcsp->declline);
     startStmt = currentLineData(NULL, lex, 0);
     if (startStmt)
@@ -3312,7 +3312,10 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);
     browse_startfunc(funcsp, funcsp->declline);
+    funcsp->startLine = lex->line;
     lex = compound(lex, funcsp, block, TRUE);
+    if (lex)
+        funcsp->endLine = lex->line;
     browse_endfunc(funcsp, lex?lex->line : endline);
     checkUnlabeledReferences(block);
     checkGotoPastVLA(block->head, TRUE);

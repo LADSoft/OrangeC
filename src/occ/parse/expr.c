@@ -817,23 +817,10 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
             SYMBOL *sp2 = search(overloadNameTab[CI_DESTRUCTOR], (basetype(*tp)->sp)->tp->syms);
             if (sp2)
             {
-                FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
-                funcparams->sp = sp2;
-                funcparams->thisptr = *exp;
-                funcparams->thistp = Alloc(sizeof(TYPE));
-                funcparams->thistp->size = getSize(bt_pointer);
-                funcparams->thistp->type = bt_pointer;
-                funcparams->thistp->btp = basetype(*tp);
-                if (!points && (*exp)->type != en_l_ref)
-                    funcparams->novtab = TRUE;
-                *exp = varNode(en_func, NULL);
-                (*exp)->v.func = funcparams;   
+                callDestructor(basetype(*tp)->sp, NULL, exp, NULL, TRUE, FALSE, FALSE);
             }
-            else
-            {
-                if (needkw(&lex, openpa))
-                    needkw(&lex, closepa);
-            }
+            if (needkw(&lex, openpa))
+                needkw(&lex, closepa);
         }
         else
         {

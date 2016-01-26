@@ -4913,12 +4913,15 @@ jointemplate:
                     }
                     else if (cparams.prm_optimize_for_speed && isfunction(tp1) && storage_class_in != sc_member && storage_class_in != sc_mutable)
                     {
-                        if (MATCHKW(lex,colon) ||
-                                MATCHKW(lex, begin) || MATCHKW(lex, kw_try))
+                        if (!strSym)
                         {
-                            if (strcmp(sp->name, "main") != 0)
+                            if (MATCHKW(lex,colon) ||
+                                    MATCHKW(lex, begin) || MATCHKW(lex, kw_try))
                             {
-                                sp->isInline = sp->dumpInlineToFile = sp->promotedToInline = TRUE;
+                                if (strcmp(sp->name, "main") != 0)
+                                {
+                                    sp->isInline = sp->dumpInlineToFile = sp->promotedToInline = TRUE;
+                                }
                             }
                         }
                     }
@@ -5538,6 +5541,10 @@ jointemplate:
                             }
                             spi->memberInitializers = sp->memberInitializers;
                             spi->hasTry = sp->hasTry;
+
+                            spi->isInline |= sp->isInline;
+                            spi->dumpInlineToFile |= sp->dumpInlineToFile;
+                            spi->promotedToInline |= sp->promotedToInline;
                             sp = spi;
                             sp->redeclared = TRUE;
                         }

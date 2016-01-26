@@ -153,14 +153,14 @@ static void show_profile(void)
     for (i=0; i < profnames; i++) {
         unsigned v = p[i]->time ;
         
-        fprintf(out,"%32s: %02u%% (time:%10u) (count:%10d) (avg:%10d)\n",p[i]->name,v/(totaltime/100), v,p[i]->count,v/p[i]->count);
+        fprintf(out,"%32s: %02u%% (time:%10u) (count:%10d) (avg:%10d)\n",p[i]->name,totaltime/100 > 0 ? v/(totaltime/100) : 0, v,p[i]->count,v/p[i]->count);
     }
     fclose(out);
     
 }
 static unsigned int ComputeHash(char *string)
 {
-  int rv = 0;
+  unsigned rv = 0;
   while (*string)
       rv = (rv << 7) + (rv << 2) + rv + *string++;
   return rv % HASH_SIZE;
@@ -211,11 +211,13 @@ void _profile_in(char *name)
     p->starttime = _elapsed_time();
     
 }
-void _profile_out(char *name)
+void _profile_out_1(char *name)
 {
     int t;
     if (!profiling || !proclink)
+    {
         return;
+    }
     t = _elapsed_time() - proclink->starttime;
     if (t < 0) t = - t;
     proclink->time += t - fnoverhead;

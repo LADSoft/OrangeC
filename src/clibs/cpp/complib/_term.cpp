@@ -97,7 +97,7 @@ std::terminate_handler _RTL_FUNC std::set_terminate(std::terminate_handler __t)
 std::unexpected_handler _RTL_FUNC std::set_unexpected(std::unexpected_handler __u)
 {
     CPPDATA * data = getCPPData();
-    unexpected_handler *rv = (unexpected_handler)data->term;
+    unexpected_handler *rv = (unexpected_handler)data->unexpected;
     if (__u)
     {
        CPPDATA * data = getCPPData();

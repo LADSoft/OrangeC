@@ -39,6 +39,7 @@
 
 extern "C" void __global_unwind(void *, void *);
 extern "C" void __call_terminate() ;
+extern "C" void __call_unexpected();
 
 extern "C" LONG ___xceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT context, void *param) ;
 
@@ -262,10 +263,13 @@ extern "C" LONG __cppexceptionhandle(PEXCEPTION_RECORD p, void *record, PCONTEXT
         }
         else
         {
+            XCEPTHEAD *head = ((XCTAB *)record)->xceptBlock;
+            THROWREC *throwRec = head->throwRecord;
             // abort if can't throw
-            context->Eip = (DWORD)__call_terminate;
-            context->Ebp = ((XCTAB *)record)->ebp;
-            context->Esp = ((XCTAB *)record)->esp;
+            if (throwRec->flags & XD_DYNAMICXC)
+                __call_unexpected();
+            else
+                __call_terminate();
             return 0;
         }
 	}

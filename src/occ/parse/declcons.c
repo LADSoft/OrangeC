@@ -47,6 +47,7 @@ extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern TYPE stdpointer, stdint;
 extern int total_errors;
 extern INCLUDES *includes;
+extern BOOLEAN functionCanThrow;
 	
 static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst);
 static void createDestructor(SYMBOL *sp);
@@ -296,6 +297,7 @@ static SYMBOL *declareDestructor(SYMBOL *sp)
     tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
     func = makeID(sc_member, tp, NULL, overloadNameTab[CI_DESTRUCTOR]);
+    func->xcMode = xc_none;
     tp->syms = CreateHashTable(1);        
     sp1 = makeID(sc_parameter, tp->btp, NULL, AnonymousName());
     insert(sp1, tp->syms);
@@ -1330,6 +1332,8 @@ static void shimDefaultConstructor(SYMBOL *sp, SYMBOL *cons)
             }
             st = stmtNode(NULL, &b, st_return);
             st->select = e1;
+            consfunc->xcMode = cons->xcMode;
+            consfunc->xc->xcDynamic = cons->xc->xcDynamic;
             consfunc->inlineFunc.stmt = stmtNode(NULL,NULL, st_block);
             consfunc->inlineFunc.stmt->lower = b.head;
             consfunc->inlineFunc.syms = basetype(consfunc->tp)->syms;
@@ -1542,10 +1546,10 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
 }
 static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOLEAN top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
 {
+    STATEMENT *st = NULL;
     if (member->init)
     {
         EXPRESSION *exp;
-        STATEMENT *st;
         if (member->init->exp)
         {
             exp = convertInitToExpression(member->tp, member, NULL, member->init, thisptr, FALSE);
@@ -1564,7 +1568,6 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
     {
         TYPE *ctype = member->tp;
         EXPRESSION *exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
-        STATEMENT *st;
         if (doCopy && matchesCopy(parentCons, FALSE))
         {
             FUNCTIONCALL *params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -2698,6 +2701,7 @@ void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *a
         params->fcall = varNode(en_pc, dest1);
     if (dest1)
     {
+        CheckCalledException(dest1, params->thisptr);
         if (!skipAccess && dest1 && !isAccessible(against,sp, dest1, theCurrentFunc, top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected, FALSE))
         {
             errorsym(ERR_CANNOT_ACCESS, dest1);
@@ -2793,6 +2797,7 @@ BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params,
         
     if (cons1 && isfunction(cons1->tp))
     {
+        CheckCalledException(cons1, params->thisptr);
         
         if (cons1->castoperator)
         {

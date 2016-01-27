@@ -702,9 +702,11 @@ static SYMBOL *DumpXCSpecifiers(SYMBOL *funcsp)
         {
             case xc_none:
                 genint(XD_NOXC);
+                genint(0);
                 break;
             case xc_all:
                 genint(XD_ALLXC);
+                genint(0);
                 break;
             case xc_dynamic:
                 genint(XD_DYNAMICXC);
@@ -765,7 +767,7 @@ static BOOLEAN throughThis(EXPRESSION *exp)
 }
 void XTDumpTab(SYMBOL *funcsp)
 {
-    if (funcsp->xc && cparams.prm_xcept)
+    if (funcsp->xc && funcsp->xc->xctab && cparams.prm_xcept)
     {
         XCLIST *list = NULL, **listPtr = &list, *p;
         SYMBOL *throwSym;

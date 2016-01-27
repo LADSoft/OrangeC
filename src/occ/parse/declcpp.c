@@ -61,6 +61,7 @@ extern LIST *openStructs;
 extern int structLevel;
 extern LAMBDA *lambdas;
 extern int anonymousNotAlloc;
+extern BOOLEAN functionCanThrow;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -383,7 +384,7 @@ static void checkAmbiguousVirtualFunc(SYMBOL *sp, VTABENTRY **match, VTABENTRY *
         vt = vt->next;
     }
 }
-static void checkXT(SYMBOL *sym1, SYMBOL *sym2)
+static void checkXT(SYMBOL *sym1, SYMBOL *sym2, BOOLEAN func)
 {
 
     if (sym1->xcMode == xc_dynamic && sym2->xcMode == xc_dynamic)
@@ -402,7 +403,10 @@ static void checkXT(SYMBOL *sym1, SYMBOL *sym2)
             if (!l2)
             {
                 currentErrorLine = 0;
-                errorsym(ERR_EXCEPTION_SPECIFIER_AT_LEAST_AS_RESTRICTIVE, sym1);
+                if (func)
+                    errorsym(ERR_EXCEPTION_SPECIFIER_BLOCKS_EXCEPTIONS, sym1);
+                else
+                    errorsym(ERR_EXCEPTION_SPECIFIER_AT_LEAST_AS_RESTRICTIVE, sym1);
                 break;
             }
             l1 = l1->next;
@@ -410,11 +414,16 @@ static void checkXT(SYMBOL *sym1, SYMBOL *sym2)
     }
     else if (sym1->xcMode != sym2->xcMode)
     {
-        if ((sym1->xcMode == xc_all && sym2->xcMode != xc_unspecified )
-            || (sym1->xcMode == xc_unspecified && sym2->xcMode != xc_all) || sym2->xcMode == xc_none)
+        if (sym2->xcMode != xc_unspecified && sym2->xcMode != xc_all)
         {
-            currentErrorLine = 0;
-            errorsym(ERR_EXCEPTION_SPECIFIER_AT_LEAST_AS_RESTRICTIVE, sym1);
+            if (sym1->xcMode == xc_dynamic && sym1->xc->xcDynamic || sym1->xcMode == xc_unspecified || sym1->xcMode == xc_all)
+            {
+                currentErrorLine = 0;
+                if (func)
+                    errorsym(ERR_EXCEPTION_SPECIFIER_BLOCKS_EXCEPTIONS, sym1);
+                else
+                    errorsym(ERR_EXCEPTION_SPECIFIER_AT_LEAST_AS_RESTRICTIVE, sym1);
+            }
         }
     }
 }
@@ -446,7 +455,7 @@ static void checkExceptionSpecification(SYMBOL *sp)
                                 char *f2 = strrchr(sym3->decoratedName, '@');
                                 if (f2 && !strcmp(f1, f2))
                                 {
-                                    checkXT(sym1, sym3);
+                                    checkXT(sym1, sym3, FALSE);
                                 }
                                 hr3 = hr3->next;
                             }
@@ -459,6 +468,11 @@ static void checkExceptionSpecification(SYMBOL *sp)
         }
         hr = hr->next;
     }
+}
+void CheckCalledException(SYMBOL *cst, EXPRESSION *exp)
+{
+    if (cst->xcMode != xc_none && (cst->xcMode != xc_dynamic || cst->xc && cst->xc->xcDynamic))
+        functionCanThrow = TRUE;
 }
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset)
 {

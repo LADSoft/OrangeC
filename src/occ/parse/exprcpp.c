@@ -75,6 +75,7 @@ extern LAMBDA *lambdas;
 extern int currentErrorLine;
 extern int templateNestingCount;
 extern LAMBDA *lambdas;
+extern BOOLEAN functionCanThrow;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -454,6 +455,7 @@ BOOLEAN cppCast(TYPE *src, TYPE **tp, EXPRESSION **exp)
             {
                 FUNCTIONCALL *params = Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION *e1;
+                CheckCalledException(cst, *exp);
                 *exp = DerivedToBase(cst->parentClass->tp, src, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
@@ -1273,6 +1275,7 @@ BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTI
         *exp = intNode(en_func, 0);
         (*exp)->v.func = funcparams;
         *tp = s3->tp;
+        CheckCalledException(s3, *exp);
         return TRUE;
     }
     funcparams->thistp = NULL;
@@ -1543,6 +1546,7 @@ BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp,
             createAssignment(s3->parentClass, s3);
         if (l.str)
             dropStructureDeclaration();
+        CheckCalledException(s3, funcparams->thisptr);
         return TRUE;
     }
     if (l.str)
@@ -2119,7 +2123,7 @@ static BOOLEAN noexceptExpression(EXPRESSION *node)
             fp = node->v.func;
             {
                 SYMBOL *sp = fp->sp;
-                rv = sp->xcMode == xc_none || (sp->xcMode == xc_dynamic && !sp->xc->xcDynamic);
+                rv = sp->xcMode == xc_none || (sp->xcMode == xc_dynamic && (!sp->xc || !sp->xc->xcDynamic));
             }
             break;
         case en_stmt:

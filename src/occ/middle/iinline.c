@@ -367,6 +367,11 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
         f->sp->dumpInlineToFile = TRUE;
         return NULL;
     }
+    if (basetype(basetype(f->sp->tp)->btp) == bt_memberptr)
+    {
+        f->sp->dumpInlineToFile = TRUE;
+        return NULL;
+    }
     hr = basetype(f->sp->tp)->syms->table[0];
     while (hr)
     {

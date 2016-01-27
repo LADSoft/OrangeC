@@ -2960,7 +2960,17 @@ static void matchFunctionDeclaration(LEXEME *lex, SYMBOL *sp, SYMBOL *spo, BOOLE
     }
     else if (spo->xcMode != sp->xcMode)
     {
-        if (sp->xcMode == xc_unspecified)
+        if (spo->xcMode == xc_none && sp->xcMode == xc_dynamic)
+        {
+            if (sp->xc->xcDynamic)
+                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+        }
+        else if (sp->xcMode == xc_none && spo->xcMode == xc_dynamic)
+        {
+            if (spo->xc->xcDynamic)
+                errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
+        }
+        else if (sp->xcMode == xc_unspecified)
         {
             if (!MATCHKW(lex, begin))
                 errorsym(ERR_EXCEPTION_SPECIFIER_MUST_MATCH, sp);
@@ -3604,7 +3614,9 @@ LEXEME *getExceptionSpecifiers(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_s
                 lex = getsym();
                 if (MATCHKW(lex, closepa))
                 {
-                    sp->xcMode = xc_none;
+                    sp->xcMode = xc_dynamic;
+                    if (!sp->xc)
+                        sp->xc = Alloc(sizeof(struct xcept));
                 }
                 else
                 {
@@ -5093,6 +5105,8 @@ jointemplate:
                         if (inTemplate && (!sp->templateParams || MATCHKW(lex,colon) ||
                                 MATCHKW(lex, begin) || MATCHKW(lex, kw_try)))
                             sp->templateParams = TemplateGetParams(sp);
+                        if (sp->isDestructor && sp->xcMode == xc_unspecified)
+                            sp->xcMode = xc_none;
                         if (sp->constexpression && !sp->isDestructor && !sp->isConstructor)
                         {
                             TYPE *tpx = Alloc(sizeof(TYPE));

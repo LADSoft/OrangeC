@@ -77,7 +77,7 @@ extern BOOLEAN hasXCInfo;
 extern STRUCTSYM *structSyms;
 extern int anonymousNotAlloc;
 extern int expandingParams;
-
+extern BOOLEAN functionCanThrow;
 int packIndex;
 
 int argument_nesting;
@@ -2553,7 +2553,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                 p->exp = exprNode(en_stackblock, p->exp, NULL);
                 p->exp->size = p->tp->size;
             }
-        }            
+        }   
         hr = hr->next;
         lptr = &(*lptr)->next;
     }
@@ -2984,6 +2984,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             {
                 AdjustParams(funcparams->sp, hr, lptr, operands, TRUE);
             }
+            CheckCalledException(funcparams->sp, funcparams->thisptr);
             if (cparams.prm_cplusplus)
             {
                 lptr = &funcparams->arguments;
@@ -5837,6 +5838,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
                         sp = GetOverloadedFunction(tp, exp, (*tp)->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
                         if (sp)
                         {
+                            sp->genreffed = TRUE;                    
                             *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
                             done = TRUE;
                         }
@@ -5910,6 +5912,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
                     sp = GetOverloadedFunction(&tp1, &exp1, tp1->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
                     if (sp)
                     {
+                        sp->genreffed = TRUE;
                         *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
                         done = TRUE;
                     }
@@ -6252,6 +6255,7 @@ LEXEME *expression_throw(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **ex
     *tp = &stdvoid;
     hasXCInfo = TRUE;
     lex = getsym();
+    functionCanThrow = TRUE;
     if (!MATCHKW(lex, semicolon))
     {
         SYMBOL *sp = namespacesearch("_ThrowException", globalNameSpace, FALSE, FALSE);

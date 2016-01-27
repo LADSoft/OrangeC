@@ -2470,7 +2470,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 ap1 = make_immed(size, node->v.i);
             }
             ap1->offset->unionoffset = node->unionoffset;
-            ap1->offset->type = node->type;
+            ap1->offset->type = node->type == en_nullptr ? en_c_i : node->type;
             ap2 = LookupImmedTemp(ap1, ap1);
             if (ap1 != ap2)
             {

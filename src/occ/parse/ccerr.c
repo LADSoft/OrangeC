@@ -534,6 +534,8 @@ static struct {
 {"ISO C++ forbids in-class initialization of non-const static member '%s'", ERROR },
 {"Need packed template parameter", ERROR },
 {"Mismatched types '%s' and '%s' while infering lambda return type", ERROR },
+{"Exception specifier blocks exceptions thrown from '%s'", WARNING },
+{"Exception specifier blocks locally thrown exception of type '%s'", WARNING },
 #endif
 } ;
 

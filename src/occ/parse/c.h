@@ -601,7 +601,8 @@ typedef struct sym
                                 // following elements are the list of pointers to names
     struct sym *parentTemplate; // could be the parent of a specialization or an instantiation
     struct init * init, *lastInit, *dest;
-    enum e_xc { xc_unspecified, xc_none, xc_all, xc_dynamic } xcMode;
+    // order is important for this next, a comparison is done based on this ordering
+    enum e_xc { xc_unspecified, xc_all, xc_dynamic, xc_none } xcMode;
     struct xcept
     {
         LIST *xcDynamic; // list of types, the exception specification when dynamic

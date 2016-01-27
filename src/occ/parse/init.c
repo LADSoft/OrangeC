@@ -1063,6 +1063,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                     exp2 = &(*exp2)->left;
                 if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads && (*exp2)->v.func->sp->tp->syms->table[0])
                 {
+                    SYMBOL *sp2;
                     HASHREC *hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
                     FUNCTIONCALL fpargs;
                     INITLIST **args = &fpargs.arguments;
@@ -1080,7 +1081,9 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                     if (*exp2 && (*exp2)->type == en_func)
                        fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
-                    GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    sp2 = GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    if (sp2)
+                        sp2->genreffed = TRUE;                    
                 }
                 if (cparams.prm_cplusplus && (isarithmetic(itype) || basetype(itype)->type == bt_enum) && isstructured(tp))
                 {
@@ -1231,6 +1234,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                 }
                 if (hrp)
                 {
+                    SYMBOL *sp2;
                     memset(&fpargs, 0, sizeof(fpargs));
                     while (hrp)
                     {
@@ -1244,7 +1248,9 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                     if (*exp2 && (*exp2)->type == en_func)
                        fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
-                    GetOverloadedFunction(ispointer(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    sp2 = GetOverloadedFunction(ispointer(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    if (sp2)
+                        sp2->genreffed = TRUE;                    
                 }
             }
             if (tp->type == bt_memberptr)

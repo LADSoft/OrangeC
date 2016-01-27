@@ -3854,6 +3854,9 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                         {
                             argl->tp = func->tp;
                             argl->exp = varNode(en_pc, func);
+                            func->genreffed = TRUE;
+                            InsertInline(func);
+                            InsertExtern(func);
                         }
                     }
                 }

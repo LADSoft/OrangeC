@@ -5,8 +5,7 @@
     All rights reserved.
     
     Redistribution and use of this software in source and binary forms, 
-    with or without modification, are permitted provided that the following 
-    conditions are met:
+    with or without  met:
     
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
@@ -68,6 +67,7 @@ int nextLabel;
 BOOLEAN setjmp_used;
 BOOLEAN functionHasAssembly;
 BOOLEAN declareAndInitialize;
+BOOLEAN functionCanThrow;
 
 LINEDATA *linesHead, *linesTail;
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
@@ -80,6 +80,7 @@ void statement_ini()
 {
     nextLabel = 1;
     linesHead = linesTail = NULL;
+    functionCanThrow = FALSE;
 }
 void InsertLineData(int lineno, int fileindex, char *fname, char *line)
 {
@@ -1638,6 +1639,30 @@ static EXPRESSION *ConvertReturnToRef(EXPRESSION *exp, TYPE *tp, TYPE *boundTP)
     }
     return exp;
 }
+static SYMBOL *baseNode(EXPRESSION *node)
+{
+    if (!node)
+        return 0;
+    switch (node->type)
+    {
+        case en_label:
+        case en_auto:
+        case en_pc:
+        case en_global:
+        case en_tempref:
+        case en_threadlocal:
+            return node;
+        case en_add:
+        {
+            EXPRESSION *rv = baseNode(node->left);
+            if (rv)
+                return rv;
+            return baseNode(node->right);
+        }
+        default:
+            return 0;
+    }
+}
 static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
 {
     STATEMENT *st;
@@ -1724,7 +1749,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     FUNCTIONCALL *funcparams = Alloc(sizeof(FUNCTIONCALL));
                     TYPE *ctype = tp;
                     // shortcut for conversion from single expression
-                    EXPRESSION *exp1 = NULL;
+                    EXPRESSION *exp1 = NULL, *exp2, *exp3 = NULL;
                     TYPE *tp1 = NULL;
                     lex = expression_no_comma(lex, funcsp, NULL, &tp1, &exp1, NULL, 0);
                     if (tp1 && isstructured(tp1))
@@ -1739,30 +1764,59 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         }
                         optimize_for_constants(&exp1);
                     }
-                    funcparams->arguments = Alloc(sizeof(INITLIST));
-                    funcparams->arguments->tp = tp1;
-                    funcparams->arguments->exp = exp1;
-                    oldrref = basetype(tp1)->rref;
-                    oldlref = basetype(tp1)->lref;
-                    basetype(tp1)->rref = exp1->type == en_func || exp1->type == en_thisref || exp1->type == en_auto;
-                    basetype(tp1)->lref = !basetype(tp1)->rref;
-                    maybeConversion = FALSE;
-                    returntype = tp;
-                    implicit = TRUE;
-                    callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE); 
-                    returnexp = en;
-                    basetype(tp1)->rref = oldrref;
-                    basetype(tp1)->lref = oldlref;
-                    if (funcparams->sp && matchesCopy(funcparams->sp, TRUE))
+                    /*
+                    exp2 = exp1;
+                    if (exp2->type == en_thisref)
+                        exp2 = exp2->left;
+                    if (exp2->type == en_func)
+                        if (exp2->v.func->sp->isConstructor)
+                            exp3 = baseNode(exp2->v.func->thisptr);
+                        else if (exp2->v.func->returnEXP)
+                            exp3 = baseNode(exp2->v.func->returnEXP);
+                    if (exp2->type == en_func && exp3 && exp3->type == en_auto && exp3->v.sp->anonymous &&
+                        (exp2->v.func->sp->isConstructor && comparetypes(basetype(exp2->v.func->thistp)->btp, tp1, TRUE) ||
+                         !exp2->v.func->sp->isConstructor && exp2->v.func->returnSP && comparetypes(exp2->v.func->returnSP->tp, tp1, TRUE)))
                     {
-                        switch (exp1->type)
+                        // either a constructor for the return type or function returning the return type
+                        if (exp2->v.func->sp->isConstructor)
                         {
-                            case en_global:
-                            case en_label:
-                            case en_auto:
-                            case en_threadlocal:
-                                exp1->v.sp->dest = NULL;
-                                break;
+                            exp2->v.func->thisptr = en;
+                        }
+                        else
+                        {
+                            exp2->v.func->returnEXP = en;
+                        }
+                        returntype = tp;
+                        returnexp = exp1;
+                    }
+                    else
+                    */
+                    {
+                        funcparams->arguments = Alloc(sizeof(INITLIST));
+                        funcparams->arguments->tp = tp1;
+                        funcparams->arguments->exp = exp1;
+                        oldrref = basetype(tp1)->rref;
+                        oldlref = basetype(tp1)->lref;
+                        basetype(tp1)->rref = exp1->type == en_func || exp1->type == en_thisref || exp1->type == en_auto;
+                        basetype(tp1)->lref = !basetype(tp1)->rref;
+                        maybeConversion = FALSE;
+                        returntype = tp;
+                        implicit = TRUE;
+                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE); 
+                        returnexp = en;
+                        basetype(tp1)->rref = oldrref;
+                        basetype(tp1)->lref = oldlref;
+                        if (funcparams->sp && matchesCopy(funcparams->sp, TRUE))
+                        {
+                            switch (exp1->type)
+                            {
+                                case en_global:
+                                case en_label:
+                                case en_auto:
+                                case en_threadlocal:
+                                    exp1->v.sp->dest = NULL;
+                                    break;
+                            }
                         }
                     }
                 }
@@ -2984,15 +3038,22 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     }
     if (first && cparams.prm_cplusplus)
     {
-        if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
-            thunkDestructorTail(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
-    }
-    if (first && cparams.prm_cplusplus)
-    {
+        if (functionCanThrow)
+        {
+            if (funcsp->xcMode == xc_none || funcsp->xcMode == xc_dynamic)
+            {
+                hasXCInfo = TRUE;
+            }
+        }
+        else if (funcsp->xcMode == xc_dynamic && funcsp->xc->xcDynamic)
+            hasXCInfo = TRUE;
         if (hasXCInfo && cparams.prm_xcept)
         {
+            funcsp->noinline = TRUE;
             insertXCInfo(funcsp);
         }
+        if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
+            thunkDestructorTail(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
     }
     FreeLocalContext(blockstmt, funcsp, codeLabel++);
     if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto && !funcsp->isConstructor)
@@ -3285,6 +3346,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     BOOLEAN oldfunctionHasAssembly = functionHasAssembly;
     BOOLEAN oldDeclareAndInitialize = declareAndInitialize;
     BOOLEAN oldHasXCInfo = hasXCInfo;
+    BOOLEAN oldFunctionCanThrow = functionCanThrow;
     HASHTABLE *oldSyms = localNameSpace->syms;
     HASHTABLE *oldLabelSyms = labelSyms;
     SYMBOL *oldtheCurrentFunc = theCurrentFunc;
@@ -3292,6 +3354,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     STATEMENT *startStmt;
     SYMBOL *spt = funcsp;
     int oldCodeLabel = codeLabel;
+    functionCanThrow = FALSE;
     codeLabel = INT_MIN;
     hasXCInfo = FALSE;
     localNameSpace->syms = NULL;
@@ -3302,8 +3365,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     theCurrentFunc = funcsp;
 
     checkUndefinedStructures(funcsp);
-//    if (funcsp->xcMode != xc_unspecified)
-//        hasXCInfo = TRUE;
     FlushLineData(funcsp->declfile, funcsp->declline);
     startStmt = currentLineData(NULL, lex, 0);
     if (startStmt)
@@ -3388,5 +3449,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     localNameSpace->syms = oldSyms;
     labelSyms = oldLabelSyms;
     codeLabel = oldCodeLabel;
+    functionCanThrow = oldFunctionCanThrow;
     return lex;
 }

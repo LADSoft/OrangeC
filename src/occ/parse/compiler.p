@@ -158,6 +158,7 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
 LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces);
 LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_class, BOOLEAN beforeOnly, BOOLEAN toErr);
 int classRefCount(SYMBOL *base, SYMBOL *derived);
+void CheckCalledException(SYMBOL *cst, EXPRESSION *exp);
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset);
 void deferredCompileOne(SYMBOL *cur);
 void deferredCompile(void);

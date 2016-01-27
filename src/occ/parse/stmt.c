@@ -3045,7 +3045,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
                 hasXCInfo = TRUE;
             }
         }
-        else if (funcsp->xcMode == xc_dynamic && funcsp->xc->xcDynamic)
+        else if (funcsp->xcMode == xc_dynamic && funcsp->xc && funcsp->xc->xcDynamic)
             hasXCInfo = TRUE;
         if (hasXCInfo && cparams.prm_xcept)
         {

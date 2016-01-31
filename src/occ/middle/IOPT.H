@@ -238,7 +238,7 @@ typedef struct _aliasAddress
 	struct _aliaslist *pointsto;
 	int offset;
     BITINT *modifiedBy;
-	BOOLEAN processed;
+    int processIndex;
 } ALIASADDRESS;
 
 typedef struct _aliaslist

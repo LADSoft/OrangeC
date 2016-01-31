@@ -75,7 +75,8 @@ int cachedTempCount;
 BITINT *uivBytes;
 static BOOLEAN changed;
 static ALIASLIST *parmList;
-
+static int processCount;
+BITINT *processBits;
 struct UIVHash
 {
     struct UIVHash *next;
@@ -246,19 +247,6 @@ static ALIASNAME *LookupMem(IMODE *im)
     }
     return *p;
 }
-static BOOLEAN samebase(ALIASNAME *nm1, ALIASNAME *nm2)
-{
-    IMODE *im1, *im2;
-    if (nm1->byUIV)
-        im1 = nm1->v.uiv->im;
-    else
-        im1 = nm1->v.name;
-    if (nm2->byUIV)
-        im2 = nm2->v.uiv->im;
-    else
-        im2 = nm2->v.name;
-    return (im1 == im2);
-}
 static void AliasUnion(ALIASLIST **dest, ALIASLIST *src)
 {
     while (src)
@@ -266,11 +254,21 @@ static void AliasUnion(ALIASLIST **dest, ALIASLIST *src)
         ALIASLIST **q = dest;
         while (*q)
         {
+            ALIASNAME *nm1 = (*q)->address->name, *nm2 = src->address->name;
+            IMODE *im1, *im2;
             // we don't check the offset here because of the rule if the same
             // name is used with different offsets it is assumed to be an array.
-            if ((*q)->address->name == src->address->name)
+            if (nm1 == nm2)
                 break;
-            if (samebase((*q)->address->name, src->address->name))
+            if (nm1->byUIV)
+                im1 = nm1->v.uiv->im;
+            else
+                im1 = nm1->v.name;
+            if (nm2->byUIV)
+                im2 = nm2->v.uiv->im;
+            else
+                im2 = nm2->v.name;
+            if (im1 == im2)
                 break;
             q = &(*q)->next;
         }
@@ -616,13 +614,17 @@ static void HandleAssn(QUAD *head)
         }
         else if (head->temps & TEMP_ANS)
         {			
-            if (head->dc.left->mode == i_immed && head->dc.left->size == ISZ_ADDR && head->dc.left->offset->type != en_labcon )
+            if (head->dc.left->mode == i_immed && head->dc.left->size == ISZ_ADDR && head->dc.left->offset->type != en_labcon&& !isintconst(head->dc.left->offset) )
             {
                 // temp, immed
-                ALIASNAME *an = LookupMem(head->ans->offset->v.sp->imvalue);
+                BOOLEAN xchanged = changed;
+                ALIASNAME *an = LookupMem(head->dc.left);
                 ALIASADDRESS *aa = LookupAddress(an, 0);
+                ALIASLIST *al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
+                al->address = aa;
                 tempInfo[head->ans->offset->v.sp->value.i]->pointsto = NULL;
-                AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, aa->pointsto);
+                AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
+                changed = xchanged;
             }
             else if (head->dc.left->retval)
             {
@@ -907,19 +909,16 @@ static void HandleAdd(QUAD *head)
 }
 static void HandleAssnBlock(QUAD *head)
 {
-    ALIASLIST *src=NULL, *dest=NULL;
-    int i, n = head->ans->offset->v.i;
+    ALIASNAME *dest = NULL;
     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
     {
-        dest = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
+        // we don't support writing to arbitrary memory, e.g. a pointer returned from a function call
+        return;
     }
     else if (head->dc.left->mode == i_immed)
     {
-        ALIASNAME *an = LookupMem(head->dc.left);
-        ALIASADDRESS *aa;
-        an = LookupAliasName(an, 0);
-        aa = LookupAddress(an, 0);
-        dest = aa->pointsto;
+        dest = LookupMem(head->dc.left);
+        dest = LookupAliasName(dest, 0);
     }
     else
     {
@@ -928,38 +927,37 @@ static void HandleAssnBlock(QUAD *head)
     
     if (head->dc.right->mode == i_direct && ((head->temps & TEMP_RIGHT) || head->dc.right->retval))
     {
-        src = tempInfo[head->dc.right->offset->v.sp->value.i]->pointsto;
+        ALIASLIST *src = tempInfo[head->dc.right->offset->v.sp->value.i]->pointsto;
+        while (src)
+        {
+            ALIASNAME *srcn = src->address->name;
+            LIST *addr = srcn->addresses;
+            while (addr)
+            {
+                ALIASADDRESS *aa= (ALIASADDRESS *)addr  ->data;
+    		    ALIASADDRESS *aadest = LookupAddress(dest, aa->offset);
+                AliasUnion(&aadest->pointsto, aa->pointsto);
+                addr = addr->next;
+            }
+            src = src->next;
+        }
     }
     else if (head->dc.right->mode == i_immed)
     {
-        ALIASNAME *an = LookupMem(head->dc.right);
-        ALIASADDRESS *aa;
-        an = LookupAliasName(an, 0);
-        aa = LookupAddress(an, 0);
-        src = aa->pointsto;
+        ALIASNAME *src = LookupMem(head->dc.right);
+        LIST *addr;
+        addr = src->addresses;
+        while (addr)
+        {
+            ALIASADDRESS *aa= (ALIASADDRESS *)addr->data;
+		    ALIASADDRESS *aadest = LookupAddress(dest, aa->offset);
+            AliasUnion(&aadest->pointsto, aa->pointsto);
+            addr = addr->next;
+        }
     }
     else
     {
         diag("HandleAssnBlock: invalid src type");
-    }
-    for (i=0; i < n; i++)
-    {
-        ALIASLIST *lsrc = src;
-        while (lsrc)
-        {
-            ALIASADDRESS *aasrc = GetAddress(lsrc->address->name, i);
-			if (aasrc)
-			{
-				ALIASLIST *ldest = dest;
-				while (ldest)
-				{
-					ALIASADDRESS *aadest = LookupAddress(ldest->address->name, i);
-					AliasUnion(&aadest->pointsto, aasrc->pointsto);
-					ldest = ldest->next;
-				}
-			}
-			lsrc = lsrc->next;
-		}
     }
 }
 static void HandleParmBlock(QUAD *head)
@@ -1114,9 +1112,9 @@ static void scanDepends(BITINT *bits, ALIASLIST *alin)
         ALIASADDRESS *aa2 = (ALIASADDRESS *)al->address;
         IMODE *im;
           while (aa2->merge) aa2 = aa2->merge;
-        if (!aa2->processed)
+        if (!isset(processBits, aa2->processIndex))
         {
-            aa2->processed = TRUE;
+            setbit(processBits, aa2->processIndex);
             if (aa2->modifiedBy)
                 ormap(bits, aa2->modifiedBy);
             scanDepends(bits, aa2->pointsto);
@@ -1191,12 +1189,8 @@ void AliasGosub(QUAD *tail, BITINT *parms, BITINT *bits, int n)
             if (tail->temps & TEMP_LEFT)
             {
                 ALIASLIST *al = tempInfo[tail->dc.left->offset->v.sp->value.i]->pointsto;
-                while (al)
-                {   
-                    ResetProcessed();
-                    scanDepends(parms, al->address->pointsto);
-                    al = al->next;
-                }
+                ResetProcessed();
+                scanDepends(parms, al);
             }
             else
             {
@@ -1350,16 +1344,25 @@ static void MakeAliasLists(void)
 }
 static void ResetProcessed(void)
 {
+    bitarrayClear(processBits, processCount);
+}
+static void AllocateProcessed(void)
+{
     int i;
+    processCount = 0;
     for (i=0; i < DAGSIZE; i++)
     {
-        ALIASADDRESS *aa = addresses[i];
-        while (aa)
+        ALIASADDRESS *addr = addresses[i];
+        while (addr)
         {
-            aa->processed = FALSE;
-            aa = aa->next;
+            ALIASADDRESS *aa = addr;
+            while (aa->merge)
+                aa = aa->merge;
+            aa->processIndex = processCount++;
+            addr = addr->next;
         }
     }
+    processBits = aallocbit(processCount);
 }
 static void GatherInds(BITINT *p, int n, ALIASLIST *al)
 {
@@ -1367,9 +1370,9 @@ static void GatherInds(BITINT *p, int n, ALIASLIST *al)
     {
         int k;
         BITINT *r, *s;
-        if (!al->address->processed)
+        if (!isset(processBits, al->address->processIndex))
         {
-            al->address->processed = TRUE;
+            setbit(processBits, al->address->processIndex);
             GatherInds(p, n, al->address->pointsto);
         }
         s = p;
@@ -1425,10 +1428,11 @@ void AliasPass1(void)
 }
 void AliasPass2(void)
 {
+    AllocateProcessed();
     MakeAliasLists();
     ScanUIVs();
     ScanMem();
-//    if (icdFile)
-//        DumpAliases();
+    if (icdFile)
+        DumpAliases();
     complementmap(uivBytes);
 }

@@ -300,8 +300,8 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
     int oldretcount = retcount;
     int oldOffset = codeLabelOffset;
     EXPRESSION *oldthis = inlinesym_thisptr[inlinesym_count];
-    
-//    return NULL;
+
+    //return NULL;    
     if (cparams.prm_debug)
     {
         f->sp->dumpInlineToFile = TRUE;

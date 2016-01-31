@@ -4923,7 +4923,7 @@ jointemplate:
                             linkage = lk_none;
                         sp->isInline = TRUE;
                     }
-                    else if (cparams.prm_optimize_for_speed && isfunction(tp1) && storage_class_in != sc_member && storage_class_in != sc_mutable)
+                    else if (!cparams.prm_profiler && cparams.prm_optimize_for_speed && isfunction(tp1) && storage_class_in != sc_member && storage_class_in != sc_mutable)
                     {
                         if (!strSym)
                         {

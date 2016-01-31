@@ -43,21 +43,28 @@
 #pragma startup init_profile 50
 extern char **_argv;
 
-unsigned _elapsed_time(void);
+unsigned long long _current_time(void);
 
 typedef struct _profile {
     struct _profile *hashlink;
-    struct _profile *link;
     char *name;
-   unsigned int time;
-   unsigned int starttime;
+   unsigned long long time;
+   unsigned long long totaltime;
+   unsigned long long starttime;
+   unsigned long long globalstarttime;
     unsigned count;
+    unsigned nesting;
 } PROFILE;
     
 #define PROFILESTR "$$$PROFILER"
 #define PROFILESTR1 "$$$PROFILER1"
 
-static PROFILE *proclink;
+typedef struct _list
+{
+    struct _list *next;
+    PROFILE *data;
+} LIST;
+static LIST *stack;
 static int profiling = 0;
 static int profileincomplete = 0;
 static int profnames = 0;
@@ -73,7 +80,7 @@ static void init_profile(void)
 {
     // won't work quite right in a multithreaded app
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL + THREAD_PRIORITY_HIGHEST);
-    _elapsed_time();
+    _current_time();
     profiling = 1;
     validate();
 }
@@ -82,8 +89,8 @@ static int comparison(const void *a, const void *b)
 {
     PROFILE *x=*((PROFILE **)a),*y=*((PROFILE **)b);
     unsigned r,s;
-    r = x->time;
-    s = y->time;
+    r = x->totaltime;
+    s = y->totaltime;
     if (r & 0xf0000000)
         r = 0;
     if (s & 0xf0000000)
@@ -103,7 +110,7 @@ static void validate(void)
     _profile_out(PROFILESTR1);
     _profile_out(PROFILESTR);
     t = HashIt(PROFILESTR);
-    fnoverhead = t->time;
+    fnoverhead = 0;//t->time;
 }
 static void show_profile(void)
 {
@@ -114,7 +121,7 @@ static void show_profile(void)
 #endif
     int i,pos=0;
     char name[256],*s;
-    unsigned totaltime = 0,totalcount=0;
+    unsigned long long totaltime = 0,totalcount=0;
     profiling = 0;
 
 #ifdef XXXXX
@@ -151,9 +158,10 @@ static void show_profile(void)
     qsort(p,profnames,sizeof(PROFILE *),comparison);
     fprintf(out,"Profile info: (time: %10d, calls: %10d)\n\n",totaltime,totalcount);
     for (i=0; i < profnames; i++) {
-        unsigned v = p[i]->time ;
-        
-        fprintf(out,"%32s: %02u%% (time:%10u) (count:%10d) (avg:%10d)\n",p[i]->name,totaltime/100 > 0 ? v/(totaltime/100) : 0, v,p[i]->count,v/p[i]->count);
+        unsigned long long v = p[i]->time ;
+        unsigned long long u = p[i]->totaltime;
+        unsigned long long n = totaltime/100;
+        fprintf(out,"%32s: %02u%%/%02u%% (time:%10u) (count:%10d) (avg:%10d)\n",p[i]->name,(int)(n > 0 ? v/n : 0),(int)( n >0 ? u/n : 0), (int)v,p[i]->count,v/p[i]->count);
     }
     fclose(out);
     
@@ -167,35 +175,36 @@ static unsigned int ComputeHash(char *string)
 }
 static PROFILE *HashIt(char *str)
 {
-    int h = ComputeHash(str);
+    unsigned n = (unsigned)str;
+    unsigned h = (n + (n >>8) + (n >> 16) + (n >> 24) + (n << 8) + (n << 16) + (n << 24)) % HASH_SIZE;
     PROFILE *p = hashtab[h];
     while (p) {
-        if (!strcmp(p->name,str))
+        if (p->name == str)
             return p;
         p = p->hashlink;
     }
-    p = malloc(sizeof(PROFILE));
+    p = calloc(1, sizeof(PROFILE));
     if (!p)
         return p;
     profnames++;
     p->name = str;
-    p->time = 0;
-    p->count = 0;
     p->hashlink = hashtab[h];
-    p->link = 0;
     hashtab[h] = p;
     return p;
 }
 void _profile_in(char *name)
 {
-    int t;
+    LIST *l;
+    long long t;
+    unsigned long long x;
     PROFILE *p;
     if (!profiling)
         return;
-    if (proclink) {
-        t = _elapsed_time() - proclink->starttime;
-        if (t < 0) t = - t;
-        proclink->time += t - fnoverhead;
+    x = _current_time();
+    if (stack) {
+        t = x - stack->data->starttime;
+        if (t < 0) t= - t;
+        stack->data->time += t - fnoverhead;
     }
 
     profiling = 0;
@@ -204,24 +213,44 @@ void _profile_in(char *name)
         profileincomplete = 1;
         return;
     }
+    l = calloc(1, sizeof(LIST));
+    if (!l) {
+        profileincomplete = 1;
+        return;
+    }
+    l->data = p;
+    l->next = stack;
+    stack = l;
     profiling = 1;
-    p->link = proclink;
-    proclink = p;
-    p->count++;
-    p->starttime = _elapsed_time();
     
+    p->count++;
+    p->starttime = x;
+   if (!p->nesting++)
+        p->globalstarttime = x;
 }
 void _profile_out_1(char *name)
 {
-    int t;
-    if (!profiling || !proclink)
+    long long t;
+    unsigned long long x = _current_time();
+    PROFILE *proclink;
+    LIST *toFree;
+    if (!profiling || !stack)
     {
         return;
     }
-    t = _elapsed_time() - proclink->starttime;
+    proclink = stack->data;
+    toFree = stack;
+    stack = toFree->next;
+    free(toFree);
+    t = x - proclink->starttime;
     if (t < 0) t = - t;
     proclink->time += t - fnoverhead;
-    proclink = proclink->link;
-    if (proclink)
-        proclink->starttime = _elapsed_time();
+    if (!--proclink->nesting)
+    {
+        t = x - proclink->globalstarttime;
+        if (t < 0) t = - t;
+        proclink->totaltime += t - fnoverhead;
+    }
+    if (stack)
+        stack->data->starttime = x;
 }

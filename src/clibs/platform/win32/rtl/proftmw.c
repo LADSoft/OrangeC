@@ -45,19 +45,15 @@
 #include <locale.h>
 #include "libp.h"
 #include <windows.h>
-  
-static unsigned int ticks=0;
-static unsigned last_read;
 
-unsigned int _elapsed_time(void)
+unsigned long long _current_time(void)
 {
-#ifdef XXXXX
+#ifndef XXXXX
     LARGE_INTEGER x;
     QueryPerformanceCounter(&x);
-    return x.LowPart;
-#endif
+    return *(unsigned long long *)&x;
+#else
     int rv =  __ll_ticks() ;
-    int rv1 = last_read ;
-    last_read = rv ;
-    return rv - rv1 ;
+    return rv ;
+#endif
 }

@@ -44,6 +44,12 @@ endif
 
 all: $(DEPENDENCIES)
 
+profilew.o: profilew.c
+	$(CC) /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@F $^
+
+proftmw.o: proftmw.c
+	$(CC) /c /I$(STDINCLUDE) /9 -o$(OBJECT)\$@F $^
+
 vsconio.o: vsconio.c
 	$(CC) /c /I$(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@F $^
 

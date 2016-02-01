@@ -70,6 +70,7 @@ static int profileincomplete = 0;
 static int profnames = 0;
 static PROFILE *hashtab[HASH_SIZE];
 static unsigned fnoverhead;
+static int guard;
 
 void _profile_in(char *name);
 void _profile_out(char *name);
@@ -123,7 +124,7 @@ static void show_profile(void)
     char name[256],*s;
     unsigned long long totaltime = 0,totalcount=0;
     profiling = 0;
-
+    guard++;
 #ifdef XXXXX
     QueryPerformanceFrequency(&x);
 #endif
@@ -198,8 +199,9 @@ void _profile_in(char *name)
     long long t;
     unsigned long long x;
     PROFILE *p;
-    if (!profiling)
+    if (guard || !profiling)
         return;
+    guard++;
     x = _current_time();
     if (stack) {
         t = x - stack->data->starttime;
@@ -211,11 +213,13 @@ void _profile_in(char *name)
     p = HashIt(name);
     if (!p) {
         profileincomplete = 1;
+        guard--;
         return;
     }
     l = calloc(1, sizeof(LIST));
     if (!l) {
         profileincomplete = 1;
+        guard--;
         return;
     }
     l->data = p;
@@ -227,17 +231,20 @@ void _profile_in(char *name)
     p->starttime = x;
    if (!p->nesting++)
         p->globalstarttime = x;
+    guard--;
 }
 void _profile_out_1(char *name)
 {
     long long t;
-    unsigned long long x = _current_time();
+    unsigned long long x;
     PROFILE *proclink;
     LIST *toFree;
-    if (!profiling || !stack)
+    if (guard || !profiling || !stack)
     {
         return;
     }
+    guard++;
+    x = _current_time();
     proclink = stack->data;
     toFree = stack;
     stack = toFree->next;
@@ -253,4 +260,5 @@ void _profile_out_1(char *name)
     }
     if (stack)
         stack->data->starttime = x;
+    guard--;
 }

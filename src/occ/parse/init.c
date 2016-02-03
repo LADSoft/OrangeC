@@ -2107,7 +2107,9 @@ static void set_array_sizes(AGGREGATE_DESCRIPTOR *cache)
             {
                 int size = cache->max;
                 int base = basetype(cache->tp)->btp->size;
-                TYPE *temp = cache->tp;				
+                TYPE *temp = cache->tp;
+                if (base ==0)
+                    base = 1;				
                 size = size + base - 1;
                 size = (size / base) * base;
                 while (temp && temp->size == 0)

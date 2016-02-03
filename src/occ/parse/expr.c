@@ -2052,7 +2052,6 @@ void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListT
 }
 void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit)
 {
-
     if (func->storage_class == sc_overloads)
         return;
     if (hr && ((SYMBOL *)hr->p)->thisPtr)

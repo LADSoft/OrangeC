@@ -753,6 +753,8 @@ void optimize(SYMBOL *funcsp)
      */
     /* Global opts */
 
+    /* we do this here to remove multiple consecutive GOTO statements that confuse the flow analyzer */
+    peep_icode(TRUE);			/* peephole optimizations at the ICODE level */
     flows_and_doms();
     gatherLocalInfo(funcsp);
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)

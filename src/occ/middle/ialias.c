@@ -1432,7 +1432,7 @@ void AliasPass2(void)
     MakeAliasLists();
     ScanUIVs();
     ScanMem();
-    if (icdFile)
-        DumpAliases();
+//    if (icdFile)
+//        DumpAliases();
     complementmap(uivBytes);
 }

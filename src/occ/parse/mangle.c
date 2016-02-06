@@ -733,16 +733,24 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                 *in++ = 'g';
                 break;
             case bt_pointer:
-                if (first|| !tp->array)
+                if (tp->nullptrType)
                 {
-                    *in++ = 'p';
+                    in = lookupName(in, "nullptr_t");
+                    in += strlen(in);
                 }
                 else
                 {
-                    sprintf(in,"A%ld",tp->btp->size ? tp->size / tp->btp->size : 0);
-                    in += strlen(in);
+                    if (first|| !tp->array)
+                    {
+                        *in++ = 'p';
+                    }
+                    else
+                    {
+                        sprintf(in,"A%ld",tp->btp->size ? tp->size / tp->btp->size : 0);
+                        in += strlen(in);
+                    }
+                    in = mangleType(in, tp->btp, FALSE);
                 }
-                in = mangleType(in, tp->btp, FALSE);
                 break;
             case bt_far:
                 *in++ = 'P';

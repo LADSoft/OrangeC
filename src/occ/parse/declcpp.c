@@ -965,7 +965,6 @@ TYPE *PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp)
         if (sp->templateLevel && (!sp->instantiated || sp->linkage != lk_virtual) 
             && sp->templateParams && allTemplateArgsSpecified(sp, sp->templateParams->next))
         {
-            TEMPLATEPARAMLIST *tpl = sp->templateParams;
 	        sp = TemplateClassInstantiateInternal(sp, NULL, FALSE);
 		    if (sp)
 			    *tpx = sp->tp;

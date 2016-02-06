@@ -2929,6 +2929,21 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 seq[(*n)++] = CV_NONE;
             }                            
         }
+        else if (basetype(tpp)->nullptrType)
+        {
+            if (basetype(tpa)->nullptrType || ispointer(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr) )
+            {
+                seq[(*n)++] = CV_IDENTITY;
+            }
+            else if (isint(tpa) && expa && (isconstzero(tpa, expa) || expa->type == en_nullptr))
+            {
+                seq[(*n)++] = CV_POINTERCONVERSION;
+            }
+            else
+            {
+                seq[(*n)++] = CV_NONE;
+            }
+        }
         else if (ispointer(tpp))
         {
             if (ispointer(tpa))

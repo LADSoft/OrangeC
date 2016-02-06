@@ -6187,7 +6187,12 @@ static BOOLEAN checkArgType(TYPE *tp)
             return allTemplateArgsSpecified(basetype(tp)->sp, basetype(tp)->sp->templateParams->next);
         }
     }
-    else if (basetype(tp)->type == bt_templateparam || basetype(tp)->type == bt_templatedecltype)
+    else if (basetype(tp)->type == bt_templateparam)
+    {
+        if (!basetype(tp)->templateParam->p->byClass.val)
+            return FALSE;
+    }
+    else if (basetype(tp)->type == bt_templatedecltype)
         return FALSE;
     else if (basetype(tp)->type == bt_templateselector)
     {
@@ -6505,7 +6510,6 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
         l = l->next;
     }
     saveParams(origList, n);
-    restart:
     for (i=0; i < n; i++)
     {
             spList[i] = ValidateClassTemplate(origList[i], unspecialized, args);
@@ -6590,7 +6594,6 @@ SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr)
         if (!noErr)
         {
             errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
-            goto restart;
         }
         // might get more error info by procedeing;
         if (!sp->specializations)

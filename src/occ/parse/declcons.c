@@ -2405,7 +2405,7 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     {
         SYMBOL *parm;
         AdjustParams(asn1, basetype(asn1->tp)->syms->table[0], &params->arguments, FALSE, TRUE);
-        parm = (SYMBOL *)asn1->tp->syms->table[0]->next->p;
+        parm = (SYMBOL *)basetype(asn1->tp)->syms->table[0]->next->p;
         if (parm && isref(parm->tp))
         {
             TYPE *tp1 = Alloc(sizeof(TYPE));

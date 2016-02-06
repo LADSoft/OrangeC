@@ -355,15 +355,23 @@ TYPE *typenum(char *buf, TYPE *tp)
             if (tp->syms)
             {
                 hr = tp->syms->table[0];
-                if (((SYMBOL *)hr->p)->thisPtr)
+                if (hr && hr->p)
                 {
-                    SYMBOL *thisptr = (SYMBOL *)hr->p;
-                    *buf++ = ' ';
-                    *buf++='(';
-                    getcls(buf, basetype (basetype(thisptr->tp)->btp)->sp);
-                    strcat(buf, "::*)(");
-                    buf += strlen(buf);
-                    hr = hr->next;
+                    if (((SYMBOL *)hr->p)->thisPtr)
+                    {
+                        SYMBOL *thisptr = (SYMBOL *)hr->p;
+                        *buf++ = ' ';
+                        *buf++='(';
+                        getcls(buf, basetype (basetype(thisptr->tp)->btp)->sp);
+                        strcat(buf, "::*)(");
+                        buf += strlen(buf);
+                        hr = hr->next;
+                    }
+                    else
+                    {
+                       strcat(buf," (*)(");
+                        buf += strlen(buf);
+                    }
                 }
                 else
                 {
@@ -470,7 +478,14 @@ TYPE *typenum(char *buf, TYPE *tp)
             strcpy(buf, tn_void);
             break;
         case bt_pointer:
-            typenumptr(buf, tp);
+            if (tp->nullptrType)
+            {
+                strcpy(buf, "nullptr_t");
+            }
+            else
+            {
+                typenumptr(buf, tp);
+            }
             break;
         case bt_memberptr:
             if (isfunction(basetype(tp)->btp))

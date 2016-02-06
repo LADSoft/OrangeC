@@ -119,6 +119,19 @@ void dump_flowgraph(void)
     }
     fprintf(icdFile,"\n");
 }
+static void RemoveDuplicateGotos(void)
+{
+    QUAD *head = intermed_head;
+    while (head)
+    {
+        if (head->dc.opcode == i_goto)
+        {
+            while (head->fwd && head->fwd->dc.opcode == i_goto)
+                RemoveInstruction(head->fwd);
+        }
+        head = head->fwd;
+    }
+}
 static void basicFlowInfo(void)
 {
     QUAD *head = intermed_head, *block;
@@ -1229,7 +1242,8 @@ void flows_and_doms(void)
             blockArray[i]->succ = blockArray[i]->pred = NULL;
         }
     }
-        
+
+    RemoveDuplicateGotos();        
     basicFlowInfo();
     gather_flowgraph();
     doms_only(TRUE);

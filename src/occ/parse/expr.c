@@ -4364,11 +4364,8 @@ static LEXEME *expression_sizeof(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 *exp = nodeSizeof(*tp, *exp);
             }
         }
-        itp = *tp;
-        if (isref(itp))
-            itp = basetype(itp)->btp;
             
-           *tp = &stdint; /* other compilers use sizeof as a signed value so we do too... */
+        *tp = &stdint; /* other compilers use sizeof as a signed value so we do too... */
     }
     return lex;
 }

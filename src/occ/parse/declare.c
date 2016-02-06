@@ -4866,7 +4866,6 @@ jointemplate:
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate,
                                     storage_class, &linkage, &linkage2, &linkage3, asFriend, consdest, FALSE, FALSE);
                     inTemplateType = FALSE;
-
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
                     if (strSym)
@@ -5260,7 +5259,7 @@ jointemplate:
                                 }
                                 else if (sym && !sym->isConstructor && !sym->isDestructor && !comparetypes(basetype(sp->tp)->btp, basetype((sym)->tp)->btp, TRUE))
                                 {
-                                    if (cparams.prm_cplusplus && isfunction(sym->tp) && sym->templateLevel)
+                                    if (cparams.prm_cplusplus && isfunction(sym->tp) && (sym->templateLevel || templateNestingCount))
                                         checkReturn = FALSE;
                                 }
                             }                            
@@ -5839,6 +5838,7 @@ jointemplate:
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1 || asFriend && templateNestingCount==2)
                                 {
                                     lex = getDeferredData(lex, sp, TRUE);
+                                    InsertInline(sp);
                                 }
                                 else
                                 {

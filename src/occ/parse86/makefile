@@ -86,7 +86,6 @@ SOURCE = ..\parse;..\preproc;..\middle
 
 BACKEND_INCLUDE_PATH=.
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
-$(info $(SRCPATH))
 BACKEND_FILES = config.c
 
 

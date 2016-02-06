@@ -5166,8 +5166,8 @@ static void TemplateTransferClassDeferred(SYMBOL *newCls, SYMBOL *tmpl)
                                     tsf = tsf->next;
                                     ssf = ssf->next;
                                 }
+                                ss2->deferredCompile = ts2->deferredCompile;
                             }
-                            ss2->deferredCompile = ts2->deferredCompile;
                             ss2->maintemplate = ts2;
                             if (!ss2->instantiatedInlineInClass)
                             {
@@ -5485,6 +5485,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             BOOLEAN oldTemplateType = inTemplateType;
             LAMBDA *oldLambdas = lambdas;
             int oldPackIndex = packIndex;
+            int oldRegisterTemplate = dontRegisterTemplate;
             SetAccessibleTemplateArgs(cls->templateParams, TRUE);
             packIndex = -1;
             deferred = NULL;
@@ -5517,7 +5518,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             cls->baseClasses = NULL;
             cls->vbaseEntries = NULL;
             instantiatingTemplate++;
-			dontRegisterTemplate+= templateNestingCount != 0;
+			dontRegisterTemplate = templateNestingCount != 0;
             lex = SetAlternateLex(lex);
             lex = innerDeclStruct(lex, NULL, cls, FALSE, cls->tp->type == bt_class ? ac_private : ac_public, cls->isfinal, &defd);
             SetAlternateLex(NULL);
@@ -5531,7 +5532,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
             if (old.tp->syms)
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
-			dontRegisterTemplate-= templateNestingCount != 0;
+			dontRegisterTemplate = oldRegisterTemplate;
             packIndex = oldPackIndex;
             lambdas = oldLambdas;
             instantiatingTemplate --;

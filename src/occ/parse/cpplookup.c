@@ -1494,6 +1494,19 @@ static BOOLEAN ismem(EXPRESSION *exp)
         case en_auto:
         case en_threadlocal:
             return TRUE;
+        case en_thisref:
+            exp = exp->left;
+            if (exp->v.func->sp->isConstructor || exp->v.func->sp->isDestructor)
+                return FALSE;
+            /* fallthrough */
+        case en_func:
+        {
+            TYPE *tp = exp->v.func->sp->tp;
+            if (tp->type == bt_aggregate || !isfunction(tp))
+                return FALSE;
+            tp = basetype(tp)->btp;
+            return ispointer(tp) || isref(tp);
+        }
         case en_add:
         case en_sub:
         case en_structadd:

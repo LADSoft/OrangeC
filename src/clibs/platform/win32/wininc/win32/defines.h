@@ -2009,6 +2009,7 @@
 #define ILD_SELECTED    (4)
 #define ILD_TRANSPARENT (1)
 #define CLR_NONE        (0xffffffffL)
+#define CLR_INVALID     (0xffffffffL)
 #define CLR_DEFAULT     (0xff000000L)
 #define CLR_HILIGHT (0xff000000L)
 

@@ -2836,8 +2836,8 @@ typedef struct tagNEWTEXTMETRIC {
 
 
 typedef struct tagNEWTEXTMETRICEX {
-  NEWTEXTMETRIC  ntmentm;
-  FONTSIGNATURE  ntmeFontSignature;
+    NEWTEXTMETRIC  ntmTm;
+    FONTSIGNATURE   ntmFontSig;
 } NEWTEXTMETRICEX;
 
 typedef struct tagNONCLIENTMETRICS {

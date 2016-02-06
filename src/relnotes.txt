@@ -1,6 +1,53 @@
 Release notes:
 
-version 5.52.1:
+version 5.60.1: 2/6/16
+    occ:        package compiles itself now, and the results can be used to build other files
+    occ:        speed up aliasing code; compiles itself faster now
+    olink:      speed up processing of C++ files by an order of magnitude
+
+    occ:        exception table pointers were not being placed in the vtab. (typeid failed)
+    occ:        address of structures could get an extra dereference when accessed as a reference member
+    occ:        cast operators would not be called as part of a return statement.
+    occ:        could generate the exception handling structures for C++ on non-dword boundaries,
+                and windows does not like this. (exception handling broken)
+    occ:        didn't throw non-structured types properly
+    occ:        smart exception table generation for functions that don't allow exceptions to be thrown
+    occ:        add profiler functionality
+    occ:        taking the address of a templated function could cause the function to be undefined
+                in the object file if the address was taken as a function argument.
+    occ:        fix problems with aliasing of structure assignments
+    occ:        declarations like : int a[][]; where multiple braces are empty could crash the compiler
+    occ:        do branch optimizations at the beginning of the optimizer pass; this will result in better
+                optimizations.
+    occ:        sometimes as with a return at the end of the first part of an if statement
+                multiple gotos could be generated in the back end, and this would confuse the flow analyzer and
+                result in invalid code being generated.
+    occ:        treat nullptr_t as a first-class citizen in function arguments (argument matching
+                was allowing nonnull pointers to match)
+    occ:        fix problems the types of template selectors that are found in the shared_ptr constructors
+    occ:        fix problems with internally generated qualifiers on class assigners causing a crash
+    occ:        remove some test code that performed an infinite loop
+    occ:        if a pointer to a structure was returned from a function, the copy by rvalue would be done instead of copy by lvalue
+    olink:      virtual sections were not matched to externals in the same file, so they would be dragged
+                out of a library if they existed in the library and this could cause collisions
+    oasm:       virtual sections were sent to the object file with the wrong attributes, so link failed
+    ocide:      fix problem with 'flashing' gui
+    ocide:      fix database problems: colorization and hints were broken
+    ocide:      fix ctrl-f and ctrl-h to do the expected thing when the find/replace window has focus
+    ocide:      after a replace in selection, restore the selection.
+    ocide:      after a replace in selection, don't scroll the screen.
+    ocide:      debugger: stepping over a windows function call didn't stop after the call.
+    ocide:      call stack window function name list doesn;t work for static functions
+    ocide:      call stack window can correlate last line of a function to first line of next function
+    ocide:      when bringing up find/replace window, fetch word under cursor (or word in toolbar)
+    occpr:      fix crash condition
+    clibs:      couldn't throw a non-structured type without it crashing.
+    clibs:      fix profiler to work with orange c; fix problems in profiler code; Use QueryPerformanceCounter
+    clibs:      set_unexpected would set the unexpected handler but return the terminate handler
+    clibs:      realloc(ptr, 0) did not free ptr and return NULL.
+    clibs:      fix the definition of NEWTEXTMETRICEX
+
+version 5.52.1: 1/22/16
     occ:        expressions involving bit fields did not get evaluated properly
                 unless the expression was an assignment or comparison
     occ:        fix bug with operator-> returning pointer to class: if this was used as
@@ -25,6 +72,7 @@ version 5.52.1:
                 calling an overloaded operator function. (so the function got applied twice)
     occ:        when objects that have to be constructed are default parameters, the
                 space for the objects does not get allocated if they are used.
+    occ:        fix bug when using function arguments as function arguments to an inline function.
     libcxx:     fix problem with not enough space being allocated for locale in ios structure
     clibs:      fix malloc/free to detect doubly freed pointers with more alacrity
 Version 5.51.1: 1/16/16

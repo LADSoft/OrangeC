@@ -158,7 +158,7 @@ void SetStackArea(HWND hwnd)
             return ;
         newStack->next = 0;
         FindFunctionName(newStack->name, eip);
-        GetBreakpointLine(eip, &newStack->fileName[0], &newStack->lineno, stackbase != NULL);
+        GetBreakpointLine(eip, &newStack->fileName[0], &newStack->lineno, FALSE/*stackbase != NULL*/);
         newStack->address = eip;
         newStack->basePtr = ebp;
         if (stackbase)

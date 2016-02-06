@@ -44,6 +44,9 @@
 #include "header.h"
 
 extern HINSTANCE hInstance;
+extern HWND hwndTbFind;
+extern int modifiedFind;
+
 
 static int wndoffs;
 static WNDPROC oldComboProc;
@@ -66,6 +69,8 @@ LRESULT CALLBACK historyEditComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_KEYUP:
+            if (hwnd == hwndTbFind)
+                modifiedFind = TRUE;
             switch(wParam)
             {
                 case VK_RETURN:

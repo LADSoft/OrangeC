@@ -1169,6 +1169,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     SendMessage(hwndFind, WM_COMMAND, IDCANCEL, 0);
             }
                  break;
+            case IDM_FIND:
+            case IDM_REPLACE:
+            {
+                HWND x = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
+                if (IsEditWindow(x))
+                    SendMessage(x, WM_COMMAND, wParam, 0);
+                break;
+            }
             default:
                 if (wParam >= ID_FILEBROWSE_LIST && wParam < ID_FILEBROWSE_LIST + MAX_BROWSE)
                 {

@@ -913,7 +913,7 @@ void InstallForParse(HWND hwnd)
                 installparse(name, FALSE);
             else if (tolower(name[len-1]) == 'h')
             {
-                DWINFO *ptr = editWindows;
+                 DWINFO *ptr = editWindows;
                 while (ptr)
                 {
                     if (ptr->active && IsWindow(ptr->self))

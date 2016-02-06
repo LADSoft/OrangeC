@@ -1020,7 +1020,8 @@ int Execute(char *cmd, char *wdp, int window)
 
     memset(&si, 0, sizeof(si));
     si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESTDHANDLES;
+    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
 
     CreatePipe(&stdinRd, &stdinWr, &security, 0);
     DuplicateHandle(GetCurrentProcess(), stdinWr, GetCurrentProcess(), &stdinWr,
@@ -1030,7 +1031,7 @@ int Execute(char *cmd, char *wdp, int window)
     si.hStdOutput = stdoutWr;
     si.hStdError = stdoutWr;
     
-    retcode = CreateProcess(0, cmd, 0, 0, TRUE, DETACHED_PROCESS | CREATE_SUSPENDED, 
+    retcode = CreateProcess(0, cmd, 0, 0, TRUE, CREATE_SUSPENDED, 
                             0, path, &si, &pi);
 
     CloseHandle(stdoutWr);

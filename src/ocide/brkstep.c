@@ -99,7 +99,7 @@ int StepOverIncrement(DEBUG_EVENT *dbe)
                 if ((word = (buf[1] &0xc7)) < 0xc0)
                 {
                     // not indirect through reg
-                    if (word == 6)
+                    if (word == 6 || word == 5)
                     // Offset
                         skiplen += 4;
                     else

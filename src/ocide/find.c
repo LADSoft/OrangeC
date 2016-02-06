@@ -68,6 +68,7 @@ extern char szInstallPath[];
 DWORD BrowseForFile(HWND hwnd, LPSTR pszDisplayName, LPSTR pszPath, UINT cchPath);
 
 HWND hwndFind = NULL, hwndFindInternal = NULL;
+int modifiedFind;
 
 char *findhist[MAX_COMBO_HISTORY];
 char *replacehist[MAX_COMBO_HISTORY];
@@ -1244,7 +1245,7 @@ static void GetReplaceText(char *dest, char *replace, char *dta, int len, int fl
         strcpy(dest, replace);
     }
 }
-static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *pos, int flags, char *search, char *replace, RE_CONTEXT *context)
+static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *pos, CHARRANGE *selection, int flags, char *search, char *replace, RE_CONTEXT *context)
 {
     BOOL val;
     int len = 0;
@@ -1279,6 +1280,20 @@ static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *po
             }
         }
         l = strlen(repl) - strlen(search);
+        if (curpos + *ofs < selection->cpMin)
+        {
+            if (curpos + *ofs +l > selection->cpMin)
+                selection->cpMin += selection->cpMin - curpos - *ofs;
+            else
+                selection->cpMin += l;
+        }
+        if (curpos + *ofs < selection->cpMax)
+        {
+            if (curpos + *ofs +l > selection->cpMax)
+                selection->cpMax += selection->cpMax - curpos - *ofs;
+            else
+                selection->cpMax += l;
+        }
         *ofs += l;
         inSetSel = TRUE;
         SendMessage(ptr->dwHandle, EM_HIDESELECTION, 1, 0);
@@ -1303,6 +1318,8 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
     int vis;
     int linepos;
     CHARRANGE lastReplacePos;
+    CHARRANGE selection;
+    
     // to guard against the EN_LINECHANGE message which does an EndFind();
     do
     {
@@ -1310,24 +1327,39 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
         {
             if (ptr && ptr != lastPtr && (flags & F_REPLACEALL))
             {
-                if (needsUpdate)
+                if (selection.cpMin != selection.cpMax)
                 {
-					offset = lastoffset;
-                    if (lastReplacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
-                        lastReplacePos.cpMin = replacePos.cpMax = vis = offset = 0;
-                    lastReplacePos.cpMin += offset;
-                    lastReplacePos.cpMax += offset;
-                    SendMessage(lastPtr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&lastReplacePos);
-                    linepos = SendMessage(lastPtr->dwHandle, EM_LINEFROMCHAR, lastReplacePos.cpMin, 0);
-                    vis = linepos - vis;
-                    SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
+                    if (lastPtr)
+                    {
+                        SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
+                        SendMessage(lastPtr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&selection);
+                    }
+                    lastPtr = ptr;
+                    vis = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
+                    SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (WPARAM) &selection);
                 }
-                vis  = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
-                lastPtr = ptr;
-				SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (LPARAM)&lastReplacePos);
-                linepos = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, lastReplacePos.cpMin, 0);
-                vis = linepos - vis;
-                needsUpdate = TRUE;
+                else
+                {
+                    if (needsUpdate)
+                    {
+    					offset = lastoffset;
+                        if (lastReplacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
+                            lastReplacePos.cpMin = replacePos.cpMax = vis = offset = 0;
+                        lastReplacePos.cpMin += offset;
+                        lastReplacePos.cpMax += offset;
+                        SendMessage(lastPtr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&lastReplacePos);
+                        linepos = SendMessage(lastPtr->dwHandle, EM_LINEFROMCHAR, lastReplacePos.cpMin, 0);
+                        vis = linepos - vis;
+                        SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
+                    }
+                    vis  = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
+                    lastPtr = ptr;
+    				SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (LPARAM)&lastReplacePos);
+                    linepos = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, lastReplacePos.cpMin, 0);
+                    vis = linepos - vis;
+                    needsUpdate = TRUE;
+                }
+                
             }
             offset = 0;
 			lastoffset = 0;
@@ -1335,7 +1367,7 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
             {
 				BOOL doupdate = FALSE;
 				doupdate = replacePos.cpMin < lastReplacePos.cpMin;
-                replaced = ReplaceNextInDocument(ptr, buf, &offset, &replacePos, flags, search, replace, context);
+                replaced = ReplaceNextInDocument(ptr, buf, &offset, &replacePos, &selection, flags, search, replace, context);
 				if (doupdate)
 					lastoffset = offset;
             }
@@ -1355,17 +1387,28 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
         }
     } while ((!replaced || (flags & F_REPLACEALL) ) && !canceled &&         
              (buf = GetNextFindDocument(&replacePos, mode, &ptr, specifiedPath, specifiedExtension, flags)));
-    if (needsUpdate)
+    if (selection.cpMin != selection.cpMax)
     {
-		offset = lastoffset;
-        if (replacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
-            replacePos.cpMin = replacePos.cpMax = vis = offset = 0;
-        replacePos.cpMin += offset;
-        replacePos.cpMax += offset;
-        SendMessage(lastPtr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&replacePos);
-        linepos = SendMessage(lastPtr->dwHandle, EM_LINEFROMCHAR, replacePos.cpMin, 0);
-        vis = linepos - vis;
-        SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
+        if (lastPtr)
+        {
+            SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
+            SendMessage(lastPtr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&selection);
+        }
+    }
+    else
+    {
+        if (needsUpdate)
+        {
+    		offset = lastoffset;
+            if (replacePos.cpMin >= SendMessage(lastPtr->dwHandle, EM_GETSIZE, 0, 0) - offset)
+                replacePos.cpMin = replacePos.cpMax = vis = offset = 0;
+            replacePos.cpMin += offset;
+            replacePos.cpMax += offset;
+            SendMessage(lastPtr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&replacePos);
+            linepos = SendMessage(lastPtr->dwHandle, EM_LINEFROMCHAR, replacePos.cpMin, 0);
+            vis = linepos - vis;
+            SendMessage(lastPtr->dwHandle, EM_SETFIRSTVISIBLELINE, vis, 0);
+        }
     }
     if (context)
         re_free(context);
@@ -1551,6 +1594,19 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
     switch (iMessage)
     {
         case WM_INITDIALOG:
+            if (modifiedFind)
+            {
+                int n = GetWindowText(hwndTbFind, findText, 256);
+                if (n < 0)
+                    n = 0;
+                findText[n] = 0;
+            }
+            else
+            {
+                HWND hwnd = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0,0);
+                if (IsWindow(hwnd))
+                    SendMessage(hwnd, WM_WORDUNDERCURSOR, 0, (LPARAM)findText);
+            }
             hwndFindInternal = hwndDlg;
             hwndParent = GetParent(hwndDlg);
             pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
@@ -1629,6 +1685,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
             }
             EnableWindows(hwndDlg, pHdr->findEnabled);
             SetFlags(hwndDlg, pHdr);
+            modifiedFind = FALSE;
             return 1;
         case WM_ENABLEFIND:
             pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
@@ -1653,6 +1710,9 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 SendMessage(child, WM_SAVEHISTORY, 0, 0);
                 SendMessage(child, WM_GETTEXT, 256, (LPARAM)replaceText);
             }
+            break;
+        case WM_KEYDOWN:
+            MessageBeep(0);
             break;
         case WM_COMMAND:
             pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
@@ -1967,6 +2027,7 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
     DLGHDR *pHdr;
     TC_ITEM tie;
     int i;
+    char buf[512];
     switch (iMessage)
     {
         case WM_INITDIALOG:

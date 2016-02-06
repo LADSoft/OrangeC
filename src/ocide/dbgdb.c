@@ -497,6 +497,12 @@ int *GetLineTableInternal(DEBUG_INFO *dbg_info, char *name, int lineno, int *lc)
 }
 int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int equals)
 {
+    char gname[512];
+    int gtype;
+    int gaddr;
+    char lname[512];
+    int ltype;
+    int laddr;
     static char *eqquery = {
         "SELECT Names.name, Globals.varAddress, Globals.typeId FROM Names"
         "    JOIN Globals on Globals.symbolId = Names.id"
@@ -509,11 +515,25 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
         "    WHERE Globals.varAddress <= ?" 
         "       ORDER BY Globals.varAddress DESC;"
     };
+    static char *leqquery = {
+        "SELECT Names.name, Locals.varAddress, Locals.typeId FROM Names"
+        "    JOIN Locals on Locals.symbolId = Names.id"
+        "    WHERE Locals.varAddress = ?" 
+        "       ORDER BY Locals.varAddress DESC;"
+    };
+    static char *llequery = {
+        "SELECT Names.name, Locals.varAddress, Locals.typeId FROM Names"
+        "    JOIN Locals on Locals.symbolId = Names.id"
+        "    WHERE Locals.varAddress <= ?" 
+        "       ORDER BY Locals.varAddress DESC;"
+    };
     char *query = equals ? eqquery : lequery;
     int rv = 0;
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
-    name[0] = 0;
+    gname[0] = lname[0] = 0;
+    gaddr = laddr = 0;
+    type = ltype = 0;
     rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
@@ -531,10 +551,9 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
                     done = TRUE;
                     break;
                 case SQLITE_ROW:
-                    strcpy(name, (char *)sqlite3_column_text(handle, 0));
-                    rv = sqlite3_column_int(handle, 1);
-                    if (type)
-                        *type = sqlite3_column_int(handle, 2);
+                    strcpy(gname, (char *)sqlite3_column_text(handle, 0));
+                    gaddr = sqlite3_column_int(handle, 1);
+                    gtype = sqlite3_column_int(handle, 2);
                     rc = SQLITE_OK;
                     done = TRUE;
                     break;
@@ -545,7 +564,69 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
         }
         sqlite3_finalize(handle);
     }
-    return rv;
+    query = equals ? leqquery : llequery;
+    rc = SQLITE_OK;
+    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        sqlite3_bind_int(handle, 1, Address);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                    strcpy(lname, (char *)sqlite3_column_text(handle, 0));
+                    laddr = sqlite3_column_int(handle, 1);
+                    ltype = sqlite3_column_int(handle, 2);
+                    rc = SQLITE_OK;
+                    done = TRUE;
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        sqlite3_finalize(handle);
+    }
+    if (gaddr && laddr)
+    {
+        if (gaddr < laddr)
+        {
+            strcpy(name, lname);
+            if (type)
+                *type = ltype;
+            return laddr;
+        }
+        else
+        {
+            strcpy(name, gname);
+            if (type)
+                *type = gtype;
+            return gaddr;
+        }
+    }
+    else if (gaddr)
+    {
+        strcpy(name, gname);
+        if (type)
+            *type = gtype;
+        return gaddr;
+    }
+    else
+    {
+        strcpy(name, lname);
+        if (type)
+            *type = ltype;
+        return laddr;
+    }
 }
 int GetFuncId(DEBUG_INFO *dbg_info, int Address)
 {

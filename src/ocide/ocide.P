@@ -469,7 +469,6 @@ long APIENTRY FileChangeProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 void CheckEditWindowChangedThread(void *aa);
 void CheckEditWindowChanged(void);
 int QuerySaveAll(void);
-
                             /* Drawversion.c */
 
 char *ParseVersionString(char *string, int *returnedLength);

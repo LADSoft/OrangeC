@@ -139,8 +139,12 @@ static int busyFunc(void*handle,int times)
     }
     else {   
         MSG msg;
-        while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
             ProcessMessage(&msg);
+            if (msg.message == WM_QUIT)
+                break;
+        }
         Sleep(0);
         return 1;
     }
@@ -150,13 +154,11 @@ static void dbVacuum(void *xx)
     char *zErrMsg = NULL;
     sqlite3 *xdb = xx;
     DWINFO *p;
-    /*
     if (sqlite3_exec(xdb, "PRAGMA journal_mode = OFF; PRAGMA synchronous = OFF;PRAGMA temp_store = MEMORY;",//VACUUM;", 
                           verscallback, 0, &zErrMsg)!=SQLITE_OK )
     {
           sqlite3_free(zErrMsg);
     } 
-    */           
     vacuuming = FALSE;
     WaitForSingleObject(ewSem, INFINITE);
     p = editWindows;

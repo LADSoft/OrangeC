@@ -231,8 +231,12 @@ void GetSecondaryFileList(HWND hwndLV, int *items, BOOL changed)
         if (active)
             PostMessage(xx, WM_DEFERREDCLOSE, 0, 0);
     }
-    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    {
         ProcessMessage(&msg);
+        if (msg.message == WM_QUIT)
+            break;
+    }
         
 }
 //-------------------------------------------------------------------------

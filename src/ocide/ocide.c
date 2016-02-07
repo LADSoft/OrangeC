@@ -81,6 +81,7 @@ extern THREAD *activeThread, *stoppedThread;
 extern HWND hwndToolNav, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark;
 extern enum DebugState uState;
 extern PROJECTITEM *workArea;
+extern BOOL stopCCThread;
 
 void ApplyDialogFont(HWND hwnd);
 char *getcwd( char *__buf, int __buflen ); // can't include dir.h because it defines eof...
@@ -1271,7 +1272,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_DESTROY:
             DestructTheme();
             PostQuitMessage(0);
-            return 0;
+			return 0;
         case WM_REDRAWTOOLBAR:
             RedrawToolBar();
 
@@ -1420,6 +1421,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_CLOSE:
+			stopCCThread = TRUE;
             if (uState != notDebugging)
             {
                 if (ExtendedMessageBox("Debugger", MB_OKCANCEL, 
@@ -1453,10 +1455,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SaveDocksToRegistry();
             SendMessage(hwndProject, WM_COMMAND, IDM_SAVEWS, 0);
             dmgrSetRundown();
+            CloseAll();
             if (hwndProject)
             // MUST be after files are saved for tags to be updated
                 DestroyWindow(hwndProject);
-            break;
+			DestroyWindow(hwndStatus);
+			DestroyWindow(hwndClient);
+			DestroyWindow(hwnd);
+			return 0;
         default:
             break;
     }
@@ -1557,6 +1563,12 @@ int IsBusyMessage(MSG *msg)
 void ProcessMessage(MSG *msg)
 {
 //	printwmsg(msg->hwnd, msg->message, msg->wParam, msg->lParam);
+	if (msg->message == WM_QUIT)
+	{
+		// we won't get here from the main loop
+		PostQuitMessage(msg->wParam);
+		return;
+	}
     HookMouseMovement(msg);
     if (!IsBusyMessage(msg))
     {

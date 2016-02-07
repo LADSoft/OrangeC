@@ -93,8 +93,8 @@ struct _ccList *codeCompList;
 
 static unsigned int ccThreadId;
 static HANDLE ccThreadExit, ccThreadGuard;
-static BOOL stopCCThread;
 static DWINFO *ewQueue;
+BOOL stopCCThread;
 void recolorize(DWINFO *ptr);
 void AsyncOpenFile(DWINFO *newInfo);
 
@@ -366,8 +366,12 @@ void CloseAll(void)
             ShowWindow(ptr->self, SW_HIDE);
         ptr = ptr->next;
     }
-    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    {
         ProcessMessage(&msg);
+        if (msg.message == WM_QUIT)
+            break;
+    }
     ptr = editWindows;
     while (ptr)
     {
@@ -377,8 +381,12 @@ void CloseAll(void)
         if (active)
             PostMessage(xx, WM_CLOSE, 0, 0);
     }
-    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    {
         ProcessMessage(&msg);
+        if (msg.message == WM_QUIT)
+            break;
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -874,7 +882,11 @@ DWORD MsgWait(HANDLE event, DWORD timeout)
             {
                 MSG msg;
                 while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+                {
                     ProcessMessage(&msg);
+                    if (msg.message == WM_QUIT)
+                        return WAIT_TIMEOUT;
+                }
             }
                 break;
             default:
@@ -971,6 +983,8 @@ unsigned __stdcall ScanParse(void *aa)
         if (stopCCThread)
             break;
         Sleep(100);
+        if (stopCCThread)
+            break;
     }
     SetEvent(ccThreadExit);
     return 0;
@@ -1556,8 +1570,14 @@ HWND openfile(DWINFO *newInfo, int newwindow, int visible)
     HWND rv ;
     void *extra = newInfo == (DWINFO *)-1 ? newInfo : NULL ;
     MSG msg;
-    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    {
         ProcessMessage(&msg);
+        if (msg.message == WM_QUIT)
+            break;
+    }
+    if (msg.message == WM_QUIT)
+        return NULL;
     if (newInfo && newInfo != (DWINFO*) - 1)
     {
         DWINFO *ptr = editWindows;

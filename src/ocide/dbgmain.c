@@ -574,8 +574,12 @@ static void abortDebugThread(void)
         while (uState != notDebugging)
         {
 			MSG msg;
-			while (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
-				ProcessMessage(&msg);
+            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            {
+                ProcessMessage(&msg);
+                if (msg.message == WM_QUIT)
+                    break;
+            }
             if (++i >= 100)
             {
                 ExtendedMessageBox("Debugger", MB_SETFOREGROUND |

@@ -346,7 +346,7 @@ int addsize = 0;
 
 /*      variable initialization         */
 
-char segregs[] = "CSDSESFSGSSS";
+char segregs[] = "csdsesfsgsss";
 
 extern int prm_assembler;
 
@@ -1644,7 +1644,7 @@ void outop(char *name)
 {
     beputc('\t');
     while (*name)
-        beputc(toupper(*name++));
+        beputc(*name++);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1742,12 +1742,12 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
             if (doSign)
             {
                 if ((int)offset->v.sp->offset < 0)
-                    bePrintf( "-0%lXH", -offset->v.sp->offset);
+                    bePrintf( "-0%lxh", -offset->v.sp->offset);
                 else
-                    bePrintf( "+0%lXH", offset->v.sp->offset);
+                    bePrintf( "+0%lxh", offset->v.sp->offset);
             }
             else
-                bePrintf( "0%lXH", offset->v.sp->offset);
+                bePrintf( "0%lxh", offset->v.sp->offset);
                 
             break;
         case en_c_i:
@@ -1777,7 +1777,7 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
 //					n &= 0xff;
 //				if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
 //					n &= 0xffff;
-                bePrintf( "0%XH", n);
+                bePrintf( "0%xh", n);
             }
             break;
         case en_c_fc:
@@ -1880,15 +1880,15 @@ void putsizedreg(char *string, int reg, int size)
 {
     static char *byteregs[] = 
     {
-        "AL", "CL", "DL", "BL", "AH", "CH", "DH", "BH"
+        "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"
     };
     static char *wordregs[] = 
     {
-        "AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"
+        "ax", "cx", "dx", "bx", "sp", "bp", "si", "di"
     };
     static char *longregs[] = 
     {
-        "EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI"
+        "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"
     };
     if (size < 0)
         size =  - size;
@@ -1916,53 +1916,53 @@ void pointersize(int size)
         case ISZ_LDOUBLE:
         case ISZ_ILDOUBLE:
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                bePrintf( "TWORD ");
+                bePrintf( "tword ");
             else
-                bePrintf( "TBYTE ");
+                bePrintf( "tbyte ");
             break;
         case ISZ_ULONGLONG:
         case ISZ_DOUBLE:
         case ISZ_IDOUBLE:
             /* should never happen                      */
-            bePrintf( "QWORD ");
+            bePrintf( "qword ");
             break;
         case ISZ_FLOAT:
         case ISZ_IFLOAT:
             if (!uses_float)
             {
                 if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                    bePrintf( "DWORD FAR ");
+                    bePrintf( "dword far ");
                 else
-                    bePrintf( "FWORD ");
+                    bePrintf( "fword ");
                 break;
             }
         case ISZ_U32:
         case ISZ_UINT:
         case ISZ_ULONG:
         case ISZ_ADDR:
-            bePrintf( "DWORD ");
+            bePrintf( "dword ");
             break;
         case ISZ_U16:
         case ISZ_USHORT:
         case ISZ_WCHAR:
-            bePrintf( "WORD ");
+            bePrintf( "word ");
             break;
         case ISZ_BOOLEAN:
         case ISZ_UCHAR:
-            bePrintf( "BYTE ");
+            bePrintf( "byte ");
             break;
         case ISZ_NONE:
              /* for NASM with certain FP ops */
             break;
     case ISZ_FARPTR:
-        bePrintf("FAR ");
+        bePrintf("far ");
         break;
         default:
             diag("Bad pointer");
             break;
     }
     if (!(prm_assembler == pa_nasm  || prm_assembler == pa_fasm) && size)
-        bePrintf( "PTR ");
+        bePrintf( "ptr ");
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2037,32 +2037,32 @@ void oa_putamode(AMODE *ap)
             putseg(ap->seg, 0);
             break;
         case am_screg:
-            bePrintf( "CR%d", ap->preg);
+            bePrintf( "cr%d", ap->preg);
             break;
         case am_sdreg:
-            bePrintf( "DR%d", ap->preg);
+            bePrintf( "dr%d", ap->preg);
             break;
         case am_streg:
-            bePrintf( "TR%d", ap->preg);
+            bePrintf( "tr%d", ap->preg);
             break;
         case am_immed:
             if (ap->length > 0 && islabeled(ap->offset))
             {
                 if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                    bePrintf( "OFFSET ");
+                    bePrintf( "offset ");
                 else if (!nosize)
                 {
                     if (ap->length == -ISZ_UCHAR || ap->length == ISZ_UCHAR)
                     {
-                        bePrintf("BYTE ");
+                        bePrintf("byte ");
                     }
                     else if (ap->length == -ISZ_USHORT || ap->length == ISZ_USHORT)
                     {
-                        bePrintf("WORD ");
+                        bePrintf("word ");
                     }
                     else
                     {
-                        bePrintf( "DWORD ");
+                        bePrintf( "dword ");
                     }
                 }
             }
@@ -2088,9 +2088,9 @@ void oa_putamode(AMODE *ap)
             break;
         case am_freg:
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                bePrintf( "ST%d", ap->preg);
+                bePrintf( "st%d", ap->preg);
             else
-                bePrintf( "ST(%d)", ap->preg);
+                bePrintf( "st(%d)", ap->preg);
             break;
         case am_indisp:
             pointersize(ap->length);
@@ -2182,15 +2182,15 @@ void oa_put_code(OCODE *cd)
         op_jmp && aps->mode == am_immed && !apd)))
     {
         if (cd->branched & BR_SHORT)
-            bePrintf( "\tSHORT");
+            bePrintf( "\tshort");
         else
-            bePrintf( "\tNEAR");
+            bePrintf( "\tnear");
         nosize = TRUE;
     }
     else if (op == op_jmp && aps->mode == am_immed && aps->offset->type ==
         en_labcon && (cd->branched &BR_SHORT))
     {
-        bePrintf( "\tSHORT");
+        bePrintf( "\tshort");
         nosize = TRUE;
     }
     switch (op)
@@ -2298,7 +2298,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                     UBYTE dta[4];
                     int i;
                     FPFToFloat(dta, val);
-                    bePrintf("\tDB\t");
+                    bePrintf("\tdb\t");
                     for (i=0; i < 4; i++)
                     {
                         bePrintf( "0%02XH", dta[i]);
@@ -2307,7 +2307,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                     }
                 }
                 else
-                    bePrintf( "\tDD\t%s\n", buf);
+                    bePrintf( "\tdd\t%s\n", buf);
                 break;
             case doublegen:
                 if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
@@ -2316,7 +2316,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                     UBYTE dta[8];
                     int i;
                     FPFToDouble(dta, val);
-                    bePrintf("\tDB\t");
+                    bePrintf("\tdb\t");
                     for (i=0; i < 8; i++)
                     {
                         bePrintf( "0%02XH", dta[i]);
@@ -2325,7 +2325,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                     }
                 }
                 else
-                    bePrintf( "\tDQ\t%s\n", buf);
+                    bePrintf( "\tdq\t%s\n", buf);
                 break;
             case longdoublegen:
                 if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
@@ -2334,7 +2334,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                     UBYTE dta[10];
                     int i;
                     FPFToLongDouble(dta, val);
-                    bePrintf("\tDB\t");
+                    bePrintf("\tdb\t");
                     for (i=0; i < 10; i++)
                     {
                         bePrintf( "0%02XH", dta[i]);
@@ -2343,7 +2343,7 @@ void oa_genfloat(enum e_gt type, FPF *val)
                     }
                 }
                 else
-                    bePrintf( "\tDT\t%s\n", buf);
+                    bePrintf( "\tdt\t%s\n", buf);
                 break;
             default:
                 diag("floatgen - invalid type");
@@ -2384,7 +2384,7 @@ void oa_genstring(LCHAR *str, int len)
                 {
                     oa_gentype = nogen;
                     oa_nl();
-                    bePrintf("\tDB\t\"");
+                    bePrintf("\tdb\t\"");
                     instring = TRUE;
                 }
                 bePrintf("%c", *str++);
@@ -2411,27 +2411,27 @@ void oa_genint(enum e_gt type, LLONG_TYPE val)
     if (cparams.prm_asmfile) {
         switch (type) {
             case chargen:
-                bePrintf( "\tDB\t0%XH\n", val &0x00ff);
+                bePrintf( "\tdb\t0%xh\n", val &0x00ff);
                 break ;
             case shortgen:
             case u16gen:
-                bePrintf( "\tDW\t0%XH\n", val &0x0ffff);
+                bePrintf( "\tdw\t0%xh\n", val &0x0ffff);
                 break ;
             case longgen:
             case enumgen:
             case intgen:
             case u32gen:
-                bePrintf( "\tDD\t0%lXH\n", val);
+                bePrintf( "\tdd\t0%lxh\n", val);
                 break ;
             case longlonggen:
                 #ifndef USE_LONGLONG
-                    bePrintf( "\tDD\t0%lXH,0%lXH\n", val, val < 0 ?  - 1: 0);
+                    bePrintf( "\tdd\t0%lxh,0%lxh\n", val, val < 0 ?  - 1: 0);
                 #else 
-                    bePrintf( "\tDD\t0%lXH,0%lXH\n", val, val >> 32);
+                    bePrintf( "\tdd\t0%lxh,0%lxh\n", val, val >> 32);
                 #endif 
                 break ;
             case wchar_tgen:
-                   bePrintf( "\tDW\t0%lXH\n", val);
+                   bePrintf( "\tdw\t0%lxh\n", val);
                 break ;
             default:
                 diag("genint - unknown type");
@@ -2477,8 +2477,8 @@ void oa_gensrref(SYMBOL *sp, int val)
     {
         beDecorateSymName(buf, sp);
         oa_nl();
-        bePrintf( "\tDB\t0,%d\n", val);
-        bePrintf( "\tDD\t%s\n", buf);
+        bePrintf( "\tdb\t0,%d\n", val);
+        bePrintf( "\tdd\t%s\n", buf);
         oa_gentype = srrefgen;
     }
     else
@@ -2511,7 +2511,7 @@ void oa_genref(SYMBOL *sp, int offset)
                 oa_nl();
             else
                 newlabel = FALSE;
-            bePrintf( "\tDD\t%s\n", buf1);
+            bePrintf( "\tdd\t%s\n", buf1);
             oa_gentype = longgen;
         }
     }
@@ -2544,9 +2544,9 @@ void oa_genstorage(int nbytes)
         else
             newlabel = FALSE;
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            bePrintf( "\tRESB\t0%XH\n", nbytes);
+            bePrintf( "\tresb\t0%xh\n", nbytes);
         else
-            bePrintf( "\tDB\t0%XH DUP (?)\n", nbytes);
+            bePrintf( "\tdb\t0%xh DUP (?)\n", nbytes);
         oa_gentype = nogen;
     }
     else
@@ -2567,7 +2567,7 @@ void oa_gen_labref(int n)
                 oa_nl();
             else
                 newlabel = FALSE;
-            bePrintf( "\tDD\tL_%d\n", n);
+            bePrintf( "\tdd\tL_%d\n", n);
             oa_gentype = longgen;
     }
     else
@@ -2584,7 +2584,7 @@ void oa_gen_labdifref(int n1, int n2)
                 oa_nl();
             else
                 newlabel = FALSE;
-            bePrintf( "\tDD\tL_%d-L_%d\n", n1, n2);
+            bePrintf( "\tdd\tL_%d-L_%d\n", n1, n2);
             oa_gentype = longgen;
     }
     else
@@ -2646,125 +2646,125 @@ void oa_enterseg(enum e_sg seg)
             oa_nl();
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
-                    bePrintf( "SECTION code\n");
+                    bePrintf( "section code\n");
                 else
             {
-                bePrintf( "SECTION .text\n");
-                bePrintf( "[BITS 32]\n");
+                bePrintf( "section .text\n");
+                bePrintf( "[bits 32]\n");
             }
             else
-                bePrintf( "\t.CODE\n");
+                bePrintf( "\t.code\n");
         } else if (seg == constseg) {
            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
-                    bePrintf( "SECTION const\n");
+                    bePrintf( "section const\n");
                 else
                 {
-                    bePrintf( "SECTION .text\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .text\n");
+                    bePrintf( "[bits 32]\n");
                 }
             }
             else
                 bePrintf( 
-                    "_CONST\tSEGMENT USE32 PUBLIC DWORD \042CONST\042\n");
+                    "_CONST\tsegment use32 public dword \042CONST\042\n");
          } else if (seg == stringseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
-                    bePrintf( "SECTION string\n");
+                    bePrintf( "section string\n");
                 else
                 {
-                    bePrintf( "SECTION .data\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .data\n");
+                    bePrintf( "[bits 32]\n");
                 }
             }
             else
                 bePrintf( 
-                    "_STRING\tSEGMENT USE32 PUBLIC DWORD \042STRING\042\n");
+                    "_STRING\tsegment use32 public dword \042STRING\042\n");
          } else if (seg == dataseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
-                    bePrintf( "SECTION data\n");
+                    bePrintf( "section data\n");
                 else
                 {
-                    bePrintf( "SECTION .data\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .data\n");
+                    bePrintf( "[bits 32]\n");
                 }
             else
                 bePrintf( "\t.DATA\n");
          } else if (seg == tlsseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
-                    bePrintf( "SECTION tls\n");
+                    bePrintf( "section tls\n");
                 else
                 {
-                    bePrintf( "SECTION .data\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .data\n");
+                    bePrintf( "[bits 32]\n");
                 }
             else
                 bePrintf( 
-                    "_TLS\tSEGMENT USE32 PUBLIC DWORD \042TLS\042\n");
+                    "_TLS\tsegment use32 public dword \042TLS\042\n");
          } else if (seg == tlssuseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
-                    bePrintf( "SECTION tlsstartup\n");
+                    bePrintf( "section tlsstartup\n");
                 else
                 {
-                    bePrintf( "SECTION .data\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .data\n");
+                    bePrintf( "[bits 32]\n");
                 }
             else
                 bePrintf( 
-                    "_TLS\tSEGMENT USE32 PUBLIC DWORD \042TLS\042\n");
+                    "_TLS\tsegment use32 public dword \042TLS\042\n");
          } else if (seg == tlsrdseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
-                    bePrintf( "SECTION tlsrundown\n");
+                    bePrintf( "section tlsrundown\n");
                 else
                 {
-                    bePrintf( "SECTION .data\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .data\n");
+                    bePrintf( "[bits 32]\n");
                 }
             else
                 bePrintf( 
-                    "_TLS\tSEGMENT USE32 PUBLIC DWORD \042TLS\042\n");
+                    "_TLS\tsegment use32 public dword \042TLS\042\n");
          } else if (seg == bssxseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
-                    bePrintf( "SECTION bss\n");
+                    bePrintf( "section bss\n");
                 else
-                    bePrintf( "SECTION .bss\n");
+                    bePrintf( "section .bss\n");
             else
-                bePrintf( "\t.DATA?\n");
+                bePrintf( "\t.data?\n");
          } else if (seg == startupxseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
-                    bePrintf( "SECTION cstartup\n");
+                    bePrintf( "section cstartup\n");
                 else
                 {
-                    bePrintf( "SECTION .text\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .text\n");
+                    bePrintf( "[bits 32]\n");
                 }
             }
             else
                 bePrintf( 
-                    "cstartup\tSEGMENT USE32 PUBLIC DWORD \042INITDATA\042\n");
+                    "cstartup\tsegment use32 public dword \042INITDATA\042\n");
          } else if (seg == rundownxseg) {
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
-                    bePrintf( "SECTION crundown\n");
+                    bePrintf( "section crundown\n");
                 else
                 {
-                    bePrintf( "SECTION .text\n");
-                    bePrintf( "[BITS 32]\n");
+                    bePrintf( "section .text\n");
+                    bePrintf( "[bits 32]\n");
                 }
             }
             else
                 bePrintf( 
-                    "crundown\tSEGMENT USE32 PUBLIC DWORD \042EXITDATA\042\n");
+                    "crundown\tsegment use32 public dword \042EXITDATA\042\n");
          }
     }
 }
@@ -2783,15 +2783,15 @@ void oa_enterseg(enum e_sg seg)
                 oa_currentSeg = noseg;
 #ifdef IEEE
                 if (virtual_mode)
-                    bePrintf( "\tSECTION vsd%s VIRTUAL\n", sp->decoratedName);
+                    bePrintf( "\tsection vsd%s virtual\n", sp->decoratedName);
                 else
-                    bePrintf( "\tSECTION vsc%s VIRTUAL\n", sp->decoratedName);
+                    bePrintf( "\tsection vsc%s virtual\n", sp->decoratedName);
 #else
                 bePrintf( "\tSECTION @%s VIRTUAL\n", sp->decoratedName);
 #endif
             }
             else
-                bePrintf( "@%s\tSEGMENT VIRTUAL\n", sp->decoratedName);
+                bePrintf( "@%s\tsegment virtual\n", sp->decoratedName);
             bePrintf( "%s:\n", sp->decoratedName);
         }
         else
@@ -2804,7 +2804,7 @@ void oa_enterseg(enum e_sg seg)
             oa_nl();
             if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
             {
-                bePrintf( "@%s\tENDS\n", sp->decoratedName);
+                bePrintf( "@%s\tends\n", sp->decoratedName);
             }
             else
                 if (virtual_mode)
@@ -2834,9 +2834,9 @@ void oa_align(int size)
         /* NASM 0.91 wouldn't let me use parenthesis but this should work
          * according to the documented precedence levels
          */
-            bePrintf( "\tTIMES $$-$ & %d NOP\n", size-1);
+            bePrintf( "\ttimes $$-$ & %d nop\n", size-1);
         else
-            bePrintf( "\tALIGN\t%d\n", size);
+            bePrintf( "\talign\t%d\n", size);
     }
     else
         outcode_align(size);
@@ -2909,7 +2909,7 @@ void dump_muldivval(void)
             oa_align(8);
             oa_put_label(muldivlink->label);
             if (muldivlink->size == ISZ_NONE)
-                bePrintf( "\tDD\t0%xH\n", muldivlink->value);
+                bePrintf( "\tdd\t0%xh\n", muldivlink->value);
             else {
                 char buf[256];
                 if (muldivlink->floatvalue.type == IFPF_IS_INFINITY
@@ -2936,7 +2936,7 @@ void dump_muldivval(void)
                             len = 10;
                             break;
                     }
-                    bePrintf("\tDB\t");
+                    bePrintf("\tdb\t");
                     for (i=0; i < len; i++)
                     {
                         bePrintf("0%02XH", data[i]);
@@ -2952,12 +2952,12 @@ void dump_muldivval(void)
                     if (muldivlink->size == ISZ_FLOAT || muldivlink->size == ISZ_IFLOAT)
                         
                     {
-                        bePrintf( "\tDD\t%s\n", buf);
+                        bePrintf( "\tdd\t%s\n", buf);
                     }
                     else if (muldivlink->size == ISZ_DOUBLE || muldivlink->size == ISZ_IDOUBLE)
-                        bePrintf( "\tDQ\t%s\n", buf);
+                        bePrintf( "\tdq\t%s\n", buf);
                     else
-                        bePrintf( "\tDT\t%s\n", buf);
+                        bePrintf( "\tdt\t%s\n", buf);
                 }
             }
             muldivlink = muldivlink->next;
@@ -2993,18 +2993,18 @@ void oa_header(char *filename, char *compiler_version)
     {
         if (!prm_nodos)
         {
-            bePrintf( "\tSECTION code align=16 CLASS=CODE USE32\n");
-            bePrintf( "\tSECTION data align=8 CLASS=DATA USE32\n");
-            bePrintf( "\tSECTION bss  align=8 CLASS=BSS USE32\n");
-            bePrintf( "\tSECTION const  align=8 CLASS=CONST USE32\n");
-            bePrintf( "\tSECTION string  align=2 CLASS=STRING USE32\n")
+            bePrintf( "\tsection code align=16 class=CODE use32\n");
+            bePrintf( "\tsection data align=8 class=DATA use32\n");
+            bePrintf( "\tsection bss  align=8 class=BSS use32\n");
+            bePrintf( "\tsection const  align=8 class=CONST use32\n");
+            bePrintf( "\tsection string  align=2 class=STRING use32\n")
                 ;
-            bePrintf( "\tSECTION tls  align=8 CLASS=TLS USE32\n")
+            bePrintf( "\tsection tls  align=8 class=TLS use32\n")
                 ;
             bePrintf( 
-                "\tSECTION cstartup align=2 CLASS=INITDATA USE32\n");
+                "\tsection cstartup align=2 class=INITDATA use32\n");
             bePrintf( 
-                "\tSECTION crundown align=2 CLASS=EXITDATA USE32\n");
+                "\tsection crundown align=2 class=EXITDATA use32\n");
 //            bePrintf( 
  //               "\tSECTION cppinit  align=4 CLASS=CPPINIT USE32\n");
   //          bePrintf( 
@@ -3013,27 +3013,27 @@ void oa_header(char *filename, char *compiler_version)
         }
         else
         {
-            bePrintf( "\tSECTION .text\n");
-            bePrintf( "\tSECTION .data\n");
-            bePrintf( "\tSECTION .bss\n");
+            bePrintf( "\tsection .text\n");
+            bePrintf( "\tsection .data\n");
+            bePrintf( "\tsection .bss\n");
         }
     }
     else
     {
-        bePrintf( "\tTITLE\t'%s'\n", filename);
+        bePrintf( "\ttitle\t'%s'\n", filename);
         if (prm_flat)
-            bePrintf( "\t.486p\n\t.MODEL FLAT\n\n");
+            bePrintf( "\t.486p\n\t.model flat\n\n");
         else
             if (prm_assembler == pa_masm)
-                bePrintf( "\t.486p\n\t.MODEL SMALL\n\n");
+                bePrintf( "\t.486p\n\t.model small\n\n");
             else
-                bePrintf( "\t.486p\n\t.MODEL USE32 SMALL\n\n");
+                bePrintf( "\t.486p\n\t.model use32 small\n\n");
     }
 }
 void oa_trailer(void)
 {
     if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-        bePrintf("\tEND\n");
+        bePrintf("\tend\n");
 }
 /*-------------------------------------------------------------------------*/
 void oa_localdef(SYMBOL *sp)
@@ -3049,9 +3049,9 @@ void oa_globaldef(SYMBOL *sp)
     {
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            bePrintf( "[GLOBAL\t%s]\n", sp->decoratedName);
+            bePrintf( "[global\t%s]\n", sp->decoratedName);
         else
-            bePrintf( "\tPUBLIC\t%s\n", sp->decoratedName);
+            bePrintf( "\tpublic\t%s\n", sp->decoratedName);
     } else
         omf_globaldef(sp);
 }
@@ -3066,7 +3066,7 @@ void oa_output_alias(char *name, char *alias)
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             bePrintf( "%%define %s %s\n", name, alias);
         else
-            bePrintf( "%s EQU\t<%s>\n", name, alias);
+            bePrintf( "%s equ\t<%s>\n", name, alias);
     }
 }
 
@@ -3079,14 +3079,14 @@ void oa_put_extern(SYMBOL *sp, int code)
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
         {
-            bePrintf( "[EXTERN\t%s]\n", sp->decoratedName);
+            bePrintf( "[extern\t%s]\n", sp->decoratedName);
         }
         else
         {
             if (code)
-                bePrintf( "\tEXTRN\t%s:PROC\n", sp->decoratedName);
+                bePrintf( "\textrn\t%s:proc\n", sp->decoratedName);
             else
-                bePrintf( "\tEXTRN\t%s:BYTE\n", sp->decoratedName); 
+                bePrintf( "\textrn\t%s:byte\n", sp->decoratedName); 
         }
     } else
         omf_put_extern(sp, code);
@@ -3125,7 +3125,7 @@ void oa_output_includelib(char *name)
     if (cparams.prm_asmfile)
     {
         if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-            bePrintf( "\tINCLUDELIB %s\n", name);
+            bePrintf( "\tincludelib %s\n", name);
     } else
         omf_put_includelib(name);
 }

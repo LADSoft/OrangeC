@@ -154,7 +154,7 @@ bool dlPeMain::ParseOutDefFile(int *argc, char **argv)
             if (!stricmp(argv[i]+npos, ".def"))
             {
                 defFile = argv[i];
-                memcpy(argv, argv+1, sizeof(argv[0]) * *argc - i - 1);
+                memcpy(argv+i, argv+i+1, sizeof(argv[0]) * *argc - i - 1);
                 (*argc)--, i--;
                 n++;
             }

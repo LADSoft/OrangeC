@@ -1272,7 +1272,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_DESTROY:
             DestructTheme();
             PostQuitMessage(0);
-			return 0;
+            break;
         case WM_REDRAWTOOLBAR:
             RedrawToolBar();
 
@@ -1459,10 +1459,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (hwndProject)
             // MUST be after files are saved for tags to be updated
                 DestroyWindow(hwndProject);
-			DestroyWindow(hwndStatus);
-			DestroyWindow(hwndClient);
-			DestroyWindow(hwnd);
-			return 0;
+            break;
         default:
             break;
     }

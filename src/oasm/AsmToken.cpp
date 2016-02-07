@@ -523,7 +523,7 @@ bool IdentifierToken::Start(const std::string &line)
 }
 void IdentifierToken::Parse(std::string &line)
 {
-    char buf[1024], *p = buf;
+    char buf[2048], *p = buf;
     int i, n;
     for (i =0; (p == buf || p - buf -1 < sizeof(buf)) && p-buf < line.size() && IsSymbolChar(line.c_str() + i);)
     {

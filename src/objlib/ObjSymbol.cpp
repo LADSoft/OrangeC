@@ -112,7 +112,7 @@ static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 char *unmang_intrins(char *buf, char *name, char *last)
 {
-    char cur[512],  *p = cur,  *q;
+    char cur[4096],  *p = cur,  *q;
     int i;
     *p++ = *name++; // past the '$'
     while (*name != '@' &&  *name != '$' &&  *name)
@@ -200,7 +200,7 @@ static char *unmangptr(char *buf , char *name, char *last)
     }
     else if (*name != 'A')
     { 
-        char basetp[512];
+        char basetp[4096];
         int l;
         if (cconst)
         {
@@ -456,6 +456,7 @@ char *unmangleExpression(char *dest, char *name)
                    dest = unmangleExpression(dest, name);
                 }
                 *dest++=')';
+				*dest = 0;
                 break;
             }
             case 'e':
@@ -468,7 +469,7 @@ char *unmangleExpression(char *dest, char *name)
                     *dest++ = *name++;
                 if (*name)
                 {
-                    char bft[512];
+                    char bft[4096];
                     name ++;
                     unmang1(bft, name, "", false);
                 }
@@ -527,7 +528,7 @@ static char *unmangTemplate(char *buf, char *name, char *last)
                     }
                     else
                     {
-                        char tname[2048];
+                        char tname[10000];
                         *buf = 0;
                         tname[0] = 0;
                         if (*name == 'e')
@@ -566,7 +567,7 @@ char *unmang1(char *buf, char *name, char *last, bool tof)
 {
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
-    char buf1[1024],  *p, buf2[1024], buf3[1024];
+    char buf1[10000],  *p, buf2[10000], buf3[1000];
     while (*name == '_')
         name++;
     while (*name == 'x' ||  *name == 'y')
@@ -1084,4 +1085,3 @@ char *unmangle(char *val, char *name)
         }
     return val;
 }
-

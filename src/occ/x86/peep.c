@@ -1013,9 +1013,13 @@ void peep_mov(OCODE *ip)
             if (equal_address(ip1->oper1, ip->oper2))
             {
                 if (ip->oper1->preg == ip1->oper2->preg)
+                {
                     remove_peep_entry(ip);
+                }
                 else
-                    ip->oper2 = ip1->oper2;
+                {
+                    *ip->oper2 = *ip1->oper2;
+                }
             }
         }
     }      

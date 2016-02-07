@@ -88,6 +88,7 @@ private:
     static CmdSwitchBool printDir;
     static CmdSwitchBool warnUndef;
     static CmdSwitchBool treeBuild;
+    static CmdSwitchBool keepResponseFiles;
     static char *usageText;
     static char *builtinVars;
     static char *builtinRules;

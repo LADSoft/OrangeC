@@ -63,9 +63,9 @@ Maker::Depends::~Depends()
 }
 
 Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, bool RebuildAll,
-             std::string NewFiles, std::string OldFiles) : silent(Silent),
+             bool KeepResponseFiles, std::string NewFiles, std::string OldFiles) : silent(Silent),
     displayOnly(DisplayOnly), ignoreResults(IgnoreResults), missingTarget(false), touch(Touch),
-    rebuildAll(RebuildAll), newFiles(NewFiles), oldFiles(OldFiles)
+    rebuildAll(RebuildAll), keepResponseFiles(KeepResponseFiles), newFiles(NewFiles), oldFiles(OldFiles)
     {
     }
 Maker::~Maker()
@@ -690,7 +690,7 @@ int Maker::RunOne(Depends *depend, EnvironmentStrings &env, bool keepGoing)
         sil = OnList(depend->GetGoal(), ".SILENT");
     if (!ig)
         ig = OnList(depend->GetGoal(), ".IGNORE");
-    Spawner sp(env, ig, sil, displayOnly);
+    Spawner sp(env, ig, sil, displayOnly, keepResponseFiles);
     if (depend->GetRule() && depend->GetRule()->GetCommands())
         rv = sp.Run(*depend->GetRule()->GetCommands(), rl, NULL);
     if (rv)

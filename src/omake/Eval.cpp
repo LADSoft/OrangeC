@@ -1461,7 +1461,7 @@ std::string Eval::shell(const std::string &arglist)
 {
     Eval a(arglist, false, ruleList, rule);
     EnvironmentStrings empty;
-    Spawner sp (empty, true, true, false);
+    Spawner sp (empty, true, true, false, false);
     return sp.shell(a.Evaluate());
 }
 

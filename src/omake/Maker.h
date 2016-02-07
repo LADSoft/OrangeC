@@ -100,7 +100,7 @@ class Maker
     };
 public:
     Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch,
-          bool rebuildAll = false, std::string newFiles = "", std::string oldFiles = "");
+          bool rebuildAll = false, bool keepResponseFiles = false, std::string newFiles = "", std::string oldFiles = "");
     ~Maker();
     static void SetFirstGoal(const std::string &name);
     static void ClearFirstGoal() { firstGoal = "" ; }
@@ -136,6 +136,7 @@ private:
     bool missingTarget;
     bool touch;
     bool rebuildAll;
+    bool keepResponseFiles;
     std::string newFiles;
     std::string oldFiles;
     std::set<std::string> ignoreFailedTargets;

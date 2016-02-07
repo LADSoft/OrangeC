@@ -84,21 +84,22 @@ CmdSwitchBool MakeMain::cancelKeep(switchParser, 'S');
 CmdSwitchBool MakeMain::printDir(switchParser, 'w');
 CmdSwitchBool MakeMain::warnUndef(switchParser, 'u');
 CmdSwitchBool MakeMain::treeBuild(switchParser, 'T');
+CmdSwitchBool MakeMain::keepResponseFiles(switchParser, 'K');
 
 char *MakeMain::usageText = "[options] goals\n"
                     "\n"
                     "/B    Rebuild all             /C    Set directory\n"
                     "/Dxxx Define something        /Ixxx Set include path\n"
-                    "/R    Ignore builtin vars     /S    Cancel keepgoing\n"
-                    "/T    Tree Build              /Wxxx WhatIf\n"
-                    "/d    Reserved                /e    Environment overrides\n"
-                    "/fxxx Specify make file       /h    This text\n"
-                    "/i    Ignore errors           /k    Keep going\n"
-                    "/n    Display only            /oxxx Specify old goals\n"
-                    "/p    Print database          /q    Query\n"
-                    "/r    Ignore builtin rules    /s    Don't print commands\n"
-                    "/t    Touch                   /u    Debug warnings\n"
-                    "/w    Print directory\n"
+                    "/K    Keep response files     /R    Ignore builtin vars\n"
+                    "/S    Cancel keepgoing        /T    Tree Build\n"
+                    "/Wxxx WhatIf                  /d    Reserved\n"
+                    "/e    Environment overrides   /fxxx Specify make file\n"
+                    "/h    This text               /i    Ignore errors\n"
+                    "/k    Keep going              /n    Display only\n"
+                    "/oxxx Specify old goals       /p    Print database\n"
+                    "/q    Query                   /r    Ignore builtin rules\n"
+                    "/s    Don't print commands    /t    Touch\n"
+                    "/u    Debug warnings          /w    Print directory\n"
                     "\nTime: " __TIME__ "  Date: " __DATE__;
 char *MakeMain::builtinVars = "";
 char *MakeMain::builtinRules = "";
@@ -181,6 +182,10 @@ void MakeMain::SetMakeFlags()
     if (keepGoing.GetValue())
     {
         vals += "k";
+    }
+    if (keepResponseFiles.GetValue())
+    {
+        vals += "K";
     }
     if (ignoreErrors.GetValue())
     {
@@ -513,7 +518,7 @@ int MakeMain::Run(int argc, char **argv)
         bool xtouch = touch.GetValue();
         xdontrun |= xtouch || query.GetValue();
         xsilent |= xtouch || query.GetValue();
-        Maker maker(xsilent, xdontrun, xignore, xtouch, rebuild.GetValue(), newFiles.GetValue(), oldFiles.GetValue());
+        Maker maker(xsilent, xdontrun, xignore, xtouch, rebuild.GetValue(), keepResponseFiles.GetValue(), newFiles.GetValue(), oldFiles.GetValue());
         for (int i = 1; i < argc; i++)
         {
             maker.AddGoal(argv[i]);

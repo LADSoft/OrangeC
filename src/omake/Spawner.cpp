@@ -44,6 +44,7 @@
 #include <iomanip>
 #include <iostream>
 #include "utils.h"
+
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
 int Spawner::lineLength = 500;
@@ -112,7 +113,7 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
         rv = Run(cmd, curIgnore, curSilent, curDontRun);
         if (curIgnore)
             rv = 0;
-        if (makeName.size())
+        if (!keepResponseFiles && makeName.size())
             OS::RemoveFile(makeName);
     }
     return rv;

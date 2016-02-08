@@ -1558,6 +1558,14 @@ void gen_vtt(VTABENTRY *entry, SYMBOL *func, SYMBOL *name)
     oprintf(icdFile, "\t[this] = [this] - %d\n", entry->dataOffset);
     oprintf(icdFile, "\tGOTO\t%s:PC", func->decoratedName);
 }
+void gen_importThunk(SYMBOL *func)
+{
+    if (chosenAssembler->gen->gen_importThunk)
+        chosenAssembler->gen->gen_importThunk(func);
+    if (!icdFile)
+        return;
+    oprintf(icdFile, "\tGOTO [%s]\n", func->name);
+}
 void gen_vc1(SYMBOL *func)
 {
     gen_strlab(func);

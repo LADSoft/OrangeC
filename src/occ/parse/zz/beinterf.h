@@ -270,7 +270,6 @@ typedef struct _arch_gen {
     void (*gen_endvirtual)(SYMBOL *sp);    /* end a virtual segment */
     void (*gen_vtt)(VTABENTRY *vt, SYMBOL *func); /* vttthunk entry */
     void (*gen_vc1)(SYMBOL *func);      /* vc1thunk entry */
-    void (*gen_importThunk)(SYMBOL *func);      /* import thunk entry */
     void (*gen_storage)(int size);      /* generate uninitialized storage */
     void (*align)(int size);            /* put an alignment command */
     void (*enterseg)(enum e_sg segnum); /* enter a new segment */

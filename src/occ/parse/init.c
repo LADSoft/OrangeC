@@ -950,6 +950,7 @@ void dumpInitializers(void)
         dumpDynamicDestructors();
         dumpTLSDestructors();
         dumpvc1Thunks();
+        dumpImportThunks();
     }
 #endif
 }
@@ -1068,6 +1069,8 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                     FUNCTIONCALL fpargs;
                     INITLIST **args = &fpargs.arguments;
                     TYPE *tp1 = NULL;
+                    sp2 = MatchOverloadedFunction((*exp2)->v.func->sp->tp, &tp1, (*exp2)->v.func->sp, exp2, 0);
+                    /*
                     memset(&fpargs, 0, sizeof(fpargs));
                     while (hrp)
                     {
@@ -1082,6 +1085,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                        fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     sp2 = GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    */
                     if (sp2)
                         sp2->genreffed = TRUE;                    
                 }
@@ -1220,6 +1224,9 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                 INITLIST **args = &fpargs.arguments;
                 TYPE *tp1 = NULL;
                 HASHREC *hrp;
+                SYMBOL *sp2;
+                sp2 = MatchOverloadedFunction(itype, ispointer(itype)? &tp : &tp1, (*exp2)->v.func->sp, exp2, 0);
+                /*
                 if (isfuncptr(itype))
                 {
                     hrp = basetype(basetype(itype)->btp)->syms->table[0];
@@ -1249,9 +1256,14 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                        fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     sp2 = GetOverloadedFunction(ispointer(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    */
                     if (sp2)
-                        sp2->genreffed = TRUE;                    
-                }
+                    {
+                        sp2->genreffed = TRUE;
+                        if ((*exp2)->type == en_pc || (*exp2)->type == en_func && !(*exp2)->v.func->ascall)
+                            thunkForImportTable(exp2);
+                    }
+//                }
             }
             if (tp->type == bt_memberptr)
             {
@@ -1325,6 +1337,8 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                 HASHREC *hrp;
                 if ((*exp2)->v.func->sp->parentClass && !(*exp2)->v.func->asaddress)
                     error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                funcsp = MatchOverloadedFunction(itype, &tp1, (*exp2)->v.func->sp, exp2, 0);
+                /*
                 memset(&fpargs, 0, sizeof(fpargs));
                 if (isfuncptr(itype))
                 {
@@ -1361,15 +1375,16 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                        fpargs.templateParams = (*exp2)->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     funcsp = GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    */
                     if (funcsp)
                     {
                         exp = varNode(en_memberptr, funcsp);
                     }
-                    if (!comparetypes(itype->btp, tp1, TRUE))
+                    if (tp1 && !comparetypes(itype->btp, tp1, TRUE))
                     {
                         errortype(ERR_CANNOT_CONVERT_TYPE, tp1, itype);
                     }
-                }
+//                }
             }
             else if (exp->type == en_memberptr)
             {
@@ -1605,6 +1620,8 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                         SYMBOL *funcsp;
                         INITLIST **args = &fpargs.arguments;
                         HASHREC *hrp = itype1->btp->syms->table[0];
+                        funcsp = MatchOverloadedFunction(itype1, &tp, tp->sp, &exp, 0);
+                        /*
                         memset(&fpargs, 0, sizeof(fpargs));
                         if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
                         {
@@ -1638,6 +1655,7 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                            fpargs.templateParams = exp->v.func->templateParams;
                         fpargs.ascall = TRUE;
                         funcsp = GetOverloadedFunction(& tp, &exp, tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
+                        */
                         if (funcsp)
                         {
                             int lbl = dumpMemberPtr(funcsp, tp, TRUE);

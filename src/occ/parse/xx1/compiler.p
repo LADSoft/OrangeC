@@ -158,7 +158,6 @@ void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOLEA
 LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces);
 LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_class, BOOLEAN beforeOnly, BOOLEAN toErr);
 int classRefCount(SYMBOL *base, SYMBOL *derived);
-void CheckCalledException(SYMBOL *cst, EXPRESSION *exp);
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset);
 void deferredCompileOne(SYMBOL *cur);
 void deferredCompile(void);
@@ -230,7 +229,6 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class,
                                /* Expr.c */
 
 void expr_init(void);
-void thunkForImportTable(EXPRESSION **exp);
 void checkscope(TYPE *tp1, TYPE *tp2);
 void checkauto(TYPE *tp);
 void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable);
@@ -270,7 +268,7 @@ LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcpar
 EXPRESSION *DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION *exp, int flags);
 void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListType, 
                            INITLIST **lptr, BOOLEAN operands, BOOLEAN asref);
-void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit);
+void AdjustParams(HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
 LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
 LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
@@ -623,7 +621,6 @@ void genbyte(long val);
 void genbool(int val);
 void gen_vtt(VTABENTRY *entry, SYMBOL *func, SYMBOL *name);
 void gen_strlab(SYMBOL *sp);
-void gen_importThunk(SYMBOL *func);
 void gen_vc1(SYMBOL *func);
 void put_label(int lab);
 void put_staticlabel(long label);
@@ -966,7 +963,6 @@ SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
                               FUNCTIONCALL *args, TYPE *atp, BOOLEAN toErr, 
                               BOOLEAN maybeConversion, BOOLEAN toInstantiate, int flags);
-SYMBOL *MatchOverloadedFunction(TYPE *tp, TYPE **mtp, SYMBOL *sp, EXPRESSION **exp, int flags);
 void insert(SYMBOL *in, HASHTABLE *table);
 HASHREC *AddOverloadName(SYMBOL *item, HASHTABLE *table);
 void insertOverload(SYMBOL *in, HASHTABLE *table);

@@ -1843,6 +1843,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                             SYMBOL *funcsp;
                             if (returnexp->v.func->sp->parentClass && !returnexp->v.func->asaddress)
                                 error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                            funcsp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &returnexp, 0);
+                            /*
                             if (isfuncptr(tp))
                             {
                                 hrp = basetype(basetype(tp)->btp)->syms->table[0];
@@ -1880,6 +1882,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                                fpargs.templateParams = returnexp->v.func->templateParams;
                             fpargs.ascall = TRUE;
                             funcsp = GetOverloadedFunction(&tp1, &returnexp, returnexp->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                            */
                             if (funcsp && basetype(tp)->type == bt_memberptr)
                             {
                                 int lbl = dumpMemberPtr(funcsp, tp, TRUE);
@@ -1947,6 +1950,8 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                     EXPRESSION *exp1;
                     if (returnexp->v.func->sp->parentClass && !returnexp->v.func->asaddress)
                         error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                    returnexp->v.func->sp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &exp1, 0);
+                    /*
                     if (isfuncptr(tp))
                     {
                         hrp = basetype(basetype(tp)->btp)->syms->table[0];
@@ -1984,6 +1989,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                        fpargs.templateParams = returnexp->v.func->templateParams;
                     fpargs.ascall = TRUE;
                     returnexp->v.func->sp = GetOverloadedFunction(&tp1, &exp1, returnexp->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                    */
                     returnexp->v.func->fcall = varNode(en_pc, returnexp->v.func->sp);
                 }
             }

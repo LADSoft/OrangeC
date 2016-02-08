@@ -44,6 +44,7 @@ extern TYPE stdpointer, stdvoid;
 extern int startlab, retlab;
 extern int total_errors;
 extern INCLUDES *includes;
+extern LIST *importThunks;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
 static LIST *inlineDataHead, *inlineDataTail;
@@ -272,6 +273,19 @@ void dumpInlines(void)
             }
             dataList = dataList->next;
         }
+    }
+#endif
+}
+void dumpImportThunks(void)
+{
+#ifndef PARSER_ONLY
+    LIST *l = importThunks;
+    while (l)
+    {
+        gen_virtual((SYMBOL *)l->data, FALSE);
+        gen_importThunk((SYMBOL *)l->data);
+        gen_endvirtual((SYMBOL *)l->data);
+        l = l->next;
     }
 #endif
 }

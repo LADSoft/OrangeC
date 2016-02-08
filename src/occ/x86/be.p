@@ -189,6 +189,7 @@ void oa_gen_virtual(SYMBOL *sp, int data);
 void oa_gen_endvirtual(SYMBOL *sp);
 void oa_gen_vtt(VTABENTRY *entry, SYMBOL *func);
 void oa_gen_vc1(SYMBOL *func);
+void oa_gen_importThunk(SYMBOL *func);
 void oa_align(int size);
 long queue_muldivval(long number);
 long queue_floatval(FPF *number, int size);

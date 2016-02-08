@@ -262,6 +262,14 @@ void oa_gen_vc1(SYMBOL *func)
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
 }
+void oa_gen_importThunk(SYMBOL *func)
+{
+    AMODE *ofs = (AMODE *)Alloc(sizeof(AMODE));
+    ofs->mode = am_direct;
+    ofs->offset = varNode(en_pc, func->mainsym);
+    gen_code(op_jmp, ofs, NULL);
+    flush_peep(NULL, NULL);
+}
 void make_floatconst(AMODE *ap)
 {
     int size = ap->length;

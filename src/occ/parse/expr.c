@@ -82,6 +82,7 @@ int packIndex;
 
 int argument_nesting;
 
+LIST *importThunks;
 /* lvaule */
 /* handling of const int */
 /*-------------------------------------------------------------------------------------------------------------------------------- */
@@ -93,6 +94,43 @@ static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **t
 void expr_init(void)
 {
     packIndex = -1;
+    importThunks = NULL;
+}
+void thunkForImportTable(EXPRESSION **exp)
+{
+    SYMBOL *sp;
+    if ((*exp)->type == en_pc)
+        sp = (*exp)->v.sp;
+    else
+        sp = (*exp)->v.func->sp;
+        // order is important here as we might get into this function with an already sanitized symbol
+    if (sp && sp->linkage2 == lk_import && isfunction(sp->tp) && ((*exp)->type == en_pc || !(*exp)->v.func->ascall))
+    {
+        LIST *search = importThunks;
+        while (search)
+        {
+            if (((SYMBOL *)search->data)->mainsym == sp)
+            {
+                *exp = varNode(en_pc, search->data);
+                break; 
+            }
+            search = search->next;
+        }
+        if (!search)
+        {
+            SYMBOL *newThunk;
+            char buf[2048];
+            sprintf(buf, "@$%s", sp->name);
+            newThunk = makeID(sc_global,&stdpointer,NULL, litlate(buf));
+            newThunk->errname = newThunk->decoratedName = newThunk->name;
+            newThunk->mainsym = sp; // mainsym is the symbol this was derived from
+            search = (LIST *)Alloc(sizeof(LIST));
+            search->next = importThunks;
+            search->data = newThunk;
+            importThunks = search;   
+            *exp = varNode(en_pc, search->data);
+        }
+    }
 }
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right)
 {
@@ -2144,6 +2182,9 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
             }
         }
         p = *lptr;
+        if (p->exp->type == en_pc || p->exp->type == en_func)
+            thunkForImportTable(&p->exp);
+
         if (cparams.prm_cplusplus)
         {
             BOOLEAN done = FALSE;
@@ -2380,7 +2421,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
                         if (p->exp->type == en_memberptr)
                         {
                             int lbl = dumpMemberPtr(p->exp->v.sp, tp2, TRUE);
-                            p->exp = tp2, intNode(en_labcon, lbl);
+                            p->exp = intNode(en_labcon, lbl);
                         }
                         else if (isconstzero(p->tp, p->exp) || p->exp->type == en_nullptr)
                         {
@@ -5640,6 +5681,31 @@ static LEXEME *expression_inequality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYP
                 checkscope(*tp, tp1);
                 castToArithmetic(FALSE, tp, exp, kw, tp1, TRUE);
                 castToArithmetic(FALSE, &tp1, &exp1, (enum e_kw)-1, *tp, TRUE);
+                if (cparams.prm_cplusplus)
+                {
+                    SYMBOL *funcsp= NULL;
+                    if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
+                    {
+                        if (tp1->syms->table[0]->next)
+                            errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)tp1->syms->table[0]->p)->name);
+                        exp1 = varNode(en_pc, tp1->syms->table[0]->p);
+                        tp1 = ((SYMBOL *)tp1->syms->table[0]->p)->tp;
+                            
+                    }
+                    else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
+                    {
+                        if ((*tp)->syms->table[0]->next)
+                            errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)(*tp)->syms->table[0]->p)->name);
+                        (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
+                        (*tp) = ((SYMBOL *)(*tp)->syms->table[0]->p)->tp;
+                    }
+                    if (funcsp)
+                        funcsp->genreffed = TRUE;
+                }
+                if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+                    thunkForImportTable(exp);
+                if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+                    thunkForImportTable(&exp1);
                 if (isstructured(*tp) || isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_OPERATION);
                 else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate  || tp1->type == bt_aggregate)
@@ -5744,181 +5810,36 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
                 insertOperatorFunc(ovcl_binary_numericptr, kw,
                                funcsp, tp, exp, tp1, exp1, NULL, flags);
             }
+            if (cparams.prm_cplusplus)
+            {
+                SYMBOL *funcsp= NULL;
+                if ((ispointer(*tp) || basetype(*tp)->type == bt_memberptr) && tp1->type == bt_aggregate)
+                {
+                    if (tp1->syms->table[0]->next)
+                        errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)tp1->syms->table[0]->p)->name);
+                    exp1 = varNode(en_pc, tp1->syms->table[0]->p);
+                   tp1 = ((SYMBOL *)tp1->syms->table[0]->p)->tp;
+                        
+                }
+                else if ((ispointer(tp1) || basetype(tp1)->type == bt_memberptr) && (*tp)->type == bt_aggregate)
+                {
+                    if ((*tp)->syms->table[0]->next)
+                        errorstr(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, ((SYMBOL *)(*tp)->syms->table[0]->p)->name);
+                    (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
+                    (*tp) = ((SYMBOL *)(*tp)->syms->table[0]->p)->tp;
+                }
+                if (funcsp)
+                    funcsp->genreffed = TRUE;
+            }
+            if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+                thunkForImportTable(exp);
+            if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+                thunkForImportTable(&exp1);
             if (isstructured(*tp) || isstructured(tp1))
                 error(ERR_ILL_STRUCTURE_OPERATION);
             else if (isvoid(*tp) || isvoid(tp1))
                 error(ERR_NOT_AN_ALLOWED_TYPE);
-            else if ((*tp)->type == bt_aggregate)
-            {
-                if (tp1->type == bt_aggregate)
-                {
-                    HASHREC *hr = (*tp)->syms->table[0];
-                    HASHREC *hr1 = tp1->syms->table[0];
-                    if (!hr->next && !hr1->next && comparetypes(((SYMBOL *)hr->p)->tp, ((SYMBOL *)hr1->p)->tp, TRUE))
-                    {
-                        if (kw == eq)
-                        {
-                            *exp = intNode(en_c_i, hr->p == hr1->p);
-                        }
-                        else
-                        {
-                            *exp = intNode(en_c_i, hr->p != hr1->p);
-                        }
-                        done = TRUE;
-                    }
-                    else
-                    {
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
-                    }
-                }
-                else
-                {
-                    FUNCTIONCALL fpargs;
-                    TYPE *tp2 = tp1;
-                    if (ispointer(tp2))
-                        tp2 = basetype(tp2)->btp;
-                    if (basetype(tp2)->type == bt_memberptr && isfunction(basetype(tp2)->btp) && basetype(basetype(tp2)->btp)->sp->parentClass)
-                    {
-                        HASHREC *hrp = basetype(basetype(tp2)->btp)->syms->table[0];
-                        INITLIST **args = &fpargs.arguments;
-                        SYMBOL *sp;
-                        memset(&fpargs, 0, sizeof(fpargs));
-                        fpargs.thistp = Alloc(sizeof(TYPE));
-                        fpargs.thistp->type = bt_pointer;
-                        fpargs.thistp->size = getSize(bt_pointer);
-                        fpargs.thistp->btp = basetype(tp2)->sp->tp;
-                        fpargs.thisptr = intNode(en_c_i, 0);
-                        while (hrp)
-                        {
-                            *args = Alloc(sizeof(INITLIST));
-                            (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                            if (isref((*args)->tp))
-                                (*args)->tp = basetype((*args)->tp)->btp;
-                            args = &(*args)->next;
-                            hrp = hrp->next;
-                        }
-                        fpargs.ascall = TRUE;
-                        sp = GetOverloadedFunction(tp, exp, (*tp)->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
-                        if (sp)
-                        {
-                            int lab = dumpMemberPtr(sp, *tp, TRUE);
-                            *exp = exprNode(en_mp_compare, intNode(en_labcon, lab), exp1);
-                            (*exp)->size = tp1->size;
-                            if (kw == neq)
-                                *exp = exprNode(en_not, *exp, NULL);
-                            done = TRUE;
-                        }
-                    }
-                    else if (isfunction(tp2))
-                    {
-                        HASHREC *hrp = tp2->syms->table[0];
-                        INITLIST **args = &fpargs.arguments;
-                        SYMBOL *sp;
-                        memset(&fpargs, 0, sizeof(fpargs));
-                        if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
-                        {
-                            fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
-                            fpargs.thisptr = intNode(en_c_i, 0);
-                            hrp = hrp->next;
-                        }
-                        while (hrp)
-                        {
-                            *args = Alloc(sizeof(INITLIST));
-                            (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                            if (isref((*args)->tp))
-                                (*args)->tp = basetype((*args)->tp)->btp;
-                            args = &(*args)->next;
-                            hrp = hrp->next;
-                        }
-                        fpargs.ascall = TRUE;
-                        sp = GetOverloadedFunction(tp, exp, (*tp)->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
-                        if (sp)
-                        {
-                            sp->genreffed = TRUE;                    
-                            *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
-                            done = TRUE;
-                        }
-                    }
-                    else
-                    {
-                        error(ERR_NOT_AN_ALLOWED_TYPE);
-                    }
-                }
-            }
-            else if (tp1->type == bt_aggregate)
-            {
-                FUNCTIONCALL fpargs;
-                TYPE *tp2 = *tp;
-                if (ispointer(tp2))
-                    tp2 = basetype(tp2)->btp;
-                if (basetype(tp2)->type == bt_memberptr && isfunction(basetype(tp2)->btp) && basetype(basetype(tp2)->btp)->sp->parentClass)
-                {
-                    HASHREC *hrp = basetype(basetype(tp2)->btp)->syms->table[0];
-                    INITLIST **args = &fpargs.arguments;
-                       SYMBOL *sp;
-                    memset(&fpargs, 0, sizeof(fpargs));
-                    fpargs.thistp = Alloc(sizeof(TYPE));
-                    fpargs.thistp->type = bt_pointer;
-                    fpargs.thistp->size = getSize(bt_pointer);
-                    fpargs.thistp->btp = basetype(tp2)->sp->tp;
-                    fpargs.thisptr = intNode(en_c_i, 0);
-                    while (hrp)
-                    {
-                        *args = Alloc(sizeof(INITLIST));
-                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                        if (isref((*args)->tp))
-                            (*args)->tp = basetype((*args)->tp)->btp;
-                        args = &(*args)->next;
-                        hrp = hrp->next;
-                    }
-                    fpargs.ascall = TRUE;
-                    sp = GetOverloadedFunction(&tp1, &exp1, tp1->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
-                    if (sp)
-                    {
-                            int lab = dumpMemberPtr(sp, tp1, TRUE);
-                            *exp = exprNode(en_mp_compare, *exp, intNode(en_labcon, lab));
-                            (*exp)->size = (*tp)->size;
-                            if (kw == neq)
-                                *exp = exprNode(en_not, *exp, NULL);
-                            done = TRUE;
-                    }
-                }
-                else if (isfunction(tp2))
-                {
-                    HASHREC *hrp = tp2->syms->table[0];
-                    INITLIST **args = &fpargs.arguments;
-                       SYMBOL *sp;
-                    memset(&fpargs, 0, sizeof(fpargs));
-                    if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
-                    {
-                        fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
-                        fpargs.thisptr = intNode(en_c_i, 0);
-                        hrp = hrp->next;
-                    }
-                    while (hrp)
-                    {
-                        *args = Alloc(sizeof(INITLIST));
-                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                        if (isref((*args)->tp))
-                            (*args)->tp = basetype((*args)->tp)->btp;
-                        args = &(*args)->next;
-                        hrp = hrp->next;
-                    }
-                    fpargs.ascall = TRUE;
-                    sp = GetOverloadedFunction(&tp1, &exp1, tp1->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
-                    if (sp)
-                    {
-                        sp->genreffed = TRUE;
-                        *exp = exprNode(kw == eq ? en_eq : en_ne, *exp, exp1);
-                        done = TRUE;
-                    }
-                }
-                else
-                {
-                    error(ERR_NOT_AN_ALLOWED_TYPE);
-                }
-            }
-            else if (ispointer(*tp))
+            if (ispointer(*tp))
             {
                 if (isintconst(exp1))
                 {
@@ -5950,7 +5871,19 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             }
             else if (basetype(*tp)->type == bt_memberptr)
             {
-                if (isconstzero(tp1, exp1))
+                if (basetype(tp1)->type == bt_memberptr)
+                {
+                    if (!comparetypes(basetype(*tp)->btp, basetype(tp1)->btp, TRUE))
+                    {
+                        error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
+                    }
+                    *exp = exprNode(en_mp_compare, *exp, exp1);
+                    (*exp)->size = (*tp)->size;
+                    if (kw == neq)
+                        *exp = exprNode(en_not, *exp, NULL);
+                    done = TRUE;
+                }
+                else if (isconstzero(tp1, exp1))
                 {
                     *exp = exprNode(en_mp_as_bool, *exp, NULL);
                     (*exp)->size = (*tp)->size;
@@ -5958,10 +5891,12 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
                         *exp = exprNode(en_not, *exp, NULL);
                     done = TRUE;
                 }
-                else if (comparetypes(*tp, tp1, TRUE))
+                else if (comparetypes(basetype(*tp)->btp, tp1, TRUE))
                 {
+                    int lbl = dumpMemberPtr(exp1->v.sp, *tp, TRUE);
+                    exp1 = intNode(en_labcon, lbl);
                     *exp = exprNode(en_mp_compare, *exp, exp1);
-                    (*exp)->size = tp1->size;
+                    (*exp)->size = (*tp)->size;
                     if (kw == neq)
                         *exp = exprNode(en_not, *exp, NULL);
                     done = TRUE;
@@ -5975,14 +5910,16 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
             {
                 if (isconstzero(*tp, *exp))
                 {
-                       *exp = exprNode(en_mp_as_bool, exp1, NULL);
+                    *exp = exprNode(en_mp_as_bool, exp1, NULL);
                     (*exp)->size = (tp1)->size;
                     if (kw == eq)
                         *exp = exprNode(en_not, *exp, NULL);
                     done = TRUE;
                 }
-                else if (comparetypes(*tp, tp1, TRUE))
+                else if (comparetypes(*tp, basetype(tp1)->btp, TRUE))
                 {
+                    int lbl = dumpMemberPtr((*exp)->v.sp, tp1, TRUE);
+                    *(exp) = intNode(en_labcon, lbl);
                     *exp = exprNode(en_mp_compare, *exp, exp1);
                     (*exp)->size = tp1->size;
                     if (kw == neq)
@@ -6481,6 +6418,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             SYMBOL *funcsp;
             if ((*exp2)->v.func->sp->parentClass && !(*exp2)->v.func->asaddress)
                 error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+            funcsp = MatchOverloadedFunction((*tp), isfuncptr(*tp) || basetype(*tp)->type == bt_memberptr ? & tp1 : &tp2, (*exp2)->v.func->sp, exp2, flags);
+            /*
             if (isfuncptr(*tp))
             {
                 hrp = basetype(basetype(*tp)->btp)->syms->table[0];
@@ -6519,14 +6458,22 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
                fpargs.templateParams = (*exp2)->v.func->templateParams;
             fpargs.ascall = TRUE;
             funcsp = GetOverloadedFunction(isfuncptr(*tp) || basetype(*tp)->type == bt_memberptr ? & tp1 : &tp2, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
+            */
             if (funcsp && basetype(*tp)->type == bt_memberptr)
             {
                 int lbl = dumpMemberPtr(funcsp, *tp, TRUE);
                 exp1 = intNode(en_labcon, lbl);
             }
+            if (funcsp)
+            {
+                tp1 = funcsp->tp;
+                if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+                    thunkForImportTable(&exp1);
+            }
             if (basetype(*tp)->btp && !comparetypes(basetype(*tp)->btp, tp1, TRUE))
             {
-                errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+                if (!isvoidptr(*tp))
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
             }
         }
         if (isconstraw(*tp, TRUE) && !localMutable)
@@ -6902,6 +6849,8 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             }
         }
     }
+    if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+        thunkForImportTable(exp);
     return lex;
 }
 static LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags)

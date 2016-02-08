@@ -10,7 +10,6 @@
     
     * Redistributions of source code must retain the above
       copyright notice, this list of conditions and the
-      following disclaimer.
     
     * Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the
@@ -3044,7 +3043,7 @@ void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n,
                 seq[(*n)++] = CV_NONE;            
             }
         }
-        else if (ispointer(tpa))
+        else if (ispointer(tpa) || isfunction(tpa))
         {
             if (basetype(tpp)->type == bt_bool)
             {
@@ -3493,8 +3492,13 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                 }
                 else
                 {
-                    if (a && a->tp->type == bt_aggregate && isfuncptr(tp))
+                    TYPE *tp2 = tp;
+                    if (isref(tp2))
+                        tp2 = basetype(tp2)->btp;
+                    if (a && a->tp->type == bt_aggregate && (isfuncptr(tp2) || basetype(tp2)->type == bt_memberptr && isfunction(basetype(tp2)->btp)) )
                     {
+                        MatchOverloadedFunction(tp2, &a->tp, a->tp->sp, &a->exp, 0);
+                        /*
                         HASHREC *hrp = basetype(basetype(tp)->btp)->syms->table[0];
                         FUNCTIONCALL fpargs;
                         INITLIST **args = &fpargs.arguments;
@@ -3516,9 +3520,10 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                             fpargs.templateParams = exp2->v.func->templateParams;
                         fpargs.ascall = TRUE;
                         GetOverloadedFunction(&a->tp, &a->exp, a->tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
+                        */
                     }
                     getSingleConversion(tp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
-                                    sp, userFunc ? &userFunc[n] : NULL, TRUE);
+                            sp, userFunc ? &userFunc[n] : NULL, TRUE);
                 }
                 m1 = m;
                 while (m1 && seq[m1-1] == CV_IDENTITY)
@@ -3872,24 +3877,18 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                 {
                     HASHREC *hr = argl->tp->syms->table[0];
                     SYMBOL *func = (SYMBOL *)hr->p;
-                    if (!func->templateLevel)
+                    if (!func->templateLevel && !hr->next)
                     {
-                        if (hr->next)
-                        {
-                            errorsym2(ERR_AMBIGUITY_BETWEEN, (SYMBOL *)hr->p, (SYMBOL *)hr->next->p);
-                        }
-                        else
-                        {
-                            argl->tp = func->tp;
-                            argl->exp = varNode(en_pc, func);
-                            func->genreffed = TRUE;
-                            InsertInline(func);
-                            InsertExtern(func);
-                        }
+                        argl->tp = func->tp;
+                        argl->exp = varNode(en_pc, func);
+                        func->genreffed = TRUE;
+                        InsertInline(func);
+                        InsertExtern(func);
                     }
                 }
                 argl = argl->next;
             }
+
             lst2 = gather;
             while (lst2)
             {
@@ -4128,3 +4127,61 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
         dropStructureDeclaration();
     return sp;
 }
+SYMBOL *MatchOverloadedFunction(TYPE *tp, TYPE **mtp, SYMBOL *sp, EXPRESSION **exp, int flags)
+{
+    FUNCTIONCALL fpargs;
+    INITLIST ** args = &fpargs.arguments;
+    EXPRESSION *exp2 = *exp;
+    HASHREC *hrp;
+    tp = basetype(tp);
+    if (isfuncptr(tp) || tp->type == bt_memberptr)
+    {
+        hrp = basetype(basetype(tp)->btp)->syms->table[0];
+    }
+    else
+    {
+        hrp = NULL;
+        if ((*exp)->v.func->sp->tp->syms)
+        {
+            HASHTABLE *syms = (*exp)->v.func->sp->tp->syms;
+            hrp  = syms->table[0];
+            if (hrp && ((SYMBOL *)hrp->p)->tp->syms)
+                hrp = ((SYMBOL *)hrp->p)->tp->syms->table[0];
+            else
+                hrp = NULL;
+        }
+    }
+    while (castvalue(exp2))
+        exp2 = exp2->left;
+           
+    memset(&fpargs, 0, sizeof(fpargs));
+    if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
+    {
+        fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
+        fpargs.thisptr = intNode(en_c_i, 0);
+        hrp = hrp->next;
+    }
+    else if (tp->type == bt_memberptr)
+    {
+        fpargs.thistp = Alloc(sizeof(TYPE));
+        fpargs.thistp->type = bt_pointer;
+        fpargs.thistp->size = getSize(bt_pointer);
+        fpargs.thistp->btp = tp->sp->tp;
+        fpargs.thisptr = intNode(en_c_i, 0);
+    }
+    while (hrp)
+    {
+        *args = Alloc(sizeof(INITLIST));
+        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
+        (*args)->exp = intNode(en_c_i, 0);
+        if (isref((*args)->tp))
+            (*args)->tp = basetype((*args)->tp)->btp;
+        args = &(*args)->next;
+        hrp = hrp->next;
+    }
+    if (exp2 && exp2->type == en_func)
+       fpargs.templateParams = exp2->v.func->templateParams;
+    fpargs.ascall = TRUE;
+    return GetOverloadedFunction(mtp, exp, sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
+}
+                                

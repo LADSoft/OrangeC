@@ -4,7 +4,7 @@
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
     
-    Redistribution and use of this software in source and binary forms, 
+    Redistribution and se of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
     
@@ -549,6 +549,7 @@ ARCH_GEN outputfunctions = {
     oa_gen_endvirtual,     /* end a virtual segment */
     oa_gen_vtt,                  /* do a VT thunk entry */
     oa_gen_vc1,                 /* do a vc1 thunk entry */
+    oa_gen_importThunk,                 /* do an import thunk entry */
     oa_genstorage,             /* generate uninitialized storage */
     oa_align,                  /* put an alignment command */
     oa_enterseg,               /* switch to new seg */

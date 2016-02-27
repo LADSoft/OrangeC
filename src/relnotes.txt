@@ -1,5 +1,39 @@
 Release notes:
 
+version 5.61.1:
+    occ:        fix code generation for taking windows API functions by address:
+                it should generate a thunk to call through the import table when a
+                call through the address is made.
+    occ:        casting a pointer to a qualified func ptr (e.g. qualified with stdcall) ignored the qualifier
+                whereas declaring the pointer with a stdcall type worked fine.
+    occ:        couldn't compare a function address to a pointer for equality in C++ mode
+    occ:        shouldn't have to cast a function pointer to void * to assign it to a variable declared as void *
+    occ:        generate ASM file in lower case now
+    occ:        fix problems generating invalid register sizes in the assembly language file
+    occ:        clean up some cases where it should have done function overload resolution for function pointers
+                and didn't.
+    occ:        matching template specializations with function calls as parameters was broken
+    occ:        matching a templated argument type didn't always work
+    occ:        there were problems with matching functions to template specializations with functions
+    occ:        const/volatile on a typedef within a class caused an error
+    occ:        function<...>  didn't match a structure with a matching operator () in argument matching
+    occ:        in c++ mode, when an untagged structure is used to define a variable,
+                don't expose the variable to the linker (make it local to the file).
+    occ:        fix problem where incomplete return statements could crash the compiler       
+    occ:        improve handling of 'tuple' templates
+    occ:        fix problem where sometimes a call through a pointer would be
+                inline expanded (incorrectly)
+    occ:        fix problem where returning a boolean by reference crashed the program
+    ocide:      fix problem with crashing while typing in a return statement;
+    oasm:       fix problems assembling some C++ code
+    ocide:      clean up shutdown, fix problem where it hangs in memory after shutdown sometimes
+    ocide:      fix build so build with self works on OCIDE
+    olink:      update the name unmangling to match current compiler
+    omake:      add option to keep response files
+    dlpe:       when you specified a .def file, it wouldn't generate an output file
+    examples:   add delegate.cpp
+    demos:      properly compiles sqlite3 now
+
 version 5.60.1: 2/6/16
     occ:        package compiles itself now, and the results can be used to build other files
     occ:        speed up aliasing code; compiles itself faster now

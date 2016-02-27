@@ -62,6 +62,7 @@ C_DEPENDENCIES= \
     inline.c \
     lambda.c \
     lex.c \
+    libcxx.c \
     list.c \
     mangle.c \
     memory.c \

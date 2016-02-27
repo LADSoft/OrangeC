@@ -80,6 +80,7 @@ C_DEPENDENCIES= \
     istren.c \
     lambda.c \
     lex.c \
+    libcxx.c \
     list.c \
     mangle.c \
     memory.c \

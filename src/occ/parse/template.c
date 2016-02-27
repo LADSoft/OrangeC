@@ -2507,6 +2507,7 @@ static TYPE *LookupTypeFromExpression(EXPRESSION *exp, TEMPLATEPARAMLIST *enclos
                 }
                 else if (isstructured(rve))
                 {
+                    /* this needs some work */
                     rv = rve;
                     if (!exp->v.func || !insertOperatorParams(NULL, &rv, &exp1, exp->v.func, 0))
                         rv = &stdint;

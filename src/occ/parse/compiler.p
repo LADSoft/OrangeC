@@ -230,6 +230,8 @@ LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class,
                                /* Expr.c */
 
 void expr_init(void);
+void libcxx_init(void);
+BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE **tp, EXPRESSION **exp);
 void thunkForImportTable(EXPRESSION **exp);
 void checkscope(TYPE *tp1, TYPE *tp2);
 void checkauto(TYPE *tp);

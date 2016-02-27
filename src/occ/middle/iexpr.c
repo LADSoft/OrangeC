@@ -1772,6 +1772,12 @@ IMODE *gen_stmt_from_expr(SYMBOL *funcsp, EXPRESSION *node, int flags)
 }
 /*-------------------------------------------------------------------------*/
 
+static BOOLEAN has_arg_destructors(INITLIST *arg)
+{
+    if (arg)
+        return !!arg->dest || has_arg_destructors(arg->next);
+    return FALSE;
+}
 static void gen_arg_destructors(SYMBOL *funcsp, INITLIST *arg)
 {
     if (arg)
@@ -1976,6 +1982,12 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     {
             ap = tempreg(ISZ_ADDR, 0);
             ap->retval = TRUE;
+    }
+    if (has_arg_destructors(f->arguments))
+    {
+        IMODE *ap1 = tempreg(ap->size, 0);
+        gen_icode(i_assn, ap1, ap, NULL);
+        ap = ap1;
     }
     gen_arg_destructors(funcsp, f->arguments);
     return ap;

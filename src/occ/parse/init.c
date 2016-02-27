@@ -980,6 +980,67 @@ INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp,
     *pos = pos1;
     return pos1;
 }
+static LEXEME *init_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **expr, BOOLEAN commaallowed)
+{
+    LEXEME *start = lex;
+    if (commaallowed)
+        lex = expression(lex, funcsp, atp, tp, expr, 0);
+    else
+        lex = expression_no_comma(lex, funcsp, atp, tp, expr, NULL, 0);
+    if (*tp && isvoid(*tp))
+        error(ERR_NOT_AN_ALLOWED_TYPE);
+    optimize_for_constants(expr);
+	if (*tp)
+	{
+        if (*expr && (*expr)->type == en_func && 
+            (*expr)->v.func->sp->parentClass && !(*expr)->v.func->ascall && !(*expr)->v.func->asaddress)
+        {
+            HASHREC *hr = basetype((*expr)->v.func->functp)->syms->table[0];
+            while (hr)
+            {
+                SYMBOL *sym = (SYMBOL *)hr->p;
+                if (sym->storage_class == sc_member || sym->storage_class == sc_mutable)
+                {
+                    error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
+                    break;
+                }
+                hr = hr->next;
+            }
+        }
+        if (MATCHKW(lex, ellipse))
+        {
+            // lose p
+            lex = getsym();
+            if (*expr && (*expr)->type != en_packedempty)
+            {
+				INITLIST *shim = NULL;
+				INITLIST **lptr = &shim;
+                checkPackedExpression(*expr);  
+                // this is going to presume that the expression involved
+                // is not too long to be cached by the LEXEME mechanism.          
+                lptr = expandPackedInitList(lptr, funcsp, start, *expr);
+				if (!shim)
+				{
+					*expr = intNode(en_c_i, 0);
+				}
+				else {
+					if (shim->next)
+					{
+						error(ERR_TOO_MANY_INITIALIZERS);
+					}
+					*expr = shim->exp;
+					*tp = shim->tp;
+				}
+            }
+        }
+        else
+        {
+            checkUnpackedExpression(*expr);
+        }
+    }
+	return lex;
+}
+
 static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
                                     enum e_sc sc, TYPE *itype, INITIALIZER **init)
 {
@@ -997,7 +1058,7 @@ static LEXEME *initialize_bool_type(LEXEME *lex, SYMBOL *funcsp, int offset,
     }
     else
     {
-        lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        lex = init_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
         if (!tp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1049,7 +1110,7 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
     }
     else
     {
-        lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        lex = init_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
         if (!tp || !exp)
         {
             error(ERR_EXPRESSION_SYNTAX);
@@ -1065,27 +1126,8 @@ static LEXEME *initialize_arithmetic_type(LEXEME *lex, SYMBOL *funcsp, int offse
                 if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads && (*exp2)->v.func->sp->tp->syms->table[0])
                 {
                     SYMBOL *sp2;
-                    HASHREC *hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
-                    FUNCTIONCALL fpargs;
-                    INITLIST **args = &fpargs.arguments;
                     TYPE *tp1 = NULL;
                     sp2 = MatchOverloadedFunction((*exp2)->v.func->sp->tp, &tp1, (*exp2)->v.func->sp, exp2, 0);
-                    /*
-                    memset(&fpargs, 0, sizeof(fpargs));
-                    while (hrp)
-                    {
-                        *args = Alloc(sizeof(INITLIST));
-                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                        if (isref((*args)->tp))
-                            (*args)->tp = basetype((*args)->tp)->btp;
-                        args = &(*args)->next;
-                        hrp = hrp->next;
-                    }
-                    if (*exp2 && (*exp2)->type == en_func)
-                       fpargs.templateParams = (*exp2)->v.func->templateParams;
-                    fpargs.ascall = TRUE;
-                    sp2 = GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
-                    */
                     if (sp2)
                         sp2->genreffed = TRUE;                    
                 }
@@ -1192,7 +1234,7 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
     {
         if (!lex || (lex->type != l_astr && lex->type != l_wstr && lex->type != l_ustr && lex->type != l_Ustr))
         {
-            lex = optimized_expression(lex, funcsp, itype, &tp, &exp, FALSE);
+            lex = init_expression(lex, funcsp, itype, &tp, &exp, FALSE);
             if (!tp)
             {
                 error(ERR_EXPRESSION_SYNTAX);
@@ -1220,50 +1262,15 @@ static LEXEME *initialize_pointer_type(LEXEME *lex, SYMBOL *funcsp, int offset, 
                 exp2 = &(*exp2)->left;
             if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads)
             {
-                FUNCTIONCALL fpargs;
-                INITLIST **args = &fpargs.arguments;
                 TYPE *tp1 = NULL;
-                HASHREC *hrp;
                 SYMBOL *sp2;
                 sp2 = MatchOverloadedFunction(itype, ispointer(itype)? &tp : &tp1, (*exp2)->v.func->sp, exp2, 0);
-                /*
-                if (isfuncptr(itype))
+                if (sp2)
                 {
-                    hrp = basetype(basetype(itype)->btp)->syms->table[0];
+                    sp2->genreffed = TRUE;
+                    if ((*exp2)->type == en_pc || (*exp2)->type == en_func && !(*exp2)->v.func->ascall)
+                        thunkForImportTable(exp2);
                 }
-                else if ((*exp2)->v.func->sp->tp->syms->table[0])
-                {
-                    hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
-                }
-                else
-                {
-                    hrp = NULL;
-                }
-                if (hrp)
-                {
-                    SYMBOL *sp2;
-                    memset(&fpargs, 0, sizeof(fpargs));
-                    while (hrp)
-                    {
-                        *args = Alloc(sizeof(INITLIST));
-                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                        if (isref((*args)->tp))
-                            (*args)->tp = basetype((*args)->tp)->btp;
-                        args = &(*args)->next;
-                        hrp = hrp->next;
-                    }
-                    if (*exp2 && (*exp2)->type == en_func)
-                       fpargs.templateParams = (*exp2)->v.func->templateParams;
-                    fpargs.ascall = TRUE;
-                    sp2 = GetOverloadedFunction(ispointer(itype)? &tp : &tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
-                    */
-                    if (sp2)
-                    {
-                        sp2->genreffed = TRUE;
-                        if ((*exp2)->type == en_pc || (*exp2)->type == en_func && !(*exp2)->v.func->ascall)
-                            thunkForImportTable(exp2);
-                    }
-//                }
             }
             if (tp->type == bt_memberptr)
             {
@@ -1318,7 +1325,7 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
     }
     else
     {
-        lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        lex = init_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
         if (!isconstzero(tp, exp) && exp->type != en_nullptr)
         {
             EXPRESSION **exp2;
@@ -1331,60 +1338,18 @@ static LEXEME *initialize_memberptr(LEXEME *lex, SYMBOL *funcsp, int offset,
                 exp2 = &(*exp2)->left;
             if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads)
             {
-                FUNCTIONCALL fpargs;
-                INITLIST **args = &fpargs.arguments;
                 TYPE *tp1 = NULL;
-                HASHREC *hrp;
                 if ((*exp2)->v.func->sp->parentClass && !(*exp2)->v.func->asaddress)
                     error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                 funcsp = MatchOverloadedFunction(itype, &tp1, (*exp2)->v.func->sp, exp2, 0);
-                /*
-                memset(&fpargs, 0, sizeof(fpargs));
-                if (isfuncptr(itype))
+                if (funcsp)
                 {
-                    hrp = basetype(basetype(itype)->btp)->syms->table[0];
+                    exp = varNode(en_memberptr, funcsp);
                 }
-                else if ((*exp2)->v.func->sp->tp->syms->table[0])
+                if (tp1 && !comparetypes(itype->btp, tp1, TRUE))
                 {
-                    hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, itype);
                 }
-                else
-                {
-                    hrp = NULL;
-                }
-                if (hrp)
-                {
-                    SYMBOL *memsp = (*exp2)->v.func->sp, *funcsp;
-                    memset(&fpargs, 0, sizeof(fpargs));
-                    if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
-                    {
-                        fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
-                        fpargs.thisptr = intNode(en_c_i, 0);
-                        hrp = hrp->next;
-                    }
-                    while (hrp)
-                    {
-                        *args = Alloc(sizeof(INITLIST));
-                        (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                        if (isref((*args)->tp))
-                            (*args)->tp = basetype((*args)->tp)->btp;
-                        args = &(*args)->next;
-                        hrp = hrp->next;
-                    }
-                    if (*exp2 && (*exp2)->type == en_func)
-                       fpargs.templateParams = (*exp2)->v.func->templateParams;
-                    fpargs.ascall = TRUE;
-                    funcsp = GetOverloadedFunction(&tp1, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
-                    */
-                    if (funcsp)
-                    {
-                        exp = varNode(en_memberptr, funcsp);
-                    }
-                    if (tp1 && !comparetypes(itype->btp, tp1, TRUE))
-                    {
-                        errortype(ERR_CANNOT_CONVERT_TYPE, tp1, itype);
-                    }
-//                }
             }
             else if (exp->type == en_memberptr)
             {
@@ -1616,46 +1581,8 @@ static LEXEME *initialize_reference_type(LEXEME *lex, SYMBOL *funcsp, int offset
                 {
                     if (isfunction(itype1->btp))
                     {
-                        FUNCTIONCALL fpargs;
                         SYMBOL *funcsp;
-                        INITLIST **args = &fpargs.arguments;
-                        HASHREC *hrp = itype1->btp->syms->table[0];
                         funcsp = MatchOverloadedFunction(itype1, &tp, tp->sp, &exp, 0);
-                        /*
-                        memset(&fpargs, 0, sizeof(fpargs));
-                        if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
-                        {
-                            fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
-                            fpargs.thisptr = intNode(en_c_i, 0);
-                            hrp = hrp->next;
-                        }
-                        else
-                        {
-                            // in case of typedef
-                            fpargs.thistp = Alloc(sizeof(TYPE));
-                            fpargs.thistp->type = bt_pointer;
-                            fpargs.thistp->size = getSize(bt_pointer);
-                            fpargs.thistp->btp = itype1->sp->tp;
-                            fpargs.thisptr = intNode(en_c_i, 0);
-                            
-                        }
-                        while (hrp)
-                        {
-                            if (((SYMBOL *)hrp->p)->tp->type != bt_void)
-                            {
-                                *args = Alloc(sizeof(INITLIST));
-                                (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                                if (isref((*args)->tp))
-                                    (*args)->tp = basetype((*args)->tp)->btp;
-                                args = &(*args)->next;
-                            }
-                            hrp = hrp->next;
-                        }
-                        if (exp && (exp)->type == en_func)
-                           fpargs.templateParams = exp->v.func->templateParams;
-                        fpargs.ascall = TRUE;
-                        funcsp = GetOverloadedFunction(& tp, &exp, tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
-                        */
                         if (funcsp)
                         {
                             int lbl = dumpMemberPtr(funcsp, tp, TRUE);
@@ -1857,7 +1784,7 @@ static BOOLEAN designator(LEXEME **lex, SYMBOL *funcsp, AGGREGATE_DESCRIPTOR **d
                 EXPRESSION *enode=NULL;
                 int index;
                 *lex = getsym();
-                *lex = optimized_expression(*lex, funcsp, NULL, &tp, &enode, FALSE);
+                *lex = init_expression(*lex, funcsp, NULL, &tp, &enode, FALSE);
                 needkw(lex, closebr);
                 if (!tp)
                     error(ERR_EXPRESSION_SYNTAX);
@@ -2346,7 +2273,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                 {
                     TYPE *tp1 = NULL;
                     EXPRESSION *exp1;
-                    lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+                    lex = init_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
                     if (tp1->type == bt_auto)
                         tp1 = itype;
                     if (!tp1 || !comparetypes(basetype(tp1), basetype(itype), TRUE))
@@ -2404,7 +2331,7 @@ static LEXEME *initialize_aggregate_type(LEXEME *lex, SYMBOL *funcsp, SYMBOL *ba
                         // shortcut for conversion from single expression
                         EXPRESSION *exp1 = NULL;
                         TYPE *tp1 = NULL;
-                        lex = optimized_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
+                        lex = init_expression(lex, funcsp, NULL, &tp1, &exp1, FALSE);
                         funcparams->arguments = Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
@@ -2719,7 +2646,7 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
     {
         TYPE *tp = NULL;
         EXPRESSION *exp;
-        lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+        lex = init_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
         if (!tp)
             error(ERR_EXPRESSION_SYNTAX);
         else

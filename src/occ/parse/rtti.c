@@ -121,6 +121,27 @@ static char *RTTIGetDisplayName(char *buf, TYPE *tp)
         strcpy(buf, "any");
         buf += strlen(buf);
     }
+    else if (isfunction(tp))
+    {
+        HASHREC *hr = basetype(tp)->syms->table[0];
+        buf = RTTIGetDisplayName(buf, tp->btp);
+        *buf++ = '(';
+        *buf++ = '*';
+        *buf++ = ') ';
+        *buf++ = '( ';
+        while (hr)
+        {
+            buf = RTTIGetDisplayName(buf, ((SYMBOL *)hr->p)->tp);
+            if (hr->next)
+            {
+                *buf++ = ',';
+                *buf++ = ' ';
+            }
+            hr = hr->next;
+        }
+        *buf++ = ') ';
+        *buf = 0;
+    }
     else
     {
         strcpy(buf, typeNames[tp->type]);

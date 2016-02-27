@@ -806,7 +806,8 @@ BOOLEAN isbasevolatile(TYPE *tp)
 
 int link_getseg(SYMBOL *sp)
 {
-    if (sp->mainsym)
+    // the exception is for the win32 address thunks
+    if (sp->mainsym && (sp->linkage != lk_virtual || sp->mainsym->storage_class != sc_external))
         sp = sp->mainsym;
     if (!sp->tp)
         return dataseg;
@@ -829,7 +830,7 @@ int link_getseg(SYMBOL *sp)
         case sc_external:
         case sc_localstatic:
         case sc_overloads:
-            if (sp->linkage == lk_virtual && cparams.prm_cplusplus)
+            if (sp->linkage == lk_virtual)// && cparams.prm_cplusplus)
                 return sp->value.i | 0xc0000000;
             if (isfunction(sp->tp))
 /*				

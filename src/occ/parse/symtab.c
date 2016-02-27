@@ -351,6 +351,8 @@ BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly)
                 {
                     if (tps->type != bt_templateparam)
                         break;
+					if (tpn->templateParam->p->packed != tps->templateParam->p->packed)
+						break;
                     tableOld[tCount] = GetHashValue(tps->templateParam->p->sym->name);
                     tableNew[tCount] = GetHashValue(tpn->templateParam->p->sym->name);
                     tCount++;

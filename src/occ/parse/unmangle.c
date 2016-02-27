@@ -599,11 +599,20 @@ char *unmang1(char *buf, char *name, char *last, BOOLEAN tof)
             }
             else if (name[0] == '$')
             {
-                name++;
-                newname = unmang1(buf, name, last, FALSE);
-                v -= newname - name-1;
-                name = newname;
-                buf += strlen(buf);
+				if (name[1] == '$') // in case of $$lambda
+				{
+                    *buf++ =  *name++;
+                    *buf++ =  *name++;
+					v -= 2;
+				}
+				else
+				{
+	                name++;
+	                newname = unmang1(buf, name, last, FALSE);
+		            v -= newname - name-1;
+			        name = newname;
+				    buf += strlen(buf);
+				}
             }
             else
             {

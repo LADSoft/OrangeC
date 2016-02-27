@@ -124,6 +124,7 @@ void thunkForImportTable(EXPRESSION **exp)
             newThunk = makeID(sc_global,&stdpointer,NULL, litlate(buf));
             newThunk->errname = newThunk->decoratedName = newThunk->name;
             newThunk->mainsym = sp; // mainsym is the symbol this was derived from
+            newThunk->linkage = lk_virtual;
             search = (LIST *)Alloc(sizeof(LIST));
             search->next = importThunks;
             search->data = newThunk;
@@ -1678,7 +1679,12 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                 {
                     // lose p
                     lex = getsym();
-                    if (p->exp && p->exp->type != en_packedempty)
+                    if (templateNestingCount)
+                    {
+                        *lptr = p;
+                        lptr = &(*lptr)->next;
+                    }
+                    else if (p->exp && p->exp->type != en_packedempty)
                     {
                         checkPackedExpression(p->exp);  
                         // this is going to presume that the expression involved
@@ -1688,7 +1694,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
                 }
                 else
                 {
-                    if (toErr)
+                    if (toErr && argument_nesting <= 1)
                         checkUnpackedExpression(p->exp);
                     *lptr = p;
                     lptr = &(*lptr)->next;
@@ -1732,7 +1738,11 @@ LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw
 }
 LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack)
 {
-    return getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, FALSE, 0);
+    LEXEME *rv;
+    argument_nesting++;
+    rv = getInitInternal(lex, funcsp, &funcparams->arguments, finish, TRUE,allowPack, FALSE, 0);
+    argument_nesting--;
+    return rv;
 }
 static int simpleDerivation(EXPRESSION *exp)
 {
@@ -2670,13 +2680,12 @@ static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
                     funcparams.thisptr = intNode(en_c_i, 0);
                     funcparams.thistp = Alloc(sizeof(TYPE));
                     funcparams.thistp->type = bt_pointer;
-                    funcparams.thistp->btp = tp2;
+                    funcparams.thistp->btp = basetype(tp2);
                     funcparams.thistp->size = getSize(bt_pointer);
                     funcparams.ascall = TRUE;
                     funcparams.arguments = funcparams.arguments->next;
                     rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, FALSE, 
                                   FALSE, FALSE, _F_SIZEOF) != NULL;
-                    
                 }
             }
         }
@@ -2705,6 +2714,8 @@ static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
             }
             else if (isref(from))
                 rv = FALSE;
+            if (isfunction(from))
+                from = basetype(from)->btp;
             if (rv)
             {
                 while (isref(from))
@@ -2713,8 +2724,27 @@ static BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sy
                     to = basetype(to)->btp;
                 rv = comparetypes(to, from, FALSE);
                 if (!rv && isstructured(from) && isstructured(to))
+				{
                    if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
                        rv = TRUE;
+				}
+				if (!rv && isstructured(from))
+				{
+					SYMBOL *sp = search("$bcall", basetype(from)->syms);
+					if (sp)
+					{
+						HASHREC *hr = sp->tp->syms->table[0];
+						while (hr)
+						{
+							if (comparetypes(basetype(((SYMBOL *)hr->p)->tp)->btp, to, FALSE))
+							{
+								rv= TRUE;
+								break;
+							}
+							hr = hr->next;
+						}
+					}
+				}
             }
         }
         else
@@ -2835,7 +2865,7 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
             TYPE *tp1;
             // note at this pointer the arglist does NOT have the this pointer,
             // it will be added after we select a member function that needs it.
-            funcparams->ascall = TRUE;    
+            funcparams->ascall = TRUE;
             sp = GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, NULL, TRUE, FALSE, TRUE, flags);
             tp1 = *tp;
             while (tp1->btp && tp1->type != bt_bit)
@@ -5233,6 +5263,8 @@ LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRE
                 else
                 { 
                     lex = expression_cast(lex, funcsp, NULL, &throwaway, exp, ismutable, flags);
+                    if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+                        thunkForImportTable(exp);
     //                if ((*exp)->type == en_func)
     //                    *exp = (*exp)->v.func->fcall;
                     if (throwaway)
@@ -6411,54 +6443,11 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             exp2 = &(*exp2)->left;
         if ((*exp2)->type == en_func && (*exp2)->v.func->sp->storage_class == sc_overloads)
         {
-            FUNCTIONCALL fpargs;
-            INITLIST **args = &fpargs.arguments;
-            TYPE *tp2;
-            HASHREC *hrp ;
+            TYPE *tp2 = NULL;
             SYMBOL *funcsp;
             if ((*exp2)->v.func->sp->parentClass && !(*exp2)->v.func->asaddress)
                 error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
             funcsp = MatchOverloadedFunction((*tp), isfuncptr(*tp) || basetype(*tp)->type == bt_memberptr ? & tp1 : &tp2, (*exp2)->v.func->sp, exp2, flags);
-            /*
-            if (isfuncptr(*tp))
-            {
-                hrp = basetype(basetype(*tp)->btp)->syms->table[0];
-            }
-            else
-            {
-                hrp = NULL;
-                if ((*exp2)->v.func->sp->tp->syms)
-                {
-                    HASHTABLE *syms = (*exp2)->v.func->sp->tp->syms;
-                    hrp  = syms->table[0];
-                    if (hrp && ((SYMBOL *)hrp->p)->tp->syms)
-                        hrp = ((SYMBOL *)hrp->p)->tp->syms->table[0];
-                    else
-                        hrp = NULL;
-//                    hrp = basetype(((SYMBOL *)((*exp2)->v.func->sp->tp->syms->table[0]->p))->tp)->syms->table[0];
-                }
-            }
-            memset(&fpargs, 0, sizeof(fpargs));
-            if (hrp && ((SYMBOL *)hrp->p)->thisPtr)
-            {
-                fpargs.thistp = ((SYMBOL *)hrp->p)->tp;
-                fpargs.thisptr = intNode(en_c_i, 0);
-                hrp = hrp->next;
-            }
-            while (hrp)
-            {
-                *args = Alloc(sizeof(INITLIST));
-                (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                if (isref((*args)->tp))
-                    (*args)->tp = basetype((*args)->tp)->btp;
-                args = &(*args)->next;
-                hrp = hrp->next;
-            }
-            if (*exp2 && (*exp2)->type == en_func)
-               fpargs.templateParams = (*exp2)->v.func->templateParams;
-            fpargs.ascall = TRUE;
-            funcsp = GetOverloadedFunction(isfuncptr(*tp) || basetype(*tp)->type == bt_memberptr ? & tp1 : &tp2, exp2, (*exp2)->v.func->sp, &fpargs, NULL, TRUE, FALSE, TRUE, flags); 
-            */
             if (funcsp && basetype(*tp)->type == bt_memberptr)
             {
                 int lbl = dumpMemberPtr(funcsp, *tp, TRUE);

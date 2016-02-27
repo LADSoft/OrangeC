@@ -2693,7 +2693,13 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
                         break;
                     if (!templatecomparetypes(pa, pl, TRUE))
                     {
-                        break;
+                        if (basetype(pa)->type == bt_enum && isint(pl) || basetype(pl)->type == bt_enum && isint(pa))
+                        {
+                        }
+                        else
+                        {
+                            break;
+                        }
                     }
                 }
                 else if (PL->p->type == kw_template)
@@ -3498,29 +3504,6 @@ static BOOLEAN getFuncConversions(SYMBOL *sp, FUNCTIONCALL *f, TYPE *atp,
                     if (a && a->tp->type == bt_aggregate && (isfuncptr(tp2) || basetype(tp2)->type == bt_memberptr && isfunction(basetype(tp2)->btp)) )
                     {
                         MatchOverloadedFunction(tp2, &a->tp, a->tp->sp, &a->exp, 0);
-                        /*
-                        HASHREC *hrp = basetype(basetype(tp)->btp)->syms->table[0];
-                        FUNCTIONCALL fpargs;
-                        INITLIST **args = &fpargs.arguments;
-                        EXPRESSION *exp2 = a->exp;
-                        if (exp2)
-                        while (castvalue(exp2))
-                            exp2 = exp2->left;
-                        memset(&fpargs, 0, sizeof(fpargs));
-                        while (hrp)
-                        {
-                            *args = Alloc(sizeof(INITLIST));
-                            (*args)->tp = ((SYMBOL *)hrp->p)->tp;
-                            if (isref((*args)->tp))
-                                (*args)->tp = basetype((*args)->tp)->btp;
-                            args = &(*args)->next;
-                            hrp = hrp->next;
-                        }
-                        if (exp2 && exp2->type == en_func)
-                            fpargs.templateParams = exp2->v.func->templateParams;
-                        fpargs.ascall = TRUE;
-                        GetOverloadedFunction(&a->tp, &a->exp, a->tp->sp, &fpargs, NULL, TRUE, FALSE, TRUE, 0); 
-                        */
                     }
                     getSingleConversion(tp, a ? a->tp : ((SYMBOL *)(*hrt)->p)->tp, a ? a->exp : NULL, &m, seq,
                             sp, userFunc ? &userFunc[n] : NULL, TRUE);
@@ -3881,7 +3864,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                     {
                         argl->tp = func->tp;
                         argl->exp = varNode(en_pc, func);
-                        func->genreffed = TRUE;
+                       func->genreffed = TRUE;
                         InsertInline(func);
                         InsertExtern(func);
                     }
@@ -4071,11 +4054,17 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
             }
             else if (found1 && found2)
             {
-                errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
+				if (toErr)
+	                errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
+				else
+					found1 = found2 = NULL;
             }
             else if (found1->deleted && !templateNestingCount)
             {
-                errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
+				if (toErr)
+	                errorsym(ERR_DELETED_FUNCTION_REFERENCED, found1);
+				else
+					found1 = NULL;
             }
             if (found1)
             {
@@ -4141,6 +4130,8 @@ SYMBOL *MatchOverloadedFunction(TYPE *tp, TYPE **mtp, SYMBOL *sp, EXPRESSION **e
     else
     {
         hrp = NULL;
+        if (!*exp)
+            return FALSE;
         if ((*exp)->v.func->sp->tp->syms)
         {
             HASHTABLE *syms = (*exp)->v.func->sp->tp->syms;

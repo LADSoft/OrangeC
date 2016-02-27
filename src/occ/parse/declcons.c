@@ -48,7 +48,8 @@ extern TYPE stdpointer, stdint;
 extern int total_errors;
 extern INCLUDES *includes;
 extern BOOLEAN functionCanThrow;
-	
+extern int argument_nesting;
+
 static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPRESSION *thisptr, EXPRESSION *other, BOOLEAN move, BOOLEAN isconst);
 static void createDestructor(SYMBOL *sp);
 
@@ -1259,7 +1260,7 @@ void createConstructorsForLambda(SYMBOL *sp)
     if (!isMoveConstructorDeleted(sp))
     {
         newcons = declareConstructor(sp, FALSE, TRUE);
-        newcons->deleted = isMoveAssignmentDeleted(sp);
+//        newcons->deleted = isMoveAssignmentDeleted(sp);
     }
 }
 // if there is a constructor with defaulted args that would match the
@@ -1544,7 +1545,7 @@ static void genConsData(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi,
         st->select = exp;
     }
 }
-static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOLEAN top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN doCopy)
+static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi, SYMBOL *member, int memberOffs, BOOLEAN top, EXPRESSION *thisptr, EXPRESSION *otherptr, SYMBOL *parentCons, BOOLEAN baseClass, BOOLEAN doCopy)
 {
     STATEMENT *st = NULL;
     if (member->init)
@@ -1620,11 +1621,11 @@ static void genConstructorCall(BLOCKDATA *b, SYMBOL *cls, MEMBERINITIALIZERS *mi
         }
         else
         {
-            if (mi && mi->sp)
+            if (mi && mi->sp && baseClass)
             {
                 while (mi)
                 {
-                    if (mi->sp && isstructured(mi->sp->tp) && basetype(mi->sp->tp)->sp == member)
+                    if (mi->sp && isstructured(mi->sp->tp) && (basetype(mi->sp->tp)->sp == member || sameTemplate(mi->sp->tp, member->tp)))
                     {
                         break;
                     }
@@ -1735,7 +1736,7 @@ static void doVirtualBases(BLOCKDATA *b, SYMBOL *sp, MEMBERINITIALIZERS *mi, VBA
 	{
 	    doVirtualBases(b, sp, mi, vbe->next, thisptr, otherptr, parentCons, doCopy);
         if (vbe->alloc)
-    		genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, FALSE, thisptr, otherptr, parentCons, doCopy);
+    		genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, FALSE, thisptr, otherptr, parentCons, TRUE, doCopy);
 	}
 }
 static EXPRESSION *unshim(EXPRESSION *exp, EXPRESSION *ths);
@@ -1917,32 +1918,60 @@ void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons)
                         errorsym(ERR_NOT_A_TEMPLATE, init->sp);
                     }
                 }
-                if (MATCHKW(lex, openpa) && (!isstructured(init->sp->tp) || basetype(init->sp->tp)->sp->trivialCons))
+                if (!isstructured(init->sp->tp))
                 {
-                    lex = getsym();
-                    if (MATCHKW(lex, closepa))
-                    {
-                        lex = getsym();
-                        init->init = NULL;
-                        if (isstructured(init->sp->tp))
-                        {
-                            initInsert(&init->init, NULL, NULL, init->sp->offset, FALSE);
-                        }
-                        else
-                        {
-                            initInsert(&init->init, init->sp->tp, intNode(en_c_i,0), init->sp->offset, FALSE);
-                        }
-                        done = TRUE;
-                    }
-                    else
-                    {
-                        lex = backupsym();
+					if (MATCHKW(lex, openpa)) 
+					{
+						lex = getsym();
+						if (MATCHKW(lex, closepa))
+						{
+							lex = getsym();
+							init->init = NULL;
+							initInsert(&init->init, init->sp->tp, intNode(en_c_i,0), init->sp->offset, FALSE);
+							done = TRUE;
+						}
+						else
+						{
+							lex = backupsym();
+						}
+					}
+					if (!done)
+					{
+                        needkw(&lex, openpa);
+						init->init = NULL;
+						argument_nesting++;
+						lex = initType(lex, cons, 0, sc_auto, &init->init,  NULL, init->sp->tp, init->sp, FALSE, 0);
+						argument_nesting--;
+						done = TRUE;
+                        needkw(&lex, closepa);
                     }
                 }
-                if (!done)
-                {
-                    init->init = NULL;
-                    lex = initType(lex, cons, 0, sc_auto, &init->init,  NULL, init->sp->tp, init->sp, FALSE, 0);
+				else
+				{
+					if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->trivialCons)
+					{
+						FUNCTIONCALL *funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+						TYPE *ctype = init->sp->tp;
+						EXPRESSION *exp = exprNode(en_add, getThisNode(init->sp), intNode(en_c_i, init->sp->offset));
+						lex = getMemberInitializers(lex, cons, funcparams, closepa, TRUE);
+						init->init = NULL;
+						if (!funcparams->arguments)
+						{	
+							initInsert(&init->init, NULL, NULL, init->sp->offset, FALSE);
+						}
+						else {
+							if (funcparams->arguments->next)
+							{
+								error(ERR_TOO_MANY_INITIALIZERS);
+							}
+							initInsert(&init->init, init->sp->tp, funcparams->arguments->exp, init->sp->offset, TRUE);
+						}
+					}
+					else
+					{
+						init->init = NULL;
+						lex = initType(lex, cons, 0, sc_auto, &init->init,  NULL, init->sp->tp, init->sp, FALSE, 0);
+					}
                 }
                 if (init->packed)
                     error(ERR_PACK_SPECIFIER_NOT_ALLOWED_HERE);
@@ -2241,7 +2270,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
                 {
                     if (isstructured(sp->tp))
                     {
-                        genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset,TRUE, thisptr, otherptr, cons, doCopy);
+                        genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset,TRUE, thisptr, otherptr, cons, FALSE, doCopy);
                     }
                     else
                     {
@@ -2283,7 +2312,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
         while (bc)
         {
             if (!bc->isvirtual)
-                genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, FALSE, thisptr, otherptr, cons, doCopy || !cons->memberInitializers);
+                genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, FALSE, thisptr, otherptr, cons, TRUE, doCopy || !cons->memberInitializers);
             bc = bc->next;
         }
         if (hasVTab(sym))
@@ -2296,7 +2325,7 @@ EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTA
             {
                 if (isstructured(sp->tp))
                 {
-                    genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset,TRUE, thisptr, otherptr, cons, doCopy);
+                    genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset,TRUE, thisptr, otherptr, cons, FALSE, doCopy);
                 }
                 else
                 {
@@ -2390,6 +2419,10 @@ static void genAsnCall(BLOCKDATA *b, SYMBOL *cls, SYMBOL *base, int offset, EXPR
     {
         tp = base->tp;
     }
+    if (move)
+        tp->rref = TRUE;
+    else
+        tp->lref = TRUE;
     params->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
     params->arguments->tp = tp;
     params->arguments->exp = right;

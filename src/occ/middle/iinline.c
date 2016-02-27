@@ -313,6 +313,11 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
         f->sp->dumpInlineToFile = TRUE;
         return NULL;
     }
+    if (f->fcall->type != en_pc)
+    {
+        f->sp->dumpInlineToFile = TRUE;
+        return NULL;
+    }
     if (f->sp->storage_class == sc_virtual)
     {
         f->sp->dumpInlineToFile = TRUE;

@@ -1622,29 +1622,58 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
     expandingParams++;
     if (count)
     {
-        int i;
-        int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
-        for (i=1; i < count; i++)
-        {
-            if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
-            {
-                error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
-                break;
-            }
-        }
-        for (i=0; i < n; i++)
-        {
-            INITLIST *p = Alloc(sizeof(INITLIST));
-            LEXEME *lex = SetAlternateLex(start);
-            packIndex = i;
-            expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE);
-            SetAlternateLex(NULL);
-            if (p->tp)
-            {
-                *lptr = p;
-                lptr = &(*lptr)->next;
-            }
-        }
+		if (arg[0]->packed)
+		{
+			HASHREC *hr = basetype(arg[0]->parent->tp)->syms->table[0];
+			while (hr->p && hr->p != arg[0])
+				hr = hr->next;
+			if (hr)
+			{
+				while (hr)
+				{
+					SYMBOL *sym = (SYMBOL *)hr->p;
+					INITLIST *p = Alloc(sizeof(INITLIST));
+					p->tp = sym->tp;
+					p->exp = varNode(en_auto, sym);
+					if (isref(p->tp))
+					{
+						p->exp = exprNode(en_l_p, p->exp, NULL);
+						p->tp = basetype(p->tp)->btp;
+					}
+					if (!isstructured(p->tp))
+						deref(p->tp,&p->exp);
+					*lptr = p;
+					lptr = &(*lptr)->next;
+					hr = hr->next;
+				}
+			}
+		}
+		else
+		{
+			int i;
+			int n = CountPacks(arg[0]->tp->templateParam->p->byPack.pack);
+			for (i=1; i < count; i++)
+			{
+				if (CountPacks(arg[i]->tp->templateParam->p->byPack.pack) != n)
+				{
+					error(ERR_PACK_SPECIFIERS_SIZE_MISMATCH);
+					break;
+				}
+			}
+			for (i=0; i < n; i++)
+			{
+				INITLIST *p = Alloc(sizeof(INITLIST));
+				LEXEME *lex = SetAlternateLex(start);
+				packIndex = i;
+				expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE);
+				SetAlternateLex(NULL);
+				if (p->tp)
+				{
+					*lptr = p;
+					lptr = &(*lptr)->next;
+				}
+			}
+		}
     }
     expandingParams--;
     packIndex = oldPack;
@@ -1711,7 +1740,7 @@ MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERI
                     bc1 = bc;
                     while (bc1)
                     {
-                        if (bc1->cls == added->sp)
+                        if (bc1->cls == added->sp || sameTemplate(bc1->cls->tp, added->sp->tp))
                             break;
                         bc1 = bc1->next;
                     }

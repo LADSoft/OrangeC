@@ -410,6 +410,8 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_cl
     else if (sp && !sp->anonymous && toErr)
         if (sp->tp->type != bt_templateparam)
             error(ERR_TOO_MANY_IDENTIFIERS);
+    if (sp && sp->anonymous)
+        sp->linkage = linkage;
     inTemplateType = oldTemplateType;
     return lex;
 }
@@ -1042,6 +1044,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
     enum e_ac defaultAccess;
     BOOLEAN addedNew = FALSE;
     int declline = lex->line;
+    BOOLEAN anonymous = FALSE;
     *defd = FALSE;
     switch(KW(lex))
     {
@@ -1071,6 +1074,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
             errorint(ERR_NEEDY, '{');
         tagname = AnonymousTypeName();
         charindex = -1;
+        anonymous = TRUE;
     }
 
     lex = tagsearch(lex, tagname, &sp, &table, &strSym, &nsv, storage_class);
@@ -1087,6 +1091,7 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         addedNew = TRUE;
         sp = Alloc(sizeof(SYMBOL ));
         sp->name = tagname;
+        sp->anonymous = anonymous;
         sp->storage_class = sc_type;
         sp->tp = Alloc(sizeof(TYPE));
         sp->tp->type = type;
@@ -1385,6 +1390,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
     NAMESPACEVALUES *nsv;
     SYMBOL *strSym;
     int declline = lex->line;
+    BOOLEAN anonymous = FALSE;
     *defd = FALSE;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, TRUE);
@@ -1405,6 +1411,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
             errorint(ERR_NEEDY, '{');
         tagname = AnonymousTypeName();
         charindex = -1;
+        anonymous = TRUE;
     }
     
     lex = tagsearch(lex, lex->value.s.a, &sp, &table, &strSym, &nsv, storage_class);
@@ -1437,6 +1444,7 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         sp = Alloc(sizeof(SYMBOL ));
         sp->name = tagname;
         sp->access = access;
+        sp->anonymous = anonymous;
         sp->storage_class = sc_type;
         sp->tp = Alloc(sizeof(TYPE));
         sp->tp->type = bt_enum;
@@ -2214,24 +2222,6 @@ LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym_out
                             tn = tp2;
                         }
                     }
-                    /*
-                    else if (tn->lref)
-                    {
-                        TYPE *tp2 = Alloc(sizeof(TYPE));
-                        tp2->type = bt_lref;
-                        tp2->size = getSize(bt_pointer);
-                        tp2->btp = tn;
-                        tn = tp2;
-                    }
-                    else if (tn->rref)
-                    {
-                        TYPE *tp2 = Alloc(sizeof(TYPE));
-                        tp2->type = bt_rref;
-                        tp2->size = getSize(bt_pointer);
-                        tp2->btp = tn;
-                        tn = tp2;
-                    } 
-                    */               
                 }
                 if (!MATCHKW(lex, closepa))
                     needkw(&lex, closepa);
@@ -5063,6 +5053,9 @@ jointemplate:
                         {
                             storage_class = sc_member;
                         }
+                        if (cparams.prm_cplusplus && !ssp && storage_class == sc_global && (isstructured(tp1) || basetype(tp1)->type == bt_enum))
+                            if (basetype(tp1)->sp->anonymous)
+                                storage_class = sc_static;
                         if (consdest != CT_NONE)
                         {
                             if (consdest == CT_CONS)
@@ -5546,7 +5539,7 @@ jointemplate:
                                 spi->tp = sp->tp;
                             if (sp->oldstyle)
                                 spi->oldstyle = TRUE;
-                            if (!spi->declfile || spi->tp->type == bt_func)
+                            if (!spi->declfile || spi->tp->type == bt_func && !spi->parentClass && !spi->specialized)
                             {
                                 spi->declfile = sp->declfile;
                                 spi->declline = sp->declline;
@@ -5660,7 +5653,7 @@ jointemplate:
                                 sym->friends = l;
                             }   
                         }
-                        if (!ismember(sp) && !sp->constexpression)
+                        if (!ismember(sp) && !sp->constexpression && !istype(sp))
                         {
                             if (isfunction(sp->tp) && (isconst(sp->tp) || isvolatile(sp->tp)))
                                 error(ERR_ONLY_MEMBER_CONST_VOLATILE);

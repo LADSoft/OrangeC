@@ -101,6 +101,7 @@
     <ClCompile Include="..\parse\INLINE.c" />
     <ClCompile Include="..\parse\lambda.c" />
     <ClCompile Include="..\parse\lex.c" />
+    <ClCompile Include="..\parse\libcxx.c" />
     <ClCompile Include="..\parse\LIST.c" />
     <ClCompile Include="..\parse\mangle.c" />
     <ClCompile Include="..\parse\memory.c" />

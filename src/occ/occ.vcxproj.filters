@@ -210,6 +210,9 @@
     <ClCompile Include="middle\iinline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="parse\libcxx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parse\beinterf.h">

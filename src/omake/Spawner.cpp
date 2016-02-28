@@ -76,7 +76,7 @@ int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)
         cmd = c.Evaluate(); // deferred evaluation
         size_t n = cmd.find("&&");
         std::string makeName;
-        if (n == cmd.size() - 3)
+        if (n != std::string::npos && n == cmd.size() - 3)
         {
             char match = cmd[n+2];
             cmd.erase(n);

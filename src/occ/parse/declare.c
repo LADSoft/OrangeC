@@ -3813,7 +3813,35 @@ static LEXEME *getAfterType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **sp,
                                 {
                                     if (basetype(*tp)->btp->type != bt_auto)
                                         error(ERR_MULTIPLE_RETURN_TYPES_SPECIFIED);
-                                    basetype(*tp)->btp = tpx;
+                                    if (isarray(tpx))
+                                    {
+                                        TYPE *tpn = NULL;
+                                        tpn = Alloc(sizeof(TYPE));
+                                        tpn->type = bt_pointer;
+                                        tpn->size = getSize(bt_pointer);
+                                        tpn->btp = basetype(tpx)->btp;
+                                        if (isconst(tpx))
+                                        {
+                                            TYPE *tpq = Alloc(sizeof(TYPE));
+                                            tpq->size = tpn->size;
+                                            tpq->type = bt_const;
+                                            tpq->btp = tpn;
+                                            tpn = tpq;
+                                        }
+                                        if (isvolatile(tpx))
+                                        {
+                                            TYPE *tpq = Alloc(sizeof(TYPE));
+                                            tpq->size = tpn->size;
+                                            tpq->type = bt_volatile;
+                                            tpq->btp = tpn;
+                                            tpn = tpq;
+                                        }
+                                        basetype(*tp)->btp = tpn;
+                                    }
+                                    else
+                                    {
+                                        basetype(*tp)->btp = tpx;
+                                    }
                                 }
                                 localNameSpace->syms = locals;
                                 DecGlobalFlag();

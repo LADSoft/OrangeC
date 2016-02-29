@@ -2651,6 +2651,31 @@ static LEXEME *initialize_auto(LEXEME *lex, SYMBOL *funcsp, int offset,
             error(ERR_EXPRESSION_SYNTAX);
         else
         {
+            if (isarray(tp))
+            {
+                TYPE *itp = Alloc(sizeof(TYPE));
+                itp->type = bt_pointer;
+                itp->size = getSize(bt_pointer);
+                itp->btp = basetype(tp)->btp;
+                if (isconst(itp))
+                {
+                    TYPE *itp1 = Alloc(sizeof(TYPE));
+                    itp1->type = bt_const;
+                    itp1->size = itp->size;
+                    itp1->btp = itp;
+                    itp = itp1;
+                }
+                if (isvolatile(itp))
+                {
+                    TYPE *itp1 = Alloc(sizeof(TYPE));
+                    itp1->type = bt_volatile;
+                    itp1->size = itp->size;
+                    itp1->btp = itp;
+                    itp = itp1;
+                }
+                tp = itp;
+                
+            }
             if (isconst(sp->tp) && !isconst(tp))
             {
                 TYPE *itp = Alloc(sizeof(TYPE));

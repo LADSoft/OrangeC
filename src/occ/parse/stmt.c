@@ -1832,7 +1832,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 }
                 else
                 {
-                    if (returnexp->type == en_func)
+                    if (returnexp->type == en_func && !returnexp->v.func->ascall)
                     {
                         if (returnexp->v.func->sp->storage_class == sc_overloads)
                         {

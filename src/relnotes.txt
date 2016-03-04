@@ -1,6 +1,13 @@
 Release notes:
 
-version 5.61.1:
+version 5.62.1:
+    occ:        add support for more C++ intrinsics (to increase compilation speed)
+    occ:        auto did not work properly with arrays
+    occ:        a newly introduce problem caused returning the return value of a 
+                function that returns a structured variable to fail to compile.
+    omake:      it crashed when you put '$' right before a three-character command
+
+version 5.61.1: 2/27/2016
     occ:        fix code generation for taking windows API functions by address:
                 it should generate a thunk to call through the import table when a
                 call through the address is made.

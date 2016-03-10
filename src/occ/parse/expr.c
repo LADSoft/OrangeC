@@ -5941,7 +5941,18 @@ static LEXEME *expression_hook(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp
         else if (isvoid(*tp) || (*tp)->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);
         lex = getsym();
-        lex = expression_comma(lex, funcsp, NULL, &tph, &eph, NULL, flags);
+        if (MATCHKW(lex, colon))
+        {
+            // replicate the selector into the 'true' value
+            eph = anonymousVar(sc_auto, *tp);
+            deref(*tp, &eph);
+            tph = *tp;
+            *exp = exprNode(en_assign, eph, *exp);
+        }
+        else
+        {
+            lex = expression_comma(lex, funcsp, NULL, &tph, &eph, NULL, flags);
+        }
         if (!tph)
         {
             *tp = NULL;

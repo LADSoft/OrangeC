@@ -2908,7 +2908,10 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         lex = statement(lex, funcsp, blockstmt, FALSE);
     }
     if (!lex)
+    {
+        needkw(&lex, end);
         return lex;
+    }
     browse_blockend(lex->line);
     currentLineData(blockstmt, lex, -!first);
     if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch)
@@ -3220,23 +3223,26 @@ static void handleInlines(SYMBOL *funcsp)
      * args or return value, or if it has nested declarations
      */
     {
-        HASHTABLE *ht = funcsp->inlineFunc.syms->next; /* past params */
-        if (ht)
-            ht = ht->next; /* past first level */
-        /* if any vars declared at another level */
-        while (ht && ht->next)
+        if (funcsp->inlineFunc.syms)
         {
-            if (ht->table[0])
+            HASHTABLE *ht = funcsp->inlineFunc.syms->next; /* past params */
+            if (ht)
+                ht = ht->next; /* past first level */
+            /* if any vars declared at another level */
+            while (ht && ht->next)
             {
-                funcsp->noinline = TRUE;
-                break;
+                if (ht->table[0])
+                {
+                    funcsp->noinline = TRUE;
+                    break;
+                }
+                ht = ht->next;
             }
-            ht = ht->next;
-        }
-        if (funcsp->inlineFunc.syms->next)
-        {
-            if (funcsp->inlineFunc.syms->next->table[0])
-                funcsp->noinline = TRUE;
+            if (funcsp->inlineFunc.syms->next)
+            {
+                if (funcsp->inlineFunc.syms->next->table[0])
+                    funcsp->noinline = TRUE;
+            }
         }
         if (funcsp->linkage == lk_virtual)
         {

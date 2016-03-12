@@ -4371,9 +4371,11 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 {
                     TYPE *tp, *tpb, *tpn,**tpnp = &tpn;
                     BOOLEAN done = FALSE;
+                    SYMBOL *spold = sp;
                     sp->label = nextLabel++;
                     IncGlobalFlag();
                     sp = clonesym(sp);
+                    spold->indecltable = TRUE;
                     tp = sp->tp;
                     tpb = basetype(tp);
                     do
@@ -4398,14 +4400,17 @@ static LEXEME *expression_ampersand(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE
                 }
                 if (!sp->parent)
                     sp->parent = funcsp; // this promotion of a global to local is necessary to not make it linkable
-                *exp = varNode(en_label, sp);
+//                if (sp->parent)
+                    *exp = varNode(en_label, sp);
+//                else
+//                    *exp = varNode(en_global, sp);
             }
             else
             {
-                if (sp->parent)
+//                if (sp->parent)
                     *exp = varNode(en_label, sp);
-                else
-                    *exp = varNode(en_global, sp);
+//                else
+//                    *exp = varNode(en_global, sp);
             }
             tp1 = Alloc(sizeof(TYPE));
             tp1->type = bt_pointer;

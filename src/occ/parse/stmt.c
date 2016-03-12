@@ -1830,6 +1830,10 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
+                else if (!comparetypes(tp, tp1, TRUE))
+                {
+                    errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
+                }
                 else
                 {
                     if (returnexp->type == en_func && !returnexp->v.func->ascall)
@@ -1886,7 +1890,14 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             }
             if (isstructured(tp1) && isarithmetic(tp))
             {
-                castToArithmetic(FALSE, &tp1, &returnexp, (enum e_kw)-1, tp, TRUE);
+                if (cparams.prm_cplusplus)
+                {
+                    castToArithmetic(FALSE, &tp1, &returnexp, (enum e_kw)-1, tp, TRUE);
+                }
+                else
+                {
+                    errortype(ERR_CANNOT_CAST_TYPE, tp1, tp);
+                }
             }
             if (tp->type == bt_auto)
                 returntype = tp = tp1;

@@ -1811,3 +1811,11 @@ EXPRESSION *RemoveAutoIncDec(EXPRESSION *exp)
         newExp->right = RemoveAutoIncDec(newExp->right);
     return newExp;
 }
+LLONG_TYPE imax(LLONG_TYPE x, LLONG_TYPE y)
+{
+    return x > y ? x : y;
+}
+LLONG_TYPE imin(LLONG_TYPE x, LLONG_TYPE y)
+{
+    return x < y ? x : y;
+}

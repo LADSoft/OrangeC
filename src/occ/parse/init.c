@@ -937,10 +937,14 @@ void dumpInitializers(void)
                     globaldef(sp);
                 else if (sp->storage_class == sc_static)
                     localdef(sp);
-                if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
+                if (sp->storage_class == sc_localstatic)
                     put_label(sp->label);
                 else
+                {
                     gen_strlab(sp);
+                    if (sp->storage_class == sc_constant)
+                        put_label(sp->label);
+                }
                 dumpInitGroup(sp, tp);
             }
             symListTail = symListTail->next;

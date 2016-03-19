@@ -60,9 +60,11 @@ static SYMBOL *inlinesym_list[MAX_INLINE_NESTING];
 #undef MAX_INLINE_NESTING
 #define MAX_INLINE_NESTING 3
 
+static int inline_nesting;
 void iinlineInit(void)
 {
     inlinesym_count = 0;
+    inline_nesting = 0;
 }
 static BOOLEAN hasRelativeThis(EXPRESSION *thisPtr)
 {
@@ -285,6 +287,11 @@ static void inlineCopySyms(HASHTABLE *src)
     }
     
 }
+static BOOLEAN inlineTooComplex(FUNCTIONCALL *f)
+{
+    return f->sp->endLine - f->sp->startLine > 15/ (inline_nesting*2 + 1);
+    
+}
 IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
 /*
  *      generate a function call node and return the address mode
@@ -308,7 +315,7 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
         return NULL;
     }
     /* measure of complexity */
-    if (f->sp->endLine - f->sp->startLine > 15)
+    if (inlineTooComplex(f))
     {
         f->sp->dumpInlineToFile = TRUE;
         return NULL;
@@ -393,6 +400,7 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
             f->sp->dumpInlineToFile = TRUE;
             return NULL;
         }
+    inline_nesting++;
     codeLabelOffset = nextLabel - INT_MIN ;
     nextLabel += f->sp->labelCount + 10;
     retcount = 0;
@@ -425,5 +433,6 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
     codeLabelOffset = oldOffset;
     inlinesym_count--;
     inlinesym_thisptr[inlinesym_count] = oldthis;
+    inline_nesting--;
     return ap3;
 }

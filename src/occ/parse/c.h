@@ -480,7 +480,7 @@ typedef struct sym
     unsigned dontlist: 1; /* it is a system include, don't put in list file */
     unsigned allocate: 1; /* variable is used, allocate space for it */
     unsigned inAllocTable: 1; /* auto temp var is in the allocation table already */
-    unsigned indecltable;//: 1; /* global already in dump table */
+    unsigned indecltable: 1; /* global already in dump table */
     unsigned spaceallocated: 1; /* space has been allocated */
     unsigned regmode: 2; /* 0 = pure var, 1 = addr in reg, 2 = value in reg*/
     unsigned loadds: 1; /* to load data seg (limited) */

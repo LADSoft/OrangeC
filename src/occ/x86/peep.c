@@ -434,6 +434,10 @@ void peep_add(OCODE *ip)
                 && ip1->oper2->mode == am_immed && (!varsp(ip->oper2->offset) ||
                                                     !varsp(ip1->oper2->offset)))
             {
+                if (!isintconst(ip->oper2->offset))
+                    ip1->oper2->length = ISZ_UINT;
+                if (!isintconst(ip1->oper2->offset))
+                    ip->oper2->length = ISZ_UINT;
                 ip->oper2->offset = exprNode(en_add, ip->oper2->offset, ip1->oper2->offset);
                 ip->opcode = ip1->opcode;
                 remove_peep_entry(ip1);
@@ -446,6 +450,10 @@ void peep_add(OCODE *ip)
                     && ip1->oper2->mode == am_immed && (!varsp(ip->oper2->offset) ||
                                                         !varsp(ip1->oper2->offset)))
                 {
+                    if (!isintconst(ip->oper2->offset))
+                        ip1->oper2->length = ISZ_UINT;
+                    if (!isintconst(ip1->oper2->offset))
+                        ip->oper2->length = ISZ_UINT;
                     ip->oper2->offset = exprNode(en_add, ip->oper2->offset, ip1->oper2->offset);
                     ip->opcode = ip1->opcode;
                     remove_peep_entry(ip1);
@@ -835,7 +843,7 @@ void peep_cmp(OCODE *ip)
             ->offset->v.i != 0 && (ip1->opcode == op_je || ip1->opcode == op_jne)) 
         {
             OCODE *ip2 = ip->back;
-            if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1))
+            if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1) && ip2->oper2->mode != am_immed)
             {
                 if (!live(ip1->oper1->liveRegs, ip->oper1->preg))
                 {
@@ -1912,6 +1920,10 @@ void oa_peep(void)
         }
     }
     for (ip = peep_head; ip; ip = ip->fwd)
+    {
         if (!ip->noopt)
+        {
             peep_prefixes(ip);
+        }
+    }
 }

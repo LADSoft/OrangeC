@@ -389,6 +389,10 @@ BOOLEAN isconstaddress(EXPRESSION *exp);
 SYMBOL *clonesym(SYMBOL *sym);
 TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLEAN minimizeInt, TYPE *atp);
 EXPRESSION *RemoveAutoIncDec(EXPRESSION *exp);
+LLONG_TYPE imax(LLONG_TYPE x, LLONG_TYPE y);
+LLONG_TYPE imin(LLONG_TYPE x, LLONG_TYPE y);
+
+
 							  /* IAlias.c */
 void AliasInit(void);
 void AliasRundown(void);
@@ -543,6 +547,7 @@ void liveVariables(void);
 void usesInfo(void);
 void definesInfo(void);
 IMODE *InitTempOpt(int size1, int size2);
+void TransferInlineTemps(void);
 void gatherLocalInfo(SYMBOL *funcsp);
 void removeDead(BLOCK *b);
 								/* iloop.c */
@@ -717,6 +722,7 @@ void TranslateFromSSA(BOOLEAN all);
 void genstmtini(void);
 void makeXCTab(SYMBOL *funcsp);
 EXPRESSION *tempenode(void);
+IMODE *tempregpure(int size, int mode);
 IMODE *tempreg(int size, int mode);
 IMODE *imake_label(int label);
 IMODE *make_direct(int i);

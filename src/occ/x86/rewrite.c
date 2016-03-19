@@ -707,7 +707,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globalVars, BRIGGS_SET *eobGlobals, int p
                             {
                                 if (t->dc.left->bits)
                                 {
-                                    if (t->dc.left->bits == 1)
+                                    if (t->dc.left->bits == 1 && (ins->dc.opcode == i_sete || ins->dc.opcode == i_setne || ins->dc.opcode == i_je || ins->dc.opcode == i_jne))
                                     {
                                         ins->dc.left = t->dc.left;
                                         ins->temps &= ~TEMP_LEFT;

@@ -81,12 +81,15 @@ extern QUAD *intermed_head, *intermed_tail;
 extern int walkPostorder;
 extern BITINT *uivBytes;
 
+unsigned short *termMap;
+unsigned short *termMapUp;
+int termCount;
+
 static BLOCK **reverseOrder, **forwardOrder;
 static BITINT *tempBytes, *tempBytes2, *tempBytes3;
 static int blocks;
 static BITINT *unMoveableTerms;
 static BITINT *ocpTerms;
-int termCount;
 
 
 static void ormap(BITINT *dest, BITINT *src)
@@ -158,15 +161,15 @@ static BOOLEAN AnySet(BITINT *map)
 }
 static void EnterGlobal(QUAD *head)
 {
-    head->dsafe = lallocbit(termCount);
-    head->earliest = lallocbit(termCount);
-    head->delay = lallocbit(termCount);
-    head->latest = lallocbit(termCount);
-    head->isolated = lallocbit(termCount);
-    head->OCP = lallocbit(termCount);
-    head->RO = lallocbit(termCount);
-    head->uses = lallocbit(termCount);
-    head->transparent = lallocbit(termCount);
+    head->dsafe = aallocbit(termCount);
+    head->earliest = aallocbit(termCount);
+    head->delay = aallocbit(termCount);
+    head->latest = aallocbit(termCount);
+    head->isolated = aallocbit(termCount);
+    head->OCP = aallocbit(termCount);
+    head->RO = aallocbit(termCount);
+    head->uses = aallocbit(termCount);
+    head->transparent = aallocbit(termCount);
     setmap(head->transparent, TRUE);
 }
 static void GatherGlobals(void)
@@ -214,7 +217,7 @@ void SetunMoveableTerms(void)
         int i;
     // if they don't have floating point regs then don't move expressions involving
     // floating point
-    unMoveableTerms = lallocbit(termCount);
+    unMoveableTerms = aallocbit(termCount);
     setmap(unMoveableTerms, TRUE);
     for (i=0; i < blockCount; i++)
     {
@@ -229,18 +232,10 @@ void SetunMoveableTerms(void)
                 {
                     if (head->temps & TEMP_ANS)
                     {
-                        int n = head->ans->offset->v.sp->value.i;
+                        int n = termMap[head->ans->offset->v.sp->value.i];
                         if ((!chosenAssembler->arch->hasFloatRegs
                                 &&head->ans->size >= ISZ_FLOAT) || head->ans->bits || head->ans->vol || head->ans->offset->v.sp->loadTemp)
                             clearbit(unMoveableTerms,n );
-/*                            
-                        if (head->dc.left && head->dc.left->bits)
-                        {
-                            clearbit(unMoveableTerms, n);
-                            if (tempInfo[n]->terms)
-                                andmap(unMoveableTerms, tempInfo[n]->terms);
-                        }
-                        */
                     }
                 }
                 head = head->fwd;
@@ -269,32 +264,31 @@ static void CalculateUses(void)
             {
                 if (head->temps & TEMP_ANS)
                 {
-                    int n = head->ans->offset->v.sp->value.i;
                     if (head->ans->mode == i_ind)
                     {
-                        setbit(tail->uses, head->ans->offset->v.sp->value.i);
+                        setbit(tail->uses, termMap[head->ans->offset->v.sp->value.i]);
                     }
                 }
                 if (head->temps & TEMP_LEFT)
                 {
                     if (head->dc.left->mode == i_ind)
                     {
-                        setbit(tail->uses, head->dc.left->offset->v.sp->value.i);
+                        setbit(tail->uses, termMap[head->dc.left->offset->v.sp->value.i]);
                     }
                     else if (!head->dc.left->offset->v.sp->pushedtotemp)
                     {
-                        setbit(tail->uses, head->dc.left->offset->v.sp->value.i);
+                        setbit(tail->uses, termMap[head->dc.left->offset->v.sp->value.i]);
                     }
                 }
                 if (head->temps & TEMP_RIGHT)
                 {
                     if (head->dc.right->mode == i_ind)
                     {
-                        setbit(tail->uses, head->dc.right->offset->v.sp->value.i);
+                        setbit(tail->uses, termMap[head->dc.right->offset->v.sp->value.i]);
                     }
                     else if (!head->dc.right->offset->v.sp->pushedtotemp)
                     {
-                        setbit(tail->uses, head->dc.right->offset->v.sp->value.i);
+                        setbit(tail->uses, termMap[head->dc.right->offset->v.sp->value.i]);
                     }
                 }
             }
@@ -324,7 +318,7 @@ static void CalculateTransparent(void)
                 if (next->dc.left && next->dc.left->retval && (next->temps & TEMP_ANS) && next->ans->mode == i_direct)
                 {
                     int n = next->ans->offset->v.sp->value.i;
-                    clearbit(head->transparent, n);
+                    clearbit(head->transparent, termMap[n]);
                     if (tempInfo[n]->terms)
                         andmap(tail->transparent, tempInfo[n]->terms);
                     break;
@@ -333,9 +327,9 @@ static void CalculateTransparent(void)
             }
             complementmap(tempBytes3);
             for (i=0; i < termCount; i++)
-                if (!isset(tempBytes3, i) && tempInfo[i]->terms)
+                if (!isset(tempBytes3, i) && tempInfo[termMapUp[i]]->terms)
                 {
-                    andmap(tail->transparent, tempInfo[i]->terms);
+                    andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
                 }
         }
         else if (tail->dc.opcode == i_assnblock)
@@ -347,34 +341,12 @@ static void CalculateTransparent(void)
             {
                 if (!isset(tempBytes, i))
                 {
-                    if (tempInfo[i]->terms)
-                        andmap(tempBytes, tempInfo[i]->terms);
+                    if (tempInfo[termMapUp[i]]->terms)
+                        andmap(tempBytes, tempInfo[termMapUp[i]]->terms);
                 }
             }
             andmap(tail->transparent, tempBytes);
         }
-        /*
-        else if (tail->ans && !(tail->temps & TEMP_ANS))
-        {
-            switch (head->ans->offset->type)
-            {
-                case en_global:
-                case en_pc:
-                case en_auto:
-                case en_threadlocal:
-                {
-                    IMODE *lt = GetLoadTemp(head->ans);
-                    if (lt)
-                    {
-                        int n = lt->offset->v.sp->value.i;
-                        if (tempInfo[n]->terms)
-                            andmap(tail->transparent, tempInfo[n]->terms);
-                        clearbit(tail->transparent, n); 
-                    }
-                }
-            }
-        }
-        */
         head = tail->back;
         while (head && !head->OCP)
         {
@@ -387,7 +359,7 @@ static void CalculateTransparent(void)
                         int n = head->ans->offset->v.sp->value.i;
                         if (!tempInfo[n]->uses)
                         {
-                            tempInfo[n]->uses = lallocbit(termCount);
+                            tempInfo[n]->uses = aallocbit(termCount);
                             AliasUses(tempInfo[n]->uses, head->dc.left, TRUE);
                             AliasUses(tempInfo[n]->uses, head->dc.right,TRUE);
                         }                    
@@ -414,29 +386,13 @@ static void CalculateTransparent(void)
             {
                 setmap(tempBytes, FALSE);
                 AliasUses(tempBytes, tail->ans, TRUE);
-                for (i=0; i < tempCount; i++)
+                for (i=0; i < termCount; i++)
                 {
-                    /*
-                    if (tempInfo[i]->uses)
-                    {
-                        for (j = 0; j < n; j++)
-                        {
-                            if (tempInfo[i]->uses[j] & tempBytes[j])
-                                break;
-                        }
-                        if (j < n)
-                        {
-                            clearbit(tail->transparent, i);
-                            if (tempInfo[i]->terms)
-                                andmap(tail->transparent, tempInfo[i]->terms);
-                        }
-                    }
-                    */
                     if (isset(tempBytes, i))
                     {
                         clearbit(tail->transparent, i);
-                        if (tempInfo[i]->terms)
-                            andmap(tail->transparent, tempInfo[i]->terms);
+                        if (tempInfo[termMapUp[i]]->terms)
+                            andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
                     }
                 }
             }
@@ -807,7 +763,7 @@ static void GatherTerms(void)
                         int l = tail->dc.left->offset->v.sp->value.i;
                         if (!tempInfo[l]->terms)
                         {
-                            tempInfo[l]->terms = lallocbit(termCount);
+                            tempInfo[l]->terms = aallocbit(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -818,14 +774,14 @@ static void GatherTerms(void)
                         {
                             andmap(tempInfo[l]->terms, tempInfo[n]->terms);
                         }
-                        clearbit(tempInfo[l]->terms, n);
+                        clearbit(tempInfo[l]->terms, termMap[n]);
                     }
                     if ((tail->temps & TEMP_RIGHT) && !tail->dc.right->offset->v.sp->pushedtotemp)
                     {
                         int l = tail->dc.right->offset->v.sp->value.i;
                         if (!tempInfo[l]->terms)
                         {
-                            tempInfo[l]->terms = lallocbit(termCount);
+                            tempInfo[l]->terms = aallocbit(termCount);
                         }
                         if (tempInfo[l]->termClear)
                         {
@@ -836,7 +792,7 @@ static void GatherTerms(void)
                         {
                             andmap(tempInfo[l]->terms, tempInfo[n]->terms);
                         }
-                        clearbit(tempInfo[l]->terms, n);
+                        clearbit(tempInfo[l]->terms, termMap[n]);
                     }
                 }
             }
@@ -844,15 +800,15 @@ static void GatherTerms(void)
         }
     }
     for (i=0; i < termCount; i++)
-        if (!isset(uivBytes, i) && tempInfo[i]->terms)
+        if (!isset(uivBytes, i) && tempInfo[termMapUp[i]]->terms)
         {
-            andmap(uivBytes, tempInfo[i]->terms);
+            andmap(uivBytes, tempInfo[termMapUp[i]]->terms);
         }
 }
 static void CalculateOCPAndRO(void)
 {
     int i;
-    ocpTerms = lallocbit(termCount);
+    ocpTerms = aallocbit(termCount);
     for (i=0; i < blocks; i++)
     {		
         if (forwardOrder[i])
@@ -905,17 +861,6 @@ static void HandleOCP(QUAD *after, int tn)
                     if (tn == after->ans->offset->v.sp->value.i)
                         if (after->ans->mode == i_direct)
                             beforea = after;
-                            /*
-                        else if (!after)
-                            beforel = after;
-                    if (!after)
-                    {
-                        if ((p->temps & TEMP_LEFT) && p->dc.left->offset->v.sp->value.i == after->ans->offset->v.sp->value.i)
-                            beforel = after->back;
-                        if ((p->temps & TEMP_RIGHT) && p->dc.right->offset->v.sp->value.i == after->ans->offset->v.sp->value.i)
-                            beforel = after->back;
-                    }
-                    */
                 }
                 after = after->back;
             }
@@ -1052,13 +997,13 @@ static void HandleRO(QUAD *after, int tn)
 static void MoveExpressions(void)
 {
     int i,j;
-    for (i=0; i < termCount/2; i++)
+    for (i=0; i < termCount; i++)
     {
         if (isset(ocpTerms,i))
         {
             int j;
-            int size = tempInfo[i]->enode->v.sp->imvalue->size;
-            tempInfo[i]->copy = InitTempOpt(size, size);
+            int size = tempInfo[termMapUp[i]]->enode->v.sp->imvalue->size;
+            tempInfo[termMapUp[i]]->copy = InitTempOpt(size, size);
             for (j=0; j < blocks; j++)
             {
     
@@ -1069,15 +1014,15 @@ static void MoveExpressions(void)
                     {
                         if (isset(head->OCP,i))
                         {
-                            HandleOCP(head, i);
-                        }
+                            HandleOCP(head, termMapUp[i]);
+                       }
                     }
                     head = head->fwd;
                 }
             }
         }
     }
-    for (i=0; i < termCount/2; i++)
+    for (i=0; i < termCount; i++)
     {
         if (isset(ocpTerms,i))
         {
@@ -1091,7 +1036,7 @@ static void MoveExpressions(void)
                     if (head->OCP)
                     {
                         if (isset(head->RO,i))
-                            HandleRO(head, i);
+                            HandleRO(head, termMapUp[i]);
                     }
                     head = head->fwd;
                 }
@@ -1186,6 +1131,23 @@ static int fgc(enum e_fgtype type, BLOCK *parent, BLOCK *b)
 {
     return TRUE;
 }
+void SetGlobalTerms(void)
+{
+    int i, j;
+    termCount = 0;
+    for (i=0; i < tempCount; i++)
+        if (tempInfo[i]->inUse)
+            termCount++;
+    termMap = Alloc(sizeof(unsigned short) * tempCount);
+    termMapUp = Alloc(sizeof(unsigned short) * termCount);
+    for (i=0, j=0; i < tempCount; i++)
+        if (tempInfo[i]->inUse)
+        {
+            termMap[i] = j;
+            termMapUp[j] = i;
+            j++;
+        }
+}
 void GlobalOptimization(void)
 {
     int i;
@@ -1230,12 +1192,11 @@ void GlobalOptimization(void)
             bl = bl->next;
         }		
     }
-
-    termCount = tempCount;
+                    
     definesInfo();
-    tempBytes = lallocbit(termCount);
-    tempBytes2 = lallocbit(termCount);
-    tempBytes3 = lallocbit(termCount);
+    tempBytes = aallocbit(termCount);
+    tempBytes2 = aallocbit(termCount);
+    tempBytes3 = aallocbit(termCount);
     GatherGlobals();
     GatherTerms();
     CalculateUses();

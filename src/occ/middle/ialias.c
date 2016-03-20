@@ -70,6 +70,8 @@ extern SYMBOL *theCurrentFunc;
 extern int termCount;
 extern int loopCount;
 extern LOOP **loopArray;
+extern unsigned short *termMap, *termMapUp;
+extern int termCount;
 
 int cachedTempCount;
 BITINT *uivBytes;
@@ -141,9 +143,9 @@ static void PrintTemps(BITINT *modifiedBy)
     if (modifiedBy)
     {
         oprintf(icdFile, "[");
-        for (i=1; i < cachedTempCount; i++)
+        for (i=1; i < termCount; i++)
             if (isset(modifiedBy, i))
-                oprintf(icdFile, "T%d ", i);
+                oprintf(icdFile, "T%d ", termMapUp[i]);
         oprintf(icdFile, "]");
     }
 }
@@ -1071,7 +1073,7 @@ static void GatherAliases(LOOP *lp)
 }
 static void ormap(BITINT *dest, BITINT *src)
 {
-    int n = (tempCount + BITINTBITS-1)/BITINTBITS;
+    int n = (termCount + BITINTBITS-1)/BITINTBITS;
     int i;
     for (i=0; i < n; i++)
     {
@@ -1085,7 +1087,7 @@ static void ormap(BITINT *dest, BITINT *src)
 }
 static void andmap(BITINT *dest, BITINT *src)
 {
-    int n = (tempCount + BITINTBITS-1)/BITINTBITS;
+    int n = (termCount + BITINTBITS-1)/BITINTBITS;
     int i;
     for (i=0; i < n; i++)
     {
@@ -1095,7 +1097,7 @@ static void andmap(BITINT *dest, BITINT *src)
 }
 static void complementmap(BITINT *dest)
 {
-    int n = (tempCount + BITINTBITS-1)/BITINTBITS;
+    int n = (termCount + BITINTBITS-1)/BITINTBITS;
     int i;
     for (i=0; i < n; i++)
     {
@@ -1148,7 +1150,7 @@ void AliasStruct(BITINT *bits, IMODE *ans, IMODE *left, IMODE *right)
             }
             src = src->next;
         }
-        setbit(bits, left->offset->v.sp->value.i);
+        setbit(bits, termMap[left->offset->v.sp->value.i]);
         return;
     }
     else if (left->mode == i_immed)
@@ -1220,7 +1222,7 @@ void AliasUses(BITINT *bits, IMODE *im, BOOLEAN rhs)
                 {
                     im = LookupLoadTemp(im, im);
                 }
-                setbit(bits, im->offset->v.sp->value.i);
+                setbit(bits, termMap[im->offset->v.sp->value.i]);
             }
             else if (im->mode == i_direct)
             {
@@ -1234,7 +1236,7 @@ void AliasUses(BITINT *bits, IMODE *im, BOOLEAN rhs)
                 im = GetLoadTemp(im);
                 if (im)
                 {
-                    setbit(bits, im->offset->v.sp->value.i);
+                    setbit(bits, termMap[im->offset->v.sp->value.i]);
                 }
             }
             else if (im->mode == i_immed && !isintconst(im->offset) && 
@@ -1253,32 +1255,24 @@ void AliasUses(BITINT *bits, IMODE *im, BOOLEAN rhs)
                     im = GetLoadTemp(im);
                     if (im)
                     {
-                        setbit(bits, im->offset->v.sp->value.i);
+                        setbit(bits, termMap[im->offset->v.sp->value.i]);
                     }
                 }
             }
         }
         else
         {
-            setbit(bits, im->offset->v.sp->value.i);
+            setbit(bits, termMap[im->offset->v.sp->value.i]);
         }
     }
 }
 static void ScanUIVs(void)
 {
-    int n = (tempCount + BITINTBITS-1)/BITINTBITS;
     BOOLEAN done = FALSE;
     ALIASLIST *al = parmList;
     int i;
     ResetProcessed();
-    uivBytes = aallocbit(tempCount);
-    /*
-    while (al)
-    {   
-        scanDepends(uivBytes, al->address->pointsto, n);
-        al = al->next;
-    }
-    */
+    uivBytes = aallocbit(termCount);
     for (i=0; i < DAGSIZE; i++)
     {
         ALIASADDRESS *aa = addresses[i];
@@ -1304,7 +1298,7 @@ static void ScanUIVs(void)
                 case en_threadlocal:
                     im = GetLoadTemp(im);
                     if (im)
-                        setbit(uivBytes, im->offset->v.sp->value.i);
+                        setbit(uivBytes, termMap[im->offset->v.sp->value.i]);
                     break;
                 default:
                     break;
@@ -1316,7 +1310,6 @@ static void ScanUIVs(void)
 static void MakeAliasLists(void)
 {
     int i;
-    int n = (cachedTempCount + BITINTBITS-1)/BITINTBITS;
     for (i=0; i < cachedTempCount; i++)
     {
         int n = tempInfo[i]->postSSATemp;
@@ -1325,7 +1318,7 @@ static void MakeAliasLists(void)
             tempInfo[n]->pointsto = tempInfo[i]->pointsto;
             tempInfo[i]->pointsto = NULL;
         }
-        tempInfo[i]->modifiedBy = aallocbit(tempCount);
+        tempInfo[i]->modifiedBy = aallocbit(termCount);
     }
     for (i=0; i < cachedTempCount; i++)
         if (tempInfo[i]->pointsto)
@@ -1336,8 +1329,8 @@ static void MakeAliasLists(void)
                 ALIASADDRESS *aa = al->address;
                 while (aa->merge) aa = aa->merge;
                 if (!aa->modifiedBy)
-                    aa->modifiedBy = aallocbit(tempCount);
-                setbit(aa->modifiedBy, i);
+                    aa->modifiedBy = aallocbit(termCount);
+                setbit(aa->modifiedBy, termMap[i]);
                 al = al->next;
             }
         }
@@ -1380,7 +1373,7 @@ static void GatherInds(BITINT *p, int n, ALIASLIST *al)
         if (s)
         {
             if (!r)
-                r = al->address->modifiedBy = aallocbit(tempCount);
+                r = al->address->modifiedBy = aallocbit(termCount);
             for (k=0; k < n; k++)
             {
                 if (~*r & *s)
@@ -1397,7 +1390,7 @@ static void GatherInds(BITINT *p, int n, ALIASLIST *al)
 static void ScanMem(void)
 {
     int i,k;
-    int n = (tempCount + BITINTBITS-1)/BITINTBITS;
+    int n = (termCount + BITINTBITS-1)/BITINTBITS;
     do 
     {
         changed = FALSE;

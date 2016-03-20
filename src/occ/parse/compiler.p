@@ -530,6 +530,7 @@ void MoveLoopInvariants(void);
 
                               /* Ilazy.c */
 void RearrangePrecolors(void);
+void SetGlobalTerms(void);
 void GlobalOptimization(void);
 
 								/* ilimit.c */

@@ -790,6 +790,7 @@ void optimize(SYMBOL *funcsp)
         if (optflags & OPT_GLOBAL)
         {
     //printf("alias 2\n");
+            SetGlobalTerms();
             AliasPass2();
             //printf("global\n");
             GlobalOptimization(); /* partial redundancy, code motion */

@@ -1080,7 +1080,7 @@ void TranslateFromSSA(BOOLEAN all)
         tempInfo[i]->temp = FALSE;
         if (all && tempInfo[i]->enode) // && !tempInfo[i]->enode->v.sp->imaddress)
             tempInfo[i]->preSSATemp = i;
-        tempInfo[i]->conflicts = allocbit(tempCount*2);
+//        tempInfo[i]->conflicts = allocbit(tempCount*2);
     }
     liveVariables();
     partition(all);

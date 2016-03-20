@@ -74,6 +74,7 @@ extern int maxBlocks, maxTemps;
 extern int retlab, startlab;
 extern LIST *temporarySymbols;
 extern int inlinesym_count;
+extern int tempBottom, nextTemp;
 
 IMODE *returnImode;
 int retcount;
@@ -794,6 +795,7 @@ void optimize(SYMBOL *funcsp)
             GlobalOptimization(); /* partial redundancy, code motion */
             AliasRundown();
         }
+        nextTemp = tempBottom;
                  //printf("end opt\n");
            RemoveCriticalThunks();
         removeDead(blockArray[0]);

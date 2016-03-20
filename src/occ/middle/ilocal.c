@@ -61,8 +61,7 @@ TEMP_INFO **tempInfo;
 int tempSize;
 
 BRIGGS_SET *killed;
-
-static int nextTemp;
+int tempBottom, nextTemp;
 
 static void renameOneSym(SYMBOL *sp)
 {
@@ -198,50 +197,43 @@ static void renameToTemps(SYMBOL *funcsp)
 
 static int AllocTempOpt(int size1)
 {
-//	int n = nextTemp;
     int t;
     int i;
-    /*
-    for (i= nextTemp; i < tempCount; i++)
-        if (!tempInfo[i]->inUse && tempInfo[i]->enode)
-        {
-            EXPRESSION *rv = tempInfo[i]->enode;
-            rv->v.sp->imvalue->size = size1;
-            rv->v.sp->imind = NULL;
-            memset(tempInfo[i], 0, sizeof(TEMP_INFO));
-            tempInfo[i]->enode = rv;
-            t = i;
-            break;
-        }
-    if (i == tempCount)
+    IMODE *rv;
+    while (nextTemp < tempCount)
     {
-        for (i=0; i < nextTemp; i++)
-            if (!tempInfo[i]->inUse && tempInfo[i]->enode)
-            {
-                EXPRESSION *rv = tempInfo[i]->enode;
-                rv->v.sp->imvalue->size = size1;
-                rv->v.sp->imind = NULL;
-                memset(tempInfo[i], 0, sizeof(TEMP_INFO));
-                tempInfo[i]->enode = rv;
-                t = i;
-                break;
-            }
-        if (i == nextTemp)
-        {*/
-            IMODE *rv = tempreg(size1, FALSE);
-            t = rv->offset->v.sp->value.i;
-            if (t >= tempSize)
-            {
-                TEMP_INFO **temp = oAlloc((tempSize + 1000) * sizeof(TEMP_INFO *));
-                memcpy(temp, tempInfo, sizeof(TEMP_INFO *) * tempSize);
-                tempSize += 1000;
-                tempInfo = temp;
-            }
-            if (!tempInfo[t])
-                tempInfo[t] = (TEMP_INFO *)oAlloc(sizeof(TEMP_INFO));
-            tempInfo[t]->enode = rv->offset;
-//		}
-//	}
+        if (! tempInfo[nextTemp]->inUse)
+            break;
+        nextTemp++;
+    }
+    if (nextTemp < tempCount)
+    {
+        int n = tempCount;
+        tempCount = nextTemp;
+        rv = tempreg(size1, FALSE);
+        tempCount = n;
+    }
+    else
+    {
+         rv = tempreg(size1, FALSE);
+    }
+    t = rv->offset->v.sp->value.i;
+    if (t >= tempSize)
+    {
+        TEMP_INFO **temp = oAlloc((tempSize + 1000) * sizeof(TEMP_INFO *));
+        memcpy(temp, tempInfo, sizeof(TEMP_INFO *) * tempSize);
+        tempSize += 1000;
+        tempInfo = temp;
+    }
+    if (!tempInfo[t])
+    {
+        tempInfo[t] = (TEMP_INFO *)oAlloc(sizeof(TEMP_INFO));
+    }
+    else
+    {
+        memset(tempInfo[t], 0, sizeof(TEMP_INFO));
+    }
+    tempInfo[t]->enode = rv->offset;
     nextTemp = t;
     tempInfo[t]-> partition = t;
     tempInfo[t]->color = -1;
@@ -272,7 +264,7 @@ static void InitTempInfo(void)
 {
     QUAD *head = intermed_head;
     int i;
-    nextTemp = tempCount;
+    nextTemp = tempBottom = tempCount;
     tempSize = tempCount + 1000;
     tempInfo = (TEMP_INFO **)oAlloc(sizeof(TEMP_INFO *) * (tempSize));
 

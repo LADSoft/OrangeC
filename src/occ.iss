@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.62.0.1
+AppVerName=Orange C Version 5.63.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -101,12 +101,13 @@ Name: "{group}\Tools Help"; Filename: "{app}\help\tools.chm"; Components: main\d
 Name: "{userdesktop}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; MinVersion: 4,4; Components: main\desktop; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\bin\ocide.exe"; Parameters: " "; Description: "Launch Orange C IDE"; Flags: nowait postinstall skipifsilent unchecked; Components: main\desktop;
-
+Filename: "{app}\bin\ocide.exe"; Parameters: " "; Description: "Launch Orange C IDE"; Flags: nowait postinstall skipifsilent unchecked; Components: main\desktop; BeforeInstall: SetEnvPath;
 [Registry]
 Root: HKLM; Subkey: "Software\LADSoft"; Flags: uninsdeletekeyifempty; Components: main\desktop;
 Root: HKLM; SubKey: "Software\LADSoft\ORANGEC"; Valuetype: string; ValueName: "InstallPath"; ValueData: "{app}"; Components: main\desktop;
 Root: HKLM; SubKey: "Software\LADSoft\ORANGEC\OCIDE"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}"; Components: main\desktop;
+
+Root: HKCU; SubKey: "Environment"; ValueType: string; ValueName: "ORANGEC"; ValueData: "{app}"; Components: main\desktop;
 
 Root: HKCR; Subkey: ".cwa"; Flags: uninsdeletekeyifempty; Components: main\desktop;
 Root: HKCR; Subkey: "cwafile.cwafile"; Flags: uninsdeletekey; Components: main\desktop;
@@ -186,6 +187,19 @@ type: filesandordirs; Name: "{userappdata}\Orange C"; Components: main\desktop;
 ;Filename: "{app}\bin\defs.exe";  Parameters: "/U ""{app}"" "; Flags: runminimized
 
 [Code]
+#ifdef UNICODE
+  #define AW "W"
+#else
+  #define AW "A"
+#endif
+function SetEnvironmentVariable(lpName: string; lpValue: string): BOOL;
+  external 'SetEnvironmentVariable{#AW}@kernel32.dll stdcall';
+
+procedure SetEnvPath;
+begin
+  if not SetEnvironmentVariable('PATH', ExpandConstant('{app}')) then
+    MsgBox(SysErrorMessage(DLLGetLastError), mbError, MB_OK);
+end;
 function InitializeSetup(): Boolean;
 begin
   Result := True;
@@ -210,22 +224,22 @@ procedure AddToPath(Path : String);
 var
   WorkingPath : String;
 begin
-  RegQueryStringValue(HKEY_LOCAL_MACHINE, 'System\CurrentControlSet\Control\Session Manager\Environment', 'Path', WorkingPath);
+  RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', WorkingPath);
   if Pos(Path, workingPath) = 0 then
     begin
       Insert(Path, WorkingPath, 1);
-      RegWriteExpandStringValue(HKEY_LOCAL_MACHINE, 'System\CurrentControlSet\Control\Session Manager\Environment', 'Path', WorkingPath);
+      RegWriteExpandStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', WorkingPath);
     end;
 end;
 procedure RemoveFromPath(Path : String);
 var
   WorkingPath : String;
 begin
-  RegQueryStringValue(HKEY_LOCAL_MACHINE, 'System\CurrentControlSet\Control\Session Manager\Environment', 'Path', WorkingPath);
+  RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', WorkingPath);
   if Pos(Path, workingPath) <> 0 then
     begin
       Delete(WorkingPath, Pos(Path, workingPath), Length(Path));
-      RegWriteExpandStringValue(HKEY_LOCAL_MACHINE, 'System\CurrentControlSet\Control\Session Manager\Environment', 'Path', WorkingPath);
+      RegWriteExpandStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', WorkingPath);
     end;
 end;
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -238,7 +252,6 @@ begin
       DeleteFile(ExpandConstant('{app}\help\chelp.chm:Zone.Identifier'));
       if Not IsComponentSelected('main\memstick') Then
         Begin
-          RegWriteExpandStringValue(HKEY_LOCAL_MACHINE, 'System\CurrentControlSet\Control\Session Manager\Environment', 'ORANGEC',ExpandConstant('{app}'));
           if IsTaskSelected('addtopath') Then
             Begin
               AddToPath(ExpandConstant('{app}\bin;'));
@@ -251,7 +264,6 @@ begin
   if CurUninstallStep = usUninstall then
     begin
       Begin
-        RegDeleteValue(HKEY_LOCAL_MACHINE, 'System\CurrentControlSet\Control\Session Manager\Environment', 'ORANGEC');
         RemoveFromPath(ExpandConstant('{app}\bin;'));
       End
     end;

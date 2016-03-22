@@ -1,6 +1,23 @@
 Release notes:
 
-version 5.62.1:
+version 5.63.1: 3/19/2016
+    occ:        fix problem with crash when a close brace was missing at the end of the file
+    occ:        add support for expressions like a ? : b
+    occ:        clean up the error handling when returning structured values the wrong way
+    occ:        if you took the address of a static const var two or more times
+                it would be replicated in the output file.
+    occ:        if the address of a static const var is used in a global declaration,
+                a bad output file would be generated
+    occ:        the expression optimizer could take an extremely long time for very complex expressions
+    occ:        fix a problem where a an x86 comparison opcode could sometimes be optimized to compare two immediates
+    occ:        fix problems generating too-large constants in assembly language output causing assemble errors
+    occ:        fix problems with csmith output: there is heavy inlining in these files and too many
+                were running the compiler out of memory
+    occ:        fix a problem where a bit operation was attempted to be generated with an inequality
+    setup:      access ORANGEC environment variable off of HKEY_CURRENT_USER instead of HKEY_LOCAL_MACHINE
+    setup:      propagate registry changes before running the IDE from the setup program
+
+version 5.62.1: 3/3/2016
     occ:        add support for more C++ intrinsics (to increase compilation speed)
     occ:        auto did not work properly with arrays
     occ:        a newly introduce problem caused returning the return value of a 

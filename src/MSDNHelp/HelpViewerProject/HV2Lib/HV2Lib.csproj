@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{CD03BC77-2011-46C7-AD10-F65F867FF39C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HVProject.HV2Lib</RootNamespace>
+    <AssemblyName>HVProject.HV2Lib</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release_7|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release_7\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DefineConstants>$(DefineConstants);VSDLL</DefineConstants>
+  </PropertyGroup>
+	<Choose>
+	  <When Condition="'$(Configuration)' == 'Release_7'">
+		<ItemGroup>
+			<Reference Include="Microsoft.VisualStudio.Help.Runtime, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+			  <SpecificVersion>False</SpecificVersion>
+			  <HintPath>$(OPF32)\Microsoft Help Viewer\v2.0\Microsoft.VisualStudio.Help.Runtime.dll</HintPath>	  
+			  <Private>True</Private>
+			</Reference>
+		</ItemGroup>
+	  </When>
+	  <Otherwise>
+		<ItemGroup>
+			<Reference Include="Windows.Help.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+			  <SpecificVersion>False</SpecificVersion>
+			</Reference>
+		</ItemGroup>
+	  </Otherwise>
+	</Choose>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Common\AppConfigUtility.cs" />
+    <Compile Include="Common\CatalogItem.cs" />
+    <Compile Include="Common\CatalogList.cs" />
+    <Compile Include="Common\FileUtility.cs" />
+    <Compile Include="Common\HV2RegInfo.cs" />
+    <Compile Include="Common\HV2Reg.cs" />
+    <Compile Include="Common\MSLocales.cs" />
+    <Compile Include="Common\Native.cs" />
+    <Compile Include="LocalStore\CatalogParser.cs" />
+    <Compile Include="PluggableProtocol\MsxhelpProtocol.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="PluggableProtocol\HelpClassFactory.cs" />
+    <Compile Include="PluggableProtocol\HelpPluggableProtocolHandler.cs" />
+    <Compile Include="PluggableProtocol\Interfaces.cs" />
+    <Compile Include="PluggableProtocol\NativeMethods.cs" />
+    <Compile Include="Render\HttpUtility.cs" />
+    <Compile Include="Render\MetaData.cs" />
+    <Compile Include="Render\CustomRenderer.cs" />
+    <Compile Include="Render\HelpQuery.cs" />
+    <Compile Include="Render\TopicStreamExpand.cs" />
+    <Compile Include="View\HlpViewer.cs" />
+    <Compile Include="View\Panel_SearchOperator.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="View\Panel_SearchOperator.Designer.cs">
+      <DependentUpon>Panel_SearchOperator.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\Panel_Toc.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="View\Panel_Toc.Designer.cs">
+      <DependentUpon>Panel_Toc.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\IndexCache.cs" />
+    <Compile Include="View\TocSync.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\Panel_SearchOperator.resx">
+      <DependentUpon>Panel_SearchOperator.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\Panel_Toc.resx">
+      <DependentUpon>Panel_Toc.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Helpware.Misc\Helpware.Misc.csproj">
+      <Project>{31ed459a-3a06-464d-90da-4d7fd7824e16}</Project>
+      <Name>Helpware.Misc</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

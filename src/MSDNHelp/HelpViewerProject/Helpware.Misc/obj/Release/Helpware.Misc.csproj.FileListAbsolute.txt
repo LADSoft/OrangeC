@@ -1,0 +1,5 @@
+C:\orangec\src\MSDNHelp\HelpViewerProject\Helpware.Misc\bin\Release\Helpware.Misc.dll
+C:\orangec\src\MSDNHelp\HelpViewerProject\Helpware.Misc\bin\Release\Helpware.Misc.pdb
+C:\orangec\src\MSDNHelp\HelpViewerProject\Helpware.Misc\obj\Release\Helpware.Misc.csprojResolveAssemblyReference.cache
+C:\orangec\src\MSDNHelp\HelpViewerProject\Helpware.Misc\obj\Release\Helpware.Misc.dll
+C:\orangec\src\MSDNHelp\HelpViewerProject\Helpware.Misc\obj\Release\Helpware.Misc.pdb

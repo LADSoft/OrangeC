@@ -710,6 +710,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         SendMessage(win, WM_COMMAND, IDM_SPECIFIEDHELP, 0);
                         break;
                     }
+                WebHelp("xyzzy");
             }
             else if (GetKeyState(VK_SHIFT) & 0x80000000)
             {
@@ -727,6 +728,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_COMMAND:
             switch (wParam &0xffff)
             {
+            case IDM_WEBHELP:
+                WebHelp("xyzzy");
+                break;
+            case IDM_CONFIGWEBHELP:
+                ConfigWebHelp();
+                break;
             case IDM_SPECIFIEDHELP:
                SpecifiedHelp(0);
                break;

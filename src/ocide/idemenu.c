@@ -272,6 +272,10 @@ static struct menuBitmap {
     }
     ,
     {
+        IDM_WEBHELP, 3, 8
+    }
+    ,
+    {
         IDM_SAVEAS, 3, 9
     }
     ,

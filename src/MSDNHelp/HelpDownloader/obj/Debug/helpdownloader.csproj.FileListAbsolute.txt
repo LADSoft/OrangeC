@@ -1,0 +1,8 @@
+C:\HV2example\HelpDownloader\obj\Debug\helpdownloader.csprojResolveAssemblyReference.cache
+C:\HV2example\HelpDownloader\obj\Debug\VisualStudioHelpDownloader2012.MainForm.resources
+C:\HV2example\HelpDownloader\obj\Debug\helpdownloader.csproj.GenerateResource.Cache
+C:\HV2example\HelpDownloader\bin\Debug\HelpDownloader.exe.config
+C:\HV2example\HelpDownloader\bin\Debug\HelpDownloader.exe
+C:\HV2example\HelpDownloader\bin\Debug\HelpDownloader.pdb
+C:\HV2example\HelpDownloader\obj\Debug\HelpDownloader.exe
+C:\HV2example\HelpDownloader\obj\Debug\HelpDownloader.pdb

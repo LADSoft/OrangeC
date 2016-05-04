@@ -1,0 +1,298 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{078C48F1-DE8B-4432-971D-FF7A5FFF359E}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HV2ApiExplore</RootNamespace>
+    <AssemblyName>HV2ApiExplore</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>HV2ProjectIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Windows.Help.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Forms\Form_RunHelpIndexer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Form_RunHelpIndexer.Designer.cs">
+      <DependentUpon>Form_RunHelpIndexer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_CreateMSHX.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_CreateMSHX.Designer.cs">
+      <DependentUpon>Page_CreateMSHX.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_EventLog.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_EventLog.Designer.cs">
+      <DependentUpon>Page_EventLog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Panel_HelpIndexer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Panel_HelpIndexer.Designer.cs">
+      <DependentUpon>Panel_HelpIndexer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_Store.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_Store.Designer.cs">
+      <DependentUpon>Page_Store.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_Topic.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_Topic.Designer.cs">
+      <DependentUpon>Page_Topic.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Panel_HelpTopicResults.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Panel_HelpTopicResults.Designer.cs">
+      <DependentUpon>Panel_HelpTopicResults.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_Keywords.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_Keywords.Designer.cs">
+      <DependentUpon>Page_Keywords.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_Search.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_Search.Designer.cs">
+      <DependentUpon>Page_Search.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_Notes.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_Notes.Designer.cs">
+      <DependentUpon>Page_Notes.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_TOC.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_TOC.Designer.cs">
+      <DependentUpon>Page_TOC.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Globals.cs" />
+    <Compile Include="Forms\DebugForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\DebugForm.Designer.cs">
+      <DependentUpon>DebugForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Form_H2Main.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Form_H2Main.Designer.cs">
+      <DependentUpon>Form_H2Main.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Page_Catalogs.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Page_Catalogs.Designer.cs">
+      <DependentUpon>Page_Catalogs.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Forms\DebugForm.resx">
+      <DependentUpon>DebugForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Form_RunHelpIndexer.resx">
+      <DependentUpon>Form_RunHelpIndexer.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Form_H2Main.resx">
+      <DependentUpon>Form_H2Main.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_CreateMSHX.resx">
+      <DependentUpon>Page_CreateMSHX.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_EventLog.resx">
+      <DependentUpon>Page_EventLog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Panel_HelpIndexer.resx">
+      <DependentUpon>Panel_HelpIndexer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_Store.resx">
+      <DependentUpon>Page_Store.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_Topic.resx">
+      <DependentUpon>Page_Topic.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Panel_HelpTopicResults.resx">
+      <DependentUpon>Panel_HelpTopicResults.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_Catalogs.resx">
+      <DependentUpon>Page_Catalogs.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_Keywords.resx">
+      <DependentUpon>Page_Keywords.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_Search.resx">
+      <DependentUpon>Page_Search.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_Notes.resx">
+      <DependentUpon>Page_Notes.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Page_TOC.resx">
+      <DependentUpon>Page_TOC.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Helpware.Misc\Helpware.Misc.csproj">
+      <Project>{31ED459A-3A06-464D-90DA-4D7FD7824E16}</Project>
+      <Name>Helpware.Misc</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\HV2Lib\HV2Lib.csproj">
+      <Project>{CD03BC77-2011-46C7-AD10-F65F867FF39C}</Project>
+      <Name>HV2Lib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\help_16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\Document.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4 Client Profile %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\infoTip13x13.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\eye-16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\YellowFlag.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\GreenFlag.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\Copy.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\Explorer.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\Zip.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\warning16x16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="HV2ProjectIcon.ico" />
+    <None Include="images\Execute.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

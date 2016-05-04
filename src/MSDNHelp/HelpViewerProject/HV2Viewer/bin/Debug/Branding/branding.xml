@@ -1,0 +1,61 @@
+﻿<root>
+    <!-- CollapsibleArea -->
+    <ExpandText _locID="collapsible.1">Expand</ExpandText>
+    <CollapseText _locID="collapsible.2">Collapse</CollapseText>
+    <!-- CodeSnippet -->
+    <CopyToClipboard _locID="codesnippet.1">Copy to Clipboard</CopyToClipboard>
+    <ViewColorizedText _locID="codesnippet.2">View Colorized</ViewColorizedText>
+    <CombinedVBTabDisplayLanguage _locID="codesnippet.3">Visual Basic (Sample)</CombinedVBTabDisplayLanguage>
+    <VBDeclaration _locID="codesnippet.4">'Declaration</VBDeclaration>
+    <VBUsage _locID="codesnippet.5">'Usage</VBUsage>
+    <!-- Feedback and Footer -->
+    <CopyRight><!-- _locID_CDATA="copyright.1" --><![CDATA[© 2011 Microsoft Corporation. All rights reserved.]]></CopyRight>
+    <SendFeedback><!-- _locID_CDATA="feedback.1" --><![CDATA[<a href="{0}" {1}>Send Feedback</a> on this topic to Microsoft.]]></SendFeedback>
+    <FeedbackLink><!-- _locID_CDATA="feedback.2" --><![CDATA[mailto:DevDocs@Microsoft.com?subject=MSDN%5e*{1}%5e*VS%5e*{2}%5e*{0}&amp;body=Visual%20Studio%20feedback%20policy%3a%20http%3a%2f%2fmsdn.microsoft.com%2f{0}%2flibrary%2fee264131(VS.100).aspx]]></FeedbackLink>
+    <!-- Logo -->
+    <LogoTitle><!-- _locID_CDATA="logo.1" --><![CDATA[Visual Studio 2010]]></LogoTitle>
+    <LogoFileName>vs_logo_bk.gif</LogoFileName>
+    <LogoFileNameHC>vs_logo_wh.gif</LogoFileNameHC>
+    <!-- Disclaimer -->
+    <Disclaimer>
+        <EditDisclaimer><!-- _locID_CDATA="disclaimer.1" --><![CDATA[This is machine-translated content. You can go to the online version of this topic to view and edit the text side-by-side with English.]]></EditDisclaimer>
+        <NonEditDisclaimer><!-- _locID_CDATA="disclaimer.2" --><![CDATA[This is machine-translated content. You can go to the online version of this topic to view the text side-by-side with English.]]></NonEditDisclaimer>
+        <QualityEditDisclaimer><!-- _locID_CDATA="disclaimer.3" --><![CDATA[You can go to the online version of this topic to view and edit the text side-by-side with English.]]></QualityEditDisclaimer>
+        <QualityNonEditDisclaimer><!-- _locID_CDATA="disclaimer.4" --><![CDATA[You can go to the online version of this topic to view the text side-by-side with English.]]></QualityNonEditDisclaimer>
+        <MT_BetaContents><!-- _locID_CDATA="disclaimer.5" --><![CDATA[This is machine-translated content that is provided for the Beta release. A fully translated version of this content will be provided in a future release.]]></MT_BetaContents>
+        <MT_BetaRecycledContents><!-- _locID_CDATA="disclaimer.6" --><![CDATA[This is content from the previous version of the product.]]></MT_BetaRecycledContents>
+    </Disclaimer>
+    <LinkTableTitle _locID="linktable.1">Link Table</LinkTableTitle>
+    <!-- Link to English version of the topic -->
+    <TopicEnuLinkText><!-- _locID_CDATA="topicenglishlink.1" --><![CDATA[View <a href="[LINK_PLACE_HOLDER]">the English version</a> of this topic that is available on your computer]]></TopicEnuLinkText>
+    <!-- Link to online version of the topic -->
+    <TopicOnlineLinkText><!-- _locID_CDATA="topiconlinelink.1" --><![CDATA[View this topic <a href="{0}" {1}>online</a>]]></TopicOnlineLinkText>
+    <OnlineText _locID="onlinetext.1">Online</OnlineText>
+    <!-- Video Audio control -->
+    <MultiMediaNotSupported _locID="audiovidio.1">Internet Explorer 9 or greater must be installed to support {0} content.</MultiMediaNotSupported>
+    <VideoText _locID="audiovidio.2">displaying video</VideoText>
+    <AudioText _locID="audiovidio.3">streaming audio</AudioText>
+    <OnlineVideoLinkText><!-- _locID_CDATA="audiovidio.4" --><![CDATA[<p>To view the video associated with this topic, click {0}<a href="{1}">{2}here</a>.</p>]]></OnlineVideoLinkText>
+    <OnlineAudioLinkText><!-- _locID_CDATA="audiovidio.5" --><![CDATA[<p>To listen to the audio associated with this topic, click {0}<a href="{1}">{2}here</a>.</p>]]></OnlineAudioLinkText>
+    <!-- Content Not Installed control-->
+    <ContentNotInstalledTitle><!-- _locID_CDATA="contentnotinstalled.1" --><![CDATA[No content was found on your computer.]]></ContentNotInstalledTitle>
+    <ContentNotInstalledDownloadContentText><!-- _locID_CDATA="contentnotinstalled.2" --><![CDATA[<p>To download content to your computer, <a href="{0}" {1}>click the Manage tab</a>.</p>]]></ContentNotInstalledDownloadContentText>
+    <ContentNotInstalledText><!-- _locID_CDATA="contentnotinstalled.3" --><![CDATA[<p>No content is installed on your computer. Please see your Administrator for local Help content installation.</p>]]></ContentNotInstalledText>
+    <!-- Topic Not Found control-->
+    <TopicNotFoundTitle><!-- _locID_CDATA="topicnotfound.1" --><![CDATA[Cannot find requested topic on your computer]]></TopicNotFoundTitle>
+    <TopicNotFoundViewOnlineText><!-- _locID_CDATA="topicnotfound.2" --><![CDATA[<p>The topic you requested was not found on your computer, but you can <a href="{0}" {1}>view the topic online</a>.</p>]]></TopicNotFoundViewOnlineText>
+    <TopicNotFoundDownloadContentText><!-- _locID_CDATA="topicnotfound.3" --><![CDATA[<p>See the navigation pane for links to similar topics, or <a href="{0}" {1}>click the Manage tab</a> to download content to your computer.</p>]]></TopicNotFoundDownloadContentText>
+    <TopicNotFoundText><!-- _locID_CDATA="topicnotfound.4" --><![CDATA[<p>The topic you requested was not found on your computer.</p>]]></TopicNotFoundText>
+    <!-- Malformed Topiccontrol-->
+    <TopicCorruptedTitle><!-- _locID_CDATA="topicmalformed.1" --><![CDATA[Unable to display the requested topic]]></TopicCorruptedTitle>
+    <TopicCorruptedViewOnlineText><!-- _locID_CDATA="topicmalformed.2" --><![CDATA[<p>Help Viewer is unable to display the requested topic. There may be an error in the topic's content or an underlying system dependency.</p>]]></TopicCorruptedViewOnlineText>
+    <!-- Home Page control-->
+    <HomePageTitle><!-- _locID_CDATA="homepage.1" --><![CDATA[Help Viewer Home]]></HomePageTitle>
+    <HomePageIntroduction><!-- _locID_CDATA="homepage.2" --><![CDATA[<p>Welcome to the Microsoft Help Viewer, an essential source of information for everyone who uses Microsoft tools, products, technologies, and services. The Help Viewer gives you access to how-to and reference information, sample code, technical articles, and more. To find the content you need, browse the table of contents, use full-text search, or navigate through content using the keyword index.</p>]]></HomePageIntroduction>
+    <HomePageContentInstallText><!-- _locID_CDATA="homepage.3" --><![CDATA[<p><br />Use the <a href="{0}" {1}>Manage</a> tab to do the following:<ul><li>Add content to your computer.</li><li>Check for updates to your local content.</li><li>Remove content from your computer.</li></ul></p>]]></HomePageContentInstallText>
+    <HomePageInstalledBooks><!-- _locID_CDATA="homepage.4" --><![CDATA[Installed Books]]></HomePageInstalledBooks>
+    <HomePageNoBooksInstalled><!-- _locID_CDATA="homepage.5" --><![CDATA[No content was found on your computer.]]></HomePageNoBooksInstalled>
+    <HomePageHelpSettings><!-- _locID_CDATA="homepage.6" --><![CDATA[Help Settings]]></HomePageHelpSettings>
+    <HomePageHelpSettingsText><!-- _locID_CDATA="homepage.7" --><![CDATA[<p>Your current setting is local help. The Help Viewer displays content that you have installed on your computer.<br />To change your source of Help content, on the Visual Studio menu bar, choose <span style="{0}">Help, Set Help Preference</span>.<br /></p>]]></HomePageHelpSettingsText>
+    <MegaByte _locID="megabyte.1">MB</MegaByte>
+ </root>

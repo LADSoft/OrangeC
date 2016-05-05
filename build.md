@@ -3,7 +3,7 @@ Building Orange C
 
 These instructions are for building on WIN32.  I actually build on Windows 7 64-bit.
 
-You will need either Borland C++ 5.5, Visual Studio 2010, OpenWatcom, or MINGW to compile this set of applications.  This program does not currently compile itself (although it does successfully compile the compiler itself I haven't fully vetted it with the C++ language used by virtually every other application).
+You will need either Borland C++ 5.5, Visual Studio 2010, OpenWatcom, or MINGW to compile this set of applications.   For help support, C# tools version 4.0 and .NET framework 4.5 need to be installed.  Additionally, with the exception of the C# code this package currently will compile and link itself.
 
 You will also need 7-zip and inno setup, to do a complete build including making the distribution files.
 
@@ -22,6 +22,14 @@ You can change the version number by editing `SRC\VERSION.H` then rebuilding eve
 Building orange C happens in three steps.  First, the executables are built.  Then, the C Runtime library is built.  After that, the distribution release files are built.
 
 To build the executables you can either install Borland C++ 5.5, the free version, or you you can install Visual Studio Express.  The build files for Visual Studio Express assume VC2010, I don't know if they will port forward.
+
+If you want to use VC to compile the executables, install the command line build environment (using VCVARS32.bat) and type:
+
+    ms.bat
+
+If you want to include the help programs into the built project, make sure the .NET prerequisets are installed and type:
+
+    mshelp.bat
 
 The first time you build various steps have to be taken to bootstrap the build.   For a first time build or if you want to make sure the entire thing gets built, cd to the source directory and type:
 

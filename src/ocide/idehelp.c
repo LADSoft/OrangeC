@@ -87,6 +87,7 @@ int findhvfiles(char *path, char *sel)
 }
 int CheckWebVersion()
 {
+    int winVer = ((GetVersion() & 0xff) << 8) + ((GetVersion() >> 8) & 0xff);
     int netVer = 0;
      HKEY hKey;
 
@@ -131,13 +132,13 @@ int CheckWebVersion()
         return 0;
     }
     // windows 8 or above
-    if ((GetVersion() & 255) < 5)
+    if (winVer< 0x601)
     {
         ExtendedMessageBox("Windows 7 required", 0, "Windows 7 or better is required to use this feature.");
         return 0;
     }
     // windows 7
-    if ((GetVersion() & 255) == 5)
+    if (winVer == 0x601)
     {
         char *p =getenv("ProgramFiles(x86)");
         if (!p || !*p)
@@ -167,7 +168,7 @@ static void  WebHelpThread(void *x)
     strncpy(search, string, sizeof(search));
     search[sizeof(search)-1] = 0;
     strupr(search);
-    if ((GetVersion() & 255) < 6)
+    if ((GetVersion() & 0xffff) == 0x0106) // Windows 7
         sprintf(cmd, "%s\\bin_7\\hv2viewer winbase/%s%%5Cwinuser/%s%%5C%s", szInstallPath, search, search, search);
     else
         sprintf(cmd, "%s\\bin\\hv2viewer winbase/%s%%5Cwinuser/%s%%5C%s", szInstallPath, search, search, search);

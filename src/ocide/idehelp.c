@@ -42,6 +42,8 @@
 #include <stdio.h>
 #include "htmlhelp.h"
 #include "header.h"
+#define _MT
+#include <errno.h>
 extern char szInstallPath[];
 extern HWND hwndFrame;
 
@@ -83,7 +85,7 @@ int findhvfiles(char *path, char *sel)
 {
     char buf[MAX_PATH];
     sprintf(buf, "%s\\Microsoft Help Viewer\\%s\\Microsoft.VisualStudio.Help.Runtime.dll", path, sel);
-    return !access(buf);
+    return !access(buf,0);
 }
 int CheckWebVersion()
 {
@@ -96,7 +98,7 @@ int CheckWebVersion()
         int i=0;
         while (1)
         {
-            int n;
+            int n=0;
             int retCode;
             char buf[256];
             FILETIME lastWriteTime;
@@ -169,9 +171,9 @@ static void  WebHelpThread(void *x)
     search[sizeof(search)-1] = 0;
     strupr(search);
     if ((GetVersion() & 0xffff) == 0x0106) // Windows 7
-        sprintf(cmd, "%s\\bin_7\\hv2viewer winbase/%s%%5Cwinuser/%s%%5C%s", szInstallPath, search, search, search);
+        sprintf(cmd, "\"%s\\bin_7\\hv2viewer\" winbase/%s%%5Cwinuser/%s%%5C%s", szInstallPath, search, search, search);
     else
-        sprintf(cmd, "%s\\bin\\hv2viewer winbase/%s%%5Cwinuser/%s%%5C%s", szInstallPath, search, search, search);
+        sprintf(cmd, "\"%s\\bin_8\\hv2viewer\" winbase/%s%%5Cwinuser/%s%%5C%s", szInstallPath, search, search, search);
 //    sprintf(cmd, "explorer \"http://msdn.microsoft.com/query/dev10.query?appId=Dev10IDEF1&l=EN-US&k=k(%%22WINUSER%%2f%s%%22);k(%s)&rd=true\"", search, search);
     memset(&stStartInfo, 0, sizeof(STARTUPINFO));
     memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
@@ -204,7 +206,7 @@ int ConfigWebHelp(void)
         char cmd[1024];
         STARTUPINFO stStartInfo;
         PROCESS_INFORMATION stProcessInfo;
-        sprintf(cmd, "%s\\bin\\helpdownloader", szInstallPath);
+        sprintf(cmd, "\"%s\\bin_8\\helpdownloader\"", szInstallPath);
         memset(&stStartInfo, 0, sizeof(STARTUPINFO));
         memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
     

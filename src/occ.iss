@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.64.0.1
+AppVerName=Orange C Version 5.65.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -59,9 +59,10 @@ Name: "{app}\appdata"; Components: main\memstick
 Source: "C:\orangec\src\ocidehld.bat"; DestDir: "{app}"; DestName: "ocide.bat"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\license\*.*"; DestDir: "{app}\license\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\bin\*.*"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;Components: main
-Source: "C:\orangec\bin\branding\*.*"; DestDir: "{app}\bin\branding"; Flags: IgnoreVersion;Components: main
 Source: "C:\orangec\bin_7\*.*"; DestDir: "{app}\bin_7\"; Flags: IgnoreVersion;Components: main
 Source: "C:\orangec\bin_7\branding\*.*"; DestDir: "{app}\bin_7\branding"; Flags: IgnoreVersion;Components: main
+Source: "C:\orangec\bin_8\*.*"; DestDir: "{app}\bin_8\"; Flags: IgnoreVersion;Components: main
+Source: "C:\orangec\bin_8\branding\*.*"; DestDir: "{app}\bin_8\branding"; Flags: IgnoreVersion;Components: main
 Source: "C:\orangec\help\*.*"; DestDir: "{app}\help\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\rule\*.rul"; DestDir: "{app}\rule\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\include\*.*"; DestDir: "{app}\include\"; Flags: IgnoreVersion; Components: main

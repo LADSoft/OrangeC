@@ -54,6 +54,8 @@ DISTRIBUTE:
 	-del $(DISTSRC)
 	-mkdir $(DISTROOT)\appdata
 	$(ZIP) -r0 a $(DISTEXE) orangec\bin\*.exe orangec\bin\*.app orangec\bin\*.spc orangec\bin\*.dll orangec\bin\*.cfg  orangec\bin\general.props
+	$(ZIP) -r0 a $(DISTEXE) orangec\bin_7\*.exe orangec\bin_7\*.dll orangec\bin_7\*.config orangec\bin_7\branding\*.*
+	$(ZIP) -r0 a $(DISTEXE) orangec\bin_8\*.exe orangec\bin_8\*.dll orangec\bin_8\*.config orangec\bin_8\branding\*.*
 	$(ZIP) a $(DISTEXE) orangec\lib\*.* orangec\include\*.* orangec\examples\*.* orangec\doc\*.* orangec\license\*.* 
    	$(ZIP) a $(DISTEXE) orangec\lib\* orangec\include\* orangec\examples\* orangec\doc\* orangec\license\*
 	$(ZIP) d $(DISTEXE) doc\tools.htm

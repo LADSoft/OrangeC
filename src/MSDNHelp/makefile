@@ -37,12 +37,12 @@
 #		email: TouchStone222@runbox.com <David Lindauer>
 
 DISTRIBUTE:
-	-copy helpdownloader\bin\release\helpdownloader.exe $(DISTBIN)
-	-copy helpdownloader\bin\release\helpdownloader.exe.config $(DISTBIN)
-	-copy helpviewerproject\hv2viewer\bin\release\hv2viewer.exe $(DISTBIN)
-	-copy helpviewerproject\hv2viewer\bin\release\hv2viewer.exe.config $(DISTBIN)
-	-copy helpviewerproject\hv2viewer\bin\release\*.dll $(DISTBIN)
-	-copy helpviewerproject\hv2viewer\bin\debug\branding\*.* $(DISTBIN)\branding
+	-copy helpdownloader\bin\release\helpdownloader.exe $(DISTBIN_8)
+	-copy helpdownloader\bin\release\helpdownloader.exe.config $(DISTBIN_8)
+	-copy helpviewerproject\hv2viewer\bin\release\hv2viewer.exe $(DISTBIN_8)
+	-copy helpviewerproject\hv2viewer\bin\release\hv2viewer.exe.config $(DISTBIN_8)
+	-copy helpviewerproject\hv2viewer\bin\release\*.dll $(DISTBIN_8)
+	-copy helpviewerproject\hv2viewer\bin\debug\branding\*.* $(DISTBIN_8)\branding
 	-copy helpviewerproject\hv2viewer\bin\release_7\hv2viewer.exe $(DISTBIN_7)
 	-copy helpviewerproject\hv2viewer\bin\release_7\hv2viewer.exe.config $(DISTBIN_7)
 	-copy helpviewerproject\hv2viewer\bin\release_7\*.dll $(DISTBIN_7)

@@ -971,7 +971,7 @@ UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
     if (p->cd->undohead != p->cd->undotail)
     {
         x = p->cd->redopos + 1;
-        if (x >= UNDO_MAX)
+       if (x >= UNDO_MAX)
             x = 0;
         if (x != p->cd->undotail)
         {
@@ -1044,7 +1044,7 @@ UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
     if (++p->cd->undohead >= UNDO_MAX)
         p->cd->undohead = 0;
     p->cd->redopos = p->cd->undohead;
-    if (p->cd->undohead == p->cd->undotail)
+    if ((p->cd->undohead+1)%UNDO_MAX == p->cd->undotail)
         if (++p->cd->undotail >= UNDO_MAX)
             p->cd->undotail = 0;
     u->len = u->undotemp = 0;
@@ -1068,7 +1068,6 @@ void insertautoundo(HWND hwnd, EDITDATA *p, int type)
         u->postselend = p->selendcharpos;
     }
 }
-
 /**********************************************************************
  * undo_deletesel gets the undo structure for a CUT operation
  **********************************************************************/
@@ -2767,6 +2766,59 @@ void FindParenMatch(HWND hwnd, EDITDATA *p)
     if (PropGetBool(NULL, "MATCH_PARENTHESIS"))
         if (!FindParenMatchForward(hwnd, p ,TRUE ))
             FindParenMatchBackward(hwnd, p, TRUE);
+}
+void FindBraceMatchForward(HWND hwnd, EDITDATA *p)
+{
+    int n = 1;
+    int x = p->selstartcharpos;
+    while (isspace(p->cd->text[x].ch))
+        x++ ;
+    if (p->cd->text[x].ch == '{')
+        x++;
+    while (n && p->cd->text[x].ch)
+    {
+        if (!instring(p->cd->text, p->cd->text + x))
+        {
+            if (p->cd->text[x].ch == '{')
+                n++;
+            if (p->cd->text[x].ch == '}')
+                n--;
+        }
+        x++;
+    }
+    p->selstartcharpos = p->selendcharpos =x;
+    ScrollCaretIntoView(hwnd, p, TRUE);
+}
+void FindBraceMatchBackward(HWND hwnd, EDITDATA *p)
+{
+    int n = 1;
+    int x = p->selstartcharpos;
+    while (x && isspace(p->cd->text[x].ch))
+        x-- ;
+    if (x && p->cd->text[x].ch == '}')
+        x--;
+    while (x && n)
+    {
+        if (!instring(p->cd->text, p->cd->text + x))
+        {
+            if (p->cd->text[x].ch == '{')
+                n--;
+            if (p->cd->text[x].ch == '}')
+                n++;
+        }
+        if (!n)
+            break;
+        x--;
+    }
+    p->selstartcharpos = p->selendcharpos =x;
+    ScrollCaretIntoView(hwnd, p, TRUE);
+}
+void FindBraceMatch(HWND hwnd, EDITDATA *p, int ch)
+{
+    if (ch == '{')
+        FindBraceMatchBackward(hwnd, p);
+    else if (ch == '}')
+        FindBraceMatchForward(hwnd, p);
 }
 /**********************************************************************
  * go backwards to the last tab position
@@ -5860,6 +5912,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         break;
                     InstallForParse(GetParent(hwnd));
                     break ;
+                                        
                 case VK_SHIFT:
                     p->cd->selecting = TRUE;
                     break;
@@ -5870,6 +5923,20 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 SendMessage(hwndShowFunc, WM_USER+3, wParam, (LPARAM)p);
                 FindParenMatch(hwnd, p);
+                break;
+            case WM_SYSKEYDOWN:
+                p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                switch (wParam)
+                {
+                    case 221:
+                    case 219:
+                        if (GetKeyState(VK_SHIFT) && 0x80000000)
+                            if (lParam &0x20000000) {// alt key
+                                FindBraceMatch(hwnd, p, wParam == 219 ? '{' : '}');
+                                return 0;
+                            }
+                        break;
+                }
                 break;
             case WM_KEYUP:
                 if (wParam == VK_SHIFT)
@@ -6575,7 +6642,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 {
                     if (p->cd->undohead != p->cd->undotail )
                     {
-                        int x = p->cd->redopos + 1;
+                        int x = p->cd->redopos+1;
                         if (x >= UNDO_MAX)
                             x -= UNDO_MAX;
                         return x != p->cd->undotail;

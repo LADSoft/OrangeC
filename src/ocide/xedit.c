@@ -2771,32 +2771,57 @@ void FindBraceMatchForward(HWND hwnd, EDITDATA *p)
 {
     int n = 1;
     int x = p->selstartcharpos;
-    while (isspace(p->cd->text[x].ch))
-        x++ ;
+    while ( x && isspace(p->cd->text[x].ch))
+        x--;
     if (p->cd->text[x].ch == '{')
-        x++;
-    while (n && p->cd->text[x].ch)
     {
-        if (!instring(p->cd->text, p->cd->text + x))
-        {
-            if (p->cd->text[x].ch == '{')
-                n++;
-            if (p->cd->text[x].ch == '}')
-                n--;
-        }
         x++;
     }
-    p->selstartcharpos = p->selendcharpos =x;
-    ScrollCaretIntoView(hwnd, p, TRUE);
+    else
+    {
+        x = p->selstartcharpos;
+        while (isspace(p->cd->text[x].ch))
+            x++ ;
+        if (p->cd->text[x].ch == '{')
+            x++;
+    }
+    if (x && p->cd->text[x-1].ch == '{')
+    {
+        while (n && p->cd->text[x].ch)
+        {
+            if (!instring(p->cd->text, p->cd->text + x))
+            {
+                if (p->cd->text[x].ch == '{')
+                    n++;
+                if (p->cd->text[x].ch == '}')
+                    n--;
+            }
+            x++;
+        }
+        p->selstartcharpos = p->selendcharpos =x;
+        ScrollCaretIntoView(hwnd, p, TRUE);
+    }
 }
 void FindBraceMatchBackward(HWND hwnd, EDITDATA *p)
 {
     int n = 1;
     int x = p->selstartcharpos;
-    while (x && isspace(p->cd->text[x].ch))
-        x-- ;
-    if (x && p->cd->text[x].ch == '}')
+    while (isspace(p->cd->text[x].ch))
+        x++ ;
+    if (p->cd->text[x].ch == '}')
+    {
         x--;
+    }
+    else
+    {
+        x = p->selstartcharpos;
+        while (x && isspace(p->cd->text[x-1].ch))
+            x-- ;
+        if (x && p->cd->text[x-1].ch == '}')
+            x-=2;
+        else
+            return;
+    }
     while (x && n)
     {
         if (!instring(p->cd->text, p->cd->text + x))
@@ -5924,10 +5949,42 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 SendMessage(hwndShowFunc, WM_USER+3, wParam, (LPARAM)p);
                 FindParenMatch(hwnd, p);
                 break;
+            case WM_SYSCHAR:
+                p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                switch (wParam)
+                {
+                    case 221:
+                    case 219:
+                        if (GetKeyState(VK_SHIFT) && 0x80000000)
+                            if (lParam &0x20000000) {// alt key
+                                return 0;
+                            }
+                        break;
+                }
+                break;
+            case WM_SYSKEYUP:
+                p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                switch (wParam)
+                {
+                    case VK_SHIFT:
+                        p->cd->selecting = FALSE;
+                        break;
+                    case 221:
+                    case 219:
+                        if (GetKeyState(VK_SHIFT) && 0x80000000)
+                            if (lParam &0x20000000) {// alt key
+                                return 0;
+                            }
+                        break;
+                }
+                break;
             case WM_SYSKEYDOWN:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 switch (wParam)
                 {
+                    case VK_SHIFT:
+                        p->cd->selecting = TRUE;
+                        break;
                     case 221:
                     case 219:
                         if (GetKeyState(VK_SHIFT) && 0x80000000)

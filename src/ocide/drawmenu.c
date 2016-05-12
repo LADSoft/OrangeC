@@ -320,8 +320,13 @@ static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, 
     
     if (text)
     {
+        char buf[256];
+        WCHAR wbuf[256];
+        BOOL usedDefault;
+        StringWToA(buf, text, wcslen(text));
         SetBkColor(hDC, GetSysColor(bg));
-        TextOutW(hDC, x+3, y+1, text, wcslen(text));
+        wbuf[MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf,strlen(buf), wbuf, 256)]=0;
+        TextOutW(hDC, x+3, y+1, wbuf, wcslen(wbuf));
     }
     else // separator
     {

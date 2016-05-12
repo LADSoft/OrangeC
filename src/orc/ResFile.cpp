@@ -45,6 +45,9 @@
 #include "StringTable.h"
 
 #include <fstream>
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 ResFile::~ResFile()
 {
@@ -112,9 +115,28 @@ void ResFile::WriteData(const unsigned char *data, int len)
 void ResFile::WriteString(const std::wstring &str)
 {
     int n = str.size();
+#ifdef WIN32
+        // The string actually isn't unicode, it is
+        // code-page based.
+        // the MENU font doesn't support code pages very well...
+        // Convert to unicode.
+        {
+            int i;
+            char buf[256];
+            WCHAR wbuf[256], *p = wbuf;
+            for (i=0; i < n; i++)
+                buf[i] = str[i];
+            buf[i] = 0;
+            
+            wbuf[MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf,strlen(buf), wbuf, 256)]=0;
+            while (*p)
+                WriteWord(*p++);
+        }
+#else
     // writing word by word for portability
     for (int i=0; i < n; i++)
         WriteWord(str[i]);
+#endif
     WriteWord(0);
 }
 

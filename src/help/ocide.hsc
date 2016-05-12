@@ -3380,7 +3380,7 @@ Writing
 
 
 FALSE
-103
+105
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1500\cf1\b\fs32 Hot Keys\cf0\b0\f1\fs20 
@@ -3425,6 +3425,8 @@ FALSE
 \par \b CTL-T\b0\tab Place the line the cursor is at in the center of the window (vertical center)
 \par \b CTL-X\b0\tab Copy the selection to the clipboard, and cut it from the text
 \par \b CTL-Z\b0\tab Undo the last operation
+\par \b ALT-\{\b0\tab Navigate to beginning of block when cursor is on a '\}'\b 
+\par ALT-\}\b0\tab Navigate to end of block when cursor is on a '\{'
 \par \b SHIFT-F1\tab\b0 Show run time library help for the word under the cursor.
 \par \b CTL-F7\b0\tab Compile the file in the source window
 \par \b BACKSPACE\b0\tab Delete the character preceding the cursor

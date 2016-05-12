@@ -1158,7 +1158,8 @@ void ResGetMenuItemName(EXPRESSION *id, char *text)
                 strcpy (p, p+1);
                 continue;
             }
-               
+            if (*p & 0x80)
+                *p &= 0x7f;           
             if (!isalnum(*p))
                 *p = '_';
             p++;
@@ -1175,6 +1176,8 @@ void ResGetStringItemName(EXPRESSION *id, char *text)
         sprintf(name, "IDS_%s",text);
         while (*p)
         {
+            if (*p & 0x80)
+                *p &= 0x7f;           
             if (!isalnum(*p))
                 *p = '_';
             p++;

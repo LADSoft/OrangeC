@@ -148,10 +148,10 @@ void GetMenuPropText(char *buf, HWND lv, struct resRes *data, int row)
     }
     else
     {
-        if (data->resource->u.menu->extended)
+//        if (data->resource->u.menu->extended)
             sprintf(buf, "Yes");
-        else
-            sprintf(buf, "No");
+//        else
+//            sprintf(buf, "No");
     }
 }
 HWND MenuPropStartEdit(HWND lv, int row, struct resRes *data)

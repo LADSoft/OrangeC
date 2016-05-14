@@ -64,7 +64,6 @@ extern HWND hwndFind, hwndProject, hwndASM, hwndThread;
 extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndStack;
 extern int making;
 extern enum DebugState uState;
-extern char szHelpPath[]; 
 extern PROJECTITEM *activeProject;
 
 int WindowItemCount = 0;
@@ -265,10 +264,6 @@ static struct menuBitmap {
     ,
     {
         IDM_TOOLSHELP, 3, 8
-    }
-    ,
-    {
-        IDM_SPECIFIEDHELP, 3, 8
     }
     ,
     {
@@ -753,9 +748,8 @@ void InitMenuPopup(HMENU menu)
     //         mf_state = uState == atBreakpoint || uState == atException ? MF_ENABLED : MF_GRAYED ;
     //         EnableMenuItem(menu,IDM_HBREAK, mf_state ) ;
 
-    mf_state = szHelpPath[0] ? MF_ENABLED : MF_GRAYED;
-    EnableMenuItem(menu, IDM_SPECIFIEDHELP, mf_state);
-
+    mf_state = PropGetInt(NULL, "MSDN_HELP_MODE") == 0 ? MF_ENABLED : MF_GRAYED;
+    EnableMenuItem(menu,IDM_CONFIGWEBHELP, mf_state ) ;
 
 
 }

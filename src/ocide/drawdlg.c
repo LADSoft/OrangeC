@@ -2419,10 +2419,10 @@ void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
     switch (row)
     {
         case 0:
-            if (data->resource->u.dialog->ex.extended)
+//            if (data->resource->u.dialog->ex.extended)
                 strcpy(buf, "Yes");
-            else
-                strcpy(buf, "No");
+//            else
+//                strcpy(buf, "No");
             break;
         case 1:
             if (data->resource->u.dialog->caption)

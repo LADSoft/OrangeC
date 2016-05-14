@@ -436,7 +436,10 @@ static TBBUTTON fontButtons[] =
     ,
     {
         2, IDM_UNDERLINE, TBSTATE_ENABLED | TBSTATE_WRAP, TBSTYLE_CHECK
-    }
+    },
+    {
+        0, 0, 0, 0
+    } 
 };
 LRESULT CALLBACK toolProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
@@ -704,7 +707,7 @@ LRESULT CALLBACK  Color2WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SendMessage(p->hwndColorToolbar,TB_SETBITMAPSIZE,0,(LPARAM) MAKELONG(10, 10));
             memcpy(p->currentPalette, defaultColors, sizeof(p->currentPalette));
             memset(buttons, 0, sizeof(buttons));
-            if (p->res->saveColors < 8)
+            if (p->res->saveColors < 8 && p->res->saveColors != 0)
             {
                 for (i=0; i < 2; i++)
                 {
@@ -2971,7 +2974,7 @@ static void InsertTabs(IMGDATA *p, IMAGEDATA *res)
     char buf[80];
     if (res->next)
         InsertTabs(p, res->next);
-    sprintf(buf, "%d x %d x %d", res->width, res->height, res->saveColors);
+    sprintf(buf, "%d x %d x %d", res->width, res->height, res->saveColors == 0 ? 24 : res->saveColors);
     SendMessage(p->hwndImageTab, TABM_ADD, (WPARAM)buf, (LPARAM)res);
 }
 static void ResetCursorList(IMGDATA *p)
@@ -3296,7 +3299,6 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             parts[2] = rf.right - 200;
             parts[3] = rf.right - 200;
             SendMessage(p->hwndStatus, SB_SETPARTS, 4, (LPARAM) &parts[0]);
-            if (p->res->type != FT_BMP)
             {
                 p->hwndImageTab = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
                 ApplyDialogFont(p->hwndImageTab);

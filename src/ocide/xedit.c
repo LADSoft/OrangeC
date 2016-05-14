@@ -54,6 +54,8 @@
 extern SCOPE *activeScope;
 extern LOGFONT systemDialogFont;
 
+HWND hwndeditPopup;
+
 #define TRANSPARENT_COLOR 0x872395
 
 // This defines the maximum range for the horizontal scroll bar on the window
@@ -950,9 +952,7 @@ static void DoHelp(HWND edwin, int speced)
     else
     {
         if (GetKeyState(VK_CONTROL) &0x80000000)
-            WebHelp(buf);
-        else if (speced)
-            SpecifiedHelp(buf);
+            MSDNHelp(buf);
         else
             RTLHelp(buf);
     }
@@ -4228,6 +4228,33 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         }
         InvalidateRect(hwnd, 0, 0);
     }
+    void GetEditPopupFrame(RECT *rect)
+    {
+        GetFrameWindowRect(rect);
+        rect->top -= GetSystemMetrics(SM_CYMENU);
+    }
+    void PopupFullScreen (HWND hwnd, EDITDATA *p)
+    {
+        if (!(GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP))
+        {
+            RECT wrect;
+            GetEditPopupFrame(&wrect);
+            hwndeditPopup = CreateWindowEx(WS_EX_TOPMOST, "xedit","", 
+                                       (WS_POPUP | WS_CHILD | WS_VISIBLE),
+                                       wrect.left, wrect.top, 
+                                       wrect.right - wrect.left, wrect.bottom - wrect.top,
+                                       GetParent(hwnd),0, hInstance, p);
+        }
+    }
+    void ReleaseFullScreen(HWND hwnd, EDITDATA *p)
+    {
+        if (GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP)
+        {
+            hwndeditPopup = NULL;
+            CloseWindow(hwnd);
+            DestroyWindow(hwnd);
+        }
+    }
     void SendUpdate(HWND hwnd)
     {
         SendMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)(EN_UPDATE | 
@@ -5869,6 +5896,20 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     setcurcol(p);
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
+                case 219: //'['
+                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        PopupFullScreen(hwnd, p);
+                        return 0;
+                    }
+                    break;
+                case 221: //']'
+                    if (GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        ReleaseFullScreen(hwnd, p);
+                        return 0;
+                    }
+                    break;
                 case 'A':
                     if (GetKeyState(VK_CONTROL) &0x80000000)
                     {
@@ -5953,11 +5994,12 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 switch (wParam)
                 {
-                    case 221:
-                    case 219:
+                    case 221: //']'
+                    case 219: //'['
                         if (GetKeyState(VK_SHIFT) && 0x80000000)
-                            if (lParam &0x20000000) {// alt key
-                                return 0;
+                            if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                                if (lParam &0x20000000) {// alt key
+                                    return 0;
                             }
                         break;
                 }
@@ -5969,12 +6011,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     case VK_SHIFT:
                         p->cd->selecting = FALSE;
                         break;
-                    case 221:
-                    case 219:
+                    case 221: //']'
+                    case 219: //'['
                         if (GetKeyState(VK_SHIFT) && 0x80000000)
-                            if (lParam &0x20000000) {// alt key
-                                return 0;
-                            }
+                            if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                                if (lParam &0x20000000) {// alt key
+                                    return 0;
+                                }
                         break;
                 }
                 break;
@@ -5985,13 +6028,14 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     case VK_SHIFT:
                         p->cd->selecting = TRUE;
                         break;
-                    case 221:
-                    case 219:
+                    case 221: //']'
+                    case 219: //'['
                         if (GetKeyState(VK_SHIFT) && 0x80000000)
-                            if (lParam &0x20000000) {// alt key
-                                FindBraceMatch(hwnd, p, wParam == 219 ? '{' : '}');
-                                return 0;
-                            }
+                            if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                                if (lParam &0x20000000) {// alt key
+                                    FindBraceMatch(hwnd, p, wParam == 219 ? '{' : '}');
+                                    return 0;
+                                }
                         break;
                 }
                 break;
@@ -6119,13 +6163,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                     p->cd->lineDataMax = 0;
                     if (!p->cd->lineData)
                     {
-                        HWND t = GetParent(p->self);
+                        HWND t = GetParent(hwnd);
                         DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
                         p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
                     }
                     FreeColorizeEntries(p->colorizeEntries);
                     {
-                        HWND t = GetParent(p->self);
+                        HWND t = GetParent(hwnd);
                         DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
                         ccGetColorizeData(x->dwName, p->colorizeEntries);
                         FullColorize(hwnd, p, FALSE);
@@ -6140,6 +6184,14 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 if (lpCreate->lpCreateParams)
                 {
                     p->cd = (COREDATA *)((EDITDATA *)(lpCreate->lpCreateParams))->cd;
+                    if (GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP)
+                    {
+                        p->selstartcharpos = ((EDITDATA *)(lpCreate->lpCreateParams))->selstartcharpos;
+                        p->selendcharpos = ((EDITDATA *)(lpCreate->lpCreateParams))->selendcharpos;
+                        p->textshowncharpos = ((EDITDATA *)(lpCreate->lpCreateParams))->textshowncharpos;
+                        p->popupDerivedFrom = ((EDITDATA *)(lpCreate->lpCreateParams));
+                        SetWindowLong(hwnd, GWL_HWNDPARENT, (long)GetParent(((EDITDATA *)(lpCreate->lpCreateParams))->self));
+                    }
                 }
                 else 
                 {
@@ -6209,6 +6261,12 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 return 0;
             case WM_DESTROY:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                if (p->popupDerivedFrom)
+                {
+                    p->popupDerivedFrom->selstartcharpos = p->selstartcharpos;
+                    p->popupDerivedFrom->selendcharpos = p->selendcharpos;
+                    ScrollCaretIntoView(p->popupDerivedFrom->self, p->popupDerivedFrom, TRUE);
+                }
                 while (p->cd->colorizing) Sleep(10);
                 DestroyWindow(p->tooltip);
                 {

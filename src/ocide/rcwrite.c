@@ -982,14 +982,14 @@ static void WritePopup(FILE *outputFile, MENUITEM *items, int extended, int inde
 static void WriteMenu(FILE *outputFile, RESOURCE *res)
 {
     MENU *m = res->u.menu;
-    if (m->extended)
-    {
+//    if (m->extended)
+//    {
         fprintf(outputFile, "MENUEX ");
-    }
-    else
-    {
-        fprintf(outputFile, "MENU ");
-    }   
+//    }
+//    else
+//    {
+//        fprintf(outputFile, "MENU ");
+//    }   
     WriteMemFlags(outputFile, res->info.memflags);
     fprintf(outputFile, "\n");
     WriteSecondaryCharacteristics(outputFile, &res->info);
@@ -1288,14 +1288,14 @@ static void WriteDialog(FILE *outputFile, RESOURCE *res)
 {
     DIALOG *d = res->u.dialog;
     CONTROL *c = d->controls;
-    if (d->ex.extended)
-    {
+//    if (d->ex.extended)
+//    {
         fprintf(outputFile, "DIALOGEX ");
-    }
-    else
-    {
-        fprintf(outputFile, "DIALOG ");
-    }
+//    }
+//    else
+//    {
+//        fprintf(outputFile, "DIALOG ");
+//    }
     if (res->info.memflags)
     {
         WriteMemFlags(outputFile, res->info.memflags);

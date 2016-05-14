@@ -121,6 +121,14 @@
 %P of %#
 			</ITEM>
 		</PROPS>
+		<PROPS NAME="Help Settings" HELPID="555">
+			<ITEM NAME="WIN32 Help mode" ID="MSDN_HELP_MODE" TYPE="COMBO" DEFAULT="0">
+				<SETTING NAME="Online" VALUE="0"/>
+				<SETTING NAME="Windows 8 offline" VALUE="1"/>
+                <SETTING NAME="WIN32.CHM" VALUE="2"/>
+			</ITEM>
+			<ITEM NAME="CHM File Path" ID="CHM_HELP_PATH" TYPE="TEXT"/>
+		</PROPS>
 	</PROPGROUP>
 </OCRULE>
 

@@ -70,6 +70,7 @@
 #define  Scribble530            (530)       // Hints And Code Completion
 #define  Scribble540            (540)       // Printer Settings
 #define  IDH_GENERAL_PROPERTIES_DIALOG (550) // General Properties Dialog
+#define  Scribble555            (555)       // WIN32 Help Configuration
 #define  Scribble560            (560)       // General Project Configuration Properties
 #define  Scribble570            (570)       // Debug Project Config Properties
 #define  IDH_PROJECT_PROPERTIES_DIALOG (580) // Project Properties Dialog

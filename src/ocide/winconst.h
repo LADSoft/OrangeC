@@ -1,6 +1,6 @@
 #ifdef __IDE_RC_INVOKED
 #define __NEXT_CONTROL_ID	2
-#define __NEXT_MENU_ID		10002
+#define __NEXT_MENU_ID		10003
 #define __NEXT_RESOURCE_ID	10
 #define __NEXT_STRING_ID	1000
 #endif
@@ -582,3 +582,4 @@
 
 #define WindowMenuItem 9
 #define ToolsMenuItem 7
+#define IDM_david 10002

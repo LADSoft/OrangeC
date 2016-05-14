@@ -64,6 +64,7 @@
  
 extern HWND hwndTbFind;
 extern HWND hwndFind;
+extern HWND hwndeditPopup;
 extern int WindowItemCount;
 extern char *findhist[MAX_COMBO_HISTORY];
 extern int restoredDocks;
@@ -710,7 +711,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         SendMessage(win, WM_COMMAND, IDM_SPECIFIEDHELP, 0);
                         break;
                     }
-                WebHelp("xyzzy");
+                MSDNHelp("xyzzy");
             }
             else if (GetKeyState(VK_SHIFT) & 0x80000000)
             {
@@ -729,14 +730,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             switch (wParam &0xffff)
             {
             case IDM_WEBHELP:
-                WebHelp("xyzzy");
+                MSDNHelp("xyzzy");
                 break;
             case IDM_CONFIGWEBHELP:
-                ConfigWebHelp();
+                ConfigMSDNHelp();
                 break;
-            case IDM_SPECIFIEDHELP:
-               SpecifiedHelp(0);
-               break;
             case IDM_RTLHELP:
                 RTLHelp(0);
                 break;
@@ -1288,6 +1286,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             InitMenuPopup(hMenuMain);
             return 0;
 
+        case WM_MOVE:
+            if (hwndeditPopup)
+            {
+                RECT rect;
+                GetEditPopupFrame(&rect);
+                MoveWindow(hwndeditPopup, rect.left, rect.top, rect.right - rect.left,
+                    rect.bottom - rect.top, 1);
+            }
+            break;
         case WM_SIZE:
             switch (wParam)
             {
@@ -1300,6 +1307,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case SIZENORMAL:
                 IntToProfile(psShow, SW_SHOWNORMAL);
                 break;
+            }
+            if (hwndeditPopup)
+            {
+                RECT rect;
+                GetEditPopupFrame(&rect);
+                MoveWindow(hwndeditPopup, rect.left, rect.top, rect.right - rect.left,
+                    rect.bottom - rect.top, 1);
             }
             if (wParam != SIZEICONIC)
             {

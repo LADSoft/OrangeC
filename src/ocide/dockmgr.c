@@ -75,7 +75,7 @@ static RECT lastbound;
 static int drawnbound;
 static int suggestedDock, lastSuggestedDock;
 static HWND sbwnd;
-static int sbheight;
+int sbheight;
 static int rundown;
 static HWND hwndFocus;
 int dock(CCW_params *p, RECT *r);

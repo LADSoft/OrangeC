@@ -69,6 +69,7 @@ extern int finding;
 extern SCOPE *activeScope;
 extern SCOPE *StackList;
 extern THREAD *activeThread, *stoppedThread;
+extern HWND hwndeditPopup;
 
 POINT rightclickPos;
 HANDLE editHeap;
@@ -595,18 +596,19 @@ void SetTitle(HWND hwnd)
 void drawParams(DWINFO *info, HWND hwnd)
 {
     char buf[512];
+    HWND child = hwndeditPopup ? hwndeditPopup : info->dwHandle;
     int start, ins, col, sel;
-    int readonly = SendMessage(info->dwHandle, EM_GETREADONLY, 0, 0);
-    int mod = SendMessage(info->dwHandle, EM_GETMODIFY, 0, 0);
-    int maxLines = SendMessage(info->dwHandle, EM_GETLINECOUNT, 0, 0) + 1; 
-    int textSize = SendMessage(info->dwHandle, EM_GETSIZE, 0, 0);
+    int readonly = SendMessage(child, EM_GETREADONLY, 0, 0);
+    int mod = SendMessage(child, EM_GETMODIFY, 0, 0);
+    int maxLines = SendMessage(child, EM_GETLINECOUNT, 0, 0) + 1; 
+    int textSize = SendMessage(child, EM_GETSIZE, 0, 0);
     CHARRANGE a;
-    SendMessage(info->dwHandle, EM_GETSEL, (WPARAM) &sel, 0);
-    SendMessage(GetDlgItem(hwnd, ID_EDITCHILD), EM_EXGETSEL, 0, (LPARAM) &a);
+    SendMessage(child, EM_GETSEL, (WPARAM) &sel, 0);
+    SendMessage(child, EM_EXGETSEL, 0, (LPARAM) &a);
     sel = a.cpMin;
-    start = SendMessage(info->dwHandle, EM_EXLINEFROMCHAR, 0, sel);
-    ins = SendMessage(info->dwHandle, EM_GETINSERTSTATUS, 0, 0);
-    col = SendMessage(info->dwHandle, EM_GETCOLUMN, 0, 0);
+    start = SendMessage(child, EM_EXLINEFROMCHAR, 0, sel);
+    ins = SendMessage(child, EM_GETINSERTSTATUS, 0, 0);
+    col = SendMessage(child, EM_GETCOLUMN, 0, 0);
     sprintf(buf, "Size: %d", textSize);
     SendMessage(hwndStatus, SB_SETTEXT, 1 | SBT_NOBORDERS, (LPARAM)buf);
     sprintf(buf, "Lines: %d", maxLines);
@@ -1096,9 +1098,9 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 newInfo = ptr ;
                 openfile(ptr, TRUE, TRUE);
                 break ;
-            case IDM_SPECIFIEDHELP:
             case IDM_RTLHELP:
             case IDM_LANGUAGEHELP:
+            case IDM_SPECIFIEDHELP:
                 ptr = (DWINFO*)GetWindowLong(hwnd, 0);
                 i = SendMessage(ptr->dwHandle, WM_COMMAND, wParam, lParam);
                 break;

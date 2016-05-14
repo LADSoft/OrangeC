@@ -525,10 +525,11 @@ typedef struct _colorize_hash_entry
         int type;
     } *lines;
 } COLORIZE_HASH_ENTRY;
-typedef struct {
+typedef struct _editData{
 	COREDATA *cd ;
 	HWND self ;
     HWND tooltip;
+    struct _editData *popupDerivedFrom;
 	int id ;
     int selstartcharpos;
     int selendcharpos;

@@ -186,7 +186,7 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
     /*
      * Set up the XOR mask
      */
-    if (res->saveColors < 8)
+    if (res->saveColors < 8 && res->saveColors != 0)
     {
         // must be two...
         HDC cdc = CreateCompatibleDC(res->hdcImage);
@@ -376,7 +376,7 @@ void SaveImage(IMAGEDATA *res)
 
     lpBits = lpBPtr;
 
-    if (res->saveColors < 8 && res->colors > res->saveColors)
+    if (res->saveColors < 8 && res->saveColors != 0 && res->colors > res->saveColors)
     {
         // must be two...
         HDC cdc = CreateCompatibleDC(res->hdcImage);
@@ -782,6 +782,7 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 ExtendedMessageBox("Error", 0, "Could not load image");
                 return -1;
             }
+            
             imageData->gd.childWindow = CreateWindowEx(0, szimageClassName, "Image Editor",
                 WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
                 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,

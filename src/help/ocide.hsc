@@ -43,7 +43,7 @@ Previous
 Next
 FALSE
 
-116
+117
 10
 Scribble10
 index
@@ -1111,7 +1111,7 @@ FALSE
 260
 Scribble260
 Help Menu
-help menu;menu;
+help;help menu;menu;
 
 
 
@@ -1120,7 +1120,7 @@ Writing
 
 
 FALSE
-19
+25
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Help Menu\cf2\b0\f1\fs20 
@@ -1135,8 +1135,14 @@ FALSE
 \par \b 
 \par RTL Help \b0 shows help specific to the \cf4\strike C Run-time Library\cf3\strike0\{linkFile=crtl.chm\}\cf2 .
 \par \b 
-\par Tools Help\b0  shows help specific to the \cf4\strike Command Line Tools\cf3\strike0\{linkFile=TOOLS.chm\}\cf2 , and help related to compiler extensions used by the C compiler in this package.\b 
+\par Tools Help\b0  shows help specific to the \cf4\strike Command Line Tools\cf3\strike0\{linkFile=TOOLS.chm\}\cf2 , and help related to compiler extensions used by the C compiler in this package.
 \par 
+\par \b WIN32 Help\b0  opens the selected \cf4\strike WIN32 help\cf3\strike0\{linkID=555\}\cf2  system to its main page.\b 
+\par 
+\par Getting Started \b0 shows general information about how to get started with creating a project in this Ide
+\par 
+\par \b Configure WIN32 Library \b0 downloads the WIN32 offline help library, when the help mode is set to Windows 8
+\par \b 
 \par About \b0 shows the version information of the IDE.
 \par \b\f1 
 \par }
@@ -2160,7 +2166,7 @@ Writing
 
 
 FALSE
-24
+25
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\tx720\cf1\b\fs32 General Properties Dialog\cf0\b0\f1\fs20 
@@ -2182,8 +2188,45 @@ FALSE
 \par \pard\tx720\tx1400\cf0\b Other Settings\b0 
 \par \pard\tx1380\tx4220\tab\cf2\strike Hints and Code Completion\cf3\strike0\{linkID=530\}\tab\cf0 Settings related to automatic help given by the editor
 \par \tab\cf2\strike Printer Settings\cf3\strike0\{linkID=540\}\cf0\tab Printer Settings
+\par \tab\cf2\strike Win32 Help configuration\cf3\strike0\{linkID=555\}\cf0\tab Help file settings for the WIN32 help
 \par 
 \par \pard\tx720 Properties specific to building programs are on the \cf2\strike Project Properties\cf3\strike0\{linkID=580\}\cf0  dialog\f1 
+\par }
+555
+Scribble555
+WIN32 Help Configuration
+help;help menu;
+
+
+
+Writing
+
+
+
+FALSE
+23
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 WIN32 Help Configuration\cf0\lang1049\b0\f1\fs20 
+\par 
+\par \lang1033\f0 The WIN32 Help Configuration properties page is inside the \cf2\strike General Properties Dialog\cf3\strike0\{linkID=550\}\cf0 .  It allows modification of settings related to setting up WIN32 help.  It appears similar to what follows:
+\par 
+\par \pard\qc\cf3\{bmc helpsettings.png\}
+\par \pard\cf0\lang1049\f1 
+\par \lang1033\f0 When WIN32 help is configured the key sequence \b CTL-F1 \b0 will use the WIN32 help to locate the word under the cursor.
+\par 
+\par The following properties are available on this page:
+\par 
+\par \b Win32 Help Mode\b0  is the type of win32 help that is configured.   It is one of the following:
+\par \pard\tx1420\tx4240 
+\par \tab\b Online Help\b0\tab This uses an internet connection to access MSDN in online format
+\par \tab\b Windows 8 Offline help\b0\tab This allows using the MSDN help on a local computer
+\par \tab\tab A configuration step downloads the help
+\par \tab\b WIN32.CHM\b0\tab This uses the old Win32 help, which has been converted to CHM format.
+\par 
+\par \b CHM File Path\b0  is the complete path where the WIN32.CHM help file resides.  It is only used if the mode is WIN32.CHM
+\par 
+\par \lang1049\f1 
 \par }
 560
 Scribble560
@@ -3380,7 +3423,7 @@ Writing
 
 
 FALSE
-105
+108
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1500\cf1\b\fs32 Hot Keys\cf0\b0\f1\fs20 
@@ -3427,7 +3470,10 @@ FALSE
 \par \b CTL-Z\b0\tab Undo the last operation
 \par \b ALT-\{\b0\tab Navigate to beginning of block when cursor is on a '\}'\b 
 \par ALT-\}\b0\tab Navigate to end of block when cursor is on a '\{'
+\par \b CTL-[ \b0                                      Open full-size edit window
+\par \b CTL-] \b0                                      Close full-size edit window
 \par \b SHIFT-F1\tab\b0 Show run time library help for the word under the cursor.
+\par \b CTL-F1\b0\tab Show \cf2\strike WIN32 help\cf3\strike0\{linkID=555\}\cf0  for the word under the cursor
 \par \b CTL-F7\b0\tab Compile the file in the source window
 \par \b BACKSPACE\b0\tab Delete the character preceding the cursor
 \par \b DELETE\b0\tab Delete the character at the cursor
@@ -4290,7 +4336,7 @@ FALSE
 0
 0
 0
-178
+179
 1 General Information
 2 Welcome=Scribble10
 2 Getting Started=IDH_GETTING_STARTED
@@ -4351,6 +4397,7 @@ FALSE
 3 Backup Settings=Scribble520
 3 Hints And Code Completion=Scribble530
 3 Printer Settings=Scribble540
+3 WIN32 Help Configuration=Scribble555
 2 Edit Toolbar=IDH_EDIT_TOOLBAR
 2 Edit Menu=Scribble130
 2 Editor Context Menu=Scribble150

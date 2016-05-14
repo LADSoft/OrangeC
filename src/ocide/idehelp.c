@@ -47,15 +47,14 @@
 extern char szInstallPath[];
 extern HWND hwndFrame;
 
-char szHelpPath[1024]; // so editing will work...
-HMODULE htmlLib;
+static HMODULE htmlLib;
+
 static FARPROC HelpFunc;
 
 //-------------------------------------------------------------------------
 
 int InitHelp(void)
 {
-    strcpy(szHelpPath, (char*)ProfileToString("HelpPath", ""));
     if (htmlLib)
         return TRUE;
     htmlLib = LoadLibrary("hhctrl.ocx");
@@ -67,6 +66,7 @@ int InitHelp(void)
     }
 
     return FALSE;
+;
 }
 
 //-------------------------------------------------------------------------
@@ -79,7 +79,6 @@ void RundownHelp(void)
         FreeLibrary(htmlLib);
         htmlLib = 0;
     }
-    StringToProfile("HelpPath", szHelpPath);
 }
 int findhvfiles(char *path, char *sel)
 {
@@ -158,7 +157,7 @@ int CheckWebVersion()
     return 1;
 }
 //http://msdn.microsoft.com/query/dev10.query?appId=Dev10IDEF1&l=EN-US&k=k(%22WINUSER%2fMESSAGEBOX%22);k(MESSAGEBOX)&rd=true
-static void  WebHelpThread(void *x)
+static void  MSDNHelpThread(void *x)
 {
     static DWORD idProcess = NULL;
     char *string = (char *)x;
@@ -194,12 +193,65 @@ static void  WebHelpThread(void *x)
     if (idProcess)
         ProcessToTop(idProcess);
 }
-int WebHelp(char *string)
+//http://msdn.microsoft.com/query/dev10.query?appId=Dev10IDEF1&l=EN-US&k=k(%22WINUSER%2fMESSAGEBOX%22);k(MESSAGEBOX)&rd=true
+static void  MSDNHelp2(void *x)
 {
-    if (CheckWebVersion())
-        _beginthread((BEGINTHREAD_FUNC)WebHelpThread,0, (LPVOID)string);
+    char *string = (char *)x;
+    char search[256];
+    char cmd[1024];
+    STARTUPINFO stStartInfo;
+    PROCESS_INFORMATION stProcessInfo;
+    strncpy(search, string, sizeof(search));
+    search[sizeof(search)-1] = 0;
+    strupr(search);
+    sprintf(cmd, "explorer \"http://msdn.microsoft.com/query/dev10.query?appId=Dev10IDEF1&l=EN-US&k=k(%%22WINBASE%%2f%s%%22);k(%%22WINUSER%%2f%s%%22);k(%s)&rd=true\"", search, search, search);
+    memset(&stStartInfo, 0, sizeof(STARTUPINFO));
+    memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
+
+    stStartInfo.cb = sizeof(STARTUPINFO);
+    CreateProcess(NULL, cmd, NULL, NULL, TRUE, DETACHED_PROCESS, NULL, 
+            NULL,  &stStartInfo, &stProcessInfo);
+    CloseHandle(stProcessInfo.hProcess);
+    CloseHandle(stProcessInfo.hThread);
 }
-int ConfigWebHelp(void)
+int SpecifiedHelp(char *string)
+{
+    HH_AKLINK hl;
+    char szHelpPath[1024]; // so editing will work...
+    PropGetString(NULL, "CHM_HELP_PATH", szHelpPath, sizeof(szHelpPath));
+    if (!szHelpPath[0] || !InitHelp())
+        return FALSE;
+        if (!string)
+            string = "";
+    hl.cbStruct = sizeof(HH_AKLINK);
+    hl.fReserved = FALSE;
+    hl.pszKeywords = string;
+    hl.pszUrl = NULL;
+    hl.pszMsgText = NULL;
+    hl.pszMsgTitle = NULL;
+    hl.pszWindow = NULL;
+    hl.fIndexOnFail = TRUE;
+    HelpFunc(GetDesktopWindow(), szHelpPath, HH_DISPLAY_TOPIC, 0);
+    return HelpFunc(GetDesktopWindow(), szHelpPath, HH_KEYWORD_LOOKUP, &hl);
+//   	return WinHelp(hwndFrame, szHelpPath, HELP_KEY, (DWORD)string);
+}
+int MSDNHelp(char *string)
+{
+    switch (PropGetBool(NULL, "MSDN_HELP_MODE"))
+    {
+        case 0:
+            MSDNHelp2(string);
+            break;
+        case 1:
+            if (CheckWebVersion())
+                _beginthread((BEGINTHREAD_FUNC)MSDNHelpThread,0, (LPVOID)string);
+            break;
+        case 2:
+            SpecifiedHelp(string);
+            break;
+    }
+}
+int ConfigMSDNHelp(void)
 {
     if (CheckWebVersion())
     {
@@ -216,27 +268,6 @@ int ConfigWebHelp(void)
         CloseHandle(stProcessInfo.hProcess);
         CloseHandle(stProcessInfo.hThread);
     }
-}
-//-------------------------------------------------------------------------
-int SpecifiedHelp(char *string)
-{
-    HH_AKLINK hl;
-    char buf[256];
-    if (!szHelpPath[0] || !InitHelp())
-        return FALSE;
-        if (!string)
-            string = "";
-    hl.cbStruct = sizeof(HH_AKLINK);
-    hl.fReserved = FALSE;
-    hl.pszKeywords = string;
-    hl.pszUrl = NULL;
-    hl.pszMsgText = NULL;
-    hl.pszMsgTitle = NULL;
-    hl.pszWindow = NULL;
-    hl.fIndexOnFail = TRUE;
-    HelpFunc(GetDesktopWindow(), buf, HH_DISPLAY_TOPIC, 0);
-    return HelpFunc(GetDesktopWindow(), buf, HH_KEYWORD_LOOKUP, &hl);
-//   	return WinHelp(hwndFrame, szHelpPath, HELP_KEY, (DWORD)string);
 }
 int RTLHelp(char *string)
 {

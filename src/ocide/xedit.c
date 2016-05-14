@@ -4239,11 +4239,12 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         {
             RECT wrect;
             GetEditPopupFrame(&wrect);
-            hwndeditPopup = CreateWindowEx(WS_EX_TOPMOST, "xedit","", 
-                                       (WS_POPUP | WS_CHILD | WS_VISIBLE),
+            hwndeditPopup = CreateWindow("xedit","", 
+                                       (WS_POPUP | WS_CHILD),
                                        wrect.left, wrect.top, 
                                        wrect.right - wrect.left, wrect.bottom - wrect.top,
                                        GetParent(hwnd),0, hInstance, p);
+            SetWindowPos(hwndeditPopup, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW);
         }
     }
     void ReleaseFullScreen(HWND hwnd, EDITDATA *p)

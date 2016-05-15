@@ -43,7 +43,7 @@
 #include <stdio.h>
 #include "HEADER.H"
 #include "lsctrl.h"
-#include "winconst.h"
+#include "idewinconst.h"
  
 extern HINSTANCE hInstance;
 extern LOGFONT systemDialogFont;

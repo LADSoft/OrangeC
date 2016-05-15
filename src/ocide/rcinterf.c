@@ -894,6 +894,7 @@ void HandleDblClick(HTREEITEM item, BOOL err)
         }
         else
         {
+            prjSelectedItem = p->hTreeItem;
             ResOpen(p);
         }
     }

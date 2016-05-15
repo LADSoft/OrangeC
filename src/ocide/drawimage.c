@@ -168,7 +168,7 @@ int LoadImageToDC(HWND hwndParent, IMAGEDATA *res)
     if (!(hbmMono = CreateBitmap(res->width, res->height, 1, 1, NULL)))
         return FALSE;
 
-    if (bitCount == 24)
+    if (bitCount == 24 || bitCount == 32)
         colorTableBytes = 0;
     else
         colorTableBytes = (1 << bitCount) * sizeof(RGBQUAD);
@@ -292,6 +292,8 @@ void SaveImage(IMAGEDATA *res)
             break;
         case 0:
             bitCount = 24;
+            if (res->withAlpha)
+                bitCount = 32;
             break;
     }
 
@@ -505,7 +507,8 @@ static int validDIB(
     if (DIB->biBitCount != 1 &&
             DIB->biBitCount != 4 &&
             DIB->biBitCount != 8 &&
-            DIB->biBitCount != 24)
+            DIB->biBitCount != 24 &&
+            DIB->biBitCount != 32)
         return FALSE;
 
     if (bitmap) {
@@ -517,7 +520,7 @@ static int validDIB(
         ANDMaskBytes = (((DIB->biWidth + 31) & 0xffffffe0) >> 3) *
                 height;
     }
-    if (DIB->biBitCount == 24)
+    if (DIB->biBitCount >= 24)
         colorTableBytes = 0;
     else
         colorTableBytes = (1 << DIB->biBitCount) * sizeof(RGBQUAD);
@@ -572,7 +575,10 @@ static IMAGEDATA *LoadBitmapImage(HWND hwndParent, struct resRes *imageData)
 
         case 24:
             colors = 0;
-            break;                
+            break;
+        case 32:
+            colors = 0;
+            break;
         default:
             return NULL;
     }
@@ -587,6 +593,7 @@ static IMAGEDATA *LoadBitmapImage(HWND hwndParent, struct resRes *imageData)
     id->height = bih.biHeight;
     id->width = bih.biWidth;
     id->colors = id->saveColors = colors;
+    id->withAlpha = bih.biBitCount == 32;
     id->DIBSize = DIBSize;
     id->rgbScreen = RGB_DEFAULT_BACKGROUND; /* not used for bitmaps, but let's initialize anyway */
     id->origData = bitmapData;

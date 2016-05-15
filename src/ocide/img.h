@@ -15,6 +15,7 @@ typedef struct _imagedata {
     enum { FT_BMP, FT_ICO, FT_CUR } type;
     int imageDirty : 1;
     int fileDirty : 1;
+    int withAlpha : 1;
     int height;
     int width;
     int colors;

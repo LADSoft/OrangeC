@@ -205,7 +205,10 @@ void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
             FormatExp(buf, data->gd.selectedMenu->id);
             break;        
         case 1:
-            StringWToA(buf, data->gd.selectedMenu->text, wcslen(data->gd.selectedMenu->text));
+            if (data->gd.selectedMenu->text)
+                StringWToA(buf, data->gd.selectedMenu->text, wcslen(data->gd.selectedMenu->text));
+            else
+                strcpy(buf, "<SEPARATOR>");
             break;
     }
 }
@@ -248,18 +251,37 @@ void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
 }
 static int CalculateMenuWidth(HDC hDC, MENUITEM *items)
 {
-    int maxWidth = 0;
+    int textWidth = 0, cmdWidth=0;
+    int maxWidth;
     SIZE sz;
     while (items)
     {
         if (items->text)
         {
-            GetTextExtentPoint32W(hDC, items->text, wcslen(items->text), &sz);
-            if (sz.cx > maxWidth)
-                maxWidth = sz.cx;
+            WCHAR *n = wcschr(items->text, L'\t');
+            int m = wcslen(items->text);
+            if (n)
+            {
+                GetTextExtentPoint32W(hDC, items->text, n - items->text, &sz);
+                if (sz.cx > textWidth)
+                    textWidth = sz.cx;
+                n++;
+                GetTextExtentPoint32W(hDC, n, wcslen(n), &sz);
+                if (sz.cx > cmdWidth)
+                    cmdWidth = sz.cx;
+            }
+            else
+            {
+                GetTextExtentPoint32W(hDC, items->text, m, &sz);
+                if (sz.cx > textWidth)
+                    textWidth = sz.cx;
+            }
         }
         items = items->next;
     }
+    maxWidth = textWidth + cmdWidth;
+    if (cmdWidth)
+        maxWidth += 16;
     if (maxWidth < 64)
         maxWidth = 64;
     return maxWidth;
@@ -323,10 +345,24 @@ static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, 
         char buf[256];
         WCHAR wbuf[256];
         BOOL usedDefault;
+        WCHAR *n;
         StringWToA(buf, text, wcslen(text));
         SetBkColor(hDC, GetSysColor(bg));
         wbuf[MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf,strlen(buf), wbuf, 256)]=0;
-        TextOutW(hDC, x+3, y+1, wbuf, wcslen(wbuf));
+        n = wcschr(wbuf, L'\t');
+        if (n)
+        {
+            SIZE sz;
+            TextOutW(hDC, x+3, y+1, wbuf, n - wbuf);
+            n++;
+            GetTextExtentPoint32W(hDC, n, wcslen(n), &sz);
+            TextOutW(hDC, x+width-10-sz.cx, y+1, n, wcslen(n));
+            
+        }
+        else
+        {
+            TextOutW(hDC, x+3, y+1, wbuf, wcslen(wbuf));
+        }
     }
     else // separator
     {
@@ -612,24 +648,27 @@ static void MarkUnexpanded(MENUITEM *items)
 static void SelectItem(struct resRes *menuData, MENUITEM *orig, MENUITEM *selected, 
                        BOOL openEditor, int x, int y, int width, int height)
 {
-    MarkUnexpanded(orig);
-    selected->expanded = TRUE;
-    menuData->gd.selectedMenu = selected;
-    if (openEditor)
+    if (selected->text)
     {
-        char buf[512];
-        HFONT font;
-        font = CreateFontIndirect(&systemMenuFont);
-        StringWToA(buf, selected->text, wcslen(selected->text));
-        menuData->gd.editWindow = CreateWindow("edit", "", WS_VISIBLE |
-            WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER | ES_AUTOHSCROLL,
-            x,y,width,height, menuData->activeHwnd, (HMENU)ID_EDIT,
-            hInstance, NULL);
-        SendMessage(menuData->gd.editWindow, WM_SETFONT, (WPARAM)font, TRUE);
-        SendMessage(menuData->gd.editWindow, WM_SETTEXT, 0, (LPARAM)buf);
-        AccSubclassEditWnd(menuData->activeHwnd, menuData->gd.editWindow);
-        SendMessage(menuData->gd.editWindow, EM_SETSEL, 0, -1);
-        SetFocus(menuData->gd.editWindow);
+        MarkUnexpanded(orig);
+        selected->expanded = TRUE;
+        menuData->gd.selectedMenu = selected;
+        if (openEditor)
+        {
+            char buf[512];
+            HFONT font;
+            font = CreateFontIndirect(&systemMenuFont);
+            StringWToA(buf, selected->text, wcslen(selected->text));
+            menuData->gd.editWindow = CreateWindow("edit", "", WS_VISIBLE |
+                WS_CHILD | WS_CLIPSIBLINGS | WS_BORDER | ES_AUTOHSCROLL | ES_MULTILINE,
+                x,y,width,height, menuData->activeHwnd, (HMENU)ID_EDIT,
+                hInstance, NULL);
+            SendMessage(menuData->gd.editWindow, WM_SETFONT, (WPARAM)font, TRUE);
+            SendMessage(menuData->gd.editWindow, WM_SETTEXT, 0, (LPARAM)buf);
+            AccSubclassEditWnd(menuData->activeHwnd, menuData->gd.editWindow);
+            SendMessage(menuData->gd.editWindow, EM_SETSEL, 0, -1);
+            SetFocus(menuData->gd.editWindow);
+        }
     }
 }
 static BOOL SelectFromColumns(HDC hDC, struct resRes * menuData,

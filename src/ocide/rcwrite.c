@@ -818,7 +818,7 @@ static void WriteVersion(FILE *outputFile, RESOURCE *res)
     }
     if (v->fixed->file_flags)
     {
-        fprintf(outputFile, "FILEFLAGS");
+        fprintf(outputFile, "FILEFLAGS ");
         WriteExp(outputFile, v->fixed->file_flags);
         fprintf(outputFile, "\n");
     }

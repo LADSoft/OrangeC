@@ -45,7 +45,7 @@
 #include <ctype.h>
 
 #include "header.h"
-#include "winconst.h"
+#include "idewinconst.h"
 #include "sqlite3.h"
 
 extern int defaultWorkArea;

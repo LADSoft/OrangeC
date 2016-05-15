@@ -39,7 +39,7 @@
 */
 
 
-#include "winconst.h"
+#include "idewinconst.h"
 #include "lsctrl.h"
 #include "progress.h"
 

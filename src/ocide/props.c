@@ -45,7 +45,7 @@
 #include <prsht.h>
 #include <stdio.h>
 #include <ctype.h>
-#include "winconst.h"
+#include "idewinconst.h"
 #include "helpid.h"
 #include "header.h"
 

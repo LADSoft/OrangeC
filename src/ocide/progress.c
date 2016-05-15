@@ -44,7 +44,7 @@
 
 #include "header.h"
 #include "progress.h"
-#include "winconst.h"
+#include "idewinconst.h"
 
 static char *szProgName = "LADPROGRESS";
 // ==============================================================

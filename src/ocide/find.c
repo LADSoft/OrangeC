@@ -47,7 +47,7 @@
 #include "header.h"
 #include "codecomp.h"
 #include "regexp.h"
-#include "winconst.h"
+#include "idewinconst.h"
 #include <ctype.h>
 
 

@@ -42,7 +42,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "header.h"
-#include "winconst.h"
+#include "idewinconst.h"
 #define MIN_WIDTH 30
 #define DEFAULT_WIDTH 230
 #define DEFAULT_HEIGHT 160

@@ -40,7 +40,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-#include "winconst.h"
+#include "idewinconst.h"
 #include "header.h"
  
 extern HWND hwndSrcTab;

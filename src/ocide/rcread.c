@@ -1728,7 +1728,9 @@ static void ParseStringTable(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
     need_begin();
     while (is_number())
     {
-        EXPRESSION *val = ReadExp();
+        EXPRESSION *val;
+        defcheck(lptr);
+        val = ReadExp();
         skip_comma();
         if (lastst != sconst)
             generror(ERR_STRING_EXPECTED, 0);
@@ -1857,6 +1859,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
             need_begin();
             while (lastst == kw_value)
             {
+                defcheck(lptr);
                 getsym();
                 if (lastst != sconst)
                     generror(ERR_STRING_EXPECTED, 0);
@@ -1889,6 +1892,7 @@ static void ParseVersionInfo(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info)
             while (lastst == kw_value)
             {
                 struct ver_varlangchar **cur1;
+                defcheck(lptr);
                 *current = rcAlloc(sizeof(struct ver_varinfo)
                     );
                 getsym();
@@ -2254,7 +2258,8 @@ RESOURCE_DATA *ReadResources(char *fileName)
             fatal("file %s not found", fileName);
         Parse(&cd);
     }
-    fclose(inputFile);
+	if (inputFile)
+	    fclose(inputFile);
 	inputFile = NULL;
     if (cd.resources)
     {

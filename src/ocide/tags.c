@@ -44,7 +44,7 @@
 #include <stdio.h>
 
 #include "header.h"
-#include "winconst.h"
+#include "idewinconst.h"
 extern DWINFO *editWindows;
 extern HWND hwndFrame;
 extern HINSTANCE hInstance;

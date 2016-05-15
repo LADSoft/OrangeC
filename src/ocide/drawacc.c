@@ -399,10 +399,19 @@ static void AccDoUndo(struct resRes *acceleratorData)
 LRESULT CALLBACK EditorSubclassProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    if (iMessage == WM_KEYDOWN && wParam == VK_RETURN)
+    switch (iMessage)
     {
-        PostMessage((HWND)GetWindowLong(hwnd, GWL_USERDATA), WM_COMMAND, MAKEWPARAM(ID_EDIT, EN_KILLFOCUS), 0);
-        return 0;
+        case WM_KEYDOWN:
+            if (wParam == VK_RETURN)
+            {
+                PostMessage((HWND)GetWindowLong(hwnd, GWL_USERDATA), WM_COMMAND, MAKEWPARAM(ID_EDIT, EN_KILLFOCUS), 0);
+                return 0;
+            }
+            break;
+        case WM_KEYUP:
+            if (wParam == VK_RETURN)
+                return 0;
+            break;
     }
     return CallWindowProc(oldEditProc, hwnd, iMessage, wParam, lParam);
 }

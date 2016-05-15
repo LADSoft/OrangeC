@@ -44,7 +44,7 @@
 #include <stdio.h>
 //#include <dir.h>
 #include <ctype.h>
-#include "winconst.h"
+#include "idewinconst.h"
 #include "header.h"
 #define MAX_SAVED_DIRS 10
  

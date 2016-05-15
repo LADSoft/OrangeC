@@ -45,7 +45,7 @@
 #include <stdlib.h>
 
 #include "header.h"
-#include "winconst.h"
+#include "idewinconst.h"
 #include "lsctrl.h"
 
 #define INDENT 0

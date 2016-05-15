@@ -46,7 +46,7 @@
 #include <ctype.h>
 
 #include "header.h"
-#include "winconst.h"
+#include "idewinconst.h"
 
 #define DELTA 7
 #define MAX_BROWSE 50

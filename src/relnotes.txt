@@ -1,5 +1,30 @@
 Release notes:
 
+version 5.67.1:
+    ocide:      24-bit bitmaps not displayed properly in the resource workshop
+    ocide:      always save dialogs as DIALOGEX to avoid problems with compiling the RC file
+    ocide:      always save menus as MENUEX to avoid problems with compiling the RC file
+    ocide:      add CTL-[ and CTL-] to open and close full-size edit window
+    ocide:      augment win32 help to have three options depending on how you want to do it.
+    ocide:      opening an image in the resource workshop crashed the IDE
+    ocide:      when there are two projects, attempting to open resources
+                from the two projects simultaneously could result \
+                in errors and crashes
+    ocide:      #defines weren't being replaced in version and string tables
+    ocide:      when saving version info, the FILEFLAGSMASK wasn't set properly
+    ocide:      clicking on a 'separator' in the menu design view 
+                would crash the IDE
+    ocide:      the 'tab' character separating a menu item description from
+                its hotkey sequence wasn't honored.
+    ocide:      load and save bitmaps with 32-bit colors (you can't edit the alpha)
+    ocide:      if a menu item was dragged down onto the next lower item,
+                the item would disappear and eventually the IDE would crash
+
+version 5.66.1: 5/11/2016
+    ocide:      add ALT+{ and ALT+}  for navigation between braces
+    ocide, ORC: fix problems with the system menu font not understanding code pages (convert to unicode in RC file)
+    ocide:      fix problems with undo not working during a long edit session
+ 
 version 5.64.1: 5/1/2016
     Add MSDN library help
 

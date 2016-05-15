@@ -568,18 +568,26 @@ static void UndoInsert(struct resRes *menuData, MENUITEM **item)
         menuData->gd.undoData = newUndo;
     }
 }
-static MENUITEM **GetItemPlace(MENUITEM **top, MENUITEM *item)
+static MENUITEM **GetItemPlace(MENUITEM **top, MENUITEM *src, MENUITEM *item)
 {
+    MENUITEM **last = NULL;
     while (*top)
     {
         if (*top == item)
+        {
+            if (last && *last == src)
+            {
+                return &(*top)->next;
+            }
             return top;
+        }
         if ((*top)->popup)
         {
-            MENUITEM **rv = GetItemPlace(&(*top)->popup, item);
+            MENUITEM **rv = GetItemPlace(&(*top)->popup, src, item);
             if (rv)
                 return rv;
         }
+        last = top;
         top = &(*top)->next;
     }
     return NULL;
@@ -620,7 +628,7 @@ static void DoUndo(struct resRes * menuData)
                 *undo->place = undo->item;
                 break;
             case mu_move:
-                place = GetItemPlace(&menuData->resource->u.menu->items, undo->item);
+                place = GetItemPlace(&menuData->resource->u.menu->items, undo->place, undo->item);
                 *place = (*place)->next;
                 undo->item->next = *undo->place;               
                 *undo->place = undo->item;
@@ -890,14 +898,16 @@ static void DoMove(struct resRes *menuData, MENUITEM *item, MENUITEM *dest)
 {
     if (item != dest)
     {
-        MENUITEM **itemplace = GetItemPlace(&menuData->resource->u.menu->items, item);
+        MENUITEM **itemplace = GetItemPlace(&menuData->resource->u.menu->items, NULL, item);
         MENUITEM **destplace;
         if (dest)
         {
-            destplace = GetItemPlace(&menuData->resource->u.menu->items, dest);
+            destplace = GetItemPlace(&menuData->resource->u.menu->items, item, dest);
         }
         else
         {
+            if (!item->next)
+                return;
             destplace = itemplace;
             while (*destplace)
                 destplace = &(*destplace)->next;

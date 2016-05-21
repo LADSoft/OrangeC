@@ -108,6 +108,7 @@
     <ClCompile Include="dbgasm.c" />
     <ClCompile Include="dbgdb.c" />
     <ClCompile Include="dbghints.c" />
+    <ClCompile Include="dbglocals.c" />
     <ClCompile Include="dbgmain.c" />
     <ClCompile Include="dbgmem.c" />
     <ClCompile Include="dbgreg.c" />

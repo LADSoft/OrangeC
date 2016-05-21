@@ -2620,12 +2620,12 @@ int adjustforbadplacement(int id, CCD_params *d)
                 d->oldsize.right = 200;
                 d->oldsize.bottom = 200;
                 break;
-            case DID_ERRORWND:
+            case DID_LOCALSWND:
                 d->oldsize.right = 200;
                 d->oldsize.bottom = 200;
                 break;
-            case DID_ASMWND:
-                d->oldsize.right = 500;
+            case DID_ERRORWND:
+                d->oldsize.right = 200;
                 d->oldsize.bottom = 200;
                 break;
             case DID_MEMWND:

@@ -54,7 +54,7 @@
 #define LINELEN 564
 
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame;
+extern HWND hwndClient, hwndStatus, hwndFrame, hwndSrcTab;
 extern enum DebugState uState;
 extern THREAD *activeThread;
 extern PROJECTITEM *activeProject;
@@ -65,6 +65,7 @@ HWND hwndASM;
 
 static char **lines;
 static int *addrs;
+static int *linenos;
 static int curline, shownLine;
 
 static char szASMClassName[] = "xccASMClass";
@@ -145,8 +146,8 @@ static char *getline(char *module, int lineno)
     if (!feof(infile))
         strncpy(line, buffer, 255);
     rline = line;
-    while (isspace(*rline))
-        rline++;
+//    while (isspace(*rline))
+//        rline++;
     l = strlen(rline) - 1;
     if (l >= 0 && rline[l] < 32)
         rline[l] = 0;
@@ -157,6 +158,7 @@ static char *getline(char *module, int lineno)
 
 void CalculateDisassembly(int moving)
 {
+    int lastlineno = -1;
     RECT r;
     int rv = 0;
     int lineno;
@@ -190,16 +192,34 @@ void CalculateDisassembly(int moving)
             char *types,  *syms;
             if (GetBreakpointLine(code_address, buf1, &lineno, FALSE) == code_address)
             {
-                addrs[i] = code_address;
-                sprintf(lines[i++], "MODULE: %s LINE: %d %s", relpath(buf1, activeProject->realName), lineno,
-                    getline(buf1, lineno));
+                if (lastlineno == -1)
+                {
+                    linenos[i] = lineno;
+                    addrs[i] = code_address;
+                    sprintf(lines[i++], "%s", getline(buf1, lineno));
+                }
+                else
+                {
+                    int j;
+                    for (j= lastlineno + 1; j <= lineno && i < LINES; j++)
+                    {
+                        linenos[i] = j;
+                        addrs[i] = code_address;
+                        sprintf(lines[i++], "%s", getline(buf1, j));
+                    }
+                    if (i >= LINES)
+                        break;
+                }
+                lastlineno = lineno;
             }
+            /*
             if (FindGlobalSymbol(&dbg, code_address, buffer, NULL))
             {
                 addrs[i] = code_address;
                 strcat(buffer, ":");
                 strcpy(lines[i++], buffer);
             }
+            */
             addrs[i] = code_address;
             GetCodeLine(lines[i++]);
         }
@@ -253,6 +273,20 @@ static void CopyText(HWND hwnd)
         free(p);
     }
 }
+int indent(int n)
+{
+    char *p = lines[n];
+    if (p[8] == ':')
+    {
+        int i;
+        for (i=0; i < 8; i++)
+            if (!isxdigit(p[i]))
+                break;
+        if (i == 8)
+            return 150;
+    }
+    return 0;
+}
 void DoDisassembly(HDC dc, RECT *r)
 {
     int i;
@@ -260,20 +294,20 @@ void DoDisassembly(HDC dc, RECT *r)
     int linecnt = (r->bottom - r->top) / 16;
     for (i = 0; i < linecnt; i++)
     {
-        int n;
+        int n, indnt = indent(i+shownLine);
         RECT r1;
         n = addrs[i + shownLine];
-        if (addrs[i + shownLine] == addrs[i + shownLine + 1])
+        if (indnt)
         {
-            v = SetTextColor(dc, 0xcc00);
+            v = SetTextColor(dc, 0xaaaaaa);
         }
-        TextOut(dc, ASM_OFFSET + 5, i *16+r->top, lines[i + shownLine], strlen
+        TextOut(dc, ASM_OFFSET + 5 + indnt, i *16+r->top, lines[i + shownLine], strlen
             (lines[i + shownLine]));
-        if (addrs[i + shownLine] == addrs[i + shownLine + 1])
+        if (indnt)
         {
             SetTextColor(dc, v);
         }
-        if (strncmp(lines[i + shownLine], "MODULE", 6))
+        if (indnt)
         {
             if (n == asmIP)
             {
@@ -371,7 +405,7 @@ void asmDoPaint(HWND hwnd)
     if (activeProcess && activeProcess->hProcess)
     {
         oldFont = SelectObject(dc, asmFont);
-        oldcolor = SetTextColor(dc, 0xff0000);
+        oldcolor = SetTextColor(dc, 0x6a6b6c);
         DoDisassembly(dc, &r);
         SetTextColor(dc, oldcolor);
         SelectObject(dc, oldFont);
@@ -400,6 +434,9 @@ LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             addrs = (int*)calloc(1,LINES *sizeof(int));
             if (!addrs)
                 return  - 1;
+            linenos = (int *)calloc(1, LINES *sizeof(int));
+            if (!linenos)
+                return -1;
             for (i = 0; i < LINES; i++)
                 if (!(lines[i] = (char*)calloc(1,LINELEN)))
                     return  - 1;
@@ -414,6 +451,7 @@ LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             charwidth = metric.tmMaxCharWidth;
             SetScrollRange(hwnd, SB_VERT, 0, 64000, FALSE);
             SetScrollPos(hwnd, SB_VERT, 32000, TRUE);
+            SendMessage(hwndSrcTab, TABM_ADD, (WPARAM)"Disassembly", (LPARAM)hwnd);
             break;
         case WM_PAINT:
             asmDoPaint(hwnd);
@@ -456,14 +494,29 @@ setBreakPoint:
                 if (shownLine + caretY / 16 >= 4096)
                     return 0;
                 n = addrs[shownLine + caretY/ 16];
-                if (isBreakPoint(n))
+                if (indent(shownLine + caretY/16))
                 {
-                    dbgClearBreakPoint(NULL, n);
-                }		
+                    if (isBreakPoint(n))
+                    {
+                        dbgClearBreakPoint(NULL, n);
+                    }		
+                    else
+                    {
+                        dbgSetBreakPoint(NULL, n, NULL);
+                    }
+                }
                 else
                 {
-                    dbgSetBreakPoint(NULL, n, NULL);
+                    int lineno;
+                    DWINFO info;
+                    memset(&info, 0, sizeof(info));
+                    GetBreakpointLine(addrs[shownLine + caretY/16], info.dwName, &lineno, FALSE);
+                    info.dwLineNo =  linenos[shownLine + caretY/16];
+                    info.logMRU = FALSE;
+                    info.newFile = FALSE;
+                    CreateDrawWindow(&info, TRUE);
                 }
+                    
                 InvalidateRect(hwndASM, 0, 1);
             }
             break;
@@ -524,11 +577,13 @@ setBreakPoint:
             }
             break;
         case WM_DESTROY:
+            PostMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             DeleteObject(asmFont);
             for (i = 0; i < LINES; i++)
                 free(lines[i]);
             free(lines);
             free(addrs);
+            hwndASM = 0;
             break;
         case WM_SIZE:
             InvalidateRect(hwnd, 0, 1);
@@ -574,8 +629,7 @@ setBreakPoint:
             SetScrollPos(hwnd, SB_VERT, 32000, TRUE);
             return 0;
     }
-
-    return DefWindowProc(hwnd, iMessage, wParam, lParam);
+    return DefMDIChildProc(hwnd, iMessage, wParam, lParam);
 }
 
 //-------------------------------------------------------------------------
@@ -602,8 +656,8 @@ void StopASMWindow(void)
 {
     if (hwndASM)
     {
+        CloseWindow(hwndASM);
         DestroyWindow(hwndASM);
-        hwndASM = NULL;
     }
 }
 //-------------------------------------------------------------------------
@@ -616,7 +670,12 @@ HWND CreateASMWindow(void)
     }
     else
     {
-        hwndASM = CreateDockableWindow(DID_ASMWND, szASMClassName, szASMTitle, hInstance, 500, 200);
+        hwndASM = CreateMDIWindow(szASMClassName, szASMTitle, WS_VISIBLE |
+           WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | 
+        WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
+        WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, 
+        NULL); 
     }
     return hwndASM;
 }

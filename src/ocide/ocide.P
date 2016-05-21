@@ -129,6 +129,7 @@ int GetHigherBreakpointLineByModule(DEBUG_INFO *dbg_info, char *module, int line
 int *GetLineTableInternal(DEBUG_INFO *dbg_info, char *name, int lineno, int *lc);
 int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int equals);
 int GetFuncId(DEBUG_INFO *dbg_info, int Address);
+NAMELIST *GetEnclosedAutos(DEBUG_INFO *dbg_info, int funcId, int line);
 int GetLocalSymbolAddress(DEBUG_INFO *dbg_info, int funcId, char *name, char *filename, int line, int *address, int *type);
 int GetGlobalSymbolAddress(DEBUG_INFO *dbg_info, char *name, char *filename, int line, int *address, int *type);
 int GetType(DEBUG_INFO *dbg_info, char *name);
@@ -221,6 +222,7 @@ int *GetBreakpointAddresses(char *module, int *linenum);
 int GetBreakpointNearestLine(char *module, int linenum, int inmodule);
 int FindFunctionName(char *buf, int Address);
 int FindGlobalSymbol(DEBUG_INFO **dbg_info, int Address, char *buf, int *type);
+NAMELIST *FindEnclosedAutos(SCOPE *scope);
 SCOPE * FindSymbol(DEBUG_INFO **dbg_info, SCOPE *scope, char *name, int *address, int *type);
 int FindTypeSymbol(DEBUG_INFO **dbg_info, SCOPE *scope, char *name);
 int basictypesize(int type);
@@ -1247,6 +1249,7 @@ PROFILE *LoadRule(char *fileName);
 
 void abspath(char *name, char *path);
 char *relpath(char *name, char *path);
+char *relpath2(char *name, char *path);
 void absincludepath(char *name, char *path);
 char *relincludepath(char *name, char *path);
 PROJECTITEM *LoadErr(struct xmlNode *root, char *name);

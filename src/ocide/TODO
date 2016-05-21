@@ -1,30 +1,15 @@
 debug info for AES.C
 
-minigzip, rel file & LE records
-
-read ocide rc file
-
 autocomplete is confused between structures and regular names
-find crashes
-misc ide crashes...
 
 ending brace at end of line
 warnings not entirely displayed
 
-crashed when started debugger(2)
-occpr crash and live forever
-
 debug clean up artifacts on trees
-
-remember tree expansions...
 
 debug can't parse array elements for [] definition in func header
 allow click on tree to change open properties window
-gui for adding rules...
-debug better hints and pins
 hints on property pages
-simple zip/unzip for projects
-debug integrate disassembly with edit windows
 
 
 no ws on startup
@@ -35,4 +20,12 @@ redo gui using themes...
 
 when displaying types, insert name before []
 
+------------------------------
+gui for adding rules...
+fix build type windows to work properly
+
+1) maybe add 'pins' for watch info similar to what is found in later versions of VS
+2) integrate ZIP/UNZIP functionality into the IDE for project rollup
+3) add a more modern interface to allow easier docking of the docking windows
+4) remember tree expansions...
 

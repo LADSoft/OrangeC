@@ -646,7 +646,7 @@ public:
     context() : startLine(NULL), currentLine(NULL) { }
     ObjLineNo *startLine;
     ObjLineNo *currentLine;
-    std::deque<ObjSymbol *>vars;
+    std::map<ObjSymbol *, ObjLineNo *>vars;
 } ;
 bool LinkDebugFile::WriteAutosTable()
 {
@@ -681,7 +681,7 @@ bool LinkDebugFile::WriteAutosTable()
                     switch((*it2)->GetType())
                     {
                         case ObjDebugTag::eVar:
-                            currentContext->vars.push_back((*it2)->GetSymbol());
+                            currentContext->vars[(*it2)->GetSymbol()] = currentLine;
                             break;
                         case ObjDebugTag::eFunctionStart:
                         {
@@ -707,18 +707,18 @@ bool LinkDebugFile::WriteAutosTable()
                         }
                         case ObjDebugTag::eBlockEnd:
                         {
-                            int start = currentContext->startLine->GetLineNumber();  
-                            int end = currentContext->currentLine->GetLineNumber();
+                            int end = currentLine->GetLineNumber();
                             int fileId = currentContext->startLine->GetFile()->GetIndex();
-                            for (std::deque<ObjSymbol *>::iterator it = currentContext->vars.begin(); it != currentContext->vars.end(); ++it)
+                            for (std::map<ObjSymbol *, ObjLineNo *>::iterator it = currentContext->vars.begin(); it != currentContext->vars.end(); ++it)
                             {
-                                ObjSymbol *s = (*it);
+                                ObjSymbol *s = it->first;
+                                int startLine = it->second->GetLineNumber();
                                 v.push_back(autoMap[s->GetIndex()]);
                                 v.push_back(GetTypeIndex(s->GetBaseType()));
                                 v.push_back(funcId);
                                 v.push_back(fileId);
                                 v.push_back(s->GetOffset()->EvalNoModify(0));
-                                v.push_back(start);
+                                v.push_back(startLine);
                                 v.push_back(end);
                             }
                             delete currentContext;

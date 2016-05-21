@@ -265,7 +265,7 @@ int IsStepping(DEBUG_EVENT *dbe)
 
 void StepOver(DEBUG_EVENT *dbe)
 {
-    if (dmgrGetHiddenState(DID_ASMWND) || (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) != GetParent(hwndASM))
+    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) != hwndASM)
     {
         uState = SteppingOver;
     }
@@ -289,7 +289,7 @@ void StepOut(DEBUG_EVENT *dbe)
 
 void StepIn(DEBUG_EVENT *dbe)
 {
-    if (dmgrGetHiddenState(DID_ASMWND))
+    if ((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) != hwndASM)
     {
         uState = SteppingIn;
     }

@@ -550,10 +550,20 @@ void InitMenuPopup(HMENU menu)
     SetMenuCheckedState(menu, DID_ERRORWND, IDM_VIEWERROR);
     SetMenuCheckedState(menu, DID_STACKWND, IDM_VIEWSTACK);
     SetMenuCheckedState(menu, DID_THREADWND, IDM_VIEWTHREAD);
-    SetMenuCheckedState(menu, DID_ASMWND, IDM_VIEWASM);
+    {
+        MENUITEMINFO info;
+    
+        info.cbSize = sizeof(MENUITEMINFO);
+        info.fMask = MIIM_STATE;
+        GetMenuItemInfo(menu, IDM_VIEWASM, MF_BYCOMMAND, &info);
+        info.fState = (info.fState &~MFS_CHECKED) | (hwndASM ?
+            MFS_CHECKED : 0);
+        SetMenuItemInfo(menu, IDM_VIEWASM, MF_BYCOMMAND, &info);
+    }
     SetMenuCheckedState(menu, DID_MEMWND, IDM_VIEWMEM);
     SetMenuCheckedState(menu, DID_REGWND, IDM_VIEWREGISTER);
     SetMenuCheckedState(menu, DID_WATCHWND, IDM_VIEWWATCH);
+    SetMenuCheckedState(menu, DID_LOCALSWND, IDM_VIEWLOCALS);
 
     win = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
     mf_state = MF_GRAYED;
@@ -657,6 +667,7 @@ void InitMenuPopup(HMENU menu)
     EnableMenuItem(menu, IDM_ACTIVEPROJECTPROPERTIES, mf_state);
     EnableMenuItem(menu, IDM_PROJECTPROPERTIES, mf_state);
     EnableMenuItem(menu, IDM_PROJECTDEPENDS, mf_state);
+    EnableMenuItem(menu, IDM_RUNNODEBUG, mf_state);
     if (making)
         mf_state = MF_ENABLED;
     else
@@ -692,6 +703,7 @@ void InitMenuPopup(HMENU menu)
     EnableMenuItem(menu, IDM_VIEWREGISTER, mf_state);
     EnableMenuItem(menu, IDM_VIEWSTACK, mf_state);
     EnableMenuItem(menu, IDM_VIEWWATCH, mf_state);
+    EnableMenuItem(menu, IDM_VIEWLOCALS, mf_state);
     EnableMenuItem(menu, IDM_VIEWTHREAD, mf_state);
     EnableMenuItem(menu, IDM_DATABREAKPOINT, mf_state);
     mf_state = uState == Running ? MF_ENABLED : MF_GRAYED;

@@ -46,7 +46,7 @@
 #include <process.h>
 
 extern HWND hwndClient;
-extern HWND hwndFrame, hwndASM, hwndRegister, hwndWatch, hwndThread;
+extern HWND hwndFrame, hwndRegister, hwndWatch, hwndLocals, hwndThread;
 extern HWND hwndToolDebug, hwndStack, hwndMem;
 extern DWINFO *editWindows;
 extern PROJECTITEM *activeProject;
@@ -355,6 +355,7 @@ static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
 			PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
 				GetThread(info->dwProcessId, info->dwThreadId)->hThread);
 		PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
+        PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
 		if (hwndThread)
 			PostMessage(hwndThread, WM_RESTACK, (WPARAM)1, 0);
 		if (hwndMem)
@@ -408,6 +409,7 @@ static int HandleException(DEBUG_EVENT *info, char *cmd)
     if (hwndStack)
         PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
     PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
+    PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
     if (hwndThread)
         PostMessage(hwndThread, WM_RESTACK, (WPARAM)1, 0);
     if (hwndRegister)

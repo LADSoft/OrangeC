@@ -63,13 +63,14 @@
 #define DID_TABWND 1
 #define DID_WATCHWND 2
 #define DID_ERRORWND 3
-#define DID_ASMWND 4
+//#define DID_ASMWND 4  keep reserved for compatibility with older projects
 #define DID_MEMWND 5
 #define DID_STACKWND 6
 #define DID_THREADWND 7
 #define DID_BPWND 8
 #define DID_REGWND 9
 #define DID_PROPSWND 10
+#define DID_LOCALSWND 11
 
 #define DID_EDITTOOL 20
 #define DID_BUILDTOOL 21
@@ -160,6 +161,11 @@
 #define TFO_INCLUDE 4
 #define TFO_RESOURCE 8
 #define TFO_OTHER 16
+typedef struct _namelist {
+    struct _namelist *next;
+    char *data;
+} NAMELIST;
+
 
     enum
     {
@@ -400,6 +406,7 @@ typedef struct
     VARINFO *info;
     DEBUG_INFO *dbg_info;
     int cursoreip;
+    int marked : 1;
 } WATCHINFO;
 
 struct tag

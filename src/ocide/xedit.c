@@ -2800,6 +2800,7 @@ void FindBraceMatchForward(HWND hwnd, EDITDATA *p)
         }
         p->selstartcharpos = p->selendcharpos =x;
         ScrollCaretIntoView(hwnd, p, TRUE);
+        PostMessage(GetParent(hwnd), WM_COMMAND, ID_REDRAWSTATUS, 0);
     }
 }
 void FindBraceMatchBackward(HWND hwnd, EDITDATA *p)
@@ -2837,6 +2838,7 @@ void FindBraceMatchBackward(HWND hwnd, EDITDATA *p)
     }
     p->selstartcharpos = p->selendcharpos =x;
     ScrollCaretIntoView(hwnd, p, TRUE);
+    PostMessage(GetParent(hwnd), WM_COMMAND, ID_REDRAWSTATUS, 0);
 }
 void FindBraceMatch(HWND hwnd, EDITDATA *p, int ch)
 {
@@ -5997,11 +5999,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 {
                     case 221: //']'
                     case 219: //'['
-                        if (GetKeyState(VK_SHIFT) && 0x80000000)
-                            if (!(GetKeyState(VK_CONTROL) &0x80000000))
-                                if (lParam &0x20000000) {// alt key
-                                    return 0;
-                            }
+                        if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                            if (lParam &0x20000000) {// alt key
+                                return 0;
+                        }
                         break;
                 }
                 break;
@@ -6014,11 +6015,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         break;
                     case 221: //']'
                     case 219: //'['
-                        if (GetKeyState(VK_SHIFT) && 0x80000000)
-                            if (!(GetKeyState(VK_CONTROL) &0x80000000))
-                                if (lParam &0x20000000) {// alt key
-                                    return 0;
-                                }
+                        if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                            if (lParam &0x20000000) {// alt key
+                                return 0;
+                            }
                         break;
                 }
                 break;
@@ -6031,12 +6031,11 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                         break;
                     case 221: //']'
                     case 219: //'['
-                        if (GetKeyState(VK_SHIFT) && 0x80000000)
-                            if (!(GetKeyState(VK_CONTROL) &0x80000000))
-                                if (lParam &0x20000000) {// alt key
-                                    FindBraceMatch(hwnd, p, wParam == 219 ? '{' : '}');
-                                    return 0;
-                                }
+                        if (!(GetKeyState(VK_CONTROL) &0x80000000))
+                            if (lParam &0x20000000) {// alt key
+                                FindBraceMatch(hwnd, p, wParam == 219 ? '{' : '}');
+                                return 0;
+                            }
                         break;
                 }
                 break;

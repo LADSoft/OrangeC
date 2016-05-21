@@ -72,7 +72,7 @@ extern DWINFO *editWindows;
 extern char szHelpPath[]; 
 extern int making;
 extern HWND hwndProject, hwndASM, hwndThread, hwndRes;
-extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndStack;
+extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndLocals, hwndStack;
 extern HWND hwndBookmark;
 extern DWINFO *mrulist[MAX_MRU],  *mruprojlist[MAX_MRU];
 extern HANDLE BreakpointSem;
@@ -595,7 +595,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 CreateTabWindow();
                 CreatePropertyTabWindow();
                 CreateWatchWindow();
-                CreateASMWindow();
+                CreateLocalsWindow();
                 CreateMemWindow();
                 CreateThreadWindow();
                 CreateRegisterWindow();
@@ -620,12 +620,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             PostMessage(hwnd, WM_TOOLBARDROPDOWN2, wParam, lParam);
             return 1;
         case WM_EXCEPTION:
-            dmgrHideWindow(DID_ASMWND, FALSE);
             dbe = (DEBUG_EVENT*)lParam;
             if (!GetBreakpointLine((DWORD)dbe
                 ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                 &linenum, FALSE))
-                dmgrHideWindow(DID_ASMWND, FALSE);
+                CreateASMWindow();
             else
                 ApplyBreakAddress(module, linenum);
             if (hwndASM)
@@ -657,16 +656,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             dbe = (DEBUG_EVENT*)lParam;
             if (uState != notDebugging)
             {
-                if (hwndASM)
-                    SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-                                dbe->u.Exception.ExceptionRecord.ExceptionAddress);
                 
                 if (!GetBreakpointLine((DWORD)dbe
                     ->u.Exception.ExceptionRecord.ExceptionAddress, &module[0],
                     &linenum, FALSE))
-                    dmgrHideWindow(DID_ASMWND, FALSE);
+                    CreateASMWindow();
                 else
                     ApplyBreakAddress(module, linenum);
+                if (hwndASM)
+                    SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+                                dbe->u.Exception.ExceptionRecord.ExceptionAddress);
             }
             return 0;
         case WM_CREATE:
@@ -870,7 +869,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case IDM_SCROLLTOBP:
                 if (!GetBreakpointLine((DWORD)stoppedThread->regs.Eip,
                     &module[0], &linenum, FALSE))
-                    dmgrHideWindow(DID_ASMWND, FALSE);
+                    CreateASMWindow();
                 else
                     ApplyBreakAddress(module, linenum);
                 activeThread = stoppedThread;
@@ -878,6 +877,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
                         activeThread->hThread);
                 PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
+                PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
                 if (hwndStack)
                     PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
                 if (hwndThread)
@@ -938,8 +938,28 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 break;
             case IDM_VIEWASM:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWASM);
-                dmgrHideWindow(DID_ASMWND, x_state);
-                SetMenuCheckedState(hMenuMain, DID_ASMWND, IDM_VIEWASM);
+                if (x_state)
+                {
+                    StopASMWindow();
+                }
+                else
+                {
+                    CreateASMWindow();
+                    SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+                                (LPARAM)activeThread->regs.Eip);
+                }
+                /*
+                {
+                    MENUITEMINFO info;
+                
+                    info.cbSize = sizeof(MENUITEMINFO);
+                    info.fMask = MIIM_STATE;
+                    GetMenuItemInfo(hMenuMain, IDM_VIEWASM, MF_BYCOMMAND, &info);
+                    info.fState = (info.fState &~MFS_CHECKED) | (hwndASM ?
+                        MFS_CHECKED : 0);
+                    SetMenuItemInfo(hMenuMain, IDM_VIEWASM, MF_BYCOMMAND, &info);
+                }
+                */
                 break;
             case IDM_VIEWMEM:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWMEM);
@@ -965,6 +985,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWWATCH);
                 dmgrHideWindow(DID_WATCHWND, x_state);
                 SetMenuCheckedState(hMenuMain, DID_WATCHWND, IDM_VIEWWATCH);
+                return 0;
+            case IDM_VIEWLOCALS:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWLOCALS);
+                dmgrHideWindow(DID_LOCALSWND, x_state);
+                SetMenuCheckedState(hMenuMain, DID_LOCALSWND, IDM_VIEWLOCALS);
                 return 0;
             case IDM_VIEWERROR:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWERROR);
@@ -1413,9 +1438,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 int old = workArea->dbgview;
                 workArea->dbgview = 0;
-                workArea->dbgview |= dmgrHideWindow(DID_ASMWND, TRUE) << DID_ASMWND;
+                if (hwndASM)
+                    PostMessage(hwnd, WM_COMMAND, IDM_VIEWASM, 0);
                 workArea->dbgview |= dmgrHideWindow(DID_WATCHWND, TRUE) <<
                     DID_WATCHWND;
+                workArea->dbgview |= dmgrHideWindow(DID_LOCALSWND, TRUE) <<
+                    DID_LOCALSWND;
                 workArea->dbgview |= dmgrHideWindow(DID_MEMWND, TRUE) << DID_MEMWND;
                 workArea->dbgview |= dmgrHideWindow(DID_STACKWND, TRUE) <<
                     DID_STACKWND;
@@ -1427,10 +1455,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             else
             {
-                if (workArea->dbgview &(1 << DID_ASMWND))
-                    dmgrHideWindow(DID_ASMWND, 0);
                 if (workArea->dbgview &(1 << DID_WATCHWND))
                     dmgrHideWindow(DID_WATCHWND, 0);
+                if (workArea->dbgview &(1 << DID_LOCALSWND))
+                    dmgrHideWindow(DID_LOCALSWND, 0);
                 if (workArea->dbgview &(1 << DID_MEMWND))
                     dmgrHideWindow(DID_MEMWND, 0);
                 if (workArea->dbgview &(1 << DID_STACKWND))
@@ -1763,6 +1791,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
         RegisterPropsWindow();
         RegisterCtlTbWindow();
         RegisterWatchWindow();
+        RegisterLocalsWindow();
         RegisterJumpListWindow();
         RegisterDlgDrawWindow();
         RegisterAcceleratorDrawWindow();

@@ -706,6 +706,59 @@ int GetFuncId(DEBUG_INFO *dbg_info, int Address)
     rv = agbl > alcl ? gbl : lcl;
     return rv;
 }
+NAMELIST *GetEnclosedAutos(DEBUG_INFO *dbg_info, int funcId, int line)
+{
+    static char *query = {
+        "SELECT Names.name FROM Names"
+        "    JOIN Autos on Autos.symbolId = Names.id"
+        "    WHERE Autos.funcId = ?"
+        "       AND Autos.beginLine <= ?"
+        "       And Autos.endLine >= ?"
+        "       ORDER BY Autos.beginLine DESC;"
+    };
+    NAMELIST * rv = NULL;
+    int rc = SQLITE_OK;
+    sqlite3_stmt *handle;
+    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        sqlite3_bind_int(handle, 1, funcId);
+        sqlite3_bind_int(handle, 2, line);
+        sqlite3_bind_int(handle, 3, line);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                {
+                    const unsigned char *p = sqlite3_column_text(handle, 0);
+                    if (p && p[0])
+                    {
+                        NAMELIST *next = calloc(1, sizeof(NAMELIST));
+                        next->data = strdup(p);
+                        next->next = rv;
+                        rv = next;
+                    }
+                    rc = SQLITE_OK;
+                    break;
+                }
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        sqlite3_finalize(handle);
+    }
+    return rv;
+}
 int GetLocalSymbolAddress(DEBUG_INFO *dbg_info, int funcId, char *name, char *filename, int line, int *address, int *type)
 {
     static char *query = {

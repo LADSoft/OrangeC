@@ -91,7 +91,7 @@ static void GetImgPropText(char *buf, HWND lv, struct resRes *data, int row)
         case 1:
         {
             PROJECTITEM *pj = GetResProjectFile(data->hTreeItem);
-            strcpy(buf, relpath(data->resource->filename, pj->realName));
+            strcpy(buf, relpath2(data->resource->filename, pj->realName));
         }
             break;
         case 2:

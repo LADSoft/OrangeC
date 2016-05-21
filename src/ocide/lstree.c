@@ -467,6 +467,7 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
             SendMessage(ptr->hwndHeader, HDM_SETITEM, 1, (LPARAM) &hie);
             SendMessage(ptr->hwndTree, TCF_SETDIVIDER, 0, hie.cxy);
             InvalidateRect(ptr->hwndHeader, 0, 1);
+            InvalidateRect(ptr->hwndTree, 0, 1);
             break;
         case TCF_SETHEADER:
             ptr = (COLUMNINFO*)GetWindowLong(hwnd, 0);

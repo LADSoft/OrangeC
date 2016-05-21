@@ -576,7 +576,7 @@ void SetTitle(HWND hwnd)
         strcpy(buf, info->dwTitle);
     if (activeProject)
     {
-        strcpy(buf, relpath(buf, activeProject->realName));
+        strcpy(buf, relpath2(buf, activeProject->realName));
     }
     else
     {
@@ -584,7 +584,7 @@ void SetTitle(HWND hwnd)
         dir[0] = 0;
         GetCurrentDirectory(MAX_PATH, dir);
         strcat(dir,"\\hithere");
-        strcpy(buf, relpath(buf, dir));
+        strcpy(buf, relpath2(buf, dir));
     }
     if (dt->id)
         sprintf(buf + strlen(buf), " (%d)", dt->id + 1);
@@ -1595,7 +1595,7 @@ HWND openfile(DWINFO *newInfo, int newwindow, int visible)
                 else
                 {
                     HWND active = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
-                    if (GetParent(hwndASM) == active || ptr->self == active)
+                    if (ptr->self == active)
                     {
                         SetFocus(active);
                     }

@@ -191,7 +191,59 @@ char *relpath(char *name, char *path)
         return projname;
     }
 }
+char *relpath2(char *name, char *path)
+{
+    static char projname[MAX_PATH], localname[MAX_PATH];
+    char *p = localname,  *q = projname,  *r,  *s;
+    if (!path[0])
+        return name;
+    if (toupper(name[0]) != toupper(path[0]))
+        return name;
 
+    strcpy(localname, name);
+    strcpy(projname, path);
+    r = strrchr(localname, '\\');
+    if (r)
+        *r++ = 0;
+    // r has the point to the file name
+    else
+        r = localname;
+    s = strrchr(projname, '\\');
+    if (!s)
+        return name;
+    if (*s)
+        *s = 0;
+
+    while (*p &&  *q && toupper(*p) == toupper(*q))
+    {
+        p++, q++;
+    }
+    while (q != path && q[-1] != '\\')
+        p--, q--;
+    if (!(*p |  *q))
+        return r;
+    else if (*(p - 1) == '\\' && *(p - 2) == ':')
+        return name;
+    else
+    {
+        int count =  0;
+        if (*q != '\\')
+            while (p > localname &&  *p != '\\')
+                p--;
+        while (*q && (q = strchr(q + 1, '\\')))
+            count++;
+        projname[0] = 0;
+        while (count--)
+            strcat(projname, "..\\");
+        if (*p)
+        {
+            strcat(projname, p + 1);
+            strcat(projname, "\\");
+        }
+        strcat(projname, r);
+        return projname;
+    }
+}
 //-------------------------------------------------------------------------
 
 void absincludepath(char *name, char *path)
@@ -985,7 +1037,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
     PROJECTITEM *wa;
     int version;
     FILE *in;
-    char activeName[MAX_PATH];
+    char activeName[MAX_PATH], *p;
     struct xmlNode *root;
     struct xmlNode *nodes;
     activeName[0] = 0;
@@ -1013,7 +1065,11 @@ PROJECTITEM *RestoreWorkArea(char *name)
     ClearProfileNames();
     wa->type = PJ_WS;
     strcpy(wa->realName, name);
-    strcpy(wa->displayName, relpath(name, wa->realName));
+    p = relpath2(name, wa->realName);
+    if (strrchr(p, '\\'))
+        p = strrchr(p, '\\') + 1;
+    strcpy(wa->displayName, p);
+    
     
     TagEraseAllEntries();
     CloseAll();

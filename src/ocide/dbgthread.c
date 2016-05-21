@@ -50,7 +50,7 @@
 
 extern HINSTANCE hInstance;
 extern HWND hwndClient, hwndStatus, hwndFrame;
-extern HWND hwndRegister, hwndWatch, hwndStack, hwndThread, hwndMem, hwndASM;
+extern HWND hwndRegister, hwndWatch, hwndLocals, hwndStack, hwndThread, hwndMem, hwndASM;
 extern THREAD *activeThread;
 extern PROCESS *activeProcess;
 extern enum DebugState uState;
@@ -219,6 +219,7 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
                 PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
                     activeThread->hThread);
             PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
+            PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
             if (hwndStack)
                 PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
             if (hwndMem)

@@ -299,8 +299,33 @@ int FindGlobalSymbol(DEBUG_INFO **dbg_info, int Address, char *buf, int *type)
     }
     return rv;
 }
-//-------------------------------------------------------------------------
 
+//-------------------------------------------------------------------------
+NAMELIST *FindEnclosedAutos(SCOPE *scope)
+{
+    DEBUG_INFO *dbg ;
+    int funcId;
+    int line;
+    int Address;
+    char fileName[MAX_PATH];
+    if (!scope)
+       return 0;
+    dbg = findDebug(scope->address);
+
+    if (!dbg)
+        return 0;
+    Address = scope->address - dbg->loadbase + dbg->linkbase;
+    funcId = GetFuncId(dbg, Address);
+    if (funcId)
+    {
+        if (GetBreakpointLine(scope->address, fileName, &line, FALSE))
+        {
+           
+            return GetEnclosedAutos(dbg, funcId, line);
+        }
+    }
+    return 0;
+}
 // this does a lot of database lookups but it only happens when the user is entering
 // a new value to watch or whatever so it doesn't matter if it is slow...
 SCOPE * FindSymbol(DEBUG_INFO **dbg_info, SCOPE *scope, char *name, int *address, int *type)

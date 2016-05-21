@@ -563,6 +563,7 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             r.top = 0;
             r.bottom = HIWORD(lParam);
             MoveWindow(lsTabCtrl, r.left, r.bottom - 26, r.right - r.left, 26, 1);
+            InvalidateRect(lsTabCtrl, 0, 1);
             MoveWindow(hsubwnds[0], r.left, r.top, r.right - r.left, r.bottom -
                 r.top - 27, 1);
             MoveWindow(hsubwnds[1], r.left, r.top, r.right - r.left, r.bottom -

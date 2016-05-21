@@ -69,7 +69,7 @@ void FileBrowseLeft()
         if (!fileBrowseCursor)
         {
             HWND current = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
-            if (GetParent(hwndASM) == current || active == current)
+            if (active == current)
             {
                 SetFocus(current);
             }

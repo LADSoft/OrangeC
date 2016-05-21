@@ -61,11 +61,11 @@ static HWND hwndTabCtrl;
 
 static HBITMAP valueBitmap, itemBitmap;
 
-static char *nameTags[4] = { "Watch 1", "Watch 2", "Watch 3", "Watch 4" };
-static HWND hwndTree[4];
-static WATCHINFO *watchinfo_list[4];
-static int watchinfo_max[4];
-static int watchinfo_count[4];
+static char *nameTags[5] = { "Watch 1", "Watch 2", "Watch 3", "Watch 4"};
+HWND hwndWatchTree[5];
+WATCHINFO *watchinfo_list[5];
+int watchinfo_max[5];
+int watchinfo_count[5];
 
 void AddTypeInfoToName(DEBUG_INFO *dbg_info, VARINFO *v)
 {
@@ -94,7 +94,7 @@ void FreeTree(VARINFO *info, int page)
     {
         FreeTree(info->subtype, page);
         if (info->hTreeItem)
-            TreeView_DeleteItem(hwndTree[page], info->hTreeItem);
+            TreeView_DeleteItem(hwndWatchTree[page], info->hTreeItem);
         info = info->link;
     }
 }
@@ -277,7 +277,7 @@ HTREEITEM InsertItem(HTREEITEM hParent, HTREEITEM after, VARINFO *var, int page)
     t.hInsertAfter = after;
     t.UNNAMED_UNION item.mask = 0;
     t.UNNAMED_UNION item.lParam = (int)var;
-    rv = TreeView_InsertItem(hwndTree[page], &t);
+    rv = TreeView_InsertItem(hwndWatchTree[page], &t);
     return rv;
 }
 
@@ -295,7 +295,7 @@ void InsertSubTree(HTREEITEM parent, HTREEITEM after, VARINFO *var, int index, i
         if (var->pointer && !var->subtype)
         {
             var->hTreeHolder = InsertItem(var->hTreeItem, TVI_LAST, var, page);
-            TreeView_Expand(hwndTree[page], var->hTreeItem, TVE_COLLAPSE);
+            TreeView_Expand(hwndWatchTree[page], var->hTreeItem, TVE_COLLAPSE);
         }
         else
             InsertSubTree(var->hTreeItem, 0, var->subtype, index, page);
@@ -312,6 +312,7 @@ void AddItem(DEBUG_INFO *dbg, VARINFO *var,
     WATCHINFO *x = MatchItem(var, page);
     if (x)
     {
+        x->marked = FALSE;
         FreeVarInfo(var);
     }
     else
@@ -365,15 +366,15 @@ void DeleteItem(POINT *pt, int page)
     TV_ITEM item;
     VARINFO *v;
 
-    ScreenToClient(hwndTree[page], pt);
+    ScreenToClient(hwndWatchTree[page], pt);
     t.pt =  *pt;
-    titem = TreeView_HitTest(hwndTree[page], &t);
+    titem = TreeView_HitTest(hwndWatchTree[page], &t);
     if (titem)
     {
         int c;
         item.mask = TVIF_PARAM;
         item.hItem = titem;
-        TreeView_GetItem(hwndTree[page], &item);
+        TreeView_GetItem(hwndWatchTree[page], &item);
         v = (VARINFO*)item.lParam;
         x = &watchinfo_list[page][c = v->watchindex];
         FreeTree(x->info, page);
@@ -392,7 +393,7 @@ void DeleteItem(POINT *pt, int page)
 void DeleteAllItems(int page)
 {
     int i;
-    TreeView_DeleteAllItems(hwndTree[page]);
+    TreeView_DeleteAllItems(hwndWatchTree[page]);
     for (i = 0; i < watchinfo_count[page]; i++)
         FreeVarInfo(watchinfo_list[page][i].info);
     watchinfo_count[page] = 0;
@@ -463,7 +464,7 @@ void RefreshItems(int page)
         }
         RefreshItem(wi, offset, activeThread);
     }
-    InvalidateRect(hwndTree[page], 0, 0);
+    InvalidateRect(hwndWatchTree[page], 0, 0);
 }
 
 //-------------------------------------------------------------------------
@@ -478,7 +479,7 @@ void ExpandPointer(VARINFO *v, int code, int page)
             int outofscope = ((val = v->derefaddress) == -1 && !ReadValue(v->address, &val, 4, v)) || !val;
             if (!v->subtype && watchinfo_list[page][v->watchindex].dbg_info)
             {
-                TreeView_DeleteItem(hwndTree[page], v->hTreeHolder);
+                TreeView_DeleteItem(hwndWatchTree[page], v->hTreeHolder);
                 ExpandPointerInfo(watchinfo_list[page][v->watchindex].dbg_info, v);
                 if (v->subtype->structure)
                 {
@@ -679,32 +680,35 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case TABN_SELECTED:
                 {
                     LSTABNOTIFY *p = (LSTABNOTIFY *)h;
-                    ShowWindow(hwndTree[selected], SW_HIDE);
-                    for (i=0; i < 4; i++)
-                        if (p->lParam == (LPARAM)hwndTree[i])
+                    ShowWindow(hwndWatchTree[selected], SW_HIDE);
+                    for (i=0; i < 5; i++)
+                        if (p->lParam == (LPARAM)hwndWatchTree[i])
                             selected = i;
-                    ShowWindow(hwndTree[selected], SW_SHOW);
+                    ShowWindow(hwndWatchTree[selected], SW_SHOW);
                     break;
                 }
             case NM_RCLICK:
                 {
-                    HMENU menu = LoadMenuGeneric(hInstance, "WATCHMENU");
-                    HMENU popup = GetSubMenu(menu, 0);
-                    TV_HITTESTINFO t;
-                    HTREEITEM titem;
-                    GetCursorPos(&t.pt);
-                    ScreenToClient(hwndTree[selected], &t.pt);
-                    titem = TreeView_HitTest(hwndTree[selected], &t);
-                    if (!titem || TreeView_GetParent(hwndTree[selected], titem))
+                    if (selected < 4)
                     {
-                        EnableMenuItem(popup, IDM_DELETEWATCH, MF_GRAYED);
+                        HMENU menu = LoadMenuGeneric(hInstance, "WATCHMENU");
+                        HMENU popup = GetSubMenu(menu, 0);
+                        TV_HITTESTINFO t;
+                        HTREEITEM titem;
+                        GetCursorPos(&t.pt);
+                        ScreenToClient(hwndWatchTree[selected], &t.pt);
+                        titem = TreeView_HitTest(hwndWatchTree[selected], &t);
+                        if (!titem || TreeView_GetParent(hwndWatchTree[selected], titem))
+                        {
+                            EnableMenuItem(popup, IDM_DELETEWATCH, MF_GRAYED);
+                        }
+                        InsertBitmapsInMenu(popup);
+                        GetCursorPos(&menupos);
+                        TrackPopupMenuEx(popup, TPM_BOTTOMALIGN | TPM_LEFTBUTTON,
+                            menupos.x, menupos.y, hwndFrame, NULL);
+                        DestroyMenu(menu);
                     }
-                    InsertBitmapsInMenu(popup);
-                    GetCursorPos(&menupos);
-                    TrackPopupMenuEx(popup, TPM_BOTTOMALIGN | TPM_LEFTBUTTON,
-                        menupos.x, menupos.y, hwndFrame, NULL);
-                    DestroyMenu(menu);
-                    SetFocus(hwndTree[selected]);
+                    SetFocus(hwndWatchTree[selected]);
                 }
                 return 0;
             case TVN_ITEMEXPANDING:
@@ -718,7 +722,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 nmt = (LPNMTREEVIEW)h;
                 item.mask = TVIF_PARAM;
                 item.hItem = (HTREEITEM)nmt->itemNew.hItem;
-                TreeView_GetItem(hwndTree[selected], &item);
+                TreeView_GetItem(hwndWatchTree[selected], &item);
                 var = (VARINFO*)item.lParam;
                 if (var->editable)
                 {
@@ -731,7 +735,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 nmt = (LPNMTREEVIEW)h;
                 item.mask = TVIF_PARAM;
                 item.hItem = (HTREEITEM)nmt->itemNew.hItem;
-                TreeView_GetItem(hwndTree[selected], &item);
+                TreeView_GetItem(hwndWatchTree[selected], &item);
                 var = (VARINFO*)item.lParam;
                 ChangeData(var, nmt->itemNew.pszText, selected);
                 RefreshItems(selected);
@@ -751,10 +755,10 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             ApplyDialogFont(hwndTabCtrl);
             r.bottom -= 25;
             for (i=3; i >0 ; i--)
-                hwndTree[i] = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE, &r, &tch);
-            hwndTree[0] = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE | WS_VISIBLE, &r, &tch);
+                hwndWatchTree[i] = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE, &r, &tch);
+            hwndWatchTree[0] = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE | WS_VISIBLE, &r, &tch);
             for (i=3; i >=0 ; i--)
-                SendMessage(hwndTabCtrl, TABM_ADD, (WPARAM)nameTags[i], (LPARAM)hwndTree[i]);
+                SendMessage(hwndTabCtrl, TABM_ADD, (WPARAM)nameTags[i], (LPARAM)hwndWatchTree[i]);
             return 0;
         case WM_ADDWATCHINDIRECT:
             win = (HWND)wParam;
@@ -813,7 +817,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case ID_SETADDRESS:
                 for (i=3; i >=0; i--)
                     RefreshItems(i);
-                InvalidateRect(hwndTree[selected], 0, 0);
+                InvalidateRect(hwndWatchTree[selected], 0, 0);
                 break;
             case IDM_DELETEWATCH:
                 DeleteItem(&menupos, selected);
@@ -825,9 +829,9 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_DESTROY:
             for (i=3; i >=0 ; i--)
-                TreeView_DeleteAllItems(hwndTree[i]);
+                TreeView_DeleteAllItems(hwndWatchTree[i]);
             for (i=3; i >=0 ; i--)
-                DestroyWindow(hwndTree[i]);
+                DestroyWindow(hwndWatchTree[i]);
             DeleteObject(valueBitmap);
             DeleteObject(itemBitmap);
             hwndWatch = 0;
@@ -839,8 +843,9 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             r.top = 0;
             r.bottom = HIWORD(lParam);
             MoveWindow(hwndTabCtrl, r.left, r.bottom - 24, r.right - r.left, 24, 1);
+            InvalidateRect(hwndTabCtrl, 0, 1);
             for (i=3; i >=0 ; i--)
-                MoveWindow(hwndTree[i], r.left, r.top, r.right - r.left, r.bottom -
+                MoveWindow(hwndWatchTree[i], r.left, r.top, r.right - r.left, r.bottom -
                     r.top - 25, 0);
             return 0;
         case WM_CLOSE:

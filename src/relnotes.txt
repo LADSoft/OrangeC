@@ -1,6 +1,21 @@
 Release notes:
 
-version 5.67.1:
+version 5.68.1:
+    ocide:      improve disassembly window
+    ocide:      add 'locals' window
+    ocide:      add toolbar for profile and build type
+    ocide:      fix vagary with pressing shift while alt key was held down
+                made ALT-{ and ALT-} not work reliably.  Now you don't have to hold
+                the shift key down while pressing those key sequences.
+    ocide:      fix some display issues with paths having ..\somedir\file
+                when they only needed to have 'file'
+    ocide:      run without debug not available if there is no active project
+                (crashed)
+    ocide:      watch info for auto variables was not available on the last
+                line of a block
+    ocide:      improve display redraw when undocked windows are resized
+
+version 5.67.1: 05/15/2016
     ocide:      24-bit bitmaps not displayed properly in the resource workshop
     ocide:      always save dialogs as DIALOGEX to avoid problems with compiling the RC file
     ocide:      always save menus as MENUEX to avoid problems with compiling the RC file

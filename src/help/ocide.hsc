@@ -43,7 +43,7 @@ Previous
 Next
 FALSE
 
-117
+119
 10
 Scribble10
 index
@@ -1345,7 +1345,7 @@ Writing
 
 
 FALSE
-18
+19
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1440\cf1\b\fs32 Debugging Windows\cf0\b0\f1\fs20 
@@ -1362,6 +1362,7 @@ FALSE
 \par \tab\cf2\strike Call Stack Window\cf3\strike0\{linkID=700\}\cf0\tab Shows a back trace of the processor stack
 \par \tab\cf2\strike Threads Window\cf3\strike0\{linkID=710\}\cf0\tab Shows a list of threads
 \par \tab\cf2\strike Watch Window\cf3\strike0\{linkID=650\}\cf0\tab Shows the value of variables
+\par \tab\cf2\strike Locals Window\cf3\strike0\{linkID=655\}\cf0\tab Shows the values of local(auto) variables that are currently in scope
 \par \pard\ri1440\tx680\tx3680 
 \par }
 330
@@ -1650,7 +1651,7 @@ Writing
 
 
 FALSE
-23
+25
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Breakpoints\cf2\b0\f1\fs20 
@@ -1661,6 +1662,8 @@ FALSE
 \par from the \cf3\strike Editor Context Menu\cf4\strike0\{linkID=150\}\cf2 , or by selecting a line in an editor window and pressing F9.
 \par 
 \par Breakpoints may be set while the \cf3\strike Integrated Debugger\cf4\strike0\{linkID=300\}\cf2  is stopped, but only take effect when the debugger is running.  
+\par 
+\par Breakpoints may also be set while in the \cf3\strike Disassembly Window\cf4\strike0\{linkID=670\}\cf2 .   In this case a breakpoint can be set on arbitrary machine instructions, not just at the beginning of a line.
 \par 
 \par When no breakpoints are set, the program stops at the \i main()\i0  or \i Winmain()\i0  function when run, as if a breakpoint had been set there.
 \par 
@@ -1762,7 +1765,7 @@ Writing
 
 
 FALSE
-23
+24
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\ri1480\cf1\b\fs32 Toolbars\cf0\b0\f1\fs20 
@@ -1784,7 +1787,8 @@ FALSE
 \par \tab\cf3\strike Bookmark Toolbar\cf2\strike0\{linkID=780\}\cf0 
 \par \pard\ri1460\tx680\tx3680\tab\cf3\strike Build Toolbar\cf2\strike0\{linkID=750\}
 \par \cf0\tab\cf3\strike Debug Toolbar\cf2\strike0\{linkID=760\}\cf0 
-\par \tab\cf3\strike Thread Toolbar\cf2\strike0\{linkID=790\}\cf0 
+\par \tab\cf3\strike Thread Toolbar\cf2\strike0\{linkID=790\}
+\par \tab\cf3\strike Build Type Toolbar\cf2\strike0\{linkID=755\}\cf0 
 \par }
 460
 Scribble460
@@ -2756,7 +2760,7 @@ FALSE
 650
 IDH_WATCH_WINDOW
 Watch Window
-debugging windows;special windows;watch window;windows;
+debugging windows;locals window;special windows;watch window;windows;
 
 
 
@@ -2784,6 +2788,35 @@ FALSE
 \par 
 \par The window is updated automatically each time the program stops at a break point.
 \par \pard\fi-2800\li2800\ri1460\tx720\tx2820\f1 
+\par }
+655
+Scribble655
+Locals Window
+locals window;watch window;
+
+
+
+Writing
+
+
+
+FALSE
+16
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;\red0\green0\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Locals Window\cf0\b0\f1\fs20 
+\par \pard\ri1480 
+\par \f0 The watch window is accessible from the \cf2\strike Debug->Windows Menu\cf3\strike0\{linkID=320\}\cf0 .  It  shows the value of variables which are currently in scope, and allows them to be modified.  It appears similar to what follows:
+\par 
+\par \pard\ri1480\qc\cf3\{bmc wlocals.png\}\cf0 
+\par \pard\ri1480 
+\par \pard\cf4 This window is another kind of \cf2\strike Watch Window\cf3\strike0\{linkID=650\}, \cf0 which automatically selects the local (auto) variables which are currently in scope for easy viewing\cf4 
+\par \b 
+\par \pard\ri1480\cf0\b0 When a value is displayed, clicking on the right-hand side of the value will open a small text window.  Typing a new value then pressing ENTER will cause that value to be written to the executable's memory.
+\par 
+\par The window is updated automatically each time the program stops at a break point.
+\par \pard\fi-2800\li2800\ri1460\tx720\tx2820\f1 
+\par \pard\lang1049 
 \par }
 660
 Scribble660
@@ -2814,7 +2847,7 @@ FALSE
 \par }
 670
 IDH_ASSEMBLY_WINDOW
-Assembly Window
+Disassembly Window
 assembly window;debugging windows;special windows;windows;
 
 
@@ -2824,10 +2857,10 @@ Writing
 
 
 FALSE
-15
+19
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
-\viewkind4\uc1\pard\ri1460\cf1\b\fs32 Assembly Window\cf0\b0\f1\fs20 
+\viewkind4\uc1\pard\ri1460\cf1\b\fs32 Disassembly Window\cf0\b0\f1\fs20 
 \par 
 \par \f0 The Assembly Window is accessed from the \cf2\strike Debug->Windows Menu\cf3\strike0\{linkID=320\}\cf0 .  It shows assembly language instructions for the program.  It appears similar to what follows:
 \par 
@@ -2835,9 +2868,13 @@ FALSE
 \par \pard\ri1460 
 \par Generally the window will start at the position the break point is at.  However if focus is set to the window, then the 'goto' toolbar item (or CTRL-G) will bring up a dialog allowing the address to be changed.  A number can be entered here, or the name of a variable.  It is also possible to type an \cf2\strike expression\cf3\strike0\{linkID=800\}\cf0  into this box and have it evaluated.
 \par 
-\par In the window, disassembled instructions will be shown in blue and commentary showing the module name and line data will be shown in green.  
+\par In the window, disassembled instructions will be shown in a light gray and commentary showing the source code will be in a darker gray.  
 \par 
 \par While the window has focus, the up and down arrows and page up and page down keys will allow navigation through the disassembly.  As a convenience, pressing the HOME key will show the executable code address where the program counter is currently stopped.
+\par 
+\par While the disassembly windows has focus, debugger single-step commands will be for individual lines of disassembled code, instead of for source code file lines.
+\par 
+\par Clicking on a source code line will bring up an \cf2\strike editor window\cf3\strike0\{linkID=50\}\cf0  to allow editing the source code.   Clicking on a disassembled instruction will result in a \cf2\strike breakpoint\cf3\strike0\{linkID=410\}\cf0  being set or cleared.
 \par 
 \par }
 680
@@ -3061,7 +3098,7 @@ FALSE
 750
 IDH_BUILD_TOOLBAR
 Build Toolbar
-build;build toolbar;make;toolbars;
+build;build toolbar;build type toolbar;make;toolbars;
 
 
 
@@ -3088,6 +3125,33 @@ FALSE
 \par \f1 
 \par \f0\tab\b Stop Build\tab\b0 Stop the entire build\f1 
 \par \f0 
+\par 
+\par }
+755
+IDH_BUILD_TYPE_TOOLBAR
+Build Type Toolbar
+build;build toolbar;build type toolbar;
+
+
+
+Writing
+
+
+
+FALSE
+14
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Build Type Toolbar\cf0\lang1049\b0\f1\fs20 
+\par 
+\par \pard\ri1480\lang1033\f0 The Build Type toolbar has two windows that allows choice of the profile and the build type.  It may be customized using the \cf2\strike Toolbar Customization Dialog\cf3\strike0\{linkID=860\}.\cf0   In the undocked state, and when all buttons are in their normal position, it appears as follows:
+\par 
+\par \pard\ri1480\qc\cf3\{bmc tbuildtype.png\}\cf0 
+\par \pard\ri1480\f1 
+\par \f0 The Thread toolbar has the following options:
+\par \pard\fi-4200\li4200\ri1440\tx1400\tx4220\b\tab Profiles\b0\tab a combo-box which has a list of existing \cf2\strike profiles\cf3\strike0\{linkID=585\}\cf0 .   Selecting one sets the build profile.
+\par \tab\b Build Type\b0\tab a combo-box which allows the choice of building in either debug or release mode.
+\par 
 \par 
 \par }
 760
@@ -4336,7 +4400,7 @@ FALSE
 0
 0
 0
-179
+181
 1 General Information
 2 Welcome=Scribble10
 2 Getting Started=IDH_GETTING_STARTED
@@ -4417,12 +4481,13 @@ FALSE
 2 Debugging Windows=Scribble320
 3 Hardware Breakpoints=IDH_HARDWARE_BREAKPOINTS_DIALOG
 3 Data Breakpoints=IDH_DATA_BREAKPOINTS_DIALOG
-3 Assembly Window=IDH_ASSEMBLY_WINDOW
+3 Disassembly Window=IDH_ASSEMBLY_WINDOW
 3 Memory Window=IDH_MEMORY_WINDOW
 3 Register Window=IDH_REGISTER_WINDOW
 3 Call Stack Window=IDH_STACK_WINDOW
 3 Threads Window=IDH_THREAD_WINDOW
 3 Watch Window=IDH_WATCH_WINDOW
+3 Locals Window=Scribble655
 1 Menus
 2 Menus=Scribble40
 2 Main Menu
@@ -4484,6 +4549,7 @@ FALSE
 1 Workarea Window
 2 Workarea Window=Scribble190
 2 Build Toolbar=IDH_BUILD_TOOLBAR
+2 Build Type Toolbar=IDH_BUILD_TYPE_TOOLBAR
 2 Build Menu=Scribble250
 2 Workarea Context Menu=Scribble210
 2 New Work Area Dialog=IDH_NEW_WORKAREA_DIALOG

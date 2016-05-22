@@ -899,33 +899,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case IDM_BUILDRULES:
                 BuildRulesCustomize();
                 break;
-                /*
-            case IDM_VIEWBUILDBAR:
-                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWBUILDBAR);
-                dmgrHideWindow(DID_BUILDTOOL, x_state);
-                SetMenuCheckedState(hMenuMain, DID_BUILDTOOL, IDM_VIEWBUILDBAR);
-                break;
-            case IDM_VIEWBOOKMARKBAR:
-                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWBOOKMARKBAR);
-                dmgrHideWindow(DID_BOOKMARKTOOL, x_state);
-                SetMenuCheckedState(hMenuMain, DID_BOOKMARKTOOL, IDM_VIEWBOOKMARKBAR);
-                break;
-            case IDM_VIEWNAVBAR:
-                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWNAVBAR);
-                dmgrHideWindow(DID_NAVTOOL, x_state);
-                SetMenuCheckedState(hMenuMain, DID_NAVTOOL, IDM_VIEWNAVBAR);
-                break;
-            case IDM_VIEWEDITBAR:
-                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWEDITBAR);
-                dmgrHideWindow(DID_EDITTOOL, x_state);
-                SetMenuCheckedState(hMenuMain, DID_EDITTOOL, IDM_VIEWEDITBAR);
-                break;
-            case IDM_VIEWDEBUGBAR:
-                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWDEBUGBAR);
-                dmgrHideWindow(DID_DEBUGTOOL, x_state);
-                SetMenuCheckedState(hMenuMain, DID_DEBUGTOOL, IDM_VIEWDEBUGBAR);
-                break;
-                */
             case IDM_VIEWSTACK:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWSTACK);
                 dmgrHideWindow(DID_STACKWND, x_state);

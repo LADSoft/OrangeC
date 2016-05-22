@@ -59,7 +59,7 @@
 extern char szInstallPath[];
 extern PROJECTITEM *workArea;
 extern LOGFONT systemDialogFont;
-extern HWND hwndFrame;
+extern HWND hwndFrame, hwndProject;
 extern HINSTANCE hInstance;
 extern BUILDRULE *buildRules;
 extern unsigned int helpMsg;
@@ -966,9 +966,14 @@ long APIENTRY NewProfileProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
                     name[0] = 0;
                     name[SendDlgItemMessage(hwnd, IDC_NEWPROFILE, WM_GETTEXT, 256, (LPARAM)name)] = 0;
                     if (name[0])
+                    {
+                        SendMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
                         EndDialog(hwnd, 1);
+                    }
                     else
+                    {
                         ExtendedMessageBox("Error", 0, "Please enter a new profile name");
+                    }
                     break;
                 case IDCANCEL:
                     EndDialog(hwnd, 0);

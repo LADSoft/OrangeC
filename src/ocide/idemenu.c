@@ -538,13 +538,6 @@ void InitMenuPopup(HMENU menu)
     BOOL x_state;
     int selstart, selend;
     SetWindowMenu();
-    /*
-    SetMenuCheckedState(menu, DID_BUILDTOOL, IDM_VIEWBUILDBAR);
-    SetMenuCheckedState(menu, DID_NAVTOOL, IDM_VIEWNAVBAR);
-    SetMenuCheckedState(menu, DID_BOOKMARKTOOL, IDM_VIEWBOOKMARKBAR);
-    SetMenuCheckedState(menu, DID_EDITTOOL, IDM_VIEWEDITBAR);
-    SetMenuCheckedState(menu, DID_DEBUGTOOL, IDM_VIEWDEBUGBAR);
-    */
     SetMenuCheckedState(menu, DID_TABWND, IDM_VIEWPROJECT);
     SetMenuCheckedState(menu, DID_PROPSWND, IDM_VIEWPROPS);
     SetMenuCheckedState(menu, DID_ERRORWND, IDM_VIEWERROR);

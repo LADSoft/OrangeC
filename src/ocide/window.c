@@ -50,11 +50,12 @@
 #include "..\version.h"
 #include <sys\stat.h>
 
-#define INITIAL_DOCK_COUNT 11
+#define INITIAL_DOCK_COUNT 12
 
 int initialIDs[INITIAL_DOCK_COUNT] = 
 {
-    DID_TABWND, DID_ERRORWND, DID_WATCHWND, DID_LOCALSWND, DID_PROPSWND, DID_EDITTOOL, DID_NAVTOOL, DID_BUILDTOOL,
+    DID_TABWND, DID_ERRORWND, DID_WATCHWND, DID_LOCALSWND, DID_PROPSWND, DID_EDITTOOL, 
+    DID_BUILDTYPETOOL, DID_NAVTOOL, DID_BUILDTOOL,
         DID_DEBUGTOOL, DID_BOOKMARKTOOL, DID_THREADSTOOL
 };
 CCD_params initialDocks[INITIAL_DOCK_COUNT] = 
@@ -155,6 +156,25 @@ CCD_params initialDocks[INITIAL_DOCK_COUNT] =
     }
     ,
     { // edit tool
+        DOCK_TOP, DOCK_TOP, FALSE, 0, 0, 0, 0, 
+        {
+            0, 0, 200, 30
+        }
+        , 
+        {
+            0, 0, 200, 30
+        }
+        , 
+        {
+            0, 0, 200, 30
+        }
+        , 
+        {
+            0, 0, 0, 0
+        }
+    }
+    , 
+    { // build type tool
         DOCK_TOP, DOCK_TOP, FALSE, 0, 0, 0, 0, 
         {
             0, 0, 200, 30

@@ -56,9 +56,10 @@ extern int editFlags;
 extern DWINFO *editWindows;
 extern HINSTANCE hInstance;
 extern struct tagfile *tagFileList;
-extern HWND hwndToolNav, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark;
+extern HWND hwndToolNav, hwndToolBuildType, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark;
 extern HWND hwndClient, hwndFrame;
 extern HWND hwndSrcTab;
+extern HWND hwndProject;
 extern char *findhist[MAX_COMBO_HISTORY];
 extern char *findbrowsehist[MAX_COMBO_HISTORY];
 extern char *replacehist[MAX_COMBO_HISTORY];
@@ -866,6 +867,9 @@ void RestoreToolBars(struct xmlNode *node, int version)
     {
         switch (id)
         {
+            case DID_BUILDTYPETOOL:
+                hwnd = hwndToolBuildType;
+                break;
             case DID_NAVTOOL:
                 hwnd = hwndToolNav;
                 break;
@@ -1029,6 +1033,7 @@ void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
         }
         node = node->next;
     }
+    SendMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
 }
 //-------------------------------------------------------------------------
 
@@ -1368,6 +1373,7 @@ void SaveToolBarA(FILE *out, HWND hwnd)
 void SaveToolBars(FILE *out)
 {
     SaveToolBarA(out, hwndToolNav);
+    SaveToolBarA(out, hwndToolBuildType);
     SaveToolBarA(out, hwndToolEdit);
     SaveToolBarA(out, hwndToolBuild);
     SaveToolBarA(out, hwndToolDebug);

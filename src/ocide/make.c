@@ -46,14 +46,14 @@
 #include "header.h"
 
 extern int errcount, warncount;
-extern HWND hwndFrame;
+extern HWND hwndFrame, hwndProject;
 extern char makeTempFile[MAX_PATH];
 extern char szInstallPath[];
 extern BUILDRULE *buildRules;
 extern PROJECTITEM *workArea;
 extern PROJECTITEM *internalDepends;
 extern PROJECTITEM *activeProject;
-extern HashTable *tables;
+extern HWND hwndTbProfile, hwndTbBuildType;
 
 int making;
 
@@ -560,6 +560,7 @@ static DWORD MakerThread(void *p)
         ErrWarnCounts();
     }
     making = FALSE;
+    PostMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
     ReleaseSemaphore(makeSem, 1, NULL);
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     TagLinesAdjust(0, TAGM_UPDATEDEBUG);
@@ -573,6 +574,8 @@ void Maker(PROJECTITEM *pj, BOOL clean)
 {
     DWORD threadhand;
     stopBuild = FALSE;
+    EnableWindow(hwndTbProfile, FALSE);
+    EnableWindow(hwndTbBuildType, FALSE);
     SaveDrawAll();
     ResSaveAll();
     SaveAllProjects(workArea, FALSE);

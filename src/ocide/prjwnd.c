@@ -64,6 +64,11 @@ extern HWND hwndEdit;
 extern PROJECTITEM *editItem;
 extern char *szprjEditClassName;
 extern LOGFONT systemDialogFont;
+extern HWND hwndTbBuildType, hwndTbProfile;
+extern PROFILENAMELIST *profileNames;
+extern char *sysProfileName;
+extern char currentProfileName[256] ;
+extern int profileDebugMode;
 
 LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
@@ -599,6 +604,79 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_COMMAND:
             switch (LOWORD(wParam))
             {
+                case ID_TBPROFILE:
+                    if (HIWORD(wParam) == CBN_SELENDOK)
+                    {
+                        int i = SendMessage(hwndTbProfile, CB_GETCURSEL, 0 , 0);
+                        if (i != CB_ERR)
+                        {
+                            if (i == 0)
+                            {
+                                strcpy(currentProfileName, sysProfileName);
+                            }
+                            else
+                            {
+                                PROFILENAMELIST *pf = profileNames;
+                                while (pf && --i)
+                                    pf = pf->next;
+                                if (pf)
+                                {
+                                    strcpy(currentProfileName, pf->name);
+                                }
+                            }
+                            MarkChanged(workArea, TRUE);
+                        }
+                    }
+                    break;
+                case ID_TBBUILDTYPE:
+                    if (HIWORD(wParam) == CBN_SELENDOK)
+                    {
+                        int i = SendMessage(hwndTbBuildType, CB_GETCURSEL, 0 , 0);
+                        if (i != CB_ERR)
+                        {
+                            profileDebugMode = i == 0 ? 1 : 0;
+                            MarkChanged(workArea, TRUE);
+                        }
+                    }
+                    break;
+                case IDM_RESETPROFILECOMBOS:
+                {
+                    HWND htemp;
+                    PROFILENAMELIST *pf;
+                    int selected,n;
+                    int count;
+                    POINT pt;
+                    pf = profileNames;
+                    selected = 0;
+                    count = 0;
+                    SendMessage(hwndTbProfile, CB_RESETCONTENT, 0, 0);
+                    SendMessage(hwndTbProfile, CB_ADDSTRING, 0, (LPARAM)sysProfileName);
+                    while (pf)
+                    {
+                        count++;
+                        if (!strcmp(pf->name,currentProfileName))
+                            selected = count;
+                        SendMessage(hwndTbProfile, CB_ADDSTRING, 0, (LPARAM)pf->name);
+                            
+                        pf = pf->next;
+                            
+                    }
+                    SendMessage(hwndTbProfile, CB_SETCURSEL, selected, 0);
+                    SendMessage(hwndTbBuildType, CB_RESETCONTENT, 0, 0);
+                    SendMessage(hwndTbBuildType, CB_ADDSTRING, 0, (LPARAM)"Debug");
+                    SendMessage(hwndTbBuildType, CB_ADDSTRING, 0, (LPARAM)"Release");
+                    SendMessage(hwndTbBuildType, CB_SETCURSEL, profileDebugMode ? 0 : 1, 0);
+                    
+                    pt.x = 5;
+                    pt.y = 5;
+                    htemp = ChildWindowFromPoint(hwndTbProfile, pt);
+                    SendMessage(htemp, EM_SETREADONLY, 1, 0);
+                    htemp = ChildWindowFromPoint(hwndTbBuildType, pt);
+                    SendMessage(htemp, EM_SETREADONLY, 1, 0);
+                    EnableWindow(hwndTbProfile, TRUE);
+                    EnableWindow(hwndTbBuildType, TRUE);
+                    break;
+                }
             case IDM_IMPORT_CWS:
                 ImportProject(FALSE);
                 break;

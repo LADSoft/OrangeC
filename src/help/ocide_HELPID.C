@@ -85,8 +85,9 @@
 #define  Scribble630            (630)       // Librarian Properties
 #define  Scribble640            (640)       // Custom Build Properties
 #define  IDH_WATCH_WINDOW       (650)       // Watch Window
+#define  Scribble655            (655)       // Locals Window
 #define  Scribble660            (660)       // Watch Context Menu
-#define  IDH_ASSEMBLY_WINDOW    (670)       // Assembly Window
+#define  IDH_ASSEMBLY_WINDOW    (670)       // Disassembly Window
 #define  IDH_MEMORY_WINDOW      (680)       // Memory Window
 #define  Scribble690            (690)       // Memory Context Menu
 #define  IDH_STACK_WINDOW       (700)       // Call Stack Window
@@ -95,6 +96,7 @@
 #define  IDH_HARDWARE_BREAKPOINTS_DIALOG (730) // Hardware Breakpoints Dialog
 #define  IDH_EDIT_TOOLBAR       (740)       // Edit Toolbar
 #define  IDH_BUILD_TOOLBAR      (750)       // Build Toolbar
+#define  IDH_BUILD_TYPE_TOOLBAR (755)       // Build Type Toolbar
 #define  IDH_DEBUG_TOOLBAR      (760)       // Debug Toolbar
 #define  IDH_NAV_TOOLBAR        (770)       // Navigation Toolbar
 #define  IDH_BOOKMARK_TOOLBAR   (780)       // Bookmark Toolbar

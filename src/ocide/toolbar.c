@@ -67,9 +67,9 @@ extern FILEBROWSE *fileBrowseCursor;
 extern FILEBROWSE *fileBrowseInfo;
 extern PROJECTITEM *activeProject;
 
-HWND hwndTbFind, hwndTbThreads, hwndTbProcedure;
+HWND hwndTbFind, hwndTbThreads, hwndTbProfile, hwndTbBuildType, hwndTbProcedure;
 
-HWND hwndToolNav, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark, hwndToolThreads;
+HWND hwndToolNav, hwndToolBuildType, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark, hwndToolThreads;
 
 static char *navhints[] = 
 {
@@ -77,6 +77,10 @@ static char *navhints[] =
     "Back", "Forward", "", "Goto Line [Ctl+G]", "",
     "Find [Ctl+F]", "Find Next [F3]", "Replace [Ctl+H]", "Find In Files", "", 
      "Customize"
+};
+static char *buildTypehints[] = 
+{
+    "", "Profile", "", "Build Type"
 };
 static char *edithints[] = 
 {
@@ -159,6 +163,33 @@ static TBBUTTON navButtons[] =
         130, 10000, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT, {0}, 0, -1
     }
     , 
+    {
+        0, 0, 0, 0
+    }
+    , 
+};
+static TBBUTTON buildTypeButtons[] = 
+{
+    {
+        60, 10000, TBSTATE_WRAP, TBSTYLE_SEP, {0}, 0, -1
+    }
+    ,
+    {
+        160, 10001, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT, {0}, 0, -1
+    }
+    ,
+    {
+        0, 0, TBSTATE_WRAP, TBSTYLE_SEP, {0}, 0, -1 // not a control, a real separator
+    }
+    ,
+    {
+        80, 10002, TBSTATE_WRAP, TBSTYLE_SEP, {0}, 0, -1
+    }
+    ,
+    {
+        161, 10003, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT, {0}, 0, -1
+    }
+    ,
     {
         0, 0, 0, 0
     }
@@ -422,6 +453,7 @@ static TBCUSTOMDATA customData[] =
     { "Debug Toolbar", DID_DEBUGTOOL, &hwndToolDebug },
     { "Edit Toolbar", DID_EDITTOOL, &hwndToolEdit },
     { "Navigation Toolbar", DID_NAVTOOL, &hwndToolNav },    
+    { "Build Type Toolbar", DID_BUILDTYPETOOL, &hwndToolBuildType },    
     { "Threads Toolbar", DID_THREADSTOOL, &hwndToolThreads },
 } ;
 static void PopulateCustomView(HWND hwnd)
@@ -618,6 +650,8 @@ void RedrawToolBar(void)
         (mf_state, 0));
     SendMessage(hwndToolNav, TB_ENABLEBUTTON, IDM_FIND, MAKELONG
         (mf_state, 0));
+    SendMessage(hwndToolBuildType, TB_ENABLEBUTTON, IDM_FIND, MAKELONG
+        (mf_state, 0));
     SendMessage(hwndToolEdit, TB_ENABLEBUTTON, IDM_TOUPPER, MAKELONG
         (mf_state /*&& selstart != selend*/, 0));
     SendMessage(hwndToolEdit, TB_ENABLEBUTTON, IDM_TOLOWER, MAKELONG
@@ -785,6 +819,8 @@ void MakeToolBar(HWND hwnd)
     RegisterTbControls();
     hwndToolEdit = CreateToolBarWindow(DID_EDITTOOL, hwndFrame, hwndFrame, 16,
         15, ID_EDITTB, 17, editButtons, edithints, 0, "Edit Tools", IDH_EDIT_TOOLBAR);
+    hwndToolBuildType = CreateToolBarWindow(DID_BUILDTYPETOOL, hwndFrame, hwndFrame,
+        16, 15, ID_BUILDTYPETB, 4, buildTypeButtons, buildTypehints, 0, "Build Type", IDH_BUILD_TYPE_TOOLBAR);
     hwndToolNav = CreateToolBarWindow(DID_NAVTOOL, hwndFrame, hwndFrame, 16,
         15, ID_NAVTB, 13, navButtons, navhints, 0, "Nav Tools", IDH_NAV_TOOLBAR);
     hwndToolBuild = CreateToolBarWindow(DID_BUILDTOOL, hwndFrame, hwndFrame,
@@ -813,6 +849,24 @@ void MakeToolBar(HWND hwnd)
                         0,0,100, 200, hwndStack, (HMENU)ID_TBPROCEDURE, hInstance, 0);  
     SendMessage(hwndToolThreads, LCF_ADDCONTROL, 3, (LPARAM)hwndTbProcedure);
   
+    hwndTemp = CreateWindowEx(WS_EX_TRANSPARENT, "xccTbStatic", "Profile:", WS_CHILD +
+        WS_VISIBLE, 
+                        0,0,100, 200, hwndFrame, 0, hInstance, 0);  
+    SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 0, (LPARAM)hwndTemp);
+    hwndTbProfile = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
+        WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
+                        0,0,100, 200, hwndProject, (HMENU)ID_TBPROFILE, hInstance, 0);  
+    SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 1, (LPARAM)hwndTbProfile);
+    hwndTemp = CreateWindowEx(WS_EX_TRANSPARENT, "xccTbStatic", "Build Type:", WS_CHILD +
+        WS_VISIBLE, 
+                        0,0,100, 200, hwndFrame, 0, hInstance, 0);  
+    SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 2, (LPARAM)hwndTemp);
+    hwndTbBuildType = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
+        WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
+                        0,0,100, 200, hwndProject, (HMENU)ID_TBBUILDTYPE, hInstance, 0);  
+    SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 3, (LPARAM)hwndTbBuildType);
+
+
     hwndTbFind = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
         WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
                         0,0,100, 200, hwndFrame, (HMENU)ID_TBFIND, hInstance, 0);  
@@ -821,6 +875,8 @@ void MakeToolBar(HWND hwnd)
     
     ApplyDialogFont(hwndTbFind);
     ApplyDialogFont(hwndTbThreads);
+    ApplyDialogFont(hwndTbProfile);
+    ApplyDialogFont(hwndTbBuildType);
     ApplyDialogFont(hwndTbProcedure);
     
     EnableWindow(hwndTbThreads, FALSE);

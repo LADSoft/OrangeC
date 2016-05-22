@@ -22,7 +22,6 @@ when displaying types, insert name before []
 
 ------------------------------
 gui for adding rules...
-fix build type windows to work properly
 
 1) maybe add 'pins' for watch info similar to what is found in later versions of VS
 2) integrate ZIP/UNZIP functionality into the IDE for project rollup

@@ -46,11 +46,12 @@
 #include <process.h>
 
 extern HWND hwndClient;
-extern HWND hwndFrame, hwndRegister, hwndWatch, hwndLocals, hwndThread;
+extern HWND hwndFrame, hwndRegister, hwndWatch, hwndLocals, hwndThread, hwndProject;
 extern HWND hwndToolDebug, hwndStack, hwndMem;
 extern DWINFO *editWindows;
 extern PROJECTITEM *activeProject;
 extern BOOL SingleStepping;
+extern HWND hwndTbBuildType, hwndTbProfile;
 
 enum DebugState uState = notDebugging;
 HANDLE StartupSem, BreakpointSem;
@@ -124,6 +125,8 @@ int initiateDebug(int stopimmediately)
             free(args);
             return uState;
         } 
+        EnableWindow(hwndTbProfile, FALSE);
+        EnableWindow(hwndTbBuildType, FALSE);
         stopWinMain = !!stopimmediately;
         Semaphores = TRUE;
         StartupSem = CreateSemaphore(0, 0, 1, 0);
@@ -1197,6 +1200,7 @@ void StartDebug(char *cmd)
         RedrawAllBreakpoints();
     
         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+        PostMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
     if (hpsapiLib)
         FreeLibrary(hpsapiLib);
 }

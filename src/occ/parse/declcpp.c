@@ -62,6 +62,7 @@ extern int structLevel;
 extern LAMBDA *lambdas;
 extern int anonymousNotAlloc;
 extern BOOLEAN functionCanThrow;
+extern LINEDATA *linesHead, *linesTail;
 
 LIST *nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -762,6 +763,8 @@ void deferredCompileOne(SYMBOL *cur)
     if (!cur->inlineFunc.stmt && (!cur->templateLevel || !cur->templateParams || cur->instantiated))
     {
         int tns = PushTemplateNamespace(cur->parentClass);
+        LINEDATA *linesHeadOld = linesHead, *linesTailOld = linesTail;
+        linesHead = linesTail = NULL;
             
         cur->linkage = lk_virtual;
         if (cur->templateParams && cur->templateLevel)
@@ -805,6 +808,8 @@ void deferredCompileOne(SYMBOL *cur)
             dropStructureDeclaration();
         }
         PopTemplateNamespace(tns);
+        linesHead = linesHeadOld;
+        linesTail = linesTailOld;
     }
 }
 static void RecalcArraySize(TYPE *tp)

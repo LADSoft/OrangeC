@@ -85,6 +85,7 @@ extern BOOLEAN inMatchOverload;
 extern int codeLabel;
 extern LAMBDA *lambdas;
 extern int argument_nesting;
+extern LINEDATA *linesHead, *linesTail;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -276,6 +277,10 @@ void TemplateRegisterDeferred(LEXEME *lex)
                 lex->value.s.a = litlate(lex->value.s.a);
             *cur = *lex;
             cur->next = NULL;
+            if (linesHead)
+            {
+                cur->linedata = linesHead;
+            }
             if (inTemplateBody)
             {
                 if (currents->bodyHead)

@@ -110,6 +110,14 @@ void *memAlloc(MEMBLK **arena, int size)
     memset(rv, 0, size);
 #endif
     selected->left = selected->left - ((size + MALIGN - 1) & -MALIGN);
+    if (((int)rv & 0xffff) == 0x2e24)
+        printf("hi");
+    if (((int)rv & 0xffff) == 0xe09c)
+        printf("hi");
+    if (((int)rv & 0xffff) == 0xe09c)
+        printf("hi");
+    if (((int)rv & 0xffff) == 0x0ed0)
+        printf("hi");
     return rv;
 }
 void memFree(MEMBLK **arena, int *peak)

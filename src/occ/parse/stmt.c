@@ -3304,9 +3304,12 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
 
     checkUndefinedStructures(funcsp);
     FlushLineData(funcsp->declfile, funcsp->declline);
-    startStmt = currentLineData(NULL, lex, 0);
-    if (startStmt)
-        funcsp->linedata = startStmt->lineData;
+    if (!funcsp->linedata)
+    {
+        startStmt = currentLineData(NULL, lex, 0);
+        if (startStmt)
+            funcsp->linedata = startStmt->lineData;
+    }
     funcsp->declaring = TRUE;
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);

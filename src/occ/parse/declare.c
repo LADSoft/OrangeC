@@ -72,6 +72,7 @@ extern int codeLabel;
 extern SYMBOL *instantiatingMemberFuncClass;
 extern BOOLEAN parsingSpecializationDeclaration;
 extern int anonymousNotAlloc;
+extern LINEDATA *linesHead, *linesTail;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -882,6 +883,7 @@ static LEXEME *structbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_ac cur
     addStructureDeclaration(&sl);
     while (lex && KW(lex) != end)
     {
+        FlushLineData(lex->file, lex->line);
         switch(KW(lex))
         {
             case kw_private:
@@ -3040,6 +3042,11 @@ LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces)
             lex->value.s.a = litlate(lex->value.s.a);
         **cur = *lex;
         (*cur)->prev = last;
+        if (linesHead)
+        {
+            (*cur)->linedata = linesHead;
+            linesHead = linesTail = NULL;
+        }
         last = *cur;
         cur = &(*cur)->next;
         lex = getsym();
@@ -5858,6 +5865,9 @@ jointemplate:
                                 }
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable || templateNestingCount == 1 || asFriend && templateNestingCount==2)
                                 {
+                                    STATEMENT *startStmt = currentLineData(NULL, lex, 0);
+                                    if (startStmt)
+                                        sp->linedata = startStmt->lineData;
                                     lex = getDeferredData(lex, sp, TRUE);
                                     InsertInline(sp);
                                 }

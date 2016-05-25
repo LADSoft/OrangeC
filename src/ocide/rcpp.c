@@ -430,7 +430,7 @@ void glbdefine(char *name, char *value)
         def = rcAlloc(sizeof(DEFSTRUCT));
         def->args = 0;
         def->argcount = 0;
-        def->string = p = rcAlloc(strlen(value) *sizeof(WCHAR) + 2);
+        def->string = p = rcAlloc(strlen(value) *sizeof(WCHAR) + sizeof(WCHAR));
         while (*value)
             *p++ =  *value++;
         *p++ = 0;

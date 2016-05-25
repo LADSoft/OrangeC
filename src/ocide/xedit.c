@@ -6158,15 +6158,18 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 if (PropGetInt(NULL, "CODE_COMPLETION") != 0)
                 {
                    p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                    free(p->cd->lineData);
-                    p->cd->lineData = NULL;
-                    p->cd->lineDataMax = 0;
-                    if (!p->cd->lineData)
-                    {
-                        HWND t = GetParent(hwnd);
-                        DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
-                        p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
-                    }
+                   if (p->cd)
+                   {
+                        free(p->cd->lineData);
+                        p->cd->lineData = NULL;
+                        p->cd->lineDataMax = 0;
+                        if (!p->cd->lineData)
+                        {
+                            HWND t = GetParent(hwnd);
+                            DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
+                            p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
+                        }
+                   }
                     FreeColorizeEntries(p->colorizeEntries);
                     {
                         HWND t = GetParent(hwnd);

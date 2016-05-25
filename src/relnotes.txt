@@ -1,6 +1,9 @@
 Release notes:
 
-version 5.68.1:
+Version 5.69.1: 05/25/2016
+    ocide:      fix crash when reloading resources
+
+version 5.68.1: 05/22/2016
     ocide:      improve disassembly window
     ocide:      add 'locals' window
     ocide:      add toolbar for profile and build type

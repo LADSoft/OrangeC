@@ -2233,7 +2233,8 @@ RESOURCE_DATA *ReadResources(char *fileName)
     rcIdFile = NULL;
     memset(&cd, 0, sizeof(cd));
     cd.resourcesTail = &cd.resources;
-
+    memHeap = NULL;
+    
     if (setjmp(errjump))
     {
         cd.resources = NULL;

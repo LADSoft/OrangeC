@@ -1387,6 +1387,10 @@ LEXEME *getsym(void)
             contin = TRUE;
         }
     } while (contin);
+    if (linesHead)
+    {
+        lex->linedata = linesHead;
+    }
     return last = lex;
 }
 LEXEME *prevsym(LEXEME *lex)

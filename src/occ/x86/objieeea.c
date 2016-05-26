@@ -451,7 +451,7 @@ int link_BasicType(TYPE *tp)
     }
     return n;
 }
-void dumpStructFields(int sel, int n, int sz, HASHREC *hr)
+void dumpStructFields(int sel, int n, int sz, BASECLASS *bc, HASHREC *hr)
 {
     char buf[512];
     int count = 0;
@@ -459,15 +459,42 @@ void dumpStructFields(int sel, int n, int sz, HASHREC *hr)
     int table1[15];
     int last = 0;
     int i;
-    while (hr && count < sizeof(table)/sizeof(table[0]))
+    if (bc)
     {
-        SYMBOL *sp = (SYMBOL *)hr->p;
-        table[count] = sp;
-        table1[count++] = link_puttype(sp->tp);
-        hr = hr->next;
+        TYPE tpl = { 0 };
+        tpl.type = bt_pointer;
+        tpl.size = getSize(bt_pointer);
+        while (bc && count < sizeof(table)/sizeof(table[0]))
+        {
+            SYMBOL *sp = (SYMBOL *)bc->cls;
+            table[count] = sp;
+            if (bc->isvirtual)
+            {
+                tpl.btp = sp->tp;
+                table1[count++] = link_puttype(&tpl);
+            }
+            else
+            {
+                table1[count++] = link_puttype(sp->tp);
+            }
+            bc = bc->next;
+        }
     }
-    if (hr)
-        dumpStructFields(9, last = typeIndex++, sz, hr);
+    else
+    {
+        while (hr && count < sizeof(table)/sizeof(table[0]))
+        {
+            SYMBOL *sp = (SYMBOL *)hr->p;
+            if (ismemberdata(sp))
+            {
+                table[count] = sp;
+                table1[count++] = link_puttype(sp->tp);
+            }
+            hr = hr->next;
+        }
+    }
+    if (bc || hr)
+        dumpStructFields(9, last = typeIndex++, sz, bc, hr);
     emit_record_ieee("ATT%X,T%X", n, sel);
     if (sel != 9)
         emit_record_ieee(",%X",sz);
@@ -592,9 +619,9 @@ void link_extendedtype(TYPE *tp1)
                 sel = 4;
             }
             if (tp->syms)
-                dumpStructFields(sel, n, tp->size, tp->syms->table[0]);
+                dumpStructFields(sel, n, tp->size, tp->sp->baseClasses, tp->syms->table[0]);
             else
-                dumpStructFields(sel, n, tp->size, NULL);
+                dumpStructFields(sel, n, tp->size, tp->sp->baseClasses, NULL);
             emit_record_ieee("NT%X,%03X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
         }
         else if (tp->type == bt_ellipse)

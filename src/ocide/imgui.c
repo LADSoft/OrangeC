@@ -1393,15 +1393,17 @@ static void printSize(IMGDATA *p, int x, int y)
     char buf[256];
     RECT r;
     POINT pt;
-    sprintf(buf,"%d x %d", (x -p->sizePos.x+ p->showX)/p->zoom + p->res->width, (y - p->sizePos.y + p->showY)/ p->zoom + p->res->height);
+    x -= p->sizePos.x;
+    y -= p->sizePos.y;
+    sprintf(buf,"%d x %d", (x + p->showX)/p->zoom + p->res->width, (y + p->showY)/ p->zoom + p->res->height);
     SendMessage(p->hwndStatus, SB_SETTEXT, 3, (LPARAM)buf);
     pt.x = 0;
     pt.y = 0;
     ClientToScreen(p->hwndWorkspace, &pt);
     r.left = pt.x;
     r.top = pt.y;
-    r.right =  pt.x + x - p->sizePos.x + p->res->width * p->zoom;
-    r.bottom = pt.y + y - p->sizePos.y + p->res->height * p->zoom;
+    r.right =  pt.x + x + p->res->width * p->zoom;
+    r.bottom = pt.y + y + p->res->height * p->zoom;
     DrawBoundingRect(&r);
     
 }

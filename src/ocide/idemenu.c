@@ -540,7 +540,8 @@ void InitMenuPopup(HMENU menu)
     SetWindowMenu();
     SetMenuCheckedState(menu, DID_TABWND, IDM_VIEWPROJECT);
     SetMenuCheckedState(menu, DID_PROPSWND, IDM_VIEWPROPS);
-    SetMenuCheckedState(menu, DID_ERRORWND, IDM_VIEWERROR);
+    SetMenuCheckedState(menu, DID_INFOWND, IDM_VIEWINFO);
+    SetMenuCheckedState(menu, DID_ERRWND, IDM_VIEWERR);
     SetMenuCheckedState(menu, DID_STACKWND, IDM_VIEWSTACK);
     SetMenuCheckedState(menu, DID_THREADWND, IDM_VIEWTHREAD);
     {

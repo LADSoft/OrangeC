@@ -1,4 +1,4 @@
-#include "winconst.h"
+#include "Resource.h"
 #include <windows.h>
 
 MAINMENU MENU

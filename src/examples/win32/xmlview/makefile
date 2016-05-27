@@ -57,14 +57,14 @@ $(CFLAGS_XMLVIEW_EXE) -I$(INCLUDE_XMLVIEW_EXE)
  xml.c
 |
 
-xmlview.o : xmlview.c winconst.h xml.h 
+xmlview.o : xmlview.c Resource.h xml.h 
 	$(CC) @&&|
 $(CFLAGS_XMLVIEW_EXE) -I$(INCLUDE_XMLVIEW_EXE)
  $(DEFINES_XMLVIEW_EXE)
  xmlview.c
 |
 
-xmlview.res : xmlview.rc winconst.h 
+xmlview.res : xmlview.rc Resource.h 
 	$(RC) $(RCFLAGS_XMLVIEW_EXE) -i$(INCLUDE_XMLVIEW_EXE) @&&|
 $(DEFINES_XMLVIEW_EXE) xmlview.rc
 |

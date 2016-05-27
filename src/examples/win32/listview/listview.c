@@ -1,4 +1,4 @@
-#include "winconst.h"
+#include "Resource.h"
 #include  <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
@@ -191,8 +191,8 @@ int PASCAL WndProc (HWND hWnd, int wmsg, int wParam, int lParam)
             hwndListView = CreateWindowEx(0,WC_LISTVIEW,"",
                WS_VISIBLE | WS_CHILD | LVS_REPORT | LVS_SINGLESEL | WS_BORDER,
                     0,tr.bottom,r.right,r.bottom-tr.bottom,hWnd, (HMENU) 100, hInstance, NULL) ;
-            hbmpNode = LoadBitmap(hInstance, "ID_NODE") ;
-            hbmpAttrib = LoadBitmap(hInstance, "ID_ATTRIB") ;
+            hbmpNode = LoadBitmap(hInstance, MAKEINTRESOURCE(ID_NODE)) ;
+            hbmpAttrib = LoadBitmap(hInstance, MAKEINTRESOURCE(ID_ATTRIB)) ;
             lvIml = ImageList_Create(16,16,FALSE,2,0) ;
             ilNode = ImageList_Add(lvIml, hbmpNode, 0) ;
             ilAttrib = ImageList_Add(lvIml, hbmpAttrib, 0) ;
@@ -261,7 +261,7 @@ int PASCAL WndProc (HWND hWnd, int wmsg, int wParam, int lParam)
                     break ;
                 case IDM_ABOUT:
                     /* Put up the about box */
-                    DialogBox(hInstance,"DLG_ABOUT",hWnd,(DLGPROC)AboutBoxProc) ;
+                    DialogBox(hInstance,MAKEINTRESOURCE(DLG_ABOUT),hWnd,(DLGPROC)AboutBoxProc) ;
                     break ;
                 case IDM_EXIT:
                     /* Graceful exit of the program */
@@ -337,7 +337,7 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     InitCommonControls() ;
     
     /* Create The Window */
-    hMenuMain = LoadMenu(hInstance,"MAINMENU") ;
+    hMenuMain = LoadMenu(hInstance,MAKEINTRESOURCE(MAINMENU)) ;
     hWnd= CreateWindow(szAppName,stitle,WS_OVERLAPPEDWINDOW + WS_VISIBLE,
             CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
             0,hMenuMain,hInstance,0) ;

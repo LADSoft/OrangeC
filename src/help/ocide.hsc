@@ -43,7 +43,7 @@ Previous
 Next
 FALSE
 
-119
+120
 10
 Scribble10
 index
@@ -3768,7 +3768,7 @@ FALSE
 1000
 Scribble1000
 Resource Editor
-
+resources;
 
 
 
@@ -3777,7 +3777,7 @@ Writing
 
 
 FALSE
-24
+26
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Resource Editor\cf0\b0\f1\fs20 
@@ -3796,11 +3796,58 @@ FALSE
 \par \pard\fi-840\li840 
 \par \pard\tx200\f0 Additionally, you can add Font and Message Table resources although you cannot edit them.
 \par \f1 
+\par \f0 See here for general remarks that may be useful in diagnosing problems loading resources.\f1 
+\par 
 \par \f0 A main \cf2\strike Resource Window\cf3\strike0\{linkID=1005\}\cf0  shows a list of all available resources and allows easy addition and removal of resources.  Clicking on a resource will bring up the associated resource editor for that resource.\f1 
 \par 
 \par \f0 The resource editor interacts with a resource (.RC) file, where it stores the data in ASCII format.  It is capable of loading and saving most resource files, although there are a few limits.  For an existing resouce file, it will read in most types of resources even if the resource editor does not have native support for editing them.
 \par 
 \par 
+\par }
+1002
+Scribble1002
+Remarks about Resources
+resource problems;resources;
+
+
+
+Writing
+
+
+
+FALSE
+32
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Times New Roman;}}
+{\colortbl ;\red0\green0\blue255;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Remarks about Resources
+\par \cf0\lang1049\b0\f1\fs20 
+\par 
+\par \lang1033\f0 The way resource files work, it is possible to reference a resource either by name, or by number.   For example for the resource statement:
+\par 
+\par \f2\fs24\tab ID_BMP bitmap "somefile.bmp"
+\par \lang1049 
+\par \f0\fs20 It is not immediately clear whether you would use a statement such as
+\par 
+\par \f2\fs24\tab HBITMAP myBmp = LoadBitmap(hDC, "ID_BMP");
+\par 
+\par \f0\fs20 or a statement such as:
+\par 
+\par \f2\fs24\tab HBITMAP myBmp = LoadBitmap(hDC, MAKEINTRESOURCE(ID_BMP));
+\par \f0\fs20 
+\par to actually load the bitmap into the program.   One of these is going to work, and the other isn't.
+\par 
+\par The rule is that if ID_BMP has not been defined anywhere, the resource compiler will compile a 'named' reference to the resource.   For example the first example would be the way to load it.  However, if it has been defined somewhere:
+\par 
+\par \f2\fs24\tab #define ID_BMP 100
+\par \tab ID_BMP bitmap "somefile.bmp"
+\par 
+\par \f0\fs20 Then the resource compiler will compile a numeric reference to the resource, and one would have to use the second way of loading it.
+\par 
+\par Some projects have defined the resource name, and some have not.   So either method may be necessary for loading existing resources depending on the situation.   However, this IDE always adds a #define for resources, so the second method using MAKEINTRESOURCE is the preferred method for loading new resources.   This entire behavior is well-defined in windows and will be compatible across development environments, except in the case where a development environment adds a #define after the fact without indicating it.
+\par 
+\par This IDE will load and save resources identifiers in either format; if there is no #define one won't be added.   It is only when creating a new resource with the resource editor that one has to be aware to use the numeric reference via MAKEINTRESOURCE instead of the named reference.  But this behavior does make it possible to use the named version of resources.   Simply delete the associated #define after creating the resource, then reload the resource file.
+\par 
+\par \f2 
 \par }
 1005
 Scribble1005
@@ -3841,7 +3888,7 @@ FALSE
 1010
 Scribble1010
 Add New Resource Dialog
-
+dialog;
 
 
 
@@ -3878,7 +3925,7 @@ FALSE
 1020
 Scribble1020
 Resource Menu
-
+menu;
 
 
 
@@ -3931,7 +3978,7 @@ FALSE
 1026
 Scribble1026
 Resource Properties
-
+properties;
 
 
 
@@ -3955,7 +4002,7 @@ FALSE
 1040
 Scribble1040
 Accelerators Window
-
+editor window;
 
 
 
@@ -3977,7 +4024,7 @@ FALSE
 1050
 Scribble1050
 Accelerators Context Menu
-
+menu;
 
 
 
@@ -4007,7 +4054,7 @@ FALSE
 1060
 Scribble1060
 Dialog Window
-
+editor window;
 
 
 
@@ -4032,7 +4079,7 @@ FALSE
 1065
 Scribble1065
 Dialog Control Toolbox
-
+dialog;
 
 
 
@@ -4070,7 +4117,7 @@ FALSE
 1070
 Scribble1070
 Dialog Context Menu
-
+menu;
 
 
 
@@ -4106,7 +4153,7 @@ FALSE
 1080
 Scribble1080
 Image Window
-
+editor window;
 
 
 
@@ -4142,7 +4189,7 @@ FALSE
 1090
 Scribble1090
 Image Context Menu
-
+menu;
 
 
 
@@ -4181,7 +4228,7 @@ FALSE
 1100
 Scribble1100
 RCData Window
-
+editor window;
 
 
 
@@ -4210,7 +4257,7 @@ FALSE
 1110
 Scribble1110
 RCData Context Menu
-
+menu;
 
 
 
@@ -4238,7 +4285,7 @@ FALSE
 1120
 Scribble1120
 String Table Window
-
+editor window;
 
 
 
@@ -4263,7 +4310,7 @@ FALSE
 1130
 Scribble1130
 String Table Context Menu
-
+menu;
 
 
 
@@ -4292,7 +4339,7 @@ FALSE
 1140
 Scribble1140
 Version Data Window
-
+editor window;
 
 
 
@@ -4315,7 +4362,7 @@ FALSE
 1145
 Scribble1145
 Version Data Context Menu
-
+menu;
 
 
 
@@ -4343,7 +4390,7 @@ FALSE
 1150
 Scribble1150
 Menu Window
-
+editor window;
 
 
 
@@ -4372,7 +4419,7 @@ FALSE
 1160
 Scribble1160
 Menu Context Menu
-
+menu;
 
 
 

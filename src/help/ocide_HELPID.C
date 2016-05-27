@@ -113,6 +113,7 @@
 #define  IDH_CUSTOM_TOOLS_DIALOG (910)      // Custom Tools
 #define  IDH_CUSTOM_TOOLS_EDITOR (920)      // Custom Tools Editor
 #define  Scribble1000           (1000)      // Resource Editor
+#define  Scribble1002           (1002)      // Remarks about Resources
 #define  Scribble1005           (1005)      // Resource Window
 #define  Scribble1010           (1010)      // Add New Resource Dialog
 #define  Scribble1020           (1020)      // Resource Menu

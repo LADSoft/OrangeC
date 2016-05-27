@@ -1,4 +1,4 @@
-#include "winconst.h"
+#include "Resource.h"
 #include  <windows.h>
 #include <stdio.h>
 #include <commctrl.h>
@@ -163,8 +163,8 @@ int PASCAL WndProc (HWND hWnd, int wmsg, int wParam, int lParam)
             hwndTree = CreateWindowEx(0,WC_TREEVIEW,"",
                WS_VISIBLE | WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | WS_BORDER,
                     0,0,r.right,r.bottom,hWnd, (HMENU) 100, hInstance, NULL) ;
-            hbmpNode = LoadBitmap(hInstance, "ID_NODE") ;
-            hbmpAttrib = LoadBitmap(hInstance, "ID_ATTRIB") ;
+            hbmpNode = LoadBitmap(hInstance, MAKEINTRESOURCE(ID_NODE)) ;
+            hbmpAttrib = LoadBitmap(hInstance, MAKEINTRESOURCE(ID_ATTRIB)) ;
             treeIml = ImageList_Create(16,16,FALSE,2,0) ;
             ilNode = ImageList_Add(treeIml, hbmpNode, 0) ;
             ilAttrib = ImageList_Add(treeIml, hbmpAttrib, 0) ;
@@ -206,8 +206,7 @@ int PASCAL WndProc (HWND hWnd, int wmsg, int wParam, int lParam)
                                 TreeView_DeleteItem(hwndTree, TVI_ROOT) ;
                                 FreeNames(nodes) ;
                                 xmlFree(nodes) ;
-                            }
-                            nodes = xmlReadFile(fil) ;
+                            }                            nodes = xmlReadFile(fil) ;
                             fclose(fil) ;
                             if (!nodes)
                                 MessageBox(0,"Could not parse XML file","Error",0) ;
@@ -220,7 +219,7 @@ int PASCAL WndProc (HWND hWnd, int wmsg, int wParam, int lParam)
                     break ;
                 case IDM_ABOUT:
                     /* Put up the about box */
-                    DialogBox(hInstance,"DLG_ABOUT",hWnd,(DLGPROC)AboutBoxProc) ;
+                    DialogBox(hInstance,MAKEINTRESOURCE(DLG_ABOUT),hWnd,(DLGPROC)AboutBoxProc) ;
                     break ;
                 case IDM_EXIT:
                     /* Graceful exit of the program */
@@ -272,7 +271,7 @@ int PASCAL WinMain( HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     InitCommonControls() ;
     
     /* Create The Window */
-    hMenuMain = LoadMenu(hInstance,"MAINMENU") ;
+    hMenuMain = LoadMenu(hInstance,MAKEINTRESOURCE(MAINMENU)) ;
     hWnd= CreateWindow(szAppName,stitle,WS_OVERLAPPEDWINDOW + WS_VISIBLE,
             CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
             0,hMenuMain,hInstance,0) ;

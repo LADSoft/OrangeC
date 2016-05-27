@@ -57,14 +57,14 @@ $(CFLAGS_LISTVIEW_EXE) -I$(INCLUDE_LISTVIEW_EXE)
  xml.c
 |
 
-listview.o : listview.c winconst.h xml.h 
+listview.o : listview.c Resource.h xml.h 
 	$(CC) @&&|
 $(CFLAGS_LISTVIEW_EXE) -I$(INCLUDE_LISTVIEW_EXE)
  $(DEFINES_LISTVIEW_EXE)
  listview.c
 |
 
-listview.res : listview.rc winconst.h 
+listview.res : listview.rc Resource.h 
 	$(RC) $(RCFLAGS_LISTVIEW_EXE) -i$(INCLUDE_LISTVIEW_EXE) @&&|
 $(DEFINES_LISTVIEW_EXE) listview.rc
 |

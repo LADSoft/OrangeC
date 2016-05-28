@@ -133,7 +133,7 @@ LRESULT CALLBACK PropsTabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             hwndPropsTab = hwnd;
             GetClientRect(hwnd, &r);
             hwndPropsTabCtrl = CreateWindow(WC_TABCONTROL, 0, WS_CHILD +
-                WS_CLIPSIBLINGS + WS_VISIBLE + TCS_FLATBUTTONS /*+ TCS_OWNERDRAWFIXED */
+                WS_CLIPSIBLINGS + WS_CLIPCHILDREN + WS_VISIBLE + TCS_FLATBUTTONS /*+ TCS_OWNERDRAWFIXED */
                 + TCS_FOCUSNEVER /*+ TCS_FIXEDWIDTH*/ + TCS_BOTTOM, r.left, r.top,
                 r.right - r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
             ApplyDialogFont(hwndPropsTabCtrl);

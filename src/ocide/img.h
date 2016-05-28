@@ -124,7 +124,7 @@ typedef struct _imgdata {
     DWORD currentRightColor;
  
     DWORD currentPalette[MAX_COLORS];
-    DWORD zoom;
+    int zoom;
     struct resRes *resource;
     
 } IMGDATA ;

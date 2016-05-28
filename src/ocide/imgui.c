@@ -2364,14 +2364,8 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     GetClientRect(hwnd, &rf);
                     p->selectRect.left = p->showX/p->zoom ;
                     p->selectRect.top = p->showY/p->zoom ;
-                    p->selectRect.right = p->res->width ;
-                    if (p->res->width - p->selectRect.left > rf.right/p->zoom)
-                        p->selectRect.right = rf.right/p->zoom + p->showX;
-                    p->selectRect.bottom = p->res->height ;
-                    if (p->res->height - p->selectRect.top > rf.bottom/p->zoom)
-                        p->selectRect.bottom = rf.bottom/p->zoom + p->showY;
-                    p->selectRect.right--;
-                    p->selectRect.bottom--;
+                    p->selectRect.right = p->res->width + p->showX/p->zoom ;
+                    p->selectRect.bottom = p->res->height + p->showY/p->zoom;
                     SendMessage(p->hwndControlToolbar, TB_CHECKBUTTON, IDM_SELECT, MAKELPARAM(TRUE, 0));
                     p->drawMode = IDM_SELECT;
                     p->cursor = arrowCursor;

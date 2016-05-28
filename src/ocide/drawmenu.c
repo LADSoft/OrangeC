@@ -1151,13 +1151,28 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_RBUTTONUP:
             SetFocus(hwnd);
             return 1;
+        case WM_ERASEBKGND:
+            return 1;
         case WM_PAINT:
+        {
+            RECT rect;
+            HDC hDC, hdouble;
+            HBITMAP bitmap;
+            PAINTSTRUCT ps;
+            GetClientRect(hwnd, &rect);
+            hDC = BeginPaint(hwnd, &ps);
+            hdouble = CreateCompatibleDC(hDC);
+            bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+            SelectObject(hdouble, bitmap);
+            FillRect(hdouble, &rect, (HBRUSH)(COLOR_APPWORKSPACE + 1));
             menuData = (struct resRes *)GetWindowLong(hwnd, 0);
-            GetClientRect(hwnd, &r);
-            dc = BeginPaint(hwnd, &paint);
-            DoPaint(hwnd, dc, &paint, &r, menuData);
-            EndPaint(hwnd, &paint);
-            break;
+            DoPaint(hwnd, hdouble, &paint, &rect, menuData);
+            BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+            DeleteObject(bitmap);
+            DeleteObject(hdouble);
+            EndPaint(hwnd, &ps);
+        }
+        return 0;
         case WM_RBUTTONDOWN:
             menuData = (struct resRes *)GetWindowLong(hwnd, 0);
             SendMessage(hwnd, WM_COMMAND, ID_EDIT + (EN_KILLFOCUS << 16), 0);

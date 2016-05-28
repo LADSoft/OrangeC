@@ -2362,17 +2362,20 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 case IDM_SELECTALL:
                     p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);
-                    unselectDo(p);
-                    GetClientRect(hwnd, &rf);
-                    p->selectRect.left = p->showX/p->zoom ;
-                    p->selectRect.top = p->showY/p->zoom ;
-                    p->selectRect.right = rf.right/p->zoom + p->showX;
-                    p->selectRect.bottom = rf.bottom/p->zoom + p->showY;
-                    SendMessage(p->hwndControlToolbar, TB_CHECKBUTTON, IDM_SELECT, MAKELPARAM(TRUE, 0));
-                    p->drawMode = IDM_SELECT;
-                    p->cursor = arrowCursor;
-                    selectDo(p);
-                    InvalidateRect(hwnd, 0, 0);
+                    if (p->res)
+                    {
+                        unselectDo(p);
+                        GetClientRect(hwnd, &rf);
+                        p->selectRect.left = p->showX/p->zoom ;
+                        p->selectRect.top = p->showY/p->zoom ;
+                        p->selectRect.right = p->res->width + p->showX/p->zoom;
+                        p->selectRect.bottom = p->res->height + p->showY/p->zoom;
+                        SendMessage(p->hwndControlToolbar, TB_CHECKBUTTON, IDM_SELECT, MAKELPARAM(TRUE, 0));
+                        p->drawMode = IDM_SELECT;
+                        p->cursor = arrowCursor;
+                        selectDo(p);
+                        InvalidateRect(hwnd, 0, 0);
+                    }
                     break;					
                 case IDM_RESIZEDRAW:
                     p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);

@@ -592,7 +592,7 @@ void CreateJumpListWindow(void)
 {
     if (hwndJumpList)
         return ;
-    hwndJumpList = CreateWindow(szJumpListClassName, "", WS_CHILD,
+    hwndJumpList = CreateWindow(szJumpListClassName, "", WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         CW_USEDEFAULT, CW_USEDEFAULT, 200, 200, hwndFrame, 0, hInstance, 0);
 }
 void RegisterJumpListWindow(void)

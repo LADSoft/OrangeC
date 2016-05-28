@@ -207,7 +207,7 @@ void RegisterContainerWindow(HINSTANCE hInstance)
     wc.hInstance = hInstance;
     wc.hIcon = LoadIcon(0, IDI_APPLICATION);
     wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_3DFACE + 1);
+    wc.hbrBackground = GetStockObject(NULL_BRUSH);
     wc.lpszMenuName = 0;
     wc.lpszClassName = szContainerClassName;
     RegisterClass(&wc);

@@ -403,7 +403,7 @@ static void PopulateExToolsView(HWND hwnd, int sel, BOOL first)
     if (first)
     {
         LV_COLUMN lvC;
-        ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+        ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     
         GetWindowRect(hwndLV, &r);
         lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;

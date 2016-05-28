@@ -72,6 +72,39 @@ static int errcount;
 static int errors, warnings;
 static void CopyText(HWND hwnd)
 {
+    char *p = NULL;
+    int sz = 1;
+    int n = errcount;
+    int btns = errorButtons;
+    int i;
+    for (i=0; i < n && i < errcount; i++)
+    {
+        char buf[1000];
+        if (errlist[i]->isWarning && (btns & ERR_WARNINGS)
+            || !errlist[i]->isWarning && (btns & ERR_ERRORS))
+        {
+            sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i+1, errlist[i]->isWarning ? "Warn " : "Error",
+                    errlist[i]->file, errlist[i]->lineno, errlist[i]->error);
+            sz += strlen(buf);
+        }
+    }
+    p = calloc(sz, sizeof(char));
+    if (p)
+    {
+        for (i=0; i < n && i < errcount; i++)
+        {
+            char buf[1000];
+            if (errlist[i]->isWarning && (btns & ERR_WARNINGS)
+                || !errlist[i]->isWarning && (btns & ERR_ERRORS))
+            {
+                sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i+1, errlist[i]->isWarning ? "Warn " : "Error",
+                        errlist[i]->file, errlist[i]->lineno, errlist[i]->error);
+                strcat(p, buf);
+            }
+        }
+        TextToClipBoard(hwnd, p);
+        free(p);
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -109,6 +142,10 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
         case WM_CTLCOLORSTATIC:
         {
             return (LRESULT)(HBRUSH)(COLOR_INACTIVECAPTION + 1);
+        }
+        case WM_CTLCOLORBTN:
+        {
+            return (LRESULT)GetStockObject(NULL_BRUSH);
         }
 
         case WM_NOTIFY:
@@ -281,23 +318,25 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             DrawIconEx(pDis->hDC, pDis->rcItem.left+ iconpos.x, pDis->rcItem.top+iconpos.y, image, 20, 20,
                        0,NULL, DI_NORMAL);
         }
-            break;
+        return 0;
         case WM_CREATE:
             hwndError = hwnd;
             GetClientRect(hwnd, &r);
-            hwndBackground = CreateWindow("static", "", WS_CHILD | WS_VISIBLE,
+            hwndBackground = CreateWindow("static", "", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
                                                 0,0, r.right - r.bottom, BUTTONHEIGHT + 4, hwnd, 0, hInstance, 0);
             hwndErrButton = CreateWindow("button", "0 errors",  WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                          2,2,BUTTONWIDTH,BUTTONHEIGHT, hwnd, 0, hInstance, 0);
             hwndWarnButton = CreateWindow("button", "0 warnings",  WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
                                          4 + BUTTONWIDTH + 2,2, BUTTONWIDTH,BUTTONHEIGHT, hwnd, 0, hInstance, 0);
+            BringWindowToTop(hwndErrButton);
+            BringWindowToTop(hwndWarnButton);
             font = CreateFontIndirect(&systemDialogFont);
             SendMessage(hwndErrButton, WM_SETFONT, (WPARAM)font, 0);
             SendMessage(hwndWarnButton, WM_SETFONT, (WPARAM)font, 0);
             hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", 
                            LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
                            0,BUTTONHEIGHT + 4,r.right-r.left, r.bottom - r.top-BUTTONHEIGHT-4, hwnd, 0, hInstance, 0);
-            ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+            ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
             ApplyDialogFont(hwndLV);
             lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
             lvC.cx = 30;
@@ -330,7 +369,7 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             r.right = LOWORD(lParam);
             r.bottom = HIWORD(lParam);
             MoveWindow(hwndLV, r.left, r.top+BUTTONHEIGHT + 4, r.right - r.left,
-                r.bottom - r.top-BUTTONHEIGHT - 4, 1);
+                r.bottom - r.top-BUTTONHEIGHT - 4, 0);
             MoveWindow(hwndBackground, r.left, r.top, r.right - r.left, BUTTONHEIGHT + 4, 1);
             lvC.mask = LVCF_WIDTH;
             lvC.cx = r.right - r.left - 250;
@@ -360,7 +399,7 @@ void RegisterErrorWindow(void)
     wc.hInstance = hInstance;
     wc.hIcon = LoadIcon(0, IDI_APPLICATION);
     wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = 0; // GetStockObject(WHITE_BRUSH);
+    wc.hbrBackground = 0;
     wc.lpszMenuName = 0;
     wc.lpszClassName = szErrorClassName;
     RegisterClass(&wc);

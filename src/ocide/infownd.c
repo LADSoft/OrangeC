@@ -591,6 +591,8 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return 0;
         case WM_CLOSE:
             break;
+        case WM_ERASEBKGND:
+            return 1;
         case WM_PAINT:
             dc = BeginPaint(hwnd, &ps);
             pen = CreatePen(PS_SOLID, 0, RetrieveSysColor(COLOR_3DSHADOW));

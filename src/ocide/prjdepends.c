@@ -86,7 +86,7 @@ static void PopulateProject(HWND hwnd, PROJECTITEM *proj)
     RECT r;
     int rows = 0;
     ListView_DeleteAllItems(hwndLV);
-    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
     ListView_DeleteColumn(hwndLV, 1);
     ListView_DeleteColumn(hwndLV, 0);

@@ -91,7 +91,7 @@ static void SetListViewColumns(HWND parent, HWND hwnd, RECT *r)
     LV_COLUMN lvC;
     LVGROUP lvG;
     ListView_EnableGroupView(hwnd, TRUE);
-    ListView_SetExtendedListViewStyle(hwnd, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwnd, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM  | LVCF_TEXT;
     lvC.cx = (r->right - r->left)/2;

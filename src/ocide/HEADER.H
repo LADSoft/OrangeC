@@ -774,6 +774,13 @@ typedef struct tagNMTTCUSTOMDRAW
 #define MCW_EM 0x0008001F
 
 #endif
+#ifndef LVS_EX_DOUBLEBUFFER
+#define LVS_EX_DOUBLEBUFFER 0x10000
+#define TVS_EX_DOUBLEBUFFER 4
+#define TVM_SETEXTENDEDSTYLE (TV_FIRST + 44)
+#define TreeView_SetExtendedStyle(hwnd, dw, mask) \
+    SendMessage((hwnd), TVM_SETEXTENDEDSTYLE, mask, dw)
+#endif
 
 #ifdef OPENWATCOM
 #undef TreeView_GetItemRect

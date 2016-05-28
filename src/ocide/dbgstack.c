@@ -319,7 +319,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             hwndLV = CreateWindowEx(0, WC_LISTVIEW, "", 
                            LVS_REPORT | LVS_SINGLESEL | WS_CHILD | WS_VISIBLE | WS_BORDER,
                            0,0,r.right-r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
-            ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+            ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
             ApplyDialogFont(hwndLV);
             lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;
             lvC.cx = 20;

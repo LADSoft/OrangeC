@@ -2372,8 +2372,8 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     p->selectRect.bottom = p->res->height ;
                     if (p->res->height - p->selectRect.top > rf.bottom/p->zoom)
                         p->selectRect.bottom = rf.bottom/p->zoom + p->showY;
-                    p->selectRect.right--;
-                    p->selectRect.bottom--;
+                    p->selectRect.right;
+                    p->selectRect.bottom;
                     SendMessage(p->hwndControlToolbar, TB_CHECKBUTTON, IDM_SELECT, MAKELPARAM(TRUE, 0));
                     p->drawMode = IDM_SELECT;
                     p->cursor = arrowCursor;

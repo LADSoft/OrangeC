@@ -538,7 +538,7 @@ static void PopulateTree(HWND hwnd, HTREEITEM hParent, SETTING *settings)
 static void CreateLVColumns(HWND hwnd, int width)
 {
     LV_COLUMN lvC;
-    ListView_SetExtendedListViewStyle(hwnd, /*LVS_EX_FULLROWSELECT | */LVS_EX_GRIDLINES);
+    ListView_SetExtendedListViewStyle(hwnd, /*LVS_EX_FULLROWSELECT | */LVS_EX_GRIDLINES | LVS_EX_DOUBLEBUFFER);
 
     ListView_DeleteColumn(hwnd, 1);
     ListView_DeleteColumn(hwnd, 0);

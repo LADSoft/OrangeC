@@ -913,10 +913,25 @@ static LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPA
             return 0;
             
         case WM_PAINT:
-            pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
+        {
+            RECT rect;
+            HDC hDC, hdouble;
+            HBITMAP bitmap;
+            PAINTSTRUCT ps;
+            GetClientRect(hwnd, &rect);
             hDC = BeginPaint(hwnd, &ps);
-            DrawMenu(hDC, pTrack);
+            hdouble = CreateCompatibleDC(hDC);
+            bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+            SelectObject(hdouble, bitmap);
+            pTrack = (struct ttrack *)GetWindowLong(hwnd, 0);
+            FillRect(hdouble, &rect, (HBRUSH)(COLOR_MENU + 1));
+            DrawMenu(hdouble, pTrack);
+            BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+            DeleteObject(bitmap);
+            DeleteObject(hdouble);
             EndPaint(hwnd, &ps);
+        }
+        return 0;
             break;
         case WM_CREATE:
             pTrack = (struct ttrack *)(((LPCREATESTRUCT)lParam)->lpCreateParams);
@@ -1328,12 +1343,24 @@ static LRESULT CALLBACK TabWndProc(HWND hwnd, UINT iMessage,
                 DeleteObject(ptr->xBack);
                 ptr->xBack = NULL;
             }
-            dc = BeginPaint(hwnd, &ps);
-            GetClientRect(hwnd, &r);
-            FillRect(dc, &r, (HBRUSH)(COLOR_MENUBAR + 1));
-            DrawTabs(hwnd, dc, &r, ptr);
+        {
+            RECT rect;
+            HDC hDC, hdouble;
+            HBITMAP bitmap;
+            PAINTSTRUCT ps;
+            GetClientRect(hwnd, &rect);
+            hDC = BeginPaint(hwnd, &ps);
+            hdouble = CreateCompatibleDC(hDC);
+            bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+            SelectObject(hdouble, bitmap);
+            FillRect(hdouble, &rect, (HBRUSH)(COLOR_MENUBAR + 1));
+            DrawTabs(hwnd, hdouble, &rect, ptr);
+            BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+            DeleteObject(bitmap);
+            DeleteObject(hdouble);
             EndPaint(hwnd, &ps);
-            return 0;
+        }
+        return 0;
         case WM_CREATE:
             ptr = calloc(1, sizeof(struct _tabStruct));
             if (!ptr)

@@ -52,7 +52,10 @@
 
 extern HWND hwndFrame;
 
+static WNDPROC oldproc;
 static char *szToolBarWindClassName = "ladSoftToolBarWindow";
+static char *szextToolBarWindClassName = "ladSoftextToolBarWindow";
+
 static TBBUTTON sep = 
 {
     0, 0, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT, {0}, 0, -1
@@ -280,6 +283,33 @@ static void ResizeContainer(CCW_params *ptr)
     CalculateLayout( - 1, 0);
 }
 //-------------------------------------------------------------------------
+static LRESULT CALLBACK extToolBarWndProc(HWND hwnd, UINT iMessage,
+    WPARAM wParam, LPARAM lParam)
+{
+    
+    switch (iMessage)
+    {
+        case WM_PAINT:
+        {
+            RECT rect;
+            HDC hDC, hdouble;
+            HBITMAP bitmap;
+            PAINTSTRUCT ps;
+            GetClientRect(hwnd, &rect);
+            hDC = BeginPaint(hwnd, &ps);
+            hdouble = CreateCompatibleDC(hDC);
+            bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+            SelectObject(hdouble, bitmap);
+            SendMessage(hwnd, WM_PRINTCLIENT, (WPARAM)hdouble, 0);
+            BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+            DeleteObject(bitmap);
+            DeleteObject(hdouble);
+            EndPaint(hwnd, &ps);
+        }
+        return 0;
+    }
+    return CallWindowProc(oldproc, hwnd, iMessage, wParam, lParam);
+}
 
 static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
@@ -419,7 +449,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             ImageList_Add(ptr->u.tb.disabledImageList, bmp, NULL);
             DeleteObject(bmp);
             
-            ptr->u.tb.hWnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, WS_CHILD | TBSTYLE_ALTDRAG
+            ptr->u.tb.hWnd = CreateWindowEx(0, szextToolBarWindClassName, NULL, WS_CHILD | TBSTYLE_ALTDRAG
                 | (ptr->u.tb.hints ? TBSTYLE_TOOLTIPS : 0) | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | CCS_ADJUSTABLE | CCS_NODIVIDER,
                 0,0,0,0, hwnd,NULL, HINST_COMMCTRL, NULL);
             SendMessage(ptr->u.tb.hWnd, TB_SETIMAGELIST, (WPARAM)ptr->u.tb.bmpid, (LPARAM) ptr->u.tb.imageList);
@@ -429,7 +459,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             SendMessage(ptr->u.tb.hWnd, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DRAWDDARROWS);
             ChangeButtons(ptr->u.tb.btncount, ptr->u.tb.hWnd, ptr
                     ->u.tb.buttons, ptr);
-            ptr->u.tb.vWnd = CreateWindowEx(0, TOOLBARCLASSNAME, NULL, WS_CHILD //| TBSTYLE_WRAPABLE
+            ptr->u.tb.vWnd = CreateWindowEx(0, szextToolBarWindClassName, NULL, WS_CHILD //| TBSTYLE_WRAPABLE
                 | (ptr->u.tb.hints ? TBSTYLE_TOOLTIPS : 0) | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | CCS_NODIVIDER | CCS_ADJUSTABLE | CCS_VERT,
                 0,0,0,0, hwnd,NULL, HINST_COMMCTRL, NULL);
             SendMessage(ptr->u.tb.vWnd, TB_SETIMAGELIST, (WPARAM)ptr->u.tb.bmpid, (LPARAM) ptr->u.tb.imageList);
@@ -495,6 +525,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
                 SetParent(hwndCtrl, ptr->u.tb.hWnd);
                 MoveWindow(hwndCtrl, r.left, r.top, r.right- r.left, r.bottom - r.top, 1);
                 ptr->u.tb.children[i] = hwndCtrl;
+                BringWindowToTop(hwndCtrl);
             }
         }
             return 0;
@@ -563,6 +594,13 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
 void RegisterToolBarWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
+    GetClassInfo(0, TOOLBARCLASSNAME, &wc);
+    oldproc = wc.lpfnWndProc;
+    wc.lpfnWndProc = &extToolBarWndProc;
+    wc.lpszClassName = szextToolBarWindClassName;
+    wc.hInstance = hInstance;
+    RegisterClass(&wc);
+    
     memset(&wc, 0, sizeof(wc));
     wc.style = 0;
     wc.lpfnWndProc = &ControlWindWndProc;
@@ -598,7 +636,7 @@ HWND CreateToolBarWindow(int id, HWND notify, HWND parent, int width, int
         p->u.tb.bmpcount = bmpcount;
         p->u.tb.notifyparent = notify;
         p->u.tb.helpitem = helpitem;
-        p->hwnd = CreateWindowEx(0, szToolBarWindClassName, title, WS_CLIPSIBLINGS | WS_CHILD,
+        p->hwnd = CreateWindowEx(0, szToolBarWindClassName, title, WS_CLIPSIBLINGS | WS_CHILD | WS_CLIPCHILDREN,
             CW_USEDEFAULT, CW_USEDEFAULT, 1000, 30, parent, (HMENU)0,
             (HINSTANCE)GetWindowLong(parent, GWL_HINSTANCE), p);
         if (id != -1)

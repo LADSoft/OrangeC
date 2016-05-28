@@ -142,7 +142,7 @@ static int CreateBuildRuleData(HWND hwnd)
     HWND hwndLV = GetDlgItem(hwnd, IDC_BRLISTBOX);
     LV_COLUMN lvC;
     BUILDRULE *br;
-    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     ListView_DeleteAllItems(hwndLV);
 
     GetWindowRect(hwndLV, &r);

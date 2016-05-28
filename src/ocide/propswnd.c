@@ -504,6 +504,6 @@ void CreatePropsWindow(void)
     parent = hwndPropsTabCtrl;
     GetPropsTabRect(&rect);
     hwndProps = CreateWindow(szPropsClassName, szPropsTitle,
-        WS_VISIBLE | WS_CHILD, rect.left, rect.top, rect.right - rect.left,
+        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
         rect.bottom - rect.top, parent, 0, hInstance, 0);
 }

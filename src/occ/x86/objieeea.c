@@ -723,6 +723,10 @@ void link_types()
             }
         while (v)
         {
+            if (!v->data && basetype(v->sp->tp)->sp)
+            {
+                link_puttype(v->sp->tp);
+            }
             if (v->seg->attriblist)
             {
                 ATTRIBDATA *ad = v->seg->attriblist;
@@ -741,6 +745,7 @@ void link_types()
         {
             SYMBOL *sp = (SYMBOL *)dbgTypeDefs->data;
             sp->tp->dbgindex = link_puttype(sp->tp); 
+            /*
             if (sp->tp->dbgindex < 1024 && sp->tp->used)
             {
                 int n = sp->tp->dbgindex;
@@ -748,9 +753,24 @@ void link_types()
                emit_record_ieee("ATT%X,TA,T%X.\r\n", sp->tp->dbgindex, n);
             }
             emit_record_ieee("NT%X,%03X%s.\r\n", sp->tp->dbgindex, strlen(sp->name), sp->name);
+            */
             dbgTypeDefs = dbgTypeDefs->next;
         }
         emit_cs(FALSE);
+    }
+}
+void link_virtualtypes(void)
+{
+    if (cparams.prm_debug)
+    {
+        VIRTUAL_LIST *v = virtualFirst;
+        while (v)
+        {
+            int i = v->sp->value.i;
+            if (basetype(v->sp->tp)->sp)
+                emit_record_ieee("ATS%X,T%lX.\r\n", i, v->sp->tp->dbgindex);
+            v = v->next;
+        }
     }
 }
 //-------------------------------------------------------------------------
@@ -1423,6 +1443,8 @@ void output_obj_file(void)
     link_Segs();
     emit_cs(FALSE);
     link_types();
+    link_virtualtypes();
+    emit_cs(FALSE);
     link_ExtDefs();
     link_Publics();
     link_Autos();

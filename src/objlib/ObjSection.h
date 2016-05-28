@@ -47,6 +47,7 @@ class ObjLineNo;
 class ObjFixup;
 class ObjFactory;
 class ObjExpression;
+class ObjType;
 
 class ObjSection : public ObjWrapper
 {
@@ -70,7 +71,8 @@ public:
     
     ObjSection(ObjString Name, ObjInt Index) :name(Name), externalName(""), 
             alignment(1), quals(ram), index(Index), utilityFlag(false), virtualOffset(-1), 
-            size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL), used(false) {}
+            size(new ObjExpression(0)), offset(new ObjExpression(0)), aliasFor(NULL), used(false),
+            virtualSectionType(NULL) {}
     virtual ~ObjSection() { };
     ObjString &GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }
@@ -88,9 +90,12 @@ public:
     bool GetUsed() const { return used; }
     void SetIndex(ObjInt Index)	{ index = Index; }
     void Add(ObjMemory *Memory) { memoryManager.Add(Memory); }
+    void Add(ObjMemory::DebugTagContainer *Tags) { memoryManager.Add(Tags); }
     void SetBase(ObjInt Base) { memoryManager.SetBase(Base); }
     ObjInt GetBase() { return memoryManager.GetBase(); }
     ObjInt GetAbsSize() { return memoryManager.GetSize(); }
+    void SetVirtualType(ObjType *type) { virtualSectionType = type; }
+    ObjType *GetVirtualType() const { return virtualSectionType; }
     void ResolveSymbols(ObjFactory *Factory) { memoryManager.ResolveSymbols(Factory, this); }
     ObjMemoryManager &GetMemoryManager() { return memoryManager; }
     ObjExpression *GetSize() { return size; }
@@ -118,5 +123,6 @@ private:
     bool used; // for the linker
     ObjInt genOffset;
     ObjInt virtualOffset;
+    ObjType *virtualSectionType;
 } ;
 #endif

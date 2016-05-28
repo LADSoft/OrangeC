@@ -77,7 +77,21 @@ public:
 
     DebugTagIterator DebugTagBegin() { return debugTags->begin(); }
     DebugTagIterator DebugTagEnd() { return debugTags->end(); }
-    void SetDebugTags(DebugTagContainer *d) { debugTags = d; }
+    void SetDebugTags(DebugTagContainer *d)
+    {
+        if (debugTags)
+        {
+            for (int i=0; i < d->size(); i++)
+            {
+                debugTags->push_back((*d)[i]);
+            }
+            delete d;
+        }
+        else
+        {
+            debugTags = d;
+        }
+    }
 private:
     ObjInt size;
     ObjByte *data;
@@ -101,7 +115,11 @@ public:
         size += Memory->GetSize();
         memory.push_back(Memory);
     }
-
+    void Add(ObjMemory::DebugTagContainer *Tags)
+    {
+        if (memory.size())
+            memory[memory.size()-1]->SetDebugTags(Tags);
+    }
     void ResolveSymbols(ObjFactory *Factory, ObjSection *Section);
     typedef MemoryContainer::iterator MemoryIterator;
     typedef MemoryContainer::const_iterator const_MemoryIterator;

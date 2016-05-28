@@ -1244,10 +1244,13 @@ static void putattribs(EMIT_TAB *seg, int addr)
             switch(seg->attriblist->type)
             {
                 case e_ad_funcdata:
-                    if (seg->attriblist->v.sp->storage_class == sc_global)
-                        sprintf(buf1, "I%x", (int)seg->attriblist->v.sp->value.i);
+                    if (seg->attriblist->v.sp->linkage == lk_virtual)
+                        sprintf(buf1, "R%X", (int)seg->attriblist->v.sp->value.i);
+                    
+                    else if (seg->attriblist->v.sp->storage_class == sc_global)
+                        sprintf(buf1, "I%X", (int)seg->attriblist->v.sp->value.i);
                     else
-                        sprintf(buf1, "N%x", (int)seg->attriblist->v.sp->value.i);
+                        sprintf(buf1, "N%X", (int)seg->attriblist->v.sp->value.i);
                     if (seg->attriblist->start)
                         emit_record_ieee("CO404,%03X%s.\r\n", strlen(buf1), buf1);
                     else

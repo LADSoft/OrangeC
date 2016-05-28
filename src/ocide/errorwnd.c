@@ -65,7 +65,7 @@ static int curSel;
 static HBITMAP hIcoError, hIcoWarning;
 static HIMAGELIST tagImageList;
  
-static char *szErrorTitle = "Error Window";
+static char *szErrorTitle = "Error List";
 
 static ERRWNDDATA *errlist[1000];
 static int errcount;

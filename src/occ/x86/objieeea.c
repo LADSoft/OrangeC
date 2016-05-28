@@ -768,7 +768,7 @@ void link_virtualtypes(void)
         {
             int i = v->sp->value.i;
             if (basetype(v->sp->tp)->sp)
-                emit_record_ieee("ATS%X,T%lX.\r\n", i, v->sp->tp->dbgindex);
+                emit_record_ieee("ATR%X,T%lX.\r\n", i, v->sp->tp->dbgindex);
             v = v->next;
         }
     }

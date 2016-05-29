@@ -42,6 +42,7 @@
 #define  Scribble270            (270)       // Generated Make File
 #define  IDM_INFORMATION_WINDOW (280)       // Information Window
 #define  Scribble290            (290)       // Information Context Menu
+#define  Scribble295            (295)       // Error List
 #define  Scribble300            (300)       // Integrated Debugger
 #define  Scribble310            (310)       // Debug Menu
 #define  Scribble320            (320)       // Debugging Windows

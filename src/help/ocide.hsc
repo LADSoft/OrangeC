@@ -43,7 +43,7 @@ Previous
 Next
 FALSE
 
-120
+121
 10
 Scribble10
 index
@@ -56,7 +56,7 @@ Writing
 
 
 FALSE
-35
+36
 {\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1460\cf1\lang1033\b\fs32 Welcome to Orange C IDE help
@@ -75,6 +75,7 @@ FALSE
 \par \cf2\strike{\pntext\f1\'B7\tab}Project window, with integrated make facility\cf3\strike0\{linkID=190\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Resource editor\cf3\strike0\{linkID=1000\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Information windows\cf3\strike0\{linkID=280\}\cf0 
+\par \cf2\strike{\pntext\f1\'B7\tab}Error List\cf3\strike0\{linkID=295\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Integrated debugger\cf3\strike0\{linkID=300\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Debugging windows\cf3\strike0\{linkID=320\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Find and Replace\cf3\strike0\{linkID=100\}
@@ -802,7 +803,7 @@ Writing
 
 
 FALSE
-20
+22
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 View Menu\cf2\b0\f1\fs20 
@@ -814,6 +815,8 @@ FALSE
 \par \b Workarea\b0  opens or closes the \cf4\strike Workarea Window\cf3\strike0\{linkID=190\}. \cf2 When the window is displayed a check mark will appear next to the menu item.
 \par 
 \par \b Information Window\b0  opens or closes the \cf4\strike Information Window\cf3\strike0\{linkID=280\}\cf2 . When the window is displayed a check mark will appear next to the menu item.
+\par \f1 
+\par \b\f0 Error List\b0  opens or closes the \cf4\strike Error List Window\cf3\strike0\{linkID=295\}\cf2 .   When the window is displayed a check mark will appear next to the menu item.
 \par \f1 
 \par \b\f0 Create New View \b0 makes a copy of an existing editor window.  The new window will be a new view that looks at the same data as the existing view.  Changes in one view will be reflected in the other.  This mechanism allows one to view two separate locations in the same file.
 \par \f1 
@@ -1186,7 +1189,7 @@ FALSE
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;\red255\green0\blue0;}
 \viewkind4\uc1\pard\ri1440\cf1\b\fs32 Information Window\cf0\b0\f1\fs20 
 \par 
-\par \f0 The Information window iss accessible by clicking \b Information Window\b0  on the \cf2\strike View Menu\cf3\strike0\{linkID=180\}\cf0 .  It has four tabs.  Each tab can be activated for a different function, for example for viewing the output of a build or to look at a list of lines found during a file search.   During a debug session, the debug tab is displayed and has information similar to the following when the window is docked:
+\par \f0 The Information window is accessible by clicking \b Information Window\b0  on the \cf2\strike View Menu\cf3\strike0\{linkID=180\}\cf0 .  It has four tabs.  Each tab can be activated for a different function, for example for viewing the output of a build or to look at a list of lines found during a file search.   During a debug session, the debug tab is displayed and has information similar to the following when the window is docked:
 \par 
 \par \pard\ri1440\qc\cf3\{bmc winfo.png\}\cf0 
 \par \pard\ri1440 
@@ -1233,6 +1236,33 @@ FALSE
 \par 
 \par Stop Build \b0 stops a build which is in progress.\b 
 \par 
+\par }
+295
+Scribble295
+Error List
+error list;windows;
+
+
+
+Writing
+
+
+
+FALSE
+14
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Error List\cf0\lang1049\b0\f1\fs20 
+\par \pard\ri1440\lang1033 
+\par \f0 The Error List is accessible by clicking \b Error List\b0  on the \cf2\strike View Menu\cf3\strike0\{linkID=180\}\cf0 .  This window shows a list of errors and warnings.   It appears as follows:
+\par 
+\par \pard\ri1440\qc\cf3\{bmc werror.png\}\cf0 
+\par \pard\ri1440 
+\par In this example, we see several warnings (yellow icon) and an error (red icon).
+\par 
+\par The buttons at the top of the window allow configuration of whether to view errors, warnings, or both.   Clicking on an error line brings up an \cf2\strike Editor Window\cf3\strike0\{linkID=50\}\cf0  to view the line with the problem. 
+\par 
+\par The contents of this window are derived from the \cf2\strike Information Window's\cf3\strike0\{linkID=280\}\cf0  listing of build results, however, the Information Window does not have to be displayed for this window to function.
 \par }
 300
 Scribble300
@@ -4447,7 +4477,7 @@ FALSE
 0
 0
 0
-181
+182
 1 General Information
 2 Welcome=Scribble10
 2 Getting Started=IDH_GETTING_STARTED
@@ -4519,6 +4549,7 @@ FALSE
 1 Information Windows
 2 Information Window=IDM_INFORMATION_WINDOW
 2 Information Context Menu=Scribble290
+2 Error List=Scribble295
 1 Integrated Debugger
 2 Integrated Debugger=Scribble300
 2 Debug Target Properties=IDH_DEBUG_CONFIGURATION

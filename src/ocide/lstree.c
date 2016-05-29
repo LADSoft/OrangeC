@@ -197,11 +197,28 @@ LRESULT CALLBACK extTreeWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 DestroyWindow(ptr->hwndEdit);
             free(ptr);
             break;
+        case WM_ERASEBKGND:
+            return 1;
         case WM_PAINT:
             GetUpdateRect(hwnd, &r, FALSE);
-            rv = CallWindowProc(oldproc, hwnd, iMessage, wParam, lParam);
-            SendMessage(GetParent(hwnd), TCN_PAINT, 0, (LPARAM) &r);
-            return rv;
+            {
+                PAINTSTRUCT ps;
+                HDC hDC = BeginPaint(hwnd, &ps), hdouble;
+                HBITMAP bitmap;
+                RECT rect;
+                GetClientRect(hwnd, &rect);
+                hdouble = CreateCompatibleDC(hDC);
+                bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+                SelectObject(hdouble, bitmap);
+                FillRect(hdouble,&rect, (HBRUSH)(COLOR_WINDOW + 1));
+                CallWindowProc(oldproc, hwnd, WM_PRINT, (WPARAM)hdouble, PRF_CLIENT);
+                SendMessage(GetParent(hwnd), TCN_PAINT, (WPARAM)hdouble, (LPARAM) &r);
+                BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+                DeleteObject(bitmap);
+                DeleteDC(hdouble);
+                EndPaint(hwnd, &ps);
+                return 0;
+            }
         case WM_KEYDOWN:
             if (wParam =='C' && (GetKeyState(VK_CONTROL) & 0x80000000))
             {
@@ -342,6 +359,8 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
     }
     switch (iMessage)
     {
+        case WM_ERASEBKGND:
+            return 1;
         case WM_NOTIFY:
             n = (HD_NOTIFY*)lParam;
             ptr = (COLUMNINFO*)GetWindowLong(hwnd, 0);
@@ -516,14 +535,14 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
                 {
                     LOGBRUSH lbrush;
                     HBRUSH graybrush;
-                    HDC dc;
+                    HDC dc = (HDC)wParam;
                     int lined = FALSE;
                     HFONT font = (HFONT)SendMessage(ptr->hwndTree, WM_GETFONT,
                         0, 0);
                     lbrush.lbStyle = BS_SOLID;
                     lbrush.lbColor = 0xff0000;
                     graybrush = CreateBrushIndirect(&lbrush);
-                    dc = GetDC(ptr->hwndTree);
+//                    dc = GetDC(ptr->hwndTree);
                     font = SelectObject(dc, font);
                     if (GetWindowLong(hwnd, GWL_STYLE) &TCS_LINE)
                     {
@@ -584,7 +603,7 @@ LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
                         }
                     }
                     SelectObject(dc, font);
-                    ReleaseDC(ptr->hwndTree, dc);
+//                    ReleaseDC(ptr->hwndTree, dc);
                     DeleteObject(graybrush);
 
                 }

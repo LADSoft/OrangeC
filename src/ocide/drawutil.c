@@ -248,7 +248,7 @@ static int CreateFileSaveData(HWND hwnd, int changed)
     RECT r;
     HWND hwndLV = GetDlgItem(hwnd, IDC_FILELIST);
     LV_COLUMN lvC;
-    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
     GetWindowRect(hwndLV, &r);
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM ;

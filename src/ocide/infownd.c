@@ -48,12 +48,12 @@
 #include "header.h"
 
 extern HANDLE hInstance;
-extern HWND hwndWatch, hwndClient, hwndFrame, hwndTab;
+extern HWND hwndWatch, hwndClient, hwndFrame, hwndTab, hwndError;
 extern LOGFONT systemDialogFont;
 
 static HWND hwndInfo;
 static int latch;
-static char szErrorClassName[] = "xccErrorClass";
+static char szInfoClassName[] = "xccInfoClass";
 static WNDPROC oldproc;
 static HWND hwndCtrl, lsTabCtrl;
 static int index;
@@ -63,7 +63,7 @@ static char *nameTags[] =
 {
     "Build", "Debug", "Find in Files 1", "Find in Files 2"
 };
-static char *szErrorTitle = "Information Window";
+static char *szInfoTitle = "Information Window";
 int getfile(char *start, char *buffer, char end, DWINFO *info)
 {
     char *t = buffer, *q;
@@ -169,12 +169,12 @@ void TextToClipBoard(HWND hwnd, char *text)
 void BumpToEditor(HWND hwnd)
 {
     DWINFO info;
-    char   buffer[256],  *t, *q;
+    char   buffer[512],  *t, *q;
     int lineno;
     int start;
     SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
     lineno = SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, start);
-    *(short*)buffer = 255;
+    *(short*)buffer = 512;
     lineno = SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer);
     buffer[lineno] = 0;
     lineno =  - 1;
@@ -228,7 +228,64 @@ void BumpToEditor(HWND hwnd)
     }
 
 }
-
+void BumpToErrorWnd(char *buffer)
+{
+    DWINFO info;
+    char  *t, *q, *err = NULL;
+    int lineno = -1;
+    int start;
+    if ((t = strchr(buffer, '(')) && isdigit(*(t + 1)))
+    {
+        lineno = getfile(buffer, t, ')', &info);
+        err = strchr(t, ')');
+    }
+    else
+    {
+        t = buffer;
+        while (1)
+        {
+            if ((t = strchr(t + 1, ':')))
+            {
+                if (isdigit(*(t + 1)))
+                {
+                    lineno = getfile(buffer, t, ':', &info);
+                    if (lineno !=  - 1)
+                    {
+                        err = strchr(t, ':');
+                        break;
+                    }
+                }
+            }
+            else
+                break;
+        }
+    }
+    if (lineno == -1)
+    {
+        if (strstr(buffer, "in module"))
+        {
+            strcpy(info.dwName, strstr(buffer, "in module" +  10));
+            strstr(buffer, "in module")[0] = 0;
+            err = strchr(buffer, ':' );
+            lineno = -2;
+        }
+    }
+    if (lineno !=  - 1 && err)
+    {
+        ERRWNDDATA *p = calloc(1, sizeof(ERRWNDDATA));
+        p->isWarning = TRUE;
+        if (strnicmp(buffer,"error",5) == 0)
+            p->isWarning = FALSE;
+        p->lineno = lineno;
+        while (*err && !isspace(*err))
+            err++;
+        while (isspace(*err))
+            err++;
+        strcpy(p->error, err);
+        strcpy(p->file, info.dwName);
+        PostMessage(hwndError, WM_SETERRDATA, 0, (LPARAM)p);
+    }
+}
 
 //-------------------------------------------------------------------------
 
@@ -409,7 +466,7 @@ LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
     static HWND hsubwnds[4]; // build, debug, find1, find2
@@ -460,6 +517,8 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_SETTEXT2:
             if (!lParam)
             {
+                if (wParam == 0)
+                    PostMessage(hwndError, WM_CLEARERRDATA, 0, 0);
                 SendMessage(hsubwnds[wParam], WM_SETTEXT, 0, (LPARAM)"");
                 latch = TRUE;
             }
@@ -481,7 +540,10 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     SendMessage(hsubwnds[wParam], WM_VSCROLL, MAKELONG(SB_THUMBPOSITION, thumb), 0);
                 }
-
+                if (wParam == 0)
+                {
+                    BumpToErrorWnd((char *)lParam);
+                }
             }
             colors[wParam] = RetrieveSysColor(COLOR_WINDOWTEXT);
             return 0;
@@ -529,6 +591,8 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             return 0;
         case WM_CLOSE:
             break;
+        case WM_ERASEBKGND:
+            return 1;
         case WM_PAINT:
             dc = BeginPaint(hwnd, &ps);
             pen = CreatePen(PS_SOLID, 0, RetrieveSysColor(COLOR_3DSHADOW));
@@ -555,6 +619,8 @@ LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             ShowWindow(hsubwnds[index], SW_SHOW);
             SendMessage(lsTabCtrl, TABM_SELECT, 0, (LPARAM)hsubwnds[index]);
             SendMessage(hsubwnds[index], WM_SETTEXT, index, (LPARAM)"");
+            if (index == 0)
+                PostMessage(hwndError, WM_CLEARERRDATA, 0, 0);
             latch = TRUE;
             break;
         case WM_SIZE:
@@ -586,7 +652,7 @@ void RegisterInfoWindow(void)
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
     wc.style = 0;
-    wc.lpfnWndProc = &errorProc;
+    wc.lpfnWndProc = &infoProc;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = hInstance;
@@ -594,7 +660,7 @@ void RegisterInfoWindow(void)
     wc.hCursor = LoadCursor(0, IDC_ARROW);
     wc.hbrBackground = GetStockObject(WHITE_BRUSH);
     wc.lpszMenuName = 0;
-    wc.lpszClassName = szErrorClassName;
+    wc.lpszClassName = szInfoClassName;
     RegisterClass(&wc);
 
     GetClassInfo(0, "richedit", &wc);
@@ -614,7 +680,7 @@ void CreateInfoWindow(void)
 {
     if (!hwndInfo)
     {
-        hwndInfo = CreateDockableWindow(DID_ERRORWND, szErrorClassName, szErrorTitle, hInstance, 200, 500);
+        hwndInfo = CreateDockableWindow(DID_INFOWND, szInfoClassName, szInfoTitle, hInstance, 200, 500);
     }
 }
 void SetInfoColor(int window, DWORD color)

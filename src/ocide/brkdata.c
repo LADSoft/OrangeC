@@ -214,7 +214,7 @@ int LoadDataBreakpoints(HWND hwnd)
     HWND hwndLV = GetDlgItem(hwnd, IDC_BPLIST);
     LV_COLUMN lvC;
     DATABREAK *search;
-    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
     GetWindowRect(hwndLV, &r);
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;

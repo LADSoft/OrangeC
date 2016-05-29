@@ -109,7 +109,7 @@ static void SetListViewColumns(void)
     RECT r;
     LV_COLUMN lvC;
     ListView_EnableGroupView(lvwindow, TRUE);
-    ListView_SetExtendedListViewStyle(lvwindow, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP);
+    ListView_SetExtendedListViewStyle(lvwindow, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_LABELTIP | LVS_EX_DOUBLEBUFFER);
 
     GetPropsTabRect(&r);
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM  | LVCF_TEXT;
@@ -504,6 +504,6 @@ void CreatePropsWindow(void)
     parent = hwndPropsTabCtrl;
     GetPropsTabRect(&rect);
     hwndProps = CreateWindow(szPropsClassName, szPropsTitle,
-        WS_VISIBLE | WS_CHILD, rect.left, rect.top, rect.right - rect.left,
+        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
         rect.bottom - rect.top, parent, 0, hInstance, 0);
 }

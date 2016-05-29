@@ -264,8 +264,14 @@ void MemDoPaint(HWND hwnd, int focussed)
         RECT rect;
         int lines;
         int chars;
-        memset(charbuf, 0, sizeof(charbuf));
+        HDC hdouble;
+        HBITMAP bitmap;
         GetClientRect(hwnd, &rect);
+        hdouble = CreateCompatibleDC(dc);
+        bitmap = CreateCompatibleBitmap(dc, rect.right, rect.bottom);
+        SelectObject(hdouble, bitmap);
+        FillRect(hdouble, &rect,(HBRUSH)(COLOR_WINDOW + 1));
+        memset(charbuf, 0, sizeof(charbuf));
         lines = (rect.bottom - rect.top)/ 16;
         chars = (rect.right/8 - 10) / 4; 
         if (lines > 0 && chars > 0)
@@ -275,18 +281,18 @@ void MemDoPaint(HWND hwnd, int focussed)
             {
                 int j;
                 sprintf(buf, "%08X: ", MemAddress[index] + i * chars);
-                TextOut(dc, 0, i *16+rect.top, buf, strlen(buf));
+                TextOut(hdouble, 0, i *16+rect.top, buf, strlen(buf));
                 for (j = 0; j < chars; j+= memoryWordSize)
                 {
                     int k;
                     if (i == cursrow[index] && j == curscol[index] && focussed)
                     {
-                        oldbk = GetBkColor(dc);
-                        oldtxt = SetTextColor(dc, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
+                        oldbk = GetBkColor(hdouble);
+                        oldtxt = SetTextColor(hdouble, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
         //                if (modifying)
-                            SetBkColor(dc, RetrieveSysColor(COLOR_HIGHLIGHT));
+                            SetBkColor(hdouble, RetrieveSysColor(COLOR_HIGHLIGHT));
         //                else
-        //                    SetBkColor(dc, oldtxt);
+        //                    SetBkColor(hdouble, oldtxt);
                     }
                     if (ReadProcessMemory(activeProcess->hProcess, (LPVOID)(MemAddress[index] +
                         i * chars + j), (LPVOID)(charbuf + j), memoryWordSize, 0))
@@ -330,10 +336,10 @@ void MemDoPaint(HWND hwnd, int focussed)
                         charbuf[j] = '.';
                     }
                     if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
-                        TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8-4, 
+                        TextOut(hdouble, (10+ (j * 2 + j/memoryWordSize)) *8-4, 
                                                         i *16+rect.top, buf, 2 * memoryWordSize);
                     else
-                        TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, 
+                        TextOut(hdouble, (10+ (j * 2 + j/memoryWordSize)) *8, 
                                                         i *16+rect.top, buf, 2 * memoryWordSize);
                                 
                     for (k=0; k < memoryWordSize; k++)
@@ -341,22 +347,25 @@ void MemDoPaint(HWND hwnd, int focussed)
                             charbuf[j+k] = '.';
                     if (i == cursrow[index] && j == curscol[index] && focussed)
                     {
-                        SetTextColor(dc, oldtxt);
-                        SetBkColor(dc, oldbk);
+                        SetTextColor(hdouble, oldtxt);
+                        SetBkColor(hdouble, oldbk);
                     }
                     if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
-                        TextOut(dc, (10 + memoryWordSize * 2 + 
+                        TextOut(hdouble, (10 + memoryWordSize * 2 + 
                                     (j * 2 + j/memoryWordSize)) *8-4, 
                                      i *16+rect.top, " ", 1);
                     else
-                        TextOut(dc, (10 + memoryWordSize * 2 + 
+                        TextOut(hdouble, (10 + memoryWordSize * 2 + 
                                     (j * 2 + j/memoryWordSize)) *8, 
                                      i *16+rect.top, " ", 1);
                 }
-                TextOut(dc, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, &charbuf[0], strlen(charbuf));
+                TextOut(hdouble, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, &charbuf[0], strlen(charbuf));
             }
         }    
-        SelectObject(dc, oldFont);
+        SelectObject(hdouble, oldFont);
+        BitBlt(dc, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+        DeleteObject(bitmap);
+        DeleteObject(hdouble);
     
     }
     EndPaint(hwnd, &ps);
@@ -468,6 +477,8 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_DESTROY:
             break;
+        case WM_ERASEBKGND:
+            return 1;
         case WM_PAINT:
             MemDoPaint(hwnd, GetWindowLong(hwnd, GWL_USERDATA)); // focussed
             return 0;

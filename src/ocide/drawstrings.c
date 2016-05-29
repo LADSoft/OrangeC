@@ -91,7 +91,7 @@ static void SetListViewColumns(HWND hwndParent, HWND hwnd)
 {
     RECT r;
     LV_COLUMN lvC;
-    ListView_SetExtendedListViewStyle(hwnd, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwnd, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
     GetClientRect(hwnd, &r);
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM  | LVCF_TEXT;

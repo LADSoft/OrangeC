@@ -189,6 +189,7 @@ LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 hInstance, NULL);
             ListView_SetBkColor(lvwindow, RetrieveSysColor(COLOR_BTNFACE));
             ListView_SetTextBkColor(lvwindow, RetrieveSysColor(COLOR_BTNFACE));
+            ListView_SetExtendedListViewStyle(lvwindow, LVS_EX_DOUBLEBUFFER);
             lvIml = ImageList_Create(32, 32, ILC_COLOR24, IMAGECOUNT, 0);
             
             mainIml = LoadBitmap(hInstance, "ID_CONTROLS");
@@ -234,6 +235,6 @@ void CreateCtlTbWindow(void)
     parent = hwndPropsTabCtrl;
     GetPropsTabRect(&rect);
     hwndToolbox = CreateWindow(szCtlTbClassName, szCtlTbTitle,
-        WS_VISIBLE | WS_CHILD, rect.left, rect.top, rect.right - rect.left,
+        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
         rect.bottom - rect.top, parent, 0, hInstance, 0);
 }

@@ -54,6 +54,7 @@ extern int findflags;
 extern int replaceflags;
 extern int findmode;
 extern int replacemode;
+extern int errorButtons;
 
 extern int memoryWordSize;
 
@@ -132,6 +133,16 @@ void RestoreMemoryWindowSettings(struct xmlNode *node, int version)
     {
         if (IsAttrib(attribs, "WORDSIZE"))
             memoryWordSize = atoi(attribs->value);
+        attribs = attribs->next;
+    } 
+}
+void RestoreErrorWindowSettings(struct xmlNode *node, int version)
+{
+    struct xmlAttr *attribs = node->attribs;
+    while (attribs)
+    {
+        if (IsAttrib(attribs, "BTNS"))
+            errorButtons = atoi(attribs->value);
         attribs = attribs->next;
     } 
 }
@@ -241,6 +252,8 @@ int RestorePreferences(void)
             RestoreGeneralProps(nodes, version);
         else if (IsNode(nodes, "MEMWND"))
             RestoreMemoryWindowSettings(nodes, version);
+        else if (IsNode(nodes, "ERRWND"))
+            RestoreErrorWindowSettings(nodes, version);
         else if (IsNode(nodes, "FIND"))
             RestoreFindflags(nodes, version);
         else if (IsNode(nodes, "PLACEMENT"))
@@ -307,6 +320,7 @@ void SavePreferences(void)
     }
     fprintf(out, "\n\t</CUSTOMCOLORS>\n");
     fprintf(out, "\t<MEMWND WORDSIZE=\"%d\"/>\n", memoryWordSize);
+    fprintf(out, "\t<ERRWND BTNS=\"%d\"/>\n", errorButtons);
     fprintf(out, "\t<FIND FMODE=\"%d\" RMODE=\"%d\" FFLAG=\"%d\" RFLAG=\"%d\"/>\n", 
             findmode, replacemode, findflags, replaceflags);
     fprintf(out, "\t<PROPERTIES>\n");

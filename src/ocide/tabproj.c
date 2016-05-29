@@ -49,6 +49,8 @@ extern HINSTANCE hInstance;
 
 HWND hwndTab;
 HWND hwndTabCtrl;
+char sztabDoubleBufferName[] = "xccTabDoubleBuffer";
+
 static char szTabClassName[] = "xccTabClass";
 static char szTabTitle[] = "Workspace";
 static char *nameTags[] = 
@@ -60,6 +62,8 @@ static HBITMAP *bitmaps[] =
 {
      &projBitmap, &resBitmap
 };
+
+static WNDPROC oldproc;
 
 void GetTabRect(RECT *rect)
 {
@@ -76,6 +80,36 @@ void SelectResourceWindow()
     ShowWindow(hwndRes, SW_SHOW) ;
 }
 //-------------------------------------------------------------------------
+LRESULT CALLBACK tabDoubleBufferProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam)
+{
+    
+    switch(iMessage)
+    {
+        case WM_ERASEBKGND:
+            return 1;
+        case WM_PAINT:
+            {
+                PAINTSTRUCT ps;
+                HDC hDC = BeginPaint(hwnd, &ps), hdouble;
+                HBITMAP bitmap;
+                RECT rect;
+                GetClientRect(hwnd, &rect);
+                hdouble = CreateCompatibleDC(hDC);
+                bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+                SelectObject(hdouble, bitmap);
+                FillRect(hdouble,&rect, (HBRUSH)(COLOR_WINDOW + 1));
+                CallWindowProc(oldproc, hwnd, WM_PRINT, (WPARAM)hdouble, PRF_CLIENT);
+                BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+                DeleteObject(bitmap);
+                DeleteDC(hdouble);
+                EndPaint(hwnd, &ps);
+                return 0;
+            }
+        
+    }
+    return CallWindowProc(oldproc, hwnd, iMessage, wParam, lParam);
+}
 
 LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
@@ -135,7 +169,7 @@ LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_CREATE:
             hwndTab = hwnd;
             GetClientRect(hwnd, &r);
-            hwndTabCtrl = CreateWindow(WC_TABCONTROL, 0, WS_CHILD +
+            hwndTabCtrl = CreateWindow(sztabDoubleBufferName, 0, WS_CHILD + WS_CLIPCHILDREN +
                 WS_CLIPSIBLINGS + WS_VISIBLE + TCS_FLATBUTTONS /*+ TCS_OWNERDRAWFIXED */
                 + TCS_FOCUSNEVER /*+ TCS_FIXEDWIDTH*/ + TCS_BOTTOM, r.left, r.top,
                 r.right - r.left, r.bottom - r.top, hwnd, 0, hInstance, 0);
@@ -195,6 +229,13 @@ LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 void RegisterTabWindow(void)
 {
     WNDCLASS wc;
+    GetClassInfo(0, WC_TABCONTROL, &wc);
+    oldproc = wc.lpfnWndProc;
+    wc.lpfnWndProc = &tabDoubleBufferProc;
+    wc.lpszClassName = sztabDoubleBufferName;
+    wc.hInstance = hInstance;
+    RegisterClass(&wc);
+
     memset(&wc, 0, sizeof(wc));
     wc.style = 0;
     wc.lpfnWndProc = &TabWndWndProc;

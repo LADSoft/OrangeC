@@ -591,6 +591,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 HFONT font;
                 initted = TRUE;
                 CreateStackWindow();
+                CreateErrorWindow();
                 CreateInfoWindow();
                 CreateTabWindow();
                 CreatePropertyTabWindow();
@@ -964,10 +965,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 dmgrHideWindow(DID_LOCALSWND, x_state);
                 SetMenuCheckedState(hMenuMain, DID_LOCALSWND, IDM_VIEWLOCALS);
                 return 0;
-            case IDM_VIEWERROR:
-                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWERROR);
-                dmgrHideWindow(DID_ERRORWND, x_state);
-                SetMenuCheckedState(hMenuMain, DID_ERRORWND, IDM_VIEWERROR);
+            case IDM_VIEWINFO:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWINFO);
+                dmgrHideWindow(DID_INFOWND, x_state);
+                SetMenuCheckedState(hMenuMain, DID_INFOWND, IDM_VIEWINFO);
+                return 0;
+            case IDM_VIEWERR:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWERR);
+                dmgrHideWindow(DID_ERRWND, x_state);
+                SetMenuCheckedState(hMenuMain, DID_ERRWND, IDM_VIEWERR);
                 return 0;
             case IDM_ABOUT:
                 doAbout();
@@ -1753,6 +1759,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
         RegisterDrawWindow();
         RegisterProjectWindow();
         RegisterResourceWindow();
+        RegisterErrorWindow();
         RegisterInfoWindow();
         RegisterASMWindow();
         RegisterStackWindow();

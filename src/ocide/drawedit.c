@@ -1295,22 +1295,26 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             r.right = EDITOR_OFFSET - 3;
             InvalidateRect(hwnd, &r, 0);
             break;
+        case WM_ERASEBKGND:
+            return 1;
         case WM_PAINT:
-            GetClientRect(hwnd, &r);
-            dc = BeginPaint(hwnd, &paint);
-            /*
-            hpen = CreatePen(PS_SOLID, 1, 0xcccccc);
-            */
-            /*
-            oldpen = SelectObject(dc, hpen);
-            MoveToEx(dc, EDITOR_OFFSET - 2, 0, 0);
-            LineTo(dc, EDITOR_OFFSET - 2, r.bottom);
-            SelectObject(dc, oldpen);
-            DeleteObject(hpen);
-            */
-            PaintBreakpoints(hwnd, dc, &paint, &r);
-            EndPaint(hwnd, &paint);
-            return 0;
+        {
+            RECT rect;
+            HDC hDC, hdouble;
+            HBITMAP bitmap;
+            PAINTSTRUCT ps;
+            GetClientRect(hwnd, &rect);
+            hDC = BeginPaint(hwnd, &ps);
+            hdouble = CreateCompatibleDC(hDC);
+            bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+            SelectObject(hdouble, bitmap);
+            PaintBreakpoints(hwnd, hdouble, &paint, &rect);
+            BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+            DeleteObject(bitmap);
+            DeleteObject(hdouble);
+            EndPaint(hwnd, &ps);
+        }
+        return 0;
         case WM_CREATE:
             //         maximized = TRUE ;			
             rv = DefWindowProc(hwnd, iMessage, wParam, lParam);

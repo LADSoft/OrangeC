@@ -382,34 +382,44 @@ void asmDoPaint(HWND hwnd)
 {
     HDC dc;
     HPEN hpen, oldpen;
-    RECT r;
+    RECT rect;
     HBRUSH graybrush;
     PAINTSTRUCT paint;
     HFONT oldFont;
+    HDC hdouble;
+    HBITMAP bitmap;
     int oldcolor;
-    GetClientRect(hwnd, &r);
+    GetClientRect(hwnd, &rect);
     dc = BeginPaint(hwnd, &paint);
+    hdouble = CreateCompatibleDC(dc);
+    bitmap = CreateCompatibleBitmap(dc, rect.right, rect.bottom);
+    SelectObject(hdouble, bitmap);
+    FillRect(hdouble, &rect, (HBRUSH)(COLOR_WINDOW + 1));
     hpen = CreatePen(PS_SOLID, 0, RetrieveSysColor(COLOR_BTNSHADOW));
     graybrush = CreateSolidBrush(RetrieveSysColor(COLOR_BTNFACE));
-    r.right = ASM_OFFSET - 1;
-//    MoveToEx(dc, ASM_OFFSET - 1, 0, 0);
-//    LineTo(dc, ASM_OFFSET - 1, r.bottom);
-    FillRect(dc, &r, graybrush);
-    oldpen = SelectObject(dc, hpen);
-    MoveToEx(dc, ASM_OFFSET - 1, 0, 0);
-    LineTo(dc, ASM_OFFSET - 1, r.bottom);
-    SelectObject(dc, oldpen);
+    rect.right = ASM_OFFSET - 1;
+//    MoveToEx(hdouble, ASM_OFFSET - 1, 0, 0);
+//    LineTo(hdouble, ASM_OFFSET - 1, r.bottom);
+    FillRect(hdouble, &rect, graybrush);
+    oldpen = SelectObject(hdouble, hpen);
+    MoveToEx(hdouble, ASM_OFFSET - 1, 0, 0);
+    LineTo(hdouble, ASM_OFFSET - 1, rect.bottom);
+    SelectObject(hdouble, oldpen);
     DeleteObject(hpen);
     DeleteObject(graybrush);
     
     if (activeProcess && activeProcess->hProcess)
     {
-        oldFont = SelectObject(dc, asmFont);
-        oldcolor = SetTextColor(dc, 0x6a6b6c);
-        DoDisassembly(dc, &r);
-        SetTextColor(dc, oldcolor);
-        SelectObject(dc, oldFont);
+        oldFont = SelectObject(hdouble, asmFont);
+        oldcolor = SetTextColor(hdouble, 0x6a6b6c);
+        DoDisassembly(hdouble, &rect);
+        SetTextColor(hdouble, oldcolor);
+        SelectObject(hdouble, oldFont);
     }
+    GetClientRect(hwnd, &rect);
+    BitBlt(dc, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+    DeleteObject(bitmap);
+    DeleteObject(hdouble);
     EndPaint(hwnd, &paint);
 }
 
@@ -453,6 +463,8 @@ LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SetScrollPos(hwnd, SB_VERT, 32000, TRUE);
             SendMessage(hwndSrcTab, TABM_ADD, (WPARAM)"Disassembly", (LPARAM)hwnd);
             break;
+        case WM_ERASEBKGND:
+            return 1;
         case WM_PAINT:
             asmDoPaint(hwnd);
             return 0;

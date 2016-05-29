@@ -360,7 +360,8 @@ BEGIN
 	POPUP "&View"
 	BEGIN
 		MENUITEM "&Work Area", IDM_VIEWPROJECT
-		MENUITEM "&Information Window", IDM_VIEWERROR
+		MENUITEM "&Information Window", IDM_VIEWINFO
+		MENUITEM "&Error List", IDM_VIEWERR
 		MENUITEM "&Property Window", IDM_VIEWPROPS
 		MENUITEM "", 0, MFT_SEPARATOR
 		MENUITEM "Create New &View", IDM_COPYWINDOW
@@ -603,6 +604,8 @@ ID_FOLDEROPEN BITMAP "res\\foldop.bmp"
 ID_FOLDERCLOSE BITMAP "res\\foldcl.bmp"
 ID_CONTROLS BITMAP "res\\ctl32.bmp"
 ID_TAG BITMAP "res\\tags.bmp"
+ID_ERRICO ICON "res\\err.ico"
+ID_WARNICO ICON "res\\warn.ico"
 ID_PROJBMP BITMAP "res\\projtab.bmp"
 ID_RESBMP BITMAP "res\\restab.bmp"
 ID_ITEMBMP BITMAP "res\\item.bmp"

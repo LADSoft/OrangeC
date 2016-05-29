@@ -129,6 +129,7 @@
     <ClCompile Include="drawutil.c" />
     <ClCompile Include="drawversion.c" />
     <ClCompile Include="effect.c" />
+    <ClCompile Include="errorwnd.c" />
     <ClCompile Include="extools.c" />
     <ClCompile Include="FileBrowse.c" />
     <ClCompile Include="filedlg.c" />

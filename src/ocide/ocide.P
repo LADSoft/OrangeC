@@ -660,6 +660,9 @@ void SetInfoColor(int window, DWORD color);
 void SelectInfoWindow(int window);
 void SendInfoMessage(int window, char *buf);
 
+void RegisterErrorWindow(void);
+void CreateErrorWindow(void);
+
                              /* Instance.c */
 
 int SendFileName(char *msg);

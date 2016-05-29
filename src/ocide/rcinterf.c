@@ -73,6 +73,7 @@ extern char szMessageTableFilter[];
 extern jmp_buf errjump;
 extern LOGFONT systemDialogFont;
 extern struct propertyFuncs imgFuncs;
+extern char sztreeDoubleBufferName[] ;
 
 HWND hwndRes;
 char *rcSearchPath;
@@ -1996,7 +1997,7 @@ LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_CREATE:
             GetClientRect(hwnd, &rs);
-            treeWindow = CreateWindowEx(0, WC_TREEVIEW, "", WS_VISIBLE |
+            treeWindow = CreateWindowEx(0, sztreeDoubleBufferName, "", WS_VISIBLE |
                 WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_TRACKSELECT,
                 0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
                 hInstance, NULL);
@@ -2080,6 +2081,6 @@ void CreateResourceWindow(void)
     parent = hwndTabCtrl;
     GetTabRect(&rect);
     hwndRes = CreateWindow(szResourceClassName, szResourceTitle,
-        WS_VISIBLE | WS_CHILD, rect.left, rect.top, rect.right - rect.left,
+        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
         rect.bottom - rect.top, parent, 0, hInstance, 0);
 }

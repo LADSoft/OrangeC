@@ -227,7 +227,7 @@ static int CreateNewFileData(HWND hwnd)
     RECT r;
     HWND hwndLV = GetDlgItem(hwnd, IDC_LVNEWPROJECT);
     LV_COLUMN lvC;
-    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwndLV, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     ListView_SetImageList(hwndLV, ImageList_Duplicate(treeIml), LVSIL_SMALL);
 
     GetWindowRect(hwndLV, &r);

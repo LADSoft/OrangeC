@@ -70,6 +70,8 @@ extern char *sysProfileName;
 extern char currentProfileName[256] ;
 extern int profileDebugMode;
 
+WNDPROC oldproc;
+
 LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 
@@ -81,6 +83,8 @@ HIMAGELIST treeIml;
 HFONT projFont, boldProjFont, italicProjFont;
 
 static char szProjectClassName[] = "xccProjectClass";
+char sztreeDoubleBufferName[] = "xccTreeDoubleBuffer";
+
 static HBITMAP folderClose, folderOpen, mainIml;
 static int ilfolderClose, ilfolderOpen;
 static int treeViewSelected;
@@ -424,7 +428,36 @@ static int CustomDraw(HWND hwnd, LPNMTVCUSTOMDRAW draw)
             return CDRF_DODEFAULT;
     }
 }
-
+LRESULT CALLBACK treeDoubleBufferProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam)
+{
+    
+    switch(iMessage)
+    {
+        case WM_ERASEBKGND:
+            return 1;
+        case WM_PAINT:
+            {
+                PAINTSTRUCT ps;
+                HDC hDC = BeginPaint(hwnd, &ps), hdouble;
+                HBITMAP bitmap;
+                RECT rect;
+                GetClientRect(hwnd, &rect);
+                hdouble = CreateCompatibleDC(hDC);
+                bitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+                SelectObject(hdouble, bitmap);
+                FillRect(hdouble,&rect, (HBRUSH)(COLOR_WINDOW + 1));
+                CallWindowProc(oldproc, hwnd, WM_PRINT, (WPARAM)hdouble, PRF_CLIENT);
+                BitBlt(hDC, 0, 0, rect.right, rect.bottom, hdouble, 0, 0, SRCCOPY);
+                DeleteObject(bitmap);
+                DeleteDC(hdouble);
+                EndPaint(hwnd, &ps);
+                return 0;
+            }
+        
+    }
+    return CallWindowProc(oldproc, hwnd, iMessage, wParam, lParam);
+}
 LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
@@ -1008,7 +1041,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             DeleteObject(folderClose);
             DeleteObject(folderOpen);
             DeleteObject(mainIml);
-            prjTreeWindow = CreateWindowEx(0, WC_TREEVIEW, "", WS_VISIBLE |
+            prjTreeWindow = CreateWindowEx(0, sztreeDoubleBufferName, "", WS_VISIBLE |
                 WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_TRACKSELECT,
                 0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
                 hInstance, NULL);
@@ -1050,6 +1083,13 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 void RegisterProjectWindow(void)
 {
     WNDCLASS wc;
+    GetClassInfo(0, WC_TREEVIEW, &wc);
+    oldproc = wc.lpfnWndProc;
+    wc.lpfnWndProc = &treeDoubleBufferProc;
+    wc.lpszClassName = sztreeDoubleBufferName;
+    wc.hInstance = hInstance;
+    RegisterClass(&wc);
+
     memset(&wc, 0, sizeof(wc));
     wc.style = 0;
     wc.lpfnWndProc = &ProjectProc;
@@ -1082,7 +1122,7 @@ void CreateProjectWindow(void)
     parent = hwndTabCtrl;
     GetTabRect(&rect);
     hwndProject = CreateWindow(szProjectClassName, szWorkAreaTitle,
-        WS_VISIBLE | WS_CHILD, rect.left, rect.top, rect.right - rect.left,
+        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
         rect.bottom - rect.top, parent, 0, hInstance, 0);
 }
 

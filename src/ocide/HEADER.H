@@ -62,7 +62,7 @@
 
 #define DID_TABWND 1
 #define DID_WATCHWND 2
-#define DID_ERRORWND 3
+#define DID_INFOWND 3
 //#define DID_ASMWND 4  keep reserved for compatibility with older projects
 #define DID_MEMWND 5
 #define DID_STACKWND 6
@@ -71,6 +71,7 @@
 #define DID_REGWND 9
 #define DID_PROPSWND 10
 #define DID_LOCALSWND 11
+#define DID_ERRWND 12
 
 #define DID_EDITTOOL 20
 #define DID_BUILDTOOL 21
@@ -642,6 +643,13 @@ typedef struct {
 	DLGTEMPLATE *apRes[8 + 4];
 } DLGHDR;
 
+typedef struct
+{
+    char file[MAX_PATH];
+    char error[512];
+    int lineno;
+    int isWarning;
+} ERRWNDDATA;
 
 struct _propsData
 {
@@ -765,6 +773,13 @@ typedef struct tagNMTTCUSTOMDRAW
 
 #define MCW_EM 0x0008001F
 
+#endif
+#ifndef LVS_EX_DOUBLEBUFFER
+#define LVS_EX_DOUBLEBUFFER 0x10000
+#define TVS_EX_DOUBLEBUFFER 4
+#define TVM_SETEXTENDEDSTYLE (TV_FIRST + 44)
+#define TreeView_SetExtendedStyle(hwnd, dw, mask) \
+    SendMessage((hwnd), TVM_SETEXTENDEDSTYLE, mask, dw)
 #endif
 
 #ifdef OPENWATCOM

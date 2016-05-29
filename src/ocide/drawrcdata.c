@@ -100,7 +100,7 @@ struct rcDataUndo
 static void SetListViewColumns(HWND hwndParent, HWND hwnd)
 {
     LV_COLUMN lvC;
-    ListView_SetExtendedListViewStyle(hwnd, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(hwnd, LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
     lvC.mask = LVCF_WIDTH | LVCF_SUBITEM  | LVCF_TEXT;
     lvC.cx = 180;

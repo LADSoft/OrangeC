@@ -400,7 +400,7 @@ bool ObjIeeeAscii::GetOffset(const char *buffer, eParseType ParseType)
     }		
     return false;
 }
-void ObjIeeeAscii::DefinePointer(int index, const char *buffer, int *pos)
+void ObjIeeeAscii::DefinePointer(ObjType::eType rType, int index, const char *buffer, int *pos)
 {
     ObjType *base;
     if (buffer[(*pos)++] != ',')
@@ -427,12 +427,12 @@ void ObjIeeeAscii::DefinePointer(int index, const char *buffer, int *pos)
     {
         if (type->GetType() != ObjType::eNone)
             ThrowSyntax(buffer, eAll);
-        type->SetType(ObjType::ePointer);
+        type->SetType(rType);
         type->SetBaseType(base);
     }
     else
     {
-        type = factory->MakeType(ObjType::ePointer, base, index);
+        type = factory->MakeType(rType, base, index);
         PutType(index, type);
     }
     type->SetSize(sz);
@@ -706,7 +706,10 @@ void ObjIeeeAscii::DefineType(int index, const char *buffer, int *pos)
     switch((ObjType::eType)definer)
     {
         case ObjType::ePointer:
-            DefinePointer(index, buffer, pos);
+        case ObjType::eLRef:
+        case ObjType::eRRef:
+        
+            DefinePointer((ObjType::eType)definer, index, buffer, pos);
             break;
         case ObjType::eBitField:
             DefineBitField(index, buffer, pos);
@@ -1214,6 +1217,7 @@ bool ObjIeeeAscii::SectionDataHeader(const char *buffer, eParseType ParseType)
     ObjSection *sect = GetSection(index);
     if (!sect)
         ThrowSyntax(buffer, ParseType);
+    
     if (currentTags && currentDataSection)
 	{
         currentDataSection->Add(currentTags);

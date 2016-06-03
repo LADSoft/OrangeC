@@ -138,6 +138,15 @@ char *LinkDebugFile::tables=
 //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
 //    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
     " );"
+    "CREATE TABLE Virtuals ("
+    "  symbolId INTEGER"
+    " ,typeId INTEGER"
+    " ,varAddress INTEGER"
+    " ,fileId INTEGER"
+//    " ,lineNo INTEGER"  // future
+//    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
+//    " ,FOREIGN KEY (typeId) REFERENCES Types(id)"
+    " );"    
     "CREATE TABLE Locals ("
     "  symbolId INTEGER"
     " ,typeId INTEGER"
@@ -372,8 +381,10 @@ bool LinkDebugFile::WriteVariableTypes()
         switch (type->GetType())
         {
             case ObjType::ePointer:
+            case ObjType::eLRef:
+            case ObjType::eRRef:
                 v.push_back(type->GetIndex());
-                v.push_back(ObjType::ePointer);
+                v.push_back(type->GetType());
                 v.push_back(type->GetSize());
                 v.push_back(GetTypeIndex(type->GetBaseType()));
                 v.push_back(0);
@@ -572,6 +583,18 @@ bool LinkDebugFile::WriteVariableNames()
             typeMap[index] = n;
         }
     }
+    int index = 1;
+    for (ObjFile::SectionIterator it = Sections.begin(); it != Sections.end(); ++it)
+    {
+        ObjString name = (*it)->GetName();
+        int npos = name.find("@");
+        if (npos != std::string::npos && npos != name.size() - 1)
+            name = name.substr(npos);
+        int n = GetSQLNameId(name);
+        if (n == -1)
+            return false;
+        sectionMap[index++] = n;
+    }
     return true;
 }
 ObjInt LinkDebugFile::GetSectionBase(ObjExpression *e)
@@ -616,6 +639,7 @@ bool LinkDebugFile::WriteGlobalsTable()
     globals.Start(dbPointer);
     globals.InsertIntoFrom("globals");
     globals.Stop();
+
     v.clear();
     for (ObjFile::SymbolIterator it = file->LocalBegin(); it != file->LocalEnd(); ++it)
     {
@@ -637,6 +661,26 @@ bool LinkDebugFile::WriteGlobalsTable()
     locals.Start(dbPointer);
     locals.InsertIntoFrom("locals");
     locals.Stop();
+
+    v.clear();
+    int index = 1;
+    for (ObjFile::SectionIterator it = Sections.begin(); it != Sections.end(); ++it)
+    {
+        int n = sectionMap[index++];
+        int address = ParentSections[*it]->GetBase() + (*it)->GetBase();
+        int type = -1;
+        if ((*it)->GetVirtualType())
+            type = GetTypeIndex((*it)->GetVirtualType());
+        int fileId = /*(*it)->GetSourceFile() ? (*it)->GetSourceFile()->GetIndex() :*/ 0;
+        v.push_back(n);
+        v.push_back(type);
+        v.push_back(address);
+        v.push_back(fileId);
+    }
+    IntegerColumnsVirtualTable virtuals(v, 4);
+    virtuals.Start(dbPointer);
+    virtuals.InsertIntoFrom("virtuals");
+    virtuals.Stop();
 
     return true;
 }
@@ -683,7 +727,14 @@ bool LinkDebugFile::WriteAutosTable()
                         case ObjDebugTag::eVar:
                             currentContext->vars[(*it2)->GetSymbol()] = currentLine;
                             break;
+                        case ObjDebugTag::eVirtualFunctionStart:
+                        {
+                            ObjSection *func = (*it2)->GetSection();
+                            funcId = sectionMap[func->GetIndex()];
+                        }
+                            // fall through
                         case ObjDebugTag::eFunctionStart:
+                        if ((*it2)->GetType() == ObjDebugTag::eFunctionStart)
                         {
                             ObjSymbol *func = (*it2)->GetSymbol();
                             if (func->GetType() == ObjSymbol::ePublic)

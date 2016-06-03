@@ -50,7 +50,7 @@ class ObjField;
 class LinkDebugFile
 {
 public:
-    LinkDebugFile(std::string OutputFile, ObjFile *File) : outputFile(OutputFile), file(File), dbPointer(NULL) { }
+    LinkDebugFile(std::string OutputFile, ObjFile *File, std::vector<ObjSection *> &sections, std::map<ObjSection *, ObjSection *> &parentSections) : Sections(sections), ParentSections(parentSections), outputFile(OutputFile), file(File), dbPointer(NULL) { }
     virtual ~LinkDebugFile();
     bool CreateOutput();
 protected:
@@ -68,6 +68,7 @@ protected:
     bool WriteVariableNames();
     ObjInt GetSectionBase(ObjExpression *e);
     bool WriteGlobalsTable();
+    bool WriteVirtualsTable();
     bool WriteAutosTable();
     bool WriteTypeNamesTable();
     int  GetTypeIndex(ObjType *Type)
@@ -79,11 +80,13 @@ protected:
     }
 private:
     std::string outputFile;
+    std::vector<ObjSection *> &Sections;
     ObjFile *file;
     sqlite3 *dbPointer;
     std::map<ObjString, int> names;
-    std::map<int, int> publicMap, localMap, autoMap, typeMap;
+    std::map<int, int> publicMap, localMap, autoMap, typeMap, sectionMap;
     std::vector<ObjString *>nameList;
+    std::map<ObjSection *, ObjSection *> ParentSections;
     static char *tables;
     static char *pragmas;
     static char *indexes;

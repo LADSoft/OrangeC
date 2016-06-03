@@ -135,6 +135,7 @@ ObjInt LinkRemapper::RenumberSection(LinkRegion *region, ObjSection *dest,
     sect->SetOffset(new ObjExpression(region->GetParent()->GetAttribs().GetAddress()));
     ObjMemoryManager &memManager = sect->GetMemoryManager();
     LinkSymbolData d;
+    manager->MapSectionToParent(source->section, dest);
     d.SetFile(source->file);
     // now copy all the data from the old section to the new one
     if (!(dest->GetQuals() & ObjSection::common) || dest->GetMemoryManager().MemoryBegin() == dest->GetMemoryManager().MemoryEnd())

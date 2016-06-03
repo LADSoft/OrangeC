@@ -148,7 +148,7 @@ protected:
     unsigned embed(int x) { return x | EEMBEDDED; }
     int GetSymbolName(ObjSymbol *Symbol);
     ObjString GetSymbolName(int *index);
-    void DefinePointer(int index, const ObjByte *buffer, int *pos);
+    void DefinePointer(ObjType::eType, int index, const ObjByte *buffer, int *pos);
     void DefineBitField(int index, const ObjByte *buffer, int *pos);
     void DefineTypeDef(int index, const ObjByte *buffer, int *pos);
     void DefineArray(ObjType::eType definer, int index, const ObjByte *buffer, int *pos);
@@ -330,7 +330,7 @@ protected:
     }
     ObjString GetSymbolName(ObjSymbol *Symbol);
     ObjString GetSymbolName(int *index);
-    void DefinePointer(int index, const char *buffer, int *pos);
+    void DefinePointer(ObjType::eType, int index, const char *buffer, int *pos);
     void DefineBitField(int index, const char *buffer, int *pos);
     void DefineTypeDef(int index, const char *buffer, int *pos);
     void DefineArray(ObjType::eType definer, int index, const char *buffer, int *pos);

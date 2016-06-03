@@ -3198,6 +3198,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                                     SYMBOL *clone = clonesym(spi);
                                     clone->tp = Alloc(sizeof(TYPE));
                                     *clone->tp = *templateParams->p->byClass.val;
+                                    SetLinkerNames(clone, lk_none);
                                     sizeQualifiers(clone->tp);
                                     if (!first)
                                     {
@@ -3227,6 +3228,7 @@ LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp,
                                 *tp2 = *clone->tp;
                                 clone->tp = tp2;
                                 clone->tp->templateParam = tp1->templateParam;
+                                SetLinkerNames(clone, lk_none);
                                 sizeQualifiers(clone->tp);
                                 insert(clone, (*tp)->syms);
                             }

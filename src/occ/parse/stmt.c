@@ -2514,10 +2514,13 @@ static void reverseAssign(STATEMENT *current, EXPRESSION **exp)
     if (current)
     {
         reverseAssign(current->next, exp);
-        if (*exp)
-            *exp = exprNode(en_void, current->select, *exp);
-        else
-            *exp = current->select;
+        if (current->type != st_line)
+        {
+            if (*exp)
+                *exp = exprNode(en_void, current->select, *exp);
+            else
+                *exp = current->select;
+        }
     }
 }
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BLOCKDATA *parent, BOOLEAN asExpression)

@@ -373,6 +373,15 @@
     10: alias for another type
         ATT$,TA,T#.
         where $ = the new type, # = the old type.
+	11: lvalue reference
+		ATT$,TB,sz,T#.
+		$ is the translator-defined type of the pointer.
+		# is the base type index
+	12: rvalue reference
+		ATT$,TC,sz,T#.
+		$ is the translator-defined type of the pointer.
+		# is the base type index
+
 4.1.3 Base types
 
 	a variety of base types are pre-defined for debugger interoperabilty; other
@@ -455,9 +464,9 @@
 		block is beginning here.
 	CO403.
 		block is ending here.  Variables introduced within the block should be discarded
-	CO404,I#. or CO404, N#.
+	CO404,I#. or CO404, N# or C0404, R#.
 		function is starting here.
-	CO405,I#. or CO405, N#.
+	CO405,I#. or CO405, N# or CO405, R#.
 		function is ending here.  Discard function-scoped variables.
 
 5.1.1 Browse info

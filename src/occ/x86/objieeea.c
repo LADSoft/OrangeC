@@ -594,6 +594,16 @@ void link_extendedtype(TYPE *tp1)
         }
         
     }
+    else if (tp->type == bt_lref)
+    {
+        int m = link_puttype(tp->btp);
+        tp1->dbgindex = emit_type_ieee("TB,%X,T%X",tp->size,m);
+    }
+    else if (tp->type == bt_rref)
+    {
+        int m = link_puttype(tp->btp);
+        tp1->dbgindex = emit_type_ieee("TC,%X,T%X",tp->size,m);
+    }
     else if (isfunction(tp))
     {
         tp1->dbgindex = dumpFunction(tp);
@@ -649,9 +659,14 @@ void link_extendedtype(TYPE *tp1)
 }
 int link_puttype(TYPE *tp)
 {
+        
     if (!tp->dbgindex)
     {
-        if (tp->type == bt_typedef)
+        if (tp->type == bt_any)
+        {
+            tp->dbgindex = 42;
+        }
+        else if (tp->type == bt_typedef)
         {
             if (!tp->btp->dbgindex)
                 link_puttype(tp->btp);
@@ -922,7 +937,7 @@ int link_getseg(SYMBOL *sp)
 void link_putpub(SYMBOL *sp, char sel)
 {
     int l = 0;
-    char buf[512], obuf[512];
+    char buf[4096], obuf[4096];
     int index;
     if (!cparams.prm_cplusplus && sp->linkage == lk_virtual)
     {
@@ -1241,16 +1256,18 @@ static void putattribs(EMIT_TAB *seg, int addr)
         if (cparams.prm_debug)
         {
             char buf1[256];
+            SYMBOL *sp = seg->attriblist->v.sp;
             switch(seg->attriblist->type)
             {
                 case e_ad_funcdata:
-                    if (seg->attriblist->v.sp->linkage == lk_virtual)
-                        sprintf(buf1, "R%X", (int)seg->attriblist->v.sp->value.i);
+                    if (sp->linkage == lk_virtual)
+                        sprintf(buf1, "R%X", (int)sp->value.i);
                     
-                    else if (seg->attriblist->v.sp->storage_class == sc_global)
-                        sprintf(buf1, "I%X", (int)seg->attriblist->v.sp->value.i);
+                     else if ((sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent) ||
+                         ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)))
+                        sprintf(buf1, "I%X", (int)sp->value.i);
                     else
-                        sprintf(buf1, "N%X", (int)seg->attriblist->v.sp->value.i);
+                        sprintf(buf1, "N%X", (int)sp->value.i);
                     if (seg->attriblist->start)
                         emit_record_ieee("CO404,%03X%s.\r\n", strlen(buf1), buf1);
                     else
@@ -1267,9 +1284,9 @@ static void putattribs(EMIT_TAB *seg, int addr)
                     }
                     break;
                 case e_ad_vardata:
-                    if (seg->attriblist->v.sp->tp->type != bt_ellipse)
+                    if (sp->tp->type != bt_ellipse)
                     {
-                        sprintf(buf1, "A%X", (int)seg->attriblist->v.sp->value.i);
+                        sprintf(buf1, "A%X", (int)sp->value.i);
                         emit_record_ieee("CO400,%03X%s.\r\n", strlen(buf1), buf1);
                     }
                     break;
@@ -1378,10 +1395,10 @@ void link_Data(void)
                 {
                     alen = len;
                 }
-                putld(j, len + j, rec->data + j);
+                putld(j, alen + j, rec->data + j);
                 if (alen == len1)
                     putattribs(v->seg, rec->address + j);
-                j += len;
+                j += alen;
                 if (f && alen == len)
                 {
                     j += putlr(f, rec, i, (*(unsigned *)(rec->data + j)));

@@ -48,6 +48,7 @@
 #include "LinkTokenizer.h"
 #include <iostream>
 #include <string.h>
+#include <map>
 
 class LibManager;
 class LinkPartition;
@@ -132,6 +133,9 @@ class LinkManager
         typedef SymbolData::iterator SymbolIterator;
         void InsertSymbol(LinkSymbolData *data) { publics.insert(data); }
 
+        void EnterVirtualSection(ObjSection *sect) { virtualSections.push_back(sect); }
+        void MapSectionToParent(ObjSection *child, ObjSection *parent) { parentSections[child] = parent; }
+
         SymbolIterator PublicBegin() { return publics.begin(); }
         SymbolIterator PublicEnd() { return publics.end(); }
         SymbolIterator PublicFind(LinkSymbolData *d) { return publics.find(d); }
@@ -192,6 +196,8 @@ class LinkManager
         CmdFiles objectFiles;
         CmdFiles libFiles;
         std::set<LinkLibrary *> dictionaries;
+        std::vector<ObjSection *> virtualSections;
+        std::map<ObjSection *, ObjSection *> parentSections;
         ObjIOBase *ioBase;
         ObjIndexManager *indexManager;
         ObjFactory *factory;

@@ -136,6 +136,8 @@ void thunkForImportTable(EXPRESSION **exp)
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right)
 {
     EXPRESSION *rv = Alloc(sizeof(EXPRESSION));
+    if (type == en_void && !left)
+        printf("hi");
     rv->type = type;
     rv->left = left;
     rv->right = right;

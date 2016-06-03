@@ -196,8 +196,10 @@ void ObjIeeeAscii::RenderType(ObjType *Type)
     switch(Type->GetType())
     {
         case ObjType::ePointer:
+        case ObjType::eLRef:
+        case ObjType::eRRef:
             RenderString("ATT" + GetTypeIndex(Type));
-            RenderString(",T" + ObjUtil::ToHex(ObjType::ePointer));
+            RenderString(",T" + ObjUtil::ToHex(Type->GetType()));
             RenderString("," + ObjUtil::ToHex(Type->GetSize()));
             RenderString(",T" + GetTypeIndex(Type->GetBaseType()) + ".");
             endl();

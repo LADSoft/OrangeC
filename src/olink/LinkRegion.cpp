@@ -481,6 +481,10 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager *manager, SectionDataIterator it
                 delete esym;
                 LinkManager::LinkError("Symbol " + pubName + " redefined");
             }
+            else
+            {
+                manager->EnterVirtualSection(curSection);
+            }
         }
     }
     if (curSection)

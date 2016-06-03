@@ -831,7 +831,7 @@ void LinkManager::CreateOutputFile()
                     ioBase->SetDebugInfoFlag(false);
                     if (debugFile.size())
                     {
-                        LinkDebugFile df(debugFile, file);
+                        LinkDebugFile df(debugFile, file, this->virtualSections, this->parentSections);
                         df.CreateOutput();
                     }
                 }

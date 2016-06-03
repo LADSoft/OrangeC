@@ -451,7 +451,7 @@ int link_BasicType(TYPE *tp)
     }
     return n;
 }
-void dumpStructFields(int sel, int n, int sz, HASHREC *hr)
+void dumpStructFields(int sel, int n, int sz, BASECLASS *bc, HASHREC *hr)
 {
     char buf[512];
     int count = 0;
@@ -459,15 +459,42 @@ void dumpStructFields(int sel, int n, int sz, HASHREC *hr)
     int table1[15];
     int last = 0;
     int i;
-    while (hr && count < sizeof(table)/sizeof(table[0]))
+    if (bc)
     {
-        SYMBOL *sp = (SYMBOL *)hr->p;
-        table[count] = sp;
-        table1[count++] = link_puttype(sp->tp);
-        hr = hr->next;
+        TYPE tpl = { 0 };
+        tpl.type = bt_pointer;
+        tpl.size = getSize(bt_pointer);
+        while (bc && count < sizeof(table)/sizeof(table[0]))
+        {
+            SYMBOL *sp = (SYMBOL *)bc->cls;
+            table[count] = sp;
+            if (bc->isvirtual)
+            {
+                tpl.btp = sp->tp;
+                table1[count++] = link_puttype(&tpl);
+            }
+            else
+            {
+                table1[count++] = link_puttype(sp->tp);
+            }
+            bc = bc->next;
+        }
     }
-    if (hr)
-        dumpStructFields(9, last = typeIndex++, sz, hr);
+    else
+    {
+        while (hr && count < sizeof(table)/sizeof(table[0]))
+        {
+            SYMBOL *sp = (SYMBOL *)hr->p;
+            if (ismemberdata(sp))
+            {
+                table[count] = sp;
+                table1[count++] = link_puttype(sp->tp);
+            }
+            hr = hr->next;
+        }
+    }
+    if (bc || hr)
+        dumpStructFields(9, last = typeIndex++, sz, bc, hr);
     emit_record_ieee("ATT%X,T%X", n, sel);
     if (sel != 9)
         emit_record_ieee(",%X",sz);
@@ -592,9 +619,9 @@ void link_extendedtype(TYPE *tp1)
                 sel = 4;
             }
             if (tp->syms)
-                dumpStructFields(sel, n, tp->size, tp->syms->table[0]);
+                dumpStructFields(sel, n, tp->size, tp->sp->baseClasses, tp->syms->table[0]);
             else
-                dumpStructFields(sel, n, tp->size, NULL);
+                dumpStructFields(sel, n, tp->size, tp->sp->baseClasses, NULL);
             emit_record_ieee("NT%X,%03X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
         }
         else if (tp->type == bt_ellipse)
@@ -696,6 +723,10 @@ void link_types()
             }
         while (v)
         {
+            if (!v->data && basetype(v->sp->tp)->sp)
+            {
+                link_puttype(v->sp->tp);
+            }
             if (v->seg->attriblist)
             {
                 ATTRIBDATA *ad = v->seg->attriblist;
@@ -714,6 +745,7 @@ void link_types()
         {
             SYMBOL *sp = (SYMBOL *)dbgTypeDefs->data;
             sp->tp->dbgindex = link_puttype(sp->tp); 
+            /*
             if (sp->tp->dbgindex < 1024 && sp->tp->used)
             {
                 int n = sp->tp->dbgindex;
@@ -721,9 +753,24 @@ void link_types()
                emit_record_ieee("ATT%X,TA,T%X.\r\n", sp->tp->dbgindex, n);
             }
             emit_record_ieee("NT%X,%03X%s.\r\n", sp->tp->dbgindex, strlen(sp->name), sp->name);
+            */
             dbgTypeDefs = dbgTypeDefs->next;
         }
         emit_cs(FALSE);
+    }
+}
+void link_virtualtypes(void)
+{
+    if (cparams.prm_debug)
+    {
+        VIRTUAL_LIST *v = virtualFirst;
+        while (v)
+        {
+            int i = v->sp->value.i;
+            if (basetype(v->sp->tp)->sp)
+                emit_record_ieee("ATR%X,T%lX.\r\n", i, v->sp->tp->dbgindex);
+            v = v->next;
+        }
     }
 }
 //-------------------------------------------------------------------------
@@ -1197,10 +1244,13 @@ static void putattribs(EMIT_TAB *seg, int addr)
             switch(seg->attriblist->type)
             {
                 case e_ad_funcdata:
-                    if (seg->attriblist->v.sp->storage_class == sc_global)
-                        sprintf(buf1, "I%x", (int)seg->attriblist->v.sp->value.i);
+                    if (seg->attriblist->v.sp->linkage == lk_virtual)
+                        sprintf(buf1, "R%X", (int)seg->attriblist->v.sp->value.i);
+                    
+                    else if (seg->attriblist->v.sp->storage_class == sc_global)
+                        sprintf(buf1, "I%X", (int)seg->attriblist->v.sp->value.i);
                     else
-                        sprintf(buf1, "N%x", (int)seg->attriblist->v.sp->value.i);
+                        sprintf(buf1, "N%X", (int)seg->attriblist->v.sp->value.i);
                     if (seg->attriblist->start)
                         emit_record_ieee("CO404,%03X%s.\r\n", strlen(buf1), buf1);
                     else
@@ -1396,6 +1446,8 @@ void output_obj_file(void)
     link_Segs();
     emit_cs(FALSE);
     link_types();
+    link_virtualtypes();
+    emit_cs(FALSE);
     link_ExtDefs();
     link_Publics();
     link_Autos();

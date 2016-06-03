@@ -79,6 +79,12 @@ public:
         Tag(d);
         return d;
     }
+    virtual ObjDebugTag *MakeDebugTag(ObjSection *Section, bool Start)
+    {
+        ObjDebugTag *d = new ObjDebugTag(Section, Start);
+        Tag(d);
+        return d;
+    }
     virtual ObjDebugTag *MakeDebugTag(ObjSymbol *Function, bool Start)
     {
         ObjDebugTag *d = new ObjDebugTag(Function, Start);

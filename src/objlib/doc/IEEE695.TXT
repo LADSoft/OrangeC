@@ -195,7 +195,7 @@
 3.5.3 AT$#,T%.
 	Defines the type of a variable.  The type index '%' must either be a built-in 
 	type, or a type that has been declared previously with the ATT# command.
-	'$' is again one of the valid variable types.
+	'$' is again one of the valid variable types or 'R' for virtual sections
 	'%' is the type to assign.
 
 3.6.1 COMMENT records
@@ -546,6 +546,8 @@
 		ASL records should only exist for sections with the 'A' attribute
 	CS record
 	ATT records (optional)
+    CS record
+    ATS records (optional)
 	CS record
 	NI/ASI/ATI records for publics (ATI optional)
 	NX/ATX records for externals

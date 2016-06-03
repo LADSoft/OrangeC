@@ -45,6 +45,7 @@
 class ObjLineNo;
 class ObjSymbol;
 class ObjFunction;
+class ObjSection;
 
 class ObjDebugTag : public ObjWrapper
 {
@@ -56,10 +57,13 @@ public:
         eBlockStart,
         eBlockEnd,
         eFunctionStart,
-        eFunctionEnd
+        eFunctionEnd,
+        eVirtualFunctionStart,
+        eVirtualFunctionEnd
     } ;
     ObjDebugTag(ObjLineNo *LineNo) : type(eLineNo), lineNo(LineNo) {} ;
     ObjDebugTag(ObjSymbol *Symbol) : type(eVar), symbol(Symbol) {} ;
+    ObjDebugTag(ObjSection *Section, bool Start) : type(Start ? eVirtualFunctionStart : eVirtualFunctionEnd), section(Section) {} 
     ObjDebugTag(ObjSymbol *Symbol, bool Start) 
             : type (Start ? eFunctionStart : eFunctionEnd) , symbol(Symbol) {}
     ObjDebugTag(bool Start) : type(Start ? eBlockStart : eBlockEnd), lineNo(NULL) {} ;
@@ -74,11 +78,16 @@ public:
     {
         return symbol;
     }
+    ObjSection *GetSection()
+    {
+        return section;
+    }
 private:
     enum eType type;
     union {
         ObjLineNo *lineNo;
         ObjSymbol *symbol;
+        ObjSection *section;
     } ;
 } ;
 #endif

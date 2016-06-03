@@ -59,6 +59,7 @@ extern int nextLabel;
 extern SYMBOL *theCurrentFunc;
 extern NAMESPACEVALUES *localNameSpace;
 extern int inDefaultParam;
+extern LINEDATA *linesHead, *linesTail;
 
 int anonymousNotAlloc;
 
@@ -93,6 +94,7 @@ BOOLEAN ismemberdata(SYMBOL *sp)
 }
 BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
 {
+    LINEDATA *oldHead = linesHead, *oldTail = linesTail; 
     if (!lex)
         return FALSE;
        
@@ -101,6 +103,8 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         TEMPLATEPARAM *tparam = TemplateLookupSpecializationParam(lex->value.s.a);
         if (tparam)
         {
+            linesHead = oldHead;
+            linesTail = oldTail;
             return tparam->type == kw_typename || tparam->type == kw_template;
         }
     }
@@ -112,10 +116,14 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
         nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global, FALSE, FALSE);
         if (cparams.prm_cplusplus)
             prevsym(placeholder);
+        linesHead = oldHead;
+        linesTail = oldTail;
         return (sp && istype(sp)) || (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
     else 
     {
+        linesHead = oldHead;
+        linesTail = oldTail;
         return KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS | TT_TYPENAME);
     }
     

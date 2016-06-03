@@ -85,6 +85,7 @@ extern BOOLEAN inMatchOverload;
 extern int codeLabel;
 extern LAMBDA *lambdas;
 extern int argument_nesting;
+extern LINEDATA *linesHead, *linesTail;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;

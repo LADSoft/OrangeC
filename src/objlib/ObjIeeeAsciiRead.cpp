@@ -754,12 +754,16 @@ bool ObjIeeeAscii::TypeName(const char *buffer, eParseType parseType)
 bool ObjIeeeAscii::TypeSpec(const char *buffer, eParseType ParseType)
 {
     if (!file)
+    {
         ThrowSyntax(buffer, ParseType);
+    }
     int pos = 2;
     char ch = buffer[pos++];
     int index = ObjUtil::FromHex(buffer, &pos);
     if (buffer[pos++] != ',')
+    {
         ThrowSyntax(buffer, ParseType);
+    }
     switch (ch)
     {
         case 'A':
@@ -790,6 +794,32 @@ bool ObjIeeeAscii::TypeSpec(const char *buffer, eParseType ParseType)
         {
             DefineType(index, buffer, &pos);
             CheckTerm(buffer + pos);
+            break;
+        }
+        case 'R':
+        {
+            ObjSection *sect = GetSection(index);
+            if (!sect)
+            {
+                ThrowSyntax(buffer, eAll);
+            }
+            if (buffer[pos++] != 'T')
+            {
+                ThrowSyntax(buffer, ParseType);
+            }
+            index = ObjUtil::FromHex(buffer, &pos);
+            CheckTerm(buffer + pos);
+            ObjType *type;
+            /* won't get a 'special' type deriving type here */
+            if (index < ObjType::eReservedTop)
+                type = factory->MakeType((ObjType::eType)index);
+            else
+                type = GetType(index);
+            if (!type)
+            {
+                ThrowSyntax(buffer, ParseType);
+            }
+            sect->SetVirtualType(type);	
             break;
         }
         default:
@@ -1007,11 +1037,22 @@ bool ObjIeeeAscii::Comment(const char *buffer, eParseType ParseType)
             int pos = 0;
             int ch = data[pos++];
             int index = ObjUtil::FromHex(data, &pos);
-            ObjSymbol *sym = FindSymbol(ch, index);
-            if (!sym)
-                ThrowSyntax(buffer, ParseType);
-            ObjDebugTag *tag = factory->MakeDebugTag(sym, cnum == eFunctionStart);
-            currentTags->push_back(tag);
+            if (ch == 'R')
+            {
+                ObjSection *sect = GetSection(index);
+                if (!sect)
+                    ThrowSyntax(buffer, ParseType);
+                ObjDebugTag *tag = factory->MakeDebugTag(sect, cnum == eFunctionStart);
+                currentTags->push_back(tag);
+            }
+            else
+            {
+                ObjSymbol *sym = FindSymbol(ch, index);
+                if (!sym)
+                    ThrowSyntax(buffer, ParseType);
+                ObjDebugTag *tag = factory->MakeDebugTag(sym, cnum == eFunctionStart);
+                currentTags->push_back(tag);
+            }
             break;
     }
     return false;
@@ -1173,6 +1214,11 @@ bool ObjIeeeAscii::SectionDataHeader(const char *buffer, eParseType ParseType)
     ObjSection *sect = GetSection(index);
     if (!sect)
         ThrowSyntax(buffer, ParseType);
+    if (currentTags && currentDataSection)
+	{
+        currentDataSection->Add(currentTags);
+	    currentTags = new ObjMemory::DebugTagContainer;
+	}
     currentDataSection = sect;
     return false;
 }

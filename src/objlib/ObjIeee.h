@@ -200,6 +200,7 @@ protected:
     void WriteFiles();
     void WriteSectionHeaders();
     void WriteTypes();
+    void WriteVirtualTypes();
     void WriteSymbols();
     void WriteStartAddress();
     void WriteSections();
@@ -395,6 +396,7 @@ protected:
     void WriteFiles();
     void WriteSectionHeaders();
     void WriteTypes();
+    void WriteVirtualTypes();
     void WriteSymbols();
     void WriteStartAddress();
     void WriteSections();

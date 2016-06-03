@@ -52,6 +52,7 @@
 
 extern COMPILER_PARAMS cparams ;
 extern INCLUDES *includes;
+extern LINEDATA *linesHead,*linesTail;
 
 int endline;
 LEXCONTEXT *context;
@@ -1258,6 +1259,13 @@ LEXEME *getsym(void)
             TemplateRegisterDeferred(context->last);
         context->last = rv;
         context->cur = context->cur->next;
+        if (rv->linedata)
+        {
+            linesHead = rv->linedata;
+            linesTail = linesHead;
+            while (linesTail && linesTail->next)
+                linesTail = linesTail->next;
+        }
         return rv;
     }
     else if (context->next)
@@ -1379,6 +1387,10 @@ LEXEME *getsym(void)
             contin = TRUE;
         }
     } while (contin);
+    if (linesHead)
+    {
+        lex->linedata = linesHead;
+    }
     return last = lex;
 }
 LEXEME *prevsym(LEXEME *lex)

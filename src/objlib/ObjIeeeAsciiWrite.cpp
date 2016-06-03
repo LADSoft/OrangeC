@@ -372,6 +372,12 @@ void ObjIeeeAscii::RenderDebugTag(ObjDebugTag *Tag)
             RenderComment(Tag->GetType() == ObjDebugTag::eFunctionStart ?
                                  eFunctionStart : eFunctionEnd, data);
             break;
+        case ObjDebugTag::eVirtualFunctionStart:
+        case ObjDebugTag::eVirtualFunctionEnd:
+            data = "R" + ObjUtil::ToHex(Tag->GetSection()->GetIndex());
+            RenderComment(Tag->GetType() == ObjDebugTag::eVirtualFunctionStart ?
+                                 eFunctionStart : eFunctionEnd, data);
+            break;
         case ObjDebugTag::eLineNo:
             data = ObjUtil::ToDecimal(Tag->GetLineNo()->GetFile()->GetIndex()) 
                     + "," + ObjUtil::ToDecimal(Tag->GetLineNo()->GetLineNumber()) ;
@@ -645,6 +651,22 @@ void ObjIeeeAscii::WriteTypes()
             RenderType(*it);
         }
     }	
+}
+void ObjIeeeAscii::WriteVirtualTypes()
+{
+    if (GetDebugInfoFlag())
+    {
+        for (ObjFile ::SectionIterator it = file->SectionBegin();
+                 it != file->SectionEnd(); ++it)
+        {
+            ObjType * type = (*it)->GetVirtualType();
+            if (type)
+            {
+                RenderString("AT" + ObjUtil::ToHex((*it)->GetIndex()) + ",T" + GetTypeIndex(type) + ".");
+                endl();
+            }	
+        }
+    }
 }
 void ObjIeeeAscii::WriteSymbols()
 {

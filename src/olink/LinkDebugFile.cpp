@@ -609,10 +609,14 @@ ObjInt LinkDebugFile::GetSectionBase(ObjExpression *e)
     else if (e->GetOperator() == ObjExpression::eSection)
     {
         ObjSection *s = file->GetSection(e->GetSection()->GetIndex());
+	ObjExpression *oldOffs = e->GetSection()->GetOffset();
         ObjMemoryManager &m = s->GetMemoryManager();
         // wrecks the link but the link is already done!!!!
         e->GetSection()->SetOffset(new ObjExpression(0));
-        return m.GetBase();
+        int rv = m.GetBase();
+        e->GetSection()->SetOffset(oldOffs);
+	return rv;
+
     }
     return 0;
 }

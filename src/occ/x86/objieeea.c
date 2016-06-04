@@ -1114,15 +1114,16 @@ void link_Fixups(char *buf, FIXUP *fixup, EMIT_LIST *rec, int curseg, int offs)
                 sp->storage_class == sc_global || sp->storage_class ==
                 sc_static || sp->storage_class == sc_localstatic || sp->storage_class == sc_overloads))
             {
+                int n = sp->linkage == lk_virtual ? 0 : sp->offset;
                 if ((xseg & 0xffffff) == 0)
                     iseg = link_getseg(fixup->sym);
                 if (rel)
                 {
-                    sprintf(buf, "R%X,%X,+,4,-,P,-", xseg & ~0xc0000000, sp->offset + offs);
+                    sprintf(buf, "R%X,%X,+,4,-,P,-", xseg & ~0xc0000000, n + offs);
                 }
                 else
                 {
-                    sprintf(buf, "R%X,%X,+", xseg & ~0xc0000000, sp->offset + offs);
+                    sprintf(buf, "R%X,%X,+", xseg & ~0xc0000000, n + offs);
                 }
                 /* segment relative */
             }

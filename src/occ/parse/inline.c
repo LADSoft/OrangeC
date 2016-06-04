@@ -243,9 +243,15 @@ void dumpInlines(void)
                     }
                     gen_virtual(sym, TRUE);
                     if (sym->init)
-                        dumpInit(sym, sym->init);
+                    {
+                        int n = dumpInit(sym, sym->init);
+                        if (n < basetype(sym->tp)->size)
+                            genstorage(basetype(sym->tp)->size - n);
+                    }
                     else
+                    {
                         genstorage(basetype(sym->tp)->size);
+                    }
                     gen_endvirtual(sym);
                 }
             }

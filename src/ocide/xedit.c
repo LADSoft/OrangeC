@@ -875,7 +875,7 @@ int GetWordFromPos(HWND hwnd, char *outputbuf, int charpos, int *linenum, int
             start = end;
             end = temp;
         }
-        if (end - start < 511)
+        if (end - start < 255)
         {
             int i = 0;
             while (start < end)

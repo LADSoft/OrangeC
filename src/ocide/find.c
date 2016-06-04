@@ -1606,6 +1606,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 HWND hwnd = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0,0);
                 if (IsWindow(hwnd))
                     SendMessage(hwnd, WM_WORDUNDERCURSOR, 0, (LPARAM)findText);
+				findText[sizeof(findText)-1] = 0;
             }
             hwndFindInternal = hwndDlg;
             hwndParent = GetParent(hwndDlg);

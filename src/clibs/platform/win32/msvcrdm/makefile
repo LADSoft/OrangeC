@@ -65,6 +65,7 @@ $(CLIBOBJECT)\tan.o $(CLIBOBJECT)\tanh.o $(CLIBOBJECT)\fpclass.o
 $(CLIBOBJECT)\hypot.o $(CLIBOBJECT)\polyf.o $(CLIBOBJECT)\poly.o $(CLIBOBJECT)\polyl.o $(CLIBOBJECT)\pow10.o
 $(CLIBOBJECT)\del1.o $(CLIBOBJECT)\new1.o $(CLIBOBJECT)\del2.o $(CLIBOBJECT)\new2.o $(CLIBOBJECT)\rnew.o
 $(CLIBOBJECT)\_ixb.o $(CLIBOBJECT)\cpphandler.o $(CLIBOBJECT)\_term.o $(CLIBOBJECT)\_gunwind.o $(CLIBOBJECT)\arrcall.o
+$(CLIBOBJECT)\bad_alloc.o
 $(WINOBJECT)\secure.o
 |
 	$(IMPLIB) $(SYSOBJECT)\$@ .\msvcrt.def

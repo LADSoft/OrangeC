@@ -794,6 +794,7 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
                 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                 hwnd, NULL, hInstance, (void *)imageData);
+            InsertRCWindow(hwnd);
             break;
         case WM_RESCOMMIT:
             imageData = (struct resRes *)GetWindowLong(hwnd, 0);
@@ -812,6 +813,7 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             imageData = (struct resRes *)GetWindowLong(hwnd, 0);
             return SendMessage(imageData->gd.childWindow, iMessage, wParam, lParam);
         case WM_CLOSE:
+            RemoveRCWindow(hwnd);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             SendMessage(hwnd, WM_RESCOMMIT, 0, 0);
             break;

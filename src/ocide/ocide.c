@@ -997,6 +997,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case IDM_CLOSEALLWINDOWS:
                 if (QuerySaveAll() != IDCANCEL)
                     CloseAll();
+                CloseAllResourceWindows();
                 return 0;
             case IDM_EXIT:
                 if (SendMessage(hwnd, WM_QUERYENDSESSION, 0, 0))

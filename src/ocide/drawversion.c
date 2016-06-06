@@ -1027,8 +1027,10 @@ LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 hInstance, NULL);
             SetListViewColumns(hwnd, versionData->gd.childWindow, &r);
             PopulateVersion(hwnd, versionData);            
+            InsertRCWindow(hwnd);
             break;
         case WM_CLOSE:
+            RemoveRCWindow(hwnd);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             break;
         case WM_DESTROY:

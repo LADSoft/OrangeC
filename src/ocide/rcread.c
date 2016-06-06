@@ -1556,7 +1556,13 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
         {
             case kw_menuitem:
                 getsym();
-                if (lastst == sconst)
+                if (lastst == kw_separator)
+                {
+                    m->text = NULL;
+                    getsym();
+                    skip_comma();
+                }
+                else if (lastst == sconst)
                 {
                         StringAsciiToWChar(&m->text, laststr,
                             laststrlen);

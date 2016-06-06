@@ -1071,6 +1071,9 @@ int intexpr(void);
 
                              /* Rcinterf.c */
 
+void InsertRCWindow(HWND hwnd);
+void RemoveRCWindow(HWND hwnd);
+void CloseAllResourceWindows(void);
 void CreateNewResourceFile(PROJECTITEM *data, char *name, int flag);
 void FormatExp(char *buf, EXPRESSION *exp);
 void FormatResId(char *buf, IDENT *id);

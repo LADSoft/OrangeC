@@ -1268,8 +1268,10 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 hInstance, NULL);
             SetListViewColumns(hwnd, acceleratorData->gd.childWindow);
             PopulateKeys(hwnd, acceleratorData );
+            InsertRCWindow(hwnd);
             break;
         case WM_CLOSE:
+            RemoveRCWindow(hwnd);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             break;
         case WM_DESTROY:

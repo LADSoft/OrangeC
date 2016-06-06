@@ -1124,9 +1124,11 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             resData = menuData;
             resFuncs = &menuFuncs;
             MarkUnexpanded(menuData->resource->u.menu->items);
+            InsertRCWindow(hwnd);
             break;
         
         case WM_CLOSE:
+            RemoveRCWindow(hwnd);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             break;
         case WM_DESTROY:

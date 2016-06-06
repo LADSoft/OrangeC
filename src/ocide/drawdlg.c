@@ -3334,8 +3334,10 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             dlgData->activeHwnd = hwnd;
             dlgData->gd.childWindow = CreateDlgWindow(hwnd, dlgData);
             ShowOrHideScrollBars(hwnd, dlgData);
+            InsertRCWindow(hwnd);
             break;
         case WM_CLOSE:
+            RemoveRCWindow(hwnd);
             dlgData = (struct resRes *)GetWindowLong(hwnd, 0);
             SendMessage(dlgData->gd.childWindow, WM_CLOSE, 0, 0);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);

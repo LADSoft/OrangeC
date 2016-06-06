@@ -517,8 +517,10 @@ LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 hInstance, NULL);
             SetListViewColumns(hwnd, stringTableData->gd.childWindow);
             PopulateStrings(hwnd, stringTableData );
+            InsertRCWindow(hwnd);
             break;
         case WM_CLOSE:
+            RemoveRCWindow(hwnd);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
             break;
         case WM_DESTROY:

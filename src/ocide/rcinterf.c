@@ -92,6 +92,7 @@ static char *szResourceClassName = "xccResource";
 static char *szResourceTitle = "Resources";
 static char srchbuf[1024];
 static WNDPROC oldEditProc;
+static LIST *resourceWindows;
 
 static char *rcContents = {
     "#include <windows.h>\n"
@@ -136,6 +137,47 @@ static struct {
 static struct resRes dummies[sizeof(DirNames)/sizeof(DirNames[0])];
 
 static PROJECTITEM *GetItemInfo(HTREEITEM item);
+void InsertRCWindow(HWND hwnd)
+{
+    LIST *l = malloc(sizeof(LIST));
+    l->data = (void *)hwnd;
+    l->next = resourceWindows;
+    resourceWindows = l;
+}
+void RemoveRCWindow(HWND hwnd)
+{
+    LIST **l = resourceWindows;
+    while (*l)
+    {
+        if ((*l)->data == (void *)hwnd)
+        {
+            LIST *q = *l;
+            *l = (*l)->next;
+            free(q);
+            break;
+        }
+    }
+}
+void CloseAllResourceWindows(void)
+{
+    LIST *l = resourceWindows;
+    MSG msg;
+    while (l)
+    {
+        HWND hwnd = (HWND)l->data;
+        LIST *q = l;
+        SendMessage(hwnd, WM_CLOSE, 0, 0);
+        l = l->next;
+        free(q);
+    }
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    {
+        ProcessMessage(&msg);
+        if (msg.message == WM_QUIT)
+            break;
+    }
+    resourceWindows = NULL;
+}
 static void GetProjectPath(char *buf)
 {
     PROJECTITEM *data = GetItemInfo(prjSelectedItem);
@@ -1072,6 +1114,7 @@ BOOL ResCheckChanged(RESOURCE *resources)
 }
 void ResFree(PROJECTITEM *file, BOOL toSave)
 {
+    CloseAllResourceWindows();
     if (file->resData)
     {
         if (toSave && (ResCheckChanged(file->resData->resources->resources)))

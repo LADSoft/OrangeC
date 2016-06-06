@@ -1,5 +1,22 @@
 Release notes:
 
+version 5.70.1:
+    help, examples: clarify that creating new resources creates them in the style that requires
+                MAKEINTRESOURCE
+    ocide:      fix problem with not being able to resize images that had been zoomed  in the icon editor
+    ocide:      fix problem with select all in the icon editor not selecting the entire image
+    ocide:      add window to show errors more clearly
+    ocide:      fix problems where windows would flicker while being resized
+    ocide:      fix crash when replacing in a large selection
+    ocide:      the RC file parser could not parse 'MENUITEM SEPARATOR'
+    ocide:      IDE would crash when loading new resources while a resource editor was opened
+    occ:        sometimes static const integral template members could be instantiated
+                as empty virtual functions; then they would be initialized but overwrite other memory.
+    occ:        when member data was instantiated virtually it could contain an offset into the structure
+                virtual member data is separate from the structure's internal placement, so this
+                would crash the program
+    clibs:      add 'bad_alloc' to the msvcrt dll library so that use of operator new would work.
+
 Version 5.69.1: 05/25/2016
     ocide:      fix crash when reloading resources
 

@@ -15,7 +15,7 @@ version 5.70.1:
     occ:        when member data was instantiated virtually it could contain an offset into the structure
                 virtual member data is separate from the structure's internal placement, so this
                 would crash the program
-    clibs:      add 'bad_alloc' to the msvcrt dll library so that use of operator new would work.
+    rtl:        add 'bad_alloc' to the msvcrt dll library so that use of operator new would work.
 
 Version 5.69.1: 05/25/2016
     ocide:      fix crash when reloading resources

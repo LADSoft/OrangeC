@@ -358,7 +358,7 @@ static void CreateCursorResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *re
 
 //-------------------------------------------------------------------------
 
-static void CreateDialogResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, DIALOG *dialog)
+static void CreateDialogResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resinfo, DIALOG *dialog, BOOL extended)
 {
     DIALOG *copy;
     RESOURCE *r;
@@ -367,7 +367,7 @@ static void CreateDialogResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *re
     *copy =  *dialog;
 
     r = rcAlloc(sizeof(RESOURCE));
-    r->itype = RESTYPE_DIALOG;
+    r->itype = extended ? RESTYPE_DIALOGEX : RESTYPE_DIALOG;
     r->u.dialog = copy;
     r->info =  *resinfo;
     AddResource(cd, (IDENT *)RESTYPE_DIALOG, r, id, resinfo->language_high, resinfo->language_low, 0);
@@ -557,10 +557,9 @@ static void CreateMenuResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resi
     m = rcAlloc(sizeof *m);
     m->items = menuitems;
     m->help = 0;
-    m->extended = extended;
 
     r = rcAlloc(sizeof(RESOURCE));
-    r->itype = RESTYPE_MENU;
+    r->itype = extended ? RESTYPE_MENUEX : RESTYPE_MENU;
     r->u.menu = m;
     r->info =  *resinfo;
     AddResource(cd, (IDENT *)RESTYPE_MENU, r, id, resinfo->language_high, resinfo->language_low, 0);
@@ -1419,10 +1418,6 @@ static void ParseDialog(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info, int e
         DIALOG *dialog = rcAlloc(sizeof(DIALOG));
         CONTROL **p = &dialog->controls;
         memset(dialog, 0, sizeof(*dialog));
-        if (extended)
-        {
-            dialog->ex.extended = 1;
-        } 
         dialog->style = 0; // WS_POPUPWINDOW ;
         getsym();
         ReadMemflags(info);
@@ -1440,7 +1435,7 @@ static void ParseDialog(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *info, int e
         while (ParseControl(&p, extended))
             ;
         need_end();
-        CreateDialogResource(cd, id, info, dialog);
+        CreateDialogResource(cd, id, info, dialog, extended);
 
 }
 
@@ -1556,13 +1551,7 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
         {
             case kw_menuitem:
                 getsym();
-                if (lastst == kw_separator)
-                {
-                    m->text = NULL;
-                    getsym();
-                    skip_comma();
-                }
-                else if (lastst == sconst)
+                if (lastst == sconst)
                 {
                         StringAsciiToWChar(&m->text, laststr,
                             laststrlen);
@@ -1576,18 +1565,21 @@ static void ReadMenuList(MENUITEM * * * i, int extended)
                     ReadMenuFlags(m);
                 else if (lastst != eol)
                 {
-                    m->type = ReadExp();
+                    if( is_number())
+                        m->type = ReadExp();
                     if (Eval(m->type) & MFT_SEPARATOR)
                         m->text = NULL;
                     skip_comma();
                     if (lastst != eol)
                     {
-                        m->state = ReadExp();
+                        if (is_number())
+                            m->state = ReadExp();
                         skip_comma();
                     }
                     if (lastst != eol)
                     {
-                        m->help = ReadExp();
+                        if (is_number())
+                            m->help = ReadExp();
                         skip_comma();
                     }
                 }
@@ -2090,7 +2082,7 @@ static void SelectControlIdBase(RESOURCE_DATA *select)
     select->nextControlId = 1;
     for (res = select->resources; res; res = res->next)
     {
-        if (res->itype == RESTYPE_DIALOG)
+        if (res->itype == RESTYPE_DIALOG || res->itype == RESTYPE_DIALOGEX)
         {
             CONTROL *controls = res->u.dialog->controls;
             while (controls)

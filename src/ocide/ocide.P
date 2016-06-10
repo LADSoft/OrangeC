@@ -435,7 +435,7 @@ void CreateImageDrawWindow(struct resRes *info);
 
                              /* Drawmenu.c */
 
-void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep);
+void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep, BOOL extended);
 void RecurseSetSeparator(MENU *menu, MENUITEM *item, BOOL issep);
 int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse);
 void InsertDelete(HWND hwnd, struct resRes * menuData, int code);

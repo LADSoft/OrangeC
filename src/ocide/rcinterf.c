@@ -113,7 +113,8 @@ static char *DirNames[] =
     "", "Accelerators", "Bitmaps" , "Cursors",
     "Dialogs", "DlgInclude", "Fonts",
     "Icons", "", "Menus", "Message Tables",
-    "RCdata", "String Tables", "Userdata" ,"Version Info"
+    "RCdata", "String Tables", "Userdata" ,"Version Info",
+    "DialogEx", "MenuEx"
 } ;
 
 static struct {
@@ -126,8 +127,10 @@ static struct {
     { "Cursor", "IDC_CURSOR", RESTYPE_CURSOR },
     { "Bitmap", "IDB_BITMAP", RESTYPE_BITMAP },
     { "Dialog", "IDD_DIALOG", RESTYPE_DIALOG },
+    { "DialogEx", "IDD_DIALOG", RESTYPE_DIALOGEX },
     { "Font", "IDF_FONT", RESTYPE_FONT },
     { "Menu", "IDM_MENU", RESTYPE_MENU },
+    { "MenuEx", "IDM_MENU", RESTYPE_MENUEX },
     { "Message Table", "IDT_MESSAGETABLE", RESTYPE_MESSAGETABLE },
     { "Version", "VS_VERSION_INFO", RESTYPE_VERSION },
     { "String", "IDS_STRING", RESTYPE_STRING },
@@ -146,7 +149,7 @@ void InsertRCWindow(HWND hwnd)
 }
 void RemoveRCWindow(HWND hwnd)
 {
-    LIST **l = resourceWindows;
+    LIST **l = &resourceWindows;
     while (*l)
     {
         if ((*l)->data == (void *)hwnd)
@@ -156,19 +159,18 @@ void RemoveRCWindow(HWND hwnd)
             free(q);
             break;
         }
+        l = &(*l)->next;
     }
 }
 void CloseAllResourceWindows(void)
 {
-    LIST *l = resourceWindows;
     MSG msg;
-    while (l)
+    while (resourceWindows)
     {
+        LIST *l = resourceWindows;
         HWND hwnd = (HWND)l->data;
-        LIST *q = l;
         SendMessage(hwnd, WM_CLOSE, 0, 0);
-        l = l->next;
-        free(q);
+        // the close will get rid of the item from the list
     }
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     {
@@ -908,9 +910,11 @@ void HandleDblClick(HTREEITEM item, BOOL err)
                         CreateImageDrawWindow(d);
                         break;
                     case RESTYPE_DIALOG:
+                    case RESTYPE_DIALOGEX:
                         CreateDlgDrawWindow(d);
                         break;
                     case RESTYPE_MENU:
+                    case RESTYPE_MENUEX:
                         CreateMenuDrawWindow(d);
                         break;
                     case RESTYPE_VERSION:
@@ -1048,6 +1052,10 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
                     newItem = "New Dialog";
                     delItem = "Remove Dialog";
                     break;
+                case RESTYPE_DIALOGEX:
+                    newItem = "New DialogEx";
+                    delItem = "Remove DialogEx";
+                    break;
                 case RESTYPE_FONT:
                     newItem = "New Font";
                     delItem = "Remove Font";
@@ -1055,6 +1063,10 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
                 case RESTYPE_MENU:
                     newItem = "New Menu";
                     delItem = "Remove Menu";
+                    break;
+                case RESTYPE_MENUEX:
+                    newItem = "New MenuEx";
+                    delItem = "Remove MenuEx";
                     break;
                 case RESTYPE_VERSION:
                     newItem = "New Version Info";
@@ -1454,7 +1466,6 @@ static void ResPrependDialogButton(CONTROL **ctl, char *text, int id, char *idna
 static DIALOG *ResNewDialog()
 {
     DIALOG *rv = rcAlloc(sizeof(DIALOG));
-    rv->ex.extended = TRUE;
     rv->exstyle = ResOrExp(ResNewExp(WS_EX_DLGMODALFRAME, "WS_EX_DLGMODALFRAME"),
                            ResNewExp(WS_EX_CONTEXTHELP, "WS_EX_CONTEXTHELP"));
     rv->style = ResNewExp(WS_VISIBLE, "DS_MODALFRAME");
@@ -1746,9 +1757,11 @@ static int ResSetData(PROJECTITEM *data, RESOURCE *newRes)
                     return 0;
                 break;
             case RESTYPE_DIALOG:
+            case RESTYPE_DIALOGEX:
                 newRes->u.dialog = ResNewDialog();
                 break;
             case RESTYPE_MENU:
+            case RESTYPE_MENUEX:
                 newRes->u.menu = ResNewMenu();
                 break;
             case RESTYPE_VERSION:

@@ -63,6 +63,7 @@ static HCURSOR dragCur, noCur;
 
 HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data);
 EXPRESSION *ResAllocateMenuId();
+static void UndoChange(struct resRes *menuData, MENUITEM *item);
 
 struct menuUndo
 {
@@ -98,9 +99,9 @@ struct propertyFuncs menuItemFuncs =
     MenuItemPropStartEdit,
     MenuItemPropEndEdit
 } ;
-void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep)
+static void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep, BOOL extended)
 {
-    if (menu->extended)
+    if (extended)
     {
         if (issep)
             AddToStyle(&mi->type, "MFT_SEPARATOR", MFT_SEPARATOR);   
@@ -115,77 +116,26 @@ void SetSeparatorFlag(MENU *menu, MENUITEM *mi, BOOL issep)
             mi->flags &= ~MI_SEPARATOR;
     }
 }
-void RecurseSetSeparator(MENU *menu, MENUITEM *item, BOOL issep)
-{
-    if (item)
-    {
-        if (item->next)
-            RecurseSetSeparator(menu, item->next, issep);
-        if (item->popup)
-            RecurseSetSeparator(menu, item->popup, issep);
-        if (!item->text)
-        {
-            SetSeparatorFlag(menu, item, issep);
-        }
-    }    
-}
 static void InsertMenuProperties(HWND lv, struct resRes *data)
 {
-    PropSetGroup(lv, 101, L"Menu Characteristics");
     PropSetGroup(lv, 102, L"General Characteristics");
-    PropSetItem(lv, 0, 101, "Extended (MENUEX)");
-    PropSetItem(lv, 1, 102, "Resource Id");
-    PropSetItem(lv, 2, 102, "Language");
-    PropSetItem(lv, 3, 102, "SubLanguage");
-    PropSetItem(lv, 4, 102, "Characteristics");
-    PropSetItem(lv, 5, 102, "Version");    
+    PropSetItem(lv, 0, 102, "Resource Id");
+    PropSetItem(lv, 1, 102, "Language");
+    PropSetItem(lv, 2, 102, "SubLanguage");
+    PropSetItem(lv, 3, 102, "Characteristics");
+    PropSetItem(lv, 4, 102, "Version");    
 }
 void GetMenuPropText(char *buf, HWND lv, struct resRes *data, int row)
 {
-    if (row >= 1)
-    {
-        GetAccPropText(buf, lv, data, row-1);
-    }
-    else
-    {
-//        if (data->resource->u.menu->extended)
-            sprintf(buf, "Yes");
-//        else
-//            sprintf(buf, "No");
-    }
+    GetAccPropText(buf, lv, data, row);
 }
 HWND MenuPropStartEdit(HWND lv, int row, struct resRes *data)
 {
-    if (row >= 1)
-    {
-        return AccPropStartEdit(lv, row-1, data);
-    }
-    else
-    {
-        HWND rv = PropGetHWNDCombobox(lv);
-        SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
-        SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"Yes");
-        SendMessage(rv, CB_SETCURSEL, data->resource->u.menu->extended ? 1 : 0, 0);
-        return rv;
-    }
+    return AccPropStartEdit(lv, row, data);
 }
 void MenuPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
 {
-    if (row >= 1)
-    {
-        AccPropEndEdit(lv, row-1, editWnd, data);
-    }
-    else
-    {
-        int n = SendMessage(editWnd, CB_GETCURSEL, 0, 0);
-        if (n != CB_ERR)
-        {
-            RecurseSetSeparator(data->resource->u.menu, data->resource->u.menu->items, FALSE);
-            data->resource->u.menu->extended = !!n;
-            RecurseSetSeparator(data->resource->u.menu, data->resource->u.menu->items, TRUE);
-            ResSetDirty(data);
-        }
-    }
+    AccPropEndEdit(lv, row, editWnd, data);
     DestroyWindow(editWnd);
     ListView_SetItemText(lv, row, 1, LPSTR_TEXTCALLBACK);
     SetFocus(data->activeHwnd);
@@ -195,12 +145,15 @@ static void InsertMenuItemProperties(HWND lv, struct resRes *data)
     PropSetGroup(lv, 101, L"Menu Item Characteristics");
     PropSetItem(lv, 0, 101, "Menu Identifier");
     PropSetItem(lv, 1, 101, "Text");
+    PropSetItem(lv, 2, 101, "Grayed");
+    PropSetItem(lv, 3, 101, "Checked");
 }
 void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
 {
     buf[0] = 0;
     switch (row)
     {
+        int flag;
         case 0:
             FormatExp(buf, data->gd.selectedMenu->id);
             break;        
@@ -210,16 +163,63 @@ void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
             else
                 strcpy(buf, "<SEPARATOR>");
             break;
+        case 2:
+            if (data->resource->itype == RESTYPE_MENUEX)
+            {
+                flag = Eval(data->gd.selectedMenu->state) & MFS_GRAYED;
+            }
+            else
+            {
+                flag = data->gd.selectedMenu->flags & MI_GRAYED;
+            }
+            if (flag)
+                strcpy(buf, "Yes");
+            else
+                strcpy(buf, "No");
+            break;
+        case 3:
+            if (data->resource->itype == RESTYPE_MENUEX)
+            {
+                flag = Eval(data->gd.selectedMenu->state) & MFS_CHECKED;
+            }
+            else
+            {
+                flag = data->gd.selectedMenu->flags & MI_CHECKED;
+            }
+            if (flag)
+                strcpy(buf, "Yes");
+            else
+                strcpy(buf, "No");
+            break;
     }
 }
 HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes *data)
 {
-    HWND rv = PropGetHWNDText(lv);
-    if (rv)
+    HWND rv;
+    if (row < 2) 
     {
-        char buf[256];
-        GetMenuItemPropText(buf, lv, data, row);
-        SendMessage(rv, WM_SETTEXT, 0, (LPARAM)buf);
+        rv = PropGetHWNDText(lv);
+        if (rv)
+        {
+            char buf[256];
+            GetMenuItemPropText(buf, lv, data, row);
+            SendMessage(rv, WM_SETTEXT, 0, (LPARAM)buf);
+        }
+    }
+    else 
+    {
+        rv = PropGetHWNDCombobox(lv);
+        if (rv)
+        {
+            char buf[256];
+            int v;
+            GetMenuItemPropText(buf, lv, data, row);
+            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
+            SendMessage(rv, CB_SETITEMDATA, v, 0);
+            v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"Yes");
+            SendMessage(rv, CB_SETITEMDATA, v, 1);
+            SendMessage(rv, CB_SETCURSEL, buf[0] == 'Y' ? 1 : 0, 0);
+        }
     }
     return rv;
 }
@@ -227,24 +227,70 @@ void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
 {
     char buf[256];
     char buf1[256];
-    SendMessage(editWnd, WM_GETTEXT, sizeof(buf), (LPARAM)buf);
-    GetMenuItemPropText(buf1, lv, data, row);
-    if (strcmp(buf, buf1))
+    switch(row)
     {
-        switch(row)
-        {
-            case 0:
+        int n;
+        case 0:
+            GetWindowText(editWnd, buf, 256);
+            if (strcmp(buf, buf1))
+            {
+                GetMenuItemPropText(buf1, lv, data, row);
                 PropSetIdName(data, buf, &data->gd.selectedMenu->id, NULL, FALSE);
-                break;
-            case 1:
+            }
+            break;
+        case 1:
+            GetWindowText(editWnd, buf, 256);
+            GetMenuItemPropText(buf1, lv, data, row);
+            if (strcmp(buf, buf1))
+            {
                 if (data->gd.selectedMenu->id)
                     ResGetMenuItemName(data->gd.selectedMenu->id, buf);
                 StringAsciiToWChar(& data->gd.selectedMenu->text, buf, strlen(buf));
                 InvalidateRect(data->activeHwnd, 0, 0);
-                break;
-        }
-        ResSetDirty(data);
+            }
+            break;
+        case 2:
+            UndoChange(data, data->gd.selectedMenu);
+            n = SendMessage(editWnd, CB_GETCURSEL, 0, 0);
+            if (data->resource->itype == RESTYPE_MENUEX)
+            {
+                int flag = Eval(data->gd.selectedMenu->state) & MFS_GRAYED;
+                if (n && !flag)
+                    AddToStyle(&data->gd.selectedMenu->state, "MFS_GRAYED", MFS_GRAYED);
+                else if (!n && flag)
+                    RemoveFromStyle(&data->gd.selectedMenu->state, MFS_GRAYED);
+            }
+            else
+            {
+                if (n)
+                    data->gd.selectedMenu->flags |= MI_GRAYED;
+                else
+                    data->gd.selectedMenu->flags &= ~MI_GRAYED;
+            }
+            InvalidateRect(data->activeHwnd, 0, 0);
+            break;
+        case 3:
+            UndoChange(data, data->gd.selectedMenu);
+            n = SendMessage(editWnd, CB_GETCURSEL, 0, 0);
+            if (data->resource->itype == RESTYPE_MENUEX)
+            {
+                int flag = Eval(data->gd.selectedMenu->state) & MFS_CHECKED;
+                if (n && !flag)
+                    AddToStyle(&data->gd.selectedMenu->state, "MFS_CHECKED", MFS_CHECKED);
+                else if (!n && flag)
+                    RemoveFromStyle(&data->gd.selectedMenu->state, MFS_CHECKED);
+            }
+            else
+            {
+                if (n)
+                    data->gd.selectedMenu->flags |= MI_CHECKED;
+                else
+                    data->gd.selectedMenu->flags &= ~MI_CHECKED;
+            }
+            InvalidateRect(data->activeHwnd, 0, 0);
+            break;
     }
+    ResSetDirty(data);
     DestroyWindow(editWnd);
     ListView_SetItemText(lv, row, 1, LPSTR_TEXTCALLBACK);
     SetFocus(data->activeHwnd);
@@ -325,7 +371,7 @@ static void GetSizeTopRow(HDC hDC, MENUITEM *items, int x, int y, int fontHeight
     if (fontHeight > sz->cy)
         sz->cy = fontHeight;
 }
-static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, int width, int height)
+static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, int width, int height, BOOL checked, BOOL grayed)
 {
     RECT r1;
     r1.left = x;
@@ -346,6 +392,7 @@ static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, 
         WCHAR wbuf[256];
         BOOL usedDefault;
         WCHAR *n;
+        int old = SetTextColor(hDC, grayed ? GetSysColor(COLOR_BTNSHADOW) : GetSysColor(COLOR_WINDOWTEXT));
         StringWToA(buf, text, wcslen(text));
         SetBkColor(hDC, GetSysColor(bg));
         wbuf[MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf,strlen(buf), wbuf, 256)]=0;
@@ -363,6 +410,7 @@ static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, 
         {
             TextOutW(hDC, x+3, y+1, wbuf, wcslen(wbuf));
         }
+        SetTextColor(hDC, old);
     }
     else // separator
     {
@@ -385,7 +433,7 @@ static void DrawItem(HDC hDC, WCHAR *text, BOOL selected, int bg, int x, int y, 
         
     }
 }
-static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected, int x, int y, HFONT font, int fontHeight)
+static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected, int x, int y, HFONT font, int fontHeight, BOOL extended)
 {
     MENUITEM *orig = items;
     int width = CalculateMenuWidth(hDC, items) + 28;
@@ -393,7 +441,19 @@ static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
     BOOL submenu = FALSE;
     while (items)
     {
-        DrawItem(hDC, items->text, selected == items,COLOR_BTNFACE, x, pos, width, fontHeight);
+        int checked;
+        int grayed; 
+        if (extended)
+        {
+            checked = Eval(items->state) & MFS_CHECKED;
+            grayed = Eval(items->state) & MFS_GRAYED;
+        }
+        else
+        {
+            checked = items->flags & MI_CHECKED;
+            grayed = items->flags & MI_GRAYED;
+        }
+        DrawItem(hDC, items->text, selected == items,COLOR_BTNFACE, x, pos, width, fontHeight, checked, grayed);
         if (items->popup)
         {
             if (items->expanded)
@@ -412,7 +472,7 @@ static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
         {
             if (items->popup && items->expanded)
             {
-                PaintColumn(hDC, arrow, items->popup, selected, x+width, pos, font, fontHeight);
+                PaintColumn(hDC, arrow, items->popup, selected, x+width, pos, font, fontHeight, extended);
             }
             pos += fontHeight;
             items = items->next;
@@ -420,21 +480,21 @@ static void PaintColumn(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
     }
     else
     {
-        DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x, pos, width, fontHeight);
+        DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x, pos, width, fontHeight, FALSE, FALSE);
         items = orig;
         pos = y;
         while (items)
         {
             if (items->expanded)
             {
-                DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x+width, pos, width, fontHeight);
+                DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x+width, pos, width, fontHeight, FALSE, FALSE);
             }
             pos += fontHeight;
             items = items->next;
         }
     }
 }
-static void PaintTopRow(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected, int x, int y, HFONT font, int fontHeight)
+static void PaintTopRow(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected, int x, int y, HFONT font, int fontHeight, int extended)
 {
     MENUITEM *orig = items;
     int orig_x = x;
@@ -442,20 +502,34 @@ static void PaintTopRow(HDC hDC, HDC arrow, MENUITEM *items, MENUITEM *selected,
     xx.cx =40;
     while (items)
     {
+        int checked;
+        int grayed; 
+        if (extended)
+        {
+            checked = Eval(items->state) & MFS_CHECKED;
+            grayed = Eval(items->state) & MFS_GRAYED;
+        }
+        else
+        {
+            checked = items->flags & MI_CHECKED;
+            grayed = items->flags & MI_GRAYED;
+        }
         GetTextExtentPoint32W(hDC, items->text, wcslen(items->text), &xx);
         xx.cx += 16;
-        DrawItem(hDC, items->text, selected == items, COLOR_BTNFACE, x, y, xx.cx, fontHeight);
+        DrawItem(hDC, items->text, selected == items, COLOR_BTNFACE, x, y, xx.cx, fontHeight, checked, grayed);
         x += xx.cx;
         items = items->next;
     }
-    DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x, y, xx.cx, fontHeight);    
+    GetTextExtentPoint32W(hDC, L"<---->", 6, &xx);
+    xx.cx += 16;
+    DrawItem(hDC, L"<---->", FALSE, COLOR_WINDOW, x, y, xx.cx, fontHeight, FALSE, FALSE);    
     items = orig;
     x = orig_x;
     while (items)
     {
         SIZE xx;
         if (items->expanded)
-            PaintColumn(hDC, arrow, items->popup, selected, x, y+fontHeight, font, fontHeight);
+            PaintColumn(hDC, arrow, items->popup, selected, x, y+fontHeight, font, fontHeight, extended);
         GetTextExtentPoint32W(hDC, items->text, wcslen(items->text), &xx);
         xx.cx += 16;
         x += xx.cx;
@@ -494,7 +568,7 @@ static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct r
     r1.bottom = 1000;
     FillRect(compatDC,&r1, (HBRUSH)(COLOR_APPWORKSPACE + 1));
     SetTextColor(compatDC, GetSysColor(COLOR_WINDOWTEXT));
-    PaintTopRow(compatDC, arrowDC, menuData->resource->u.menu->items, menuData->gd.selectedMenu, 0, 0, font, fontHeight);
+    PaintTopRow(compatDC, arrowDC, menuData->resource->u.menu->items, menuData->gd.selectedMenu, 0, 0, font, fontHeight, menuData->resource->itype == RESTYPE_MENUEX);
     font = SelectObject(compatDC, font);
     menuData->gd.scrollMax.x = sz.cx;
     menuData->gd.scrollMax.y = sz.cy;
@@ -958,7 +1032,7 @@ static void DoInsert(struct resRes *menuData, MENUITEM **items, int code, MENUIT
             ResGetHeap(workArea, menuData);
             newItem = rcAlloc(sizeof(MENUITEM));
             newItem->next = *items;
-            SetSeparatorFlag(menuData->resource->u.menu, newItem, TRUE);
+            SetSeparatorFlag(menuData->resource->u.menu, newItem, TRUE, menuData->resource->itype == RESTYPE_MENUEX);
             *items = newItem;
             UndoInsert(menuData, items);
             ResSetDirty(menuData);

@@ -89,7 +89,10 @@ void LoadDefaultRules(void)
 void RestoreBuildRules(struct xmlNode *node, int version)
 {
     node = node->children;
-    while (node)
+    if (!node)
+        LoadDefaultRules(); // safety
+             
+    else while (node)
     {
         if (IsNode(node, "FILE"))
         {

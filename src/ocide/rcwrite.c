@@ -979,21 +979,21 @@ static void WritePopup(FILE *outputFile, MENUITEM *items, int extended, int inde
     WriteIndent(outputFile, --indent);
     fprintf(outputFile, "END\n");
 }
-static void WriteMenu(FILE *outputFile, RESOURCE *res)
+static void WriteMenu(FILE *outputFile, RESOURCE *res, BOOL extended)
 {
     MENU *m = res->u.menu;
-//    if (m->extended)
-//    {
+    if (extended)
+    {
         fprintf(outputFile, "MENUEX ");
-//    }
-//    else
-//    {
-//        fprintf(outputFile, "MENU ");
-//    }   
+    }
+    else
+    {
+        fprintf(outputFile, "MENU ");
+    }   
     WriteMemFlags(outputFile, res->info.memflags);
     fprintf(outputFile, "\n");
     WriteSecondaryCharacteristics(outputFile, &res->info);
-    WritePopup(outputFile, m->items, m->extended, 0);
+    WritePopup(outputFile, m->items, extended, 0);
 }
 static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
 {
@@ -1187,7 +1187,7 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
         fprintf(outputFile, ", ");
         WriteExp(outputFile, control->style);
     }
-    if (control->exstyle)
+    if (extended && control->exstyle)
     {
         fprintf(outputFile, ", ");
         WriteExp(outputFile, control->exstyle);
@@ -1199,7 +1199,7 @@ static void WriteControl(FILE *outputFile, CONTROL *control, int extended)
     }
     fputc('\n', outputFile);    
 }
-static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *info)
+static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *info, BOOL extended)
 {
     if (info->language_low)
     {
@@ -1230,7 +1230,7 @@ static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *
         WriteExp(outputFile, dlg->style);
         fprintf(outputFile, "\n");
     }
-    if (dlg->exstyle)
+    if (extended && dlg->exstyle)
     {
         fprintf(outputFile, "EXSTYLE ");
         WriteExp(outputFile, dlg->exstyle);
@@ -1248,20 +1248,23 @@ static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *
         WriteExp(outputFile, dlg->pointsize);
         fprintf(outputFile, ", ");
         WriteWString(outputFile, dlg->font, wcslen(dlg->font));
-        if (dlg->ex.weight || dlg->ex.italic || dlg->ex.charset)
+        if (extended)
         {
-            fprintf(outputFile, ", ");
-            WriteExp(outputFile, dlg->ex.weight);
-        }
-        if (dlg->ex.italic || dlg->ex.charset)
-        {
-            fprintf(outputFile, ", ");
-            WriteExp(outputFile, dlg->ex.italic);
-        }
-        if (dlg->ex.charset)
-        {
-            fprintf(outputFile, ", ");
-            WriteExp(outputFile, dlg->ex.charset);
+            if (dlg->ex.weight || dlg->ex.italic || dlg->ex.charset)
+            {
+                fprintf(outputFile, ", ");
+                WriteExp(outputFile, dlg->ex.weight);
+            }
+            if (dlg->ex.italic || dlg->ex.charset)
+            {
+                fprintf(outputFile, ", ");
+                WriteExp(outputFile, dlg->ex.italic);
+            }
+            if (dlg->ex.charset)
+            {
+                fprintf(outputFile, ", ");
+                WriteExp(outputFile, dlg->ex.charset);
+            }
         }
         fprintf(outputFile, "\n");
     }
@@ -1284,18 +1287,18 @@ static void WriteDialogSettings(FILE *outputFile, DIALOG *dlg, CHARACTERISTICS *
         fprintf(outputFile, "\n");
     }
 }
-static void WriteDialog(FILE *outputFile, RESOURCE *res)
+static void WriteDialog(FILE *outputFile, RESOURCE *res, BOOL extended)
 {
     DIALOG *d = res->u.dialog;
     CONTROL *c = d->controls;
-//    if (d->ex.extended)
-//    {
+    if (extended)
+    {
         fprintf(outputFile, "DIALOGEX ");
-//    }
-//    else
-//    {
-//        fprintf(outputFile, "DIALOG ");
-//    }
+    }
+    else
+    {
+        fprintf(outputFile, "DIALOG ");
+    }
     if (res->info.memflags)
     {
         WriteMemFlags(outputFile, res->info.memflags);
@@ -1309,11 +1312,11 @@ static void WriteDialog(FILE *outputFile, RESOURCE *res)
     fprintf(outputFile, ", ");
     WriteExp(outputFile, d->height);
     fprintf(outputFile, "\n");
-    WriteDialogSettings(outputFile, d, &res->info);
+    WriteDialogSettings(outputFile, d, &res->info, extended);
     fprintf(outputFile, "BEGIN\n");
     while (c)
     {
-        WriteControl(outputFile, c, d->ex.extended);
+        WriteControl(outputFile, c, extended);
         c = c->next;
     }
     fprintf(outputFile, "END\n");
@@ -1348,10 +1351,16 @@ static void WriteRes(FILE *outputFile, char *rel, RESOURCE *res)
                 WriteIcon(outputFile, rel, res);
                 break;
             case RESTYPE_MENU:
-                WriteMenu(outputFile, res);
+                WriteMenu(outputFile, res, FALSE);
+                break;
+            case RESTYPE_MENUEX:
+                WriteMenu(outputFile, res, TRUE);
                 break;
             case RESTYPE_DIALOG:
-                WriteDialog(outputFile, res);
+                WriteDialog(outputFile, res, FALSE);
+                break;
+            case RESTYPE_DIALOGEX:
+                WriteDialog(outputFile, res, TRUE);
                 break;
             case RESTYPE_STRING:
                 WriteString(outputFile, res);

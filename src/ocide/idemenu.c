@@ -711,7 +711,7 @@ void InitMenuPopup(HMENU menu)
     if (IsWindow(win) && IsResourceWindow(win))
     {
         struct resRes *res = (struct resRes *)GetWindowLong(win, 0);
-        if (res->resource->itype == RESTYPE_DIALOG)
+        if (res->resource->itype == RESTYPE_DIALOG || res->resource->itype == RESTYPE_DIALOGEX)
             mf_state = MF_ENABLED;
     }
     EnableMenuItem(menu, IDM_CREATIONORDER, mf_state);

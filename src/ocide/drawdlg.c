@@ -1986,12 +1986,12 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
             break;
         case 2: // check box
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
-            AddToStyle(&c->style, "BS_CHECKBOX", BS_CHECKBOX);
+            AddToStyle(&c->style, "BS_AUTOCHECKBOX", BS_AUTOCHECKBOX);
             classtype = CTL_BUTTON;
             text = "Check Box";          
             break;
         case 3: // Radio Button
-            AddToStyle(&c->style, "BS_RADIOBUTTON", BS_RADIOBUTTON);
+            AddToStyle(&c->style, "BS_AUTORADIOBUTTON", BS_AUTORADIOBUTTON);
             classtype = CTL_BUTTON;
             text = "Radio Button";          
             break;
@@ -2391,27 +2391,26 @@ static void InsertDlgProperties(HWND lv, struct resRes *data)
     PropSetGroup(lv, 101, L"Dialog Characteristics");
     PropSetGroup(lv, 102, L"Font Characteristics");
     PropSetGroup(lv, 103, L"General Characteristics");
-    PropSetItem(lv, 0, 101, "Extended (DIALOGEX)");
-    PropSetItem(lv, 1, 101, "Caption");
-    PropSetItem(lv, 2, 101, "Style");
-    PropSetItem(lv, 3, 101, "ExtendedStyle");
-    PropSetItem(lv, 4, 101, "X");
-    PropSetItem(lv, 5, 101, "Y");
-    PropSetItem(lv, 6, 101, "Width");
-    PropSetItem(lv, 7, 101, "Height");
+    PropSetItem(lv, 0, 101, "Caption");
+    PropSetItem(lv, 1, 101, "Style");
+    PropSetItem(lv, 2, 101, "ExtendedStyle");
+    PropSetItem(lv, 3, 101, "X");
+    PropSetItem(lv, 4, 101, "Y");
+    PropSetItem(lv, 5, 101, "Width");
+    PropSetItem(lv, 6, 101, "Height");
     
-    PropSetItem(lv, 8, 102, "Typeface");
-    PropSetItem(lv, 9, 102, "Point Size");
-    PropSetItem(lv, 10, 102, "Bold");
-    PropSetItem(lv, 11, 102, "Italic");
-    PropSetItem(lv, 12, 102, "Charset");
+    PropSetItem(lv, 7, 102, "Typeface");
+    PropSetItem(lv, 8, 102, "Point Size");
+    PropSetItem(lv, 9, 102, "Bold");
+    PropSetItem(lv, 10, 102, "Italic");
+    PropSetItem(lv, 11, 102, "Charset");
     
-    PropSetItem(lv, 13, 103, "Resource id");
-    PropSetItem(lv, 14, 103, "Language");
-    PropSetItem(lv, 15, 103, "SubLanguage");
-    PropSetItem(lv, 16, 103, "Characteristics");
-    PropSetItem(lv, 17, 103, "Version");    
-    PropSetItem(lv, 18, 103, "Class");    
+    PropSetItem(lv, 12, 103, "Resource id");
+    PropSetItem(lv, 13, 103, "Language");
+    PropSetItem(lv, 14, 103, "SubLanguage");
+    PropSetItem(lv, 15, 103, "Characteristics");
+    PropSetItem(lv, 16, 103, "Version");    
+    PropSetItem(lv, 17, 103, "Class");    
 }
 void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
 {
@@ -2419,75 +2418,69 @@ void GetDlgPropText(char *buf, HWND lv, struct resRes *data, int row)
     switch (row)
     {
         case 0:
-//            if (data->resource->u.dialog->ex.extended)
-                strcpy(buf, "Yes");
-//            else
-//                strcpy(buf, "No");
-            break;
-        case 1:
             if (data->resource->u.dialog->caption)
             {
                 StringWToA(buf, data->resource->u.dialog->caption, wcslen(data->resource->u.dialog->caption));
             }
             break;
-        case 2:
+        case 1:
             FormatExp(buf, data->resource->u.dialog->style);
             break;
-        case 3:
+        case 2:
             FormatExp(buf, data->resource->u.dialog->exstyle);
             break;
-        case 4:
+        case 3:
             sprintf(buf, "%d", Eval(data->resource->u.dialog->x));
             break;
-        case 5:
+        case 4:
             sprintf(buf, "%d", Eval(data->resource->u.dialog->y));
             break;
-        case 6:
+        case 5:
             sprintf(buf, "%d", Eval(data->resource->u.dialog->width));
             break;
-        case 7:
+        case 6:
             sprintf(buf, "%d", Eval(data->resource->u.dialog->height));
             break;
-        case 8:
+        case 7:
             if (data->resource->u.dialog->font)
             {
                 StringWToA(buf, data->resource->u.dialog->font, wcslen(data->resource->u.dialog->font));
             }
             break;
-        case 9:
+        case 8:
             sprintf(buf, "%d", Eval(data->resource->u.dialog->pointsize));
             break;        
-        case 10:
+        case 9:
             if (Eval(data->resource->u.dialog->ex.weight) == FW_BOLD)
                 strcpy(buf, "Yes");
             else
                 strcpy(buf, "No");
             break;
-        case 11:
+        case 10:
             if (Eval(data->resource->u.dialog->ex.italic))
                 strcpy(buf, "Yes");
             else
                 strcpy(buf, "No");
             break;
-        case 12:
+        case 11:
             FormatExp(buf, data->resource->u.dialog->ex.charset);
             break;
-        case 13:
+        case 12:
             FormatResId(buf, &data->resource->id);
             break;
-        case 14:
+        case 13:
             FormatExp(buf, data->resource->info.language_high);
             break;
-        case 15:
+        case 14:
             FormatExp(buf, data->resource->info.language_low);
             break;
-        case 16:
+        case 15:
             FormatExp(buf, data->resource->info.characteristics);
             break;
-        case 17:
+        case 16:
             FormatExp(buf, data->resource->info.version);
             break;
-        case 18:
+        case 17:
             if (data->resource->u.dialog->class)
                 FormatResId(buf, data->resource->u.dialog->class);
             break;
@@ -2499,22 +2492,22 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data)
     int v;
     switch(row)
     {
+        case 3:
         case 4:
         case 5:
         case 6:
-        case 7:
-        case 9:
+        case 8:
+        case 13:
         case 14:
         case 15:
         case 16:
-        case 17:
             rv = PropGetHWNDNumeric(lv);
             break;
         default:
             rv = PropGetHWNDText(lv);
             break;        
+        case 9:
         case 10:
-        case 11:
             rv = PropGetHWNDCombobox(lv);
             v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
             SendMessage(rv, CB_SETITEMDATA, v, 0);
@@ -2552,34 +2545,28 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
         switch(row)
         {
             case 0:
-                if (!strcmp(buf, "Yes"))
-                    data->resource->u.dialog->ex.extended = 1;
-                else
-                    data->resource->u.dialog->ex.extended = 0;
-                break;
-            case 1:
                 data->resource->u.dialog->caption = NULL;
                 StringAsciiToWChar(&data->resource->u.dialog->caption, buf, strlen(buf));
                 break;
-            case 2:
+            case 1:
                 PropSetExp(data, buf, &data->resource->u.dialog->style);
                 break;
-            case 3:
+            case 2:
                 PropSetExp(data, buf, &data->resource->u.dialog->exstyle);
                 break;
-            case 4:
+            case 3:
                 PropSetExp(data, buf, &data->resource->u.dialog->x);
                 break;
-            case 5:
+            case 4:
                 PropSetExp(data, buf, &data->resource->u.dialog->y);
                 break;
-            case 6:
+            case 5:
                 PropSetExp(data, buf, &data->resource->u.dialog->width);
                 break;
-            case 7:
+            case 6:
                 PropSetExp(data, buf, &data->resource->u.dialog->height);
                 break;
-            case 8:
+            case 7:
                 data->resource->u.dialog->font = NULL;
                 if (data->gd.font)
                 {
@@ -2588,7 +2575,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                 }
                 StringAsciiToWChar(&data->resource->u.dialog->font, buf, strlen(buf));
                 break;
-            case 9:
+            case 8:
                 if (data->gd.font)
                 {
                     DeleteObject(data->gd.font);
@@ -2596,7 +2583,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                 }
                 PropSetExp(data, buf, &data->resource->u.dialog->pointsize);
                 break;        
-            case 10:
+            case 9:
                 if (data->gd.font)
                 {
                     DeleteObject(data->gd.font);
@@ -2608,7 +2595,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                     sprintf(buf, "%d", FW_NORMAL);
                 PropSetExp(data, buf, &data->resource->u.dialog->ex.weight);
                 break;
-            case 11:
+            case 10:
                 if (data->gd.font)
                 {
                     DeleteObject(data->gd.font);
@@ -2620,25 +2607,25 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
                     strcpy(buf, "0");
                 PropSetExp(data, buf, &data->resource->u.dialog->ex.italic);
                 break;
-            case 12:
+            case 11:
                 PropSetExp(data, buf, &data->resource->u.dialog->ex.charset);
                 break;
-            case 13:
+            case 12:
                 PropSetIdName(data, buf, &data->resource->id.u.id, NULL, TRUE);
                 break;
-            case 14:
+            case 13:
                 PropSetExp(data, buf, &data->resource->info.language_high);
                 break;
-            case 15:
+            case 14:
                 PropSetExp(data, buf, &data->resource->info.language_low);
                 break;
-            case 16:
+            case 15:
                 PropSetExp(data, buf, &data->resource->info.characteristics);
                 break;
-            case 17:
+            case 16:
                 PropSetExp(data, buf, &data->resource->info.version);
                 break;
-            case 18:
+            case 17:
                 ResSetDirty(data);
                 if (!data->resource->u.dialog->class)
                     data->resource->u.dialog->class = rcAlloc(sizeof(IDENT));

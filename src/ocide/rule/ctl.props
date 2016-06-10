@@ -52,10 +52,10 @@
     <CONTROL TYPE="CHECKBOX">
         <HEADER LABEL="Checkbox Settings"/>
         <CAPTION LABEL="Caption" TYPE="TEXT"/>
-        <STYLE LABEL="Pushlike" type="YESNO" MASK="0x1000">
+        <STYLE LABEL="Pushlike" TYPE="YESNO" MASK="0x1000">
             <FIELD VALUELABEL="BS_PUSHLIKE" VALUE="0x1000"/>
         </STYLE>
-        <STYLE LABEL="Text to left" type="YESNO" MASK="0x20">
+        <STYLE LABEL="Text to left" TYPE="YESNO" MASK="0x20">
             <FIELD VALUELABEL="BS_LEFTTEXT" VALUE="0x20"/>
         </STYLE>
         <STYLE LABEL="Type" TYPE="COMBO" MASK="0xf">
@@ -89,15 +89,15 @@
     <CONTROL TYPE="RADIOBUTTON">
         <HEADER LABEL="Radio Button Settings"/>
         <CAPTION LABEL="Caption" TYPE="TEXT"/>
-        <STYLE LABEL="Pushlike" type="YESNO" MASK="0x1000">
+        <STYLE LABEL="Pushlike" TYPE="YESNO" MASK="0x1000">
             <FIELD VALUELABEL="BS_PUSHLIKE" VALUE="0x1000"/>
         </STYLE>
-        <STYLE LABEL="Text to left" type="YESNO" MASK="0x20">
+        <STYLE LABEL="Text to left" TYPE="YESNO" MASK="0x20">
             <FIELD VALUELABEL="BS_LEFTTEXT" VALUE="0x20"/>
         </STYLE>
-        <STYLE LABEL="Type" TYPE="COMBO" MASK="0xf">
-            <FIELD LABEL="Radio Button" VALUELABEL="BS_RADIOBUTTON" VALUE="4"/>
-            <FIELD LABEL="Auto Radio Button" VALUELABEL="BS_AUTORADIOBUTTON" VALUE="9"/>
+        <STYLE LABEL="Select Mode" TYPE="COMBO" MASK="0xf">
+            <FIELD LABEL="Manual" VALUELABEL="BS_RADIOBUTTON" VALUE="4"/>
+            <FIELD LABEL="Auto" VALUELABEL="BS_AUTORADIOBUTTON" VALUE="9"/>
         </STYLE>
         <HEADER LABEL="Common Settings"/>
         <ID LABEL="Id" TYPE="ID" />

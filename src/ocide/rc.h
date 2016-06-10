@@ -300,7 +300,6 @@ typedef struct
     WCHAR *font;
     struct
     {
-        int extended;
         EXPRESSION *help;
         EXPRESSION *weight;
         EXPRESSION *italic;
@@ -339,7 +338,6 @@ typedef struct
 {
     MENUITEM *items;
     EXPRESSION *help;
-    int extended;
 } MENU;
 
 
@@ -502,7 +500,9 @@ enum resType
     RESTYPE_DIALOG, RESTYPE_DLGINCLUDE, RESTYPE_FONT,
     RESTYPE_ICON, RESTYPE_LANGUAGE, RESTYPE_MENU, RESTYPE_MESSAGETABLE, 
     RESTYPE_RCDATA, RESTYPE_STRING, RESTYPE_USERDATA,
-    RESTYPE_VERSION
+    RESTYPE_VERSION,
+    // ordering is based on resource ordering, the next aren't standard resource types and must come last.
+    RESTYPE_DIALOGEX, RESTYPE_MENUEX,
 } ;
 
 typedef struct _resource

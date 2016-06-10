@@ -1,6 +1,16 @@
 Release notes:
 
-version 5.70.1:
+version 5.71.1: Jun 9, 2016
+    ocide:      fix vagaries between DIALOG and DIALOGEX resources
+    ocide:      fix vagaries between MENU and MENUEX resources
+    ocide:      fix separators on menus to save properly in both modes
+    ocide:      don't automatically attempt to convert MENU or DIALOG to their EX equivalent
+    ocide:      add GRAYED and CHECKED options to menu item properties
+    ocide:      change the radio button TYPE property to a SELECT MODE property
+    ocide:      safely recover if the build options in a project file are corrupt
+    ocide:      fix bug where opening multiple resource windows then trying to close them would hang the ide
+
+version 5.70.1: Jun 6, 2016
     help, examples: clarify that creating new resources creates them in the style that requires
                 MAKEINTRESOURCE
     ocide:      fix problem with not being able to resize images that had been zoomed  in the icon editor

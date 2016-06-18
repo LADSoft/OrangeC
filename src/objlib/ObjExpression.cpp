@@ -125,7 +125,13 @@ ObjInt ObjExpression::EvalNoModify(ObjInt pc)
         case eSymbol:
             return symbol->GetOffset()->EvalNoModify(pc); /* shouldn't have symbols point to symbols */
         case eSection:
-            return section->GetOffset()->EvalNoModify(pc);
+			return 0;
+			/*
+            if (section->GetAliasFor())
+                return section->GetAliasFor()->GetOffset()->EvalNoModify(pc);
+            else
+                return section->GetOffset()->EvalNoModify(pc);
+				*/
         case eNonExpression:
             return 0;
         case eExpression:

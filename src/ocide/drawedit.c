@@ -792,9 +792,11 @@ int PaintBreakpoints(HWND hwnd, HDC dc, PAINTSTRUCT *paint, RECT *rcl)
         {
             char buf[256];
             sprintf(buf, "%d", i);
+            SetBkMode(drawDC, TRANSPARENT);
             TextOut(drawDC, EDITOR_OFFSET - 4 + (ptr->lineNumberDigits - GetLog10(i)) * 
                     ((EDITDATA *)SendMessage(ptr->dwHandle, EM_GETEDITDATA, 0, 0))->cd->txtFontWidth , 
                     (i - linenum) *height + offset, buf, strlen(buf));
+            SetBkMode(drawDC, OPAQUE);
         }
     }
     xfont = SelectObject(drawDC, xfont);

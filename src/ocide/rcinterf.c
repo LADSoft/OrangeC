@@ -1609,10 +1609,10 @@ static BITMAP_ *ResNewBitmap(PROJECTITEM *pj, RESOURCE *newRes)
             nbmp = rcAlloc(sizeof(BITMAP_));
             {
                 BITMAPINFOHEADER *lpbih;
-                nbmp->headerSize = sizeof(BITMAPINFOHEADER)  + (1 << 4) * sizeof(RGBQUAD);
+                nbmp->headerSize = sizeof(BITMAPINFOHEADER)  ;//+ (1 << 4) * sizeof(RGBQUAD);
                 nbmp->headerData = (BYTE *)(lpbih = rcAlloc(nbmp->headerSize));
                 memset(nbmp->headerData + sizeof(BITMAPINFOHEADER), 0xff, 3); // COLOR WHITE
-                lpbih->biBitCount = 4; // 16 colors
+                lpbih->biBitCount = 24; // 24-bit colors
                 lpbih->biHeight = 32;
                 lpbih->biWidth = 32;
                 lpbih->biPlanes = 1;
@@ -1620,7 +1620,7 @@ static BITMAP_ *ResNewBitmap(PROJECTITEM *pj, RESOURCE *newRes)
                 lpbih->biSizeImage = (((((DWORD)lpbih->biWidth * lpbih->biBitCount) + 31) & 0xffffffe0) >> 3) * lpbih->biHeight;
                 nbmp->pixelSize = lpbih->biSizeImage;
                 nbmp->pixelData = rcAlloc(nbmp->pixelSize);
-                
+                memset(nbmp->pixelData, 0xff, nbmp->pixelSize); // set to white                
             }
             return nbmp;
     }

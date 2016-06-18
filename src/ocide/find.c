@@ -88,6 +88,7 @@ static char fileType[MAX_PATH] = "*.*";
 static BOOL canceled = FALSE;
 static BOOL inSetSel;
 static int replaceCount;
+static int matchCount;
 
 int findflags = F_DOWN | F_OPENWINDOW | F_SUBDIR;
 int replaceflags = F_DOWN | F_OPENWINDOW | F_SUBDIR;
@@ -505,7 +506,11 @@ static void FindAllInBuffer(char *fname, char *buf, char *search, int flags)
     pos.cpMin = 0;
     pos.cpMax = strlen(buf);
     flags |= F_DOWN;
-    while ((pos.cpMin = xfind(fname, search, flags, buf, &len, &pos, context)) >= 0) pos.cpMin += len ;
+    while ((pos.cpMin = xfind(fname, search, flags, buf, &len, &pos, context)) >= 0) 
+    {
+        matchCount++;
+        pos.cpMin += len ;
+    }
     if (context)
         re_free(context);
     
@@ -524,6 +529,7 @@ static int FindNextInDocument(DWINFO *ptr, char *buf, CHARRANGE *pos, int flags,
     {
         CHARRANGE r;
         HWND win;
+        matchCount++;
         if (flags & F_DOWN)
         {
             r.cpMax = pos->cpMin;
@@ -668,7 +674,7 @@ static BUFLIST **FindLoadProject(PROJECTITEM *pi, BUFLIST **tail, int flags, cha
     static DWINFO **files;
     HANDLE handle;
     if (!pi)
-        return NULL;
+        return tail;
     pi = pi->children;
     while (pi && !canceled)
     {
@@ -677,7 +683,7 @@ static BUFLIST **FindLoadProject(PROJECTITEM *pi, BUFLIST **tail, int flags, cha
             
             if (flags & F_SUBDIR)
             {
-                FindLoadProject(pi, NULL, flags, extensions);
+                tail = FindLoadProject(pi, tail, flags, extensions);
             }
         }
         else if (matchesExt(pi->realName, extensions))
@@ -794,6 +800,16 @@ static void RestartFind()
         }
     }
 }
+static void GetSelectionPos(HWND hwnd, CHARRANGE *cr)
+{
+    SendMessage(hwnd, EM_EXGETSEL, 0 , (LPARAM)cr);
+    if (cr->cpMax < cr->cpMin)
+    {
+        int n = cr->cpMax;
+        cr->cpMax = cr->cpMin;
+        cr->cpMin = n;
+    }
+}
 void FindResetWindows()
 {
     CHARRANGE *findPointer = &findPos;
@@ -810,7 +826,7 @@ void FindResetWindows()
     {
         HWND hwnd;
         CHARRANGE a;
-        SendMessage(currentWindow->dwHandle, EM_EXGETSEL, 0, (WPARAM) &a);
+        GetSelectionPos(currentWindow->dwHandle, &a);
         hwnd = (HWND)SendMessage(hwndClient,WM_MDIGETACTIVE, 0, 0);
         if (IsEditWindow(hwnd))
         {
@@ -845,7 +861,7 @@ void FindResetWindows()
                             opened = p;
                             p->range = *findPointer;
                             p->ptr = currentWindow;
-                            SendMessage(info->dwHandle, EM_EXGETSEL, 0, (LPARAM)&a);
+                            GetSelectionPos(info->dwHandle, &a);
                             free(currentBuffer);
                             currentBuffer = LoadBuffer(info);
                             currentWindow = info;
@@ -864,7 +880,7 @@ void FindResetWindows()
                         opened = p;
                         p->ptr = currentWindow;
                         p->range = *findPointer;
-                        SendMessage(info->dwHandle, EM_EXGETSEL, 0, (LPARAM)&a);
+                        GetSelectionPos(info->dwHandle, &a);
                         
                         free(currentBuffer);
                         currentBuffer = LoadBuffer(info);
@@ -905,7 +921,7 @@ void FindResetWindows()
         }    
         if (flags & F_DOWN)
         {
-            findPointer->cpMin = a.cpMin;
+            findPointer->cpMin = a.cpMax;
         }
         else
         {
@@ -945,7 +961,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
                     tail = &(*tail)->fwd;
                     *tail = newBuf;
                     newBuf->ptr = editWindows;
-                    SendMessage(editWindows->dwHandle, EM_EXGETSEL, (WPARAM)0, (LPARAM) &newBuf->range);
+                    GetSelectionPos(editWindows->dwHandle, &newBuf->range);
                     if (newBuf->range.cpMin == newBuf->range.cpMax)
                     {
                         if (flags & (F_OUTPUT1 | F_OUTPUT2))
@@ -1004,7 +1020,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
                         *tail = newBuf;
                         tail = &(*tail)->fwd;
                         *tail = newBuf;
-                        SendMessage(editWindows->dwHandle, EM_EXGETSEL, (WPARAM)0, (LPARAM) &newBuf->range);
+                        GetSelectionPos(editWindows->dwHandle, &newBuf->range);
                         *pos = newBuf->range;
                         if (newBuf->range.cpMin == newBuf->range.cpMax)
                         {
@@ -1072,7 +1088,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
                 }
                 break;
             case F_M_CURRENTPROJECT:
-                FindLoadProject(activeProject, tail, flags, specifiedExtensions);
+                tail = FindLoadProject(activeProject, tail, flags, specifiedExtensions);
                 break;
             case F_M_ALLPROJECTS:
                 pi = workArea->children;
@@ -1158,10 +1174,12 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
     findFromTB = FALSE;
     if (flags & (F_OUTPUT1 | F_OUTPUT2))
     {
+        char msgbuf[256];
         int fifwindow = (flags & F_OUTPUT2) ? ERR_FIND2_WINDOW : ERR_FIND1_WINDOW;
         EndFind();
         TagRemoveAll(fifwindow == ERR_FIND1_WINDOW ? TAG_FIF1 : TAG_FIF2);
         SelectInfoWindow(fifwindow);
+        matchCount = 0;
         ptr = NULL;
         do
         {
@@ -1169,7 +1187,8 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
             if (buf)
                 FindAllInBuffer(ptr->dwName, buf, search, flags);
         } while (buf && !canceled); 
-        SendInfoMessage(fifwindow, "Done\n");
+        sprintf(msgbuf, "\nFinished.  %d Matches\n", matchCount);
+        SendInfoMessage(fifwindow, msgbuf);
 //        SendInfoDone(fifwindow);
     }
     else
@@ -1256,6 +1275,7 @@ static int ReplaceNextInDocument(DWINFO *ptr, char *buf, int *ofs, CHARRANGE *po
         int curpos;
         int l;
         CHARRANGE aa;
+        matchCount ++;
         if (!ptr->self)
         {
             DWINFO *ptrx = GetFileInfo(ptr->dwName);
@@ -1354,7 +1374,7 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
                     }
                     vis  = SendMessage(ptr->dwHandle, EM_GETFIRSTVISIBLELINE, 0, 0);
                     lastPtr = ptr;
-    				SendMessage(ptr->dwHandle, EM_EXGETSEL, 0, (LPARAM)&lastReplacePos);
+    				GetSelectionPos(ptr->dwHandle, &lastReplacePos);
                     linepos = SendMessage(ptr->dwHandle, EM_LINEFROMCHAR, lastReplacePos.cpMin, 0);
                     vis = linepos - vis;
                     needsUpdate = TRUE;
@@ -1585,6 +1605,19 @@ DLGTEMPLATE * WINAPI DoLockDlgRes(LPCSTR lpszResName)
     return (DLGTEMPLATE *) LockResource(hglb);
 }
 
+static void SetFindNextButton(HWND hwndDlg)
+{
+    if (findflags & (F_OUTPUT1 | F_OUTPUT2))
+    {
+        SetDlgItemText(hwndDlg, IDC_FINDNEXT, "Find All");
+        SetDlgItemText(hwndDlg, IDC_REPLACEFINDNEXT, "Find All");
+    }
+    else
+    {
+        SetDlgItemText(hwndDlg, IDC_FINDNEXT, "Find Next");
+        SetDlgItemText(hwndDlg, IDC_REPLACEFINDNEXT, "Find Next");
+    }
+}
 VOID WINAPI OnSelChanged(HWND hwndDlg);
 LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                                   lParam)
@@ -1615,6 +1648,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
             SetWindowPos(hwndDlg, HWND_TOP,
                          pHdr->rcDisplay.left, pHdr->rcDisplay.top,
                          0, 0, SWP_NOSIZE);
+            SetFindNextButton(hwndDlg);
             if (!pHdr->iSel)
             {
                 HWND child = GetDlgItem(hwndDlg, IDC_COMBOFINDFIND);
@@ -1879,6 +1913,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     {
                         findflags &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
                         findflags |= F_OPENWINDOW;
+                        SetFindNextButton(hwndDlg);
                     }
                     break;
                 case IDC_RADIOFIND1:
@@ -1886,6 +1921,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     {
                         findflags &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
                         findflags |= F_OUTPUT1;
+                        SetFindNextButton(hwndDlg);
                     }
                     break;
                 case IDC_RADIOFIND2:
@@ -1893,6 +1929,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     {
                         findflags &= ~(F_OUTPUT1 | F_OUTPUT2 | F_OPENWINDOW);
                         findflags |= F_OUTPUT2;
+                        SetFindNextButton(hwndDlg);
                     }
                     break;
                 case IDCANCEL:
@@ -2039,10 +2076,14 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                 if (findflags & F_OPENWINDOW)
                 {
                     findflags &= ~F_OPENWINDOW;
-                    findflags |= F_OUTPUT1;
+                    if (!(findflags & (F_OUTPUT1 | F_OUTPUT2)))
+                        findflags |= F_OUTPUT1;
                     findmode = F_M_CURRENTPROJECT;
                     replacemode = F_M_CURRENTPROJECT;
                 }
+                else if (!(findflags & (F_OUTPUT1 | F_OUTPUT2)))
+                    findflags |= F_OUTPUT1;
+
             }
             else
             {

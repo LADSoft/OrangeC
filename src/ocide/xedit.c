@@ -1206,7 +1206,7 @@ void ClientArea(HWND hwnd, EDITDATA *p, RECT *r)
 {
     GetClientRect(hwnd, r);
     //   r->bottom -= GetSystemMetrics(SM_CYHSCROLL) ;
-    r->bottom -= r->bottom % p->cd->txtFontHeight;
+    r->bottom -= r->bottom % (p->cd->txtFontHeight ? p->cd->txtFontHeight : 2);
 }
 
 /**********************************************************************
@@ -3750,14 +3750,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
             int oldinsert = p->cd->inserting;
             int start;
             int x = p->cd->redopos;
-            if (x == p->cd->undohead)
-            {
-                if (--x < 0)
-                    x += UNDO_MAX;
-            }
-            u = &p->cd->undolist[x];
             if (--x < 0)
                 x += UNDO_MAX;
+            u = &p->cd->undolist[x];
             p->cd->undoing++;
             p->cd->inserting = TRUE;
             rv = 0;
@@ -3952,10 +3947,10 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         {
             int oldinsert = p->cd->inserting;
             UNDO *u;
-            int x = p->cd->redopos+1;
+            int x = p->cd->redopos;
             if (x >= UNDO_MAX)
                 x -= UNDO_MAX;
-            if (x != p->cd->undotail)
+            if (x == p->cd->undotail)
                 x = p->cd->redopos;
             u = &p->cd->undolist[x];
             if (++x >= UNDO_MAX)
@@ -5573,30 +5568,32 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
      * exeditProc is the window proc for the edit control
      **********************************************************************/
 
-    LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
-        lParam)
+LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
+    lParam)
+{
+    CREATESTRUCT *lpCreate;
+    static char buffer[1024];
+    EDITDATA *p;
+    DWINFO *x;
+    int stop;
+    LRESULT rv;
+    int i, start, end;
+    TOOLTIPTEXT *lpnhead;
+    int l;
+    DEBUG_INFO *dbg;
+    VARINFO *var;
+    NMHDR nm;
+    int charpos;
+    RECT r;
+    HDC dc;
+    HFONT xfont;
+    TEXTMETRIC t;
+    INTERNAL_CHAR *ic;
+    POINTL pt;
+    LOGFONT lf;
+    CHARRANGE *ci;
+    if (GetWindowLong(hwnd, 0) || iMessage == WM_CREATE)
     {
-        CREATESTRUCT *lpCreate;
-        static char buffer[1024];
-        EDITDATA *p;
-        DWINFO *x;
-        int stop;
-        LRESULT rv;
-        int i, start, end;
-        TOOLTIPTEXT *lpnhead;
-        int l;
-        DEBUG_INFO *dbg;
-        VARINFO *var;
-        NMHDR nm;
-        int charpos;
-        RECT r;
-        HDC dc;
-        HFONT xfont;
-        TEXTMETRIC t;
-        INTERNAL_CHAR *ic;
-        POINTL pt;
-        LOGFONT lf;
-        CHARRANGE *ci;
         switch (iMessage)
         {
             case WM_TIMER:
@@ -6760,10 +6757,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 {
                     if (p->cd->undohead != p->cd->undotail )
                     {
-                        int x = p->cd->redopos+1;
-                        if (x >= UNDO_MAX)
-                            x -= UNDO_MAX;
-                        return x != p->cd->undotail;
+                        return p->cd->undotail != p->cd->redopos;
                     }
                 }
                 return FALSE;
@@ -6910,8 +6904,9 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 break;
 
         }
-        return DefWindowProc(hwnd, iMessage, wParam, lParam);
     }
+    return DefWindowProc(hwnd, iMessage, wParam, lParam);
+}
     /**********************************************************************
      * RegisterXeditWindow registers the edit window
      **********************************************************************/

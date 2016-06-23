@@ -133,14 +133,14 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
     if (info->outofscope || info->outofscopereg)
         sprintf(buf, "out of scope");
     else if (info->constant)
-        sprintf(buf, "POINTER: %x", info->address);
+        sprintf(buf, "POINTER: 0x%x", info->address);
     else if (info->structure)
     {
-        sprintf(buf, "STRUCTURE: %x", info->address);
+        sprintf(buf, "STRUCTURE: 0x%x", info->address);
     }
     else if (info->unionx)
     {
-        sprintf(buf, "UNION: %x", info->address);
+        sprintf(buf, "UNION: 0x%x", info->address);
     }
     else if (info->pointer)
     {
@@ -151,7 +151,7 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
             if (onevalue)
                 sprintf(buf, "0x%x ", val);
             else
-                sprintf(buf, "POINTER: %x ", val);
+                sprintf(buf, "POINTER: 0x%x ", val);
             GetStringValue(info, buf + strlen(buf), 32, val);
         }
         else
@@ -177,7 +177,7 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
     }
     else if (info->array)
     {
-        sprintf(buf, "ARRAY: %x ", info->address);
+        sprintf(buf, "ARRAY: 0x%x ", info->address);
         GetStringValue(info, buf + strlen(buf), 32, info->address);
     }
     else
@@ -775,7 +775,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             else
             {
-                if (charrange.cpMax - charrange.cpMin < sizeof(buf))
+              if (charrange.cpMin - charrange.cpMax < sizeof(buf) || charrange.cpMax - charrange.cpMin < sizeof(buf))
                 {
                     SendMessage(win, EM_GETSELTEXT, 0, (LPARAM)buf);
                     doit = TRUE ;

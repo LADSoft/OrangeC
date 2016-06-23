@@ -50,7 +50,7 @@ BOOL useim;
 
 void SegmentDisplay(char *buffer, long value)
 {
-    sprintf(buffer, "%x", value);
+    sprintf(buffer, "0x0x%x", value);
 }
 
 //-------------------------------------------------------------------------
@@ -67,66 +67,66 @@ void FormatValue(char *buffer, OPERAND *record, uint segs, uint type)
     {
         case SY_SIGNEDOFS:
             if (record->address < 0)
-                sprintf(buffer, "-%x", (BYTE)ABS(record->address));
+                sprintf(buffer, "-0x%x", (BYTE)ABS(record->address));
             else
-                sprintf(buffer, "+%x", (BYTE)record->address);
+                sprintf(buffer, "+0x%x", (BYTE)record->address);
             break;
         case SY_WORDOFS:
-            sprintf(buffer, "+%lx", record->address);
+            sprintf(buffer, "+0x%lx", record->address);
             break;
         case SY_BYTEOFS:
-            sprintf(buffer, "+%x", (BYTE)record->address);
+            sprintf(buffer, "+0x%x", (BYTE)record->address);
             break;
         case SY_ABSOLUTE:
             if (buf[0])
-                sprintf(buffer, "%lx:%s", record->address, buf);
+                sprintf(buffer, "0x%lx:%s", record->address, buf);
             else
-                sprintf(buffer, "%lx", record->address);
+                sprintf(buffer, "0x%lx", record->address);
             break;
         case SY_SIGNEDIMM:
             if (record->address < 0)
-                sprintf(buffer, "-%x", ABS(record->address));
+                sprintf(buffer, "-0x%x", ABS(record->address));
             else
-                sprintf(buffer, "+%x", record->address);
+                sprintf(buffer, "+0x%x", record->address);
             break;
         case SY_WORDIMM:
             if (useim)
-                sprintf(buffer, "%lx", record->address);
+                sprintf(buffer, "0x%lx", record->address);
             else
-                sprintf(buffer, "offset %lx", record->address);
+                sprintf(buffer, "offset 0x%lx", record->address);
             break;
         case SY_BYTEIMM:
-            sprintf(buffer, "%x", (BYTE)(record->address));
+            sprintf(buffer, "0x%x", (BYTE)(record->address));
             break;
         case SY_PORT:
-            sprintf(buffer, "%x", (BYTE)record->address);
+            sprintf(buffer, "0x%x", (BYTE)record->address);
             break;
         case SY_INTR:
-            sprintf(buffer, "%x", (BYTE)record->address);
+            sprintf(buffer, "0x%x", (BYTE)record->address);
             break;
         case SY_RETURN:
-            sprintf(buffer, "%x", (uint)record->address);
+            sprintf(buffer, "0x%x", (uint)record->address);
             break;
         case SY_ABSBRANCH:
             if (buf[0])
-                sprintf(buffer, "%lx:%s", record->address, buf);
+                sprintf(buffer, "0x%lx:%s", record->address, buf);
             else
-                sprintf(buffer, "%lx", record->address);
+                sprintf(buffer, "0x%lx", record->address);
             break;
         case SY_LONGBRANCH:
             if (buf[0])
-                sprintf(buffer, "%lx:%s", record->address, buf);
+                sprintf(buffer, "0x%lx:%s", record->address, buf);
             else
-                sprintf(buffer, "%lx", record->address);
+                sprintf(buffer, "0x%lx", record->address);
             break;
         case SY_SHORTBRANCH:
             if (buf[0])
-                sprintf(buffer, "%lx:%s", record->address, buf);
+                sprintf(buffer, "0x%lx:%s", record->address, buf);
             else
-                sprintf(buffer, "%lx", record->address);
+                sprintf(buffer, "0x%lx", record->address);
             break;
         case SY_SHIFT:
-            sprintf(buffer, "%x", (BYTE)record->address);
+            sprintf(buffer, "0x%x", (BYTE)record->address);
             break;
         case SY_SEGMENT:
             SegmentDisplay(buffer, record->segment);

@@ -28,18 +28,19 @@
 ;INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 ;TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ;ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-section data USE32
-%include "..\..\copyrght.asm"
+%ifdef __BUILDING_LSCRTL_DLL
+[export __profile_out]
+%endif
+[global __profile_out]
+[extern __profile_out_1]
 
-section code USE32
-extern ___startup
-..start:
-and	esp,-16
-push	0
-mov 	ebp, esp
-jmp ___startup
-extern _main
-global startupStruct
-startupStruct:
-    dd  0
-    dd  _main
+SECTION code CLASS=CODE USE32
+__profile_out:
+    push eax
+    push edx
+    call __profile_out_1
+    pop edx
+    pop eax
+    ret
+@__security_check_cookie@4:
+    ret

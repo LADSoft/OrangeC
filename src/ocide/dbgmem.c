@@ -117,6 +117,8 @@ int GetMemAddress(char *buf, BOOL error)
     int stars = 0;
     while (*buf == ' ')
         buf++;
+    if (buf[0] == '&')
+        buf++;
     {
         int l;
         DEBUG_INFO *dbg;

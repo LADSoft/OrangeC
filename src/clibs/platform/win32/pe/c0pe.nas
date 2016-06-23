@@ -33,10 +33,9 @@ section data USE32
 section code USE32 
 extern ___startup
 ..start:
+and	esp,-16
 push	0
 mov 	ebp, esp
-and	esp,-16
-sub esp, 4
 jmp ___startup
 extern WinMain
 global startupStruct

@@ -446,17 +446,17 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
                 sprintf(buf, "%f + %f * I", (double)info->fval,(double)info->fvali) ;
                 break;
             default:
-                sprintf(buf,"%x", info->address);
+                sprintf(buf,"0x%x", info->address);
                 break;
         }
     }
     else if (info->structure)
     {
-        sprintf(buf, "STRUCTURE: %x", info->address); 
+        sprintf(buf, "STRUCTURE: 0x%x", info->address); 
     }
     else if (info->unionx)
     {
-        sprintf(buf, "UNION: %x", info->address);
+        sprintf(buf, "UNION: 0x%x", info->address);
     }
     else if (info->pointer)
     {
@@ -464,12 +464,12 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
         char buf2[256],  *p;
         if (info->derefaddress != -1)
         {
-            sprintf(buf, "POINTER: %x ", info->derefaddress);
+            sprintf(buf, "POINTER: 0x%x ", info->derefaddress);
             GetStringValue(info, buf + strlen(buf), 32, info->derefaddress);
         }
         else if (ReadValue(info->address, &val, 4, info))
         {
-            sprintf(buf, "POINTER: %x ", val);
+            sprintf(buf, "POINTER: 0x%x ", val);
             GetStringValue(info, buf + strlen(buf), 32, val);
         }
         else
@@ -482,13 +482,13 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
         int signedtype;
         int v = HintBf(info, &signedtype);
         if (signedtype)
-            sprintf(buf, "%d(%x)", v, v);
+            sprintf(buf, "%d(0x%x)", v, v);
         else
-            sprintf(buf, "%u(%x)", v, v);
+            sprintf(buf, "%u(0x%x)", v, v);
     }
     else if (info->array)
     {
-        sprintf(buf, "ARRAY: %x ", info->address);
+        sprintf(buf, "ARRAY: 0x%x ", info->address);
         GetStringValue(info, buf + strlen(buf), 32, info->address);
     }
     else

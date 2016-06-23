@@ -1008,10 +1008,12 @@ UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
                     {
                         if (p->selstartcharpos == u->postselstart)
                         {
+                            /*
                             p->cd->undohead = x;
                             if (++p->cd->undohead >= UNDO_MAX)
                                 p->cd->undohead -= UNDO_MAX;
                             p->cd->redopos = p->cd->undohead;
+                            */
                             p->cd->modified = TRUE;
                             return u;
                         }
@@ -1020,11 +1022,12 @@ UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
                     {
                         if (p->selstartcharpos + 1 == u->postselstart)
                         {
+                            /*
                             p->cd->undohead = x;
                             if (++p->cd->undohead >= UNDO_MAX)
                                 p->cd->undohead -= UNDO_MAX;
                             p->cd->redopos = p->cd->undohead;
-                            p->cd->modified = TRUE;
+                            */
                             return  u;
                         }
                     }
@@ -1033,12 +1036,6 @@ UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
         }
     }
 
-    if (p->cd->redopos != p->cd->undohead)
-    {
-        p->cd->redopos++;
-        if (p->cd->redopos >= UNDO_MAX)
-            p->cd->redopos -= UNDO_MAX;
-    }
     p->cd->undohead = p->cd->redopos;
     u = &p->cd->undolist[p->cd->redopos];
     if (++p->cd->undohead >= UNDO_MAX)
@@ -5567,7 +5564,16 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     /**********************************************************************
      * exeditProc is the window proc for the edit control
      **********************************************************************/
-
+int KeyboardToAscii(int vk, int scan)
+{
+    WCHAR data[10];
+    BYTE state[256];
+    data[0] = 0;
+    memset(state,0, sizeof(state));
+    ToUnicodeEx(vk, (scan>>16) & 0xff, state, data, 10, 0, 0);
+    return data[0];  
+    
+}
 LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam)
 {
@@ -5896,20 +5902,6 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     setcurcol(p);
                     SendMessage(GetParent(hwnd), EN_SETCURSOR, 0, 0);
                     break;
-                case 219: //'['
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
-                    {
-                        PopupFullScreen(hwnd, p);
-                        return 0;
-                    }
-                    break;
-                case 221: //']'
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
-                    {
-                        ReleaseFullScreen(hwnd, p);
-                        return 0;
-                    }
-                    break;
                 case 'A':
                     if (GetKeyState(VK_CONTROL) &0x80000000)
                     {
@@ -5982,6 +5974,25 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 case VK_SHIFT:
                     p->cd->selecting = TRUE;
                     break;
+                default:
+                    switch (KeyboardToAscii(wParam, lParam))
+                    {
+                         case '[':
+                            if (GetKeyState(VK_CONTROL) &0x80000000)
+                            {
+                                PopupFullScreen(hwnd, p);
+                                return 0;
+                            }
+                            break;
+                        case ']':
+                            if (GetKeyState(VK_CONTROL) &0x80000000)
+                            {
+                                ReleaseFullScreen(hwnd, p);
+                                return 0;
+                            }
+                            break;
+                    }
+
                 }
                 if (p->cd->selecting)
                     InvalidateRect(hwnd, 0, 0);
@@ -5990,28 +6001,14 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 SendMessage(hwndShowFunc, WM_USER+3, wParam, (LPARAM)p);
                 FindParenMatch(hwnd, p);
                 break;
-            case WM_SYSCHAR:
-                p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                switch (wParam)
-                {
-                    case 221: //']'
-                    case 219: //'['
-                        if (!(GetKeyState(VK_CONTROL) &0x80000000))
-                            if (lParam &0x20000000) {// alt key
-                                return 0;
-                        }
-                        break;
-                }
-                break;
             case WM_SYSKEYUP:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                switch (wParam)
-                {
-                    case VK_SHIFT:
+                if (wParam == VK_SHIFT)
                         p->cd->selecting = FALSE;
-                        break;
-                    case 221: //']'
-                    case 219: //'['
+                else switch (wParam = KeyboardToAscii(wParam, lParam))
+                {
+                    case ']':
+                    case '[':
                         if (!(GetKeyState(VK_CONTROL) &0x80000000))
                             if (lParam &0x20000000) {// alt key
                                 return 0;
@@ -6021,16 +6018,15 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 break;
             case WM_SYSKEYDOWN:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                switch (wParam)
-                {
-                    case VK_SHIFT:
+                if (wParam == VK_SHIFT)
                         p->cd->selecting = TRUE;
-                        break;
-                    case 221: //']'
-                    case 219: //'['
+                else switch (wParam = KeyboardToAscii(wParam, lParam))
+                {
+                    case ']':
+                    case '[':
                         if (!(GetKeyState(VK_CONTROL) &0x80000000))
                             if (lParam &0x20000000) {// alt key
-                                FindBraceMatch(hwnd, p, wParam == 219 ? '{' : '}');
+                                FindBraceMatch(hwnd, p, wParam == '[' ? '{' : '}');
                                 return 0;
                             }
                         break;

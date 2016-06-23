@@ -549,17 +549,27 @@ int dumpFunction(TYPE *tp)
         types[count++] = link_puttype(s->tp);
         hr = hr->next;
     }
-    switch (basetype(tp)->sp->linkage)
+    switch(basetype(tp)->sp->storage_class)
     {
+        case sc_virtual:
+        case sc_member:
+        case sc_mutable:
+            v = 4;
+            break;
         default:
-        case lk_cdecl:
-            v = 1;
-            break;
-        case lk_stdcall:
-            v = 2;
-            break;
-         case lk_pascal:
-            v = 3;
+            switch (basetype(tp)->sp->linkage)
+            {
+                default:
+                case lk_cdecl:
+                    v = 1;
+                    break;
+                case lk_stdcall:
+                    v = 2;
+                    break;
+                 case lk_pascal:
+                    v = 3;
+                    break;
+            }
             break;
     }
     sprintf(buf,"T2,T%X,%X",m, v);

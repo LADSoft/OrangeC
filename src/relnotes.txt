@@ -1,5 +1,19 @@
 Release notes:
 
+version 5.72.1: Jun 23, 2016
+    ocide:      fix several crash conditions
+    ocide:      fix redo to work properly
+    ocide:      fix various bugs in find dialog & add new features
+    ocide:      fix problem where bitmaps defaulted to 16 colors (not all colors could be used)
+    ocide:      debugger fix display of enumerated values: was showing random numbers
+    ocide:      fix CTL-[ CTL-] ALT-[ and ALT-] to work independently of the installed keyboard
+                and not interfere with the keystrokes
+    ocide:      in memory window, specifying an expression with '&' should be superfluous
+    ocide:      in disassembly window, prefix all constants with 0x to show they are hexadecimal
+    ocide:      properly evaluate a selection when adding to the watch window via right-click
+    olink:      fix debug info:  ocide call stack, threads windows showed invalid function names
+                and global variables were off as well (this was introduced with the C++ debugging info)
+
 version 5.71.1: Jun 9, 2016
     ocide:      fix vagaries between DIALOG and DIALOGEX resources
     ocide:      fix vagaries between MENU and MENUEX resources

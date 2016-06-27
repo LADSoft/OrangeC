@@ -104,7 +104,7 @@ ObjString ObjIeeeAscii::GetSymbolName(const char *buffer, int *index)
     CheckTerm(buffer + pos);
     if (!GetCaseSensitiveFlag())
     {
-        char buf[2048];
+        char buf[4096];
         strncpy(buf, rv.c_str(), sizeof(buf));
         buf[sizeof(buf) - 1] = 0;
         char *p = buf;

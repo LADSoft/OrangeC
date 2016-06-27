@@ -74,7 +74,7 @@ extern char anonymousNameSpaceName[512];
             "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand", "$basor", 
             "$basxor", "$binc", "$bdec", "$barray", "$bcall", "$bstar", 
             "$barrow", "$bcomma", "$blor", "$bland", "$bnot", "$bor", "$band", "$bxor", 
-            "$bcpl", "$bnwa", "$bdla", "$blit"
+            "$bcpl", "$bnwa", "$bdla", "$blit", 0
 
     };
     char *xlate_tab[] = 
@@ -82,7 +82,7 @@ extern char anonymousNameSpaceName[512];
         0, 0, 0, "new", "delete", "+", "-", "*", "/", "<<", ">>", "%", "==", "!=",
             "<", "<=", ">", ">=", "=", "+=", "-=", "*=", "/=", "%=", "<<=", 
             ">>=", "&=", "|=", "^=", "++", "--", "[]", "()", "->*", "->", ",", "||",
-            "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\" ",
+            "&&", "!", "|", "&", "^", "~", "new[]", "delete[]", "\"\" ", 0
     };
 #define IT_THRESHOLD 3
 #define IT_OV_THRESHOLD 5
@@ -403,6 +403,16 @@ char *unmangleExpression(char *dest, char *name)
                         v =  *name++ - '0';
                         while (isdigit(*name))
                             v = v * 10+ *name++ - '0';
+                        strncpy(dest, name, v);
+                        name += v;
+                        dest += strlen(dest);
+                    }
+                    else if (*name == 'n')
+                    {
+                        name++;
+                        v =  *name++ - '0';
+                        if (v > 9)
+                            v -= 7;
                         strcpy(dest, manglenames[v]);
                         dest += strlen(dest);
                     }
@@ -411,31 +421,72 @@ char *unmangleExpression(char *dest, char *name)
                         name++;
                         *dest++=':';
                         *dest++=':';
-                        v =  *name++ - '0';
-                        while (isdigit(*name))
-                            v = v * 10+ *name++ - '0';
-                        strcpy(dest, manglenames[v]);
-                        dest += strlen(dest);                    
+                        if (isdigit(*name))
+                        {
+                            v =  *name++ - '0';
+                            while (isdigit(*name))
+                                v = v * 10+ *name++ - '0';
+                            strncpy(dest, name, v);
+                            name += v;
+                            dest += strlen(dest);                    
+                        }
+                        else if (*name == 'n')
+                        {
+                            name++;
+                            v =  *name++ - '0';
+                            if (v > 9)
+                                v -= 7;
+                            strcpy(dest, manglenames[v]);
+                            dest += strlen(dest);
+                        }
                     }                    
                 }
                 else
                 {
                     int v;
-                    v =  *name++ - '0';
-                    while (isdigit(*name))
-                        v = v * 10+ *name++ - '0';
-                    strcpy(dest, manglenames[v]);
-                    dest += strlen(dest);                    
+                    name++;
+                    if (isdigit (*name))
+                    {
+                        v =  *name++ - '0';
+                        while (isdigit(*name))
+                            v = v * 10+ *name++ - '0';
+                        strncpy(dest, name, v);
+                        name += v;
+                        dest += strlen(dest);                    
+                    }
+                    else if (*name == 'n')
+                    {
+                        name++;
+                        v =  *name++ - '0';
+                        if (v > 9)
+                            v -= 7;
+                        strcpy(dest, manglenames[v]);
+                        dest += strlen(dest);
+                    }
                 }
             }
             case 'f':
             {
                 int v;
-                v =  *name++ - '0';
-                while (isdigit(*name))
-                    v = v * 10+ *name++ - '0';
-                strcpy(dest, manglenames[v]);
-                dest += strlen(dest);
+                if (isdigit (*name))
+                {
+                
+                    v =  *name++ - '0';
+                    while (isdigit(*name))
+                        v = v * 10+ *name++ - '0';
+                    strncpy(dest, name, v);
+                    name += v;
+                    dest += strlen(dest);
+                }
+                else if (*name == 'n')
+                {
+                    name++;
+                    v =  *name++ - '0';
+                    if (v > 9)
+                        v -= 7;
+                    strcpy(dest, manglenames[v]);
+                    dest += strlen(dest);
+                }
                 *dest++='(';
                 while (*name == 'f')
                 {

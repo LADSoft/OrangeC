@@ -103,8 +103,16 @@ void BRCLoader::InsertSymData(std::string s, BrowseData *ldata)
                 {
                     BrowseDataset::iterator it = sym->data.find(ld);
                     sym->data.erase(it);
-                    delete ld;
-                    sym->func = ldata;
+                    if (sym->insert(ldata))
+                    {
+                        sym->func = ldata;
+                        delete ld;
+                    }
+                    else
+                    {
+                        sym->insert(ld);
+                        delete ldata;
+                    }
                 }
                 else if (ldata->type == ObjBrowseInfo::eFuncStart && ldata->qual == ObjBrowseInfo::eExternal)
                 {
@@ -115,14 +123,11 @@ void BRCLoader::InsertSymData(std::string s, BrowseData *ldata)
         }
         else
         {
-            sym->func = ldata;
+            if (sym->insert(ldata))
+                sym->func = ldata;
+            else
+                delete ldata;
         }
-    }
-    if (!sym->insert(ldata))
-    {
-        if (sym->func == ldata)
-            sym->func = NULL;
-        delete ldata;
     }
 }
 
@@ -154,9 +159,9 @@ ObjInt BRCLoader::InsertVariable(ObjBrowseInfo &p)
     ldata->qual = p.GetQual();
     ldata->charPos = p.GetCharPos();
     ldata->hint = hint;
-    ldata->blockLevel = blocks.size();
+    ldata->blockLevel = blocks.size()- blockHead;
     ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
-    if (blocks.size() == 0)
+    if (blocks.size()-blockHead == 0)
     {
         InsertSymData(name, ldata);
     } 
@@ -175,9 +180,10 @@ void BRCLoader::InsertDefine(ObjBrowseInfo &p)
 }
 
 //-------------------------------------------------------------------------
-
 void BRCLoader::StartFunc(ObjBrowseInfo &p)
 {
+    functionNesting.push_front(blockHead);
+    blockHead = blocks.size();
     int line = InsertVariable(p);
     StartBlock(line);
 }
@@ -194,6 +200,8 @@ void BRCLoader::EndFunc(ObjBrowseInfo &p)
 //    (*sym->data.begin())->funcEndLine = line;
     sym->func->funcEndLine = line;
     EndBlock(line);
+    blockHead = functionNesting.front();
+    functionNesting.pop_front();
 }
 
 //-------------------------------------------------------------------------

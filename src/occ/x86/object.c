@@ -878,7 +878,7 @@ void omfComDefData(void)
         {
             int indent;
             int len;
-            char fbuf[2048];
+            char fbuf[4096];
             p = buf;
             p += put_ident(p, v->sp->value.i);
             if (rec->address < MAX_16BIT_ADDRESS)
@@ -944,7 +944,7 @@ void omfData(void)
             {
                 int indent;
                 int len;
-                char fbuf[2048];
+                char fbuf[4096];
                 buf[0] = segxlattab[i];
                 if (rec->address < MAX_16BIT_ADDRESS)
                 {

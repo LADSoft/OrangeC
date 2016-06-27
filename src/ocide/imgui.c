@@ -912,7 +912,7 @@ static void PositionCaret(IMGDATA *p)
     hf = SelectObject(dc, p->drawFont);
     if (sz.cx > (p->selectRect.right - p->selectRect.left) * p->zoom)
         sz.cx = (p->selectRect.right - p->selectRect.left) * p->zoom;
-    SetCaretPos(p->selectRect.left * p->zoom + sz.cx, p->selectRect.top * p->zoom);
+    SetCaretPos(p->selectRect.left * p->zoom + sz.cx - p->showX, p->selectRect.top * p->zoom- p->showY);
 }
 static void DoShowCaret(IMGDATA *p)
 {
@@ -2774,7 +2774,7 @@ LRESULT CALLBACK  WorkspaceWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 width = r.right - 2 * GetSystemMetrics(SM_CXBORDER);
                 SetScrollRange(hwnd, SB_HORZ, 0, p->maxX = (p->res->width * p->zoom - width), TRUE); 
-                p->showX = 0;
+//                p->showX = 0;
                 SetScrollPos(hwnd, SB_HORZ, p->showX, FALSE);
                 ShowScrollBar(hwnd, SB_HORZ, TRUE);
             }
@@ -2790,7 +2790,7 @@ LRESULT CALLBACK  WorkspaceWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 height = r.bottom - 2 * GetSystemMetrics(SM_CYBORDER);
                 SetScrollRange(hwnd, SB_VERT, 0, p->maxY = (p->res->height * p->zoom - height), TRUE); 
-                p->showY = 0;
+//                p->showY = 0;
                 SetScrollPos(hwnd, SB_VERT, p->showY, FALSE);
                 ShowScrollBar(hwnd, SB_VERT, TRUE);
             }

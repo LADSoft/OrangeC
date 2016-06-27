@@ -977,6 +977,15 @@ void genfunc(SYMBOL *funcsp)
 /*	        gen_icode(i_loadcontext, 0,0,0); */
     }
     gen_icode(i_prologue,0,0,0);
+    if (cparams.prm_debug)
+    {
+        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p)->thisPtr)
+        {
+            EXPRESSION *exp = varNode(en_auto, ((SYMBOL *)basetype(funcsp->tp)->syms->table[0]->p));
+            exp->v.sp->tp->used = TRUE;
+            gen_varstart(exp);
+        }
+    }
     gen_label(startlab);
     AddProfilerData(funcsp);
     if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)

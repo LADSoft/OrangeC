@@ -133,7 +133,7 @@ void omfInit(void)
 }
 static void emit_record_ieee(char *format, ...)
 {
-    char buffer[2048];
+    char buffer[4096];
     int i, l;
     va_list ap;
 
@@ -351,7 +351,7 @@ void link_Files(void)
 
 void link_Segs(void)
 {
-    char buf[2048];
+    char buf[4096];
     int i;
     VIRTUAL_LIST *v = virtualFirst;
     firstVirtualSeg = 1;
@@ -425,6 +425,12 @@ int emit_type_ieee(char *format, ...)
     }
     return n;
 }
+void emit_type_name(int n, char *nm)
+{
+    if (nm[0] == '_')
+        nm++; 
+    emit_record_ieee("NT%X,%03X%s.\r\n", n, strlen(nm), nm);
+}
 int link_BasicType(TYPE *tp)
 {
     static int basicTypes[] = 
@@ -451,7 +457,7 @@ int link_BasicType(TYPE *tp)
     }
     return n;
 }
-void dumpStructFields(int sel, int n, int sz, BASECLASS *bc, HASHREC *hr)
+void dumpStructFields(int sel, int n, int sz, SYMBOL *parent, BASECLASS *bc, HASHREC *hr)
 {
     char buf[512];
     int count = 0;
@@ -468,13 +474,25 @@ void dumpStructFields(int sel, int n, int sz, BASECLASS *bc, HASHREC *hr)
         {
             SYMBOL *sp = (SYMBOL *)bc->cls;
             table[count] = sp;
+            // we are setting sp->offset here for use later in this function
             if (bc->isvirtual)
             {
+                VBASEENTRY *vbase = parent->vbaseEntries;
+                while (vbase)
+                {
+                    if (vbase->cls == bc->cls || sameTemplate(vbase->cls->tp, bc->cls->tp))
+                    {
+                        sp->offset = vbase->pointerOffset;  
+                        break;
+                    }
+                    vbase = vbase->next;
+                }
                 tpl.btp = sp->tp;
                 table1[count++] = link_puttype(&tpl);
             }
             else
             {
+                sp->offset = bc->offset;
                 table1[count++] = link_puttype(sp->tp);
             }
             bc = bc->next;
@@ -485,7 +503,7 @@ void dumpStructFields(int sel, int n, int sz, BASECLASS *bc, HASHREC *hr)
         while (hr && count < sizeof(table)/sizeof(table[0]))
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            if (ismemberdata(sp))
+            if (!istype(sp) && sp->tp->type != bt_aggregate)
             {
                 table[count] = sp;
                 table1[count++] = link_puttype(sp->tp);
@@ -494,12 +512,12 @@ void dumpStructFields(int sel, int n, int sz, BASECLASS *bc, HASHREC *hr)
         }
     }
     if (bc || hr)
-        dumpStructFields(9, last = typeIndex++, sz, bc, hr);
+        dumpStructFields(9, last = typeIndex++, sz, parent, bc, hr);
     emit_record_ieee("ATT%X,T%X", n, sel);
     if (sel != 9)
         emit_record_ieee(",%X",sz);
     for (i=0; i < count; i++)
-        emit_record_ieee(",T%X,%03X%s,%X", table1[i], strlen(table[i]->name), table[i]->name, table[i]->offset);
+        emit_record_ieee(",T%X,%03X%s,%X", table1[i], strlen(table[i]->name), table[i]->name, ismemberdata(table[i]) ? table[i]->offset : -1);
     
     if (last != 0)
         emit_record_ieee(",T%X", last);
@@ -535,7 +553,7 @@ void dumpEnumFields(int sel, int n, int baseType, int sz, HASHREC *hr)
 }
 int dumpFunction(TYPE *tp)
 {
-    char buf[2048], *bptr;
+    char buf[4096], *bptr;
     HASHREC *hr;
     int n;
     int m = link_puttype(basetype(tp)->btp);
@@ -554,7 +572,7 @@ int dumpFunction(TYPE *tp)
         case sc_virtual:
         case sc_member:
         case sc_mutable:
-            v = 4;
+            v = 4;  // has a this pointer
             break;
         default:
             switch (basetype(tp)->sp->linkage)
@@ -572,6 +590,8 @@ int dumpFunction(TYPE *tp)
             }
             break;
     }
+    if (isstructured(basetype(tp)->btp))
+        v |= 32; // structured return value
     sprintf(buf,"T2,T%X,%X",m, v);
     bptr = buf + strlen(buf);
     for (i=0; i < count; i++)
@@ -639,10 +659,10 @@ void link_extendedtype(TYPE *tp1)
                 sel = 4;
             }
             if (tp->syms)
-                dumpStructFields(sel, n, tp->size, tp->sp->baseClasses, tp->syms->table[0]);
+                dumpStructFields(sel, n, tp->size, tp->sp, tp->sp->baseClasses, tp->syms->table[0]);
             else
-                dumpStructFields(sel, n, tp->size, tp->sp->baseClasses, NULL);
-            emit_record_ieee("NT%X,%03X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
+                dumpStructFields(sel, n, tp->size, tp->sp, tp->sp->baseClasses, NULL);
+            emit_type_name(n, tp->sp->decoratedName);
         }
         else if (tp->type == bt_ellipse)
         {
@@ -663,7 +683,7 @@ void link_extendedtype(TYPE *tp1)
                 dumpEnumFields(8, n, m, tp->size, tp->syms->table[0]);
             else
                 dumpEnumFields(8, n, m, tp->size, NULL);
-            emit_record_ieee("NT%X,%03X%s.\r\n", n, strlen(tp->sp->name), tp->sp->name);
+            emit_type_name(n, tp->sp->decoratedName);
         }
     }
 }
@@ -684,7 +704,7 @@ int link_puttype(TYPE *tp)
             {
                 tp->dbgindex = typeIndex++;
                 emit_record_ieee("ATT%X,TA,T%X.\r\n", tp->dbgindex, tp->btp->dbgindex);
-                emit_record_ieee("NT%X,%03X%s.\r\n", tp->dbgindex, strlen(tp->sp->name), tp->sp->name);
+                emit_type_name(tp->dbgindex, tp->sp->decoratedName);
             }
         }
         else
@@ -777,6 +797,7 @@ void link_types()
                 sp->tp->dbgindex = typeIndex++;
                emit_record_ieee("ATT%X,TA,T%X.\r\n", sp->tp->dbgindex, n);
             }
+            emit_type_name(sp->tp->dbgindex, sp->decoratedName);
             emit_record_ieee("NT%X,%03X%s.\r\n", sp->tp->dbgindex, strlen(sp->name), sp->name);
             */
             dbgTypeDefs = dbgTypeDefs->next;
@@ -803,7 +824,7 @@ void link_virtualtypes(void)
 void link_putext(SYMBOL *sp)
 {
 
-    char buf[2048];
+    char buf[4096];
     beDecorateSymName(buf, sp);
     sp->value.i = extIndex++;
     emit_record_ieee("NX%X,%03X%s.\r\n", (int)sp->value.i, strlen(buf), buf);
@@ -965,7 +986,10 @@ void link_putpub(SYMBOL *sp, char sel)
     else
         index = autoIndex++;
     sp->value.i = index;
-    beDecorateSymName(buf, sp);
+    if (sp->thisPtr)
+        strcpy(buf, "_this");
+    else
+        beDecorateSymName(buf, sp);
     emit_record_ieee("N%c%X,%03X%s.\r\n", sel, index, strlen(buf), buf);
     if (sel == 'A')
     {
@@ -994,6 +1018,7 @@ void link_Publics(void)
     {
         SYMBOL *sp = lf->data;
         if ((sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent) ||
+            (cparams.prm_debug && sp->parentClass && !isfunction(sp->tp)) ||
              ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)))
         {
             link_putpub(sp, 'I');
@@ -1432,7 +1457,7 @@ void link_BrowseInfo(void)
         emit_record_ieee("CO102,007ENDDATA.\r\n");
         while (browseInfo)
         {
-            char buf1[256];
+            char buf1[4096];
             sprintf(buf1, "%x,%x,%d,%d,%d,%03X%s",
                              browseInfo->type, 
                              browseInfo->flags, 

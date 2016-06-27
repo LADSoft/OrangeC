@@ -50,13 +50,13 @@ void ccNewFile(char *fileName, BOOLEAN main);
 extern ARCH_ASM *chosenAssembler;
 extern char infile[];
 extern int ignore_global_init;
+extern void *linesHead, *linesTail;
 #endif
 extern COMPILER_PARAMS cparams;
 extern char *prm_searchpath,  *sys_searchpath;
 extern char version[];
 
 extern FILE *cppFile;
-
 
 int preprocLine;
 char *preprocFile;
@@ -573,6 +573,10 @@ BOOLEAN getline(void)
                 ccCloseFile(includes->handle);
 #else
                 fclose(includes->handle);
+#endif
+#ifndef CPREPROCESSOR
+                linesHead = includes->linesHead;
+                linesTail = includes->linesTail;
 #endif
                 includes = includes->next;
                 FreeInclData(p);
@@ -1149,6 +1153,12 @@ void doinclude(void)
             else
                 incfiles = lastinc = list;
         }
+#ifndef CPREPROCESSOR
+        inc->linesHead = linesHead;
+        inc->linesTail = linesTail;
+        
+        linesHead = linesTail = NULL;
+#endif
         inc->fileindex = i;
 #ifndef CPREPROCESSOR
         if (chosenAssembler && chosenAssembler->enter_includename)

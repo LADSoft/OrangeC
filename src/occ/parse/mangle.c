@@ -793,7 +793,10 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
                     strcat(nm , s->name);
                     s= s->next;
                 }
-                sprintf(in, "%d%s", strlen(nm), nm);
+                p = nm;
+                while (isdigit(*p))
+                    p++;
+                sprintf(in, "%d%s", strlen(p), p);
                 in += strlen(in);
             }
                 break;

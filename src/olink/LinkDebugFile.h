@@ -44,6 +44,7 @@
 #include <string>
 #include <vector>
 #include "sqlvt.h"
+#include <deque>
 class ObjFile;
 class ObjField;
 
@@ -62,6 +63,7 @@ protected:
     bool DBOpen(char *name);
     bool WriteFileNames();
     bool WriteLineNumbers();
+    void PushCPPName(ObjString name, int n);
     int GetSQLNameId(ObjString name);
     bool WriteNamesTable();
     bool WriteVariableTypes();
@@ -79,14 +81,20 @@ protected:
             return (int)Type->GetType();
     }
 private:
+    struct CPPMapping {
+        int simpleId;
+        int complexId;
+    };
     std::string outputFile;
     std::vector<ObjSection *> &Sections;
     ObjFile *file;
     sqlite3 *dbPointer;
     std::map<ObjString, int> names;
-    std::map<int, int> publicMap, localMap, autoMap, typeMap, sectionMap;
+    std::map<std::string, int> sectionMap;
+    std::map<int, int> publicMap, localMap, autoMap, typeMap;
     std::vector<ObjString *>nameList;
     std::map<ObjSection *, ObjSection *> ParentSections;
+    std::deque<CPPMapping> CPPMappingList;
     static char *tables;
     static char *pragmas;
     static char *indexes;

@@ -167,6 +167,10 @@ char *LinkDebugFile::tables=
 //    " ,FOREIGN KEY (symbolId) REFERENCES Names(id)"
 //    " ,FOREIGN KEY (fileId) REFERENCES FileNames(id)"
     " );"
+    "CREATE TABLE CPPNameMapping ("
+    "  simpleId INTEGER"
+    " ,complexId INTEGER"
+    " );"
     "INSERT INTO dbPropertyBag (property, value)"
     " VALUES (\"dbVersion\", "STRINGVERSION");"
     "COMMIT; "
@@ -340,6 +344,45 @@ bool LinkDebugFile::WriteLineNumbers()
 //    linesfull.Stop();
     return true;
 }
+void LinkDebugFile::PushCPPName(ObjString name, int n)
+{
+    if (name.find("@") != std::string::npos)
+    {
+        int first = 0;
+        int last = name.size();
+        for (int i =0; i < name.size(); i++)
+        {
+            if (name[i] == '@')
+            {
+                first = i;
+                i++; // past any '$'
+            }
+            else if (name[i] == '$')
+            {
+                last = i;
+                break;
+            }
+        }
+        if (last != name.size())
+        {
+            std::string simpleName = name.substr(first, last-first);
+            int s = GetSQLNameId(simpleName);
+            CPPMapping map;
+            map.simpleId = s;
+            map.complexId = n;
+            CPPMappingList.push_back(map);
+
+            if (first != 0)
+            {
+                simpleName = name.substr(0, last);
+                s = GetSQLNameId(simpleName);
+                map.simpleId = s;
+                map.complexId = n;
+                CPPMappingList.push_back(map);
+            }
+        }
+    }
+}
 int LinkDebugFile::GetSQLNameId(ObjString name)
 {
     std::map<ObjString, int>::iterator it = names.find(name);
@@ -348,8 +391,9 @@ int LinkDebugFile::GetSQLNameId(ObjString name)
         return it->second;
     }
     nameList.push_back(new ObjString(name));
-    names[name] = nameList.size();
-    return nameList.size();
+    int n = names[name] = nameList.size();
+    PushCPPName(name, n);
+    return n;
 }
 bool LinkDebugFile::WriteNamesTable()
 {
@@ -368,6 +412,17 @@ bool LinkDebugFile::WriteNamesTable()
         delete s;
     }
     nameList.clear();
+    v.clear();
+    for (std::deque<CPPMapping>::iterator it = CPPMappingList.begin(); it != CPPMappingList.end(); ++it)
+    {
+        v.push_back((*it).simpleId);
+        v.push_back((*it).complexId);
+    }
+    IntegerColumnsVirtualTable args(v, 2);
+    args.Start(dbPointer);
+    args.InsertIntoFrom("cppnamemapping");
+    args.Stop();
+    CPPMappingList.clear();
     return true;
 }
 bool LinkDebugFile::WriteVariableTypes()
@@ -582,8 +637,7 @@ bool LinkDebugFile::WriteVariableNames()
                 return false;
             typeMap[index] = n;
         }
-    }
-    int index = 1;
+   }
     for (ObjFile::SectionIterator it = Sections.begin(); it != Sections.end(); ++it)
     {
         ObjString name = (*it)->GetName();
@@ -593,7 +647,7 @@ bool LinkDebugFile::WriteVariableNames()
         int n = GetSQLNameId(name);
         if (n == -1)
             return false;
-        sectionMap[index++] = n;
+        sectionMap[(*it)->GetName()] = n;
     }
     return true;
 }
@@ -667,10 +721,9 @@ bool LinkDebugFile::WriteGlobalsTable()
     locals.Stop();
 
     v.clear();
-    int index = 1;
     for (ObjFile::SectionIterator it = Sections.begin(); it != Sections.end(); ++it)
     {
-        int n = sectionMap[index++];
+        int n = sectionMap[(*it)->GetName()];
         int address = ParentSections[*it]->GetBase() + (*it)->GetBase();
         int type = -1;
         if ((*it)->GetVirtualType())
@@ -734,7 +787,7 @@ bool LinkDebugFile::WriteAutosTable()
                         case ObjDebugTag::eVirtualFunctionStart:
                         {
                             ObjSection *func = (*it2)->GetSection();
-                            funcId = sectionMap[func->GetIndex()];
+                            funcId = sectionMap[func->GetName()];
                         }
                             // fall through
                         case ObjDebugTag::eFunctionStart:
@@ -756,11 +809,9 @@ bool LinkDebugFile::WriteAutosTable()
                             currentContext = new context;
                             currentContext->startLine = currentContext->currentLine = currentLine;
                             break;
-                        case ObjDebugTag::eFunctionEnd:
-                        {
-                            ObjSymbol *func = (*it2)->GetSymbol();
-                        }
+                        case ObjDebugTag::eVirtualFunctionEnd:
                         case ObjDebugTag::eBlockEnd:
+                        case ObjDebugTag::eFunctionEnd:
                         {
                             int end = currentLine->GetLineNumber();
                             int fileId = currentContext->startLine->GetFile()->GetIndex();

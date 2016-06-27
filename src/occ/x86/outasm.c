@@ -1732,7 +1732,7 @@ void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
  *      put a constant to the outputFile file.
  */
 {
-    char buf[2048];
+    char buf[4096];
     SYMBOL *sp;
     char buf1[100];
     int toffs;
@@ -2241,7 +2241,7 @@ void oa_gen_strlab(SYMBOL *sp)
  *      generate a named label.
  */
 {
-    char buf[2048];
+    char buf[4096];
     beDecorateSymName(buf, sp);
     if (cparams.prm_asmfile)
     {
@@ -2472,7 +2472,7 @@ void oa_genaddress(ULLONG_TYPE val)
 
 void oa_gensrref(SYMBOL *sp, int val)
 {
-    char buf[2048];
+    char buf[4096];
     if (cparams.prm_asmfile)
     {
         beDecorateSymName(buf, sp);
@@ -2493,7 +2493,7 @@ void oa_genref(SYMBOL *sp, int offset)
  */
 {
     char sign;
-    char buf[2048], buf1[2048];
+    char buf[4096], buf1[4096];
     if (cparams.prm_asmfile)
     {
         if (offset < 0)
@@ -3109,7 +3109,7 @@ void oa_put_impfunc(SYMBOL *sp, char *file)
 
 void oa_put_expfunc(SYMBOL *sp)
 {
-    char buf[2048];
+    char buf[4096];
     if (cparams.prm_asmfile) {
         beDecorateSymName(buf, sp);
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)

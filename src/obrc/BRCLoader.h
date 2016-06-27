@@ -132,7 +132,7 @@ public:
 class BRCLoader
 {
 public:
-    BRCLoader(CmdFiles &Files ) : files(Files), currentFile(0) { }
+    BRCLoader(CmdFiles &Files ) : files(Files), currentFile(0), blockHead(0) { }
     ~BRCLoader();
     bool load();
 
@@ -157,6 +157,8 @@ private:
     std::map<int, int> indexMap;	
     Symbols syms;
     std::vector<BlockData *> blocks;
+    int blockHead;
+    std::deque<int> functionNesting;
 };
 #endif
 

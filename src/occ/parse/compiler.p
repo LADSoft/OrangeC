@@ -160,6 +160,7 @@ LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_cl
 int classRefCount(SYMBOL *base, SYMBOL *derived);
 void CheckCalledException(SYMBOL *cst, EXPRESSION *exp);
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset);
+void HandleDeferredCompiles(void);
 void deferredCompileOne(SYMBOL *cur);
 void deferredCompile(void);
 void deferredInitializeStructFunctions(SYMBOL *cur);
@@ -215,6 +216,7 @@ SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, B
 SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class);
 void TemplateDataInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
 void SetTemplateNamespace(SYMBOL *sym);
+void HandleDeferredFunctionInstantiate(void);
 SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
 BOOLEAN allTemplateArgsSpecified(SYMBOL *sym, TEMPLATEPARAMLIST *args);
 SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr);

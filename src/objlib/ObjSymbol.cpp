@@ -110,6 +110,8 @@ static char *unmangTemplate(char *buf, char *name, char *last);
 static int manglenamecount =  - 1;
 static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
+
+
 char *unmang_intrins(char *buf, char *name, char *last)
 {
     char cur[4096],  *p = cur,  *q;
@@ -416,6 +418,16 @@ char *unmangleExpression(char *dest, char *name)
                         v =  *name++ - '0';
                         while (isdigit(*name))
                             v = v * 10+ *name++ - '0';
+                        strncpy(dest, name, v);
+                        name += v;
+                        dest += strlen(dest);
+                    }
+                    else if (*name == 'n')
+                    {
+                        name++;
+                        v =  *name++ - '0';
+                        if (v > 9)
+                            v -= 7;
                         strcpy(dest, manglenames[v]);
                         dest += strlen(dest);
                     }
@@ -424,31 +436,72 @@ char *unmangleExpression(char *dest, char *name)
                         name++;
                         *dest++=':';
                         *dest++=':';
-                        v =  *name++ - '0';
-                        while (isdigit(*name))
-                            v = v * 10+ *name++ - '0';
-                        strcpy(dest, manglenames[v]);
-                        dest += strlen(dest);                    
+                        if (isdigit(*name))
+                        {
+                            v =  *name++ - '0';
+                            while (isdigit(*name))
+                                v = v * 10+ *name++ - '0';
+                            strncpy(dest, name, v);
+                            name += v;
+                            dest += strlen(dest);                    
+                        }
+                        else if (*name == 'n')
+                        {
+                            name++;
+                            v =  *name++ - '0';
+                            if (v > 9)
+                                v -= 7;
+                            strcpy(dest, manglenames[v]);
+                            dest += strlen(dest);
+                        }
                     }                    
                 }
                 else
                 {
                     int v;
-                    v =  *name++ - '0';
-                    while (isdigit(*name))
-                        v = v * 10+ *name++ - '0';
-                    strcpy(dest, manglenames[v]);
-                    dest += strlen(dest);                    
+                    name++;
+                    if (isdigit (*name))
+                    {
+                        v =  *name++ - '0';
+                        while (isdigit(*name))
+                            v = v * 10+ *name++ - '0';
+                        strncpy(dest, name, v);
+                        name += v;
+                        dest += strlen(dest);                    
+                    }
+                    else if (*name == 'n')
+                    {
+                        name++;
+                        v =  *name++ - '0';
+                        if (v > 9)
+                            v -= 7;
+                        strcpy(dest, manglenames[v]);
+                        dest += strlen(dest);
+                    }
                 }
             }
             case 'f':
             {
                 int v;
-                v =  *name++ - '0';
-                while (isdigit(*name))
-                    v = v * 10+ *name++ - '0';
-                strcpy(dest, manglenames[v]);
-                dest += strlen(dest);
+                if (isdigit (*name))
+                {
+                
+                    v =  *name++ - '0';
+                    while (isdigit(*name))
+                        v = v * 10+ *name++ - '0';
+                    strncpy(dest, name, v);
+                    name += v;
+                    dest += strlen(dest);
+                }
+                else if (*name == 'n')
+                {
+                    name++;
+                    v =  *name++ - '0';
+                    if (v > 9)
+                        v -= 7;
+                    strcpy(dest, manglenames[v]);
+                    dest += strlen(dest);
+                }
                 *dest++='(';
                 while (*name == 'f')
                 {
@@ -612,11 +665,20 @@ char *unmang1(char *buf, char *name, char *last, bool tof)
             }
             else if (name[0] == '$')
             {
-                name++;
-                newname = unmang1(buf, name, last, false);
-                v -= newname - name-1;
-                name = newname;
-                buf += strlen(buf);
+				if (name[1] == '$') // in case of $$lambda
+				{
+                    *buf++ =  *name++;
+                    *buf++ =  *name++;
+					v -= 2;
+				}
+				else
+				{
+	                name++;
+	                newname = unmang1(buf, name, last, false);
+		            v -= newname - name-1;
+			        name = newname;
+				    buf += strlen(buf);
+				}
             }
             else
             {

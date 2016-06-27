@@ -1743,8 +1743,8 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 PropsWndRedraw();
             }
             CleanChildSpace( hwnd, data->dlg->gd.childWindow);
-            MoveWindow(hwnd, r.left, r.top, r.right-r.left, r.bottom-r.top, FALSE);
-            MoveWindow(data->hwndRedir, 1,1,r.right-r.left-2, r.bottom-r.top-2, FALSE);
+            MoveWindow(hwnd, r.left, r.top, r.right-r.left, r.bottom-r.top, TRUE);
+            MoveWindow(data->hwndRedir, 1,1,r.right-r.left-2, r.bottom-r.top-2, TRUE);
         }
         return 0;
         case WM_MOVE:

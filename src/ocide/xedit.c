@@ -970,17 +970,14 @@ UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
         return 0;
     if (p->cd->undohead != p->cd->undotail)
     {
-        x = p->cd->redopos + 1;
-       if (x >= UNDO_MAX)
+        x = p->cd->redopos;
+        if (x >= UNDO_MAX)
             x = 0;
         if (x != p->cd->undotail)
         {
             x = p->cd->redopos;
-            if (x == p->cd->undohead)
-            {
-                if (--x < 0)
-                    x += UNDO_MAX;
-            }
+            if (--x < 0)
+                x += UNDO_MAX;
             u = &p->cd->undolist[x];
             switch(u->type)
             {

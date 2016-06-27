@@ -381,7 +381,7 @@ ObjInt LinkRemapper::RegisterType(ObjFile *file, ObjType *type, char *name)
 }
 ObjInt LinkRemapper::MapType(ObjFile *file, ObjType *type)
 {
-    char name[256];
+    char name[4096];
     // we don't already have a mapping for this type, now see if the type
     // was declared in some other module
     switch(type->GetType())

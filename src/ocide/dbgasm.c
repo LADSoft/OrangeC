@@ -227,6 +227,8 @@ void CalculateDisassembly(int moving)
     if (!moving)
     {
         shownLine = rv - linecount / 2;
+        if (shownLine < 0)
+            shownLine = 0;
     }
     else
     {

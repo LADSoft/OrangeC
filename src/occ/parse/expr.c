@@ -1478,7 +1478,10 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                     {
                         assignmentUsages(list->exp, FALSE);
 join:
-                        if (!comparetypes(list->tp, decl->tp, FALSE))
+                        if (!list || !list->tp)
+                        {
+                        }
+                        else if (!comparetypes(list->tp, decl->tp, FALSE))
                         {
                             if (basetype(decl->tp)->type != bt_memberptr)
                                 errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
@@ -1551,7 +1554,7 @@ join:
                 else
                     cast(list->tp, &list->exp);
             }
-            if (dest && basetype(dest)->type != bt_memberptr && (!list || !comparetypes(dest, list->tp, TRUE)))
+            if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, TRUE))
             {
                 cast(basetype(dest), &list->exp);
                 list->tp = dest;
@@ -1581,7 +1584,7 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
     if (finish == end)
     {
         SYMBOL *sp = namespacesearch("std", globalNameSpace, FALSE, FALSE);
-        if (sp->storage_class == sc_namespace)
+        if (sp && sp->storage_class == sc_namespace)
         {
             sp = namespacesearch("initializer_list", sp->nameSpaceValues, TRUE, FALSE);
             if (!sp || !sp->tp->syms)
@@ -2144,7 +2147,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
             }
         }
         p = *lptr;
-        if (p->exp->type == en_pc || p->exp->type == en_func)
+        if (p && p->exp && (p->exp->type == en_pc || p->exp->type == en_func))
             thunkForImportTable(&p->exp);
 
         if (cparams.prm_cplusplus)
@@ -2550,7 +2553,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
         else
         {
             // legacy c language support
-            if (isstructured(p->tp))
+            if (p && p->tp && isstructured(p->tp))
             {
                 p->exp = exprNode(en_stackblock, p->exp, NULL);
                 p->exp->size = p->tp->size;

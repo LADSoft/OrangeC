@@ -1,5 +1,12 @@
 Release notes:
 
+Version 5.73.1:
+    ocide:      fix a problem with undo
+    ocide:      fix problems with scrolling being reset while editing images
+    ocide:      fix problem with controls not being displayed properly while moving them in a dialog
+    ocide:      for dialogex and menuex, would not save the controls/menu items properly when adding new ones
+    occ:        fix an obscure compiler crash when presented with functions without proper argument lists
+
 version 5.72.1: Jun 23, 2016
     ocide:      fix several crash conditions
     ocide:      fix redo to work properly

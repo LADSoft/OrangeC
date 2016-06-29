@@ -1449,9 +1449,11 @@ static void MarkNewDefinitions(RESOURCE_DATA *select)
                 MarkStringDefinitions(select, res->u.stringtable);
                 break;
             case RESTYPE_DIALOG:
+            case RESTYPE_DIALOGEX:
                 MarkControlDefinitions(select, res->u.dialog);
                 break;
             case RESTYPE_MENU:
+            case RESTYPE_MENUEX:
                 MarkMenuDefinitions(select, res->u.menu->items);
                 break;
             default:

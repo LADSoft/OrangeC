@@ -2113,7 +2113,7 @@ static void SelectMenuIdBase(RESOURCE_DATA *select)
     select->nextMenuId = 10000;
     for (res = select->resources; res; res = res->next)
     {
-        if (res->itype == RESTYPE_MENU)
+        if (res->itype == RESTYPE_MENU || res->itype == RESTYPE_MENUEX)
         {
             RecurseMenuIdBase(select, res->u.menu->items);
         }

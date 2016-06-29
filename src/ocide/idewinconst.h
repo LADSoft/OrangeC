@@ -593,5 +593,5 @@
 #define ToolsMenuItem 7
 #define IDM_david 10002
 
-#define IDE_ERRICO 20
-#define IDE_WARNICO 21
+#define ID_ERRICO 20
+#define ID_WARNICO 21

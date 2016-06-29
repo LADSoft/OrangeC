@@ -172,6 +172,7 @@ void dumpInlines(void)
                     {
                         InsertExtern(sym->vtabsp);
                         sym->vtabsp->storage_class = sc_external;
+                        sym->vtabsp->linkage = lk_c;
                     }
                     else
                     {

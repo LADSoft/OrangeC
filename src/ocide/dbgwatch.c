@@ -228,10 +228,10 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
                 break;
             case eDouble:
             case eImaginaryDouble:
-                *(double*)buf1 = *(long double*)buf1;
+                *(double*)buf1 = *(double*)buf1;
             case eLongDouble:
             case eImaginaryLongDouble:
-                sprintf(buf, "%f", *(double*)buf1);
+                sprintf(buf, "%lf", *(long double*)buf1);
                 break;
             case eComplex:
                 sprintf(buf, "%f + %f * I", (double)*(float*)buf1, (double)*(float *)(buf1 + 4));

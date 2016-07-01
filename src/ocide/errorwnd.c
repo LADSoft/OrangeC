@@ -404,8 +404,8 @@ void RegisterErrorWindow(void)
     wc.lpszClassName = szErrorClassName;
     RegisterClass(&wc);
 
-    hIcoError = LoadImage(hInstance, "ID_ERRICO", IMAGE_ICON, 20, 20, 0);
-    hIcoWarning = LoadImage(hInstance, "ID_WARNICO", IMAGE_ICON, 20, 20, 0);
+    hIcoError = LoadImage(hInstance, MAKEINTRESOURCE(ID_ERRICO), IMAGE_ICON, 20, 20, 0);
+    hIcoWarning = LoadImage(hInstance, MAKEINTRESOURCE(ID_WARNICO), IMAGE_ICON, 20, 20, 0);
     tagImageList = ImageList_Create(20, 20, ILC_COLOR | ILC_MASK, 2, 0);
     ImageList_AddIcon(tagImageList, hIcoError);
     ImageList_AddIcon(tagImageList, hIcoWarning);

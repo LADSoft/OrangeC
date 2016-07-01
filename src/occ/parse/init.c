@@ -938,7 +938,10 @@ void dumpInitializers(void)
                 else if (sp->storage_class == sc_static)
                     localdef(sp);
                 if (sp->storage_class == sc_localstatic)
+                {
+                    localstaticdef(sp); // for debug info
                     put_label(sp->label);
+                }
                 else
                 {
                     gen_strlab(sp);

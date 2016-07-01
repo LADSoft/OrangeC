@@ -184,90 +184,110 @@ BOOLEAN isDerivedFromTemplate(TYPE *tp)
 BOOLEAN isunsigned(TYPE *tp)
 {
     tp = basetype(tp);
-    switch (tp->type)
+    if (tp)
     {
-        case bt_bool:
-        case bt_unsigned:
-        case bt_unsigned_short:
-        case bt_unsigned_char:
-        case bt_unsigned_long:
-        case bt_unsigned_long_long:
-        case bt_wchar_t:
-            return TRUE;
-        default:
-            return FALSE;
-    }	
+        switch (tp->type)
+        {
+            case bt_bool:
+            case bt_unsigned:
+            case bt_unsigned_short:
+            case bt_unsigned_char:
+            case bt_unsigned_long:
+            case bt_unsigned_long_long:
+            case bt_wchar_t:
+                return TRUE;
+            default:
+                return FALSE;
+        }	
+    }
+    return FALSE;
 }
 BOOLEAN isint(TYPE *tp)
 {
     tp = basetype(tp);
-    switch(tp->type)
+    if (tp)
     {
-        case bt_bool:
-        case bt_int:
-        case bt_char16_t:
-        case bt_char32_t:
-        case bt_unsigned:
-        case bt_short:
-        case bt_unsigned_short:
-        case bt_char:
-        case bt_unsigned_char:
-        case bt_signed_char:
-        case bt_long:
-        case bt_unsigned_long:
-        case bt_long_long:
-        case bt_unsigned_long_long:
-        case bt_wchar_t:
-            return TRUE;
-        case bt_templateparam:
-            if (tp->templateParam->p->type == kw_int)
-                return isint(tp->templateParam->p->byNonType.tp);
-            return FALSE;
-        default:
-            if (tp->type == bt_enum && !cparams.prm_cplusplus)
+        switch(tp->type)
+        {
+            case bt_bool:
+            case bt_int:
+            case bt_char16_t:
+            case bt_char32_t:
+            case bt_unsigned:
+            case bt_short:
+            case bt_unsigned_short:
+            case bt_char:
+            case bt_unsigned_char:
+            case bt_signed_char:
+            case bt_long:
+            case bt_unsigned_long:
+            case bt_long_long:
+            case bt_unsigned_long_long:
+            case bt_wchar_t:
                 return TRUE;
-
-            return FALSE;
+            case bt_templateparam:
+                if (tp->templateParam->p->type == kw_int)
+                    return isint(tp->templateParam->p->byNonType.tp);
+                return FALSE;
+            default:
+                if (tp->type == bt_enum && !cparams.prm_cplusplus)
+                    return TRUE;
+    
+                return FALSE;
+        }
     }
+    return FALSE;
 }
 BOOLEAN isfloat(TYPE *tp)
 {
     tp = basetype(tp);
-    switch (tp->type)
+    if (tp)
     {
-        case bt_float:
-        case bt_double:
-        case bt_long_double:
-            return TRUE;
-        default:
-            return FALSE;
+        switch (tp->type)
+        {
+            case bt_float:
+            case bt_double:
+            case bt_long_double:
+                return TRUE;
+            default:
+                return FALSE;
+        }
     }
+    return FALSE;
 }
 BOOLEAN iscomplex(TYPE *tp)
 {
     tp = basetype(tp);
-    switch (tp->type)
+    if (tp)
     {
-        case bt_float_complex:
-        case bt_double_complex:
-        case bt_long_double_complex:
-            return TRUE;
-        default:
-            return FALSE;
+        switch (tp->type)
+        {
+            case bt_float_complex:
+            case bt_double_complex:
+            case bt_long_double_complex:
+                return TRUE;
+            default:
+                return FALSE;
+        }
     }
+    return FALSE;
 }
 BOOLEAN isimaginary(TYPE *tp)
 {
     tp = basetype(tp);
-    switch (tp->type)
+    if (tp)
     {
-        case bt_float_imaginary:
-        case bt_double_imaginary:
-        case bt_long_double_imaginary:
-            return TRUE;
-        default:
-            return FALSE;
+        switch (tp->type)
+        {
+            case bt_float_imaginary:
+            case bt_double_imaginary:
+            case bt_long_double_imaginary:
+                return TRUE;
+            default:
+                return FALSE;
+        }
     }
+    return FALSE;
 }
 BOOLEAN isarithmetic(TYPE *tp)
 {
@@ -278,7 +298,7 @@ BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
 {
 	BOOLEAN done = FALSE;
 	BOOLEAN rv = FALSE;
-    while (!done)
+    while (!done && tp)
     {
         if (useTemplate)
         {
@@ -319,7 +339,7 @@ BOOLEAN isconst(TYPE *tp)
 }
 BOOLEAN isvolatile(TYPE *tp)
 {
-    while (TRUE)
+    while (tp)
     {
         switch(tp->type)
         {
@@ -341,10 +361,11 @@ BOOLEAN isvolatile(TYPE *tp)
                 return FALSE;
         }
     }
+    return FALSE;
 }
 BOOLEAN islrqual(TYPE *tp)
 {
-    while (TRUE)
+    while (tp)
     {
         switch(tp->type)
         {
@@ -366,10 +387,11 @@ BOOLEAN islrqual(TYPE *tp)
                 return FALSE;
         }
     }
+    return FALSE;
 }
 BOOLEAN isrrqual(TYPE *tp)
 {
-    while (TRUE)
+    while (tp)
     {
         switch(tp->type)
         {
@@ -391,10 +413,11 @@ BOOLEAN isrrqual(TYPE *tp)
                 return FALSE;
         }
     }
+    return FALSE;
 }
 BOOLEAN isrestrict(TYPE *tp)
 {
-    while (TRUE)
+    while (tp)
     {
         switch(tp->type)
         {
@@ -416,6 +439,7 @@ BOOLEAN isrestrict(TYPE *tp)
                 return FALSE;
         }
     }
+    return FALSE;
 }
 BOOLEAN isatomic(TYPE *tp)
 {
@@ -446,41 +470,51 @@ BOOLEAN isatomic(TYPE *tp)
 BOOLEAN isvoid(TYPE *tp)
 {
     tp = basetype(tp);
-    return tp->type == bt_void;
+    if (tp)
+        return tp->type == bt_void;
+    return FALSE;
 }
 BOOLEAN ispointer(TYPE *tp)
 {
     tp = basetype(tp);
-    switch(tp->type)
+    if (tp)
     {
-        case bt_far:
-        case bt_pointer:
-        case bt_seg:
-            return TRUE;
-        case bt_templateparam:
-            if (tp->templateParam->p->type == kw_int)
-                return ispointer(tp->templateParam->p->byNonType.tp);
-            return FALSE;
-        default:
-            return FALSE;
+        switch(tp->type)
+        {
+            case bt_far:
+            case bt_pointer:
+            case bt_seg:
+                return TRUE;
+            case bt_templateparam:
+                if (tp->templateParam->p->type == kw_int)
+                    return ispointer(tp->templateParam->p->byNonType.tp);
+                return FALSE;
+            default:
+                return FALSE;
+        }
     }
+    return FALSE;
 }
 BOOLEAN isref(TYPE *tp)
 {
     tp = basetype(tp);
-    switch(tp->type)
+    if (tp)
     {
-        case bt_lref:
-            return TRUE;
-        case bt_rref:
-            return TRUE;
-        case bt_templateparam:
-            if (tp->templateParam->p->type == kw_int)
-                return isref(tp->templateParam->p->byNonType.tp);
-            return FALSE;
-        default:
-            return FALSE;
+        switch(tp->type)
+        {
+            case bt_lref:
+                return TRUE;
+            case bt_rref:
+                return TRUE;
+            case bt_templateparam:
+                if (tp->templateParam->p->type == kw_int)
+                    return isref(tp->templateParam->p->byNonType.tp);
+                return FALSE;
+            default:
+                return FALSE;
+        }
     }
+    return FALSE;
 }
 BOOLEAN isvoidptr(TYPE *tp)
 {
@@ -490,35 +524,45 @@ BOOLEAN isvoidptr(TYPE *tp)
 BOOLEAN isfunction(TYPE *tp)
 {
     tp = basetype(tp);
-    return tp && (tp->type == bt_func || tp->type == bt_ifunc);
+    if (tp)
+        return tp && (tp->type == bt_func || tp->type == bt_ifunc);
+    return FALSE;
 }
 BOOLEAN isfuncptr(TYPE *tp)
 {
     tp = basetype(tp);
-    return ispointer(tp) && tp->btp && isfunction(tp->btp);
+    if (tp)
+        return ispointer(tp) && tp->btp && isfunction(tp->btp);
+    return FALSE;
 }
 BOOLEAN isarray(TYPE *tp)
 {
     tp = basetype(tp);
-    return ispointer(tp) && tp->array;		
+    if (tp)
+        return ispointer(tp) && tp->array;		
+    return FALSE;
 }
 BOOLEAN isunion(TYPE *tp)
 {
     tp = basetype(tp);
-    return tp->type == bt_union;
+    if (tp)
+        return tp->type == bt_union;
+    return FALSE;
 }
 BOOLEAN isstructured(TYPE *tp)
 {
     tp = basetype(tp);
-    switch(tp->type)
-    {
-        case bt_struct:
-        case bt_union:
-        case bt_class:
-            return TRUE;
-        default:
-            return FALSE;
-    }
+    if (tp)
+        switch(tp->type)
+        {
+            case bt_struct:
+            case bt_union:
+            case bt_class:
+                return TRUE;
+            default:
+                return FALSE;
+        }
+    return FALSE;
 }
 SYMBOL *getFunctionSP(TYPE **tp)
 {

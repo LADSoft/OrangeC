@@ -85,9 +85,8 @@ LIST *deferred;
 int structLevel;
 LIST *openStructs;
 
-static int unnamed_tag_id, unnamed_id, anonymous_id;
+static int unnamed_tag_id, unnamed_id;
 static char *importFile;
-static int anonid;
 #define CT_NONE 0
 #define CT_CONS 1
 #define CT_DEST 2
@@ -100,7 +99,6 @@ void declare_init(void)
 {
     unnamed_tag_id = 1;
     unnamed_id = 1;
-    anonymous_id = 1;
     structSyms = NULL;
     externals = NULL;
     globalCache = NULL;
@@ -147,10 +145,20 @@ char *AnonymousName(void)
     sprintf(buf,"Anonymous++Identifier %d", unnamed_id++);
     return litlate(buf);
 }
+static unsigned hashs(char *n)
+{
+    unsigned rv = 0;
+    while (*n)
+    {
+        rv += (*n << 7) + (*n << 2) + (*n << 1);
+        n++;
+    }
+    return rv;
+} 
 char *AnonymousTypeName(void)
 {
-    char buf[512], *p, *q;
-    sprintf(buf,"__anontype_%x_%x", anonid++, rand());
+    char buf[512];
+    sprintf(buf,"__anontype_%u_%d", hashs(includes->fname), includes->anonymousid++ );
     return litlate(buf);
 }
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
@@ -4405,6 +4413,8 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         default:
             if (beforeOnly)
                 return lex;
+            if (!basetype(*tp))
+                *tp = &stdint;
             if (*tp && (isstructured(*tp) || (*tp)->type == bt_enum) && KW(lex) == semicolon)
             {
                 lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);

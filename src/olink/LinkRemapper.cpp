@@ -386,6 +386,12 @@ ObjInt LinkRemapper::MapType(ObjFile *file, ObjType *type)
     // was declared in some other module
     switch(type->GetType())
     {
+        case ObjType::eLRef:
+            sprintf(name, "&%d;%d", type->GetSize(), GetTypeIndex(type->GetBaseType()));
+            break;
+        case ObjType::eRRef:
+            sprintf(name, "^%d;%d", type->GetSize(), GetTypeIndex(type->GetBaseType()));
+            break;
         case ObjType::ePointer:
             sprintf(name, "*%d;%d", type->GetSize(), GetTypeIndex(type->GetBaseType()));
             break;

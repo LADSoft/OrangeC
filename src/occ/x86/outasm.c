@@ -3043,6 +3043,13 @@ void oa_localdef(SYMBOL *sp)
         omf_globaldef(sp);
     }
 }
+void oa_localstaticdef(SYMBOL *sp)
+{
+    if (!cparams.prm_asmfile)
+    {
+        omf_globaldef(sp);
+    }
+}
 void oa_globaldef(SYMBOL *sp)
 {
     if (cparams.prm_asmfile)

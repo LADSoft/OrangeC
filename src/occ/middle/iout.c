@@ -2499,6 +2499,13 @@ void localdef(SYMBOL *sp)
         chosenAssembler->gen->local_define(sp);
     DecGlobalFlag();
 }
+void localstaticdef(SYMBOL *sp)
+{
+    IncGlobalFlag();
+    if (chosenAssembler->gen->local_static_define)
+        chosenAssembler->gen->local_static_define(sp);
+    DecGlobalFlag();
+}
 void globaldef(SYMBOL *sp)
 {
     if (sp->linkage2 == lk_export && sp->linkage != lk_virtual)

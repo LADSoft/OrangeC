@@ -76,6 +76,7 @@ typedef struct _includes_
 {
     struct _includes_ *next;
     FILE	*handle;
+    int     anonymousid;
     int 	fileindex;
     int		line;
     int		current;

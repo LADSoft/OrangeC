@@ -658,6 +658,7 @@ void genlabref(int label);
 void genref(SYMBOL *sp, int offset);
 void genpcref(SYMBOL *sp, int offset);
 void localdef(SYMBOL *sp);
+void localstaticdef(SYMBOL *sp);
 void genstorage(int nUBYTEs);
 void gen_labref(int n);
 void gen_labdifref(int n1, int n2);

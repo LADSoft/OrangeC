@@ -201,6 +201,7 @@ void oa_trailer(void);
 void oa_adjust_codelab(void *select, int offset);
 void oa_globaldef(SYMBOL *sp);
 void oa_localdef(SYMBOL *sp);
+void oa_localstaticdef(SYMBOL *sp);
 void oa_output_alias(char *name, char *alias);
 void oa_put_extern(SYMBOL *sp, int code);
 void oa_put_impfunc(SYMBOL *sp, char *file);

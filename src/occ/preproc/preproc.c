@@ -1038,14 +1038,19 @@ void doline(void)
 
 INCLUDES *GetIncludeData(void)
 {
+    INCLUDES *rv;
     if (inclData)
     {
-        INCLUDES *rv = inclData;
+        rv = inclData;
         inclData = inclData->next;
         memset(rv, 0, sizeof(*rv));
-        return rv;
     }
-    return globalAlloc(sizeof(INCLUDES));
+    else
+    { 
+        rv = globalAlloc(sizeof(INCLUDES));
+    }
+    rv->anonymousid = 1;
+    return rv;
 }
 void FreeInclData(INCLUDES *data)
 {

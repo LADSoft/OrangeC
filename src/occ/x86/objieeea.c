@@ -737,7 +737,7 @@ void link_types()
         while (lf)
         {
             SYMBOL *sp = lf->data;
-            if (sp->storage_class == sc_global && !sp->isInline && sp->tp->used)
+            if ((sp->storage_class == sc_global ||sp->storage_class == sc_localstatic) && !sp->isInline && sp->tp->used)
             {
                 link_puttype(sp->tp);
             }
@@ -987,9 +987,21 @@ void link_putpub(SYMBOL *sp, char sel)
         index = autoIndex++;
     sp->value.i = index;
     if (sp->thisPtr)
+    {
         strcpy(buf, "_this");
+    }
+    else if (sel == 'A')
+    {
+        sprintf(buf, "_%s", sp->name);   
+    }
+    else if (sp->storage_class == sc_localstatic)
+    {
+        sprintf(buf, "@%s@%s", sp->parent->name, sp->name);
+    }
     else
+    {
         beDecorateSymName(buf, sp);
+    }
     emit_record_ieee("N%c%X,%03X%s.\r\n", sel, index, strlen(buf), buf);
     if (sel == 'A')
     {
@@ -1017,11 +1029,14 @@ void link_Publics(void)
     while (lf)
     {
         SYMBOL *sp = lf->data;
-        if ((sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent) ||
+        if ((sp->storage_class == sc_global || sp->storage_class == sc_localstatic || (sp->storage_class == sc_constant && !sp->parent) ||
             (cparams.prm_debug && sp->parentClass && !isfunction(sp->tp)) ||
              ((sp->storage_class == sc_member || sp->storage_class == sc_virtual) && isfunction(sp->tp)&& sp->inlineFunc.stmt)))
         {
-            link_putpub(sp, 'I');
+            if (sp->storage_class == sc_localstatic) // local function variable
+                link_putpub(sp, 'N');
+            else
+                link_putpub(sp, 'I');
         }
         lf = lf->next;
     }

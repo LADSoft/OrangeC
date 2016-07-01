@@ -277,6 +277,7 @@ typedef struct _arch_gen {
     void (*exitseg)(enum e_sg segnum);  /* exit current segment */
     void (*global_define)(SYMBOL *sp);     /* put a global definition */
     void (*local_define)(SYMBOL *sp);     /* put a global definition */
+    void (*local_static_define)(SYMBOL *sp);     /* put a function local definition */
     void (*extern_define)(SYMBOL *sp, int code); /* put an external definition */
     void (*import_define)(SYMBOL *sp, char *file); /* put an import definition */
     void (*export_define)(SYMBOL *sp);             /* put an export definition */

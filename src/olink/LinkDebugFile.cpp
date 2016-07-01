@@ -350,14 +350,24 @@ void LinkDebugFile::PushCPPName(ObjString name, int n)
     {
         int first = 0;
         int last = name.size();
+        int nested = 0;
         for (int i =0; i < name.size(); i++)
         {
             if (name[i] == '@')
             {
                 first = i;
-                i++; // past any '$'
+                if (name[i+1] == '$')
+                    i++; // past any '$'
             }
-            else if (name[i] == '$')
+            else if (name[i] == '#')
+            {
+                nested++;
+            }
+            else if (name[i] == '~')
+            {
+                nested--;
+            }
+            else if (!nested && name[i] == '$')
             {
                 last = i;
                 break;

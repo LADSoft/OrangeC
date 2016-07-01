@@ -556,6 +556,7 @@ ARCH_GEN outputfunctions = {
     oa_exitseg,                /* exit current segment */
     oa_globaldef,          /* put a global definition */
     oa_localdef,          /* put a local definition */
+    oa_localstaticdef,          /* put a local static definition */
     oa_put_extern,         /* put an external definition */
     oa_put_impfunc,        /* put an import definition */
     oa_put_expfunc,        /* put an export definition */

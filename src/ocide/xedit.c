@@ -2686,7 +2686,7 @@ int FindParenMatchBackward(HWND hwnd, EDITDATA *p, int dec)
         skip = ']', match = '[';
     else
         return FALSE;
-    while (--s)
+    while (s && --s)
     {
         if (quotechar == p->cd->text[s].ch && (!s || p->cd->text[s-1].ch != '\\' 
                                                || s < 2 || p->cd->text[s-2].ch == '\\'))

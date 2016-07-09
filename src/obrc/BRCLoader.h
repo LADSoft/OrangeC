@@ -70,24 +70,8 @@ public:
     int line;
     int charPos;
 } ;
-struct BrowseDataLT
-{
-    bool operator() (BrowseData *left, BrowseData *right) const
-    {
-        if (left->fileIndex < right->fileIndex)
-            return true;
-        if (left->fileIndex == right->fileIndex)
-        {
-            if (left->startLine < right->startLine)
-                return true;
-            if (left->startLine == right->startLine)
-                if (left->qual < right->qual)
-                    return true;
-        }
-        return false;
-    }
-};
-typedef std::set<BrowseData *,BrowseDataLT> BrowseDataset;
+
+typedef std::deque<BrowseData *> BrowseDataset;
 
 class SymData
 {
@@ -97,6 +81,8 @@ public:
     ~SymData();
     std::string name;
     BrowseDataset data;
+    BrowseDataset usages;
+    std::deque<SymData *> mapping;
     BrowseData *func;
     int externalCount;
     int globalCount;
@@ -104,18 +90,9 @@ public:
     int localCount;
     __int64 index;
     unsigned fileOffs;
-    bool insert(BrowseData *xx)
+    void insert(BrowseData *xx)
     {
-        BrowseDataset::iterator it = data.find(xx);
-        if (it == data.end())
-        {
-            data.insert(xx);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        data.push_back(xx);
     }
 } ;
 class BlockData
@@ -139,15 +116,16 @@ public:
     Symbols &GetSymbols() { return syms; }
     std::map<std::string, int> &GetFileNames() { return nameMap; }    
 protected:
-    void InsertSymData(std::string s, BrowseData *data);
+    void InsertSymData(std::string s, BrowseData *data, bool func = false);
     void InsertBlockData(std::string s, BrowseData *ldata);
     void InsertFile(ObjBrowseInfo &p);
-    int InsertVariable(ObjBrowseInfo &p);
+    int InsertVariable(ObjBrowseInfo &p, bool func = false);
     void InsertDefine(ObjBrowseInfo &p);
     void StartFunc(ObjBrowseInfo &p);
     void EndFunc(ObjBrowseInfo &p);
     void StartBlock(int line);
     void EndBlock(int line);
+    void Usages(ObjBrowseInfo &p);
     void ParseData(ObjFile &f);
     void LoadSourceFiles(ObjFile &fil);
 private:

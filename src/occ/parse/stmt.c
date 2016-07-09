@@ -52,7 +52,6 @@ extern enum e_kw skim_closepa[];
 extern enum e_kw skim_semi[];
 extern SYMBOL *theCurrentFunc;
 extern TYPE stdpointer;
-extern int endline;
 extern char *overloadNameTab[];
 extern LEXCONTEXT *context;
 extern TYPE stdXC;
@@ -70,6 +69,9 @@ BOOLEAN declareAndInitialize;
 BOOLEAN functionCanThrow;
 
 LINEDATA *linesHead, *linesTail;
+
+static int endline;
+
 static LEXEME *autodeclare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, 
                            BLOCKDATA *parent, BOOLEAN asExpression);
 static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
@@ -2867,6 +2869,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
     {
         HASHREC *hr = basetype(funcsp->tp)->syms->table[0];
         int n = 1;
+        browse_startfunc(funcsp, funcsp->declline);
         while (hr)
         {
             SYMBOL *sp2 = (SYMBOL *)hr->p;
@@ -2921,12 +2924,16 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
         blockstmt->lastcaseordefault = FALSE;
         lex = statement(lex, funcsp, blockstmt, FALSE);
     }
+    if (first)
+    {
+        browse_endfunc(funcsp, funcsp->endLine = lex?lex->line : endline);
+    }
     if (!lex)
     {
         needkw(&lex, end);
         return lex;
     }
-    browse_blockend(lex->line);
+    browse_blockend(endline = lex->line);
     currentLineData(blockstmt, lex, -!first);
     if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch)
         parent->needlabel = blockstmt->needlabel;
@@ -3316,12 +3323,8 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     funcsp->declaring = TRUE;
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);
-    browse_startfunc(funcsp, funcsp->declline);
     funcsp->startLine = lex->line;
     lex = compound(lex, funcsp, block, TRUE);
-    if (lex)
-        funcsp->endLine = lex->line;
-    browse_endfunc(funcsp, lex?lex->line : endline);
     checkUnlabeledReferences(block);
     checkGotoPastVLA(block->head, TRUE);
     funcsp->labelCount = codeLabel - INT_MIN;

@@ -2715,10 +2715,10 @@ BOOLEAN sameTemplate(TYPE *P, TYPE *A)
                     EXPRESSION *pat = PA->p->byNonType.val && !PA->p->byNonType.dflt ? PA->p->byNonType.val : PA->p->byNonType.dflt;
                     if (!templatecomparetypes(PL->p->byNonType.tp, PA->p->byNonType.tp, TRUE))
                         break;
-#ifndef PARSER_ONLY
+//#ifndef PARSER_ONLY
                     if ((!plt || !pat) || !equalTemplateIntNode(plt, pat))
                         break;
-#endif
+//#endif
                 }
             }
             PL = PL->next;

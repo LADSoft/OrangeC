@@ -69,7 +69,7 @@ BRCLoader::~BRCLoader()
         delete s;
     }
 }
-void BRCLoader::InsertSymData(std::string s, BrowseData *ldata)
+void BRCLoader::InsertSymData(std::string s, BrowseData *ldata, bool func)
 {
     SymData *sym;
     Symbols::iterator it = syms.find(s);
@@ -82,53 +82,9 @@ void BRCLoader::InsertSymData(std::string s, BrowseData *ldata)
         sym = new SymData(s);
         syms[s] = sym;
     }
-    if (ldata->qual == ObjBrowseInfo::eExternal )
-        sym->externalCount++;
-    else if (ldata->blockLevel == 1)
-        sym->argCount++;
-    else if (ldata->blockLevel > 1)
-        sym->localCount++;
-    else
-        sym->globalCount++;
-
-    // if it is global scoped override any prototype
-    if (ldata->blockLevel == 0 && ldata->type == ObjBrowseInfo::eFuncStart)
-    {
-        if (sym->func)
-        {
-            BrowseData *ld = sym->func;
-            if (ld->blockLevel == 0)
-            {
-                if (ld->type == ObjBrowseInfo::eFuncStart && ld->qual == ObjBrowseInfo::eExternal)
-                {
-                    BrowseDataset::iterator it = sym->data.find(ld);
-                    sym->data.erase(it);
-                    if (sym->insert(ldata))
-                    {
-                        sym->func = ldata;
-                        delete ld;
-                    }
-                    else
-                    {
-                        sym->insert(ld);
-                        delete ldata;
-                    }
-                }
-                else if (ldata->type == ObjBrowseInfo::eFuncStart && ldata->qual == ObjBrowseInfo::eExternal)
-                {
-                    delete ldata;
-                    return;
-                }
-            }
-        }
-        else
-        {
-            if (sym->insert(ldata))
-                sym->func = ldata;
-            else
-                delete ldata;
-        }
-    }
+    sym->insert(ldata);
+    if (func)
+        sym->func = ldata;
 }
 
 //-------------------------------------------------------------------------
@@ -149,7 +105,7 @@ void BRCLoader::InsertFile(ObjBrowseInfo &p)
 
 //-------------------------------------------------------------------------
 
-ObjInt BRCLoader::InsertVariable(ObjBrowseInfo &p)
+ObjInt BRCLoader::InsertVariable(ObjBrowseInfo &p, bool func)
 {
     BrowseData *ldata = new BrowseData;
     std::string hint;
@@ -161,9 +117,10 @@ ObjInt BRCLoader::InsertVariable(ObjBrowseInfo &p)
     ldata->hint = hint;
     ldata->blockLevel = blocks.size()- blockHead;
     ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
+    // functions can be nested in C++ browse info..
     if (blocks.size()-blockHead == 0)
     {
-        InsertSymData(name, ldata);
+        InsertSymData(name, ldata, func);
     } 
     else
     {
@@ -178,13 +135,38 @@ void BRCLoader::InsertDefine(ObjBrowseInfo &p)
 {
     InsertVariable(p);
 }
+void BRCLoader::Usages(ObjBrowseInfo &p)
+{
+    BrowseData *ldata = new BrowseData;
+    std::string hint;
+    std::string name = p.GetData();
+    ldata->type =  p.GetType();
+    ldata->startLine = p.GetLine()->GetLineNumber();
+    ldata->qual = p.GetQual();
+    ldata->charPos = p.GetCharPos();
+    ldata->hint = hint;
+    ldata->blockLevel = blocks.size()- blockHead;
+    ldata->fileIndex = indexMap[p.GetLineNo()->GetFile()->GetIndex()];
+    SymData *sym;
+    Symbols::iterator it = syms.find(name);
+    if (it != syms.end())
+    {
+        sym = it->second;
+    }
+    else
+    {
+        sym = new SymData(name);
+        syms[name] = sym;
+    }
+    sym->usages.push_back(ldata);
+}
 
 //-------------------------------------------------------------------------
 void BRCLoader::StartFunc(ObjBrowseInfo &p)
 {
     functionNesting.push_front(blockHead);
     blockHead = blocks.size();
-    int line = InsertVariable(p);
+    int line = InsertVariable(p, true);
     StartBlock(line);
 }
 
@@ -262,6 +244,12 @@ void BRCLoader::ParseData(ObjFile &f)
                 break;
             case ObjBrowseInfo::eBlockEnd:
                 EndBlock(p->GetLine()->GetLineNumber());
+                break;
+            case ObjBrowseInfo::eTypePrototype:
+                InsertVariable(*p);
+                break;
+            case ObjBrowseInfo::eUsage:
+                Usages(*p);
                 break;
             default:
                 Utils::fatal("Unknown browse info record");

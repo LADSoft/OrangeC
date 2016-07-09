@@ -45,6 +45,7 @@
   
 extern COMPILER_PARAMS cparams;
 extern ARCH_DEBUG *chosenDebugger;
+extern INCLUDES *includes;
 
 static int currentFile = 0;
 static BROWSEFILE *files;
@@ -102,6 +103,13 @@ void browse_init(void)
     files = NULL;
 }
 
+static void getBrowseName(char *buf, SYMBOL *sp)
+{
+    if (sp->storage_class == sc_localstatic)
+        sprintf(buf, "_%s", sp->name);
+    else
+        sprintf(buf, "%s", sp->decoratedName);
+}
 static void addBrowseRecord(BROWSEINFO *bri)
 {
     chosenDebugger->browsedata(bri);
@@ -116,7 +124,7 @@ void browse_startfunc(SYMBOL *func, int lineno)
         return ;
     bri = (BROWSEINFO *)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_STARTFUNC;
-    unmangle(name, func->decoratedName);
+    getBrowseName(name, func);
     bri->name = litlate(name);
     bri->lineno = lineno;
     bri->charpos = 0;
@@ -135,7 +143,7 @@ void browse_endfunc(SYMBOL *func, int lineno)
         return ;
     bri = (BROWSEINFO *)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_ENDFUNC;
-    unmangle(name, func->decoratedName);
+    getBrowseName(name, func);
     bri->name = litlate(name);
     bri->lineno = lineno;
     bri->charpos = 0;
@@ -191,17 +199,60 @@ void browse_variable(SYMBOL *var)
     BROWSEINFO *bri;
     if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
         return ;
+    if (var->thisPtr)
+        return ;
+        
     if (!var->decoratedName)
         return ;
+    if (strstr(var->name, "++") || strstr(var->name, "$anontype"))
+        return;
+    switch (var->storage_class)
+    {
+        case sc_global:
+        case sc_external:
+        case sc_localstatic:
+        case sc_static:
+        case sc_type:
+            break;
+        default:
+            if (!isfunction(var->tp))
+                return;
+            break;
+    }    
     bri = (BROWSEINFO *)Alloc(sizeof(BROWSEINFO));
-    bri->type = BRS_VARIABLE;
-    unmangle(name, var->decoratedName);
+    bri->type = isfunction(var->tp) ? BRS_PROTOTYPE : BRS_VARIABLE;
+    getBrowseName(name, var);
     bri->name = litlate(name);
     bri->lineno = var->declline;
     bri->charpos = var->declcharpos >= 0 ? var->declcharpos : 0;
-    bri->flags = (var->storage_class == sc_external ? BRF_EXTERNAL : 0) | (var
+    bri->flags = (var->storage_class == sc_external  || isfunction(var->tp) ? BRF_EXTERNAL : 0) | (var
         ->storage_class == sc_static ? BRF_STATIC : 0) | (var->storage_class == sc_type ? BRF_TYPE : 0);
     bri->filenum = var->declfilenum;
+    addBrowseRecord(bri);
+}
+void browse_usage(SYMBOL *var, int file)
+{
+    char name[4096];
+    BROWSEINFO *bri;
+    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+        return ;
+    if (var->thisPtr)
+        return ;
+        
+    if (!var->decoratedName)
+        return ;
+    if (strstr(var->name, "++") || strstr(var->name, "$anontype"))
+        return;
+    bri = (BROWSEINFO *)Alloc(sizeof(BROWSEINFO));
+    bri->type = BRS_USAGE;
+    getBrowseName(name, var);
+    bri->name = litlate(name);
+    bri->lineno = includes->line;
+    bri->charpos = includes->lptr - includes->inputline - strlen(var->name);
+    if (bri->charpos < 0)
+        bri->charpos = 0;
+    bri->flags = 0;
+    bri->filenum = file;
     addBrowseRecord(bri);
 }
 

@@ -1684,8 +1684,8 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         val = anonymousVar(sc_auto, &stdpointer);
         sp = val->v.sp;
         sp->decoratedName = sp->errname = sp->name;
-        if (localNameSpace->syms)
-            insert(sp, localNameSpace->syms);
+//        if (localNameSpace->syms)
+//            insert(sp, localNameSpace->syms);
         deref(&stdpointer, &val);
         s1->throughClass = s1->parentClass != NULL;
         if (s1->throughClass && !isAccessible(s1->parentClass, s1->parentClass, s1, funcsp, placement->thisptr ? ac_protected : ac_public, FALSE))

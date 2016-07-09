@@ -274,7 +274,7 @@ static char *putpointer(char *p, TYPE *tp)
 
 static TYPE *enumConst(char *buf, TYPE *tp)
 {
-    while (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == bt_derivedfromtemplate)
+    while (tp && (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == bt_derivedfromtemplate))
     {
         switch(tp->type)
         {
@@ -306,6 +306,8 @@ void typenumptr(char *buf, TYPE *tp)
     char bf[256], *p = bf;
     p = putpointer(p, tp);
     tp = enumConst(buf, tp->btp);
+    if (!tp)
+        return;
     while (ispointer(tp))
     {
         p = putpointer(p, tp);
@@ -332,6 +334,8 @@ TYPE *typenum(char *buf, TYPE *tp)
     if (tp->type == bt_derivedfromtemplate)
         tp = tp->btp;
     tp = enumConst(buf, tp);
+    if (!tp)
+        return NULL;
     buf += strlen(buf);
     switch (tp->type)
     {
@@ -553,34 +557,37 @@ TYPE *typenum(char *buf, TYPE *tp)
             break;
         case bt_class:
 /*                strcpy(buf, tn_class); */
-            unmangle(name, tp->sp->errname);
+            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_struct:
 /*                strcpy(buf, tn_struct); */
-            unmangle(name, tp->sp->errname);
+            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_union:
 /*                strcpy(buf, tn_union); */
-            unmangle(name, tp->sp->errname);
+            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_enum:
 /*                strcpy(buf, tn_enum);  */
-            unmangle(name, tp->sp->errname);
+            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_templateselector:
         {
             TEMPLATESELECTOR *ts = tp->sp->templateSelector->next;
-            strcpy(buf, ts->sym->name);
-            ts = ts->next;
-            while (ts)
+            if (ts->sym)
             {
-                strcat(buf, "::");
-                strcat(buf, ts->name);
+                strcpy(buf, ts->sym->name);
                 ts = ts->next;
+                while (ts)
+                {
+                    strcat(buf, "::");
+                    strcat(buf, ts->name);
+                    ts = ts->next;
+                }
             }
             break;
         }

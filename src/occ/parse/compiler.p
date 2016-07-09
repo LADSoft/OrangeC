@@ -27,6 +27,7 @@ void browse_variable(SYMBOL *var);
 void browse_define(char *name, int lineno, int charindex);
 void browse_blockstart(int lineno);
 void browse_blockend(int lineno);
+void browse_usage(SYMBOL *var, int file);
 
                                /* Ccerr.c */
 void errorinit(void);
@@ -778,6 +779,7 @@ void list_table(HASHTABLE *t, int j);
 
                               /* Mangle.c */
 
+char *mangleNameSpaces(char *in, SYMBOL *sp);
 char *mangleType (char *in, TYPE *tp, BOOLEAN first);
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage);
 char *unmang1(char *buf, char *name, char *last, BOOLEAN tof);

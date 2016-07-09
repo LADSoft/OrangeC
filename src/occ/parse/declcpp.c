@@ -69,6 +69,10 @@ char anonymousNameSpaceName[512];
 
 static LIST *deferred;
 
+#ifdef PARSER_ONLY
+void ccInsertUsing(SYMBOL *ns, SYMBOL *parentns, char *file, int line);
+#endif
+
 typedef struct 
 {
     VTABENTRY *entry;
@@ -1147,10 +1151,13 @@ restart:
                         if (templateNestingCount)
                         {
                             bcsym = GetClassTemplate(bcsym, lst, TRUE);
-                            bcsym->packed = TRUE;
-                            *bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
-                            if (*bc)
-                                bc = &(*bc)->next;
+                            if (bcsym)
+                            {
+                                bcsym->packed = TRUE;
+                                *bc = innerBaseClass(declsym, bcsym, isvirtual, currentAccess);
+                                if (*bc)
+                                    bc = &(*bc)->next;
+                            }
                         }
                         else
                         {
@@ -2429,6 +2436,10 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
                         tp = (TYPE *)Alloc(sizeof(TYPE));
                         tp->type = bt_void;
                         sp = makeID(sc_namespacealias, tp, NULL, litlate(buf));
+                        if (nameSpaceList)
+                        {
+                            sp->parentNameSpace = nameSpaceList->data;
+                        }
                         SetLinkerNames(sp, lk_none);
                         if (storage_class == sc_auto)
                         {
@@ -2491,15 +2502,20 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
         TYPE *tp = (TYPE *)Alloc(sizeof(TYPE));
         tp->type = bt_void;
         sp = makeID(sc_namespace, tp, NULL, litlate(buf));
-        insert(sp, globalNameSpace->syms);
-        insert(sp, globalNameSpace->tags);
         sp->nameSpaceValues = Alloc(sizeof(NAMESPACEVALUES));
         sp->nameSpaceValues->syms = CreateHashTable(GLOBALHASHSIZE);
         sp->nameSpaceValues->tags = CreateHashTable(GLOBALHASHSIZE);
         sp->nameSpaceValues->origname = sp;
         sp->nameSpaceValues->name = sp;
+        sp->parentNameSpace = globalNameSpace->name;
         sp->linkage = linkage;
+        if (nameSpaceList)
+        {
+            sp->parentNameSpace = nameSpaceList->data;
+        }
         SetLinkerNames(sp, lk_none);
+        insert(sp, globalNameSpace->syms);
+        insert(sp, globalNameSpace->tags);
         if (anon || linkage == lk_inline)
         {
             // plop in a using directive for the anonymous namespace we are declaring
@@ -2528,10 +2544,6 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
         if (linkage == lk_inline)
             if (sp->linkage != lk_inline)
                 errorsym(ERR_NAMESPACE_NOT_INLINE, sp);
-    }
-    if (nameSpaceList)
-    {
-        sp->parentNameSpace = nameSpaceList->data;
     }
     sp->value.i++;
 
@@ -2632,6 +2644,10 @@ LEXEME *insertUsing(LEXEME *lex, enum e_ac access, enum e_sc storage_class, BOOL
                             l->next = globalNameSpace->usingDirectives;
                             globalNameSpace->usingDirectives = l;
                         }
+#ifdef PARSER_ONLY
+                        if (lex)
+                            ccInsertUsing(sp, nameSpaceList ? nameSpaceList->data : NULL, lex->file, lex->line); 
+#endif
                     }
                 }
                 lex = getsym();

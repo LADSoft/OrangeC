@@ -69,7 +69,7 @@ int mangledNamesCount ;
 
 static int declTypeIndex;
 static char *lookupName(char *in, char *name);
-static char *mangleNameSpaces(char *in, SYMBOL *sp)
+char *mangleNameSpaces(char *in, SYMBOL *sp)
 {
     if (!sp)
         return in;
@@ -822,6 +822,7 @@ char *mangleType (char *in, TYPE *tp, BOOLEAN first)
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
 {
     char errbuf[8192], *p = errbuf;
+    SYMBOL *lastParent;
     mangledNamesCount = 0;
     if (linkage == lk_none || linkage == lk_cdecl)
     {
@@ -874,7 +875,10 @@ void SetLinkerNames(SYMBOL *sym, enum e_lk linkage)
             strcpy(errbuf+1, sym->name);
             break;
         case lk_cpp:
-            p = mangleNameSpaces(p, sym->parentNameSpace);
+            lastParent = sym;
+            while (lastParent->parentClass)
+                lastParent = lastParent->parentClass;
+            p = mangleNameSpaces(p, lastParent->parentNameSpace);
             p = mangleClasses(p, sym->parentClass);
             *p++ = '@';
             if (sym->templateLevel && sym->templateParams)

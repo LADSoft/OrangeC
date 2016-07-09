@@ -228,6 +228,13 @@ HASHREC *AddOverloadName(SYMBOL *item, HASHTABLE *table)
 {
     HASHREC **p = GetHashLink(table, item->decoratedName);
     HASHREC *newRec;
+#ifdef PARSER_ONLY
+    if (!item->parserSet)
+    {
+        item->parserSet = TRUE;
+        ccSetSymbol(item);
+    }
+#endif
 
     if (*p)
     {

@@ -44,6 +44,8 @@
 #define BRS_ENDFUNC  4
 #define BRS_BLOCKSTART 5
 #define BRS_BLOCKEND 6
+#define BRS_PROTOTYPE 7
+#define BRS_USAGE 8
 
 #define BRF_EXTERNAL 2
 #define BRF_STATIC 1

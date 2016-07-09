@@ -64,14 +64,21 @@ protected:
     int CreateTables(void);
     int DBOpen(char *name);
 
+    bool Insert(sqlite3_int64 simpleId, sqlite3_int64 complexId);
     bool Insert(std::string fileName, int index);
     bool Insert(std::string symName, int type, sqlite3_int64 *id);
     bool Insert(sqlite3_int64 fileIndex, int start, int end, sqlite3_int64 nameIndex);
-    bool Insert(sqlite3_int64 symIndex, BrowseData *b);
+    bool Insert(sqlite3_int64 symIndex, BrowseData *b, bool usages = false);
     
     bool WriteFileList();
+    void InsertMappingSym(std::string name, SymData *orig, std::map<std::string, SymData *> &syms,
+                     std::map<std::string, SymData *> &newSyms);
+    void PushCPPNames(std::string name, SymData * orig, std::map<std::string, SymData *> &syms, 
+                     std::map<std::string, SymData *> &newSyms);
     bool WriteDictionary(Symbols &syms);
+    bool WriteMapping(Symbols &syms);
     bool WriteLineData(Symbols &syms);
+    bool WriteUsageData(Symbols &syms);
     bool WriteJumpTable(Symbols &syms);       
 
     BRCLoader &loader;

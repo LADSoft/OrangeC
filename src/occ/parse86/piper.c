@@ -70,6 +70,8 @@ static struct data * readFileFromPipe(char *filname)
 }
 void ccCloseFile(FILE *handle)
 {
+    extern void ccEndFile(void);
+    ccEndFile();
     if (pipeName[0])
     {
         struct data *v = (struct data *)handle;

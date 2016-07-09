@@ -53,6 +53,9 @@ static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templ
 #define MINALLOC (128 *1024)
 #define MALIGN (4)
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
 //#define DEBUG
 void mem_summary(void)
 {
@@ -83,7 +86,14 @@ static MEMBLK *galloc(MEMBLK **arena, int size)
     }
     if (!selected)
     {
+#ifdef WIN32
+        static HANDLE heap;
+        if (!heap)  
+            heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);
+        selected = HeapAlloc(heap,  0 , allocsize + sizeof(MEMBLK) - 1);
+#else
         selected = (MEMBLK *)malloc(allocsize + sizeof(MEMBLK) - 1);
+#endif
         if (!selected)
             fatal("out of memory");
         selected->size = selected->left = allocsize;
@@ -132,7 +142,9 @@ void memFree(MEMBLK **arena, int *peak)
         }
         else
         {
+#ifndef _WIN32
             free(freefind);
+#endif
         }		
         freefind = next;
     }

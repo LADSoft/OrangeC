@@ -49,22 +49,233 @@ typedef struct
     char *data;
     sqlite_int64 fileId;
 } LINEINCLUDES ;
+
+typedef struct _using
+{
+    struct _using *next;
+    int line;
+    char *file;
+    SYMBOL *sym;
+    SYMBOL *parent;
+} USING;
+
+static USING *lusing;
+
 HASHTABLE *ccHash;
+
+static int oldSkip[1000];
+static int skipCount;
 static LINEINCLUDES *lastFile;
 static sqlite3_int64 main_id;
-
+static BOOLEAN skipThisFile;
 static LIST *symList;
+static LINEINCLUDES *mainFile;
+int equalnode(EXPRESSION *node1, EXPRESSION *node2)
+/*
+ *      equalnode will return 1 if the expressions pointed to by
+ *      node1 and node2 are equivalent.
+ */
+{
+    if (node1 == 0 || node2 == 0)
+        return 0;
+    if (node1->type != node2->type)
+        return 0;
+    if (natural_size(node1) != natural_size(node2))
+        return 0;
+    switch (node1->type)
+    {
+        case en_const:
+        case en_label:
+        case en_pc:
+        case en_global:
+        case en_auto:
+        case en_absolute:
+        case en_threadlocal:
+            return node1->v.sp == node2->v.sp;
+        case en_labcon:
+            return node1->v.i == node2->v.i;
+        default:
+            return (!node1->left || equalnode(node1->left, node2->left))
+                    && (!node1->right || equalnode(node1->right, node2->right));
+        case en_c_i:
+        case en_c_l:
+        case en_c_ul:
+        case en_c_ui:
+        case en_c_c:
+        case en_c_u16:
+        case en_c_u32:
+        case en_c_bool:
+        case en_c_uc:
+        case en_c_ll:
+        case en_c_ull:
+        case en_c_wc:
+        case en_nullptr:        
+            return node1->v.i == node2->v.i;
+        case en_c_d:
+        case en_c_f:
+        case en_c_ld:
+        case en_c_di:
+        case en_c_fi:
+        case en_c_ldi:
+            return FPFEQ(&node1->v.f, &node2->v.f);
+        case en_c_dc:
+        case en_c_fc:
+        case en_c_ldc:
+            return FPFEQ(&node1->v.c.r,&node2->v.c.r) && FPFEQ(&node1->v.c.i,&node2->v.c.i);
+        case en_tempref:
+            return node1->v.sp == node2->v.sp;
+    }
+}
+EXPRESSION *GetSymRef(EXPRESSION *n)
+{
+    EXPRESSION *rv = NULL;
+        
+    switch (n->type)
+    {
+        case en_labcon:
+        case en_global:
+        case en_auto:
+        case en_absolute:
+        case en_label:
+        case en_pc:
+        case en_threadlocal:
+            return n;
+        case en_tempref:
+            return NULL;
+        default:
+            if (n->left)
+                rv = GetSymRef(n->left);
+            if (!rv && n->right)
+                rv = GetSymRef(n->right);
+            break;
+    }
+    return rv;
+}
+char *GetSymName(SYMBOL *sp)
+{
+    static char buf[4096];
+    if (sp->thisPtr)
+    {
+        return "_this";
+    }
+    else if (sp->storage_class == sc_namespace)
+    {
+        mangleNameSpaces(buf, sp);
+    }
+    else if (sp->storage_class == sc_localstatic)
+    {
+        sprintf(buf, "@%s@%s", sp->parent->name, sp->name);
+    }
+    else if (sp->storage_class == sc_auto || sp->storage_class == sc_parameter)
+    {
+        sprintf(buf, "_%s", sp->name);   
+    }
+    else
+    {
+        return sp->decoratedName;
+    }
+    return buf;
+}
+static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order,BOOLEAN base, enum e_ac access)
+{
+    if (basetype(sym->tp)->syms)
+    {    
+        HASHREC *hr = basetype(sym->tp)->syms->table[0];
+        if (!isfunction(sym->tp))
+        {
+            BASECLASS *bases = sym->baseClasses;
+            while (bases)
+            {
+                order = WriteStructMembers(bases->cls, struct_id, file_id, order, TRUE, min(bases->cls->access, access));
+                bases = bases->next;
+            }
+        }
+        while (hr)
+        {
+            SYMBOL *st = (SYMBOL *)hr->p;
+            if (st->storage_class == sc_overloads)
+            {
+                order = WriteStructMembers(st, struct_id, file_id, order, base, access);
+            }
+            else
+            {
+                char type_name[100000];
+                int indirectCount = 0;
+                int rel_id = 0;
+                TYPE *tp = st->tp;
+                sqlite3_int64 id;
+                int flags = min(st->access, access) & 15;
+                if (st->storage_class == sc_static || st->storage_class == sc_external)
+                    flags |= 16;
+                if (ismemberdata(st))
+                    flags |= 32;
+                if (st->storage_class == sc_virtual)
+                    flags |= 64;
+                if (isfunction(st->tp))
+                {
+                    flags |= 128;
+                    if (basetype(st->tp)->syms->table[0] && ((SYMBOL *)basetype(st->tp)->syms->table[0]->p)->thisPtr)
+                        flags |= 2048;
+                }
+                if (base)
+                    flags |= 256;
+                if (st->isConstructor)
+                    flags |= 512;
+                if (st->isDestructor)
+                    flags |= 1024;
+                if (isfunction(tp))
+                    tp = basetype(tp)->btp;
+                while (isref(tp))
+                    tp = basetype(tp)->btp;
+                while (ispointer(tp))
+                    tp = basetype(tp)->btp, indirectCount++;
+                if (isstructured(tp))
+                {
+                    rel_id = basetype(tp)->sp->tp->sp->ccStructId;
+                }
+                type_name[0] = 0;
+                if (isstructured(tp))
+                {
+                    switch (basetype(tp)->type)
+                    {
+                        case bt_struct:
+                            strcat(type_name, "struct ");
+                            break;
+                        case bt_class:
+                            strcat(type_name, "class ");
+                            break;
+                        case bt_union:
+                            strcat(type_name, "union ");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else if (basetype(tp)->type == bt_enum)
+                {
+                    strcat(type_name, "enum ");
+                }
+                typenum(type_name+strlen(type_name), st->tp);
+                ccWriteStructField(struct_id, GetSymName(st), litlate(type_name), 
+                                   indirectCount, rel_id,
+                                   file_id, main_id, flags, &order, &id);
+            }
+            hr = hr->next;
+        }
+    }
+    return order;
+}
 static void DumpStructs(void)
 {
     LIST *item = symList;
     while (item)
     {
         SYMBOL *sym = item->data;
-        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef)
+        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->tp->btp != bt_typedef)
         {
             sqlite3_int64 struct_id;
-            if (ccWriteStructName(sym->name, &struct_id))
-                sym->ccStructId = struct_id;
+            if (ccWriteStructName(sym->decoratedName, &struct_id))
+                basetype(sym->tp)->sp->ccStructId = struct_id;
         }
         item = item->next;
     }
@@ -74,53 +285,11 @@ static void DumpStructs(void)
         SYMBOL *sym = item->data;
         if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef && sym->tp->syms)
         {
-            sqlite3_int64 struct_id = sym->ccStructId, file_id;
+            sqlite3_int64 struct_id = basetype(sym->tp)->sp->ccStructId, file_id;
             if (ccWriteFileName(sym->declfile, &file_id))
             {
                 int order = 1;
-                HASHREC *hr = sym->tp->syms->table[0];
-                while (hr)
-                {
-                    char type_name[10000];
-                    SYMBOL *st = (SYMBOL *)hr->p;
-                    int indirectCount = 0;
-                    int rel_id = 0;
-                    TYPE *tp = st->tp;
-                    sqlite3_int64 id;
-                    while (ispointer(tp))
-                        tp = basetype(tp)->btp, indirectCount++;
-                    if (isstructured(tp))
-                    {
-                        rel_id = basetype(tp)->sp->ccStructId;
-                    }
-                    type_name[0] = 0;
-                    if (isstructured(tp))
-                    {
-                        switch (basetype(tp)->type)
-                        {
-                            case bt_struct:
-                                strcat(type_name, "struct ");
-                                break;
-                            case bt_class:
-                                strcat(type_name, "class ");
-                                break;
-                            case bt_union:
-                                strcat(type_name, "union ");
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    else if (basetype(tp)->type == bt_enum)
-                    {
-                        strcat(type_name, "enum ");
-                    }
-                    typenum(type_name+strlen(type_name), st->tp);
-                    ccWriteStructField(struct_id, st->name, litlate(type_name), 
-                                       indirectCount, rel_id,
-                                       file_id, main_id, &order, &id);
-                    hr = hr->next;
-                }
+                WriteStructMembers(sym, struct_id, file_id, order, FALSE, sym->access);
             }
         }
         item = item->next;
@@ -129,6 +298,9 @@ static void DumpStructs(void)
 static void DumpSymbolType(SYMBOL *sym)
 {
     int type = ST_UNKNOWN;
+    char *name = GetSymName(sym);
+    if (strstr(name, "++"))
+        name = " ";
     if (sym->tp && isfunction(sym->tp))
         type = ST_FUNCTION;
     else switch (sym->storage_class)
@@ -170,7 +342,100 @@ static void DumpSymbolType(SYMBOL *sym)
     if (isvolatile(sym->tp))
         type |= ST_VOLATILE;
         */
-    ccWriteSymbolType( sym->name, main_id, sym->declfile ? sym->declfile : "$$$", sym->declline, sym->ccEndLine, type);
+    ccWriteSymbolType( name, main_id, sym->declfile ? sym->declfile : "$$$", sym->declline, sym->ccEndLine, type);
+}
+static void DumpSymbol(SYMBOL *sym);
+static void DumpNamespace(SYMBOL *sym)
+{
+    char *symName = GetSymName(sym);
+    struct _ccNamespaceData *ns = sym->ccNamespaceData;
+    while (ns)
+    {
+        ccWriteNameSpaceEntry(symName, main_id, ns->declfile, ns->startline, ns->endline);
+        ns = ns->next;
+    }
+}
+static void DumpSymbol(SYMBOL *sym)
+{
+    DumpSymbolType(sym);
+    if (sym->storage_class != sc_label && (!istype(sym) || sym->storage_class == sc_typedef) && sym->storage_class != sc_overloads && sym->tp->type != bt_any)
+    {
+        SYMBOL *declsym;
+        char type_name[10000];
+        int indirectCount = 0;
+        char *name = GetSymName(sym);
+        TYPE *tp = sym->tp;
+        sqlite3_int64 id, struct_id = 0;
+        if (strstr(name, "++"))
+            name = " ";
+        if (isfunction(tp))
+            tp = basetype(tp)->btp; // get rv
+        type_name[0] = 0;
+        if (sym->storage_class == sc_typedef)
+        {
+            strcpy(type_name, "typedef ");
+        }
+        if (isstructured(tp))
+        {
+            switch (basetype(tp)->type)
+            {
+                case bt_struct:
+                    strcat(type_name, "struct ");
+                    break;
+                case bt_class:
+                    strcat(type_name, "class ");
+                    break;
+                case bt_union:
+                    strcat(type_name, "union ");
+                    break;
+                default:
+                    break;
+            }
+        }
+        else if (basetype(tp)->type == bt_enum)
+        {
+            strcat(type_name, "enum ");
+        }
+        typenum(type_name+strlen(type_name), tp->type == bt_typedef ? tp->btp : tp);
+        while (ispointer(tp))
+            tp = basetype(tp)->btp, indirectCount++;
+        if (isstructured(tp))
+        {
+            struct_id = basetype(tp)->sp->ccStructId;
+        }
+        declsym = sym;
+        if (sym->parentClass)
+        {
+            // member vars are considered declared at the top of their class...
+            declsym = sym->parentClass;
+        }
+        if (sym->storage_class == sc_namespace)
+            DumpNamespace(sym);
+        else if (ccWriteLineNumbers( name, litlate(type_name), sym->declfile ? sym->declfile : "$$$", 
+                               indirectCount, struct_id, main_id, 
+                           declsym->declline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
+        {
+            if (isfunction(sym->tp) && sym->tp->syms)
+            {
+                int order = 1;
+                HASHREC *hr = sym->tp->syms->table[0];
+                while (hr && ((SYMBOL *)hr->p)->storage_class == sc_parameter)
+                {
+                    char type_name[10000];
+                    SYMBOL *st = (SYMBOL *)hr->p;
+                    char *argName = GetSymName(st);
+                    if (strstr(argName, "++"))
+                        argName = " ";
+                    type_name[0] = 0;
+                    typenum(type_name, st->tp);
+                    if (argName[0] == 'U' && strstr(argName, "++"))
+                        argName = "{unnamed} "; // the ide depends on the first char being '{'
+                    ccWriteGlobalArg(id, main_id, argName, litlate(type_name), &order);
+                    hr = hr->next;
+                }
+            }
+        }
+    }
 }
 static void DumpSymbols(void)
 {
@@ -179,74 +444,7 @@ static void DumpSymbols(void)
     while (item)
     {
         SYMBOL *sym = item->data;
-        DumpSymbolType(sym);
-        if (sym->storage_class != sc_label && (!istype(sym) || sym->storage_class == sc_typedef) && sym->storage_class != sc_overloads && sym->tp->type != bt_any)
-        {
-            char type_name[10000];
-            int indirectCount = 0;
-            char *name = sym->name;
-            TYPE *tp = sym->tp;
-            sqlite3_int64 id, struct_id = 0;
-            if (strstr(name, "++"))
-                name = " ";
-            if (isfunction(tp))
-                tp = basetype(tp)->btp; // get rv
-            type_name[0] = 0;
-            if (sym->storage_class == sc_typedef)
-            {
-                strcpy(type_name, "typedef ");
-            }
-            if (isstructured(tp))
-            {
-                switch (basetype(tp)->type)
-                {
-                    case bt_struct:
-                        strcat(type_name, "struct ");
-                        break;
-                    case bt_class:
-                        strcat(type_name, "class ");
-                        break;
-                    case bt_union:
-                        strcat(type_name, "union ");
-                        break;
-                    default:
-                        break;
-                }
-            }
-            else if (basetype(tp)->type == bt_enum)
-            {
-                strcat(type_name, "enum ");
-            }
-            typenum(type_name+strlen(type_name), tp->type == bt_typedef ? tp->btp : tp);
-            while (ispointer(tp))
-                tp = basetype(tp)->btp, indirectCount++;
-            if (isstructured(tp))
-            {
-                struct_id = basetype(tp)->sp->ccStructId;
-            }
-            if (ccWriteLineNumbers( name, litlate(type_name), sym->declfile ? sym->declfile : "$$$", 
-                                   indirectCount, struct_id, main_id, 
-                               sym->declline, sym->ccEndLine, isfunction(sym->tp), &id))
-            {
-                if (isfunction(sym->tp) && sym->tp->syms)
-                {
-                    int order = 1;
-                    HASHREC *hr = sym->tp->syms->table[0];
-                    while (hr && ((SYMBOL *)hr->p)->storage_class == sc_parameter)
-                    {
-                        char type_name[10000];
-                        SYMBOL *st = (SYMBOL *)hr->p;
-                        char *argName = st->name;
-                        type_name[0] = 0;
-                        typenum(type_name, st->tp);
-                        if (argName[0] == 'U' && strstr(argName, "++"))
-                            argName = "{unnamed} "; // the ide depends on the first char being '{'
-                        ccWriteGlobalArg(id, main_id, argName, litlate(type_name), &order);
-                        hr = hr->next;
-                    }
-                }
-            }
-        }
+        DumpSymbol(sym);
         item = item->next;
     }
     for (i=0; i < GLOBALHASHSIZE; i++)
@@ -254,7 +452,7 @@ static void DumpSymbols(void)
         HASHREC *hr = defsyms->table[i];
         while (hr)
         {
-            ccWriteSymbolType(hr->p->name, main_id, "$$$", 1, 0, ST_DEFINE);
+            ccWriteSymbolType(((SYMBOL *)hr->p)->name, main_id, "$$$", 1, 0, ST_DEFINE);
             hr = hr->next;
         }
     }
@@ -279,60 +477,141 @@ static void DumpLines(void)
         }
     }
 }
+static void DumpUsing(void)
+{
+    while (lusing)
+    {
+        char name1[4096], name2[4096];
+        strcpy(name1, GetSymName(lusing->sym));
+        if (lusing->parent)
+            strcpy(name2, GetSymName(lusing->parent));
+        else
+            name2[0] = 0;
+        ccWriteUsingRecord(name1, name2, lusing->file, lusing->line, main_id);
+        lusing = lusing->next;
+    }
+}
+static void DumpFiles(void)
+{
+    int i;
+    time_t n = time(0);
+    for (i=0; i < ccHash->size; i++)
+    {
+        HASHREC *hr = ccHash->table[i];
+        while (hr)
+        {
+            LINEINCLUDES *l = (LINEINCLUDES *)hr->p;
+            ccWriteFileTime(l->name, n, &l->fileId);
+            hr = hr->next;
+        }   
+    }
+}
 void ccDumpSymbols(void)
 {
+    time_t n = time(0);
     ccBegin();
+    ccWriteFileTime(mainFile->name, n, &mainFile->fileId);
+    main_id = mainFile->fileId;
     ccDBDeleteForFile(main_id);
+    DumpFiles();
     DumpStructs();
     DumpSymbols();
     DumpLines();
+    DumpUsing();
     ccEnd();
     symList = NULL;
     main_id = 0;
 }
+void ccInsertUsing(SYMBOL *ns, SYMBOL *parentns, char *file, int line)
+{
+    if (!skipThisFile)
+    {
+        USING *susing = Alloc(sizeof(USING));
+        susing->line = line;
+        susing->file = file;
+        susing->sym = ns;
+        susing->parent = parentns;
+        susing->next = lusing;
+        lusing = susing;
+    }
+}
 void ccSetSymbol(SYMBOL *sp)
 {
-    LIST *newItem = Alloc(sizeof(LIST));
-    newItem->next = symList;
-    newItem->data = sp;
-    symList = newItem;
+    if (!skipThisFile)
+    {
+        LIST *newItem = Alloc(sizeof(LIST));
+        if (sp->decoratedName)
+        {
+            newItem->next = symList;
+            newItem->data = sp;
+            symList = newItem;
+        }
+    }
 }
 void ccNewFile(char *fileName, BOOLEAN main)
 {
-    LINEINCLUDES *l = Alloc(sizeof(LINEINCLUDES));
+    LINEINCLUDES *l;
     sqlite3_int64 id;
-    time_t n = time(0);
-    l->name = litlate(fullqualify(fileName));
+    char *s = fullqualify(fileName), *q = s;
+    while (*q)
+    {
+        *q = tolower(*q);
+        q++;
+    }
     if (main)
     {
-        ccHash = CreateHashTable(32);
+        ccHash = CreateHashTable(256);
         ccReset();
     }
-    insert((SYMBOL *)l, ccHash);
-    lastFile = l;
-    if (ccWriteFileTime(l->name, n, &id))
+    // this only parses each file ONCE!!!!
+    oldSkip[skipCount++] = skipThisFile;
+    skipThisFile = !!LookupName(s, ccHash);
+    if (!skipThisFile)
     {
-        if (main)
-        {
-            main_id = id;
-        }
+        IncGlobalFlag();
+        l = Alloc(sizeof(LINEINCLUDES));
+        l->name = litlate(s);
+        lastFile = l;
+        l->fileId = 0;    
+        if (main)   
+            mainFile = l;
+        else
+            insert((SYMBOL *)l, ccHash);
+        DecGlobalFlag();
     }
-    l->fileId = id;    
+}
+void ccEndFile(void)
+{
+     skipThisFile = oldSkip[--skipCount];
 }
 void ccSetFileLine(char *filename, int lineno)
 {
-    filename = fullqualify(filename);
-    if (strcmp(filename, lastFile->name) != 0)
+    if (!skipThisFile)
     {
-        lastFile = (LINEINCLUDES *)search(filename, ccHash);
+        char *q;
+        filename = fullqualify(filename);
+        q = filename;
+        while (*q)
+        {
+            *q = tolower(*q);
+            q++;
+        }
+        if (strcmp(filename, lastFile->name) != 0)
+        {
+            lastFile = (LINEINCLUDES *)search(filename, ccHash);
+            if (!lastFile)
+                lastFile = mainFile;
+        }
+        if (lineno >= lastFile->dataSize * 8)
+        {
+            int n = lastFile->dataSize;
+            lastFile->dataSize = lastFile->dataSize? lastFile->dataSize * 2 : 100;
+            if (lastFile->dataSize < (lineno + 8)/8)
+                lastFile->dataSize = (lineno + 8)/8;
+            lastFile->data = realloc(lastFile->data, lastFile->dataSize);
+            memset(lastFile->data +n, 0, lastFile->dataSize - n);
+        }
+        lastFile->lineTop = lineno;
+        lastFile->data[lineno/8] |= (1 << (lineno & 7));
     }
-    if (lineno >= lastFile->dataSize * 8)
-    {
-        int n = lastFile->dataSize;
-        lastFile->dataSize = lastFile->dataSize? lastFile->dataSize * 2 : 100;
-        lastFile->data = realloc(lastFile->data, lastFile->dataSize);
-        memset(lastFile->data +n, 0, lastFile->dataSize - n);
-    }
-    lastFile->lineTop = lineno;
-    lastFile->data[lineno/8] |= (1 << (lineno & 7));
 }

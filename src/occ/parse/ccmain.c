@@ -612,6 +612,10 @@ int main(int argc, char *argv[])
                         cparams.prm_cplusplus = TRUE;
                 }
             }
+            else if ((p[2] == 'c' ||p[2] == 'C' ) && !p[3])
+            {
+                        cparams.prm_cplusplus = TRUE;
+            }
             else
             {
                 if (p[2] == '+')

@@ -212,6 +212,7 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         SYMBOL *spx;
         HASHREC *hr;
         static int count;
+        browse_usage(sp, lex->filenum);
         *tp = sp->tp;
         lex = getsym();
         switch (sp->storage_class)
@@ -1059,6 +1060,7 @@ static LEXEME *expression_member(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
                 SYMBOL *sp3 = sp2;
                 TYPE *typ2 = typein;
                 SYMBOL *tpl = sp2;
+                browse_usage(sp2,lex->filenum);
                 if (ispointer(typ2))
                     typ2 = basetype(typ2)->btp;
                 (*exp)->isatomic = FALSE;
@@ -1657,8 +1659,10 @@ static LEXEME *getInitInternal(LEXEME *lex, SYMBOL *funcsp, INITLIST **lptr, enu
             }
             else
             {
+                lex = backupsym();
                 error(ERR_IDENTIFIER_EXPECTED);
                 errskim(&lex, finish == closepa ? skim_closepa : skim_end);
+                return lex;
             }
         }
         if (!MATCHKW(lex, comma))
@@ -2692,6 +2696,8 @@ LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION 
                 tp1 = tp1->btp;
             if (sp)
             {
+                if (sp->decoratedName[0] == '@' && lex)
+                    browse_usage(sp, lex->filenum);
                 if (funcparams->astemplate && sp->templateLevel && !sp->specialized)
                 {
                     TEMPLATEPARAMLIST *tpln = funcparams->templateParams;
@@ -5806,7 +5812,7 @@ static LEXEME *expression_equality(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE 
 }
 void GetLogicalDestructors(EXPRESSION *top, EXPRESSION *cur)
 {
-    if (cur->type == land || cur->type == lor || cur->type == hook)
+    if (!cur || cur->type == land || cur->type == lor || cur->type == hook)
         return;
     if (cur->type == en_func)
     {

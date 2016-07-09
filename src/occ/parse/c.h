@@ -436,6 +436,15 @@ typedef struct __nsv
     struct sym *name;
 } NAMESPACEVALUES;
 
+#ifdef PARSER_ONLY
+struct _ccNamespaceData
+{
+    struct _ccNamespaceData *next;
+    char * declfile;
+    int startline;
+    int endline;
+};
+#endif
 enum e_cm { cmNone, cmValue, cmRef, cmThis };
 /* symbols */
 typedef struct sym
@@ -471,6 +480,7 @@ typedef struct sym
 #ifdef PARSER_ONLY
     int      ccEndLine;      /* end line for code completion */
     ULLONG_TYPE   ccStructId;     /* code completion struct id */
+    struct  _ccNamespaceData *ccNamespaceData; /* namespace data for code completion */
     int     parserSet: 1;      /* sent to parser already*/
 #endif
     unsigned declaring: 1; /* currently being declared */
@@ -562,6 +572,7 @@ typedef struct sym
                                      // specialization was pushed from the generalized version of the template
         unsigned destructed:1;  // the c++ class instance has had a destructor generated
         unsigned initializer_list:1; // constructor with initializer_list parameter
+        unsigned retemp:1; // retemp has already been performed on this SP
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
     int labelCount; /* number of code labels within a function body */ 

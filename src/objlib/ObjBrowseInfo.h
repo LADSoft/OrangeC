@@ -48,7 +48,8 @@ class ObjMemory;
 class ObjBrowseInfo : public ObjWrapper
 {
 public:
-    enum eType { eDefine, eVariable, eFileStart, eFuncStart, eFuncEnd, eBlockStart, eBlockEnd };
+    enum eType { eDefine, eVariable, eFileStart, eFuncStart, eFuncEnd, eBlockStart, 
+                 eBlockEnd, eTypePrototype, eUsage  };
     enum eQual { eGlobal, eStatic, eExternal, eLocal, ePrototype, eTypeval };
     ObjBrowseInfo(eType Type, eQual Qual, ObjLineNo *Line, ObjInt CharPos, ObjString Data) :
         type(Type), qual(Qual), line(Line), charpos(CharPos), data(Data) { }

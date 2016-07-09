@@ -4413,8 +4413,6 @@ LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi,
         default:
             if (beforeOnly)
                 return lex;
-            if (!basetype(*tp))
-                *tp = &stdint;
             if (*tp && (isstructured(*tp) || (*tp)->type == bt_enum) && KW(lex) == semicolon)
             {
                 lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
@@ -4787,6 +4785,11 @@ jointemplate:
         else if (!asExpression && MATCHKW(lex, kw_namespace))
         {
             BOOLEAN linked;
+#ifdef PARSER_ONLY
+            struct _ccNamespaceData nsData;
+            nsData.declfile = lex->file;
+            nsData.startline =  lex->line;
+#endif
             if (storage_class_in == sc_member || storage_class_in == sc_mutable)
                 error(ERR_NAMESPACE_NO_STRUCT);   
                 
@@ -4803,6 +4806,10 @@ jointemplate:
                         lex = declare(lex, NULL, NULL, storage_class, defaultLinkage, NULL, TRUE, FALSE, FALSE, FALSE, access);
                     }
                 }
+#ifdef PARSER_ONLY
+                if (lex)
+                    nsData.endline =  lex->line;                
+#endif
                 needkw(&lex, end);
                 if (linked)
                 {
@@ -4810,6 +4817,11 @@ jointemplate:
                     sp->value.i--;
                     nameSpaceList = nameSpaceList->next;
                     globalNameSpace = globalNameSpace->next;
+#ifdef PARSER_ONLY
+                    nsData.next = sp->ccNamespaceData;
+                    sp->ccNamespaceData = Alloc(sizeof(struct _ccNamespaceData));
+                    *sp->ccNamespaceData = nsData;
+#endif
                 }
                 needsemi = FALSE;
             }
@@ -5506,7 +5518,12 @@ jointemplate:
                                         break;
                                     case sc_global:
                                         if (spi->storage_class != sc_static)
+                                        {
+                                            spi->declfile = sp->declfile;
+                                            spi->declline = sp->declline;
+                                            spi->declfilenum = sp->declfilenum;
                                             spi->storage_class = sc_global;
+                                        }
                                         break;
                                     case sc_mutable:
                                         if ((spi)->storage_class != sc_mutable)
@@ -5586,7 +5603,7 @@ jointemplate:
                                 spi->tp = sp->tp;
                             if (sp->oldstyle)
                                 spi->oldstyle = TRUE;
-                            if (!spi->declfile || spi->tp->type == bt_func && !spi->parentClass && !spi->specialized)
+                            if (!spi->declfile || spi->tp->type == bt_func)// && !spi->parentClass && !spi->specialized)
                             {
                                 spi->declfile = sp->declfile;
                                 spi->declline = sp->declline;
@@ -5835,6 +5852,8 @@ jointemplate:
                                 TYPE *tp = sp->tp;
                                 HASHREC *hr ;
                                 int old = GetGlobalFlag();
+                                if (sp->storage_class == sc_member && storage_class_in == sc_member)
+                                    browse_variable(sp); 
                                 if (sp->storage_class == sc_external)
                                     sp->storage_class = sc_global;
                                 while (tp->type != bt_func)

@@ -54,7 +54,6 @@ extern COMPILER_PARAMS cparams ;
 extern INCLUDES *includes;
 extern LINEDATA *linesHead,*linesTail;
 
-int endline;
 LEXCONTEXT *context;
 
 static LEXEME *pool;
@@ -94,7 +93,7 @@ KEYWORD keywords[] = {
     { "/", 1,  divide, KW_ASSEMBLER, TT_BINARY | TT_OPERATOR },
     { "/=", 2,  asdivide, 0, TT_ASSIGN | TT_OPERATOR },
     { ":", 1,  colon, KW_ASSEMBLER },
-    { "::", 2,  classsel, 0, TT_BINARY | TT_SELECTOR },
+    { "::", 2,  classsel, KW_CPLUSPLUS, TT_BINARY | TT_SELECTOR },
     { ":>", 2,  closebr, 0, TT_BINARY | TT_POINTER },
     { ";", 1,  semicolon, KW_ASSEMBLER, TT_CONTROL },
     { "<", 1,  lt, 0, TT_RELATION | TT_INEQUALITY },

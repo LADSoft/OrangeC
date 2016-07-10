@@ -994,7 +994,7 @@ void link_putpub(SYMBOL *sp, char sel)
     {
         sprintf(buf, "_%s", sp->name);   
     }
-    else if (sp->storage_class == sc_localstatic)
+    else if (sp->storage_class == sc_localstatic && sp->parent)
     {
         sprintf(buf, "@%s@%s", sp->parent->name, sp->name);
     }

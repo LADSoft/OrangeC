@@ -490,8 +490,8 @@ static EXPRESSION *inasm_ident(void)
             sp = Alloc(sizeof(SYMBOL ));
             sp->storage_class = sc_ulabel;
             sp->name = litlate(nm);
-            sp->declfile = lex->file;
-            sp->declline = lex->line;
+            sp->declfile = sp->origdeclfile = lex->file;
+            sp->declline = sp->origdeclline = lex->line;
             sp->declfilenum = lex->filenum;
             sp->used = TRUE;
             sp->tp = beLocalAlloc(sizeof(TYPE));
@@ -572,8 +572,8 @@ static EXPRESSION *inasm_label(void)
         sp = Alloc(sizeof(SYMBOL ));
         sp->storage_class = sc_label;
         sp->name = litlate(lex->value.s.a);
-        sp->declfile = lex->file;
-        sp->declline = lex->line;
+        sp->declfile = sp->origdeclfile = lex->file;
+        sp->declline = sp->origdeclline = lex->line;
         sp->declfilenum = lex->filenum;
         sp->tp = beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;

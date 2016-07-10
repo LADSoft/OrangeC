@@ -170,8 +170,8 @@ SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
     sp->name = name;
     sp->storage_class = storage_class;
     sp->tp = tp;
-    sp->declfile= lex->file;
-    sp->declline = lex->line;
+    sp->declfile = sp->origdeclfile = lex->file;
+    sp->declline = sp->origdeclline = lex->line;
     sp->declfilenum = lex->filenum;
     if (spi)
     {
@@ -1107,8 +1107,8 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         sp->tp->type = type;
         sp->tp->sp = sp;
         sp->declcharpos = charindex;
-        sp->declline = declline;
-        sp->declfile = lex->file;
+        sp->declline = sp->origdeclline = declline;
+        sp->declfile = sp->origdeclfile = lex->file;
         sp->declfilenum = lex->filenum;
         if ((storage_class == sc_member || storage_class == sc_mutable) && (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
             sp->parentClass = getStructureDeclaration();
@@ -1266,8 +1266,8 @@ static LEXEME *enumbody(LEXEME *lex, SYMBOL *funcsp, SYMBOL *spi,
             sp = makeID(sc_enumconstant, tp, 0, litlate(lex->value.s.a)) ;
             sp->name = sp->errname = sp->decoratedName = litlate(lex->value.s.a);
             sp->declcharpos = lex->charindex;
-            sp->declline = lex->line;
-            sp->declfile = lex->file;
+            sp->declline = sp->origdeclline = lex->line;
+            sp->declfile = sp->origdeclfile = lex->file;
             sp->declfilenum = lex->filenum;
             sp->parentClass = spi->parentClass;
             browse_variable(sp);
@@ -1472,8 +1472,8 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         sp->tp->scoped = scoped;
         sp->tp->size = sp->tp->btp->size;
         sp->declcharpos = charindex;
-        sp->declline = declline;
-        sp->declfile = lex->file;
+        sp->declline = sp->origdeclline = declline;
+        sp->declfile = sp->origdeclfile = lex->file;
         sp->declfilenum = lex->filenum;
         if (storage_class == sc_member || storage_class == sc_mutable)
             sp->parentClass = getStructureDeclaration();

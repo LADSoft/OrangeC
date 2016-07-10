@@ -81,12 +81,11 @@ static MEMBLK *galloc(MEMBLK **arena, int size)
         {
             selected = freestdmem;
             freestdmem = freestdmem->next;
-            selected->left = selected->size;
         }
     }
     if (!selected)
     {
-#ifdef WIN32
+#ifdef _WIN32
         static HANDLE heap;
         if (!heap)  
             heap = HeapCreate(HEAP_NO_SERIALIZE, 0, 0);
@@ -96,15 +95,17 @@ static MEMBLK *galloc(MEMBLK **arena, int size)
 #endif
         if (!selected)
             fatal("out of memory");
-        selected->size = selected->left = allocsize;
+        selected->size = allocsize;
     }
+    selected->left = selected->size;
 #ifdef DEBUG
     memset(selected->m, 0xc4, selected->left);
 #else
-    memset(selected->m, 0, selected->left);
+//    memset(selected->m, 0, selected->left);
 #endif
     selected->next = *arena;
     *arena = selected;
+//    printf("%d %d\n", count1, count2);
     return selected;
 }
 void *memAlloc(MEMBLK **arena, int size)
@@ -116,9 +117,9 @@ void *memAlloc(MEMBLK **arena, int size)
         selected = galloc(arena, size);
     }
     rv = (void *)(selected->m + selected->size -selected->left);
-#ifdef DEBUG
+//#ifdef DEBUG
     memset(rv, 0, size);
-#endif
+//#endif
     selected->left = selected->left - ((size + MALIGN - 1) & -MALIGN);
     return rv;
 }

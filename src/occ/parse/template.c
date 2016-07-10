@@ -1394,8 +1394,8 @@ SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams)
     candidate->tp->syms = NULL;
     candidate->tp->tags = NULL;
     candidate->baseClasses = NULL;
-    candidate->declline = includes->line;
-    candidate->declfile = includes->fname;
+    candidate->declline = candidate->origdeclline = includes->line;
+    candidate->declfile = candidate->origdeclfile = includes->fname;
     candidate->trivialCons = FALSE;
     SetLinkerNames(candidate, lk_cdecl);
     return candidate;
@@ -7148,7 +7148,7 @@ void propagateTemplateDefinition(SYMBOL *sym)
                     {
                         SYMBOL *cur = (SYMBOL *)hr->p;
                         //                        if (sym->maintemplate && !strcmp(sym->maintemplate->decoratedName, cur->decoratedName) && cur->parentClass && cur->deferredCompile)// && matchTemplateFunc(cur, sym))
-                        if (sym && sym->declline == cur->declline && !strcmp(sym->declfile, cur->declfile) && cur->deferredCompile)
+                        if (sym && sym->origdeclline == cur->origdeclline && !strcmp(sym->origdeclfile, cur->origdeclfile) && cur->deferredCompile)
                         {
                             if (matchesCopy(cur, FALSE) == matchesCopy(sym, FALSE) && matchesCopy(cur, TRUE) == matchesCopy(sym, TRUE))
                             {

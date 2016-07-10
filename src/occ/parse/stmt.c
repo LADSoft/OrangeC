@@ -1517,8 +1517,8 @@ static LEXEME *statement_goto(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         if (!spx)
         {
             spx = makeID(sc_ulabel, NULL, NULL, litlate(lex->value.s.a));
-            spx->declfile = lex->file;
-            spx->declline = lex->line;
+            spx->declfile = spx->origdeclfile = lex->file;
+            spx->declline = spx->origdeclline = lex->line;
             spx->declfilenum = lex->filenum;
             SetLinkerNames(spx, lk_none);
             spx->offset = codeLabel++;

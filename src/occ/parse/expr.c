@@ -653,8 +653,8 @@ static LEXEME *variableName(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, E
         sp = Alloc(sizeof(SYMBOL ));
         sp->name = name;
         sp->used = TRUE;
-        sp->declfile= lex->file;
-        sp->declline = lex->line;
+        sp->declfile = sp->origdeclfile = lex->file;
+        sp->declline = sp->origdeclline = lex->line;
         sp->declfilenum = lex->filenum;
         lex = getsym();
         if (MATCHKW(lex, openpa))
@@ -3084,7 +3084,9 @@ static LEXEME *expression_string(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESS
     BOOLEAN wide;
     int elems = 0;
     STRING *data;
+    int i;
     (void)funcsp;
+    
     IncGlobalFlag();
     lex = concatStringsInternal(lex, &data, &elems);
     *exp = stringlit(data);

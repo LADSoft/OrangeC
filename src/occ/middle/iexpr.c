@@ -1014,7 +1014,7 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             return gen_expr(funcsp, node->left, flags, size);
         if (ChooseMultiplier(d, N, &m, &post, &l))
         {
-            IMODE *num = gen_expr(funcsp, node->left, F_VOL, size),*ap, *ap1, *ap2, *ap3;
+            IMODE *num = gen_expr(funcsp, node->left, F_VOL, size),*ap, *ap1, *ap2, *ap3, *ap4, *ap5;
             QUAD *q;
             ap1 = LookupLoadTemp(NULL, num);
             ap = tempreg(n, 0);
@@ -1043,7 +1043,9 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
                     gen_icode(i_and, ap, num, make_immed(ISZ_UINT, (1 << l)-1));
                     return ap; 
                 }
-                gen_icode(i_lsr, ap, num, make_immed(ISZ_UINT, l));
+                ap5 = tempreg(n, 0);
+                gen_icode(i_lsr, ap5, num, make_immed(ISZ_UINT, l));
+                
 //                return n >> l;
             }
             else if (m >= oneshl32)
@@ -1054,10 +1056,15 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
                 gen_icode(i_muluh, ap1, ap3, make_immed(ISZ_UINT, m - oneshl32));
                 ap2 = tempreg(n, 0);
                 gen_icode(i_sub, ap2, num, ap1);
-                gen_icode(i_lsr, ap2, ap2, make_immed(ISZ_UINT, 1));
-                gen_icode(i_add, ap, ap1, ap2);
+                ap3 = tempreg(n, 0);
+                gen_icode(i_lsr, ap3, ap2, make_immed(ISZ_UINT, 1));
+                ap4 = tempreg(n, 0);
+                gen_icode(i_add, ap4, ap1, ap3);
+                ap5 = tempreg(n, 0);
                 if (post-1)
-                    gen_icode(i_lsr, ap, ap, make_immed(ISZ_UINT, post-1));
+                    gen_icode(i_lsr, ap5, ap4, make_immed(ISZ_UINT, post-1));
+                else
+                    gen_icode(i_assn, ap5, ap4, NULL);
                 /*
                 unsigned t1 = ((m-oneshl32) *n) >> 32;
                 unsigned q = (n-t1)>>1;
@@ -1066,15 +1073,23 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             }
             else
             {
-                ap3 = tempreg(n, 0);
-                gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
+                ap1 = tempreg(n, 0);
+                gen_icode_with_conflict(i_assn, ap1, num, NULL, TRUE);
                 if (pre)
                 {
-                    gen_icode(i_lsr, ap3, ap3, make_immed(ISZ_UINT, pre));
+                    gen_icode(i_lsr, ap3, ap1, make_immed(ISZ_UINT, pre));
                 }
-                gen_icode(i_muluh, ap, ap3, make_immed(ISZ_UINT, m - oneshl32));
+                else
+                {
+                    gen_icode(i_assn, ap3, ap1, NULL);
+                }
+                ap2 = tempreg(n, 0);
+                gen_icode(i_muluh, ap2, ap3, make_immed(ISZ_UINT, m - oneshl32));
+                ap5 = tempreg(n, 0);
                 if (post)
-                    gen_icode(i_lsr, ap, ap, make_immed(ISZ_UINT, post));
+                    gen_icode(i_lsr, ap5, ap2, make_immed(ISZ_UINT, post));
+                else
+                    gen_icode(i_assn, ap5, ap2, NULL);
                 /*
                 unsigned t1 = n >> pre;
                 t1 = (m * t1)>>32;
@@ -1083,8 +1098,13 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             }
             if (mod)
             {
-                gen_icode(i_mul, ap, ap, make_immed(ISZ_UINT, d));
-                gen_icode(i_sub, ap, num, ap);           
+                ap2 = tempreg(n, 0);
+                gen_icode(i_mul, ap2, ap5, make_immed(ISZ_UINT, d));
+                gen_icode(i_sub, ap, num, ap2);           
+            }
+            else
+            {
+                gen_icode(i_assn, ap, ap5, NULL);
             }
             return ap;
         }
@@ -1102,7 +1122,7 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
         int post, l,pre=0;
         if (ChooseMultiplier(ad, 31, &m, &post, &l))
         {
-            IMODE *num = gen_expr(funcsp, node->left, F_VOL, size),*ap, *ap1, *ap2, *ap3;
+            IMODE *num = gen_expr(funcsp, node->left, F_VOL, size),*ap, *ap1, *ap2, *ap3, *ap4, *ap5;
             QUAD *q;
             ap1 = LookupLoadTemp(NULL, num);
             ap = tempreg(n, 0);
@@ -1116,16 +1136,19 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
 //                q = ad;
             else if (ad == 1 << l)      
             {
+                ap2 = tempreg(n, 0);
                 if (l > 1)
-                    gen_icode(i_asr, ap, num, make_immed(ISZ_UINT, l-1));
+                    gen_icode(i_asr, ap2, num, make_immed(ISZ_UINT, l-1));
                 else
                 {
-                    ap = tempreg(n, 0);
-                    gen_icode(i_assn, ap, num, NULL);
+                    gen_icode(i_assn, ap2, num, NULL);
                 }
-                gen_icode(i_lsr, ap, ap, make_immed(ISZ_UINT, N-l));
-                gen_icode(i_add, ap, ap, num);
-                gen_icode(i_asr, ap, ap, make_immed(ISZ_UINT, l));
+                ap3 = tempreg(n, 0);
+                gen_icode(i_lsr, ap3, ap2, make_immed(ISZ_UINT, N-l));
+                ap4 = tempreg(n, 0);
+                gen_icode(i_add, ap4, ap3, num);
+                ap5 = tempreg(n, 0);
+                gen_icode(i_asr, ap5, ap4, make_immed(ISZ_UINT, l));
                 /*
                 q = n >> (l-1);
                 q = (unsigned)q >> (32 - l);
@@ -1136,11 +1159,17 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             {
                 ap3 = tempreg(n, 0);
                 gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
-                gen_icode(i_mulsh, ap, ap3, make_immed(ISZ_UINT, m));
+                ap1 = tempreg(n, 0);
+                gen_icode(i_mulsh, ap1, ap3, make_immed(ISZ_UINT, m));
+                ap2 = tempreg(n, 0);
                 if (post)
-                    gen_icode(i_asr, ap, ap, make_immed(ISZ_UINT, post));
-                gen_icode(i_asr, ap3, num, make_immed(ISZ_UINT, N-1));
-                gen_icode(i_sub, ap, ap, ap3);
+                    gen_icode(i_asr, ap2, ap1, make_immed(ISZ_UINT, post));
+                else
+                    gen_icode(i_assn, ap2, ap1,NULL);
+                ap4 = tempreg(n, 0);
+                gen_icode(i_asr, ap4, num, make_immed(ISZ_UINT, N-1));
+                ap5 = tempreg(n, 0);
+                gen_icode(i_sub, ap5, ap2, ap4);
                 /*
                 q = ((LLONG)m) * n >> 32;
                 q = q >> post;
@@ -1151,12 +1180,19 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             {
                 ap3 = tempreg(n, 0);
                 gen_icode_with_conflict(i_assn, ap3, num, NULL, TRUE);
-                gen_icode(i_mulsh, ap, ap3, make_immed(ISZ_UINT, m-oneshl32));
-                gen_icode(i_add, ap, ap, num);
+                ap1 = tempreg(n, 0);
+                gen_icode(i_mulsh, ap1, ap3, make_immed(ISZ_UINT, m-oneshl32));
+                ap2 = tempreg(n, 0);
+                gen_icode(i_add, ap2, ap1, num);
+                ap4 = tempreg(n, 0);
                 if (post)
-                    gen_icode(i_asr, ap, ap, make_immed(ISZ_UINT, post));
+                    gen_icode(i_asr, ap4, ap2, make_immed(ISZ_UINT, post));
+                else
+                    gen_icode(i_assn, ap4, ap2, NULL);
+                ap3 = tempreg(n, 0);
                 gen_icode(i_asr, ap3, num, make_immed(ISZ_UINT, N-1));
-                gen_icode(i_sub, ap, ap, ap3);
+                ap5 = tempreg(n, 0);
+                gen_icode(i_sub, ap5, ap4, ap3);
                 /*
                 q = ((LLONG)(m-oneshl32))*n>>32;
                 q = (n + q) >> post;
@@ -1165,12 +1201,19 @@ IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
            }
             if (d < 0)
             {
-                gen_icode(i_neg, ap, ap, NULL);
+                ap3 = tempreg(n, 0);
+                gen_icode(i_neg, ap3, ap5, NULL);
+                ap5 = ap3;            
             }
             if (mod)
             {
-                gen_icode(i_mul, ap, ap, make_immed(ISZ_UINT, d));
-                gen_icode(i_sub, ap, num, ap);           
+                ap3 = tempreg(n, 0);
+                gen_icode(i_mul, ap3, ap5, make_immed(ISZ_UINT, d));
+                gen_icode(i_sub, ap, num, ap3);           
+            }
+            else
+            {
+                gen_icode(i_assn, ap, ap5, NULL);
             }
             return ap;
         }
@@ -2773,7 +2816,6 @@ IMODE *gen_void(EXPRESSION *node, SYMBOL *funcsp)
 {
     if (node->type != en_auto)
         gen_expr( funcsp, node, F_NOVALUE, natural_size(node));
-    /*   gen_code(op_void,0,0);*/
     return 0;
 }
 

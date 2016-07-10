@@ -1450,9 +1450,10 @@ void put_code(QUAD *q)
  */
 {
     int i;
-    for (i=0; i < blockCount; i++)
-        if (blockArray[i] && blockArray[i]->head == q)
-            oprintf(icdFile, "block %d\n", i);
+    if (q->block && q->block->head == q)
+    {
+        oprintf(icdFile, "block %d\n", q->block->blocknum);
+    }
     (*oplst[q->dc.opcode])(q);
     if (q->genConflict)
         oputc('^', icdFile);

@@ -45,6 +45,7 @@
 
 #define REG_MAX (chosenAssembler->arch->registerCount)
 
+//static unsigned long long aa,bb;
 /* implements 'iterated register coalescing', George & Appel
  * and includes the recommended change to commit the first set of coalescings
  * with the pathological case, priority, and spill modifications given in
@@ -762,6 +763,7 @@ static void CountInstructions(BOOLEAN first)
             case i_dbgblock:
             case i_dbgblockend:
             case i_varstart:
+                head->index = 0;
                 break;
             default:
                 head->index = instructionCount++;
@@ -853,9 +855,9 @@ static BOOLEAN BriggsCoalesceInit(int u, int v, int n)
         if (x)
         {
             int n = i * BITINTBITS;
-            for (t= n; t< n +BITINTBITS; t++, x >>= 1)
+            for (t= 0; t<BITINTBITS; t++, x >>= 1)
                 if (x & 1)
-                    if (tempInfo[t]->squeeze >= tempInfo[t]->regCount)
+                    if (tempInfo[t+n]->squeeze >= tempInfo[t+n]->regCount)
                         k++;
         }
     }
@@ -1191,7 +1193,6 @@ static void AddWorkList(int u)
 static int Combine(int u, int v)
 {
     int i, t;
-    int max = (tempCount + BITINTBITS-1)/BITINTBITS;
     BOOLEAN losingHiDegreeNode;
     BITARRAY *tu, *tv;
     if (!tempInfo[v]->precolored && !tempInfo[u]->precolored)
@@ -1224,14 +1225,12 @@ static int Combine(int u, int v)
         int j;
         for (j=0; j < instructionByteCount; j++)
         {
-            int z;
-            if (z = bits(nm)[j])
+            if (bits(nm)[j])
             {
                 int k ;
-                int m = j * BITINTBITS;
-                for (k= m; k < m + BITINTBITS; k++, z>>=1)
+                for (k= j *BITINTBITS; k < j * BITINTBITS + BITINTBITS; k++)
                 {
-                    if ((z & 1) && instructionList[k])
+                    if (isset(nm, k) && instructionList[k])
                     {
                         int x = instructionList[k]->ans->offset->v.sp->value.i;
                         int y = instructionList[k]->dc.left->offset->v.sp->value.i;
@@ -1263,13 +1262,14 @@ static int Combine(int u, int v)
     }
     losingHiDegreeNode = tempInfo[u]->squeeze >= tempInfo[u]->regCount 
                          && tempInfo[v]->squeeze >= tempInfo[v]->regCount;
-    for (i=0; i < max; i++)
-    {
-        unsigned x;
-        if (x = tempInfo[v]->conflicts[i] & ~coalescedNodes[i])
-        {
-            for (t= i * BITINTBITS; x && t < i * BITINTBITS + BITINTBITS; t++,x>>=1)
-                if (x & 1)
+    Adjacent1(v);
+    memcpy(adjacent1, tempInfo[v]->conflicts, (tempCount + BITINTBITS-1)/BITINTBITS * sizeof(BITINT));
+    for (i=0; i < (tempCount +BITINTBITS-1)/BITINTBITS;i++)
+        adjacent1[i] &= ~coalescedNodes[i];
+    for (i=0; i < (tempCount + BITINTBITS-1)/BITINTBITS; i++)
+        if (adjacent1[i])
+            for (t= i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++)
+                if (isset(adjacent1, t))
                 {
                     if (t != u && !isConflicting(t, u))
                     {
@@ -1289,8 +1289,6 @@ static int Combine(int u, int v)
                     }
                     DecrementDegree(t, v);
                 }
-        }
-    }
     if (tempInfo[u]->squeeze >= tempInfo[u]->regCount)
     {
         if (briggsTest(freezeWorklist, u))
@@ -1370,28 +1368,79 @@ static BOOLEAN inBothRegClasses(int u, int v)
     }
     return TRUE;
 }
+int blcompare(const void *left, const void *right)
+{
+    BLOCK **lleft = (BLOCK **)left;
+    BLOCK **rright = (BLOCK **)right;
+    if( (*lleft)->spillCost > (*rright)->spillCost)
+        return -1;
+    return (*lleft)->spillCost < (*rright)->spillCost;
+}
 static BOOLEAN Coalesce(void)
 {
+    BLOCK *blocks[65536];
+    int count = 0;
     int i;
     int sel = -1;
+    unsigned priority = 0;
+//  bb = _current_time();
+    for (i=0; i < blockCount; i++)
+        if (blockArray[i])
+            blocks[count++] = blockArray[i];
+    qsort(blocks, count, sizeof(BLOCK *), blcompare);
 
-    for (i=0; i < instructionByteCount; i++)
+printf("hi\n");
+    for (i=0; i < count; i++)
     {
-        BITINT x;
-        if ((x = (bits(workingMoves))[i]))
-        {
-            int j;
-            for (j= 0; x; j++, x>>=1)
+        int k, end;
+        QUAD *q = blocks[i]->head;
+        printf("%d ", blocks[i]->blocknum);
+        while (!q->index)
+            q = q->fwd;
+            k = q->index/BITINTBITS;
+    //            printf("%d %d %d\n", k, q->index, BITINTBITS);
+            q = blocks[i]->tail;
+            while (!q->index)
+                q = q->back;
+            end = q->index/BITINTBITS;
+//            if (k != end)
             {
-                if (x & 1)
-                {
-                    sel = i * BITINTBITS + j;
-                    goto join;
+//                k /= BITINTBITS;
+//                end /= BITINTBITS;
+    //        printf("%d %d %d\n", i, k, end);
+                for (; k <= end; k++)
+                {            
+                    BITINT x;
+                    printf(":%d ", k);
+                    if ((x = (bits(workingMoves))[k]))
+                    {
+                        int j;
+                        int m = k * BITINTBITS;
+                        for (j= 0; j < BITINTBITS;  j++, x>>=1, m++)
+                        {
+                            if (x & 1)
+                            {
+                            printf("1");
+                                if (instructionList[m]->block == blocks[i])
+                                {
+                                    QUAD *head = instructionList[m];
+    //                                printf("A");
+    //                                printf("1");
+    //                                if (head->block->spillCost > priority)
+                                    {
+    //                                    printf("2");
+                                        priority = head->block->spillCost;
+                                        sel = m;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            }
         }
     }
     join:
+//    aa += _current_time() - bb;
     if (sel != -1)
     {
         int u,v;
@@ -1441,7 +1490,7 @@ static BOOLEAN Coalesce(void)
                 GeorgeCoalesceInit(v, u, sel);
             else
                 BriggsCoalesceInit(u,v, sel);
-            }
+        }
         return TRUE;
     }
     /* no moves buffered for attempted coalesce at this time */
@@ -2392,12 +2441,9 @@ void AllocateRegisters(QUAD *head)
         InitClasses();
         definesInfo();
         usesInfo();
-//    bb = _current_time();
         CalculateConflictGraph(NULL, TRUE);
         SqueezeInit();
         Build(NULL);
-//    aa += _current_time() - bb;
-//    printf("%lld\n", aa);
         MkWorklist();
         for (i=0; i < tempCount; i++)
         {
@@ -2449,6 +2495,7 @@ void AllocateRegisters(QUAD *head)
         tFree();
         cFree();
     }
+//    printf("%lld\n", aa);
     KeepCoalescedNodes();
     CopyLocalColors();
     if (passes > maxAllocationPasses)

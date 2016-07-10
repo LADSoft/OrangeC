@@ -1615,13 +1615,10 @@ static void emulBlock(BLOCK *b)
     if (!briggsTest(visited, b->blocknum))
     {
         briggsSet(visited, b->blocknum);
-        while (head)
+        while (head != b->tail->fwd)
         {
             br |= emulInstruction(head, b);
-            if (head == b->tail)
-                head = NULL;
-            else
-                head = head->fwd;
+            head = head->fwd;
         }
         if (!br)
         {

@@ -265,6 +265,7 @@ typedef struct
 	INSTRUCTIONLIST *instructionUses;
 	BITINT *conflicts;
 	IMODE *spillVar;
+    IMODE *spillAlias;
 	EXPRESSION *enode;
 	QUAD *spillTag;
 	IMODE *newname;
@@ -308,27 +309,28 @@ typedef struct
 	int temp;
 	int inductionLoop; /* 0 = none, else outermost enclosing loop */
 	int oldInductionVar;
-	short spilled:1;
-	short spillTemp:1;
-	short onstack:1;
-	short usedAsAddress:1 ;
-	short usedAsFloat:1;
-	short visiteddfst:1;
-	short expressionRoot: 1;
-	short doGlobal:1 ; /* is being used, can do global opt */
-	short cachedForLoad:1;
-	short cachedForStore:1;
-	short precolored : 1;
-	short liveAcrossFunctionCall : 1;
-	short liveAcrossBlock : 1;
-	short dontoptimize : 1;
-	short inductionInitVar: 1;
-	short inUse: 1;
-	short iuTemp : 1;
-	short termClear : 1;
-	short degreed : 1;
-	short directSpill:1;
-    short ircinitial:1;
+	unsigned spilled:1;
+	unsigned spillTemp:1;
+	unsigned onstack:1;
+	unsigned usedAsAddress:1 ;
+	unsigned usedAsFloat:1;
+	unsigned visiteddfst:1;
+	unsigned expressionRoot: 1;
+	unsigned doGlobal:1 ; /* is being used, can do global opt */
+	unsigned cachedForLoad:1;
+	unsigned cachedForStore:1;
+	unsigned precolored : 1;
+	unsigned liveAcrossFunctionCall : 1;
+	unsigned liveAcrossBlock : 1;
+	unsigned dontoptimize : 1;
+	unsigned inductionInitVar: 1;
+	unsigned inUse: 1;
+	unsigned iuTemp : 1;
+	unsigned termClear : 1;
+	unsigned degreed : 1;
+	unsigned directSpill:1;
+    unsigned ircinitial:1;
+    unsigned spilling : 1;
 	char size;
 } TEMP_INFO;
 

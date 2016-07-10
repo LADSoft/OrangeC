@@ -242,10 +242,10 @@ static void liveOut()
         {
             live = bl->block->liveIn;
             outb = b->liveOut;
-            for (j=0; j < tempDWords; j++, live++, outb++)
+            for (j=0; j < tempDWords; j++)
             {
-                if (*live)
-                    *outb |= *live;
+                if (live[j])
+                    outb[j] |= live[j];
             }
             bl = bl->next;
         }
@@ -253,14 +253,14 @@ static void liveOut()
         gen = b->liveGen;
         kills = b->liveKills;
         outb = b->liveOut;
-        for (j=0; j < tempDWords; j++, gen++,kills++,live++, outb++)
+        for (j=0; j < tempDWords; j++)
         {
-            BITINT c = *gen | (*outb & ~*kills);
+            BITINT c = gen[j] | (outb[j] & ~kills[j]);
             if (changed)
-                *live = c;
-            else if (c != *live)
+                live[j] = c;
+            else if (c != live[j])
             {
-                *live = c;
+                live[j] = c;
                 changed = TRUE;
             }
         }

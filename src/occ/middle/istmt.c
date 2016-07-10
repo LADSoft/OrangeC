@@ -793,7 +793,7 @@ void optimize(SYMBOL *funcsp)
             SetGlobalTerms();
             AliasPass2();
             //printf("global\n");
-            GlobalOptimization(); /* partial redundancy, code motion */
+//            GlobalOptimization(); /* partial redundancy, code motion */
             AliasRundown();
         }
         nextTemp = tempBottom;

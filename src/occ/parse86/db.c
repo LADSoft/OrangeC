@@ -357,7 +357,7 @@ int ccEnd(void )
 int ccDBDeleteForFile(sqlite3_int64 id)
 {
     int rv = TRUE;
-    char buf[10000];
+    char buf[1000];
     sprintf(buf, deletion, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id);
     if (!create_exec(buf))
     {

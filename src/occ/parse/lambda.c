@@ -256,7 +256,7 @@ SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOLEAN isExplicit)
                         lambda_insert(sym, current);
                         ins->sym = sym;
                         ins->enclosing = current;
-                        insert((SYMBOL *)ins, current->captured);
+                        baseinsert((SYMBOL *)ins, current->captured);
                         current = current->prev;
                     }
                     DecGlobalFlag();

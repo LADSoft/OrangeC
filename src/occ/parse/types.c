@@ -325,7 +325,7 @@ TYPE *typenum(char *buf, TYPE *tp)
 {
     SYMBOL *sp;
     HASHREC *hr;
-    char name[1024];
+    char name[4096];
     if (tp == NULL)
     {
         diag("typenum - NULL type");

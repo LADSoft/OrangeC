@@ -981,6 +981,7 @@ SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp,
                               FUNCTIONCALL *args, TYPE *atp, BOOLEAN toErr, 
                               BOOLEAN maybeConversion, BOOLEAN toInstantiate, int flags);
 SYMBOL *MatchOverloadedFunction(TYPE *tp, TYPE **mtp, SYMBOL *sp, EXPRESSION **exp, int flags);
+void baseinsert(SYMBOL *in, HASHTABLE *table);
 void insert(SYMBOL *in, HASHTABLE *table);
 HASHREC *AddOverloadName(SYMBOL *item, HASHTABLE *table);
 void insertOverload(SYMBOL *in, HASHTABLE *table);

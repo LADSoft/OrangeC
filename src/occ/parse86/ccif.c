@@ -361,7 +361,7 @@ static void DumpSymbol(SYMBOL *sym)
     if (sym->storage_class != sc_label && (!istype(sym) || sym->storage_class == sc_typedef) && sym->storage_class != sc_overloads && sym->tp->type != bt_any)
     {
         SYMBOL *declsym;
-        char type_name[10000];
+        char type_name[100000];
         int indirectCount = 0;
         char *name = GetSymName(sym);
         TYPE *tp = sym->tp;
@@ -421,7 +421,7 @@ static void DumpSymbol(SYMBOL *sym)
                 HASHREC *hr = sym->tp->syms->table[0];
                 while (hr && ((SYMBOL *)hr->p)->storage_class == sc_parameter)
                 {
-                    char type_name[10000];
+                    char type_name[100000];
                     SYMBOL *st = (SYMBOL *)hr->p;
                     char *argName = GetSymName(st);
                     if (strstr(argName, "++"))
@@ -540,6 +540,8 @@ void ccSetSymbol(SYMBOL *sp)
     if (!skipThisFile)
     {
         LIST *newItem = Alloc(sizeof(LIST));
+        if (!sp->tp)
+            printf("hi");
         if (sp->decoratedName)
         {
             newItem->next = symList;

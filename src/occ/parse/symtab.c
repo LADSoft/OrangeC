@@ -612,6 +612,35 @@ SYMBOL *tsearch(char *name)
         return sp;
     return search(name, globalNameSpace->tags);
 }
+void baseinsert(SYMBOL *in, HASHTABLE *table)
+{
+    if (cparams.prm_extwarning)
+        if (in->storage_class == sc_parameter || in->storage_class == sc_auto ||
+            in->storage_class == sc_register)
+        {
+            SYMBOL *sp;
+            if ((sp = gsearch(in->name)) != NULL)
+                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, 
+                         sp->declfile, sp->declline);
+        }
+#if defined (PARSER_ONLY)
+    if (AddName(in, table) && table != ccHash)
+#else
+    if (AddName(in, table))
+#endif
+    {
+#if defined(CPREPROCESSOR) || defined(PARSER_ONLY)
+        pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
+#else
+        if (!structLevel || !templateNestingCount)
+        {
+            SYMBOL *sym = search(in->name, table);
+            if (!sym || !sym->wasUsing || !in->wasUsing)
+                preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
+        }   
+#endif
+    }
+}
 void insert(SYMBOL *in, HASHTABLE *table)
 {
     if (table)
@@ -624,32 +653,7 @@ void insert(SYMBOL *in, HASHTABLE *table)
                 ccSetSymbol(in);
             }
 #endif
-        if (cparams.prm_extwarning)
-            if (in->storage_class == sc_parameter || in->storage_class == sc_auto ||
-                in->storage_class == sc_register)
-            {
-                SYMBOL *sp;
-                if ((sp = gsearch(in->name)) != NULL)
-                    preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, 
-                             sp->declfile, sp->declline);
-            }
-#if defined (PARSER_ONLY)
-        if (AddName(in, table) && table != ccHash)
-#else
-        if (AddName(in, table))
-#endif
-        {
-#if defined(CPREPROCESSOR) || defined(PARSER_ONLY)
-            pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
-#else
-            if (!structLevel || !templateNestingCount)
-            {
-                SYMBOL *sym = search(in->name, table);
-                if (!sym || !sym->wasUsing || !in->wasUsing)
-                    preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
-            }   
-#endif
-        }
+        baseinsert(in, table);
     }
     else
     {

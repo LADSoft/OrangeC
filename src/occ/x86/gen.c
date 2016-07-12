@@ -1588,6 +1588,10 @@ static void gen_mulxh(QUAD *q, enum e_op op)               /* unsigned division 
         AMODE *mulby = aprl;
         if (apal->mode != am_dreg)
             diag("asm_mulxh: answer not a dreg");
+        if (apll->mode == am_immed)
+        {
+            gen_codes(op_mov, q->ans->size, makedreg(EAX), apll);
+        }
         if (aprl->mode == am_immed)
         {
             mulby = make_muldivval(aprl);

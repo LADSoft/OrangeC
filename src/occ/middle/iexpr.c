@@ -1075,6 +1075,7 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             {
                 ap1 = tempreg(n, 0);
                 gen_icode_with_conflict(i_assn, ap1, num, NULL, TRUE);
+                ap3 = tempreg(n, 0);
                 if (pre)
                 {
                     gen_icode(i_lsr, ap3, ap1, make_immed(ISZ_UINT, pre));

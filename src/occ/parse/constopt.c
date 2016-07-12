@@ -1292,6 +1292,7 @@ void dooper(EXPRESSION **node, int mode)
             }
             break;
         case en_mod:
+        case en_umod:
             if (ep2->v.i)
             {
                 ep->type = maxinttype(ep1, ep2);

@@ -76,6 +76,8 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
 	int flags = 0,append = 0, update = 0, id = 0,i;
 	FILE *file;
 	char *fname;
+    if (!name)
+        return NULL;
    __ll_enter_critical() ;
 	if (__maxfiles >= _NFILE_) {
 		_dos_errno = errno = EMFILE;

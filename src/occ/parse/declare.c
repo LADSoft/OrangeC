@@ -145,20 +145,10 @@ char *AnonymousName(void)
     sprintf(buf,"Anonymous++Identifier %d", unnamed_id++);
     return litlate(buf);
 }
-static unsigned hashs(char *n)
-{
-    unsigned rv = 0;
-    while (*n)
-    {
-        rv += (*n << 7) + (*n << 2) + (*n << 1);
-        n++;
-    }
-    return rv;
-} 
 char *AnonymousTypeName(void)
 {
     char buf[512];
-    sprintf(buf,"__anontype_%u_%d", hashs(includes->fname), includes->anonymousid++ );
+    sprintf(buf,"__anontype_%u_%d", CRC32((unsigned char *)includes->fname, strlen(includes->fname)), includes->anonymousid++ );
     return litlate(buf);
 }
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)

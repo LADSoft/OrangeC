@@ -41,6 +41,7 @@ INCLUDES=..\parse ..\preproc ..\middle
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.c \
+    crc.c \
     beinterf.c \
     browse.c \
     ccerr.c \

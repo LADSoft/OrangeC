@@ -110,6 +110,7 @@
     <ClCompile Include="parse\constopt.c" />
     <ClCompile Include="parse\cppbltin.c" />
     <ClCompile Include="parse\cpplookup.c" />
+    <ClCompile Include="parse\crc.c" />
     <ClCompile Include="parse\debug.c" />
     <ClCompile Include="parse\declare.c" />
     <ClCompile Include="parse\declcons.c" />

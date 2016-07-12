@@ -52,6 +52,8 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;BORLAND;_CRT_SECURE_NO_WARNINGS;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -89,6 +91,7 @@
     <ClCompile Include="..\parse\constopt.c" />
     <ClCompile Include="..\parse\cppbltin.c" />
     <ClCompile Include="..\parse\cpplookup.c" />
+    <ClCompile Include="..\parse\crc.c" />
     <ClCompile Include="..\parse\debug.c" />
     <ClCompile Include="..\parse\declare.c" />
     <ClCompile Include="..\parse\declcons.c" />

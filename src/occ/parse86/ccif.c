@@ -162,7 +162,7 @@ char *GetSymName(SYMBOL *sp)
     {
         mangleNameSpaces(buf, sp);
     }
-    else if (sp->storage_class == sc_localstatic)
+    else if (sp->storage_class == sc_localstatic && sp->parent)
     {
         sprintf(buf, "@%s@%s", sp->parent->name, sp->name);
     }
@@ -540,8 +540,6 @@ void ccSetSymbol(SYMBOL *sp)
     if (!skipThisFile)
     {
         LIST *newItem = Alloc(sizeof(LIST));
-        if (!sp->tp)
-            printf("hi");
         if (sp->decoratedName)
         {
             newItem->next = symList;

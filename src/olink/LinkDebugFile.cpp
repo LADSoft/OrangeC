@@ -56,7 +56,7 @@
 #include <ctype.h>
 #include <fstream>
 
-#define STRINGVERSION "100"
+#define STRINGVERSION "120"
 #define DBVersion atoi(STRINGVERSION)
 
 static int version_ok;

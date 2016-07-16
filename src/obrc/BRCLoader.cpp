@@ -82,6 +82,21 @@ void BRCLoader::InsertSymData(std::string s, BrowseData *ldata, bool func)
         sym = new SymData(s);
         syms[s] = sym;
     }
+    for (BrowseDataset::iterator it = sym->data.begin(); it != sym->data.end(); it++)
+    {
+        BrowseData *compare = *it;
+        if (ldata->type == compare->type)
+            if (ldata->startLine == compare->startLine)
+                if (ldata->qual == compare->qual)
+//                    if (ldata->charPos == compare->charPos)
+//                        if (ldata->hint == compare->hint)
+                            if (ldata->blockLevel == compare->blockLevel)
+                                if (ldata->fileIndex == compare->fileIndex)
+                                {
+                                    delete ldata;
+                                    return;
+                                }
+    }
     sym->insert(ldata);
     if (func)
         sym->func = ldata;

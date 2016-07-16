@@ -256,6 +256,7 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
                     strcat(type_name, "enum ");
                 }
                 typenum(type_name+strlen(type_name), st->tp);
+                type_name[40] = 0;
                 ccWriteStructField(struct_id, GetSymName(st), litlate(type_name), 
                                    indirectCount, rel_id,
                                    file_id, main_id, flags, &order, &id);
@@ -397,6 +398,9 @@ static void DumpSymbol(SYMBOL *sym)
             strcat(type_name, "enum ");
         }
         typenum(type_name+strlen(type_name), tp->type == bt_typedef ? tp->btp : tp);
+        type_name[40] = 0;
+        while (isref(tp))
+            tp = basetype(tp)->btp;
         while (ispointer(tp))
             tp = basetype(tp)->btp, indirectCount++;
         if (isstructured(tp))
@@ -428,6 +432,7 @@ static void DumpSymbol(SYMBOL *sym)
                         argName = " ";
                     type_name[0] = 0;
                     typenum(type_name, st->tp);
+                    type_name[40] = 0;
                     if (argName[0] == 'U' && strstr(argName, "++"))
                         argName = "{unnamed} "; // the ide depends on the first char being '{'
                     ccWriteGlobalArg(id, main_id, argName, litlate(type_name), &order);

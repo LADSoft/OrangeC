@@ -46,6 +46,7 @@
 extern COMPILER_PARAMS cparams;
 extern ARCH_DEBUG *chosenDebugger;
 extern INCLUDES *includes;
+extern int funcNesting;
 
 static int currentFile = 0;
 static BROWSEFILE *files;
@@ -234,7 +235,7 @@ void browse_usage(SYMBOL *var, int file)
 {
     char name[4096];
     BROWSEINFO *bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord || funcNesting > 1)
         return ;
     if (var->thisPtr)
         return ;

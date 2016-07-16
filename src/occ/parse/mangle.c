@@ -104,7 +104,14 @@ static char * mangleExpressionInternal (char *buf, EXPRESSION *exp)
         exp = exp->left;
 	if (isintconst(exp))
 	{
-		sprintf(buf, "%lld&", exp->v.i);
+        if (exp->type == en_const)
+        {
+            sprintf(buf, "%lld&", exp->v.sp->value.i);
+        }
+        else
+        {
+    		sprintf(buf, "%lld&", exp->v.i);
+        }
 		if (buf[0] == '-')
 			buf[0] = '_';
 	}

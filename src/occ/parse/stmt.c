@@ -59,6 +59,8 @@ extern int currentErrorLine;
 extern int total_errors;
 extern LAMBDA *lambdas;
 
+int funcNesting;
+
 BOOLEAN hasXCInfo;
 int startlab, retlab;
 int codeLabel;
@@ -83,6 +85,7 @@ void statement_ini()
     nextLabel = 1;
     linesHead = linesTail = NULL;
     functionCanThrow = FALSE;
+    funcNesting = 0;
 }
 void InsertLineData(int lineno, int fileindex, char *fname, char *line)
 {
@@ -2258,8 +2261,12 @@ static LEXEME *statement_expr(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
     STATEMENT *st ;
     EXPRESSION *select = NULL;
     TYPE *tp = NULL;
+    LINEDATA *oldLineHead = linesHead, *oldLineTail = linesTail;
+    linesHead = linesTail = NULL;
     (void)parent;
     lex = optimized_expression(lex, funcsp, NULL, &tp, &select, TRUE);
+    linesHead = oldLineHead;
+    linesTail = oldLineTail;
     currentLineData(parent, lex, 0);
     st = stmtNode(lex, parent, st_expr);
     st->select = select;
@@ -3302,6 +3309,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     STATEMENT *startStmt;
     SYMBOL *spt = funcsp;
     int oldCodeLabel = codeLabel;
+    funcNesting++;
     functionCanThrow = FALSE;
     codeLabel = INT_MIN;
     hasXCInfo = FALSE;
@@ -3397,5 +3405,6 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
     labelSyms = oldLabelSyms;
     codeLabel = oldCodeLabel;
     functionCanThrow = oldFunctionCanThrow;
+    funcNesting--;
     return lex;
 }

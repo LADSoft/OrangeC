@@ -2486,7 +2486,7 @@ LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class,
             else
                 p++;
             
-            sprintf(anonymousNameSpaceName, "__%s__%d", p, rand()*RAND_MAX + rand());
+            sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32(infile, strlen(infile)));
             while ((p = strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';			
         }

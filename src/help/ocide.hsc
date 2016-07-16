@@ -56,12 +56,14 @@ Writing
 
 
 FALSE
-37
+39
 {\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1460\cf1\lang1033\b\fs32 Welcome to Orange C IDE help
 \par 
-\par \cf0\b0\fs20 Orange C IDE is an integrated development environment tailored to use with the Orange C tool set.  It supports most functionality of the tool set; however it is not a standalone program.  To accomplish its tasks it usually spawns an appropriate tool from the tool set, such as the compiler or linker.  Output from spawned tools is integrated into the information window.
+\par \cf0\b0\fs20 Orange C IDE is an integrated development environment tailored to use with the Orange C tool set that supports C and C++ development and debugging.
+\par 
+\par Orange C IDE supports most functionality of the tool set; however it is not a standalone program.  To accomplish its tasks it usually spawns an appropriate tool from the tool set, such as the compiler or linker.  Output from spawned tools is integrated into the information window.
 \par 
 \par Orange C IDE may also be used as a standalone editor.
 \par 
@@ -113,7 +115,7 @@ FALSE
 \par 
 \par \f0 Orange C IDE is a \cf2\strike workarea\cf3\strike0\{linkID=190\}\cf0  - based system.  That means to do anything significant other than simply \cf2\strike editing\cf3\strike0\{linkID=50\}\cf0  files (such as \cf2\strike compiling\cf3\strike0\{linkID=250\}\cf0  or \cf2\strike debugging\cf3\strike0\{linkID=300\}\cf0 ) a workarea must first be set up.  The workarea has information about \b Projects\b0 , which are executable or DLL files that are to be created.  A list of sources files is associated with each project; when attempting to create the project the IDE will apply the appropriate tool to each source file to compile it, then link the results together to create the project.  Orange C IDE maintains a list of dependency files and automatically rebuild all related source files when one of the dependency files changes.
 \par 
-\par The list of source files may be any combination of C language files, Assembly language files, RC files, and libraries.  Orange C IDE will automatically apply the compiler, the assembler, the resource compiler, or the linker depending on the file name extension of the source file.  If a \b Make\b0  option is selected, only files which have changed, or whose dependencies have changed, will be recompiled.  If the \b Build All\b0  option is selected Orange C IDE will rebuild all files irregardless of what has changed.
+\par The list of source files may be any combination of C/C++ language files, Assembly language files, RC files, and libraries.  Orange C IDE will automatically apply the compiler, the assembler, the resource compiler, or the linker depending on the file name extension of the source file.  If a \b Make\b0  option is selected, only files which have changed, or whose dependencies have changed, will be recompiled.  If the \b Build All\b0  option is selected Orange C IDE will rebuild all files irregardless of what has changed.
 \par 
 \par Creating a Workarea is a four-step process.  First, select\b  File -> Work Area -> New Workarea\b0  from the menu bar.  A \cf2\strike New Work Area Dialog\cf3\strike0\{linkID=362\}\cf0   prompts for the name of the workarea.  By default, this dialog will want to save your workarea in a new subdirectory under the \b My Documents\b0  folder, but this location can be changed.
 \par 
@@ -1725,7 +1727,7 @@ FALSE
 \par 
 \par Right clicking in this window brings up the \cf3\strike Breakpoint Context Menu\cf2\strike0\{linkID=417\}\cf0 .
 \par 
-\par Clicking on a code breakpoint takes on to the line the breakpoint is defined on.   Clicking on data or hardware breakpoints has no effect.
+\par Clicking on a code breakpoint takes one to the line the breakpoint is defined on.   Clicking on data or hardware breakpoints has no effect.
 \par \lang1049\f1 
 \par }
 417
@@ -1751,7 +1753,7 @@ FALSE
 \par \pard\cf0 
 \par \b Hardware Breakpoints\b0  allows creating a \cf2\strike Hardware Breakpoint\cf3\strike0\{linkID=730\}\cf0 
 \par 
-\par \b Data Breakpoints\b0  allows creating a \cf2\strike Data Breakpoint\cf3\{linkID=890\}\cf0\strike0 
+\par \b Data Breakpoints\b0  allows creating a \cf2\strike Data Breakpoint\cf3\strike0\{linkID=890\}\cf0 
 \par 
 \par \b Add Function Breakpoint\b0  allows creating a breakpoint at the beginning of a function
 \par 
@@ -1839,7 +1841,7 @@ FALSE
 \par \pard\qc\cf2\b0\fs20\{bmc wvarusage.png\}\cf0\lang1049\f1 
 \par \pard 
 \par 
-\par \lang1033\f0 On this window, type the name of the variable in the combo box.   The browse information will be used to determine where the variable is defined (shown with the green plus) and where it is used (shown with the grey box.   It is also possible to see the location where the variable is declared, which will be indicated by a yellow triangle with an exclamation point.
+\par \lang1033\f0 On this window, type the name of the variable in the combo box.   The browse information will be used to determine where the variable is defined (shown with the green plus) and where it is used (shown with the gray box).   It is also possible to see the location where the variable is declared, which will be indicated by a yellow triangle with an exclamation point.
 \par \lang1049\f1 
 \par \lang1033\f0 Clicking on a row takes one to the line of source code with the definition or usage.
 \par \lang1049\f1 
@@ -2951,7 +2953,7 @@ FALSE
 \par 
 \par \pard\ri1480\qc\cf3\{bmc wlocals.png\}\cf0 
 \par \pard\ri1480 
-\par \pard\cf4 This window is another kind of \cf2\strike Watch Window\cf3\strike0\{linkID=650\}, \cf0 the difference is it automatically selects the local (auto) variables which are currently in scope so that they don't have to be individually added to a watch window.   In a C++ member function, it will also show the this pointer.\cf4 
+\par \pard\cf4 This window is another kind of \cf2\strike Watch Window\cf3\strike0\{linkID=650\}, \cf0 the difference is that the locals window automatically selects the local (auto) variables which are currently in scope so that they don't have to be individually added to a watch window.   In a C++ member function, it will also show the this pointer.\cf4 
 \par \b 
 \par \pard\ri1480\cf0\b0 When a value is displayed, clicking on the right-hand side of the value will open a small text window.  Typing a new value then pressing ENTER will cause that value to be written to the executable's memory.
 \par 
@@ -3671,16 +3673,16 @@ FALSE
 \par \pard\fi-2800\li2800\ri1500\tx660\tx2800 In addition the following sequences have special meaning in the \cf2\strike Editor Window\cf3\strike0\{linkID=50\}\cf0 :
 \par 
 \par \pard\fi-2740\li2740\ri1500\tx2760\b ESC\b0\tab Close the find window or a code completion window
-\par \b SHIFT-CTL-#\b0\tab\tab # is a digit from 1 - 9.   Mark a position in the text
-\par \b CTL-#\b0\tab\tab # is a digit from 1 - 9.   Goto a previously marked position in the text
+\par \b SHIFT-CTL-#\b0\tab # is a digit from 1 - 9.   Mark a position in the text
+\par \b CTL-#\b0\tab # is a digit from 1 - 9.   Goto a previously marked position in the text
 \par \b CTL-C\b0\tab Copy selection to clipboard
 \par \b CTL-L\b0\tab Page Break
 \par \b CTL-R\b0\tab Redo the last undone operation
 \par \b CTL-S\b0\tab Save the file in the current edit window
-\par \b CTL-T\b0\tab Delete word at cursor
+\par \b CTL-T\b0\tab Delete word to right of cursor
 \par \b CTL-V\b0\tab Paste clipboard to cursor position.  This overwrites the selection if there is one
 \par \b CTL-X\b0\tab Copy the selection to the clipboard, and cut it from the text
-\par \b CTL-Y\b0\tab\tab Delete line cursor is on
+\par \b CTL-Y\b0\tab Delete line cursor is on
 \par \b CTL-Z\b0\tab Undo the last operation
 \par \b ALT-\{\b0\tab Navigate to beginning of block when cursor is on a '\}'\b 
 \par ALT-\}\b0\tab Navigate to end of block when cursor is on a '\{'

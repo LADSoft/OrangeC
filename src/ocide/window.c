@@ -2236,16 +2236,16 @@ static BOOL PositionNewDockRect(HWND hwnd, HWND src, RECT *r, int selected)
             switch(selected)
             {
                 case DCLIENT | DLEFT:
-                    rv = InsertDock(src, i, r, docks[i].ctl);
+                    rv = InsertDock(src, i==dockCount ? 0 : i, r, docks[i].ctl);
                     break;
                 case DCLIENT | DTOP:
-                    rv = InsertDock(src, i, r, docks[i].ctl);
+                    rv = InsertDock(src, i==dockCount ? 0 : i, r, docks[i].ctl);
                     break;
                 case DCLIENT | DRIGHT:
-                    rv = InsertDock(src, i+1, r, docks[i].ctl);
+                    rv = InsertDock(src, i==dockCount ? i : i+1, r, docks[i].ctl);
                     break;
                 case DCLIENT | DBOTTOM:
-                    rv = InsertDock(src, i+1, r, docks[i].ctl);
+                    rv = InsertDock(src, i==dockCount ? i : i+1, r, docks[i].ctl);
                     break;
             }
         }

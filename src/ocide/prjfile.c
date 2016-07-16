@@ -55,7 +55,6 @@ extern HWND hwndFrame;
 extern char szNewFileFilter[] ;
 extern char szInstallPath[];
 extern HWND prjTreeWindow;
-extern HWND hwndProject;
 extern HIMAGELIST treeIml;
 extern HTREEITEM prjSelectedItem;
 
@@ -67,6 +66,7 @@ static char *extensionMap[][2] =
     ".c", "Source Files",
     ".cpp", "Source Files",
     ".cxx", "Source Files",
+    ".cc", "Source Files",
     ".asm", "Source Files",
     ".nas", "Source Files",
     ".def", "Source Files",
@@ -245,12 +245,21 @@ static int CreateNewFileData(HWND hwnd)
     item.lParam = 0;
     ListView_InsertItem(hwndLV, &item);
     
+    memset(&item, 0, sizeof(item));
+    item.iItem = items++;
+    item.iSubItem = 0;
+    item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
+    item.iImage = IL_CPP;
+    item.pszText = "C++ Program File";
+    item.lParam = 1;
+    ListView_InsertItem(hwndLV, &item);
+
     item.iItem = items++;
     item.iSubItem = 0;
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_H;
     item.pszText = "Header File";
-    item.lParam = 6;
+    item.lParam = 7;
     ListView_InsertItem(hwndLV, &item);
     
     item.iItem = items++;
@@ -258,7 +267,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_RES;
     item.pszText = "Resource File";
-    item.lParam = 11;
+    item.lParam = 12;
     ListView_InsertItem(hwndLV, &item);
     
     item.iItem = items++;
@@ -266,7 +275,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_FILES;
     item.pszText = "Module Definition File";
-    item.lParam = 5;
+    item.lParam = 6;
     ListView_InsertItem(hwndLV, &item);
     
     item.iItem = items++;
@@ -274,7 +283,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_ASM;
     item.pszText = "Assembly Language File";
-    item.lParam = 3;
+    item.lParam = 5;
     ListView_InsertItem(hwndLV, &item);
     
     item.iItem = items++;
@@ -282,7 +291,7 @@ static int CreateNewFileData(HWND hwnd)
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
     item.iImage = IL_FILES;
     item.pszText = "Text File";
-    item.lParam = 16;
+    item.lParam = 17;
     ListView_InsertItem(hwndLV, &item);
     
     ListView_SetSelectionMark(hwndLV, 0);
@@ -440,7 +449,7 @@ void ProjectExistingFile(void)
     if (data && (data->type == PJ_PROJ || data->type == PJ_FOLDER))
     {
         OPENFILENAME ofn;
-        if (OpenFileDialog(&ofn, data->realName, hwndProject, FALSE, TRUE, szNewFileFilter,
+        if (OpenFileDialog(&ofn, data->realName, GetWindowHandle(DID_PROJWND), FALSE, TRUE, szNewFileFilter,
                                "Open existing file"))
         {
             char *path = ofn.lpstrFile;

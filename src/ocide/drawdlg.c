@@ -125,7 +125,7 @@ struct propertyFuncs dlgFuncs =
 } ;
 HANDLE ResGetHeap(PROJECTITEM *wa, struct resRes *data);
 static void CreateSingleControl(HWND hwnd, struct resRes *dlgData, CONTROL *c, BOOL activate);
-static BOOL CALLBACK RemoveWindow(HWND hwnd, LPARAM lParam);
+static BOOL CALLBACK RemoveDlgWindow(HWND hwnd, LPARAM lParam);
 static void UndoChanged(struct resRes *dlgData, CONTROL *list);
 BOOL RemoveFromStyle(EXPRESSION **style, int val);
 void AddToStyle(EXPRESSION **style, char *text, int val);
@@ -166,6 +166,47 @@ struct ctlDB
     char *label;
     struct ctlField *fields;
 } ;
+
+static SIZE GetAveCharSize(HDC dc)
+{
+   TEXTMETRIC tm;
+   char *buffer = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";    
+
+   SIZE result;
+   GetTextMetrics(dc, &tm);
+
+   GetTextExtentPoint32(dc, buffer, 52, &result);
+
+   result.cx = (result.cx/26 + 1) / 2; //div uses trunc rounding; we want arithmetic rounding
+   result.cy = tm.tmHeight;
+
+   return result;
+}
+
+static SIZE GetCheckBoxSize(HDC dc)
+{
+    
+    const int dluCheckboxSpacing = 12; //12 horizontal dlus
+    const int dluCheckboxHeight = 10; //10 vertical dlus
+
+    SIZE internal = GetAveCharSize(dc);
+    SIZE rv = { 0 , 0 };
+    rv.cx = MulDiv(dluCheckboxSpacing, internal.cx,  4); 
+    rv.cy = MulDiv(dluCheckboxSpacing, internal.cy,  8); 
+    return rv;
+}
+
+static SIZE GetTextSize(HDC dc, char *caption)
+{
+    RECT textRect = { 0,0,0,0 };
+    SIZE rv;
+    DrawText(dc, caption, -1, &textRect, DT_CALCRECT | DT_LEFT | DT_SINGLELINE);
+
+    rv.cx = textRect.right;
+    rv.cy = textRect.bottom;
+    return rv;
+}
+
 static void LoadCtlFields(struct ctlDB *dbEntry, struct xmlNode *node)
 {
     struct xmlNode *children = node->children;
@@ -687,6 +728,68 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData *data)
     }
     return rv;    
 }
+static void AdjustControlWidths(struct ctlData *data, char *text)
+{
+    int n = Eval(data->data->style);
+    int width = 0;
+    EXPRESSION *exp;
+    SIZE size;
+
+    switch(Eval(data->data->class.u.id))
+    {
+        SIZE cbsize, textsize;
+        HDC dc;
+        case CTL_BUTTON:
+            switch(n & 0xf)
+            {
+                case BS_CHECKBOX:
+                case BS_AUTOCHECKBOX:
+                case BS_3STATE:
+                case BS_AUTO3STATE:
+                case BS_RADIOBUTTON:
+                case BS_AUTORADIOBUTTON:
+                    dc = GetDC(data->hwndRedir);
+                    size = GetAveCharSize(dc);
+                    cbsize = GetCheckBoxSize(dc);
+                    textsize = GetTextSize(dc, text);
+                    width = cbsize.cx + textsize.cx;
+                    ReleaseDC(data->hwndRedir, dc);
+                    break;
+                default:
+                    return;
+            }
+            break;
+        case CTL_STATIC:
+            switch (n & 0x1f)
+            {
+                case SS_LEFT:
+                case SS_SIMPLE:
+                case SS_LEFTNOWORDWRAP:
+                    dc = GetDC(data->hwndRedir);
+                    size = GetAveCharSize(dc);
+                    textsize = GetTextSize(dc, text);
+                    width = textsize.cx;
+                    ReleaseDC(data->hwndRedir, dc);
+                    break;
+                default:
+                    return;
+            }
+            break;
+        default:
+            return;
+    }
+    width = MulDiv(width, 4, size.cx); 
+    exp = data->data->width;
+    if (width != Eval(exp))
+    {
+        UndoChanged(data->dlg, data->data);
+        ResSetDirty(data->dlg);
+        exp->left = exp->right = 0;
+        exp->rendition = 0;
+        exp->type = e_int;
+        exp->val = width;
+    }
+}
 static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
 {
     int irow = row;
@@ -812,6 +915,7 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
                         ResSetDirty(data->dlg);
                         data->data->text->symbolic = TRUE;
                         data->data->text->u.n.length = StringAsciiToWChar(&data->data->text->u.n.symbol, buf, strlen(buf));
+                        AdjustControlWidths(data, buf);
                     }
                 }
                 break;
@@ -821,7 +925,7 @@ static void CtlPropEndEdit(HWND lv, int row, HWND editWnd, struct ctlData *data)
         {
             CONTROL *c = data->data;
             struct resRes *d = data->dlg;
-            EnumChildWindows(d->gd.childWindow, RemoveWindow, (LPARAM)c);
+            EnumChildWindows(d->gd.childWindow, RemoveDlgWindow, (LPARAM)c);
             CreateSingleControl(d->gd.childWindow, d, c, FALSE);
         }
     }
@@ -935,7 +1039,7 @@ static HWND CreateDlgWindow(HWND hwnd, struct resRes * dlgData)
     }
     rv = CreateWindowEx(Eval(d->exstyle),
                            szDlgDialogClassName, buf,
-                           (Eval(d->style) | WS_CHILD | WS_VISIBLE)& ~WS_POPUP, 
+                           (Eval(d->style) | WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN) & ~WS_POPUP, 
                            r.left, r.top , r.right - r.left, r.bottom - r.top,
                            hwnd, 0, hInstance, dlgData);
     if (rv)
@@ -1196,7 +1300,7 @@ static void CleanChildSpace(HWND hwnd, HWND parent)
     cl.bottom = pt2.y+3;
     InvalidateRect(parent, &cl, TRUE);
 }
-static BOOL CALLBACK RemoveWindow(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK RemoveDlgWindow(HWND hwnd, LPARAM lParam)
 {
     CONTROL *c = (CONTROL *)lParam;
     struct ctlData *data = (struct ctlData *)GetWindowLong(hwnd, GWL_USERDATA);
@@ -1228,7 +1332,7 @@ static void DlgUndoOne(struct resRes *dlgData)
                 {
                     while (c)
                     {
-                        EnumChildWindows(dlgData->gd.childWindow, RemoveWindow, (LPARAM)c);
+                        EnumChildWindows(dlgData->gd.childWindow, RemoveDlgWindow, (LPARAM)c);
                         c = c->next;
                     }
                 }
@@ -1254,7 +1358,7 @@ static void DlgUndoOne(struct resRes *dlgData)
                 *undo->item = *undo->saved;
                 if (dlgData->gd.dlgAltMode == DA_NONE)
                 {
-                    EnumChildWindows(dlgData->gd.childWindow, RemoveWindow, (LPARAM)undo->item);
+                    EnumChildWindows(dlgData->gd.childWindow, RemoveDlgWindow, (LPARAM)undo->item);
                     CreateSingleControl(dlgData->gd.childWindow, dlgData, undo->item, FALSE);
                 }
                 else
@@ -1671,6 +1775,8 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     }
                     MoveWindow(hwnd, r.left, r.top, r.right - r.left, r.bottom-r.top, FALSE);
                 }
+                InvalidateRect(hwnd, NULL, TRUE);
+                /*
                 if (wParam)
                 {
                     data->hwndPrev = GetWindow(hwnd, GW_HWNDPREV);
@@ -1680,7 +1786,7 @@ LRESULT CALLBACK DlgControlInputProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     SetWindowPos(hwnd, data->hwndPrev, 0,0,0,0, SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE);
                 }
-                InvalidateRect(hwnd, NULL, FALSE);
+                */
             }
             return 0;
         case WM_QUERYCTLDROPTARGET:
@@ -1988,12 +2094,14 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
             AddToStyle(&c->style, "BS_AUTOCHECKBOX", BS_AUTOCHECKBOX);
             classtype = CTL_BUTTON;
-            text = "Check Box";          
+            text = "Check Box";
+            r.bottom = MulDiv(10, base.cy, 8);          
             break;
         case 3: // Radio Button
             AddToStyle(&c->style, "BS_AUTORADIOBUTTON", BS_AUTORADIOBUTTON);
             classtype = CTL_BUTTON;
-            text = "Radio Button";          
+            text = "Radio Button";
+            r.bottom = 10;          
             break;
         case 4: // Static Text
             AddToStyle(&c->style, "WS_GROUP", WS_GROUP);
@@ -2015,6 +2123,7 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
             AddToStyle(&c->style, "ES_LEFT", ES_LEFT);
             classtype = CTL_EDIT;
             text = "Edit Box";
+            r.bottom = MulDiv(14, base.cy, 8);          
             break;
         case 7: // combo box
             AddToStyle(&c->style, "WS_TABSTOP", WS_TABSTOP);
@@ -2084,6 +2193,9 @@ static void InsertNewControl(struct resRes *dlgData, int type, POINT at)
         if (r.right == 0)
         {
             r.right = 20 + strlen(text) * base.cx;
+        }
+        if (r.bottom == 0)
+        {
             r.bottom = 2 * base.cy;
         }
         
@@ -2492,22 +2604,22 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes *data)
     int v;
     switch(row)
     {
-        case 3:
         case 4:
         case 5:
         case 6:
-        case 8:
-        case 13:
+        case 7:
+        case 9:
         case 14:
         case 15:
         case 16:
+        case 17:
             rv = PropGetHWNDNumeric(lv);
             break;
         default:
             rv = PropGetHWNDText(lv);
             break;        
-        case 9:
         case 10:
+        case 11:
             rv = PropGetHWNDCombobox(lv);
             v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM)"No");
             SendMessage(rv, CB_SETITEMDATA, v, 0);
@@ -2764,7 +2876,7 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 focus.right = end.x;
                 focus.bottom = end.y;
                 DrawBoundingRect(&focus);
-                EnumChildWindows(hwnd, SelectChildren, (LPARAM)&focus);
+                 EnumChildWindows(hwnd, SelectChildren, (LPARAM)&focus);
             }
             else if (dragging)
             {
@@ -3314,7 +3426,13 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
             }
             break;
+        case WM_NCACTIVATE:
+             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+             return TRUE;
+        case WM_NCPAINT:
+             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
+            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             createStruct = (LPCREATESTRUCT)lParam;
             dlgData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
             SetWindowLong(hwnd, 0, (long)dlgData);
@@ -3465,7 +3583,7 @@ LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     return DefMDIChildProc(hwnd, iMessage, wParam, lParam);
 }
 
-void RegisterDlgDrawWindow(void)
+void RegisterDlgDrawWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
@@ -3544,7 +3662,9 @@ void CreateDlgDrawWindow(struct resRes *info)
         (LPARAM)info); 
     if (hwnd)
     {
+        SelectWindow(DID_CTLTBWND);
         SendMessage(hwndSrcTab, TABM_ADD, (WPARAM)name, (LPARAM)hwnd);
+        
         if (info->resource->changed)
             ResRewriteTitle(info, TRUE);
     }

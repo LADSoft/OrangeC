@@ -56,7 +56,7 @@ static char *filedResourceTypes[] = {
     "cursor", "font" ,"bitmap" ,"icon", "messagetable", "rcdata"
 };
 static char *sourceTypes[] = {
-    ".c", ".cpp", ".cxx", ".h", ".hpp", ".hxx", ".rc"
+    ".c", ".cpp", ".cxx", ".cc", ".h", ".hpp", ".hxx", ".rc"
 };
 
 
@@ -338,7 +338,6 @@ void CalculateProjectDepends(PROJECTITEM *pj)
                 break;
         }            
         SetBusy(0);
-        SetStatusMessage("", FALSE);
     }
 }
 void CalculateFileAutoDepends(char *fileName)

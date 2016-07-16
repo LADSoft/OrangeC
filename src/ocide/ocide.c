@@ -59,7 +59,8 @@
 #define IDT_STOPPING 2
 #define IDT_CLIENTCONTEXTMENU 3
 #define IDT_RETRIEVEFILENAMES 4
-
+#define IDT_ANIMATING 5
+ 
 #define FONTNAME "veramono.ttf"
  
 extern HWND hwndTbFind;
@@ -71,15 +72,13 @@ extern int restoredDocks;
 extern DWINFO *editWindows;
 extern char szHelpPath[]; 
 extern int making;
-extern HWND hwndProject, hwndASM, hwndThread, hwndRes;
-extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndLocals, hwndStack;
+extern HWND hwndASM;
 extern HWND hwndBookmark;
 extern DWINFO *mrulist[MAX_MRU],  *mruprojlist[MAX_MRU];
 extern HANDLE BreakpointSem;
 extern char *lines[];
 extern int curline;
 extern THREAD *activeThread, *stoppedThread;
-extern HWND hwndToolNav, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark;
 extern enum DebugState uState;
 extern PROJECTITEM *workArea;
 extern BOOL stopCCThread;
@@ -104,7 +103,7 @@ char szInstallPath[1024];
 HANDLE hMenuMain, hAccel, hwndFrame, hwndClient, hwndStatus;
 HINSTANCE hInstance;
 HANDLE editLib;
-HWND hwndSrcTab; 
+HWND hwndSrcTab, hwndJump; 
 
 unsigned int helpMsg;
 
@@ -147,12 +146,15 @@ ARGLIST ArgList[] =
 void SetStatusMessage(char *str, int highlight)
 {
     static char buf[1000];
-    buf[0] = highlight + '0';
-    strcpy(buf + 1, str);
-    if (buf[1] == 0)
-        strcpy(buf + 1, "    ");
-    SendMessage(hwndStatus, SB_SETTEXT, 0 | SBT_NOBORDERS | SBT_OWNERDRAW, (LPARAM)
-        buf);
+    if (buf[1] || str[0])
+    {
+        buf[0] = highlight + '0';
+        strcpy(buf + 1, str);
+        if (buf[1] == 0)
+            strcpy(buf + 1, "    ");
+        PostMessage(hwndStatus, SB_SETTEXT, 0 | SBT_NOBORDERS | SBT_OWNERDRAW, (LPARAM)
+            buf);
+    }
 }
 static int readytodraw = FALSE;
 void SetBusy(int state)
@@ -240,7 +242,6 @@ int IsResourceWindow(HWND hwnd)
     return (GetWindowLong(hwnd, 4) == RESSIG);
 }
 //-------------------------------------------------------------------------
-
 LRESULT CALLBACK BrowseToProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
@@ -275,8 +276,6 @@ LRESULT CALLBACK BrowseToProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     }
     return 0;
 }
-
-//-------------------------------------------------------------------------
 
 LRESULT CALLBACK WaitingProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
@@ -432,7 +431,7 @@ void LoadFirstWorkArea(void)
             if (bCmdLineProj)
             {
                 LoadProject(szNewProj);
-                dmgrHideWindow(DID_TABWND, FALSE);
+                SelectWindow(DID_PROJWND);
             }
         }
         else
@@ -485,33 +484,67 @@ static void OwnerDrawStatusBar(DRAWITEMSTRUCT *di)
 {
     int colorfg, colorbg;
     HBRUSH hbr;
+    HDC hdcMem = CreateCompatibleDC(di->hDC);
+    HBITMAP bmp = CreateCompatibleBitmap(di->hDC, di->rcItem.right - di->rcItem.left, di->rcItem.bottom - di->rcItem.top);
+    RECT r = di->rcItem;
+    HFONT font = CreateFontIndirect(&systemDialogFont);
+    OffsetRect(&r, -di->rcItem.left, - di->rcItem.top);
+    SelectObject(hdcMem, bmp);
+    SelectObject(hdcMem, font);
     /* for drawing the first section of the status window */
     if (*(char *)(di->itemData) == '1')
     {
-        colorfg = SetTextColor(di->hDC, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
-        colorbg = SetBkColor(di->hDC, RetrieveSysColor(COLOR_HIGHLIGHT));
+        colorfg = SetTextColor(hdcMem, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
+        colorbg = SetBkColor(hdcMem, RetrieveSysColor(COLOR_HIGHLIGHT));
         hbr = CreateSolidBrush(RetrieveSysColor(COLOR_HIGHLIGHT));
     }
     else
     {
-        colorfg = SetTextColor(di->hDC, RetrieveSysColor(COLOR_BTNTEXT));
-        colorbg = SetBkColor(di->hDC, RetrieveSysColor(COLOR_BTNFACE));
+        colorfg = SetTextColor(hdcMem, RetrieveSysColor(COLOR_BTNTEXT));
+        colorbg = SetBkColor(hdcMem, RetrieveSysColor(COLOR_BTNFACE));
         hbr = CreateSolidBrush(RetrieveSysColor(COLOR_BTNFACE));
     }				
-    FillRect(di->hDC, &di->rcItem, hbr);
+    FillRect(hdcMem, &r, hbr);
     
-    TextOut(di->hDC, di->rcItem.left, di->rcItem.top, (char *)(di->itemData + 1), 
+    TextOut(hdcMem, 0, 0, (char *)(di->itemData + 1), 
                 strlen((char *)di->itemData + 1));
-    SetTextColor(di->hDC, colorfg);
-    SetBkColor(di->hDC, colorbg);
-    SetTextColor(di->hDC, colorfg);
+    BitBlt(di->hDC, di->rcItem.left, di->rcItem.top, di->rcItem.right - di->rcItem.left,
+           di->rcItem.bottom - di->rcItem.top, hdcMem, 0, 0, SRCCOPY);
+    DeleteObject(font);
     DeleteObject(hbr);
+    DeleteObject(bmp);
+    DeleteDC(hdcMem);
 }
 //-------------------------------------------------------------------------
-
+void DrawBuildAnimation(HWND hwnd, int index)
+{
+    static HBITMAP bitmap;
+    RECT r;
+    HDC dc = GetDC(hwndStatus);
+    SendMessage(hwndStatus, SB_GETRECT, 1, (LPARAM) &r);
+    if (!bitmap)
+    {
+        bitmap = LoadBitmap(hInstance, "ID_BUILDANIM");
+        ChangeBitmapColor(bitmap, 0xc0c0c0, RetrieveSysColor(COLOR_BTNFACE));
+    }
+    if (index < 0)
+    {
+        FillRect(dc, &r, (HBRUSH)(COLOR_BTNFACE + 1));
+    }
+    else
+    {
+        HDC hMemDC = CreateCompatibleDC(dc);
+        SelectObject(hMemDC, bitmap);
+        BitBlt(dc, 2+r.left, 2+ r.top, 16, 16, hMemDC, 16 * index, 0, SRCCOPY);
+        DeleteObject(hMemDC);
+    } 
+    ReleaseDC(hwndStatus, dc);
+}
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
+    static int animatePos = -1;
+    static int animateTimerId;
     int maxed;
     LRESULT rv;
     static int timerid;
@@ -590,19 +623,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             {
                 HFONT font;
                 initted = TRUE;
-                CreateStackWindow();
-                CreateErrorWindow();
-                CreateInfoWindow();
-                CreateTabWindow();
-                CreatePropertyTabWindow();
-                CreateWatchWindow();
-                CreateLocalsWindow();
-                CreateMemWindow();
-                CreateThreadWindow();
-                CreateRegisterWindow();
-                CreateJumpListWindow();
-                MakeToolBar(hwnd);
+                hwndJump = CreateJumpListWindow();
+                CreateBoundingRect(hInstance, hwndFrame);
                 hwndSrcTab = CreateLsTabWindow(hwnd, TABS_HOTTRACK | TABS_FLAT | TABS_CLOSEBTN | TABS_WINDOWBTN | TABS_DRAGABLE | WS_VISIBLE);
+                CreateAllWindows();
+                MakeToolBar(hwnd);
+                ResizeLayout(0);
                 ApplyDialogFont(hwndSrcTab);
                 timerid = SetTimer(hwnd, IDT_STARTING, 100, 0);
                 SetTimer(hwnd, IDT_RETRIEVEFILENAMES, 500, 0);
@@ -676,30 +702,31 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             csx.hWindowMenu = hMenuMain;
             csx.idFirstChild = IDM_FIRSTCHILD;
              hwndStatus = CreateWindowEx(0L, "msctls_statusbar32", "",
-                WS_CHILD | WS_BORDER | WS_VISIBLE | CCS_NODIVIDER,
+                WS_CHILD | WS_BORDER | CCS_NODIVIDER | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
                     -100, -100, 10, 10,
                     hwnd, (HMENU)ID_STATUS_WINDOW, hInstance, NULL);
             GetClientRect(hwnd, &rf);
 
             hwndClient = CreateWindowEx(0, "MDICLIENT", 0, WS_CHILD +
-                WS_CLIPCHILDREN + WS_VISIBLE | MDIS_ALLCHILDSTYLES,
+                WS_CLIPCHILDREN + WS_CLIPSIBLINGS,
                 rf.left, rf.top, rf.right - rf.left, rf.bottom - rf.top, hwnd,
                 0, hInstance, &csx);
+            ShowWindow(hwndClient, SW_SHOW);
+            InitDrawUtil();
             SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM)&maxed);
             SendMessage(hwndClient, WM_MDISETMENU, (WPARAM)hMenuMain, (LPARAM)
                 GetSubMenu(hMenuMain, WindowMenuItem + maxed));
-            parts[0] = rf.right - 500;
-            parts[1] = rf.right - 420;
-            parts[2] = rf.right - 340;
-            parts[3] = rf.right - 260;
-            parts[4] = rf.right - 180;
-            parts[5] = rf.right - 100;
-            parts[6] = rf.right - 20;
-            SendMessage(hwndStatus, SB_SETPARTS, 7, (LPARAM) &parts[0]);
-             for (i=0; i < 7; i++)
+            parts[0] = rf.right - 520;
+            parts[1] = rf.right - 500;
+            parts[2] = rf.right - 420;
+            parts[3] = rf.right - 340;
+            parts[4] = rf.right - 260;
+            parts[5] = rf.right - 180;
+            parts[6] = rf.right - 100;
+            parts[7] = rf.right - 20;
+            SendMessage(hwndStatus, SB_SETPARTS, 8, (LPARAM) &parts[0]);
+             for (i=0; i < 8; i++)
                  SendMessage(hwndStatus, SB_SETTEXT, i | SBT_NOBORDERS | SBT_OWNERDRAW, (LPARAM)"   ");
-            dmgrInit(hInstance, hwnd, hwndClient, 20);
-            dmgrAddStatusBar(hwndStatus);
             break;
         case WM_HELP:
             if (GetKeyState(VK_CONTROL) &0x80000000)
@@ -762,7 +789,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 name = (char *)DialogBoxParam(hInstance, "ADDWATCHDIALOG", hwnd, 
                     (DLGPROC)WatchAddProc, 0);
                 if (name)
-                    SendMessage(hwndWatch, WM_ADDWATCH, activeThread->regs.Eip,
+                    SendToLastWatch(WM_ADDWATCH, activeThread->regs.Eip,
                         (LPARAM)name);
                 break;
             case IDM_ADDWATCHINDIRECT:
@@ -770,12 +797,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 if (IsWindow(win = (HWND)SendMessage(hwndClient,
                     WM_MDIGETACTIVE, 0, 0)) && IsEditWindow(win))
-                    SendMessage(hwndWatch, WM_ADDWATCHINDIRECT, (WPARAM)win, 0);
+                    SendToLastWatch(WM_ADDWATCHINDIRECT, (WPARAM)win, 0);
                 break;
             case IDM_DATABREAKPOINT:
                 if (uState != atBreakpoint && uState != atException)
                     break;
                 databp(NULL);
+                break;
+            case IDM_FUNCTIONBREAKPOINT:
+                functionbp();
                 break;
             case IDM_DATABREAKPOINTINDIRECT:
                 if (uState != atBreakpoint && uState != atException)
@@ -788,7 +818,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case IDM_DELETEALLWATCH:
                 if (uState != atBreakpoint && uState != atException)
                     break;
-                SendMessage(hwndWatch, iMessage, wParam, lParam);
+                SendToLastWatch(iMessage, wParam, lParam);
                 break;
                 case IDM_HBREAK:
                     hbpDialog();
@@ -818,7 +848,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                 else if (uState == notDebugging)
                 {
-                    PostMessage(hwndProject, WM_COMMAND, IDM_RUN, 0);
+                    PostDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RUN, 0);
                 }
                 else
                 {
@@ -874,25 +904,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 else
                     ApplyBreakAddress(module, linenum);
                 activeThread = stoppedThread;
-                if (hwndRegister)
-                    PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-                        activeThread->hThread);
-                PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
-                PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
-                if (hwndStack)
-                    PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
-                if (hwndThread)
-                    PostMessage(hwndThread, WM_RESTACK, (WPARAM)1, 0);
-                if (hwndMem)
-                    PostMessage(hwndMem, WM_RESTACK, 0, 0);
+                PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+                    activeThread->hThread);
+                PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
+                PostDIDMessage(DID_WATCHWND+1, WM_COMMAND, ID_SETADDRESS, 0);
+                PostDIDMessage(DID_WATCHWND+2, WM_COMMAND, ID_SETADDRESS, 0);
+                PostDIDMessage(DID_WATCHWND+3, WM_COMMAND, ID_SETADDRESS, 0);
+                PostDIDMessage(DID_LOCALSWND, WM_COMMAND, ID_SETADDRESS, 0);
+                PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
+                PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)1, 0);
+                PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
+                PostDIDMessage(DID_MEMWND+1, WM_RESTACK, 0, 0);
+                PostDIDMessage(DID_MEMWND+2, WM_RESTACK, 0, 0);
+                PostDIDMessage(DID_MEMWND+3, WM_RESTACK, 0, 0);
                 if (hwndASM)
                     SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
                                 activeThread->regs.Eip);
-                if (hwndThread)
-                    SendMessage(hwndThread, WM_RESTACK, 0, 0);
+                SendDIDMessage(DID_THREADWND, WM_RESTACK, 0, 0);
                 break;
             case IDM_RUNNODEBUG:
-                SendMessage(hwndProject, WM_COMMAND, IDM_RUNNODEBUG, 0);
+                SendDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RUNNODEBUG, 0);
                 break;
             case IDM_TOOLCUSTOM:
                 TBCustomize();
@@ -902,12 +933,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 break;
             case IDM_VIEWSTACK:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWSTACK);
-                dmgrHideWindow(DID_STACKWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_STACKWND);
+                else
+                    SelectWindow(DID_STACKWND);
                 SetMenuCheckedState(hMenuMain, DID_STACKWND, IDM_VIEWSTACK);
                 break;
             case IDM_VIEWTHREAD:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWTHREAD);
-                dmgrHideWindow(DID_THREADWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_THREADWND);
+                else
+                    SelectWindow(DID_THREADWND);
                 SetMenuCheckedState(hMenuMain, DID_THREADWND, IDM_VIEWTHREAD);
                 break;
             case IDM_VIEWASM:
@@ -937,43 +974,147 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 break;
             case IDM_VIEWMEM:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWMEM);
-                dmgrHideWindow(DID_MEMWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_MEMWND);
+                else
+                    SelectWindow(DID_MEMWND);
                 SetMenuCheckedState(hMenuMain, DID_MEMWND, IDM_VIEWMEM);
+                break;
+            case IDM_VIEWMEM2:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWMEM2);
+                if (x_state)
+                    RemoveWindow(DID_MEMWND+1);
+                else
+                    SelectWindow(DID_MEMWND+1);
+                SetMenuCheckedState(hMenuMain, DID_MEMWND+1, IDM_VIEWMEM2);
+                break;
+            case IDM_VIEWMEM3:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWMEM3);
+                if (x_state)
+                    RemoveWindow(DID_MEMWND+2);
+                else
+                    SelectWindow(DID_MEMWND+2);
+                SetMenuCheckedState(hMenuMain, DID_MEMWND+2, IDM_VIEWMEM3);
+                break;
+            case IDM_VIEWMEM4:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWMEM4);
+                if (x_state)
+                    RemoveWindow(DID_MEMWND+3);
+                else
+                    SelectWindow(DID_MEMWND+3);
+                SetMenuCheckedState(hMenuMain, DID_MEMWND+3, IDM_VIEWMEM4);
                 break;
             case IDM_VIEWREGISTER:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWREGISTER);
-                dmgrHideWindow(DID_REGWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_REGWND);
+                else
+                    SelectWindow(DID_REGWND);
                 SetMenuCheckedState(hMenuMain, DID_REGWND, IDM_VIEWREGISTER);
                 break;
             case IDM_VIEWPROJECT:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWPROJECT);
-                dmgrHideWindow(DID_TABWND, x_state);
-                SetMenuCheckedState(hMenuMain, DID_TABWND, IDM_VIEWPROJECT);
+                if (x_state)
+                    RemoveWindow(DID_PROJWND);
+                else
+                    SelectWindow(DID_PROJWND);
+                SetMenuCheckedState(hMenuMain, DID_PROJWND, IDM_VIEWPROJECT);
+                return 0;
+            case IDM_VIEWRES:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWRES);
+                if (x_state)
+                    RemoveWindow(DID_RESWND);
+                else
+                    SelectWindow(DID_RESWND);
+                SetMenuCheckedState(hMenuMain, DID_RESWND, IDM_VIEWRES);
                 return 0;
             case IDM_VIEWPROPS:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWPROPS);
-                dmgrHideWindow(DID_PROPSWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_PROPSWND);
+                else
+                    SelectWindow(DID_PROPSWND);
                 SetMenuCheckedState(hMenuMain, DID_PROPSWND, IDM_VIEWPROPS);
+                return 0;
+            case IDM_VIEWCTLTB:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWCTLTB);
+                if (x_state)
+                    RemoveWindow(DID_CTLTBWND);
+                else
+                    SelectWindow(DID_CTLTBWND);
+                SetMenuCheckedState(hMenuMain, DID_PROPSWND, IDM_VIEWCTLTB);
                 return 0;
             case IDM_VIEWWATCH:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWWATCH);
-                dmgrHideWindow(DID_WATCHWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_WATCHWND);
+                else
+                    SelectWindow(DID_WATCHWND);
                 SetMenuCheckedState(hMenuMain, DID_WATCHWND, IDM_VIEWWATCH);
+                return 0;
+            case IDM_VIEWWATCH2:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWWATCH2);
+                if (x_state)
+                    RemoveWindow(DID_WATCHWND+1);
+                else
+                    SelectWindow(DID_WATCHWND+1);
+                SetMenuCheckedState(hMenuMain, DID_WATCHWND+1, IDM_VIEWWATCH2);
+                return 0;
+            case IDM_VIEWWATCH3:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWWATCH3);
+                if (x_state)
+                    RemoveWindow(DID_WATCHWND+2);
+                else
+                    SelectWindow(DID_WATCHWND+2);
+                SetMenuCheckedState(hMenuMain, DID_WATCHWND+2, IDM_VIEWWATCH3);
+                return 0;
+            case IDM_VIEWWATCH4:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWWATCH4);
+                if (x_state)
+                    RemoveWindow(DID_WATCHWND+3);
+                else
+                    SelectWindow(DID_WATCHWND+3);
+                SetMenuCheckedState(hMenuMain, DID_WATCHWND+3, IDM_VIEWWATCH4);
                 return 0;
             case IDM_VIEWLOCALS:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWLOCALS);
-                dmgrHideWindow(DID_LOCALSWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_LOCALSWND);
+                else
+                    SelectWindow(DID_LOCALSWND);
                 SetMenuCheckedState(hMenuMain, DID_LOCALSWND, IDM_VIEWLOCALS);
+                return 0;
+            case IDM_VIEWBP:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWBP);
+                if (x_state)
+                    RemoveWindow(DID_BREAKWND);
+                else
+                    SelectWindow(DID_BREAKWND);
+                SetMenuCheckedState(hMenuMain, DID_LOCALSWND, IDM_VIEWBP);
                 return 0;
             case IDM_VIEWINFO:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWINFO);
-                dmgrHideWindow(DID_INFOWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_INFOWND);
+                else
+                    SelectWindow(DID_INFOWND);
                 SetMenuCheckedState(hMenuMain, DID_INFOWND, IDM_VIEWINFO);
                 return 0;
             case IDM_VIEWERR:
                 x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWERR);
-                dmgrHideWindow(DID_ERRWND, x_state);
+                if (x_state)
+                    RemoveWindow(DID_ERRWND);
+                else
+                    SelectWindow(DID_ERRWND);
                 SetMenuCheckedState(hMenuMain, DID_ERRWND, IDM_VIEWERR);
+                return 0;
+            case IDM_VIEWBROWSE:
+                x_state = GetMenuCheckedState(hMenuMain, IDM_VIEWBROWSE);
+                if (x_state)
+                    RemoveWindow(DID_BROWSEWND);
+                else
+                    SelectWindow(DID_BROWSEWND);
+                SetMenuCheckedState(hMenuMain, DID_BROWSEWND, IDM_VIEWBROWSE);
                 return 0;
             case IDM_ABOUT:
                 doAbout();
@@ -995,9 +1136,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 }
                  return 0;
             case IDM_CLOSEALLWINDOWS:
+                CloseAllResourceWindows();
                 if (QuerySaveAll() != IDCANCEL)
                     CloseAll();
-                CloseAllResourceWindows();
                 return 0;
             case IDM_EXIT:
                 if (SendMessage(hwnd, WM_QUERYENDSESSION, 0, 0))
@@ -1013,12 +1154,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SendMessage(hwndClient, WM_MDITILE, MDITILE_VERTICAL, 0);
                 return 0;
             case IDM_ARRANGE:
-                SendMessage(hwndClient, WM_MDIICONARRANGE, 0, 0);
+                PostMessage(hwndClient, WM_MDIICONARRANGE, 0, 0);
                 return 0;
             case IDM_NEWPROJECT:
             case IDM_EXISTINGPROJECT:
             case IDM_NEWWS:
-                dmgrHideWindow(DID_TABWND, FALSE);
+                SelectWindow(DID_PROJWND);
             case IDM_OPENWS:
             case IDM_CLOSEWS:
             case IDM_SAVEWS:
@@ -1033,7 +1174,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     }
                     abortDebug();
                 }
-                SendMessage(hwndProject, iMessage, wParam, lParam);
+                SendDIDMessage(DID_PROJWND, iMessage, wParam, lParam);
                 break;
             case IDM_GENERALPROPERTIES:
                 ShowGeneralProperties();
@@ -1077,10 +1218,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
                 // fall through
             case IDM_STOPBUILD:
-                if (hwndProject)
-                {
-                    PostMessage(hwndProject, WM_COMMAND, wParam, lParam);
-                }
+                PostDIDMessage(DID_PROJWND, WM_COMMAND, wParam, lParam);
                 return 0;
             case IDM_FINDINFILES:
                 OpenFindInFilesDialog();
@@ -1115,18 +1253,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         }
                     }
                 break;
-            case IDM_BROWSE:
+            case IDM_BROWSETODECLARATION:
+            case IDM_BROWSETODEFINITION:
                 if (IsWindow(win = (HWND)SendMessage(hwndClient,
                     WM_MDIGETACTIVE, 0, 0)) && IsEditWindow(win))
                 {
-                    BrowseTo(win, 0);
+                    BrowseTo(win, 0, (LOWORD(wParam) == IDM_BROWSETODECLARATION));
                 }
                 break;
             case IDM_BROWSETO:
                 browseToText[0] = 0;
                 if (DialogBoxParam(hInstance, "BROWSETODIALOG", hwnd, (DLGPROC)
                     BrowseToProc, 0))
-                    BrowseTo(0, browseToText);
+                    BrowseTo(0, browseToText, FALSE);
                 break;
             case IDM_BROWSEBACK:
                 BrowseBack();
@@ -1137,6 +1276,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 databpRemove();
                 SendMessage(hwnd, WM_REDRAWTOOLBAR, 0, 0);
                 break;
+            case IDM_DISABLEALLBREAKPOINTS:
+            {
+                BOOL state = TagAnyDisabledBreakpoints() || hbpAnyDisabledBreakpoints() || databpAnyDisabledBreakpoints();
+                TagEnableAllBreakpoints(state);
+                hbpEnableAllBreakpoints(state);
+                databpEnableAllBreakpoints(state);
+                PostDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
+                break;
+            }
             case IDM_REMOVEBOOKMARKS:
                 if (ExtendedMessageBox("Debugger", MB_YESNO, 
                     "Do you want to remove all bookmarks?") == IDYES)
@@ -1160,16 +1308,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 ShowWindowList();
                 break;
             case IDM_DOSWINDOW:
-                SendMessage(hwndProject, WM_COMMAND, IDM_DOSWINDOW, 0);
+                SendDIDMessage(DID_PROJWND, WM_COMMAND, IDM_DOSWINDOW, 0);
                 break;
             case IDM_MAKEWINDOW:
-                SendMessage(hwndProject, WM_COMMAND, IDM_MAKEWINDOW, 0);
+                SendDIDMessage(DID_PROJWND, WM_COMMAND, IDM_MAKEWINDOW, 0);
                 break;
             case IDM_EDITEXTERNALTOOLS:
                 EditExternalTools();
                 break;
             case IDM_NEWRESOURCE:
-                return SendMessage(hwndRes, iMessage, wParam, lParam);
+                return SendDIDMessage(DID_RESWND, iMessage, wParam, lParam);
             case IDM_CLOSEFIND:
             {
                 HWND x = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
@@ -1258,9 +1406,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     }
                     else if (!IsEditWindow(win2))
                     {
-                        win2 = GetParent(win2);
-                        if (win2 != hwnd)
-                            PostMessage(win2, WM_COMMAND, wParam, lParam);
+//                        win2 = GetParent(win2);
+//                        if (win2 != hwnd)
+                            PostMessage(win, WM_COMMAND, wParam, lParam);
                     }
                     else
                     {
@@ -1327,37 +1475,62 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 rf.bottom = HIWORD(lParam);
                 GetWindowRect(hwndStatus, &rs);
                 rf.top = rf.bottom - rs.bottom + rs.top;
-                MoveWindow(hwndStatus, rf.left, rf.top, rf.right - rf.left,
-                    rf.bottom - rf.top, 1);
-                parts[0] = rf.right - 500;
-                parts[1] = rf.right - 420;
-                parts[2] = rf.right - 340;
-                parts[3] = rf.right - 260;
-                parts[4] = rf.right - 180;
-                parts[5] = rf.right - 100;
-                parts[6] = rf.right - 20;
-                SendMessage(hwndStatus, SB_SETPARTS, 7, (LPARAM) &parts[0]);
-                SendMessage(hwndStatus, SB_SETTEXT, 0 | SBT_NOBORDERS  | SBT_OWNERDRAW, (LPARAM)
-                    "    ");
+                SetWindowPos(hwndStatus, NULL, rf.left, rf.top, rf.right - rf.left,
+                    rf.bottom - rf.top, SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
+                parts[0] = rf.right - 520;
+                parts[1] = rf.right - 500;
+                parts[2] = rf.right - 420;
+                parts[3] = rf.right - 340;
+                parts[4] = rf.right - 260;
+                parts[5] = rf.right - 180;
+                parts[6] = rf.right - 100;
+                parts[7] = rf.right - 20;
+                SendMessage(hwndStatus, SB_SETPARTS, 8, (LPARAM) &parts[0]);
+                SetStatusMessage("", FALSE);
     
-                rv = 0; //DefFrameProc(hwnd, hwndClient, iMessage, wParam, lParam);
-                dmgrSizeFrame();
+                rv = 0;
+                rf.top = 0;
+                ResizeLayout(&rf);
                 return rv;
             }
             break;
+        case WM_BUILDANIMATE:
+            if (wParam)
+            {
+                if (animatePos < 0)
+                {
+                    animateTimerId = SetTimer(hwnd, IDT_ANIMATING, 500, NULL);
+               }
+            }
+            else
+            {
+                if (animatePos >= 0)
+                {
+                    KillTimer(hwnd, animateTimerId);
+                    animatePos = -1;
+                    DrawBuildAnimation(hwnd, animatePos);
+                }
+            }
+            break;
         case WM_TIMER:
-            if (wParam == IDT_STARTING)
+            if (wParam == IDT_ANIMATING)
+            {
+                DrawBuildAnimation(hwnd, ++animatePos);
+                if (animatePos >= 4)
+                    animatePos = 0;
+            }
+            else if (wParam == IDT_STARTING)
             {
                 // i don't know if this one is necessary
                 KillTimer(hwnd, timerid);
                 CreateMenuBitmaps();
                 InsertBitmapsInMenu(hMenuMain);
-                LoadFirstWorkArea();
-                if (!restoredDocks)
+//              if (!restoredDocks)
                 {
                     CreateDocks();
                     SendMessage(hwnd, WM_REDRAWTOOLBAR, 0, 0);
                 }
+                LoadFirstWorkArea();
             } 
             else if (wParam == IDT_CLIENTCONTEXTMENU)
             {
@@ -1414,40 +1587,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 KillTimer(hwnd, timerid);
             break;
         case WM_HIDEDEBUGWINDOWS:
-            if (wParam)
-            {
-                int old = workArea->dbgview;
-                workArea->dbgview = 0;
-                if (hwndASM)
-                    PostMessage(hwnd, WM_COMMAND, IDM_VIEWASM, 0);
-                workArea->dbgview |= dmgrHideWindow(DID_WATCHWND, TRUE) <<
-                    DID_WATCHWND;
-                workArea->dbgview |= dmgrHideWindow(DID_LOCALSWND, TRUE) <<
-                    DID_LOCALSWND;
-                workArea->dbgview |= dmgrHideWindow(DID_MEMWND, TRUE) << DID_MEMWND;
-                workArea->dbgview |= dmgrHideWindow(DID_STACKWND, TRUE) <<
-                    DID_STACKWND;
-                workArea->dbgview |= dmgrHideWindow(DID_THREADWND, TRUE) <<
-                    DID_THREADWND;
-                workArea->dbgview |= dmgrHideWindow(DID_REGWND, TRUE) << DID_REGWND;
-                if (old != workArea->dbgview)
-                    workArea->changed = TRUE;
-            }
-            else
-            {
-                if (workArea->dbgview &(1 << DID_WATCHWND))
-                    dmgrHideWindow(DID_WATCHWND, 0);
-                if (workArea->dbgview &(1 << DID_LOCALSWND))
-                    dmgrHideWindow(DID_LOCALSWND, 0);
-                if (workArea->dbgview &(1 << DID_MEMWND))
-                    dmgrHideWindow(DID_MEMWND, 0);
-                if (workArea->dbgview &(1 << DID_STACKWND))
-                    dmgrHideWindow(DID_STACKWND, 0);
-                if (workArea->dbgview &(1 << DID_THREADWND))
-                    dmgrHideWindow(DID_THREADWND, 0);
-                if (workArea->dbgview &(1 << DID_REGWND))
-                    dmgrHideWindow(DID_REGWND, 0);
-            }
+            SelectDebugWindows(!wParam);
             break;
         case WM_CLOSE:
 			stopCCThread = TRUE;
@@ -1481,13 +1621,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             MRUToProfile(1);
             MRDToProfile();
             ExternalToolsToProfile();
-            SaveDocksToRegistry();
-            SendMessage(hwndProject, WM_COMMAND, IDM_SAVEWS, 0);
-            dmgrSetRundown();
+            SendDIDMessage(DID_PROJWND, WM_COMMAND, IDM_SAVEWS, 0);
             CloseAll();
-            if (hwndProject)
             // MUST be after files are saved for tags to be updated
-                DestroyWindow(hwndProject);
+            DestroyWindow(GetWindowHandle(DID_PROJWND));
             break;
         default:
             break;
@@ -1598,6 +1735,16 @@ void ProcessMessage(MSG *msg)
     HookMouseMovement(msg);
     if (!IsBusyMessage(msg))
     {
+        switch(msg->message)
+        {
+            case WM_LBUTTONDOWN:
+            case WM_RBUTTONDOWN:
+            case WM_MBUTTONDOWN:
+            case WM_KEYDOWN:
+            case WM_VSCROLL: // for thumb tracking
+                SetStatusMessage("", FALSE);
+                break;
+        } 
         if (ignoreAccel || !TranslateMDISysAccel(hwndClient, msg))
         {
             if (ignoreAccel || !TranslateAccelerator(hwndFrame, hAccel, msg))
@@ -1619,8 +1766,8 @@ void ProcessMessage(MSG *msg)
                         case WM_RBUTTONDOWN:
                         case WM_MBUTTONDOWN:
                         case WM_KEYDOWN:
+                        case WM_VSCROLL: // for thumb tracking
                             PropsWndClearEditBox(msg);
-                            PostMessage(hwndStatus, SB_SETTEXT, 0 | SBT_NOBORDERS | SBT_OWNERDRAW, (LPARAM)"    ");
                             break;
                     } 
                     TranslateMessage(msg);
@@ -1727,7 +1874,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
                  ICC_TAB_CLASSES | ICC_TREEVIEW_CLASSES;
     InitCommonControlsEx(&ccEx);
     helpMsg = RegisterWindowMessage("commdlg_help");
-    editLib = LoadLibrary("riched32.dll"); /* Version 1.0 */
+    editLib = LoadLibrary("riched20.dll"); /* Version 2.0 */
     //   if (!FindWindow(szFrameClassName,0)) {
     {
         WNDCLASS wc;
@@ -1744,43 +1891,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
         wc.lpszClassName = szFrameClassName;
         RegisterClass(&wc);
 
-        RegisterXeditWindow();
-        RegisterextTreeWindow();
-        RegisterControlWindow(hInstance);
-        RegisterFrameWindow(hInstance);
-        RegisterToolBarWindow(hInstance);
-        RegisterGripWindow(hInstance);
-        RegisterContainerWindow(hInstance);
-        RegisterBlankWindow(hInstance);
-        RegisterLsTabWindow(hInstance);
-        RegisterTTIPWindow(hInstance);
-        RegisterHistoryComboWindow();
-        RegisterPropWindows(hInstance);
-
-        RegisterDrawWindow();
-        RegisterProjectWindow();
-        RegisterResourceWindow();
-        RegisterErrorWindow();
-        RegisterInfoWindow();
-        RegisterASMWindow();
-        RegisterStackWindow();
-        RegisterThreadWindow();
-        RegisterRegisterWindow();
-        RegisterMemWindow();
-        RegisterTabWindow();
-        RegisterPropertyTabWindow();
-        RegisterPropsWindow();
-        RegisterCtlTbWindow();
-        RegisterWatchWindow();
-        RegisterLocalsWindow();
-        RegisterJumpListWindow();
-        RegisterDlgDrawWindow();
-        RegisterAcceleratorDrawWindow();
-        RegisterImageDrawWindow();
-        RegisterMenuDrawWindow();
-        RegisterVersionDrawWindow();
-        RegisterStringTableDrawWindow();
-        RegisterRCDataDrawWindow();
+        RegisterAllWindows();
     }
     
     GetSystemDialogFont();
@@ -1791,16 +1902,18 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     WindowItemCount = GetMenuItemCount(hsub);
     hAccel = LoadAccelerators(hInstance, "MAINACCELERATORS");
 
-    if (!RestorePlacementFromRegistry(&wp))
+//    if (!RestorePlacementFromRegistry(&wp))
     {
         wp.rcNormalPosition.left = wp.rcNormalPosition.right = CW_USEDEFAULT;
         wp.rcNormalPosition.top = wp.rcNormalPosition.bottom = CW_USEDEFAULT;
     }
+    /*
     else
     {
         wp.rcNormalPosition.right -= wp.rcNormalPosition.left;
         wp.rcNormalPosition.bottom -= wp.rcNormalPosition.top;
     }
+    */
     hwndFrame = CreateWindowEx(0, szFrameClassName, "Orange C IDE",
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         wp.rcNormalPosition.left, wp.rcNormalPosition.top,

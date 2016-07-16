@@ -1,12 +1,13 @@
 <OCRULE>
     <PROPGROUP VERSION="10" CLASS="FILE" NAME="Compiler Settings" ORDER="10">
     	<COMMAND>
+
    			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
 	    			"$$(LSINSTALLBIN)\occ.exe" -! "@&amp;&amp;|
 $$(CFLAGS) "-o%.o" $$(UNICODE) 
 "/I$$(INCLUDE)"
 $$(DEFINE)
-"%.c" 
+"%.c%.cc%.cpp%.cxx" 
 |"
 			</ITEM>
    			<ITEM NAME="Code Completion" ID="__CODE_COMPLETION" TYPE="TEXT">
@@ -15,11 +16,11 @@ $$(CFLAGS) -! "-o$(__CODE_COMPLETION_FILE)" $$(UNICODE)
 /P$(__CODE_COMPLETION_PIPE)
 "/I$$(INCLUDE)"
 $$(DEFINE)
-"%.c" 
+"%.c%.cc%.cpp%.cxx" 
 |"           
             </ITEM>
 			<ITEM NAME="Source Extension" ID="__SOURCE_EXTENSION" TYPE="TEXT">
-				%.c
+				%.c %.cpp %.cxx %.cc
 			</ITEM>
 			<ITEM NAME="Target Extension" ID="__TARGET_EXTENSION" TYPE="TEXT">
 				%.o
@@ -89,7 +90,7 @@ $$(DEFINE)
 			<ITEM CLASS="File" NAME="Output File" TYPE="TEXT" ID="OUTPUTFILE">
 				$(OUTPUTDIR)\$(OUTPUTNAME)$(OUTPUTEXT)
 			</ITEM>
-			<ITEM NAME="Compatibility" TYPE="COMBO" ID="__C99" DEFAULT="/9">
+			<ITEM NAME="Compatibility" TYPE="COMBO" EXT="%.c" ID="__C99" DEFAULT="/9">
 				<SETTING NAME="C89" VALUE=""/>
 				<SETTING NAME="C99" VALUE="/9"/>
 				<SETTING NAME="C11" VALUE="/1"/>
@@ -98,7 +99,7 @@ $$(DEFINE)
 				<SETTING NAME="No" VALUE=""/>
 				<SETTING NAME="Yes" VALUE="/A"/>
 			</ITEM>
-			<ITEM NAME="Show Warnings" TYPE="COMBO" ID="__WARNINGS" DEFAULT=" /E-100">
+			<ITEM NAME="Show Warnings" TYPE="COMBO" ID="__WARNINGS" DEFAULT=" /E100">
 				<SETTING NAME="No" VALUE="/E-100"/>
 				<SETTING NAME="Yes" VALUE="/E100"/>
 				<SETTING NAME="Extended" VALUE="/E+100"/>

@@ -40,8 +40,9 @@
 
 
 #include "idewinconst.h"
-#include "lsctrl.h"
 #include "progress.h"
+#include "ctl.h"
+#include "codecomp.h"
 
 #define BEGINTHREAD_FUNC void (*)(void *)
 #define BROWSE_VERSION 2
@@ -57,29 +58,35 @@
 
 #define HBREAK 
 
-#define CONTROL_FONT "Bitstream Vera Sans Mono"
+#define CONTROL_FONT "Courier New"
 #define CONTROL_FONT_BASIC_SIZE 14
 
-#define DID_TABWND 1
-#define DID_WATCHWND 2
-#define DID_INFOWND 3
-//#define DID_ASMWND 4  keep reserved for compatibility with older projects
-#define DID_MEMWND 5
-#define DID_STACKWND 6
-#define DID_THREADWND 7
-#define DID_BPWND 8
-#define DID_REGWND 9
-#define DID_PROPSWND 10
-#define DID_LOCALSWND 11
-#define DID_ERRWND 12
+#define MAX_HANDLES 42
 
-#define DID_EDITTOOL 20
-#define DID_BUILDTOOL 21
-#define DID_DEBUGTOOL 22
-#define DID_NAVTOOL 23
-#define DID_BOOKMARKTOOL 24
-#define DID_THREADSTOOL 25
-#define DID_BUILDTYPETOOL 26
+#define DID_PROJWND 1
+#define DID_RESWND 2
+#define DID_PROPSWND 3
+#define DID_CTLTBWND 4
+#define DID_ERRWND 5
+#define DID_INFOWND 6
+#define DID_FINDWND 7
+#define DID_STACKWND 9
+#define DID_THREADWND 10
+#define DID_BREAKWND 11
+#define DID_REGWND 12
+#define DID_LOCALSWND 13
+#define DID_MEMWND 14   /* through 17 */
+#define DID_WATCHWND 18 /* through 21 */
+#define DID_BROWSEWND 22
+//#define DID_ASMWND 4  keep reserved for compatibility with older projects
+
+#define DID_EDITTOOL 32
+#define DID_BUILDTOOL 33
+#define DID_DEBUGTOOL 34
+#define DID_NAVTOOL 35
+#define DID_BOOKMARKTOOL 36
+#define DID_THREADSTOOL 37
+#define DID_BUILDTYPETOOL 38
 
 #define IML_BP 0
 #define IML_CONTINUATION 1
@@ -90,14 +97,16 @@
 #define IML_FIF1 6
 #define IML_FIF2 7
 #define IML_BLANK 8
-#define ILEDIT_IMAGECOUNT 9
+#define IML_DISABLEDBP 9
+#define ILEDIT_IMAGECOUNT 10
 
 #define TAG_BP 0
 #define TAG_FIF1 1
 #define TAG_FIF2 2
 #define TAG_BOOKMARK 3
 #define TAG_BPGRAYED 4 /* no tags gathered here, this is just a return value */
-#define TAG_MAX 5
+#define TAG_DISABLEDBP 5 /* ditto */
+#define TAG_MAX 6
 
 #define TAGM_SAVEFILE 0
 #define TAGM_DISCARDFILE 1
@@ -113,8 +122,6 @@
 #define ERR_NO_WINDOW -1
 #define ERR_BUILD_WINDOW 0
 #define ERR_DEBUG_WINDOW 1
-#define ERR_FIND1_WINDOW 2
-#define ERR_FIND2_WINDOW 3
 
 #define LANGUAGE_NONE 0
 #define LANGUAGE_C 1
@@ -195,6 +202,7 @@ typedef struct _setting
 	HTREEITEM hTreeItem;
 	HWND hWnd;
 	char *displayName;
+    char *ext;
 	char *select;
 	char *cls;
 	char *id;
@@ -264,7 +272,6 @@ typedef struct _projectItem
 	BOOL loaded;
     BOOL visited;
     BOOL clean;
-	DWORD dbgview;
 } PROJECTITEM;
 
 typedef struct _projectItemList
@@ -294,6 +301,7 @@ typedef struct _bkpt
     BOOL active;
     int linenum;
     char module[256];
+    char name[256];
     void *extra; // to be defined later
 } BREAKPOINT;
 
@@ -327,6 +335,12 @@ typedef struct dbg_info
     DWORD loadbase;
 } DEBUG_INFO;
 
+typedef struct function_list
+{
+    struct function_list *next;
+    char name[256];
+    int address;
+} FUNCTIONLIST;
 typedef struct dll_info
 {
     struct dll_info *next;
@@ -379,6 +393,8 @@ typedef struct varinfo
     int outofscopereg: 1;
     int constant: 1;
     int pointer: 1;
+    int lref:1;
+    int rref:1;
     int enumx: 1;
     int structure: 1;
     int unionx: 1;
@@ -420,6 +436,7 @@ struct tag
     int fileLineno;
     int charpos;
     int enabled;
+    int disable;
     void *extra;
 };
 
@@ -539,7 +556,9 @@ typedef struct _editData{
 	HWND self ;
     HWND tooltip;
     struct _editData *popupDerivedFrom;
+    int marks[10];
 	int id ;
+    int insertcursorcolumn;
     int selstartcharpos;
     int selendcharpos;
     int textshowncharpos;
@@ -559,6 +578,46 @@ typedef struct _edlist_
 	EDITDATA *data;
 } EDLIST;
 
+#define C_BACKGROUND 0
+#define C_READONLYBACKGROUND 1
+#define C_TEXT 2
+#define C_HIGHLIGHT 3
+#define C_KEYWORD 4
+#define C_COMMENT 5
+#define C_NUMBER 6
+#define C_STRING 7
+#define C_ESCAPE 8
+#define C_DEFINE 9
+#define C_FUNCTION 10
+#define C_PARAMETER 11
+#define C_TYPEDEF 12
+#define C_TAG 13
+#define C_AUTO 14
+#define C_LOCALSTATIC 15
+#define C_STATIC 16
+#define C_GLOBAL 17
+#define C_EXTERNAL 18
+#define C_LABEL 19
+#define C_MEMBER 20
+#define C_SYS_WINDOWBACKGROUND 31
+// The KEYLIST structure holds information about text which should be
+// colorized.  It gives the name of a keyword (e.g. 'int') and the color
+// to display it in.
+
+typedef struct
+{
+    char *text;
+    unsigned char Color;
+//    COLORREF *color;
+} KEYLIST;
+
+    typedef struct cinfo
+    {
+        EDITDATA *ed;
+        HWND wnd;
+        int creation;
+    } CINFO;
+    
 typedef struct dwinfo
 {
     struct dwinfo *prev, *next;
@@ -584,11 +643,22 @@ typedef struct dwinfo
     int active : 1;
 } DWINFO;
 
+typedef struct hdwebkpt
+{
+    char name[256];
+    DWORD address;
+    BYTE mode;
+    BYTE size;
+    BOOL active;
+	BOOL disable;
+} HDWEBKPT;
+
 typedef struct _databreak_
 {
 	struct _databreak_ *next;
 	char name[256];
 	BOOL active;
+    BOOL disable;
 	DWORD address;
 	DWORD size;
 } DATABREAK;
@@ -627,7 +697,8 @@ typedef struct s_FileBrowse
 #define F_M_ALLPROJECTS 3
 #define F_M_INCLUDEDIR 4
 #define F_M_SPECIFIEDPATH 5
-#define F_M_MAX 6
+#define F_M_SELECTION 6
+#define F_M_MAX 7
 
 // find dialog
 typedef struct {
@@ -659,7 +730,6 @@ struct _propsData
     PROJECTITEM *saveTo;
 };
 
-
 #define MAKEHASH_MAX 32
 typedef struct hashTable
 {
@@ -668,9 +738,28 @@ typedef struct hashTable
     NameValuePair *pairs[MAKEHASH_MAX];
 } HashTable;
 
+typedef struct
+{
+    int ctl;
+    HWND hwnd;
+    RECT r;
+    RECT hr;
+    RECT display;
+} DOCK_STR;
+
+typedef struct _browselist
+{
+    struct _browselist *next;
+    char name[512];
+    char file[MAX_PATH];
+    int line;
+    int id;
+    int definition:1;
+    int declaration:1;
+} BROWSELIST;
+
 #include "rc.h"
 #include "xml.h"
-#include "lstab.h"
 #include "ocide.p"
 
 #ifndef LVN_BEGINSCROLL
@@ -705,6 +794,7 @@ typedef struct tagNMLVSCROLL
 
 #ifdef OPENWATCOM
 #define LWA_COLORKEY 1
+#define LWA_ALPHA 2
 #define WS_EX_LAYERED 0x80000
 #define WS_EX_NOACTIVATE 0x8000000
 #define WM_NCMOUSEHOVER 0x2a0

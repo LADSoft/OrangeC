@@ -116,7 +116,7 @@ DWORD GetMainAddress(DEBUG_INFO *dbg)
         rv = GetSymbolAddress(dbg, "DllMain");
     return rv;
 }
-static DEBUG_INFO *findDebug(int Address)
+DEBUG_INFO *findDebug(int Address)
 {
     DEBUG_INFO *dbg = activeProcess->dbg_info;
     DLL_INFO *dll = activeProcess->dll_info;
@@ -251,15 +251,43 @@ int GetBreakpointNearestLine(char *module, int linenum, int inmodule)
     return -1;
 }
 
-static void unmanglename(char *buf)
+void unmanglename(char *buf)
 {
-    char internal[512];
-    strcpy(internal, buf);
-    if (internal[0] == '_')
-        strcpy(buf, internal + 1);
+    char internal[4096];
+    unmangle(internal, buf);
+    internal[40] = 0;
+    strcpy(buf, internal);
+    
 }
 
-int FindFunctionName(char *buf, int Address)
+FUNCTIONLIST *GetFunctionList(DEBUG_INFO *dbg_info, SCOPE *scope, char *name)
+{
+    FUNCTIONLIST *rv = NULL, *scan;
+    if (!strrchr(name+1, '@'))
+    {
+        DEBUG_INFO *inf;
+        int address, type;
+        if (FindSymbol(&inf, scope, name+1,  &address, &type))
+        {
+            FUNCTIONLIST *next = calloc(sizeof(FUNCTIONLIST), 1);
+            next->next = rv ;
+            rv = next;
+            strcpy(next->name, name+1);
+            next->address = address;
+        }
+        rv = LookupCPPNames(dbg_info, name +1, rv);
+    }
+    rv = LookupCPPNames(dbg_info, name, rv);
+    
+    scan = rv;
+    while (scan)
+    {
+        unmanglename(scan->name);
+        scan = scan->next;
+    }
+    return rv;
+}
+int FindFunctionName(char *buf, int Address, DEBUG_INFO **dbg_out, int *type)
 {
     DEBUG_INFO *dbg;
     int offset;
@@ -271,11 +299,13 @@ int FindFunctionName(char *buf, int Address)
     if (!dbg)
         return 0;
     Address = Address - dbg->loadbase + dbg->linkbase;
-    rv = GetGlobalName(dbg, buf, NULL, Address, FALSE);
+    rv = GetGlobalName(dbg, buf, type, Address, FALSE);
     if (rv)
     {
         unmanglename(buf);
     }
+    if (dbg_out)
+        *dbg_out = dbg;
     return rv;
 }
 //-------------------------------------------------------------------------
@@ -601,6 +631,12 @@ int DeclType(DEBUG_INFO *dbg_info, VARINFO *v)
     }
     switch(qual = GetTypeQualifier(dbg_info, v->type))
     {
+        case eLRef:
+            v->lref = TRUE;
+            return GetPointerInfo(dbg_info, v);
+        case eRRef:
+            v->rref = TRUE;
+            return GetPointerInfo(dbg_info, v);
         case ePointer:
         case eFunction:
             return GetPointerInfo(dbg_info, v);

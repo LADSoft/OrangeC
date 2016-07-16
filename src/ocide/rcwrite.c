@@ -1351,16 +1351,10 @@ static void WriteRes(FILE *outputFile, char *rel, RESOURCE *res)
                 WriteIcon(outputFile, rel, res);
                 break;
             case RESTYPE_MENU:
-                WriteMenu(outputFile, res, FALSE);
-                break;
-            case RESTYPE_MENUEX:
-                WriteMenu(outputFile, res, TRUE);
+                WriteMenu(outputFile, res, res->extended);
                 break;
             case RESTYPE_DIALOG:
-                WriteDialog(outputFile, res, FALSE);
-                break;
-            case RESTYPE_DIALOGEX:
-                WriteDialog(outputFile, res, TRUE);
+                WriteDialog(outputFile, res, res->extended);
                 break;
             case RESTYPE_STRING:
                 WriteString(outputFile, res);
@@ -1449,11 +1443,9 @@ static void MarkNewDefinitions(RESOURCE_DATA *select)
                 MarkStringDefinitions(select, res->u.stringtable);
                 break;
             case RESTYPE_DIALOG:
-            case RESTYPE_DIALOGEX:
                 MarkControlDefinitions(select, res->u.dialog);
                 break;
             case RESTYPE_MENU:
-            case RESTYPE_MENUEX:
                 MarkMenuDefinitions(select, res->u.menu->items);
                 break;
             default:

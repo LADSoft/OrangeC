@@ -45,7 +45,6 @@
 #include <process.h>
 #include "helpid.h"
 #include "header.h"
-#include "codecomp.h"
 #include "regexp.h"
 #include "rc.h"
 #include "rcgui.h"
@@ -56,12 +55,35 @@ extern PROJECTITEM *workArea;
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
 extern HANDLE ewSem;
+extern LOGFONT systemDialogFont;
+extern HWND hwndClient, hwndFrame;
 
 struct saveData
 {
     BOOL asProject;
     void *data;
 } ;
+static HBITMAP closenrml, closepress;
+
+void InitDrawUtil(void)
+{
+    RECT r;
+    HDC dc = GetWindowDC(hwndFrame);
+    HDC memDC = CreateCompatibleDC(dc);
+    HBITMAP hbmp = CreateCompatibleBitmap(dc, 20,20);
+
+    r.left = r.top = 0;
+    r.right = r.bottom = 20;
+    SelectObject(memDC, hbmp);
+    DrawFrameControl(memDC, &r, DFC_CAPTION, DFCS_CAPTIONCLOSE | DFCS_FLAT);
+    closenrml = SelectObject(memDC, hbmp);
+    hbmp = CreateCompatibleBitmap(dc, 20,20);
+    DrawFrameControl(memDC, &r, DFC_CAPTION, DFCS_CAPTIONCLOSE | DFCS_FLAT | DFCS_PUSHED);
+    closepress = SelectObject(memDC, hbmp);
+//    DeleteObject(hbmp);
+    DeleteDC(memDC);
+    ReleaseDC(hwndClient, dc);
+}
 int FileAttributes(char *name)
 {
     int rv = GetFileAttributes(name);
@@ -675,3 +697,100 @@ int QuerySaveAll(void)
     return DialogBox(hInstance, "DLG_FILESAVE", hwndFrame, (DLGPROC)FileSaveProc);
 }
 
+int PaintMDITitleBar(HWND hwnd, int iMessage, WPARAM wParam, LPARAM lParam)
+{
+#define WM_GETTITLEBARINFOEX 0x33f
+    typedef struct tagTITLEBARINFOEX {
+      DWORD cbSize;
+      RECT  rcTitleBar;
+      DWORD rgstate[CCHILDREN_TITLEBAR+1];
+      RECT  rgrect[CCHILDREN_TITLEBAR+1];
+    } TITLEBARINFOEX, *PTITLEBARINFOEX, *LPTITLEBARINFOEX;
+    TITLEBARINFOEX tbi;
+    char buf[256];
+    SIZE sz;
+    int rv = 0;
+    HDC hdc;
+    RECT r, rclient;
+    POINT pt;
+    int n;
+    HBRUSH brush = GetStockObject(NULL_BRUSH);
+    HPEN pen = CreatePen(PS_SOLID, 0, GetSysColor(COLOR_BTNSHADOW));
+    HPEN pen2 = CreatePen(PS_SOLID, 0, GetSysColor((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd ? COLOR_GRADIENTACTIVECAPTION : COLOR_GRADIENTINACTIVECAPTION));
+    HPEN pen3;
+    HDC hdcMem, hdcDraw;
+    HBITMAP bitmap;
+    HFONT xfont;
+    n = systemDialogFont.lfHeight;
+    systemDialogFont.lfHeight = -16; 
+    xfont = CreateFontIndirect(&systemDialogFont);
+    systemDialogFont.lfHeight = n;
+    hdc = GetWindowDC(hwnd);
+    memset(&tbi, 0, sizeof(tbi));
+    tbi.cbSize = sizeof(tbi);
+    SendMessage(hwnd, WM_GETTITLEBARINFOEX, 0, (LPARAM)&tbi);
+    MapWindowPoints(HWND_DESKTOP, hwnd, (LPPOINT)&tbi.rgrect[5], 2);
+    pt.x = pt.y = n = GetSystemMetrics(SM_CXDLGFRAME)*2;//+ GetSystemMetrics(SM_CXBORDER);
+    pen3 = CreatePen(PS_SOLID, pt.y, GetSysColor((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd ? COLOR_GRADIENTACTIVECAPTION : COLOR_GRADIENTINACTIVECAPTION));
+    GetClientRect(hwnd, &rclient);
+    MapWindowPoints(hwnd, HWND_DESKTOP, (LPPOINT)&rclient, 2);
+    GetWindowRect(hwnd, &r);
+    rclient.top -= r.top;
+    rclient.left -= r.left;
+    rclient.bottom -= r.top;
+    rclient.right -= r.left;
+    r.right -= r.left;
+    r.left -= r.left;
+    r.bottom -= r.top;
+    r.top -= r.top;
+    brush = SelectObject(hdc, brush);
+    pen = SelectObject(hdc, pen);
+    Rectangle(hdc, r.left, r.top, r.right, r.bottom);
+    pen = SelectObject(hdc, pen2);
+    Rectangle(hdc, r.left+1, r.top+1, r.right-1, r.bottom -1);
+    pen2 = SelectObject(hdc, pen3);
+    n = 4;
+    Rectangle(hdc, r.left+1+n , r.top+1+n+ GetSystemMetrics(SM_CYSMCAPTION), r.right-4, r.bottom -4);
+//    rv = DefMDIChildProc(hwnd, iMessage, wParam, lParam);
+    pen3 = SelectObject(hdc, pen);
+    Rectangle(hdc, rclient.left-1 , rclient.top-1, rclient.right+1, rclient.bottom+1);
+    r.top+=2 ;
+    r.bottom = rclient.top;
+    r.left += 2;
+    r.right -= 2;
+    hdcDraw = CreateCompatibleDC(hdc);
+    bitmap = CreateCompatibleBitmap(hdc, r.right - r.left + 4, rclient.top);
+    SelectObject(hdcDraw, bitmap);
+    FillRect(hdcDraw, &r, (HBRUSH)(((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd ? COLOR_GRADIENTACTIVECAPTION : COLOR_GRADIENTINACTIVECAPTION)+1));
+    r.bottom = r.top + GetSystemMetrics(SM_CYSMCAPTION);
+    GradientFillCaption(hdcDraw, &r, (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0) == hwnd);
+    hdcMem = CreateCompatibleDC(hdc);
+    
+    if (tbi.rgstate[5] == STATE_SYSTEM_PRESSED)
+        SelectObject(hdcMem, closepress);
+    else
+        SelectObject(hdcMem, closenrml);
+    BitBlt(hdcDraw, tbi.rgrect[5].left+rclient.left+2, tbi.rgrect[5].top+rclient.top+2, 20,20, hdcMem, 0, 0, SRCCOPY);
+    DeleteDC(hdcMem);
+    GetWindowText(hwnd, buf, sizeof(buf));
+    SelectObject(hdcDraw, xfont);
+    GetTextExtentPoint32(hdcDraw, buf, strlen(buf), &sz);
+    n = (r.right + r.left + 4 - sz.cx)/2;
+    SetBkMode(hdcDraw, TRANSPARENT);
+    TextOut(hdcDraw, n, 4, buf, strlen(buf));            
+    SelectObject(hdcDraw, xfont);
+             
+    BitBlt(hdc, r.left, r.top, r.right-r.left, rclient.top - r.top-1, hdcDraw, r.left, r.top, SRCCOPY);
+             
+    brush = SelectObject(hdc, brush);
+    pen = SelectObject(hdc, pen);
+    DeleteObject(xfont);
+    DeleteObject(bitmap);
+    DeleteObject(pen3);
+    DeleteObject(pen2);
+    DeleteObject(pen);
+    DeleteDC(hdcDraw);
+    ReleaseDC(hwnd, hdc);
+    return rv;
+    
+}

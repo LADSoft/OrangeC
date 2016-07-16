@@ -46,7 +46,7 @@
 #include "dbgtype.h"
 //#include <dir.h>
 
-extern HWND hwndFrame, hwndProject, hwndRegister, hwndClient,hwndTab;
+extern HWND hwndFrame, hwndClient;
 extern HINSTANCE hInstance;
 extern PROCESS *activeProcess;
 extern THREAD *activeThread;
@@ -54,22 +54,29 @@ extern unsigned bitmask[];
 extern POINT rightclickPos;
 extern SCOPE *activeScope;
 
-HWND hwndWatch;
 static char szWatchClassName[] = "xccWatchClass";
 static char szWatchTitle[] = "Watch Window";
-static HWND hwndTabCtrl;
 
 static HBITMAP valueBitmap, itemBitmap;
 
 static char *nameTags[5] = { "Watch 1", "Watch 2", "Watch 3", "Watch 4"};
-HWND hwndWatchTree[5];
-WATCHINFO *watchinfo_list[5];
-int watchinfo_max[5];
-int watchinfo_count[5];
 
-void AddTypeInfoToName(DEBUG_INFO *dbg_info, VARINFO *v)
+static int lastWatch = DID_WATCHWND;
+
+typedef struct watchdata
 {
-    char buf[256],  *p;
+    int DID;
+    HWND hwndWatchTree;
+    WATCHINFO *watchinfo_list;
+    int watchinfo_max;
+    int watchinfo_count;
+    VARINFO *structNesting[100];
+    int nestingCount;
+    BOOL refreshNeeded;
+} WATCHDATA;
+static void AddTypeInfoToName(DEBUG_INFO *dbg_info, VARINFO *v)
+{
+    char buf[512],  *p;
     strcpy(v->screenname, v->membername);
     p = v->screenname + strlen(v->screenname);
     sprintf(p, "(%s)", SymTypeName(buf, dbg_info, v));
@@ -77,57 +84,77 @@ void AddTypeInfoToName(DEBUG_INFO *dbg_info, VARINFO *v)
 
 //-------------------------------------------------------------------------
 
-WATCHINFO *MatchItem(VARINFO *var, int page)
+static WATCHINFO *MatchItem(VARINFO *var, WATCHDATA *ptr)
 {
     int i;
-    for (i = 0; i < watchinfo_count[page]; i++)
-        if (!strcmp(watchinfo_list[page][i].info->membername, var->membername))
-            return  &watchinfo_list[page][i];
+    for (i = 0; i < ptr->watchinfo_count; i++)
+        if (!strcmp(ptr->watchinfo_list[i].info->membername, var->membername))
+            return  &ptr->watchinfo_list[i];
     return 0;
 }
 
 //-------------------------------------------------------------------------
 
-void FreeTree(VARINFO *info, int page)
+static void FreeTree(VARINFO *info, WATCHDATA *ptr)
 {
     while (info)
     {
-        FreeTree(info->subtype, page);
+        FreeTree(info->subtype, ptr);
         if (info->hTreeItem)
-            TreeView_DeleteItem(hwndWatchTree[page], info->hTreeItem);
+            TreeView_DeleteItem(ptr->hwndWatchTree, info->hTreeItem);
         info = info->link;
     }
 }
-
 //-------------------------------------------------------------------------
 
-void RefreshAddresses(VARINFO *var, int address, THREAD *thread, int noscope)
+static void RefreshAddresses(WATCHDATA *ptr, VARINFO *var, int address, THREAD *thread, int noscope)
 {
+    ptr->structNesting[ptr->nestingCount++] = var;
     while (var)
     {
+        char buf[1048];
         int unscope = noscope;
-        int val=0;
         if (noscope)
             var->outofscope = TRUE;
         else
         {
+            int val;
             var->outofscope = FALSE;
             if (thread)
                 var->thread = thread;
-            val = var->address = address + var->offset;
-            if (var->pointer)
+            if (var->offset == -1)
+            {
+                DEBUG_INFO *dbg;
+                int i;
+                char name[2048];
+                name[0] = 0;
+                for (i=0; i < ptr->nestingCount-1; i++)
+                    sprintf(name + strlen(name), "%s", ptr->structNesting[i]->structtag);
+                sprintf(name + strlen(name), "@%s", var->membername);
+                dbg = findDebug(ptr->structNesting[0]->scope->address);
+                val = var->address = GetSymbolAddress(dbg, name);
+                // static member data
+            }
+            else
+            {
+                val = var->address = address + var->offset;
+            }
+            if (var->constant)
+                val = var->address;
+            else if (var->pointer)
             {
                 unscope = ((val = var->derefaddress) == -1 && !ReadValue(var->address, &val, 4, var)) || !val;
             }
+            RefreshAddresses(ptr, var->subtype, val, thread, unscope);
         }
-        RefreshAddresses(var->subtype, val, thread, unscope);
         var = var->link;
     }
+    ptr->nestingCount--;
 }
 
 //-------------------------------------------------------------------------
 
-void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
+static void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
 {
     int i;
     if (info->outofscope || info->outofscopereg)
@@ -231,7 +258,7 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
                 *(double*)buf1 = *(double*)buf1;
             case eLongDouble:
             case eImaginaryLongDouble:
-                sprintf(buf, "%lf", *(long double*)buf1);
+                sprintf(buf, "%f", *(long double*)buf1);
                 break;
             case eComplex:
                 sprintf(buf, "%f + %f * I", (double)*(float*)buf1, (double)*(float *)(buf1 + 4));
@@ -248,27 +275,54 @@ void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue)
 
 //-------------------------------------------------------------------------
 
-void RefreshData(DEBUG_INFO *dbg_info, VARINFO *var)
+static void RefreshData(DEBUG_INFO *dbg_info, VARINFO *var, BOOL adding)
 {
     while (var)
     {
-        WatchValue(dbg_info, var->value, var, FALSE);
-        RefreshData(dbg_info, var->subtype);
+        char localbf[256];
+        if (!adding)
+            strcpy(localbf, var->value);
+        if ((var->lref || var->rref) && var->type < eReservedTop && var->type > eVoid)
+        {
+            VARINFO q = *var;
+            q.pointer = q.rref = q.lref = 0;
+            if (!ReadValue(var->address, &q.address, 4, var))
+            {
+                sprintf(var->value, "REFERENCE: <UNKNOWN>");
+            }
+            else
+            {
+                WatchValue(dbg_info, var->value, &q, FALSE);
+            }
+        }
+        else
+        {
+            RefreshData(dbg_info, var->subtype, adding);
+            WatchValue(dbg_info, var->value, var, FALSE);
+        }
+        if (!adding && strcmp(localbf, var->value))
+        {
+            var->watchhead.col2Color = 0xff;
+        }
+        else
+        {
+            var->watchhead.col2Color = 0;
+        }
         var = var->link;
     }
 }
 
 //-------------------------------------------------------------------------
 
-void RefreshItem(WATCHINFO *var, int address, THREAD *thread)
+static void RefreshItem(WATCHDATA *ptr, WATCHINFO *var, int address, THREAD *thread, BOOL adding)
 {
-    RefreshAddresses(var->info, address, thread, var->info->outofscope);
-    RefreshData(var->dbg_info, var->info);
+    RefreshAddresses(ptr, var->info, address, thread, var->info->outofscope);
+    RefreshData(var->dbg_info, var->info,adding);
 }
 
 //-------------------------------------------------------------------------
 
-HTREEITEM InsertItem(HTREEITEM hParent, HTREEITEM after, VARINFO *var, int page)
+static HTREEITEM InsertItem(HTREEITEM hParent, HTREEITEM after, VARINFO *var, WATCHDATA *ptr)
 {
     HTREEITEM rv;
     TV_INSERTSTRUCT t;
@@ -277,28 +331,28 @@ HTREEITEM InsertItem(HTREEITEM hParent, HTREEITEM after, VARINFO *var, int page)
     t.hInsertAfter = after;
     t.UNNAMED_UNION item.mask = 0;
     t.UNNAMED_UNION item.lParam = (int)var;
-    rv = TreeView_InsertItem(hwndWatchTree[page], &t);
+    rv = TreeView_InsertItem(ptr->hwndWatchTree, &t);
     return rv;
 }
 
 //-------------------------------------------------------------------------
 
-void InsertSubTree(HTREEITEM parent, HTREEITEM after, VARINFO *var, int index, int page)
+static void InsertSubTree(HTREEITEM parent, HTREEITEM after, VARINFO *var, int index, WATCHDATA *ptr)
 {
     while (var)
     {
-        AddTypeInfoToName(watchinfo_list[page][index].dbg_info, var);
-        var->hTreeItem = InsertItem(parent, after, var, page);
+        AddTypeInfoToName(ptr->watchinfo_list[index].dbg_info, var);
+        var->hTreeItem = InsertItem(parent, after, var, ptr);
         var->watchindex = index;
         var->watchhead.col1Text = &var->screenname[0];
         var->watchhead.col2Text = &var->value[0];
-        if (var->pointer && !var->subtype)
+        if (var->pointer && !var->subtype && (!var->lref && !var->rref || var->type > eReservedTop))
         {
-            var->hTreeHolder = InsertItem(var->hTreeItem, TVI_LAST, var, page);
-            TreeView_Expand(hwndWatchTree[page], var->hTreeItem, TVE_COLLAPSE);
+            var->hTreeHolder = InsertItem(var->hTreeItem, TVI_LAST, var, ptr);
+            TreeView_Expand(ptr->hwndWatchTree, var->hTreeItem, TVE_COLLAPSE);
         }
         else
-            InsertSubTree(var->hTreeItem, 0, var->subtype, index, page);
+            InsertSubTree(var->hTreeItem, 0, var->subtype, index, ptr);
         after = var->hTreeItem;
         var = var->link;
     }
@@ -306,10 +360,10 @@ void InsertSubTree(HTREEITEM parent, HTREEITEM after, VARINFO *var, int index, i
 
 //-------------------------------------------------------------------------
 
-void AddItem(DEBUG_INFO *dbg, VARINFO *var, 
-             int cursoreip, int page)
+static void AddItem(DEBUG_INFO *dbg, VARINFO *var, 
+             int cursoreip, WATCHDATA *ptr)
 {
-    WATCHINFO *x = MatchItem(var, page);
+    WATCHINFO *x = MatchItem(var, ptr);
     if (x)
     {
         x->marked = FALSE;
@@ -318,33 +372,33 @@ void AddItem(DEBUG_INFO *dbg, VARINFO *var,
     else
     {
         HTREEITEM previous = 0;
-        if (watchinfo_count[page] >= watchinfo_max[page])
+        if (ptr->watchinfo_count >= ptr->watchinfo_max)
         {
-            if (watchinfo_max[page] >= 128)
+            if (ptr->watchinfo_max >= 128)
             {
                 ExtendedMessageBox("Watch Error", MB_SETFOREGROUND |
                     MB_SYSTEMMODAL, 
                     "There are too many items in the watch window\nNot adding the current selection");
                 return ;
             }
-            watchinfo_max[page] += 64;
-            watchinfo_list[page] = realloc(watchinfo_list[page], watchinfo_max[page] *sizeof
+            ptr->watchinfo_max += 64;
+            ptr->watchinfo_list = realloc(ptr->watchinfo_list, ptr->watchinfo_max *sizeof
                 (WATCHINFO));
         }
-        if (watchinfo_count[page])
-            previous = watchinfo_list[page][watchinfo_count[page] - 1].info->hTreeItem;
-        memset(&watchinfo_list[page][watchinfo_count[page]], 0, sizeof(watchinfo_list[page][0]));
-        watchinfo_list[page][watchinfo_count[page]].info = var;
-        watchinfo_list[page][watchinfo_count[page]].dbg_info = dbg;
-        watchinfo_list[page][watchinfo_count[page]++].cursoreip = cursoreip;
-        RefreshItem(&watchinfo_list[page][watchinfo_count[page] - 1], var->address, NULL);
-        InsertSubTree(0, previous, var, watchinfo_count[page] - 1, page);
+        if (ptr->watchinfo_count)
+            previous = ptr->watchinfo_list[ptr->watchinfo_count - 1].info->hTreeItem;
+        memset(&ptr->watchinfo_list[ptr->watchinfo_count], 0, sizeof(ptr->watchinfo_list[0]));
+        ptr->watchinfo_list[ptr->watchinfo_count].info = var;
+        ptr->watchinfo_list[ptr->watchinfo_count].dbg_info = dbg;
+        ptr->watchinfo_list[ptr->watchinfo_count++].cursoreip = cursoreip;
+        RefreshItem(ptr, &ptr->watchinfo_list[ptr->watchinfo_count - 1], var->address, NULL, TRUE);
+        InsertSubTree(0, previous, var, ptr->watchinfo_count - 1, ptr);
     }
 }
 
 //-------------------------------------------------------------------------
 
-void RenumberDeleteItems(VARINFO *v)
+static void RenumberDeleteItems(VARINFO *v)
 {
     while (v)
     {
@@ -357,7 +411,7 @@ void RenumberDeleteItems(VARINFO *v)
 
 //-------------------------------------------------------------------------
 
-void DeleteItem(POINT *pt, int page)
+static void DeleteItem(POINT *pt, WATCHDATA *ptr)
 {
     int i;
     WATCHINFO *x;
@@ -366,79 +420,78 @@ void DeleteItem(POINT *pt, int page)
     TV_ITEM item;
     VARINFO *v;
 
-    ScreenToClient(hwndWatchTree[page], pt);
+    ScreenToClient(ptr->hwndWatchTree, pt);
     t.pt =  *pt;
-    titem = TreeView_HitTest(hwndWatchTree[page], &t);
+    titem = TreeView_HitTest(ptr->hwndWatchTree, &t);
     if (titem)
     {
         int c;
         item.mask = TVIF_PARAM;
         item.hItem = titem;
-        TreeView_GetItem(hwndWatchTree[page], &item);
+        TreeView_GetItem(ptr->hwndWatchTree, &item);
         v = (VARINFO*)item.lParam;
-        x = &watchinfo_list[page][c = v->watchindex];
-        FreeTree(x->info, page);
+        x = &ptr->watchinfo_list[c = v->watchindex];
+        FreeTree(x->info, ptr);
         FreeVarInfo(x->info);
-        for (i = c; i < watchinfo_count[page] - 1; i++)
+        for (i = c; i < ptr->watchinfo_count - 1; i++)
         {
-            watchinfo_list[page][i] = watchinfo_list[page][i + 1];
-            RenumberDeleteItems(watchinfo_list[page][i].info);
+            ptr->watchinfo_list[i] = ptr->watchinfo_list[i + 1];
+            RenumberDeleteItems(ptr->watchinfo_list[i].info);
         }
-        watchinfo_count[page]--;
+        ptr->watchinfo_count--;
     }
 }
 
 //-------------------------------------------------------------------------
 
-void DeleteAllItems(int page)
+static void DeleteAllItems(WATCHDATA *ptr)
 {
     int i;
-    TreeView_DeleteAllItems(hwndWatchTree[page]);
-    for (i = 0; i < watchinfo_count[page]; i++)
-        FreeVarInfo(watchinfo_list[page][i].info);
-    watchinfo_count[page] = 0;
+    TreeView_DeleteAllItems(ptr->hwndWatchTree);
+    for (i = 0; i < ptr->watchinfo_count; i++)
+        FreeVarInfo(ptr->watchinfo_list[i].info);
+    ptr->watchinfo_count = 0;
 }
 
 //-------------------------------------------------------------------------
 
-void Unscope(WATCHINFO *wi, int page)
+static void Unscope(WATCHINFO *wi, WATCHDATA *ptr)
 {
     if (!wi->info->outofscope)
     {
         wi->info->outofscope = TRUE;
-        //      FreeTree(wi->info->subtype, page) ;
+        //      FreeTree(wi->info->subtype, ptr) ;
     }
 }
 
 //-------------------------------------------------------------------------
 
-void Rescope(WATCHINFO *wi, int index, int page)
+static void Rescope(WATCHINFO *wi, int index, WATCHDATA *ptr)
 {
     if (wi->info->outofscope)
     {
         wi->info->outofscope = FALSE;
-        //      InsertSubTree(wi->info->hTreeItem,0,wi->info->subtype, index, page) ;
     }
 }
 
 //-------------------------------------------------------------------------
 
-void RefreshItems(int page)
+static void RefreshItems(WATCHDATA *ptr)
 {
     int i;
     char *types,  *syms;
     int offset;
     DEBUG_INFO *dbg;
-    for (i = 0; i < watchinfo_count[page]; i++)
+    for (i = 0; i < ptr->watchinfo_count; i++)
     {
-        WATCHINFO *wi = &watchinfo_list[page][i];
+        WATCHINFO *wi = &ptr->watchinfo_list[i];
         VARINFO *var;
         int level;
         var = EvalExpr(&wi->dbg_info, activeScope,
                                (char*)wi->info->membername, FALSE);
         if (!var)
         {
-            Unscope(wi, page);
+            Unscope(wi, ptr);
             offset = 0;
         }
         else
@@ -446,13 +499,13 @@ void RefreshItems(int page)
             wi->info->outofscopereg = var->outofscopereg;
             if (var->outofscopereg)
             {
-                Unscope(wi, page);
+                Unscope(wi, ptr);
                 offset = 0;
             }
             else
             {
                 int ebp, level;
-                Rescope(wi, i, page);
+                Rescope(wi, i, ptr);
                 offset = var->address;
                 wi->cursoreip = activeScope->address;
                 if (var->pointer)
@@ -462,43 +515,46 @@ void RefreshItems(int page)
             }
             FreeVarInfo(var);
         }
-        RefreshItem(wi, offset, activeThread);
+        RefreshItem(ptr, wi, offset, activeThread, FALSE);
     }
-    InvalidateRect(hwndWatchTree[page], 0, 0);
+    InvalidateRect(ptr->hwndWatchTree, 0, 0);
 }
 
 //-------------------------------------------------------------------------
 
-void ExpandPointer(VARINFO *v, int code, int page)
+static void ExpandPointer(VARINFO *v, int code, WATCHDATA *ptr)
 {
     if (v->pointer)
     {
         if (code == TVE_EXPAND)
         {
             int val;
-            int outofscope = ((val = v->derefaddress) == -1 && !ReadValue(v->address, &val, 4, v)) || !val;
-            if (!v->subtype && watchinfo_list[page][v->watchindex].dbg_info)
+            int outofscope;
+            outofscope = ((val = v->derefaddress) == -1 && !ReadValue(v->address, &val, 4, v)) || !val;
+            if (!v->subtype && ptr->watchinfo_list[v->watchindex].dbg_info)
             {
-                TreeView_DeleteItem(hwndWatchTree[page], v->hTreeHolder);
-                ExpandPointerInfo(watchinfo_list[page][v->watchindex].dbg_info, v);
+                TreeView_DeleteItem(ptr->hwndWatchTree, v->hTreeHolder);
+                ExpandPointerInfo(ptr->watchinfo_list[v->watchindex].dbg_info, v);
                 if (v->subtype->structure)
                 {
-                    InsertSubTree(v->hTreeItem, 0, v->subtype->subtype, v->watchindex, page);
+                    InsertSubTree(v->hTreeItem, 0, v->subtype->subtype, v->watchindex, ptr);
                 }
                 else
-                    InsertSubTree(v->hTreeItem, 0, v->subtype, v->watchindex, page);
+                    InsertSubTree(v->hTreeItem, 0, v->subtype, v->watchindex, ptr);
             }
-            RefreshAddresses(v->subtype, val, NULL, outofscope);
-            RefreshData(watchinfo_list[page][v->watchindex].dbg_info, v);
+            ptr->structNesting[ptr->nestingCount++] = v;
+            RefreshAddresses(ptr, v->subtype, val, NULL, outofscope);
+            ptr->nestingCount--;
+            RefreshData(ptr->watchinfo_list[v->watchindex].dbg_info, v, TRUE);
         }
         else if (code == TVE_COLLAPSE)
         {
-            if (v->subtype)
+            if (v->subtype && !v->derefaddress)
             {
-                FreeTree(v->subtype, page);
+                FreeTree(v->subtype, ptr);
                 FreeVarInfo(v->subtype);
                 v->subtype = 0;
-                v->hTreeHolder = InsertItem(v->hTreeItem, TVI_LAST, v, page);
+                v->hTreeHolder = InsertItem(v->hTreeItem, TVI_LAST, v, ptr);
             }
         }
     }
@@ -510,7 +566,7 @@ void ExpandPointer(VARINFO *v, int code, int page)
 
 //-------------------------------------------------------------------------
 
-void ChangeData(VARINFO *info, char *text, int page)
+static void ChangeData(VARINFO *info, char *text, WATCHDATA *ptr)
 {
     if (info->type >= eFloat && info->type <= eImaginaryLongDouble)
     {
@@ -567,7 +623,7 @@ void ChangeData(VARINFO *info, char *text, int page)
         int size;
         if (info->enumx && !isdigit(text[0]))
         {
-            value = GetEnumValue(watchinfo_list[page][info->watchindex].dbg_info, info,
+            value = GetEnumValue(ptr->watchinfo_list[info->watchindex].dbg_info, info,
                 text);
             size = 4;
         }
@@ -623,23 +679,80 @@ void ChangeData(VARINFO *info, char *text, int page)
             {
                 VARINFO *inf = info->subtype;
                 info->subtype = 0;
-                FreeTree(inf, page);
+                FreeTree(inf, ptr);
                 FreeVarInfo(inf);
             }
             else
-                RefreshAddresses(info->subtype, value, NULL, info->outofscope);
+                RefreshAddresses(ptr, info->subtype, value, NULL, info->outofscope);
         }
     }
-    RefreshData(watchinfo_list[page][info->watchindex].dbg_info, info);
+    RefreshData(ptr->watchinfo_list[info->watchindex].dbg_info, info, TRUE);
 }
 
 //-------------------------------------------------------------------------
+static void LoadLocals(WATCHDATA *ptr)
+{
+    NAMELIST *names = FindEnclosedAutos(activeScope);
+    WATCHINFO *p = ptr->watchinfo_list;
+    int i;
+    for (i=0; i < ptr->watchinfo_count; i++)
+        p[i].marked = TRUE;
 
+    while (names)
+    {
+        NAMELIST *next = names->next;
+        DEBUG_INFO *dbg;
+        VARINFO *var = EvalExpr(&dbg, activeScope, (char*) names->data+1, FALSE);
+        if (var)
+        {
+            AddItem(dbg, var, activeScope->address, ptr);
+        }
+        free(names->data);
+        free(names);
+        names = next;
+    }
+    p = ptr->watchinfo_list;
+    for (i=0; i < ptr->watchinfo_count; i++)
+        if (p[i].marked)
+        {
+            WATCHINFO *x = &ptr->watchinfo_list[i];
+            int j;
+            FreeTree(x->info, ptr);
+            FreeVarInfo(x->info);
+            for (j = i; j < ptr->watchinfo_count - 1; j++)
+
+            {
+                ptr->watchinfo_list[j] = ptr->watchinfo_list[j + 1];
+                RenumberDeleteItems(ptr->watchinfo_list[j].info);
+            }
+            ptr->watchinfo_count--;
+            i--;
+        }
+}
+void ReloadVars(WATCHDATA *ptr)
+{
+    int i;
+    int len = ptr->watchinfo_count;
+    for (i=0; i < ptr->watchinfo_count; i++)
+    {
+        FreeTree(ptr->watchinfo_list[i].info, ptr);
+    }
+    ptr->watchinfo_count = 0;
+    for (i=0; i < len; i++)
+    {
+        DEBUG_INFO *dbg;
+        VARINFO *var = EvalExpr(&dbg, activeScope, (char*)ptr->watchinfo_list[i].info->membername , FALSE);
+        if (var)
+            FreeVarInfo(ptr->watchinfo_list[i].info);
+        else
+            var = ptr->watchinfo_list[i].info;
+        AddItem(dbg, var, activeScope->address, ptr);
+    }
+}
 LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    
-    static int selected;
+    WATCHDATA *ptr;    
     static POINT menupos;
     static char buf[256];
     RECT r,  *pr;
@@ -674,31 +787,22 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             break;
         case WM_NOTIFY:
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
             h = (NMHDR*)lParam;
             switch (h->code)
             {
-            case TABN_SELECTED:
-                {
-                    LSTABNOTIFY *p = (LSTABNOTIFY *)h;
-                    ShowWindow(hwndWatchTree[selected], SW_HIDE);
-                    for (i=0; i < 5; i++)
-                        if (p->lParam == (LPARAM)hwndWatchTree[i])
-                            selected = i;
-                    ShowWindow(hwndWatchTree[selected], SW_SHOW);
-                    break;
-                }
             case NM_RCLICK:
                 {
-                    if (selected < 4)
+                    if (ptr->DID != DID_LOCALSWND)
                     {
                         HMENU menu = LoadMenuGeneric(hInstance, "WATCHMENU");
                         HMENU popup = GetSubMenu(menu, 0);
                         TV_HITTESTINFO t;
                         HTREEITEM titem;
                         GetCursorPos(&t.pt);
-                        ScreenToClient(hwndWatchTree[selected], &t.pt);
-                        titem = TreeView_HitTest(hwndWatchTree[selected], &t);
-                        if (!titem || TreeView_GetParent(hwndWatchTree[selected], titem))
+                        ScreenToClient(ptr->hwndWatchTree, &t.pt);
+                        titem = TreeView_HitTest(ptr->hwndWatchTree, &t);
+                        if (!titem || TreeView_GetParent(ptr->hwndWatchTree, titem))
                         {
                             EnableMenuItem(popup, IDM_DELETEWATCH, MF_GRAYED);
                         }
@@ -707,26 +811,27 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         TrackPopupMenuEx(popup, TPM_BOTTOMALIGN | TPM_LEFTBUTTON,
                             menupos.x, menupos.y, hwndFrame, NULL);
                         DestroyMenu(menu);
+                        lastWatch = ptr->DID;
                     }
-                    SetFocus(hwndWatchTree[selected]);
+                    SetFocus(ptr->hwndWatchTree);
                 }
                 return 0;
             case TVN_ITEMEXPANDING:
                 nmt = (LPNMTREEVIEW)h;
                 if (nmt->action)
                 {
-                    ExpandPointer((VARINFO*)nmt->itemNew.lParam, nmt->action, selected);
+                    ExpandPointer((VARINFO*)nmt->itemNew.lParam, nmt->action, ptr);
                 }
                 return 0;
             case TCN_EDITQUERY:
                 nmt = (LPNMTREEVIEW)h;
                 item.mask = TVIF_PARAM;
                 item.hItem = (HTREEITEM)nmt->itemNew.hItem;
-                TreeView_GetItem(hwndWatchTree[selected], &item);
+                TreeView_GetItem(ptr->hwndWatchTree, &item);
                 var = (VARINFO*)item.lParam;
                 if (var->editable)
                 {
-                    WatchValue(watchinfo_list[selected][var->watchindex].dbg_info, buf,
+                    WatchValue(ptr->watchinfo_list[var->watchindex].dbg_info, buf,
                         var, TRUE);
                     return buf;
                 }
@@ -735,32 +840,25 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 nmt = (LPNMTREEVIEW)h;
                 item.mask = TVIF_PARAM;
                 item.hItem = (HTREEITEM)nmt->itemNew.hItem;
-                TreeView_GetItem(hwndWatchTree[selected], &item);
+                TreeView_GetItem(ptr->hwndWatchTree, &item);
                 var = (VARINFO*)item.lParam;
-                ChangeData(var, nmt->itemNew.pszText, selected);
-                RefreshItems(selected);
+                ChangeData(var, nmt->itemNew.pszText, ptr);
+                RefreshItems(ptr);
                 return 0;
            }
             break;
         case WM_CREATE:
-            hwndWatch = hwnd;
+            ptr = (WATCHDATA *)calloc(sizeof(WATCHDATA),1);
+            SetWindowLong(hwnd, 0, (long)ptr);
             GetClientRect(hwnd, &r);
-            valueBitmap = LoadImage(hInstance, "ID_VALUEBMP", IMAGE_BITMAP, 0, 0, LR_LOADMAP3DCOLORS);
-            itemBitmap = LoadImage(hInstance, "ID_ITEMBMP", IMAGE_BITMAP, 0, 0, LR_LOADMAP3DCOLORS);
             tch.colText1 = "Item";
             tch.colText2 = "Value";
             tch.colBmp1 = itemBitmap;
             tch.colBmp2 = valueBitmap;
-            hwndTabCtrl = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
-            ApplyDialogFont(hwndTabCtrl);
-            r.bottom -= 25;
-            for (i=3; i >0 ; i--)
-                hwndWatchTree[i] = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE, &r, &tch);
-            hwndWatchTree[0] = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE | WS_VISIBLE, &r, &tch);
-            for (i=3; i >=0 ; i--)
-                SendMessage(hwndTabCtrl, TABM_ADD, (WPARAM)nameTags[i], (LPARAM)hwndWatchTree[i]);
+            ptr->hwndWatchTree = CreateextTreeWindow(hwnd, WS_DLGFRAME | TCS_LINE | WS_VISIBLE, &r, &tch);
             return 0;
         case WM_ADDWATCHINDIRECT:
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
             win = (HWND)wParam;
             doit = FALSE;
             SendMessage(win, EM_EXGETSEL, (WPARAM)0, (LPARAM) &charrange);
@@ -775,7 +873,7 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             else
             {
-              if (charrange.cpMin - charrange.cpMax < sizeof(buf) || charrange.cpMax - charrange.cpMin < sizeof(buf))
+                if (charrange.cpMax - charrange.cpMin < sizeof(buf) ||charrange.cpMin - charrange.cpMax < sizeof(buf))
                 {
                     SendMessage(win, EM_GETSELTEXT, 0, (LPARAM)buf);
                     doit = TRUE ;
@@ -786,19 +884,19 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 var = EvalExpr(&dbg, activeScope, (char*) buf, TRUE);
                 if (var)
                 {
-                    AddItem(dbg, var, activeScope->address, selected);
-                    dmgrHideWindow(DID_WATCHWND, FALSE);
+                    AddItem(dbg, var, activeScope->address, ptr);
+                    SelectWindow(ptr->DID);
                     break ;
-                }
-            }
+                }            }
             ExtendedMessageBox("Error", MB_SETFOREGROUND |
                 MB_SYSTEMMODAL, "Symbol does not exist in this scope");
             break;
         case WM_ADDWATCH:
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
             offset = wParam;
             if (!offset)
             {
-                DeleteAllItems(selected);
+                DeleteAllItems(ptr);
             }
             else
             {
@@ -806,51 +904,60 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     lParam, TRUE);
                 if (var)
                 {
-                    AddItem(dbg, var, activeScope->address, selected);
-                    dmgrHideWindow(DID_WATCHWND, FALSE);
+                    AddItem(dbg, var, activeScope->address, ptr);
+                    SelectWindow(ptr->DID);
                 }
             }
             break;
+        case WM_INITIALSTACK:
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
+            ptr->refreshNeeded = TRUE;
+            break;
         case WM_COMMAND:
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
             switch (wParam)
             {
             case ID_SETADDRESS:
-                for (i=3; i >=0; i--)
-                    RefreshItems(i);
-                InvalidateRect(hwndWatchTree[selected], 0, 0);
+                if (ptr->DID == DID_LOCALSWND)
+                    LoadLocals(ptr);
+                if (ptr->refreshNeeded)
+                    ReloadVars(ptr);
+                else
+                    RefreshItems(ptr);
+                ptr->refreshNeeded = FALSE;
+                InvalidateRect(ptr->hwndWatchTree, 0, 0);
                 break;
             case IDM_DELETEWATCH:
-                DeleteItem(&menupos, selected);
+                DeleteItem(&menupos, ptr);
                 break;
             case IDM_DELETEALLWATCH:
-                DeleteAllItems(selected);
+                DeleteAllItems(ptr);
                 break;
             }
             break;
         case WM_DESTROY:
-            for (i=3; i >=0 ; i--)
-                TreeView_DeleteAllItems(hwndWatchTree[i]);
-            for (i=3; i >=0 ; i--)
-                DestroyWindow(hwndWatchTree[i]);
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
+            TreeView_DeleteAllItems(ptr->hwndWatchTree);
+            DestroyWindow(ptr->hwndWatchTree);
             DeleteObject(valueBitmap);
             DeleteObject(itemBitmap);
-            hwndWatch = 0;
             break;
 
         case WM_SIZE:
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
             r.left = 0;
             r.right = LOWORD(lParam);
             r.top = 0;
             r.bottom = HIWORD(lParam);
-            MoveWindow(hwndTabCtrl, r.left, r.bottom - 24, r.right - r.left, 24, 1);
-            InvalidateRect(hwndTabCtrl, 0, 1);
-            for (i=3; i >=0 ; i--)
-                MoveWindow(hwndWatchTree[i], r.left, r.top, r.right - r.left, r.bottom -
-                    r.top - 25, 0);
+            MoveWindow(ptr->hwndWatchTree, r.left, r.top, r.right - r.left, r.bottom -
+                r.top, 0);
             return 0;
         case WM_CLOSE:
             break;
         case WM_ACTIVATEME:
+            ptr = (WATCHDATA *)GetWindowLong(hwnd, 0);
+            if (ptr->DID != DID_LOCALSWND)
+                lastWatch = ptr->DID;
             SendMessage(GetParent(hwnd), WM_ACTIVATEME, 0, 0);
             break;
     }
@@ -859,26 +966,69 @@ LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-void RegisterWatchWindow(void)
+void RegisterWatchWindow(HINSTANCE hInstance)
 {
-    WNDCLASS wc;
-    memset(&wc, 0, sizeof(wc));
-    wc.style = 0;
-    wc.lpfnWndProc = &WatchWndProc;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    wc.hInstance = hInstance;
-    wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-    wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = GetStockObject(WHITE_BRUSH);
-    wc.lpszMenuName = 0;
-    wc.lpszClassName = szWatchClassName;
-    RegisterClass(&wc);
+    static BOOL registered;
+    if (!registered)
+    {
+        WNDCLASS wc;
+        memset(&wc, 0, sizeof(wc));
+        wc.style = 0;
+        wc.lpfnWndProc = &WatchWndProc;
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = sizeof(DWORD);
+        wc.hInstance = hInstance;
+        wc.hIcon = LoadIcon(0, IDI_APPLICATION);
+        wc.hCursor = LoadCursor(0, IDC_ARROW);
+        wc.hbrBackground = GetStockObject(WHITE_BRUSH);
+        wc.lpszMenuName = 0;
+        wc.lpszClassName = szWatchClassName;
+        RegisterClass(&wc);
+        valueBitmap = LoadImage(hInstance, "ID_VALUEBMP", IMAGE_BITMAP, 0, 0, LR_LOADMAP3DCOLORS);
+        itemBitmap = LoadImage(hInstance, "ID_ITEMBMP", IMAGE_BITMAP, 0, 0, LR_LOADMAP3DCOLORS);
+        
+        registered = TRUE;
+    }
 }
 
 //-------------------------------------------------------------------------
 
-void CreateWatchWindow(void)
+HWND CreateWatch1Window(void)
 {
-    hwndWatch = CreateDockableWindow(DID_WATCHWND, szWatchClassName, szWatchTitle, hInstance, 200, 200);
+    HWND rv = CreateInternalWindow(DID_WATCHWND, szWatchClassName, "Watch 1");
+    WATCHDATA *data = (WATCHDATA *)GetWindowLong(rv, 0);
+    data->DID = DID_WATCHWND;
+    return rv;
+}
+HWND CreateWatch2Window(void)
+{
+    HWND rv = CreateInternalWindow(DID_WATCHWND+1, szWatchClassName, "Watch 2");
+    WATCHDATA *data = (WATCHDATA *)GetWindowLong(rv, 0);
+    data->DID = DID_WATCHWND+1;
+    return rv;
+}
+HWND CreateWatch3Window(void)
+{
+    HWND rv = CreateInternalWindow(DID_WATCHWND+2, szWatchClassName, "Watch 3");
+    WATCHDATA *data = (WATCHDATA *)GetWindowLong(rv, 0);
+    data->DID = DID_WATCHWND+2;
+    return rv;
+}
+HWND CreateWatch4Window(void)
+{
+    HWND rv = CreateInternalWindow(DID_WATCHWND+3, szWatchClassName, "Watch 4");
+    WATCHDATA *data = (WATCHDATA *)GetWindowLong(rv, 0);
+    data->DID = DID_WATCHWND+3;
+    return rv;
+}
+HWND CreateLocalsWindow(void)
+{
+    HWND rv = CreateInternalWindow(DID_LOCALSWND, szWatchClassName, "Locals");
+    WATCHDATA *data = (WATCHDATA *)GetWindowLong(rv, 0);
+    data->DID = DID_LOCALSWND;
+    return rv;
+}
+int SendToLastWatch(unsigned iMessage, WPARAM wParam, LPARAM lParam)
+{
+    return SendDIDMessage(lastWatch, iMessage, wParam, lParam);
 }

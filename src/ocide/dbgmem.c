@@ -50,7 +50,7 @@
 #include <ctype.h>
 
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame;
+extern HWND hwndClient, hwndFrame;
 extern PROCESS *activeProcess;
 extern enum DebugState uState;
 extern THREAD *activeThread;
@@ -59,30 +59,51 @@ extern SCOPE *activeScope;
 extern LOGFONT systemDialogFont;
 
 char *memhist[MAX_COMBO_HISTORY];
-HWND hwndMem;
 
 int memoryWordSize = 1;
 
 static char szMemClassName[] = "xccMemoryClass";
 static char szMemInternalClass[] = "xccInternalMemoryClass";
-static HWND hwndCombo, hwndEdit;
-static HBRUSH hbrBackground;
 static WNDPROC oldproc;
+static HBRUSH hbrBackground;
 
-static int oldMemAddress[4];
-static int MemAddress[4];
-static int cursrow[4], curscol[4];
-static char currentSel[4][256];
-static HWND hwndMemInternal[4];
+TBBUTTON memButtons[] = 
+{
+    {
+        0, IDM_GOTO, TBSTATE_ENABLED | TBSTATE_WRAP, TBSTYLE_BUTTON
+    }
+    ,
+    {
+        0, 0, 0, 0
+    }
+};
+char *memHints[] = { "Auto Evaluate" };
 
-static int curpos;
-static char cursmod[32];
-static int modifying;
-static HFONT staticFont;
-static HWND hwndTabCtrl;
-static int index;
+typedef struct memdata
+{
+    HWND hwndCombo, hwndEdit, hwndStatic;
+    HWND hwnd, hwndChild;
+    HWND toolbar;
+    BYTE *lastMem;
+    int lastMemSize;
+    int oldMemAddress;
+    int MemAddress;
+    int cursrow, curscol;
+    char currentSel[256];
+    char name[256];
+    int curpos;
+    int modifying;
+    int focussed;
+    int length;
+    int wordSize;
+    int autoeval;
+    char cursmod[32];
+    BYTE *currentData;
+    int currentLen;
+    BYTE *lastData;
+    int lastLen;
+} MEMDATA;
 
-static char *nameTags[4] = { "Memory 1", "Memory 2", "Memory 3", "Memory 4" };
 static LOGFONT Normalfontdata = 
 {
     -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET,
@@ -91,33 +112,32 @@ static LOGFONT Normalfontdata =
         CONTROL_FONT
 };
 
-HFONT MemFont;
-static char *szMemTitle = "Memory Window";
+static HFONT MemFont;
 LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 
-void SetCursMode(void)
+static void SetCursMode(MEMDATA *ptr)
 {
-        switch(memoryWordSize)
+        switch((memoryWordSize & 0xffff))
         {
                 case 1:
-                        strcpy(cursmod, "  ");
+                        strcpy(ptr->cursmod, "  ");
                         break;
                 case 2:
-                        strcpy(cursmod, "    ");
+                        strcpy(ptr->cursmod, "    ");
                         break;
                 case 4:
-                        strcpy(cursmod, "        ");
+                        strcpy(ptr->cursmod, "        ");
                         break;
         }
 }
-int GetMemAddress(char *buf, BOOL error)
+static int GetMemAddress(char *buf, BOOL error)
 {
     int addr, newaddr;
     int stars = 0;
     while (*buf == ' ')
         buf++;
-    if (buf[0] == '&')
+    if (*buf == '&')
         buf++;
     {
         int l;
@@ -131,10 +151,7 @@ int GetMemAddress(char *buf, BOOL error)
             else if (var->address < 0x1000)
             {
                 char data[20];
-                //if (!var->explicitreg)
-                    //ExtendedMessageBox("Address Error", MB_SETFOREGROUND |
-                        //MB_SYSTEMMODAL, 
-                        //"Address is a register.  Using its value as the address.");
+                var -> thread = activeThread;
                 ReadValue(var->address, &data, 4, var);
                 addr = *(int*)data;
             }
@@ -149,21 +166,13 @@ int GetMemAddress(char *buf, BOOL error)
             addr = 0;
         }
     }
-    //   newaddr = addr ;
-    //   while (stars) {
-    //      if (!ReadProcessMemory(activeProcess->hProcess,(LPVOID)newaddr,(LPVOID)&newaddr, 4, 0) )
-    //         break ;
-    //      stars-- ;
-    //   }
-    //   if (!stars)
-    //      addr = newaddr ;
 
     return addr;
 }
 
 //-------------------------------------------------------------------------
 
-static void CopyText(HWND hwnd)
+static void MemCopyText(HWND hwnd, MEMDATA *ptr)
 {
     int i;
     char buf[1024];
@@ -181,24 +190,26 @@ static void CopyText(HWND hwnd)
     GetClientRect(hwnd, &rect);
     rect.top += 22;
     lines = (rect.bottom - rect.top)/ 16;
-    chars = (rect.right/8 - 10) / 4; 
+    chars = (ptr->wordSize >> 16);
+    if (!chars)
+        chars = (rect.right/8 - 10) / 4; 
     
-    p = malloc((chars+7) * lines + 1);
+    p = malloc(lines * 2048 + 1);
     if (p)
     {
         p[0] = 0;
         for (i = 0; i < lines; i++)
         {
             int j;
-            sprintf(buf, "%08X: ", MemAddress[index] + i * chars);
+            sprintf(buf, "%08X: ", ptr->MemAddress + i * chars);
             strcat(p, buf);
-            for (j = 0; j < chars; j+= memoryWordSize)
+            for (j = 0; j < chars; j+= (ptr->wordSize & 0xffff))
             {
                 int k;
-                if (ReadProcessMemory(activeProcess->hProcess, (LPVOID)(MemAddress[index] +
-                    i * chars + j), (LPVOID)(charbuf + j), memoryWordSize, 0))
+                if (ReadProcessMemory(activeProcess->hProcess, (LPVOID)(ptr->MemAddress +
+                    i * chars + j), (LPVOID)(charbuf + j), (ptr->wordSize & 0xffff), 0))
                 {
-                    switch(memoryWordSize)
+                    switch((ptr->wordSize & 0xffff))
                     {
                             case 1:
                     sprintf(buf, "%02X ", (unsigned char)charbuf[j]);
@@ -210,19 +221,19 @@ static void CopyText(HWND hwnd)
                     sprintf(buf, "%08X ", (*(unsigned int *)(charbuf+j)));
                                     break;
                     }
-                    if (i == cursrow[index] && j == curscol[index])
-                        if (modifying)
-                            strcpy(buf, cursmod);
+                    if (i == ptr->cursrow && j == ptr->curscol)
+                        if (ptr->modifying)
+                            strcpy(buf, ptr->cursmod);
                 }
                 else
                 {
-                    if (i == cursrow[index] && j == curscol[index])
+                    if (i == ptr->cursrow && j == ptr->curscol)
                     {
-                        modifying = FALSE;
-                        curpos = 0;
-                        SetCursMode();
+                        ptr->modifying = FALSE;
+                        ptr->curpos = 0;
+                        SetCursMode(ptr);
                     }
-                    switch(memoryWordSize)
+                    switch((ptr->wordSize & 0xffff))
                     {
                             case 1:
                     strcpy(buf, "?? ");
@@ -238,7 +249,7 @@ static void CopyText(HWND hwnd)
                 }
                 strcat(p, buf);
                 strcat(p, " ");
-                for (k=0; k < memoryWordSize; k++)
+                for (k=0; k < (ptr->wordSize & 0xffff); k++)
                     if (charbuf[j+k] < 32 || charbuf[j+k] > 126)
                         charbuf[j+k] = '.';
             }
@@ -250,7 +261,7 @@ static void CopyText(HWND hwnd)
         free(p);
     }
 }
-void MemDoPaint(HWND hwnd, int focussed)
+void MemDoPaint(HWND hwnd, MEMDATA *ptr, int focussed)
 {
     PAINTSTRUCT ps;
     HDC dc;
@@ -275,31 +286,32 @@ void MemDoPaint(HWND hwnd, int focussed)
         FillRect(hdouble, &rect,(HBRUSH)(COLOR_WINDOW + 1));
         memset(charbuf, 0, sizeof(charbuf));
         lines = (rect.bottom - rect.top)/ 16;
-        chars = (rect.right/8 - 10) / 4; 
-        if (lines > 0 && chars > 0)
+        chars = (ptr->wordSize >> 16);
+        if (!chars)
+            chars = (rect.right/8 - 10) / 4; 
+        oldFont = SelectObject(hdouble, MemFont);
+         if (lines > 0 && chars > 0)
         {
-            oldFont = SelectObject(dc, MemFont);
+            if (ptr->currentLen < lines * chars)
+            {
+                free(ptr->currentData);
+                ptr->currentLen = lines * chars;
+                ptr->currentData = calloc(ptr->currentLen + 16,1);
+            }
             for (i = 0; i < lines; i++)
             {
                 int j;
-                sprintf(buf, "%08X: ", MemAddress[index] + i * chars);
+                sprintf(buf, "%08X: ", ptr->MemAddress + i * chars);
                 TextOut(hdouble, 0, i *16+rect.top, buf, strlen(buf));
-                for (j = 0; j < chars; j+= memoryWordSize)
+                for (j = 0; j < chars; j+= (ptr->wordSize & 0xffff))
                 {
                     int k;
-                    if (i == cursrow[index] && j == curscol[index] && focussed)
+                    int setbk = FALSE;
+                    if (ReadProcessMemory(activeProcess->hProcess, (LPVOID)(ptr->MemAddress +
+                        i * chars + j), (LPVOID)(charbuf + j), (ptr->wordSize & 0xffff), 0))
                     {
-                        oldbk = GetBkColor(hdouble);
-                        oldtxt = SetTextColor(hdouble, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
-        //                if (modifying)
-                            SetBkColor(hdouble, RetrieveSysColor(COLOR_HIGHLIGHT));
-        //                else
-        //                    SetBkColor(hdouble, oldtxt);
-                    }
-                    if (ReadProcessMemory(activeProcess->hProcess, (LPVOID)(MemAddress[index] +
-                        i * chars + j), (LPVOID)(charbuf + j), memoryWordSize, 0))
-                    {
-                        switch(memoryWordSize)
+                        memcpy(ptr->currentData + chars * i + j, charbuf + j, (ptr->wordSize & 0xffff));
+                        switch((ptr->wordSize & 0xffff))
                         {
                                 case 1:
                         sprintf(buf, "%02X ", (unsigned char)charbuf[j]);
@@ -311,19 +323,19 @@ void MemDoPaint(HWND hwnd, int focussed)
                         sprintf(buf, "%08X ", (*(unsigned int *)(charbuf+j)));
                                         break;
                         }
-                        if (i == cursrow[index] && j == curscol[index])
-                            if (modifying)
-                                strcpy(buf, cursmod);
+                        if (i == ptr->cursrow && j == ptr->curscol)
+                            if (ptr->modifying)
+                                strcpy(buf, ptr->cursmod);
                     }
                     else
                     {
-                        if (i == cursrow[index] && j == curscol[index])
+                        if (i == ptr->cursrow && j == ptr->curscol)
                         {
-                            modifying = FALSE;
-                            curpos = 0;
-                            SetCursMode();
+                            ptr->modifying = FALSE;
+                            ptr->curpos = 0;
+                            SetCursMode(ptr);
                         }
-                        switch(memoryWordSize)
+                        switch((ptr->wordSize & 0xffff))
                         {
                                 case 1:
                         strcpy(buf, "?? ");
@@ -337,31 +349,44 @@ void MemDoPaint(HWND hwnd, int focussed)
                         }
                         charbuf[j] = '.';
                     }
-                    if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
-                        TextOut(hdouble, (10+ (j * 2 + j/memoryWordSize)) *8-4, 
-                                                        i *16+rect.top, buf, 2 * memoryWordSize);
+                    if (i == ptr->cursrow && j == ptr->curscol && focussed)
+                    {
+                        oldbk = GetBkColor(hdouble);
+                        oldtxt = SetTextColor(hdouble, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
+                        SetBkColor(hdouble, RetrieveSysColor(COLOR_HIGHLIGHT));
+                        setbk = TRUE;
+                    }
+                    else if (ptr->lastData && memcmp(ptr->lastData + chars * i + j, ptr->currentData + chars * i + j, (ptr->wordSize & 0xffff)))
+                    {
+                        oldbk = GetBkColor(hdouble);
+                        oldtxt = SetTextColor(hdouble, 0xff);
+                        setbk = TRUE;
+                    }
+                    if (i == ptr->cursrow && j == ptr->curscol && focussed && ptr->modifying)
+                        TextOut(hdouble, (10+ (j * 2 + j/(ptr->wordSize & 0xffff))) *8-4, 
+                                                        i *16+rect.top, buf, 2 * (ptr->wordSize & 0xffff));
                     else
-                        TextOut(hdouble, (10+ (j * 2 + j/memoryWordSize)) *8, 
-                                                        i *16+rect.top, buf, 2 * memoryWordSize);
+                        TextOut(hdouble, (10+ (j * 2 + j/(ptr->wordSize & 0xffff))) *8, 
+                                                        i *16+rect.top, buf, 2 * (ptr->wordSize & 0xffff));
                                 
-                    for (k=0; k < memoryWordSize; k++)
-                        if (charbuf[j+k] < 32 || charbuf[j+k] > 126)
-                            charbuf[j+k] = '.';
-                    if (i == cursrow[index] && j == curscol[index] && focussed)
+                    if (setbk)
                     {
                         SetTextColor(hdouble, oldtxt);
                         SetBkColor(hdouble, oldbk);
                     }
-                    if (i == cursrow[index] && j == curscol[index] && focussed && modifying)
-                        TextOut(hdouble, (10 + memoryWordSize * 2 + 
-                                    (j * 2 + j/memoryWordSize)) *8-4, 
+                    for (k=0; k < (ptr->wordSize & 0xffff); k++)
+                        if (charbuf[j+k] < 32 || charbuf[j+k] > 126)
+                            charbuf[j+k] = '.';
+                    if (i == ptr->cursrow && j == ptr->curscol && focussed && ptr->modifying)
+                        TextOut(hdouble, (10 + (ptr->wordSize & 0xffff) * 2 + 
+                                    (j * 2 + j/(ptr->wordSize & 0xffff))) *8-4, 
                                      i *16+rect.top, " ", 1);
                     else
-                        TextOut(hdouble, (10 + memoryWordSize * 2 + 
-                                    (j * 2 + j/memoryWordSize)) *8, 
+                        TextOut(hdouble, (10 + (ptr->wordSize & 0xffff) * 2 + 
+                                    (j * 2 + j/(ptr->wordSize & 0xffff))) *8, 
                                      i *16+rect.top, " ", 1);
                 }
-                TextOut(hdouble, (10+ (j * 2 + j/memoryWordSize)) *8, i *16+rect.top, &charbuf[0], strlen(charbuf));
+                TextOut(hdouble, (10+ (j * 2 + j/(ptr->wordSize & 0xffff))) *8, i *16+rect.top, &charbuf[0], strlen(charbuf));
             }
         }    
         SelectObject(hdouble, oldFont);
@@ -374,11 +399,30 @@ void MemDoPaint(HWND hwnd, int focussed)
 }
 //-------------------------------------------------------------------------
 
-LRESULT CALLBACK EditHook(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
+static LRESULT CALLBACK EditHook(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam)
 {
+    MEMDATA *ptr;
     switch (iMessage)
     {
+        case WM_LBUTTONDOWN:
+            SetFocus(hwnd);
+            break;
+        case WM_SYSCHAR:
+        case WM_SYSDEADCHAR:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        {
+            // I don't know why I have to do this.   MEnu access keys don't work
+            // unless I do though.
+            HWND hwnd1 = GetParent(hwnd);
+            while (hwnd1 != HWND_DESKTOP)
+            {
+                hwnd = hwnd1;
+                hwnd1 = GetParent(hwnd);
+            }
+            return SendMessage(hwnd, iMessage, wParam, lParam);
+        }
         case WM_COMMAND:
         {
                 char *buf;
@@ -411,8 +455,9 @@ LRESULT CALLBACK EditHook(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 }
                 if (buf)
                 {
+                        ptr = (MEMDATA *)GetWindowLong(hwnd, GWL_USERDATA);
                         SendMessage(hwnd, WM_SETTEXT, 0 , (LPARAM)buf);
-                        SendMessage(hwndMem, WM_COMMAND, IDC_RETURN, 0);
+                        SendMessage(ptr->hwnd, WM_COMMAND, IDC_RETURN, 0);
                 }
         }
                 break;
@@ -430,28 +475,29 @@ LRESULT CALLBACK EditHook(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
         }
             return 0;
         case WM_KEYDOWN:
+            ptr = (MEMDATA *)GetWindowLong(hwnd, GWL_USERDATA);
             switch (wParam)
             {
             case VK_RETURN:
                 if (GetKeyState(VK_SHIFT) &0x80000000)
-                    return SendMessage(hwndMem, iMessage, wParam, lParam);
+                    return SendMessage(ptr->hwnd, iMessage, wParam, lParam);
                 else
-                    return SendMessage(hwndMem, WM_COMMAND, IDC_RETURN, 0);
+                    return SendMessage(ptr->hwnd, WM_COMMAND, IDC_RETURN, 0);
             case VK_ESCAPE:
                 if (GetKeyState(VK_SHIFT) &0x80000000)
-                    return SendMessage(hwndMem, iMessage, wParam, lParam);
+                    return SendMessage(ptr->hwnd, iMessage, wParam, lParam);
                 else
-                    return SendMessage(hwndMem, WM_COMMAND, IDC_ESCAPE, 0);            
+                    return SendMessage(ptr->hwnd, WM_COMMAND, IDC_ESCAPE, 0);            
             case VK_LEFT:
             case VK_RIGHT:
             case VK_UP:
             case VK_DOWN:
                 if (GetKeyState(VK_SHIFT) &0x80000000)
-                    return SendMessage(hwndMem, iMessage, wParam, lParam);
+                    return SendMessage(ptr->hwnd, iMessage, wParam, lParam);
                 break;
             case VK_NEXT:
             case VK_PRIOR:
-                return SendMessage(hwndMem, iMessage, wParam, lParam);
+                return SendMessage(ptr->hwnd, iMessage, wParam, lParam);
             }
             break;
         case WM_KEYUP:
@@ -471,9 +517,13 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     RECT r;
     int lines, chars;
     char buf[256];
+    LPCREATESTRUCT lpCreateStruct;
+    MEMDATA *ptr;
     switch (iMessage)
     {
         case WM_CREATE:
+            lpCreateStruct = (LPCREATESTRUCT) lParam;
+            SetWindowLong(hwnd, 0, (long)lpCreateStruct->lpCreateParams);
             SetScrollRange(hwnd, SB_VERT, 0, 64000, FALSE);
             SetScrollPos(hwnd, SB_VERT, 32000, TRUE);
             break;
@@ -482,18 +532,21 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_ERASEBKGND:
             return 1;
         case WM_PAINT:
-            MemDoPaint(hwnd, GetWindowLong(hwnd, GWL_USERDATA)); // focussed
+            ptr = (HWND)GetWindowLong(hwnd, 0);
+            MemDoPaint(hwnd, ptr, ptr->focussed); // focussed
             return 0;
         case WM_SETFOCUS:
+            ptr = (HWND)GetWindowLong(hwnd, 0);
             //         SendMessage(hwndFrame,WM_REDRAWTOOLBAR,0,0) ;
             SendMessage(GetParent(hwnd), WM_ACTIVATEME, 0, 0);
-            SetWindowLong(hwnd, GWL_USERDATA, TRUE);
+            ptr->focussed = TRUE;
             InvalidateRect(hwnd, 0, 1);
             break;
         case WM_KILLFOCUS:
-            SetWindowLong(hwnd, GWL_USERDATA, FALSE);
-            modifying = FALSE;
-            SetCursMode();
+            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr->focussed = FALSE;
+            ptr->modifying = FALSE;
+            SetCursMode(ptr);
             InvalidateRect(hwnd, 0, 1);
             break;
         case WM_RBUTTONDOWN:
@@ -510,128 +563,138 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             return 0;
         case WM_COMMAND:
+            ptr = (HWND)GetWindowLong(hwnd, 0);
             switch(wParam)
             {
                     case IDM_BYTE:
-                            memoryWordSize = 1;
+                            ptr->wordSize = (ptr->wordSize & 0xffff0000) + 1;
+                            memoryWordSize = ptr->wordSize;
                             SavePreferences();
                             break;
                     case IDM_WORD:
-                            memoryWordSize = 2;
+                            ptr->wordSize = (ptr->wordSize & 0xffff0000) + 2;
+                            memoryWordSize = ptr->wordSize;
                             SavePreferences();
                             break;
                     case IDM_DWORD:
-                            memoryWordSize = 4;
+                            ptr->wordSize = (ptr->wordSize & 0xffff0000) + 4;
+                            memoryWordSize = ptr->wordSize;
                             SavePreferences();
                             break;
-                    case IDM_GOTO:
-                        MemAddress[index] = lParam;
-                        oldMemAddress[index] = MemAddress[index];
-                        InvalidateRect(hwnd, 0, 1);
-                        return 0;
+                   default:
+                        if (wParam >= 16384 && wParam <= 16384 + 64)
+                        {
+                            ptr->wordSize &= 0xffff;
+                            ptr->wordSize |= (wParam - 16384) << 16;
+                            memoryWordSize = ptr->wordSize;
+                            SavePreferences();
+                        }
+                        break;
             }
             MarkChanged(workArea, TRUE);
-            modifying = FALSE;
+            ptr-> modifying = FALSE;
             InvalidateRect(hwnd, 0, 1);
             break;
         case WM_LBUTTONDOWN:
+            ptr = (HWND)GetWindowLong(hwnd, 0);
             GetClientRect(hwnd, &r);
             lines = (r.bottom - r.top)/ 16;
             chars = (r.right/8 - 10) / 4; 
-            SetCursMode();
-            curpos = 0;
-            modifying = FALSE;
-            if (LOWORD(lParam) >= 10 *8 && LOWORD(lParam) < 10*8 + chars *8 * (1 + 2 * memoryWordSize))
+            SetCursMode(ptr);
+            ptr->curpos = 0;
+            ptr->modifying = FALSE;
+            if (LOWORD(lParam) >= 10 *8 && LOWORD(lParam) < 10*8 + chars *8 * (1 + 2 * (ptr->wordSize & 0xffff)))
             {
-                curscol[index] = (LOWORD(lParam)/8 - 10) / (1 + memoryWordSize * 2);
-                curscol[index] *= memoryWordSize;
-                cursrow[index] = (HIWORD(lParam)) / 16;
-                if (GetWindowLong(hwnd, GWL_USERDATA))
+                ptr->curscol = (LOWORD(lParam)/8 - 10) / (1 + (ptr->wordSize & 0xffff) * 2);
+                ptr->curscol *= (ptr->wordSize & 0xffff);
+                ptr->cursrow = (HIWORD(lParam)) / 16;
+                if (ptr->focussed)
                     InvalidateRect(hwnd, 0, 1);
             }
             SetFocus(hwnd);
             break;
         case WM_KEYDOWN:
+            ptr = (HWND)GetWindowLong(hwnd, 0);
             GetClientRect(hwnd, &r);
             lines = (r.bottom - r.top)/ 16;
             chars = (r.right/8 - 10) / 4; 
             switch (wParam)
             {
             case VK_BACK:
-                if (modifying)
+                if (ptr->modifying)
                 {
-                    cursmod[curpos] = ' ';
-                    if (curpos)
-                        curpos--;
+                    ptr->cursmod[ptr->curpos] = ' ';
+                    if (ptr->curpos)
+                        ptr->curpos--;
                     InvalidateRect(hwnd, 0, 1);
                 }
                 break;
             case VK_LEFT:
-                if (modifying)
+                if (ptr->modifying)
                 {
-                    cursmod[curpos] = ' ';
-                    if (curpos)
-                        curpos--;
+                    ptr->cursmod[ptr->curpos] = ' ';
+                    if (ptr->curpos)
+                        ptr->curpos--;
                     InvalidateRect(hwnd, 0, 1);
                     break;
                 }
-                if (curscol[index] != 0)
+                if (ptr->curscol != 0)
                 {
-                    curscol[index]-= memoryWordSize;
+                    ptr->curscol-= (ptr->wordSize & 0xffff);
                     InvalidateRect(hwnd, 0, 1);
                     break;
                 }
-                curscol[index] = chars - memoryWordSize;
+                ptr->curscol = chars - (ptr->wordSize & 0xffff);
                 // FALL THROUGH
             case VK_UP:
-                modifying = FALSE;
-                SetCursMode();
-                curpos = 0;
-                if (cursrow[index] == 0)
+                ptr->modifying = FALSE;
+                SetCursMode(ptr);
+                ptr->curpos = 0;
+                if (ptr->cursrow == 0)
                     SendMessage(hwnd, WM_VSCROLL, SB_LINEUP, 0);
                 else
                 {
-                    cursrow[index]--;
+                    ptr->cursrow--;
                     InvalidateRect(hwnd, 0, 1);
                 }
                 break;
             case VK_RIGHT:
-                if (modifying)
+                if (ptr->modifying)
                 {
-                    if (curpos < memoryWordSize * 2)
-                        curpos++;
+                    if (ptr->curpos < (ptr->wordSize & 0xffff) * 2)
+                        ptr->curpos++;
                     break;
                 }
-                if (curscol[index] + memoryWordSize < chars)
+                if (ptr->curscol + (ptr->wordSize & 0xffff) < chars)
                 {
-                    curscol[index]+=memoryWordSize;
+                    ptr->curscol+=(ptr->wordSize & 0xffff);
                     InvalidateRect(hwnd, 0, 1);
                     break;
                 }
-                curscol[index] = 0;
+                ptr->curscol = 0;
                 // FALL THROUGH
             case VK_DOWN:
                 GetClientRect(hwnd, &r);
                 lines = (r.bottom - r.top)/ 16;
-                modifying = FALSE;
-                SetCursMode();
-                curpos = 0;
-                if (cursrow[index] +1 >= lines)
+                ptr->modifying = FALSE;
+                SetCursMode(ptr);
+                ptr->curpos = 0;
+                if (ptr->cursrow +1 >= lines)
                     SendMessage(hwnd, WM_VSCROLL, SB_LINEDOWN, 0);
                 else
                 {
-                    cursrow[index]++;
+                    ptr->cursrow++;
                     InvalidateRect(hwnd, 0, 1);
                 }
                 break;
             case VK_RETURN:
-                if (modifying)
+                if (ptr->modifying)
                 {
                     MEMORY_BASIC_INFORMATION mbi;
                     DWORD dwOldProtect;
                     unsigned v = 0;
-                    int address = MemAddress[index] + cursrow[index] * chars + curscol[index];
-                    sscanf(cursmod, "%x", &v);
+                    int address = ptr->MemAddress + ptr->cursrow * chars + ptr->curscol;
+                    sscanf(ptr->cursmod, "%x", &v);
                     GetClientRect(hwnd, &r);
                     lines = (r.bottom - r.top)/ 16;
                     chars = (r.right/8 - 10) / 4; 
@@ -641,7 +704,7 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     VirtualProtectEx(activeProcess->hProcess, mbi.BaseAddress,
                         mbi.RegionSize, PAGE_EXECUTE_READWRITE, &mbi.Protect);
                     if (!WriteProcessMemory(activeProcess->hProcess, (LPVOID)
-                        address, (LPVOID) &v, memoryWordSize, 0))
+                        address, (LPVOID) &v, (ptr->wordSize & 0xffff), 0))
                         ExtendedMessageBox("Memory Window", MB_SETFOREGROUND |
                             MB_SYSTEMMODAL, 
                             "Could not write process memory with new value");
@@ -649,16 +712,16 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         mbi.RegionSize, mbi.Protect, &dwOldProtect);
                     FlushInstructionCache(activeProcess->hProcess, (LPVOID)
                         address, 1);
-                    modifying = FALSE;
-                    curpos = 0;
-                    SetCursMode();
+                    ptr->modifying = FALSE;
+                    ptr->curpos = 0;
+                    SetCursMode(ptr);
                     InvalidateRect(hwnd, 0, 1);
                 }
                 break;
             case VK_ESCAPE:
-                modifying = FALSE;
-                curpos = 0;
-                SetCursMode();
+                ptr->modifying = FALSE;
+                ptr->curpos = 0;
+                SetCursMode(ptr);
                 InvalidateRect(hwnd, 0, 1);
                 break;
             case VK_NEXT:
@@ -670,56 +733,61 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             case 'C':
                 if (GetKeyState(VK_CONTROL) &0x80000000)
                 {
-                    CopyText(hwnd);
+                    MemCopyText(hwnd, ptr);
                 }
                 break;
             
             }
             break;
         case WM_CHAR:
+            ptr = (HWND)GetWindowLong(hwnd, 0);
             if (isxdigit(wParam))
             {
-                modifying = TRUE;
-                cursmod[curpos] = toupper(wParam);
-                if (curpos < memoryWordSize * 2)
-                    curpos++;
+                ptr->modifying = TRUE;
+                ptr->cursmod[ptr->curpos] = toupper(wParam);
+                if (ptr->curpos < (ptr->wordSize & 0xffff) * 2)
+                    ptr->curpos++;
                 InvalidateRect(hwnd, 0, 0);
             }
             break;
         case WM_VSCROLL:
+            ptr = (HWND)GetWindowLong(hwnd, 0);
             GetClientRect(hwnd, &r);
             lines = (r.bottom - r.top)/ 16;
             chars = (r.right/8 - 10) / 4; 
             switch (LOWORD(wParam))
             {
             case SB_BOTTOM:
-                MemAddress[index] =  - (lines *chars);
+                ptr->MemAddress =  - (lines *chars);
                 break;
             case SB_TOP:
-                MemAddress[index] = 0;
+                ptr->MemAddress = 0;
                 break;
             case SB_ENDSCROLL:
                 return 0;
             case SB_LINEDOWN:
-                MemAddress[index] += chars;
+                ptr->MemAddress += chars;
                 break;
             case SB_LINEUP:
-                MemAddress[index] -= chars;
+                ptr->MemAddress -= chars;
                 break;
             case SB_PAGEDOWN:
-                MemAddress[index] += chars *(lines - 1);
+                ptr->MemAddress += chars *(lines - 1);
                 break;
             case SB_PAGEUP:
-                MemAddress[index] -= chars *(lines - 1);
+                ptr->MemAddress -= chars *(lines - 1);
                 break;
             case SB_THUMBPOSITION:
-                MemAddress[index] = oldMemAddress[index] + (HIWORD(wParam) - 32000) *16;
-                oldMemAddress[index] = MemAddress[index];
+                ptr->MemAddress = ptr->oldMemAddress + (HIWORD(wParam) - 32000) *16;
+                ptr->oldMemAddress = ptr->MemAddress;
                 break;
             case SB_THUMBTRACK:
-                MemAddress[index] = oldMemAddress[index] + (HIWORD(wParam) - 32000) *16;
+                ptr->MemAddress = ptr->oldMemAddress + (HIWORD(wParam) - 32000) *16;
                 break;
             }
+            free(ptr->lastData);
+            ptr->lastData = NULL;
+            ptr->lastLen = 0;
             InvalidateRect(hwnd, 0, 1);
             SetScrollPos(hwnd, SB_VERT, 32000, TRUE);
             return 0;
@@ -730,126 +798,152 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 }
 //-------------------------------------------------------------------------
 
+static void SetEditChild(MEMDATA *ptr)
+{
+    if (ptr->autoeval)
+    {
+        SendMessage(ptr->hwndEdit, WM_SETTEXT, 0, (LPARAM)ptr->name);
+    }
+    else
+    {
+        char buf[256];
+        sprintf(buf,"0x%x", ptr->MemAddress);
+        SendMessage(ptr->hwndEdit, WM_SETTEXT, 0, (LPARAM)buf);
+    }
+}
 LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
+    MEMDATA *ptr;
     RECT r;
     POINT pt;
-    HWND hwndStatic;
     int lines, chars;
     static int focussed;
     char buf[256];
-    LPNMHDR nmh;
     int i;
     switch (iMessage)
     {
-        case WM_NOTIFY:
-            nmh = (LPNMHDR)lParam;
-            if (nmh->code == TABN_SELECTED)
-            {
-                LSTABNOTIFY *p = (LSTABNOTIFY *)nmh;
-                curpos = 0;
-                modifying = FALSE;
-                SendMessage(hwndEdit, WM_GETTEXT, 256, (LPARAM)currentSel[index]);
-                ShowWindow(hwndMemInternal[index], SW_HIDE);
-                for (i=0; i < 4; i++)
-                    if (p->lParam == (LPARAM)hwndMemInternal[i])
-                        index = i;
-                ShowWindow(hwndMemInternal[index], SW_SHOW);
-                SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)currentSel[index]);
-                break;
-            }
-            break;
         case WM_ACTIVATEME:
             return SendMessage(GetParent(hwnd), iMessage, wParam, lParam);
         case WM_CREATE:
-            index = 0;
-            modifying = 0;
-            curpos = 0;
-            SetCursMode();
+            ptr = (MEMDATA *)calloc(1, sizeof(MEMDATA));
+            ptr->wordSize = memoryWordSize;
+            SetWindowLong(hwnd, 0, (long)ptr);
+            ptr->modifying = 0;
+            ptr->hwnd = hwnd;
+            SetCursMode(ptr);
             GetClientRect(hwnd, &r);
-            MemFont = CreateFontIndirect(&Normalfontdata);
-            hwndStatic = CreateWindow("STATIC", "Address:", WS_CHILD + WS_CLIPSIBLINGS + WS_VISIBLE,
-                r.left + 20, r.top + 6, 60, 18,
+            ptr->hwndStatic = CreateWindow("STATIC", "Address:", WS_CHILD + WS_CLIPSIBLINGS + WS_VISIBLE,
+                r.left + 10, r.top + 6, 60, 18,
                 hwnd, 0, hInstance, 0);
-            ApplyDialogFont(hwndStatic);
-            hwndCombo = CreateWindow("COMBOBOX", "", WS_CHILD + WS_CLIPSIBLINGS +
+            ApplyDialogFont(ptr->hwndStatic);
+            ptr->hwndCombo = CreateWindow("COMBOBOX", "", WS_CHILD + WS_CLIPSIBLINGS +
                 WS_BORDER + WS_VISIBLE + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
                                 r.left + 80, r.top, 200, 100, hwnd, 0, hInstance, 0);
-            ApplyDialogFont(hwndCombo);
-            SubClassHistoryCombo(hwndCombo);
-            SendMessage(hwndCombo, WM_SETHISTORY, 0, (LPARAM)memhist);
+            ApplyDialogFont(ptr->hwndCombo);
+            SubClassHistoryCombo(ptr->hwndCombo);
+            SendMessage(ptr->hwndCombo, WM_SETHISTORY, 0, (LPARAM)memhist);
             pt.x = pt.y = 5;
-            hwndEdit = ChildWindowFromPoint(hwndCombo, pt);
-            oldproc = (WNDPROC)SetWindowLong(hwndEdit, GWL_WNDPROC, (int)EditHook);
+            ptr->hwndEdit = ChildWindowFromPoint(ptr->hwndCombo, pt);
+            SetWindowLong(ptr->hwndEdit, GWL_USERDATA, (long)ptr);
+            oldproc = (WNDPROC)SetWindowLong(ptr->hwndEdit, GWL_WNDPROC, (int)EditHook);
+            ptr->toolbar = CreateToolBarWindow(-1, hwnd, hwnd,
+                ID_MEMTB, 1, memButtons, memHints, "Memory Tools", 0/*IDH_ help hint */, TRUE);
+            SendMessage(ptr->toolbar, LCF_FLOATINGTOOL, 0, 0);
+            SetWindowPos(ptr->toolbar, NULL, 275, 1, 0,0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
             GetClientRect(hwnd, &r);
-            hwndTabCtrl = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
-            ApplyDialogFont(hwndTabCtrl);
             r.top += 26;
-            r.bottom -= 25;
-            // we want the next four to all be the same size since they are overlapping windows inside the memory window
-            hwndMemInternal[0] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_VISIBLE + WS_BORDER,
+            ptr->hwndChild = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_VISIBLE + WS_BORDER,
                                           r.left, r.top, r.right - r.left, r.bottom - r.top,
-                                          hwnd, 0, hInstance, 0);
-            hwndMemInternal[1] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER, 
-                                          r.left, r.top, r.right - r.left, r.bottom - r.top,
-                                          hwnd, 0, hInstance, 0);
-            hwndMemInternal[2] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER,
-                                          r.left, r.top, r.right - r.left, r.bottom - r.top,
-                                          hwnd, 0, hInstance, 0);
-            hwndMemInternal[3] = CreateWindowEx(0, szMemInternalClass, "", WS_CHILD + WS_BORDER,
-                                          r.left, r.top, r.right - r.left, r.bottom - r.top,
-                                          hwnd, 0, hInstance, 0);
-            for (i=3; i >=0 ; i--)
-                SendMessage(hwndTabCtrl, TABM_ADD, (WPARAM)nameTags[i], (LPARAM)hwndMemInternal[i]);
+                                          hwnd, 0, hInstance, ptr);
             break;
+        case WM_RESETHISTORY:
+            ptr = (MEMDATA *)GetWindowLong(hwnd, 0);
+            SendMessage(ptr->hwndCombo, WM_SETHISTORY, 0, (LPARAM)memhist);
+            break;            
         case WM_DESTROY:
-            hwndMem = 0;
+            ptr = (MEMDATA *)GetWindowLong(hwnd, 0);
+            DeleteObject(ptr->hwndStatic);
+            DeleteObject(ptr->hwndCombo);
+            DeleteObject(ptr->hwndChild);
             break;
         case WM_SETFOCUS:
-            SetFocus(hwndCombo);
+            ptr = (MEMDATA *)GetWindowLong(hwnd, 0);
             SendMessage(GetParent(hwnd), WM_ACTIVATEME, 0, 0);
-            InvalidateRect(hwndMemInternal[index], 0, 1);
+            InvalidateRect(ptr->hwndChild, 0, 1);
             break;
         case WM_KILLFOCUS:
-            modifying = FALSE;
-            SetCursMode();
-            InvalidateRect(hwndMemInternal[index], 0, 1);
+            ptr = (MEMDATA *)GetWindowLong(hwnd, 0);
+            ptr->modifying = FALSE;
+            SetCursMode(ptr);
+            InvalidateRect(ptr->hwndChild, 0, 1);
             break;
         case WM_COMMAND:
+            ptr = (MEMDATA *)GetWindowLong(hwnd, 0);
             switch(wParam)
             {
                 case IDC_RETURN:
-                    SendMessage(hwndEdit, WM_GETTEXT, 256, (LPARAM)buf);
-                    MemAddress[index] = GetMemAddress(buf, TRUE);
-                    oldMemAddress[index] = MemAddress[index];
-                    InvalidateRect(hwndMemInternal[index], 0, 1);
-                    SendMessage(hwndCombo, WM_SAVEHISTORY, 0, 0);
+                    SendMessage(ptr->hwndEdit, WM_GETTEXT, 256, (LPARAM)ptr->name);
+                    ptr->MemAddress = GetMemAddress(ptr->name, TRUE);
+                    ptr->oldMemAddress = ptr->MemAddress;
+                    InvalidateRect(ptr->hwndChild, 0, 1);
+                    SendMessage(ptr->hwndCombo, WM_SAVEHISTORY, 0, 0);
+                    SetEditChild(ptr);
+                    free(ptr->lastData);
+                    ptr->lastData = NULL;
+                    ptr->lastLen = 0;
                     return 0;
                 case IDC_ESCAPE:
-                    sprintf(buf,"0x%x", MemAddress[index]);
-                    SendMessage(hwndEdit, WM_SETTEXT, 0, (LPARAM)buf);
+                    SetEditChild(ptr);
+                    return 0;
+                case IDM_GOTO:
+                    ptr->autoeval = !ptr->autoeval;
+                    SetEditChild(ptr);
                     return 0;
             }
+            if (HIWORD(wParam) == CBN_SELENDOK)
+            {
+                PostMessage(hwnd, WM_COMMAND, IDC_RETURN, 0);
+                return 0;
+            }
             MarkChanged(workArea, TRUE);
-            modifying = FALSE;
-            InvalidateRect(hwndMemInternal[index], 0, 1);
+            ptr->modifying = FALSE;
+            InvalidateRect(ptr->hwndChild, 0, 1);
             break;
         case WM_RESTACK:
-            SendMessage(hwndEdit, WM_GETTEXT, 256, (LPARAM)buf);
-            MemAddress[index] = GetMemAddress(buf, FALSE);
-            oldMemAddress[index] = MemAddress[index];
-            InvalidateRect(hwndMemInternal[index], 0, 1);
+            ptr = (MEMDATA *)GetWindowLong(hwnd, 0);
+            SendMessage(ptr->hwndEdit, WM_GETTEXT, 256, (LPARAM)buf);
+            if (ptr->autoeval)
+            {
+                ptr->MemAddress = GetMemAddress(buf, FALSE);
+                if (ptr->MemAddress != ptr->oldMemAddress)
+                {
+                    free(ptr->lastData);
+                    ptr->lastData = NULL;
+                    ptr->lastLen = 0;
+                    ptr->oldMemAddress = ptr->MemAddress;
+                    InvalidateRect(ptr->hwndChild, 0, 1);
+                    break;
+                }
+                ptr->oldMemAddress = ptr->MemAddress;
+            }
+            if (ptr->lastLen < ptr->currentLen)
+            {
+                free(ptr->lastData);
+                ptr->lastLen = ptr->currentLen;
+                ptr->lastData = calloc(ptr->lastLen, 1);
+            }
+            memcpy(ptr->lastData, ptr->currentData, ptr->lastLen);
+            InvalidateRect(ptr->hwndChild, 0, 1);
             break;
         case WM_SIZE:
+            ptr = (MEMDATA *)GetWindowLong(hwnd, 0);
             r.left = 0;
             r.right = LOWORD(lParam);
             r.top = 0;
             r.bottom = HIWORD(lParam);
-            MoveWindow(hwndTabCtrl, r.left, r.bottom - 24, r.right - r.left, 24, 1);
-            for (i=0; i < 4; i++)
-                MoveWindow(hwndMemInternal[i], r.left, r.top+26, r.right - r.left, r.bottom -
-                    r.top - 25 - 26, 1);
+            MoveWindow(ptr->hwndChild, r.left, r.top+26, r.right - r.left, r.bottom -
+                    r.top - 26, 1);
             break;
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
@@ -857,47 +951,55 @@ LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 
 
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------
 
-void RegisterMemWindow(void)
+void RegisterMemWindow(HINSTANCE hInstance)
 {
-    WNDCLASS wc;
-    memset(&wc, 0, sizeof(wc));
-    wc.style = CS_HREDRAW + CS_VREDRAW;
-    wc.lpfnWndProc = &MemProc;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    wc.hInstance = hInstance;
-    wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-    wc.hCursor = LoadCursor(0, IDC_ARROW);
-    hbrBackground = wc.hbrBackground = (HBRUSH)RetrieveSysBrush(COLOR_BTNFACE);
-    wc.lpszMenuName = 0;
-    wc.lpszClassName = szMemClassName;
-    RegisterClass(&wc);
-    
-    wc.lpfnWndProc = &MemInternalProc;
-    wc.hIcon = LoadIcon(0, IDI_APPLICATION);
-    wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)RetrieveSysBrush(COLOR_WINDOW);
-    wc.lpszClassName = szMemInternalClass;
-    RegisterClass(&wc);
+    static BOOL registered;
+    if (!registered)
+    {
+        WNDCLASS wc;
+        memset(&wc, 0, sizeof(wc));
+        wc.style = CS_HREDRAW + CS_VREDRAW;
+        wc.lpfnWndProc = &MemProc;
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = sizeof(DWORD);
+        wc.hInstance = hInstance;
+        wc.hIcon = LoadIcon(0, IDI_APPLICATION);
+        wc.hCursor = LoadCursor(0, IDC_ARROW);
+        hbrBackground = wc.hbrBackground = (HBRUSH)RetrieveSysBrush(COLOR_BTNFACE);
+        wc.lpszMenuName = 0;
+        wc.lpszClassName = szMemClassName;
+        RegisterClass(&wc);
+       
+        MemFont = CreateFontIndirect(&Normalfontdata);
+        
+        wc.lpfnWndProc = &MemInternalProc;
+        wc.hIcon = LoadIcon(0, IDI_APPLICATION);
+        wc.hCursor = LoadCursor(0, IDC_ARROW);
+        wc.hbrBackground = (HBRUSH)RetrieveSysBrush(COLOR_WINDOW);
+        wc.lpszClassName = szMemInternalClass;
+        RegisterClass(&wc);
 
+        registered = TRUE;
+    }
 }
 
 //-------------------------------------------------------------------------
 
-HWND CreateMemWindow(void)
+HWND CreateMem1Window(void)
 {
-    HWND rv;
-    RECT r;
-    POINT pt;
-    if (hwndMem)
-    {
-        SendMessage(hwndMem, WM_SETFOCUS, 0, 0);
-    }
-    else
-    {
-        hwndMem = CreateDockableWindow(DID_MEMWND, szMemClassName, szMemTitle, hInstance, 80 * 8, 19 * 8 + 40);
-    }
-    return hwndMem;
+    return CreateInternalWindow(DID_MEMWND, szMemClassName, "Memory 1");
+}
+HWND CreateMem2Window(void)
+{
+    return CreateInternalWindow(DID_MEMWND+1, szMemClassName, "Memory 2");
+}
+HWND CreateMem3Window(void)
+{
+    return CreateInternalWindow(DID_MEMWND+2, szMemClassName, "Memory 3");
+}
+HWND CreateMem4Window(void)
+{
+    return CreateInternalWindow(DID_MEMWND+3, szMemClassName, "Memory 4");
 }

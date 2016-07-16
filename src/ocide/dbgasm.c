@@ -48,13 +48,14 @@
 #include "opcodes.h"
 #include <ctype.h>
 
-#define ASM_OFFSET 35
+#define ASM_OFFSET 24
 
 #define LINES 512
 #define LINELEN 564
 
+extern SCOPE *activeScope;
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame, hwndSrcTab;
+extern HWND hwndClient, hwndFrame, hwndSrcTab;
 extern enum DebugState uState;
 extern THREAD *activeThread;
 extern PROJECTITEM *activeProject;
@@ -315,16 +316,16 @@ void DoDisassembly(HDC dc, RECT *r)
             {
                 if (isBreakPoint(n))
                 {
-                    ImageList_Draw(tagImageList, IML_STOPBP, dc, 16, i*16, ILD_NORMAL);
+                    ImageList_Draw(tagImageList, IML_STOPBP, dc, 3, i*16, ILD_NORMAL);
                 }
                 else if (uState != Running)
                 {
-                    ImageList_Draw(tagImageList, IML_STOP, dc, 16, i*16, ILD_NORMAL);
+                    ImageList_Draw(tagImageList, IML_STOP, dc, 3, i*16, ILD_NORMAL);
                 }
             }
             else if (isBreakPoint(n))
             {
-                ImageList_Draw(tagImageList, IML_BP, dc, 16, i*16, ILD_NORMAL);
+                ImageList_Draw(tagImageList, IML_BP, dc, 3, i*16, ILD_NORMAL);
             }
         }
     }
@@ -345,7 +346,7 @@ LRESULT CALLBACK gotoProc2(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (wParam == IDOK)
             {
                 GetEditField(hwnd, IDC_GOTO, buf);
-                info = EvalExpr(&dbg, NULL, buf, TRUE);
+                info = EvalExpr(&dbg, activeScope, buf, TRUE);
                 if (info)
                 {
                     if (info->constant)
@@ -439,7 +440,14 @@ LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     int xlines;
     switch (iMessage)
     {
+        case WM_NCACTIVATE:
+             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+             return TRUE;
+        case WM_NCPAINT:
+             SetScrollPos(hwnd, SB_VERT, 32000, TRUE);
+             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
+            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             lines = (char **)calloc(1,LINES *sizeof(char*));
             if (!lines)
                 return  - 1;
@@ -461,6 +469,7 @@ LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             SelectObject(dc, oldFont);
             ReleaseDC(hwnd, dc);
             charwidth = metric.tmMaxCharWidth;
+            ShowScrollBar(hwnd, SB_VERT, TRUE);
             SetScrollRange(hwnd, SB_VERT, 0, 64000, FALSE);
             SetScrollPos(hwnd, SB_VERT, 32000, TRUE);
             SendMessage(hwndSrcTab, TABM_ADD, (WPARAM)"Disassembly", (LPARAM)hwnd);
@@ -531,7 +540,8 @@ setBreakPoint:
                     CreateDrawWindow(&info, TRUE);
                 }
                     
-                InvalidateRect(hwndASM, 0, 1);
+                if (hwndASM)
+                    InvalidateRect(hwndASM, 0, 1);
             }
             break;
         case WM_COMMAND:
@@ -540,19 +550,21 @@ setBreakPoint:
                 case IDM_BREAKPOINT:
                     goto setBreakPoint;
                 case IDM_GOTO:
-                    asmAddress = DialogBox(hInstance, "GOTODIALOG2", hwnd, (DLGPROC)
+                    asmAddress = DialogBox((HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), "GOTODIALOG2", hwnd, (DLGPROC)
                         gotoProc2);
                     if (asmAddress != 0xffffffff)
                     {
                         CalculateDisassembly(0);
-                        InvalidateRect(hwndASM, 0, 1);
+                        if (hwndASM)
+                            InvalidateRect(hwndASM, 0, 1);
                     }
                     break;
                 case ID_SETADDRESS:
                     asmAddress = asmIP = lParam;
                     threadID = activeThread->idThread;
                     CalculateDisassembly(0);
-                    InvalidateRect(hwndASM, 0, 1);
+                    if (hwndASM)
+                        InvalidateRect(hwndASM, 0, 1);
                     break;
             }
             break;
@@ -648,9 +660,10 @@ setBreakPoint:
 
 //-------------------------------------------------------------------------
 
-void RegisterASMWindow(void)
+void RegisterASMWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
+    
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_DBLCLKS;
     wc.lpfnWndProc = &ASMProc;
@@ -684,7 +697,7 @@ HWND CreateASMWindow(void)
     }
     else
     {
-        hwndASM = CreateMDIWindow(szASMClassName, szASMTitle, WS_VISIBLE |
+        hwndASM = CreateMDIWindow(szASMClassName, szASMTitle, WS_VISIBLE | WS_VSCROLL |
            WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | 
         WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
         WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),

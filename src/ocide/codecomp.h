@@ -42,6 +42,7 @@ typedef struct
 {
     int argCount;
     char *baseType;
+    BOOL member;
     struct _ProtoData
     {
         char *fieldType;
@@ -58,16 +59,27 @@ typedef struct
         char *fieldName;
         sqlite3_int64 subStructId;
         int indirectCount;
+        int flags;
     } *data;
 } CCSTRUCTDATA;
+typedef struct _ccfuncdata
+{
+    struct _ccfuncdata *next;
+    char *fullname;
+    CCPROTODATA *args;
+} CCFUNCDATA;
 void CodeCompInit(void);
 void DoParse(char *name);
 void ccLineChange(char *name, int drawnLineno, int delta);
 void deleteFileData(char *name);
-int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags);
+CCFUNCDATA *ccLookupFunctionList(int lineno, char *file, char *name);
+void ccFreeFunctionList(CCFUNCDATA *data);
+int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags, sqlite_int64 *rtype);
 int ccLookupStructType(char *name, char *module, int line, sqlite3_int64 *structId, int *indirectCount);
 CCSTRUCTDATA *ccLookupStructElems(char *module, sqlite3_int64 structId, int indirectCount);
 void ccFreeStructData(CCSTRUCTDATA *data);
+int ccLookupContainingNamespace(char *file, int lineno, char *ns);
+int ccLookupContainingMemberFunction(char *file, int lineno, char *func);
 int ccLookupFunctionType(char *name, char *module, sqlite3_int64 *protoId, sqlite3_int64 *typeId);
 CCPROTODATA *ccLookupArgList(sqlite3_int64 protoId, sqlite3_int64 argId);
 void ccFreeArgList(CCPROTODATA *data);

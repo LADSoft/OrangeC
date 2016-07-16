@@ -50,7 +50,7 @@ BOOL useim;
 
 void SegmentDisplay(char *buffer, long value)
 {
-    sprintf(buffer, "0x0x%x", value);
+    sprintf(buffer, "0x%x", value);
 }
 
 //-------------------------------------------------------------------------

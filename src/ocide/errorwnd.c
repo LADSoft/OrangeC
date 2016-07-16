@@ -51,14 +51,14 @@
 #define ERR_ERRORS 1
 #define ERR_WARNINGS 2
 #define BUTTONWIDTH 110
-#define BUTTONHEIGHT 30
+#define BUTTONHEIGHT 26
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame;
+extern HWND hwndClient, hwndFrame;
 extern LOGFONT systemDialogFont;
 
-HWND hwndError;
 int errorButtons = ERR_ERRORS | ERR_WARNINGS;
 
+static HWND hwndError;
 static char szErrorClassName[] = "xccErrorClass";
 static HWND hwndLV, hwndErrButton, hwndWarnButton, hwndBackground;
 static int curSel;
@@ -369,10 +369,10 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
             r.right = LOWORD(lParam);
             r.bottom = HIWORD(lParam);
             MoveWindow(hwndLV, r.left, r.top+BUTTONHEIGHT + 4, r.right - r.left,
-                r.bottom - r.top-BUTTONHEIGHT - 4, 0);
+                r.bottom - r.top-BUTTONHEIGHT - 4, 1);
             MoveWindow(hwndBackground, r.left, r.top, r.right - r.left, BUTTONHEIGHT + 4, 1);
             lvC.mask = LVCF_WIDTH;
-            lvC.cx = r.right - r.left - 250;
+            lvC.cx = r.right - r.left - 270;
             ListView_SetColumn(hwndLV, 2, &lvC);
             break;
         case WM_DESTROY:
@@ -388,7 +388,7 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
 
 //-------------------------------------------------------------------------
 
-void RegisterErrorWindow(void)
+void RegisterErrorWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
@@ -413,7 +413,8 @@ void RegisterErrorWindow(void)
 
 //-------------------------------------------------------------------------
 
-void CreateErrorWindow(void)
+HWND CreateErrorWindow(void)
 {
-    hwndError = CreateDockableWindow(DID_ERRWND, szErrorClassName, szErrorTitle, hInstance, 30 * 8, 19 * 8);
+    hwndError = CreateInternalWindow(DID_ERRWND, szErrorClassName, szErrorTitle);
+    return hwndError;
 }

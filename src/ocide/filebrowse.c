@@ -51,7 +51,7 @@
 #define DELTA 7
 #define MAX_BROWSE 50
 
-extern HWND hwndFrame, hwndClient, hwndASM;
+extern HWND hwndFrame, hwndClient;
 
 FILEBROWSE *fileBrowseCursor = NULL;
 FILEBROWSE *fileBrowseInfo;

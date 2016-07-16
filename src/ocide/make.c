@@ -46,7 +46,7 @@
 #include "header.h"
 
 extern int errcount, warncount;
-extern HWND hwndFrame, hwndProject;
+extern HWND hwndFrame;
 extern char makeTempFile[MAX_PATH];
 extern char szInstallPath[];
 extern BUILDRULE *buildRules;
@@ -532,6 +532,7 @@ static DWORD MakerThread(void *p)
 {
     PROJECTITEM *pj = (PROJECTITEM *)p;
     PROJECTITEM *deps = (PROJECTITEM *)internalDepends;
+    PostMessage(hwndFrame, WM_BUILDANIMATE, 1, 0);
     making = TRUE;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     WaitForSingleObject(makeSem, INFINITE);
@@ -560,10 +561,12 @@ static DWORD MakerThread(void *p)
         ErrWarnCounts();
     }
     making = FALSE;
-    PostMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
+    PostMessage(hwndFrame, WM_BUILDANIMATE, 0, 0);
+    PostDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
     ReleaseSemaphore(makeSem, 1, NULL);
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     TagLinesAdjust(0, TAGM_UPDATEDEBUG);
+    SetStatusMessage(errcount == 0 ? "Build Succeeded" : "Build Failed", FALSE);
     return errcount == 0;
 }
 void StopBuild(void)
@@ -573,6 +576,11 @@ void StopBuild(void)
 void Maker(PROJECTITEM *pj, BOOL clean)
 {
     DWORD threadhand;
+    HWND errWnd = GetWindowHandle(DID_ERRWND);
+    if (!(GetWindowLong(errWnd, GWL_STYLE) & WS_VISIBLE))
+        SelectWindow(DID_INFOWND);
+    SendDIDMessage(DID_INFOWND, WM_COMMAND, IDM_CLEAR, 0);
+
     stopBuild = FALSE;
     EnableWindow(hwndTbProfile, FALSE);
     EnableWindow(hwndTbBuildType, FALSE);
@@ -599,12 +607,15 @@ void dbgRebuildMainThread(int cmd)
         CreateProjectDependenciesList();
         if (BuildModified(workArea))
         {
-            if (ExtendedMessageBox("Debugger", MB_YESNO, 
-                "Project needs to be rebuilt before debugging,  Do you want to rebuild?") == IDYES)
+            switch (ExtendedMessageBox("Debugger", MB_YESNOCANCEL, 
+                "Project needs to be rebuilt before debugging,  Do you want to rebuild?"))
             {
-                stopBuild = FALSE;
-                if (!MakerThread(workArea))
-                    return ;
+                case IDYES:
+                    stopBuild = FALSE;
+                    if (!MakerThread(workArea))
+                        return ;
+                case IDCANCEL:
+                    return;
             }
         }
         initiateDebug(!TagAnyBreakpoints() || cmd == IDM_STEPIN || cmd == IDM_STEPOUT || cmd == IDM_STEPOVER);

@@ -1,4 +1,3 @@
-
 /* Protogen Version 3.0.1.6Thursday November 27, 2014  01:32:16 */
 
                               /* Altcomb.c */
@@ -8,6 +7,7 @@ LRESULT CALLBACK historyEditComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 LRESULT CALLBACK historyComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 void SubClassHistoryCombo(HWND combo);
+void SubClassNECombo(HWND combo);
 void RegisterHistoryComboWindow(void);
 
                             /* Autodepend.c */
@@ -38,10 +38,14 @@ int isLocalBreakPoint(int addr);
 int dbgSetBreakPoint(char *name, int linenum, char *extra);
 void dbgClearBreakPoint(char *name, int linenum);
 void SetBP(DEBUG_EVENT *dbe);
-
+void functionbp(void);
                               /* Brkdata.c */
 
 void databpInit(void);
+BOOL databpAnyBreakpoints(void);
+BOOL databpAnyDisabledBreakpoints(void);
+void databpEnableAllBreakpoints(BOOL enableState);
+void databpDelete(DATABREAK *data);
 void databpRemove(void);
 void databpSetBP(HANDLE hProcess);
 void databpResetBP(HANDLE hProcess);
@@ -59,6 +63,9 @@ void databp(HWND hwnd);
                               /* Brkhdwe.c */
 
 void hbpInit(void);
+BOOL hbpAnyBreakpoints(void);
+BOOL hbpAnyDisabledBreakpoints(void);
+void hbpEnableAllBreakpoints(BOOL enableState);
 void hbpDisable(void);
 void hbpSetBP(void);
 void hbpResetBP(void);
@@ -80,11 +87,20 @@ void StepIn(DEBUG_EVENT *dbe);
 int RunTo(DEBUG_EVENT *dbe);
 int isSteppingOut(DEBUG_EVENT *dbe);
 
+                              /* Brkwnd.c */
+
+void RegisterBreakWindow(HINSTANCE hInstance);
+HWND CreateBreakWindow(void);
+
                               /* Browse.c */
 
+sqlite3 *BrowseOpenDBByHWND(HWND hwnd, PROJECTITEM **returnProj);
+int LookupSymbolBrowse(sqlite3 *db, char *name);
+BROWSELIST *LookupCPPNamesBrowse(sqlite3 *db, char *name, BROWSELIST *in);
 void InsertBrowse(char *filname, int curline);
-void BrowseTo(HWND hwnd, char *msg);
-void BrowseBack(void);
+void BrowseTo(HWND hwnd, char *msg, BOOL toDeclaration);
+void RegisterBrowseWindow(HINSTANCE hInstance);
+HWND CreateBrowseWindow(void);
 
                              /* Buildrul.c */
 
@@ -99,11 +115,82 @@ void ReloadLineData(char *name);
 void DoParse(char *name);
 void deleteFileData(char *name);
 char ** ccGetMatchingNames(char *name, char **names, int *size, int *max);
-int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags);
+int ccLookupType(char *buffer, char *name, char *module, int line, int *rflags, sqlite_int64 *rtype);
+int ccLookupMemberType(char *name, char *module, int line, sqlite3_int64 *structId, int *indir);
+int ccLookupStructId(char *name, char *module, int line, sqlite3_int64 *structId);
 BYTE * ccGetLineData(char *file, int *max);
 void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type);
 void StartCodeCompletionServer(void);
 
+                             /* Ctlbound.c */
+
+void DrawBoundingRect(RECT *r1);
+void HideBoundingRect(void);
+void CreateBoundingRect(HINSTANCE hInstance, HWND hwndFrame);
+
+                              /* Ctlcont.c */
+
+void RegisterControlWindow(HINSTANCE hInstance);
+HWND CreateControlWindow(HWND parent);
+
+                             /* Ctlframe.c */
+
+void RegisterFrameWindow(HINSTANCE hInstance);
+HWND CreateFrameWindow(HWND parent);
+
+                              /* Ctltab.c */
+
+struct _singleTab *CreateItem(char *name, LPARAM lParam);
+void RemoveFromActive(struct _tabStruct *ptr, struct _singleTab *tabs);
+void RemoveFromSelected(struct _tabStruct *ptr, struct _singleTab *tabs);
+void AddToActive(struct _tabStruct *ptr, int pos, struct _singleTab *tabs);
+void AddToSelected(struct _tabStruct *ptr, int pos, struct _singleTab *tabs);
+void MyDrawEdge(HDC hDc, struct _tabStruct *ptr, int xStart, int yStart, int xEnd, int yEnd, int inc);
+void MyDrawArc(HDC hDc, struct _tabStruct *ptr, int x, int y, int inc);
+void DrawWindowBmp(HWND hwnd, struct _tabStruct *ptr, HDC hDc, int bordertype);
+void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr);
+int GetItem(struct _tabStruct *ptr , int index);
+struct _singleTab *AddTab(struct _tabStruct *ptr, int pos, char *name, LPARAM lParam);
+struct _singleTab *RemoveTab(struct _tabStruct *ptr, LPARAM lParam);
+BOOL ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam);
+void SelectTab(struct _tabStruct *ptr, LPARAM lParam);
+void RemoveAllTabs(struct _tabStruct *ptr);
+struct _singleTab * FindTabByPos(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam);
+BOOL IsCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, LPARAM lParam);
+void ShowCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, BOOL open, LPARAM lParam);
+BOOL IsWindowButton(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam);
+void ShowWindowButton(HWND hwnd, struct _tabStruct *ptr, int flags);
+BOOL ChangeHighLight(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab);
+void SetFonts(HWND hwnd, struct _tabStruct *ptr, HFONT font);
+int Notify(HWND hwnd, struct _singleTab *tab, int notifyCode);
+void RegisterLsTabWindow(HINSTANCE hInstance);
+HWND CreateLsTabWindow(HWND parent, int style);
+
+                               /* Ctltb.c */
+
+int GetToolBarData2(HWND hwnd, char *horiz);
+void SetToolBarData2(HWND hwnd, char *horiz);
+void RegisterToolBarWindow(HINSTANCE hInstance);
+HWND CreateToolBarWindow(int id, HWND notify, HWND parent, int bmp, int bmpcount, TBBUTTON *buttons, char **hints,
+    char *title, int helpItem, BOOL visible);
+
+                              /* Ctltree.c */
+
+int LoadItemText(HWND hwnd, HTREEITEM htreeItem, char *buf, int indent);
+int GetClipboardText(HWND hwnd, HTREEITEM item, char *buf, int indent);
+void CopyText(HWND hwnd);
+LRESULT CALLBACK extTreeWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
+    LPARAM lParam);
+LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
+    wParam, LPARAM lParam);
+void RegisterextTreeWindow(HINSTANCE hInstance);
+HWND CreateextTreeWindow(HWND parent, int style, RECT *r, TCHeader *h);
+
+                               /* Ctltt.c */
+
+void HookMouseMovement(MSG *msg);
+void RegisterTTIPWindow(HINSTANCE hInstance);
+HWND CreateTTIPWindow(HWND hwndParent, int style);
                               /* Dbgasm.c */
 
 void GetCodeLine(char *s);
@@ -114,7 +201,7 @@ LRESULT CALLBACK gotoProc2(HWND hwnd, UINT iMessage, WPARAM wParam,
 void asmDoPaint(HWND hwnd);
 LRESULT CALLBACK ASMProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterASMWindow(void);
+void RegisterASMWindow(HINSTANCE hInstance);
 void StopASMWindow(void);
 HWND CreateASMWindow(void);
 
@@ -134,7 +221,9 @@ int GetLocalSymbolAddress(DEBUG_INFO *dbg_info, int funcId, char *name, char *fi
 int GetGlobalSymbolAddress(DEBUG_INFO *dbg_info, char *name, char *filename, int line, int *address, int *type);
 int GetType(DEBUG_INFO *dbg_info, char *name);
 int GetTypeName(DEBUG_INFO *dbg_info, int type, char *name);
+int GetReturnTypeQualifier(DEBUG_INFO *dbg_info, int type);
 int GetTypeQualifier(DEBUG_INFO *dbg_info, int type);
+FUNCTIONLIST *LookupCPPNames(DEBUG_INFO *dbg_info, char *name, FUNCTIONLIST *in);
 int LookupTypedefValues(DEBUG_INFO *dbg_info, int type);
 int LookupPointerSubtype(DEBUG_INFO *dbg_info, int type);
 int LookupBitfieldInfo(DEBUG_INFO *dbg_info, int type, int *start, int *end);
@@ -158,6 +247,9 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf);
 void SimpleTypeName(char *name, int type);
 char *SymTypeName(char *buf, DEBUG_INFO *info, VARINFO *v);
 
+                              /* Dbglocals.c */
+void RegisterLocalsWindow(HINSTANCE hInstance);
+HWND CreateLocalsWindow(void);
                               /* Dbgmain.c */
 
 void RunProgram(PROJECTITEM *plist);
@@ -180,24 +272,19 @@ void StartDebug(char *cmd);
 
                               /* Dbgmem.c */
 
-void SetCursMode(void);
-int GetMemAddress(char *buf, BOOL error);
-void MemDoPaint(HWND hwnd, int focussed);
-LRESULT CALLBACK EditHook(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
-    lParam);
-LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam);
-LRESULT CALLBACK MemProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam);
-void RegisterMemWindow(void);
-HWND CreateMemWindow(void);
+void RegisterMemWindow(HINSTANCE hInstance);
+
+HWND CreateMem1Window(void);
+HWND CreateMem2Window(void);
+HWND CreateMem3Window(void);
+HWND CreateMem4Window(void);
 
                               /* Dbgreg.c */
 
 void SaveRegisterContext(void);
 LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterRegisterWindow(void);
+void RegisterRegisterWindow(HINSTANCE hInstance);
 HWND CreateRegisterWindow(void);
 
                              /* Dbgstack.c */
@@ -205,22 +292,25 @@ HWND CreateRegisterWindow(void);
 void ClearStackArea(HWND hwnd);
 int eipReal(int eip);
 int readStackedData(int inebp, int *outebp);
-void SetStackArea(HWND hwnd);
+void SetStackArea(void);
 LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterStackWindow(void);
+void RegisterStackWindow(HINSTANCE hInstance);
 HWND CreateStackWindow(void);
 
                               /* Dbgsyms.c */
 
+void unmanglename(char *buf);
 DEBUG_INFO *GetDebugInfo(HANDLE hProcess, DWORD base);
+DEBUG_INFO *findDebug(int Address);
 void FreeDebugInfo(DEBUG_INFO *dbg);
 DWORD GetMainAddress(DEBUG_INFO *dbg);
 int * GetLineTable(char *name, int line, int *lc);
 int GetBreakpointLine(int Address, char *module, int *linenum, BOOL next);
 int *GetBreakpointAddresses(char *module, int *linenum);
 int GetBreakpointNearestLine(char *module, int linenum, int inmodule);
-int FindFunctionName(char *buf, int Address);
+FUNCTIONLIST *GetFunctionList(DEBUG_INFO *dbg_info, SCOPE *scope, char *name);
+int FindFunctionName(char *buf, int Address, DEBUG_INFO **dbg, int *type);
 int FindGlobalSymbol(DEBUG_INFO **dbg_info, int Address, char *buf, int *type);
 NAMELIST *FindEnclosedAutos(SCOPE *scope);
 SCOPE * FindSymbol(DEBUG_INFO **dbg_info, SCOPE *scope, char *name, int *address, int *type);
@@ -242,102 +332,26 @@ void FreeVarInfo(VARINFO *info);
 
 LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
     wParam, LPARAM lParam);
-void RegisterThreadWindow(void);
+void RegisterThreadWindow(HINSTANCE hInstance);
 HWND CreateThreadWindow(void);
 
                              /* Dbgwatch.c */
 
-void AddTypeInfoToName(DEBUG_INFO *dbg_info, VARINFO *v);
-WATCHINFO *MatchItem(VARINFO *var, int page);
-void FreeTree(VARINFO *info, int page);
-void RefreshAddresses(VARINFO *var, int address, THREAD *thread, int noscope);
-void WatchValue(DEBUG_INFO *dbg_info, char *buf, VARINFO *info, int onevalue);
-void RefreshData(DEBUG_INFO *dbg_info, VARINFO *var);
-void RefreshItem(WATCHINFO *var, int address, THREAD *thread);
-HTREEITEM InsertItem(HTREEITEM hParent, HTREEITEM after, VARINFO *var, int page);
-void InsertSubTree(HTREEITEM parent, HTREEITEM after, VARINFO *var, int index, int page);
-void AddItem(DEBUG_INFO *dbg, VARINFO *var, 
-             int cursoreip, int page);
-void RenumberDeleteItems(VARINFO *v);
-void DeleteItem(POINT *pt, int page);
-void DeleteAllItems(int page);
-void Unscope(WATCHINFO *wi, int page);
-void Rescope(WATCHINFO *wi, int index, int page);
-void RefreshItems(int page);
-void ExpandPointer(VARINFO *v, int code, int page);
-void ChangeData(VARINFO *info, char *text, int page);
-LRESULT CALLBACK WatchWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam);
-void RegisterWatchWindow(void);
-void CreateWatchWindow(void);
+void RegisterWatchWindow(HINSTANCE hInstance);
+HWND CreateWatch1Window(void);
+HWND CreateWatch2Window(void);
+HWND CreateWatch3Window(void);
+HWND CreateWatch4Window(void);
+HWND CreateLocalsWindow(void);
+int SendToLastWatch(unsigned iMessage, WPARAM wParam, LPARAM lParam);
 
                              /* Dlgctlwnd.c */
 
 LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterCtlTbWindow(void);
-void CreateCtlTbWindow(void);
+void RegisterCtlTbWindow(HINSTANCE hInstance);
+HWND CreateCtlTbWindow(void);
 
-                              /* Dockmgr.c */
-
-CCD_params *FindParams(CCW_params *p, int *index);
-void DrawBoundingRect(RECT *r1);
-void HideBoundingRect(void);
-void GetRelativeRect(HWND parent, HWND self, RECT *r);
-void GetFrameWindowRect(RECT *r);
-void AllocContainer(CCW_params *p, RECT *r);
-void FreeParent(CCW_params *ps);
-void AllocGrip(CCW_params *p, RECT *r, int vertical, int reshow, int hidden);
-void AllocBlank(RECT *r, CCD_params *d, int vertical);
-void dmgrAddStatusBar(HWND sb);
-void GetClientWindowRect(RECT *r);
-void dmgrInit(HINSTANCE hInstance, HWND frame, HWND client, int count);
-HWND CreateDockableWindow(int id, char *szClass, char *szTitle, HINSTANCE hInstance, int cx, int cy);
-void AddDockableToolbarWindow(CCW_params *p);
-void DestroyDockableWindow(HWND hwnd);
-void dmgrStartMoveClient(CCW_params *p, POINT *cursor);
-void dmgrMoveClient(CCW_params *p, POINT *cursor, int grip);
-void dmgrEndMoveClient(CCW_params *p, POINT *cursor);
-void dmgrStartMoveGrip(CCW_params *p, POINT *cursor);
-void dmgrMoveGrip(CCW_params *p, POINT *cursor);
-void dmgrEndMoveGrip(CCW_params *p, POINT *cursor);
-int dmgrDocked(CCW_params *p);
-void dmgrSizeBarStartMove(CCW_params *p, POINT *cursor);
-void dmgrSizeBarMove(CCW_params *p, POINT *cursor);
-void dmgrSizeBarEndMove(CCW_params *p);
-void dmgrFlex(CCW_params *p);
-void dmgrSizeFrame(void);
-int dmgrGetHiddenState(int id);
-int dmgrHideWindow(int id, int state);
-void PutWindow(HWND hwnd, RECT *r);
-void CalculateMoveableDocks(CCW_params *p, RECT *r, POINT *cursor);
-int InsertRow(int index, int dflag);
-void OrderLeftRight(int *windows, int wincount, int byposition);
-int IndexLeftRight(int *windows, int wincount, int index);
-int InsertLeftRight(int *windows, int wincount, int index, RECT *frame, int min);
-void HideAdjLeftRight(int *windows, int wincount, int index);
-void SizeLeftRight(int *windows, int wincount, int adj, RECT *r2);
-int InsertColumn(int index, int dflag);
-void OrderTopBottom(int *windows, int wincount, int byposition);
-int IndexTopBottom(int *windows, int wincount, int index);
-int InsertTopBottom(int *windows, int wincount, int index, RECT *frame, int min);
-void HideAdjTopBottom(int *windows, int wincount, int index);
-void SizeTopBottom(int *windows, int wincount, int adj, RECT *client, RECT
-    *oldclient);
-void InsertVertFrame(int index, int left, RECT *fullframe);
-void InsertHorizFrame(int index, int top, int fullframe);
-void CalculateLayout(int index, int recalhidden);
-void DoDocks(CCW_params *p);
-void CalculateSizebarBounds(CCW_params *p, RECT *dest);
-void Resize(CCW_params *p, RECT *r);
-void CalculateHidden(CCD_params *d, int index, int state);
-int dmgrGetInfo(CCW_params *p, CCD_params *d);
-int dmgrSetInfo(int *ids, CCD_params *d, int size);
-void dmgrSetRundown(void);
-int adjustforbadplacement(int id, CCD_params *d);
-void SaveDocksToRegistry(void);
-int RestoreDocksFromRegistry(void);
-int RestorePlacementFromRegistry(WINDOWPLACEMENT *wp);
 
                               /* Doswind.c */
 
@@ -359,7 +373,7 @@ char *GetVKName(int val);
 EXPRESSION *GetVKExpression(int val);
 LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterAcceleratorDrawWindow(void);
+void RegisterAcceleratorDrawWindow(HINSTANCE hInstance);
 void CreateAcceleratorDrawWindow(struct resRes *info);
 
                               /* Drawdlg.c */
@@ -380,7 +394,7 @@ LRESULT CALLBACK DlgDlgProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 LRESULT CALLBACK DlgDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterDlgDrawWindow(void);
+void RegisterDlgDrawWindow(HINSTANCE hInstance);
 void CreateDlgDrawWindow(struct resRes *info);
 
                              /* Drawedit.c */
@@ -422,7 +436,7 @@ void InstallForParse(HWND hwnd);
 void InstallAllForParse(void);
 LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterDrawWindow(void);
+void RegisterDrawWindow(HINSTANCE hInstance);
 HWND openfile(DWINFO *newInfo, int newwindow, int visible);
 HWND CreateDrawWindow(DWINFO *baseinfo, int visible);
 
@@ -430,7 +444,7 @@ HWND CreateDrawWindow(DWINFO *baseinfo, int visible);
 
 LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterImageDrawWindow(void);
+void RegisterImageDrawWindow(HINSTANCE hInstance);
 void CreateImageDrawWindow(struct resRes *info);
 
                              /* Drawmenu.c */
@@ -441,7 +455,7 @@ int menuHitTest(HWND hwnd, struct resRes *menuData, POINT mouse);
 void InsertDelete(HWND hwnd, struct resRes * menuData, int code);
 LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterMenuDrawWindow(void);
+void RegisterMenuDrawWindow(HINSTANCE hInstance);
 void CreateMenuDrawWindow(struct resRes *info);
 
                             /* Drawrcdata.c */
@@ -449,18 +463,19 @@ void CreateMenuDrawWindow(struct resRes *info);
 void FormatAsciiString(char *buf, char *string, int len);
 LRESULT CALLBACK rcDataDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterRCDataDrawWindow(void);
+void RegisterRCDataDrawWindow(HINSTANCE hInstance);
 void CreateRCDataDrawWindow(struct resRes *info);
 
                             /* Drawstrings.c */
 
 LRESULT CALLBACK StringTableDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterStringTableDrawWindow(void);
+void RegisterStringTableDrawWindow(HINSTANCE hInstance);
 void CreateStringTableDrawWindow(struct resRes *info);
 
                              /* Drawutil.c */
 
+void InitDrawUtil(void);
 int FileAttributes(char *name);
 void GetFileList(HWND hwndLV, PROJECTITEM *pj, int *items, BOOL changed);
 void GetSecondaryFileList(HWND hwndLV, int *items, BOOL changed);
@@ -471,13 +486,14 @@ long APIENTRY FileChangeProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 void CheckEditWindowChangedThread(void *aa);
 void CheckEditWindowChanged(void);
 int QuerySaveAll(void);
+int PaintMDITitleBar(HWND hwnd, int iMessage, WPARAM wParam, LPARAM lParam);
+
                             /* Drawversion.c */
 
-char *ParseVersionString(char *string, int *returnedLength);
-void FormatVersionString(char *buf, WCHAR *string, int len);
+char *ParseVersionString(char *string, int *returnedLength);void FormatVersionString(char *buf, WCHAR *string, int len);
 LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterVersionDrawWindow(void);
+void RegisterVersionDrawWindow(HINSTANCE hInstance);
 void CreateVersionDrawWindow(struct resRes *info);
 
                               /* Effect.c */
@@ -555,6 +571,13 @@ void OpenFindDialog(void);
 void OpenReplaceDialog(void);
 void OpenFindInFilesDialog(void);
 
+                                /* find.c */
+
+void RegisterFindWindow(HINSTANCE hInstance);
+HWND CreateFind1Window(void);
+HWND CreateFind2Window(void);
+void SendFindMessage(BOOL second, char *buf);
+
                              /* Idedialog.c */
 
 void DisableControl(HWND hwnd, int control, int disable);
@@ -575,6 +598,7 @@ int GetListSel(HWND hwnd, int control);
 
                               /* Ideeval.c */
 
+void GetQualifiedName(char *dest, char **src, BOOL type, BOOL towarn);
 VARINFO *EvalExpr(DEBUG_INFO **dbg, SCOPE *sc,
     char *text, int towarn);
 
@@ -643,25 +667,27 @@ LRESULT CALLBACK  WorkspaceWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterImageWindows(void);
+void RegisterImageWindows(HINSTANCE hInstance);
 
                               /* Infownd.c */
 
+void SimpleSearchInTextBox(HWND hwndEdit);
 int getfile(char *start, char *buffer, char end, DWINFO *info);
 void TextToClipBoard(HWND hwnd, char *text);
+void EditCopyText(HWND hwnd);
 void BumpToEditor(HWND hwnd);
 LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 LRESULT CALLBACK errorProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterInfoWindow(void);
-void CreateInfoWindow(void);
+void RegisterInfoWindow(HINSTANCE hInstance);
+HWND CreateInfoWindow(void);
 void SetInfoColor(int window, DWORD color);
 void SelectInfoWindow(int window);
 void SendInfoMessage(int window, char *buf);
 
-void RegisterErrorWindow(void);
-void CreateErrorWindow(void);
+void RegisterErrorWindow(HINSTANCE hInstance);
+HWND CreateErrorWindow(void);
 
                              /* Instance.c */
 
@@ -683,90 +709,9 @@ LRESULT CALLBACK ValueComboProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 LRESULT CALLBACK JumpListProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void CreateJumpListWindow(void);
-void RegisterJumpListWindow(void);
+void RegisterJumpListWindow(HINSTANCE hInstance);
+HWND CreateJumpListWindow(void);
 
-                              /* Lsblank.c */
-
-void RegisterBlankWindow(HINSTANCE hInstance);
-CCW_params *CreateBlankWindow(HWND parent);
-
-                              /* Lscont.c */
-
-LRESULT CALLBACK ContainerProc(HWND hwnd, UINT iMessage, WPARAM
-    wParam, LPARAM lParam);
-void RegisterContainerWindow(HINSTANCE hInstance);
-CCW_params *CreateContainerWindow(HWND parent, CCW_params *child, RECT *r);
-
-                              /* Lsctrl.c */
-
-void RegisterControlWindow(HINSTANCE hInstance);
-CCW_params *CreateControlWindow(HWND parent);
-
-                              /* Lsframe.c */
-
-void RegisterFrameWindow(HINSTANCE hInstance);
-CCW_params *CreateFrameWindow(HWND parent);
-
-                              /* Lsgrip.c */
-
-void FillGradientTB(HDC dc, RECT *r, int vertical);
-void RegisterGripWindow(HINSTANCE hInstance);
-CCW_params *CreateGripWindow(HWND parent);
-
-                               /* Lstab.c */
-
-struct _singleTab *CreateItem(char *name, LPARAM lParam);
-void RemoveFromActive(struct _tabStruct *ptr, struct _singleTab *tabs);
-void RemoveFromSelected(struct _tabStruct *ptr, struct _singleTab *tabs);
-void AddToActive(struct _tabStruct *ptr, struct _singleTab *tabs);
-void AddToSelected(struct _tabStruct *ptr, struct _singleTab *tabs);
-void MyDrawEdge(HDC hDc, struct _tabStruct *ptr, int xStart, int yStart, int xEnd, int yEnd, int inc);
-void MyDrawArc(HDC hDc, struct _tabStruct *ptr, int x, int y, int inc);
-void DrawWindowBmp(HWND hwnd, struct _tabStruct *ptr, HDC hDc, int bordertype);
-void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr);
-int GetItem(struct _tabStruct *ptr , int index);
-struct _singleTab *AddTab(struct _tabStruct *ptr, char *name, LPARAM lParam);
-struct _singleTab *RemoveTab(struct _tabStruct *ptr, LPARAM lParam);
-BOOL ModifyTab(struct _tabStruct *ptr, WPARAM modified, LPARAM lParam);
-void SelectTab(struct _tabStruct *ptr, LPARAM lParam);
-void RemoveAllTabs(struct _tabStruct *ptr);
-struct _singleTab * FindTabByPos(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam);
-BOOL IsCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, LPARAM lParam);
-void ShowCloseButton(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab, BOOL open, LPARAM lParam);
-BOOL IsWindowButton(HWND hwnd, struct _tabStruct *ptr, LPARAM lParam);
-void ShowWindowButton(HWND hwnd, struct _tabStruct *ptr, int flags);
-BOOL ChangeHighLight(HWND hwnd, struct _tabStruct *ptr, struct _singleTab *tab);
-void SetFonts(HWND hwnd, struct _tabStruct *ptr, HFONT font);
-void Notify(HWND hwnd, struct _singleTab *tab, int notifyCode);
-void RegisterLsTabWindow(HINSTANCE hInstance);
-HWND CreateLsTabWindow(HWND parent, int style);
-
-                              /* Lstool.c */
-
-int GetToolBarData(HWND hwnd, char *horiz, char *vert);
-void SetToolBarData(HWND hwnd, char *horiz, char *vert);
-void RegisterToolBarWindow(HINSTANCE hInstance);
-HWND CreateToolBarWindow(int id, HWND notify, HWND parent, int width, int
-    height, int bmp, int bmpcount, TBBUTTON *buttons, char **hints, int
-    vertical, char *title, int helpitem);
-
-                              /* Lstree.c */
-
-int LoadItemText(HWND hwnd, HTREEITEM htreeItem, char *buf, int indent);
-int GetClipboardText(HWND hwnd, HTREEITEM item, char *buf, int indent);
-LRESULT CALLBACK extTreeWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam);
-LRESULT CALLBACK ColumnTreeWndProc(HWND hwnd, UINT iMessage, WPARAM
-    wParam, LPARAM lParam);
-void RegisterextTreeWindow(void);
-HWND CreateextTreeWindow(HWND parent, int style, RECT *r, TCHeader *h);
-
-                               /* Lstt.c */
-
-void HookMouseMovement(MSG *msg);
-void RegisterTTIPWindow(HINSTANCE hInstance);
-HWND CreateTTIPWindow(HWND hwndParent, int style);
 
                                /* Make.c */
 
@@ -780,7 +725,6 @@ void dbgRebuildMain(int cmd);
 
                             /* Makecommon.c */
 
-void ExpandSpecial(SETTING *setting, char *buf, char *src);
 int GetFilenamePaths(PROJECTITEM *pj, char **dest, char *ext, int len, BOOL first, int escaped, int spacing, PROJECTITEM **lcd);
 void EvalMacros(PROJECTITEM *pj, char *parsedCmd, char *rawCmd, PROJECTITEM **lcd);
 unsigned MakeHash(char *name);
@@ -954,8 +898,8 @@ HTREEITEM FindItemByWind(HWND hwnd);
 void CreateProjectMenu(void);
 LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterProjectWindow(void);
-void CreateProjectWindow(void);
+void RegisterProjectWindow(HINSTANCE hInstance);
+HWND CreateProjectWindow(void);
 
                               /* Profile.c */
 
@@ -975,6 +919,7 @@ void DeleteProgress(void);
 void SetProgress(long value, LPCSTR fmt, ...);
 
                                /* Props.c */
+BOOL MatchesExt(char *name, char *exts);
 
 char *LookupProfileName(char *name);
 void ClearProfileNames(void);
@@ -1020,8 +965,8 @@ void PropsWndRedraw(void);
 void PropsWndClearEditBox(MSG *msg);
 LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterPropsWindow(void);
-void CreatePropsWindow(void);
+void RegisterPropsWindow(HINSTANCE hInstance);
+HWND CreatePropsWindow(void);
 
                                /* Rcerr.c */
 
@@ -1119,8 +1064,8 @@ void ResRename(void);
 void ResDoneRenaming(void);
 LRESULT CALLBACK ResourceProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
-void RegisterResourceWindow(void);
-void CreateResourceWindow(void);
+void RegisterResourceWindow(HINSTANCE hInstance);
+HWND CreateResourceWindow(void);
 
                                /* Rckw.c */
 
@@ -1295,27 +1240,12 @@ void SaveWorkArea(PROJECTITEM *wa);
 
 FILE *searchPathI(char *string, char *searchPath, char *mode);
 
-                              /* Tabproj.c */
-
-void GetTabRect(RECT *rect);
-void SelectResourceWindow(void);
-LRESULT CALLBACK TabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam);
-void RegisterTabWindow(void);
-void CreateTabWindow(void);
-
-                              /* Tabtool.c */
-
-void GetPropsTabRect(RECT *rect);
-LRESULT CALLBACK PropsTabWndWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
-    LPARAM lParam);
-void RegisterPropertyTabWindow(void);
-void CreatePropertyTabWindow(void);
-
                                /* Tags.c */
 
 int IsTagged(char *module, int line);
 int TagAnyBreakpoints(void);
+BOOL TagAnyDisabledBreakpoints(void);
+int TagEnableAllBreakpoints(BOOL enableState);
 int Tag(int type, char *name, int drawnLineno, int charpos, void *extra, int
     freeextra, int alwaysadd);
 void TagRemoveAll(int type);
@@ -1348,7 +1278,12 @@ void RedrawToolBar(void);
 int ToolBarDropDown(int id, int lParam);
 LRESULT CALLBACK tbStatProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam);
+HWND GetToolWindow(int DID);
 void MakeToolBar(HWND hwnd);
+
+                                /* unmangle.c */
+
+char *unmangle(char *val, char *name);
 
                                 /* Uz.c */
 
@@ -1375,32 +1310,83 @@ int parse_args(int *argc, char *argv[], int case_sensitive);
 
                               /* Window.c */
 
+void SelectDebugWindows(BOOL dbgMode);
+void Select(int flag);
+void RegisterAllWindows(void);
+void CreateAllWindows(void);
+HWND GetWindowHandle(int);
+LRESULT PostDIDMessage(int DID, unsigned iMessage, WPARAM wParam, LPARAM lParam);
+LRESULT SendDIDMessage(int DID, unsigned iMessage, WPARAM wParam, LPARAM lParam);
+int GetWindowIndex(int DID);
+void RemoveWindow(int DID);
+void SelectWindow(int DID);
+void SelectDebugWindows(BOOL dbgMode);
+void ResizeLayout(RECT *rect);
+void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y);
+void DockEndDrag(HWND hwnd, int ox, int oy, int x, int y);
+BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y);
+HWND CreateInternalWindow(int DID, char *clsName, char *title);
 void CreateDocks(void);
+
+
+                             /* Xclipbrd.c */
+
+void SelToClipboard(HWND hwnd, EDITDATA *p);
+void ClipboardToSel(HWND hwnd, EDITDATA *ptr);
+
+                             /* Xcodecomp.c */
+
+BOOL GetContainerData(int lineno, char *file, char *ns, char *func);
+CCSTRUCTDATA * GetStructType(char **name, int lineno, char *file, CCSTRUCTDATA *structData, int * indir_in);
+LRESULT CALLBACK codecompProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
+    lParam);
+void GetCompletionPos(HWND hwnd, EDITDATA *p, LPPOINT pt, int width, int height);
+int showStruct(HWND hwnd, EDITDATA *p, int ch);
+KEYLIST *partialmatchkeyword(KEYLIST *table, int tabsize, char *name);
+char **GetCodeCompKeywords(char *name, char **names, int *size, int *max, HWND hwnd, EDITDATA *p);
+char **GetCodeCompVariables(char *name, char **names, int *size, int *max, HWND hwnd, EDITDATA *p);
+void showVariableOrKeyword(HWND hwnd, EDITDATA *p);
+LRESULT CALLBACK funcProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
+    lParam);
+void showFunction(HWND hwnd, EDITDATA *p, int ch);
+
+                             /* Xcolorize.c */
+
+void SendUpdate(HWND hwnd); /* PROTOTYPE */
+void LoadColors(void);
+void Colorize(INTERNAL_CHAR *buf, int start, int len, int color, int
+    italic);                                                      
+int keysym(char x);
+INTERNAL_CHAR *strpstr(INTERNAL_CHAR *t, char *text, int len);
+int strplen(INTERNAL_CHAR *t);
+int backalpha(INTERNAL_CHAR *buf, int i);                         
+int pcmp(INTERNAL_CHAR *s, char *t, int preproc, int *retlen, int
+    caseinsensitive, int bykey);
+KEYLIST *matchkeyword(KEYLIST *table, int tabsize, int preproc, INTERNAL_CHAR
+    *t, int *retlen, int insensitive);
+void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, 
+                           int chars, int start, int type, int bkColor);
+int instring(INTERNAL_CHAR *buf, INTERNAL_CHAR *t1);              
+void FormatBuffer(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int type, int bkColor);
+void FormatBufferFromScratch(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int
+    type, int bkColor);                                           
+void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor);
+void colorizeThread(CINFO *info);                                 
+void FullColorize(HWND hwnd, EDITDATA *p, int creation);
+int getColorizeHashKey(char *name);                               
+COLORIZE_HASH_ENTRY *lookupColorizeName(COLORIZE_HASH_ENTRY *entries[], char *name);
+int LookupColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int line);
+void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type);
+void FreeColorizeEntries(COLORIZE_HASH_ENTRY *entries[]);
 
                                /* Xedit.c */
 
-void LoadColors(void);
 void getPageSize(void);
 int freemem(EDITDATA *p);
 int allocmem(EDITDATA *p, int size);
 int commitmem(EDITDATA *p, int size);
 void reparse(HWND hwnd, EDITDATA *p);
-int keysym(char x);
-INTERNAL_CHAR *strpstr(INTERNAL_CHAR *t, char *text, int len);
-int strplen(INTERNAL_CHAR *t);
-int pcmp(INTERNAL_CHAR *s, char *t, int preproc, int *retlen, int
-    caseinsensitive, int bykey);
-int GetWordFromPos(HWND hwnd, char *outputbuf, int charpos, int *linenum, int
-    *startoffs, int *endoffs);
-UNDO *getundo(HWND hwnd, EDITDATA *p, int type);
-void insertautoundo(HWND hwnd, EDITDATA *p, int type);
-UNDO *undo_deletesel(HWND hwnd, EDITDATA *p);
-UNDO *undo_casechange(HWND hwnd, EDITDATA *p);
-UNDO *undo_insertsel(HWND hwnd, EDITDATA *p, char *s);
-UNDO *undo_deletechar(HWND hwnd, EDITDATA *p, int ch, int type);
-UNDO *undo_modifychar(HWND hwnd, EDITDATA *p);
-UNDO *undo_insertchar(HWND hwnd, EDITDATA *p, int ch);
-void ClientArea(HWND hwnd, EDITDATA *p, RECT *r);
+void UpdateSiblings(EDITDATA *p, int pos, int insert);            
 int posfromchar(HWND hwnd, EDITDATA *p, POINTL *point, int pos);
 int charfrompos(HWND hwnd, EDITDATA *p, POINTL *point);
 void VScrollLen(HWND hwnd, int count, int set);
@@ -1415,13 +1401,38 @@ void TrackVScroll(HWND hwnd, EDITDATA *p, int end);
 void TrackHScroll(HWND hwnd, EDITDATA *p, int end);
 int lfchars(INTERNAL_CHAR *c, int start, int end);
 int LineFromChar(EDITDATA *p, int pos);
+int SelLine(EDITDATA *p, int pos);                                
 void Replace(HWND hwnd, EDITDATA *p, char *s, int lens);
 int GetLineOffset(HWND hwnd, EDITDATA *p, int chpos);
-void drawline(HWND hwnd, EDITDATA *p, int chpos);
+void drawline(HWND hwnd, EDITDATA *p, int chpos);                 
 void insertchar(HWND hwnd, EDITDATA *p, int ch);
+void insertcrtabs(HWND hwnd, EDITDATA *p); /* PROTOTYPE */
 void insertcr(HWND hwnd, EDITDATA *p, BOOL tabs);
 void inserttab(HWND hwnd, EDITDATA *p);
 int firstword(INTERNAL_CHAR *pos, char *name);
+void backtab(HWND hwnd, EDITDATA *p);
+void removechar(HWND hwnd, EDITDATA *p, int utype);
+void upline(HWND hwnd, EDITDATA *p, int lines);
+int lineParsed(EDITDATA *p, int line);
+int getfragment(EDITDATA *p, int pos, int autoDecoration, int colorizing, char *buf, COLORREF *fcolor, COLORREF *bcolor,
+    HFONT *font, int *col, int line);
+void EditPaint(HWND hwnd, EDITDATA *p);
+void endofline(HWND hwnd, EDITDATA *p);
+void sol(HWND hwnd, EDITDATA *p);
+void leftword(HWND hwnd, EDITDATA *p);
+void rightword(HWND hwnd, EDITDATA *p);
+void CALLBACK AutoTimeProc(HWND hwnd, UINT message, UINT event, DWORD timex);
+void StartAutoScroll(HWND hwnd, EDITDATA *p, int dir);
+void EndAutoScroll(HWND hwnd, EDITDATA *p);
+void HilightWord(HWND hwnd, EDITDATA *p);
+void verticalCenter(HWND hwnd, EDITDATA *p);
+BOOL multilineSelect(EDITDATA *p);                                
+LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
+    lParam);
+void RegisterXeditWindow(void);
+
+                              /* Xformat.c */
+
 void insertcrtabs(HWND hwnd, EDITDATA *p);
 int preprocline(EDITDATA *p, int pos);
 void InsertBeginTabs(HWND hwnd, EDITDATA *p);
@@ -1430,8 +1441,37 @@ void SelectIndent(HWND hwnd, EDITDATA *p, int insert);
 void SelectComment(HWND hwnd, EDITDATA *p, int insert);
 void DeletePound(HWND hwnd, EDITDATA *p);
 void DeletePercent(HWND hwnd, EDITDATA *p);
+void upperlowercase(HWND hwnd, EDITDATA *p, int ucase);
+
+                              /* Xmatch.c */
+
 void CancelParenMatch(HWND hwnd, EDITDATA *p);
 int FindParenMatchBackward(HWND hwnd, EDITDATA *p, int dec);
 int FindParenMatchForward(HWND hwnd, EDITDATA *p, int dec);
+
+                               /* Xundo.c */
+
+UNDO *getundo(HWND hwnd, EDITDATA *p, int type);
+void insertautoundo(HWND hwnd, EDITDATA *p, int type);
+UNDO *undo_deletesel(HWND hwnd, EDITDATA *p);
+UNDO *undo_casechange(HWND hwnd, EDITDATA *p);
+UNDO *undo_insertsel(HWND hwnd, EDITDATA *p, char *s);
+UNDO *undo_deletechar(HWND hwnd, EDITDATA *p, int ch, int type);
+UNDO *undo_modifychar(HWND hwnd, EDITDATA *p);
+UNDO *undo_insertchar(HWND hwnd, EDITDATA *p, int ch);
+void undo_pchar(HWND hwnd, EDITDATA *p, int ch);
+int doundo(HWND hwnd, EDITDATA *p);
+int doredo(HWND hwnd, EDITDATA *p);
+
+                               /* Xutil.c */
+
+int GetWordFromPos(HWND hwnd, char *outputbuf, int fullcpp, int charpos, int *linenum, int
+    *startoffs, int *endoffs);
+void DoHelp(HWND edwin, int speced);                              
+void ClientArea(HWND hwnd, EDITDATA *p, RECT *r);
 void GetEditPopupFrame(RECT *rect);
-void RegisterXeditWindow(void);
+void PopupFullScreen (HWND hwnd, EDITDATA *p);
+void ReleaseFullScreen(HWND hwnd, EDITDATA *p);
+void SendUpdate(HWND hwnd);
+int KeyboardToAscii(int vk, int scan, BOOL fullstate);
+

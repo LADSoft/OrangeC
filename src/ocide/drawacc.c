@@ -1256,7 +1256,13 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case EM_CANUNDO:
             acceleratorData = (struct resRes *)GetWindowLong(hwnd, 0);
             return acceleratorData->gd.undoData != NULL;
+        case WM_NCACTIVATE:
+             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+             return TRUE;
+        case WM_NCPAINT:
+             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
+            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             GetClientRect(hwnd, &r);
             createStruct = (LPCREATESTRUCT)lParam;
             acceleratorData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
@@ -1303,7 +1309,7 @@ LRESULT CALLBACK AcceleratorDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     return DefMDIChildProc(hwnd, iMessage, wParam, lParam);
 }
 
-void RegisterAcceleratorDrawWindow(void)
+void RegisterAcceleratorDrawWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));

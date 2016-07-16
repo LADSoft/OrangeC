@@ -47,44 +47,19 @@
 #include "header.h"
 #include "idewinconst.h"
 
-#define INDENT 0
-
-#define TITLEWIDTH 15
-#define RIGHTWIDTH 5
-#define EDGEWIDTH 1
-#define TITLETOP 5
-#define BARLEFT 3
-#define BARRIGHT (BUTTONCORNER + 2 * BUTTONWIDTH + 4)
-#define BARTOP 0
-#define BUTTONCORNER 1
-#define BUTTONWIDTH 12
 
 extern HWND hwndFrame;
 
 static WNDPROC oldproc;
 static char *szToolBarWindClassName = "ctlToolBar";
+static char *szToolBarInternalClassName = "ctlToolBarInternal";
 static char *szextToolBarWindClassName = "ctlToolBarExt";
 
-typedef struct {
-    DWORD id;
-    HWND hWnd;
-    RECT pos;
-    char **hints;
-    WCHAR **whints;
-    TBBUTTON *buttons;
-    int btncount;
-    int bmpid;
-    int bmpcount;
-    HWND *children;
-    DWORD helpItem;
-    HWND notifyParent;
-    HIMAGELIST imageList, disabledImageList;
-} TB_Params;
 static TBBUTTON sep = 
 {
     0, 0, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT, {0}, 0, -1
 };
-static void GradientFillTB(HDC dc, RECT *r)
+void GradientFillTB(HDC dc, RECT *r)
 {
     TRIVERTEX vertex[2] ;
     GRADIENT_RECT gRect;
@@ -110,7 +85,6 @@ static void GradientFillTB(HDC dc, RECT *r)
 static void DrawTitle(HDC dc, RECT *r)
 {
     HPEN pen1, pen2, pen3, oldpen;
-
 
     pen1 = CreatePen(PS_SOLID, 1, RetrieveSysColor(COLOR_3DLIGHT));
     pen2 = CreatePen(PS_SOLID, 2, RetrieveSysColor(COLOR_3DHILIGHT));
@@ -138,7 +112,7 @@ static void DrawTitle(HDC dc, RECT *r)
     DeleteObject(pen2);
     DeleteObject(pen3);
 }
-static char *GetTipText(TB_Params *ptr, int id)
+static char *GetTipText(TBData *ptr, int id)
 {
     int i;
     for (i = 0; i < ptr->btncount; i++)
@@ -173,7 +147,7 @@ static void FormatToolBar(char *buf, HWND hwnd)
 
 //-------------------------------------------------------------------------
 
-static int ParseToolBar(char *buf, HWND hwnd, TB_Params *ptr, TBBUTTON
+static int ParseToolBar(char *buf, HWND hwnd, TBData *ptr, TBBUTTON
     *buttons)
 {
     int rv = 0, i, id, count;
@@ -222,25 +196,25 @@ static int ParseToolBar(char *buf, HWND hwnd, TB_Params *ptr, TBBUTTON
 
 //-------------------------------------------------------------------------
 
-static void SetRectSize(HWND hwnd, TB_Params *ptr)
+static void SetRectSize(HWND hwnd, TBData *ptr)
 {
     RECT r;
     TBBUTTON buttons[60];
     int num = 0;
     int i;
     BOOL found = FALSE;
-    while (SendMessage(hwnd, TB_GETBUTTON, num, (LPARAM) &buttons[num]))
+    while (SendMessage(ptr->hWnd, TB_GETBUTTON, num, (LPARAM) &buttons[num]))
     {
         if (!(buttons[num].fsStyle & TBSTYLE_SEP))
             found = TRUE;
         num++;
     }
-    SendMessage(hwnd, TB_SETROWS, MAKEWPARAM(1, FALSE), (LPARAM) &r);
-    SendMessage(hwnd, TB_GETITEMRECT, num - 1, (LPARAM) &r);
-    ptr->pos.right = r.right + GRIPWIDTH + RIGHTWIDTH;
+    MoveWindow(ptr->hWnd, 0,0,1000,30, 0);
+    SendMessage(ptr->hWnd, TB_SETROWS, MAKEWPARAM(1, FALSE), (LPARAM) &r);
+    SendMessage(ptr->hWnd, TB_GETITEMRECT, num - 1, (LPARAM) &r);
+    ptr->pos.right = r.right + GRIPWIDTH;
     ptr->pos.bottom = r.bottom + GetSystemMetrics(SM_CYBORDER) * 2;
-    MoveWindow(ptr->hWnd, GRIPWIDTH, 0, ptr->pos.right-GRIPWIDTH-RIGHTWIDTH, ptr->pos.bottom, 1);
-    MoveWindow(hwnd, 0, 0, ptr->pos.right, ptr->pos.bottom, 1);
+    MoveWindow(ptr->grip, 0, 0, ptr->pos.right, ptr->pos.bottom, 0);
     for (i=0; i < ptr->btncount; i++)
         if (ptr->children[i])
         {
@@ -258,8 +232,8 @@ static void SetRectSize(HWND hwnd, TB_Params *ptr)
                     if (ptr->children[j])
                     {
                         RECT r;
-                        SendMessage(hwnd, TB_GETITEMRECT, i, (LPARAM)&r);
-                        SetWindowPos(ptr->children[j], 0, r.left, r.top, r.right- r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
+                        SendMessage(ptr->hWnd, TB_GETITEMRECT, i, (LPARAM)&r);
+                        SetWindowPos(ptr->children[j], HWND_TOP, r.left, r.top, r.right- r.left-3, r.bottom - r.top, SWP_NOACTIVATE | SWP_SHOWWINDOW);
                     }
                 }
             }
@@ -268,14 +242,14 @@ static void SetRectSize(HWND hwnd, TB_Params *ptr)
 
 //-------------------------------------------------------------------------
 
-static void ChangeButtons(int num, HWND hwnd, TBBUTTON *buttons, TB_Params
+static void ChangeButtons(int num, HWND hwnd, TBBUTTON *buttons, TBData
     *ptr)
 {
     if (num)
     {
-        while (SendMessage(hwnd, TB_DELETEBUTTON, 0, 0))
+        while (SendMessage(ptr->hWnd, TB_DELETEBUTTON, 0, 0))
             ;
-        SendMessage(hwnd, TB_ADDBUTTONS, num, (LPARAM) buttons);
+        SendMessage(ptr->hWnd, TB_ADDBUTTONS, num, (LPARAM) buttons);
         SetRectSize(hwnd, ptr);
     }
 }
@@ -285,27 +259,27 @@ static void ChangeButtons(int num, HWND hwnd, TBBUTTON *buttons, TB_Params
 
 //-------------------------------------------------------------------------
 
-int GetToolBarData2(HWND hwnd, char *horiz)
+int GetToolBarData(HWND hwnd, char *define)
 {
-    TB_Params *ptr = (TB_Params*)GetWindowLong(hwnd, 0);
-    FormatToolBar(horiz, ptr->hWnd);
+    TBData *ptr = (TBData*)GetWindowLong(hwnd, 0);
+    FormatToolBar(define, ptr->hWnd);
     return ptr->id;
 }
 
 //-------------------------------------------------------------------------
 
-void SetToolBarData2(HWND hwnd, char *horiz)
+void SetToolBarData(HWND hwnd, char *define)
 {
     TBBUTTON buttons[60];
-    TB_Params *ptr = (TB_Params*)GetWindowLong(hwnd, 0);
+    TBData *ptr = (TBData*)GetWindowLong(hwnd, 0);
 //    RECT c;
     int i;
 //	ShowWindow(hwnd, SW_HIDE);
 //    GetClientRect(ptr->hWnd, &c);
 //    MoveWindow(ptr->hWnd, GRIPWIDTH, 0, 1000, 1000, 0);
 
-    i = ParseToolBar(horiz, ptr->hWnd, ptr, buttons);
-    ChangeButtons(i, ptr->hWnd, buttons, ptr);
+    i = ParseToolBar(define, ptr->hWnd, ptr, buttons);
+    ChangeButtons(i, hwnd, buttons, ptr);
 }
 
 //-------------------------------------------------------------------------
@@ -339,18 +313,99 @@ static LRESULT CALLBACK extToolBarWndProc(HWND hwnd, UINT iMessage,
     return CallWindowProc(oldproc, hwnd, iMessage, wParam, lParam);
 }
 
-static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
+static LRESULT CALLBACK tbInternalWndProc(HWND hwnd, UINT iMessage,
     WPARAM wParam, LPARAM lParam)
 {
+    TBData *ptr;
     LPTOOLTIPTEXT lpt;
+    switch (iMessage)
+    {
+        case WM_CREATE:
+            ptr = (TBData*)(((LPCREATESTRUCT)lParam)->lpCreateParams);
+            SetWindowLong(hwnd, 0, (DWORD)ptr);
+            ptr->hWnd = CreateWindowEx(0, szextToolBarWindClassName, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | TBSTYLE_ALTDRAG
+                | (ptr->hints ? TBSTYLE_TOOLTIPS : 0) | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | CCS_ADJUSTABLE | CCS_NODIVIDER,
+                
+                0,0,0,0, hwnd,NULL, (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), NULL);
+            SendMessage(ptr->hWnd, TB_SETIMAGELIST, (WPARAM)ptr->bmpid, (LPARAM) ptr->imageList);
+            SendMessage(ptr->hWnd, TB_SETDISABLEDIMAGELIST, (WPARAM)ptr->bmpid, (LPARAM) ptr->disabledImageList);
+            SendMessage(ptr->hWnd, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON),
+                0);
+            SendMessage(ptr->hWnd, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DRAWDDARROWS);
+            ChangeButtons(ptr->btncount, ptr->grip, ptr
+                    ->buttons, ptr);
+            break;            
+        case WM_NOTIFY:
+            if (((LPNMHDR)lParam)->code >= TBN_LAST && ((LPNMHDR)lParam)->code <= TBN_FIRST)
+                return SendMessage(GetParent(hwnd), iMessage, wParam, lParam);
+            switch(((NMHDR *)lParam)->code)
+            {
+                char *p;
+                case TTN_NEEDTEXT:
+                    ptr = (TBData*)GetWindowLong(hwnd, 0);
+                    lpt = (LPTOOLTIPTEXT)lParam;
+                    p = GetTipText(ptr, lpt->hdr.idFrom);
+                    if (p)
+                    {
+                        strcpy(lpt->szText, p);
+                    }
+                    break;
+            }
+            break;
+        case WM_COMMAND:
+            return SendMessage(GetParent(hwnd), iMessage, wParam, lParam);
+            
+        case WM_ERASEBKGND:
+            // the check is to make sure we are being called from the toolbar
+            // if we don't put it in we get flickering when the window gets redraw
+            // independently of the toolbar
+            if (GetObjectType((HGDIOBJ)wParam) == OBJ_MEMDC)
+            {
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
+                {
+                    HBRUSH hbr = RetrieveSysBrush(COLOR_BTNFACE);
+                    HRGN rgn;
+                    RECT r;
+                    GetClientRect(hwnd, &r);
+                    FillRect((HDC)wParam, &r, hbr);
+                    DeleteObject(hbr);
+                    if (!ptr->nonfloating)
+                    {
+                        // in toolbar, make a nice gradient and round the right-hand side corners
+                        rgn = CreateRoundRectRgn(r.left-15, r.top, r.right+1, r.bottom+1, 5, 5);
+                        SelectClipRgn((HDC)wParam, rgn);
+                        GradientFillTB((HDC)wParam, &r);
+                        DeleteObject(rgn);
+                    }
+                }
+            }
+            return 1;
+        case WM_SIZE:
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
+            MoveWindow(ptr->hWnd, 0, 0, LOWORD(lParam), HIWORD(lParam), 1);
+            break;
+    }
+    return DefWindowProc(hwnd, iMessage, wParam, lParam);
+}
+static LRESULT CALLBACK tbWindWndProc(HWND hwnd, UINT iMessage,
+    WPARAM wParam, LPARAM lParam)
+{
+    static RECT focusPos, captureArea, originalPos;
+    static BOOL captured;
     HBITMAP bmp;
     RECT r;
     PAINTSTRUCT ps;
     HDC dc;
-    TB_Params *ptr;
+    TBData *ptr;
     char *p;
     LPNMTOOLBAR lpnmtoolbar;
     int i,j,n;
+    if (iMessage >= WM_USER && iMessage < WM_USER + 200)
+    {
+        ptr = (TBData*)GetWindowLong(hwnd, 0);
+        if (ptr)
+            return SendMessage(ptr->hWnd, iMessage, wParam, lParam);
+    }
     switch (iMessage)
     {
         case WM_NOTIFY:
@@ -364,7 +419,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
                 lpnmtoolbar = (LPNMTOOLBAR)lParam;
                 return lpnmtoolbar->tbButton.idCommand != ID_TOOLBARCUSTOM;
             case TBN_GETBUTTONINFO:
-                ptr = (TB_Params*)GetWindowLong(hwnd, 0);
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
                 lpnmtoolbar = (LPNMTOOLBAR)lParam;
                 if (lpnmtoolbar->iItem < ptr->btncount)
                 {
@@ -382,14 +437,14 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             case TBN_ENDDRAG:
                 break;
             case TBN_RESET:
-                ptr = (TB_Params*)GetWindowLong(hwnd, 0);
-                ChangeButtons(ptr->btncount, ptr->hWnd, ptr
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
+                ChangeButtons(ptr->btncount, hwnd, ptr
                     ->buttons, ptr);
-                PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+                PostMessage(GetParent(hwnd), WM_REDRAWTOOLBAR, 0, 0);
                 
                 break;
             case TBN_CUSTHELP:
-                ptr = (TB_Params*)GetWindowLong(hwnd, 0);
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
                 if (ptr->helpItem)
                     ContextHelp(ptr->helpItem);
                 break;
@@ -397,21 +452,13 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
 //                return FALSE;
             case TBN_ENDADJUST:
             case TBN_TOOLBARCHANGE:
-                ptr = (TB_Params*)GetWindowLong(hwnd, 0);
-                SetRectSize(ptr->hWnd, ptr);
-                PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-                break;
-            case TTN_NEEDTEXT:
-                ptr = (TB_Params*)GetWindowLong(hwnd, 0);
-                lpt = (LPTOOLTIPTEXT)lParam;
-                p = GetTipText(ptr, lpt->hdr.idFrom);
-                if (p)
-                {
-                    strcpy(lpt->szText, p);
-                }
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
+                SetRectSize(hwnd, ptr);
+                PostMessage(GetParent(hwnd), WM_REDRAWTOOLBAR, 0, 0);
+                SavePreferences();
                 break;
             case TBN_DROPDOWN:
-                ptr = (TB_Params*)GetWindowLong(hwnd, 0);
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
                 lpnmtoolbar = (LPNMTOOLBAR)lParam;
                 return SendMessage(ptr->notifyParent, WM_TOOLBARDROPDOWN, lpnmtoolbar->iItem, MAKELPARAM(lpnmtoolbar->rcButton.left, lpnmtoolbar->rcButton.bottom))
                             ? TBDDRET_DEFAULT : TBDDRET_NODEFAULT ;
@@ -420,15 +467,95 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
 //                    lParam);
             }
             break;
+        case WM_LBUTTONDOWN:
+            if (LOWORD(lParam) < GRIPWIDTH)
+            {
+                captured = TRUE;
+                SetCapture(hwnd);
+                GetWindowRect(GetParent(hwnd), &captureArea);
+                GetWindowRect(hwnd, &focusPos);
+                GetWindowRect(hwnd, &originalPos);
+                captureArea.bottom += originalPos.bottom - originalPos.top;
+                DrawBoundingRect(&focusPos);
+            }
+            break;
+        case WM_LBUTTONUP:
+            if (captured)
+            {
+                POINT pt;
+                HideBoundingRect();
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
+                ReleaseCapture();
+                captured = FALSE;
+                pt.x = LOWORD(lParam);
+                pt.y = HIWORD(lParam);
+                ClientToScreen(hwnd, &pt);
+                PostMessage(GetParent(hwnd), WM_REDRAWTOOLBAR, ptr->id, MAKELPARAM(pt.x, pt.y));
+            }
+            break;
+        case WM_MOUSEMOVE:
+            if (captured)
+            {
+                int newX = (int)(short)LOWORD(lParam);
+                int newY = (int)(short)HIWORD(lParam);
+                int n = focusPos.bottom - focusPos.top +GetSystemMetrics(SM_CYBORDER) * 2;
+                newX += originalPos.left;
+                newY += originalPos.top;
+                newY = ((newY - originalPos.top)/n)*n + originalPos.top;
+                if ((int)(short)HIWORD(lParam) < 0)
+                {
+                    newY -= n;
+                }
+                
+                if (newX < captureArea.left)
+                    newX = captureArea.left;
+                if (newY < captureArea.top)
+                    newY = captureArea.top;
+                if (newX < captureArea.right && newY < captureArea.bottom)
+                {
+                    
+                    focusPos.right = focusPos.right - focusPos.left + newX;
+                    focusPos.left = newX;
+                    focusPos.bottom = focusPos.bottom - focusPos.top + newY;
+                    focusPos.top = newY;
+                    DrawBoundingRect(&focusPos);
+                }
+            }
+            break;
+        case WM_SHOWWINDOW:
+            PostMessage(GetParent(hwnd), WM_REDRAWTOOLBAR, 0, 0);
+            break;
+        case WM_ERASEBKGND:
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
+            {
+                HBRUSH hbr = RetrieveSysBrush(COLOR_BTNFACE);
+                HRGN rgn;
+                RECT r;
+                GetClientRect(hwnd, &r);
+                FillRect((HDC)wParam, &r, hbr);
+                DeleteObject(hbr);
+                ptr = (TBData*)GetWindowLong(hwnd, 0);
+                if (!ptr->nonfloating)
+                {
+                    // in toolbar, make a nice gradient and round the right-hand side corners
+                    rgn = CreateRoundRectRgn(r.left+2, r.top, r.right+1, r.bottom+1, 5, 5);
+                    SelectClipRgn((HDC)wParam, rgn);
+                    GradientFillTB((HDC)wParam, &r);
+                    DeleteObject(rgn);
+                }
+            }
+            return 1;
         case WM_PAINT:
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
             dc = BeginPaint(hwnd, &ps);
             GetClientRect(hwnd, &r);
-            DrawTitle(hwnd, &r);
+            if (!ptr->nonfloating)
+                DrawTitle(dc, &r);
             EndPaint(hwnd, &ps);
-            break;
+            return 0;
         case WM_COMMAND:
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
 
-            ptr = (TB_Params*)GetWindowLong(hwnd, 0);
             if (wParam == ID_TOOLBARCUSTOM)
             {
                 PostMessage(ptr->hWnd, TB_CUSTOMIZE, 0, 0);
@@ -439,8 +566,9 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             }
             return 0;
         case WM_CREATE:
-            ptr = (TB_Params*)(((LPCREATESTRUCT)lParam)->lpCreateParams);
+            ptr = (TBData*)(((LPCREATESTRUCT)lParam)->lpCreateParams);
             SetWindowLong(hwnd, 0, (DWORD)ptr);
+            ptr->grip = hwnd;
             ptr->btncount = 0;
             n = 10000;
             while (ptr->buttons[ptr->btncount].fsStyle || ptr
@@ -469,20 +597,12 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
             Tint(bmp, RetrieveSysColor(COLOR_BTNSHADOW));
             ImageList_Add(ptr->disabledImageList, bmp, NULL);
             DeleteObject(bmp);
-            
-            ptr->hWnd = CreateWindowEx(0, szextToolBarWindClassName, NULL, WS_CHILD | TBSTYLE_ALTDRAG
-                | (ptr->hints ? TBSTYLE_TOOLTIPS : 0) | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | CCS_ADJUSTABLE | CCS_NODIVIDER,
-                0,0,0,0, hwnd,NULL, HINST_COMMCTRL, NULL);
-            SendMessage(ptr->hWnd, TB_SETIMAGELIST, (WPARAM)ptr->bmpid, (LPARAM) ptr->imageList);
-            SendMessage(ptr->hWnd, TB_SETDISABLEDIMAGELIST, (WPARAM)ptr->bmpid, (LPARAM) ptr->disabledImageList);
-            SendMessage(ptr->hWnd, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON),
-                0);
-            SendMessage(ptr->hWnd, TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DRAWDDARROWS);
-            ChangeButtons(ptr->btncount, ptr->hWnd, ptr
-                    ->buttons, ptr);
+
+            ptr->blank = CreateWindowEx(0, szToolBarInternalClassName, "", WS_CHILD | WS_VISIBLE,
+                0,0,0,0, hwnd,NULL, (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), ptr);
             break;
         case WM_DESTROY:
-            ptr = (TB_Params*)GetWindowLong(hwnd, 0);
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
             for (i=0; i <ptr->btncount; i++)
             {
                 free(ptr->whints[i]);
@@ -496,7 +616,7 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
         case LCF_ADDCONTROL:
         {
             int i;
-            ptr = (TB_Params*)GetWindowLong(hwnd, 0);
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
             
             for (i=0; i < ptr->btncount; i++)
             {
@@ -513,48 +633,31 @@ static LRESULT CALLBACK ControlWindWndProc(HWND hwnd, UINT iMessage,
                 HWND hwndCtrl = (HWND)lParam;
                 SendMessage(ptr->hWnd, TB_GETITEMRECT, i, (LPARAM)&r);
                 SetParent(hwndCtrl, ptr->hWnd);
-                MoveWindow(hwndCtrl, r.left, r.top, r.right- r.left, r.bottom - r.top, 1);
+                SetWindowPos(hwndCtrl, HWND_TOP, r.left, r.top, r.right- r.left-3, r.bottom - r.top, SWP_NOACTIVATE | SWP_SHOWWINDOW);
                 ptr->children[i] = hwndCtrl;
-                BringWindowToTop(hwndCtrl);
             }
         }
             return 0;
+        case LCF_FLOATINGTOOL:
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
+            ptr->nonfloating = !wParam;
+            InvalidateRect(hwnd, 0, 0);
+            return 0;
         case WM_CLOSE:
-            ptr = (TB_Params*)GetWindowLong(hwnd, 0);
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
             return 0;
         case WM_SIZE:
-            ptr = (TB_Params*)GetWindowLong(hwnd, 0);
-            MoveWindow(ptr->hWnd, 0, GRIPWIDTH, ptr->pos.right, ptr
+            ptr = (TBData*)GetWindowLong(hwnd, 0);
+            MoveWindow(ptr->blank, GRIPWIDTH, 0, ptr->pos.right - GRIPWIDTH, ptr
                 ->pos.bottom, 1);
             break;
-        case WM_ERASEBKGND:
-            ptr = (TB_Params*)GetWindowLong(hwnd, 0);
-            {
-                HBRUSH hbr = RetrieveSysBrush(COLOR_BTNFACE);
-                HRGN rgn;
-                GetClientRect(hwnd, &r);
-                FillRect((HDC)wParam, &r, hbr);
-                DeleteObject(hbr);
-                // in toolbar, make a nice gradient and round the right-hand side corners
-                rgn = CreateRoundRectRgn(r.left, r.top, r.right+1, r.bottom+1, 5, 5);
-                SelectClipRgn((HDC)wParam, rgn);
-                GradientFillTB((HDC)wParam, &r);
-                DeleteObject(rgn);
-            }
-           return 1;
-        default:
-            if (iMessage >= WM_USER && iMessage <= WM_USER + 100)
-            {
-                ptr = (TB_Params*)GetWindowLong(hwnd, 0);
-                return SendMessage(ptr->hWnd, iMessage, wParam, lParam);
-            }
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }
 
 //-------------------------------------------------------------------------
 
-void RegisterToolBarWindow2(HINSTANCE hInstance)
+void RegisterToolBarWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     GetClassInfo(0, TOOLBARCLASSNAME, &wc);
@@ -566,7 +669,7 @@ void RegisterToolBarWindow2(HINSTANCE hInstance)
     
     memset(&wc, 0, sizeof(wc));
     wc.style = 0;
-    wc.lpfnWndProc = &ControlWindWndProc;
+    wc.lpfnWndProc = &tbWindWndProc;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = sizeof(LPVOID);
     wc.hInstance = hInstance;
@@ -576,15 +679,26 @@ void RegisterToolBarWindow2(HINSTANCE hInstance)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szToolBarWindClassName;
     RegisterClass(&wc);
+    wc.style = 0;
+    wc.lpfnWndProc = &tbInternalWndProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = sizeof(LPVOID);
+    wc.hInstance = hInstance;
+    wc.hIcon = LoadIcon(0, IDI_APPLICATION);
+    wc.hCursor = LoadCursor(0, IDC_ARROW);
+    wc.hbrBackground = RetrieveSysBrush(COLOR_BTNFACE);
+    wc.lpszMenuName = 0;
+    wc.lpszClassName = szToolBarInternalClassName;
+    RegisterClass(&wc);
 
 }
 
 //-------------------------------------------------------------------------
 
-HWND CreateToolBarWindow2(int id, HWND notify, HWND parent, int bmp, int bmpcount, TBBUTTON *buttons, char **hints,
-    char *title, int helpItem)
+HWND CreateToolBarWindow(int id, HWND notify, HWND parent, int bmp, int bmpcount, TBBUTTON *buttons, char **hints,
+    char *title, int helpItem, BOOL visible)
 {
-    TB_Params *p = calloc(sizeof(TB_Params), 1);
+    TBData *p = calloc(sizeof(TBData), 1);
     if (p)
     {
         p->id = id;
@@ -594,9 +708,9 @@ HWND CreateToolBarWindow2(int id, HWND notify, HWND parent, int bmp, int bmpcoun
         p->bmpcount = bmpcount;
         p->notifyParent = notify;
         p->helpItem = helpItem;
-        p->hWnd = CreateWindowEx(0, szToolBarWindClassName, title, WS_CLIPSIBLINGS | WS_CHILD | WS_CLIPCHILDREN,
+        return CreateWindowEx(0, szToolBarWindClassName, title, WS_CLIPSIBLINGS | WS_CHILD | WS_CLIPCHILDREN | (visible ? WS_VISIBLE : 0),
             CW_USEDEFAULT, CW_USEDEFAULT, 1000, 30, parent, (HMENU)0,
             (HINSTANCE)GetWindowLong(parent, GWL_HINSTANCE), p);
     }
-    return p->hWnd;
+    return NULL;
 }

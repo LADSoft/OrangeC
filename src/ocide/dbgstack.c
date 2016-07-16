@@ -2,7 +2,7 @@
     Software License Agreement (BSD License)
     
     Copyright (c) 1997-2012, David Lindauer, (LADSoft).
-    All rights reserved.
+    All rights reserved.l
     
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
@@ -49,21 +49,22 @@
 #include <ctype.h>
 
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame;
+extern HWND hwndClient, hwndFrame;
 extern enum DebugState uState;
 extern THREAD *activeThread, *stoppedThread;
 extern PROCESS *activeProcess;
 extern HWND hwndTbProcedure;
 
-HWND hwndStack;
+SCOPE lastScope;
 SCOPE *activeScope;
 SCOPE *StackList;
 
+static HWND hwndStack;
 static char szStackClassName[] = "xccStackClass";
 
 static HIMAGELIST tagImageList;
 static int curSel;
-static char *szStackTitle = "Call Stack Window";
+static char *szStackTitle = "Call Stack";
 static HWND hwndLV;
 
 
@@ -93,6 +94,11 @@ static void CopyText(HWND hwnd)
 }
 static void SetScope(SCOPE *newScope)
 {
+    if (newScope)
+    {
+        lastScope = *newScope;
+        lastScope.next = NULL;
+    }
     activeScope = newScope;
     RedrawAllBreakpoints();
 }
@@ -142,7 +148,7 @@ int readStackedData(int inebp, int *outebp)
 
 //-------------------------------------------------------------------------
 
-void SetStackArea(HWND hwnd)
+void SetStackArea(void)
 {
     int ebp = activeThread->regs.Ebp;
     int eip = activeThread->regs.Eip;
@@ -152,12 +158,17 @@ void SetStackArea(HWND hwnd)
         return ;
     while (1)
     {
+        char name[256];
+        int n;
+        int type = 0;
+        DEBUG_INFO *dbg = NULL;
         eip = eipReal(eip);
         newStack = calloc(1,sizeof(SCOPE));
         if (!newStack)
             return ;
         newStack->next = 0;
-        FindFunctionName(newStack->name, eip);
+        n = FindFunctionName(name, eip, &dbg, &type);
+        sprintf(newStack->name, "%s + 0x%x", name, eip - n);
         GetBreakpointLine(eip, &newStack->fileName[0], &newStack->lineno, FALSE/*stackbase != NULL*/);
         newStack->address = eip;
         newStack->basePtr = ebp;
@@ -344,8 +355,14 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             MoveWindow(hwndLV, r.left, r.top, r.right - r.left,
                 r.bottom - r.top, 1);
             break;
-            // fall through
-        case WM_RESTACK:
+        case WM_INITIALSTACK:
+            SetStackArea();
+            SendDIDMessage(DID_WATCHWND, WM_INITIALSTACK, 0, 0);
+            SendDIDMessage(DID_WATCHWND+1, WM_INITIALSTACK, 0, 0);
+            SendDIDMessage(DID_WATCHWND+2, WM_INITIALSTACK, 0, 0);
+            SendDIDMessage(DID_WATCHWND+3, WM_INITIALSTACK, 0, 0);
+            break;
+         case WM_RESTACK:
             SetScope(NULL);
             ClearStackArea(hwnd);
             EnableWindow(hwndLV, uState != notDebugging && wParam);
@@ -355,7 +372,7 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 int i = 0;
                 char buf[256];
                 SCOPE *list;
-                SetStackArea(hwnd);
+                SetStackArea();
                 
                 list = StackList;
                 ListView_DeleteAllItems(hwndLV);
@@ -418,9 +435,10 @@ LRESULT CALLBACK StackProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-void RegisterStackWindow(void)
+void RegisterStackWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
+    HBITMAP bitmap;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_HREDRAW + CS_VREDRAW + CS_DBLCLKS;
     wc.lpfnWndProc = &StackProc;
@@ -433,6 +451,13 @@ void RegisterStackWindow(void)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szStackClassName;
     RegisterClass(&wc);
+
+    bitmap = LoadBitmap(hInstance, "ID_TAG");
+    ChangeBitmapColor(bitmap, 0xc0c0c0, RetrieveSysColor(COLOR_WINDOW));
+    tagImageList = ImageList_Create(16, 16, ILC_COLOR24, ILEDIT_IMAGECOUNT, 0);
+    ImageList_Add(tagImageList, bitmap, NULL);
+    DeleteObject(bitmap);
+
 }
 
 //-------------------------------------------------------------------------
@@ -445,13 +470,7 @@ HWND CreateStackWindow(void)
     }
     else
     {
-        HBITMAP bitmap;
-        bitmap = LoadBitmap(hInstance, "ID_TAG");
-        ChangeBitmapColor(bitmap, 0xc0c0c0, RetrieveSysColor(COLOR_WINDOW));
-        tagImageList = ImageList_Create(16, 16, ILC_COLOR24, ILEDIT_IMAGECOUNT, 0);
-        ImageList_Add(tagImageList, bitmap, NULL);
-        DeleteObject(bitmap);
-        hwndStack = CreateDockableWindow(DID_STACKWND, szStackClassName, szStackTitle, hInstance, 30 * 8, 19 * 8);
+        hwndStack = CreateInternalWindow(DID_STACKWND, szStackClassName, szStackTitle);
     }
     return hwndStack;
 }

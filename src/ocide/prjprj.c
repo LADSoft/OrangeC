@@ -56,7 +56,6 @@ extern char szProjectFilter[] ;
 extern int profileDebugMode;
 extern char currentProfileName[256];
 extern char *sysProfileName;
-extern HWND hwndProject;
 extern HWND prjTreeWindow;
 extern PROJECTITEM *activeProject;
 extern int defaultWorkArea;
@@ -432,7 +431,7 @@ void ProjectExistingProject(void)
     {
         OPENFILENAME ofn;
 
-        if (OpenFileDialog(&ofn, 0, hwndProject, FALSE, FALSE, szProjectFilter,
+        if (OpenFileDialog(&ofn, 0, GetWindowHandle(DID_PROJWND), FALSE, FALSE, szProjectFilter,
                                "Open existing project"))
         {
             PROJECTITEM *p = workArea->children;
@@ -529,6 +528,6 @@ void LoadProject(char *name)
 
 void IndirectProjectWindow(DWINFO *info)
 {
-    dmgrHideWindow(DID_TABWND, FALSE);
+    SelectWindow(DID_PROJWND);
     LoadWorkArea(info->dwName, TRUE);
 }

@@ -515,20 +515,86 @@ static int lastst;
     static VARINFO *lookupsym(char **text, 
         DEBUG_INFO **dbg, SCOPE *sc, int towarn)
     {
-        char buf[256],  *p = buf;
+        char buf[2048],  *p = buf;
         VARINFO *var;
+        SCOPE *next, *sc1;
         int offset = 0;
         int type = 0;
         int address = 0;
-        while (isalnum(**text) ||  **text == '_')
-            *p++ = *(*text)++;
-        *p = 0;
-        if ((sc = FindSymbol(dbg, sc, (char*) buf, &address, &type)))
+        BOOL global = FALSE;
+        if (sc)
+            next = sc->next;
+        while (isspace(**text))
+            (*text)++;
+        if (**text == ':')
         {
-            var = GetVarInfo(*dbg, (char*)buf, address, type, sc, activeThread);
+            if ((*text)[1] != ':')
+            {
+                return NULL;
+            }
+            *text += 2;
+            global = TRUE;
+        }
+        GetQualifiedName(buf, text, FALSE, towarn);
+        if (!strrchr(buf+1, '@') && !strrchr(buf +1 , '#'))
+        {
+            p = buf + 1;
+            // lookup for member variables within the scope of the this ptr
+            if (!global && sc && strcmp(buf+1, "this"))
+            {
+                DEBUG_INFO *dbg1;
+                SCOPE *next = sc->next, *sc1;
+                char buf1[4096];
+                sc->next = NULL;
+                // but we have to prefer parameters and vars defined in the function
+                if ((sc1 = FindSymbol(dbg, sc, (char*) p, &address, &type)))
+                {
+                    var = GetVarInfo(*dbg, (char*)p, address, type, sc1, activeThread);
+                    sc->next = next;
+                    return var;
+                }
+                sc->next = next;
+                sprintf(buf1, "this->%s", p);
+                var = EvalExpr(dbg, sc, buf1, FALSE);
+                if (var)
+                {
+                    return var;
+                }
+            }
+        }
+        else
+        {
+            p = buf;
+        }
+        if (sc && !strcmp(p, "this"))
+            sc->next = NULL ; // only search for 'this' in the local scope
+        if ((sc1 = FindSymbol(dbg, sc, (char*) p, &address, &type)))
+        {
+            var = GetVarInfo(*dbg, (char*)p, address, type, sc1, activeThread);
 //            if (var->udt)
 //                return ieerr(text, var, 0, "Can't use type here", towarn);
+            sc->next = next;
             return var;
+        }
+        if (sc)
+        {
+            char fn[2048],*q = fn+1;
+            sc->next = next;
+            // one final search for function scoped statics
+            // these will only be found if not obscured by some other name,
+            // regardless of scope.
+            if (FindFunctionName(q, sc->address, NULL, NULL))
+            {
+                if (q[0] != '@')
+                    *(--q) = '@';
+                strcat(q,buf);
+                if ((sc1 = FindSymbol(dbg, sc, (char*) q, &address, &type)))
+                {
+                    var = GetVarInfo(*dbg, (char*)q, address, type, sc1, activeThread);
+                    sc->next = next;
+                    return var;
+                }
+            }
         }
         return NULL;
     }
@@ -536,6 +602,7 @@ static int lastst;
     {
         char *str;
         int type;
+        char *mstr;
     } CASTTYPE;
 
     static CASTTYPE regs[] = 
@@ -661,73 +728,383 @@ static int lastst;
     static CASTTYPE casts[] = 
     {
         {
-            "int", eInt
+            "int", eInt, "i"
         }
         , 
         {
-            "long", eInt
+            "long", eInt, "l"
         }
         , 
         {
-            "long long", eLongLong
+            "long long", eLongLong, "L"
         }
         , 
         {
-            "unsigned", eUInt
+            "unsigned int", eUInt, "ui"
         }
         , 
         {
-            "unsigned long", eUInt
+            "unsigned", eUInt, "ui"
         }
         , 
         {
-            "unsigned long long", eULongLong
+            "unsigned long", eUInt, "ul"
         }
         , 
         {
-            "short", eShort
+            "unsigned long long", eULongLong, "uL"
         }
         , 
         {
-            "unsigned short", eUShort
+            "short", eShort, "s"
         }
         , 
         {
-            "char", eChar
+            "unsigned short", eUShort, "us"
         }
         , 
         {
-            "unsigned char", eUChar
+            "char", eChar, "c"
         }
         , 
         {
-            "bool", eBool
+            "unsigned char", eUChar, "uc"
         }
         , 
         {
-            "float", eFloat
+            "bool", eBool, "4bool"
         }
         , 
         {
-            "double", eDouble
+            "float", eFloat, "f"
         }
         , 
         {
-            "long double", eLongDouble
+            "double", eDouble, "d"
         }
         , 
         {
-            "float imaginary", eImaginary
+            "long double", eLongDouble, "g"
         }
         , 
         {
-            "double imaginary", eImaginaryDouble
+            "float imaginary", eImaginary, ""
         }
         , 
         {
-            "long double imaginary", eImaginaryLongDouble
+            "double imaginary", eImaginaryDouble, ""
+        }
+        , 
+        {
+            "long double imaginary", eImaginaryLongDouble, ""
         }
     };
+int GetConstVol(char **srcin)
+{
+    int flags = 0;
+    char *src = *srcin;
+    while (1)
+    {
+        while (isspace(*src))
+            src++;
+        if (!strncmp(src, "const", 5) && !isalnum(src[5]) && src[5] != '_')
+        {
+            src += 5;
+            flags |= 1;
+        }
+        else if (!strncmp(src, "volatile", 5) && !isalnum(src[8]) && src[8] != '_')
+        {
+            src += 8;
+            flags |= 2;
+        }
+        else
+            break;
+        
+    }    
+    *srcin = src;
+    return flags;
+}
+char *GetQualifiers (char *dest, char **srcin, int flags)
+{
+    char *src = *srcin;
+    flags |= GetConstVol(&src);
+    while (isspace(*src))
+        src ++;
+    if (*src == '&' || *src == '*')
+    {
+        char c = *src++ == '&' ? 'r' : 'p';
+        dest = GetQualifiers(dest, &src, 0);
+        dest += strlen(dest);
+        *dest ++ = c;
+        *dest = 0;
+    }
+    if (flags & 1)
+        *dest ++ = 'x';
+    else if (flags & 2)
+        *dest ++ = 'y';
+    *dest = 0;
+    *srcin = src;
+    return dest;
+}
+
+void SimplifyNames(char *dest)
+{
+    // this may be a little off in terms of the chosen indexes
+    int count = 0, i;
+    char names[10][512];
+    char *p = dest;
+    while (*p && count < 10)
+    {
+        if (isdigit(*p))
+        {
+            int n = atoi(p);
+            while (isdigit(*p))
+                p++;
+            if (isalpha(*p) || *p == '_')
+            {
+                for (i=0; i < count; i++)
+                    if (strlen(names[i]) == n && !strncmp(names[i],p, n))
+                        break;
+                if (i == count)
+                {
+                    strncpy(names[count], p, n);
+                    names[count++][n] = 0;
+                } 
+            }
+        }
+        else p++;
+    }
+    if (count)
+    {
+        int found[10];
+        memset(found, 0, sizeof(found));
+        p = dest;
+        while (*p)
+        {
+            if (isdigit(*p))
+            {
+                int n = atoi(p);
+                char *q = p;
+                while (isdigit(*q))
+                    q++;
+                if (isalpha(*q) || *q == '_')
+                {
+                    for (i=0; i < count; i++)
+                        if (strlen(names[i]) == n && !strncmp(names[i],q, n))
+                            break;
+                    if (i != count && found[i]++)
+                    {
+                        char bf[20];
+                        int digits = p - q;
+                        sprintf(bf, "n%d", i);
+                        strncpy(p, bf, strlen(bf));
+                        p+= strlen(bf);
+                        memcpy(p, p + n - digits-2, strlen(p)-(n-digits-2)+1);                       
+                    } 
+                    else
+                    {
+                        p = q;
+                    }
+                }
+                else
+                    p = q;
+            }
+            else p++;
+        }        
+    }
+}
+void GetQualifiedName(char *dest, char **src, BOOL type, BOOL towarn)
+{
+            // not handling const/volatile yet
+    int i = 0;
+    char *p = dest;
+    int flags = 0;
+    if (!(*src))
+        return;
+    if (!type)
+    {
+        *dest = 0;
+        while (isspace(**src))
+            (*src)++;
+    }
+    if (type)
+    {
+        int l;
+        flags = GetConstVol(src);
+        for (i = 0; i < sizeof(casts) / sizeof(casts[0]); i++)
+            if (!strncmp((*src), casts[i].str, l = strlen(casts[i].str)) && !isalnum
+                ((*src)[l]) && (*src)[l] != '_')
+                break;
+        if ( i <sizeof(casts)/sizeof(casts[0]))
+        {
+            char *q;
+            *src += strlen(casts[i].str);
+            q =GetQualifiers(p, src, flags);
+            strcpy(q, casts[i].mstr);
+            return; 
+        }
+        else if (!strcmp((*src), "struct "))
+            (*src) += 7;
+        else if (!strcmp((*src), "union "))
+            (*src) += 6;
+        else if (!strcmp((*src), "enum "))
+            (*src) += 5;
+    }
+    *p++ = '@';
+    while (*(*src))
+    {
+        if (*(*src) == ':')
+        {
+            if ((*src)[1] != ':')
+            {
+                *p = 0;
+                return;
+            }
+            if (!(*src)[2])
+            {
+                break;
+            }                
+            (*src)+=2;
+            while (isspace(*(*src))) (*src)++;
+            *p++ = '@';
+            *p = 0;
+        }
+        else if (*(*src) == '<')
+        {
+            // this isn't perfect, it won't create template names with default arguments
+            char buf1[2048], *q=buf1, *r = p;
+            
+            while (isalnum(r[-1]) || r[-1] == '_')
+                r-- ;
+            *q++ = '#';
+            strcpy(q, r);
+            q += strlen(q);
+            *q++ = '$';            
+            (*src)++;
+            while (1)
+            {
+                while (isspace(*(*src)))
+                    (*src) ++;
+                GetQualifiedName(q, src, TRUE, towarn);
+                q = q + strlen(q);
+                while (isspace(*(*src)))
+                    (*src)++;
+                if (*(*src) == ',')
+                    (*src)++;
+                else
+                    break;
+            }
+            *q++ = '~';
+            *q++ = 0;
+            if (**src != '>')
+                return;
+            (*src)++;
+            strcpy(r, buf1);
+            p = r + strlen(r);
+            
+        }
+        else if (isspace(*(*src)))
+        {
+            while (isspace(*(*src)))
+                (*src)++;
+            if (*(*src) != '<' && *(*src) != ':')
+                break;
+        }
+        else if (!type && !strncmp((*src), "operator",8) && !isalnum((*src)[8]) && (*src)[8] != '_')
+        {
+            extern char *cpp_funcname_tab[1] ; 
+            extern char *xlate_tab[1]; 
+            char *q = (*src) + 8 , ** search= xlate_tab + 3;
+            int i = 3;
+            while (isspace(*q))
+                q++;
+            while (*search)
+            {
+                if (!strncmp(*search, q, strlen(*search)))
+                    break;
+                i++;
+                search ++;
+            }
+            if (*search)
+            {
+                *src = q + strlen(*search);
+                strcpy(p, cpp_funcname_tab[i]);
+                p += strlen(p);
+            }
+            else
+            {
+                if (towarn)
+                    ExtendedMessageBox("Evaluation",0,"Invalid operator");
+                return;
+            }
+            break;
+        }
+        else if (isalnum(*(*src)) || *(*src) == '_' || *(*src) == '~')
+        {
+            *p++ = *(*src)++;
+            *p = 0;
+        }
+        else
+            break;
+    }
+    // check for constructors and destructors
+    if (!type)
+    {
+        int in = 0;
+        extern char *cpp_funcname_tab[1] ; 
+        p = dest + strlen(dest)-1;
+        while (p > dest)
+        {
+            if (*p == '~')
+            {
+                if (!in && p[-1] == '@')
+                    break;
+                in++;
+            }
+            if (*p == '#')
+            {
+                if (!in)
+                    break;
+                in--;
+            }
+            if (!in && *p == '@')
+                break;
+            p--;
+        }
+        if (*p == '~')
+        {
+            in = strlen(p+1);
+            if (p-in > dest && !strncmp(p-in-1, p+1, strlen(p+1)))
+            {
+                strcpy(p, cpp_funcname_tab[1]);
+            }
+            
+        }
+        else
+        {
+            in = strlen(p+1);
+            if (p-in > dest && !strncmp(p-in, p+1, strlen(p+1)))
+            {
+                strcpy(p+1, cpp_funcname_tab[0]);
+            }
+        }
+        SimplifyNames(dest);
+        p = dest + strlen(dest);
+    }
+    else // used as a template argument
+    {
+        char len[200], *q = len;
+        char *z = dest;
+        int n = strlen(dest);
+        if (!strchr(z+1, '@'))
+            z++;
+        q = GetQualifiers(q, src, flags);
+        sprintf(q, "%d%s", strlen(z),z);
+        strcpy(dest, len);
+        p = dest + strlen(dest);
+        
+    }
+}
     static VARINFO *castnode(char **text, 
         DEBUG_INFO **dbg, SCOPE *sc, int towarn)
     {
@@ -735,60 +1112,48 @@ static int lastst;
         VARINFO *var1 = 0;
         int tp, i;
         int indir = 0, l;
-        char *p = (*text) + 1;
-        char *start = (*text);
-        char buf[256],  *q = buf;
+        char *start = (*text) + 1;
+        char buf[2048],  *q = buf;
 
-        skipspace(&p);
-        for (i = 0; i < sizeof(casts) / sizeof(casts[0]); i++)
-            if (!strncmp(p, casts[i].str, l = strlen(casts[i].str)) && !isalnum
-                (p[l]) && p[l] != '_')
-                break;
-        if (i >= sizeof(casts) / sizeof(casts[0]))
+        
+        GetQualifiedName(q, &start, TRUE, towarn);
+        while (*q == 'r' || *q == 'p' || *q == 'x' || *q == 'y')
         {
-            // IF they type in struct or union, it is a nop, we are keying
-            // only off the type name
-            if (!strncmp(p, "struct ", 7))
-                p += 7;
-            else if (!strncmp(p, "union ", 6))
-                p += 6;
-            if (isalpha(*p) ||  *p == '_')
+            if (*q == 'p' || *q == 'r')
+                indir++;  
+            q++;
+        }
+        if (isdigit(*q))
+        {
+            while (isdigit(*q))
+                q++;
+            if ((tp = FindTypeSymbol(dbg, sc, (char*)q)) == 0)
             {
-                while (isalnum(*p) ||  *p == '_')
-                    *q++ =  *p++;
-                *q = 0;
-                if ((tp = FindTypeSymbol(dbg, sc, (char*)buf)) == 0)
+                if ((tp = FindTypeSymbol(dbg, sc, (char*)q+1)) == 0)
                 {
-                    *text = start;
-                    return 0;
+                    q[-1] = '@';
+                    if ((tp = FindTypeSymbol(dbg, sc, (char*)q-1)) == 0)
+                        return 0;
                 }
-                hasUDT = TRUE;
             }
-            else
-            {
-                *text = start;
-                return 0;
-            }
+            hasUDT = TRUE;
         }
         else
         {
-            p += strlen(casts[i].str);
-            tp = casts[i].type;
+            for (i = 0; i < sizeof(casts) / sizeof(casts[0]); i++)
+                if (!strcmp(q, casts[i].mstr))
+                {
+                    tp = casts[i].type;
+                    break;
+                }
+            if ( i >= sizeof(casts) /sizeof(casts[0]))
+                return 0;
         }
-        if (!isspace(*p) &&  *p != ')' &&  *p != '*')
-            return 0;
-
-        skipspace(&p);
-        while (*p == '*')
-        {
-            p++;
-            indir++;
-            skipspace(&p);
-        }
-        *text = p;
-        if (*(*text)++ != ')')
+        while (isspace(*start)) start ++;
+        if (*start++ != ')')
             return ieerr(text, var1, 0, "Missing ')'", towarn);
-        // if we got here we have a valid cast
+        *text = start;
+
         var1 = calloc(sizeof(VARINFO), 1);
         if (!var1)
             return 0;
@@ -839,7 +1204,7 @@ static int lastst;
         skipspace(text);
         if (isdigit(**text) ||  **text == '.')
             var1 = constnode(text, towarn);
-        else if (isalpha(**text) ||  **text == '_')
+        else if (isalpha(**text) ||  **text == '_' || **text == ':')
         {
             char *p = *text;
             var1 = lookupsym(text, dbg, sc, towarn);
@@ -867,12 +1232,16 @@ static int lastst;
                 var1 = POP();
                 if (var2->constant)
                 {
-                    var1->constant = TRUE;
+                    var1->address = var2->ival;
+                    var1->derefaddress = var1->address;
                     var1->ival = var2->ival;
                     var1->fval = var2->fval;
                 }
                 else
+                {
                     var1->address = var2->address;
+                    var1->derefaddress = var1->address;
+                }
                 FreeVarInfo(var2);
             }
             else
@@ -938,7 +1307,20 @@ static int lastst;
                 if (!var2)
                     return ieerr(text, var1, 0, "Unknown member name", towarn);
                 (*var3) = var2->link;
-                var2->address = var1->address + var2->offset;
+                 if (var2->offset == -1)
+                {
+                    DEBUG_INFO *dbg;
+                    int i;
+                    char name[2048];
+                    sprintf(name, "%s@%s", var1->structtag, var2->membername);
+                    dbg = findDebug(var1->address);
+                    var2->address = GetSymbolAddress(dbg, name);
+                    // static member data
+                }
+                else
+                {
+                   var2->address = var1->address + var2->offset;
+                }
                 var2->offset = 0;
                 FreeVarInfo(var1);
                 var1 = var2;
@@ -1650,6 +2032,16 @@ static int lastst;
         }
         return POP();
     }
+static void SelectScope(VARINFO *var, SCOPE *sc)
+{
+    VARINFO *t = var;
+    while (t)
+    {
+        SelectScope(t->subtype, sc);
+        t->scope = sc;
+        t = t->link;
+    }
+}
 VARINFO *EvalExpr(DEBUG_INFO **dbg, SCOPE *sc,
     char *text, int towarn)
 {
@@ -1670,5 +2062,6 @@ VARINFO *EvalExpr(DEBUG_INFO **dbg, SCOPE *sc,
             var->address = var->ival;
         }
         strcpy(var->membername, p);
+        SelectScope(var , sc);
         return var;
 }

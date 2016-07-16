@@ -64,12 +64,11 @@ typedef struct
 
 
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame;
+extern HWND hwndClient, hwndFrame;
 extern enum DebugState uState;
-extern HWND hwndTab;
 extern THREAD *activeThread;
 
-HWND hwndRegister;
+static HWND hwndRegister;
 static CONTEXT regContext;
 static HWND hwndTree;
 static char szRegisterClassName[] = "xccRegisterClass";
@@ -423,6 +422,7 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     TreeView_DeleteAllItems(hwndTree);
                     drawn = FALSE;
                 }
+                InvalidateRect(hwndRegister, 0, TRUE);
                 InvalidateRect(hwndTree, 0, 0);
                 break;
             default:
@@ -470,7 +470,7 @@ LRESULT CALLBACK RegisterProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-void RegisterRegisterWindow(void)
+void RegisterRegisterWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
@@ -497,7 +497,7 @@ HWND CreateRegisterWindow(void)
     }
     else
     {
-        hwndRegister = CreateDockableWindow(DID_REGWND, szRegisterClassName, szRegTitle, hInstance, 200, 400);
+        hwndRegister = CreateInternalWindow(DID_REGWND, szRegisterClassName, szRegTitle);
     }
     return hwndRegister;
 }

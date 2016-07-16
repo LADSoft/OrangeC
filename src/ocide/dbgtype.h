@@ -39,7 +39,7 @@
 */
     enum eDbgType { eNone = 0, ePointer, eFunction, eBitField,
                  eStruct, eUnion, eArray, eVla, eEnum,
-                 eField, eTypeDef,
+                 eField, eTypeDef, eLRef, eRRef,
                  eVoid = 32, ePVoid, eBool, eBit,
                  eChar = 40, eShort, eInt, eLong,
                  eLongLong, eWcharT, eChar16T, eChar32T,

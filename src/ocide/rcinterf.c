@@ -55,7 +55,6 @@
 #define N_EDITDONE -4001
 
 extern HWND hwndSrcTab;
-extern HWND hwndTabCtrl;
 extern HWND hwndClient;
 extern HWND hwndFrame;
 extern char szInstallPath[];
@@ -75,10 +74,10 @@ extern LOGFONT systemDialogFont;
 extern struct propertyFuncs imgFuncs;
 extern char sztreeDoubleBufferName[] ;
 
-HWND hwndRes;
 char *rcSearchPath;
 RESOURCE_DATA *currentResData;
 
+static HWND hwndRes;
 static char *szresEditClassName = "xccresEditClass";
 static PROJECTITEM *editItem;
 static HWND hwndEdit;
@@ -113,8 +112,7 @@ static char *DirNames[] =
     "", "Accelerators", "Bitmaps" , "Cursors",
     "Dialogs", "DlgInclude", "Fonts",
     "Icons", "", "Menus", "Message Tables",
-    "RCdata", "String Tables", "Userdata" ,"Version Info",
-    "DialogEx", "MenuEx"
+    "RCdata", "String Tables", "Userdata" ,"Version Info", 
 } ;
 
 static struct {
@@ -127,10 +125,8 @@ static struct {
     { "Cursor", "IDC_CURSOR", RESTYPE_CURSOR },
     { "Bitmap", "IDB_BITMAP", RESTYPE_BITMAP },
     { "Dialog", "IDD_DIALOG", RESTYPE_DIALOG },
-    { "DialogEx", "IDD_DIALOG", RESTYPE_DIALOGEX },
     { "Font", "IDF_FONT", RESTYPE_FONT },
     { "Menu", "IDM_MENU", RESTYPE_MENU },
-    { "MenuEx", "IDM_MENU", RESTYPE_MENUEX },
     { "Message Table", "IDT_MESSAGETABLE", RESTYPE_MESSAGETABLE },
     { "Version", "VS_VERSION_INFO", RESTYPE_VERSION },
     { "String", "IDS_STRING", RESTYPE_STRING },
@@ -664,6 +660,7 @@ void ResRewriteTitle(struct resRes *res, BOOL dirty)
         strcpy(buf, res->name);
     }
     SetWindowText(res->activeHwnd, buf);
+    SendMessage(res->activeHwnd, WM_NCPAINT, 1, 0);
     SendMessage(hwndSrcTab, TABM_RENAME, (WPARAM)buf, (LPARAM)res->activeHwnd);
 }
 void ResSetDirty(struct resRes *res)
@@ -910,11 +907,9 @@ void HandleDblClick(HTREEITEM item, BOOL err)
                         CreateImageDrawWindow(d);
                         break;
                     case RESTYPE_DIALOG:
-                    case RESTYPE_DIALOGEX:
                         CreateDlgDrawWindow(d);
                         break;
                     case RESTYPE_MENU:
-                    case RESTYPE_MENUEX:
                         CreateMenuDrawWindow(d);
                         break;
                     case RESTYPE_VERSION:
@@ -1052,10 +1047,6 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
                     newItem = "New Dialog";
                     delItem = "Remove Dialog";
                     break;
-                case RESTYPE_DIALOGEX:
-                    newItem = "New DialogEx";
-                    delItem = "Remove DialogEx";
-                    break;
                 case RESTYPE_FONT:
                     newItem = "New Font";
                     delItem = "Remove Font";
@@ -1063,10 +1054,6 @@ void HandleRightClick(HWND hWnd, HTREEITEM item)
                 case RESTYPE_MENU:
                     newItem = "New Menu";
                     delItem = "Remove Menu";
-                    break;
-                case RESTYPE_MENUEX:
-                    newItem = "New MenuEx";
-                    delItem = "Remove MenuEx";
                     break;
                 case RESTYPE_VERSION:
                     newItem = "New Version Info";
@@ -1145,11 +1132,10 @@ void ResReload(PROJECTITEM *pj)
 }
 void NavigateToResource(PROJECTITEM *file)
 {
-    SelectResourceWindow();    
+    SelectWindow(DID_RESWND);
     TreeView_SelectItem(treeWindow, file->hResTreeItem);
     ResOpen(file);
-    if (dmgrGetHiddenState(DID_PROPSWND))
-        PostMessage(hwndFrame, WM_COMMAND, IDM_VIEWPROPS, 0);
+    SelectWindow(DID_PROPSWND);
 }
 void ResAddItem(PROJECTITEM *file)
 {
@@ -1757,11 +1743,11 @@ static int ResSetData(PROJECTITEM *data, RESOURCE *newRes)
                     return 0;
                 break;
             case RESTYPE_DIALOG:
-            case RESTYPE_DIALOGEX:
+                newRes->extended = TRUE;
                 newRes->u.dialog = ResNewDialog();
                 break;
             case RESTYPE_MENU:
-            case RESTYPE_MENUEX:
+                newRes->extended = TRUE;
                 newRes->u.menu = ResNewMenu();
                 break;
             case RESTYPE_VERSION:
@@ -2103,7 +2089,7 @@ static LRESULT CALLBACK extEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     }
     return CallWindowProc(oldEditProc, hwnd, iMessage, wParam, lParam);
 }
-void RegisterResourceWindow(void)
+void RegisterResourceWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
@@ -2130,13 +2116,8 @@ void RegisterResourceWindow(void)
 
 //-------------------------------------------------------------------------
 
-void CreateResourceWindow(void)
+HWND CreateResourceWindow(void)
 {
-    RECT rect;
-    HWND parent;
-    parent = hwndTabCtrl;
-    GetTabRect(&rect);
-    hwndRes = CreateWindow(szResourceClassName, szResourceTitle,
-        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
-        rect.bottom - rect.top, parent, 0, hInstance, 0);
+    hwndRes = CreateInternalWindow(DID_PROJWND, szResourceClassName, szResourceTitle);
+    return hwndRes;
 }

@@ -1014,7 +1014,13 @@ LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     break;
             }
             break;
+        case WM_NCACTIVATE:
+             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+             return TRUE;
+        case WM_NCPAINT:
+             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
+            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             GetClientRect(hwnd, &r);
             createStruct = (LPCREATESTRUCT)lParam;
             versionData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
@@ -1059,7 +1065,7 @@ LRESULT CALLBACK VersionDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     return DefMDIChildProc(hwnd, iMessage, wParam, lParam);
 }
 
-void RegisterVersionDrawWindow(void)
+void RegisterVersionDrawWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));

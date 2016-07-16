@@ -46,17 +46,44 @@
 #include <richedit.h>
 #include <limits.h>
 #include "c_types.h"
-#include "codecomp.h"
 #include <stdlib.h>
 #include <ctype.h>
 #include <process.h>
 #include "symtypes.h"
+extern HWND hwndFrame;
 extern SCOPE *activeScope;
 extern LOGFONT systemDialogFont;
+extern HWND codecompleteBox;
+extern BOOL inStructBox;
+extern HWND hwndShowFunc;
+ extern COLORREF keywordColor;
+ extern COLORREF numberColor;
+ extern COLORREF commentColo;
+ extern COLORREF stringColor;
+ extern COLORREF directiveColor;
+ extern COLORREF backgroundColor;
+ extern COLORREF readonlyBackgroundColor;
+ extern COLORREF textColor;
+ extern COLORREF highlightColor;
+ extern COLORREF selectedTextColor ;
+ extern COLORREF selectedBackgroundColor;
+ extern COLORREF columnbarColor;
 
-HWND hwndeditPopup;
+ extern COLORREF defineColor;
+ extern COLORREF functionColor;
+ extern COLORREF parameterColor;
+ extern COLORREF typedefColor;
+ extern COLORREF tagColor;
+ extern COLORREF autoColor;
+ extern COLORREF localStaticColor;
+ extern COLORREF staticColor;
+ extern COLORREF globalColor;
+ extern COLORREF externColor;
+ extern COLORREF labelColor;
+ extern COLORREF memberColor;
 
-#define TRANSPARENT_COLOR 0x872395
+extern COLORREF *colors[];
+
 
 // This defines the maximum range for the horizontal scroll bar on the window
 #define MAX_HSCROLL 256
@@ -64,67 +91,6 @@ HWND hwndeditPopup;
 // The KEYLIST structure holds information about text which should be
 // colorized.  It gives the name of a keyword (e.g. 'int') and the color
 // to display it in.
-
-typedef struct
-{
-    char *text;
-    unsigned char Color;
-//    COLORREF *color;
-} KEYLIST;
-
-static COLORREF keywordColor = 0xff8000;
-static COLORREF numberColor = 0x0000ff;
-static COLORREF commentColor = 0x00c000;
-static COLORREF stringColor = 0x8000ff;
-static COLORREF directiveColor = 0xff0000;
-static COLORREF backgroundColor = 0xffffff;
-static COLORREF readonlyBackgroundColor = 0xc0c0c0;
-static COLORREF textColor = 0;
-static COLORREF highlightColor = 0x80ffff;
-static COLORREF selectedTextColor = 0xffffff;
-static COLORREF selectedBackgroundColor = 0xff0000;
-static COLORREF columnbarColor = 0xccccff;
-
-static COLORREF defineColor = 0x208080;
-static COLORREF functionColor = 0xc00000;
-static COLORREF parameterColor = 0x0080ff;
-static COLORREF typedefColor = 0xc0c000;
-static COLORREF tagColor = 0xc0c000;
-static COLORREF autoColor = 0x0080ff;
-static COLORREF localStaticColor = 0x00e0ff;
-static COLORREF staticColor = 0x00e0ff;
-static COLORREF globalColor = 0xffff00;
-static COLORREF externColor = 0xe0e000;
-static COLORREF labelColor = 0xc00000;
-static COLORREF memberColor = 0xc0c000;
-
-#define C_BACKGROUND 0
-#define C_READONLYBACKGROUND 1
-#define C_TEXT 2
-#define C_HIGHLIGHT 3
-#define C_KEYWORD 4
-#define C_COMMENT 5
-#define C_NUMBER 6
-#define C_STRING 7
-#define C_ESCAPE 8
-#define C_DEFINE 9
-#define C_FUNCTION 10
-#define C_PARAMETER 11
-#define C_TYPEDEF 12
-#define C_TAG 13
-#define C_AUTO 14
-#define C_LOCALSTATIC 15
-#define C_STATIC 16
-#define C_GLOBAL 17
-#define C_EXTERNAL 18
-#define C_LABEL 19
-#define C_MEMBER 20
-#define C_SYS_WINDOWBACKGROUND 31
-static COLORREF *colors[] = { &backgroundColor, &readonlyBackgroundColor, &textColor, &highlightColor, &keywordColor,
-                        &commentColor, &numberColor, &stringColor, &directiveColor ,
-                        &defineColor, &functionColor, &parameterColor, &typedefColor, &tagColor, &autoColor,
-                        &localStaticColor, &staticColor, &globalColor, &externColor, &labelColor, &memberColor
-                        };
 
 
 LOGFONT EditFont = 
@@ -134,9 +100,6 @@ LOGFONT EditFont =
          | FF_DONTCARE,
         CONTROL_FONT
 };
-
-// COLORREF selcolor = 0 ;
-
 // For drawing, put a little margin at the left
 #define LEFTMARGIN 5
 
@@ -147,60 +110,8 @@ extern enum DebugState uState;
 extern HINSTANCE hInstance;
 extern int progLanguage;
 
-// and the next is highlight data filled in by the find
-char highlightText[256] ;
-int highlightCaseSensitive;
-int highlightWholeWord;
-
 static int page_size = -1;
-static HWND codecompleteBox;
-static BOOL inStructBox;
-static HWND hwndShowFunc;
 
-void SendUpdate(HWND hwnd);
-static int LookupColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int line);
-// The C_keywordList is a list of all keywords, with colorization info
-static KEYLIST C_keywordList[] = 
-{
-    #include "c_kw.h"
-};
-static KEYLIST ASM_keywordList[] = 
-{
-    #include "asm_kw.h"
-};
-static KEYLIST RC_keywordList[] =
-{
-#include "rc_kw.h"
-};
-void LoadColors(void)
-{
-    keywordColor = PropGetColor(NULL, "COLOR_KEYWORD");
-    numberColor = PropGetColor(NULL, "COLOR_NUMBER");
-    commentColor = PropGetColor(NULL, "COLOR_COMMENT");
-    stringColor = PropGetColor(NULL, "COLOR_STRING");
-    directiveColor = PropGetColor(NULL, "COLOR_DIRECTIVE");
-    backgroundColor = PropGetColor(NULL, "COLOR_BACKGROUND");
-    readonlyBackgroundColor = PropGetColor(NULL, "COLOR_READONLYBACKGROUND");
-    textColor = PropGetColor(NULL, "COLOR_TEXT");
-    selectedBackgroundColor = PropGetColor(NULL, "COLOR_SELECTEDBACKGROUND");
-    selectedTextColor = PropGetColor(NULL, "COLOR_SELECTEDTEXT");
-    highlightColor = PropGetColor(NULL, "COLOR_HIGHLIGHT");
-    columnbarColor = PropGetColor(NULL, "COLOR_COLUMNBAR");
-
-    defineColor = PropGetColor(NULL, "COLOR_DEFINE");
-    functionColor = PropGetColor(NULL, "COLOR_FUNCTION");
-    parameterColor = PropGetColor(NULL, "COLOR_PARAMETER");
-    typedefColor = PropGetColor(NULL, "COLOR_TYPEDEF");
-    tagColor = PropGetColor(NULL, "COLOR_TAG");
-    autoColor = PropGetColor(NULL, "COLOR_AUTO");
-    localStaticColor = PropGetColor(NULL, "COLOR_LOCALSTATIC");
-    staticColor = PropGetColor(NULL, "COLOR_STATIC");
-    globalColor = PropGetColor(NULL, "COLOR_GLOBAL");
-    externColor = PropGetColor(NULL, "COLOR_EXTERN");
-    labelColor = PropGetColor(NULL, "COLOR_LABEL");
-    memberColor = PropGetColor(NULL, "COLOR_MEMBER");
-
-}
 
 /* using windows to allocate memory because the borland runtime gets confused
  * with large amounts of data
@@ -290,540 +201,11 @@ void reparse(HWND hwnd, EDITDATA *p)
 {
     if (p->cd->reparseTimerID)
         KillTimer(hwnd,p->cd->reparseTimerID);
-    p->cd->reparseTimerID = SetTimer(hwnd, 2, 4000, 0);
-}
-/**********************************************************************
- * Colorize marks a range of text with a specific color and attributes
- **********************************************************************/
-static void Colorize(INTERNAL_CHAR *buf, int start, int len, int color, int
-    italic)
-{
-    int dwEffects = 0, i;
-    INTERNAL_CHAR *p = buf + start;
-    if (italic)
-        dwEffects |= CFE_ITALIC;
-    if (!color)
-        dwEffects |= CFE_AUTOCOLOR;
-    //   else 
-    //   {
-    //		if (!italic)
-    //         dwEffects |= CFE_BOLD ;
-    //	}
-    for (i = 0; i < len; i++, p++)
-    {
-        p->Color = color;
-        p->effect = dwEffects;
-    }
-}
-
-/**********************************************************************
- * keysym returns true if it is a symbol that can be used in a keyword
- **********************************************************************/
-int keysym(char x)
-{
-    return isalnum(x) || x == '_';
-}
-
-/**********************************************************************
- * strpstr  finds a text string within a string organized as internal
- * characters.  Returns 0 if it couldn't find the string
- **********************************************************************/
-INTERNAL_CHAR *strpstr(INTERNAL_CHAR *t, char *text, int len)
-{
-    while (t->ch && len)
-    {
-        if (t->ch == text[0])
-        {
-            char *t1 = text;
-            INTERNAL_CHAR *it1 = t;
-            while (*t1 && it1->ch ==  *t1)
-            {
-                t1++;
-                it1++;
-            }
-            if (! *t1)
-                return t;
-        }
-        t++;
-        len--;
-    }
-    return 0;
-
-}
-
-/**********************************************************************
- * strplen  finds the length of an internal_char array
- **********************************************************************/
-
-int strplen(INTERNAL_CHAR *t)
-{
-    int rv = 0;
-    while (t->ch)
-        rv++, t++;
-    return rv;
-}
-
-/**********************************************************************
- * backalpha goes backwards to find out if the current (numeric)
- * character is part of an identifier, or if it is a standalone number.
- * returns TRUE if part of an identifier.  Used in colorizing numbers
- **********************************************************************/
-
-static int backalpha(INTERNAL_CHAR *buf, int i)
-{
-    while (i >= 0)
-    {
-        if (isalpha(buf[i].ch))
-            return TRUE;
-        if (buf[i].ch == '_')
-            return TRUE;
-        if (!isdigit(buf[i].ch))
-            return FALSE;
-        i--;
-    }
-    return FALSE;
-
-}
-
-//-------------------------------------------------------------------------
-
-int pcmp(INTERNAL_CHAR *s, char *t, int preproc, int *retlen, int
-    caseinsensitive, int bykey)
-{
-    *retlen = 0;
-    while (*t && s->ch && (!bykey || keysym(s->ch)))
-    {
-        int val = s->ch;
-        int ch = *t;
-        if (caseinsensitive)
-        {
-            val = tolower(val);
-            ch = tolower(ch);
-        }
-        if (val <  ch)
-            return  - 1;
-        else if (val >  ch)
-            return 1;
-        else
-        {
-            if (ch == preproc)
-            {
-                while (isspace(s[1].ch) && s[1].ch != '\n')
-                    s++, (*retlen)++;
-            }
-            s++, t++, (*retlen)++;
-        }
-    }
-    if (*t)
-        return -1;
-    return bykey && keysym(s->ch) ;
-}
-
-/**********************************************************************
- * See if a keyword matches the current text location
- **********************************************************************/
-KEYLIST *matchkeyword(KEYLIST *table, int tabsize, int preproc, INTERNAL_CHAR
-    *t, int *retlen, int insensitive)
-{
-    int top = tabsize;
-    int bottom =  - 1;
-    int v;
-    while (top - bottom > 1)
-    {
-        int mid = (top + bottom) / 2;
-        v = pcmp(t, table[mid].text, preproc, retlen, insensitive, t->ch != '#');
-        if (v < 0)
-        {
-            top = mid;
-        }
-        else
-        {
-            bottom = mid;
-        }
-    }
-    if (bottom ==  - 1)
-        return 0;
-    v = pcmp(t, table[bottom].text, preproc, retlen, insensitive, t->ch != '#');
-    if (v)
-        return 0;
-    return  &table[bottom];
-}
-
-/**********************************************************************
- * SearchKeywords searches a range of INTERNAL_CHARs for keywords,
- * numbers, and strings, and colorizes them
- **********************************************************************/
-
-static void SearchKeywords(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, 
-                           int chars, int start, int type, int bkColor)
-{
-    int i;
-    KEYLIST *sr = C_keywordList;
-    int size = sizeof(C_keywordList) / sizeof(KEYLIST);
-    int preproc = '#';
-    int hexflg = FALSE, binflg = FALSE;
-    int xchars = chars;
-    INTERNAL_CHAR *t = buf;
-    int lineno = 1;
-    BOOLEAN hashed;
-    while (t < buf + start)
-    {
-        if (t++->ch == '\n')
-            lineno++;
-    }
-    t = buf + start;
-    if (type == LANGUAGE_ASM)
-    {
-        sr = ASM_keywordList;
-        size = sizeof(ASM_keywordList) / sizeof(KEYLIST);
-        preproc = '%';
-    }
-    else if (type == LANGUAGE_RC)
-    {
-        sr = RC_keywordList;
-        size = sizeof(RC_keywordList) / sizeof(KEYLIST);
-        preproc = '#';
-    }
-    while (t->ch && xchars > 0)
-    {
-        while (t->ch && (t->Color & 0xf) == C_COMMENT && xchars > 0)
-        {
-            if (t->ch == '\n')
-                lineno++;
-            t++, xchars--;
-        }
-        if (xchars > 0 && (t == buf || (!keysym(t[ - 1].ch) && (keysym(t->ch) ||
-            t->ch == preproc))))
-        {
-            int len;
-            KEYLIST *p = matchkeyword(sr, size, preproc, t, &len, type ==
-                LANGUAGE_ASM || type == LANGUAGE_RC);
-            if (p)
-            {
-                Colorize(buf, t - buf, len,  (bkColor << 5) + p->Color, FALSE);
-                t += len;
-                xchars -= len;
-            }
-            else
-            {
-                int type;
-                char name[256],*p=name;
-                INTERNAL_CHAR *t1 = t;
-                while (keysym(t1->ch) && p < name + 250)
-                {
-                    *p++ = t1++->ch;
-                }
-                *p = 0;
-                if ((t != buf && t[-1].ch == '.') || (t > buf + 1 && t[-1].ch == '>' && t[-2].ch == '-'))
-                {
-                        len = p - name;
-                        Colorize(buf, t - buf, len,  (bkColor << 5) + C_MEMBER, FALSE);
-                        t += len;
-                        xchars -= len;
-                }
-                else
-                {
-                    type = LookupColorizeEntry(entries, name, lineno);
-                    if (type >= 0)
-                    {
-                        len = p - name;
-                        Colorize(buf, t - buf, len,  (bkColor << 5) + (type - ST_DEFINE + C_DEFINE), FALSE);
-                        t += len;
-                        xchars -= len;
-                    }
-                    else
-                    {
-                        if (t->ch == '\n')
-                            lineno++;
-                        if (t->Color == (C_HIGHLIGHT << 5) + C_TEXT)
-                            t->Color = (bkColor << 5) + C_TEXT;
-                        t++, xchars--;
-                    }
-                }
-        }
-        }
-        else
-        {
-            if (t->ch == '\n')
-                lineno++;
-            if (t->Color == (C_HIGHLIGHT << 5) + C_TEXT)
-                t->Color = (bkColor << 5) + C_TEXT;
-            t++, xchars--;
-        }
-    }
-    for (i = 0; i < chars; i++)
-	{
-        if (i ==0 || buf[start+i].ch =='\n')
-        {
-            hashed = FALSE;
-            while (i < chars && isspace(buf[start+i].ch)) i++;
-            if (i >= chars)
-                break;
-            if (buf[start+i].ch == '#') 
-            {
-                i ++;
-                while (i < chars && isspace(buf[start+i].ch)) i++;
-                if (i >= chars)
-                    break;
-                hashed = buf[start+i].ch == 'i' && buf[start + i + 1].ch == 'n'; // check for #include
-            }
-        }
-        if ((buf[start + i].Color & 0xf) != C_COMMENT)
-        {
-            int len;
-            if (highlightText[0] && 
-                !pcmp(buf + start + i, highlightText, preproc, &len, !highlightCaseSensitive, FALSE)
-                && (!highlightWholeWord || (i == 0 || ((!isalnum(buf[i-1].ch)) && buf[i-1].ch != '_' 
-				&& !isalnum(buf[i+len].ch) && buf[i+len].ch != '_'))))
-            {
-                Colorize(buf, start + i, len,  (C_HIGHLIGHT << 5) + C_TEXT, FALSE);
-                i += len - 1;
-            }
-            else if (type == LANGUAGE_ASM && buf[start+i].ch == '$')
-            {
-                len = 1;
-                while (isxdigit(buf[start + i + len].ch))
-                    len++;
-                Colorize(buf, start + i, len, (bkColor << 5) | C_NUMBER, FALSE);
-                i += len - 1;
-            }
-            else if (isdigit(buf[start + i].ch))
-            {
-                if (!backalpha(buf, start + i - 1))
-                {
-                    int j = i;
-                    char ch = buf[start + i++].ch;
-                    if (type == LANGUAGE_C || type == LANGUAGE_RC)
-                    {
-                        if (isdigit(ch) || ch == '.')
-                        {
-                            char oc = ch;
-                            ch = buf[start + i].ch;
-                            hexflg = oc == '0' && (ch == 'x' || ch == 'X');
-                            binflg = oc == '0' && (ch == 'b' || ch == 'B');
-                            if (hexflg || binflg)
-                                ch = buf [start + ++i].ch;
-                            while (ch == '.' || (!binflg && isdigit(ch)) || (binflg && (ch == '0' || ch == '1'))
-                                || (hexflg && (isxdigit(ch) || ch =='p' || ch == 'P')) ||
-                                  (!hexflg && (ch == 'e' || ch== 'E')))
-                            {
-                                    i++;
-                                    if ((!hexflg && ch >= 'A') || (hexflg && (ch =='p' || ch == 'P')))
-                                    {
-                                        ch = buf[start+i].ch;
-                                        if (ch == '-' || ch == '+')
-                                            i++;
-                                    }
-                                    ch = buf[start+i].ch ;
-                            }
-                            while (ch== 'L' || ch == 'l'
-                                || ch == 'U' || ch == 'u'
-                                || ch == 'F' || ch == 'f')
-                                ch = buf[start + ++i].ch;
-                        }
-                    }
-                    else
-                    {
-                        while (isxdigit(buf[start + i].ch))
-                            i++;
-                        if (buf[start + i].ch != 'H' && buf[start + i].ch != 'h')
-                        {
-                            i = j;
-                            while (isdigit(buf[start + i].ch))
-                                i++;
-                        }
-                        else
-                            i++;
-                    }
-                    hexflg = FALSE;
-                    Colorize(buf, start + j, i - j, (bkColor << 5) | C_NUMBER, FALSE);
-                    i--;
-                }
-            }
-            else if ((buf[start + i].ch == '"' 
-                || buf[start + i].ch == '\'') && (start + i <2 || buf[start + i - 1].ch != '\\' || buf[start + i - 2].ch == '\\'))
-            {
-                int ch = buf[start + i].ch;
-                int j = i++;
-                while (buf[start + i].ch && ((buf[start + i].ch != ch && buf[start +
-                    i].ch != '\n') || (buf[start + i - 1].ch == '\\' && buf[start + i -
-                    2].ch != '\\')) && i < chars)
-                    i++;
-                Colorize(buf, start + j + 1, i - j - 1, (bkColor << 5) | C_STRING, FALSE);
-            }
-            else if (hashed && buf[start + i].ch == '<')
-            {
-                int j = i++;
-                while (buf[start + i].ch && (buf[start + i].ch != '>' && buf[start +
-                    i].ch != '\n'))
-                    i++;
-                Colorize(buf, start + j + 1, i - j - 1, (bkColor << 5) | C_STRING, FALSE);
-            }
-        }
-    }
-
-}
-
-/**********************************************************************
- * FormatBuffer colorizes comments over a range of text, 
- * then calls SearchKeywords to colorize keywords
- **********************************************************************/
-static int instring(INTERNAL_CHAR *buf, INTERNAL_CHAR *t1)
-{
-    INTERNAL_CHAR *t2 = t1;
-    int quotechar = 0;
-    while (t2 != buf && t2[ - 1].ch != '\n')
-        t2--;
-    while (t2 != t1)
-    {
-        if (quotechar)
-        {
-            if (t2->ch == quotechar && t2[ - 1].ch != '\\')
-                quotechar = 0;
-        }
-        else
-        {
-            if (t2->ch == '\'' || t2->ch == '"')
-                quotechar = t2->ch;
-        }
-        t2++;
-    }
-    return !!quotechar;
-}
-
-//-------------------------------------------------------------------------
-
-static void FormatBuffer(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int type, int bkColor)
-{
-    if (type != LANGUAGE_NONE && PropGetBool(NULL, "COLORIZE"))
-    {
-        if (type == LANGUAGE_C || type == LANGUAGE_RC)
-        {
-            INTERNAL_CHAR *t = buf + start;
-            INTERNAL_CHAR *t1;
-            while (TRUE)
-            {
-                t1 = strpstr(t, "/*", end - (t - buf));
-    
-                if (t1)
-                {
-                    if ((t1 == buf || t1[ - 1].ch != '/') && !instring(buf, t1))
-                    {
-    
-                        t = strpstr(t1, "*/",  - 1);
-                        if (!t)
-                            t = t1 + strplen(t1);
-                        else
-                        {
-                            t += 2;
-                        }
-                        Colorize(buf, t1 - buf, t - t1, (bkColor << 5) | C_COMMENT, TRUE);
-                    }
-                    else
-                        t = t1 + 1;
-                }
-                else
-                    break;
-            }
-            t = buf + start;
-            t1 = strpstr(t, "//", end - (t - buf));
-            while (t1)
-            {
-                if (!instring(buf, t1) && (t1->Color & 0xf) != C_COMMENT)
-                {
-    
-                    t = strpstr(t1, "\n",  - 1);
-                    while (1)
-                    {
-                        if (!t)
-                        {
-                            t = t1 + strplen(t1);
-                            break;
-                        }
-                        else
-                        {
-                            INTERNAL_CHAR *t2 = t;
-                            while (t2 > buf && isspace(t2[ - 1].ch))
-                                t2--;
-                            if (t2[ - 1].ch != '\\')
-                                break;
-                            t = strpstr(t + 1, "\n",  - 1);
-                        }
-                    }
-                    Colorize(buf, t1 - buf, t - t1 + 1, (bkColor << 5) | C_COMMENT, TRUE);
-                }
-                else
-                    t = t1 + 1;
-                t1 = strpstr(t, "//", end - (t - buf));
-            }
-        }
-        else if (type == LANGUAGE_ASM)
-        {
-            INTERNAL_CHAR *t = buf + start;
-            int type;
-            INTERNAL_CHAR *t1;
-            t1 = strpstr(t, ";", end - (t - buf));
-            while (t1)
-            {
-                t = strpstr(t1, "\n",  - 1);
-                if (!t)
-                {
-                    t = t1 + strplen(t1);
-                }
-                Colorize(buf, t1 - buf, t - t1 + 1, (bkColor << 5) | C_COMMENT, TRUE);
-                t1 = strpstr(t, ";", end - (t - buf));
-            }
-        }
-        SearchKeywords(entries, buf, end - start, start, type, bkColor);
-    }
-    else
-    {
-        Colorize(buf, start, end, (bkColor << 5) | C_TEXT, FALSE);
-    }
-}
-
-//-------------------------------------------------------------------------
-
-static void FormatBufferFromScratch(COLORIZE_HASH_ENTRY *entries[], INTERNAL_CHAR *buf, int start, int end, int
-    type, int bkColor)
-{
-    if (type != LANGUAGE_NONE && PropGetBool(NULL, "COLORIZE"))
-    {
-        int xend, xstart;
-        xend = end;
-        if (start < 0)
-            start = 0;
-        xstart = start;
-        while (xstart && (buf[xstart - 1].ch != '\n' || (buf[xstart - 1].Color & 0xf) ==
-            C_COMMENT))
-            xstart--;
-        while (buf[xend].ch && (buf[xend].ch != '\n' || (buf[xend].Color &0xf) ==
-                    C_COMMENT))
-                xend++;
-    
-        Colorize(buf, xstart, xend - xstart, (bkColor << 5) | C_TEXT, FALSE);
-        FormatBuffer(entries, buf, xstart, xend, type, bkColor);
-    }
-}
-
-/**********************************************************************
- * FormatLine is an optimized colorizer that just colorizes the current
- * line
- **********************************************************************/
-
-static void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
-{
-    if (PropGetBool(NULL, "COLORIZE") && type != LANGUAGE_NONE)
-    {
-    
-        int start, end;
-        EDITDATA *p = (EDITDATA*)GetWindowLong(hwnd, 0);
-        SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, (LPARAM) &end);
-        FormatBufferFromScratch(p->colorizeEntries, buf, start, start, type, bkColor);
-    }
+    p->cd->reparseTimerID = SetTimer(hwnd, 2, 2500, 0);
 }
 static void UpdateSiblings(EDITDATA *p, int pos, int insert)
 {
+    void UpdateMarks(EDITDATA *p, int pos, int insert);
     EDLIST *list = p->cd->siblings;
     while (list)
     {
@@ -831,376 +213,12 @@ static void UpdateSiblings(EDITDATA *p, int pos, int insert)
         {
             SendMessage(list->data->self, EM_UPDATESIBLING, insert, pos);
         }
+        else
+        {
+            UpdateMarks(p, pos, insert);
+        }
         list = list->next ;
     }
-}
-/**********************************************************************
- * GetWordFromPos is a utility to find out what the word under the
- * cursor is, and various information about it
- **********************************************************************/
-int GetWordFromPos(HWND hwnd, char *outputbuf, int charpos, int *linenum, int
-    *startoffs, int *endoffs)
-{
-    int linepos;
-    int linecharpos;
-    int linecharindex;
-    char buf[1000];
-    CHARRANGE charrange;
-
-    EDITDATA *p = (EDITDATA*)GetWindowLong(hwnd, 0);
-
-    if (charpos ==  - 1)
-    {
-        SendMessage(hwnd, EM_EXGETSEL, (WPARAM)0, (LPARAM) &charrange);
-        charpos = charrange.cpMin;
-    }
-    linepos = SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, (LPARAM)charpos);
-    linecharindex = SendMessage(hwnd, EM_LINEINDEX, linepos, 0);
-    linecharpos = charpos - linecharindex;
-    *(short*)buf = 1000;
-    outputbuf[0] = 0;
-    if (linecharpos >= SendMessage(hwnd, EM_GETLINE, linepos, (LPARAM)buf))
-    {
-        return FALSE;
-    }
-
-    /* if there is a selection, attempt to use it */
-    if (p->selstartcharpos != p->selendcharpos)
-    {
-        int start = p->selstartcharpos;
-        int end = p->selendcharpos;
-        if (start > end)
-        {
-            int temp = start;
-            start = end;
-            end = temp;
-        }
-        if (end - start < 255)
-        {
-            int i = 0;
-            while (start < end)
-                outputbuf[i++] = p->cd->text[start++].ch;
-            outputbuf[i] = 0;
-            if (linenum)
-                *linenum = linepos;
-            if (startoffs)
-                *startoffs = start;
-            if (endoffs)
-                *endoffs = end;
-            return TRUE;
-        }
-    }
-    
-        
-    // otherwise get word under cursor
-    while (linecharpos && (buf[linecharpos] == ' ' || buf[linecharpos] == '\n' 
-        || buf[linecharpos] == '\t' || buf[linecharpos] == 0))
-        linecharpos--;
-
-
-    {
-        char *start = buf + linecharpos,  *end = start;
-        if (start > buf)
-        {
-            start--;
-
-            if (start == buf)
-            {
-                if (!keysym(*start))
-                    start++;
-            }
-            else
-            while (start > buf)
-            {
-                if (!keysym(*start))
-                {
-                    start++;
-                    break;
-                }
-                start--;
-            }
-            if (!keysym(*start))
-                start++;
-        }
-        while (*end && keysym(*end))
-            end++;
-        *end = 0;
-        if (start > end)
-            start = end;
-        if (linenum)
-            *linenum = linepos;
-        if (startoffs)
-            *startoffs = start - buf + linecharindex;
-        if (endoffs)
-            *endoffs = end - buf + linecharindex;
-        strcpy(outputbuf, start);
-    }
-        return TRUE;
-}
-
-/**********************************************************************
- * DoHelp handles the F1 key functionality - it gets the word under the
- * cursor then tries a lookup from the favorite help engine.  Again this
- * is kind of linked to the rest of CCIDE
- **********************************************************************/
-
-static void DoHelp(HWND edwin, int speced)
-{
-    char buf[512];
-    if (!GetWordFromPos(edwin, buf,  - 1, 0, 0, 0))
-        return ;
-    else
-    {
-        if (GetKeyState(VK_CONTROL) &0x80000000)
-            MSDNHelp(buf);
-        else
-            RTLHelp(buf);
-    }
-}
-
-
-/**********************************************************************
- * getundo creates an UNDO structure based on the user's last operation
- **********************************************************************/
-UNDO *getundo(HWND hwnd, EDITDATA *p, int type)
-{
-    int x;
-    UNDO *u;
-    if (p->cd->undoing)
-        return 0;
-    if (p->cd->undohead != p->cd->undotail)
-    {
-        x = p->cd->redopos;
-        if (x >= UNDO_MAX)
-            x = 0;
-        if (x != p->cd->undotail)
-        {
-            x = p->cd->redopos;
-            if (--x < 0)
-                x += UNDO_MAX;
-            u = &p->cd->undolist[x];
-            switch(u->type)
-            {
-                case UNDO_INSERT:
-                    u->len = u->undotemp;
-                    break;
-                case UNDO_MODIFY:
-                case UNDO_BACKSPACE:
-                case UNDO_DELETE:
-                    memcpy(u->data, u->data + u->undotemp, u->len - u->undotemp);
-                    u->len -=u->undotemp;
-                    u->undotemp = 0;
-                    break;
-                default:
-                    u->undotemp = 0;
-                    break;
-            }
-            if (type != UNDO_DELETESELECTION && type != UNDO_INSERTSELECTION && type !=
-                UNDO_CASECHANGE && type != UNDO_AUTOBEGIN && type != UNDO_AUTOEND &&
-                type != UNDO_AUTOCHAINBEGIN && p->cd->undohead != p->cd->undotail)
-            {
-                if (u->type == type)
-                {
-                    if (type != UNDO_BACKSPACE)
-                    {
-                        if (p->selstartcharpos == u->postselstart)
-                        {
-                            /*
-                            p->cd->undohead = x;
-                            if (++p->cd->undohead >= UNDO_MAX)
-                                p->cd->undohead -= UNDO_MAX;
-                            p->cd->redopos = p->cd->undohead;
-                            */
-                            p->cd->modified = TRUE;
-                            return u;
-                        }
-                    }
-                    else
-                    {
-                        if (p->selstartcharpos + 1 == u->postselstart)
-                        {
-                            /*
-                            p->cd->undohead = x;
-                            if (++p->cd->undohead >= UNDO_MAX)
-                                p->cd->undohead -= UNDO_MAX;
-                            p->cd->redopos = p->cd->undohead;
-                            */
-                            return  u;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    p->cd->undohead = p->cd->redopos;
-    u = &p->cd->undolist[p->cd->redopos];
-    if (++p->cd->undohead >= UNDO_MAX)
-        p->cd->undohead = 0;
-    p->cd->redopos = p->cd->undohead;
-    if ((p->cd->undohead+1)%UNDO_MAX == p->cd->undotail)
-        if (++p->cd->undotail >= UNDO_MAX)
-            p->cd->undotail = 0;
-    u->len = u->undotemp = 0;
-    u->preselstart = p->selstartcharpos;
-    u->preselend = p->selendcharpos;
-    u->charpos = p->textshowncharpos;
-    u->modified = p->cd->modified;
-    p->cd->modified = TRUE;
-    u->type = type;
-    return u;
-}
-
-//-------------------------------------------------------------------------
-
-void insertautoundo(HWND hwnd, EDITDATA *p, int type)
-{
-    UNDO *u = getundo(hwnd, p, type);
-    if (u)
-    {
-        u->postselstart = p->selstartcharpos;
-        u->postselend = p->selendcharpos;
-    }
-}
-/**********************************************************************
- * undo_deletesel gets the undo structure for a CUT operation
- **********************************************************************/
-UNDO *undo_deletesel(HWND hwnd, EDITDATA *p)
-{
-    UNDO *u;
-    int start, end;
-    int i = 0;
-    if (p->selstartcharpos == p->selendcharpos)
-        return 0;
-    u = getundo(hwnd, p, UNDO_DELETESELECTION);
-    if (!u)
-        return u;
-    if (p->selstartcharpos < p->selendcharpos)
-    {
-        start = p->selstartcharpos;
-        end = p->selendcharpos;
-    }
-    else
-    {
-        start = p->selendcharpos;
-        end = p->selstartcharpos;
-    }
-    if (end - start > u->max)
-    {
-        BYTE *temp = (BYTE *)realloc(u->data, end - start);
-        if (!temp)
-            return 0;
-        u->data = temp;
-        u->max = end - start;
-    }
-    u->len = end - start;
-    while (start < end)
-    {
-        u->data[i++] = p->cd->text[start++].ch;
-    }
-    return u;
-}
-
-//-------------------------------------------------------------------------
-
-UNDO *undo_casechange(HWND hwnd, EDITDATA *p)
-{
-    UNDO *x = undo_deletesel(hwnd, p);
-    x->type = UNDO_CASECHANGE;
-    return x;
-}
-
-/**********************************************************************
- * undo_insertsel gets the undo structure for an operation which pasts
- **********************************************************************/
-UNDO *undo_insertsel(HWND hwnd, EDITDATA *p, char *s)
-{
-    UNDO *u = getundo(hwnd, p, UNDO_INSERTSELECTION);
-    if (!u)
-        return u;
-    u->len = strlen(s);
-    if (u->max < u->len)
-    {
-        u->data = realloc(u->data, u->len);
-    }
-    memcpy(u->data, s, u->len);
-    return u;
-}
-
-/**********************************************************************
- * undo_deletechar gets the undo structure for a character deletion
- **********************************************************************/
-UNDO *undo_deletechar(HWND hwnd, EDITDATA *p, int ch, int type)
-{
-    UNDO *u = getundo(hwnd, p, type);
-    if (!u)
-        return u;
-    if (u->max <= u->len)
-    {
-        BYTE *temp = realloc(u->data, u->max + 64);
-        if (!temp)
-            return 0;
-        u->data = temp;
-        u->max += 64;
-    }
-    memmove(u->data + 1, u->data, u->len++);
-    u->data[0] = ch;
-    u->postselstart = p->selstartcharpos;
-    u->postselend = p->selendcharpos;
-    return u;
-}
-
-/**********************************************************************
- * undo_deletechar gets the undo structure for typing over a character
- **********************************************************************/
-UNDO *undo_modifychar(HWND hwnd, EDITDATA *p)
-{
-    UNDO *u = getundo(hwnd, p, UNDO_MODIFY);
-    if (!u)
-        return u;
-    if (u->max <= u->len)
-    {
-        BYTE *temp = realloc(u->data, u->max + 64);
-        if (!temp)
-            return 0;
-        u->data = temp;
-        u->max += 64;
-    }
-    memmove(u->data + 1, u->data, u->len++);
-    u->data[0] = p->cd->text[p->selstartcharpos].ch;
-    return u;
-}
-
-/**********************************************************************
- * undo_deletechar gets the undo structure for inserting a character
- **********************************************************************/
-UNDO *undo_insertchar(HWND hwnd, EDITDATA *p, int ch)
-{
-    UNDO *u = getundo(hwnd, p, UNDO_INSERT);
-    if (!u)
-        return u;
-    if (u->max <= u->len)
-    {
-        BYTE *temp = realloc(u->data, u->max + 64);
-        if (!temp)
-            return 0;
-        u->data = temp;
-        u->max += 64;
-    }
-    u->data[u->len++] = ch;
-    u->undotemp = u->len;
-    return u;
-}
-
-/**********************************************************************
- * ClientArea gets the client area.  We are leaving space at the bottom
- * because it would be overlayed with the scroll bar
- **********************************************************************/
-void ClientArea(HWND hwnd, EDITDATA *p, RECT *r)
-{
-    GetClientRect(hwnd, r);
-    //   r->bottom -= GetSystemMetrics(SM_CYHSCROLL) ;
-    r->bottom -= r->bottom % (p->cd->txtFontHeight ? p->cd->txtFontHeight : 2);
 }
 
 /**********************************************************************
@@ -1771,21 +789,6 @@ int GetLineOffset(HWND hwnd, EDITDATA *p, int chpos)
     return line;
 }
 
-/**********************************************************************
- * drawline draws the current line and everything below it(by invalidating
- * the selection)
- **********************************************************************/
-void drawline(HWND hwnd, EDITDATA *p, int chpos)
-{
-    RECT r;
-    int pos;
-    pos = p->selendcharpos;
-    ClientArea(hwnd, p, &r);
-    r.top = GetLineOffset(hwnd, p, pos) *p->cd->txtFontHeight;
-    SendUpdate(hwnd);
-    InvalidateRect(hwnd, &r, 1);
-    MoveCaret(hwnd, p);
-}
 
 /**********************************************************************
  * insertchar handles the functionality of inserting a character
@@ -1876,7 +879,7 @@ void insertcrtabs(HWND hwnd, EDITDATA *p);
 void insertcr(HWND hwnd, EDITDATA *p, BOOL tabs)
 {
     int temp;
-    drawline(hwnd, p, p->selstartcharpos);
+    xdrawline(hwnd, p, p->selstartcharpos);
     if (p->selstartcharpos > p->selendcharpos)
     {
         temp =  - p->selstartcharpos;
@@ -1889,6 +892,11 @@ void insertcr(HWND hwnd, EDITDATA *p, BOOL tabs)
     }
     if (PropGetBool(NULL, "AUTO_INDENT"))
     {
+        BOOL realinsert = p->cd->text[p->selstartcharpos].ch != '\n';
+        int pos = 0;
+        int n = p->selstartcharpos, parenpos = -1;
+        POINTL pt;
+        int first = 0, hasend = 0, noend = 0, hasbegin = 0, nesting = 0;
         insertautoundo(hwnd, p, UNDO_AUTOEND);
         insertchar(hwnd, p, '\n');
         if (temp < 0)
@@ -1899,7 +907,117 @@ void insertcr(HWND hwnd, EDITDATA *p, BOOL tabs)
         {
             p->selendcharpos = temp + 1;
         }
-        insertcrtabs(hwnd, p);
+        while (n > 0 && p->cd->text[n].ch == '\n')
+            first++, n--;
+        while (n > 0 && (p->cd->text[n].ch != '\n' || nesting)) 
+        {
+            
+            if (p->cd->text[n].ch == ')')
+                nesting++;
+            else
+                if (p->cd->text[n].ch == '(')
+                    if (nesting)
+                        nesting--;
+                    else
+                        parenpos = n;
+            if (!isspace(p->cd->text[n].ch) && !noend)
+            {
+                if (p->cd->text[n].ch == '}')
+                    hasend = TRUE;
+                else if (p->cd->text[n].ch == '{')
+                    hasbegin = TRUE;
+                else
+                    noend = TRUE;
+            }
+            n--;
+        }
+        if (n > 0)
+            n++;
+        while (n < p->cd->textlen && isspace(p->cd->text[n].ch) && p->cd->text[n].ch != '\n')
+        {
+            if (p->cd->text[n].ch == '\t')
+            {
+                if (p->cd->tabs)
+                {
+                    pos += p->cd->tabs;
+                    pos /= p->cd->tabs;
+                    pos *= p->cd->tabs;
+                }
+                else
+                    pos++;
+            }
+            else
+            {
+                pos++;
+            }
+            n++;
+        }
+
+        if (hasbegin)
+        {
+            if (p->cd->tabs)
+            {
+                pos += p->cd->tabs;
+                pos /= p->cd->tabs;
+                pos *= p->cd->tabs;
+            }
+        }
+        else if (first)
+        {
+            while (n < p->cd->textlen && p->cd->text[n].ch != '\n')
+            {
+                if (!isspace(p->cd->text[n].ch))
+                    break;
+                n++;
+            }
+            if (parenpos != -1 && n < parenpos)
+            {
+                while (n < parenpos)
+                {
+                    if (p->cd->text[n].ch == '\t')
+                    {
+                        if (p->cd->tabs)
+                        {
+                            pos += p->cd->tabs;
+                            pos /= p->cd->tabs;
+                            pos *= p->cd->tabs;
+                        }
+                        else
+                            pos++;
+                    }
+                    else
+                    {
+                        pos++;
+                    }
+                    n++;
+                    
+                }
+            }
+            
+            else if (firstword(p->cd->text +n, "if") || firstword(p->cd->text + n, "else")
+                ||firstword(p->cd->text + n, "do") || firstword(p->cd->text + n, "for")
+                ||firstword(p->cd->text + n, "while")||firstword(p->cd->text + n, "case")
+                ||firstword(p->cd->text + n, "default"))
+
+                {
+                    if (p->cd->tabs)
+                    {
+                        pos += p->cd->tabs;
+                        pos /= p->cd->tabs;
+                        pos *= p->cd->tabs;
+                    }
+                }
+        }
+        if (posfromchar(hwnd, p, &pt, p->selstartcharpos != p->selendcharpos 
+            ? p->selendcharpos: p->selstartcharpos))
+        {
+            p->insertcursorcolumn = pos;
+            pt.x += p->cd->txtFontWidth * pos;
+            SetCaretPos(pt.x, pt.y);
+            if (realinsert)
+                insertcrtabs(hwnd, p);
+        }
+//        insertcrtabs(hwnd, p);
         insertautoundo(hwnd, p, UNDO_AUTOBEGIN);
     }
     else
@@ -1975,872 +1093,7 @@ int firstword(INTERNAL_CHAR *pos, char *name)
         return FALSE;
     return TRUE ;
 }
-/**********************************************************************
- * tab to the current line position
- **********************************************************************/
-void insertcrtabs(HWND hwnd, EDITDATA *p)
-{
-    int pos, n;
-    int oldinsert = p->cd->inserting;
-    int storepos, parencount = 0;
-    if (!p->cd->language)
-        return ;
-    if (!PropGetBool(NULL, "AUTO_INDENT"))
-        return ;
-    p->cd->inserting = TRUE;
-    pos = p->selstartcharpos - 1;
-    while (1)
-    {
-        int pos2 = pos ;
-        while (pos && p->cd->text[pos - 1].ch != '\n')
-            pos--;
-        while (p->cd->text[pos].ch && isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch 
-            != '\n')
-            pos++;
-        if (p->cd->text[pos].ch != '#')
-        {
-            int quotechar = 0;
-            while (pos2-- > pos &&
-                   p->cd->text[pos2].ch && p->cd->text[pos2].ch != '\n')
-            {
-                if ((p->cd->text[pos2].Color & 0xf) != C_COMMENT)
-                {
-                    if (quotechar == p->cd->text[pos2].ch && (!pos2 || p->cd->text[pos2-1].ch != '\\' 
-                                                           || pos2 < 2 || p->cd->text[pos2-2].ch == '\\'))
-                    {
-                        quotechar = 0;
-                    }
-                    else if (!quotechar)
-                    {
-                        if ((p->cd->text[pos2].ch == '\'' || p->cd->text[pos2].ch == '"')
-                            && (!pos2 || p->cd->text[pos2-1].ch != '\\'
-                                || pos2 < 2 || p->cd->text[pos2-2].ch == '\\'))
-                        {
-                            quotechar = p->cd->text[pos2].ch;
-                        }
-                        else if (p->cd->text[pos2].ch == '(')
-                        {
-                            storepos = pos2 ;
-                            if (++parencount > 0)
-                                break;
-                        }
-                        else
-                            if (p->cd->text[pos2].ch == ')')
-                                parencount--;
-                    } 
-                }
-            }
-            if (parencount > 0)
-            {
-                pos = storepos + 1 ;
-                break ;
-            }
-            else if (parencount == 0)
-                break;
-        }
-        while (pos && p->cd->text[pos - 1].ch != '\n')
-            pos--;
-        if (!pos)
-            break;
-        pos--;
-    }
-//    insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
-    n = curcol(p, p->cd->text, pos);
-    if (firstword(p->cd->text +pos, "if") || firstword(p->cd->text + pos, "else")
-        ||firstword(p->cd->text + pos, "do") || firstword(p->cd->text + pos, "for")
-        ||firstword(p->cd->text + pos, "while")||firstword(p->cd->text + pos, "case"))
-    {
-        pos = p->selstartcharpos-1;
-        while (pos && isspace(p->cd->text[pos].ch))
-        {
-            pos--;
-        }
-        if (p->cd->text[pos].ch != ';')
-            n+= p->cd->tabs;
-    }
-    else
-    {
-        pos = p->selstartcharpos-1;
-        while (pos && isspace(p->cd->text[pos].ch))
-        {
-            pos--;
-        }
-        if (p->cd->text[pos].ch == '{')
-        {
-            while (pos && p->cd->text[pos-1].ch != '\n')
-                pos--;
-            while (isspace(p->cd->text[pos].ch))
-                pos++;
-            n = curcol(p, p->cd->text, pos);
-            n += p->cd->tabs;
-            n = (n / p->cd->tabs) * p->cd->tabs;
-        }
-    }
-    while (n >= p->cd->tabs)
-    {
-        inserttab(hwnd, p);
-        n -= p->cd->tabs;
-    }
-    while (n--)
-        insertchar(hwnd, p, ' ');
-    p->cd->inserting = oldinsert;
-//    insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
-}
 
-//-------------------------------------------------------------------------
-
-int spacedend(EDITDATA *p, int pos)
-{
-    int rv = 0;
-    while (pos && p->cd->text[pos - 1].ch != '\n')
-        if (!isspace(p->cd->text[--pos].ch))
-            return 0;
-    rv = pos;
-    while (p->cd->text[pos].ch && isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch !=
-        '\n')
-        pos++;
-    if (p->cd->text[pos].ch == '}')
-        return rv;
-    else
-        return 0;
-}
-
-//-------------------------------------------------------------------------
-
-int preprocline(EDITDATA *p, int pos)
-{
-    int rv;
-    while (pos && p->cd->text[pos - 1].ch != '\n')
-        pos--;
-    rv = pos;
-    while (isspace(p->cd->text[pos].ch))
-        pos++;
-    if (p->cd->text[pos].ch == '#')
-        return rv;
-    else
-        return  - 1;
-}
-
-/**********************************************************************
- * tab to the current line position
- **********************************************************************/
-void InsertBeginTabs(HWND hwnd, EDITDATA *p)
-{
-    int pos, n;
-    int storepos, parencount = 0;
-    int solpos, eospos;
-    int oldinsert = p->cd->inserting;
-    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_RC)
-        return ;
-    if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
-    p->cd->inserting = TRUE;
-    pos = p->selstartcharpos - 1;
-    solpos = pos;
-    while (solpos && p->cd->text[solpos - 1].ch != '\n')
-    {
-        if (!isspace(p->cd->text[solpos - 1].ch))
-            return ;
-        solpos--;
-    }
-    if (solpos)
-        pos = solpos-1 ;
-    eospos = solpos;
-    while (eospos < p->cd->textlen && isspace(p->cd->text[eospos].ch) &&
-               p->cd->text[eospos].ch != '\n')
-        eospos++;
-    while (1)
-    {
-        int pos2 = pos ;
-        while (pos && p->cd->text[pos - 1].ch != '\n')
-            pos--;
-        while (p->cd->text[pos].ch && isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch 
-            != '\n')
-            pos++;
-        if (p->cd->text[pos].ch != '#')
-        {
-            while (pos2-- > pos &&
-                   p->cd->text[pos2].ch && p->cd->text[pos2].ch != '\n')
-            {
-                if (p->cd->text[pos2].ch == '(')
-                {
-                    storepos = pos2 ;
-                    if (++parencount == 0)
-                        break;
-                }
-                else
-                    if (p->cd->text[pos2].ch == ')')
-                        if (--parencount == 0)
-                            break;
-            } 
-            if (parencount >= 0)
-                break;
-        }
-        while (pos && p->cd->text[pos - 1].ch != '\n')
-            pos--;
-        if (!pos)
-            break;
-        pos--;
-    }
-    while (pos && p->cd->text[pos-1].ch != '\n')
-        pos--;
-    while (isspace(p->cd->text[pos].ch) && p->cd->text[pos].ch && pos < p->cd->textlen)
-        pos++;
-    insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
-    n = curcol(p, p->cd->text, pos);
-    p->selstartcharpos = solpos;
-    p->selendcharpos = eospos;
-    Replace(hwnd, p, "", 0);
-    while (n >= p->cd->tabs)
-    {
-        inserttab(hwnd, p);
-        n -= p->cd->tabs;
-    }
-    while (n--)
-        insertchar(hwnd, p, ' ');
-    p->selstartcharpos = ++p->selendcharpos; // skip past '}'
-    insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
-    p->cd->inserting = oldinsert;
-}
-/**********************************************************************
- * tab to the current line position
- **********************************************************************/
-void InsertEndTabs(HWND hwnd, EDITDATA *p, int newend)
-{
-    int pos, n;
-    int eospos;
-    int lsolpos, leospos;
-    int oldinsert = p->cd->inserting;
-    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_RC)
-        return ;
-    if (!newend)
-        return ;
-    if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
-    p->cd->inserting = TRUE;
-    leospos = pos = p->selstartcharpos - 1;
-    while (isspace(p->cd->text[leospos].ch) && p->cd->text[leospos].ch != '\n')
-        leospos++;
-
-    if ((lsolpos = spacedend(p, pos)))
-    {
-        int indentlevel = 0;
-        eospos = 0;
-        pos--;
-        while (pos > 0)
-        {
-            int pos1 = preprocline(p, pos);
-            if (pos1 !=  - 1)
-                pos = pos1;
-            else if ((p->cd->text[pos].Color & 0xf) != C_COMMENT)
-            {
-                if (p->cd->text[pos].ch == '{')
-                {
-                    if (!indentlevel)
-                    {
-                        while (pos && p->cd->text[pos - 1].ch != '\n')
-                                pos--;
-                        while (isspace(p->cd->text[pos].ch))
-                            pos++;
-                        eospos = pos;
-                        break;
-                    }
-                    else
-                        indentlevel--;
-                }
-                else if (p->cd->text[pos].ch == '}')
-                    indentlevel++;
-            }
-            pos--;
-        }
-        insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
-        n = curcol(p, p->cd->text, eospos);
-        p->selstartcharpos = lsolpos;
-        p->selendcharpos = leospos;
-        Replace(hwnd, p, "", 0);
-        while (n >= p->cd->tabs)
-        {
-            inserttab(hwnd, p);
-            n -= p->cd->tabs;
-        }
-        while (n--)
-            insertchar(hwnd, p, ' ');
-        p->selstartcharpos = ++p->selendcharpos; // skip past '}'
-        insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
-    }
-    p->cd->inserting = oldinsert;
-}
-
-//-------------------------------------------------------------------------
-
-void SelectIndent(HWND hwnd, EDITDATA *p, int insert)
-{
-    int olds = p->selstartcharpos;
-    int olde = p->selendcharpos;
-    int start = p->selstartcharpos;
-    int end = p->selendcharpos;
-    int oldinsert = p->cd->inserting;
-    int oldselect = p->cd->selecting;
-    int oldte = p->cd->textlen;
-    int decd = FALSE;
-    int inverted = FALSE ;
-    p->cd->inserting = TRUE;
-    if (start == end)
-    {
-        int x;
-        int adjustPos = start;
-        int uVal = p->cd->undohead;
-        while (start && p->cd->text[start-1].ch != '\n')
-            start--;
-        while (p->cd->text[end].ch && p->cd->text[end].ch != '\n')
-            end ++;
-        x = p->textshowncharpos;
-        if (insert)
-        {
-            insertautoundo(hwnd, p, UNDO_AUTOEND);
-            p->selstartcharpos = p->selendcharpos = start;
-            inserttab(hwnd, p);
-            p->cd->undolist[uVal].noChangeSel = TRUE;
-            insertautoundo(hwnd, p, UNDO_AUTOBEGIN);
-            end += p->cd->textlen - oldte;
-            p->selstartcharpos = adjustPos;
-            if (adjustPos > start)
-                p->selstartcharpos += p->cd->textlen - oldte;
-            p->selendcharpos = p->selstartcharpos;
-            
-            if (start < x)
-                p->textshowncharpos = x + p->cd->textlen - oldte;
-        }
-        else
-        {
-            if (isspace(p->cd->text[start].ch) && p->cd->text[start].ch != '\n')
-            {
-                int count = 0;
-                if (p->cd->text[start + count].ch == ' ')
-                    while (count < p->cd->tabs)
-                        if (p->cd->text[start + count].ch != ' ')
-                            break;
-                        else
-                            count++;
-                else
-                    count++;
-                insertautoundo(hwnd, p, UNDO_AUTOEND);
-                p->selstartcharpos = start;
-                p->selendcharpos = start + count;
-                Replace(hwnd, p, "", 0);
-                insertautoundo(hwnd, p, UNDO_AUTOBEGIN);
-                end -= count;
-                p->selstartcharpos = adjustPos;
-                if (adjustPos > start)
-                    p->selstartcharpos += p->cd->textlen - oldte;
-                p->selendcharpos = p->selstartcharpos;
-                if (start < p->textshowncharpos)
-                    p->textshowncharpos = x - count;
-                p->cd->undolist[uVal].noChangeSel = TRUE;
-            }
-        }
-    }
-    else
-    {
-        if (end < start)
-        {
-            inverted = TRUE ;
-            start = p->selendcharpos;
-            end = p->selstartcharpos;
-        }
-        if (end && p->cd->text[end - 1].ch == '\n')
-            end--, decd++;
-        while (start && p->cd->text[start - 1].ch != '\n')
-            start--;
-        while (p->cd->text[end].ch && p->cd->text[end].ch != '\n')
-            end++;
-        olds = start;
-        insertautoundo(hwnd, p, UNDO_AUTOEND);
-        while (start < end)
-        {
-            int x = p->textshowncharpos;
-            if (insert)
-            {
-                p->selstartcharpos = p->selendcharpos = start;
-                inserttab(hwnd, p);
-                end += p->cd->textlen - oldte;
-                if (start < x)
-                    p->textshowncharpos = x + p->cd->textlen - oldte;
-            }
-            else
-            {
-                if (isspace(p->cd->text[start].ch) && p->cd->text[start].ch != '\n')
-                {
-                    int count = 0;
-                    if (p->cd->text[start + count].ch == ' ')
-                        while (count < p->cd->tabs)
-                            if (p->cd->text[start + count].ch != ' ')
-                                break;
-                            else
-                                count++;
-                    else
-                        count++;
-                    p->selstartcharpos = start;
-                    p->selendcharpos = start + count;
-                    Replace(hwnd, p, "", 0);
-                    end -= count;
-                    if (start < p->textshowncharpos)
-                        p->textshowncharpos = x - count;
-                }
-            }
-            oldte = p->cd->textlen;
-            while (p->cd->text[start].ch && p->cd->text[start].ch != '\n')
-                start++;
-            if (p->cd->text[start].ch)
-                start++;
-        }
-        if (inverted)
-        {
-            p->selstartcharpos = end + decd;
-            p->selendcharpos = olds;
-        }
-        else
-        {
-            p->selendcharpos = end + decd;
-            p->selstartcharpos = olds;
-        }
-        insertautoundo(hwnd, p, UNDO_AUTOBEGIN);
-    }
-    p->cd->inserting = oldinsert;
-    p->cd->selecting = TRUE;
-    MoveCaret(hwnd, p);
-    p->cd->selecting = oldselect;
-    InvalidateRect(hwnd, 0, 0);
-}
-void SelectComment(HWND hwnd, EDITDATA *p, int insert)
-{
-    int olds = p->selstartcharpos;
-    int olde = p->selendcharpos;
-    int start = p->selstartcharpos;
-    int end = p->selendcharpos;
-    int oldinsert = p->cd->inserting;
-    int oldselect = p->cd->selecting;
-    int decd = FALSE;
-    int inverted = FALSE ;
-    int column = 10000;
-    p->cd->inserting = TRUE;
-    insertautoundo(hwnd, p, UNDO_AUTOEND);
-    if (start == end)
-    {
-        int adjustPos = start;
-           int x = p->textshowncharpos;
-        while (start && p->cd->text[start - 1].ch != '\n')
-            start--;
-        while (p->cd->text[end].ch && p->cd->text[end].ch != '\n')
-            end++;
-        while (start && isspace(p->cd->text[start].ch) && p->cd->text[start].ch != '\n' )
-            start++;
-        p->selstartcharpos = p->selendcharpos = start;
-        if (insert)
-        {
-            if (p->cd->language == LANGUAGE_ASM)
-            {
-                Replace(hwnd, p, ";", 1);
-                end += 1;
-                if (start < x)
-                    p->textshowncharpos = x + 1;
-                p->selstartcharpos = adjustPos;
-                if (adjustPos > start)
-                    p->selstartcharpos ++;
-                p->selendcharpos = p->selstartcharpos;
-            }
-            else
-            {
-                Replace(hwnd, p, "//", 2);
-                end += 2;
-                if (start < x)
-                    p->textshowncharpos = x + 2;
-                p->selstartcharpos = adjustPos;
-                if (adjustPos > start)
-                    p->selstartcharpos += 2;
-                p->selendcharpos = p->selstartcharpos;
-            }
-        }
-        else
-        {
-            if (p->cd->language == LANGUAGE_ASM)
-            {
-                if (p->cd->text[start].ch == ';')
-                {
-                    p->selendcharpos += 1;
-                    Replace(hwnd, p, "", 0);
-                    end -= 1;
-                    if (start < x)
-                        p->textshowncharpos = x - 1;
-                    p->selstartcharpos = adjustPos;
-                    if (adjustPos > start)
-                        p->selstartcharpos --;
-                    p->selendcharpos = p->selstartcharpos;
-                }
-            }
-            else if (p->cd->text[start].ch == '/' && p->cd->text[start + 1].ch == '/')
-            {
-                p->selendcharpos += 2;
-                Replace(hwnd, p, "", 0);
-                end -= 2;
-                if (start < x)
-                    p->textshowncharpos = x - 2;
-                p->selstartcharpos = adjustPos;
-                if (adjustPos > start)
-                    p->selstartcharpos -= 2;
-                p->selendcharpos = p->selstartcharpos;
-            }
-        }
-    }
-    else
-    {
-        if (end < start)
-        {
-            inverted = TRUE ;
-            start = p->selendcharpos;
-            end = p->selstartcharpos;
-        }
-        if (end && p->cd->text[end - 1].ch == '\n')
-            end--, decd++;
-        while (start && p->cd->text[start - 1].ch != '\n')
-            start--;
-        while (p->cd->text[end].ch && p->cd->text[end].ch != '\n')
-            end++;
-        olds = start;
-        while (start < end)
-        {
-            int n = 0;
-            while (isspace(p->cd->text[start].ch) && p->cd->text[start].ch != '\n')
-            {
-                if (p->cd->text[start].ch == '\t')
-                    n += p->cd->tabs;
-                else
-                    n++;
-                start++;
-            }
-            if (n < column)
-                column = n;
-            while (p->cd->text[start].ch && p->cd->text[start].ch != '\n')
-                start++;
-            if (p->cd->text[start].ch)
-                start++;
-        }
-        start = olds;
-        while (start < end)
-        {
-            int x = p->textshowncharpos;
-            int n = 0;
-            while (isspace(p->cd->text[start].ch) && p->cd->text[start].ch != '\n')
-            {
-                if (p->cd->text[start].ch == '\t')
-                    n += p->cd->tabs;
-                else
-                    n++;
-                start++;
-                if (n >= column)
-                    break;
-            }
-            p->selstartcharpos = p->selendcharpos = start;
-            if (insert)
-            {
-                if (p->cd->language == LANGUAGE_ASM)
-                {
-                    Replace(hwnd, p, ";", 1);
-                    end += 1;
-                    if (start < x)
-                        p->textshowncharpos = x + 1;
-                }
-                else
-                {
-                    Replace(hwnd, p, "//", 2);
-                    end += 2;
-                    if (start < x)
-                        p->textshowncharpos = x + 2;
-                }
-            }
-            else
-            {
-                if (p->cd->language == LANGUAGE_ASM)
-                {
-                    if (p->cd->text[start].ch == ';')
-                    {
-                        p->selendcharpos += 1;
-                        Replace(hwnd, p, "", 0);
-                        end -= 1;
-                        if (start < x)
-                            p->textshowncharpos = x - 1;
-                    }
-                }
-                else if (p->cd->text[start].ch == '/' && p->cd->text[start + 1].ch == '/')
-                {
-                    p->selendcharpos += 2;
-                    Replace(hwnd, p, "", 0);
-                    end -= 2;
-                    if (start < x)
-                        p->textshowncharpos = x - 2;
-                }
-            }
-            while (p->cd->text[start].ch && p->cd->text[start].ch != '\n')
-                start++;
-            if (p->cd->text[start].ch)
-                start++;
-        }
-        if (inverted)
-        {
-            p->selstartcharpos = end + decd;
-            p->selendcharpos = olds;
-        }
-        else
-        {
-            p->selendcharpos = end + decd;
-            p->selstartcharpos = olds;
-        }
-    }
-    insertautoundo(hwnd, p, UNDO_AUTOBEGIN);
-    p->cd->inserting = oldinsert;
-    p->cd->selecting = TRUE;
-    MoveCaret(hwnd, p);
-    p->cd->selecting = oldselect;
-    FormatBuffer(p->colorizeEntries, p->cd->text, olds, end + decd, p->cd->language, p->cd->defbackground);
-    InvalidateRect(hwnd, 0, 0);
-}
-//-------------------------------------------------------------------------
-
-void DeletePound(HWND hwnd, EDITDATA *p)
-{
-    int n, m;
-    if (p->cd->language != LANGUAGE_C && p->cd->language != LANGUAGE_RC)
-        return ;
-    if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
-    if (p->selstartcharpos && p->cd->text[p->selstartcharpos - 1].ch != '#')
-        return ;
-    n = p->selstartcharpos - 1;
-    while (n && p->cd->text[n - 1].ch != '\n')
-        n--;
-    m = n;
-    while (isspace(p->cd->text[m].ch))
-        m++;
-    if (p->cd->text[m].ch != '#' || m == n)
-        return ;
-    insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
-    p->selstartcharpos = n;
-    p->selendcharpos = m;
-    Replace(hwnd, p, "", 0);
-    p->selstartcharpos = p->selendcharpos = n + 1;
-    insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
-    ScrollCaretIntoView(hwnd, p, FALSE);
-}
-
-//-------------------------------------------------------------------------
-
-void DeletePercent(HWND hwnd, EDITDATA *p)
-{
-    int n, m;
-    if (p->cd->language != LANGUAGE_ASM)
-        return ;
-    if (!PropGetBool(NULL, "AUTO_FORMAT"))
-        return ;
-    if (p->selstartcharpos && p->cd->text[p->selstartcharpos - 1].ch != '%')
-        return ;
-    n = p->selstartcharpos - 1;
-    while (n && p->cd->text[n - 1].ch != '\n')
-        n--;
-    m = n;
-    while (isspace(p->cd->text[m].ch))
-        m++;
-    if (p->cd->text[m].ch != '%' || m == n)
-        return ;
-    insertautoundo(hwnd, p, UNDO_AUTOCHAINEND);
-    p->selstartcharpos = n;
-    p->selendcharpos = m;
-    Replace(hwnd, p, "", 0);
-    p->selstartcharpos = p->selendcharpos = n + 1;
-    insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
-    ScrollCaretIntoView(hwnd, p, FALSE);
-}
-
-void CancelParenMatch(HWND hwnd, EDITDATA *p)
-{
-    if (p->matchingEnd != 0)
-    {
-        p->matchingEnd = p->matchingStart = 0;
-        InvalidateRect(hwnd,NULL,0);
-    }
-}
-int FindParenMatchBackward(HWND hwnd, EDITDATA *p, int dec)
-{
-    int skip,match;
-    int level = 1;
-    int s = p->selstartcharpos;
-    int quotechar = 0;
-    if (s != p->selendcharpos || (s == p->cd->textlen && !dec))
-        return FALSE;
-    if (dec && s)
-        s--;
-    if (p->cd->text[s].ch == ')')
-        skip = ')', match = '(';
-    else if (p->cd->text[s].ch == '}')
-        skip = '}', match = '{';
-    else if (p->cd->text[s].ch == ']')
-        skip = ']', match = '[';
-    else
-        return FALSE;
-    while (s && --s)
-    {
-        if (quotechar == p->cd->text[s].ch && (!s || p->cd->text[s-1].ch != '\\' 
-                                               || s < 2 || p->cd->text[s-2].ch == '\\'))
-            quotechar = 0;
-        else if (!quotechar)
-        {
-            if ((p->cd->text[s].ch == '\'' || p->cd->text[s].ch == '"')
-                && (!s || p->cd->text[s-1].ch != '\\'
-                    || s < 2 || p->cd->text[s-2].ch == '\\'))
-                quotechar = p->cd->text[s].ch;
-            else if (p->cd->text[s].ch == skip)
-                level++;
-            else if (p->cd->text[s].ch == match)
-            {
-                if (!--level)
-                    break;
-            }
-        }
-    }
-    if (level)
-        return FALSE;
-    p->matchingStart = p->selstartcharpos - dec;
-    p->matchingEnd = s;
-    InvalidateRect(hwnd, NULL, FALSE);
-    return TRUE;
-}
-int FindParenMatchForward(HWND hwnd, EDITDATA *p, int dec)
-{
-    int skip,match;
-    int level = 1;
-    int s = p->selstartcharpos;
-    int quotechar = 0;
-    if (s != p->selendcharpos || (s == p->cd->textlen && !dec))
-        return FALSE;
-    if (dec && s)
-        s--;
-    if (p->cd->text[s].ch == '(')
-        skip = '(', match = ')';
-    else if (p->cd->text[s].ch == '{')
-        skip = '{', match = '}';
-    else if (p->cd->text[s].ch == '[')
-        skip = '[', match = ']';
-    else
-        return FALSE;
-    while (++s != p->cd->textlen)
-    {
-        if (quotechar == p->cd->text[s].ch && (p->cd->text[s-1].ch != '\\'
-                                               || s < 2 || p->cd->text[s-2].ch == '\\'))
-            quotechar = 0; 
-        else if (!quotechar)
-        {
-            if ((p->cd->text[s].ch == '\'' || p->cd->text[s].ch == '"')
-                && (p->cd->text[s-1].ch != '\\' || s < 2 || p->cd->text[s-2].ch == '\\'))
-                quotechar = p->cd->text[s].ch;
-            else if (p->cd->text[s].ch == skip)
-                level++;
-            else if (p->cd->text[s].ch == match)
-                if (!--level)
-                    break;
-        }
-    }
-    if (level)
-        return FALSE;
-    p->matchingStart = p->selstartcharpos - dec;
-    p->matchingEnd = s;
-    InvalidateRect(hwnd, NULL, FALSE);
-    return TRUE;
-}
-void FindParenMatch(HWND hwnd, EDITDATA *p)
-{
-    if (PropGetBool(NULL, "MATCH_PARENTHESIS"))
-        if (!FindParenMatchForward(hwnd, p ,TRUE ))
-            FindParenMatchBackward(hwnd, p, TRUE);
-}
-void FindBraceMatchForward(HWND hwnd, EDITDATA *p)
-{
-    int n = 1;
-    int x = p->selstartcharpos;
-    while ( x && isspace(p->cd->text[x].ch))
-        x--;
-    if (p->cd->text[x].ch == '{')
-    {
-        x++;
-    }
-    else
-    {
-        x = p->selstartcharpos;
-        while (isspace(p->cd->text[x].ch))
-            x++ ;
-        if (p->cd->text[x].ch == '{')
-            x++;
-    }
-    if (x && p->cd->text[x-1].ch == '{')
-    {
-        while (n && p->cd->text[x].ch)
-        {
-            if (!instring(p->cd->text, p->cd->text + x))
-            {
-                if (p->cd->text[x].ch == '{')
-                    n++;
-                if (p->cd->text[x].ch == '}')
-                    n--;
-            }
-            x++;
-        }
-        p->selstartcharpos = p->selendcharpos =x;
-        ScrollCaretIntoView(hwnd, p, TRUE);
-        PostMessage(GetParent(hwnd), WM_COMMAND, ID_REDRAWSTATUS, 0);
-    }
-}
-void FindBraceMatchBackward(HWND hwnd, EDITDATA *p)
-{
-    int n = 1;
-    int x = p->selstartcharpos;
-    while (isspace(p->cd->text[x].ch))
-        x++ ;
-    if (p->cd->text[x].ch == '}')
-    {
-        x--;
-    }
-    else
-    {
-        x = p->selstartcharpos;
-        while (x && isspace(p->cd->text[x-1].ch))
-            x-- ;
-        if (x && p->cd->text[x-1].ch == '}')
-            x-=2;
-        else
-            return;
-    }
-    while (x && n)
-    {
-        if (!instring(p->cd->text, p->cd->text + x))
-        {
-            if (p->cd->text[x].ch == '{')
-                n--;
-            if (p->cd->text[x].ch == '}')
-                n++;
-        }
-        if (!n)
-            break;
-        x--;
-    }
-    p->selstartcharpos = p->selendcharpos =x;
-    ScrollCaretIntoView(hwnd, p, TRUE);
-    PostMessage(GetParent(hwnd), WM_COMMAND, ID_REDRAWSTATUS, 0);
-}
-void FindBraceMatch(HWND hwnd, EDITDATA *p, int ch)
-{
-    if (ch == '{')
-        FindBraceMatchBackward(hwnd, p);
-    else if (ch == '}')
-        FindBraceMatchForward(hwnd, p);
-}
 /**********************************************************************
  * go backwards to the last tab position
  **********************************************************************/
@@ -2901,12 +1154,83 @@ void backtab(HWND hwnd, EDITDATA *p)
 
 }
 
-
+void RemoveCurrentLine(HWND hwnd, EDITDATA *p)
+{
+    int end = p->selendcharpos;
+    int start = p->selendcharpos;
+    int oldend = p->selendcharpos;
+    int oldstart = p->selendcharpos;
+    int n;
+    UNDO *u;
+    while (end < p->cd->textlen && p->cd->text[end].ch != '\n')
+        end++;
+    if (end < p->cd->textlen && p->cd->text[end].ch == '\n')
+        end++;
+    while (start > 0 && p->cd->text[start-1].ch != '\n')
+        start--;
+    p->selstartcharpos = start;
+    p->selendcharpos = end;
+    Replace(hwnd, p, "", 0);
+     n = p->cd->undohead -1;
+     if (n < 0)
+         n += UNDO_MAX;
+    u = & p->cd->undolist[n];
+    u->preselstart = oldstart;
+    u->preselend = oldend;
+}
+void RemoveNextWord(HWND hwnd, EDITDATA *p)
+{
+    int end = p->selendcharpos;
+    int start = p->selendcharpos;
+    int oldend = p->selendcharpos;
+    int oldstart = p->selendcharpos;
+    int n;
+    UNDO *u;
+    if (end < p->cd->textlen && isspace(p->cd->text[end].ch))
+    {
+        while (end < p->cd->textlen && isspace(p->cd->text[end].ch))
+        {
+            end++;
+        }
+    } 
+    else if (end < p->cd->textlen && isalpha(p->cd->text[end].ch) || p->cd->text[end].ch == '_')
+    {
+        while (end < p->cd->textlen && isalnum(p->cd->text[end].ch) || p->cd->text[end].ch == '_')
+        {
+            end++;
+        }
+    }
+    else if (end < p->cd->textlen)
+    {
+        end++;
+    }
+    p->selstartcharpos = start;
+    p->selendcharpos = end;
+    
+    Replace(hwnd, p, "", 0);
+     n = p->cd->undohead -1;
+     if (n < 0)
+         n += UNDO_MAX;
+    u = & p->cd->undolist[n];
+    u->preselstart = oldstart;
+    u->preselend = oldend;
+}
 /**********************************************************************
  * removechar cuts a character from the text (delete or back arrow)
  **********************************************************************/
 void removechar(HWND hwnd, EDITDATA *p, int utype)
 {
+    if (p->insertcursorcolumn)
+    {
+        if (utype == UNDO_BACKSPACE)
+        {
+            return;
+        }
+        else
+        {
+            insertcrtabs(hwnd, p);
+        }
+    }
     if (p->cd->inserting && p->selstartcharpos != p->selendcharpos)
     {
         Replace(hwnd, p, "", 0);
@@ -2952,99 +1276,11 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         p->cd->textlen-=del;
         UpdateSiblings(p, p->selstartcharpos, -del);
         ScrollCaretIntoView(hwnd, p, FALSE);
-        drawline(hwnd, p, p->selstartcharpos);
+        xdrawline(hwnd, p, p->selstartcharpos);
         reparse(hwnd, p);
     }
     p->selendcharpos = p->selstartcharpos;
 }
-    /**********************************************************************
-     * SelToClipboard copies the current selection to the clipboard
-     **********************************************************************/
-    void SelToClipboard(HWND hwnd, EDITDATA *p)
-    {
-        int start, end, lf = 0, i;
-        if (p->selendcharpos - p->selstartcharpos < 0)
-        {
-            end = p->selstartcharpos;
-            start = p->selendcharpos;
-        }
-        else
-        {
-            end = p->selendcharpos;
-            start = p->selstartcharpos;
-        }
-        if (end == start)
-            return ;
-        for (i = start; i < end; i++)
-            if (p->cd->text[i].ch == '\n')
-                lf++;
-        if (OpenClipboard(hwnd))
-        {
-            HGLOBAL glmem = GlobalAlloc(GMEM_DDESHARE + GMEM_MOVEABLE, end -
-                start + 1+lf);
-            if (glmem != NULL)
-            {
-                char *data = GlobalLock(glmem),  *q = data;
-                for (i = start; i < end; i++)
-                {
-                    if (p->cd->text[i].ch == '\n')
-                        *q++ = '\r';
-                    *q++ = p->cd->text[i].ch;
-                }
-                *q++ = 0;
-                GlobalUnlock(data);
-                EmptyClipboard();
-                SetClipboardData(CF_TEXT, glmem);
-            }
-            CloseClipboard();
-        }
-    }
-    /**********************************************************************
-     * ClipboardToSel pastes the clipboard into the text
-     **********************************************************************/
-    void ClipboardToSel(HWND hwnd, EDITDATA *ptr)
-    {
-        if (!IsClipboardFormatAvailable(CF_TEXT))
-            return ;
-        if (OpenClipboard(hwnd))
-        {
-            HANDLE clh = GetClipboardData(CF_TEXT);
-            char *data = GlobalLock(clh);
-            int l = GlobalSize(clh);
-            if (l)
-            {
-                char *mem = calloc(1,l),  *p = mem,  *q = mem;
-                if (mem)
-                {
-                    memcpy(mem, data, l);
-                    mem[l - 1] = 0;
-                    while (*p)
-                        if (*p == '\r')
-                            p++;
-                        else
-                            *q++ =  *p++;
-                    *q = 0;
-                    if (mem[0])
-                    {
-                        Replace(hwnd, ptr, mem, q - mem);
-                        ScrollCaretIntoView(hwnd, ptr, FALSE);
-                        FormatBufferFromScratch(ptr->colorizeEntries, ptr->cd->text, ptr
-                            ->selstartcharpos - 1, ptr->selendcharpos + 1,
-                            ptr->cd->language, ptr->cd->defbackground);
-                        SendUpdate(hwnd);
-                        ptr->cd->sendchangeonpaint = TRUE;
-                        ptr->selendcharpos = ptr->selstartcharpos = ptr
-                            ->selstartcharpos + strlen(mem);
-                        MoveCaret(hwnd, ptr);
-                        InvalidateRect(hwnd, 0, 0);
-                    }
-                    free(mem);
-                }
-            }
-            GlobalUnlock(data);
-            CloseClipboard();
-        }
-    }
     /**********************************************************************
      * upline scrolls the display down one line
      **********************************************************************/
@@ -3053,6 +1289,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         int ilines = lines;
         int pos;
         int col, index = 0;
+        p->insertcursorcolumn = 0;
         pos = p->selendcharpos;
         //   oldsel = pos ;
         col = p->cd->updowncol;
@@ -3113,334 +1350,13 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         }
         ScrollCaretIntoView(hwnd, p, FALSE);
     }
-    int lineParsed(EDITDATA *p, int line)
-    {
-        if (PropGetInt(NULL, "CODE_COMPLETION") != 0)
-        {
-            if (p->cd->lineData && !IsBadReadPtr(p->cd->lineData, (p->cd->lineDataMax+7)/8))
-            {
-                if (p->cd->lineDataMax < line)
-                    line = p->cd->lineDataMax;
-                return !!(p->cd->lineData[line/8] & (1 << (line & 7)));
-            }
-        }
-        return TRUE;
-    }
-    int getfragment(EDITDATA *p, int pos, int autoDecoration, int colorizing, char *buf, COLORREF *fcolor, COLORREF *bcolor,
-        HFONT *font, int *col, int line)
-    {
-        int count = 0;
-        int found = FALSE;
-        int attribs = 0;
-        int color = (p->cd->defbackground << 5) + C_TEXT;
-        int selecting;
-        int start, end;
-        int matched = FALSE;
-        int taboffs = p->leftshownindex % p->cd->tabs;
-        int parsed = !colorizing || lineParsed(p, line);
-        if (p->cd->nosel)
-            start = end = 0;
-        else if (p->selstartcharpos <= p->selendcharpos)
-        {
-            start = p->selstartcharpos;
-            end = p->selendcharpos;
-        }
-        else
-        {
-            start = p->selendcharpos;
-            end = p->selstartcharpos;
-        }
-        selecting = pos >= start && pos < end;
-        while (TRUE)
-        {
-            if (pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
-                break;
-            if (p->cd->text[pos].ch == '\f')
-            {
-                buf[count++] = '\f';
-                pos++;
-                break;
-            }
-            if (selecting)
-            {
-                if (pos >= end)
-                    break;
-            }
-            else
-            {
-                if (p->matchingEnd && parsed)
-                    if (pos == p->matchingStart || pos == p->matchingEnd)
-                    {	
-                        buf[count++] = p->cd->text[pos++].ch;
-                        (*col)++;
-                        matched = TRUE;
-                        break;
-                    }
-                if (pos >= start && pos < end)
-                    break;
-            }
-            if (found)
-            {
-                if (!selecting && parsed)
-                {
-                    if (p->cd->text[pos].effect != attribs)
-                        break;
-                    if (!(attribs &CFE_AUTOCOLOR) && p->cd->text[pos].Color
-                        != color)
-                        break;
-                }
-            }
-            if (p->cd->text[pos].ch == '\t')
-            {
-                int newpos = ((*col + p->cd->tabs) / p->cd->tabs) *p->cd->tabs;
-                int i;
-                for (i =  *col; i < newpos; i++)
-                    buf[count++] = ' ';
-                pos++;
-                *col = newpos;
-                found = TRUE;
-            }
-            else
-            {
-                if (p->cd->text[pos].ch == ' ')
-                {
-                    buf[count++] = ' ';
-                    pos++;
-                    (*col)++;
-                    found = TRUE;
-                }
-                else
-                {
-                    found = TRUE;
-                    attribs = p->cd->text[pos].effect;
-                    color = p->cd->text[pos].Color;
-                    buf[count++] = p->cd->text[pos++].ch;
-                    (*col)++;
-                }
-            }
-            if (p->matchingEnd && parsed)
-                if (pos == p->matchingStart || pos == p->matchingEnd)
-                {
-                    break;
-                }
-        }
-        if (!parsed)
-        {
-            *fcolor = 0x80808080;
-            if (p->cd->defbackground == C_SYS_WINDOWBACKGROUND)
-            {
-                *bcolor = RetrieveSysColor(COLOR_WINDOW);
-            }
-            else
-                *bcolor = *(colors[(color >> 5) & 0x1f]);
-        }
-        else if (selecting)
-        {
-            *fcolor = selectedTextColor;
-            *bcolor = selectedBackgroundColor;
-        }
-        else
-        {
-            if (attribs &CFE_AUTOCOLOR)
-                *fcolor = *(colors[p->cd->defforeground]);
-            else
-                *fcolor = *(colors[color & 0x1f]);
-            if (p->cd->defbackground == C_SYS_WINDOWBACKGROUND)
-            {
-                *bcolor = RetrieveSysColor(COLOR_WINDOW);
-            }
-            else
-                *bcolor = *(colors[(color >> 5) & 0x1f]);
-        }
-        switch (attribs &~CFE_AUTOCOLOR)
-        {
-            case CFE_BOLD:
-                *font = p->cd->hBoldFont;
-                break;
-            case CFE_ITALIC:
-                *font = p->cd->hItalicFont;
-                if (pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
-                    buf[count++] = ' ';
-                break;
-            case CFE_BOLD | CFE_ITALIC: default:
-                if (color == C_AUTO)
-                {
-                    switch( autoDecoration)
-                    {
-                        case 0: default:
-                            *font = p->cd->hFont;
-                            break;
-                        case 1:
-                            *font = p->cd->hItalicFont;
-                            if (pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
-                                buf[count++] = ' ';
-                            break;
-                        case 2:
-                            *font = p->cd->hBoldFont;
-                            break;
-                    }
-                }
-                else
-                {
-                    *font = p->cd->hFont;
-                }
-                break;
-        }
-        if (matched)
-        {
-            *font = p->cd->hBoldFont;
-            *fcolor = keywordColor;
-        }
-        buf[count] = 0;
-        return pos;
-    }
-    /**********************************************************************
-     * EditPaint is the paint procedure for the window.  It selectively
-     * paints only those lines that have been marked as changed
-     **********************************************************************/
-    void EditPaint(HWND hwnd, EDITDATA *p)
-    {
-        char buf[4000];
-        PAINTSTRUCT ps;
-        HDC dc;
-        RECT r, b1, client;
-        int lines, i, pos;
-        int baseline;
-        HBRUSH selBrush = CreateSolidBrush(selectedBackgroundColor);
-        HPEN columnbarPen ;
-        int colMark = PropGetInt(NULL, "COLUMN_MARK");
-        int autoDecoration = PropGetInt(NULL, "DECORATE_AUTO");
-		int colorizing = PropGetBool(NULL, "COLORIZE");
-        if (colMark != 0)
-        {
-            columnbarPen =	CreatePen(PS_SOLID, 0, columnbarColor);
-        }
-        else
-        {
-            columnbarPen = CreatePen(PS_NULL, 0, 0);
-        }
-        ClientArea(hwnd, p, &r);
-        GetClientRect(hwnd, &client);
-        lines = r.bottom / p->cd->txtFontHeight;
-        dc = BeginPaint(hwnd, &ps);
-        SetBkMode(dc, OPAQUE);
-        pos = p->textshowncharpos;
-        baseline = LineFromChar(p, pos)+1;
-        for (i = 0; i < lines; i++)
-        {
-            int col = 0, leftcol = 0;
-            r.top = i * p->cd->txtFontHeight;
-            r.bottom = r.top + p->cd->txtFontHeight;
-            if (IntersectRect(&b1, &r, &ps.rcPaint))
-            {
-                while (leftcol < p->leftshownindex && p->cd->text[pos].ch != '\n'
-                    && p->cd->text[pos].ch != '\f'
-                    && pos < p->cd->textlen)
-                {
-                    if (p->cd->text[pos].ch == '\t')
-                    {
-                        int v = leftcol;
-                        v = v + p->cd->tabs;
-                        v = (v / p->cd->tabs) *p->cd->tabs;
-                        leftcol = v;
-                        if (v > p->leftshownindex)
-                            break;
-                        pos++;
-                    }
-                    else
-                    {
-                        pos++;
-                        leftcol++;
-                    }
-                }
-                if (leftcol > p->leftshownindex)
-                    leftcol = p->leftshownindex;
-                while (p->cd->text[pos].ch != '\n' && pos < p->cd->textlen)
-                {
-                    int selection = FALSE;
-                    COLORREF fcolor, bcolor;
-                    HFONT font;
-                    int n, j, z=0;
-                    int dx[500];
-                    int ofs = 0;
-                    pos = getfragment(p, pos, autoDecoration, colorizing, buf, &fcolor, &bcolor, &font,
-                        &leftcol, baseline + i);
-                    if (buf[0] == '\f')
-                    {
-                        strcpy(buf,"+--------- Page Break ---------+");
-                    }
-                    SetTextColor(dc, fcolor);
-                    SetBkColor(dc, bcolor);
-                    SelectObject(dc, font);
-                    n = strlen(buf);
-                    for (j=0; j < n; j++)
-                    {
-                        dx[j] = p->cd->txtFontWidth; 
-                    }
-                    if (col > 1 && font == p->cd->hItalicFont)
-                        z = -1;
-                    ExtTextOut(dc, col+z, r.top, ETO_OPAQUE, NULL, buf, n,dx);
-                    col += (p->cd->txtFontWidth) * n;
-                }
-            }
-            while (pos < p->cd->textlen)
-            {
-                if (p->cd->text[pos].ch == '\n')
-                    break;
-                pos++;
-            }
-            r.left = col;
-            if ((pos < p->selendcharpos && pos > p->selstartcharpos)
-                    || (pos >= p->selendcharpos && pos < p->selstartcharpos)) {
-                FillRect(dc, &r, selBrush);
-            }
-            else
-                FillRect(dc, &r, p->cd->hbrBackground);
-            if (colMark && p->leftshownindex < colMark)
-            {
-                HPEN oldpen = SelectObject(dc, columnbarPen);
-                int x = (colMark - p->leftshownindex) * (p->cd->txtFontWidth);
-                MoveToEx(dc, x, r.top, NULL);
-                         
-                LineTo(dc, x, r.bottom);
-                SelectObject(dc, oldpen);
-            }
-            r.left = 0;
-            if (pos >= p->cd->textlen)
-                break;
-            pos++;
-        }
-        if (r.bottom < client.bottom)
-        {
-            r.top = r.bottom;
-            r.bottom = client.bottom;
-            FillRect(dc, &r, p->cd->hbrBackground);
-            if (colMark && p->leftshownindex < colMark)
-            {
-                HPEN oldpen = SelectObject(dc, columnbarPen);
-                int x = (colMark - p->leftshownindex) * (p->cd->txtFontWidth);
-                MoveToEx(dc, x, r.top, NULL);
-                         
-                LineTo(dc, x, r.bottom);
-                SelectObject(dc, oldpen);
-            }
-        }
-        EndPaint(hwnd, &ps);
-        if (p->cd->sendchangeonpaint)
-        {
-            p->cd->sendchangeonpaint = FALSE;
-            SendMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)(EN_CHANGE | 
-                (GetWindowLong(hwnd, GWL_ID) << 16)), (LPARAM)hwnd);
-        }
-        DeleteObject(selBrush);
-        DeleteObject(columnbarPen);
-    }
-    /**********************************************************************
+   /**********************************************************************
      * eol indexes to the last character in a line
      **********************************************************************/
     void endofline(HWND hwnd, EDITDATA *p)
     {
         int pos;
+        p->insertcursorcolumn = 0;
         pos = p->selendcharpos;
         while (pos < p->cd->textlen && p->cd->text[pos].ch != '\n')
             pos++;
@@ -3467,6 +1383,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     {
         int pos;
         int encns = FALSE;
+        p->insertcursorcolumn = 0;
         pos = p->selendcharpos;
         if (pos && p->cd->text[pos - 1].ch == '\n')
         {
@@ -3508,6 +1425,18 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
      **********************************************************************/
     void left(HWND hwnd, EDITDATA *p)
     {
+        if (p->insertcursorcolumn)
+        {
+            POINT pt;
+            p->insertcursorcolumn--;
+            if (posfromchar(hwnd, p, &pt, p->selstartcharpos != p->selendcharpos 
+                ? p->selendcharpos: p->selstartcharpos))
+            {
+                pt.x += p->cd->txtFontWidth * p->insertcursorcolumn;
+                SetCaretPos(pt.x, pt.y);
+            }
+            return;
+        }
         if (!p->cd->selecting && p->selstartcharpos != p->selendcharpos)
         {
             if (p->selstartcharpos > p->selendcharpos)
@@ -3548,6 +1477,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
      **********************************************************************/
     void right(HWND hwnd, EDITDATA *p)
     {
+        p->insertcursorcolumn = 0;
         if (!p->cd->selecting && p->selstartcharpos != p->selendcharpos)
         {
             if (p->selstartcharpos < p->selendcharpos)
@@ -3588,6 +1518,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     {
         int pos;
         int flag = 0;
+        p->insertcursorcolumn = 0;
         pos = p->selendcharpos;
         if (pos)
             pos--;
@@ -3620,6 +1551,7 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
     {
         int pos;
         int flag = 0;
+        p->insertcursorcolumn = 0;
         pos = p->selendcharpos;
         while (pos < p->cd->textlen && (isalnum(p->cd->text[pos].ch) || p->cd->text[pos].ch
             == '_'))
@@ -3722,412 +1654,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 p->selendcharpos++;
         }
     }
-    /**********************************************************************
-     * undo_pchar undoes a delete character operation
-     **********************************************************************/
-    void undo_pchar(HWND hwnd, EDITDATA *p, int ch)
-    {
-        insertchar(hwnd, p, ch);
-        FormatLine(hwnd, p->cd->text, p->cd->language, p->cd->defbackground);
-    }
-    /**********************************************************************
-     * doundo is the primary routine to traverse the undo list and perform
-     * an undo operation
-     **********************************************************************/
-
-    int doundo(HWND hwnd, EDITDATA *p)
-    {
-        int rv = 1;
-        if (SendMessage(hwnd, EM_CANUNDO, 0, 0))
-        {
-            UNDO *u ;
-            int oldinsert = p->cd->inserting;
-            int start;
-            int x = p->cd->redopos;
-            if (--x < 0)
-                x += UNDO_MAX;
-            u = &p->cd->undolist[x];
-            p->cd->undoing++;
-            p->cd->inserting = TRUE;
-            rv = 0;
-            switch (u->type)
-            {
-                case UNDO_INSERT:
-                    start = u->undotemp;
-                    start--;
-                    if (keysym(u->data[start]))
-                        while (start > 0 && keysym(u->data[start-1]))
-                            start--;
-                    p->selstartcharpos = u->preselstart + start;
-                    p->selendcharpos = p->selstartcharpos + u->undotemp -start;
-                    u->postselstart = u->postselend = p->selstartcharpos;
-                    u->undotemp = start;
-                    if (u->undotemp <= 0)
-                    {
-                        p->cd->modified = u->modified;
-                        p->cd->redopos = x;
-                    }
-                    Replace(hwnd, p, "", 0);
-                    break;
-                case UNDO_DELETE:
-                    start = u->undotemp;
-                    if (u->len > start && keysym(u->data[start]))
-                        while (u->len > start && keysym(u->data[start]))
-                        {
-                            p->selstartcharpos = p->selendcharpos = u->preselstart;
-                            undo_pchar(hwnd, p, u->data[start++]);
-                        }
-                    else
-                    {
-                        p->selstartcharpos = p->selendcharpos = u->preselstart;
-                        undo_pchar(hwnd, p, u->data[start++]);
-                    }
-                    u->undotemp = start;
-                    if (u->len <= start)
-                    {
-                        p->cd->modified = u->modified;
-                        p->cd->redopos = x;
-                    }
-                    p->selstartcharpos = p->selendcharpos = u->preselstart;
-                    break;
-                case UNDO_BACKSPACE:
-                    start = u->undotemp;
-                    p->selstartcharpos = p->selendcharpos = u->postselstart;
-                    if (u->len > start && keysym(u->data[start]))
-                        while (u->len > start && keysym(u->data[start]))
-                        {
-                            undo_pchar(hwnd, p, u->data[start++]);
-                        }
-                    else
-                    {
-                        undo_pchar(hwnd, p, u->data[start++]);
-                    }
-                    u->postselstart = u->postselend += start - u->undotemp ;
-                    u->undotemp = start;
-                    if (u->len <= start)
-                    {
-                        p->cd->modified = u->modified;
-                        p->cd->redopos = x;
-                    }
-                    break;
-                case UNDO_MODIFY:
-                    p->cd->inserting = FALSE;
-                    start = u->undotemp;
-                    if (keysym(u->data[start]))
-                        while (keysym(u->data[start]) && u->len > start)
-                        {
-                            int n;
-                            p->selstartcharpos = p->selendcharpos = u->postselstart - start-1;
-                            n = p->cd->text[p->selstartcharpos].ch;
-                            undo_pchar(hwnd, p, u->data[start]);
-                            u->data[start++] = n;
-                        }
-                    else
-                    {
-                        int n;
-                        p->selstartcharpos = p->selendcharpos = u->postselstart - start-1;
-                        n = p->cd->text[p->selstartcharpos].ch;
-                        undo_pchar(hwnd, p, u->data[start]);
-                        u->data[start++] = n;
-                        if (u->data[start] == '\n')
-                        {
-                            p->selstartcharpos = p->selendcharpos = u
-                                ->postselstart - start;
-                            n = p->cd->text[p->selstartcharpos].ch;
-                            undo_pchar(hwnd, p, u->data[start]);
-                            u->data[start++] = n;
-                        }
-                    }
-                    u->undotemp = start;
-                    if (u->len <= start)
-                    {
-                        p->cd->modified = u->modified;
-                        p->cd->redopos = x;
-                    }
-                    p->selstartcharpos = p->selendcharpos = u->postselstart - start;
-                    break;
-                case UNDO_INSERTSELECTION:
-                    p->selstartcharpos = u->postselstart;
-                    p->selendcharpos = u->postselend;
-                    Replace(hwnd, p, "", 0);
-                    p->cd->modified = u->modified;
-                    p->cd->redopos = x;
-                    p->selstartcharpos = u->preselstart;
-                    p->selendcharpos = u->preselend;
-                    break;
-                case UNDO_DELETESELECTION:
-                    p->selstartcharpos = u->postselstart;
-                    p->selendcharpos = u->postselend;
-                    Replace(hwnd, p, (char *)u->data, u->len);
-                    p->cd->modified = u->modified;
-                    p->cd->redopos = x;
-                    p->selstartcharpos = u->preselstart;
-                    p->selendcharpos = u->preselend;
-                    break;
-                case UNDO_CASECHANGE:
-                {
-                    int s = p->selstartcharpos;
-                    int e = p->selendcharpos;
-                    
-                    p->selstartcharpos = u->postselstart;
-                    p->selendcharpos = u->postselend;
-                    if (p->selstartcharpos > p->selendcharpos)
-                    {
-                        int i = p->selstartcharpos;
-                        p->selstartcharpos = p->selendcharpos;
-                        p->selendcharpos = i;
-                    }
-                    p->cd->modified = u->modified;
-                    p->cd->redopos = x;
-                    for (start = 0; start < u->len; start++)
-                    {
-                        int n = p->cd->text[p->selstartcharpos + start].ch;
-                        p->cd->text[p->selstartcharpos + start].ch = u->data[start];
-                        u->data[start] = n;
-                    }
-                    if (u->noChangeSel)
-                    {
-                        p->selstartcharpos = s;
-                        p->selendcharpos = e;
-                    }
-                    else
-                    {
-                        p->selstartcharpos = u->preselstart;
-                        p->selendcharpos = u->preselend;
-                    }
-                    break;
-                }
-                case UNDO_AUTOBEGIN:
-                    p->cd->redopos = x;
-                    while (!doundo(hwnd, p))
-                        ;
-                    break;
-                case UNDO_AUTOCHAINBEGIN:
-                    p->cd->redopos = x;
-                    while (!doundo(hwnd, p))
-                        ;
-                    doundo(hwnd, p); 
-                        // will undo things recursively if there are more auto-begins
-                    break;
-                case UNDO_AUTOEND:
-                case UNDO_AUTOCHAINEND:
-                    p->cd->redopos = x;
-                    p->selstartcharpos = u->preselstart;
-                    p->selendcharpos = u->preselend;
-                    p->textshowncharpos = u->charpos;
-                    p->cd->modified = u->modified;
-                    rv = 1;
-                    break;
-            }
-            p->cd->inserting = oldinsert;
-            p->cd->undoing--;
-            p->cd->sendchangeonpaint = TRUE;
-            InvalidateRect(hwnd, 0, 0);
-            ScrollCaretIntoView(hwnd, p, FALSE);
-            reparse(hwnd, p);
-        }
-        return rv;
-    }
-    /**********************************************************************
-     * doundo is the primary routine to traverse the undo list and perform
-     * an undo operation
-     **********************************************************************/
-
-    int doredo(HWND hwnd, EDITDATA *p)
-    {
-        int rv = 1;
-        int start;
-        if (SendMessage(hwnd, EM_CANREDO, 0, 0))
-        {
-            int oldinsert = p->cd->inserting;
-            UNDO *u;
-            int x = p->cd->redopos;
-            if (x >= UNDO_MAX)
-                x -= UNDO_MAX;
-            if (x == p->cd->undotail)
-                x = p->cd->redopos;
-            u = &p->cd->undolist[x];
-            if (++x >= UNDO_MAX)
-                x -= UNDO_MAX;
-            p->cd->undoing++;
-            p->cd->inserting = TRUE;
-            rv = 0;
-            switch (u->type)
-            {
-                case UNDO_INSERT:
-                    p->selstartcharpos = p->selendcharpos = u->preselstart + u->undotemp;
-                    start = u->undotemp;
-                    if (keysym(u->data[start]))
-                        while (u->len > start && keysym(u->data[start]))
-                        {
-                            undo_pchar(hwnd, p, u->data[start++]);
-                        }
-                    else
-                    {
-                        undo_pchar(hwnd, p, u->data[start++]);
-                    }
-                    u->undotemp = start;
-                    u->postselstart = u->postselend = u->preselstart + start;
-                    if (u->len <= u->undotemp)
-                    {
-                        p->cd->modified = p->cd->undolist[x].modified;
-                        p->cd->redopos = x;
-                    }
-                    break;
-                case UNDO_DELETE:
-                    start = u->undotemp;
-                    if (keysym(u->data[start-1]))
-                    {
-                        while (start >0 && keysym(u->data[start-1]))
-                        {
-                            start--;
-                        }
-                    }
-                    else
-                    {
-                        start--;
-                    }
-                    p->selstartcharpos = u->preselstart ;
-                    p->selendcharpos = p->selstartcharpos + u->undotemp - start;
-                    Replace(hwnd, p, "", 0);
-                    u->undotemp = start;
-                    if (u->undotemp == 0)
-                    {
-                        p->cd->modified = p->cd->undolist[x].modified;
-                        p->cd->redopos = x;
-                    }
-                    break;
-                case UNDO_BACKSPACE:
-                    start = u->undotemp;
-                    if (keysym(u->data[start-1]))
-                    {
-                        while (start >0 && keysym(u->data[start-1]))
-                        {
-                            start--;
-                        }
-                    }
-                    else
-                    {
-                        start--;
-                    }
-                    p->selstartcharpos = u->postselstart;
-                    p->selendcharpos = p->selstartcharpos - u->undotemp + start;
-                    Replace(hwnd, p, "", 0);
-                    u->postselstart = u->postselend -= u->undotemp - start;
-                    u->undotemp = start;
-                    if (u->undotemp == 0)
-                    {
-                        p->cd->modified = p->cd->undolist[x].modified;
-                        p->cd->redopos = x;
-                    }
-                    break;
-                case UNDO_MODIFY:
-                    p->cd->inserting = FALSE;
-                    start = u->undotemp;
-                    p->selendcharpos = p->selstartcharpos = u->preselstart + u->len - start;
-                    
-                    if (keysym(u->data[start-1]))
-                        while (start > 0 && keysym(u->data[start-1]))
-                        {
-                            int n = p->cd->text[p->selstartcharpos].ch;
-                            undo_pchar(hwnd, p, u->data[--start]);
-                            u->data[start] = n;
-                        }
-                    else
-                    {
-                        int n = p->cd->text[p->selstartcharpos].ch;
-                        undo_pchar(hwnd, p, u->data[--start]);
-                        u->data[start] = n;
-                    }
-                    u->undotemp = start;
-                    if (start == 0)
-                    {
-                        p->cd->modified = p->cd->undolist[x].modified;
-                        p->cd->redopos = x;
-                    }
-                    break;
-                case UNDO_INSERTSELECTION:
-                    p->selstartcharpos = u->preselstart;
-                    p->selendcharpos = u->preselend;
-                    Replace(hwnd, p, (char *)u->data, u->len);
-                    p->cd->modified = p->cd->undolist[x].modified;
-                    p->cd->redopos = x;
-                    p->selstartcharpos = u->postselstart;
-                    p->selendcharpos = u->postselend;
-    
-                    break;
-                case UNDO_DELETESELECTION:
-                    p->selstartcharpos = u->preselstart;
-                    p->selendcharpos = u->preselend;
-                    Replace(hwnd, p, "", 0);
-                    p->cd->modified = p->cd->undolist[x].modified;
-                    p->cd->redopos = x;
-                    p->selstartcharpos = u->postselstart;
-                    p->selendcharpos = u->postselend;
-                    break;
-                case UNDO_CASECHANGE:
-                {
-                    int s = p->selstartcharpos;
-                    int e = p->selendcharpos;
-                    p->selstartcharpos = u->preselstart;
-                    p->selendcharpos = u->preselend;
-                    if (p->selstartcharpos > p->selendcharpos)
-                    {
-                        int i = p->selstartcharpos;
-                        p->selstartcharpos = p->selendcharpos;
-                        p->selendcharpos = i;
-                    }
-                    p->cd->modified = p->cd->undolist[x].modified;
-                    p->cd->redopos = x;
-                    for (start = 0; start < u->len; start++)
-                    {
-                        int n = p->cd->text[p->selstartcharpos + start].ch;
-                        p->cd->text[p->selstartcharpos + start].ch = u->data[start];
-                        u->data[start] = n;
-                    }
-                    if (u->noChangeSel)
-                    {
-                        p->selstartcharpos = s;
-                        p->selendcharpos = e;
-                    }
-                    else
-                    {
-                        p->selstartcharpos = u->postselstart;
-                        p->selendcharpos = u->postselend;
-                    }
-                    break;
-                }
-                case UNDO_AUTOEND:
-                    p->cd->redopos = x;
-                    while (!doredo(hwnd, p))
-                        ;
-                    break;
-                case UNDO_AUTOCHAINEND:
-                    p->cd->redopos = x;
-                    while (!doredo(hwnd, p))
-                        ;
-                    doredo(hwnd, p); 
-                        // will undo things recursively if there are more auto-ends
-                    break;
-                case UNDO_AUTOBEGIN:
-                case UNDO_AUTOCHAINBEGIN:
-                    p->cd->redopos = x;
-                    p->cd->modified = p->cd->undolist[x].modified;
-                    p->selstartcharpos = u->postselstart;
-                    p->selendcharpos = u->postselend;
-                    p->textshowncharpos = u->charpos;
-                    rv = 1;
-                    break;
-            }
-            p->cd->inserting = oldinsert;
-            p->cd->undoing--;
-            p->cd->sendchangeonpaint = TRUE;
-            InvalidateRect(hwnd, 0, 0);
-            ScrollCaretIntoView(hwnd, p, FALSE);
-            reparse(hwnd, p);
-        }
-        return rv;
-    }
     void verticalCenter(HWND hwnd, EDITDATA *p)
     {
         RECT bounds;
@@ -4173,1374 +1699,6 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
         InvalidateRect(hwnd, 0, 0);
         MoveCaret(hwnd, p);
     }
-    void upperlowercase(HWND hwnd, EDITDATA *p, int ucase)
-    {
-        int oldsel = -1;
-        int i;
-        int s, e;
-        UNDO *u;
-        u = undo_casechange(hwnd, p);
-        if (p->selstartcharpos == p->selendcharpos)
-        {
-            e = s = p->selstartcharpos;
-            if (!isalnum(p->cd->text[e].ch) && p->cd->text[e].ch != '_')
-                return;
-            e++;
-            while (p->cd->text[e].ch && (isalnum(p->cd->text[e].ch) || p->cd->text[e].ch == '_'))
-                   e++;
-            while (s && (isalnum(p->cd->text[s-1].ch) || p->cd->text[s-1].ch == '_'))
-                s--;
-            oldsel = p->selstartcharpos;
-            p->selstartcharpos = s;
-            p->selendcharpos = e;
-        }
-        else
-        {
-            s = p->selstartcharpos;
-            e = p->selendcharpos;
-        }
-        u->postselstart = s;
-        u->postselend = e;
-        if (e < s)
-        {
-            int v = s;
-            s = e;
-            e = v;
-        }
-        if (oldsel != -1)
-        {
-            u->noChangeSel = TRUE;
-            p->selstartcharpos = p->selendcharpos = oldsel;
-        }
-        for (i = s; i < e; i++)
-        {
-            p->cd->text[i].ch = ucase ? toupper(p->cd->text[i].ch): tolower(p
-                ->cd->text[i].ch);
-        }
-        InvalidateRect(hwnd, 0, 0);
-    }
-    void GetEditPopupFrame(RECT *rect)
-    {
-        GetFrameWindowRect(rect);
-        rect->top -= GetSystemMetrics(SM_CYMENU);
-    }
-    void PopupFullScreen (HWND hwnd, EDITDATA *p)
-    {
-        if (!(GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP))
-        {
-            RECT wrect;
-            GetEditPopupFrame(&wrect);
-            hwndeditPopup = CreateWindow("xedit","", 
-                                       (WS_POPUP | WS_CHILD),
-                                       wrect.left, wrect.top, 
-                                       wrect.right - wrect.left, wrect.bottom - wrect.top,
-                                       GetParent(hwnd),0, hInstance, p);
-            SetWindowPos(hwndeditPopup, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW);
-        }
-    }
-    void ReleaseFullScreen(HWND hwnd, EDITDATA *p)
-    {
-        if (GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP)
-        {
-            hwndeditPopup = NULL;
-            CloseWindow(hwnd);
-            DestroyWindow(hwnd);
-        }
-    }
-    void SendUpdate(HWND hwnd)
-    {
-        SendMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)(EN_UPDATE | 
-            (GetWindowLong(hwnd, GWL_ID) << 16)), (LPARAM)hwnd);
-    }
-    typedef struct qq
-    {
-        EDITDATA *ed;
-        HWND wnd;
-        int creation;
-    } CINFO;
-    static void colorizeThread(CINFO *info)
-    {
-        if (info->creation)
-        {
-            ShowWindow(info->wnd, SW_SHOW);
-            SendMessage(info->wnd, EM_GETLINECOUNT, 0, 0); // update scroll bar
-            info->ed->cd->sendchangeonpaint = TRUE;
-            SendUpdate(info->wnd);
-        }
-        FormatBufferFromScratch(info->ed->colorizeEntries, info->ed->cd->text, 0, info->ed->cd->textlen, info->ed->cd
-            ->language, info->ed->cd->defbackground);
-        InvalidateRect(info->wnd, 0, 1);
-        info->ed->cd->colorizing--;
-        free(info);
-    }
-    void FullColorize(HWND hwnd, EDITDATA *p, int creation)
-    {
-        CINFO *info = calloc(1,sizeof(CINFO));
-        if (info)
-        {
-            DWORD hand;
-            info->ed = p;
-            info->wnd = hwnd;
-            info->creation = creation;
-            SetLastError(0);
-            p->cd->colorizing++;
-            _beginthread((BEGINTHREAD_FUNC)colorizeThread, 0, (LPVOID)info);
-        }
-    }
-    struct llist 
-    {
-        struct llist *next;
-        char name[256];
-    } ;
-    LRESULT CALLBACK codecompProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
-        lParam)
-    {
-        static HWND parent;
-        static HWND hwndLB;
-        static char buf[256];
-        static int len;
-        static int begin_inserted;
-        static int selected;
-        PAINTSTRUCT ps;
-        HDC dc;
-        char buf2[256];
-        EDITDATA *p ;
-        DRAWITEMSTRUCT *lpdis;
-        MEASUREITEMSTRUCT *lpmis;
-        TEXTMETRIC tm;
-        HFONT font;
-        RECT r;
-        int fg, bg;
-        int i = selected;
-        HPEN pen;
-        HBRUSH brush;
-        static struct llist *stringdata;
-        static int initialLen;
-        char *temp;
-        switch(iMessage)
-        {
-            case WM_MEASUREITEM: 
-                lpmis = (LPMEASUREITEMSTRUCT) lParam; 
-                dc = GetDC(hwnd);
-                GetTextMetrics(dc, &tm);
-                ReleaseDC(hwnd, dc);
-                /* Set the height of the list box items. */ 
-     
-                lpmis->itemHeight = tm.tmHeight; 
-                return TRUE; 
-     
-//	 		case WM_COMPAREITEM:
-//				lpcis = (LPCOMPAREITEMSTRUCT)lParam;
-//				return strcmp((char *)lpcis->itemData1, (char *)lpcis->itemData2);
-            case WM_DRAWITEM: 
-     
-                lpdis = (LPDRAWITEMSTRUCT) lParam; 
-                /* If there are no list box items, skip this message. */ 
-     
-                /* 
-                 * Draw the bitmap and text for the list box item. Draw a 
-    
-                 * rectangle around the bitmap if it is selected. 
-                 */ 
-                switch (lpdis->itemAction) { 
-     
-                    case ODA_SELECT: 
-                    case ODA_DRAWENTIRE: 
-                        if (lpdis->itemState == ODS_SELECTED) 
-                        {
-                              FillRect(lpdis->hDC, &lpdis->rcItem, (HBRUSH)(COLOR_HIGHLIGHT + 1));
-                            fg = SetTextColor(lpdis->hDC, RetrieveSysColor(COLOR_HIGHLIGHTTEXT));
-                            bg = SetBkColor(lpdis->hDC, RetrieveSysColor(COLOR_HIGHLIGHT));
-                        }
-                        else
-                        {
-                              FillRect(lpdis->hDC, &lpdis->rcItem, (HBRUSH)(COLOR_INFOBK+1));
-                            bg = SetBkColor(lpdis->hDC, RetrieveSysColor(COLOR_INFOBK));
-                        }
-                        
-                        temp = (char *)SendMessage(lpdis->hwndItem, LB_GETITEMDATA, lpdis->itemID, 0);
-                        strcpy(buf2, temp);
-                        GetTextMetrics(lpdis->hDC, &tm); 
-     
-                        TextOut(lpdis->hDC, 
-                            6, 
-                            (lpdis->rcItem.bottom + lpdis->rcItem.top - tm.tmHeight) / 2,
-                            buf2, 
-                            strlen(buf2)); 
-
-                        if (lpdis->itemState == ODS_SELECTED) 
-                        { 
-                            SetTextColor(lpdis->hDC, fg);
-//		 					font = SelectObject(lpdis->hDC, font);
-//							DeleteObject(font); 
-                        }
-                        SetBkColor(lpdis->hDC, bg);
-                        break; 
-     
-                    case ODA_FOCUS: 
-                        /* 
-                         * Do not process focus changes. The focus caret 
-    
-                         * (outline rectangle) indicates the selection. 
-                         * The Which one? (IDOK) button indicates the final 
-                         * selection. 
-                         */ 
-                        break; 
-                }
-                return TRUE;
-            case WM_CREATE:
-                hwndLB = CreateWindow("LISTBOX","", 
-                                       WS_CHILD | WS_VISIBLE | LBS_NOTIFY |
-                                       LBS_OWNERDRAWFIXED | WS_VSCROLL | LBS_SORT |
-                                       LBS_WANTKEYBOARDINPUT | WS_CLIPSIBLINGS,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       hwnd, (HMENU)100, hInstance,0);
-                ApplyDialogFont(hwndLB);
-                SetLayeredWindowAttributes(hwnd, TRANSPARENT_COLOR, 0xff, LWA_COLORKEY);
-                break;
-            case WM_DESTROY:
-                SendMessage(hwnd, LB_RESETCONTENT, 0, 0);
-                DestroyWindow(hwndLB);
-                hwndLB = NULL;
-                codecompleteBox = NULL;
-                inStructBox = FALSE;
-                break;
-            case WM_PAINT:
-                dc = BeginPaint(hwnd, &ps);
-                GetClientRect(hwnd, &r);
-                brush = CreateSolidBrush(TRANSPARENT_COLOR);
-                FillRect(dc, &r, brush);
-                DeleteObject(brush);
-
-                pen = CreatePen(PS_SOLID, 0, RetrieveSysColor(COLOR_INFOTEXT));
-                pen = SelectObject(dc, pen); 
-                RoundRect(dc, r.left, r.top, r.right, r.bottom, 5, 5);
-                pen = SelectObject(dc, pen);
-                DeleteObject(pen);
-                
-                EndPaint(hwnd, &ps);
-                return 0;
-            case WM_USER:
-                parent = (HWND)lParam;
-                p= (EDITDATA *)GetWindowLong(parent, 0);
-                insertautoundo(parent, p, UNDO_AUTOEND);
-                len = 0;
-                selected = 0;
-                initialLen = 0;
-                begin_inserted = FALSE;
-                break;
-            case WM_USER+1:
-            {
-                len = 0;
-                selected = SendMessage(hwndLB, LB_GETCURSEL, 0, 0);
-                if (selected != LB_ERR)
-                {
-                    temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                    buf[len++] = temp[0];
-                    buf[len] = 0;
-                }
-            }
-                break;
-            case WM_USER+2:
-            {
-                strcpy(buf, (char *)lParam);
-                len = initialLen = strlen(buf);
-                selected = SendMessage(hwnd, LB_SELECTSTRING, -1, (LPARAM)buf);
-                if (selected != LB_ERR)
-                {
-                    temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                    strcpy(buf2, temp);
-                    if (!stricmp(buf, buf2))
-                    {
-                        temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected+1, 0);
-                        if ((int)temp != LB_ERR)
-                        {
-                            if (strnicmp(temp, buf2, strlen(buf2)) != 0)
-                                PostMessage(hwnd, WM_CLOSE, 0, 0);
-                        }
-                        else
-                        {
-                            PostMessage(hwnd, WM_CLOSE, 0, 0);
-                        }
-                    }
-                }
-                return -1;
-            }
-                break;
-            case WM_SETFOCUS:
-                SetFocus(hwndLB);
-                break;
-            case WM_CLOSE:
-                if (!begin_inserted)
-                {
-                    p= (EDITDATA *)GetWindowLong(parent, 0);
-                    begin_inserted = TRUE;
-                    insertautoundo(parent, p, UNDO_AUTOBEGIN);
-                    if (len == 0)
-                        doundo(parent, p);
-                }
-                break ;
-            case WM_COMMAND:
-                if (HIWORD(wParam) == LBN_KILLFOCUS)
-                {
-                    PostMessage(hwnd, WM_CLOSE, 0, 0);
-                } 
-                else if (HIWORD(wParam) == LBN_DBLCLK)
-                {
-                    PostMessage(hwndLB, WM_KEYDOWN, VK_RETURN, 0);
-                }
-                else if (HIWORD(wParam) == LBN_SELCHANGE)
-                {
-                    selected = SendMessage(hwndLB, LB_GETCURSEL, 0, 0);
-                }
-                break;
-            case WM_SIZE:
-                MoveWindow(hwndLB, 2, 2, (lParam &65535)-4, (lParam >> 16)-4, 1);
-                break;
-            case WM_VKEYTOITEM:
-                switch(LOWORD(wParam))
-                {				
-                    case VK_RETURN:
-                    case VK_RIGHT:
-                        if (len && selected != LB_ERR)
-                        {
-                            EDITDATA *p = (EDITDATA *)GetWindowLong(parent, 0);
-                            int count;
-                            begin_inserted = TRUE;
-                            insertautoundo(parent, p, UNDO_AUTOBEGIN);
-                            doundo(parent, p);
-
-                            temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                            strcpy(buf, temp);
-                            count = strlen(buf);
-                            p->selstartcharpos -= initialLen;
-                            p->selendcharpos = p->selstartcharpos + initialLen;
-                            Replace(parent, p, buf, count);
-                            p->selstartcharpos = p->selendcharpos = p->selstartcharpos + count;
-                            MoveCaret(parent, p);
-                        }
-                        // fallthrough
-                        
-                    case VK_SPACE:
-                    case VK_ESCAPE:
-                    case VK_LEFT:
-                        PostMessage(hwnd, WM_CLOSE, 0, 0);
-                        return -2;
-                    case VK_UP:
-                    case VK_DOWN:
-                    case VK_PRIOR:
-                    case VK_NEXT:
-                        PostMessage(hwnd, WM_USER + 1, 0, 0);
-                        return -1;
-                    case VK_BACK:
-                        if (len > initialLen)
-                        {
-                            len--;
-                            buf[len] = 0;
-                            if (len == 0)
-                            {
-                                selected = 0;
-                                PostMessage(hwndLB, LB_SETCURSEL, -1, 0);
-                            }
-                            else
-                                selected = SendMessage(hwnd, LB_SELECTSTRING, -1, (LPARAM)buf);
-                        }
-                        else
-                        {
-                            p= (EDITDATA *)GetWindowLong(parent, 0);
-                            begin_inserted = TRUE;
-                            insertautoundo(parent, p, UNDO_AUTOBEGIN);
-                            doundo(parent, p);
-                            PostMessage(hwnd, WM_CLOSE, 0, 0);
-                        }
-                        SendMessage(parent, WM_KEYDOWN, VK_BACK, lParam);
-                        return -2;
-                    case VK_DELETE:
-                        len = 0;
-                        selected = 0;
-                        buf[len] = 0;
-                        SendMessage(hwndLB, LB_SETCURSEL, -1, 0);
-                        p= (EDITDATA *)GetWindowLong(parent, 0);
-                        insertautoundo(parent, p, UNDO_AUTOBEGIN);
-                        doundo(parent, p);
-                        insertautoundo(parent, p, UNDO_AUTOEND);
-                        return -2;
-                    case VK_SHIFT:
-                    case VK_CONTROL:
-                        break;
-                    default:
-                        if (GetKeyState(VK_CONTROL) &0x80000000)
-                        {
-                    case VK_HOME:
-                    case VK_END:
-                            p= (EDITDATA *)GetWindowLong(parent, 0);
-                            begin_inserted = TRUE;
-                            insertautoundo(parent, p, UNDO_AUTOBEGIN);
-//                            doundo(parent, p);
-                            PostMessage(hwnd, WM_CLOSE, 0, 0);
-                            SendMessage(parent, WM_KEYDOWN, wParam, lParam);
-                            return -2;
-                        }
-                        break;
-                }
-                return -1;
-            case WM_CHARTOITEM:
-                if (wParam == '.' || wParam == '-')
-                {
-                    PostMessage(hwnd, WM_CLOSE, 0, 0);
-                    SendMessage(parent, WM_CHAR, wParam, 0);
-                }
-                else
-                {
-                    wParam = LOWORD(wParam);
-                    buf[len++] = wParam;
-                    buf[len] = 0;
-                    SendMessage(parent, WM_CHAR, wParam, 0);
-                    selected = SendMessage(hwnd, LB_SELECTSTRING, -1, (LPARAM)buf);
-                    if (selected != LB_ERR)
-                    {
-                        temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                        strcpy(buf2, temp);
-                        if (!stricmp(buf, buf2))
-                        {
-                            // if it is the prefix of another item don't close out the box
-                            temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected+1, 0);
-                            if (temp == (char *)-1 || strnicmp(buf, temp, len))
-                                PostMessage(hwnd, WM_CLOSE, 0, 0);
-                        }
-                    }
-                }
-                return -1;
-            case LB_RESETCONTENT:
-                SendMessage(hwndLB, LB_RESETCONTENT, 0, 0);
-                while (stringdata)
-                {
-                    struct llist *next = stringdata->next;
-                    free(stringdata);
-                    stringdata = next;
-                }
-                return 0;
-            case LB_ADDSTRING:
-                {
-                    struct llist *ll = malloc(sizeof(struct llist)), **find = &stringdata;
-                    if (ll)
-                    {
-                        int i = 0, rv;
-                        strncpy(ll->name, (char *)lParam, 256);
-                        ll->name[255] = 0;
-                        while ((*find) && strcmp(ll->name, (*find)->name) > 0)
-                        {
-                            i++;
-                            find = &(*find)->next;
-                        }
-                        ll->next = *find;
-                        *find = ll;
-                        rv =  SendMessage(hwndLB, LB_INSERTSTRING, i, (LPARAM)ll->name);
-                        SendMessage(hwndLB, LB_SETCURSEL, selected = 0, 0);
-                        return rv;
-                    }
-                }
-                return 0;
-            case LB_SELECTSTRING:
-            {
-                int i = wParam +1;
-                do
-                {
-                    temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, i, 0);
-                    if ((int)temp != LB_ERR)
-                        if (!strnicmp(temp, (char *)lParam, strlen((char *)lParam)))
-                        {
-                            int n = SendMessage(hwndLB, LB_GETCOUNT, 0, 0);
-                            if (n > 8)
-                                n = 8;
-                            n = i - n/2;
-                            if (n < 0)
-                                n = 0;
-                            SendMessage(hwndLB, LB_SETTOPINDEX, n, 0);
-                            SendMessage(hwndLB, LB_SETCURSEL, i, 0);
-                            return i;
-                        }
-                    i++;
-                } while ((int)temp != LB_ERR);
-                if (wParam != -1)
-                {
-                    for (i=0; i <= wParam; i++)
-                    {
-                        buf2[0] = 0;
-                        temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                        if ((int)temp != LB_ERR)
-                            if (!strnicmp(temp, (char *)lParam, strlen((char *)lParam)))
-                            {
-                                int n = SendMessage(hwndLB, LB_GETCOUNT, 0, 0);
-                                if (n > 8)
-                                    n = 8;
-                                n = i - n/2;
-                                if (n < 0)
-                                    n = 0;
-                                SendMessage(hwndLB, LB_SETTOPINDEX, n, 0);
-                                SendMessage(hwndLB, LB_SETCURSEL, i, 0);
-                                return i;
-                            }
-                    }
-                }
-                SendMessage(hwndLB, LB_SETCURSEL, -1, 0);
-                return LB_ERR;
-            }
-            default:
-                if (iMessage >= LB_ADDSTRING && iMessage <= LB_SETCOUNT)
-                    return SendMessage(hwndLB, iMessage, wParam, lParam);
-                break;
-                
-        }
-        return DefWindowProc(hwnd, iMessage, wParam, lParam);
-    }
-    void GetCompletionPos(HWND hwnd, EDITDATA *p, LPPOINT pt, int width, int height)
-    
-    {
-        if (posfromchar(hwnd, p, pt, p->selstartcharpos))
-        {
-            RECT rect, frame;
-            GetWindowRect(hwnd, &rect);
-            GetFrameWindowRect(&frame);
-            pt->x -= width/2;
-            pt->x += rect.left;
-//			pt->x -= frame.left;
-            pt->y += p->cd->txtFontHeight ; //+ GetSystemMetrics(SM_CYCAPTION) * 2;
-            pt->y += rect.top ;
-//			pt->y -= frame.top;
-            if (pt->y + height > frame.bottom - frame.top)
-            {
-                pt->y -= p->cd->txtFontHeight;
-                pt->y -= height;
-            }			
-        }
-    }
-    CCSTRUCTDATA * find_type(HWND hwnd, EDITDATA *p, int ch, sqlite3_int64 *id)
-    {
-        char buf[4096], *q = buf+4095, *p1, *r1;
-        DWINFO *info = (DWINFO *)GetWindowLong(GetParent(hwnd), 0);
-        int lineno = SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, p->selstartcharpos);
-        int pos = p->selstartcharpos-1;
-        int done = FALSE;
-        int wading = FALSE;
-        int parenLevel = 0;
-        CCSTRUCTDATA *structData = NULL;
-        if (!info || PropGetInt(NULL, "CODE_COMPLETION") == 0)
-            return NULL;
-        *q = 0;
-        if (pos <= 0)
-            return NULL;
-        while (pos && isspace (p->cd->text[pos].ch))
-            pos--;
-        while (pos && !done && q != buf)
-        {
-            switch(p->cd->text[pos].ch)
-            {
-                case ';':
-                case '}':
-                case '{':
-                    done = TRUE;
-                    break;
-                case ',':
-                    if (!wading)
-                        done = TRUE;
-                    break;
-                case ')':
-                    parenLevel++;
-                    *--q = ')';
-                    break;
-                case '(':
-                    if (parenLevel)
-                    {
-                        parenLevel--;
-                        *(--q) = '(';
-                    }
-                    else
-                    {
-                        done = TRUE;
-                    }
-                    break;
-                case ']':
-                    if (!wading)
-                    {
-                        *--q = ']';
-                    }
-                      wading++ ;
-                    break;
-                case '[':
-                    if (wading)
-                    {
-                        wading --;
-                        if (!wading)
-                            *--q = '[';
-                    }
-                    else
-                        done = TRUE;
-                    break;
-                case ' ':
-                case '\t':
-                case '\f':
-                case '\n':
-                    while (pos && isspace(p->cd->text[pos].ch))
-                    {
-                        pos--;
-                    }
-                    pos++;
-                    break;
-                case '>':
-                    if (!wading)
-                    {
-                        if (pos && p->cd->text[pos-1].ch == '-')
-                        {
-                            *--q = '>';
-                            *--q = '-';
-                            pos--;
-                        }
-                        else
-                            done = TRUE;
-                    }
-                    break;
-                case '.':
-                    if (!wading)
-                        *--q = '.';
-                    break;
-                case '*':
-                {
-                    int lvl = 0;
-                    p1 = q;
-                    q-=2;
-                    r1 = q;
-                    while (*p1 && (*p1 != ')' || lvl))
-                    {
-                        if (*p1 == '(')
-                            lvl++;
-                        else if (*p1 == ')')
-                            lvl--;
-                        *r1++ = *p1++;
-                    }
-                    *r1++ = '[';
-                    *r1++ = ']';
-                }
-                    break;
-                default:
-                    if (!wading)
-                    {
-                        if (!isalnum(p->cd->text[pos].ch) && 
-                            p->cd->text[pos].ch != '_')
-                            done = TRUE;
-                        else
-                            *--q = p->cd->text[pos].ch;
-                    }
-                    break ;
-            }
-            pos--;
-        }
-        p1 = r1 = q;
-        while (*p1)
-        {
-            if (*p1 != '(' && *p1 != ')')
-                *r1++ = *p1++;
-            else
-                p1++;
-        }
-        *r1 = 0;
-        *id = 0;
-        while (*q)
-        {
-            int goon = FALSE;
-            int indir = 0;
-            char name[256], *s = name;
-            while (*q && (isalnum(*q) || *q == '_'))
-                *s++ = *q++;
-            *s = 0;
-            if (*id == 0)
-            {
-                ccFreeStructData(structData);
-                structData = NULL;
-                if (ccLookupStructType(name, info->dwName, lineno, id, &indir))
-                {
-                    structData = ccLookupStructElems(info->dwName, *id, indir);
-                }
-            }
-            else
-            {
-                int i;
-                *id = 0;
-                for (i= 0; i < structData->fieldCount; i++)
-                {
-                    if (!stricmp(name, structData->data[i].fieldName))
-                    {
-                        *id = structData->data[i].subStructId;
-                        indir = structData->data[i].indirectCount;
-                        break;
-                    }
-                }
-                ccFreeStructData(structData);
-                structData = NULL;
-                if (*id)
-                {
-                    structData = ccLookupStructElems(info->dwName, *id, indir);
-                }
-            }
-            if (!structData)
-            {
-                ccFreeStructData(structData);                
-                return NULL;
-            }
-            while (*q == '[' && *(q+1) == ']')
-            {
-                q += 2;
-                (indir)--;
-            }
-            if (*q)
-                if (*q == '.')
-                    q++;
-                else if (*q == '-' && *(q+1) == '>')
-                {
-                    q += 2;
-                    (indir)--;
-                }
-                else
-                {
-                    ccFreeStructData(structData);                
-                    return NULL;
-                }
-            else
-                if (ch == '>')
-                    (indir)--;
-
-            if (indir != 0)
-            {
-                ccFreeStructData(structData);                
-                return NULL;
-            }
-        }
-        return structData;
-    }
-    int showStruct(HWND hwnd, EDITDATA *p, int ch)
-    {
-        if (instring(p->cd->text, &p->cd->text[p->selstartcharpos]))
-            return 0;
-        if (ch == '>')
-        {
-            if (p->selstartcharpos < 2 || p->cd->text[p->selstartcharpos-2].ch != '-')
-            {
-                return 0;
-            }
-        }
-
-        if (!codecompleteBox)
-        {
-            sqlite3_int64 id;
-            CCSTRUCTDATA *structData = find_type(hwnd, p, ch, &id);
-            if (structData)
-            {
-                codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
-                                       (WS_POPUP) | WS_CLIPCHILDREN,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       hwnd,0, hInstance,0);
-                inStructBox = TRUE;
-                if (codecompleteBox)
-                {
-                    int count = 0;
-                    int max = 0;
-                    SIZE siz1;
-                    int width, height;
-                    POINT cpos;
-                    TEXTMETRIC t;
-                    HDC dc = GetDC(codecompleteBox);
-                    drawline(hwnd, p, p->selstartcharpos);
-                    GetTextMetrics(dc, &t);
-                    SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
-                    p->cd->selecting = FALSE;
-                    width = 0;
-                    for (count =0; count < structData->fieldCount; count++)
-                    {
-                        int n;
-                        char *name = structData->data[count].fieldName;
-                        GetTextExtentPoint32(dc, name, strlen(name), &siz1);
-                        if (siz1.cx > width)
-                            width = siz1.cx;
-                        n = SendMessage(codecompleteBox, LB_ADDSTRING, 0, (LPARAM)name);
-                    }
-                    ccFreeStructData(structData);
-                    ReleaseDC(codecompleteBox, dc);
-                    if (count > 8)
-                        count = 8;
-                    if (width < 70)
-                        width = 70;
-                    if (count)
-                    {
-                        height = t.tmHeight * count;
-                        width += 10 + GetSystemMetrics(SM_CXVSCROLL) + 2 * GetSystemMetrics(SM_CXFRAME);
-                        GetCompletionPos(hwnd, p, &cpos, width, height);
-                        SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
-                        MoveWindow(codecompleteBox, cpos.x, cpos.y, width+4, height+4, TRUE);
-                        ShowWindow(codecompleteBox, SW_SHOW);
-                        if (IsWindowVisible(hwndShowFunc))
-                            ShowWindow(hwndShowFunc, SW_HIDE);
-                        return TRUE;
-                    }
-                    else
-                        DestroyWindow(codecompleteBox);
-                }
-            }
-        }
-        return FALSE;
-    }
-    KEYLIST *partialmatchkeyword(KEYLIST *table, int tabsize, char *name)
-    {
-        int len = strlen(name);
-        int top = tabsize;
-        int bottom =  - 1;
-        int v;
-        char *p = name;
-        while (*p)
-        {
-            *p = tolower(*p);
-            p++;
-        }
-        while (top - bottom > 1)
-        {
-            int mid = (top + bottom) / 2;
-            char trans[256];
-            p = &trans[0];
-            strcpy(trans, table[mid].text);
-            while (*p)
-            {
-                *p = tolower(*p);
-                p++;
-            }
-            v = strncmp(name, trans, len);
-            if (v < 0)
-            {
-                top = mid;
-            }
-            else
-            {
-                bottom = mid;
-            }
-        }
-        if (bottom ==  - 1)
-            return 0;
-        return  &table[bottom];
-    }
-    char **GetCodeCompKeywords(char *name, char **names, int *size, int *max, HWND hwnd, EDITDATA *p)
-    {
-        KEYLIST *table = partialmatchkeyword(C_keywordList, sizeof(C_keywordList)/sizeof(C_keywordList[0]), name);
-        if (table)
-        {
-            int len = strlen(name);
-            while (C_keywordList != table && !strnicmp(table[-1].text, name, len))
-                table--;
-            while (!strnicmp(name, table->text, len))
-            {
-                if (*size >= *max)
-                {
-                    if (!*max) *max = 10; else *max *= 2;
-                    names = realloc(names, *max * sizeof(void *));
-                }
-                names[(*size)++] = strdup(table->text);
-                table++;
-            }
-        }
-        return names;
-    }
-    char **GetCodeCompVariables(char *name, char **names, int *size, int *max, HWND hwnd, EDITDATA *p)
-    {
-        names = ccGetMatchingNames(name, names, size, max);
-        return names;
-    }
-    void showVariableOrKeyword(HWND hwnd, EDITDATA *p)
-    {
-        if (instring(p->cd->text, &p->cd->text[p->selstartcharpos]))
-            return;
-        if (inStructBox || PropGetInt(NULL, "CODE_COMPLETION") < 2)
-            return;
-        {
-            char buf[4096], *q = buf + sizeof(buf);
-            int pos = p->selstartcharpos-1;
-            char **names = NULL;
-            int size = 0, max = 0;
-            *--q = 0;
-            if (pos <= 0)
-                return;
-            while (pos && (isalnum(p->cd->text[pos].ch) || p->cd->text[pos].ch == '_' || p->cd->text[pos].ch == '#'))
-                   *--q = p->cd->text[pos--].ch;
-            if (codecompleteBox)
-            {
-                if (strlen(q) == PropGetInt(NULL, "CODE_COMPLETION_VARIABLE_THRESHOLD")
-                    || strlen(q) == PropGetInt(NULL, "CODE_COMPLETION_KEYWORD_THRESHOLD"))
-                {
-                    SendMessage(codecompleteBox, WM_CLOSE, 0, 0);
-                    codecompleteBox = NULL;
-                }
-            }
-            if (!codecompleteBox)
-            {
-                if (strlen(q) >= PropGetInt(NULL, "CODE_COMPLETION_VARIABLE_THRESHOLD"))
-                    names = GetCodeCompVariables(q, names, &size, &max, hwnd, p);
-                if (strlen(q) >= PropGetInt(NULL, "CODE_COMPLETION_KEYWORD_THRESHOLD"))
-                    names = GetCodeCompKeywords(q, names, &size, &max, hwnd, p);
-                if (size)
-                {
-                    codecompleteBox = CreateWindowEx(WS_EX_TOPMOST| WS_EX_LAYERED | WS_EX_NOACTIVATE, "xcccodeclass","", 
-                                       (WS_POPUP) | WS_CLIPCHILDREN,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       CW_USEDEFAULT, CW_USEDEFAULT,
-                                       hwnd,0, hInstance,0);
-                    if (codecompleteBox)
-                    {
-                        int count = 0;
-                        int max = 0;
-                        SIZE siz1;
-                        int width, height;
-                        POINT cpos;
-                        TEXTMETRIC t;
-                        HDC dc = GetDC(codecompleteBox);
-                        drawline(hwnd, p, p->selstartcharpos);
-                        GetTextMetrics(dc, &t);
-                        SendMessage(codecompleteBox, LB_RESETCONTENT, 0, 0); 
-                        p->cd->selecting = FALSE;
-                        width = 0;
-                        for (count =0; count < size; count++)
-                        {
-                            int n;
-                            char *name = names[count];
-                            GetTextExtentPoint32(dc, name, strlen(name), &siz1);
-                            if (siz1.cx > width)
-                                width = siz1.cx;
-                            n = SendMessage(codecompleteBox, LB_ADDSTRING, 0, (LPARAM)name);
-                            free(name);
-                        }
-                        free(names);
-                        ReleaseDC(codecompleteBox, dc);
-                        if (count > 8)
-                            count = 8;
-                        if (width < 70)
-                            width = 70;
-                        if (count)
-                        {
-                            height = t.tmHeight * count;
-                            width += 10 + GetSystemMetrics(SM_CXVSCROLL) + 2 * GetSystemMetrics(SM_CXFRAME);
-                            GetCompletionPos(hwnd, p, &cpos, width, height);
-                            SendMessage(codecompleteBox, WM_USER, 0, (LPARAM)hwnd);
-                            SendMessage(codecompleteBox, WM_USER + 2, 0, (LPARAM)q);
-                            MoveWindow(codecompleteBox, cpos.x, cpos.y, width+4, height+4, TRUE);
-                            ShowWindow(codecompleteBox, SW_SHOW);
-                            if (IsWindowVisible(hwndShowFunc))
-                                ShowWindow(hwndShowFunc, SW_HIDE);
-                            return;
-                        }
-                        else
-                            DestroyWindow(codecompleteBox);
-                    }
-                }
-            }
-        }
-    }
-    void SetFuncWindowSize(HWND hwnd, HFONT normal, HFONT bold, char *proto, 
-                           int arg, int max, int *offsets)
-    {
-        HDC dc = GetDC(hwnd);
-        SIZE size1, size2, size3;
-        HFONT oldfont;
-        RECT r;
-        oldfont = SelectObject(dc, normal);
-        GetTextExtentPoint32(dc, proto, offsets[arg], &size1);
-        SelectObject(dc, bold);
-        GetTextExtentPoint32(dc, proto+ offsets[arg], offsets[arg+1]-offsets[arg], 
-                             &size2);
-        SelectObject(dc, normal);
-        GetTextExtentPoint32(dc, proto+ offsets[arg+1], 
-                             strlen(proto)- offsets[arg+1], &size3);
-        SelectObject(dc, oldfont);
-        ReleaseDC(hwnd, dc);
-        GetWindowRect(hwnd, &r);
-        MoveWindow(hwnd, r.left, r.top, size1.cx + size2.cx + size3.cx 
-                   + 4 + 4 * GetSystemMetrics(SM_CXBORDER), 
-                   size1.cy + 4 + 2 * GetSystemMetrics(SM_CYBORDER), TRUE);
-    }  
-    int getFuncPos(EDITDATA *p, char *funcname)
-    {
-        int l = p->selstartcharpos;
-        int slen = strlen(funcname);
-        int count = 0;
-        if (p->selstartcharpos != p->selendcharpos)
-        {
-            return INT_MAX;
-        }
-        while (l >= 0)
-        {
-            if (funcname[0] == p->cd->text[l].ch)
-            {
-                int i;
-                for (i=0; i < slen; i++)
-                {
-                    if (funcname[i] != p->cd->text[i+l].ch)
-                        break;
-                }
-                if (i >= slen)
-                    break;
-            }
-            l--;
-        }
-        if (l < 0)
-        {
-            return INT_MAX;
-        }
-        l += slen;
-        while (isspace(p->cd->text[l].ch) && l < p->selstartcharpos)
-            l++;
-        if (p->cd->text[l].ch != '(')
-        {
-            return INT_MAX;
-        }
-        l++;
-        while (l < p->selstartcharpos)
-        {
-            if (p->cd->text[l].ch == ',')
-                count++, l++;
-            else if (p->cd->text[l].ch == '[')
-            {
-                slen = 0;
-                do
-                {
-                    if (p->cd->text[l].ch == '[')
-                        slen++;
-                    else if (p->cd->text[l].ch == ']')
-                        slen--;
-                    l++;
-                } while (slen && l < p->selstartcharpos);
-            }
-            else if (p->cd->text[l].ch == '(')
-            {
-                slen = 0;
-                do
-                {
-                    if (p->cd->text[l].ch == '(')
-                        slen++;
-                    else if (p->cd->text[l].ch == ')')
-                        slen--;
-                    l++;
-                } while (slen && l < p->selstartcharpos);				
-            }
-            else if (p->cd->text[l].ch == ')')
-            {
-                return INT_MAX;
-            }
-            else
-                l++;
-                
-        }
-        return count;
-    }
-    static int getColorizeHashKey(char *name)
-    {
-        unsigned n = 0;
-        while (*name)
-        {
-            n = (n << 7) + (n << 1) + n + *name++;
-        }
-        return n % COLORIZE_HASH_SIZE;
-    }
-    static COLORIZE_HASH_ENTRY *lookupColorizeName(COLORIZE_HASH_ENTRY *entries[], char *name)
-    {
-        int key = getColorizeHashKey(name);
-        COLORIZE_HASH_ENTRY *entry = entries[key];
-        while (entry)
-        {
-            if (!strcmp(entry->name, name))
-                return entry;
-            entry = entry->next;
-        }
-        return entry;
-    }
-    static int LookupColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int line)
-    {
-        int rv = -1;
-        COLORIZE_HASH_ENTRY *entry = lookupColorizeName(entries, name);
-        if (entry)
-        {
-            int lastlargest = 1;
-            struct _colorize_lines_entry *lines = entry->lines;
-            while (lines)
-            {
-                if (lines->start >= lastlargest && lines->start <= line && (lines->end == 0 || lines->end >= line))
-                {
-                    lastlargest = lines->start;
-                    rv = lines->type;
-                }
-                lines = lines->next;
-            }
-        }
-        return rv;
-    }
-    void InsertColorizeEntry(COLORIZE_HASH_ENTRY *entries[], char *name, int start, int end, int type)
-    {
-        COLORIZE_HASH_ENTRY *entry = lookupColorizeName(entries, name);
-        struct _colorize_lines_entry *lines;
-        if (!entry)
-        {
-            int key = getColorizeHashKey(name);
-            entry = (COLORIZE_HASH_ENTRY *)calloc(sizeof(COLORIZE_HASH_ENTRY),1);
-            entry->name = strdup(name);
-            entry->next = entries[key];
-            entries[key] = entry;
-        }
-        lines = entry->lines;
-        while (lines)
-        {
-            if (lines->start == start && lines->end == end)
-                return;
-            lines = lines->next;
-        }
-        lines = calloc(sizeof(struct _colorize_lines_entry),1);
-        lines->start = start;
-        lines->end = end;
-        lines->type = type;
-        lines->next = entry->lines;
-        entry->lines = lines;
-    }
-    void FreeColorizeEntries(COLORIZE_HASH_ENTRY *entries[])
-    {
-        int i;
-        for (i=0; i < COLORIZE_HASH_SIZE; i++)
-        {
-            COLORIZE_HASH_ENTRY *he = entries[i];
-            entries[i] = NULL;
-            while (he)
-            {
-                COLORIZE_HASH_ENTRY *next = he->next;
-                struct _colorize_lines_entry *le = he->lines;
-                while (le)
-                {
-                    struct _colorize_lines_entry *lnext = le->next;
-                    free(le);
-                    le = lnext;
-                }
-                free(he->name);
-                free(he);
-                he = next;
-            }
-        }
-    }
-    LRESULT CALLBACK funcProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
-        lParam)
-    {
-        static char name[256];
-        static char proto[4096];
-        static int offsets[400];
-        static int argcount, currentArg;
-        static HFONT normal, bold, oldfont;
-        int offset;
-        int oldbk, oldfg;
-        LOGFONT lf;
-        PAINTSTRUCT ps;
-        HPEN pen;
-        HBRUSH brush;
-        HDC dc;
-        SIZE size1, size2;
-        RECT r;
-        switch(iMessage)
-        {
-            case WM_CREATE:
-                lf = systemDialogFont;
-                normal = (HFONT)CreateFontIndirect(&lf);
-                lf.lfWeight = FW_BOLD;
-                bold = CreateFontIndirect(&lf);
-                SetLayeredWindowAttributes(hwnd, TRANSPARENT_COLOR, 0xff, LWA_COLORKEY);
-                break;
-            case WM_USER:
-                strcpy(name, (char *)wParam);
-                strcpy(proto, (char *)lParam);
-                currentArg = 0;
-                SetFuncWindowSize(hwnd, normal, bold, proto, 
-                                  currentArg, argcount, offsets);
-                break;
-            case WM_USER + 1:
-                memcpy(offsets, (int *)lParam, (wParam +1 )* sizeof(int));
-                argcount = wParam;
-                currentArg = 0;
-                SetFuncWindowSize(hwnd, normal, bold, proto, 
-                                  currentArg, argcount, offsets);
-                break;
-            case WM_USER + 2:
-                currentArg = wParam;
-                if (currentArg >= argcount)
-                    currentArg = argcount - 1;
-                SetFuncWindowSize(hwnd, normal, bold, proto, 
-                                  currentArg, argcount, offsets);
-                InvalidateRect(hwnd, 0, 0);
-                break;
-            case WM_USER + 3:
-                if (IsWindowVisible(hwnd))
-                {
-                    switch(wParam)
-                    {
-                        case VK_UP:
-                        case VK_DOWN:
-                        case VK_HOME:
-                        case VK_END:
-                        case VK_PRIOR:
-                        case VK_NEXT:
-                            ShowWindow(hwnd, SW_HIDE);
-                            break;
-                        default:
-                            currentArg = getFuncPos((EDITDATA *)lParam, name);
-                            if (currentArg == INT_MAX)
-                            {
-                                currentArg = 0;
-                                ShowWindow(hwnd, SW_HIDE);
-                            }
-                            else
-                            {
-                                if (currentArg >= argcount)
-                                    currentArg = argcount-1;
-                                InvalidateRect(hwnd, 0, 0);
-                            }
-                            break;
-                    }
-                }
-                break;
-            case WM_PAINT:
-                dc = BeginPaint(hwnd, &ps);
-                GetClientRect(hwnd, &r);
-                brush = CreateSolidBrush(TRANSPARENT_COLOR);
-                FillRect(dc, &r, brush);
-                DeleteObject(brush);
-                
-                brush = CreateSolidBrush(RetrieveSysColor(COLOR_INFOBK));
-                brush = SelectObject(dc, brush);
-                pen = CreatePen(PS_SOLID, 0, 0);
-                pen = SelectObject(dc, pen); 
-                RoundRect(dc, r.left, r.top, r.right, r.bottom, 5, 5);
-                brush = SelectObject(dc, brush);
-                DeleteObject(brush);
-                
-                oldbk = SetBkColor(dc, RetrieveSysColor(COLOR_INFOBK));
-                oldfg = SetTextColor(dc, RetrieveSysColor(COLOR_INFOTEXT));
-                offset = 2 + 2 * GetSystemMetrics(SM_CXBORDER);
-                oldfont = SelectObject(dc, normal);
-                GetTextExtentPoint32(dc, proto, offsets[currentArg], &size1);
-                TextOut(dc, offset, 3, proto, offsets[currentArg]);
-                SelectObject(dc, oldfont);
-
-                oldfont = SelectObject(dc, bold);
-                GetTextExtentPoint32(dc, proto+ offsets[currentArg], 
-                                     offsets[currentArg+1]-offsets[currentArg], 
-                                     &size2);
-                TextOut(dc, offset + size1.cx, 3, proto + offsets[currentArg], 
-                        offsets[currentArg + 1 ] - offsets[currentArg]);
-                SelectObject(dc, oldfont);
-
-
-                oldfont = SelectObject(dc, normal);
-                TextOut(dc, offset + size1.cx + size2.cx, 3, 
-                        proto + offsets[currentArg+1], 
-                        strlen(proto) - offsets[currentArg + 1]);
-                SelectObject(dc, oldfont);
-                pen = SelectObject(dc, pen);
-                SetTextColor(dc, oldfg);
-                SetBkColor(dc, oldbk);
-                DeleteObject(pen);
-                EndPaint(hwnd, &ps);
-                return 0;
-        }
-        return DefWindowProc(hwnd, iMessage, wParam, lParam);
-    }
-    void showFunction(HWND hwnd, EDITDATA *p, int ch)
-    {
-        sqlite3_int64 id, baseid;
-        CCPROTODATA *args;
-        DWINFO *info = (DWINFO *)GetWindowLong(GetParent(hwnd), 0);
-        char name[2046], *q = name;
-        int end = p->selstartcharpos;
-        int pos = p->selstartcharpos - 1;
-        POINT cpos;
-        SIZE size;
-        int curArg = 0;
-        if (instring(p->cd->text, &p->cd->text[p->selstartcharpos]))
-            return;
-        p->cd->selecting = FALSE;
-        if (pos <= 0 || PropGetInt(NULL, "CODE_COMPLETION") == 0)
-            return ;
-        if (ch == ',' || ch == '(')
-        {
-            int parenLevel = 0;
-            if (ch == ',')
-                curArg ++;
-            while (((pos && p->cd->text[pos].ch != '(') || parenLevel) && p->cd->text[pos].ch != ';')
-            {
-                if (p->cd->text[pos].ch == ',')
-                    curArg++;
-                if (p->cd->text[pos].ch == ')')
-                    parenLevel++;
-                if (p->cd->text[pos].ch == '(')
-                    parenLevel--;
-                pos--;
-            }
-            if (!pos || p->cd->text[pos].ch != '(')
-                return;
-            end = pos;
-            pos--;
-            
-        }
-        while (pos && isspace(p->cd->text[pos].ch))
-        {
-            pos--;
-            end--;
-        }
-        while (pos && (isalnum(p->cd->text[pos].ch)
-                || p->cd->text[pos].ch == '_'))
-            pos--;
-        pos++;
-        while (pos < end)
-            *q++ = p->cd->text[pos++].ch;
-        *q = 0;
-        if (ccLookupFunctionType(name, info->dwName, &id, &baseid) && (args = ccLookupArgList(id, baseid)))
-        {
-            HDC dc;
-            int offsets[400];
-            char proto[4096];
-            int count =0;
-            sprintf(proto, "%s %s(", args->baseType, name);
-            for (count = 0; count < args->argCount; count++)
-            {
-                offsets[count] = strlen(proto);
-                if (args->data[count].fieldName[0] == '{') // unnamed...
-                    sprintf(proto + strlen(proto), "%s, ", args->data[count].fieldType);
-                else                    
-                    sprintf(proto + strlen(proto), "%s %s, ", args->data[count].fieldType, args->data[count].fieldName);
-            }
-            if (count)
-                proto[strlen(proto)-2] = 0;
-            offsets[count] = strlen(proto);
-            strcat(proto, ")");
-            ccFreeArgList(args);            
-            if (!hwndShowFunc)
-            {
-                hwndShowFunc = CreateWindowEx(WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_NOACTIVATE, "xccfuncclass", "",
-                                            (WS_POPUP),
-                                            CW_USEDEFAULT, CW_USEDEFAULT,
-                                            CW_USEDEFAULT, CW_USEDEFAULT,
-                                            hwnd, 0, GetModuleHandle(0), 0);
-            }
-            SendMessage(hwndShowFunc, WM_USER, (WPARAM)name, (LPARAM)proto);
-            SendMessage(hwndShowFunc, WM_USER + 1, count, (LPARAM)offsets);
-            dc = GetDC(hwndShowFunc);
-            GetTextExtentPoint32(dc, proto, strlen(proto), &size);
-            ReleaseDC(hwndShowFunc, dc);
-            GetCompletionPos(hwnd, p, &cpos, size.cx, size.cy);
-//						SetParent(codecompleteBox, hwnd);
-            MoveWindow(hwndShowFunc, cpos.x, cpos.y, size.cx, size.cy, TRUE);
-            SendMessage(hwndShowFunc, WM_USER + 2, curArg, 0);
-            ShowWindow(hwndShowFunc, SW_SHOW);
-            SetFocus(hwnd);
-        }
-    }
     static BOOL multilineSelect(EDITDATA *p)
     {
         int st = p->selstartcharpos;
@@ -5558,19 +1716,37 @@ void removechar(HWND hwnd, EDITDATA *p, int utype)
                 return TRUE;
         return FALSE;
     }
+    void UpdateMarks(EDITDATA *p, int pos, int insert)
+    {
+        int i;
+        for (i=0; i < 10; i++)
+        {
+            if (p->marks[i] >= pos)
+                p->marks[i] += insert;
+            else if (pos + insert < p->marks[i])
+                p->marks[i] = pos + insert;                
+        }
+    }
+    void MarkOrGoto(HWND hwnd, EDITDATA *p, int index, BOOL mark)
+    {
+        if (index >=0 && index < 10)
+        {
+            if (mark)
+            {
+                p->marks[index] = p->selendcharpos;
+            }
+            else
+            {
+                p->selstartcharpos = p->selendcharpos = p->marks[index];
+                ScrollCaretIntoView(hwnd, p, TRUE);
+            }
+        }
+    }
+                   
     /**********************************************************************
      * exeditProc is the window proc for the edit control
      **********************************************************************/
-int KeyboardToAscii(int vk, int scan)
-{
-    WCHAR data[10];
-    BYTE state[256];
-    data[0] = 0;
-    memset(state,0, sizeof(state));
-    ToUnicodeEx(vk, (scan>>16) & 0xff, state, data, 10, 0, 0);
-    return data[0];  
-    
-}
+
 LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam)
 {
@@ -5605,8 +1781,32 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 p->cd->reparseTimerID = 0;
                 InstallForParse(GetParent(hwnd));
                 break;
-            case WM_ERASEBKGND:
+                /*
+            case WM_NCPAINT:
+            {
+                HDC dc;
+                RECT r;
+                HBRUSH brush = GetStockObject(NULL_BRUSH);
+                HPEN pen = CreatePen(PS_SOLID, 0, GetSysColor(COLOR_BTNSHADOW));
+                DefWindowProc(hwnd, iMessage, wParam, lParam);
+                GetWindowRect(hwnd, &r);
+                r.right -= r.left;
+                r.left -= r.left;
+                r.bottom -= r.top;
+                r.top -= r.top;
+                dc = GetWindowDC(hwnd);
+                pen = SelectObject(dc, pen);
+                brush = SelectObject(dc, brush);
+                Rectangle(dc, r.left, r.top, r.right, r.bottom);
+                brush = SelectObject(dc, brush);
+                pen = SelectObject(dc, pen);
+                DeleteObject(pen);
+                ReleaseDC(hwnd, dc);
                 return 0;
+            }
+            */
+            case WM_ERASEBKGND:
+                return 1;
             case WM_PAINT:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 if (!p->cd->colorizing)
@@ -5616,7 +1816,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 return ((EDITDATA*)GetWindowLong(hwnd, 0))->cd->inserting;
             case WM_CODECOMPLETE:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                if (wParam == '.' || wParam == '>')
+                if (wParam == '.' || wParam == '>' || wParam == ':')
                     showStruct(hwnd, p, wParam);
                 else
                     showVariableOrKeyword(hwnd, p);
@@ -5650,7 +1850,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         GetCursorPos(&pt);
                         ScreenToClient(hwnd, &pt);
                         charpos = SendMessage(hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt);
-                           GetWordFromPos(hwnd, name,  charpos, &lineno, &start, &end);
+                           GetWordFromPos(hwnd, name, FALSE, charpos, &lineno, &start, &end);
                         lineno++;
                         if (name[0])
                         {
@@ -5658,7 +1858,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                             if (uState == notDebugging)
                             {
                                 int flags;
-                                if (ccLookupType(buffer, name, info->dwName, lineno, & flags))
+                                if (ccLookupType(buffer, name, info->dwName, lineno, & flags, NULL))
                                 {
                                     if (strncmp(buffer, "(*)", 3) != 0)
                                     {
@@ -5693,21 +1893,20 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     DoHelp(hwnd, 0);
                 if (LOWORD(wParam) == IDM_SPECIFIEDHELP)
                     DoHelp(hwnd, 1);
-                if (LOWORD(wParam) == IDM_CLOSEFIND)
-                {
-                    if (IsWindowVisible(hwndShowFunc))
-                        ShowWindow(hwndShowFunc, SW_HIDE);
-                    if (IsWindow(codecompleteBox))
-                        SendMessage(codecompleteBox, WM_CLOSE, 0, 0);
-                }
                 break;
             case WM_KEYDOWN:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                if (IsWindowVisible(hwndShowFunc) && !SendMessage(hwndShowFunc, WM_USER+3, wParam, lParam))
+                    break;
                 CancelParenMatch(hwnd, p);
                 switch (wParam)
                 {
                 case VK_ESCAPE:
-                    SendMessage(hwnd, WM_COMMAND, IDM_CLOSEFIND, 0);
+                    SendMessage(hwndFrame, WM_COMMAND, IDM_CLOSEFIND, 0);
+                    if (IsWindowVisible(hwndShowFunc))
+                        ShowWindow(hwndShowFunc, SW_HIDE);
+                    if (IsWindow(codecompleteBox))
+                        SendMessage(codecompleteBox, WM_CLOSE, 0, 0);
                     break;
                 case VK_INSERT:
                     if (!p->cd->readonly)
@@ -5784,7 +1983,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                             else
                             {
                                 backtab(hwnd, p);
-                                drawline(hwnd, p, p->selstartcharpos);
+                                xdrawline(hwnd, p, p->selstartcharpos);
                             }
                         }
                         else
@@ -5795,13 +1994,15 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     {
                         if (!p->cd->readonly)
                         {
+                            if (p->insertcursorcolumn)
+                                insertcrtabs(hwnd, p);
                             if (multilineSelect(p))
                                 SelectIndent(hwnd, p, TRUE);
                             else
                             {
                                 inserttab(hwnd, p);
                                 InsertEndTabs(hwnd, p, FALSE);
-                                drawline(hwnd, p, p->selstartcharpos);
+                                xdrawline(hwnd, p, p->selstartcharpos);
                             }
                         }
                         else
@@ -5905,7 +2106,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         p->selstartcharpos = 0;
                         p->selendcharpos = p->cd->textlen;
                         InvalidateRect(hwnd, 0, 0);
-                        }
+                    }
                     break;
                 case 'X':
                     if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
@@ -5926,17 +2127,34 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     }
                     break;
                 case 'Y':
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        RemoveCurrentLine(hwnd, p);
+                        return 0;
+                    }
+                    break;
+                case 'T':
+                    if (!p->cd->readonly && GetKeyState(VK_CONTROL) &0x80000000)
+                    {
+                        RemoveNextWord(hwnd, p);
+                    }
+                    break;
+                case 'R':
                     if (!p->cd->readonly)
                         if (GetKeyState(VK_CONTROL) &0x80000000)
                         {
-                            SendMessage(hwnd, WM_REDO, 0, 0);
+                                SendMessage(hwnd, WM_REDO, 0, 0);
+                                if (IsWindowVisible(hwndShowFunc))
+                                    ShowWindow(hwndShowFunc, SW_HIDE);
                         }
-                        break;
+                    break;
                 case 'Z':
                     if (!p->cd->readonly)
                         if (GetKeyState(VK_CONTROL) &0x80000000)
                         {
                             SendMessage(hwnd, WM_UNDO, 0, 0);
+                            if (IsWindowVisible(hwndShowFunc))
+                                ShowWindow(hwndShowFunc, SW_HIDE);
                         }
                     break;
                 case 'S':
@@ -5946,10 +2164,6 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                             SendMessage(GetParent(hwnd), WM_COMMAND, IDM_SAVE,
                                 0);
                     }
-                    break;
-                case 'T':
-                    if (GetKeyState(VK_CONTROL) &0x80000000)
-                        verticalCenter(hwnd, p);
                     break;
                 case 'L':
                     if (!(GetKeyState(VK_CONTROL) &0x80000000))
@@ -5972,7 +2186,15 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     p->cd->selecting = TRUE;
                     break;
                 default:
-                    switch (KeyboardToAscii(wParam, lParam))
+                    if (wParam >= '1' && wParam <= '9') // I couldn't get shift-ctrl-0 to return any value on my computer
+                    {
+                        if (GetKeyState(VK_CONTROL) &0x80000000)
+                        {
+                            MarkOrGoto(hwnd, p , wParam-'0', !!(GetKeyState(VK_SHIFT) &0x80000000));
+                            break;
+                        }
+                    }
+                    switch (KeyboardToAscii(wParam, lParam, FALSE))
                     {
                          case '[':
                             if (GetKeyState(VK_CONTROL) &0x80000000)
@@ -5988,24 +2210,29 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                                 return 0;
                             }
                             break;
+                        case '\\':
+                            if (GetKeyState(VK_CONTROL) &0x80000000)
+                            {
+                                verticalCenter(hwnd, p);
+                            }
+                            break;
                     }
-
+                    break;
                 }
                 if (p->cd->selecting)
                     InvalidateRect(hwnd, 0, 0);
                 PostMessage(GetParent(hwnd), WM_COMMAND, ID_REDRAWSTATUS, 0);
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                SendMessage(hwndShowFunc, WM_USER+3, wParam, (LPARAM)p);
                 FindParenMatch(hwnd, p);
                 break;
             case WM_SYSKEYUP:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 if (wParam == VK_SHIFT)
                         p->cd->selecting = FALSE;
-                else switch (wParam = KeyboardToAscii(wParam, lParam))
+                else switch (wParam = KeyboardToAscii(wParam, lParam, FALSE))
                 {
-                    case ']':
                     case '[':
+                    case ']':
                         if (!(GetKeyState(VK_CONTROL) &0x80000000))
                             if (lParam &0x20000000) {// alt key
                                 return 0;
@@ -6017,10 +2244,10 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 if (wParam == VK_SHIFT)
                         p->cd->selecting = TRUE;
-                else switch (wParam = KeyboardToAscii(wParam, lParam))
+                else switch (wParam = KeyboardToAscii(wParam, lParam, FALSE))
                 {
-                    case ']':
                     case '[':
+                    case ']':
                         if (!(GetKeyState(VK_CONTROL) &0x80000000))
                             if (lParam &0x20000000) {// alt key
                                 FindBraceMatch(hwnd, p, wParam == '[' ? '{' : '}');
@@ -6041,11 +2268,13 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 if (wParam >= ' ' && wParam < 256)
                 {
                     p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                    if (p->insertcursorcolumn)
+                        insertcrtabs(hwnd, p);
                     CancelParenMatch(hwnd, p);
                     if (!p->cd->readonly)
                     {
                         insertchar(hwnd, p, wParam);
-                        if (wParam == '.' || wParam == '>' || isalnum(wParam) || wParam == '_')
+                        if (wParam == '.' || wParam == '>' || wParam == ':' || isalnum(wParam) || wParam == '_')
                         {
                             PostMessage(hwnd, WM_CODECOMPLETE, wParam, p->selstartcharpos);
                         }
@@ -6062,7 +2291,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         if (!p->cd->inserting)
                             SendMessage(hwnd, WM_CLEAR, 0, 0);
                         FormatLine(hwnd, p->cd->text, p->cd->language, p->cd->defbackground);
-                        drawline(hwnd, p, p->selstartcharpos);
+                        xdrawline(hwnd, p, p->selstartcharpos);
                     }
                     else
                         right(hwnd, p);
@@ -6128,6 +2357,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 return (LRESULT) (EDITDATA*)GetWindowLong(hwnd, 0);
             case EM_UPDATESIBLING:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                UpdateMarks(p, lParam, wParam);
                 if (lParam <= p->textshowncharpos)
                 {
                     if (wParam > 0)
@@ -6250,10 +2480,11 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     Colorize(p->cd->text, 0, p->cd->textlen, (p->cd->defbackground << 5) + p->cd->defforeground, FALSE);
                     FullColorize(hwnd, p, FALSE);
                 }
-                InvalidateRect(hwnd, 0, 1);
+                InvalidateRect(hwnd, 0, 0);
                 return 0;
             case WM_DESTROY:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
+                SetWindowLong(hwnd, 0, 0);
                 if (p->popupDerivedFrom)
                 {
                     p->popupDerivedFrom->selstartcharpos = p->selstartcharpos;
@@ -6442,7 +2673,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     }
                     MoveCaret(hwnd, p);
                }
-                SendMessage(hwndShowFunc, WM_USER+3, 0, (LPARAM)p);
+                SendMessage(hwndShowFunc, WM_USER+3, 0, 0);
                 return 0;
             case WM_RBUTTONDOWN:
             case WM_MBUTTONDOWN:
@@ -6518,16 +2749,16 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);
                 /* have the pos from the lbutton down */
                 HilightWord(hwnd, p);
-                drawline(hwnd, p, 0);
+                xdrawline(hwnd, p, 0);
                 break;
             case WM_WORDUNDERCURSOR:
-                   return GetWordFromPos(hwnd, (char*)lParam,  - 1, 0, 0, 0);
+                   return GetWordFromPos(hwnd, (char*)lParam, wParam, - 1, 0, 0, 0);
             case WM_WORDUNDERPOINT:
             {
                 int charpos, start, end, linepos;
                 POINT pt = *(POINT *)wParam;
                 charpos = SendMessage(hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt);
-                return GetWordFromPos(hwnd, (char *)lParam, charpos, &linepos, &start, &end);
+                return GetWordFromPos(hwnd, (char *)lParam, wParam, charpos, &linepos, &start, &end);
             }
                 break;
             case EM_SETBKGNDCOLOR:
@@ -6543,7 +2774,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 }
                 DeleteObject(p->cd->hbrBackground);
                 p->cd->hbrBackground = CreateSolidBrush(colors[lParam][0]);
-                InvalidateRect(hwnd, 0, 1);
+                InvalidateRect(hwnd, 0, 0);
                 break;
             case WM_GETTEXT:
                 p = (EDITDATA*)GetWindowLong(hwnd, 0);

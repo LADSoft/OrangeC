@@ -55,21 +55,26 @@
 #include "..\version.h"
 #include <sys\stat.h>
 
+extern LOGFONT systemDialogFont;
 extern PROJECTITEM *activeProject;
 extern HWND hwndFrame, hwndClient;
 extern HINSTANCE hInstance;
 extern DWINFO *editWindows;
 extern enum DebugState uState;
-extern HWND hwndFind, hwndProject, hwndASM, hwndThread;
-extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndStack;
+extern HWND hwndFind, hwndASM;
 extern int making;
 extern FILEBROWSE *fileBrowseCursor;
 extern FILEBROWSE *fileBrowseInfo;
 extern PROJECTITEM *activeProject;
 
+HWND hwndToolbarBar;
 HWND hwndTbFind, hwndTbThreads, hwndTbProfile, hwndTbBuildType, hwndTbProcedure;
-
 HWND hwndToolNav, hwndToolBuildType, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark, hwndToolThreads;
+int toolLayout[100];
+int toolCount;
+
+
+static char * tbBarClassName = "xccTbBar";
 
 static char *navhints[] = 
 {
@@ -439,6 +444,14 @@ static TBBUTTON threadButtons[] =
     }
     , 
 };
+static int toolDefaults[] =
+{
+ DID_EDITTOOL, DID_BUILDTYPETOOL, DID_NAVTOOL, 
+ -1,
+ DID_BUILDTOOL, DID_DEBUGTOOL, DID_BOOKMARKTOOL, DID_THREADSTOOL    
+};
+
+
 typedef struct
 {
     char *text;
@@ -491,12 +504,14 @@ static void PopulateCustomView(HWND hwnd)
         item.lParam = (LPARAM)i;
         item.pszText = ""; // LPSTR_TEXTCALLBACK ;
         v = ListView_InsertItem(hwndLV, &item);
-        ListView_SetCheckState(hwndLV, v, dmgrGetHiddenState(d->did) ? 0 : 1);
+        ListView_SetCheckState(hwndLV, v, IsWindowVisible(*(customData[i].wnd)) ? 1 : 0);
     }
     if (items)
     {
         ListView_SetSelectionMark(hwndLV, 0);
         ListView_SetItemState(hwndLV, 0, LVIS_SELECTED, LVIS_SELECTED);
+        EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
+        
     }
 
 }
@@ -532,7 +547,8 @@ LRESULT CALLBACK CustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         int n = lp->uNewState & LVIS_STATEIMAGEMASK;
                         if (n & LVIS_STATEIMAGEMASK)
                         {
-                            dmgrHideWindow(customData[lp->iItem].did, !ListView_GetCheckState(lp->hdr.hwndFrom, lp->iItem));
+                            ShowWindow(*(customData[lp->iItem].wnd), 
+                                       ListView_GetCheckState(lp->hdr.hwndFrom, lp->iItem) ? SW_SHOW : SW_HIDE);
                         }
                         if (lp->uNewState & LVIS_SELECTED)
                         {
@@ -617,6 +633,7 @@ void RedrawToolBar(void)
     HWND win;
     BOOL mf_state;
     BOOL x_state;
+
     win = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
     mf_state = !!SendMessage(win, EM_CANUNDO, 0, 0); 
     SendMessage(hwndToolEdit, TB_ENABLEBUTTON, IDM_UNDO, MAKELONG
@@ -670,7 +687,10 @@ void RedrawToolBar(void)
     SendMessage(hwndToolNav, TB_ENABLEBUTTON, IDM_REPLACE, MAKELONG
         (mf_state, 0));
     SendMessage(hwndToolNav, TB_ENABLEBUTTON, IDM_GOTO, MAKELONG
-        (mf_state || win == hwndASM || win == hwndMem, 0));
+        (mf_state || win == hwndASM || win == GetWindowHandle(DID_MEMWND)
+         || win == GetWindowHandle(DID_MEMWND+1)
+         || win == GetWindowHandle(DID_MEMWND+2)
+         || win == GetWindowHandle(DID_MEMWND+3), 0));
     SendMessage(hwndToolBookmark, TB_ENABLEBUTTON, IDM_BOOKMARK, MAKELONG
         (mf_state, 0));
     x_state = AnyBookmarks();
@@ -766,37 +786,233 @@ LRESULT CALLBACK tbStatProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
 {
     HWND hwndStatic;
     RECT r;
-    LPCREATESTRUCT lpcp;
+    char *p;
+    char buf[256];
+    PAINTSTRUCT ps;
     HDC dc;
     switch (iMessage)
     {
         case WM_CREATE:
-            lpcp = (LPCREATESTRUCT) lParam;
-            hwndStatic = CreateWindowEx(0, "static", lpcp->lpszName, WS_CHILD +
-                WS_VISIBLE | SS_CENTERIMAGE, 0,0,100, 200, hwnd, 0, lpcp->hInstance, 0);  
-            ApplyDialogFont(hwndStatic);
-            SetWindowLong(hwnd, GWL_USERDATA, (long)hwndStatic);
             break;
         case WM_DESTROY:
-            DestroyWindow((HWND)GetWindowLong(hwnd, GWL_USERDATA));
             break;
         case WM_SIZE:
-            GetClientRect(hwnd, &r);
-            MoveWindow((HWND)GetWindowLong(hwnd, GWL_USERDATA), r.left, r.top, r.right - r.left, r.bottom - r.top, 1);
             return 0;
+        case WM_PAINT:
+            buf[0] = 255;
+            GetWindowText(hwnd, buf, 256);
+        {
+            POINT pt;
+            SIZE sz;
+            HFONT font = CreateFontIndirect(&systemDialogFont);
+            dc = BeginPaint(hwnd, &ps);
+            GetClientRect(hwnd, &r);
+            GetTextExtentPoint32(dc, buf, strlen(buf), &sz);
+            pt.x = 0;
+            pt.y = (r.bottom - r.top - sz.cy)/2 + r.top;
+            SetBkMode(dc, TRANSPARENT);
+            font = SelectObject(dc, font);
+            TextOut(dc, pt.x, pt.y, buf, strlen(buf));
+            SelectObject(dc, font);
+            DeleteObject(font);
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
         case WM_ERASEBKGND:
             GetClientRect(hwnd, &r);
             dc = GetDC(hwnd);
-            FillGradientTB(dc, &r, FALSE);
+            GradientFillTB(dc, &r);
             ReleaseDC(hwnd, dc);
-            return 0;
-        case WM_CTLCOLORSTATIC:
-            SetBkMode((HDC)wParam, TRANSPARENT);
-            return (LRESULT)GetStockObject(NULL_BRUSH);
+            return 1;        
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }
-//-------------------------------------------------------------------------
+HWND GetToolWindow(int DID)
+{
+    int j;
+    for (j=0; j < sizeof(customData)/sizeof(customData[0]); j++)
+        if (customData[j].did == DID)
+        {
+            return *(customData[j].wnd);
+        }
+    return NULL;
+}
+static int tbBarMove(HWND hwnd, int DID, int x, int y)
+{
+    int current = 0;
+    int i;
+    POINT pt;
+    RECT r;
+    HWND lastVisible = 0;
+    pt.x = x;
+    pt.y = y;
+    GetWindowRect(hwnd, &r);
+    for (i=0; i < toolCount; i++)
+        if (toolLayout[i] == DID)
+        {
+            current = i;
+            break;
+        }
+    if (PtInRect(&r, pt))
+    {
+        for (i=0; i < toolCount+1; i++)
+        {
+            
+            if (current != i)
+            {
+                int n = toolLayout[i];
+                if (n == -1 || i == toolCount)
+                {
+                    if (lastVisible)
+                    {
+                        GetWindowRect(lastVisible, &r);
+                        r.right = 10000;
+                        if (PtInRect(&r, pt))
+                        {
+                            n =i;
+                            if (i >= current)
+                                n--;
+                            // at end of line
+                            memcpy(toolLayout + current, toolLayout + current + 1, (toolCount-1 - current)*sizeof(int));
+                            memmove(toolLayout + n+1, toolLayout + n, (toolCount - n - 1 )*sizeof(int));
+                            toolLayout[n] = DID;
+                            break;
+                        }
+                    }
+                }
+                else 
+                {
+                    HWND hwndChild = GetToolWindow(n);
+                    if (IsWindowVisible(hwndChild))
+                    {
+                        lastVisible = hwndChild;
+                        GetWindowRect(hwndChild, &r);
+                        if (PtInRect(&r, pt))
+                            
+                        {
+                            n =i;
+                            if (i >= current)
+                                n--;
+                            memcpy(toolLayout + current, toolLayout + current + 1, (toolCount-1 - current)*sizeof(int));
+                            r.right = (r.right + r.left)/2;
+                            if (PtInRect(&r, pt))
+                            {
+                                // to left;
+                                memmove(toolLayout + n+1, toolLayout + n, (toolCount - n - 1 )*sizeof(int));
+                                toolLayout[n] = DID;
+                            }
+                            else
+                            {
+                                // to right
+                                memmove(toolLayout + n + 2, toolLayout + n + 1, (toolCount - n - 1 )*sizeof(int));
+                                toolLayout[n+1] = DID;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        // at end;
+        memcpy(toolLayout + current, toolLayout + current + 1, (toolCount-1 - current)*sizeof(int));
+        toolLayout[toolCount-1] = -1;
+        toolLayout[toolCount++] = DID;
+    }
+    ResizeLayout(NULL);
+    while (toolCount && toolLayout[toolCount-1] == -1)
+        toolCount--;
+    while(toolCount && toolLayout[0] == -1)
+    {
+        memcpy(toolLayout, toolLayout +1, (--toolCount)*sizeof(int));
+    }
+}
+static int tbBarRedraw(HWND hwnd)
+{
+    RECT tbRects[20];
+    int tbIDs[20];
+    int count = 0; 
+     
+    int i;
+    int nwidth =0, nheight = 0, width, height;
+    BOOL addToHeight = FALSE;
+    RECT r;
+    GetClientRect(GetParent(hwnd), &r);
+    width = r.right;
+    height = r.bottom;
+    for (i=0; i < toolCount; i++)
+    {
+        HWND hwndChild = GetToolWindow(toolLayout[i]);
+        if (toolLayout[i] == -1)
+        {
+            if (count)
+            {
+                nwidth = 0;
+                addToHeight = TRUE;
+            }
+        }
+        else if (IsWindowVisible(hwndChild))
+        {
+            RECT r;
+            GetClientRect(hwndChild, &r);
+//            if (nwidth + r.right > width)
+//            {
+//                nwidth = 0;
+//                addToHeight = TRUE;
+//            }
+            if (addToHeight)
+            {
+                nheight += r.bottom+2;
+                addToHeight = FALSE;
+            }
+            tbIDs[count] = toolLayout[i];
+            tbRects[count].left = nwidth;
+            tbRects[count].top = nheight;
+            tbRects[count].right = nwidth + r.right;
+            tbRects[count].bottom = nheight + r.bottom;
+            count++;
+            nwidth += r.right;
+        }
+    }
+    if (count)
+    {
+        MoveWindow(hwnd, 0, 0, width, tbRects[count-1].bottom, 1);
+        for (i=0; i < count; i++)
+        {
+            int j;
+            HWND hwndChild = NULL;
+            for (j=0; j < sizeof(customData)/sizeof(customData[0]); j++)
+                if (customData[j].did == tbIDs[i])
+                {
+                    hwndChild = *(customData[j].wnd);
+                    break;
+                }
+            MoveWindow(hwndChild, tbRects[i].left, tbRects[i].top, tbRects[i].right - tbRects[i].left,
+                                       tbRects[i].bottom - tbRects[i].top, 1);
+        }
+    }
+    else
+    {
+        MoveWindow(hwnd, 0, 0, 1, 1, 1);
+    }
+    return nheight;
+}
+LRESULT CALLBACK tbBarProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
+    lParam)
+{
+    switch (iMessage)
+    {        
+        case WM_REDRAWTOOLBAR:
+            if (lParam)
+                tbBarMove(hwnd, wParam, LOWORD(lParam), HIWORD(lParam));
+            tbBarRedraw(hwnd);
+            PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+            return 0;
+    }
+    return DefWindowProc(hwnd, iMessage, wParam, lParam);
+}
 static void RegisterTbControls(void)
 {
     WNDCLASS wc;
@@ -806,10 +1022,22 @@ static void RegisterTbControls(void)
     wc.hInstance = hInstance;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 4;
-    wc.style = CS_DBLCLKS;
+    wc.style = 0;
     wc.hIcon = 0;
     wc.hCursor = 0;
     wc.hbrBackground = 0;
+    wc.lpszMenuName = 0;
+    RegisterClass(&wc);
+
+    wc.lpfnWndProc = &tbBarProc;
+    wc.lpszClassName = tbBarClassName;
+    wc.hInstance = hInstance;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.style = 0;
+    wc.hIcon = 0;
+    wc.hCursor = 0;
+    wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
     wc.lpszMenuName = 0;
     RegisterClass(&wc);
 }
@@ -817,59 +1045,63 @@ void MakeToolBar(HWND hwnd)
 {
     HWND hwndTemp;
     RegisterTbControls();
-    hwndToolEdit = CreateToolBarWindow(DID_EDITTOOL, hwndFrame, hwndFrame, 16,
-        15, ID_EDITTB, 17, editButtons, edithints, 0, "Edit Tools", IDH_EDIT_TOOLBAR);
-    hwndToolBuildType = CreateToolBarWindow(DID_BUILDTYPETOOL, hwndFrame, hwndFrame,
-        16, 15, ID_BUILDTYPETB, 4, buildTypeButtons, buildTypehints, 0, "Build Type", IDH_BUILD_TYPE_TOOLBAR);
-    hwndToolNav = CreateToolBarWindow(DID_NAVTOOL, hwndFrame, hwndFrame, 16,
-        15, ID_NAVTB, 13, navButtons, navhints, 0, "Nav Tools", IDH_NAV_TOOLBAR);
-    hwndToolBuild = CreateToolBarWindow(DID_BUILDTOOL, hwndFrame, hwndFrame,
-        16, 15, ID_BUILDTB, 5, makeButtons, makehints, 0, "Build Tools", IDH_BUILD_TOOLBAR);
-    hwndToolDebug = CreateToolBarWindow(DID_DEBUGTOOL, hwndFrame, hwndFrame,
-        16, 15, ID_DEBUGTB, 15, debugButtons, debughints, 0, "Debug Tools", IDH_DEBUG_TOOLBAR);
-    hwndToolBookmark = CreateToolBarWindow(DID_BOOKMARKTOOL, hwndFrame, hwndFrame,
-        16, 15, ID_BOOKMARKTB, 8, bookmarkButtons, bookmarkhints, 0, "Bookmark Tools", IDH_BOOKMARK_TOOLBAR);
-    hwndToolThreads = CreateToolBarWindow(DID_THREADSTOOL, hwndFrame, hwndFrame,
-        16, 15, ID_THREADSTB, 4, threadButtons, threadhints, 0, "Bookmark Tools", IDH_THREAD_TOOLBAR);
-  
-    hwndTemp = CreateWindowEx(WS_EX_TRANSPARENT, "xccTbStatic", "Thread:", WS_CHILD +
-        WS_VISIBLE, 
-                        0,0,100, 200, hwndFrame, 0, hInstance, 0);  
+    toolCount = sizeof(toolDefaults)/sizeof(toolDefaults[0]); 
+    memcpy(toolLayout, toolDefaults, sizeof(toolDefaults)); 
+    hwndToolbarBar = CreateWindow(tbBarClassName, "", WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CHILD | WS_VISIBLE,
+                                  0, 0, 1, 1, hwndFrame, 0, hInstance, 0);
+    hwndToolEdit = CreateToolBarWindow(DID_EDITTOOL, hwndFrame, hwndToolbarBar,
+        ID_EDITTB, 17, editButtons, edithints, "Edit Tools", IDH_EDIT_TOOLBAR, TRUE);
+    hwndToolBuildType = CreateToolBarWindow(DID_BUILDTYPETOOL, hwndFrame, hwndToolbarBar,
+        ID_BUILDTYPETB, 4, buildTypeButtons, buildTypehints, "Build Type", IDH_BUILD_TYPE_TOOLBAR, TRUE);
+    hwndToolNav = CreateToolBarWindow(DID_NAVTOOL, hwndFrame, hwndToolbarBar,
+        ID_NAVTB, 13, navButtons, navhints, "Nav Tools", IDH_NAV_TOOLBAR, TRUE);
+    hwndToolBuild = CreateToolBarWindow(DID_BUILDTOOL, hwndFrame, hwndToolbarBar,
+        ID_BUILDTB, 5, makeButtons, makehints, "Build Tools", IDH_BUILD_TOOLBAR, TRUE);
+    hwndToolDebug = CreateToolBarWindow(DID_DEBUGTOOL, hwndFrame, hwndToolbarBar,
+        ID_DEBUGTB, 15, debugButtons, debughints, "Debug Tools", IDH_DEBUG_TOOLBAR, TRUE);
+    hwndToolBookmark = CreateToolBarWindow(DID_BOOKMARKTOOL, hwndFrame, hwndToolbarBar,
+        ID_BOOKMARKTB, 8, bookmarkButtons, bookmarkhints, "Bookmark Tools", IDH_BOOKMARK_TOOLBAR, TRUE);
+    hwndToolThreads = CreateToolBarWindow(DID_THREADSTOOL, hwndFrame, hwndToolbarBar,
+        ID_THREADSTB, 4, threadButtons, threadhints, "Bookmark Tools", IDH_THREAD_TOOLBAR, TRUE);
+
+    
+    hwndTemp = CreateWindow("xccTbStatic", "Thread:", WS_CHILD +
+        WS_VISIBLE, 0,0,100, 200, hwndToolbarBar, 0, hInstance, 0);  
     SendMessage(hwndToolThreads, LCF_ADDCONTROL, 0, (LPARAM)hwndTemp);
     hwndTbThreads = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
         WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
-                        0,0,100, 200, hwndThread, (HMENU)ID_TBTHREADS, hInstance, 0);  
+                        0,0,100, 200, GetWindowHandle(DID_THREADWND), (HMENU)ID_TBTHREADS, hInstance, 0);  
     SendMessage(hwndToolThreads, LCF_ADDCONTROL, 1, (LPARAM)hwndTbThreads);
-    hwndTemp = CreateWindowEx(WS_EX_TRANSPARENT, "xccTbStatic", "Procedure:", WS_CHILD +
-        WS_VISIBLE, 
-                        0,0,100, 200, hwndFrame, 0, hInstance, 0);  
+    hwndTemp = CreateWindow("xccTbStatic", "Procedure:", WS_CHILD +
+        WS_VISIBLE, 0,0,100, 200, hwndToolbarBar, 0, hInstance, 0);  
     SendMessage(hwndToolThreads, LCF_ADDCONTROL, 2, (LPARAM)hwndTemp);
     hwndTbProcedure = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
         WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
-                        0,0,100, 200, hwndStack, (HMENU)ID_TBPROCEDURE, hInstance, 0);  
+                        0,0,100, 200, GetWindowHandle(DID_STACKWND), (HMENU)ID_TBPROCEDURE, hInstance, 0);  
     SendMessage(hwndToolThreads, LCF_ADDCONTROL, 3, (LPARAM)hwndTbProcedure);
   
-    hwndTemp = CreateWindowEx(WS_EX_TRANSPARENT, "xccTbStatic", "Profile:", WS_CHILD +
-        WS_VISIBLE, 
-                        0,0,100, 200, hwndFrame, 0, hInstance, 0);  
+    hwndTemp = CreateWindow("xccTbStatic", "Profile:", WS_CHILD +
+        WS_VISIBLE, 0,0,100, 200, hwndToolbarBar, 0, hInstance, 0);  
     SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 0, (LPARAM)hwndTemp);
     hwndTbProfile = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
         WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
-                        0,0,100, 200, hwndProject, (HMENU)ID_TBPROFILE, hInstance, 0);  
+                        0,0,100, 200, GetWindowHandle(DID_PROJWND), (HMENU)ID_TBPROFILE, hInstance, 0);  
+    SubClassNECombo(hwndTbProfile);
     SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 1, (LPARAM)hwndTbProfile);
-    hwndTemp = CreateWindowEx(WS_EX_TRANSPARENT, "xccTbStatic", "Build Type:", WS_CHILD +
+    hwndTemp = CreateWindow("xccTbStatic", "Build Type:", WS_CHILD +
         WS_VISIBLE, 
-                        0,0,100, 200, hwndFrame, 0, hInstance, 0);  
+                        0,0,100, 200, hwndToolbarBar, 0, hInstance, 0);  
     SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 2, (LPARAM)hwndTemp);
     hwndTbBuildType = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
         WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
-                        0,0,100, 200, hwndProject, (HMENU)ID_TBBUILDTYPE, hInstance, 0);  
+                        0,0,100, 200, GetWindowHandle(DID_PROJWND), (HMENU)ID_TBBUILDTYPE, hInstance, 0);  
+    SubClassNECombo(hwndTbBuildType);
     SendMessage(hwndToolBuildType, LCF_ADDCONTROL, 3, (LPARAM)hwndTbBuildType);
 
 
     hwndTbFind = CreateWindowEx(0, "COMBOBOX", "", WS_CHILD + WS_BORDER +
         WS_VISIBLE + WS_TABSTOP + CBS_DROPDOWN + CBS_AUTOHSCROLL, 
-                        0,0,100, 200, hwndFrame, (HMENU)ID_TBFIND, hInstance, 0);  
+                        0,0,100, 200, hwndToolbarBar, (HMENU)ID_TBFIND, hInstance, 0);  
     SendMessage(hwndToolNav, LCF_ADDCONTROL, 0, (LPARAM)hwndTbFind);
     SubClassHistoryCombo(hwndTbFind);
     

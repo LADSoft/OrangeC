@@ -91,24 +91,42 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="CC386.CFG" />
     <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="res\ocide.exe.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ociderc.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\sqlite3\sqlite3.c" />
     <ClCompile Include="altcomb.c" />
     <ClCompile Include="autodepend.c" />
+    <ClCompile Include="bookmarks.c" />
     <ClCompile Include="brfold.c" />
     <ClCompile Include="brkcode.c" />
     <ClCompile Include="brkdata.c" />
     <ClCompile Include="brkhdwe.c" />
     <ClCompile Include="brkstep.c" />
+    <ClCompile Include="brkwnd.c" />
     <ClCompile Include="browse.c" />
+    <ClCompile Include="brsJump.c" />
+    <ClCompile Include="brsLookup.c" />
+    <ClCompile Include="brswnd.c" />
     <ClCompile Include="buildrul.c" />
     <ClCompile Include="codecomp.c" />
+    <ClCompile Include="ctlbound.c" />
+    <ClCompile Include="ctlcont.c" />
+    <ClCompile Include="ctlframe.c" />
+    <ClCompile Include="ctltab.c" />
+    <ClCompile Include="ctltb.c" />
+    <ClCompile Include="ctltree.c" />
+    <ClCompile Include="ctltt.c" />
     <ClCompile Include="dbgasm.c" />
     <ClCompile Include="dbgdb.c" />
     <ClCompile Include="dbghints.c" />
-    <ClCompile Include="dbglocals.c" />
     <ClCompile Include="dbgmain.c" />
     <ClCompile Include="dbgmem.c" />
     <ClCompile Include="dbgreg.c" />
@@ -117,7 +135,7 @@
     <ClCompile Include="dbgthread.c" />
     <ClCompile Include="dbgwatch.c" />
     <ClCompile Include="dlgctlwnd.c" />
-    <ClCompile Include="DOCKMGR.c" />
+    <ClCompile Include="dlgpropwnd.c" />
     <ClCompile Include="doswind.c" />
     <ClCompile Include="drawacc.c" />
     <ClCompile Include="drawdlg.c" />
@@ -131,9 +149,10 @@
     <ClCompile Include="effect.c" />
     <ClCompile Include="errorwnd.c" />
     <ClCompile Include="extools.c" />
-    <ClCompile Include="FileBrowse.c" />
+    <ClCompile Include="filebrowse.c" />
     <ClCompile Include="filedlg.c" />
     <ClCompile Include="find.c" />
+    <ClCompile Include="findwnd.c" />
     <ClCompile Include="idedialog.c" />
     <ClCompile Include="ideeval.c" />
     <ClCompile Include="idehelp.c" />
@@ -144,27 +163,18 @@
     <ClCompile Include="imgui.c" />
     <ClCompile Include="infownd.c" />
     <ClCompile Include="instance.c" />
-    <ClCompile Include="jumplist.c" />
-    <ClCompile Include="lsblank.c" />
-    <ClCompile Include="lscont.c" />
-    <ClCompile Include="lsctrl.c" />
-    <ClCompile Include="lsframe.c" />
-    <ClCompile Include="lsgrip.c" />
-    <ClCompile Include="lstab.c" />
-    <ClCompile Include="lstool.c" />
-    <ClCompile Include="LSTREE.c" />
-    <ClCompile Include="lstt.c" />
     <ClCompile Include="make.c" />
     <ClCompile Include="makecommon.c" />
-    <ClCompile Include="MAKEGEN.c" />
-    <ClCompile Include="MRU.c" />
+    <ClCompile Include="makegen.c" />
+    <ClCompile Include="memwnd.c" />
+    <ClCompile Include="mru.c" />
     <ClCompile Include="ocide.c" />
-    <ClCompile Include="OPCODES.c" />
-    <ClCompile Include="OPERANDS.c" />
-    <ClCompile Include="PEFILE.c" />
-    <ClCompile Include="POPUP.c" />
+    <ClCompile Include="opcodes.c" />
+    <ClCompile Include="operands.c" />
+    <ClCompile Include="pefile.c" />
+    <ClCompile Include="popup.c" />
     <ClCompile Include="print.c" />
-    <ClCompile Include="PRINTWM.c" />
+    <ClCompile Include="printwm.c" />
     <ClCompile Include="prjdepends.c" />
     <ClCompile Include="prjfile.c" />
     <ClCompile Include="prjfolder.c" />
@@ -172,10 +182,9 @@
     <ClCompile Include="prjutil.c" />
     <ClCompile Include="prjwa.c" />
     <ClCompile Include="prjwnd.c" />
-    <ClCompile Include="PROFILE.c" />
+    <ClCompile Include="profile.c" />
     <ClCompile Include="progress.c" />
     <ClCompile Include="props.c" />
-    <ClCompile Include="propswnd.c" />
     <ClCompile Include="rcerr.c" />
     <ClCompile Include="rcgs.c" />
     <ClCompile Include="rcie.c" />
@@ -186,34 +195,44 @@
     <ClCompile Include="rcsym.c" />
     <ClCompile Include="rcutil.c" />
     <ClCompile Include="rcwrite.c" />
-    <ClCompile Include="SIMOPS.c" />
+    <ClCompile Include="simops.c" />
     <ClCompile Include="slprefs.c" />
     <ClCompile Include="slproj.c" />
     <ClCompile Include="slrule.c" />
     <ClCompile Include="slwa.c" />
-    <ClCompile Include="Splash.c" />
-    <ClCompile Include="SRCHPATH.c" />
-    <ClCompile Include="tabproj.c" />
-    <ClCompile Include="tabtool.c" />
-    <ClCompile Include="TAGS.c" />
+    <ClCompile Include="splash.c" />
+    <ClCompile Include="srchpath.c" />
+    <ClCompile Include="tags.c" />
     <ClCompile Include="toolbar.c" />
-    <ClCompile Include="UZ.c" />
+    <ClCompile Include="unmangle.c" />
+    <ClCompile Include="uz.c" />
     <ClCompile Include="wargs.c" />
     <ClCompile Include="window.c" />
-    <ClCompile Include="XEDIT.c" />
+    <ClCompile Include="xclipbrd.c" />
+    <ClCompile Include="xcodefunc.c" />
+    <ClCompile Include="xcodestruc.c" />
+    <ClCompile Include="xcodeutil.c" />
+    <ClCompile Include="xcolorize.c" />
+    <ClCompile Include="xedit.c" />
+    <ClCompile Include="xformat.c" />
+    <ClCompile Include="xmatch.c" />
+    <ClCompile Include="xpaint.c" />
+    <ClCompile Include="xundo.c" />
+    <ClCompile Include="xutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ASM_KW.H" />
     <ClInclude Include="codecomp.h" />
-    <ClInclude Include="Cvexefmt.h" />
+    <ClInclude Include="ctl.h" />
+    <ClInclude Include="cvexefmt.h" />
     <ClInclude Include="C_KW.H" />
     <ClInclude Include="c_types.h" />
     <ClInclude Include="dbgtype.h" />
     <ClInclude Include="HEADER.H" />
     <ClInclude Include="helpid.h" />
-    <ClInclude Include="HtmlHelp.h" />
+    <ClInclude Include="htmlhelp.h" />
+    <ClInclude Include="idewinconst.h" />
     <ClInclude Include="img.h" />
-    <ClInclude Include="LSCTRL.H" />
     <ClInclude Include="OPCODES.H" />
     <ClInclude Include="OPERANDS.H" />
     <ClInclude Include="parser.h" />
@@ -225,18 +244,12 @@
     <ClInclude Include="rc_kw.h" />
     <ClInclude Include="regexp.h" />
     <ClInclude Include="resedit.h" />
-    <ClInclude Include="Splash.h" />
-    <ClInclude Include="TreeListView.h" />
+    <ClInclude Include="splash.h" />
+    <ClInclude Include="symtypes.h" />
+    <ClInclude Include="treelistview.h" />
     <ClInclude Include="UTYPE.H" />
     <ClInclude Include="wargs.h" />
-    <ClInclude Include="winconst.h" />
     <ClInclude Include="XML.H" />
-  </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="res\ocide.exe.manifest" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="ociderc.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

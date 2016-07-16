@@ -60,7 +60,7 @@ extern CRITICAL_SECTION projectMutex;
 extern HWND prjTreeWindow;
 extern DWINFO *editWindows;
 
-char szWorkAreaName[MAX_PATH] = "Default.cwa";
+char szWorkAreaName[MAX_PATH] = "Default1.cwa";
 char szWorkAreaTitle[256];
 int defaultWorkArea = TRUE;
 PROJECTITEM *workArea;
@@ -80,7 +80,7 @@ void GetDefaultWorkAreaName(char *buf)
 {
     GetDefaultProjectsPath(buf);
 //	GetUserDataPath(buf);
-    strcat(buf,"\\default.cwa");
+    strcat(buf,"\\default1.cwa");
 }
 //-------------------------------------------------------------------------
 
@@ -113,7 +113,7 @@ void LoadWorkArea(char *name, BOOL existing)
     oldWorkArea = workArea;
     workArea = NULL;
     activeProject = NULL;
-    defaultWorkArea = !!stristr(name, "default.cwa");
+    defaultWorkArea = !!stristr(name, "default1.cwa");
     workArea=RestoreWorkArea(name);
     if (workArea)
     {

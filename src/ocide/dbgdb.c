@@ -134,13 +134,18 @@ DEBUG_INFO *DebugDBOpen(char *name)
 int GetSymbolAddress(DEBUG_INFO *dbg_info, char *name)
 {
     static char *query = {
-        "SELECT Globals.varAddress FROM Globals"
-        "    JOIN Names on Globals.symbolId = Names.id"
+        "SELECT globals.varAddress FROM globals"
+        "    JOIN Names on globals.symbolId = Names.id"
         "    WHERE Names.name = ?;"
     };
     static char *query2 = {
         "SELECT Locals.varAddress FROM Locals"
         "    JOIN Names on Locals.symbolId = Names.id"
+        "    WHERE Names.name = ?;"
+    };
+    static char *query3 = {
+        "SELECT virtuals.varAddress FROM virtuals"
+        "    JOIN Names on virtuals.symbolId = Names.id"
         "    WHERE Names.name = ?;"
     };
     int rv = 0;
@@ -176,6 +181,37 @@ int GetSymbolAddress(DEBUG_INFO *dbg_info, char *name)
         if (rc != SQLITE_OK)
         {
             rc = sqlite3_prepare_v2(dbg_info->dbPointer, query2, strlen(query2)+1, &handle, NULL);
+            if (rc == SQLITE_OK)
+            {
+                int done = FALSE;
+                rc = SQLITE_DONE;
+                sqlite3_bind_text(handle, 1, name, strlen(name), SQLITE_STATIC);
+                while (!done)
+                {
+                    switch(rc = sqlite3_step(handle))
+                    {
+                        case SQLITE_BUSY:
+                            done = TRUE;
+                            break;
+                        case SQLITE_DONE:
+                            done = TRUE;
+                            break;
+                        case SQLITE_ROW:
+                            rv = sqlite3_column_int(handle, 0);
+                            rc = SQLITE_OK;
+                            done = TRUE;
+                            break;
+                        default:
+                            done = TRUE;
+                            break;
+                    }
+                }
+            }
+            sqlite3_finalize(handle);
+        }
+        if (rc != SQLITE_OK)
+        {
+            rc = sqlite3_prepare_v2(dbg_info->dbPointer, query3, strlen(query3)+1, &handle, NULL);
             if (rc == SQLITE_OK)
             {
                 int done = FALSE;
@@ -503,17 +539,20 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
     char lname[512];
     int ltype;
     int laddr;
+    char vname[512];
+    int vtype;
+    int vaddr;
     static char *eqquery = {
-        "SELECT Names.name, Globals.varAddress, Globals.typeId FROM Names"
-        "    JOIN Globals on Globals.symbolId = Names.id"
-        "    WHERE Globals.varAddress = ?" 
-        "       ORDER BY Globals.varAddress DESC;"
+        "SELECT Names.name, globals.varAddress, globals.typeId FROM Names"
+        "    JOIN globals on globals.symbolId = Names.id"
+        "    WHERE globals.varAddress = ?" 
+        "       ORDER BY globals.varAddress DESC;"
     };
     static char *lequery = {
-        "SELECT Names.name, Globals.varAddress, Globals.typeId FROM Names"
-        "    JOIN Globals on Globals.symbolId = Names.id"
-        "    WHERE Globals.varAddress <= ?" 
-        "       ORDER BY Globals.varAddress DESC;"
+        "SELECT Names.name, globals.varAddress, globals.typeId FROM Names"
+        "    JOIN globals on globals.symbolId = Names.id"
+        "    WHERE globals.varAddress <= ?" 
+        "       ORDER BY globals.varAddress DESC;"
     };
     static char *leqquery = {
         "SELECT Names.name, Locals.varAddress, Locals.typeId FROM Names"
@@ -527,13 +566,25 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
         "    WHERE Locals.varAddress <= ?" 
         "       ORDER BY Locals.varAddress DESC;"
     };
+    static char *veqquery = {
+        "SELECT Names.name, virtuals.varAddress, virtuals.typeId FROM Names"
+        "    JOIN virtuals on virtuals.symbolId = Names.id"
+        "    WHERE virtuals.varAddress = ?" 
+        "       ORDER BY virtuals.varAddress DESC;"
+    };
+    static char *vlequery = {
+        "SELECT Names.name, virtuals.varAddress, virtuals.typeId FROM Names"
+        "    JOIN virtuals on virtuals.symbolId = Names.id"
+        "    WHERE virtuals.varAddress <= ?" 
+        "       ORDER BY virtuals.varAddress DESC;"
+    };
     char *query = equals ? eqquery : lequery;
     int rv = 0;
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
     gname[0] = lname[0] = 0;
-    gaddr = laddr = 0;
-    type = ltype = 0;
+    gaddr = laddr = vaddr = 0;
+    gtype = ltype = vtype = 0;
     rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
@@ -596,9 +647,41 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
         }
         sqlite3_finalize(handle);
     }
-    if (gaddr && laddr)
+    query = equals ? veqquery : vlequery;
+    rc = SQLITE_OK;
+    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
     {
-        if (gaddr < laddr)
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        sqlite3_bind_int(handle, 1, Address);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                    strcpy(vname, (char *)sqlite3_column_text(handle, 0));
+                    vaddr = sqlite3_column_int(handle, 1);
+                    vtype = sqlite3_column_int(handle, 2);
+                    rc = SQLITE_OK;
+                    done = TRUE;
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        sqlite3_finalize(handle);
+    }
+    if (gaddr < laddr)
+    {
+        if (vaddr < laddr)
         {
             strcpy(name, lname);
             if (type)
@@ -607,34 +690,34 @@ int GetGlobalName(DEBUG_INFO *dbg_info, char *name, int *type, int Address, int 
         }
         else
         {
-            strcpy(name, gname);
+            strcpy(name, vname);
             if (type)
-                *type = gtype;
-            return gaddr;
+                *type = vtype;
+            return vaddr;
         }
     }
-    else if (gaddr)
+    else if (gaddr < vaddr)
+    {
+        strcpy(name, vname);
+        if (type)
+            *type = vtype;
+        return vaddr;
+    }
+    else
     {
         strcpy(name, gname);
         if (type)
             *type = gtype;
         return gaddr;
     }
-    else
-    {
-        strcpy(name, lname);
-        if (type)
-            *type = ltype;
-        return laddr;
-    }
 }
 int GetFuncId(DEBUG_INFO *dbg_info, int Address)
 {
     static char *query = {
-        "SELECT Names.id, Globals.varAddress FROM Names"
-        "    JOIN Globals on Globals.symbolId = Names.id"
-        "    WHERE Globals.varAddress <= ?" 
-        "       ORDER BY Globals.varAddress DESC;"
+        "SELECT Names.id, globals.varAddress FROM Names"
+        "    JOIN globals on globals.symbolId = Names.id"
+        "    WHERE globals.varAddress <= ?" 
+        "       ORDER BY globals.varAddress DESC;"
     };
     static char *lquery = {
         "SELECT Names.id, Locals.varAddress FROM Names"
@@ -642,7 +725,13 @@ int GetFuncId(DEBUG_INFO *dbg_info, int Address)
         "    WHERE Locals.varAddress <= ?" 
         "       ORDER BY Locals.varAddress DESC;"
     };
-    int rv = 0, gbl=0, lcl=0, agbl =0, alcl=0;
+    static char *vquery = {
+        "SELECT Names.id, virtuals.varAddress FROM Names"
+        "    JOIN virtuals on virtuals.symbolId = Names.id"
+        "    WHERE virtuals.varAddress <= ?" 
+        "       ORDER BY virtuals.varAddress DESC;"
+    };
+    int rv = 0, gbl=0, lcl=0, vir = 0, agbl =0, alcl=0, avir = 0;
     int rc = SQLITE_OK;
     sqlite3_stmt *handle;
     rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
@@ -703,8 +792,44 @@ int GetFuncId(DEBUG_INFO *dbg_info, int Address)
         }
         sqlite3_finalize(handle);
     }
-    rv = agbl > alcl ? gbl : lcl;
-    return rv;
+    rc = sqlite3_prepare_v2(dbg_info->dbPointer, vquery, strlen(vquery)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        sqlite3_bind_int(handle, 1, Address);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                    vir = sqlite3_column_int(handle, 0);
+                    avir = sqlite3_column_int(handle, 1);
+                    rc = SQLITE_OK;
+                    done = TRUE;
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        sqlite3_finalize(handle);
+    }
+    if (agbl < alcl)
+        if (avir < alcl)
+            return lcl;
+        else
+            return vir;
+    else if (agbl < avir)
+        return vir;
+    else
+        return gbl;
 }
 NAMELIST *GetEnclosedAutos(DEBUG_INFO *dbg_info, int funcId, int line)
 {
@@ -870,13 +995,55 @@ int GetGlobalSymbolAddress(DEBUG_INFO *dbg_info, char *name, char *filename, int
     if (!rv)
     {
         static char *glquery = {
-            "SELECT Globals.varAddress, Globals.typeId FROM Globals"
-            "    JOIN Names on Globals.symbolId = Names.id"
+            "SELECT globals.varAddress, globals.typeId FROM globals"
+            "    JOIN Names on globals.symbolId = Names.id"
             "    WHERE Names.name = ? OR Names.Name = ?;"
         };
         int rc = SQLITE_OK;
         sqlite3_stmt *handle;
         rc = sqlite3_prepare_v2(dbg_info->dbPointer, glquery, strlen(glquery)+1, &handle, NULL);
+        if (rc == SQLITE_OK)
+        {
+            int done = FALSE;
+            rc = SQLITE_DONE;
+            sqlite3_bind_text(handle, 1, iname, strlen(iname), SQLITE_STATIC);
+            sqlite3_bind_text(handle, 2, name, strlen(name), SQLITE_STATIC);
+            while (!done)
+            {
+                switch(rc = sqlite3_step(handle))
+                {
+                    case SQLITE_BUSY:
+                        done = TRUE;
+                        break;
+                    case SQLITE_DONE:
+                        done = TRUE;
+                        break;
+                    case SQLITE_ROW:
+                        *address = sqlite3_column_int(handle, 0);
+                        *type = sqlite3_column_int(handle, 1);
+                        rv = TRUE;
+                        rc = SQLITE_OK;
+                        done = TRUE;
+                        break;
+                    default:
+                        done = TRUE;
+                        break;
+                }
+            }
+            sqlite3_finalize(handle);
+        }
+    }
+    // now search the globals
+    if (!rv)
+    {
+        static char *virquery = {
+            "SELECT virtuals.varAddress, virtuals.typeId FROM virtuals"
+            "    JOIN Names on virtuals.symbolId = Names.id"
+            "    WHERE Names.name = ? OR Names.Name = ?;"
+        };
+        int rc = SQLITE_OK;
+        sqlite3_stmt *handle;
+        rc = sqlite3_prepare_v2(dbg_info->dbPointer, virquery, strlen(virquery)+1, &handle, NULL);
         if (rc == SQLITE_OK)
         {
             int done = FALSE;
@@ -1043,6 +1210,45 @@ int GetTypeName(DEBUG_INFO *dbg_info, int type, char *name)
     }
     return rv;
 }
+int GetReturnTypeQualifier(DEBUG_INFO *dbg_info, int type)
+{
+    static char *query = {
+        "SELECT Types.baseType from types"
+        "    WHERE Types.id = ?"
+    };
+    int rv = 0;
+    int rc = SQLITE_OK;
+    sqlite3_stmt *handle;
+    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        sqlite3_bind_int(handle, 1, type);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                    rv = sqlite3_column_int(handle, 0);
+                    rc = SQLITE_OK;
+                    done = TRUE;
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        sqlite3_finalize(handle);
+    }
+    return rv;
+}
 int GetTypeQualifier(DEBUG_INFO *dbg_info, int type)
 {
     static char *query = {
@@ -1081,6 +1287,212 @@ int GetTypeQualifier(DEBUG_INFO *dbg_info, int type)
         sqlite3_finalize(handle);
     }
     return rv;
+}
+FUNCTIONLIST *LookupCPPNames(DEBUG_INFO *dbg_info, char *name, FUNCTIONLIST *in)
+{
+    static char *query = {
+        "SELECT id From Names"
+        "     Where name = ?"
+    };
+    static char *query1 = {
+        "SELECT complexId FROM CPPNameMapping"
+        "    WHERE simpleId = ?"
+    };
+    static char *query2 = {
+        
+        "SELECT name From Names"
+        "     Where id = ?"
+    };
+    static char *query3 = {
+        "SELECT varAddress From globals"
+        "    Where symbolId = ?"
+    };
+    static char *query4 = {
+        "SELECT varAddress From virtuals"
+        "    Where symbolId = ?"
+    };
+        
+    int id = -1;
+    int rv = 0;
+    int rc = SQLITE_OK;
+    sqlite3_stmt *handle;
+    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query, strlen(query)+1, &handle, NULL);
+    if (rc == SQLITE_OK)
+    {
+        int done = FALSE;
+        rc = SQLITE_DONE;
+        sqlite3_bind_text(handle, 1, name, strlen(name), SQLITE_STATIC);
+        while (!done)
+        {
+            switch(rc = sqlite3_step(handle))
+            {
+                case SQLITE_BUSY:
+                    done = TRUE;
+                    break;
+                case SQLITE_DONE:
+                    done = TRUE;
+                    break;
+                case SQLITE_ROW:
+                    id = sqlite3_column_int(handle, 0);
+                    rc = SQLITE_OK;
+                    done = TRUE;
+                    break;
+                default:
+                    done = TRUE;
+                    break;
+            }
+        }
+        sqlite3_finalize(handle);
+    }
+    if (id >= 0)
+    {
+        rc = sqlite3_prepare_v2(dbg_info->dbPointer, query1, strlen(query1)+1, &handle, NULL);
+        if (rc == SQLITE_OK)
+        {
+            int done = FALSE;
+            rc = SQLITE_DONE;
+            sqlite3_bind_int(handle, 1, id);
+            while (!done)
+            {
+                switch(rc = sqlite3_step(handle))
+                {
+                    case SQLITE_BUSY:
+                        done = TRUE;
+                        break;
+                    case SQLITE_DONE:
+                        done = TRUE;
+                        rc = SQLITE_OK;
+                        break;
+                    case SQLITE_ROW:
+                    {
+                        FUNCTIONLIST *next = calloc(sizeof(FUNCTIONLIST), 1);
+                        next->address = -sqlite3_column_int(handle, 0);
+                        next->next = in;
+                        in = next;
+                        break;
+                    }
+                    default:
+                        done = TRUE;
+                        break;
+                }
+            }
+            sqlite3_finalize(handle);
+        }
+        if (rc == SQLITE_OK)
+        {
+            FUNCTIONLIST *scan = in;
+            while (scan)
+            {
+                if (scan->address < 0)
+                {
+                    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query2, strlen(query2)+1, &handle, NULL);
+                    if (rc == SQLITE_OK)
+                    {
+                        int done = FALSE;
+                        rc = SQLITE_DONE;
+                        sqlite3_bind_int(handle, 1, -scan->address);
+                        while (!done)
+                        {
+                            switch(rc = sqlite3_step(handle))
+                            {
+                                case SQLITE_BUSY:
+                                    done = TRUE;
+                                    break;
+                                case SQLITE_DONE:
+                                    done = TRUE;
+                                    break;
+                                case SQLITE_ROW:
+                                    strcpy(scan->name, (char *)sqlite3_column_text(handle, 0));
+                                    rc = SQLITE_OK;
+                                    done = TRUE;
+                                    break;
+                                default:
+                                    done = TRUE;
+                                    break;
+                            }
+                        }
+                        sqlite3_finalize(handle);
+                    }
+                }
+                scan = scan->next;
+            }
+            scan = in;
+            while (scan)
+            {
+                if (scan->address < 0)
+                {
+                    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query3, strlen(query3)+1, &handle, NULL);
+                    if (rc == SQLITE_OK)
+                    {
+                        int done = FALSE;
+                        rc = SQLITE_DONE;
+                        sqlite3_bind_int(handle, 1, -scan->address);
+                        while (!done)
+                        {
+                            switch(rc = sqlite3_step(handle))
+                            {
+                                case SQLITE_BUSY:
+                                    done = TRUE;
+                                    break;
+                                case SQLITE_DONE:
+                                    done = TRUE;
+                                    break;
+                                case SQLITE_ROW:
+                                    scan->address = sqlite3_column_int(handle, 0);
+                                    rc = SQLITE_OK;
+                                    done = TRUE;
+                                    break;
+                                default:
+                                    done = TRUE;
+                                    break;
+                            }
+                        }
+                        sqlite3_finalize(handle);
+                    }
+                }
+                scan = scan->next;
+            }
+            scan = in;
+            while (scan)
+            {
+                if (scan->address < 0)
+                {
+                    rc = sqlite3_prepare_v2(dbg_info->dbPointer, query4, strlen(query4)+1, &handle, NULL);
+                    if (rc == SQLITE_OK)
+                    {
+                        int done = FALSE;
+                        rc = SQLITE_DONE;
+                        sqlite3_bind_int(handle, 1, -scan->address);
+                        while (!done)
+                        {
+                            switch(rc = sqlite3_step(handle))
+                            {
+                                case SQLITE_BUSY:
+                                    done = TRUE;
+                                    break;
+                                case SQLITE_DONE:
+                                    done = TRUE;
+                                    break;
+                                case SQLITE_ROW:
+                                    scan->address = sqlite3_column_int(handle, 0);
+                                    rc = SQLITE_OK;
+                                    done = TRUE;
+                                    break;
+                                default:
+                                    done = TRUE;
+                                    break;
+                            }
+                        }
+                        sqlite3_finalize(handle);
+                    }
+                }
+                scan = scan->next;
+            }
+        }
+    }
+    
+    return in;
+    
 }
 int LookupTypedefValues(DEBUG_INFO *dbg_info, int type)
 {

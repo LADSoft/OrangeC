@@ -1,0 +1,83 @@
+debug info for AES.C
+
+autocomplete is confused between structures and regular names
+
+ending brace at end of line
+warnings not entirely displayed
+
+debug clean up artifacts on trees
+
+allow drag windows onto the desktop
+
+debug can't parse array elements for [] definition in func header
+allow click on tree to change open properties window
+hints on property pages
+
+select c++ function name doesn't allow 'operator char()' for example
+
+no ws on startup
+
+redo gui using themes...
+
+smart status bar
+
+--------------------
+
+when displaying types, insert name before []
+
+------------------------------
+gui for adding rules...
+
+1) maybe add 'pins' for watch info similar to what is found in later versions of VS
+2) integrate ZIP/UNZIP functionality into the IDE for project rollup
+
+
+remember tree expansions
+find window docking
+resource window: don't show non-resource subtrees
+save bitmaps in multiple formats
+hints for variables: show structured info now and allow drilling down
+menu & dialog simulator for resources
+
+general properties redraw issues -> allow resize
+browse info: browse to constructor, destructor, or operator func
+    when selected via -> or .
+code completion: completion for non instantiated member functions
+code completion: handle ":: " at beginning of global name
+code completion: structured return values from functions
+code completion: dotstar and pointstar operators
+code completion: using statements in nested namespaces...
+code completion: namespace-qualifed structure is not completed
+debug info:      "->"
+
+debug info/code completion: retest with header files
+bug(variable usages window): printf found apparently in inline expansion...
+
+
+debug info:
+    show vtabs?
+
+browse info:
+    select function associated with current class?
+    class browser?
+
+code completion:
+    in structures, don't show base classes (just show the accessible members,
+        should this be qualified inside member functions?)
+    in structures, show member functions (one entry for each function group should suffice,
+            pick the least restrictive for the icon)
+    in structures, icons for private, public, protected, functions vs data and member data vs static data
+
+    in functions, allow cycling through list of functions.
+    allow parsing full range of C++
+    allow for . and -> in functions and filter appropriately
+    filter functions when qualified
+
+    function list instead of single function
+    hints allow full nesting of vars
+public, protect, private
+static member
+regular member
+member function
+virtual member function
+static member function

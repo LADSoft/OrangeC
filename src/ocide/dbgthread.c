@@ -49,14 +49,14 @@
 #include <ctype.h>
 
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame;
-extern HWND hwndRegister, hwndWatch, hwndLocals, hwndStack, hwndThread, hwndMem, hwndASM;
+extern HWND hwndClient, hwndFrame;
+extern HWND hwndASM;
 extern THREAD *activeThread;
 extern PROCESS *activeProcess;
 extern enum DebugState uState;
 extern HWND hwndTbThreads;
 
-HWND hwndThread;
+static HWND hwndThread;
 
 static char szThreadClassName[] = "xccThreadClass";
 static int DisplayThreads;
@@ -64,7 +64,7 @@ static HWND hwndLV;
 static int curSel;
 static HIMAGELIST tagImageList;
 
-static char *szThreadTitle = "Thread Window";
+static char *szThreadTitle = "Threads";
 
 static void CopyText(HWND hwnd)
 {
@@ -86,11 +86,13 @@ static void CopyText(HWND hwnd)
         {
             char name[256];
             int eip = list->regs.Eip;
-            if (!FindFunctionName(name, eip))
+            int n;
+            n = FindFunctionName(name, eip, NULL, NULL);
+            if (!n)
                 name[0] = 0;
             if (list->idThread == activeThread->idThread)
                 strcat(name, "*");
-            sprintf(p + strlen(p), "%d\t%s\n", list->idThread, name);
+            sprintf(p + strlen(p), "%d\t%s + 0x%x\n", list->idThread, name, eip - n);
             list = list->next;
         }
         TextToClipBoard(hwnd, p);
@@ -131,12 +133,15 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             {
                 LV_DISPINFO *p = (LV_DISPINFO *)lParam;
                 THREAD *x = (THREAD *)p->item.lParam;
-                char name[256];
+                char name[256], name1[256];
                 if (p->item.iSubItem == 2)
                 {
                     int eip = x->regs.Eip;
-                    if (!FindFunctionName(name, eip))
-                        name[0] = 0;
+                    int n;
+                    n = FindFunctionName(name1, eip, NULL, NULL);
+                    if (!n)
+                        name1[0] = 0;
+                    sprintf(name, "%s + 0x%x", name1, eip - n);
                 }
                 else
                 {
@@ -215,18 +220,20 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
             item.mask = LVIF_IMAGE;
             item.iImage = 4;
             ListView_SetItem(hwndLV, &item);
-            if (hwndRegister)
-                PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-                    activeThread->hThread);
-            PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
-            PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
-            if (hwndStack)
-                PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
-            if (hwndMem)
-                PostMessage(hwndMem, WM_RESTACK, 0, 0);
-            if (hwndASM)
-                SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-                            activeThread->regs.Eip);
+            PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+                activeThread->hThread);
+            PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_WATCHWND+1, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_WATCHWND+2, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_WATCHWND+3, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_LOCALSWND, WM_COMMAND, ID_SETADDRESS, 0);
+            PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
+            PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
+            PostDIDMessage(DID_MEMWND+1, WM_RESTACK, 0, 0);
+            PostDIDMessage(DID_MEMWND+2, WM_RESTACK, 0, 0);
+            PostDIDMessage(DID_MEMWND+3, WM_RESTACK, 0, 0);
+            SendMessage(hwndASM, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+                        activeThread->regs.Eip);
             SendMessage(hwndTbThreads, CB_SETCURSEL, curSel, 0);
 
         }
@@ -322,9 +329,10 @@ LRESULT CALLBACK ThreadProc(HWND hwnd, UINT iMessage, WPARAM
 
 //-------------------------------------------------------------------------
 
-void RegisterThreadWindow(void)
+void RegisterThreadWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
+    HBITMAP bitmap;
     memset(&wc, 0, sizeof(wc));
     wc.style = CS_HREDRAW + CS_VREDRAW + CS_DBLCLKS;
     wc.lpfnWndProc = &ThreadProc;
@@ -337,6 +345,12 @@ void RegisterThreadWindow(void)
     wc.lpszMenuName = 0;
     wc.lpszClassName = szThreadClassName;
     RegisterClass(&wc);
+
+    bitmap = LoadBitmap(hInstance, "ID_TAG");
+    ChangeBitmapColor(bitmap, 0xc0c0c0, RetrieveSysColor(COLOR_WINDOW));
+    tagImageList = ImageList_Create(16, 16, ILC_COLOR24, ILEDIT_IMAGECOUNT, 0);
+    ImageList_Add(tagImageList, bitmap, NULL);
+    DeleteObject(bitmap);
 }
 
 //-------------------------------------------------------------------------
@@ -349,13 +363,7 @@ HWND CreateThreadWindow(void)
     }
     else
     {
-        HBITMAP bitmap;
-        bitmap = LoadBitmap(hInstance, "ID_TAG");
-        ChangeBitmapColor(bitmap, 0xc0c0c0, RetrieveSysColor(COLOR_WINDOW));
-        tagImageList = ImageList_Create(16, 16, ILC_COLOR24, ILEDIT_IMAGECOUNT, 0);
-        ImageList_Add(tagImageList, bitmap, NULL);
-        DeleteObject(bitmap);
-        hwndThread = CreateDockableWindow(DID_THREADWND, szThreadClassName, szThreadTitle, hInstance, 30 * 8, 19 * 8);
+        hwndThread = CreateInternalWindow(DID_THREADWND, szThreadClassName, szThreadTitle);
     }
     return hwndThread;
 }

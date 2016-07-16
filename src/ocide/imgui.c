@@ -912,7 +912,7 @@ static void PositionCaret(IMGDATA *p)
     hf = SelectObject(dc, p->drawFont);
     if (sz.cx > (p->selectRect.right - p->selectRect.left) * p->zoom)
         sz.cx = (p->selectRect.right - p->selectRect.left) * p->zoom;
-    SetCaretPos(p->selectRect.left * p->zoom + sz.cx - p->showX, p->selectRect.top * p->zoom- p->showY);
+    SetCaretPos(p->selectRect.left * p->zoom - p->showX + sz.cx, p->selectRect.top * p->zoom - p->showY);
 }
 static void DoShowCaret(IMGDATA *p)
 {
@@ -1862,7 +1862,8 @@ static void mouseMove(HWND hwnd, IMGDATA*p, int x, int y)
             case IDM_TEXT:
                 if (p->selected)
                 {
-                    p->selectMovePos = pt;
+                    if (pt.x < p->res->width && pt.y < p->res->height)
+                        p->selectMovePos = pt;
                     break;
                 }
             case IDM_POLY:
@@ -2155,6 +2156,7 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 case IDM_SAVE:
                 {
                     p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);
+                    unselectDo(p);
                     if (p->resource->resource->changed)
                         ResSaveCurrent(workArea, p->resource);
                 }
@@ -2191,7 +2193,7 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     XFORM xx = { -1, 0, 0, 1 };
                     p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);
-                    xx.eDx = p->selectRect.right + p->selectRect.left;
+                    xx.eDx = p->selectRect.right + p->selectRect.left-1;
                     FlipOrRotate(p, &xx, 
                                  p->selectRect.left, p->selectRect.top,
                                  p->selectRect.right- p->selectRect.left,
@@ -2208,7 +2210,7 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     XFORM xx = { 1, 0, 0, -1 };
                     p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);
-                    xx.eDy = p->selectRect.bottom + p->selectRect.top;
+                    xx.eDy = p->selectRect.bottom + p->selectRect.top-1;
                     FlipOrRotate(p, &xx, 
                                  p->selectRect.left, p->selectRect.top,
                                  p->selectRect.right- p->selectRect.left,
@@ -2281,8 +2283,8 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     XFORM xx = { -1, 0, 0, -1 };
                     p = (IMGDATA *)GetWindowLong(hwnd, GWL_USERDATA);
-                    xx.eDx = p->selectRect.right + p->selectRect.left;
-                    xx.eDy = p->selectRect.bottom + p->selectRect.top;
+                    xx.eDx = p->selectRect.right + p->selectRect.left-1;
+                    xx.eDy = p->selectRect.bottom + p->selectRect.top-1;
                     FlipOrRotate(p, &xx, 
                                  p->selectRect.left, p->selectRect.top,
                                  p->selectRect.right- p->selectRect.left,
@@ -2344,11 +2346,16 @@ LRESULT CALLBACK  DrawAreaWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         SendMessage(p->hwndControlToolbar, TB_CHECKBUTTON, IDM_SELECT, MAKELPARAM(TRUE, 0));
                         p->drawMode = IDM_SELECT;
                         p->cursor = arrowCursor;
-                        p->selectRect.left = p->selectRect.top = 0;
-                        p->selectRect.right = data->width;
-                        p->selectRect.bottom = data->height;
+                        p->selectRect.left = 0;
+                        p->selectRect.top = 0;
+                        p->selectRect.right = p->selectRect.left + data->width;
+                        p->selectRect.bottom = p->selectRect.top + data->height;
                         InsertImageUndo(p->hwndSelf, p->res);
                         selectDo(p);
+                        p->selectRect.left = p->showX/p->zoom;
+                        p->selectRect.top = p->showY/p->zoom;
+                        p->selectRect.right = p->selectRect.left + data->width;
+                        p->selectRect.bottom = p->selectRect.top + data->height;
                         p->res = oldres;
                         FreeImageResource(data);
                         InvalidateRect(hwnd, 0, 0);
@@ -3303,8 +3310,9 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 ApplyDialogFont(p->hwndImageTab);
                 InsertTabs(p, p->resList);
             }
-            p->hwndFontTB = CreateToolBarWindow(-1, hwnd, hwnd, 16,
-                16, IDB_FONTTOOLBAR, 5, fontButtons, fontHints, 0, "Font Tools", IDB_FONTTOOLBAR);
+            p->hwndFontTB = CreateToolBarWindow(-1, hwnd, hwnd,
+                IDB_FONTTOOLBAR, 5, fontButtons, fontHints, "Font Tools", IDB_FONTTOOLBAR, FALSE);
+            SendMessage(p->hwndFontTB, LCF_FLOATINGTOOL, 0, 0);
 //            p->hwndFontTB = CreateToolbarEx(hwnd, WS_CHILD | WS_CLIPSIBLINGS | TBSTYLE_TRANSPARENT | CCS_NODIVIDER, 
 //                ID_FONTTOOLBAR, 3, hInstance, (UINT)fontToolBitmap, 
 //                &fontButtons, 5, 16, 16, 16, 16, sizeof(TBBUTTON));
@@ -3461,7 +3469,7 @@ LRESULT CALLBACK  ImageWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 }
 
 
-void RegisterImageWindows(void)
+void RegisterImageWindows(HINSTANCE hInstance)
 {
     WNDCLASS wc;
 

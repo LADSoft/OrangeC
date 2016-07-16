@@ -48,22 +48,143 @@
 #include "header.h"
 
 extern HANDLE hInstance;
-extern HWND hwndWatch, hwndClient, hwndFrame, hwndTab, hwndError;
+extern HWND hwndClient, hwndFrame;
 extern LOGFONT systemDialogFont;
 
+int latch;
+
+int simpleFindFlags = FR_DOWN ;
+
 static HWND hwndInfo;
-static int latch;
 static char szInfoClassName[] = "xccInfoClass";
 static WNDPROC oldproc;
-static HWND hwndCtrl, lsTabCtrl;
+static HWND hwndCtrl;
 static int index;
 static int wheelIncrement;
-
+static HWND combo;
+static HWND label;
 static char *nameTags[] = 
 {
-    "Build", "Debug", "Find in Files 1", "Find in Files 2"
+    "Build", "Debug"
 };
-static char *szInfoTitle = "Information Window";
+TBBUTTON infoButtons[] = 
+{
+    {
+        0, IDM_GOTO, TBSTATE_ENABLED | TBSTATE_WRAP, TBSTYLE_BUTTON
+    }
+    ,
+    {
+        0, 0, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT
+    }
+    , 
+    {
+        1, IDM_PREVBOOKMARK, TBSTATE_ENABLED | TBSTATE_WRAP, TBSTYLE_BUTTON
+    }
+    ,
+    {
+        2, IDM_NEXTBOOKMARK, TBSTATE_ENABLED | TBSTATE_WRAP, TBSTYLE_BUTTON
+    }
+    ,
+    {
+        0, 0, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT
+    }
+    , 
+    {
+        4, IDM_FIND, TBSTATE_ENABLED | TBSTATE_WRAP, TBSTYLE_BUTTON
+    }
+    ,
+    {
+        0, 0, TBSTATE_WRAP, TBSTYLE_SEP | TBSTYLE_FLAT
+    }
+    , 
+    {
+        3, IDM_CLEAR, TBSTATE_ENABLED | TBSTATE_WRAP, TBSTYLE_BUTTON
+    }
+    ,
+    {
+        0, 0, 0, 0
+    }
+};
+char *infoHints[] = { "Goto info", "", "Previous", "Next", "", "Find In Window", "", "Clear window" };
+
+static HWND toolbar;
+static char *szInfoTitle = "Information";
+
+void GetSimpleCharRange(HWND hwnd, int flags, FINDTEXT *findText)
+{
+    CHARRANGE pos;
+    int len = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0);
+    SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &pos);
+    if (pos.cpMin == pos.cpMax)
+        pos.cpMin = pos.cpMax = 0;
+    if (flags & FR_DOWN)
+    {
+        findText->chrg.cpMin = pos.cpMax;
+        findText->chrg.cpMax = len;
+    }
+    else
+    {
+        findText->chrg.cpMin = pos.cpMin;
+        findText->chrg.cpMax = 0;
+    }
+}
+LRESULT CALLBACK SimpleFindDialogProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+    static HWND hwndEdit;
+    switch (iMessage)
+    {
+        //IDC_COMBOFINDFIND
+        case WM_INITDIALOG:
+            CenterWindow(hwndDlg);
+            hwndEdit = (HWND)lParam;
+            CheckDlgButton(hwndDlg,IDC_CHECKFINDCASE, simpleFindFlags & FR_MATCHCASE ? BST_CHECKED : BST_UNCHECKED);
+            CheckDlgButton(hwndDlg,IDC_CHECKFINDWHOLE, simpleFindFlags & FR_WHOLEWORD ? BST_CHECKED : BST_UNCHECKED);
+            CheckRadioButton(hwndDlg, IDC_CHECKFINDUP, IDC_CHECKFINDDOWN, simpleFindFlags & FR_DOWN ? IDC_CHECKFINDDOWN : IDC_CHECKFINDUP); 
+            return TRUE;
+        case WM_COMMAND:
+            switch (wParam)
+            {
+                case IDOK:
+                {
+                    int n = 0;
+                    FINDTEXT findText;
+                    char buf[256];
+                    GetDlgItemText(hwndDlg, IDC_COMBOFINDFIND, buf, sizeof(buf));
+                    if (IsDlgButtonChecked(hwndDlg, IDC_CHECKFINDCASE) == BST_CHECKED)
+                        n |= FR_MATCHCASE;                
+                    if (IsDlgButtonChecked(hwndDlg, IDC_CHECKFINDWHOLE) == BST_CHECKED)
+                        n |= FR_WHOLEWORD;
+                    if (IsDlgButtonChecked(hwndDlg, IDC_CHECKFINDDOWN) == BST_CHECKED)
+                        n |= FR_DOWN; 
+                    simpleFindFlags = n;
+                    GetSimpleCharRange(hwndEdit, simpleFindFlags, &findText);
+                    findText.lpstrText = buf;
+                    n = SendMessage(hwndEdit, EM_FINDTEXT, simpleFindFlags, (LPARAM)&findText);
+                    if (n == -1)
+                    {
+                        MessageBeep(0);
+                    }
+                    else
+                    {
+                        findText.chrg.cpMin = n;
+                        findText.chrg.cpMax = n + strlen(buf);
+                        SendMessage(hwndEdit, EM_EXSETSEL, 0, (LPARAM)&findText.chrg);
+                        SendMessage(hwndEdit, EM_SCROLLCARET, 0, 0);
+                    }
+                    break;
+                }
+                case IDCANCEL:
+                    EndDialog(hwndDlg, 0);
+                    break;
+            }
+    }
+    return 0;
+}
+void SimpleSearchInTextBox(HWND hwndEdit)
+{
+    CreateDialogParam(hInstance, "IDD_SIMPLEFIND",hwndFrame,(DLGPROC)SimpleFindDialogProc, (LPARAM)hwndEdit);
+    
+}
 int getfile(char *start, char *buffer, char end, DWINFO *info)
 {
     char *t = buffer, *q;
@@ -166,37 +287,14 @@ void TextToClipBoard(HWND hwnd, char *text)
 }
 //-------------------------------------------------------------------------
 
-void BumpToEditor(HWND hwnd)
+BOOL bump(HWND hwnd, char *buffer)
 {
     DWINFO info;
-    char   buffer[512],  *t, *q;
+    char  *t, *q;
     int lineno;
     int start;
-    SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
-    lineno = SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, start);
-    *(short*)buffer = 512;
-    lineno = SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer);
-    buffer[lineno] = 0;
     lineno =  - 1;
-    if (index >= 2) /* find in file dialog */
-    {
-        t = info.dwName;
-        q = buffer;
-        while (*q && !isspace(*q))
-        {
-            *t++ = *q++;
-        }
-        *t = 0;
-        while (isspace(*q))
-            q++;
-        lineno = atoi(q);
-        q = strrchr(info.dwName, '\\');
-        if (q)
-            strcpy(info.dwTitle, q + 1);
-        else
-            strcpy(info.dwTitle, info.dwName);
-    }
-    else if ((t = strchr(buffer, '(')) && isdigit(*(t + 1)))
+    if ((t = strchr(buffer, '(')) && isdigit(*(t + 1)))
     {
         lineno = getfile(buffer, t, ')', &info);
     }
@@ -225,10 +323,77 @@ void BumpToEditor(HWND hwnd)
         info.logMRU = FALSE;
         info.newFile = FALSE;
         CreateDrawWindow(&info, TRUE);
+        return TRUE;
     }
-
+    return FALSE;
 }
-void BumpToErrorWnd(char *buffer)
+static void Prev(HWND hwnd)
+{
+    char   buffer[512];
+    int lineno;
+    int start;
+    int end = 0;
+    BOOL found = FALSE;
+    SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
+    lineno = SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, start);
+    while (lineno--)
+    {
+        *(short*)buffer = 512;
+        buffer[SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer)]= 0;
+        if (found = bump(hwnd, buffer))
+            break;
+    }
+    if (found)
+    {
+        CHARRANGE a;
+        a.cpMin = SendMessage(hwnd, EM_LINEINDEX, lineno, 0);
+        a.cpMax = a.cpMin;
+        SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
+        SendMessage(hwnd, EM_SCROLLCARET, 0, 0);
+        a.cpMax = a.cpMin + strlen(buffer);
+        SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
+    }
+}
+static void Next(HWND hwnd)
+{
+    char   buffer[512];
+    int lineno;
+    int start;
+    int end = SendMessage(hwnd, EM_GETLINECOUNT, 0, 0);
+    BOOL found = FALSE;
+    SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
+    lineno = SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, start);
+    while (++lineno < end)
+    {
+        *(short*)buffer = 512;
+        buffer[SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer)]= 0;
+        if (found = bump(hwnd, buffer))
+            break;
+    }
+    if (found)
+    {
+        CHARRANGE a;
+        a.cpMin = SendMessage(hwnd, EM_LINEINDEX, lineno, 0);
+        a.cpMax = a.cpMin;
+        SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
+        SendMessage(hwnd, EM_SCROLLCARET, 0, 0);
+        a.cpMax = a.cpMin + strlen(buffer);
+        SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM)&a);
+    }
+}
+static void BumpToEditor(HWND hwnd)
+{
+    char   buffer[512];
+    int lineno;
+    int start;
+    SendMessage(hwnd, EM_GETSEL, (WPARAM) &start, 0);
+    lineno = SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, start);
+    *(short*)buffer = 512;
+    lineno = SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer);
+    buffer[lineno] = 0;
+    bump(hwnd, buffer);
+}
+static void BumpToErrorWnd(char *buffer)
 {
     DWINFO info;
     char  *t, *q, *err = NULL;
@@ -283,13 +448,13 @@ void BumpToErrorWnd(char *buffer)
             err++;
         strcpy(p->error, err);
         strcpy(p->file, info.dwName);
-        PostMessage(hwndError, WM_SETERRDATA, 0, (LPARAM)p);
+        PostDIDMessage(DID_ERRWND, WM_SETERRDATA, 0, (LPARAM)p);
     }
 }
 
 //-------------------------------------------------------------------------
 
-static void CopyText(HWND hwnd)
+void EditCopyText(HWND hwnd)
 {
     char *p;
     int l;
@@ -316,6 +481,22 @@ LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
     switch (iMessage)
     {
+        case WM_SYSCHAR:
+        case WM_SYSDEADCHAR:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        {
+            // I don't know why I have to do this.   MEnu access keys don't work
+            // unless I do though.
+            HWND hwnd1 = GetParent(hwnd);
+            while (hwnd1 != HWND_DESKTOP)
+            {
+                hwnd = hwnd1;
+                hwnd1 = GetParent(hwnd);
+            }
+            
+            return SendMessage(hwnd, iMessage, wParam, lParam);
+        }
         case WM_CREATE:
             rv = CallWindowProc(oldproc, hwnd, iMessage, wParam, lParam);
             //         SendMessage(hwnd,EM_NOCOLORIZE,0,0) ;
@@ -367,7 +548,7 @@ LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 case 'C':
                     if (GetKeyState(VK_CONTROL) &0x80000000)
                     {
-                        CopyText(hwnd);
+                        EditCopyText(hwnd);
                     }
                     break;
                 case VK_CONTROL:
@@ -391,7 +572,6 @@ LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     SendMessage(hwnd, WM_VSCROLL, SB_BOTTOM, 0);
                     break;
                 default:
-                    MessageBeep(MB_OK);
                     break;
             }
             return 0;
@@ -469,8 +649,7 @@ LRESULT CALLBACK buildEditProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam)
 {
-    static HWND hsubwnds[4]; // build, debug, find1, find2
-    static HFONT textFont;
+    static HWND hsubwnds[2]; // build, debug, find1, find2
     CHARFORMAT cfm;
     NMHDR *h;
     RECT r;
@@ -479,7 +658,7 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     PAINTSTRUCT ps;
     HPEN pen;
     int i;
-    static int colors[4];
+    static int colors[2];
     static int forecolor;
     switch (iMessage)
     {
@@ -491,23 +670,40 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_LBUTTONDOWN:
             return SendMessage(hsubwnds[index], iMessage, wParam, lParam);
-        case WM_NOTIFY:
-            h = (NMHDR*)lParam;
-            switch (h->code)
+        case WM_COMMAND:
+            switch (HIWORD(wParam))
             {
-                case TABN_SELECTED:
+                case CBN_SELCHANGE:
                 {
-                    LSTABNOTIFY *p = (LSTABNOTIFY *)h;
-                    ShowWindow(hsubwnds[index], SW_HIDE);
-                    for (i=0; i < 4; i++)
-                        if (p->lParam == (LPARAM)hsubwnds[i])
-                            index = i;
-                    ShowWindow(hsubwnds[index], SW_SHOW);
+                    int newindex = SendMessage((HWND)lParam, CB_GETCURSEL, 0, 0);
+                    if (newindex != CB_ERR)
+                    {
+                        ShowWindow(hsubwnds[index], SW_HIDE);
+                        index = newindex;
+                        ShowWindow(hsubwnds[index], SW_SHOW);
+                    }
                     break;
+                    
                 }
             }
-            break;
-        case WM_COMMAND:
+            switch (LOWORD(wParam))
+            {
+                case IDM_FIND:
+                    SimpleSearchInTextBox(hsubwnds[index]);
+                    break;
+                case IDM_GOTO:
+                    BumpToEditor(hsubwnds[index]);
+                    break;
+                case IDM_PREVBOOKMARK:
+                    Prev(hsubwnds[index]);
+                    break;
+                case IDM_NEXTBOOKMARK:
+                    Next(hsubwnds[index]);
+                    break;
+                case IDM_CLEAR:
+                    SendMessage(hsubwnds[index], WM_SETTEXT, 0, (LPARAM)"");
+                    break;
+            }
             break;
         case WM_VSCROLL:
                 break;
@@ -518,7 +714,7 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (!lParam)
             {
                 if (wParam == 0)
-                    PostMessage(hwndError, WM_CLEARERRDATA, 0, 0);
+                    PostDIDMessage(DID_ERRWND, WM_CLEARERRDATA, 0, 0);
                 SendMessage(hsubwnds[wParam], WM_SETTEXT, 0, (LPARAM)"");
                 latch = TRUE;
             }
@@ -555,11 +751,18 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_CREATE:
             hwndInfo = hwnd;
             GetClientRect(hwnd, &r);
-            textFont = CreateFontIndirect(&systemDialogFont);
-            lsTabCtrl = CreateLsTabWindow(hwnd, TABS_BOTTOM | TABS_HOTTRACK | TABS_FLAT | WS_VISIBLE);
-            ApplyDialogFont(lsTabCtrl);
-            OffsetRect(&r,  - r.left,  - r.top);
-            r.bottom -= 27;
+            label = CreateWindow("STATIC", "Select information to view:", WS_CHILD | WS_VISIBLE,
+                                 5,7, 150,16,hwnd, 0, hInstance, 0);
+            combo = CreateWindowEx(WS_EX_NOACTIVATE, "COMBOBOX",  0, WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWN | CBS_AUTOHSCROLL,
+                                160, 4, 100, 20, hwnd, 0, hInstance, 0);
+            toolbar = CreateToolBarWindow(-1, hwnd, hwnd,
+                ID_INFOTB, 5, infoButtons, infoHints, "Info Tools", 0/*IDH_ help hint */, TRUE);
+            SendMessage(toolbar, LCF_FLOATINGTOOL, 0, 0);
+            SetWindowPos(toolbar, NULL, 250, 3, 0,0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER);
+            SubClassNECombo(combo);
+            ApplyDialogFont(label);
+            ApplyDialogFont(combo);
+            r.top += 25;
             hsubwnds[0] = CreateWindowEx(0, "XBUILDEDIT", 0, WS_CHILD +
                 WS_VISIBLE + WS_VSCROLL + ES_NOHIDESEL + ES_LEFT + 
                 ES_MULTILINE + ES_READONLY, r.left, r.top, r.right - r.left, r.bottom - r.top,
@@ -568,76 +771,62 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_VSCROLL + ES_NOHIDESEL + ES_LEFT + ES_MULTILINE + ES_READONLY,
                 r.left, r.top, r.right - r.left, r.bottom - r.top, hwnd,
                 (HMENU)ID_EDITCHILD, hInstance, 0);
-            hsubwnds[2] = CreateWindowEx(0, "XBUILDEDIT", 0, WS_CHILD +
-                WS_VSCROLL + ES_NOHIDESEL + ES_LEFT + ES_MULTILINE + ES_READONLY,
-                r.left, r.top, r.right - r.left, r.bottom - r.top, hwnd,
-                (HMENU)ID_EDITCHILD, hInstance, 0);
-            hsubwnds[3] = CreateWindowEx(0, "XBUILDEDIT", 0, WS_CHILD +
-                WS_VSCROLL + ES_NOHIDESEL + ES_LEFT + ES_MULTILINE + ES_READONLY,
-                r.left, r.top, r.right - r.left, r.bottom - r.top, hwnd,
-                (HMENU)ID_EDITCHILD, hInstance, 0);
             
             SendMessage(hsubwnds[0], EM_LIMITTEXT, 4 *65536, 0);
             SendMessage(hsubwnds[1], EM_LIMITTEXT, 4 *65536, 0);
-            SendMessage(hsubwnds[2], EM_LIMITTEXT, 4 *65536, 0);
-            SendMessage(hsubwnds[3], EM_LIMITTEXT, 4 *65536, 0);
-            SendMessage(hsubwnds[0], WM_SETFONT, (WPARAM)textFont, 0);
-            SendMessage(hsubwnds[1], WM_SETFONT, (WPARAM)textFont, 0);
-            SendMessage(hsubwnds[2], WM_SETFONT, (WPARAM)textFont, 0);
-            SendMessage(hsubwnds[3], WM_SETFONT, (WPARAM)textFont, 0);
-            for (i=3; i >=0 ; i--)
-                SendMessage(lsTabCtrl, TABM_ADD, (WPARAM)nameTags[i], (LPARAM)hsubwnds[i]);
-            colors[0] = colors[1] = colors[2] = colors[3] = RetrieveSysColor(COLOR_WINDOWTEXT);
+            ApplyDialogFont(hsubwnds[0]);
+            ApplyDialogFont(hsubwnds[1]);
+            for (i=0; i < 2 ; i++)
+                SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)nameTags[i]);
+            SendMessage(combo, CB_SETCURSEL, index, 0);
+            colors[0] = colors[1] = RetrieveSysColor(COLOR_WINDOWTEXT);
             return 0;
         case WM_CLOSE:
             break;
         case WM_ERASEBKGND:
             return 1;
         case WM_PAINT:
+        {
+            HPEN pen = CreatePen(PS_SOLID, 0, GetSysColor(COLOR_BTNSHADOW));
             dc = BeginPaint(hwnd, &ps);
-            pen = CreatePen(PS_SOLID, 0, RetrieveSysColor(COLOR_3DSHADOW));
-            pen = SelectObject(dc, pen);
             GetClientRect(hwnd, &r);
-            MoveToEx(dc, r.left, r.bottom - 27, NULL);
-            LineTo(dc, r.right, r.bottom - 27);
+            r.bottom = 30;
+            FillRect(dc, &r, (HBRUSH)(COLOR_BTNFACE + 1));
+            pen = SelectObject(dc, pen);
+            MoveToEx(dc, r.left, r.bottom, NULL);
+            LineTo(dc, r.right, r.bottom);
             pen = SelectObject(dc, pen);
             DeleteObject(pen);
             EndPaint(hwnd, &ps);
             return 0;
+        }
         case WM_DESTROY:
-            DeleteObject(textFont);
-            DestroyWindow(lsTabCtrl);
+            DestroyWindow(combo);
+            DestroyWindow(label);
+            DestroyWindow(toolbar);
             DestroyWindow(hsubwnds[0]);
             DestroyWindow(hsubwnds[1]);
-            DestroyWindow(hsubwnds[2]);
-            DestroyWindow(hsubwnds[3]);
             DestroyWindow(hwndCtrl);
             break;
         case WM_SELERRWINDOW:
             ShowWindow(hsubwnds[index], SW_HIDE);
             index = (int)lParam;
             ShowWindow(hsubwnds[index], SW_SHOW);
-            SendMessage(lsTabCtrl, TABM_SELECT, 0, (LPARAM)hsubwnds[index]);
+            SendMessage(combo, CB_SETCURSEL, index, 0);
             SendMessage(hsubwnds[index], WM_SETTEXT, index, (LPARAM)"");
             if (index == 0)
-                PostMessage(hwndError, WM_CLEARERRDATA, 0, 0);
+                PostDIDMessage(DID_ERRWND, WM_CLEARERRDATA, 0, 0);
             latch = TRUE;
             break;
         case WM_SIZE:
             r.left = 0;
             r.right = LOWORD(lParam);
-            r.top = 0;
+            r.top = 31;
             r.bottom = HIWORD(lParam);
-            MoveWindow(lsTabCtrl, r.left, r.bottom - 26, r.right - r.left, 26, 1);
-            InvalidateRect(lsTabCtrl, 0, 1);
             MoveWindow(hsubwnds[0], r.left, r.top, r.right - r.left, r.bottom -
-                r.top - 27, 1);
+                r.top, 1);
             MoveWindow(hsubwnds[1], r.left, r.top, r.right - r.left, r.bottom -
-                r.top - 27, 1);
-            MoveWindow(hsubwnds[2], r.left, r.top, r.right - r.left, r.bottom -
-                r.top - 27, 1);
-            MoveWindow(hsubwnds[3], r.left, r.top, r.right - r.left, r.bottom -
-                r.top - 27, 1);
+                r.top, 1);
             return 0;
         default:
             break;
@@ -647,7 +836,7 @@ LRESULT CALLBACK infoProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-void RegisterInfoWindow(void)
+void RegisterInfoWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
@@ -658,12 +847,12 @@ void RegisterInfoWindow(void)
     wc.hInstance = hInstance;
     wc.hIcon = LoadIcon(0, IDI_APPLICATION);
     wc.hCursor = LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground = GetStockObject(WHITE_BRUSH);
+    wc.hbrBackground = 0;
     wc.lpszMenuName = 0;
     wc.lpszClassName = szInfoClassName;
     RegisterClass(&wc);
 
-    GetClassInfo(0, "richedit", &wc);
+    GetClassInfo(0, "richedit20a", &wc);
     oldproc = wc.lpfnWndProc;
     wc.lpfnWndProc = &buildEditProc;
     wc.lpszClassName = "XBUILDEDIT";
@@ -676,12 +865,13 @@ void RegisterInfoWindow(void)
 
 //-------------------------------------------------------------------------
 
-void CreateInfoWindow(void)
+HWND CreateInfoWindow(void)
 {
     if (!hwndInfo)
     {
-        hwndInfo = CreateDockableWindow(DID_INFOWND, szInfoClassName, szInfoTitle, hInstance, 200, 500);
+        hwndInfo = CreateInternalWindow(DID_INFOWND, szInfoClassName, szInfoTitle);
     }
+    return hwndInfo;
 }
 void SetInfoColor(int window, DWORD color)
 {

@@ -501,8 +501,6 @@ enum resType
     RESTYPE_ICON, RESTYPE_LANGUAGE, RESTYPE_MENU, RESTYPE_MESSAGETABLE, 
     RESTYPE_RCDATA, RESTYPE_STRING, RESTYPE_USERDATA,
     RESTYPE_VERSION,
-    // ordering is based on resource ordering, the next aren't standard resource types and must come last.
-    RESTYPE_DIALOGEX, RESTYPE_MENUEX,
 } ;
 
 typedef struct _resource
@@ -511,6 +509,7 @@ typedef struct _resource
     int changed;
     int deleted;
     int itype;
+    BOOL extended ; /* MENUEX, DIALOGEX */
     IDENT type;
     IDENT id;
     char *filename;

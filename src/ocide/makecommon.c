@@ -61,10 +61,19 @@ char makeTempFile[MAX_PATH];
 
 static HashTable *tables;
 
-void ExpandSpecial(SETTING *setting, char *buf, char *src)
+void ExpandSpecial(SETTING *setting, PROJECTITEM *pj, char *buf, char *src)
 {
     if (setting)
     {
+        if (pj && setting->ext)
+        {
+            char *p = strrchr(pj->realName, '.');
+            if (!p || !MatchesExt(p, setting->ext))
+            {
+                buf[0] = 0;
+                return;
+            }
+        }            
         switch (setting->type)
         {
             case e_prependtext:
@@ -422,7 +431,7 @@ char *Lookup(char *id, PROJECTITEM *proj, PROJECTITEM **lcd)
                 {
                     *lcd = LCD(lcd2, *lcd);
                 }
-                ExpandSpecial(setting, buf1, p->value);
+                ExpandSpecial(setting, proj, buf1, p->value);
                 EvalMacros(proj, buf, buf1, lcd);
                 return buf;
             }

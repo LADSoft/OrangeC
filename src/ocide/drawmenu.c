@@ -164,7 +164,7 @@ void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
                 strcpy(buf, "<SEPARATOR>");
             break;
         case 2:
-            if (data->resource->itype == RESTYPE_MENUEX)
+            if (data->resource->extended)
             {
                 flag = Eval(data->gd.selectedMenu->state) & MFS_GRAYED;
             }
@@ -178,7 +178,7 @@ void GetMenuItemPropText(char *buf, HWND lv, struct resRes *data, int row)
                 strcpy(buf, "No");
             break;
         case 3:
-            if (data->resource->itype == RESTYPE_MENUEX)
+            if (data->resource->extended)
             {
                 flag = Eval(data->gd.selectedMenu->state) & MFS_CHECKED;
             }
@@ -252,7 +252,7 @@ void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
         case 2:
             UndoChange(data, data->gd.selectedMenu);
             n = SendMessage(editWnd, CB_GETCURSEL, 0, 0);
-            if (data->resource->itype == RESTYPE_MENUEX)
+            if (data->resource->extended)
             {
                 int flag = Eval(data->gd.selectedMenu->state) & MFS_GRAYED;
                 if (n && !flag)
@@ -272,7 +272,7 @@ void MenuItemPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes *data)
         case 3:
             UndoChange(data, data->gd.selectedMenu);
             n = SendMessage(editWnd, CB_GETCURSEL, 0, 0);
-            if (data->resource->itype == RESTYPE_MENUEX)
+            if (data->resource->extended)
             {
                 int flag = Eval(data->gd.selectedMenu->state) & MFS_CHECKED;
                 if (n && !flag)
@@ -568,7 +568,7 @@ static void DoPaint(HWND hwnd, HDC hDC, LPPAINTSTRUCT lpPaint, RECT *r, struct r
     r1.bottom = 1000;
     FillRect(compatDC,&r1, (HBRUSH)(COLOR_APPWORKSPACE + 1));
     SetTextColor(compatDC, GetSysColor(COLOR_WINDOWTEXT));
-    PaintTopRow(compatDC, arrowDC, menuData->resource->u.menu->items, menuData->gd.selectedMenu, 0, 0, font, fontHeight, menuData->resource->itype == RESTYPE_MENUEX);
+    PaintTopRow(compatDC, arrowDC, menuData->resource->u.menu->items, menuData->gd.selectedMenu, 0, 0, font, fontHeight, menuData->resource->extended);
     font = SelectObject(compatDC, font);
     menuData->gd.scrollMax.x = sz.cx;
     menuData->gd.scrollMax.y = sz.cy;
@@ -1032,7 +1032,7 @@ static void DoInsert(struct resRes *menuData, MENUITEM **items, int code, MENUIT
             ResGetHeap(workArea, menuData);
             newItem = rcAlloc(sizeof(MENUITEM));
             newItem->next = *items;
-            SetSeparatorFlag(menuData->resource->u.menu, newItem, TRUE, menuData->resource->itype == RESTYPE_MENUEX);
+            SetSeparatorFlag(menuData->resource->u.menu, newItem, TRUE, menuData->resource->extended);
             *items = newItem;
             UndoInsert(menuData, items);
             ResSetDirty(menuData);
@@ -1190,7 +1190,13 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 break;
             }
             break;
+        case WM_NCACTIVATE:
+             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+             return TRUE;
+        case WM_NCPAINT:
+             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
+            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             createStruct = (LPCREATESTRUCT)lParam;
             menuData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
             SetWindowLong(hwnd, 0, (long)menuData);
@@ -1200,7 +1206,6 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             MarkUnexpanded(menuData->resource->u.menu->items);
             InsertRCWindow(hwnd);
             break;
-        
         case WM_CLOSE:
             RemoveRCWindow(hwnd);
             SendMessage(hwndSrcTab, TABM_REMOVE, 0, (LPARAM)hwnd);
@@ -1495,7 +1500,7 @@ LRESULT CALLBACK MenuDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     return DefMDIChildProc(hwnd, iMessage, wParam, lParam);
 }
 
-void RegisterMenuDrawWindow(void)
+void RegisterMenuDrawWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));

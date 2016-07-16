@@ -54,8 +54,6 @@ extern int making;
 extern enum DebugState uState;
 extern HINSTANCE hInstance;
 extern HWND hwndClient, hwndFrame;
-extern HWND hwndTab;
-extern HWND hwndTabCtrl;
 extern char szInstallPath[];
 extern char szWorkAreaTitle[256];
 extern PROJECTITEM *workArea;
@@ -70,18 +68,18 @@ extern char *sysProfileName;
 extern char currentProfileName[256] ;
 extern int profileDebugMode;
 
-WNDPROC oldproc;
+static WNDPROC oldproc;
 
 LRESULT CALLBACK prjEditWndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 
-HWND hwndProject;
 PROJECTITEM *activeProject;
 CRITICAL_SECTION projectMutex;
 HWND prjTreeWindow;
 HIMAGELIST treeIml;
 HFONT projFont, boldProjFont, italicProjFont;
 
+static HWND hwndProject;
 static char szProjectClassName[] = "xccProjectClass";
 char sztreeDoubleBufferName[] = "xccTreeDoubleBuffer";
 
@@ -129,8 +127,10 @@ int imageof(PROJECTITEM *data, char *name)
         return IL_FILES;
     if (!xstricmpz(name, ".asm"))
         return IL_ASM;
-    if (!xstricmpz(name, ".c") || !xstricmpz(name, ".cpp") || !xstricmpz(name, ".cxx"))
+    if (!xstricmpz(name, ".c"))
         return IL_C;
+    if (!xstricmpz(name, ".cpp") || !xstricmpz(name, ".cxx") || !xstricmpz(name, ".cc"))
+        return IL_CPP;
     if (!xstricmpz(name, ".rc") || !xstricmpz(name, ".bmp") 
             || !xstricmpz(name, ".cur") || !xstricmpz(name, ".ico"))
         return IL_RES;
@@ -434,6 +434,22 @@ LRESULT CALLBACK treeDoubleBufferProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     
     switch(iMessage)
     {
+        case WM_SYSCHAR:
+        case WM_SYSDEADCHAR:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        {
+            // I don't know why I have to do this.   MEnu access keys don't work
+            // unless I do though.
+            HWND hwnd1 = GetParent(hwnd);
+            while (hwnd1 != HWND_DESKTOP)
+            {
+                hwnd = hwnd1;
+                hwnd1 = GetParent(hwnd);
+            }
+            
+            return SendMessage(hwnd, iMessage, wParam, lParam);
+        }
         case WM_ERASEBKGND:
             return 1;
         case WM_PAINT:
@@ -481,8 +497,8 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             if (wParam == SC_CLOSE)
                 SendMessage(hwnd, WM_CLOSE, 0, 0);
             break;
-        case WM_SETTEXT:
-            return SendMessage(hwndTab, iMessage, wParam, lParam);
+//        case WM_SETTEXT:
+//            return SendMessage(hwndTab, iMessage, wParam, lParam);
         case WM_LBUTTONDOWN:
         case WM_RBUTTONDOWN:
             SetFocus(hwnd);
@@ -772,7 +788,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     }
                     abortDebug();
                 }
-                dmgrHideWindow(DID_TABWND, FALSE);
+                SelectWindow(DID_PROJWND);
                 ProjectNewWorkArea();
                 break;
             case IDM_OPENWS:
@@ -785,7 +801,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     }
                     abortDebug();
                 }
-                dmgrHideWindow(DID_TABWND, FALSE);
+                SelectWindow(DID_PROJWND);
                 ProjectExistingWorkArea();
                 break;
             case IDM_CLOSEWS:
@@ -1045,7 +1061,6 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 WS_CHILD | TVS_HASLINES | TVS_LINESATROOT | TVS_HASBUTTONS | TVS_TRACKSELECT,
                 0, 0, rs.right, rs.bottom, hwnd, (HMENU)ID_TREEVIEW,
                 hInstance, NULL);
-            i = GetWindowLong(prjTreeWindow, GWL_STYLE);
             TreeView_SetImageList(prjTreeWindow, treeIml, TVSIL_NORMAL);
             lf = systemDialogFont;
             projFont = CreateFontIndirect(&lf);
@@ -1080,7 +1095,7 @@ LRESULT CALLBACK ProjectProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-void RegisterProjectWindow(void)
+void RegisterProjectWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     GetClassInfo(0, WC_TREEVIEW, &wc);
@@ -1115,14 +1130,9 @@ void RegisterProjectWindow(void)
 
 //-------------------------------------------------------------------------
 
-void CreateProjectWindow(void)
+HWND CreateProjectWindow(void)
 {
-    RECT rect;
-    HWND parent;
-    parent = hwndTabCtrl;
-    GetTabRect(&rect);
-    hwndProject = CreateWindow(szProjectClassName, szWorkAreaTitle,
-        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
-        rect.bottom - rect.top, parent, 0, hInstance, 0);
+    hwndProject = CreateInternalWindow(DID_PROJWND, szProjectClassName, "Work Area");
+    return hwndProject;
 }
 

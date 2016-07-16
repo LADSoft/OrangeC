@@ -367,7 +367,8 @@ static void CreateDialogResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *re
     *copy =  *dialog;
 
     r = rcAlloc(sizeof(RESOURCE));
-    r->itype = extended ? RESTYPE_DIALOGEX : RESTYPE_DIALOG;
+    r->itype = RESTYPE_DIALOG;
+    r->extended = extended;
     r->u.dialog = copy;
     r->info =  *resinfo;
     AddResource(cd, (IDENT *)RESTYPE_DIALOG, r, id, resinfo->language_high, resinfo->language_low, 0);
@@ -559,7 +560,8 @@ static void CreateMenuResource(COMPILEDATA *cd, IDENT *id, CHARACTERISTICS *resi
     m->help = 0;
 
     r = rcAlloc(sizeof(RESOURCE));
-    r->itype = extended ? RESTYPE_MENUEX : RESTYPE_MENU;
+    r->itype = RESTYPE_MENU;
+    r->extended = extended;
     r->u.menu = m;
     r->info =  *resinfo;
     AddResource(cd, (IDENT *)RESTYPE_MENU, r, id, resinfo->language_high, resinfo->language_low, 0);
@@ -2082,7 +2084,7 @@ static void SelectControlIdBase(RESOURCE_DATA *select)
     select->nextControlId = 1;
     for (res = select->resources; res; res = res->next)
     {
-        if (res->itype == RESTYPE_DIALOG || res->itype == RESTYPE_DIALOGEX)
+        if (res->itype == RESTYPE_DIALOG)
         {
             CONTROL *controls = res->u.dialog->controls;
             while (controls)
@@ -2113,7 +2115,7 @@ static void SelectMenuIdBase(RESOURCE_DATA *select)
     select->nextMenuId = 10000;
     for (res = select->resources; res; res = res->next)
     {
-        if (res->itype == RESTYPE_MENU || res->itype == RESTYPE_MENUEX)
+        if (res->itype == RESTYPE_MENU)
         {
             RecurseMenuIdBase(select, res->u.menu->items);
         }

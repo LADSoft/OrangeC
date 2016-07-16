@@ -42,6 +42,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include "header.h"
+#include <richedit.h>
 
 extern HINSTANCE hInstance;
 extern HWND hwndTbFind;
@@ -177,6 +178,50 @@ void SubClassHistoryCombo(HWND combo)
     SetWindowLong(editWnd, GWL_WNDPROC, (int)historyEditComboProc);
 }
 
+static DWORD CALLBACK neEditComboProc(HWND hwnd, unsigned iMessage, WPARAM wParam, LPARAM lParam)
+{
+    switch (iMessage)
+    {
+        case WM_CHAR:
+        case WM_DEADCHAR:
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+            return 0;
+        case WM_SYSCHAR:
+        case WM_SYSDEADCHAR:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        {
+            // I don't know why I have to do this.   MEnu access keys don't work
+            // unless I do though.
+            HWND hwnd1 = GetParent(hwnd);
+            while (hwnd1 != HWND_DESKTOP)
+            {
+                hwnd = hwnd1;
+                hwnd1 = GetParent(hwnd);
+            }
+            
+            return SendMessage(hwnd, iMessage, wParam, lParam);
+        }
+        case EM_EXSETSEL:
+        case EM_SETSEL:
+            return 0;
+        case WM_SETFOCUS:
+            CallWindowProc(oldEditProc, hwnd, iMessage, wParam, lParam);
+            HideCaret(hwnd);
+            return 0;
+    }
+    CallWindowProc(oldEditProc, hwnd, iMessage, wParam, lParam);
+}
+void SubClassNECombo(HWND combo)
+{
+    POINT pt;
+    HWND editWnd;
+    pt.x = 5;
+    pt.y = 5;
+    editWnd = ChildWindowFromPoint(combo, pt);
+    SetWindowLong(editWnd, GWL_WNDPROC, (int)neEditComboProc);
+}
 
 //-------------------------------------------------------------------------
 
@@ -187,12 +232,4 @@ void RegisterHistoryComboWindow(void)
     oldComboProc = wc.lpfnWndProc;
     GetClassInfo(0, "edit", &wc);
     oldEditProc = wc.lpfnWndProc;
-    return ;
-    wc.lpfnWndProc = &historyComboProc;
-    wc.lpszClassName = "historycombo";
-    wc.hInstance = hInstance;
-    wc.cbWndExtra += (4-wc.cbWndExtra % 4);
-    wndoffs = wc.cbWndExtra;
-    wc.cbWndExtra += 4;
-    RegisterClass(&wc);
 }

@@ -60,11 +60,11 @@ extern HWND hwndGeneralProps;
 extern HINSTANCE hInstance;
 extern HMENU hMenuMain;
 extern DWINFO *editWindows;
-extern HWND hwndFind, hwndProject, hwndASM, hwndThread;
-extern HWND hwndRegister, hwndMem, hwndTab, hwndWatch, hwndStack;
+extern HWND hwndFind, hwndASM;
 extern int making;
 extern enum DebugState uState;
 extern PROJECTITEM *activeProject;
+extern int defaultWorkArea;
 
 int WindowItemCount = 0;
 static int winMenuCount;
@@ -73,7 +73,7 @@ static char windowTexts[MAX_WINMENU][260];
 static HWND winMenu[MAX_WINMENU];
 static WNDPROC oldMenuProc;
 
-static int MenuBitmapIDs[] = { ID_EDITTB, ID_BUILDTB , ID_DEBUGTB, ID_EXTRA, ID_NAVTB, ID_BOOKMARKTB };
+static int MenuBitmapIDs[] = { ID_EDITTB, ID_BUILDTB , ID_DEBUGTB, ID_EXTRA, ID_NAVTB, ID_BOOKMARKTB, ID_BROWSETB };
 static struct menuBitmap {
     int id;
     int bitmapNum;
@@ -305,6 +305,22 @@ static struct menuBitmap {
     {
         IDM_REMOVEBOOKMARKS,5,6
     }
+    ,
+    {
+        IDM_BROWSETO,6,0
+    }
+    ,
+    {
+        IDM_BROWSEBACK,6,1
+    }
+    ,
+    {
+        IDM_BROWSETODEFINITION,6,2
+    }
+    ,
+    {
+        IDM_BROWSETODECLARATION,6,3
+    }
 //#endif
 };
 
@@ -523,11 +539,10 @@ UINT GetMenuCheckedState(HMENU menu, int Id)
 void SetMenuCheckedState(HMENU menu, int did, int id)
 {
     MENUITEMINFO info;
-
     info.cbSize = sizeof(MENUITEMINFO);
     info.fMask = MIIM_STATE;
     GetMenuItemInfo(menu, id, MF_BYCOMMAND, &info);
-    info.fState = (info.fState &~MFS_CHECKED) | (dmgrGetHiddenState(did) ? 0 :
+    info.fState = (info.fState &~MFS_CHECKED) | (GetWindowIndex(did) == -1 ? 0 :
         MFS_CHECKED);
     SetMenuItemInfo(menu, id, MF_BYCOMMAND, &info);
 }
@@ -538,10 +553,11 @@ void InitMenuPopup(HMENU menu)
     BOOL x_state;
     int selstart, selend;
     SetWindowMenu();
-    SetMenuCheckedState(menu, DID_TABWND, IDM_VIEWPROJECT);
+    SetMenuCheckedState(menu, DID_PROJWND, IDM_VIEWPROJECT);
     SetMenuCheckedState(menu, DID_PROPSWND, IDM_VIEWPROPS);
     SetMenuCheckedState(menu, DID_INFOWND, IDM_VIEWINFO);
     SetMenuCheckedState(menu, DID_ERRWND, IDM_VIEWERR);
+    SetMenuCheckedState(menu, DID_ERRWND, IDM_VIEWBROWSE);
     SetMenuCheckedState(menu, DID_STACKWND, IDM_VIEWSTACK);
     SetMenuCheckedState(menu, DID_THREADWND, IDM_VIEWTHREAD);
     {
@@ -555,9 +571,16 @@ void InitMenuPopup(HMENU menu)
         SetMenuItemInfo(menu, IDM_VIEWASM, MF_BYCOMMAND, &info);
     }
     SetMenuCheckedState(menu, DID_MEMWND, IDM_VIEWMEM);
+    SetMenuCheckedState(menu, DID_MEMWND+1, IDM_VIEWMEM2);
+    SetMenuCheckedState(menu, DID_MEMWND+2, IDM_VIEWMEM3);
+    SetMenuCheckedState(menu, DID_MEMWND+3, IDM_VIEWMEM4);
     SetMenuCheckedState(menu, DID_REGWND, IDM_VIEWREGISTER);
     SetMenuCheckedState(menu, DID_WATCHWND, IDM_VIEWWATCH);
+    SetMenuCheckedState(menu, DID_WATCHWND+1, IDM_VIEWWATCH2);
+    SetMenuCheckedState(menu, DID_WATCHWND+2, IDM_VIEWWATCH3);
+    SetMenuCheckedState(menu, DID_WATCHWND+3, IDM_VIEWWATCH4);
     SetMenuCheckedState(menu, DID_LOCALSWND, IDM_VIEWLOCALS);
+    SetMenuCheckedState(menu, DID_BREAKWND, IDM_VIEWBP);
 
     win = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
     mf_state = MF_GRAYED;
@@ -595,10 +618,7 @@ void InitMenuPopup(HMENU menu)
         selstart != selend) ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(menu, IDM_SELECTALL, mf_state);
     EnableMenuItem(menu, IDM_FIND, mf_state);
-    EnableMenuItem(menu, IDM_BROWSE, mf_state);
-    // EnableMenuItem(menu,IDM_BROWSETO,mf_state) ;
-    // EnableMenuItem(menu,IDM_BROWSEBACK,mf_state) ;
-    EnableMenuItem(menu, IDM_BOOKMARK, mf_state);
+
     x_state = mf_state;
     if (!AnyBookmarks())
         x_state = MF_GRAYED;
@@ -613,9 +633,22 @@ void InitMenuPopup(HMENU menu)
     EnableMenuItem(menu, IDM_FINDNEXT, mf_state);
     EnableMenuItem(menu, IDM_REPLACE, mf_state);
     x_state = mf_state;
-    if (win == hwndASM || win == hwndMem)
+    if (win == hwndASM)
         x_state = MF_ENABLED;
     EnableMenuItem(menu, IDM_GOTO, x_state);
+    if (defaultWorkArea || !PropGetBool(NULL, "BROWSE_INFORMATION")) 
+        mf_state = MF_GRAYED;   
+    EnableMenuItem(menu, IDM_BROWSETODECLARATION, mf_state);
+    EnableMenuItem(menu, IDM_BROWSETODEFINITION, mf_state);
+
+    if (defaultWorkArea || !PropGetBool(NULL, "BROWSE_INFORMATION")) 
+        mf_state = MF_GRAYED;   
+    else
+        mf_state = MF_ENABLED;
+    EnableMenuItem(menu, IDM_VIEWBROWSE, mf_state);
+    EnableMenuItem(menu,IDM_BROWSETO,mf_state) ;
+    EnableMenuItem(menu,IDM_BROWSEBACK,mf_state) ;
+    EnableMenuItem(menu, IDM_BOOKMARK, mf_state);
     if (!making && IsEditWindow(win))
     {
         if (!FindItemByWind(win))
@@ -692,16 +725,35 @@ void InitMenuPopup(HMENU menu)
     EnableMenuItem(menu, IDM_STOPDEBUGGING, mf_state);
     EnableMenuItem(menu, IDM_RUNTO, mf_state);
     EnableMenuItem(menu, IDM_SCROLLTOBP, mf_state);
+//    EnableMenuItem(menu, IDM_VIEWBP, mf_state);
     EnableMenuItem(menu, IDM_VIEWASM, mf_state);
     EnableMenuItem(menu, IDM_VIEWMEM, mf_state);
+    EnableMenuItem(menu, IDM_VIEWMEM2, mf_state);
+    EnableMenuItem(menu, IDM_VIEWMEM3, mf_state);
+    EnableMenuItem(menu, IDM_VIEWMEM4, mf_state);
     EnableMenuItem(menu, IDM_VIEWREGISTER, mf_state);
     EnableMenuItem(menu, IDM_VIEWSTACK, mf_state);
     EnableMenuItem(menu, IDM_VIEWWATCH, mf_state);
+    EnableMenuItem(menu, IDM_VIEWWATCH2, mf_state);
+    EnableMenuItem(menu, IDM_VIEWWATCH3, mf_state);
+    EnableMenuItem(menu, IDM_VIEWWATCH4, mf_state);
     EnableMenuItem(menu, IDM_VIEWLOCALS, mf_state);
     EnableMenuItem(menu, IDM_VIEWTHREAD, mf_state);
+    EnableMenuItem(menu, IDM_HBREAK, mf_state);
     EnableMenuItem(menu, IDM_DATABREAKPOINT, mf_state);
+    EnableMenuItem(menu, IDM_FUNCTIONBREAKPOINT, mf_state);
+    
     mf_state = uState == Running ? MF_ENABLED : MF_GRAYED;
     EnableMenuItem(menu, IDM_STOP, mf_state);
+
+    {
+        BOOL state = TagAnyDisabledBreakpoints() || hbpAnyDisabledBreakpoints() || databpAnyDisabledBreakpoints();
+        ModifyMenu(menu, IDM_DISABLEALLBREAKPOINTS, MF_BYCOMMAND | MF_STRING, IDM_DISABLEALLBREAKPOINTS, state ? "E&nable All Breakpoints" : "D&isable All Breakpoints");
+        
+    }
+    mf_state = (TagAnyBreakpoints() || hbpAnyBreakpoints() || databpAnyBreakpoints()) ? MF_ENABLED : MF_GRAYED;
+    EnableMenuItem(menu, IDM_REMOVEALLBREAKPOINTS, mf_state);
+    EnableMenuItem(menu, IDM_DISABLEALLBREAKPOINTS, mf_state);
 
     mf_state = MF_GRAYED;
     if (activeProject && GetResData(activeProject))
@@ -711,7 +763,7 @@ void InitMenuPopup(HMENU menu)
     if (IsWindow(win) && IsResourceWindow(win))
     {
         struct resRes *res = (struct resRes *)GetWindowLong(win, 0);
-        if (res->resource->itype == RESTYPE_DIALOG || res->resource->itype == RESTYPE_DIALOGEX)
+        if (res->resource->itype == RESTYPE_DIALOG)
             mf_state = MF_ENABLED;
     }
     EnableMenuItem(menu, IDM_CREATIONORDER, mf_state);

@@ -777,7 +777,13 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             imageData = (struct resRes *)GetWindowLong(hwnd, 0);
             SetFocus(imageData->gd.childWindow);
             break;
+        case WM_NCACTIVATE:
+             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+             return TRUE;
+        case WM_NCPAINT:
+             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_CREATE:
+            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             GetClientRect(hwnd, &r);
             createStruct = (LPCREATESTRUCT)lParam;
             imageData = (struct resRes *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
@@ -860,7 +866,7 @@ LRESULT CALLBACK ImageDrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     return DefMDIChildProc(hwnd, iMessage, wParam, lParam);
 }
 
-void RegisterImageDrawWindow(void)
+void RegisterImageDrawWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
@@ -877,7 +883,6 @@ void RegisterImageDrawWindow(void)
     RegisterClass(&wc);
 
     imageInit();
-    RegisterImageWindows();    
 }
 void CreateImageDrawWindow(struct resRes *info)
 {

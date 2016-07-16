@@ -59,7 +59,7 @@
 extern char szInstallPath[];
 extern PROJECTITEM *workArea;
 extern LOGFONT systemDialogFont;
-extern HWND hwndFrame, hwndProject;
+extern HWND hwndFrame;
 extern HINSTANCE hInstance;
 extern BUILDRULE *buildRules;
 extern unsigned int helpMsg;
@@ -309,14 +309,14 @@ void InitProps(void)
     InitializeCriticalSection(&propsMutex);
 }
 
-static BOOL MatchesExt(char *name, char *exts)
+BOOL MatchesExt(char *name, char *exts)
 {
     char *p = strrchr(name, '.');
     int n =strlen(p);
     if (p && p[1] != '\\')
     {
         char *q = exts;
-        while (q)
+        while (q && *q)
         {
             char *r = strchr(q, '.');
             if (r)
@@ -967,7 +967,7 @@ long APIENTRY NewProfileProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
                     name[SendDlgItemMessage(hwnd, IDC_NEWPROFILE, WM_GETTEXT, 256, (LPARAM)name)] = 0;
                     if (name[0])
                     {
-                        SendMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
+                        SendDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
                         EndDialog(hwnd, 1);
                     }
                     else
@@ -1072,6 +1072,8 @@ static LRESULT CALLBACK GeneralWndProc(HWND hwnd, UINT iMessage,
                 TV_ITEM xx ;
                 LPNMCUSTOMDRAW cd;
                 NMLVSCROLL *sc;
+                case HDN_BEGINTRACK:
+                    return TRUE;
                 case LVN_BEGINSCROLL:
                     sc = (NMLVSCROLL *)lParam;
                     break;
@@ -1955,7 +1957,7 @@ void ShowGeneralProperties(void)
     if (!hwndGeneralProps)
     {
         hwndGeneralProps = CreateWindow(szGeneralPropsClassName, generalProps.title, 
-                 WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_CHILD,
+                 WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_SYSMENU | WS_DLGFRAME | WS_CHILD,
                              0,0,700,500,
                              hwndFrame, 0, hInstance, (LPVOID)&generalProps);
     }

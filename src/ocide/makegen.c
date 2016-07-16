@@ -47,7 +47,6 @@
 #include "header.h"
 
 extern char szInstallPath[];
-extern HWND hwndProject;
 extern int making;
 extern PROJECTITEM *activeProject;
 
@@ -561,7 +560,7 @@ static DWORD genMake(PROJECTITEM *l)
     char vpath[10000];
     vpath[0] = 0;
     activeProject = NULL;
-    if (!SaveFileDialog(&ofn, "makefile", hwndProject, FALSE, 0,
+    if (!SaveFileDialog(&ofn, "makefile", GetWindowHandle(DID_PROJWND), FALSE, 0,
         "Save Makefile As"))
         
     {

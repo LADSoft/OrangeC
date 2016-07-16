@@ -43,7 +43,7 @@ Previous
 Next
 FALSE
 
-121
+124
 10
 Scribble10
 index
@@ -56,7 +56,7 @@ Writing
 
 
 FALSE
-36
+37
 {\rtf1\ansi\ansicpg1252\deff0{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1460\cf1\lang1033\b\fs32 Welcome to Orange C IDE help
@@ -76,6 +76,7 @@ FALSE
 \par \cf2\strike{\pntext\f1\'B7\tab}Resource editor\cf3\strike0\{linkID=1000\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Information windows\cf3\strike0\{linkID=280\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Error List\cf3\strike0\{linkID=295\}\cf0 
+\par \cf2\strike{\pntext\f1\'B7\tab}Variable Usages Window\cf3\strike0\{linkID=435\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Integrated debugger\cf3\strike0\{linkID=300\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Debugging windows\cf3\strike0\{linkID=320\}\cf0 
 \par \cf2\strike{\pntext\f1\'B7\tab}Find and Replace\cf3\strike0\{linkID=100\}
@@ -200,7 +201,7 @@ Writing
 
 
 FALSE
-48
+49
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset2 Symbol;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Menus\cf2\b0\f1\fs20 
@@ -240,7 +241,8 @@ FALSE
 \par \pard{\pntext\f2\'B7\tab}{\*\pn\pnlvlblt\pnf2\pnindent0{\pntxtb\'B7}}\fi-840\li840\tx4800\cf4\strike\f0 Client Context Menu\cf3\strike0\{linkID=195\}\tab\cf2 Shows items related to managing editor windows\f1 
 \par \cf4\strike{\pntext\f2\'B7\tab}Editor Context Menu\cf3\strike0\{linkID=150\}\cf0\f0\tab Shows items related to editing, bookmarks, and debugging\cf3\f1 
 \par \cf4\strike{\pntext\f2\'B7\tab}Information Context Menu\cf3\strike0\{linkID=290\}\cf0\f0\tab Shows items related to compiling and linking programs\cf3\f1 
-\par \cf4\strike{\pntext\f2\'B7\tab}Watch Context Menu\cf3\strike0\{linkID=660\}\cf0\f0\tab Shows items related to the watch window
+\par \cf4\strike{\pntext\f2\'B7\tab}Watch Context Menu\cf3\strike0\{linkID=660\}\cf0\f0\tab Shows items related to the watch window\tab 
+\par \cf4\strike{\pntext\f2\'B7\tab}Breakpoints Context Menu\cf3\{linkID=417\}\cf0\strike0\tab Shows items related to the breakpoints window
 \par \cf4\strike{\pntext\f2\'B7\tab}Memory Context Menu\cf3\strike0\{linkID=690\}\cf0\tab Shows items relates to size of memory units\cf3\f1 
 \par \cf4\strike{\pntext\f2\'B7\tab}Work\f0 area\f1  Context Menu\cf3\strike0\{linkID=210\}\cf0\f0\tab Shows items related to the workarea\cf3\f1 
 \par \cf4\strike\f0{\pntext\f2\'B7\tab}Project Context Menu\cf3\strike0\{linkID=230\}\cf0\tab Shows Items related to the selected project\cf3 
@@ -274,7 +276,7 @@ FALSE
 \par 
 \par \pard\ri1440\qc\tx660\tx2820\cf3\{bmc debugsession.png\}\cf0 
 \par \pard\ri1440\tx660\tx2820 
-\par In this example, the \cf2\strike Integrated Debugger\cf3\strike0\{linkID=300\}\cf0  has been started.  The dark grey bars to the left of the text show code lines which have generated code associated with them, and are suitable for breakpoints.  The red circle is a break point.  The yellow arrow shows the position at which the program flow was stopped.  This example also shows a bookmark, which is a grey square.
+\par In this example, the \cf2\strike Integrated Debugger\cf3\strike0\{linkID=300\}\cf0  has been started.  The blue bar to the left of the text shows code lines which have generated code associated with them, and are suitable for breakpoints.  The red circle is a break point.  The yellow arrow shows the position at which the program flow was stopped.  This example also shows a bookmark, which is a grey square.
 \par 
 \par When one or more files are opened for editing, a series of tabs at the top of the client area will show a list of all open files, and allow easy navigation to a given file.  If there are two many open files, an arrow button to the far right of the tabs will allow opening a menu to select from available files.  A star next to a file name indicates the file has changed and needs to be saved.
 \par 
@@ -303,7 +305,7 @@ Writing
 
 
 FALSE
-23
+43
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 File Menu\cf2\b0\f1\fs20 
@@ -313,99 +315,39 @@ FALSE
 \par \pard\qc 
 \par \cf3\{bmc mfile.png\}\cf2 
 \par \pard 
-\par \b Work Area\b0  is used to access \cf4\strike Workarea related\cf3\strike0\{linkID=70\}\cf2  features
+\par \b Open Work Area\b0  is used to browse to a work area to open
 \par 
-\par \b File\b0  is used to access \cf4\strike File related\cf3\strike0\{linkID=80\}\cf2  features
+\par \b New Work Area\b0  creates a new Work Area
 \par 
-\par \b Save All Files\b0  is used to save changes to all open files
+\par \b Reopen Work Area\b0  opens a menu which shows recent Work Areas that have been opened.   Clicking on one opens it.
+\par 
+\par \b Open Existing Project\b0  brings an existing project into the work area
+\par 
+\par \b New Project\b0  creates a new project in the work area
+\par 
+\par \b Open Existing File\b0  browses to a source file to open
+\par 
+\par \b New File\b0  creates a new source file
+\par 
+\par \b Reopen File\b0  opens a menu which shows recent source files which have been opened.   Clicking on one opens it.
+\par 
+\par \b Close File\b0  closes the current edit window
+\par 
+\par \b Save Work Area\b0  saves the Work Area and Projects if they have changed
+\par 
+\par \b Save All Files\b0  saves changes to all open source files
+\par 
+\par \b Save File\b0  saves changes to the source file which is currently being edited
 \par 
 \par \b Print\b0  is used to \cf4\strike print\cf3\strike0\{linkID=440\}\cf2  files. It opens the standard windows printer dialog and allows selection of various properties related to the print request.
+\par 
+\par \b Import\b0  is used to bring old CC386 workspaces and projects forward.
 \par 
 \par \b Command Window \b0 opens a command prompt.  The command prompt will have sufficient environment variables defined to build the project.
 \par 
 \par \b Exit\b0  exits the IDE.  If any files need to be saved or the debugger needs to be closed, a prompt will appear requesting confirmation.
 \par 
 \par 
-\par }
-70
-Scribble70
-Workarea Menu
-menu;new;new menu;
-
-
-
-Writing
-
-
-
-FALSE
-33
-{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
-{\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
-\viewkind4\uc1\pard\cf1\b\fs32 Workarea Menus\cf2\b0\f1\fs20 
-\par 
-\par \f0 The Workarea Menus allow creating and opening workspaces, and adding projects.  It appears similar to what follows:
-\par 
-\par \pard\qc\cf3\{bmc mworkarea.png\}
-\par \pard 
-\par \cf0\b New\b0  brings up the \cf4\strike Open File Dialog\cf3\strike0\{linkID=350\}\cf0  to get the name of a workarea to create.
-\par 
-\par \b Open\b0  brings up the \cf4\strike Open File Dialog\cf3\strike0\{linkID=350\}\cf0  to get the name of an existing workarea to reopen.
-\par 
-\par \b Reopen\b0  shows a menu that has recently selected workareas; selecting one opens it.
-\par 
-\par \b Save\b0  saves the workarea and any projects
-\par 
-\par \b Close\b0  closes the workarea and returns to the default
-\par 
-\par \b Import\b0  is a subment that allows importing projects from earlier versions of the IDE.  It has the following options:
-\par 
-\par \pard\fi1120\b Old Workspace\b0  converts an old workspace to the new format and imports it
-\par 
-\par \b Old Target\b0  converts an old target(project) file to the new format and imports it into the current workspace.
-\par 
-\par \pard\li1100 Note that when importing an old workspace, the old workspace may override some features such as the new toolbars.  Such features can be reenabled from the menus.
-\par \pard\b 
-\par Add\b0  is a submenu.  It has the following options
-\par 
-\par \pard\fi1140\b New Project\b0  brings up the\cf4\strike  New Project Dialog\cf3\strike0\{linkID=360\}\cf0  to get the name of a new project to open.
-\par 
-\par \b Existing Project \b0 brings up the \cf4\strike Open File Dialog\cf3\strike0\{linkID=350\}\cf0  to get the name of an existing project to reopen.
-\par \b 
-\par }
-80
-Scribble80
-File SubMenu
-
-
-
-
-Writing
-
-
-
-FALSE
-21
-{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
-{\colortbl ;\red0\green0\blue255;\red128\green0\blue0;\red0\green128\blue0;}
-\viewkind4\uc1\pard\cf1\b\fs32 File Submenu\cf0\b0\f1\fs20 
-\par 
-\par \f0 The File Submenu allows various operations associated with source code files.  It appears similar to what follows:
-\par 
-\par \pard\qc\cf2\{bmc mfilefile.png\}\cf0 
-\par \pard 
-\par 
-\par \b New\b0  creates a new file.  Initially the file will be untitled.  Attempting to save it will bring up a variation of the \cf3\strike Open File Dialog\cf2\strike0\{linkID=350\}\cf0  to select its name.
-\par 
-\par \b Open\b0  brings up the Open File Dialog to get the name of the file to open.
-\par 
-\par \b Reopen\b0  shows a menu that has recently selected files; selecting one opens it.
-\par 
-\par \b Save\b0  saves any changes made to a file.
-\par 
-\par \b SaveAs\b0  opens a variation of the Open File Dialog to allow selection of a new file name to save th file under.
-\par 
-\par \b Close\b0  closes the window associated with a file.\f1 
 \par }
 90
 Scribble90
@@ -449,7 +391,7 @@ Writing
 
 
 FALSE
-96
+97
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Find/Replace Dialog\cf0\b0\f1\fs20 
@@ -503,6 +445,7 @@ FALSE
 \par \pard\b0 
 \par Note that for each type of location that may be specified in \b Where\b0 , options and output selections will be remembered independently.
 \par \f1 
+\par \f0 There are two find windows, find-related information may be sent to either window.\f1 
 \par 
 \par \f0 When used to replace text, the Find/Replace dialog appears as follows:
 \par 
@@ -545,6 +488,32 @@ FALSE
 \par Note that for each type of location that may be specified in \b Where\b0 , options and output selections will be remembered independently.
 \par \f1 
 \par 
+\par }
+105
+Scribble105
+Find Windows
+
+
+
+
+Writing
+
+
+
+FALSE
+13
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red128\green0\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Find Windows\cf0\lang1049\b0\f1\fs20 
+\par 
+\par \lang1033\f0 The find windows serve as targets for find and replace.
+\par 
+\par \pard\ri1440\qc\tx660\tx2820\cf2\{bmc wfind.png\}\cf0 
+\par \pard\lang1049\f1 
+\par \lang1033\f0 In the example the search was for the word 'arg'.   It found a number of matches which are listed in the window.   Clicking on a match takes one to the line of source code for the match.
+\par 
+\par The various icons at the top of the window allow navigating in the window, and searching for text in the window.
+\par \lang1049\f1 
 \par }
 110
 Scribble110
@@ -708,16 +677,15 @@ FALSE
 \par 
 \par \pard\qc\cf4\{bmc cmedit.png\}\cf2 
 \par \pard 
-\par \pard\ri1440\tx660\tx2820\cf0\b Save File\b0  saves the text in the current window to disk
+\par \pard\ri1440\tx660\tx2820\cf0\b 
+\par Browse To Definition \b0 uses \cf3\strike Browse Information\cf4\{linkID=430\}\cf0\strike0  to browse to the definition of a variable or function 
 \par 
-\par \pard\cf2\b Cut, Copy\b0  and \b Paste\b0  are used to move selected text to and from the clipboard.  
-\par 
-\par \pard\ri1440\tx660\tx2820\cf0\b Toggle Bookmark\b0  toggles the bookmark setting for the current line.  See \cf3\strike Bookmarks\cf4\strike0\{linkID=400\}\cf0  for further information about bookmarks.
+\par \b Browse To Declaration\b0  uses Browse Information to browse to the declaration of a variable or function\b 
+\par \b0 
+\par \b Toggle Bookmark\b0  toggles a \cf3\strike Bookmark\cf4\strike0\{linkID=400\}\cf0  at the selected line
 \par 
 \par \pard\cf2\b Goto line\b0  opens the \cf3\strike Goto Dialog\cf4\strike0\{linkID=340\}\cf2 .  This allows positioning on a given line when the line number is entered.
 \par \pard\ri1440\tx660\tx2820\cf0 
-\par \b Browse To\b0  navigates to the definition of the word under the cursor if browse information is turned on in the \cf3\strike General Properties Hints\cf4\strike0\{linkID=530\}\cf0  page
-\par 
 \par \b Return To Origin\b0  opens the window the current breakpoint is associated with and navigates to the breakpoint line.
 \par \b 
 \par Toggle Breakpoint\b0  toggles the break point setting for the current line.  See \cf3\strike Breakpoints\cf4\strike0\{linkID=410\}\cf0  for further information about breakpoints.
@@ -728,6 +696,7 @@ FALSE
 \par 
 \par \b Add To Watch\b0  adds the identifier under the cursor to the \cf3\strike Watch Window\cf4\strike0\{linkID=650\} \cf0 and shows its value.  The Watch Window will be opened if it is currently closed.
 \par 
+\par \b Save File\b0  saves the file in the edit window
 \par }
 160
 Scribble160
@@ -776,7 +745,7 @@ Writing
 
 
 FALSE
-14
+16
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 View Browse Menu\cf2\b0\f1\fs20 
@@ -785,9 +754,11 @@ FALSE
 \par 
 \par \pard\qc\cf4\{bmc mbrowse.png\}\cf2 
 \par \pard 
-\par \b Browse To\b0  opens the \cf3\strike Browse To Dialog\cf4\strike0\{linkID=380\}\cf2 .  This allows selecting a variable name to locate the definition for.
+\par \b Browse To Definition\b0  browses to the definition of the word under the cursor using \cf3\strike Browse Information\cf4\strike0\{linkID=430\}\cf2 
 \par 
-\par \b Browse\b0  uses the word under the cursor in the active editor window as a variable name to locate the definition for.
+\par \b Browse To Declaration\b0  browses to the declaration of the word under the cursor using Browse Information\b 
+\par 
+\par Browse To\b0  opens the \cf3\strike Browse To Dialog\cf4\strike0\{linkID=380\}\cf2 .  This allows selecting a variable name to locate the definition for.
 \par 
 \par \b Browse Back\b0  undoes the last \b Browse \b0 or \b Browse To \b0 command.\f1 
 \par }
@@ -803,7 +774,7 @@ Writing
 
 
 FALSE
-22
+38
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 View Menu\cf2\b0\f1\fs20 
@@ -816,8 +787,6 @@ FALSE
 \par 
 \par \b Information Window\b0  opens or closes the \cf4\strike Information Window\cf3\strike0\{linkID=280\}\cf2 . When the window is displayed a check mark will appear next to the menu item.
 \par \f1 
-\par \b\f0 Error List\b0  opens or closes the \cf4\strike Error List Window\cf3\strike0\{linkID=295\}\cf2 .   When the window is displayed a check mark will appear next to the menu item.
-\par \f1 
 \par \b\f0 Create New View \b0 makes a copy of an existing editor window.  The new window will be a new view that looks at the same data as the existing view.  Changes in one view will be reflected in the other.  This mechanism allows one to view two separate locations in the same file.
 \par \f1 
 \par \b\f0 Bookmarks\b0  opens the \cf4\strike View Bookmarks Menu\cf3\strike0\{linkID=160\}\cf2 .
@@ -825,6 +794,24 @@ FALSE
 \par \b Browse\b0  opens the \cf4\strike View Browse Menu\cf3\strike0\{linkID=170\}.
 \par 
 \par \cf0\b Goto Line\cf2\b0  opens the \cf4\strike Goto Line\cf3\strike0\{linkID=340\}\cf2  dialog.  This allows selection of a line number to navigate to..
+\par 
+\par \b View Other\b0  opens a submenu that looks similar to what follows:
+\par 
+\par 
+\par \pard\qc\cf3\{bmc mviewother.png\}\cf2 
+\par \pard 
+\par On this menu,
+\par 
+\par \b Error List\b0  opens or closes the \cf4\strike Error List Window\cf3\strike0\{linkID=295\}\cf2 .   When the window is displayed a check mark will appear next to the menu item.
+\par \f1 
+\par \b\f0 Property Window\b0  opens or closes the \cf4\strike Resourced Property Window\cf3\strike0\{linkID=1026\}. \cf0  This window shows information about resources being edited.
+\par \cf2 
+\par \b Variable Usages\b0  opens or closes the \cf4\strike Variable Usages Window\cf3\strike0\{linkID=435\}\cf2 .   This window uses browse information to show information about the usages of a variable or function, such as where it is declared and defined, and where it is used.
+\par 
+\par \b Resources\b0  opens or closes the \cf4\strike Resource Window\cf3\strike0\{linkID=1005\}\cf2 .
+\par 
+\par \b Control Toolbar\b0  opens the\cf4\strike  Dialog Control Toolbox \cf3\strike0\{linkID=1065\},\cf0   which chooses controls to place on a dialog.
+\par \cf2 
 \par }
 190
 Scribble190
@@ -1184,26 +1171,24 @@ Writing
 
 
 FALSE
-22
+20
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;\red255\green0\blue0;}
 \viewkind4\uc1\pard\ri1440\cf1\b\fs32 Information Window\cf0\b0\f1\fs20 
 \par 
-\par \f0 The Information window is accessible by clicking \b Information Window\b0  on the \cf2\strike View Menu\cf3\strike0\{linkID=180\}\cf0 .  It has four tabs.  Each tab can be activated for a different function, for example for viewing the output of a build or to look at a list of lines found during a file search.   During a debug session, the debug tab is displayed and has information similar to the following when the window is docked:
+\par \f0 The Information window is accessible by clicking \b Information Window\b0  on the \cf2\strike View Menu\cf3\strike0\{linkID=180\}\cf0 .  It has a combo box to select what type of information to view.  
 \par 
 \par \pard\ri1440\qc\cf3\{bmc winfo.png\}\cf0 
 \par \pard\ri1440 
-\par In this example, we see the IDE creating the output files for two projects.
+\par In this example, we see the IDE creating the output files for a project.
 \par 
-\par The tabs will generally auto-select themselves when information is being displayed in them, or they can be manually selected at any time.
+\par The combobox  will generally auto-select itself when information is being displayed in them, or they can be manually selected at any time.
+\par 
+\par The various icons at the top of the window allow navigation and searching in the text.
 \par 
 \par The \b Build\b0  tab gives information about the compile in progress.  Errors and general status can be viewed here.  Clicking on a line that shows an error or warning will open an edit window and position the file to that line.  In the build tab, errors will be in \cf4 red\cf0  and warnings will be in \cf1 blue\cf0 .  
 \par 
 \par The \b Debug\b0  tab gives information about the debug status, such as what DLLs and THREADs are starting or ending.  It also displays messages from the program that are sent via the OutputDebugString API function.  These messages will be in \cf1 blue\cf0 .
-\par 
-\par The \b Find In Files 1\b0  tab is one of the output windows for results of the \cf2\strike Find/Replace\cf3\strike0\{linkID=100\}\cf0  operation.
-\par 
-\par The \b Find In Files 2\b0  tab is another output window for results of the Find/Replace operation.
 \par 
 \par Right-Clicking on the information window pane opens the \cf2\strike Information Context Menu\cf3\strike0\{linkID=290\}\cf0 .
 \par }
@@ -1258,7 +1243,7 @@ FALSE
 \par 
 \par \pard\ri1440\qc\cf3\{bmc werror.png\}\cf0 
 \par \pard\ri1440 
-\par In this example, we see several warnings (yellow icon) and an error (red icon).
+\par In this example, we see several warnings (yellow icon).   If there were an error, the icon next to it would show a red circle with an X.
 \par 
 \par The buttons at the top of the window allow configuration of whether to view errors, warnings, or both.   Clicking on an error line brings up an \cf2\strike Editor Window\cf3\strike0\{linkID=50\}\cf0  to view the line with the problem. 
 \par 
@@ -1315,7 +1300,7 @@ Writing
 
 
 FALSE
-47
+51
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red128\green0\blue0;\red0\green128\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Debug Menu\cf2\b0\f1\fs20 
@@ -1350,9 +1335,11 @@ FALSE
 \par \pard 
 \par The following menu exist on the \cf0\b Debug Windows\cf2\b0  submenu.  These items allow selection of various debug related windows, they are grayed out until the \cf4\strike Integrated Debugger\cf3\strike0\{linkID=300\}\cf2  is started.
 \par 
-\par \b Assembly\b0  opens or closes the \cf4\strike Assembly Window\cf3\strike0\{linkID=670\}\cf2 .  When the window is displayed a check mark will appear next to the menu item.
+\par \b Breakpoints\b0  opens or closes the \cf4\strike Breakpoints Window\cf3\strike0\{linkID=415\}\cf2 .   When the window is displayed a check mark will appear next to the menu item.
 \par 
-\par \b Memory\b0  opens or closes the \cf4\strike Memory Window\cf3\strike0\{linkID=680\}\cf2 .  When the window is displayed a check mark will appear next to the menu item.
+\par \b Disassembly\b0  opens or closes the \cf4\strike Assembly Window\cf3\strike0\{linkID=670\}\cf2 .  When the window is displayed a check mark will appear next to the menu item.
+\par 
+\par \b Memory\b0  opens or closes one of four \cf4\strike Memory Windows\cf3\strike0\{linkID=680\}\cf2 .  When the window is displayed a check mark will appear next to the menu item.
 \par 
 \par \b Register\b0  opens or closes the \cf4\strike Register Window\cf3\strike0\{linkID=720\}\cf2 .  When the window is displayed a check mark will appear next to the menu item.
 \par 
@@ -1360,8 +1347,10 @@ FALSE
 \par 
 \par \b Thread \b0 opens or closes the \cf4\strike Thread Window\cf3\strike0\{linkID=710\}\cf0 .  When the window is displayed a check mark will appear next to the menu item.
 \par \cf3 
-\par \cf0\b Watch \b0 opens or closes the \cf4\strike Watch Window\cf3\strike0\{linkID=650\}\cf2 .  When the window is displayed a check mark will appear next to the menu item.\f1 
+\par \cf0\b Watch \b0 opens or closes one of four \cf4\strike Watch Windows\cf3\strike0\{linkID=650\}\cf2 .  When the window is displayed a check mark will appear next to the menu item.\f1 
 \par \b 
+\par \f0 Locals \b0 opens or closes the \cf4\strike Locals Window\cf3\{\strike0 linkID=655\}\cf2 .   When the window is displayed a check mark will appear next to the menu item.
+\par \b\f1 
 \par }
 320
 Scribble320
@@ -1375,7 +1364,7 @@ Writing
 
 
 FALSE
-19
+20
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1440\cf1\b\fs32 Debugging Windows\cf0\b0\f1\fs20 
@@ -1386,7 +1375,8 @@ FALSE
 \par 
 \par The debugging windows are as follows:
 \par 
-\par \pard\ri1440\tx660\tx4200\tab\cf2\strike Assembly Window\cf3\strike0\{linkID=670\}\cf0\tab Shows an assembly language listing 
+\par \pard\ri1440\tx660\tx4200\tab\cf2\strike Disassembly Window\cf3\strike0\{linkID=670\}\cf0\tab Shows the assembly language associated with the program
+\par \tab\cf2\strike Breakpoints Window\cf3\strike0\{linkID=415\}\tab\cf0 Shows all current breakpoints
 \par \tab\cf2\strike Memory Window\cf3\strike0\{linkID=680\}\cf0\tab Shows a memory dump
 \par \tab\cf2\strike Register Window\cf3\strike0\{linkID=720\}\tab\cf0 Shows registers
 \par \tab\cf2\strike Call Stack Window\cf3\strike0\{linkID=700\}\cf0\tab Shows a back trace of the processor stack
@@ -1681,7 +1671,7 @@ Writing
 
 
 FALSE
-25
+27
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Breakpoints\cf2\b0\f1\fs20 
@@ -1695,6 +1685,8 @@ FALSE
 \par 
 \par Breakpoints may also be set while in the \cf3\strike Disassembly Window\cf4\strike0\{linkID=670\}\cf2 .   In this case a breakpoint can be set on arbitrary machine instructions, not just at the beginning of a line.
 \par 
+\par A \cf3\strike Breakpoint Window\cf4\strike0\{linkID=415\}\cf2  can show a list of current breakpoints and allow individually enabling or disabling them.
+\par 
 \par When no breakpoints are set, the program stops at the \i main()\i0  or \i Winmain()\i0  function when run, as if a breakpoint had been set there.
 \par 
 \par Another type of break point is implicitly set when the \b Run To\b0  item on the Debug Toolbar is used.  A break point is set at the cursor address to force the program to stop there.
@@ -1706,6 +1698,68 @@ FALSE
 \par Finally, the debugger supports \cf3\strike Data Breakpoints\cf4\strike0\{linkID=890\}\cf0 .  This type of breakpoint detects when a variable changes.  It can handle more complex variables than the corresponding Hardware Breakpoints, such as entire structures or arrays.  However, it uses a form of detection that has the potential to slow the program down somewhat while detection of changes is being done.
 \par 
 \par \cf2\f1 
+\par }
+415
+Scribble415
+Breakpoints Window
+breakpoints;
+
+
+
+Writing
+
+
+
+FALSE
+16
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red128\green0\blue0;\red0\green128\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Breakpoints Window\cf0\lang1049\b0\f1\fs20 
+\par 
+\par \lang1033\f0 The Breakpoints window allows viewing and editing a list of breakpoints.   It looks similar to what follows:
+\par 
+\par 
+\par \pard\qc\cf2\{bmc wbreakpoint.png\}
+\par \pard\cf0 
+\par This example has two breakpoints; one will stop the program and the other is currently disabled.   This window also shows data and hardware breakpoints, if they have been selected.
+\par 
+\par Right clicking in this window brings up the \cf3\strike Breakpoint Context Menu\cf2\strike0\{linkID=417\}\cf0 .
+\par 
+\par Clicking on a code breakpoint takes on to the line the breakpoint is defined on.   Clicking on data or hardware breakpoints has no effect.
+\par \lang1049\f1 
+\par }
+417
+Scribble417
+Breakpoint Context Menu
+
+
+
+
+Writing
+
+
+
+FALSE
+20
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Breakpoint Context Menu\cf0\lang1049\b0\f1\fs20 
+\par 
+\par \lang1033\f0 The breakpoint context menu has several items that may be used to modify the contents of the \cf2\strike Breakpoints Window\cf3\strike0\{linkID=415\}.
+\par 
+\par \pard\qc\{bmc cmbreakpoint.png\}
+\par \pard\cf0 
+\par \b Hardware Breakpoints\b0  allows creating a \cf2\strike Hardware Breakpoint\cf3\strike0\{linkID=730\}\cf0 
+\par 
+\par \b Data Breakpoints\b0  allows creating a \cf2\strike Data Breakpoint\cf3\{linkID=890\}\cf0\strike0 
+\par 
+\par \b Add Function Breakpoint\b0  allows creating a breakpoint at the beginning of a function
+\par 
+\par \b Remove This Breakpoint\b0  removes the breakpoint that was right-clicked on from the list of breakpoints
+\par 
+\par \b Remove All Breakpoints\b0  remove all breakpoints removes all breakpoints from the list
+\par 
+\par \b Enable All Breakpoints\b0  enables or disables all breakpoints in the list\lang1049\f1 
 \par }
 420
 Scribble420
@@ -1744,22 +1798,51 @@ Writing
 
 
 FALSE
-16
+18
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1460\cf1\b\fs32 Browse Information\cf0\b0\f1\fs20 
 \par 
-\par \f0 The IDE offers source code browsing.  Placing a cursor on a variable or structure name, the selecting \b Browse \b0 on the \cf2\strike View Browse Menu\cf3\strike0\{linkID=170\}\cf0  will browse to the variable or structure declaration.  Alternatively the Browse To selection will open the \cf2\strike Browse To Dialog\cf3\strike0\{linkID=380\}\cf0  and allow a name to be entered directly.
+\par \f0 The IDE offers source code browsing.  Placing a cursor on a variable or structure name, the selecting \b Browse to Definiton or Browse to Declaration \b0 on the \cf2\strike View Browse Menu\cf3\strike0\{linkID=170\}\cf0  will browse to the variable or structure declaration.  Alternatively the Browse To selection will open the \cf2\strike Browse To Dialog\cf3\strike0\{linkID=380\}\cf0  and allow a name to be entered directly.  
 \par 
-\par The browse function requires compiler support and must be enabled from the \cf2\strike General Properties Dialog\cf3\strike0\{linkID=550\}\cf0 .  After enabling it, the project must be recompiled with the Build All option.
+\par The browse function requires compiler support and must be enabled from the \cf2\strike General Properties Dialog\cf3\strike0\{linkID=550\}\cf0 .  After enabling it, the project must be recompiled with the Build All option.   In C++ code it is also possible to browse to a function which has been referenced through a structure instance, but this requires that \cf2\strike Code Completion\cf3\strike0\{linkID=530\}\cf0  also be enabled.
+\par 
+\par Various C++ language constructructs are supported, for example the namespace selector.
 \par 
 \par Browsing is only possible within C language files and headers.  Note that the browse information file (which is handled in the background) may become very large for large programs.
 \par 
-\par Browse information is also used by the \cf2\strike Jump List\cf3\strike0\{linkID=900\}.\cf0 
+\par Browse information is also used by the \cf2\strike Jump List\cf3\strike0\{linkID=900\} \cf0 and the \cf2\strike Variable Usages Window\cf3\strike0\{linkID=435\}.\cf0 
 \par 
 \par Browsing is enabled in the \cf2\strike Hints Configuration\cf3\strike0\{linkID=530\}\cf0 .
 \par 
 \par If a browse is requested, and browsing is not enabled, the IDE will ask if the workarea should be rebuilt with browsing enabled.  If the answer is yes, the workarea will be rebuilt as if by the \b Rebuild All \b0 selection on the \cf2\strike Build Menu\cf3\strike0\{linkID=250\}\cf0 , and then the browse will complete.
+\par }
+435
+Scribble435
+Variable Usages Window
+variable;variable usage;
+
+
+
+Writing
+
+
+
+FALSE
+14
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;\red128\green0\blue0;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Variable Usages Window
+\par 
+\par \cf0\b0\fs20 The Variable Usages window is used to view the position of the definition and usages of a variable.   It looks similar to what follows:
+\par \cf1\b\fs32 
+\par \pard\qc\cf2\b0\fs20\{bmc wvarusage.png\}\cf0\lang1049\f1 
+\par \pard 
+\par 
+\par \lang1033\f0 On this window, type the name of the variable in the combo box.   The browse information will be used to determine where the variable is defined (shown with the green plus) and where it is used (shown with the grey box.   It is also possible to see the location where the variable is declared, which will be indicated by a yellow triangle with an exclamation point.
+\par \lang1049\f1 
+\par \lang1033\f0 Clicking on a row takes one to the line of source code with the definition or usage.
+\par \lang1049\f1 
 \par }
 440
 Scribble440
@@ -2090,7 +2173,7 @@ FALSE
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Hints And Code Completion\cf0\b0\f1\fs20 
 \par 
-\par \f0 The Hints And Code Completion Settings is inside the \cf2\strike General Properties Dialog\cf3\strike0\{linkID=550\}\cf0 .   It allows modification of editor settings related to hints and code completion.  It appears similar to what follows:
+\par \f0 The Hints And \cf2\strike Code Completion\cf3\strike0\{linkID=535\}\cf0  Settings is inside the \cf2\strike General Properties Dialog\cf3\strike0\{linkID=550\}\cf0 .   It allows modification of editor settings related to hints and code completion.  It appears similar to what follows:
 \par 
 \par \pard\qc\cf3\{bmc hints.png\}
 \par 
@@ -2127,6 +2210,30 @@ FALSE
 \par 
 \par 
 \par \f1 
+\par }
+535
+Scribble535
+Code Completion
+
+
+
+
+Writing
+
+
+
+FALSE
+11
+{\rtf1\ansi\ansicpg1251\deff0\deflang1049{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
+{\colortbl ;\red0\green0\blue255;}
+\viewkind4\uc1\pard\cf1\lang1033\b\fs32 Code Completion\cf0\lang1049\b0\f1\fs20 
+\par 
+\par \lang1033\f0 Code Completion is a feature of the IDE that allows it to dynamically show a function prototype, or a list of structure members, while code is being typed in the editor.   In the C language this feature is relatively straightforward.  However in C++ there are a number of language features that are explicitly supported when typing a name for completion.   Some of these are as follows:
+\par 
+\par Namespace specifiers may be used to select a namespace.
+\par Using statements will usually be honored.
+\par Multiple functions may be listed if there are several overload matches
+\par If the function currently being edited is a member function, its parent class will be used to filter the options.\lang1049\f1 
 \par }
 540
 Scribble540
@@ -2799,7 +2906,7 @@ Writing
 
 
 FALSE
-19
+23
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;\red0\green0\blue0;}
 \viewkind4\uc1\pard\ri1480\cf1\b\fs32 Watch Window\cf0\b0\f1\fs20 
@@ -2808,13 +2915,17 @@ FALSE
 \par 
 \par \pard\ri1480\qc\cf3\{bmc wwatch.png\}\cf0 
 \par \pard\ri1480 
-\par \pard\cf4 The watch window has four tabs which can independently show different groups of variables.
+\par \pard\cf4 There are four watch windows that may be used independently of each other.
 \par \b 
 \par \pard\ri1480\cf0\b0 When a value is displayed, clicking on the right-hand side of the value will open a small text window.  Typing a new value then pressing ENTER will cause that value to be written to the executable's memory.
 \par 
 \par Right-Clicking in the watch window opens the \cf2\strike Watch Context Menu\cf3\strike0\{linkID=660\}\cf0 .  This allows adding or removing items to watch.
 \par 
 \par Right-Clicking in an edit window will display the \cf2\strike Editor Context Menu\cf3\strike0\{linkID=150\}\cf0 .  The \b Add To Watch\b0  menu item will display the word under the cursor in the current tab of the window, along with its value.
+\par 
+\par The expression for the watch may be complex, utilizing namespace selectors and structure access operators.
+\par 
+\par Values that have changed since the last time the program stopped at a breakpoint will be in red; other values will be in black.
 \par 
 \par The window is updated automatically each time the program stops at a break point.
 \par \pard\fi-2800\li2800\ri1460\tx720\tx2820\f1 
@@ -2840,7 +2951,7 @@ FALSE
 \par 
 \par \pard\ri1480\qc\cf3\{bmc wlocals.png\}\cf0 
 \par \pard\ri1480 
-\par \pard\cf4 This window is another kind of \cf2\strike Watch Window\cf3\strike0\{linkID=650\}, \cf0 which automatically selects the local (auto) variables which are currently in scope for easy viewing\cf4 
+\par \pard\cf4 This window is another kind of \cf2\strike Watch Window\cf3\strike0\{linkID=650\}, \cf0 the difference is it automatically selects the local (auto) variables which are currently in scope so that they don't have to be individually added to a watch window.   In a C++ member function, it will also show the this pointer.\cf4 
 \par \b 
 \par \pard\ri1480\cf0\b0 When a value is displayed, clicking on the right-hand side of the value will open a small text window.  Typing a new value then pressing ENTER will cause that value to be written to the executable's memory.
 \par 
@@ -2919,20 +3030,24 @@ Writing
 
 
 FALSE
-16
+20
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1480\cf1\b\fs32 Memory Window\cf0\b0\f1\fs20 
 \par 
-\par \f0 The Memory Window is accessed from the \cf2\strike Debug->Windows Menu\cf3\strike0\{linkID=320\}\cf0 .  It has four tabs which can each show a block of memory.  It appears similar to what follows:
+\par \f0 The Memory Window is accessed from the \cf2\strike Debug->Windows Menu\cf3\strike0\{linkID=320\}\cf0 .  It appears similar to what follows:
 \par 
 \par \pard\ri1480\qc\cf3\{bmc wmem.png\}\cf0 
 \par \pard\ri1480 
-\par In each tab, the address is shown on the left, followed by a sequence of bytes, followed by a sequence of ASCII values for the byte sequence.  By default 16 bytes will be shown per line, however if the window is resized it will automatically adjust the number of bytes per line to fit.
+\par There are four memory windows which may be used independently of each other.
 \par 
-\par At the top of the window is a small text box which is used to tell what memory should be viewed.  An address can be entered here, or the name of a variable.  It is also possible to type an \cf2\strike expression\cf3\strike0\{linkID=800\}\cf0  into this box and have it evaluated.
+\par The address is shown on the left, followed by a sequence of bytes, followed by a sequence of ASCII values for the byte sequence.  By default 16 bytes will be shown per line, however if the window is resized it will automatically adjust the number of bytes per line to fit.
+\par 
+\par At the top of the window is a small text box which is used to tell what memory should be viewed.  An address can be entered here, or the name of a variable.  It is also possible to type an \cf2\strike expression\cf3\strike0\{linkID=800\}\cf0  into this box and have it evaluated.   A toolbar button is used to choose whether the address should remain static or whether it should be re-evaluated every time the program stops at a breakpoint.
 \par 
 \par When the memory portion of the window has keyboard focus, a black cursor will appear over one of the values.  The cursor may be moved around to select a value by using the arrow and page keys.  Typing in a Hexadecimal digit will turn the cursor to blue; a second digit can be typed at this time.  While the cursor is blue, the ESCAPE key will void the edit function and return the cursor to black, or the ENTER key will accept the new value and attempt to write it to the program's memory space.  If successful the display will update with a black cursor and show the new value; if the new value cannot be written then a dialog will appear to inform you of the problem.
+\par 
+\par Values which have changed since stopping at the last breakpoint will be in red; other values will be in black.
 \par 
 \par The window is automatically updated whenever the program stops at a break point.  
 \par }
@@ -2948,12 +3063,12 @@ Writing
 
 
 FALSE
-17
+18
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Memory Context Menu\cf0\b0\f1\fs20 
 \par 
-\par \f0 The Memory Context Window is accessed by right-clicking in the \cf2\strike Memory Window\cf3\strike0\{linkID=680\}\cf0 .  It allows selection of the size of the data displayed.  It appears similar to what follows:
+\par \f0 The Memory Context Window is accessed by right-clicking in the \cf2\strike Memory Window\cf3\strike0\{linkID=680\}\cf0 .  It allows selection of the size of the data displayed and the number of bytes of data to show per line.  It appears similar to what follows:
 \par 
 \par \pard\qc\cf3\{bmc cmmemory.png\}\cf0 
 \par \pard 
@@ -2965,6 +3080,7 @@ FALSE
 \par 
 \par DWORD - selects a dword per unit (four bytes or eight hexadecimal characters)
 \par \f1 
+\par \f0 The auto selection for bytes per line will adjust the number of bytes shown based on the window width. \f1 
 \par }
 700
 IDH_STACK_WINDOW
@@ -3517,7 +3633,7 @@ Writing
 
 
 FALSE
-108
+113
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\ri1500\cf1\b\fs32 Hot Keys\cf0\b0\f1\fs20 
@@ -3555,17 +3671,22 @@ FALSE
 \par \pard\fi-2800\li2800\ri1500\tx660\tx2800 In addition the following sequences have special meaning in the \cf2\strike Editor Window\cf3\strike0\{linkID=50\}\cf0 :
 \par 
 \par \pard\fi-2740\li2740\ri1500\tx2760\b ESC\b0\tab Close the find window or a code completion window
+\par \b SHIFT-CTL-#\b0\tab\tab # is a digit from 1 - 9.   Mark a position in the text
+\par \b CTL-#\b0\tab\tab # is a digit from 1 - 9.   Goto a previously marked position in the text
 \par \b CTL-C\b0\tab Copy selection to clipboard
 \par \b CTL-L\b0\tab Page Break
+\par \b CTL-R\b0\tab Redo the last undone operation
 \par \b CTL-S\b0\tab Save the file in the current edit window
+\par \b CTL-T\b0\tab Delete word at cursor
 \par \b CTL-V\b0\tab Paste clipboard to cursor position.  This overwrites the selection if there is one
-\par \b CTL-T\b0\tab Place the line the cursor is at in the center of the window (vertical center)
 \par \b CTL-X\b0\tab Copy the selection to the clipboard, and cut it from the text
+\par \b CTL-Y\b0\tab\tab Delete line cursor is on
 \par \b CTL-Z\b0\tab Undo the last operation
 \par \b ALT-\{\b0\tab Navigate to beginning of block when cursor is on a '\}'\b 
 \par ALT-\}\b0\tab Navigate to end of block when cursor is on a '\{'
 \par \b CTL-[ \b0                                      Open full-size edit window
 \par \b CTL-] \b0                                      Close full-size edit window
+\par \b CTL-|\b0\tab Place the line the cursor is at in the center of the window (vertical center)
 \par \b SHIFT-F1\tab\b0 Show run time library help for the word under the cursor.
 \par \b CTL-F1\b0\tab Show \cf2\strike WIN32 help\cf3\strike0\{linkID=555\}\cf0  for the word under the cursor
 \par \b CTL-F7\b0\tab Compile the file in the source window
@@ -3677,7 +3798,7 @@ FALSE
 890
 IDH_DATA_BREAKPOINTS_DIALOG
 Data Breakpoint
-
+breakpoints;
 
 
 
@@ -4477,7 +4598,7 @@ FALSE
 0
 0
 0
-182
+184
 1 General Information
 2 Welcome=Scribble10
 2 Getting Started=IDH_GETTING_STARTED
@@ -4490,12 +4611,15 @@ FALSE
 2 Bookmark Dialog=Scribble390
 1 Breakpoints
 2 Breakpoints=Scribble410
+2 Breakpoints Window=Scribble415
+3 Breakpoint Context Menu=Scribble417
 2 Hardware Breakpoints Dialog=IDH_HARDWARE_BREAKPOINTS_DIALOG
 2 Data Breakpoint Dialog=IDH_DATA_BREAKPOINTS_DIALOG
 1 Browse Information
 2 Browse information=Scribble430
 2 Browse Menu=Scribble170
 2 Jump List=Scribble900
+2 Variable Usages Window=Scribble435
 2 General Configuration=IDH_GENERAL_CONFIGURATION
 1 Dialogs
 2 Add To Watch Dialog=Scribble370
@@ -4570,8 +4694,6 @@ FALSE
 2 Menus=Scribble40
 2 Main Menu
 3 File Menu=Scribble60
-4 Workarea Menu=Scribble70
-4 File SubMenu=Scribble80
 3 Edit Menu=Scribble130
 3 View Menu=Scribble180
 4 View Browse Menu=Scribble170
@@ -4593,6 +4715,7 @@ FALSE
 3 String Table Context Menu=Scribble1130
 3 Version Datta Context Menu=Scribble1145
 2 Other Context Menus
+3 Breakpoint Context Menu=Scribble417
 3 Client Context Menu=Scribble195
 3 Editor Context Menu=Scribble150
 3 Information Context Menu=Scribble290

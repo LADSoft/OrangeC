@@ -45,7 +45,6 @@
 #include <process.h>
 #include "helpid.h"
 #include "header.h"
-#include "codecomp.h"
 #include "regexp.h"
 #include "idewinconst.h"
 #include <ctype.h>
@@ -367,7 +366,6 @@ static void SendToOutput(char *fname, int flags, char *start, char *end)
     {
         char line[1000];
         char buf[1500];
-        int fifwindow = (flags & F_OUTPUT2) ? ERR_FIND2_WINDOW : ERR_FIND1_WINDOW;
         int n = countLines(start, end) + 1;
         char *ls = end, *le = end;
         while (ls > start && ls[-1] != '\n')
@@ -378,9 +376,9 @@ static void SendToOutput(char *fname, int flags, char *start, char *end)
             le = ls + sizeof(line)-1;
         memcpy(line, ls, le - ls);
         line[le - ls] = 0;
-        sprintf(buf, "%s%7d %s\n", fname, n, line);
-        SendInfoMessage(fifwindow, buf);
-        Tag(fifwindow == ERR_FIND1_WINDOW ? TAG_FIF1 : TAG_FIF2, fname, n, 0, 0, 0, 0);
+        sprintf(buf, "%s:%7d %s\n", fname, n, line);
+        SendFindMessage(!!(flags & F_OUTPUT2), buf);
+        Tag((flags & F_OUTPUT1) ? TAG_FIF1 : TAG_FIF2, fname, n, 0, 0, 0, 0);
     }
     else if (flags & F_OPENWINDOW)
     {
@@ -497,7 +495,6 @@ static RE_CONTEXT * getREContext(char *search, int flags)
 }
 static void FindAllInBuffer(char *fname, char *buf, char *search, int flags)
 {
-    int fifwindow = (flags & F_OUTPUT2) ? ERR_FIND2_WINDOW : ERR_FIND1_WINDOW;
     CHARRANGE pos;
     int len = 0;
     RE_CONTEXT *context = getREContext(search, flags);
@@ -523,7 +520,6 @@ static int FindNextInDocument(DWINFO *ptr, char *buf, CHARRANGE *pos, int flags,
     BOOL rv = FALSE;
     BOOL val;
     int len = 0;
-    SetStatusMessage("", FALSE);
     val = xfind(ptr->dwName, search, flags, buf, &len, pos, context);
     if (val >= 0)
     {
@@ -953,6 +949,7 @@ static char *GetNextFindDocument(CHARRANGE *pos, int mode, DWINFO **ptr, char *s
             PROJECTITEM *pi;
             char path[MAX_PATH];
             case F_M_CURRENTDOCUMENT:
+            case F_M_SELECTION:
                 newBuf = calloc(1, sizeof(BUFLIST));
                 if (newBuf)
                 {
@@ -1175,10 +1172,8 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
     if (flags & (F_OUTPUT1 | F_OUTPUT2))
     {
         char msgbuf[256];
-        int fifwindow = (flags & F_OUTPUT2) ? ERR_FIND2_WINDOW : ERR_FIND1_WINDOW;
         EndFind();
-        TagRemoveAll(fifwindow == ERR_FIND1_WINDOW ? TAG_FIF1 : TAG_FIF2);
-        SelectInfoWindow(fifwindow);
+        TagRemoveAll((flags & F_OUTPUT1) ? TAG_FIF1 : TAG_FIF2);
         matchCount = 0;
         ptr = NULL;
         do
@@ -1188,8 +1183,7 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
                 FindAllInBuffer(ptr->dwName, buf, search, flags);
         } while (buf && !canceled); 
         sprintf(msgbuf, "\nFinished.  %d Matches\n", matchCount);
-        SendInfoMessage(fifwindow, msgbuf);
-//        SendInfoDone(fifwindow);
+        SendFindMessage(!!(flags & F_OUTPUT2), msgbuf);
     }
     else
     {
@@ -1212,7 +1206,7 @@ static void FindStringFromFiles(int mode, int flags, char *search, char *specifi
         }
         if (!buf && !(flags &FR_REPLACEALL))
         {
-            ExtendedMessageBox("Search",0,"Search reached end of region.");
+            SetStatusMessage("Search reached end of region.", FALSE);
         }
     }
     if (context)
@@ -1383,6 +1377,8 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
             }
             offset = 0;
 			lastoffset = 0;
+            if ((flags & F_REPLACEALL) && ptr)
+                insertautoundo(ptr->dwHandle, (EDITDATA *)GetWindowLong(ptr->dwHandle, 0), UNDO_AUTOCHAINEND);
             do 
             {
 				BOOL doupdate = FALSE;
@@ -1392,6 +1388,8 @@ static void ReplaceInDocuments(int mode, int flags, char *search, char *replace,
 					lastoffset = offset;
             }
             while ((flags & F_REPLACEALL) && replaced && !canceled);
+            if ((flags & F_REPLACEALL) && ptr)
+                insertautoundo(ptr->dwHandle, (EDITDATA *)GetWindowLong(ptr->dwHandle, 0), UNDO_AUTOCHAINBEGIN);
             if (replaced && !(flags & F_REPLACEALL))
             {
                 RestartFind();
@@ -1468,6 +1466,10 @@ static void EnableWindows(HWND hwnd, BOOL state)
 }
 void DoFindNext(void *p)
 {
+    if (findflags & (F_OUTPUT1 | F_OUTPUT2))
+    {
+        SendFindMessage(!!(findflags & F_OUTPUT2), NULL);
+    }
 	if (!infindorreplace)
 	{
 		HWND hwndDlg = p;
@@ -1490,6 +1492,7 @@ void DoFindNext(void *p)
 				EndFind();
 			PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
 		}
+        rehighlight(findText, findflags &FR_MATCHCASE, findflags &F_WHOLEWORD);
 		infindorreplace = FALSE;
 	}
 }
@@ -1514,7 +1517,11 @@ void DoReplaceNext(void *p)
 		if (!canceled)
 		{
 			if (replaceflags & F_REPLACEALL)
-				ExtendedMessageBox("Replace", 0, "Replaced %d occurrences.", replaceCount);
+            {
+                char buf[256];
+				sprintf(buf,"Replaced %d occurrences.", replaceCount);
+                SetStatusMessage(buf, FALSE);
+            }
 		}
 		PostMessage(hwndDlg, WM_ENABLEFIND, TRUE ,0);
 	}
@@ -1664,7 +1671,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 }
                 SendDlgItemMessage(hwndDlg, IDC_ICONFINDOPTIONS, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->findOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
                 SendDlgItemMessage(hwndDlg, IDC_ICONFINDOUTPUT, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->findOffs & 4) ? pHdr->minusBmp : pHdr->plusBmp));
-                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.h");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.cc;*.h");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.asm;*.nas");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.def;*.rc");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOFINDTYPE, CB_ADDSTRING, 0, (LPARAM)"*.txt");
@@ -1700,9 +1707,23 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                     SubClassHistoryCombo(child);
                     SendMessage(child, WM_SETHISTORY,0, (LPARAM)replacebrowsehist);
                 }
-                    
+                child = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE,    0, 0);
+                if (IsWindow(child))
+                {
+                    CHARRANGE range;
+                    memset(&range, 0, sizeof(range));
+                    SendMessage(child, EM_EXGETSEL,0, (LPARAM)&range);
+                    if (range.cpMax != range.cpMin)
+                    {
+                        replacemode = F_M_SELECTION;
+                    }
+                    else if (replacemode == F_M_SELECTION)
+                    {
+                        replacemode = F_M_CURRENTDOCUMENT;
+                    }
+                }
                 SendDlgItemMessage(hwndDlg, IDC_ICONREPLACEOPTIONS, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)((pHdr->replaceOffs & 2) ? pHdr->minusBmp : pHdr->plusBmp));
-                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.h");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.c;*.cpp;*.cxx;*.cc;*.h");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.def;*.rc");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_ADDSTRING, 0, (LPARAM)"*.*");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACETYPE, CB_SETCURSEL, replaceext, 0);
@@ -1712,6 +1733,7 @@ LRESULT CALLBACK FindChildDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LP
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"All Projects");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"Orange C Include Path");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"User-specified Path");
+                SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_ADDSTRING, 0, (LPARAM)"Selection");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEWHERE, CB_SETCURSEL, replacemode, 0);
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM)"Direct Match");
                 SendDlgItemMessage(hwndDlg, IDC_COMBOREPLACEHOW, CB_ADDSTRING, 0, (LPARAM)"Regular Expression");
@@ -2180,6 +2202,7 @@ LRESULT CALLBACK FindDlgProc(HWND hwndDlg, UINT iMessage, WPARAM wParam, LPARAM
                 case IDCANCEL:
                     SetEvent(findEvent);
                     SetFocus((HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0));
+                    rehighlight("", 0, 0);
                     EndDialog(hwndDlg, 0);
                     pHdr = (DLGHDR *) GetWindowLong(hwndDlg, GWL_USERDATA);
                     FindChildDlgProc(pHdr->hwndDisplay, WM_USER, 0, 0);

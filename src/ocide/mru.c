@@ -53,7 +53,7 @@ static HMENU hMRUSubMenu;
 void MRUToMenu(int which)
 {
     DWINFO **list;
-    int base, base1, base2;
+    int base, base1;
     MENUITEMINFO mi;
     char buf[256];
     int i, currentOffset;
@@ -63,20 +63,17 @@ void MRUToMenu(int which)
     {
         list = mruprojlist;
         base = ID_MRU_PROJ_LIST;
-        base1 = 0; // menu index.  Must change if RC file changes
-        base2 = 2;
+        base1 = 2; // menu index.  Must change if RC file changes
     }
     else
     {
         list = mrulist;
         base = ID_MRU_LIST;
-        base1 = 1; // see above 
-        base2 = 2;
+        base1 = 9; // see above 
     }
 
-    hMRUSubMenu = GetSubMenu(hMenuMain, maxed + 0);
+    hMRUSubMenu = GetSubMenu(hMenuMain, maxed);
     hMRUSubMenu = GetSubMenu(hMRUSubMenu, base1);
-    hMRUSubMenu = GetSubMenu(hMRUSubMenu, base2);
     currentOffset = GetMenuItemCount(hMRUSubMenu);
     memset(&mi, 0, sizeof(mi));
     mi.cbSize = sizeof(mi);

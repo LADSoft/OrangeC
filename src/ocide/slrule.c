@@ -99,6 +99,8 @@ SETTING *LoadItem(struct xmlNode *node, int version, BOOL debug)
                 rv->displayName = strdup(attribs->value);
             else if (IsAttrib(attribs, "ID"))
                 rv->id = strdup(attribs->value);
+            else if (IsAttrib(attribs, "EXT"))
+                rv->ext = strdup(attribs->value);
             else if (IsAttrib(attribs, "TYPE"))
             {
                 if (!strcmp(attribs->value, "COMBO"))

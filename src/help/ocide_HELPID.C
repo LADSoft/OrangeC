@@ -19,10 +19,9 @@
 #define  Scribble40             (40)        // Menus
 #define  Scribble50             (50)        // Editor Window
 #define  Scribble60             (60)        // File Menu
-#define  Scribble70             (70)        // Workarea Menu
-#define  Scribble80             (80)        // File SubMenu
 #define  Scribble90             (90)        // Search Menu
 #define  IDH_FIND_REPLACE_DIALOG (100)      // Find/Replace dialog
+#define  Scribble105            (105)       // Find Windows
 #define  Scribble110            (110)       // Project Menu
 #define  Scribble120            (120)       // Tools Menu
 #define  Scribble130            (130)       // Edit Menu
@@ -57,8 +56,11 @@
 #define  Scribble390            (390)       // Bookmark Dialog
 #define  Scribble400            (400)       // Bookmarks
 #define  Scribble410            (410)       // Breakpoints
+#define  Scribble415            (415)       // Breakpoints Window
+#define  Scribble417            (417)       // Breakpoint Context Menu
 #define  Scribble420            (420)       // Integrated Platform Help
 #define  Scribble430            (430)       // Browse Information
+#define  Scribble435            (435)       // Variable Usages Window
 #define  Scribble440            (440)       // Printing
 #define  Scribble450            (450)       // Toolbars
 #define  Scribble460            (460)       // Toolbar Customization Dialog
@@ -69,6 +71,7 @@
 #define  Scribble510            (510)       // Formatting
 #define  Scribble520            (520)       // Backup Settings
 #define  Scribble530            (530)       // Hints And Code Completion
+#define  Scribble535            (535)       // Code Completion
 #define  Scribble540            (540)       // Printer Settings
 #define  IDH_GENERAL_PROPERTIES_DIALOG (550) // General Properties Dialog
 #define  Scribble555            (555)       // WIN32 Help Configuration

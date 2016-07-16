@@ -52,7 +52,7 @@
 
 extern HINSTANCE hInstance;
 extern char szCWSFilter[], szCTGFilter[];
-extern HWND hwndProject, hwndFrame;
+extern HWND hwndFrame;
 extern PROJECTITEM *activeProject;
 extern PROJECTITEM *workArea;
 extern HWND prjTreeWindow;
@@ -182,9 +182,8 @@ void ProjectRename(void)
         TreeView_GetItemRect(prjTreeWindow, data->hTreeItem, &s, FALSE);
         hwndEdit = CreateWindow(szprjEditClassName,
             data->displayName, WS_CHILD | ES_AUTOHSCROLL | WS_BORDER, r.left, r.top,
-            s.right - r.left, r.bottom - r.top, hwndProject, (HMENU)
-            449, (HINSTANCE)GetWindowLong(GetParent(hwndProject),
-            GWL_HINSTANCE), 0);
+            s.right - r.left, r.bottom - r.top, GetWindowHandle(DID_PROJWND), (HMENU)
+            449, hInstance, 0);
         SendMessage(hwndEdit, EM_SETSEL, 0, (LPARAM) - 1);
         SendMessage(hwndEdit, EM_SETLIMITTEXT, 64, 0);
         ShowWindow(hwndEdit, SW_SHOW);
@@ -375,7 +374,7 @@ void ImportProject(BOOL ctg)
 {
         OPENFILENAME ofn;
 
-        if (OpenFileDialog(&ofn, 0, hwndProject, FALSE, FALSE, ctg? szCTGFilter : szCWSFilter,
+        if (OpenFileDialog(&ofn, 0, GetWindowHandle(DID_PROJWND), FALSE, FALSE, ctg? szCTGFilter : szCWSFilter,
                                ctg ? "Open Old Target File" : "Open Old Workspace File"))
         {
             char *q = stristr(ofn.lpstrFile,ctg?".ctg" : ".cws");

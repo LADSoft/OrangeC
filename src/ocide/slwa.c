@@ -56,24 +56,22 @@ extern int editFlags;
 extern DWINFO *editWindows;
 extern HINSTANCE hInstance;
 extern struct tagfile *tagFileList;
-extern HWND hwndToolNav, hwndToolBuildType, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark;
 extern HWND hwndClient, hwndFrame;
 extern HWND hwndSrcTab;
-extern HWND hwndProject;
 extern char *findhist[MAX_COMBO_HISTORY];
 extern char *findbrowsehist[MAX_COMBO_HISTORY];
 extern char *replacehist[MAX_COMBO_HISTORY];
 extern char *replacebrowsehist[MAX_COMBO_HISTORY];
 extern char *watchhist[MAX_COMBO_HISTORY];
+extern char *funcbphist[MAX_COMBO_HISTORY];
 extern char *databphist[MAX_COMBO_HISTORY];
 extern char *memhist[MAX_COMBO_HISTORY];
+extern char *varinfohist[MAX_COMBO_HISTORY];
 extern DWINFO *newInfo;
 extern char szDrawClassName[];
 extern char szUntitled[];
 extern DATABREAK *dataBpList;
-extern char hbpNames[4][256];
-extern int hbpAddresses[4];
-extern char hbpModes[4], hbpSizes[4], hbpEnables;
+extern HDWEBKPT hdwebp[4];
 extern PROJECTITEM *activeProject;
 extern FILEBROWSE *fileBrowseInfo;
 extern int fileBrowseCount;
@@ -89,6 +87,23 @@ extern char *sysProfileName;
 extern BOOL snapToGrid;
 extern BOOL showGrid;
 extern int gridSpacing;
+extern int simpleFindFlags;
+extern DOCK_STR debugDocks[100], releaseDocks[100];
+extern int debugDockCount, releaseDockCount, dockCount;
+extern RECT oldFrame;
+extern HWND debugfreeWindows[100], releasefreeWindows[100];
+extern int debugfreeWindowCount, releasefreeWindowCount;
+extern int freeWindowCount;
+extern HWND handles[MAX_HANDLES];
+extern HWND hwndToolbarBar;
+extern int errorButtons;
+extern int toolLayout[100];
+extern int toolCount;
+extern HWND hwndToolNav, hwndToolBuildType, hwndToolEdit, hwndToolDebug, hwndToolBuild, hwndToolBookmark, hwndToolThreads;
+extern int toolLayout[100];
+extern int toolCount;
+
+extern int memoryWordSize;
 
 int restoredDocks = FALSE;
 
@@ -324,49 +339,28 @@ void NoMemoryWS(void)
 
 //-------------------------------------------------------------------------
 
-void RestoreDocks(struct xmlNode *node, int version)
-{
-    CCD_params d[20];
-    int ids[20];
-    int count = 0;
-    struct xmlNode *dchildren = node->children;
-    while (dchildren && count < 20)
-    {
-        if (IsNode(dchildren, "DOCK"))
-        {
-            struct xmlAttr *attribs = dchildren->attribs;
-            while (attribs)
-            {
-                if (IsAttrib(attribs, "ID"))
-                    ids[count] = atoi(attribs->value);
-                else if (IsAttrib(attribs, "VALUE"))
-                {
-                    sscanf(attribs->value, 
-                        "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d>\n",  
-                        &d[count].flags, &d[count].flexparams,  
-                        &d[count].rowindex, &d[count].colindex,  
-                        &d[count].hidden, &d[count].hiddenwidth,  
-                        &d[count].oldsize.left, &d[count].oldsize.top, 
-                        &d[count].oldsize.right, &d[count].oldsize.bottom,  
-                        &d[count].position.left, &d[count].position.top, 
-                        &d[count].position.right, &d[count].position.bottom,  
-                        &d[count].lastposition.left, &d[count].lastposition.top, 
-                        &d[count].lastposition.right, &d[count].lastposition.bottom);						
-                } attribs = attribs->next;
-            }
-            adjustforbadplacement(ids[count], &d[count]);
-            count++;
-        }
-        dchildren = dchildren->next;
-    }
-    if (count)
-    {
-        dmgrSetInfo(ids, &d[0], count);
-        restoredDocks = TRUE;
-    }
-}
 
 //-------------------------------------------------------------------------
+void RestoreMemoryWindowSettings(struct xmlNode *node, int version)
+{
+    struct xmlAttr *attribs = node->attribs;
+    while (attribs)
+    {
+        if (IsAttrib(attribs, "WORDSIZE"))
+            memoryWordSize = atoi(attribs->value);
+        attribs = attribs->next;
+    } 
+}
+void RestoreErrorWindowSettings(struct xmlNode *node, int version)
+{
+    struct xmlAttr *attribs = node->attribs;
+    while (attribs)
+    {
+        if (IsAttrib(attribs, "BTNS"))
+            errorButtons = atoi(attribs->value);
+        attribs = attribs->next;
+    } 
+}
 
 void RestoreHistory(struct xmlNode *node, int version)
 {
@@ -384,10 +378,14 @@ void RestoreHistory(struct xmlNode *node, int version)
                 histitem = replacehist;
             else if (!strcmp(attribs->value, "WATCH"))
                 histitem = watchhist;
+            else if (!strcmp(attribs->value, "FUNCBP"))
+                histitem = funcbphist;
             else if (!strcmp(attribs->value, "DATABP"))
                 histitem = databphist;
             else if (!strcmp(attribs->value, "MEMORY"))
                 histitem = memhist;
+            else if (!strcmp(attribs->value, "VARINFO"))
+                histitem = varinfohist;
             else if ( !strcmp(attribs->value, "BFINDPATH"))
                 histitem = findbrowsehist;
             else if ( !strcmp(attribs->value, "BREPLACEPATH"))
@@ -430,6 +428,187 @@ void RestoreHistory(struct xmlNode *node, int version)
 
 
 //-------------------------------------------------------------------------
+void RestoreToolBars(struct xmlNode *node, int version)
+{
+    int id = 0;
+    HWND hwnd;
+    char *defines = 0;
+    struct xmlAttr *attribs = node->attribs;
+    if (version != WSPVERS)
+        return;
+    while (attribs)
+    {
+        if (IsAttrib(attribs, "ID"))
+            id = atoi(attribs->value);
+        else if (IsAttrib(attribs, "DEFINE"))
+            defines = attribs->value;
+        attribs = attribs->next;
+    } 
+    if (id && defines)
+    {
+        hwnd = GetToolWindow(id);
+        if (hwnd)
+            SetToolBarData(hwnd, defines);
+    }
+}
+void RestoreToolbarLayout(struct xmlNode *node, int version)
+{
+    int n = 0;
+    struct xmlAttr *attribs = node->attribs;
+    if (version != WSPVERS)
+        return;
+    while (attribs)
+    {
+        if (IsAttrib(attribs, "COUNT"))
+            n = atoi(attribs->value);
+        attribs = attribs->next;
+    } 
+    if (n)
+    {
+        char *str = node->textData;
+        int pos = 0 ;
+        int i;
+        for (i=0; i < n && i < sizeof(toolLayout)/sizeof(toolLayout[0]) ; i++)
+        {
+            int d;
+            if (sscanf(str, "%d%n", &d, &pos))
+            {
+                int visible = d < 10000;
+                if (d >= 10000)
+                    d -= 10000;
+                toolLayout[i] = d;
+                if (d > 0)
+                {
+                    ShowWindow(GetToolWindow(d), visible ? SW_SHOW : SW_HIDE);
+                }
+                str += pos;
+            }
+            else
+                break;
+        }
+        toolCount = i;
+    }
+}    
+void RestoreDocks(struct xmlNode *node, int version)
+{
+    int i;
+    struct xmlNode *nodes = node->children;
+    DOCK_STR debug[100], release[100];
+    HWND debugfrees[100], releasefrees[100];
+    int dbgCount =0;
+    int rlsCount = 0;
+    int dbgfreeCount = 0;
+    int rlsfreeCount = 0;
+    while (nodes)
+    {
+        int ctl=-1;
+        int type;
+        RECT r;        
+        int index;
+        int sel;
+        struct xmlAttr *attribs = nodes->attribs;
+        while (attribs)
+        {
+            if (IsAttrib(attribs, "SEL"))
+                sel = atoi(attribs->value);
+            if (IsAttrib(attribs, "TYPE"))
+                type = atoi(attribs->value);
+            if (IsAttrib(attribs, "INDEX"))
+                index = atoi(attribs->value);
+            if (IsAttrib(attribs, "CTL"))
+                ctl = atoi(attribs->value);
+            else if (IsAttrib(attribs, "POS"))
+            {
+                sscanf(attribs->value, "%d %d %d %d", &r.left, &r.top, &r.right, &r.bottom);
+                r.right += r.left;
+                r.bottom += r.top;
+            }
+            attribs = attribs->next;
+        } 
+        if (IsNode(nodes, "FRAME"))
+        {
+            oldFrame = r;
+        }
+        else if (IsNode(nodes,"DOCKWND"))
+        {
+            HWND wnd = CreateControlWindow(hwndFrame);
+            int current, n;
+            char*p = nodes->textData;
+            if (type == 2)
+            {
+                SetWindowPos(wnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_NOZORDER); 
+                SendMessage(wnd, TW_MAKEPOPUP, 0, 0);
+//                SetParent(wnd, HWND_DESKTOP);
+                debugfrees[dbgfreeCount++] = wnd;
+            }
+            else if (type == 3)
+            {
+                SetWindowPos(wnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOACTIVATE | SWP_NOZORDER); 
+                SendMessage(wnd, TW_MAKEPOPUP, 0, 0);
+//                SetParent(wnd, HWND_DESKTOP);
+                releasefrees[rlsfreeCount++] = wnd;
+            }
+            else
+            {
+                int *count;
+                DOCK_STR *docks;
+                int pos;
+                if (type == 0)
+                {
+                    count = & dbgCount;
+                    docks = &debug[0];
+                }
+                else
+                {
+                    count = &rlsCount;
+                    docks = &release[0];
+                }
+                if (index >= *count)
+                {
+                    *count = index + 1;
+                }
+                docks[index].ctl = ctl;
+                docks[index].r = r;
+                docks[index].hwnd = wnd;
+            }
+            while (sscanf(p, "%d%n", &current, &n) == 1)
+            {
+                SendMessage(wnd, TW_ADD, 0, (LPARAM)GetWindowHandle(current));
+                p += n;
+            }
+            SendMessage(wnd, TW_SELECT, 1, (LPARAM)GetWindowHandle(sel));
+        }
+        nodes = nodes->next;
+    }
+    if (dbgCount || rlsCount || dbgfreeCount || rlsfreeCount)
+    {
+        int i;
+        for (i=0; i < debugDockCount; i++)
+            DestroyWindow(debugDocks[i].hwnd);
+        debugDockCount = 0;
+        for (i=0; i < releaseDockCount; i++)
+            DestroyWindow(releaseDocks[i].hwnd);
+        releaseDockCount = 0;
+        for (i=0; i < debugfreeWindowCount; i++)
+            DestroyWindow(debugfreeWindows[i]);
+        debugfreeWindowCount = 0;
+        for (i=0; i < releasefreeWindowCount; i++)
+            DestroyWindow(releasefreeWindows[i]);
+        releasefreeWindowCount = 0;
+        memcpy(&debugDocks[0], &debug[0], dbgCount * sizeof(DOCK_STR));
+        memcpy(&releaseDocks[0], &release[0], rlsCount * sizeof(DOCK_STR));
+        memcpy(&debugfreeWindows[0], &debugfrees[0], dbgfreeCount * sizeof(HWND));
+        memcpy(&releasefreeWindows[0], &releasefrees[0], rlsfreeCount * sizeof(HWND));
+        debugDockCount = dbgCount;
+        dockCount = releaseDockCount = rlsCount;
+        debugfreeWindowCount = dbgfreeCount;
+        freeWindowCount = releasefreeWindowCount = rlsfreeCount;
+        for (i=0; i < releasefreeWindowCount; i++)
+            ShowWindow(releasefreeWindows[i], SW_SHOW);
+        SelectDebugWindows(FALSE);
+        ResizeLayout(NULL);
+    }
+}
 
 void RestoreWindows(struct xmlNode *node, int version, PROJECTITEM *wa)
 {
@@ -741,6 +920,8 @@ void RestoreTags(struct xmlNode *node, int version, PROJECTITEM *wa)
                             (*ts)->charpos = atoi(attribs->value);
                         else if (IsAttrib(attribs, "ENABLED"))
                             (*ts)->enabled = atoi(attribs->value);
+                        else if (IsAttrib(attribs, "DISABLED"))
+                            (*ts)->disable = atoi(attribs->value);
                         attribs = attribs->next;
                     }
                     if (tagid == TAG_BOOKMARK)
@@ -786,6 +967,16 @@ void RestoreFind(struct xmlNode *node, int version)
         attribs = attribs->next;
     }
 }
+void RestoreSimpleFind(struct xmlNode *node, int version)
+{
+    struct xmlAttr *attribs = node->attribs;
+    while (attribs)
+    {
+        if (IsAttrib(attribs, "FLAGS"))
+            simpleFindFlags = atoi(attribs->value);
+        attribs = attribs->next;
+    }
+}
 //-------------------------------------------------------------------------
 
 void RestoreWatch(struct xmlNode *node, int version)
@@ -803,21 +994,25 @@ void RestoreWatch(struct xmlNode *node, int version)
         } 
         else if (IsAttrib(attribs, "ENABLE"))
         {
+            hdwebp[id].disable = atoi(attribs->value);
+        }
+        else if (IsAttrib(attribs, "ACTIVE"))
+        {
             if (atoi(attribs->value))
-                hbpEnables |= (1 << id);
+                hdwebp[id].active = TRUE;
         }
         else if (IsAttrib(attribs, "NAME"))
         {
-            strncpy(hbpNames[id], attribs->value, 255);
-            hbpNames[id][255] = 0;
+            strncpy(hdwebp[id].name, attribs->value, 255);
+            hdwebp[id].name[255] = 0;
         }
         else if (IsAttrib(attribs, "MODE"))
         {
-            hbpModes[id] = atoi(attribs->value);
+            hdwebp[id].mode = atoi(attribs->value);
         }
         else if (IsAttrib(attribs, "SIZE"))
         {
-            hbpSizes[id] = atoi(attribs->value);
+            hdwebp[id].size = atoi(attribs->value);
         }
         attribs = attribs->next;
     }
@@ -840,58 +1035,13 @@ void RestoreDataBreakpoints(struct xmlNode *node, int version)
         {
             b->active = !!atoi(attribs->value);
         }
-        attribs = attribs->next;
-    }
-}
-//-------------------------------------------------------------------------
-
-void RestoreToolBars(struct xmlNode *node, int version)
-{
-    int id = 0;
-    HWND hwnd;
-    char *horiz = 0,  *vert = 0;
-    struct xmlAttr *attribs = node->attribs;
-    if (version != WSPVERS)
-        return;
-    while (attribs)
-    {
-        if (IsAttrib(attribs, "ID"))
-            id = atoi(attribs->value);
-        else if (IsAttrib(attribs, "HORIZ"))
-            horiz = attribs->value;
-        else if (IsAttrib(attribs, "VERT"))
-            vert = attribs->value;
-        attribs = attribs->next;
-    } 
-    if (id && horiz && vert)
-    {
-        switch (id)
+        else if (IsAttrib(attribs, "DISABLE"))
         {
-            case DID_BUILDTYPETOOL:
-                hwnd = hwndToolBuildType;
-                break;
-            case DID_NAVTOOL:
-                hwnd = hwndToolNav;
-                break;
-            case DID_BOOKMARKTOOL:
-                hwnd = hwndToolBookmark;
-                break;
-            case DID_EDITTOOL:
-                hwnd = hwndToolEdit;
-                break;
-            case DID_BUILDTOOL:
-                hwnd = hwndToolBuild;
-                break;
-            case DID_DEBUGTOOL:
-                hwnd = hwndToolDebug;
-                break;
-            default:
-                return ;
+            b->disable = !!atoi(attribs->value);
         }
-        SetToolBarData(hwnd, horiz, vert);
+        attribs = attribs->next;
     }
 }
-
 //-------------------------------------------------------------------------
 
 void RestoreProjectNames(struct xmlNode *node, int version, PROJECTITEM *wa)
@@ -1033,7 +1183,7 @@ void RestoreProfileNames(struct xmlNode *node, int version, PROJECTITEM *wa)
         }
         node = node->next;
     }
-    SendMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
+    SendDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
 }
 //-------------------------------------------------------------------------
 
@@ -1042,10 +1192,11 @@ PROJECTITEM *RestoreWorkArea(char *name)
     PROJECTITEM *wa;
     int version;
     FILE *in;
-    char activeName[MAX_PATH], *p;
+    char activeName[MAX_PATH], buf[MAX_PATH], *p;
     struct xmlNode *root;
     struct xmlNode *nodes;
     activeName[0] = 0;
+
     in = fopen(name, "r");
     if (!in)
     {
@@ -1053,7 +1204,7 @@ PROJECTITEM *RestoreWorkArea(char *name)
     }
     root = xmlReadFile(in);
     fclose(in);
-    if (!root || !IsNode(root, "CC386WORKAREA"))
+    if (!root || !IsNode(root, "CC386WORKAREA") && !IsNode(root, "OCCWORKAREA"))
     {
         ExtendedMessageBox("Load Error", 0, "WorkArea is invalid file format");
         if (root)
@@ -1100,8 +1251,6 @@ PROJECTITEM *RestoreWorkArea(char *name)
             {
                 if (IsAttrib(attribs, "EXPANDED"))
                     wa->expanded = atoi(attribs->value);
-                if (IsAttrib(attribs, "DEBUGVIEW"))
-                    wa->dbgview = atoi(attribs->value);
                 attribs = attribs->next;
             } 
         }
@@ -1129,12 +1278,10 @@ PROJECTITEM *RestoreWorkArea(char *name)
             RestoreWindows(nodes, version, wa);
         else if (IsNode(nodes, "TAG"))
             RestoreTags(nodes, version, wa);
-        else if (IsNode(nodes, "DOCKS"))
-            RestoreDocks(nodes, version);
-        else if (IsNode(nodes, "TOOLBAR"))
-            RestoreToolBars(nodes, version);
         else if (IsNode(nodes, "FIND"))
             RestoreFind(nodes, version);
+        else if (IsNode(nodes, "SIMPLEFIND"))
+            RestoreSimpleFind(nodes, version);
         else if (IsNode(nodes, "WATCH"))
             RestoreWatch(nodes, version);
         else if (IsNode(nodes, "DATABP"))
@@ -1145,6 +1292,16 @@ PROJECTITEM *RestoreWorkArea(char *name)
             RestoreFileBrowse(nodes, version, wa);
         else if (IsNode(nodes, "PROPERTIES"))
             RestoreProps(nodes->children, wa, wa);
+        else if (IsNode(nodes, "MEMWND"))
+            RestoreMemoryWindowSettings(nodes, version);
+        else if (IsNode(nodes, "ERRWND"))
+            RestoreErrorWindowSettings(nodes, version);
+        else if (IsNode(nodes, "TOOLBAR"))
+            RestoreToolBars(nodes, version);
+        else if (IsNode(nodes, "TOOLLAYOUT"))
+            RestoreToolbarLayout(nodes, version);
+        else if (IsNode(nodes, "DOCKS"))
+            RestoreDocks(nodes, version);
         else if (IsNode(nodes, "PROJECTS"))
         {
             struct xmlAttr *attribs = nodes->attribs;
@@ -1162,6 +1319,96 @@ PROJECTITEM *RestoreWorkArea(char *name)
         nodes = nodes->next;
     }
     xmlFree(root);
+    sprintf(buf, "%s.user", name);   
+    in = fopen(buf, "r");
+    if (in)
+    {
+        root = xmlReadFile(in);
+        fclose(in);
+        if (!root || !IsNode(root, "OCCWORKAREAUSERPREF"))
+        {
+            if (root)
+                xmlFree(root);
+            root = NULL;
+        }
+        if (root)
+        {
+            nodes = root->children;
+            while (nodes)
+            {
+                if (IsNode(nodes, "VERSION"))
+                {
+                    struct xmlAttr *attribs = nodes->attribs;
+                    while (attribs)
+                    {
+                        if (IsAttrib(attribs, "ID"))
+                            version = atoi(attribs->value);
+                        attribs = attribs->next;
+                    } 
+                }
+                else if (IsNode(nodes, "FLAGS"))
+                {
+                    struct xmlAttr *attribs = nodes->attribs;
+                    while (attribs)
+                    {
+                        if (IsAttrib(attribs, "EXPANDED"))
+                            wa->expanded = atoi(attribs->value);
+                        attribs = attribs->next;
+                    } 
+                }
+                else if (IsNode(nodes, "DIALOG"))
+                {
+                    struct xmlAttr *attribs = nodes->attribs;
+                    while (attribs)
+                    {
+                        if (IsAttrib(attribs, "GRIDSPACING"))
+                            gridSpacing = atoi(attribs->value);
+                        if (IsAttrib(attribs, "SHOWGRID"))
+                            showGrid = !!atoi(attribs->value);
+                        if (IsAttrib(attribs, "SNAPTOGRID"))
+                            snapToGrid = !!atoi(attribs->value);
+                        attribs = attribs->next;
+                    } 
+                    if (gridSpacing <= 0)
+                        gridSpacing = 4;
+                }
+                else if (IsNode(nodes, "PROFILELIST"))
+                    RestoreProfileNames(nodes, version,wa);
+                else if (IsNode(nodes, "HISTORY"))
+                    RestoreHistory(nodes, version);
+                else if (IsNode(nodes, "EDITWINDOWS"))
+                    RestoreWindows(nodes, version, wa);
+                else if (IsNode(nodes, "TAG"))
+                    RestoreTags(nodes, version, wa);
+                else if (IsNode(nodes, "FIND"))
+                    RestoreFind(nodes, version);
+                else if (IsNode(nodes, "SIMPLEFIND"))
+                    RestoreSimpleFind(nodes, version);
+                else if (IsNode(nodes, "WATCH"))
+                    RestoreWatch(nodes, version);
+                else if (IsNode(nodes, "DATABP"))
+                    RestoreDataBreakpoints(nodes, version);
+                else if (IsNode(nodes, "CHANGELN"))
+                    RestoreChangeLn(nodes, version, wa);
+                else if (IsNode(nodes, "FILEBROWSE"))
+                    RestoreFileBrowse(nodes, version, wa);
+                else if (IsNode(nodes, "PROPERTIES"))
+                    RestoreProps(nodes->children, wa, wa);
+                else if (IsNode(nodes, "MEMWND"))
+                    RestoreMemoryWindowSettings(nodes, version);
+                else if (IsNode(nodes, "ERRWND"))
+                    RestoreErrorWindowSettings(nodes, version);
+                else if (IsNode(nodes, "TOOLBAR"))
+                    RestoreToolBars(nodes, version);
+                else if (IsNode(nodes, "TOOLLAYOUT"))
+                    RestoreToolbarLayout(nodes, version);
+                else if (IsNode(nodes, "DOCKS"))
+                    RestoreDocks(nodes, version);
+                nodes = nodes->next;
+            }
+            xmlFree(root);
+        }
+    }
     if (activeName[0])
     {
         PROJECTITEM *project = wa->children;
@@ -1180,9 +1427,15 @@ PROJECTITEM *RestoreWorkArea(char *name)
             project = project->next;
         }
     }
-    PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
+    SendMessage(hwndToolbarBar, WM_REDRAWTOOLBAR, 0, 0);
     FreeJumpSymbols();
     LoadJumpSymbols();
+    PostDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_BROWSEWND, WM_RESETHISTORY, 0, 0);
+    PostDIDMessage(DID_MEMWND, WM_RESETHISTORY, 0, 0);
+    PostDIDMessage(DID_MEMWND+1, WM_RESETHISTORY, 0, 0);
+    PostDIDMessage(DID_MEMWND+2, WM_RESETHISTORY, 0, 0);
+    PostDIDMessage(DID_MEMWND+3, WM_RESETHISTORY, 0, 0);
     return wa;
 }
 
@@ -1207,8 +1460,10 @@ void SaveHistory(FILE *out)
     onehistsave(out, replacehist, "REPLACE");
     onehistsave(out, replacebrowsehist, "BREPLACEPATH");
     onehistsave(out, watchhist, "WATCH");
+    onehistsave(out, funcbphist, "FUNCBP");
     onehistsave(out, databphist, "DATABP");
     onehistsave(out, memhist, "MEMORY");
+    onehistsave(out, varinfohist, "VARINFO");
 }
 
 //-------------------------------------------------------------------------
@@ -1261,8 +1516,8 @@ void saveonetag(FILE *out, int tag, PROJECTITEM *wa)
             while (data)
             {
                 fprintf(out, 
-                    "\t\t\t<TAGITEM LINENO=\"%d\" CP=\"%d\" ENABLED=\"%d\"",
-                    data->drawnLineno, data->charpos, data->enabled);
+                    "\t\t\t<TAGITEM LINENO=\"%d\" CP=\"%d\" ENABLED=\"%d\" DISABLED=\"%d\"",
+                    data->drawnLineno, data->charpos, data->enabled, data->disable);
 
                 if (tag == TAG_BOOKMARK)
                     fprintf(out, ">\n%s\n\t\t\t</TAGITEM>\n", xmlConvertString
@@ -1287,31 +1542,7 @@ void SaveTags(FILE *out, PROJECTITEM *wa)
 
 //-------------------------------------------------------------------------
 
-void SaveDocks(FILE *out)
-{
-    int i;
-    CCW_params p[20];
-    CCD_params d[20];
-    int len;
-    len = dmgrGetInfo(&p[0], &d[0]);
-    fprintf(out, "\t<DOCKS>\n");
-    for (i = 0; i < len; i++)
-    {
-        fprintf(out, 
-            "\t\t<DOCK ID=\"%d\" VALUE=\"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\"/>\n", 
-                p[i].id, 
-                d[i].flags, d[i].flexparams, 
-                d[i].rowindex, d[i].colindex, 
-                d[i].hidden, d[i].hiddenwidth, 
-                d[i].oldsize.left, d[i].oldsize.top, 
-                d[i].oldsize.right, d[i].oldsize.bottom, 
-                d[i].position.left, d[i].position.top, 
-                d[i].position.right, d[i].position.bottom, 
-                d[i].lastposition.left, d[i].lastposition.top, 
-                d[i].lastposition.right, d[i].lastposition.bottom);
-    }
-    fprintf(out, "\t</DOCKS>\n");
-}
+
 
 //-------------------------------------------------------------------------
 void SaveWindows(FILE *out, PROJECTITEM *wa)
@@ -1360,25 +1591,6 @@ void SaveWindows(FILE *out, PROJECTITEM *wa)
 
 //-------------------------------------------------------------------------
 
-void SaveToolBarA(FILE *out, HWND hwnd)
-{
-    char horiz[512], vert[512];
-    int id = GetToolBarData(hwnd, horiz, vert);
-    fprintf(out, "\t<TOOLBAR ID=\"%d\" HORIZ=\"%s\" VERT=\"%s\"/>\n", id, horiz,
-        vert);
-}
-
-//-------------------------------------------------------------------------
-
-void SaveToolBars(FILE *out)
-{
-    SaveToolBarA(out, hwndToolNav);
-    SaveToolBarA(out, hwndToolBuildType);
-    SaveToolBarA(out, hwndToolEdit);
-    SaveToolBarA(out, hwndToolBuild);
-    SaveToolBarA(out, hwndToolDebug);
-    SaveToolBarA(out, hwndToolBookmark);
-}
 
 //-------------------------------------------------------------------------
 
@@ -1388,7 +1600,9 @@ void SaveWatchpoints(FILE *out)
     for (i = 0; i < 4; i++)
     {
         fprintf(out, 
-            "\t<WATCH ID=\"%d\" ENABLE=\"%d\" NAME=\"%s\" MODE=\"%d\" SIZE=\"%d\"/>\n", i + 1, !!(hbpEnables &(1 << i)), xmlConvertString(hbpNames[i], TRUE), hbpModes[i], hbpSizes[i]);
+            "\t<WATCH ID=\"%d\" ACTIVE=\"%d\" DISABLE=\"%d\" NAME=\"%s\" MODE=\"%d\" SIZE=\"%d\"/>\n", i + 1, 
+            !!(hdwebp[i].active), !!(hdwebp[i].disable), xmlConvertString(hdwebp[i].name, TRUE), 
+            hdwebp[i].mode, hdwebp[i].size);
     }
 }
 
@@ -1397,7 +1611,8 @@ void SaveDataBreakpoints(FILE *out)
     DATABREAK *search = dataBpList;
     while (search)
     {
-        fprintf(out,"\t<DATABP NAME=\"%s\" ACTIVE=\"%d\"/>\n", search->name, search->active);
+        fprintf(out,"\t<DATABP NAME=\"%s\" ACTIVE=\"%d\" DISABLE=\"%d\"/>\n", 
+                search->name, search->active, search->disable);
         search = search->next;
     }
 }
@@ -1433,12 +1648,88 @@ void SaveProjectNames(FILE *out, PROJECTITEM *wa)
     }
     fprintf(out,"\t</PROJECTS>\n");
 }
+void SaveToolBarA(FILE *out, HWND hwnd)
+{
+    char data[512];
+    int id = GetToolBarData(hwnd, data);
+    fprintf(out, "\t<TOOLBAR ID=\"%d\" DEFINE=\"%s\"/>\n", id, data);
+}
+
+//-------------------------------------------------------------------------
+
+void SaveToolBars(FILE *out)
+{
+    int i;
+    fprintf(out, "\t<TOOLLAYOUT COUNT=\"%d\">\n", toolCount);
+    for (i=0; i < toolCount; i++)
+    {
+        int n = toolLayout[i];
+        if (n > 0)
+        {
+            HWND h = GetToolWindow(n);
+            if (!IsWindowVisible(h))
+                n += 10000;
+        }
+        fprintf(out, " %d ", n);
+    }    
+    fprintf(out, "\n\t</TOOLLAYOUT>\n");
+    SaveToolBarA(out, hwndToolNav);
+    SaveToolBarA(out, hwndToolBuildType);
+    SaveToolBarA(out, hwndToolEdit);
+    SaveToolBarA(out, hwndToolBuild);
+    SaveToolBarA(out, hwndToolDebug);
+    SaveToolBarA(out, hwndToolBookmark);
+    SaveToolBarA(out, hwndToolThreads);
+}
+static void SaveDock(FILE *out, HWND hwnd, RECT *r, int ctl, int type, int index)
+{
+    int sel;
+    int *list, *list1;
+    HWND xx = (HWND)SendMessage(hwnd, TW_GETACTIVE, 0, 0);
+    for (sel=0; sel < MAX_HANDLES; sel++)
+        if (handles[sel] == xx)
+            break;
+    fprintf(out, "\t\t<DOCKWND TYPE=\"%d\" INDEX=\"%d\" SEL=\"%d\" CTL=\"%d\" POS=\"%d %d %d %d\">\n",
+            type, index, sel, ctl, r->left, r->top, r->right - r->left, r->bottom - r->top);
+    fprintf(out, "\t\t\t");
+    list1 = list = (int *)SendMessage(hwnd, WM_GETDOCKLIST, 0, 0);
+    while (list && *list)
+        fprintf(out, "%d ", *list++);
+    free(list1);
+    fprintf(out, "\n\t\t</DOCKWND>\n");
+}
+void SaveDocks(FILE *out)
+{
+    int i;
+    Select(0);
+    fprintf(out,"\t<DOCKS>\n");
+    fprintf(out,"\t\t<FRAME POS=\"%d %d %d %d\"/>\n", oldFrame.left, oldFrame.top, oldFrame.right - oldFrame.left, oldFrame.bottom -oldFrame.top);
+    for (i=0 ; i < debugDockCount; i++)
+         SaveDock(out, debugDocks[i].hwnd, &debugDocks[i].r, debugDocks[i].ctl, 0, i);
+    for (i=0 ; i < releaseDockCount; i++)
+         SaveDock(out, releaseDocks[i].hwnd, &releaseDocks[i].r, releaseDocks[i].ctl, 1, i);
+    for (i=0; i < debugfreeWindowCount; i++)
+    {
+        RECT r;
+        GetWindowRect(debugfreeWindows[i], &r);
+        MapWindowPoints(HWND_DESKTOP, hwndFrame, (LPPOINT)&r, 2);
+        SaveDock(out, debugfreeWindows[i], &r, 0, 2, i);
+    }
+    for (i=0; i < releasefreeWindowCount; i++)
+    {
+        RECT r;
+        GetWindowRect(releasefreeWindows[i], &r);
+        MapWindowPoints(HWND_DESKTOP, hwndFrame, (LPPOINT)&r, 2);
+        SaveDock(out, releasefreeWindows[i], &r, 0, 3, i);
+    }
+    fprintf(out,"\t</DOCKS>\n");
+}
 void SaveWorkArea(PROJECTITEM *wa)
 {
     FILE *out;
     int i;
     PROFILENAMELIST *pf;
-    
+    char buf[ MAX_PATH];    
     if (PropGetBool(NULL, "BACKUP_PROJECTS"))
         backupFile(wa->realName);	
     out = fopen(wa->realName, "w");
@@ -1446,10 +1737,26 @@ void SaveWorkArea(PROJECTITEM *wa)
     {
         ExtendedMessageBox("Save Error", 0, "Could not save WorkArea");
         return ;
-    }
-    fprintf(out, "<CC386WORKAREA>\n");
+   }
+    fprintf(out, "<OCCWORKAREA>\n");
     fprintf(out, "\t<VERSION ID=\"%d\"/>\n", WSPVERS);
-    fprintf(out, "\t<FLAGS EXPANDED=\"%d\" DEBUGVIEW=\"%d\"/>\n", wa->expanded ? 1 : 0, wa->dbgview);
+    SaveProjectNames(out, wa);
+    fprintf(out, "</OCCWORKAREA>\n");
+    fclose(out);
+    
+    
+    sprintf(buf, "%s.user", wa->realName);   
+    if (PropGetBool(NULL, "BACKUP_PROJECTS"))
+        backupFile(buf);	
+    out = fopen(buf, "w");
+    if (!out)
+    {
+        ExtendedMessageBox("Save Error", 0, "Could not save WorkArea");
+        return ;
+    }
+    fprintf(out, "<OCCWORKAREAUSERPREF>\n");
+    fprintf(out, "\t<VERSION ID=\"%d\"/>\n", WSPVERS);
+    fprintf(out, "\t<FLAGS EXPANDED=\"%d\"/>\n", wa->expanded ? 1 : 0);
     fprintf(out, "\t<PROFILELIST SELECTED=\"%s\" TYPE=\"%s\">\n", currentProfileName,
             profileDebugMode ? "DEBUG" : "RELEASE");
     fprintf(out, "\t\t<NAME VALUE=\"%s\"/>\n", sysProfileName);
@@ -1465,19 +1772,21 @@ void SaveWorkArea(PROJECTITEM *wa)
     fprintf(out, "\t<FIND X=\"%d\" Y=\"%d\"", findDlgPos.x, findDlgPos.y);
     fprintf(out, "\n\t\tFF=\"%d\" RF=\"%d\" FM=\"%d\" RM=\"%d\" FE=\"%d\" RE=\"%d\"/>\n",
             findflags, replaceflags, findmode, replacemode, findext, replaceext);
+    fprintf(out, "\t<SIMPLEFIND FLAGS=\"%d\"/>\n", simpleFindFlags);
     SaveWatchpoints(out);
+    fprintf(out, "\t<MEMWND WORDSIZE=\"%d\"/>\n", memoryWordSize);
+    fprintf(out, "\t<ERRWND BTNS=\"%d\"/>\n", errorButtons);
     SaveDataBreakpoints(out);
-    SaveToolBars(out);
-    SaveDocks(out);
-    SaveProjectNames(out, wa);
     SaveWindows(out, wa);
     SaveHistory(out);
     SaveTags(out, wa );
     SaveChangeLn(out, wa);
     SaveFileBrowse(out, wa);
     SaveProfiles(out, wa, 1);
-    fprintf(out, "</CC386WORKAREA>\n");
-    fclose(out);
+    SaveToolBars(out);
+    SaveDocks(out);
+    
+    fprintf(out, "</OCCWORKAREAUSERPREF>\n");
     wa->changed = FALSE;
 }
 

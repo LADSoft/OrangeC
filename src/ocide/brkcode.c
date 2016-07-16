@@ -44,11 +44,15 @@
 
 #include "header.h"
 
+extern HINSTANCE hInstance;
+extern HWND hwndFrame;
 extern PROCESS *activeProcess;
 extern HWND hwndASM;
 extern DWINFO *editWindows;
 extern enum DebugState uState;
+extern SCOPE *activeScope;
 
+char *funcbphist[MAX_COMBO_HISTORY];
 //-------------------------------------------------------------------------
 
 void SetTempBreakPoint(int procid, int threadid, int *addresses)
@@ -117,10 +121,10 @@ void allocBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
         {
              pt->tempvals = calloc(i, sizeof(int));
         }
+        strcpy(pt->name, "unknown");
         for (i=0, p = pt->addresses; *p !=0; ++p, ++i)
         {
             DWORD len;
-        
             if (ReadProcessMemory(hProcess, (LPVOID)pt->addresses[i], (LPVOID) &bf, 1,
                 &len))
             {
@@ -136,7 +140,14 @@ void allocBreakPoint(HANDLE hProcess, BREAKPOINT *pt)
                     pt->active = TRUE;
                     pt->tempvals[i] = bf;
                 }
-    
+                
+            }
+            if (i == 0)
+            {
+                char name[256];
+                DWORD n = FindFunctionName(name, pt->addresses[i], NULL, NULL);
+                if (n)
+                    sprintf(pt->name, "%s + 0x%x", name, pt->addresses[i]-n);
             }
         }
     }
@@ -174,7 +185,6 @@ void SetBreakPoints(int procid)
             allocBreakPoint(activeProcess->hProcess, p);
         p = p->next;
     }
-
 }
 
 //-------------------------------------------------------------------------
@@ -246,8 +256,6 @@ int isLocalBreakPoint(int addr)
     return isBreakPoint(addr);
 }
 
-//-------------------------------------------------------------------------
-
 int dbgSetBreakPoint(char *name, int linenum, char *extra)
 {
     BREAKPOINT **p = &activeProcess->breakpoints.next;
@@ -279,8 +287,18 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
                 InvalidateRect(hwndASM, 0, 0);
 //            Tag(TAG_BP, (*p)->module, (*p)->linenum, 0, 0, 0, 0);
             if (uState == Running)
+            {
                 allocBreakPoint(activeProcess->hProcess,  *p);
+            }
+            else
+            {
+                char name[256];
+                DWORD n = FindFunctionName(name, (*p)->addresses[0], NULL,NULL);
+                if (n)
+                    sprintf((*p)->name, "%s + 0x%x", name, (*p)->addresses[0]-n);
+            }
         }
+        SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
         return 1;
     }
     else
@@ -311,9 +329,19 @@ int dbgSetBreakPoint(char *name, int linenum, char *extra)
                 (*p)->extra = extra;
                 strcpy((*p)->module, name);
                 (*p)->linenum = linenum;
-                InvalidateRect(hwndASM, 0, 0);
+                if (hwndASM)
+                    InvalidateRect(hwndASM, 0, 0);
                 if (uState == Running)
+                {
                     allocBreakPoint(activeProcess->hProcess,  *p);
+                }
+                else
+                {
+                    char name[256];
+                    DWORD n = FindFunctionName(name, (*p)->addresses[0], NULL, NULL);
+                    if (n)
+                        sprintf((*p)->name, "%s + 0x%x", name, (*p)->addresses[0]-n);
+                }
             }
             else
             {
@@ -358,7 +386,9 @@ void dbgClearBreakPoint(char *name, int linenum)
                 free(q->tempvals);
                 free(q->extra);
                 free(q);
-                InvalidateRect(hwndASM, 0, 0);
+                if (hwndASM)
+                    InvalidateRect(hwndASM, 0, 0);
+                SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
                 return ;
             }
             p = &(*p)->next;
@@ -390,6 +420,7 @@ void dbgClearBreakPoint(char *name, int linenum)
                     free(q);
                     if (hwndASM)
                         InvalidateRect(hwndASM, 0, 0);
+                    SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
                     return ;
                 }
                 p = &(*p)->next;
@@ -432,4 +463,166 @@ void SetBP(DEBUG_EVENT *dbe)
     if (hwndASM)
         InvalidateRect(hwndASM, 0, 0);
 }
+LRESULT FunctionBPProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+    static char buf[256];
+    HWND editwnd;
+    switch (iMessage)
+    {
+        case WM_COMMAND:
+            switch (LOWORD(wParam))
+            {
+            case IDOK:
+                editwnd = GetDlgItem(hwnd, IDC_EDFUNC);
+                GetWindowText(editwnd, buf, 256);
+                SendMessage(editwnd, WM_SAVEHISTORY, 0, 0);
+                                
+                EndDialog(hwnd, (int)buf);
+                break;
+            case IDCANCEL:
+                EndDialog(hwnd, 0);
+                break;
 
+            }
+            switch (HIWORD(wParam))
+            {
+            case CBN_SELCHANGE:
+                EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
+                break;
+            case CBN_EDITCHANGE:
+                EnableWindow(GetDlgItem(hwnd, IDOK), GetWindowText((HWND)lParam,
+                    buf, 2));
+                break;
+            }
+            break;
+        case WM_CLOSE:
+            PostMessage(hwnd, WM_COMMAND, IDCANCEL, 0);
+            break;
+        case WM_INITDIALOG:
+            CenterWindow(hwnd);
+            editwnd = GetDlgItem(hwnd, IDC_EDWATCH);
+            SubClassHistoryCombo(editwnd);
+            SendMessage(editwnd, WM_SETHISTORY, 0, (LPARAM)funcbphist);
+            if (!funcbphist[0])
+                EnableWindow(GetDlgItem(hwnd, IDOK), FALSE);
+            return TRUE;
+    }
+    return 0;
+}
+LRESULT FunctionBPSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+    FUNCTIONLIST *list;
+    LV_COLUMN lvC;
+    LV_ITEM item;
+    RECT r;
+    HWND hwndlb;
+    int i;
+    switch (iMessage)
+    {
+        case WM_NOTIFY:
+            if (wParam == IDC_FBPLISTBOX)
+            {
+                if (((LPNMHDR)lParam)->code == NM_DBLCLK)
+                {
+                    SendMessage(hwnd, WM_COMMAND, IDC_BMGOTO, 0);
+                }
+            }
+            break;
+        case WM_COMMAND:
+            if (wParam == IDCANCEL)
+            {
+                EndDialog(hwnd, 0);
+            }
+            else if (wParam == IDC_BMGOTO)
+            {
+                
+                int sel = ListView_GetSelectionMark(GetDlgItem(hwnd,
+                    IDC_FBPLISTBOX));
+                if (sel ==  - 1)
+                {
+                    EndDialog(hwnd, 0);
+                    break;
+                }
+                item.iItem = sel;
+                item.iSubItem = 0;
+                item.mask = LVIF_PARAM;
+                ListView_GetItem(GetDlgItem(hwnd, IDC_FBPLISTBOX), &item);
+                EndDialog(hwnd, item.lParam);
+            }
+            break;
+        case WM_INITDIALOG:
+            list = (FUNCTIONLIST *)lParam;
+            CenterWindow(hwnd);
+            hwndlb = GetDlgItem(hwnd, IDC_FBPLISTBOX);
+            ApplyDialogFont(hwndlb);
+            GetWindowRect(hwndlb, &r);
+            lvC.mask = LVCF_WIDTH | LVCF_SUBITEM;
+            lvC.cx = r.right - r.left;
+            lvC.iSubItem = 0;
+            ListView_InsertColumn(hwndlb, 0, &lvC);
+            i = 0;
+            while (list)
+            {
+                item.iItem = i++;
+                item.iSubItem = 0;
+                item.mask = LVIF_PARAM | LVIF_TEXT;
+                item.lParam = (LPARAM)list;
+                item.pszText = list->name;
+                ListView_InsertItem(hwndlb, &item);
+                list = list->next;
+            }
+            break;
+    }
+    return 0;
+}
+void functionbp(void)
+{
+    char *name = (char *)DialogBox(hInstance, "FUNCTIONBPDIALOG", hwndFrame, (DLGPROC)
+        FunctionBPProc);
+    if (name)
+    {
+        char buf[2048];
+        GetQualifiedName(buf, &name, FALSE, TRUE);
+        // we aren't handling cast operators for now...
+        if (*name)
+        {
+            name = NULL;
+        }
+        else
+        {
+            int count = 0;
+            FUNCTIONLIST *list, *selected = NULL;
+            DEBUG_INFO *dbg = findDebug(activeScope->address);
+            list = GetFunctionList(dbg, activeScope, buf);
+            if (list && list->next)
+            {
+                selected = (FUNCTIONLIST *)DialogBoxParam(hInstance, "FUNCTIONBPSELECTDIALOG", hwndFrame, (DLGPROC)
+                    FunctionBPSelectProc, (LPARAM)list);
+            }
+            else
+            {
+                selected = list;
+            }
+            if (selected)
+            {
+                int line;
+                char module[MAX_PATH];
+                if (GetBreakpointLine(selected->address, module, &line, FALSE))
+                {
+                    Tag(TAG_BP, module, line, 0,0,0,0);
+                }
+                    
+            }
+            if (list)
+            {
+                while (list)
+                {
+                    FUNCTIONLIST *l = list;
+                    list = list->next;
+                    free(l);
+               
+                }
+            }
+        }
+    }
+}

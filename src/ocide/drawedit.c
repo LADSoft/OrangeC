@@ -44,12 +44,11 @@
 #include <stdio.h>
 #include "helpid.h"
 #include "header.h"
-#include "codecomp.h"
 #include "regexp.h"
 #include <ctype.h>
 #include <process.h>
 
-#define EDITOR_OFFSET 35
+#define EDITOR_OFFSET 24
 #define LINENO_DIGITS 7
 
 extern PROJECTITEM *activeProject;
@@ -57,7 +56,7 @@ extern HWND hwndFindInternal;
 extern HWND hwndSrcTab;
 extern LOGFONT EditFont;
 extern HINSTANCE hInstance;
-extern HWND hwndClient, hwndStatus, hwndFrame, hwndASM;
+extern HWND hwndClient, hwndStatus, hwndFrame;
 extern HANDLE hMenuMain;
 extern char szSourceFilter[];
 extern char szNewFileFilter[];
@@ -70,6 +69,7 @@ extern SCOPE *activeScope;
 extern SCOPE *StackList;
 extern THREAD *activeThread, *stoppedThread;
 extern HWND hwndeditPopup;
+extern PROCESS *activeProcess;
 
 POINT rightclickPos;
 HANDLE editHeap;
@@ -567,6 +567,7 @@ int LoadFile(HWND hwnd, DWINFO *info, BOOL savepos)
 //-------------------------------------------------------------------------
 void SetTitle(HWND hwnd)
 {
+    RECT r;
     DWINFO *info = (DWINFO *)GetWindowLong(hwnd, 0);
     char buf[MAX_PATH];
     EDITDATA *dt = (EDITDATA *)SendMessage(info->dwHandle, EM_GETEDITDATA, 0, 0);
@@ -590,7 +591,8 @@ void SetTitle(HWND hwnd)
         sprintf(buf + strlen(buf), " (%d)", dt->id + 1);
     if (mod)
         strcat(buf, " *");
-    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)buf);
+    SetWindowText(hwnd, buf);
+    SendMessage(hwnd, WM_NCPAINT, 1, 0);
     SendMessage(hwndSrcTab, TABM_SETMODIFY, mod, (LPARAM)hwnd);
 }
 void drawParams(DWINFO *info, HWND hwnd)
@@ -610,18 +612,18 @@ void drawParams(DWINFO *info, HWND hwnd)
     ins = SendMessage(child, EM_GETINSERTSTATUS, 0, 0);
     col = SendMessage(child, EM_GETCOLUMN, 0, 0);
     sprintf(buf, "Size: %d", textSize);
-    SendMessage(hwndStatus, SB_SETTEXT, 1 | SBT_NOBORDERS, (LPARAM)buf);
-    sprintf(buf, "Lines: %d", maxLines);
     SendMessage(hwndStatus, SB_SETTEXT, 2 | SBT_NOBORDERS, (LPARAM)buf);
-    sprintf(buf, "Line: %d", start + 1);
+    sprintf(buf, "Lines: %d", maxLines);
     SendMessage(hwndStatus, SB_SETTEXT, 3 | SBT_NOBORDERS, (LPARAM)buf);
-    sprintf(buf, "Col: %d", col + 1);
+    sprintf(buf, "Line: %d", start + 1);
     SendMessage(hwndStatus, SB_SETTEXT, 4 | SBT_NOBORDERS, (LPARAM)buf);
-    SendMessage(hwndStatus, SB_SETTEXT, 5 | SBT_NOBORDERS, (LPARAM)(ins ? "INS" : "OVR"));
+    sprintf(buf, "Col: %d", col + 1);
+    SendMessage(hwndStatus, SB_SETTEXT, 5 | SBT_NOBORDERS, (LPARAM)buf);
+    SendMessage(hwndStatus, SB_SETTEXT, 6 | SBT_NOBORDERS, (LPARAM)(ins ? "INS" : "OVR"));
     if (readonly)
-        SendMessage(hwndStatus, SB_SETTEXT, 6 | SBT_NOBORDERS, (LPARAM)("READ-ONLY"));
+        SendMessage(hwndStatus, SB_SETTEXT, 7 | SBT_NOBORDERS, (LPARAM)("READ-ONLY"));
     else
-        SendMessage(hwndStatus, SB_SETTEXT, 6 | SBT_NOBORDERS, (LPARAM)(mod ? "MODIFIED" : 
+        SendMessage(hwndStatus, SB_SETTEXT, 7 | SBT_NOBORDERS, (LPARAM)(mod ? "MODIFIED" : 
             "    "));
 
     SetTitle(hwnd);
@@ -636,10 +638,11 @@ void drawParams(DWINFO *info, HWND hwnd)
 
 void eraseParams(HWND hwnd)
 {
-    SendMessage(hwndStatus, SB_SETTEXT, 1 | SBT_NOBORDERS, (LPARAM)"    ");
     SendMessage(hwndStatus, SB_SETTEXT, 2 | SBT_NOBORDERS, (LPARAM)"    ");
     SendMessage(hwndStatus, SB_SETTEXT, 3 | SBT_NOBORDERS, (LPARAM)"    ");
     SendMessage(hwndStatus, SB_SETTEXT, 4 | SBT_NOBORDERS, (LPARAM)"    ");
+    SendMessage(hwndStatus, SB_SETTEXT, 5 | SBT_NOBORDERS, (LPARAM)"    ");
+    SendMessage(hwndStatus, SB_SETTEXT, 6 | SBT_NOBORDERS, (LPARAM)"    ");
 
 }
 static int GetLog10(int val)
@@ -753,6 +756,9 @@ int PaintBreakpoints(HWND hwnd, HDC dc, PAINTSTRUCT *paint, RECT *rcl)
         int type = IsTagged(ptr->dwName, i);
         switch (type)
         {
+            case TAG_DISABLEDBP:
+                obj = IML_DISABLEDBP;
+                break;
             case TAG_BP:
                 if (bpline == i)
                 {
@@ -786,7 +792,7 @@ int PaintBreakpoints(HWND hwnd, HDC dc, PAINTSTRUCT *paint, RECT *rcl)
         }
         if (obj != -1)
         {
-            ImageList_Draw(tagImageList, obj, drawDC, 12, (i - linenum) *height + offset, ILD_NORMAL);
+            ImageList_Draw(tagImageList, obj, drawDC, 1, (i - linenum) *height + offset, ILD_NORMAL);
         }
         if (ptr->editorOffset != EDITOR_OFFSET && i <= maxLines+1)
         {
@@ -859,6 +865,7 @@ void recolorize(DWINFO *ptr)
     if (stristr(ptr->dwName, ".c") == ptr->dwName + strlen(ptr->dwName) - 2 ||
         stristr(ptr->dwName, ".cpp") == ptr->dwName + strlen(ptr->dwName) - 4 
         || stristr(ptr->dwName, ".cxx") == ptr->dwName + strlen(ptr->dwName) - 4 
+        || stristr(ptr->dwName, ".cc") == ptr->dwName + strlen(ptr->dwName) - 3 
         || stristr(ptr->dwName, ".h") == ptr->dwName + strlen(ptr->dwName) - 2)
         language = LANGUAGE_C;
     else if (stristr(ptr->dwName, ".asm") == ptr->dwName + strlen(ptr->dwName) 
@@ -923,24 +930,21 @@ void InstallForParse(HWND hwnd)
         DWINFO *info = (DWINFO *)GetWindowLong(hwnd, 0);
         char *name = info->dwName;
         int len = strlen(name);
-        if (name[len-2] == '.')
+        if (!xstricmp(name + len - 2, ".c") || !xstricmp(name + len - 4, ".cpp") || !xstricmp(name + len - 3, ".cc") || xstricmp(name + len - 4, ".cxx"))
+             installparse(name, FALSE);
+        else if (!xstricmp(name + len - 2, ".h"))
         {
-            if (tolower(name[len - 1]) == 'c')
-                installparse(name, FALSE);
-            else if (tolower(name[len-1]) == 'h')
+            DWINFO *ptr = editWindows;
+            while (ptr)
             {
-                 DWINFO *ptr = editWindows;
-                while (ptr)
+                if (ptr->active && IsWindow(ptr->self))
                 {
-                    if (ptr->active && IsWindow(ptr->self))
-                    {
-                        name = ptr->dwName;
-                        len = strlen(name);
-                        if (name[len -2] == '.' && tolower(name[len-1]) == 'c')
-                            installparse(name, FALSE);
-                    }
-                    ptr = ptr->next;
+                    name = ptr->dwName;
+                    len = strlen(name);
+                    if (!xstricmp(name + len - 2, ".c") || !xstricmp(name + len - 4, ".cpp") || !xstricmp(name + len - 3, ".cc") || xstricmp(name + len - 4, ".cxx"))
+                        installparse(name, FALSE);
                 }
+                ptr = ptr->next;
             }
         }
     }
@@ -1053,9 +1057,11 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             nm = (NMHDR*)lParam;
             if (nm->code == NM_RCLICK)
             {
+                CHARRANGE range;
                 HMENU menu = LoadMenuGeneric(hInstance, "EDITMENU");
                 HMENU popup = GetSubMenu(menu, 0);
                 POINT pos, pos1;
+                POINTL epos;
                 RECT rect;
                 ptr = (DWINFO*)GetWindowLong(hwnd, 0);
                 SendMessage(hwnd, EN_SETCURSOR, 0, 0);
@@ -1075,6 +1081,11 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 rightclickPos.x -= rect.left;
                 rightclickPos.y -= rect.top;
                 InsertBitmapsInMenu(popup);
+                MapWindowPoints(HWND_DESKTOP, ptr->dwHandle, &pos1, 1);
+                epos.x = pos1.x;
+                epos.y = pos1.y;
+                range.cpMin = range.cpMax = SendMessage(ptr->dwHandle, EM_CHARFROMPOS, 0, (LPARAM)&epos);
+                SendMessage(ptr->dwHandle, EM_EXSETSEL, 0, (LPARAM)&range); 
                 TrackPopupMenuEx(popup, TPM_BOTTOMALIGN | TPM_LEFTBUTTON, pos.x,
                     pos.y, hwndFrame, NULL);
                 DestroyMenu(menu);
@@ -1172,6 +1183,8 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SendMessage(ptr->dwHandle, EM_SETMODIFY, 1, 0);
             case IDM_SAVE:
                 ptr = (DWINFO*)GetWindowLong(hwnd, 0);
+                sprintf(buf, "Saving %s...", ptr->dwTitle);
+                SetStatusMessage(buf, FALSE);
                 if (LOWORD(wParam) == IDM_SAVE)
                 {
                     rv = SendMessage(ptr->dwHandle, EM_GETMODIFY, 0, 0);
@@ -1185,6 +1198,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 SendMessage(ptr->dwHandle, EM_SETMODIFY, 0, 0);
                 drawParams(ptr, hwnd);
                 CalculateFileAutoDepends(ptr->dwName);
+                
                 return rv;
             case IDM_CLOSE:
                 {
@@ -1299,6 +1313,11 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             break;
         case WM_ERASEBKGND:
             return 1;
+        case WM_NCACTIVATE:
+             PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
+             return TRUE;
+        case WM_NCPAINT:
+             return PaintMDITitleBar(hwnd, iMessage, wParam, lParam);
         case WM_PAINT:
         {
             RECT rect;
@@ -1319,9 +1338,10 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         return 0;
         case WM_CREATE:
             //         maximized = TRUE ;			
-            rv = DefWindowProc(hwnd, iMessage, wParam, lParam);
+            rv = DefMDIChildProc(hwnd, iMessage, wParam, lParam);
             if (rv)
                 return rv;
+//            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
             createStruct = (LPCREATESTRUCT)lParam;
             ed = (EDITDATA *)((LPMDICREATESTRUCT)(createStruct->lpCreateParams))->lParam;
             ptr = DeQueueEditWindow();
@@ -1346,6 +1366,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 EDITOR_OFFSET, 0, 0, 0, hwnd, (HMENU)ID_EDITCHILD, hInstance, 
                 (ed && ed != (EDITDATA *)-1) ? (void *)ed : NULL)
                 ;
+                
             ptr->self = hwnd;
             ptr->dwLineNo =  - 1;
             if (newInfo && !newInfo->newFile && newInfo->dwLineNo !=  -
@@ -1436,7 +1457,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
         case WM_SIZE:
             ptr = (DWINFO*)GetWindowLong(hwnd, 0);
             MoveWindow(GetDlgItem(hwnd, ID_EDITCHILD), ptr->editorOffset, 0, 
-                (lParam &65535) - ptr->editorOffset, lParam >> 16, 1);
+                (lParam &65535) - ptr->editorOffset, lParam >> 16, 0);
 			InvalidateRect(hwnd, 0, 0); // for line numbers
             break;
         // timer being used to prevent a click in the margin which activates
@@ -1452,10 +1473,13 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     PostMessage(hwnd, WM_COMMAND, EN_NEEDFOCUS, 0);
             break;
         case WM_MDIACTIVATE:
+
             if ((HWND)lParam != hwnd)
             {
                 break;
             }
+            SendMessage((HWND)lParam, WM_NCPAINT, 1, 0);
+            SendMessage((HWND)wParam, WM_NCPAINT, 1, 0);
             ptr = (DWINFO*)GetWindowLong(hwnd, 0);
             ptr->jumplistLineno = -1;
             MsgWait(ewSem, INFINITE);
@@ -1500,8 +1524,8 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 lineNumbers * (ptr->lineNumberDigits * ((EDITDATA *)SendMessage(ptr->dwHandle, EM_GETEDITDATA, 0, 0))->cd->txtFontWidth + 4);
             GetClientRect(hwnd, &r);
             MoveWindow(GetDlgItem(hwnd, ID_EDITCHILD), ptr->editorOffset, r.top, 
-                r.right - ptr->editorOffset, r.bottom - r.top, 1);
-            InvalidateRect(hwnd, 0, 1);
+                r.right - ptr->editorOffset, r.bottom - r.top, 0);
+            InvalidateRect(hwnd, 0, 0);
             break;
         }
         case WM_INITMENUPOPUP:
@@ -1513,7 +1537,8 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             EnableMenuItem(hMenuMain, IDM_PASTE, 1);
             EnableMenuItem(hMenuMain, IDM_UNDO, SendMessage(GetDlgItem(hwnd,
                 ID_EDITCHILD), EM_CANUNDO, 0, 0));
-            EnableMenuItem(hMenuMain, IDM_BROWSE, flag);
+            EnableMenuItem(hMenuMain, IDM_BROWSETODEFINITION, flag);
+            EnableMenuItem(hMenuMain, IDM_BROWSETODECLARATION, flag);
             //EnableMenuItem(hMenuMain,IDM_BROWSEBACK,flag) ;
             EnableMenuItem(hMenuMain, IDM_BOOKMARK, flag);
             //EnableMenuItem(hMenuMain,IDM_NEXTBOOKMARK,flag) ;
@@ -1542,7 +1567,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
 
 //-------------------------------------------------------------------------
 
-void RegisterDrawWindow(void)
+void RegisterDrawWindow(HINSTANCE hInstance)
 {
     HBITMAP bitmap;
     WNDCLASS wc;
@@ -1575,6 +1600,7 @@ void RegisterDrawWindow(void)
 
 HWND openfile(DWINFO *newInfo, int newwindow, int visible)
 {
+    RECT r;
     HWND rv ;
     void *extra = newInfo == (DWINFO *)-1 ? newInfo : NULL ;
     MSG msg;
@@ -1618,11 +1644,16 @@ HWND openfile(DWINFO *newInfo, int newwindow, int visible)
             ptr = ptr->next;
         }
     }
-    rv = CreateMDIWindow(szDrawClassName, szUntitled, (visible ? WS_VISIBLE : 0) |
+    GetClientRect(hwndClient, &r);
+    if (r.right > 820 * 5 / 4)
+        r.right = 820;
+    else
+        r.right = r.right *5/6;
+    rv = CreateMDIWindow(szDrawClassName, szUntitled, (visible ? WS_VISIBLE : 0) | 
            WS_CHILD | WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | MDIS_ALLCHILDSTYLES | 
         WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
         WS_SIZEBOX | (PropGetInt(NULL, "TABBED_WINDOWS") ? WS_MAXIMIZE : WS_SYSMENU),
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hwndClient, hInstance, 
+        CW_USEDEFAULT, CW_USEDEFAULT, r.right, CW_USEDEFAULT, hwndClient, hInstance, 
         (LPARAM)extra); 
     return rv;
 }

@@ -49,6 +49,7 @@ extern THREAD *activeThread;
 extern enum DebugState uState;
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
+extern SCOPE lastScope;
 
 static int bkReg;
 static int currentState;
@@ -61,24 +62,16 @@ static int currentState;
 #define HBP_WORD 1
 #define HBP_DWORD 3
 
-char hbpNames[4][256];
-int hbpAddresses[4];
-char hbpModes[4], hbpSizes[4], hbpEnables;
+HDWEBKPT hdwebp[4];
 
 static int resolvenametoaddr(int index, int doErrors)
 {
     int offset, addr, linoffs;
     DEBUG_INFO *dbg;
     VARINFO *var;
-    LDT_ENTRY entry;
     char buf[256];
-    if (!GetThreadSelectorEntry(activeThread->hThread, activeThread
-        ->regs.SegDs, &entry))
-        return 0;
-    linoffs = entry.BaseLow + (entry.HighWord.Bytes.BaseMid << 16) + 
-        (entry.HighWord.Bytes.BaseHi << 24);
-    strcpy(buf, hbpNames[index]);
-    var = EvalExpr(&dbg, NULL, buf, doErrors);
+    strcpy(buf, hdwebp[index].name);
+    var = EvalExpr(&dbg, &lastScope, buf, doErrors);
     if (var)
     {
         if (var->constant)
@@ -86,17 +79,13 @@ static int resolvenametoaddr(int index, int doErrors)
         else if (var->address < 0x1000)
         {
             char data[20];
-            //if (!var->explicitreg)
-                //ExtendedMessageBox("Address error", MB_SETFOREGROUND |
-                    //MB_SYSTEMMODAL, 
-                    //"Address is a register.  Using its value as the address.");
             ReadValue(var->address, &data, 4, var);
             addr = *(int*)data;
         } 
         else
             addr = var->address;
         FreeVarInfo(var);
-        hbpAddresses[index] = addr + linoffs;
+        hdwebp[index].address = addr;
         return 1;
     }
     else
@@ -110,18 +99,44 @@ void hbpInit(void)
 {
     int i;
     hbpResetBP();
-    hbpEnables = 0;
     for (i = 0; i < 4; i++)
     {
-        hbpNames[i][0] = 0;
-        hbpModes[i] = HBP_READ | HBP_WRITE;
-        hbpSizes[i] = HBP_DWORD;
+        hdwebp[i].active = 0;
+        hdwebp[i].name[0] = 0;
+        hdwebp[i].mode = HBP_READ | HBP_WRITE;
+        hdwebp[i].size = HBP_DWORD;
     }
 }
 
 void hbpDisable(void)
 {
-    hbpEnables = 0;
+    int i;
+    for (i = 0; i < 4; i++)
+        hdwebp[i].active = 0;
+}
+BOOL hbpAnyBreakpoints(void)
+{
+    int i;
+    for (i = 0; i < 4; i++)
+        if (hdwebp[i].active)
+            return TRUE;
+    return FALSE;
+}
+BOOL hbpAnyDisabledBreakpoints(void)
+{
+    int i;
+    for (i = 0; i < 4; i++)
+        if (hdwebp[i].active && hdwebp[i].disable)
+            return TRUE;
+    return FALSE;
+}
+void hbpEnableAllBreakpoints(BOOL enableState)
+{
+    int i;
+    for (i = 0; i < 4; i++)
+        if (hdwebp[i].active)
+            hdwebp[i].disable = !enableState;
+     // they will have to stop running to get the update...
 }
 /* called when bp are setting */
 void hbpSetBP(void)
@@ -131,38 +146,37 @@ void hbpSetBP(void)
     THREAD *t;
     int flag = FALSE;
     for (i = 0; i < 4; i++)
-    if (hbpEnables &(1 << i))
+    if (hdwebp[i].active)
     {
         if (!resolvenametoaddr(i, FALSE))
         {
             ExtendedMessageBox("Hardware Breakpoint", 0, 
                 "Could not locate symbol %s, resetting hardware BP",
-                hbpNames[i]);
-            hbpEnables &= ~(1 << i);
+                hdwebp[i].name);
+            hdwebp[i].active = FALSE;
         }
     }
-    if (1)
     {
         // proj && (proj->buildFlags & BF_HWBP)) {
-        if ((hbpEnables &1))
+        if ((hdwebp[0].active) && !hdwebp[0].disable)
         {
-            xdr0 = hbpAddresses[0];
-            xdr7 |= 1+(((hbpSizes[0] << 2) + hbpModes[0]) << 16);
+            xdr0 = hdwebp[0].address;
+            xdr7 |= 1+(((hdwebp[0].size << 2) + hdwebp[0].mode) << 16);
         }
-        if ((hbpEnables &2))
+        if ((hdwebp[1].active) && !hdwebp[1].disable)
         {
-            xdr1 = hbpAddresses[1];
-            xdr7 |= 4+(((hbpSizes[1] << 2) + hbpModes[1]) << 20);
+            xdr1 = hdwebp[1].address;
+            xdr7 |= 4+(((hdwebp[1].size << 2) + hdwebp[1].mode) << 20);
         }
-        if ((hbpEnables &4))
+        if ((hdwebp[2].active) && !hdwebp[2].disable)
         {
-            xdr2 = hbpAddresses[2];
-            xdr7 |= 16+(((hbpSizes[2] << 2) + hbpModes[2]) << 24);
+            xdr2 = hdwebp[2].address;
+            xdr7 |= 16+(((hdwebp[2].size << 2) + hdwebp[2].mode) << 24);
         }
-        if ((hbpEnables &8))
+        if ((hdwebp[3].active) && !hdwebp[3].disable)
         {
-            xdr3 = hbpAddresses[3];
-            xdr7 |= 64+(((hbpSizes[3] << 2) + hbpModes[3]) << 28);
+            xdr3 = hdwebp[3].address;
+            xdr7 |= 64+(((hdwebp[3].size << 2) + hdwebp[3].mode) << 28);
         }
     }
     t = activeProcess->threads;
@@ -201,7 +215,7 @@ int hbpCheck(THREAD *tThread)
             if (ctx.Dr6 &(1 << i))
                 ExtendedMessageBox("Hardware Breakpoint", MB_SYSTEMMODAL |
                     MB_SETFOREGROUND, "Hardware breakpoint for %s triggered",
-                    hbpNames[i]);
+                    hdwebp[i].name);
     }
     return ctx.Dr6 &15;
 }
@@ -213,14 +227,14 @@ static void SetHDWEDBFields(HWND hwnd, int startField, int index)
     AddComboString(hwnd, startField + 1, "Write");
 //    AddComboString(hwnd, startField + 1, "Read");
     AddComboString(hwnd, startField + 1, "Access");
-    SetComboSel(hwnd, startField + 1, hbpModes[index] == 3 ? 1 : 0);
+    SetComboSel(hwnd, startField + 1, hdwebp[index].mode == 3 ? 1 : 0);
     AddComboString(hwnd, startField + 2, "Byte");
     AddComboString(hwnd, startField + 2, "Word");
     AddComboString(hwnd, startField + 2, "Dword");
-    SetComboSel(hwnd, startField + 2, hbpSizes[index] == 3 ? 2 :
-        hbpSizes[index]);
-    SetCBField(hwnd, startField + 3, hbpEnables &(1 << index));
-    SetEditField(hwnd, startField, hbpNames[index]);
+    SetComboSel(hwnd, startField + 2, hdwebp[index].size == 3 ? 2 :
+        hdwebp[index].size);
+    SetCBField(hwnd, startField + 3, hdwebp[index].active);
+    SetEditField(hwnd, startField, hdwebp[index].name);
     SendDlgItemMessage(hwnd, startField, EM_LIMITTEXT, 250, 0);
 }
 
@@ -229,21 +243,23 @@ static void SetHDWEDBFields(HWND hwnd, int startField, int index)
 static void GetHDWEDBFields(HWND hwnd, int startField, int index)
 {
     int i;
-    hbpModes[index] = GetComboSel(hwnd, startField + 1) + 1;
-    if (hbpModes[index] == 2)
-        hbpModes[index]++;
+    hdwebp[index].mode = GetComboSel(hwnd, startField + 1) + 1;
+    if (hdwebp[index].mode == 2)
+        hdwebp[index].mode++;
     i = GetComboSel(hwnd, startField + 2);
     if (i == 2)
         i++;
-    hbpSizes[index] = i;
-    GetEditField(hwnd, startField, hbpNames[index]);
+    hdwebp[index].size = i;
+    GetEditField(hwnd, startField, hdwebp[index].name);
     if (GetCBField(hwnd, startField + 3))
         if (resolvenametoaddr(index, TRUE))
-            hbpEnables |= 1 << index;
+            hdwebp[index].active = TRUE;
         else
-            hbpEnables &= ~(1 << index);
+            hdwebp[index].active = FALSE;
     else
-        hbpEnables &= ~(1 << index);
+        hdwebp[index].active = FALSE;
+    if (hdwebp[index].active)
+        hdwebp[index].disable = FALSE; 
 }
 
 //-------------------------------------------------------------------------
@@ -279,6 +295,7 @@ static int FAR PASCAL hbpDlgProc(HWND hwnd, UINT wmsg, WPARAM wParam, LPARAM
                     else
                         workProj.buildFlags &= ~BF_HWBP;
                 #endif 
+                SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
                 EndDialog(hwnd, 1);
             }
             else if (wParam == IDCANCEL)

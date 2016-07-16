@@ -51,7 +51,7 @@
 extern HWND hwndPropsTabCtrl;
 extern HINSTANCE hInstance;
 
-HWND hwndToolbox;
+static HWND hwndToolbox;
 
 #define IMAGECOUNT 13
 
@@ -209,7 +209,7 @@ LRESULT CALLBACK CtlTbProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     }
     return DefWindowProc(hwnd, iMessage, wParam, lParam);
 }
-void RegisterCtlTbWindow(void)
+void RegisterCtlTbWindow(HINSTANCE hInstance)
 {
     WNDCLASS wc;
     memset(&wc, 0, sizeof(wc));
@@ -228,13 +228,8 @@ void RegisterCtlTbWindow(void)
 
 //-------------------------------------------------------------------------
 
-void CreateCtlTbWindow(void)
+HWND CreateCtlTbWindow(void)
 {
-    RECT rect;
-    HWND parent;
-    parent = hwndPropsTabCtrl;
-    GetPropsTabRect(&rect);
-    hwndToolbox = CreateWindow(szCtlTbClassName, szCtlTbTitle,
-        WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, rect.left, rect.top, rect.right - rect.left,
-        rect.bottom - rect.top, parent, 0, hInstance, 0);
+    hwndToolbox = CreateInternalWindow(DID_CTLTBWND, szCtlTbClassName, szCtlTbTitle);
+    return hwndToolbox;
 }

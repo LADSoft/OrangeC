@@ -46,7 +46,6 @@
 #define PROJVERS 5
 #define WSPVERS 5
 #define PREFVERS 5
-#define PREFFILE "cc386.prf"
 
 #include "header.h"
 #include "xml.h"

@@ -419,6 +419,7 @@ void GetStringValue(VARINFO *info, char *buf, int len, int address)
 void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
 {
     int i;
+ restart:
     if (info->outofscope)
         strcpy(buf, "out of scope");
     else if (info->constant)
@@ -462,7 +463,32 @@ void HintValue(DEBUG_INFO *dbg_info, VARINFO *info, char *buf)
     {
         int val;
         char buf2[256],  *p;
-        if (info->derefaddress != -1)
+        if (info->lref || info->rref)
+        {
+            val = info->derefaddress;
+            if (val == -1)
+                if (!ReadValue(info->address, &val, 4, info))
+                {
+                    sprintf(buf, "REFERENCE: <UNKNOWN>");
+                    return;
+                }
+            if (info->type <= eReservedTop && info->type > eVoid)                
+            {
+                info->address = val;
+                info->lref = info->rref = info->pointer = FALSE;
+                
+                goto restart;
+            }
+            else
+            {
+                if (info->lref)
+                    sprintf(buf, "LVALUE REFERENCE: 0x%x", val);
+                else
+                    sprintf(buf, "RVALUE REFERENCE: 0x%x", val);
+
+            }
+        }
+        else if (info->derefaddress != -1)
         {
             sprintf(buf, "POINTER: 0x%x ", info->derefaddress);
             GetStringValue(info, buf + strlen(buf), 32, info->derefaddress);
@@ -699,7 +725,9 @@ char *SymTypeName(char *buf, DEBUG_INFO *info, VARINFO *v)
         return buf;
     if (v->udt && v->structtag[0] != 0)
     {
-        strcpy(buf, v->structtag);
+        strncpy(buf, v->structtag,256);
+        buf[255] =0 ;
+        unmanglename(buf);
         return buf;
     }
     if (v->constant)
@@ -715,7 +743,12 @@ char *SymTypeName(char *buf, DEBUG_INFO *info, VARINFO *v)
         if (v->type < eReservedTop)
         {
             SimpleTypeName(buf, v->type);
-            strcat(buf, "* ");
+            if (v->lref)
+                strcat(buf, "&");
+            else if (v->rref)
+                strcat(buf, "&&");
+            else
+                strcat(buf, "* ");
         }
         else
         {
@@ -723,7 +756,12 @@ char *SymTypeName(char *buf, DEBUG_INFO *info, VARINFO *v)
             if (!v->subtype)
                 ExpandPointerInfo(info, v);
             SymTypeName(buf + strlen(buf), info, v->subtype);
-            strcat(buf, "* ");
+            if (v->lref)
+                strcat(buf, "&");
+            else if (v->rref)
+                strcat(buf, "&&");
+            else
+                strcat(buf, "* ");
             if (replace)
             {
                 FreeVarInfo(v->subtype);
@@ -739,19 +777,25 @@ char *SymTypeName(char *buf, DEBUG_INFO *info, VARINFO *v)
     {
         sprintf(buf, "union ");
         p = buf + strlen(buf);
-        sprintf(p, "%s", v->structtag);
+        strncpy(p, v->structtag,256);
+        p[255] =0 ;
+        unmanglename(p);
     }
     else if (v->structure)
     {
         sprintf(buf, "struct ");
         p = buf + strlen(buf);
-        sprintf(p, "%s", v->structtag);
+        strncpy(p, v->structtag,256);
+        p[255] =0 ;
+        unmanglename(p);
     }
     else if (v->enumx)
     {
         sprintf(buf, "enum ");
         p = buf + strlen(buf);
-        sprintf(p, "%s", v->structtag);
+        strncpy(p, v->structtag,256);
+        p[255] =0 ;
+        unmanglename(p);
     }
     if (v->array)
     {

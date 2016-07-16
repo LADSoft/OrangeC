@@ -50,14 +50,6 @@
 
 extern PROJECTITEM generalProject;
 
-extern int findflags;
-extern int replaceflags;
-extern int findmode;
-extern int replacemode;
-extern int errorButtons;
-
-extern int memoryWordSize;
-
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
 extern COLORREF custColors[16];
@@ -123,48 +115,6 @@ void RestorePlacement(struct xmlNode *node, int version)
     }
 }
 
-
-
-
-void RestoreMemoryWindowSettings(struct xmlNode *node, int version)
-{
-    struct xmlAttr *attribs = node->attribs;
-    while (attribs)
-    {
-        if (IsAttrib(attribs, "WORDSIZE"))
-            memoryWordSize = atoi(attribs->value);
-        attribs = attribs->next;
-    } 
-}
-void RestoreErrorWindowSettings(struct xmlNode *node, int version)
-{
-    struct xmlAttr *attribs = node->attribs;
-    while (attribs)
-    {
-        if (IsAttrib(attribs, "BTNS"))
-            errorButtons = atoi(attribs->value);
-        attribs = attribs->next;
-    } 
-}
-//-------------------------------------------------------------------------
-
-void RestoreFindflags(struct xmlNode *node, int version)
-{
-    struct xmlAttr *attribs = node->attribs;
-    struct xmlNode *children;
-    while (attribs)
-    {
-        if (IsAttrib(attribs, "FFLAG"))
-            findflags = atoi(attribs->value);
-        if (IsAttrib(attribs, "RFLAG"))
-            replaceflags = atoi(attribs->value);
-        if (IsAttrib(attribs, "FMODE"))
-            findmode = atoi(attribs->value);
-        if (IsAttrib(attribs, "RMODE"))
-            replacemode = atoi(attribs->value);
-        attribs = attribs->next;
-    } 
-}
 void RestoreCustomColors(struct xmlNode *node, int version)
 {
     char *p = node->textData;
@@ -211,6 +161,7 @@ void RestoreGeneralProps(struct xmlNode *node, int version)
 }
 int RestorePreferences(void)
 {
+    static int pass = 0;
     int version;
     FILE *in;
     struct xmlNode *root;
@@ -248,22 +199,17 @@ int RestorePreferences(void)
                 attribs = attribs->next;
             } 
         }
-        else if (IsNode(nodes, "PROPERTIES"))
+        else if (!pass && IsNode(nodes, "PROPERTIES"))
             RestoreGeneralProps(nodes, version);
-        else if (IsNode(nodes, "MEMWND"))
-            RestoreMemoryWindowSettings(nodes, version);
-        else if (IsNode(nodes, "ERRWND"))
-            RestoreErrorWindowSettings(nodes, version);
-        else if (IsNode(nodes, "FIND"))
-            RestoreFindflags(nodes, version);
-        else if (IsNode(nodes, "PLACEMENT"))
+        else if (!pass && IsNode(nodes, "PLACEMENT"))
             RestorePlacement(nodes, version);
-        else if (IsNode(nodes, "CUSTOMCOLORS"))
+        else if (!pass && IsNode(nodes, "CUSTOMCOLORS"))
             RestoreCustomColors(nodes, version);
-        else if (IsNode(nodes, "RULES"))
+        else if (!pass && IsNode(nodes, "RULES"))
             RestoreBuildRules(nodes, version);
         nodes = nodes->next;
     }
+    pass++;
     xmlFree(root);
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
     return 1;
@@ -319,10 +265,6 @@ void SavePreferences(void)
             fprintf(out, "\n\t\t");
     }
     fprintf(out, "\n\t</CUSTOMCOLORS>\n");
-    fprintf(out, "\t<MEMWND WORDSIZE=\"%d\"/>\n", memoryWordSize);
-    fprintf(out, "\t<ERRWND BTNS=\"%d\"/>\n", errorButtons);
-    fprintf(out, "\t<FIND FMODE=\"%d\" RMODE=\"%d\" FFLAG=\"%d\" RFLAG=\"%d\"/>\n", 
-            findmode, replacemode, findflags, replaceflags);
     fprintf(out, "\t<PROPERTIES>\n");
     SaveProps(out, generalProject.profiles->debugSettings, 2);
     fprintf(out, "\t</PROPERTIES>\n");

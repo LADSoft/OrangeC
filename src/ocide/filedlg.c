@@ -49,14 +49,15 @@
 #define MAX_SAVED_DIRS 10
  
 extern HINSTANCE hInstance;
+extern HWND hwndClient;
 extern PROJECTITEM *activeProject;
 extern PROJECTITEM *workArea;
 extern int defaultWorkArea;
 
-char szSourceFilter[] = "Source files (*.c,*.cpp,*.cxx)\0*.c;*.cpp;*.cxx\0"
-    "Headers (*.h,*.hpp,*.hxx,*.p)\0*.h;*.hpp;*.hxx;*.p\0"
+char szSourceFilter[] = "Source files (*.c,*.cpp,*.h)\0*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx;*.p\0"
     "Assembly files (*.asm, *.asi, *.inc)\0*.asm;*.asi;*.inc\0"
-    "Resource files (*.rc)\0*.rc\0""All Files (*.*)\0*.*\0";
+    "Resource files (*.rc,*.dlg,*.bmp,*.cur,*.ico)\0*.rc;*.dlg;*.bmp;*.cur;*.ico\0"
+    "All Files (*.*)\0*.*\0";
 
 char szProjectFilter[] = "Project files (*.cpj)\0*.cpj\0";
 char szWorkAreaFilter[] = "WorksArea files (*.cwa)\0*.cwa\0";
@@ -64,8 +65,8 @@ char szTargetFilter[] = "Executables (*.exe)\0*.exe\0"
     "DLLs (*.dll)\0*.dll\0"
     "Librarys (*.lib)\0*.lib\0";
 
-char szNewFileFilter[] = "C Source Files(*.c)\0*.c\0"
-    "C Header Files(*.h)\0*.h\0"
+char szNewFileFilter[] = "C Source Files(*.c, *.cpp)\0*.c;*.cpp;*.cxx;*.cc\0"
+    "C Header Files(*.h)\0*.h;*.hxx;*.hpp\0"
     "Resource Files(*.rc,*.bmp,*.cur,*.ico)\0*.rc;*.bmp;*.cur;*.ico\0"
     "Assembly Language Files(*.asm)\0*.asm\0"
     "All Files(*.*)\0*.*\0";
@@ -238,17 +239,30 @@ void setofndata(OPENFILENAME *ofn, char *name, HWND handle, char *filter)
         if (p)
             p[1] = 0;
     }
-    else if (!defaultWorkArea)
+    else 
     {
-        char *p;
-        strcpy(szDirPath,workArea->realName);
-        p = strrchr(szDirPath, '\\');
-        if (p)
-            p[1] = 0;
-    }
-    else
-    {
-        GetDefaultProjectsPath(szDirPath);
+        HWND win = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
+        if (IsWindow(win) && IsEditWindow(win))
+        {
+            DWINFO *q = (DWINFO *)GetWindowLong(win, 0);
+            char *p;
+            strcpy(szDirPath,q->dwName);
+            p = strrchr(szDirPath, '\\');
+            if (p)
+                p[1] = 0;
+        }
+        else if (!defaultWorkArea)
+        {
+            char *p;
+            strcpy(szDirPath,workArea->realName);
+            p = strrchr(szDirPath, '\\');
+            if (p)
+                p[1] = 0;
+        }
+        else
+        {
+            GetDefaultProjectsPath(szDirPath);
+        }
     }
     memset(ofn, 0, sizeof(*ofn));
     if (name)

@@ -48,12 +48,13 @@
 
 #define PAGE_SIZE 4096
 
+extern PROCESS *activeProcess;
 extern THREAD *activeThread;
 extern enum DebugState uState;
 extern HINSTANCE hInstance;
 extern HWND hwndFrame;
 extern POINT rightclickPos;
-extern SCOPE *activeScope;
+extern SCOPE lastScope;
 
 
 char *databphist[MAX_COMBO_HISTORY];
@@ -70,7 +71,7 @@ static int resolvenametoaddr(char *name, int doErrors, DWORD *size, DWORD *addr)
 {
     DEBUG_INFO *dbg;
     VARINFO *var;
-    var = EvalExpr(&dbg, NULL, name, doErrors);
+    var = EvalExpr(&dbg, &lastScope, name, doErrors);
     if (var)
     {
         if (var->constant)
@@ -111,6 +112,47 @@ void databpInit(void)
         dataBpList = next;
     }
 }
+void databpDelete(DATABREAK *data)
+{
+    DATABREAK *p = dataBpList;
+    if (p == data)
+        dataBpList = dataBpList->next;
+    else {
+        while (p && p->next && p->next != data)
+        {
+            p = p->next;
+        }
+        if (p && p->next)
+            p->next = p->next->next;
+    }
+    free(data);
+}
+BOOL databpAnyBreakpoints(void)
+{
+    return !!dataBpList;
+}
+BOOL databpAnyDisabledBreakpoints(void)
+{
+    DATABREAK *find = dataBpList;
+    while (find)
+    {
+        if (find->disable)
+            return TRUE;
+        find = find->next;
+    }
+    return FALSE;
+}
+void databpEnableAllBreakpoints(BOOL enableState)
+{
+    DATABREAK *find = dataBpList;
+    while (find)
+    {
+        find->disable = !enableState;
+        find = find->next;
+    }
+    databpResetBP(activeProcess->hProcess);
+    databpSetBP(activeProcess->hProcess);
+}
 void databpRemove(void)
 {
     while (dataBpList)
@@ -129,7 +171,7 @@ void databpSetBP(HANDLE hProcess)
         struct _pages **prot, *toAdd;
         while (search)
         {
-            if (search->active)
+            if (search->active & !search->disable)
             {
                 if (resolvenametoaddr(search->name, FALSE, &search->size, &search->address))
                 {
@@ -192,7 +234,7 @@ int databpCheck(DEBUG_EVENT *stDE)
     DATABREAK *search = dataBpList;
     while (search)
     {
-        if (search->active && (search->address & - PAGE_SIZE) <= address && address < ((search->address + search->size + PAGE_SIZE - 1) & - PAGE_SIZE))
+        if (search->active && !search->disable && (search->address & - PAGE_SIZE) <= address && address < ((search->address + search->size + PAGE_SIZE - 1) & - PAGE_SIZE))
         {
             rv = 2; // in a paged out page, but assume not a real bp
             if (search->address <= address && address < search->address + search->size)
@@ -366,6 +408,7 @@ LRESULT CALLBACK DataBpProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             switch (LOWORD(wParam))
             {
                 case IDOK:
+                    SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
                     EndDialog(hwnd, 0);
                     break;
                 case IDC_REMOVEDATABP:
@@ -441,7 +484,7 @@ LRESULT CALLBACK DataBpProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                 {
                     LPNMLISTVIEW  lpnmListView = (LPNMLISTVIEW)lParam;
                     HWND hwndLV = GetDlgItem(hwnd, IDC_BPLIST);
-                    ((DATABREAK *)lpnmListView->lParam)->active = ListView_GetCheckState(hwndLV, lpnmListView->iItem);
+                    ((DATABREAK *)lpnmListView->lParam)->disable = !(((DATABREAK *)lpnmListView->lParam)->active = ListView_GetCheckState(hwndLV, lpnmListView->iItem));
                 }
             }
             break;

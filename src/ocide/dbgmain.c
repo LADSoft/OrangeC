@@ -46,8 +46,8 @@
 #include <process.h>
 
 extern HWND hwndClient;
-extern HWND hwndFrame, hwndRegister, hwndWatch, hwndLocals, hwndThread, hwndProject;
-extern HWND hwndToolDebug, hwndStack, hwndMem;
+extern HWND hwndFrame;
+extern HWND hwndToolDebug;
 extern DWINFO *editWindows;
 extern PROJECTITEM *activeProject;
 extern BOOL SingleStepping;
@@ -352,30 +352,30 @@ static int HandleBreakpoint(DEBUG_EVENT *info, char *cmd)
 		if (uState != Aborting)
 			uState = atBreakpoint;
 		PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-		if (hwndStack)
-			PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
-		if (hwndRegister)
-			PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-				GetThread(info->dwProcessId, info->dwThreadId)->hThread);
-		PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
-        PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
-		if (hwndThread)
-			PostMessage(hwndThread, WM_RESTACK, (WPARAM)1, 0);
-		if (hwndMem)
-			PostMessage(hwndMem, WM_RESTACK, 0, 0);
-		if (hwndThread)
-			SendMessage(hwndThread, WM_RESTACK, 0, 0);
+	    PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
+		PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+		GetThread(info->dwProcessId, info->dwThreadId)->hThread);
+		PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
+		PostDIDMessage(DID_WATCHWND+1, WM_COMMAND, ID_SETADDRESS, 0);
+		PostDIDMessage(DID_WATCHWND+2, WM_COMMAND, ID_SETADDRESS, 0);
+		PostDIDMessage(DID_WATCHWND+3, WM_COMMAND, ID_SETADDRESS, 0);
+        PostDIDMessage(DID_LOCALSWND, WM_COMMAND, ID_SETADDRESS, 0);
+		PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)1, 0);
+		PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
+		PostDIDMessage(DID_MEMWND+1, WM_RESTACK, 0, 0);
+		PostDIDMessage(DID_MEMWND+2, WM_RESTACK, 0, 0);
+		PostDIDMessage(DID_MEMWND+3, WM_RESTACK, 0, 0);
+		SendDIDMessage(DID_THREADWND, WM_RESTACK, 0, 0);
 		PostMessage(hwndFrame, WM_BREAKPOINT, 0, (LPARAM)info);
+        PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 1, 0);
 	}
     if (uState != Aborting && uState != notDebugging)
     {
         WaitForSingleObject(BreakpointSem, INFINITE);
     }
-    //   PostMessage(hwndRegister,WM_COMMAND,ID_SETCONTEXT,0) ;
-    if (hwndStack)
-        PostMessage(hwndStack, WM_RESTACK, (WPARAM)0, 0);
-    if (hwndThread)
-        PostMessage(hwndThread, WM_RESTACK, (WPARAM)0, 0);
+    PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)0, 0);
+    PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)0, 0);
+    PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 0, 0);
     ApplyBreakAddress(0, 0); // get rid of the break line
     if (uState == notDebugging || uState == Aborting)
     {
@@ -409,24 +409,26 @@ static int HandleException(DEBUG_EVENT *info, char *cmd)
 //    ProcessToTop(GetCurrentProcessId());
     uState = atException;
     PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-    if (hwndStack)
-        PostMessage(hwndStack, WM_RESTACK, (WPARAM)1, 0);
-    PostMessage(hwndWatch, WM_COMMAND, ID_SETADDRESS, 0);
-    PostMessage(hwndLocals, WM_COMMAND, ID_SETADDRESS, 0);
-    if (hwndThread)
-        PostMessage(hwndThread, WM_RESTACK, (WPARAM)1, 0);
-    if (hwndRegister)
-        PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, (LPARAM)
-            GetThread(info->dwProcessId, info->dwThreadId)->hThread);
-    if (hwndMem)
-        PostMessage(hwndMem, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)1, 0);
+    PostDIDMessage(DID_WATCHWND, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_WATCHWND+1, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_WATCHWND+2, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_WATCHWND+3, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_LOCALSWND, WM_COMMAND, ID_SETADDRESS, 0);
+    PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)1, 0);
+    PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, (LPARAM)
+    GetThread(info->dwProcessId, info->dwThreadId)->hThread);
+    PostDIDMessage(DID_MEMWND, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_MEMWND+1, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_MEMWND+2, WM_RESTACK, 0, 0);
+    PostDIDMessage(DID_MEMWND+3, WM_RESTACK, 0, 0);
     PostMessage(hwndFrame, WM_EXCEPTION, 0, (LPARAM)info);
+    PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 1, 0);
     WaitForSingleObject(BreakpointSem, INFINITE);
     //   PostMessage(hwndRegister,WM_COMMAND,ID_SETCONTEXT,0) ;
-    if (hwndStack)
-        PostMessage(hwndStack, WM_RESTACK, (WPARAM)0, 0);
-    if (hwndThread)
-        PostMessage(hwndThread, WM_RESTACK, (WPARAM)0, 0);
+    PostDIDMessage(DID_STACKWND, WM_RESTACK, (WPARAM)0, 0);
+    PostDIDMessage(DID_THREADWND, WM_RESTACK, (WPARAM)0, 0);
+    PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 0, 0);
     if (uState == notDebugging || uState == Aborting)
     {
         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
@@ -496,8 +498,6 @@ void SetRegs(DWORD procID)
         p = p->next;
     }
 }
-
-//-------------------------------------------------------------------------
 
 void StopRunning(int newState)
 {
@@ -724,7 +724,6 @@ void StartDebug(char *cmd)
     }
     Sleep(500); /* Needed to make things happy */
     uState = Running;
-    InvalidateRect(hwndRegister, 0, TRUE);
 
     ReleaseSemaphore(StartupSem, 1, 0);
 
@@ -732,8 +731,10 @@ void StartDebug(char *cmd)
     hpsapiLib = LoadLibrary("PSAPI.DLL");
 
     PostMessage(hwndFrame, WM_HIDEDEBUGWINDOWS, 0, 0);
+    PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 0, 0);
 
     SelectInfoWindow(ERR_DEBUG_WINDOW);
+    SetStatusMessage("Starting Debugger", FALSE);
     // Loop until told to stop.
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
     while (bContinue)
@@ -902,7 +903,7 @@ void StartDebug(char *cmd)
                         {
                             th->hThread = stDE.u.CreateThread.hThread;
                             FindFunctionName(name, (int)
-                                stDE.u.CreateThread.lpStartAddress);
+                                stDE.u.CreateThread.lpStartAddress, NULL, NULL);
                             strcpy(th->name, name);
                         }
                         sprintf(buf, "Thread creation: %d %08x %s\r\n",
@@ -1054,7 +1055,7 @@ void StartDebug(char *cmd)
                                                 stDE.dwThreadId, p);
                                         }
                                     }
-                                    
+                                    SendDIDMessage(DID_BREAKWND, WM_RESTACK, 0, 0);
                                     dwContinueStatus = DBG_CONTINUE;
                                 }
                                 isSteppingOut(&stDE);
@@ -1194,13 +1195,17 @@ void StartDebug(char *cmd)
     
     //    ProcessToTop(GetCurrentProcessId());
         uState = notDebugging;
-        PostMessage(hwndRegister, WM_COMMAND, ID_SETADDRESS, 0);
-        //    PostMessage(hwndWatch,WM_ADDWATCH,0,0) ;
-        InvalidateRect(hwndRegister, 0, TRUE);
+        PostDIDMessage(DID_REGWND, WM_COMMAND, ID_SETADDRESS, 0);
         RedrawAllBreakpoints();
     
         PostMessage(hwndFrame, WM_REDRAWTOOLBAR, 0, 0);
-        PostMessage(hwndProject, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
+        PostDIDMessage(DID_PROJWND, WM_COMMAND, IDM_RESETPROFILECOMBOS, 0);
+        PostDIDMessage(DID_BREAKWND, WM_DOENABLE, 1, 0);
+        SendDIDMessage(DID_WATCHWND, WM_INITIALSTACK, 0, 0);                                    
+        SendDIDMessage(DID_WATCHWND+1, WM_INITIALSTACK, 0, 0);                                    
+        SendDIDMessage(DID_WATCHWND+2, WM_INITIALSTACK, 0, 0);                                    
+        SendDIDMessage(DID_WATCHWND+3, WM_INITIALSTACK, 0, 0);                                    
+        SetStatusMessage("Stopping Debugger", FALSE);
     if (hpsapiLib)
         FreeLibrary(hpsapiLib);
 }

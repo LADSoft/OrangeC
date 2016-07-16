@@ -357,7 +357,7 @@ void ChangeImageColorCount(IMAGEDATA *res, int colors)
     BitBlt(hdcTemp, 0, 0, res->width, res->height, res->hdcImage, 0, 0, SRCCOPY);
 
     res->colors = colors < 16 ? 16 : colors;
-    res->saveColors = colors;
+    res->saveColors = colors == 0 ? colors :res->colors;
     DeleteDC(res->hdcImage);
     DeleteObject(res->hbmpImage);
     res->hdcImage = hdcTemp;
@@ -540,7 +540,7 @@ IMAGEDATA *PasteImageFromClipboard(HWND hwnd, IMAGEDATA *match)
     
     /* everything ok, fill in our structure and return it */
     rv->colors = colors < 16 ? 16 : colors;
-    rv->saveColors = colors;
+    rv->saveColors = colors == 0 ? colors : rv->colors;
     rv->width = cxClip;
     rv->height = cyClip;
     rv->hbmpAndMask = hbmpClipAnd;

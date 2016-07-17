@@ -2118,6 +2118,6 @@ void RegisterResourceWindow(HINSTANCE hInstance)
 
 HWND CreateResourceWindow(void)
 {
-    hwndRes = CreateInternalWindow(DID_PROJWND, szResourceClassName, szResourceTitle);
+    hwndRes = CreateInternalWindow(DID_RESWND, szResourceClassName, szResourceTitle);
     return hwndRes;
 }

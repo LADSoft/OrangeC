@@ -1442,6 +1442,7 @@ void SelectComment(HWND hwnd, EDITDATA *p, int insert);
 void DeletePound(HWND hwnd, EDITDATA *p);
 void DeletePercent(HWND hwnd, EDITDATA *p);
 void upperlowercase(HWND hwnd, EDITDATA *p, int ucase);
+int DeleteColonSpaces(HWND hwnd, EDITDATA *p);
 
                               /* Xmatch.c */
 

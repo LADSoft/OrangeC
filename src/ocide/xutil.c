@@ -200,7 +200,29 @@ int CPPScanBackward(EDITDATA *p , int pos, BOOL asExpression)
                     return rv;
             }
         }
-        if (asExpression && pos && keysym(p->cd->text[pos-1].ch))
+        if (asExpression && pos && p->cd->text[pos-1].ch == ')')
+        {
+            pos--;
+            parenNesting[parenLevel++] = '(';
+        }
+        else if (asExpression && pos && p->cd->text[pos-1].ch == ']')
+        {
+            pos--;
+            parenNesting[parenLevel++] = '[';
+        }
+        else if (asExpression && pos && (p->cd->text[pos-1].ch == '(' || p->cd->text[pos-1].ch == '['))
+        {
+            if (!parenLevel || parenNesting[parenLevel-1] != p->cd->text[pos-1].ch)
+                return rv;
+            else pos --;
+            if (!--parenLevel)
+                rv = pos;
+        }
+        else if (parenLevel)
+        {
+            pos--;
+        }
+        else if (asExpression && pos && keysym(p->cd->text[pos-1].ch))
         {
             CHARRANGE range;
             range.cpMin = range.cpMax = pos;
@@ -224,24 +246,6 @@ int CPPScanBackward(EDITDATA *p , int pos, BOOL asExpression)
         else if (asExpression && pos > 1 && p->cd->text[pos-2].ch == '-' && p->cd->text[pos-1].ch == '>')
         {
             pos -= 2;
-        }        
-        else if (asExpression && pos && p->cd->text[pos-1].ch == ')')
-        {
-            pos--;
-            parenNesting[parenLevel++] = '(';
-        }
-        else if (asExpression && pos && p->cd->text[pos-1].ch == ']')
-        {
-            pos--;
-            parenNesting[parenLevel++] = '[';
-        }
-        else if (asExpression && pos && (p->cd->text[pos-1].ch == '(' || p->cd->text[pos-1].ch == '['))
-        {
-            if (!parenLevel || parenNesting[parenLevel-1] != p->cd->text[pos-1].ch)
-                return rv;
-            else pos --;
-            if (!--parenLevel)
-                rv = pos;
         }
         else if (pos > 0 && p->cd->text[pos-1].ch == ':')
         {

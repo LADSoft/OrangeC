@@ -51,7 +51,7 @@
 
 #define FROMIDE
 
-#define DBVersion 120
+#define DBVersion 121
 
 extern PROJECTITEM *workArea;
 extern DWINFO *editWindows;
@@ -205,6 +205,8 @@ sqlite3 *ccDBOpen(PROJECTITEM *pj)
             sqlite3_free(zErrMsg);
             DBClose(xdb);
             xdb = NULL;
+            if (!version_ok)
+                unlink(name);
         }
         else
         {

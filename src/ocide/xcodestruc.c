@@ -231,7 +231,7 @@ BOOL inStructBox;
                 if (selected != LB_ERR)
                 {
                     temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                    buf[len++] = temp[0];
+//                    buf[len++] = temp[0];
                     buf[len] = 0;
                 }
             }
@@ -392,14 +392,14 @@ BOOL inStructBox;
                 }
                 return -1;
             case WM_CHARTOITEM:
-                if (wParam == '.' || wParam == '-')
+                wParam = LOWORD(wParam);
+                if (wParam == '.' || wParam == '-' || wParam == '[')
                 {
                     PostMessage(hwnd, WM_CLOSE, 0, 0);
                     SendMessage(parent, WM_CHAR, wParam, 0);
                 }
                 else
                 {
-                    wParam = LOWORD(wParam);
                     buf[len++] = wParam;
                     buf[len] = 0;
                     SendMessage(parent, WM_CHAR, wParam, 0);

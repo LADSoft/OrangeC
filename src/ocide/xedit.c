@@ -953,7 +953,7 @@ void insertcr(HWND hwnd, EDITDATA *p, BOOL tabs)
             n++;
         }
 
-        if (hasbegin)
+        if (hasbegin && !hasend)
         {
             if (p->cd->tabs)
             {
@@ -1934,9 +1934,12 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 case VK_BACK:
                     if (p->selstartcharpos == p->selendcharpos)
                     {
+                        int n = p->insertcursorcolumn;
                         if (p->selstartcharpos == 0)
                             break;
                         left(hwnd, p);
+                        if (n)
+                            break;
                     }
                 case VK_DELETE:
                     if (!p->cd->readonly)
@@ -2273,7 +2276,28 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                     CancelParenMatch(hwnd, p);
                     if (!p->cd->readonly)
                     {
-                        insertchar(hwnd, p, wParam);
+                        if (wParam == ':')
+                        {
+                            if (p->lastWasColon)
+                            {
+                                int n = p->selstartcharpos;
+                                doundo(hwnd, p);
+                                p->selstartcharpos = p->selendcharpos = n + p->lastWasColon;
+                                p->lastWasColon = 0;
+                                insertchar(hwnd, p, wParam);
+                            }
+                            else
+                            {
+                                insertchar(hwnd, p, wParam);
+                                p->lastWasColon = DeleteColonSpaces(hwnd, p);
+                            }
+
+                        }
+                        else
+                        {
+                            insertchar(hwnd, p, wParam);
+                            p->lastWasColon = 0;
+                        }
                         if (wParam == '.' || wParam == '>' || wParam == ':' || isalnum(wParam) || wParam == '_')
                         {
                             PostMessage(hwnd, WM_CODECOMPLETE, wParam, p->selstartcharpos);

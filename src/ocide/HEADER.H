@@ -568,6 +568,7 @@ typedef struct _editData{
 	int wheelIncrement;
     char hasfocus;
     char hiddenCaret;
+    char lastWasColon;
     COLORIZE_HASH_ENTRY *colorizeEntries[COLORIZE_HASH_SIZE];
 } EDITDATA ;
 

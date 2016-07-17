@@ -703,3 +703,31 @@ void DeletePercent(HWND hwnd, EDITDATA *p)
         }
         InvalidateRect(hwnd, 0, 0);
     }
+int DeleteColonSpaces(HWND hwnd, EDITDATA *p)
+{
+    int n = p->selstartcharpos-1, s, b = n+1;
+    if (p->cd->language != LANGUAGE_ASM)
+        return 0;
+    if (!PropGetBool(NULL, "AUTO_FORMAT"))
+        return 0;
+    while (n && isspace(p->cd->text[n-1].ch) && p->cd->text[n-1].ch != '\n')
+        n--;
+    if (n && (isalnum(p->cd->text[n-1].ch) || p->cd->text[n-1].ch == '_'))
+    {
+        while (n && (isalnum(p->cd->text[n-1].ch) || p->cd->text[n-1].ch == '_'))
+            n--;
+        s = n;
+        while (s && isspace(p->cd->text[s-1].ch) && p->cd->text[s-1].ch != '\n')
+            s--;
+        if ((!s || p->cd->text[s-1].ch == '\n') && s != n)
+        {
+            p->selstartcharpos = s;
+            p->selendcharpos = n;
+            Replace(hwnd, p, "", 0);
+            p->selstartcharpos += b - n;
+            p->selendcharpos += b - n;
+            return n - s;
+        }
+    }
+    return 0;
+}

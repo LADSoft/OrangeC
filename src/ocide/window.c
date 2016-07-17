@@ -1165,6 +1165,23 @@ static void ResizeAllWindows(int dx, int dy)
          }
     }
 }
+static void ReTopAllWindows(RECT *old, RECT *new)
+{
+    if (old->top != new->top)
+    {
+        int i;
+        for (i=0; i < debugDockCount; i++)
+        {
+            if (debugDocks[i].r.top == old->top * EXTRA)
+                debugDocks[i].r.top = new->top * EXTRA;
+        }
+        for (i=0; i < releaseDockCount; i++)
+        {
+            if (releaseDocks[i].r.top == old->top * EXTRA)
+                releaseDocks[i].r.top = new->top * EXTRA;
+        }
+    }
+}
 void ResizeLayout(RECT *rect)
 {
     int jmpListHeight = 0;
@@ -1196,6 +1213,7 @@ void ResizeLayout(RECT *rect)
     deltax = frame.right - oldFrame.right;
     deltay = frame.bottom - oldFrame.bottom;
     ResizeAllWindows(deltax*EXTRA, deltay*EXTRA);
+    ReTopAllWindows(&oldFrame, &frame);
     oldFrame = frame;
     for (i=0; i < dockCount; i++)
     {

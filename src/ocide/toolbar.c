@@ -549,6 +549,8 @@ LRESULT CALLBACK CustomizeProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                         {
                             ShowWindow(*(customData[lp->iItem].wnd), 
                                        ListView_GetCheckState(lp->hdr.hwndFrom, lp->iItem) ? SW_SHOW : SW_HIDE);
+                            SendMessage(hwndToolbarBar, WM_REDRAWTOOLBAR, 0, 0);
+                            ResizeLayout(NULL);
                         }
                         if (lp->uNewState & LVIS_SELECTED)
                         {
@@ -978,7 +980,14 @@ static int tbBarRedraw(HWND hwnd)
     }
     if (count)
     {
+        HDC dc;
+        RECT r;
         MoveWindow(hwnd, 0, 0, width, tbRects[count-1].bottom, 1);
+        /* I don't know why i have to erase this manually... */
+        dc = GetDC(hwnd);
+        GetClientRect(hwnd, &r);
+        FillRect(dc, &r, (HBRUSH)(COLOR_BTNFACE + 1));
+        ReleaseDC(hwnd, dc);
         for (i=0; i < count; i++)
         {
             int j;
@@ -1002,6 +1011,9 @@ static int tbBarRedraw(HWND hwnd)
 LRESULT CALLBACK tbBarProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
     lParam)
 {
+    RECT r;
+    HDC dc;
+    PAINTSTRUCT ps;
     switch (iMessage)
     {        
         case WM_REDRAWTOOLBAR:

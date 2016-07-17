@@ -488,6 +488,8 @@ void RestoreToolbarLayout(struct xmlNode *node, int version)
         }
         toolCount = i;
     }
+    SendMessage(hwndToolbarBar, WM_REDRAWTOOLBAR, 0, 0);
+    ResizeLayout(NULL);
 }    
 void RestoreDocks(struct xmlNode *node, int version)
 {

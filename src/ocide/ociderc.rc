@@ -630,6 +630,8 @@ END
 4 ICON "res\\c.ico"
 5 ICON "res\\cpp.ico"
 6 ICON "res\\h.ico"
+7 ICON "res\\res.ico"
+
 BITMAP_SPLASH SPLASH DISCARDABLE "res\\splash.zip"
 ID_BUILDANIM BITMAP "res\\buildanim.bmp"
 ID_TOOLBAR BITMAP "res\\toolbar.bmp"

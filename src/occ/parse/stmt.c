@@ -233,7 +233,7 @@ static LEXEME *selection_expression(LEXEME *lex, BLOCKDATA *parent, EXPRESSION *
         }
     }
         
-    if (cparams.prm_cplusplus && isstructured(tp) && kw != kw_for && kw != kw_rangefor)
+    if (cparams.prm_cplusplus && tp && isstructured(tp) && kw != kw_for && kw != kw_rangefor)
     {
         if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw)-1, &stdint, TRUE))
             if (!castToPointer(&tp, exp, (enum e_kw)-1, &stdpointer))

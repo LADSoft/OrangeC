@@ -328,7 +328,6 @@ BOOL inStructBox;
                         }
                         // fallthrough
                         
-                    case VK_SPACE:
                     case VK_ESCAPE:
                     case VK_LEFT:
                         PostMessage(hwnd, WM_CLOSE, 0, 0);
@@ -393,27 +392,29 @@ BOOL inStructBox;
                 return -1;
             case WM_CHARTOITEM:
                 wParam = LOWORD(wParam);
-                if (wParam == '.' || wParam == '-' || wParam == '[')
+                SendMessage(parent, WM_CHAR, wParam, 0);
+                if (len != 0 || !isspace(wParam))
                 {
-                    PostMessage(hwnd, WM_CLOSE, 0, 0);
-                    SendMessage(parent, WM_CHAR, wParam, 0);
-                }
-                else
-                {
-                    buf[len++] = wParam;
-                    buf[len] = 0;
-                    SendMessage(parent, WM_CHAR, wParam, 0);
-                    selected = SendMessage(hwnd, LB_SELECTSTRING, -1, (LPARAM)buf);
-                    if (selected != LB_ERR)
+                    if (!isalnum(wParam) && wParam != '_')
                     {
-                        temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
-                        strcpy(buf2, temp);
-                        if (!stricmp(buf, buf2))
+                        PostMessage(hwnd, WM_CLOSE, 0, 0);
+                    }
+                    else
+                    {
+                        buf[len++] = wParam;
+                        buf[len] = 0;
+                        selected = SendMessage(hwnd, LB_SELECTSTRING, -1, (LPARAM)buf);
+                        if (selected != LB_ERR)
                         {
-                            // if it is the prefix of another item don't close out the box
-                            temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected+1, 0);
-                            if (temp == (char *)-1 || strnicmp(buf, temp, len))
-                                PostMessage(hwnd, WM_CLOSE, 0, 0);
+                            temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected, 0);
+                            strcpy(buf2, temp);
+                            if (!stricmp(buf, buf2))
+                            {
+                                // if it is the prefix of another item don't close out the box
+                                temp = (char *)SendMessage(hwndLB, LB_GETITEMDATA, selected+1, 0);
+                                if (temp == (char *)-1 || strnicmp(buf, temp, len))
+                                    PostMessage(hwnd, WM_CLOSE, 0, 0);
+                            }
                         }
                     }
                 }

@@ -5428,6 +5428,8 @@ jointemplate:
                             else
                             {
                                 sp->parentClass = strSym;
+                                if (!sp->parentClass && spi->parentClass) // error handling
+                                    sp->parentClass = spi->parentClass;
                             }
                             if (sp->constexpression)
                                 spi->constexpression = TRUE;

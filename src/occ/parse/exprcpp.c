@@ -1659,6 +1659,11 @@ LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp,
         sza->next = placement->arguments;
         placement->arguments = sza;
     }
+    else
+    {
+        error(ERR_TYPE_NAME_EXPECTED);
+        *tp = &stdint; // error handling
+    }
     if (!global)
     {
         if (isstructured(*tp))
@@ -1871,6 +1876,11 @@ LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **e
         exp1 = intNode(en_c_i, 0); // signal to the runtime to load the number of elems dynamically
     }
     lex = expression_cast(lex, funcsp, NULL, tp, exp, NULL, flags);
+    if (!*tp)
+    {
+        error(ERR_IDENTIFIER_EXPECTED);
+        *tp = &stdint; // error handling
+    }
     if (!ispointer(*tp))
     {
         error(ERR_POINTER_TYPE_EXPECTED);

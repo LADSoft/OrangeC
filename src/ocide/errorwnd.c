@@ -203,7 +203,7 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM
                         if (errlist[p->lParam]->lineno > 0)
                         {
                             memcpy(&pressed, p, sizeof(pressed));
-                            SetTimer(hwnd, 100, 500, 0);
+                            SetTimer(hwnd, 100, 50, 0);
                         }
                     }
                 }

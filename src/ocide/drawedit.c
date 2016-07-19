@@ -206,7 +206,7 @@ void doMaximize(void)
     HWND hwnd = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, (LPARAM)&state);
     if (state != PropGetInt(NULL, "TABBED_WINDOWS"))
     {
-        EnumChildWindows(hwndClient, doSysMenu, PropGetInt(NULL, "TABBED_WINDOWS"));
+//        EnumChildWindows(hwndClient, doSysMenu, PropGetInt(NULL, "TABBED_WINDOWS"));
         SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) | WS_MAXIMIZEBOX);
         SendMessage(hwndClient, PropGetInt(NULL, "TABBED_WINDOWS") ? WM_MDIMAXIMIZE : WM_MDIRESTORE, (WPARAM)hwnd, 0);
         SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) &~WS_MAXIMIZEBOX);
@@ -1473,7 +1473,6 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     PostMessage(hwnd, WM_COMMAND, EN_NEEDFOCUS, 0);
             break;
         case WM_MDIACTIVATE:
-
             if ((HWND)lParam != hwnd)
             {
                 break;

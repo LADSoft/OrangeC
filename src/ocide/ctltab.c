@@ -492,7 +492,7 @@ void DrawTabs(HWND hwnd, HDC hDc, RECT *r, struct _tabStruct *ptr)
         TextOut(hDc, x + LEFTHALF/2 - (bottom ? LEFTHALF-2 : 0), y, p, strlen(p));		
         if (tab->modified)
         {
-            TextOut(hDc, x + 2+ (tab->iImage ? 20 : 0) + size.cx - (bottom ? LEFTHALF : 0) + LEFTHALF/2, y, "*", strlen("*"));
+            TextOut(hDc, x + 2+ (tab->iImage ? 20 : 0) + size.cx - (bottom ? LEFTHALF : 0) - LEFTHALF, y, "*", strlen("*"));
         }
         if (bottom && tab->iImage >= 0)
         {

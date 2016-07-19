@@ -557,7 +557,7 @@ static DWORD MakerThread(void *p)
         SendInfoMessage(ERR_BUILD_WINDOW, "The build was canceled");
     }
     else
-    {
+   {
         ErrWarnCounts();
     }
     making = FALSE;

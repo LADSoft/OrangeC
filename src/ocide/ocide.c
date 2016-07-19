@@ -1504,12 +1504,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
             }
             else
             {
-                if (animatePos >= 0)
-                {
-                    KillTimer(hwnd, animateTimerId);
-                    animatePos = -1;
-                    DrawBuildAnimation(hwnd, animatePos);
-                }
+                KillTimer(hwnd, animateTimerId);
+                animatePos = -1;
+                DrawBuildAnimation(hwnd, animatePos);
             }
             break;
         case WM_TIMER:

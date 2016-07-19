@@ -650,6 +650,7 @@ void link_extendedtype(TYPE *tp1)
         else if (isstructured(tp))
         {
             int sel;
+            tp = basetype(tp)->sp->tp; // find instantiated version in case of C++ struct
             if (tp->type == bt_union)
             {
                 sel = 5;

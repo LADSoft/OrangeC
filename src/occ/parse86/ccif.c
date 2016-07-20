@@ -229,7 +229,7 @@ static int WriteStructMembers(SYMBOL *sym, sqlite3_int64 struct_id, sqlite3_int6
                     tp = basetype(tp)->btp;
                 while (ispointer(tp))
                     tp = basetype(tp)->btp, indirectCount++;
-                if (isstructured(tp))
+                if (isstructured(tp) && isstructured(basetype(tp)->sp->tp))
                 {
                     rel_id = basetype(tp)->sp->tp->sp->ccStructId;
                 }
@@ -311,6 +311,7 @@ static void DumpSymbolType(SYMBOL *sym)
         case sc_typedef:
             type = ST_TYPEDEF;
             break;
+        case sc_namespace:
         case sc_type:
             type = ST_TAG;
             break;

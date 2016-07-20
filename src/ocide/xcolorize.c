@@ -729,7 +729,7 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
         COLORIZE_HASH_ENTRY *entry = lookupColorizeName(entries, name);
         if (entry)
         {
-            int lastlargest = 1;
+            int lastlargest = 0;
             struct _colorize_lines_entry *lines = entry->lines;
             while (lines)
             {
@@ -777,6 +777,13 @@ void FormatLine(HWND hwnd, INTERNAL_CHAR *buf, int type, int bkColor)
                     break;
                 last ++;
             }
+            *last = '\0';
+        }
+        if (name[0] == '#')
+        {
+            char *last = ++name;
+            while (*last && *last != '$')
+                last++;
             *last = '\0';
         }
         entry = lookupColorizeName(entries, name);

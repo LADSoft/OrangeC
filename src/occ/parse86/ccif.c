@@ -287,7 +287,7 @@ static void DumpStructs(void)
         if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef && sym->tp->syms)
         {
             sqlite3_int64 struct_id = basetype(sym->tp)->sp->ccStructId, file_id;
-            if (ccWriteFileName(sym->declfile, &file_id))
+            if (ccWriteFileName(sym->origdeclfile, &file_id))
             {
                 int order = 1;
                 WriteStructMembers(sym, struct_id, file_id, order, FALSE, sym->access);
@@ -344,7 +344,7 @@ static void DumpSymbolType(SYMBOL *sym)
     if (isvolatile(sym->tp))
         type |= ST_VOLATILE;
         */
-    ccWriteSymbolType( name, main_id, sym->declfile ? sym->declfile : "$$$", sym->declline, sym->ccEndLine, type);
+    ccWriteSymbolType( name, main_id, sym->origdeclfile ? sym->origdeclfile : "$$$", sym->origdeclline, sym->ccEndLine, type);
 }
 static void DumpSymbol(SYMBOL *sym);
 static void DumpNamespace(SYMBOL *sym)
@@ -416,9 +416,9 @@ static void DumpSymbol(SYMBOL *sym)
         }
         if (sym->storage_class == sc_namespace)
             DumpNamespace(sym);
-        else if (ccWriteLineNumbers( name, litlate(type_name), sym->declfile ? sym->declfile : "$$$", 
+        else if (ccWriteLineNumbers( name, litlate(type_name), sym->origdeclfile ? sym->origdeclfile : "$$$", 
                                indirectCount, struct_id, main_id, 
-                           declsym->declline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
+                           declsym->origdeclline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
         {
             if (isfunction(sym->tp) && sym->tp->syms)
             {

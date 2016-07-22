@@ -598,6 +598,8 @@ int main(int argc, char *argv[])
         p = strrchr(buffer, '.');
         if (*(p - 1) != '.')
         {
+            if (p[1] == 'h' || p[1] == 'H') // compile H files as C++ for the IDE
+                cparams.prm_cplusplus = TRUE;
             if (p[1] == 'c' || p[1] == 'C')
             if (p[2] == 'p' || p[2] == 'P')
             {

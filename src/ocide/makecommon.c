@@ -1039,7 +1039,7 @@ int Execute(char *cmd, char *wdp, int window)
     si.hStdInput = INVALID_HANDLE_VALUE;
     si.hStdOutput = stdoutWr;
     si.hStdError = stdoutWr;
-    
+
     retcode = CreateProcess(0, cmd, 0, 0, TRUE, CREATE_SUSPENDED, 
                             0, path, &si, &pi);
 

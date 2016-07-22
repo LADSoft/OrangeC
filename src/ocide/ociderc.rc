@@ -624,13 +624,14 @@ BEGIN
 	0x50, IDM_SCROLLTOBP, VIRTKEY, CONTROL 
 END
 
-1 ICON "res\\prj.ico"
-2 ICON "res\\prj.ico"
-3 ICON "res\\ocide.ico"
-4 ICON "res\\c.ico"
-5 ICON "res\\cpp.ico"
-6 ICON "res\\h.ico"
-7 ICON "res\\res.ico"
+101 ICON "res\\prj.ico"
+102 ICON "res\\prj.ico"
+103 ICON "res\\ocide.ico"
+104 ICON "res\\c.ico"
+105 ICON "res\\cpp.ico"
+106 ICON "res\\h.ico"
+107 ICON "res\\res.ico"
+
 
 BITMAP_SPLASH SPLASH DISCARDABLE "res\\splash.zip"
 ID_BUILDANIM BITMAP "res\\buildanim.bmp"

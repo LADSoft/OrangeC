@@ -239,10 +239,29 @@ static int FindCompleteCommand(PROJECTITEM *pj, char *name)
     int rv = 0;
     do
     {
-        AddSymbolTable(pj, FALSE);
         if (pj->type == PJ_FILE)
         {
-            
+            BOOL smattered = FALSE;
+            char buf[10];
+            char *p;
+            if (!xstricmp(pj->realName + strlen(pj->realName)-2, ".h") ||
+                !xstricmp(pj->realName + strlen(pj->realName)-4, ".hpp") ||
+                !xstricmp(pj->realName + strlen(pj->realName)-4, ".hxx"))
+            {
+                // all this is to look up the rules for a .h file as if it were a .c
+                // file, we do it this way rather than goofing with the rule file
+                // because otherwise we would start compiling .h files..
+                p = strrchr(pj->realName, '.');
+                strcpy(buf, p);
+                strcpy(p, ".c");
+                 
+                smattered = TRUE;
+            }
+            AddSymbolTable(pj, FALSE);
+            if (smattered)
+            {
+                strcpy(p,buf);
+            }            
             if (!xstricmp(name, pj->realName))
             {
                 DoCompleteCommand(pj);
@@ -252,6 +271,7 @@ static int FindCompleteCommand(PROJECTITEM *pj, char *name)
         }
         else if (pj->children)
         {
+            AddSymbolTable(pj, FALSE);
               
             FindCompleteCommand(pj->children, name);
         }

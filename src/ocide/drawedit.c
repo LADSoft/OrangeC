@@ -930,7 +930,7 @@ void InstallForParse(HWND hwnd)
         DWINFO *info = (DWINFO *)GetWindowLong(hwnd, 0);
         char *name = info->dwName;
         int len = strlen(name);
-        if (!xstricmp(name + len - 2, ".c") || !xstricmp(name + len - 4, ".cpp") || !xstricmp(name + len - 3, ".cc") || xstricmp(name + len - 4, ".cxx"))
+        if (!xstricmp(name + len - 2, ".c") || !xstricmp(name + len - 4, ".cpp") || !xstricmp(name + len - 3, ".cc") || !xstricmp(name + len - 4, ".cxx") || !xstricmp(name + len - 2, ".h") )
              installparse(name, FALSE);
         else if (!xstricmp(name + len - 2, ".h"))
         {

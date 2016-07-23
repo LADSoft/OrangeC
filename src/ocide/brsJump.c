@@ -274,7 +274,7 @@ static int JumpTo(void)
                 "    JOIN FileNames ON FileNames.id = LineNumbers.fileId "
                 "    JOIN Names ON Names.id = LineNumbers.symbolId"
                 "    WHERE Names.name = ?"
-                "       AND (names.type & 64);"
+                "       AND (names.type & 64) AND (lineNumbers.qual & 2) = 0;"
             };
             int rc = SQLITE_OK;
             sqlite3_stmt *handle;

@@ -97,6 +97,32 @@ void SetWorkAreaMRU(PROJECTITEM *workArea)
         MRUToMenu(1);
     }
 }
+static DWORD SetColorize(void *v)
+{
+    DWINFO *ptr;
+    Sleep(1000);
+    ptr = editWindows;
+    while (ptr)
+    {
+        BOOL ccExistsInDB(char *fileName);
+        if (ptr->active)
+        {
+            if (ccExistsInDB(ptr->dwName))
+            {
+                if (ptr->active)
+                {
+                    SendMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
+                }
+            }
+            else
+            {
+                if (ptr->active)
+                    InstallForParse(ptr->self);
+            }
+        }
+        ptr = ptr->next;
+    }
+}
 void LoadWorkArea(char *name, BOOL existing)
 {
     PROJECTITEM *oldWorkArea;
@@ -171,25 +197,7 @@ void LoadWorkArea(char *name, BOOL existing)
     db = ccDBOpen(workArea);
     ccDBVacuum(db);
     ccDBSetDB(db);
-    ptr = editWindows;
-    while (ptr)
-    {
-        BOOL ccExistsInDB(char *fileName);
-        if (ptr->active)
-        {
-            if (ccExistsInDB(ptr->dwName))
-            {
-                if (ptr->active)
-                    SendMessage(ptr->dwHandle, EM_LOADLINEDATA, 0, 0);
-            }
-            else
-            {
-                if (ptr->active)
-                    InstallForParse(ptr->self);
-            }
-        }
-        ptr = ptr->next;
-    }
+    _beginthread(SetColorize, 0, 0);
 }
 void CloseWorkArea(void)
 {

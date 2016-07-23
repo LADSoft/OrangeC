@@ -790,7 +790,6 @@ LRESULT CALLBACK WatchAddProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 char *exceptval(int num);
 int GetHelpID(void );
-void LoadFirstWorkArea(void);
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
     LPARAM lParam);
 void doSplash(void);

@@ -199,12 +199,13 @@ int IsStepping(DEBUG_EVENT *dbe)
             if ((int)dbe->u.Exception.ExceptionRecord.ExceptionAddress !=
                 LastSkipAddr)
             {
-                if (addr)
+//                if (addr)
                 {
-                    uState = SteppingOver;
+//                    uState = SteppingOver;
                     DoStepOver(dbe);
                     return TRUE;
                 }
+                /*
                 else
                 {
                     int *p = calloc(2, sizeof(int));
@@ -213,6 +214,7 @@ int IsStepping(DEBUG_EVENT *dbe)
                     uState = StepInOut;
                     return TRUE;
                 }
+                */
             }
             else
             {

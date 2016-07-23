@@ -130,7 +130,7 @@ BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType)
 }
 TYPE *basetype(TYPE *tp)
 {
-    do 
+    while(tp) 
     {
         switch(tp->type)
         {
@@ -151,12 +151,11 @@ TYPE *basetype(TYPE *tp)
                 return tp;
         }
     }
-    while (tp);
     return NULL;
 }
 BOOLEAN isDerivedFromTemplate(TYPE *tp)
 {
-    do 
+    while (tp)
     {
         switch(tp->type)
         {
@@ -178,7 +177,6 @@ BOOLEAN isDerivedFromTemplate(TYPE *tp)
                 return FALSE;
         }
     }
-    while (tp);
     return FALSE;
 }
 BOOLEAN isunsigned(TYPE *tp)

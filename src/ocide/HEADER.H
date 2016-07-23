@@ -538,7 +538,7 @@ typedef struct
     char colorizing;
 } COREDATA;
 
-#define COLORIZE_HASH_SIZE 32
+#define COLORIZE_HASH_SIZE 251
 typedef struct _colorize_hash_entry
 {
     struct _colorize_hash_entry *next;

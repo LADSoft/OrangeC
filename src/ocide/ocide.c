@@ -418,7 +418,7 @@ int GetHelpID(void )
     return helpID;
 }
     
-void LoadFirstWorkArea(void)
+static DWORD LoadFirstWorkArea(void *v)
 {
     int argc = __argc;
     char **argv = __argv;
@@ -438,7 +438,6 @@ void LoadFirstWorkArea(void)
         {
             LoadWorkArea(szNewWS, TRUE);
         }
-
         if (todo)
         {
             int i;
@@ -1527,7 +1526,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMessage, WPARAM wParam,
                     CreateDocks();
                     SendMessage(hwnd, WM_REDRAWTOOLBAR, 0, 0);
                 }
-                LoadFirstWorkArea();
+                LoadFirstWorkArea(0);
             } 
             else if (wParam == IDT_CLIENTCONTEXTMENU)
             {

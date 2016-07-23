@@ -114,6 +114,7 @@ static void RefreshAddresses(WATCHDATA *ptr, VARINFO *var, int address, THREAD *
     {
         char buf[1048];
         int unscope = noscope;
+        var->scope = ptr->structNesting[0]->scope;
         if (noscope)
             var->outofscope = TRUE;
         else
@@ -696,8 +697,25 @@ static void LoadLocals(WATCHDATA *ptr)
     WATCHINFO *p = ptr->watchinfo_list;
     int i;
     for (i=0; i < ptr->watchinfo_count; i++)
-        p[i].marked = TRUE;
+        if (!strcmp(ptr->watchinfo_list[i].info->membername, "this"))
+        {
+            WATCHINFO *x = &ptr->watchinfo_list[i];
+            int j;
+            FreeTree(x->info, ptr);
+            FreeVarInfo(x->info);
+            for (j = i; j < ptr->watchinfo_count - 1; j++)
 
+            {
+                ptr->watchinfo_list[j] = ptr->watchinfo_list[j + 1];
+                RenumberDeleteItems(ptr->watchinfo_list[j].info);
+            }
+            ptr->watchinfo_count--;
+            i--;
+        }
+        else
+        {
+            p[i].marked = TRUE;
+        }
     while (names)
     {
         NAMELIST *next = names->next;

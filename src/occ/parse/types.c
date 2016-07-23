@@ -343,6 +343,8 @@ TYPE *typenum(char *buf, TYPE *tp)
             strcpy(buf, tp->sp->name);
             break;
         case bt_aggregate:
+            if (!tp->syms)
+                break;
             hr = tp->syms->table[0];
             sp = (SYMBOL *)hr->p;
             if (hr->next || !strcmp(sp->name, tp->sp->name)) // the tail is to prevent a problem when there are a lot of errors

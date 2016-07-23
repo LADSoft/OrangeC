@@ -781,7 +781,8 @@ bool LinkDebugFile::WriteAutosTable()
                     switch((*it2)->GetType())
                     {
                         case ObjDebugTag::eLineNo:
-                            currentLine = (*it2)->GetLineNo();
+                            if ((*it2)->GetLineNo() > currentLine) // e.g. for statements can have their first statement last
+                                currentLine = (*it2)->GetLineNo();
                             break;
                         default:
                             break;

@@ -463,8 +463,10 @@ void dumpStructFields(int sel, int n, int sz, SYMBOL *parent, BASECLASS *bc, HAS
     int count = 0;
     SYMBOL *table[15];
     int table1[15];
+    char table2[15];
     int last = 0;
     int i;
+    memset(table2, 1, sizeof(table2));
     if (bc)
     {
         TYPE tpl = { 0 };
@@ -488,6 +490,7 @@ void dumpStructFields(int sel, int n, int sz, SYMBOL *parent, BASECLASS *bc, HAS
                     vbase = vbase->next;
                 }
                 tpl.btp = sp->tp;
+                table2[count] = 0;
                 table1[count++] = link_puttype(&tpl);
             }
             else
@@ -517,7 +520,7 @@ void dumpStructFields(int sel, int n, int sz, SYMBOL *parent, BASECLASS *bc, HAS
     if (sel != 9)
         emit_record_ieee(",%X",sz);
     for (i=0; i < count; i++)
-        emit_record_ieee(",T%X,%03X%s,%X", table1[i], strlen(table[i]->name), table[i]->name, ismemberdata(table[i]) ? table[i]->offset : -1);
+        emit_record_ieee(",T%X,%03X%s,%X", table1[i], strlen(table[i]->name), table[i]->name, table2[i] ? table[i]->offset : -1);
     
     if (last != 0)
         emit_record_ieee(",T%X", last);

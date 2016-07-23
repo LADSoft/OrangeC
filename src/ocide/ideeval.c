@@ -1186,6 +1186,31 @@ void GetQualifiedName(char *dest, char **src, BOOL type, BOOL towarn)
     {
         return ieerr(text, 0, 0, "sizeof not implemented", towarn);
     }
+    static VARINFO **LookupStructMember(DEBUG_INFO **dbg, VARINFO **var3, char *name)
+    {
+        VARINFO **varin = var3;
+        while (*var3 && strcmp(name, (*var3)->membername) != 0)
+        {
+            var3 = &(*var3)->link;
+        }
+        if (*var3)
+            return var3;
+        var3 = varin;
+        while (*var3)
+        {
+            if ((*var3)->structure)
+            {
+                if (GetType(*dbg, (*var3)->structtag) != 0)
+                {
+                    VARINFO **var4 = LookupStructMember(dbg, &(*var3)->subtype,name);
+                    if (*var4)
+                        return var4;
+                }
+            }
+            var3 = &(*var3)->link;
+        }
+        return var3;
+    }
     static VARINFO *ieprimary(char **text, 
         DEBUG_INFO **dbg, SCOPE *sc, int towarn)
     /*
@@ -1297,13 +1322,8 @@ void GetQualifiedName(char *dest, char **src, BOOL type, BOOL towarn)
                 while (isalnum(**text) ||  **text == '_')
                     *p++ = *(*text)++;
                 *p = 0;
-                var2 = var1->subtype;
-                var3 = &var1->subtype;
-                while (var2 && strcmp(buf, var2->membername) != 0)
-                {
-                    var3 = &var2->link;
-                    var2 = var2->link;
-                }
+                var3 = LookupStructMember(dbg, &var1->subtype, buf);
+                var2 = *var3;
                 if (!var2)
                     return ieerr(text, var1, 0, "Unknown member name", towarn);
                 (*var3) = var2->link;

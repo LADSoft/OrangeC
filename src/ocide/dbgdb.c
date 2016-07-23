@@ -1125,7 +1125,7 @@ int GetType(DEBUG_INFO *dbg_info, char *name)
     static char *query = {
         "SELECT TypeNames.typeId from typeNames"
         "    JOIN Names on TypeNames.symbolId = Names.id"
-        "    WHERE Names.name = ?"
+        "    WHERE Names.name = ?;"
     };
     int rv = 0;
     int rc = SQLITE_OK;

@@ -2402,25 +2402,28 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                 if (PropGetInt(NULL, "CODE_COMPLETION") != 0)
                 {
                    p = (EDITDATA*)GetWindowLong(hwnd, 0);
-                   if (p->cd)
+                   if (p)
                    {
-                        free(p->cd->lineData);
-                        p->cd->lineData = NULL;
-                        p->cd->lineDataMax = 0;
-                        if (!p->cd->lineData)
+                       if (p->cd)
+                       {
+                            free(p->cd->lineData);
+                            p->cd->lineData = NULL;
+                            p->cd->lineDataMax = 0;
+                            if (!p->cd->lineData)
+                            {
+                                HWND t = GetParent(hwnd);
+                                DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
+                                p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
+                            }
+                       }
+                        FreeColorizeEntries(p->colorizeEntries);
                         {
                             HWND t = GetParent(hwnd);
                             DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
-                            p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
+                            ccGetColorizeData(x->dwName, p->colorizeEntries);
+                            FullColorize(hwnd, p, FALSE);
                         }
                    }
-                    FreeColorizeEntries(p->colorizeEntries);
-                    {
-                        HWND t = GetParent(hwnd);
-                        DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
-                        ccGetColorizeData(x->dwName, p->colorizeEntries);
-                        FullColorize(hwnd, p, FALSE);
-                    }
                 }
                 break;
             case WM_CREATE:

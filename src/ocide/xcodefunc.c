@@ -266,17 +266,24 @@ HWND hwndShowFunc;
                     switch(wParam)
                     {
                         case VK_DOWN:
-                            funcpos[index-1] ++;
-                            if (funcpos[index-1] >= GetFuncCount(funcs[index-1]))
-                                funcpos[index-1] = 0;
-                            SetFuncWindowSize(hwnd, normal, bold, origin[index-1], funcs[index-1], funcpos[index-1], curarg[index-1]);
-                            return 0;
+                            if (GetFuncCount(funcs[index-1]) > 1)
+                            {
+                                funcpos[index-1] ++;
+                                if (funcpos[index-1] >= GetFuncCount(funcs[index-1]))
+                                    funcpos[index-1] = 0;
+                                SetFuncWindowSize(hwnd, normal, bold, origin[index-1], funcs[index-1], funcpos[index-1], curarg[index-1]);
+
+                                return 0;
+                            }
                         case VK_UP:
-                            funcpos[index-1] --;
-                            if (funcpos[index-1] < 0)
-                                funcpos[index-1] = GetFuncCount(funcs[index-1]);
-                            SetFuncWindowSize(hwnd, normal, bold, origin[index-1], funcs[index-1], funcpos[index-1], curarg[index-1]);
-                            return 0;
+                            if (GetFuncCount(funcs[index-1]) > 1)
+                            {
+                                funcpos[index-1] --;
+                                if (funcpos[index-1] < 0)
+                                    funcpos[index-1] = GetFuncCount(funcs[index-1]);
+                                SetFuncWindowSize(hwnd, normal, bold, origin[index-1], funcs[index-1], funcpos[index-1], curarg[index-1]);
+                                return 0;
+                            }
                         case VK_HOME:
                         case VK_END:
                         case VK_PRIOR:

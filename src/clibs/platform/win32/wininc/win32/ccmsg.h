@@ -457,6 +457,8 @@
 #define TB_THUMBPOSITION (4)
 #define TB_THUMBTRACK (5)
 #define TB_TOP (6)
+#define TBN_FIRST (-700)
+#define TBN_LAST (-720)
 
 #define TCM_ADJUSTRECT (4904)
 #define TCM_DELETEALLITEMS (4873)

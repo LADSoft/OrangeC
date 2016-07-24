@@ -472,7 +472,7 @@ HWND hwndShowFunc;
             }
             GetWordSpan(p, &range);
             if (range.cpMin == range.cpMax)
-                return NULL;
+                return;
             pos = range.cpMin;
             while (pos && isspace(p->cd->text[pos-1].ch))
             {

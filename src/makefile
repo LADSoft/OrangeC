@@ -72,6 +72,7 @@ DISTRIBUTE:
 	$(COPYDIR) examples\msdos\%.% $(DISTEXAM)\msdos
 	$(COPYDIR) examples\system\%.% $(DISTEXAM)\system
 	$(COPYDIR) examples\win32\%.% $(DISTEXAM)\win32
+	$(COPYDIR) examples\win32\atc\%.% $(DISTEXAM)\win32\atc
 	$(COPYDIR) examples\win32\listview\%.% $(DISTEXAM)\win32\listview
 	$(COPYDIR) examples\win32\xmlview\%.% $(DISTEXAM)\win32\xmlview
 	$(COPYDIR) examples\win32\RCDemo\%.% $(DISTEXAM)\win32\RCDemo

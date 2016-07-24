@@ -1,0 +1,58 @@
+ATC is a simple air traffic control emulator.
+
+26 Airplanes take off at airports or come in at one of the 10 fixes, and then
+land at airports or exit at one of the ten fixes.   The game is over when all
+26 airplanes have exited the board at the proper place, or when one of several
+failures occur such as planes colliding, flyover of airports at zero altitude without
+landing, or exiting the board at the wrong location.
+
+To play the game select 'start' from the file menu.   IT will ask for a time,
+enter a time between 16 and 100 minutes.   Higher times make the game easier
+as the airplanes will be more spread out; lower times make it harder as more
+airplanes have to be handled at once.
+
+At the beginning of each minute, one or more airplanes may be scheduled for arrival.
+The airplanes coming in in the next minute will be described to the right of the board.
+For example:
+
+YJN 9 5 TO $ +
+
+A jet named Y is heading north from fix 5 at altitude 9 and will land at airport $, 
+and has more than ten minutes of fuel left.
+
+Airplanes are named with a letter of the English Alphabet.
+
+There are two types of planes, Jets ('J') and Props ('P').   Jets move twice as fast
+as props.  Jets move 4 times per minute; props twice per minute.
+
+The fixes are numbered from to 9.   The airports are named '$' and '%'.   Additionally,
+there are two navaids, one for each airport, and these are each denoted with a '*'.
+
+To command a plane, right click on it and a menu will appear.  The top of the menu
+will show the plane's stats as described above.   You can rotate left or right, set the
+altitude, command the plane to circle around a navaid, or set the cleared to land state.
+
+To change directions, rotate left or right.   There are four rotate commands of each type;
+labeled from 1 to 4.   When set to 1 the plane will turn left or right on the next move
+then continue on the same heading.   When set to a value greater than one, the plane will
+turn left or right for each of the next n moves, where n is the value.   At the end of
+all the turns, the plane will continue in the final direction.
+
+The airplanes may have an altitude from 0 to 9.   To land at an airport, set the altitude
+to 0 then fly into the airport from the direction of its navaid.   Flying over an
+airport at altitude zero when you aren't supposed to land at it or from any other
+direction will end the game with an error.
+
+To exit at a fix, set the altitude to 5 or greater, then point the plane at a ninety 
+degree angle to the fix and let it fly off the board.  Exiting at two low of an altitude
+or at the wrong direction or at any other position other than the intended fix will
+end the game with an error.
+
+You can do two things with navaids: circle around them and use them in the 'clear to land'
+scenario.  When you select circle navaid the plane will keep a similar distance around the
+closest navaid, to what it already has.   When you select clear to land, flying over the
+navaid from any direction will cause the plane to set its heading for the navaid's airport
+and set the altitude to zero in preparation for landing.
+
+If a plane runs out of fuel, or if two planes at the same altitude come to a distance
+of 3 or less from each other, the game will end with an error.

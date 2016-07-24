@@ -242,6 +242,8 @@ cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 	-del /Q $(DISTEXAM)\system >> $(NULLDEV)
 	-mkdir $(DISTEXAM)\win32 >> $(NULLDEV)
 	-del /Q $(DISTEXAM)\win32 >> $(NULLDEV)
+	-mkdir $(DISTEXAM)\win32\atc >> $(NULLDEV)
+	-del /Q $(DISTEXAM)\win32\atc >> $(NULLDEV)
 	-mkdir $(DISTEXAM)\win32\listview >> $(NULLDEV)
 	-del /Q $(DISTEXAM)\win32\listview >> $(NULLDEV)
 	-mkdir $(DISTEXAM)\win32\xmlview >> $(NULLDEV)

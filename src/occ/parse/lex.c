@@ -1272,6 +1272,7 @@ LEXEME *getsym(void)
         return NULL;
     }
     lex = &pool[nextFree];
+    lex->linedata = NULL;
     lex->prev = context->last;
     context->last = lex;
     lex->next = NULL;

@@ -1,0 +1,30 @@
+<CC386PROJECT>
+	<VERSION ID="5"/>
+	<WORKAREA NAME="C:\Users\David\Documents\Orange C Projects\examples\windows examples\windows examples.cwa"/>
+	<TARGET TITLE="atc">
+		<PROPERTIES>
+			<PROFILE NAME="WIN32" TYPE="DEBUG">
+				<PROP ID="__PROJECTTYPE">1</PROP>
+			</PROFILE>
+			<PROFILE NAME="WIN32" TYPE="RELEASE">
+				<PROP ID="__PROJECTTYPE">1</PROP>
+			</PROFILE>
+		</PROPERTIES>
+		<FILES>
+			<FOLDER TITLE="Include Files">
+				<FILE NAME="..\atc\DisplayObjects.h" TITLE="DisplayObjects.h" CLEAN="0"/>
+				<FILE NAME="..\atc\Resource.h" TITLE="Resource.h" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Resource Files">
+				<FILE NAME="..\atc\atc.rc" TITLE="atc.rc" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Source Files">
+				<FILE NAME="..\atc\DisplayObjects.cpp" TITLE="DisplayObjects.cpp" CLEAN="0"/>
+				<FILE NAME="..\atc\main.cpp" TITLE="main.cpp" CLEAN="0"/>
+			</FOLDER>
+			<FOLDER TITLE="Text Files">
+				<FILE NAME="..\atc\instructions.txt" TITLE="instructions.txt" CLEAN="0"/>
+			</FOLDER>
+		</FILES>
+	</TARGET>
+</CC386PROJECT>

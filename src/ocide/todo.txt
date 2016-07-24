@@ -1,3 +1,8 @@
+step into member function
+directly show a base class member
+this pointer was wrong
+
+
 debug info for AES.C
 
 autocomplete is confused between structures and regular names

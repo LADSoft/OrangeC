@@ -34,6 +34,7 @@
 		<DOCK ID="25" VALUE="32770 0 1 3 0 0 0 0 487 47 624 67 1111 91 624 67 1111 91"/>
 	</DOCKS>
 	<PROJECTS SELECTED="Demo">
+		<FILE NAME="atc\atc.exe" CLEAN="1"/>
 		<FILE NAME="Demo.exe" CLEAN="1"/>
 		<FILE NAME="huff\huff.exe" CLEAN="1"/>
 		<FILE NAME="listview\listview.exe" CLEAN="1"/>

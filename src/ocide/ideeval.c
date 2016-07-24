@@ -1200,7 +1200,9 @@ void GetQualifiedName(char *dest, char **src, BOOL type, BOOL towarn)
         {
             if ((*var3)->structure)
             {
-                if (GetType(*dbg, (*var3)->structtag) != 0)
+                // by convention if the member name is the same as the structure tag
+                // it is a base class instance, so recurse into it looking for a match
+                if (strcmp((*var3)->membername, (*var3)->structtag+1) == 0)
                 {
                     VARINFO **var4 = LookupStructMember(dbg, &(*var3)->subtype,name);
                     if (*var4)

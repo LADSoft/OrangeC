@@ -1,14 +1,6 @@
-step into member function
-directly show a base class member
-this pointer was wrong
-
-
 debug info for AES.C
 
 autocomplete is confused between structures and regular names
-
-ending brace at end of line
-warnings not entirely displayed
 
 debug clean up artifacts on trees
 
@@ -53,36 +45,7 @@ code completion: structured return values from functions
 code completion: dotstar and pointstar operators
 code completion: using statements in nested namespaces...
 code completion: namespace-qualifed structure is not completed
-debug info:      "->"
+debug info:      "->" (use begin/end/size)
+debug info:     show vtabs
+browse info:    class browser?
 
-debug info/code completion: retest with header files
-bug(variable usages window): printf found apparently in inline expansion...
-
-
-debug info:
-    show vtabs?
-
-browse info:
-    select function associated with current class?
-    class browser?
-
-code completion:
-    in structures, don't show base classes (just show the accessible members,
-        should this be qualified inside member functions?)
-    in structures, show member functions (one entry for each function group should suffice,
-            pick the least restrictive for the icon)
-    in structures, icons for private, public, protected, functions vs data and member data vs static data
-
-    in functions, allow cycling through list of functions.
-    allow parsing full range of C++
-    allow for . and -> in functions and filter appropriately
-    filter functions when qualified
-
-    function list instead of single function
-    hints allow full nesting of vars
-public, protect, private
-static member
-regular member
-member function
-virtual member function
-static member function

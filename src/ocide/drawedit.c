@@ -905,6 +905,18 @@ DWORD MsgWait(HANDLE event, DWORD timeout)
         }
     }
 }
+static void removeAllparse()
+{
+    WaitForSingleObject(ccThreadGuard, INFINITE);
+    while (codeCompList)
+    {
+        struct _ccList *list = codeCompList->next;
+        free(codeCompList->name);
+        free(codeCompList);
+        codeCompList = list;
+    }
+    SetEvent(ccThreadGuard);
+}
 static void installparse(char *name, BOOL remove)
 {
     char *p = (char *)calloc(1, strlen(name) + 1);

@@ -1789,6 +1789,8 @@ void SaveWorkArea(PROJECTITEM *wa)
     SaveDocks(out);
     
     fprintf(out, "</OCCWORKAREAUSERPREF>\n");
+    fclose(out);
     wa->changed = FALSE;
+
 }
 

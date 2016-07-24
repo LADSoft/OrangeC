@@ -2492,7 +2492,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                         l->data = p;
                     }
                 }
-                PostMessage(hwnd, EM_LOADLINEDATA, 0, 0);
+                SendMessage(hwnd, EM_LOADLINEDATA, 0, 0);
                 SetScrollRange(hwnd, SB_HORZ, 0, MAX_HSCROLL, TRUE);
                 break;
             case WM_SETEDITORSETTINGS:

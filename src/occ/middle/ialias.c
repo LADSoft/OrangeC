@@ -67,11 +67,10 @@ extern QUAD *intermed_head, *intermed_tail;
 extern FILE *icdFile;
 extern int walkPostorder;
 extern SYMBOL *theCurrentFunc;
-extern int termCount;
+extern unsigned termCount;
 extern int loopCount;
 extern LOOP **loopArray;
 extern unsigned short *termMap, *termMapUp;
-extern int termCount;
 
 int cachedTempCount;
 BITINT *uivBytes;

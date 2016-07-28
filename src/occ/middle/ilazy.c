@@ -83,7 +83,7 @@ extern BITINT *uivBytes;
 
 unsigned short *termMap;
 unsigned short *termMapUp;
-int termCount;
+unsigned termCount;
 
 static BLOCK **reverseOrder, **forwardOrder;
 static BITINT *tempBytes, *tempBytes2, *tempBytes3;

@@ -894,6 +894,9 @@ void getAmodes(QUAD *q, enum e_op *op, IMODE *im, AMODE **apl, AMODE **aph)
             (*apl)->length = im->size;
         }
     }
+    if (!(*aph))
+        if ((*apl)->liveRegs == -1)
+            (*apl)->liveRegs = 0;
     (*apl)->liveRegs |= q->liveRegs;
     if (*aph)
         (*aph)->liveRegs |= q->liveRegs;
@@ -2510,6 +2513,8 @@ void asm_add(QUAD *q)                /* evaluate an addition */
                 }
                 else
                 {
+                    if (equal_address(apll, aprl))
+                        apal->liveRegs = -1;
                     if (opl == op_lea || opr != op_lea)
                     {
                         gen_codes(opl, q->ans->size, apal, apll);
@@ -2592,6 +2597,8 @@ void asm_sub(QUAD *q)                /* evaluate a subtraction */
         }
         else
         {
+            if (equal_address(apll, aprl))
+                apal->liveRegs = -1;
             if (samereg(apal, aprl))
             {
                 liveQualify(apal, apal, 0);
@@ -2928,6 +2935,8 @@ void asm_and(QUAD *q)                /* binary and */
             gen_codes(op_and, q->ans->size, apal, apll);
         else
         {
+            if (equal_address(apll, aprl))
+                apal->liveRegs = -1;
             if (samereg(apal, aprl))
             {
                 liveQualify(apal, apal, 0);
@@ -2978,6 +2987,8 @@ void asm_or(QUAD *q)                 /* binary or */
             gen_codes(op_or, q->ans->size, apal, apll);
         else
         {
+            if (equal_address(apll, aprl))
+                apal->liveRegs = -1;
             if (samereg(apal, aprl))
             {
                 liveQualify(apal, apal, 0);
@@ -3029,6 +3040,8 @@ void asm_eor(QUAD *q)                /* binary exclusive or */
             gen_codes(op_xor, q->ans->size, apal, apll);
         else
         {
+            if (equal_address(apll, aprl))
+                apal->liveRegs = -1;
             if (samereg(apal, aprl))
             {
                 liveQualify(apal, apal, 0);
@@ -3699,6 +3712,7 @@ addrupjn:
                 else
                 {
                     gen_codes(op_mov, ISZ_UINT, apa, ap);
+                    peep_tail->oper1->liveRegs = q->liveRegs;
                     if (q->dc.opcode == i_assn && q->dc.left->bits)
                     {
                     int max;

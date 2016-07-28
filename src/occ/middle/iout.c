@@ -61,7 +61,7 @@ extern LIST *libincludes;
 extern int nextLabel;
 extern LIST *externals;
 extern SYMBOL *theCurrentFunc;
-extern int termCount;
+extern unsigned termCount;
 extern QUAD *criticalThunks;
 extern int cachedTempCount;
 

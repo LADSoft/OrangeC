@@ -107,7 +107,7 @@ static BITARRAY *frozenMoves;
 static BITARRAY *tempMoves[2];
 static QUAD **instructionList;
 static BRIGGS_SET *spillProcessed;
-static unsigned short *hiMoves;
+static short *hiMoves;
 static SPILL *spillList;
 
 static int classCount ,vertexCount;
@@ -119,7 +119,7 @@ static int instructionCount;
 static int instructionByteCount;
 
 static int accesses;
-#define PUSH(t) {tempStack[tempStackcount++] = t; setbit(stackedTemps, t); }
+#define PUSH(t) { if (!isset(stackedTemps, t)) { tempStack[tempStackcount++] = t; setbit(stackedTemps, t); } }
 #define POP()  (tempStackcount == 0 ? -1 : tempStack[--tempStackcount]	)
 
 static const UBYTE bitCounts[256] = 
@@ -814,7 +814,7 @@ static void CountInstructions(BOOLEAN first)
     frozenMoves = tallocbit(instructionCount);
     tempMoves[0] = tallocbit(instructionCount);
     tempMoves[1] = tallocbit(instructionCount);
-    hiMoves = tAlloc(sizeof(unsigned short) * (instructionCount));
+    hiMoves = tAlloc(sizeof(short) * (instructionCount));
     instructionList = tAlloc(sizeof(QUAD *) * (instructionCount));
     instructionCount -= 1000;
     head = intermed_head;
@@ -863,11 +863,11 @@ static BOOLEAN BriggsCoalesceInit(int u, int v, int n)
     if (k >= K)
     {
         hiMoves[n] = k - (K - 1);
-        return TRUE;
+        return FALSE;
     }
     else
     {
-        return FALSE;
+        return TRUE;
     }
 }
 static BOOLEAN GeorgeCoalesceInit(int u, int v, int n)
@@ -1054,7 +1054,7 @@ static BITARRAY *NodeMoves(int n, int index)
         for (i=0; i < instructionByteCount; i++)
         {
             if (w[i])
-                p[i] = w[i] & activeMoves[i] | workingMoves[i];
+                p[i] = w[i] &   (activeMoves[i] | workingMoves[i]);
         }
         return rv;
     }
@@ -1124,8 +1124,6 @@ static void EnableMoves(BITINT *nodes, int index)
                                         {
                                             clearbit(activeMoves, k);
                                             setbit(workingMoves, k);
-//											setbit(tempInfo[instructionList[k]->ans->offset->v.sp->value.i]->workingMoves, k);
-//											setbit(tempInfo[instructionList[k]->dc.left->offset->v.sp->value.i]->workingMoves, k);
                                         }
                                     }
                                 }
@@ -1146,7 +1144,7 @@ static void DecrementDegree(int m, int n)
             && tempInfo[m]->squeeze < tempInfo[m]->regCount)
         {
             Adjacent(m);
-            setbit(adjacent, m);
+//            setbit(adjacent, m);
             EnableMoves(adjacent, 1);
             briggsReset(spillWorklist, m);
             if (MoveRelated(m, 1))
@@ -1194,6 +1192,7 @@ static int Combine(int u, int v)
     int max = (tempCount + BITINTBITS-1)/BITINTBITS;
     BOOLEAN losingHiDegreeNode;
     BITARRAY *tu, *tv;
+    /*
     if (!tempInfo[v]->precolored && !tempInfo[u]->precolored)
         if (tempInfo[v]->neighbors > tempInfo[u]->neighbors)
         {
@@ -1201,6 +1200,7 @@ static int Combine(int u, int v)
             v = u;
             u = n;
         }
+    */
     if (briggsTest(freezeWorklist, v))
         briggsReset(freezeWorklist, v);
     else
@@ -1239,8 +1239,6 @@ static int Combine(int u, int v)
                         {
                             hiMoves[k] = 0;
                             setbit(tempInfo[u]->workingMoves, k);
-//							setbit(tempInfo[x]->workingMoves, k);
-//							setbit(tempInfo[y]->workingMoves, k);
                         }
                     }
                 }
@@ -1255,7 +1253,7 @@ static int Combine(int u, int v)
         {
             if (!tu)
             {
-                tu = tallocbit(instructionCount);
+                tempInfo[u] = tu = tallocbit(instructionCount);
             }
             for (i=0; i < instructionByteCount; i++)
                 (bits(tu))[i] |= (bits(tv))[i];
@@ -1577,13 +1575,12 @@ static void AssignColors(void)
     int m;
     UBYTE *order = chosenAssembler->arch->regOrder;
     int count = *order++;
-//	for (m = 0; m <= count; m++)
     {
         int pos;
         for (pos = tempStackcount-1; pos >= 0; pos--)
         {
             n = tempStack[pos];
-            if (n != -1)// && (count == m || tempInfo[n]->size == order[m]))
+            if (n != -1)
             {
                 BOOLEAN regs[MAX_INTERNAL_REGS];
                 BITINT *confl = tempInfo[n]->conflicts;
@@ -1954,8 +1951,8 @@ static void InsertCandidates(int W, BRIGGS_SET *L)
                                 n = head->dc.left->offset->v.sp->value.i;
                             if (!tempInfo[n]->spilled && !briggsTest(spillProcessed, n))
                             {
-                    briggsSet(L, n);
-                    briggsSet(spillProcessed, n);
+                                briggsSet(L, n);
+                                briggsSet(spillProcessed, n);
                             }
                         }
                     }
@@ -2069,8 +2066,8 @@ static void SpillPropagate(BRIGGS_SET *P, BRIGGS_SET *S, BRIGGS_SET *L, BRIGGS_S
         briggsReset(L, w);
         if (SpillPropagateSavings(w, S) >= tempInfo[w]->spillCost)
         {
-briggsSet(S, w);
-briggsSet(NP, w);
+            briggsSet(S, w);
+            briggsSet(NP, w);
             InsertCandidates(w, L);
         }
     }
@@ -2112,8 +2109,11 @@ static void RewriteProgram(void)
     for (i=0; i < spilledNodes->top; i++)
     {
         int n = spilledNodes->data[i];
-        tempInfo[n]->spilling = TRUE;
-        tempInfo[n]->spilled = TRUE;
+        if (!tempInfo[n]->spilled)
+        {
+            tempInfo[n]->spilling = TRUE;
+            tempInfo[n]->spilled = TRUE;
+        }
     }
     RewriteAllSpillNodes();	
     for (i=0; i < tempCount; i++)
@@ -2359,7 +2359,6 @@ void AllocateRegisters(QUAD *head)
     while (TRUE)
     {
         int i;
-
         passes++;
         if (passes >= 100)
             break;
@@ -2392,12 +2391,9 @@ void AllocateRegisters(QUAD *head)
         InitClasses();
         definesInfo();
         usesInfo();
-//    bb = _current_time();
         CalculateConflictGraph(NULL, TRUE);
         SqueezeInit();
         Build(NULL);
-//    aa += _current_time() - bb;
-//    printf("%lld\n", aa);
         MkWorklist();
         for (i=0; i < tempCount; i++)
         {
@@ -2457,6 +2453,8 @@ void AllocateRegisters(QUAD *head)
         maxAllocationSpills = spills;
     if (accesses > maxAllocationAccesses)
         maxAllocationAccesses = accesses;
+    if (passes >= 100)
+        diag("register allocator failed");
 //	printf("%s:%d\n", theCurrentFunc->name, tempCount);
     tFree();
     aFree();

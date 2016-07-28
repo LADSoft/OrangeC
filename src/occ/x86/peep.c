@@ -845,7 +845,7 @@ void peep_cmp(OCODE *ip)
             OCODE *ip2 = ip->back;
             if (ip2->opcode == op_mov && equal_address(ip->oper1, ip2->oper1) && ip2->oper2->mode != am_immed)
             {
-                if (!live(ip1->oper1->liveRegs, ip->oper1->preg))
+                if (!live(ip->oper1->liveRegs, ip->oper1->preg))
                 {
                     ip->oper1 = ip2->oper2;
                     remove_peep_entry(ip2);
@@ -941,7 +941,6 @@ void peep_mov(OCODE *ip)
         }
         return;
     }
-
     if (ip1 && ip->oper1->mode == am_dreg && ip->oper2->mode == am_seg && ip1
         ->opcode == op_mov && ip1->oper2->mode == am_dreg && ip1->oper2->length
         == 2)
@@ -981,7 +980,15 @@ void peep_mov(OCODE *ip)
                 case op_or:
                 case op_and:
                     if (ip1->oper2->mode != am_dreg && ip1->oper2->mode != am_immed)
+                    {
+                        if (!live(ip->oper1->liveRegs, ip->oper2->preg))
+                        {
+                            ip->opcode = ip1->opcode;
+                            ip1->opcode = op_mov;
+                            remove_peep_entry(ip1->back);
+                        }
                         break;
+                    }
                 case op_shl:
                 case op_sal:
                 case op_shr:
@@ -1197,7 +1204,9 @@ void peep_tworeg(OCODE *ip)
                     else
                     {
                         if (ip->opcode == op_mov)
+                        {
                             remove_peep_entry(ip);
+                        }
                         else
                             ip->oper2 = ip->back->oper2;
                     }

@@ -119,7 +119,7 @@ static int instructionCount;
 static int instructionByteCount;
 
 static int accesses;
-#define PUSH(t) { if (!isset(stackedTemps, t)) { tempStack[tempStackcount++] = t; setbit(stackedTemps, t); } }
+#define PUSH(t) { tempStack[tempStackcount++] = t; setbit(stackedTemps, t); }
 #define POP()  (tempStackcount == 0 ? -1 : tempStack[--tempStackcount]	)
 
 static const UBYTE bitCounts[256] = 
@@ -1168,6 +1168,7 @@ static void Simplify(void)
     {
         PUSH(n);
         Adjacent1(n);
+        briggsReset(freezeWorklist, n); // DAL I added this because it seemed needed
         if (tempInfo[n]->squeeze >= tempInfo[n]->regCount)
             EnableMoves(adjacent1, 0);
         for (i=0; i < (tempCount + BITINTBITS-1)/BITINTBITS; i++)
@@ -1264,7 +1265,7 @@ static int Combine(int u, int v)
     for (i=0; i < max; i++)
     {
         unsigned x;
-        if (x = tempInfo[v]->conflicts[i] & ~coalescedNodes[i])
+        if (x = tempInfo[v]->conflicts[i] & ~(stackedTemps[i] | coalescedNodes[i]))
         {
             for (t= i * BITINTBITS; x && t < i * BITINTBITS + BITINTBITS; t++,x>>=1)
                 if (x & 1)

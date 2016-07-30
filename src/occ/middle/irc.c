@@ -1190,6 +1190,7 @@ static void AddWorkList(int u)
 static int Combine(int u, int v)
 {
     int i, t;
+    unsigned z;
     int max = (tempCount + BITINTBITS-1)/BITINTBITS;
     BOOLEAN losingHiDegreeNode;
     BITARRAY *tu, *tv;
@@ -1263,12 +1264,9 @@ static int Combine(int u, int v)
     losingHiDegreeNode = tempInfo[u]->squeeze >= tempInfo[u]->regCount 
                          && tempInfo[v]->squeeze >= tempInfo[v]->regCount;
     for (i=0; i < max; i++)
-    {
-        unsigned x;
-        if (x = tempInfo[v]->conflicts[i] & ~(stackedTemps[i] | coalescedNodes[i]))
-        {
-            for (t= i * BITINTBITS; x && t < i * BITINTBITS + BITINTBITS; t++,x>>=1)
-                if (x & 1)
+        if (z = tempInfo[v]->conflicts[i] & ~coalescedNodes[i])
+            for (t= i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++, z>>=1)
+                if (z & 1)
                 {
                     if (t != u && !isConflicting(t, u))
                     {
@@ -1288,8 +1286,6 @@ static int Combine(int u, int v)
                     }
                     DecrementDegree(t, v);
                 }
-        }
-    }
     if (tempInfo[u]->squeeze >= tempInfo[u]->regCount)
     {
         if (briggsTest(freezeWorklist, u))
@@ -2110,11 +2106,8 @@ static void RewriteProgram(void)
     for (i=0; i < spilledNodes->top; i++)
     {
         int n = spilledNodes->data[i];
-        if (!tempInfo[n]->spilled)
-        {
-            tempInfo[n]->spilling = TRUE;
-            tempInfo[n]->spilled = TRUE;
-        }
+        tempInfo[n]->spilling = TRUE;
+        tempInfo[n]->spilled = TRUE;
     }
     RewriteAllSpillNodes();	
     for (i=0; i < tempCount; i++)

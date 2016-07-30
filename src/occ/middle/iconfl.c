@@ -203,7 +203,7 @@ void CalculateConflictGraph(BRIGGS_SET *nodes, BOOLEAN optimize)
                                         {
                                             if (tail->dc.left->size == tail->ans->size)
                                             {
-                                                if (!tail->ans->offset->v.sp->pushedtotemp && !tail->dc.left->offset->v.sp->pushedtotemp)
+                                                if (!tail->ans->offset->v.sp->pushedtotemp)// && !tail->dc.left->offset->v.sp->pushedtotemp)
                                                 {
                                                        k = tail->dc.left->offset->v.sp->value.i;
                                                 }

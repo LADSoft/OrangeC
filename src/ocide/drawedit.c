@@ -1640,7 +1640,7 @@ HWND openfile(DWINFO *newInfo, int newwindow, int visible)
                     HWND active = (HWND)SendMessage(hwndClient, WM_MDIGETACTIVE, 0, 0);
                     if (ptr->self == active)
                     {
-                        SetFocus(active);
+                        SetFocus(GetDlgItem(active, ID_EDITCHILD));
                     }
                     else
                     {

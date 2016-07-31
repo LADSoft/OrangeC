@@ -342,14 +342,13 @@ LRESULT CALLBACK BrowseProc(HWND hwnd, UINT iMessage, WPARAM
     RECT r;
     int i;
     LPNMHDR nmh;
-    static NMLISTVIEW pressed;
+    static LVITEM pressed;
     switch (iMessage)
     {
-        case WM_TIMER:
+        case WM_USER+1:
         {
             DWINFO info;
             char *q;
-            KillTimer(hwnd, 100);
             memset(&info,0, sizeof(info));
             strcpy(info.dwName, browselist[pressed.lParam]->file);
             q = strrchr(info.dwName, '\\');
@@ -410,19 +409,20 @@ LRESULT CALLBACK BrowseProc(HWND hwnd, UINT iMessage, WPARAM
                     p->item.pszText = name;
                 }
             }
-            else if (nmh->code == LVN_ITEMCHANGED)
+            else if (((LPNMHDR)lParam)->code == NM_DBLCLK)
             {
-                LPNMLISTVIEW p = (LPNMLISTVIEW)lParam;
-                if (p->uChanged & LVIF_STATE)
+                LVHITTESTINFO hittest;
+                GetCursorPos(&hittest.pt);
+                ScreenToClient(hwndLV, &hittest.pt);
+                if (ListView_SubItemHitTest(hwndLV, &hittest) >= 0)
                 {
-                    if (p->uNewState & LVIS_SELECTED)
-                    {
-                        if (browselist[p->lParam]->line > 0)
-                        {
-                            memcpy(&pressed, p, sizeof(pressed));
-                            SetTimer(hwnd, 100, 500, 0);
-                        }
-                    }
+                    LVITEM lvitem;
+                    lvitem.iItem = hittest.iItem;
+                    lvitem.iSubItem = 0;
+                    lvitem.mask = LVIF_PARAM;
+                    ListView_GetItem(hwndLV, &lvitem);
+                    memcpy(&pressed, &lvitem, sizeof(pressed));
+                    SendMessage(hwnd, WM_USER + 1, 0, 0);
                 }
             }
             else if (nmh->code == LVN_KEYDOWN)

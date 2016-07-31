@@ -997,9 +997,10 @@ void peep_mov(OCODE *ip)
                 case op_not:
                 case op_inc:
                 case op_dec:
-                    if (ip1->oper1->mode == am_dreg && ip1->oper1->preg == ip->oper2->preg)
-                    {					
+                    if (equal_address(ip1->oper1, ip->oper2))
+                    {		
                         ip1->oper1 = ip->oper1;
+                        ip1->oper1->liveRegs = -1;
                         if (!live(ip->oper1->liveRegs, ip->oper2->preg))
                             remove_peep_entry(ip);
                         else

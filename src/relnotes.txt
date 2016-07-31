@@ -1,6 +1,18 @@
 Release notes:
 
-Version 5.73.1:
+Version 6.0.0:
+    ocide:      Support C++ editing and debugging
+    ocide:      rewrite of how docking windows work
+    ocide:      add breakpoint window
+    ocide:      add variable usages window
+    ocide:      CTL-Y deletes the current line
+    ocide:      CTL-T deletes the word to the right of the cursor
+    ocide:      CTRL-SHIFT-1 through CTRL-SHIFT-9 mark up to nine postions in the text;
+                CTRL-1 through CTRL-9 jump to them
+    occ:        speed up compiles
+    examples:   add ATC (air traffic controller) as a C++ example for win32
+
+Version 5.73.1: Jun 28, 2016
     ocide:      fix a problem with undo
     ocide:      fix problems with scrolling being reset while editing images
     ocide:      fix problem with controls not being displayed properly while moving them in a dialog

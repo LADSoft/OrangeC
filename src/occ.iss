@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 5.73.0.1
+AppVerName=Orange C Version 6.0.0.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
@@ -83,6 +83,7 @@ Source: "C:\orangec\doc\omake\*.*"; DestDir: "{app}\doc\omake\"; Flags: IgnoreVe
 Source: "C:\orangec\examples\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\desktop
 Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{userdocs}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\desktop
@@ -91,10 +92,11 @@ Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{userdocs}\Orange C Proj
 Source: "C:\orangec\examples\*.*"; DestDir: "{app}\Orange C Projects\examples\"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\msdos\*.*"; DestDir: "{app}\Orange C Projects\examples\msdos\"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\win32\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\"; Flags: IgnoreVersion; Components: main\memstick
+Source: "C:\orangec\examples\win32\atc\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\atc"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\win32\listview\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\listview"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\win32\xmlview\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\xmlview"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\examples\win32\RCDemo\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\RCDemo"; Flags: IgnoreVersion; Components: main\memstick
-Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\desktop
+Source: "C:\orangec\examples\win32\huff\*.*"; DestDir: "{app}\Orange C Projects\examples\windows examples\huff"; Flags: IgnoreVersion; Components: main\memstick
 
 [Icons]
 Name: "{group}\Orange C IDE"; Filename: "{app}\bin\ocide.exe"; Components: main\desktop;
@@ -200,6 +202,9 @@ type: filesandordirs; Name: "{userappdata}\Orange C"; Components: main\desktop;
 function SetEnvironmentVariable(lpName: string; lpValue: string): BOOL;
   external 'SetEnvironmentVariable{#AW}@kernel32.dll stdcall';
 
+function SHChangeNotify(cmd:Integer; flags:Integer; dwItem1:Integer; dwItem2:Integer) : Integer;
+  external 'SHChangeNotify@shell32.dll stdcall';
+
 procedure SetEnvPath;
 begin
   if not SetEnvironmentVariable('PATH', ExpandConstant('{app}')) then
@@ -260,6 +265,10 @@ begin
           if IsTaskSelected('addtopath') Then
             Begin
               AddToPath(ExpandConstant('{app}\bin;'));
+            end;
+          if IsTaskSelected('fileassociation') Then
+            Begin
+              SHChangeNotify($08000000, 0, 0,0);
             end;
         end;
    end;

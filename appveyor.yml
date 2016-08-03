@@ -1,5 +1,5 @@
 build_script:
-        - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; .\\ms; cd ..; move orangec projects"
+        - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; .\\ms; cd ..\\..; move orangec projects"
 
 artifacts:
   - path: "src\\Release\\ocpp.exe"

@@ -1,5 +1,5 @@
 build_script:
-        - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; msbuild /Property:configuration=Release /Property:platform=win32; .\\omake fullbuild"
+        - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; .\\ms; .\\Release\\omake fullbuild"
 
 artifacts:
   - path: "orangec\\src\\Release\\ocpp.exe"

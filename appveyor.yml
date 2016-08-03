@@ -2,37 +2,37 @@ build_script:
         - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; .\\ms"
 
 artifacts:
-  - path: "..\\orangec\\src\\Release\\ocpp.exe"
+  - path: "\\orangec\\src\\Release\\ocpp.exe"
     name: ocpp
-  - path: "..\\orangec\\src\\Release\\ocide.exe"
+  - path: "\\orangec\\src\\Release\\ocide.exe"
     name: ocide
-  - path: "..\\orangec\\src\\Release\\occpr.exe"
+  - path: "\\orangec\\src\\Release\\occpr.exe"
     name: occpr
-  - path: "..\\orangec\\src\\Release\\occ.exe"
+  - path: "\\orangec\\src\\Release\\occ.exe"
     name: occ
-  - path: "..\\orangec\\src\\Release\\coff2ieee.exe"
+  - path: "\\orangec\\src\\Release\\coff2ieee.exe"
     name: coff2ieee
-  - path: "..\\orangec\\src\\Release\\omake.exe"
+  - path: "\\orangec\\src\\Release\\omake.exe"
     name: omake
-  - path: "..\\orangec\\src\\Release\\oimplib.exe"
+  - path: "\\orangec\\src\\Release\\oimplib.exe"
     name: oimplib
-  - path: "..\\orangec\\src\\Release\\obrc.exe"
+  - path: "\\orangec\\src\\Release\\obrc.exe"
     name: obrc
-  - path: "..\\orangec\\src\\Release\\ogrep.exe"
+  - path: "\\orangec\\src\\Release\\ogrep.exe"
     name: ogrep
-  - path: "..\\orangec\\src\\Release\\dplm.exe"
+  - path: "\\orangec\\src\\Release\\dplm.exe"
     name: dplm
-  - path: "..\\orangec\\src\\Release\\dple.exe"
+  - path: "\\orangec\\src\\Release\\dple.exe"
     name: dple
-  - path: "..\\orangec\\src\\Release\\dlmz.exe"
+  - path: "\\orangec\\src\\Release\\dlmz.exe"
     name: dlmz
-  - path: "..\\orangec\\src\\Release\\dlle.exe"
+  - path: "\\orangec\\src\\Release\\dlle.exe"
     name: dlle
-  - path: "..\\orangec\\src\\Release\\dlhex.exe"
+  - path: "\\orangec\\src\\Release\\dlhex.exe"
     name: dlhex
-  - path: "..\\orangec\\src\\Release\\olib.exe"
+  - path: "\\orangec\\src\\Release\\olib.exe"
     name: olib
-  - path: "..\\orangec\\src\\Release\\olink.exe"
+  - path: "\\orangec\\src\\Release\\olink.exe"
     name: olink
-  - path: "..\\orangec\\src\\Release\\oasm.exe"
+  - path: "\\orangec\\src\\Release\\oasm.exe"
     name: oasm

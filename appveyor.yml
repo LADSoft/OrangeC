@@ -1,2 +1,2 @@
 build_script:
-        - ps: "msbuild /Property:configuration=Release /Property:platform=win32; omake fullbuild"
+        - ps: "cd src; msbuild /Property:configuration=Release /Property:platform=win32; omake fullbuild"

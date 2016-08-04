@@ -1,0 +1,38 @@
+build_script:
+        - ps: "cd ..\\..; move projects\\orangec .; cd orangec\\src; .\\ms; cd ..\\..; move orangec projects"
+
+artifacts:
+  - path: "src\\Release\\ocpp.exe"
+    name: ocpp
+  - path: "src\\Release\\ocide.exe"
+    name: ocide
+  - path: "src\\Release\\occpr.exe"
+    name: occpr
+  - path: "src\\Release\\occ.exe"
+    name: occ
+  - path: "src\\Release\\coff2ieee.exe"
+    name: coff2ieee
+  - path: "src\\Release\\omake.exe"
+    name: omake
+  - path: "src\\Release\\oimplib.exe"
+    name: oimplib
+  - path: "src\\Release\\obrc.exe"
+    name: obrc
+  - path: "src\\Release\\ogrep.exe"
+    name: ogrep
+  - path: "src\\Release\\dplm.exe"
+    name: dplm
+  - path: "src\\Release\\dple.exe"
+    name: dple
+  - path: "src\\Release\\dlmz.exe"
+    name: dlmz
+  - path: "src\\Release\\dlle.exe"
+    name: dlle
+  - path: "src\\Release\\dlhex.exe"
+    name: dlhex
+  - path: "src\\Release\\olib.exe"
+    name: olib
+  - path: "src\\Release\\olink.exe"
+    name: olink
+  - path: "src\\Release\\oasm.exe"
+    name: oasm

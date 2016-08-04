@@ -739,7 +739,7 @@ SYMBOL *finishSearch(char *name, SYMBOL *encloser, NAMESPACEVALUES *ns, BOOLEAN 
     }
     else
     {
-        if (namespaceOnly)
+        if (namespaceOnly && !ns)
         {
             rv = namespacesearch(name, globalNameSpace, FALSE, tagsOnly);
             if (rv)
@@ -791,8 +791,8 @@ LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES
         }
         return lex;
     }
-    if (MATCHKW(lex, classsel))
-        namespaceOnly = TRUE;
+//    if (MATCHKW(lex, classsel))
+//        namespaceOnly = TRUE;
     lex = nestedPath(lex, &encloser, &ns, &throughClass, tagsOnly, storage_class, isType);
     if (cparams.prm_cplusplus)
     {

@@ -498,7 +498,7 @@ BOOLEAN matchTemplateSpecializationToParams(TEMPLATEPARAMLIST *param, TEMPLATEPA
         }
         else if (param->p->type == kw_int)
         {
-            if (!comparetypes(param->p->byNonType.tp, special->p->byNonType.tp, FALSE) && (!ispointer(param->p->byNonType.tp) || !isconstzero(param->p->byNonType.tp, special->p->byNonType.dflt)))
+            if (param->p->byNonType.tp->type != bt_templateparam && !comparetypes(param->p->byNonType.tp, special->p->byNonType.tp, FALSE) && (!ispointer(param->p->byNonType.tp) || !isconstzero(param->p->byNonType.tp, special->p->byNonType.dflt)))
                 errorsym(ERR_INCORRECT_ARGS_PASSED_TO_TEMPLATE, sp);
         }
         param = param->next;
@@ -6231,7 +6231,7 @@ static SYMBOL *ValidateClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *unspecialize
                                     exp = copy_expression(exp);
                                     optimize_for_constants(&exp);
                                 }
-                                if (!exp || params->p->byNonType.dflt && params->p->byNonType.dflt->type != en_templateparam && !equalTemplateIntNode(params->p->byNonType.dflt, exp))
+                                if (exp && params->p->byNonType.dflt && params->p->byNonType.dflt->type != en_templateparam && !equalTemplateIntNode(params->p->byNonType.dflt, exp))
                                     rv = NULL;
     //#endif
                             }

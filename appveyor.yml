@@ -1,0 +1,7 @@
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+build:
+  project: src/Orange C.sln
+  parallel: true
+  verbosity: minimal

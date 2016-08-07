@@ -3115,7 +3115,10 @@ void gen_compare(EXPRESSION *node, SYMBOL *funcsp, int btype, int label)
     else
         size = siz0;
     // the ordering here is to accomodate the x86 FP stack
-    ap3 = gen_expr( funcsp, node->right, F_COMPARE, size);
+    if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
+        ap3 = gen_expr( funcsp, node->left, F_COMPARE, size);
+    else
+        ap3 = gen_expr( funcsp, node->right, F_COMPARE, size);
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
     {
@@ -3129,7 +3132,10 @@ void gen_compare(EXPRESSION *node, SYMBOL *funcsp, int btype, int label)
             doatomicFence(funcsp, NULL, node->right, barrier);
         }
     }
-    ap3 = gen_expr( funcsp, node->left, F_COMPARE, size);
+    if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
+        ap3 = gen_expr( funcsp, node->right, F_COMPARE, size);
+    else
+        ap3 = gen_expr( funcsp, node->left, F_COMPARE, size);
     ap1 = LookupLoadTemp(NULL, ap3);
     if (ap1 != ap3)
     {
@@ -3161,7 +3167,10 @@ void gen_compare(EXPRESSION *node, SYMBOL *funcsp, int btype, int label)
         DumpIncDec(funcsp);
         DumpLogicalDestructors(node, funcsp);
     }
-    gen_icgoto(btype, label, ap1, ap2);
+    if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
+        gen_icgoto(btype, label, ap2, ap1);
+    else
+        gen_icgoto(btype, label, ap1, ap2);
 }
 
 /*-------------------------------------------------------------------------*/

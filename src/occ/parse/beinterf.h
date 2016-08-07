@@ -198,6 +198,7 @@ typedef struct {
 #define DO_NOKILLDUP 64
 #define DO_NOENTRYIF 128
 #define DO_NOCONSTBRANCH 256
+#define DO_NOOPTCONVERSION 512
     char hasFloatRegs;			/* true if has floating point registers */
 #define AFM_SIGNEDZERO 1
     char floatmode;             /* floating point modes, not honored currently */

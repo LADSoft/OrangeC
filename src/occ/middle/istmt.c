@@ -730,7 +730,6 @@ static IMODE *GetBucket(IMODE *mem)
 
 void optimize(SYMBOL *funcsp)
 {
-    return;
         //printf("optimization start\n");
     if (chosenAssembler->gen->pre_gcse)
         chosenAssembler->gen->pre_gcse(intermed_head);

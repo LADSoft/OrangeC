@@ -265,7 +265,7 @@ static ARCH_CHARACTERISTICS architecture = {
     OPT_REVERSESTORE | OPT_REVERSEPARAM, /* preferred optimizations */
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
         DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOKILLDUP | DO_NOENTRYIF |
-        DO_NOCONSTBRANCH,
+        DO_NOCONSTBRANCH | DO_NOOPTCONVERSION,
                  /* optimizations we don't want */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */

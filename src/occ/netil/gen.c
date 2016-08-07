@@ -467,7 +467,7 @@ void gen_convert(AMODE *dest, int sz)
             op = op_conv_i8;
             break;
         case ISZ_ADDR:
-            op = op_conv_u8;
+            op = op_conv_u4;
             break;
         /* */
         case ISZ_FLOAT:

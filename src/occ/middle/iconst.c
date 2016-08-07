@@ -47,6 +47,7 @@
 #include "compiler.h"
  
 extern COMPILER_PARAMS cparams;
+extern ARCH_ASM *chosenAssembler;
 extern TEMP_INFO **tempInfo;
 extern BLOCK **blockArray;
 extern int tempCount;
@@ -1753,10 +1754,13 @@ static void removeForward(BLOCK *start)
                         tail->temps &= ~TEMP_RIGHT;
                     }
                 }
-                ConstantFold(tail, TRUE);
-                if (tail->dc.opcode == i_nop)
+                if (!(chosenAssembler->arch->denyopts & DO_NOCONSTBRANCH))
                 {
-                    RemoveInstruction(tail);
+                    ConstantFold(tail, TRUE);
+                    if (tail->dc.opcode == i_nop)
+                    {
+                        RemoveInstruction(tail);
+                    }
                 }
                 break;
             case i_goto:

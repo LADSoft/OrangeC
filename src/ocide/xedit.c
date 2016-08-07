@@ -2406,7 +2406,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                    {
                        if (p->cd)
                        {
-                            p->cd->colorizing++;
+//                            p->cd->colorizing++;
                             free(p->cd->lineData);
                             p->cd->lineData = NULL;
                             p->cd->lineDataMax = 0;
@@ -2416,7 +2416,7 @@ LRESULT CALLBACK exeditProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
                                 DWINFO *x = (DWINFO *)GetWindowLong(t, 0);
                                 p->cd->lineData = ccGetLineData(x->dwName, &p->cd->lineDataMax);
                             }
-                            p->cd->colorizing--;
+//                            p->cd->colorizing--;
                        }
                         FreeColorizeEntries(p->colorizeEntries);
                         {

@@ -189,6 +189,14 @@ typedef struct {
     ARCH_PEEP *peephole_defs;   /* defines peephole information */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
+#define DO_NOGLOBAL 1
+#define DO_NOLOCAL 2
+#define DO_NOREGALLOC 4
+#define DO_NOADDRESSINIT 8
+#define DO_NOPARMADJSIZE 16
+#define DO_NOLOADSTACK 32
+#define DO_NOKILLDUP 64
+#define DO_NOENTRYIF 128
     char hasFloatRegs;			/* true if has floating point registers */
 #define AFM_SIGNEDZERO 1
     char floatmode;             /* floating point modes, not honored currently */
@@ -256,6 +264,7 @@ typedef struct _arch_gen {
     void (*preColor)(QUAD *q);			/* precolor an instruction */
     void (*gen_strlab)(SYMBOL *sp);    /* generate a named label */
     void (*gen_label)(int labnum);  /* generate a numbered label */
+    void (*gen_string_label)(int labnum, int type);  /* generate a numbered label */
     void (*gen_bit) (SYMBOL *sp, LLONG_TYPE val);   /* reserve space for a bit */
     void (*gen_int) (enum e_gt type, LLONG_TYPE val); /* initialize one of the integer types */
     void (*gen_float)(enum e_gt type, FPF *val);/* initialize a float */

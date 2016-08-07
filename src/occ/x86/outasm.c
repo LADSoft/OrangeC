@@ -2277,7 +2277,10 @@ void oa_put_label(int lab)
     else
         outcode_put_label(lab);
 }
-
+void oa_put_string_label(int lab, int type)
+{
+    oa_put_label(lab);
+}
 
 /*-------------------------------------------------------------------------*/
 

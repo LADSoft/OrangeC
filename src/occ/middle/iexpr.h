@@ -148,6 +148,7 @@ typedef struct quad
     ULLONG_TYPE liveRegs;
     struct quad *fwd, *back;
     struct _block *block;
+    void *altdata;
     BITINT *uses;
     BITINT *transparent;
     BITINT *dsafe;

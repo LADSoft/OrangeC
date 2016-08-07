@@ -1266,7 +1266,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         st = stmtNode(lex, forstmt, st_expr);
                         st->select = init;
                     }
-                    if (cparams.prm_debug || cparams.prm_optimize_for_size)
+                    if (cparams.prm_debug || cparams.prm_optimize_for_size || (chosenAssembler->arch->denyopts & DO_NOENTRYIF))
                     {
     					st = stmtNode(lex, forstmt, st_goto);
     					st->label = testlabel;
@@ -2163,7 +2163,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         else
         {
             lex = getsym();
-            if (cparams.prm_debug || cparams.prm_optimize_for_size)
+            if (cparams.prm_debug || cparams.prm_optimize_for_size || (chosenAssembler->arch->denyopts & DO_NOENTRYIF))
             {
     			st = stmtNode(lex, whilestmt, st_goto);
     			st->label = whilestmt->continuelabel;
@@ -3087,7 +3087,12 @@ void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param)
         return;
     if (isstructured(tp) && !basetype(tp)->sp->pureDest)
         hasXCInfo = TRUE;
-    if (!ispointer(tp) && tp->size <= chosenAssembler->arch->parmwidth)
+    if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+    {
+        // calculate index for CIL
+        param->offset = (*base)++;
+    }
+    else if (!ispointer(tp) && tp->size <= chosenAssembler->arch->parmwidth)
     {
         param->offset = *base + funcvaluesize(tp->size);
         *base += chosenAssembler->arch->parmwidth;
@@ -3135,14 +3140,18 @@ static void assignPascalParams(LEXEME *lex, SYMBOL *funcsp, int *base, HASHREC *
 static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
 {
     HASHREC *params = basetype(funcsp->tp)->syms->table[0];
-    int base = chosenAssembler->arch->retblocksize;
+    int base;
+    if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+        base = 0;
+    else
+        base = chosenAssembler->arch->retblocksize;
     if (funcsp->linkage == lk_pascal)
     {
         assignPascalParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
     }
     else
     {
-        if (isstructured(basetype(funcsp->tp)->btp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr)
+        if (!(chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && (isstructured(basetype(funcsp->tp)->btp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
         {
             // handle structured return values
             base += getSize(bt_pointer);

@@ -254,6 +254,7 @@ typedef struct expr
     enum e_node type;
     int pragmas;
     long size; /* For block moves */
+    long altdata;
     union
     {
         LLONG_TYPE i;
@@ -927,7 +928,8 @@ typedef struct _string
 
 
 #define OPT_BYTECOMPARE 0x10000
-
+#define OPT_REVERSESTORE 0x20000
+#define OPT_REVERSEPARAM 0x40000
 // must match stdatomic.h
 enum e_mo {
     mo_relaxed=1,

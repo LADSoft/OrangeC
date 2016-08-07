@@ -4448,32 +4448,6 @@ void outcode_end_virtual_seg(SYMBOL *sp)
 }
 
 
-EXPRESSION *GetSymRef(EXPRESSION *n)
-{
-    EXPRESSION *rv = NULL;
-        
-    switch (n->type)
-    {
-        case en_labcon:
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_label:
-        case en_pc:
-        case en_threadlocal:
-            return n;
-        case en_tempref:
-            return NULL;
-        default:
-            if (n->left)
-                rv = GetSymRef(n->left);
-            if (!rv && n->right)
-                rv = GetSymRef(n->right);
-            break;
-    }
-    return rv;
-}
-
 /*-------------------------------------------------------------------------*/
 
 int resolveoffset(OCODE *ins, EXPRESSION *n, int *resolved)

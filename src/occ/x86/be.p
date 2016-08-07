@@ -172,6 +172,7 @@ void oa_putamode(AMODE *ap);
 void oa_put_code(OCODE *cd);
 void oa_gen_strlab(SYMBOL *sp);
 void oa_put_label(int lab);
+void oa_put_string_label(int lab, int type);
 void oa_genfloat(enum e_gt type, FPF *val);
 void oa_genstring(LCHAR *str, int len);
 void oa_genint(enum e_gt type, LLONG_TYPE val);

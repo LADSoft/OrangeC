@@ -58,7 +58,7 @@ extern QUAD *intermed_head, *intermed_tail;
 extern int lineno;
 extern SYMBOL *inlinesp_list[];
 extern int inlinesp_count;
-extern BLOCK *currentBlock;
+extern BLOCK *current;
 extern BLOCKLIST *blocktail;
 extern int catchLevel;
 extern EXPRESSION *xcexp;
@@ -1388,11 +1388,22 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     LIST *l2, *lp;
     (void)flags;
     (void)size;
-    ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
-    ap4 = LookupLoadTemp(ap2, ap2);
-    if (ap4 != ap2)
-        gen_icode(i_assn, ap4, ap2, NULL);
-    ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
+    if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
+    {
+        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
+        ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
+        ap4 = LookupLoadTemp(ap2, ap2);
+        if (ap4 != ap2)
+            gen_icode(i_assn, ap4, ap2, NULL);
+    }
+    else
+    {
+        ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
+        ap4 = LookupLoadTemp(ap2, ap2);
+        if (ap4 != ap2)
+            gen_icode(i_assn, ap4, ap2, NULL);
+        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
+    }
     ap1->vol = ap2->vol;
     ap2->restricted = ap4->restricted;
     ap1->offset->pragmas = ap4->offset->pragmas;
@@ -1926,6 +1937,14 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
                 ap->size = ISZ_ADDR;
             gen_nodag(i_parm, 0, ap, 0);
         }
+        else if (chosenAssembler->arch->preferopts & OPT_REVERSEPARAM)
+        {
+            if (f->thisptr)
+            {
+                push_param(f->thisptr, funcsp);
+            }
+            genPascalArgs(f->arguments, funcsp);
+        }
         else
         {
             genCdeclArgs(f->arguments, funcsp);
@@ -1991,19 +2010,37 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         }
         gosub = gen_igosub(type, ap);
     }
+    gosub->altdata = f;
     if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)
     {
-        gosub->novalue = sizeFromType(basetype(f->functp)->btp);
+        if (basetype(f->functp)->btp->type == bt_void)
+            gosub->novalue = 0;
+        else
+            gosub->novalue = sizeFromType(basetype(f->functp)->btp);
     }
     else
     {
         gosub->novalue = -1;
     }
     /* undo pars and make a temp for the result */
-    if (f->sp->linkage != lk_stdcall && f->sp->linkage != lk_pascal)
-        gen_nodag(i_parmadj, 0, make_parmadj(adjust), make_parmadj(adjust));
+    if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+    {
+        int n = f->thisptr ? 1 : 0;
+        INITLIST *args = f->arguments;
+        while (args)
+        {
+            n++;
+            args = args->next;
+        }
+        gen_nodag(i_parmadj, 0, make_parmadj(n), make_parmadj(!isvoid(basetype(f->functp)->btp)));
+    }
     else
-        gen_nodag(i_parmadj, 0, make_parmadj(adjust2), make_parmadj(adjust));
+    {
+        if (f->sp->linkage != lk_stdcall && f->sp->linkage != lk_pascal)
+            gen_nodag(i_parmadj, 0, make_parmadj(adjust), make_parmadj(adjust));
+        else
+            gen_nodag(i_parmadj, 0, make_parmadj(adjust2), make_parmadj(adjust));
+    }
     push_nesting -= adjust;
     if (!(flags &F_NOVALUE) && !isvoid(basetype(f->functp)->btp)) {
         /* structures handled by callee... */

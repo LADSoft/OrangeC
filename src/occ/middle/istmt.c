@@ -730,6 +730,7 @@ static IMODE *GetBucket(IMODE *mem)
 
 void optimize(SYMBOL *funcsp)
 {
+    return;
         //printf("optimization start\n");
     if (chosenAssembler->gen->pre_gcse)
         chosenAssembler->gen->pre_gcse(intermed_head);
@@ -778,7 +779,7 @@ void optimize(SYMBOL *funcsp)
     //printf("invar\n");
         if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
             MoveLoopInvariants();	/* move loop invariants out of loops */
-        if (optflags & OPT_GLOBAL)
+        if ((optflags & OPT_GLOBAL) && ! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))
         {
         //printf("alias\n");
             AliasPass1();
@@ -787,7 +788,7 @@ void optimize(SYMBOL *funcsp)
         TranslateFromSSA(FALSE);
         removeDead(blockArray[0]);
 //		RemoveCriticalThunks();
-        if (optflags & OPT_GLOBAL)
+        if ((optflags & OPT_GLOBAL) && ! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))
         {
     //printf("alias 2\n");
             SetGlobalTerms();
@@ -832,7 +833,7 @@ void optimize(SYMBOL *funcsp)
         //printf("prealloc\n");
     Prealloc(1);
         //printf("from ssa\n");
-    TranslateFromSSA(TRUE);
+    TranslateFromSSA(!(chosenAssembler->arch->denyopts & DO_NOREGALLOC));
     //printf("peep\n");
     peep_icode(FALSE);			/* peephole optimizations at the ICODE level */
     RemoveCriticalThunks();
@@ -840,11 +841,14 @@ void optimize(SYMBOL *funcsp)
 
             //printf("allocate\n");
     /* now do the actual allocation */
-    AllocateRegisters(intermed_head); 
+    if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
+    {
+        AllocateRegisters(intermed_head); 
     /* backend peephole optimization can sometimes benefit by knowing what is live */
             //printf("live\n");
 
-    CalculateBackendLives();
+        CalculateBackendLives();
+    }
     sFree();
     peep_icode(TRUE);	/* we do branche opts last to not interfere with other opts */
             //printf("optimzation done\n");
@@ -1018,7 +1022,8 @@ void genfunc(SYMBOL *funcsp)
     optimize(funcsp);
     FreeLocalContext(NULL, funcsp, nextLabel++);
         
-    AllocateStackSpace(funcsp);
+    if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
+        AllocateStackSpace(funcsp);
     FillInPrologue(intermed_head, funcsp);
     /* Code gen from icode */
     rewrite_icode(); /* Translate to machine code & dump */

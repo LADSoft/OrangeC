@@ -63,7 +63,7 @@ int tempSize;
 BRIGGS_SET *killed;
 int tempBottom, nextTemp;
 
-static void renameOneSym(SYMBOL *sp)
+static int renameOneSym(SYMBOL *sp, int index)
 {
     TYPE *tp;
     /* needed for pointer aliasing */
@@ -127,6 +127,11 @@ static void renameOneSym(SYMBOL *sp)
             parmName = (IMODE *)Alloc(sizeof(IMODE));
             *parmName = *sp->imvalue;
         }
+        else if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+        {
+            // set up index for CIL
+            sp->offset = index++;
+        }
         if (sp->imvalue)
         {
             ep->isvolatile = sp->imvalue->offset->isvolatile;
@@ -145,7 +150,7 @@ static void renameOneSym(SYMBOL *sp)
             }
         }
         ep->v.sp->imvalue = sp->imvalue;
-        if (sp->storage_class == sc_parameter)
+        if (sp->storage_class == sc_parameter && !(chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
         {
             QUAD *q;
             QUAD *bl1 = blockArray[1]->head;
@@ -162,10 +167,12 @@ static void renameOneSym(SYMBOL *sp)
             q->back->fwd = q;
         }
     }
+    return index;
 }
 static void renameToTemps(SYMBOL *funcsp)
 {
     LIST *lst;
+    int i = 0;
     HASHTABLE *temp = funcsp->inlineFunc.syms;
     if ((!cparams.prm_optimize_for_speed && !cparams.prm_optimize_for_size) || functionHasAssembly)
         return;
@@ -178,7 +185,7 @@ static void renameToTemps(SYMBOL *funcsp)
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            renameOneSym(sym);
+            i = renameOneSym(sym, i);
             hr = hr->next;
         }
         temp = temp->next;
@@ -189,7 +196,7 @@ static void renameToTemps(SYMBOL *funcsp)
         SYMBOL *sym = (SYMBOL *)lst->data;
         if (!sym->anonymous)
         {
-            renameOneSym(sym);
+            i = renameOneSym(sym, i);
         }
         lst = lst->next;
     }

@@ -338,7 +338,7 @@ static void dumpDynamicInitializers(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeID(sc_static, tp, NULL,"__DYNAMIC_STARTUP__");
+        funcsp = makeUniqueID(sc_static, tp, NULL,"__DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         SetLinkerNames(funcsp, lk_none);
@@ -346,8 +346,15 @@ static void dumpDynamicInitializers(void)
         retlab = nextLabel++;
         genfunc(funcsp);
         startlab = retlab = 0;
-        startupseg();
-        gensrref(funcsp, 32+cppprio);
+        if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+        {
+            startupseg();
+            gensrref(funcsp, 32+cppprio);
+        }
+        else
+        {
+            InsertExtern(funcsp);
+        }
     }
 #endif
 }
@@ -363,7 +370,7 @@ static void dumpTLSInitializers(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeID(sc_static, tp, NULL,"__TLS_DYNAMIC_STARTUP__");
+        funcsp = makeUniqueID(sc_static, tp, NULL,"__TLS_DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         SetLinkerNames(funcsp, lk_none);
@@ -413,7 +420,7 @@ static void dumpDynamicDestructors(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeID(sc_static, tp, NULL,"__DYNAMIC_RUNDOWN__");
+        funcsp = makeUniqueID(sc_static, tp, NULL,"__DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         SetLinkerNames(funcsp, lk_none);
@@ -421,8 +428,15 @@ static void dumpDynamicDestructors(void)
         retlab = nextLabel++;
         genfunc(funcsp);
         startlab = retlab = 0;
-        rundownseg();
-        gensrref(funcsp, 32);
+        if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+        {
+            rundownseg();
+            gensrref(funcsp, 32);
+        }
+        else
+        {
+            InsertExtern(funcsp);
+        }
     }
 #endif
 }
@@ -438,7 +452,7 @@ static void dumpTLSDestructors(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeID(sc_static, tp, NULL,"__TLS_DYNAMIC_RUNDOWN__");
+        funcsp = makeUniqueID(sc_static, tp, NULL,"__TLS_DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         SetLinkerNames(funcsp, lk_none);
@@ -636,6 +650,46 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
             }
             else
                 diag("dumpsym: unknown constant type");
+        }
+        else if (chosenAssembler->arch->denyopts & DO_NOADDRESSINIT)
+        {
+            switch(exp->type)
+            {
+                case en_memberptr:
+                    dumpMemberPtr(NULL, tp, FALSE);
+                    // fall through
+                case en_pc:
+                case en_global:
+                case en_label:
+                case en_labcon:
+                case en_add:
+                case en_arrayadd:
+                case en_structadd:
+                    if (exp->type != en_memberptr)
+                        genaddress(0);
+                    if (!cparams.prm_cplusplus || sp->storage_class != sc_localstatic)
+                        insertDynamicInitializer(sp, init);
+                    break;
+                /* fall through */
+                default:
+                    if (isintconst(exp))
+                    {
+                        genint(exp->v.i);
+                    }
+                    else if (cparams.prm_cplusplus)
+                    {
+                        if (sp->storage_class != sc_localstatic)
+                            insertDynamicInitializer(sp, init);
+                        return 0;
+                    }
+                    else
+                    {
+                        diag("unknown pointer type in initSym");
+                        genaddress(0);
+                    }
+                    break;
+            }
+            return rv;
         }
         else
         {

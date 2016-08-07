@@ -456,7 +456,8 @@ static QUAD * add_dag(QUAD *newQuad)
     if (!node || (newQuad->dc.opcode == i_assn && node->ans->size != newQuad->ans->size)
          || node->ans->bits != newQuad->ans->bits)
     {
-        if (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)
+        if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
+            !(chosenAssembler->arch->denyopts & DO_NOLOCAL))
         {
         /* take care of volatiles by not registering volatile expressions
          * in the CSE table.  At this point a temp var will already exist
@@ -495,7 +496,9 @@ static QUAD * add_dag(QUAD *newQuad)
      * always save constants even when no LCSE is to be done because it
      * is needed for constant-folding in subsequent instructions
      */
-    if (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size)
+    if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) &&
+            !(chosenAssembler->arch->denyopts & DO_NOLOCAL))
+
     {
         if (newQuad->ans && (newQuad->ans->mode == i_ind || newQuad->ans->offset->type != en_tempref))
             flush_dag();

@@ -159,6 +159,7 @@ void InsertExtern(SYMBOL *sp);
 void InsertGlobal(SYMBOL *sp);
 char *AnonymousName(void);
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name);
+SYMBOL *makeUniqueID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name);
 void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOLEAN ignoreDups);
 LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces);
 LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_class, BOOLEAN beforeOnly, BOOLEAN toErr);

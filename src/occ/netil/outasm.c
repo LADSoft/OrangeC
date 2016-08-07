@@ -1,0 +1,1434 @@
+/*
+    Software License Agreement (BSD License)
+    
+    Copyright (c) 1997-2011, David Lindauer, (LADSoft).
+    All rights reserved.
+    
+    Redistribution and use of this software in source and binary forms, 
+    with or without modification, are permitted provided that the following 
+    conditions are met:
+    
+    * Redistributions of source code must retain the above
+      copyright notice, this list of conditions and the
+      following disclaimer.
+    
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the
+      following disclaimer in the documentation and/or other
+      materials provided with the distribution.
+    
+    * Neither the name of LADSoft nor the names of its
+      contributors may be used to endorse or promote products
+      derived from this software without specific prior
+      written permission of LADSoft.
+    
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER 
+    OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+    OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+    ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*/
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include "be.h"
+
+#define IEEE
+
+
+extern int prm_assembler;
+extern SYMBOL *theCurrentFunc;
+extern LIST *temporarySymbols;
+extern LIST *externals;
+
+OCODE *peep_head, *peep_tail;
+static int uses_float;
+
+static enum e_gt oa_gentype = nogen; /* Current DC type */
+enum e_sg oa_currentSeg = noseg; /* Current seg */
+static int oa_outcol = 0; /* Curront col (roughly) */
+int newlabel;
+static int virtual_mode;
+
+BOOLEAN inASMdata = FALSE;
+static BOOLEAN inASMFirst = FALSE;
+static BOOLEAN int8_used, int16_used, int32_used;
+static struct asm_details instructions[] = {
+    {
+        "reserved"
+    } , 
+    {
+        "line#"
+    }
+    , 
+    {
+        "blks#"
+    }
+    , 
+    {
+        "blke#"
+    }
+    , 
+    {
+        "vars#"
+    }
+    , 
+    {
+        "funcs#"
+    }
+    , 
+    {
+        "funce#"
+    }
+    , 
+    {
+        "void#"
+    }
+    , 
+    {
+        "cmt#"
+    }
+    , 
+    {
+        "label#"
+    }
+    , 
+    {
+        "flabel#"
+    }
+    , 
+    {
+        "seq@"
+    }
+    , 
+    {
+        "db"
+    }
+    , 
+    {
+        "dd"
+    }
+    , 
+    {
+        ".maxstack"
+    }
+    , 
+    {
+        ".entrypoint"
+    }
+    , 
+	{ "add" }, 
+	{ "add.ovf" }, 
+	{ "add.ovf.un" }, 
+	{ "and" }, 
+	{ "arglist" }, 
+	{ "beq" }, 
+	{ "beq.s" }, 
+	{ "bge" }, 
+	{ "bge.s" }, 
+	{ "bge.un" }, 
+	{ "bge.un.s" }, 
+	{ "bgt" }, 
+	{ "bgt.s" }, 
+	{ "bgt.un" }, 
+	{ "bgt.un.s" }, 
+	{ "ble" }, 
+	{ "ble.s" }, 
+	{ "ble.un" }, 
+	{ "ble.un.s" }, 
+	{ "blt" }, 
+	{ "blt.s" }, 
+	{ "blt.un" }, 
+	{ "blt.un.s" }, 
+	{ "bne.un" }, 
+	{ "bne.un.s" }, 
+	{ "box" }, 
+	{ "br" }, 
+	{ "br.s" }, 
+	{ "break" }, 
+	{ "brfalse" }, 
+	{ "brfalse.s" }, 
+	{ "brinst" }, 
+	{ "brinst.s" }, 
+	{ "brnull" }, 
+	{ "brnull.s" }, 
+	{ "brtrue" }, 
+	{ "brtrue.s" }, 
+	{ "brzero" }, 
+	{ "brzero.s" }, 
+	{ "call" }, 
+	{ "calli" }, 
+	{ "callvirt" }, 
+	{ "castclass" }, 
+	{ "ceq" }, 
+	{ "cgt" }, 
+	{ "cgt.un" }, 
+	{ "ckfinite" }, 
+	{ "clt" }, 
+	{ "clt.un" }, 
+	{ "constrained." }, 
+	{ "conv.i" }, 
+	{ "conv.i1" }, 
+	{ "conv.i2" }, 
+	{ "conv.i4" }, 
+	{ "conv.i8" }, 
+	{ "conv.ovf.i" }, 
+	{ "conv.ovf.i.un" }, 
+	{ "conv.ovf.i1" }, 
+	{ "conv.ovf.i1.un" }, 
+	{ "conv.ovf.i2" }, 
+	{ "conv.ovf.i2.un" }, 
+	{ "conv.ovf.i4" }, 
+	{ "conv.ovf.i4.un" }, 
+	{ "conv.ovf.i8" }, 
+	{ "conv.ovf.i8.un" }, 
+	{ "conv.ovf.u" }, 
+	{ "conv.ovf.u.un" }, 
+	{ "conv.ovf.u1" }, 
+	{ "conv.ovf.u1.un" }, 
+	{ "conv.ovf.u2" }, 
+	{ "conv.ovf.u2.un" }, 
+	{ "conv.ovf.u4" }, 
+	{ "conv.ovf.u4.un" }, 
+	{ "conv.ovf.u8" }, 
+	{ "conv.ovf.u8.un" }, 
+	{ "conv.r.un" }, 
+	{ "conv.r4" }, 
+	{ "conv.r8" }, 
+	{ "conv.u" }, 
+	{ "conv.u1" }, 
+	{ "conv.u2" }, 
+	{ "conv.u4" }, 
+	{ "conv.u8" }, 
+	{ "cpblk" }, 
+	{ "cpobj" }, 
+	{ "div" }, 
+	{ "div.un" }, 
+	{ "dup" }, 
+	{ "endfault" }, 
+	{ "endfilter" }, 
+	{ "endfinally" }, 
+	{ "initblk" }, 
+	{ "initobj" }, 
+	{ "isinst" }, 
+	{ "jmp" }, 
+	{ "ldarg" }, 
+	{ "ldarg.0" }, 
+	{ "ldarg.1" }, 
+	{ "ldarg.2" }, 
+	{ "ldarg.3" }, 
+	{ "ldarg.s" }, 
+	{ "ldarga" }, 
+	{ "ldarga.s" }, 
+	{ "ldc.i4" }, 
+	{ "ldc.i4.0" }, 
+	{ "ldc.i4.1" }, 
+	{ "ldc.i4.2" }, 
+	{ "ldc.i4.3" }, 
+	{ "ldc.i4.4" }, 
+	{ "ldc.i4.5" }, 
+	{ "ldc.i4.6" }, 
+	{ "ldc.i4.7" }, 
+	{ "ldc.i4.8" }, 
+	{ "ldc.i4.m1" }, 
+	{ "ldc.i4.M1" }, 
+	{ "ldc.i4.s" }, 
+	{ "ldc.i8" }, 
+	{ "ldc.r4" }, 
+	{ "ldc.r8" }, 
+	{ "ldelem" }, 
+	{ "ldelem.i" }, 
+	{ "ldelem.i1" }, 
+	{ "ldelem.i2" }, 
+	{ "ldelem.i4" }, 
+	{ "ldelem.i8" }, 
+	{ "ldelem.r4" }, 
+	{ "ldelem.r8" }, 
+	{ "ldelem.ref" }, 
+	{ "ldelem.u1" }, 
+	{ "ldelem.u2" }, 
+	{ "ldelem.u4" }, 
+	{ "ldelem.u8" }, 
+	{ "ldelema" }, 
+	{ "ldfld" }, 
+	{ "ldflda" }, 
+	{ "ldftn" }, 
+	{ "ldind.i" }, 
+	{ "ldind.i1" }, 
+	{ "ldind.i2" }, 
+	{ "ldind.i4" }, 
+	{ "ldind.i8" }, 
+	{ "ldind.r4" }, 
+	{ "ldind.r8" }, 
+	{ "ldind.ref" }, 
+	{ "ldind.u1" }, 
+	{ "ldind.u2" }, 
+	{ "ldind.u4" }, 
+	{ "ldind.u8" }, 
+	{ "ldlen" }, 
+	{ "ldloc" }, 
+	{ "ldloc.0" }, 
+	{ "ldloc.1" }, 
+	{ "ldloc.2" }, 
+	{ "ldloc.3" }, 
+	{ "ldloc.s" }, 
+	{ "ldloca" }, 
+	{ "ldloca.s" }, 
+	{ "ldnull" }, 
+	{ "ldobj" }, 
+	{ "ldsfld" }, 
+	{ "ldsflda" }, 
+	{ "ldstr" }, 
+	{ "ldtoken" }, 
+	{ "ldvirtftn" }, 
+	{ "leave" }, 
+	{ "leave.s" }, 
+	{ "localloc" }, 
+	{ "mkrefany" }, 
+	{ "mul" }, 
+	{ "mul.ovf" }, 
+	{ "mul.ovf.un" }, 
+	{ "neg" }, 
+	{ "newarr" }, 
+	{ "newobj" }, 
+	{ "no." }, 
+	{ "nop" }, 
+	{ "not" }, 
+	{ "or" }, 
+	{ "pop" }, 
+	{ "readonly." }, 
+	{ "refanytype" }, 
+	{ "refanyval" }, 
+	{ "rem" }, 
+	{ "rem.un" }, 
+	{ "ret" }, 
+	{ "rethrow" }, 
+	{ "shl" }, 
+	{ "shr" }, 
+	{ "shr.un" }, 
+	{ "sizeof" }, 
+	{ "starg" }, 
+	{ "starg.s" }, 
+	{ "stelem" }, 
+	{ "stelem.i" }, 
+	{ "stelem.i1" }, 
+	{ "stelem.i2" }, 
+	{ "stelem.i4" }, 
+	{ "stelem.i8" }, 
+	{ "stelem.r4" }, 
+	{ "stelem.r8" }, 
+	{ "stelem.ref" }, 
+	{ "stfld" }, 
+	{ "stind.i" }, 
+	{ "stind.i1" }, 
+	{ "stind.i2" }, 
+	{ "stind.i4" }, 
+	{ "stind.i8" }, 
+	{ "stind.r4" }, 
+	{ "stind.r8" }, 
+	{ "stind.ref" }, 
+	{ "stloc" }, 
+	{ "stloc.0" }, 
+	{ "stloc.1" }, 
+	{ "stloc.2" }, 
+	{ "stloc.3" }, 
+	{ "stloc.s" }, 
+	{ "stobj" }, 
+	{ "stsfld" }, 
+	{ "sub" }, 
+	{ "sub.ovf" }, 
+	{ "sub.ovf.un" }, 
+	{ "switch" }, 
+	{ "tail." }, 
+	{ "throw" }, 
+	{ "unaligned." }, 
+	{ "unbox" }, 
+	{ "unbox.any" }, 
+	{ "volatile." }, 
+	{ "xor" }
+};
+/* Init module */
+void oa_ini(void)
+{
+    oa_gentype = nogen;
+    oa_currentSeg = noseg;
+    oa_outcol = 0;
+    newlabel = FALSE;
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_nl(void)
+/*
+ * New line
+ */
+{
+    if (cparams.prm_asmfile)
+    {
+        if (oa_outcol > 0)
+        {
+            beputc('\n');
+            oa_outcol = 0;
+            oa_gentype = nogen;
+        }
+    }
+}
+
+/* Put an opcode
+ */
+void outop(char *name)
+{
+    beputc('\t');
+    while (*name)
+        beputc(*name++);
+}
+
+/*-------------------------------------------------------------------------*/
+
+
+/*-------------------------------------------------------------------------*/
+
+void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
+/*
+ *      put a constant to the outputFile file.
+ */
+{
+    char buf[4096];
+    SYMBOL *sp;
+    char buf1[100];
+    int toffs;
+    switch (offset->type)
+    {
+        case en_auto:
+            if (doSign)
+            {
+                if ((int)offset->v.sp->offset < 0)
+                    bePrintf( "-0%lxh", -offset->v.sp->offset);
+                else
+                    bePrintf( "+0%lxh", offset->v.sp->offset);
+            }
+            else
+                bePrintf( "0%lxh", offset->v.sp->offset);
+                
+            break;
+        case en_c_i:
+        case en_c_l:
+        case en_c_ui:
+        case en_c_ul:
+        case en_c_ll:
+        case en_c_ull:
+        case en_absolute:
+        case en_c_c:
+        case en_c_uc:
+        case en_c_u16:
+        case en_c_u32:
+        case en_c_bool:
+        case en_c_s:
+        case en_c_us:
+        case en_c_wc:
+            if (doSign)
+            {
+                if (offset->v.i == 0)
+                    break;
+                beputc('+');
+            }
+            {
+                int n = offset->v.i;
+//				if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
+//					n &= 0xff;
+//				if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
+//					n &= 0xffff;
+                bePrintf( "%d", n);
+            }
+            break;
+        case en_c_fc:
+        case en_c_dc:
+        case en_c_ldc:
+            if (doSign)
+                beputc('+');
+            FPFToString(buf,&offset->v.c.r);
+            FPFToString(buf1, &offset->v.c.i);
+            bePrintf( "%s,%s", buf, buf1);
+            break;
+        case en_c_f:
+        case en_c_d:
+        case en_c_ld:
+        case en_c_fi:
+        case en_c_di:
+        case en_c_ldi:
+            if (doSign)
+                beputc('+');
+            FPFToString(buf,&offset->v.f);
+            bePrintf( "%s", buf);
+            break;
+        case en_label:
+            if (doSign)
+                beputc('+');
+            bePrintf( "L_%d", offset->v.sp->label);
+            break;
+        case en_labcon:
+            if (doSign)
+                beputc('+');
+            bePrintf( "L_%d", offset->v.i);
+            break;
+        case en_pc:
+        case en_global:
+        case en_threadlocal:
+            if (doSign)
+                beputc('+');
+            sp = offset->v.sp;
+            beDecorateSymName(buf, sp);
+            bePrintf( "%s", buf);
+            break;
+        case en_add:
+        case en_structadd:
+        case en_arrayadd:
+            oa_putconst(ISZ_ADDR, offset->left, doSign);
+            oa_putconst(ISZ_ADDR, offset->right, TRUE);
+            break;
+        case en_sub:
+            oa_putconst(ISZ_ADDR, offset->left, doSign);
+            bePrintf( "-");
+            oa_putconst(ISZ_ADDR, offset->right, FALSE);
+            break;
+        case en_uminus:
+            bePrintf( "-");
+            oa_putconst(ISZ_ADDR, offset->left, FALSE);
+            break;
+        default:
+            diag("illegal constant node.");
+            break;
+    }
+}
+
+/*-------------------------------------------------------------------------*/
+
+
+
+int islabeled(EXPRESSION *n)
+{
+    int rv = 0;
+    switch (n->type)
+    {
+        case en_add:
+        case en_structadd:
+        case en_arrayadd:
+        case en_sub:
+//        case en_addstruc:
+            rv |= islabeled(n->left);
+            rv |= islabeled(n->right);
+            break;
+        case en_c_i:
+        case en_c_c:
+        case en_c_uc:
+        case en_c_u16:
+        case en_c_u32:
+        case en_c_l:
+        case en_c_ul:
+        case en_c_ui:
+        case en_c_bool:
+        case en_c_wc:
+        case en_c_s:
+        case en_c_us:
+            return 0;
+        case en_labcon:
+        case en_global:
+        case en_auto:
+        case en_absolute:
+        case en_label:
+        case en_pc:
+        case en_threadlocal:
+            return 1;
+        default:
+            diag("Unexpected node type in islabeled");
+            break;
+    }
+    return rv;
+}
+void puttype(TYPE *tp)
+{
+    tp = basetype(tp);
+    if (tp->type == bt_pointer)
+    {
+        if (tp->array)
+        {
+            puttype(tp->btp);
+            bePrintf("[]");
+        }
+        else
+            bePrintf("void*");
+    }
+    else if (tp->type == bt_void)
+        bePrintf("void");
+    else if (tp->type == bt_ellipse)
+        ;
+    else if (tp->type < bt_float_complex)
+    {
+        static char *names[] = { "", "", "int8", "int8","uint8",
+            "int16", "int16", "uint16", "uint16", "int32", "int32", "int32" ,"uint32", "int32", "uint32",
+            "int64", "uint64", "real32", "real64", "real64", "real32", "real64", "real64"
+        };
+        bePrintf(names[tp->type]);
+    }
+}
+
+/*-------------------------------------------------------------------------*/
+void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
+{
+    BOOLEAN vararg = FALSE;
+    HASHREC *hr = basetype(sp->tp)->syms->table[0];
+    oa_enterseg(oa_currentSeg);
+    bePrintf(".method public hidebysig static ");
+    if (pinvoke)
+        bePrintf("pinvokeimpl(\"msvcrt.dll\" cdecl) ");
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (sp->tp->type == bt_ellipse)
+            vararg = TRUE;
+        hr = hr->next;
+    }
+    if (vararg)
+        bePrintf("vararg ");
+    puttype(basetype(sp->tp)->btp);
+    bePrintf(" %s", sp->name);
+    if (!strcmp(sp->decoratedName, "_main"))
+    {
+        bePrintf("()");
+    }
+    else
+    {
+        hr = basetype(sp->tp)->syms->table[0];
+        bePrintf("(");
+        while (hr)
+        {
+            SYMBOL *sp = (SYMBOL *)hr->p;
+            puttype(sp->tp);
+            if (!vararg && hr->next || vararg && hr->next && hr->next->next)
+                bePrintf(", ");
+            hr = hr->next;
+        }
+        bePrintf(")");
+    } 
+    if (pinvoke)
+        bePrintf(" preservesig {}\n");
+    else
+        bePrintf(" cil managed\n{\n");
+}
+void oa_gen_strlab(SYMBOL *sp)
+/*
+ *      generate a named label.
+ */
+{
+    if (isfunction(sp->tp))
+    {
+        gen_method_header(sp, FALSE);
+
+    }
+    else
+    {
+        oa_enterseg(oa_currentSeg);
+//        inASMdata = TRUE;
+        inASMFirst = TRUE;
+        if (isarray(sp->tp))
+        {
+            bePrintf(".field public static valuetype '");
+            puttype(sp->tp);
+            bePrintf("' '%s' = ", sp->name, sp->name);
+        }
+        else
+        {
+            bePrintf(".field public static ");
+            puttype(sp->tp);
+            bePrintf(" '%s' = ", sp->name, sp->name);
+        }
+    }
+}
+/*-------------------------------------------------------------------------*/
+
+void oa_put_label(int lab)
+/*
+ *      outputFile a compiler generated label.
+ */
+{
+    if (cparams.prm_asmfile) {
+        oa_nl();
+        if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
+        {
+            newlabel = TRUE;
+            bePrintf( "\nL_%ld", lab);
+            oa_outcol = 8;
+        }
+        else
+            bePrintf( "L_%ld:\n", lab);
+    }
+}
+void oa_put_string_label(int lab, int type)
+{
+    oa_enterseg(oa_currentSeg);
+    inASMdata = TRUE;
+    inASMFirst = TRUE;
+    bePrintf(".field public static valuetype '");
+    switch (type)
+    {
+        case l_ustr:
+        case l_astr:
+            bePrintf("int8[]");
+            int8_used = TRUE;
+            break;
+        case l_Ustr:
+            bePrintf("int32[]");
+            int32_used = TRUE;
+            break;
+        case l_wstr:
+            bePrintf("int16[]");
+            int16_used = TRUE;
+            break;
+    }
+    bePrintf("' 'L_%d' at $L_%d\n", lab, lab);
+    bePrintf(".data $L_%d = { \n", lab);
+}
+
+
+/*-------------------------------------------------------------------------*/
+
+void oa_genfloat(enum e_gt type, FPF *val)
+/*
+ * Output a float value
+ */
+{
+    if (cparams.prm_asmfile)
+    {
+        char buf[256];
+        if (!inASMFirst)
+            bePrintf(",\n");
+        inASMFirst = FALSE;
+        FPFToString(buf,val);
+        switch(type) {
+            case floatgen:
+                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
+                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+                {
+                    UBYTE dta[4];
+                    int i;
+                    FPFToFloat(dta, val);
+                    bePrintf("\tdb\t");
+                    for (i=0; i < 4; i++)
+                    {
+                        bePrintf( "int8(%d)", dta[i]);
+                        if (i != 3)
+                            bePrintf(", ");
+                    }
+                }
+                else
+                    bePrintf( "\treal32(%s)", buf);
+                break;
+            case doublegen:
+            case longdoublegen:
+                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
+                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+                {
+                    UBYTE dta[8];
+                    int i;
+                    FPFToDouble(dta, val);
+                    bePrintf("\tdb\t");
+                    for (i=0; i < 8; i++)
+                    {
+                        bePrintf( "int8(%d),", dta[i]);
+                        if (i != 7)
+                            bePrintf(", ");
+                    }
+                }
+                else
+                    bePrintf( "\treal64(%s)", buf);
+                break;
+            default:
+                diag("floatgen - invalid type");
+                break ;
+        }
+    }
+}
+/*-------------------------------------------------------------------------*/
+
+void oa_genstring(LCHAR *str, int len)
+/*
+ * Generate a string literal
+ */
+{
+    if (cparams.prm_asmfile)
+    {
+        int nlen = len;
+        while (nlen--)
+        {
+            oa_genint(chargen, *str++);
+        }
+    }
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_genint(enum e_gt type, LLONG_TYPE val)
+{
+    if (cparams.prm_asmfile) {
+        if (!inASMFirst)
+            bePrintf(",\n");
+        inASMFirst = FALSE;
+        switch (type) {
+            case chargen:
+                bePrintf( "\tint8(%d)", val &0x00ff);
+                break ;
+            case shortgen:
+            case u16gen:
+                bePrintf( "\tint16(%d)", val &0x0ffff);
+                break ;
+            case longgen:
+            case enumgen:
+            case intgen:
+            case u32gen:
+                bePrintf( "\tint32(%d)", val);
+                break ;
+            case longlonggen:
+                bePrintf( "\tint64(%Ld)", val, val < 0 ?  - 1: 0);
+                break ;
+            case wchar_tgen:
+                   bePrintf( "\tint16(%d)", val);
+                break ;
+            default:
+                diag("genint - unknown type");
+                break ;
+        }
+    }
+}
+void oa_genaddress(ULLONG_TYPE val)
+{
+    if (cparams.prm_asmfile) {
+        if (!inASMFirst)
+            bePrintf(",\n");
+        inASMFirst = FALSE;
+        bePrintf( "\tint32(%d)", val);
+    }
+}
+/*-------------------------------------------------------------------------*/
+
+void oa_gensrref(SYMBOL *sp, int val)
+{
+    diag ("oa_gen_srref");
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_genref(SYMBOL *sp, int offset)
+/*
+ * Output a reference to the data area (also gens fixups )
+ */
+{
+    diag ("oa_genref");
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_genpcref(SYMBOL *sp, int offset)
+/*
+ * Output a reference to the code area (also gens fixups )
+ */
+{
+    diag("oa_genpcref");
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_genstorage(int nbytes)
+/*
+ * Output bytes of storage
+ */
+{
+    if (cparams.prm_asmfile)
+    {
+        int i;
+        if (!newlabel)
+            oa_nl();
+        else
+            newlabel = FALSE;
+        switch(nbytes)
+        {
+            case 1:
+                bePrintf("\tint8(0)");
+                break;
+            case 2:
+                bePrintf("\tint16(0)");
+                break;
+            case 4:
+                bePrintf("\tint32(0)");
+                break;
+            case 8:
+                bePrintf("\tint64(0)");
+                break;
+            default:
+                for (i=0; i < nbytes; i++)
+                {
+                    if (!inASMFirst)
+                        bePrintf(",\n");
+                    inASMFirst = FALSE;
+                    bePrintf( "\tint8(%d)", 0);
+                }
+                break;
+        }
+        oa_gentype = nogen;
+    }
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_gen_labref(int n)
+/*
+ * Generate a reference to a label
+ */
+{
+    diag("oa_gen_labref");
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_gen_labdifref(int n1, int n2)
+{
+    diag("oa_gen_labdifref");
+}
+
+/*
+ * Exit if from a special segment
+ */
+void oa_exitseg(enum e_sg seg)
+{
+}
+
+/*
+ * Switch to cseg 
+ */
+void oa_enterseg(enum e_sg seg)
+{
+    oa_currentSeg = seg ;
+    if (inASMdata)
+    {
+        bePrintf("\n}\n");
+        inASMdata = inASMFirst = FALSE;
+    }
+}
+
+/*-------------------------------------------------------------------------*/
+
+    void oa_gen_virtual(SYMBOL *sp, int data)
+    {
+        virtual_mode = data;
+        oa_currentSeg = virtseg;
+        if (cparams.prm_asmfile)
+        {
+            oa_nl();
+            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            {
+                oa_currentSeg = noseg;
+#ifdef IEEE
+                if (virtual_mode)
+                    bePrintf( "\tsection vsd%s virtual\n", sp->decoratedName);
+                else
+                    bePrintf( "\tsection vsc%s virtual\n", sp->decoratedName);
+#else
+                bePrintf( "\tSECTION @%s VIRTUAL\n", sp->decoratedName);
+#endif
+            }
+            else
+                bePrintf( "@%s\tsegment virtual\n", sp->decoratedName);
+            bePrintf( "%s:\n", sp->decoratedName);
+        }
+    }
+    void oa_gen_endvirtual(SYMBOL *sp)
+    {
+        if (cparams.prm_asmfile)
+        {
+            oa_nl();
+            if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+            {
+                bePrintf( "@%s\tends\n", sp->decoratedName);
+            }
+            else
+                if (virtual_mode)
+                    oa_enterseg(dataseg);
+                else
+                    oa_enterseg(codeseg);
+        }
+        else
+        {
+            if (virtual_mode)
+                oa_enterseg(dataseg);
+            else
+                oa_enterseg(codeseg);
+        }
+    }
+/*
+ * Align
+ * not really honorign the size... all alignments are mod 4...
+ */
+void oa_align(int size)
+{
+    if (cparams.prm_asmfile)
+    {
+        oa_nl();
+        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        /* NASM 0.91 wouldn't let me use parenthesis but this should work
+         * according to the documented precedence levels
+         */
+            bePrintf( "\ttimes $$-$ & %d nop\n", size-1);
+        else
+            bePrintf( "\talign\t%d\n", size);
+    }
+}
+
+
+/*-------------------------------------------------------------------------*/
+
+void dump_browsedata(BROWSEINFO *bri)
+{
+//    if (!cparams.prm_asmfile)
+//        omf_dump_browsedata(bri);
+}
+void dump_browsefile(BROWSEFILE *brf)
+{
+//    if (!cparams.prm_asmfile)
+//        omf_dump_browsefile(brf);
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_header(char *filename, char *compiler_version)
+{
+    oa_nl();
+    bePrintf("//File %s\n",filename);
+    bePrintf("//Compiler version %s\n",compiler_version);
+    bePrintf("\n.assembly test { }\n");
+    bePrintf("\n.assembly extern mscorlib { }\n\n\n");
+}
+void oa_trailer(void)
+{
+}
+/*-------------------------------------------------------------------------*/
+void oa_localdef(SYMBOL *sp)
+{
+    if (!cparams.prm_asmfile)
+    {
+//        omf_globaldef(sp);
+    }
+}
+void oa_localstaticdef(SYMBOL *sp)
+{
+    if (!cparams.prm_asmfile)
+    {
+//        omf_globaldef(sp);
+    }
+}
+void oa_globaldef(SYMBOL *sp)
+{
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_output_alias(char *name, char *alias)
+{
+    if (cparams.prm_asmfile)
+    {
+        oa_nl();
+        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            bePrintf( "%%define %s %s\n", name, alias);
+        else
+            bePrintf( "%s equ\t<%s>\n", name, alias);
+    }
+}
+
+
+/*-------------------------------------------------------------------------*/
+
+void put_pinvoke(SYMBOL *sp)
+{
+    gen_method_header(sp, TRUE);
+}
+void oa_put_extern(SYMBOL *sp, int code)
+{
+    if (isfunction(sp->tp))
+        put_pinvoke(sp);
+    else if (cparams.prm_asmfile) {
+        oa_nl();
+        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        {
+            bePrintf( "[extern\t%s]\n", sp->decoratedName);
+        }
+        else
+        {
+            if (code)
+                bePrintf( "\textrn\t%s:proc\n", sp->decoratedName);
+            else
+                bePrintf( "\textrn\t%s:byte\n", sp->decoratedName); 
+        }
+    }
+}
+/*-------------------------------------------------------------------------*/
+
+void oa_put_impfunc(SYMBOL *sp, char *file)
+{
+    if (cparams.prm_asmfile) 
+    {
+        bePrintf( "\timport %s %s\n", sp->decoratedName, file);
+    } 
+}
+
+/*-------------------------------------------------------------------------*/
+
+void oa_put_expfunc(SYMBOL *sp)
+{
+    char buf[4096];
+    if (cparams.prm_asmfile) {
+        beDecorateSymName(buf, sp);
+        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            bePrintf( "\texport %s\n", buf);
+        else
+            bePrintf( "\tpublicdll %s\n", buf);
+    }
+}
+
+void oa_output_includelib(char *name)
+{
+    if (cparams.prm_asmfile)
+    {
+        if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+            bePrintf( "\tincludelib %s\n", name);
+    }
+}
+void putfieldname(AMODE *arg)
+{
+    EXPRESSION *en = GetSymRef(arg->offset);
+    if (isarray(en->v.sp->tp))
+        bePrintf("\tvaluetype '");
+    else
+        bePrintf("\t");
+    puttype(en->v.sp->tp);
+    if (isarray(en->v.sp->tp))
+       bePrintf("'");
+    bePrintf(" '%s'\n", en->v.sp->name);
+}
+void putfunccall(AMODE *arg)
+{
+    EXPRESSION *en = GetSymRef(arg->offset);
+    SYMBOL *sp = en->v.sp;
+    HASHREC *hr = basetype(sp->tp)->syms->table[0];
+    BOOLEAN vararg = FALSE;
+    INITLIST *il = ((FUNCTIONCALL *)arg->altdata)->arguments;
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        if (sp->tp->type == bt_ellipse)
+            vararg = TRUE;
+        hr = hr->next;
+    }
+    bePrintf("\t");
+    if (vararg)
+        bePrintf("vararg ");
+    puttype(basetype(sp->tp)->btp);
+    bePrintf(" %s", sp->name);
+    bePrintf("(");
+    hr = basetype(sp->tp)->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *sp = (SYMBOL *)hr->p;
+        puttype(sp->tp);
+        if (sp->tp->type != bt_ellipse)
+            il = il->next;
+        if (!vararg && hr->next || vararg && hr->next && hr->next->next)
+            bePrintf(", ");
+        hr = hr->next;
+    }
+    if (vararg)
+    {
+        bePrintf(", ...");
+        while (il)
+        {
+            bePrintf(", ");
+            puttype(il->tp);
+            il = il->next;
+        }
+    }
+    bePrintf(")");
+}
+void putlocals(void)
+{
+    HASHTABLE *temp = theCurrentFunc->inlineFunc.syms;
+    LIST *lst = NULL;
+    while (temp)
+    {
+        HASHREC *hr = temp->table[0];
+        while (hr)
+        {
+            SYMBOL *sym = (SYMBOL *)hr->p;
+            if (sym->storage_class != sc_parameter)
+                break;
+            hr = hr->next;
+        }
+        if (hr)
+            break;
+        temp = temp->next;
+    }
+    if (!temp)
+    {
+        lst = temporarySymbols;
+        while (lst)
+        {
+            SYMBOL *sym = (SYMBOL *)lst->data;
+            if (!sym->anonymous)
+            {
+                break;
+            }
+            lst = lst->next;
+        }
+    }
+    if (lst || temp)
+    {
+        while (temp)
+        {
+            HASHREC *hr = temp->table[0];
+            while (hr)
+            {
+                SYMBOL *sym = (SYMBOL *)hr->p;
+                sym->temp = FALSE;
+                hr = hr->next;
+            }
+            temp = temp->next;
+        }
+        lst = temporarySymbols;
+        while (lst)
+        {
+            SYMBOL *sym = (SYMBOL *)lst->data;
+            sym->temp = FALSE;
+            lst = lst->next;
+        }
+        bePrintf("\t.locals\n\t(\n");
+        temp = theCurrentFunc->inlineFunc.syms;
+        while (temp)
+        {
+            HASHREC *hr = temp->table[0];
+            while (hr)
+            {
+                SYMBOL *sym = (SYMBOL *)hr->p;
+                if (sym->storage_class != sc_parameter && !sym->temp)
+                {
+                    sym->temp = TRUE;
+                    bePrintf("\t\t[%d] ",sym->offset);
+                    puttype(sym->tp);
+                    bePrintf(" '%s'", sym->name);
+                }
+                hr = hr->next;
+            }
+            temp = temp->next;
+        }
+        lst = temporarySymbols;
+        while (lst)
+        {
+            SYMBOL *sym = (SYMBOL *)lst->data;
+            if (!sym->anonymous && !sym->temp)
+            {
+                sym->temp= TRUE;
+                bePrintf("\t\t[%d] ",sym->offset);
+               puttype(sym->tp);
+                bePrintf(" '%s'", sym->name);
+            }
+            lst = lst->next;
+        }
+        bePrintf("\n\t)\n");
+    }
+}
+void putarg(AMODE *arg)
+{
+    switch (arg->mode)
+    {
+        int i;
+        struct swlist *pass;
+        case am_immed:
+            if (arg->offset->type == en_labcon)
+            {
+                if (arg->offset->altdata)
+                {
+                    bePrintf("\tvaluetype '");
+                    switch (arg->offset->altdata)
+                    {
+                        case l_ustr:
+                        case l_astr:
+                            bePrintf("int8[]");
+                            break;
+                        case l_Ustr:
+                            bePrintf("int32[]");
+                            break;
+                        case l_wstr:
+                            bePrintf("int16[]");
+                            break;
+                    }
+                    bePrintf("' 'L_%Ld'\n", arg->offset->v.i);
+                }
+                else
+                {
+                    bePrintf("\tL_%Ld", arg->offset->v.i);
+                }
+            }
+            else if (arg->offset->type == en_pc || arg->offset->type == en_global)
+                if (isfunction(arg->offset->v.sp->tp))
+                {
+                    putfunccall(arg);
+                }
+                else
+                {
+                    bePrintf("\t");
+                    if (isarray(arg->offset->v.sp->tp))
+                        bePrintf("valuetype '");
+                    puttype(arg->offset->v.sp->tp);
+                    if (isarray(arg->offset->v.sp->tp))
+                        bePrintf("'");
+                    bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                }
+
+            else
+                bePrintf("\t%d", arg->offset->v.i);
+            break; 
+        case am_local:
+        case am_param:
+            bePrintf("\t%d", arg->index);
+            break;
+        case am_global:
+            putfieldname(arg);
+            break;
+        case am_switch:
+            bePrintf("\t{ ");
+            pass = arg->switches;
+            i = 0;
+            while (pass)
+            {
+                bePrintf("L_%d ", pass->lab);
+                if (pass->next);
+                {
+                    bePrintf(", ");
+                    if (++i %8 == 0)
+                        bePrintf("\n\t");
+                }
+                pass = pass->next;
+            }
+            bePrintf("\n\t}");
+            break;
+    }
+}
+void oa_put_code(OCODE *ocode)
+{
+    enum e_op op = ocode->opcode;
+    if (op == op_blockstart || op == op_blockend || op == op_varstart || op == op_funcstart || op == op_funcend)
+        return;
+    if (op == op_line)
+    {
+        LINEDATA *ld = (LINEDATA *)ocode->oper1;
+        oa_nl();
+        while (ld)
+        {
+            bePrintf( "// Line %d:\t%s\n", ld->lineno, ld->line);
+            ld = ld->next;
+        }
+        return ;
+    }
+    else if (op == op_comment)
+    {
+        if (!cparams.prm_lines)
+            return ;
+        bePrintf( "%s", ocode->oper1);
+        return ;
+    }
+    else if (op == op_void)
+        return ;
+    if (op == op_maxstack)
+    {
+        putlocals();
+    }
+    bePrintf("\t%s", instructions[op].name);
+    if (ocode->oper1)
+        putarg(ocode->oper1);
+    bePrintf("\n");
+}
+void oa_end_generation(void)
+{
+    SYMBOL *start = NULL, *end = NULL;
+    LIST *externalList = externals;
+    oa_enterseg(oa_currentSeg);
+    while (externalList)
+    {
+        SYMBOL *sym = (SYMBOL *)externalList->data;
+        if (!strncmp(sym->name, "__DYNAMIC", 9))
+        {
+            if (strstr(sym->name, "STARTUP"))
+                start = sym;
+            else
+                end = sym;
+        }
+        externalList = externalList->next;
+    }
+    bePrintf(".method public hidebysig static void $Main() cil managed {\n");
+    bePrintf("\t.entrypoint\n");
+    bePrintf("\t.maxstack 1\n");
+    if (start)
+        bePrintf("\tcall void %s()\n", start->name);
+    bePrintf("\tcall int32 main()\n");
+    if (end)
+        bePrintf("\tcall void %s()\n", end->name);
+    bePrintf("\tcall void exit(int32)\n");
+    bePrintf("\tret\n");
+    bePrintf("}\n");
+    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void exit(int32) preservesig {}\n");
+
+    if (int8_used)
+    {
+        bePrintf(".class private value explicit ansi sealed 'int8[]' {.pack 1 .size 1}\n");
+    }
+    if (int16_used)
+    {
+        bePrintf(".class private value explicit ansi sealed 'int16[]' {.pack 2 .size 1}\n");
+    }
+    if (int32_used)
+    {
+        bePrintf(".class private value explicit ansi sealed 'int32[]' {.pack 4 .size 1}\n");
+    }
+    
+}
+void flush_peep(SYMBOL *funcsp, QUAD *list)
+{
+    (void)funcsp;
+    (void) list;
+    if (cparams.prm_asmfile)
+    {
+        while (peep_head != 0)
+        {
+            switch (peep_head->opcode)
+            {
+                case op_label:
+                    oa_put_label((int)peep_head->oper1);
+                    break;
+                case op_funclabel:
+                    oa_gen_strlab((SYMBOL *)peep_head->oper1);
+                    break;
+                default:
+                    oa_put_code(peep_head);
+                    break;
+
+            }
+            peep_head = peep_head->fwd;
+        }
+    }
+    bePrintf("\n}\n ");
+    peep_head = 0;
+
+}

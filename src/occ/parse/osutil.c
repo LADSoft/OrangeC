@@ -755,7 +755,19 @@ void setfile(char *buf, char *orgbuf, char *ext)
 
 void outputfile(char *buf, char *orgbuf, char *ext)
 {
-    if (has_output_file)
+   
+    if (buf[strlen(buf)-1] == '\\')
+    {
+        char *p = strrchr(orgbuf, '\\');
+        if (p)
+            p++;
+        else
+            p = orgbuf;
+        strcat(buf, p);
+        StripExt(buf);
+        AddExt(buf, ext);
+    }
+    else if (has_output_file)
     {
         AddExt(buf, ext);
     }
@@ -1042,7 +1054,7 @@ void ccinit(int argc, char *argv[])
         }
         else
         {
-            if (clist && clist->next)
+            if (clist && clist->next && outfile[strlen(outfile)-1] != '\\')
                 fatal("Cannot specify output file for multiple input files\n");
         }
     #else

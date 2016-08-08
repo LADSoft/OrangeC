@@ -175,6 +175,7 @@ int RunExternalFiles(char *rootPath)
     char spname[2048];
     char outName[260] ,*p;
     int rv;
+    char temp[260];
     strcpy(root, rootPath);
     p = strrchr(root, '\\');
     if (!p)
@@ -182,7 +183,15 @@ int RunExternalFiles(char *rootPath)
     else
         p++;
     *p = 0;
+    temp[0] = 0;
     strcpy(outName, outputFileName);
+    if (objlist && outName[0] && outName[strlen(outName)-1] == '\\')
+    {
+        strcat(outName, objlist->data);
+        StripExt(outName);
+        strcat(outName, ".exe");
+        strcpy(temp, outputFileName);
+    }
 //    p = strrchr(outName, '.');
 //    if (p && p[1] != '\\')
 //        *p = 0;
@@ -211,6 +220,7 @@ int RunExternalFiles(char *rootPath)
         FILE *fil = fopen(TEMPFILE, "w");
         if (!fil)
             return 1;
+        
         strcpy(args, winflags[prm_targettype]);
             
         c0 = winc0[prm_targettype + prm_lscrtdll * 8];
@@ -226,7 +236,7 @@ int RunExternalFiles(char *rootPath)
         fprintf(fil, "  %s", c0);
         while (objlist)
         {
-            fprintf(fil, " \"%s\"", objlist->data);
+            fprintf(fil, " \"%s%s\"", temp, objlist->data);
             objlist = objlist->next;
         }
         fprintf(fil, "  \"/o%s\" ", outName);

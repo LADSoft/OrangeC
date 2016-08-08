@@ -547,6 +547,7 @@ int main(int argc, char *argv[])
     char *p;
     BOOLEAN multipleFiles = FALSE;
     int rv;
+    char temp[260];
     srand(time(0));
 
         /*   signal(SIGSEGV,internalError) ;*/
@@ -575,9 +576,10 @@ int main(int argc, char *argv[])
         multipleFiles = TRUE;
 #ifdef PARSER_ONLY
     strcpy(buffer, clist->data);
-    outputfile(outfile, buffer, ".ods");
-    if (!ccDBOpen(outfile))
-        fatal("Cannot open database file %s", outfile);
+    strcpy(temp, outfile);
+    outputfile(temp, buffer, ".ods");
+    if (!ccDBOpen(temp))
+        fatal("Cannot open database file %s", temp);
 #else
     BitInit();
     regInit();
@@ -587,10 +589,11 @@ int main(int argc, char *argv[])
         cparams.prm_cplusplus = FALSE;
         strcpy(buffer, clist->data);
 #ifndef PARSER_ONLY
+        strcpy(temp, outfile);
         if (cparams.prm_asmfile)
-            outputfile(outfile, buffer, chosenAssembler->asmext);
+            outputfile(temp, buffer, chosenAssembler->asmext);
         else
-            outputfile(outfile, buffer, chosenAssembler->objext);
+            outputfile(temp, buffer, chosenAssembler->objext);
 #else
         ccNewFile(buffer, TRUE);
 #endif
@@ -638,11 +641,11 @@ int main(int argc, char *argv[])
         else
         {
 #ifndef PARSER_ONLY
-            outputFile = fopen(outfile, cparams.prm_asmfile ? "w" : "wb");
+            outputFile = fopen(temp, cparams.prm_asmfile ? "w" : "wb");
             if (!outputFile)
             {
                 fclose(inputFile);
-                fatal("Cannot open output file %s", outfile);
+                fatal("Cannot open output file %s", temp);
             }
             setvbuf(outputFile,0,_IOFBF,32768);
 #endif

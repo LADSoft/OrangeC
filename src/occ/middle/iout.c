@@ -2262,6 +2262,7 @@ EXPRESSION *stringlit(STRING *s)
                 {
                     rv = intNode(en_labcon, lp->label);
                     rv->size = s->size;
+                    rv->altdata = s->strtype;
                     return rv;
                 }
             }

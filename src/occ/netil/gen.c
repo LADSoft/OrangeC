@@ -44,6 +44,7 @@
 extern int startlab, retlab;
 extern OCODE *peep_head, *peep_tail;
 extern BOOLEAN inASMdata;
+extern LIST *typeList;
 
 #define MAX_ALIGNS 50
 
@@ -113,12 +114,13 @@ AMODE *make_constant(int sz, EXPRESSION *exp)
     ap->length = sz;
     return ap;
 } 
-AMODE *make_index(enum e_am am, int index)
+AMODE *make_index(enum e_am am, int index, SYMBOL *sym)
 {
     AMODE *ap;
     ap = beLocalAlloc(sizeof(AMODE));
     ap->mode = am;
     ap->index = index;
+    ap->altdata = sym;
     ap->length = -ISZ_UINT;
     return ap;
 }
@@ -136,6 +138,7 @@ BOOLEAN isauto(EXPRESSION *ep)
 void compile_start(char *name)
 {
     inASMdata = FALSE;
+    typeList = NULL;
 }
 void include_start(char *name, int num)
 {
@@ -157,12 +160,12 @@ AMODE *getAmode(IMODE *oper)
     AMODE *rv = NULL;
     switch(oper->mode)
     {
-        case i_immed:
-            rv = make_constant(oper->size, oper->offset);
-            break;
         case i_ind:
             rv = beLocalAlloc(sizeof(AMODE));
             rv->mode = am_ind;
+            break;
+        case i_immed:
+            rv = make_constant(oper->size, oper->offset);
             break;
         case i_direct:
         {
@@ -179,9 +182,9 @@ AMODE *getAmode(IMODE *oper)
             if (sp)
             {
                 if (sp->storage_class == sc_auto)
-                    rv = make_index(am_local, sp->offset);
+                    rv = make_index(am_local, sp->offset, sp);
                 else if (sp->storage_class == sc_parameter)
-                    rv = make_index(am_param, sp->offset);
+                    rv = make_index(am_param, sp->offset, sp);
                 else
                 {
                     rv = beLocalAlloc(sizeof(AMODE));
@@ -320,11 +323,35 @@ void store_ind(int sz)
 }
 void load_constant(int sz, EXPRESSION *exp)
 {
+    int sz1;
     enum e_op op;
-    AMODE *ap = make_constant(sz, exp);
+    AMODE *ap = NULL;
+    EXPRESSION *en = GetSymRef(exp);
+    sz1 = sz;
     if (sz < 0)
-        sz = - sz;
-    switch(sz)
+        sz1 = - sz;
+    if (en)
+    {
+        if (en->type == en_labcon)
+        {
+            op = op_ldsflda;
+        }
+        else if (en->v.sp->storage_class == sc_auto)
+        {
+            op = op_ldloca;
+            ap = make_index(am_local, en->v.sp->offset, en->v.sp);
+        }
+        else if (en->v.sp->storage_class == sc_parameter)
+        {
+            op = op_ldarga;
+            ap = make_index(am_param, en->v.sp->offset, en->v.sp);
+        }
+        else
+        {
+            op = op_ldsflda;
+        }
+    }
+    else switch(sz1)
     {
         case ISZ_BOOLEAN:
         case ISZ_UCHAR:
@@ -340,23 +367,8 @@ void load_constant(int sz, EXPRESSION *exp)
             op = op_ldc_i8;
             break;
         case ISZ_ADDR:
-        {
-            EXPRESSION *en = GetSymRef(exp);
-            if (en)
-            {
-                if (en->type == en_labcon)
-                    op = op_ldsflda;
-                else if (en->v.sp->storage_class == sc_auto)
-                    op = op_ldloca;
-                else if (en->v.sp->storage_class == sc_parameter)
-                    op = op_ldarga;
-                else
-                    op = op_ldsflda;
-            }
-            else
-                op = op_ldc_i4;
+            op = op_ldc_i4;
             break;
-        }
         /* */
         case ISZ_FLOAT:
             op = op_ldc_r4;
@@ -379,6 +391,8 @@ void load_constant(int sz, EXPRESSION *exp)
         case ISZ_CLDOUBLE:
             break;
     }
+    if (!ap)
+        ap = make_constant(sz, exp);
     gen_code(op, ap);
     increment_stack();
 }
@@ -649,42 +663,54 @@ void asm_rett(QUAD *q)               /* return from trap or int */
 }
 void asm_add(QUAD *q)                /* evaluate an addition */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_add, NULL);
 }
 void asm_sub(QUAD *q)                /* evaluate a subtraction */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_sub, NULL);
 }
 void asm_udiv(QUAD *q)               /* unsigned division */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_div_un, NULL);
 }
 void asm_umod(QUAD *q)               /* unsigned modulous */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_rem_un, NULL);
 }
 void asm_sdiv(QUAD *q)               /* signed division */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_div, NULL);
 }
 void asm_smod(QUAD *q)               /* signed modulous */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_rem, NULL);
@@ -699,28 +725,36 @@ void asm_mulsh(QUAD *q)
 }
 void asm_mul(QUAD *q)               /* signed multiply */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_mul, NULL);
 }
 void asm_lsr(QUAD *q)                /* unsigned shift right */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_shr_un, NULL);
 }
 void asm_lsl(QUAD *q)                /* signed shift left */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_shl, NULL);
 }
 void asm_asr(QUAD *q)                /* signed shift right */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_shr, NULL);
@@ -735,28 +769,36 @@ void asm_not(QUAD *q)                /* complement */
 }
 void asm_and(QUAD *q)                /* binary and */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_and, NULL);
 }
 void asm_or(QUAD *q)                 /* binary or */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_or, NULL);
 }
 void asm_eor(QUAD *q)                /* binary exclusive or */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     decrement_stack();
     gen_code(op_xor, NULL);
 }
 void asm_setne(QUAD *q)              /* evaluate a = b != c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_ceq, NULL);
     gen_code(op_not, NULL);
@@ -765,7 +807,9 @@ void asm_setne(QUAD *q)              /* evaluate a = b != c */
 }
 void asm_sete(QUAD *q)               /* evaluate a = b == c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_ceq, NULL);
     decrement_stack();
@@ -773,7 +817,9 @@ void asm_sete(QUAD *q)               /* evaluate a = b == c */
 }
 void asm_setc(QUAD *q)               /* evaluate a = b U< c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_clt_un, NULL);
     decrement_stack();
@@ -781,7 +827,9 @@ void asm_setc(QUAD *q)               /* evaluate a = b U< c */
 }
 void asm_seta(QUAD *q)               /* evaluate a = b U> c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_cgt_un, NULL);
     decrement_stack();
@@ -789,7 +837,9 @@ void asm_seta(QUAD *q)               /* evaluate a = b U> c */
 }
 void asm_setnc(QUAD *q)              /* evaluate a = b U>= c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_clt_un, NULL);
     gen_code(op_not, NULL);
@@ -797,7 +847,9 @@ void asm_setnc(QUAD *q)              /* evaluate a = b U>= c */
 }
 void asm_setbe(QUAD *q)              /* evaluate a = b U<= c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_cgt_un, NULL);
     gen_code(op_not, NULL);
@@ -806,7 +858,9 @@ void asm_setbe(QUAD *q)              /* evaluate a = b U<= c */
 }
 void asm_setl(QUAD *q)               /* evaluate a = b S< c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_clt, NULL);
     decrement_stack();
@@ -814,7 +868,9 @@ void asm_setl(QUAD *q)               /* evaluate a = b S< c */
 }
 void asm_setg(QUAD *q)               /* evaluate a = b s> c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_cgt, NULL);
     decrement_stack();
@@ -822,7 +878,9 @@ void asm_setg(QUAD *q)               /* evaluate a = b s> c */
 }
 void asm_setle(QUAD *q)              /* evaluate a = b S<= c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_cgt, NULL);
     gen_code(op_not, NULL);
@@ -831,7 +889,9 @@ void asm_setle(QUAD *q)              /* evaluate a = b S<= c */
 }
 void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_code(op_clt, NULL);
     gen_code(op_not, NULL);
@@ -1017,69 +1077,89 @@ void asm_clrblock(QUAD *q)           /* clear block of memory */
 }
 void asm_jc(QUAD *q)                 /* branch if a U< b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_blt_un, q->dc.v.label, TRUE);
 }
 void asm_ja(QUAD *q)                 /* branch if a U> b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_bgt_un, q->dc.v.label, TRUE);
     
 }
 void asm_je(QUAD *q)                 /* branch if a == b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_beq, q->dc.v.label, TRUE);
     
 }
 void asm_jnc(QUAD *q)                /* branch if a U>= b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_bge_un, q->dc.v.label, TRUE);
     
 }
 void asm_jbe(QUAD *q)                /* branch if a U<= b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_ble_un, q->dc.v.label, TRUE);
     
 }
 void asm_jne(QUAD *q)                /* branch if a != b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_bne_un, q->dc.v.label, TRUE);
     
 }
 void asm_jl(QUAD *q)                 /* branch if a S< b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_blt, q->dc.v.label, TRUE);
 
 }
 void asm_jg(QUAD *q)                 /* branch if a S> b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_bgt, q->dc.v.label, TRUE);
 
 }
 void asm_jle(QUAD *q)                /* branch if a S<= b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_ble, q->dc.v.label, TRUE);
     
 }
 void asm_jge(QUAD *q)                /* branch if a S>= b */
 {
-    AMODE *ap = getAmode(q->dc.right);
+    AMODE *ap = getAmode(q->dc.left);
+    gen_load(ap);
+    ap = getAmode(q->dc.right);
     gen_load(ap);
     gen_branch(op_bge, q->dc.v.label, TRUE);
     

@@ -52,6 +52,7 @@ extern LIST *externals;
 OCODE *peep_head, *peep_tail;
 static int uses_float;
 
+LIST *typeList;
 static enum e_gt oa_gentype = nogen; /* Current DC type */
 enum e_sg oa_currentSeg = noseg; /* Current seg */
 static int oa_outcol = 0; /* Curront col (roughly) */
@@ -59,7 +60,6 @@ int newlabel;
 static int virtual_mode;
 
 BOOLEAN inASMdata = FALSE;
-static BOOLEAN inASMFirst = FALSE;
 static BOOLEAN int8_used, int16_used, int32_used;
 static struct asm_details instructions[] = {
     {
@@ -553,6 +553,13 @@ int islabeled(EXPRESSION *n)
     }
     return rv;
 }
+void cacheType(TYPE *tp)
+{
+    LIST *p = beLocalAlloc(sizeof(LIST));
+    p->data = tp;
+    p->next = typeList;
+    typeList = p;
+}
 void puttype(TYPE *tp)
 {
     tp = basetype(tp);
@@ -560,11 +567,24 @@ void puttype(TYPE *tp)
     {
         if (tp->array)
         {
-            puttype(tp->btp);
-            bePrintf("[]");
+            char buf[1024];
+            cacheType(tp);
+            buf[0] = 0;
+            while (tp->array)
+            {
+                sprintf(buf + strlen(buf), "[%d]", tp->size/tp->btp->size);
+                tp = tp->btp;
+            }
+            puttype(tp);
+            bePrintf("%s", buf);
         }
         else
             bePrintf("void*");
+    }
+    else if (isstructured(tp))
+    {
+        cacheType(tp);
+        bePrintf("%s", basetype(tp)->sp->name);
     }
     else if (tp->type == bt_void)
         bePrintf("void");
@@ -579,7 +599,14 @@ void puttype(TYPE *tp)
         bePrintf(names[tp->type]);
     }
 }
-
+void puttypewrapped(TYPE *tp)
+{
+    if (isstructured(tp) || isarray(tp))
+        bePrintf("valuetype '");
+    puttype(tp);
+    if (isstructured(tp) || isarray(tp))
+        bePrintf("'");
+}
 /*-------------------------------------------------------------------------*/
 void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
 {
@@ -598,8 +625,8 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     }
     if (vararg)
         bePrintf("vararg ");
-    puttype(basetype(sp->tp)->btp);
-    bePrintf(" %s", sp->name);
+    puttypewrapped(basetype(sp->tp)->btp);
+    bePrintf(" '%s'", sp->name);
     if (!strcmp(sp->decoratedName, "_main"))
     {
         bePrintf("()");
@@ -611,7 +638,7 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            puttype(sp->tp);
+            puttypewrapped(sp->tp);
             if (!vararg && hr->next || vararg && hr->next && hr->next->next)
                 bePrintf(", ");
             hr = hr->next;
@@ -636,20 +663,12 @@ void oa_gen_strlab(SYMBOL *sp)
     else
     {
         oa_enterseg(oa_currentSeg);
-//        inASMdata = TRUE;
-        inASMFirst = TRUE;
-        if (isarray(sp->tp))
-        {
-            bePrintf(".field public static valuetype '");
-            puttype(sp->tp);
-            bePrintf("' '%s' = ", sp->name, sp->name);
-        }
-        else
-        {
-            bePrintf(".field public static ");
-            puttype(sp->tp);
-            bePrintf(" '%s' = ", sp->name, sp->name);
-        }
+        inASMdata = TRUE;
+        bePrintf(".field public static ");
+        puttypewrapped(sp->tp);
+        bePrintf(" '%s' at $%s\n", sp->name, sp->name);
+        bePrintf(".data $%s = bytearray (", sp->name);
+        oa_outcol = 0;
     }
 }
 /*-------------------------------------------------------------------------*/
@@ -675,7 +694,6 @@ void oa_put_string_label(int lab, int type)
 {
     oa_enterseg(oa_currentSeg);
     inASMdata = TRUE;
-    inASMFirst = TRUE;
     bePrintf(".field public static valuetype '");
     switch (type)
     {
@@ -694,11 +712,21 @@ void oa_put_string_label(int lab, int type)
             break;
     }
     bePrintf("' 'L_%d' at $L_%d\n", lab, lab);
-    bePrintf(".data $L_%d = { \n", lab);
+    bePrintf(".data $L_%d = bytearray (", lab);
+    oa_outcol = 0;
 }
 
 
 /*-------------------------------------------------------------------------*/
+void oa_genbyte(int bt)
+{
+    bePrintf("%x ", (unsigned char)bt);
+    if (++oa_outcol >= 8)
+    {
+        oa_outcol = 0;
+        bePrintf("\n\t");
+    }
+}
 
 void oa_genfloat(enum e_gt type, FPF *val)
 /*
@@ -708,48 +736,32 @@ void oa_genfloat(enum e_gt type, FPF *val)
     if (cparams.prm_asmfile)
     {
         char buf[256];
-        if (!inASMFirst)
-            bePrintf(",\n");
-        inASMFirst = FALSE;
         FPFToString(buf,val);
         switch(type) {
             case floatgen:
-                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
-                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+            {
+                UBYTE dta[4];
+                int i;
+                FPFToFloat(dta, val);
+                for (i=0; i < 4; i++)
                 {
-                    UBYTE dta[4];
-                    int i;
-                    FPFToFloat(dta, val);
-                    bePrintf("\tdb\t");
-                    for (i=0; i < 4; i++)
-                    {
-                        bePrintf( "int8(%d)", dta[i]);
-                        if (i != 3)
-                            bePrintf(", ");
-                    }
+                    oa_genbyte(dta[i]);
                 }
-                else
-                    bePrintf( "\treal32(%s)", buf);
                 break;
+            }
             case doublegen:
             case longdoublegen:
-                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
-                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+            {
+                UBYTE dta[8];
+                int i;
+                FPFToDouble(dta, val);
+                bePrintf("\tdb\t");
+                for (i=0; i < 8; i++)
                 {
-                    UBYTE dta[8];
-                    int i;
-                    FPFToDouble(dta, val);
-                    bePrintf("\tdb\t");
-                    for (i=0; i < 8; i++)
-                    {
-                        bePrintf( "int8(%d),", dta[i]);
-                        if (i != 7)
-                            bePrintf(", ");
-                    }
+                    oa_genbyte(dta[i]);
                 }
-                else
-                    bePrintf( "\treal64(%s)", buf);
                 break;
+            }
             default:
                 diag("floatgen - invalid type");
                 break ;
@@ -768,7 +780,7 @@ void oa_genstring(LCHAR *str, int len)
         int nlen = len;
         while (nlen--)
         {
-            oa_genint(chargen, *str++);
+            oa_genbyte(*str++);
         }
     }
 }
@@ -778,28 +790,37 @@ void oa_genstring(LCHAR *str, int len)
 void oa_genint(enum e_gt type, LLONG_TYPE val)
 {
     if (cparams.prm_asmfile) {
-        if (!inASMFirst)
-            bePrintf(",\n");
-        inASMFirst = FALSE;
         switch (type) {
             case chargen:
-                bePrintf( "\tint8(%d)", val &0x00ff);
+                oa_genbyte(val);
                 break ;
             case shortgen:
             case u16gen:
-                bePrintf( "\tint16(%d)", val &0x0ffff);
+                oa_genbyte(val & 0xff);
+                oa_genbyte((val >> 8) & 0xff);
                 break ;
             case longgen:
             case enumgen:
             case intgen:
             case u32gen:
-                bePrintf( "\tint32(%d)", val);
+                oa_genbyte(val & 0xff);
+                oa_genbyte((val >> 8) & 0xff);
+                oa_genbyte((val >> 16) & 0xff);
+                oa_genbyte((val >> 24) & 0xff);
                 break ;
             case longlonggen:
-                bePrintf( "\tint64(%Ld)", val, val < 0 ?  - 1: 0);
+                oa_genbyte(val & 0xff);
+                oa_genbyte((val >> 8) & 0xff);
+                oa_genbyte((val >> 16) & 0xff);
+                oa_genbyte((val >> 24) & 0xff);
+                oa_genbyte((val >> 32) & 0xff);
+                oa_genbyte((val >> 40) & 0xff);
+                oa_genbyte((val >> 48) & 0xff);
+                oa_genbyte((val >> 56) & 0xff);
                 break ;
             case wchar_tgen:
-                   bePrintf( "\tint16(%d)", val);
+                oa_genbyte(val & 0xff);
+                oa_genbyte((val >> 8) & 0xff);
                 break ;
             default:
                 diag("genint - unknown type");
@@ -810,10 +831,7 @@ void oa_genint(enum e_gt type, LLONG_TYPE val)
 void oa_genaddress(ULLONG_TYPE val)
 {
     if (cparams.prm_asmfile) {
-        if (!inASMFirst)
-            bePrintf(",\n");
-        inASMFirst = FALSE;
-        bePrintf( "\tint32(%d)", val);
+        oa_genint(intgen, val);
     }
 }
 /*-------------------------------------------------------------------------*/
@@ -857,30 +875,8 @@ void oa_genstorage(int nbytes)
             oa_nl();
         else
             newlabel = FALSE;
-        switch(nbytes)
-        {
-            case 1:
-                bePrintf("\tint8(0)");
-                break;
-            case 2:
-                bePrintf("\tint16(0)");
-                break;
-            case 4:
-                bePrintf("\tint32(0)");
-                break;
-            case 8:
-                bePrintf("\tint64(0)");
-                break;
-            default:
-                for (i=0; i < nbytes; i++)
-                {
-                    if (!inASMFirst)
-                        bePrintf(",\n");
-                    inASMFirst = FALSE;
-                    bePrintf( "\tint8(%d)", 0);
-                }
-                break;
-        }
+        for (i=0; i < nbytes; i++)
+            oa_genbyte(0);
         oa_gentype = nogen;
     }
 }
@@ -917,8 +913,8 @@ void oa_enterseg(enum e_sg seg)
     oa_currentSeg = seg ;
     if (inASMdata)
     {
-        bePrintf("\n}\n");
-        inASMdata = inASMFirst = FALSE;
+        bePrintf("\n)\n");
+        inASMdata = FALSE;
     }
 }
 
@@ -1011,6 +1007,7 @@ void oa_header(char *filename, char *compiler_version)
     oa_nl();
     bePrintf("//File %s\n",filename);
     bePrintf("//Compiler version %s\n",compiler_version);
+    bePrintf("\n.corflags 2 // 32-bit");
     bePrintf("\n.assembly test { }\n");
     bePrintf("\n.assembly extern mscorlib { }\n\n\n");
 }
@@ -1111,13 +1108,8 @@ void oa_output_includelib(char *name)
 void putfieldname(AMODE *arg)
 {
     EXPRESSION *en = GetSymRef(arg->offset);
-    if (isarray(en->v.sp->tp))
-        bePrintf("\tvaluetype '");
-    else
-        bePrintf("\t");
-    puttype(en->v.sp->tp);
-    if (isarray(en->v.sp->tp))
-       bePrintf("'");
+    bePrintf("\t");
+    puttypewrapped(en->v.sp->tp);
     bePrintf(" '%s'\n", en->v.sp->name);
 }
 void putfunccall(AMODE *arg)
@@ -1137,14 +1129,14 @@ void putfunccall(AMODE *arg)
     bePrintf("\t");
     if (vararg)
         bePrintf("vararg ");
-    puttype(basetype(sp->tp)->btp);
-    bePrintf(" %s", sp->name);
+    puttypewrapped(basetype(sp->tp)->btp);
+    bePrintf(" '%s'", sp->name);
     bePrintf("(");
     hr = basetype(sp->tp)->syms->table[0];
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        puttype(sp->tp);
+        puttypewrapped(sp->tp);
         if (sp->tp->type != bt_ellipse)
             il = il->next;
         if (!vararg && hr->next || vararg && hr->next && hr->next->next)
@@ -1157,7 +1149,7 @@ void putfunccall(AMODE *arg)
         while (il)
         {
             bePrintf(", ");
-            puttype(il->tp);
+            puttypewrapped(il->tp);
             il = il->next;
         }
     }
@@ -1196,6 +1188,7 @@ void putlocals(void)
     }
     if (lst || temp)
     {
+        BOOLEAN first = TRUE;
         while (temp)
         {
             HASHREC *hr = temp->table[0];
@@ -1225,9 +1218,12 @@ void putlocals(void)
                 if (sym->storage_class != sc_parameter && !sym->temp)
                 {
                     sym->temp = TRUE;
+                    if (!first)
+                        bePrintf(",\n");
+                    first = FALSE;
                     bePrintf("\t\t[%d] ",sym->offset);
-                    puttype(sym->tp);
-                    bePrintf(" '%s'", sym->name);
+                    puttypewrapped(sym->tp);
+                    bePrintf(" '%s/%d'", sym->name, sym->offset);
                 }
                 hr = hr->next;
             }
@@ -1240,9 +1236,12 @@ void putlocals(void)
             if (!sym->anonymous && !sym->temp)
             {
                 sym->temp= TRUE;
+                if (!first)
+                    bePrintf(",\n");
+                first = FALSE;
                 bePrintf("\t\t[%d] ",sym->offset);
-               puttype(sym->tp);
-                bePrintf(" '%s'", sym->name);
+               puttypewrapped(sym->tp);
+                    bePrintf(" '%s/%d'", sym->name, sym->offset);
             }
             lst = lst->next;
         }
@@ -1278,7 +1277,7 @@ void putarg(AMODE *arg)
                 }
                 else
                 {
-                    bePrintf("\tL_%Ld", arg->offset->v.i);
+                    bePrintf("\t'L_%Ld'", arg->offset->v.i);
                 }
             }
             else if (arg->offset->type == en_pc || arg->offset->type == en_global)
@@ -1289,11 +1288,7 @@ void putarg(AMODE *arg)
                 else
                 {
                     bePrintf("\t");
-                    if (isarray(arg->offset->v.sp->tp))
-                        bePrintf("valuetype '");
-                    puttype(arg->offset->v.sp->tp);
-                    if (isarray(arg->offset->v.sp->tp))
-                        bePrintf("'");
+                    puttypewrapped(arg->offset->v.sp->tp);
                     bePrintf(" '%s'\n", arg->offset->v.sp->name);
                 }
 
@@ -1301,6 +1296,8 @@ void putarg(AMODE *arg)
                 bePrintf("\t%d", arg->offset->v.i);
             break; 
         case am_local:
+            bePrintf("\t'%s/%d'", ((SYMBOL *)arg->altdata)->name, arg->index);
+            break;
         case am_param:
             bePrintf("\t%d", arg->index);
             break;
@@ -1360,6 +1357,44 @@ void oa_put_code(OCODE *ocode)
         putarg(ocode->oper1);
     bePrintf("\n");
 }
+void dumpTypes()
+{
+    LIST *lst = typeList;
+    LIST **pList = &lst;
+    typeList = NULL;
+
+    if (int8_used)
+    {
+        bePrintf(".class private value explicit ansi sealed 'int8[]' {.pack 1 .size 1}\n");
+    }
+    if (int16_used)
+    {
+        bePrintf(".class private value explicit ansi sealed 'int16[]' {.pack 2 .size 1}\n");
+    }
+    if (int32_used)
+    {
+        bePrintf(".class private value explicit ansi sealed 'int32[]' {.pack 4 .size 1}\n");
+    }
+    while (*pList)
+    {
+        // weed
+        LIST **qList = &(*pList)->next;
+        TYPE *tp = ((TYPE *)(*pList)->data);
+        while (*qList)
+        {
+            if (comparetypes((*qList)->data, (*pList)->data, TRUE))
+                *qList = (*qList)->next;
+            else
+                qList = &(*qList)->next;
+        }
+        bePrintf(".class private value explicit ansi sealed '");
+        puttype(tp);
+        bePrintf("' {.pack 1 .size %d}\n", tp->size ? tp->size : 1);
+        pList = &(*pList)->next;
+    }
+
+    typeList = NULL;
+}
 void oa_end_generation(void)
 {
     SYMBOL *start = NULL, *end = NULL;
@@ -1390,19 +1425,7 @@ void oa_end_generation(void)
     bePrintf("}\n");
     bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void exit(int32) preservesig {}\n");
 
-    if (int8_used)
-    {
-        bePrintf(".class private value explicit ansi sealed 'int8[]' {.pack 1 .size 1}\n");
-    }
-    if (int16_used)
-    {
-        bePrintf(".class private value explicit ansi sealed 'int16[]' {.pack 2 .size 1}\n");
-    }
-    if (int32_used)
-    {
-        bePrintf(".class private value explicit ansi sealed 'int32[]' {.pack 4 .size 1}\n");
-    }
-    
+    dumpTypes();    
 }
 void flush_peep(SYMBOL *funcsp, QUAD *list)
 {

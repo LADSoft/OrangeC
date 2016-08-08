@@ -63,7 +63,7 @@ int tempSize;
 BRIGGS_SET *killed;
 int tempBottom, nextTemp;
 
-static int renameOneSym(SYMBOL *sp, int index)
+static void renameOneSym(SYMBOL *sp)
 {
     TYPE *tp;
     /* needed for pointer aliasing */
@@ -127,11 +127,6 @@ static int renameOneSym(SYMBOL *sp, int index)
             parmName = (IMODE *)Alloc(sizeof(IMODE));
             *parmName = *sp->imvalue;
         }
-        else if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
-        {
-            // set up index for CIL
-            sp->offset = index++;
-        }
         if (sp->imvalue)
         {
             ep->isvolatile = sp->imvalue->offset->isvolatile;
@@ -167,25 +162,23 @@ static int renameOneSym(SYMBOL *sp, int index)
             q->back->fwd = q;
         }
     }
-    return index;
 }
 static void renameToTemps(SYMBOL *funcsp)
 {
     LIST *lst;
     int i = 0;
+    BOOLEAN doRename = TRUE;
     HASHTABLE *temp = funcsp->inlineFunc.syms;
-    if ((!cparams.prm_optimize_for_speed && !cparams.prm_optimize_for_size) || functionHasAssembly)
-        return;
+    doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
-    if (setjmp_used)
-        return;
+    doRename &= ! (setjmp_used);
     while (temp)
     {
         HASHREC *hr = temp->table[0];
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            i = renameOneSym(sym, i);
+            sym->temp = FALSE;
             hr = hr->next;
         }
         temp = temp->next;
@@ -194,9 +187,41 @@ static void renameToTemps(SYMBOL *funcsp)
     while (lst)
     {
         SYMBOL *sym = (SYMBOL *)lst->data;
-        if (!sym->anonymous)
+        sym->temp = FALSE;
+        lst = lst->next;
+    }
+    temp = funcsp->inlineFunc.syms;
+    while (temp)
+    {
+        HASHREC *hr = temp->table[0];
+        while (hr)
         {
-            i = renameOneSym(sym, i);
+            SYMBOL *sym = (SYMBOL *)hr->p;
+            if (doRename)
+                renameOneSym(sym);
+            if (sym->storage_class != sc_parameter && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
+            {
+                // set up index for CIL
+                sym->temp = TRUE;
+                sym->offset = i++;
+            }
+            hr = hr->next;
+        }
+        temp = temp->next;
+    }
+    lst = temporarySymbols;
+    while (lst)
+    {
+        SYMBOL *sym = (SYMBOL *)lst->data;
+        if (!sym->anonymous && doRename)
+        {
+            renameOneSym(sym);
+        }
+        if (sym->storage_class != sc_parameter && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
+        {
+            sym->temp = TRUE;
+            // set up index for CIL
+            sym->offset = i++;
         }
         lst = lst->next;
     }

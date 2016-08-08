@@ -785,6 +785,7 @@ void optimize(SYMBOL *funcsp)
         }
     //printf("ssa out\n");
         TranslateFromSSA(FALSE);
+     return;
         removeDead(blockArray[0]);
 //		RemoveCriticalThunks();
         if ((optflags & OPT_GLOBAL) && ! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))

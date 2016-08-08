@@ -1434,6 +1434,18 @@ static void pushBlock(BLOCK *block, BLOCK *source)
             blockWorkHead = blockWorkTail = l1;
     }
 }
+static void RemoveRef(IMODE *ref)
+{
+    QUAD *defines = tempInfo[ref->offset->v.sp->value.i]->instructionDefines;
+    if (defines)
+    {
+        if ((defines->temps & TEMP_LEFT) && !defines->dc.left->offset->v.sp->pushedtotemp )
+            RemoveRef(defines->dc.left);
+        if ((defines->temps & TEMP_RIGHT) && !defines->dc.right->offset->v.sp->pushedtotemp)
+            RemoveRef(defines->dc.right);
+        RemoveInstruction(defines);
+    }
+}
 static BOOLEAN evalBranch(QUAD *I, BLOCK *b)
 {
     BOOLEAN found = FALSE;
@@ -1462,6 +1474,7 @@ static BOOLEAN evalBranch(QUAD *I, BLOCK *b)
                     int t = qn.dc.left->offset->v.sp->value.i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
+                        RemoveRef(qn.dc.left);
                         qn.dc.left = tempInfo[t]->value.imode;
                         qn.temps &= ~TEMP_LEFT;
                     }
@@ -1475,6 +1488,7 @@ static BOOLEAN evalBranch(QUAD *I, BLOCK *b)
                     int t = qn.dc.right->offset->v.sp->value.i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
+                        RemoveRef(qn.dc.right);
                         qn.dc.right = tempInfo[t]->value.imode;
                         qn.temps &= ~TEMP_RIGHT;
                     }
@@ -1663,6 +1677,7 @@ static void iterateConstants(void)
                     int t = uses->ins->dc.left->offset->v.sp->value.i;
                     if (t == i)
                     {
+                        RemoveRef(uses->ins->dc.left);
                         uses->ins->dc.left =tempInfo[i]->value.imode;
                         uses->ins->temps &= ~TEMP_LEFT;
                         iterateMark(t);
@@ -1675,6 +1690,7 @@ static void iterateConstants(void)
                     int t = uses->ins->dc.right->offset->v.sp->value.i;
                     if (t == i)
                     {
+                        RemoveRef(uses->ins->dc.right);
                         uses->ins->dc.right =tempInfo[i]->value.imode;
                         uses->ins->temps &= ~TEMP_RIGHT;
                         iterateMark(t);
@@ -1741,6 +1757,7 @@ static void removeForward(BLOCK *start)
                     int t = tail->dc.left->offset->v.sp->value.i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
+                        RemoveRef(tail->dc.left);
                         tail->dc.left = tempInfo[t]->value.imode;
                         tail->temps &= ~TEMP_LEFT;
                     }
@@ -1750,17 +1767,15 @@ static void removeForward(BLOCK *start)
                     int t = tail->dc.right->offset->v.sp->value.i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
+                        RemoveRef(tail->dc.right);
                         tail->dc.right = tempInfo[t]->value.imode;
                         tail->temps &= ~TEMP_RIGHT;
                     }
                 }
-                if (!(chosenAssembler->arch->denyopts & DO_NOCONSTBRANCH))
+                ConstantFold(tail, TRUE);
+                if (tail->dc.opcode == i_nop)
                 {
-                    ConstantFold(tail, TRUE);
-                    if (tail->dc.opcode == i_nop)
-                    {
-                        RemoveInstruction(tail);
-                    }
+                    RemoveInstruction(tail);
                 }
                 break;
             case i_goto:

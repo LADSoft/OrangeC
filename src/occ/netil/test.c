@@ -1,6 +1,6 @@
 void printf(char *, ...);
 void exit(int);
-int p;
+int p=35;
 int *x=&p;
 int qq()
 {
@@ -15,6 +15,6 @@ int qq()
 main()
 {
     if (qq() > 10)
-        printf("\nhello world %x %x",qq(), 92);
+        printf("\nhello world %x %x",qq(), p);
     return 0;
 }

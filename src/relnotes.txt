@@ -1,5 +1,12 @@
 Release notes:
 
+Version 6.0.2:
+    occ:        if you specify an output file which is a directory (e.g. it has
+                a trailing backslash) then occ will put output files in that directory)
+
+Version 6.0.1:
+    ocide:      fix editor lockup
+
 Version 6.0.0:
     ocide:      Support C++ editing and debugging
     ocide:      rewrite of how docking windows work

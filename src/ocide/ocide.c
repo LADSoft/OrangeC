@@ -1864,7 +1864,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     InitProps();
     findInit();
     RestorePreferences();	
-    //CoInitialize(NULL);
+    CoInitialize(NULL);
     ccEx.dwSize = 0;
     ccEx.dwICC = ICC_BAR_CLASSES | ICC_LISTVIEW_CLASSES | ICC_PROGRESS_CLASS | 
                  ICC_TAB_CLASSES | ICC_TREEVIEW_CLASSES;
@@ -1941,7 +1941,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine,
     {
         ProcessMessage(&msg);
     }
-    //CoUninitialize();
+    CoUninitialize();
     EditorRundown();
     StopInstanceComms();
     FreeLibrary(editLib);

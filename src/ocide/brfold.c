@@ -46,6 +46,7 @@ int ExtendedMessageBox(char *title, int flag, char *fmt, ...);
 extern char szInstallPath[1024];
 
 static char selPath[MAX_PATH];
+static char tempPath[MAX_PATH];
 // Macros for interface casts
 #ifdef __cplusplus
 #define IID_PPV_ARG(IType, ppType) IID_##IType, reinterpret_cast<void **>(ppType)
@@ -190,10 +191,10 @@ DWORD BrowseForFile(HWND hwnd, LPSTR pszDisplayName, LPSTR pszPath, UINT cchPath
 
     bi.hwndOwner = hwnd;
     bi.pidlRoot = NULL;
-    bi.pszDisplayName = pszDisplayName;
-    bi.lpszTitle = "Choose a folder";
+    bi.pszDisplayName = tempPath;
+    bi.lpszTitle = pszDisplayName;
     bi.ulFlags = BIF_USENEWUI;
-    bi.lpfn = selPath[0] ? selectionProc : NULL;
+    bi.lpfn =  selPath[0] ? selectionProc : NULL;
     bi.lParam = 0;
 
     pidlSelected = SHBrowseForFolder(&bi);

@@ -479,10 +479,6 @@ static void markLiveInstruction(BRIGGS_SET *live, QUAD *ins)
                 ins->live = TRUE;
             else if ((ins->temps & TEMP_ANS) && briggsTest(live, ins->ans->offset->v.sp->value.i))
                 ins->live = TRUE;
-            else if (chosenAssembler->arch->denyopts & DO_NOKILLDUP)
-                if (ins->temps & TEMP_ANS)
-                    if (ins->ans->offset->v.sp->loadTemp)
-                        ins->live = TRUE;
 
             break;
     }

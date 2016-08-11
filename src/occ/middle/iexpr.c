@@ -244,7 +244,11 @@ IMODE *LookupStoreTemp(IMODE *dest, IMODE *src)
 IMODE *LookupLoadTemp(IMODE *dest, IMODE *source)
 {
     (void) dest;
-    
+
+    if (chosenAssembler->arch->denyopts & DO_UNIQUEIND)
+    {
+        return tempreg(source->size, 0);
+    }    
     if ((source->mode != i_immed)
         && (source->offset->type != en_tempref || source->mode == i_ind))
     {
@@ -541,6 +545,17 @@ IMODE *indnode(IMODE *ap1, int size)
         ap2->ptrsize = ap1->size;
         ap2->size = size;
         return ap2;
+    }
+    if (chosenAssembler->arch->denyopts & DO_UNIQUEIND)
+    {
+        IMODE *ap2 = tempreg(ap1->size, 0);
+        gen_icode(i_assn, ap2, ap1, NULL);
+        ap1 = Alloc(sizeof(IMODE));
+        *ap1 = *ap2;
+        ap1->mode = i_ind;
+        ap1->ptrsize = ap1->size;
+        ap1->size = size;
+        return ap1;
     }
     sp = varsp(ap1->offset);
     if (sp && ap1->mode == i_immed && sp->imvalue && sp->imvalue->size == size)

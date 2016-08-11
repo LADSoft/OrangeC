@@ -45,6 +45,7 @@
 #include "compiler.h"
 #include "assert.h"
 
+extern ARCH_ASM *chosenAssembler;
 extern TYPE stdpointer;
 extern IMODE *returnImode;
 extern int startlab;
@@ -309,6 +310,8 @@ IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags)
     EXPRESSION *oldthis = inlinesym_thisptr[inlinesym_count];
 
 //    return NULL;    
+    if (chosenAssembler->arch->denyopts & DO_NOINLINE)
+        return NULL;
     if (cparams.prm_debug)
     {
         f->sp->dumpInlineToFile = TRUE;

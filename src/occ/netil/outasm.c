@@ -639,6 +639,10 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
             puttypewrapped(sp->tp);
+            if (!pinvoke)
+            {
+                bePrintf(" '%s' ",sp->name);
+            }
             if (!vararg && hr->next || vararg && hr->next && hr->next->next)
                 bePrintf(", ");
             hr = hr->next;
@@ -1299,7 +1303,7 @@ void putarg(AMODE *arg)
             bePrintf("\t'%s/%d'", ((SYMBOL *)arg->altdata)->name, arg->index);
             break;
         case am_param:
-            bePrintf("\t%d", arg->index);
+            bePrintf("\t'%s'", ((SYMBOL *)arg->altdata)->name);
             break;
         case am_global:
             putfieldname(arg);

@@ -730,7 +730,8 @@ static IMODE *GetBucket(IMODE *mem)
 
 void optimize(SYMBOL *funcsp)
 {
-        //printf("optimization start\n");
+
+            //printf("optimization start\n");
     if (chosenAssembler->gen->pre_gcse)
         chosenAssembler->gen->pre_gcse(intermed_head);
     #ifdef DUMP_GCSE_INFO
@@ -773,11 +774,14 @@ void optimize(SYMBOL *funcsp)
 //		if (optflags & OPT_RESHAPE)
 //			Reshape();		/* loop expression reshaping */
     //printf("stren\n");
-        if ((cparams.prm_optimize_for_speed) && (optflags & OPT_LSTRENGTH))
-            ReduceLoopStrength(); /* loop index variable strength reduction */
-    //printf("invar\n");
-        if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
-            MoveLoopInvariants();	/* move loop invariants out of loops */
+        if (! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))
+        {
+            if ((cparams.prm_optimize_for_speed) && (optflags & OPT_LSTRENGTH))
+                ReduceLoopStrength(); /* loop index variable strength reduction */
+        //printf("invar\n");
+            if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
+                MoveLoopInvariants();	/* move loop invariants out of loops */
+        }
         if ((optflags & OPT_GLOBAL) && ! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))
         {
         //printf("alias\n");
@@ -785,7 +789,6 @@ void optimize(SYMBOL *funcsp)
         }
     //printf("ssa out\n");
         TranslateFromSSA(FALSE);
-     return;
         removeDead(blockArray[0]);
 //		RemoveCriticalThunks();
         if ((optflags & OPT_GLOBAL) && ! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))

@@ -264,8 +264,8 @@ static ARCH_CHARACTERISTICS architecture = {
     peeps,   /* defines peephole information */
     OPT_REVERSESTORE | OPT_REVERSEPARAM, /* preferred optimizations */
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
-        DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOKILLDUP | DO_NOENTRYIF |
-        DO_NOCONSTBRANCH | DO_NOOPTCONVERSION,
+        DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOENTRYIF |
+        DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND,
                  /* optimizations we don't want */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */
@@ -358,7 +358,7 @@ ARCH_GEN outputfunctions = {
     oa_trailer,            /* generate assembly language trailer */
     NULL,   /* adjust an assembly language statement for the relative code labels */
     NULL, 			         /* allow access to the quad list prior to GCSE */
-    NULL,                   /* allow access to the quad list after GCSE */
+    examine_icode,           /* allow access to the quad list after GCSE */
     flush_peep,             /* called after function body is generated */
     oa_end_generation,		/* end of code generation */
     NULL,   /* internal conflict */

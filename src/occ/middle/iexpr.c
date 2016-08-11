@@ -1439,6 +1439,10 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     else
         gen_icode(i_assn, ap1, ap4, NULL);
     */
+    if ((chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == i_ind)
+    {
+        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE), natural_size(node->left));
+    }
     ap1->vol = node->left->isvolatile;
     ap1->restricted = node->left->isrestrict;
     return ap1;
@@ -1458,14 +1462,28 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
     LIST *l;
     (void)size;
     siz1 = natural_size(node->left);
-    ap1 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-    ncnode = node->left;
-    while (castvalue(ncnode))
-        ncnode = ncnode->left;
-    ap6 = gen_expr( funcsp, ncnode, F_STORE, siz1);
-    ap5 = LookupLoadTemp(ap1, ap1);
-    if (ap5 != ap1)
-        gen_icode(i_assn, ap5, ap1, NULL);
+    if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
+    {
+        ncnode = node->left;
+        while (castvalue(ncnode))
+            ncnode = ncnode->left;
+        ap6 = gen_expr( funcsp, ncnode, F_STORE, siz1);
+        ap1 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
+        ap5 = LookupLoadTemp(ap1, ap1);
+        if (ap5 != ap1)
+            gen_icode(i_assn, ap5, ap1, NULL);
+    }
+    else
+    {
+        ap1 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
+        ncnode = node->left;
+        while (castvalue(ncnode))
+            ncnode = ncnode->left;
+        ap6 = gen_expr( funcsp, ncnode, F_STORE, siz1);
+        ap5 = LookupLoadTemp(ap1, ap1);
+        if (ap5 != ap1)
+            gen_icode(i_assn, ap5, ap1, NULL);
+    }
     if (flags & (F_NOVALUE | F_COMPARE))
     {
         if (flags & F_COMPARE)

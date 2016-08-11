@@ -763,6 +763,7 @@ void optimize(SYMBOL *funcsp)
         RearrangePrecolors();
     //printf("ssa\n");
         TranslateToSSA();
+
     //printf("const\n");
         if (optflags & OPT_CONSTANT)
         {

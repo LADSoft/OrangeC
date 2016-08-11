@@ -1637,9 +1637,12 @@ static void iterateMark(int n)
     {
         if ((uses->ins->temps & TEMP_ANS) && uses->ins->ans->mode == i_direct)
         {
-            int t = uses->ins->ans->offset->v.sp->value.i;
-            tempInfo[t]->preSSATemp = -1;
-            iterateMark(t);
+            if (!uses->ins->ans->offset->v.sp->pushedtotemp)
+            {
+                int t = uses->ins->ans->offset->v.sp->value.i;
+                tempInfo[t]->preSSATemp = -1;
+                iterateMark(t);
+            }
         }
         uses = uses->next;
     }

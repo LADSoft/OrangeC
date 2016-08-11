@@ -892,7 +892,7 @@ static void iop_varstart(QUAD *q)
 {
     if (chosenAssembler->gen->asm_varstart)
         chosenAssembler->gen->asm_varstart(q);
-    oprintf(icdFile, "\tVAR START\t%s",q->dc.left->offset->v.sp);
+    oprintf(icdFile, "\tVAR START\t%s",q->dc.left->offset->v.sp->name);
 }
 static void iop_func(QUAD *q)
 {

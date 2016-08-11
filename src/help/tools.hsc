@@ -223,7 +223,7 @@ Writing
 
 
 FALSE
-30
+32
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}}
 {\colortbl ;\red0\green0\blue255;\red0\green128\blue0;\red128\green0\blue0;}
 \viewkind4\uc1\pard\cf1\b\fs32 Command Line\cf0\b0\f1\fs20 
@@ -234,8 +234,10 @@ FALSE
 \par 
 \par \f2 OCC [parameters] list of files\f1 
 \par 
-\par The list of files can be a list of one or more C language files.\f0  \f1 C++ language files are partially supported, but the C++ support is\f0  \f1 minimal at this time. If you don't specify an extension on the\f0  \f1 command line it will default to .C; it will detect a .CPP extension and\f0  \f1 activate C++ mode as required.
+\par The list of files can be a list of one or more C language files.\f0  \f1 C++ language files are \f0 also supported\f1 . If you don't specify an extension on the\f0  \f1 command line it will default to .C; it will detect a .CPP extension and\f0  \f1 activate C++ mode as required.
 \par 
+\par \f0 The list of files can include wild card characters.
+\par \f1 
 \par OCC will accept response files with a list of command line\f0  \f1 options. To use a response file, prefix its name with '@':
 \par \f2 
 \par OCC [parameters] @resp.cc\f1 
@@ -266,7 +268,7 @@ Writing
 
 
 FALSE
-77
+83
 {\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}{\f2\fnil\fcharset0 Courier New;}{\f3\fnil\fcharset0 Courier;}}
 {\colortbl ;\red0\green0\blue255;}
 \viewkind4\uc1\pard\fi-700\li700\cf1\b\fs32 Output Control\cf0\b0\f1\fs20 
@@ -294,6 +296,12 @@ FALSE
 \par \tab\f2 OCC /c /obeep hello.c\f0 
 \par 
 \par \tab generates an object file called BEEP.O.\f1 
+\par 
+\par \f0\tab\f1 You can also set the output file to be a directory, in which case object and EXE files will be placed in that directory.  To indicate a directory is to be used, the output file name must have a trailing '\\'.   For example:
+\par 
+\par     \f0\tab\f2 OCC /o..\\output\\ /I..\\include *.c\f1 
+\par 
+\par     \f0\tab\f1 compiles all C language files in the current directory and places the output files in a directory 'output' at the same level.
 \par 
 \par \b /S\b0  generate assembly language file only
 \par 

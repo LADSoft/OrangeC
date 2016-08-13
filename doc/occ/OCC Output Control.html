@@ -1,10 +1,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
+<html><head>
   <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
-  <title>OCC Output Control</title>
-  <meta content="david" name="author">
-</head>
+  
+  <title>OCC Output Control</title><meta content="david" name="author"></head>
+
 <body>
 <h2 style="text-align: center;">OCC Output Control<br>
 </h2>
@@ -33,7 +32,13 @@ generating an EXE file.<br>
 <br>
 &nbsp;&nbsp;&nbsp; OCC /ohi hello.c<br>
 <br>
-&nbsp;&nbsp; &nbsp;generates an EXE file called HI.EXE.<br>
+&nbsp;&nbsp; &nbsp;generates an EXE file called HI.EXE.<br><br>&nbsp;&nbsp;&nbsp;
+You can also set the output file to be a directory, in which case
+object and EXE files will be placed in that directory. &nbsp;To
+indicate a directory is to be used, the output file name must have a
+trailing '\'. &nbsp; For example:<br><br>&nbsp;&nbsp;&nbsp; OCC /o..\output\ /I..\include *.c<br><br>&nbsp;
+&nbsp; compiles all C language files in the current directory and
+places the output files in a directory 'output' at the same level.<br>
 <br>
 /S&nbsp;&nbsp; &nbsp;generate assembly language file only<br>
 <br>
@@ -116,5 +121,4 @@ LSCRTL.DLL, one of the switches /Wdl /Wcl or /Wgl must be present to
 indicate to the compiler that linkage will be against that
 library.&nbsp; Failing to use one of these switches can result in
 errant run-time behavior.
-</body>
-</html>
+</body></html>

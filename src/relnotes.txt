@@ -1,13 +1,17 @@
 Release notes:
 
-Version 6.0.2:
+Version 6.0.3:
+    omake:      fix bug where '\' in some file names was interpreted as an 
+                escape character rather than a directory delimiter.
+
+Version 6.0.2:  Aug 8, 2016
     occ:        if you specify an output file which is a directory (e.g. it has
                 a trailing backslash) then occ will put output files in that directory)
 
-Version 6.0.1:
+Version 6.0.1: Aug 1, 2016
     ocide:      fix editor lockup
 
-Version 6.0.0:
+Version 6.0.0: Jul 31, 2016
     ocide:      Support C++ editing and debugging
     ocide:      rewrite of how docking windows work
     ocide:      add breakpoint window

@@ -547,6 +547,9 @@ join:
 }
 size_t Eval::FindPercent(const std::string &name, size_t pos)
 {
+        pos = name.find_first_of('%', pos);
+        return pos;
+        /*
     while (true)
     {
         pos = name.find_first_of('%', pos);
@@ -554,6 +557,7 @@ size_t Eval::FindPercent(const std::string &name, size_t pos)
             return pos;
         pos++;
     }
+    */
 }
 std::string Eval::FindStem(const std::string &name, const std::string &pattern)
 {

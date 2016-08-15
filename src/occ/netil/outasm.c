@@ -48,6 +48,7 @@ extern int prm_assembler;
 extern SYMBOL *theCurrentFunc;
 extern LIST *temporarySymbols;
 extern LIST *externals;
+extern TYPE stdpointer;
 
 OCODE *peep_head, *peep_tail;
 static int uses_float;
@@ -625,7 +626,7 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     }
     if (vararg)
         bePrintf("vararg ");
-    puttypewrapped(basetype(sp->tp)->btp);
+    puttypewrapped(isstructured(basetype(sp->tp)->btp) ? &stdpointer : basetype(sp->tp)->btp);
     bePrintf(" '%s'", sp->name);
     if (!strcmp(sp->decoratedName, "_main"))
     {
@@ -635,10 +636,16 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     {
         hr = basetype(sp->tp)->syms->table[0];
         bePrintf("(");
+        if (isstructured(basetype(sp->tp)->btp))
+        {
+            bePrintf("void *'retblock'");
+            if (!vararg && hr || vararg && hr && hr->next)
+                bePrintf(", ");
+        }
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            puttypewrapped(sp->tp);
+            puttypewrapped(isstructured(sp->tp) ? &stdpointer : sp->tp);
             if (!pinvoke)
             {
                 bePrintf(" '%s' ",sp->name);
@@ -1133,14 +1140,20 @@ void putfunccall(AMODE *arg)
     bePrintf("\t");
     if (vararg)
         bePrintf("vararg ");
-    puttypewrapped(basetype(sp->tp)->btp);
+    puttypewrapped(isstructured(basetype(sp->tp)->btp) ? &stdpointer : basetype(sp->tp)->btp);
     bePrintf(" '%s'", sp->name);
     bePrintf("(");
     hr = basetype(sp->tp)->syms->table[0];
+    if (isstructured(basetype(sp->tp)->btp))
+    {
+        bePrintf("void *");
+        if (!vararg && hr || vararg && hr && hr->next)
+            bePrintf(", ");
+    }
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        puttypewrapped(sp->tp);
+        puttypewrapped(isstructured(sp->tp)?&stdpointer : sp->tp);
         if (sp->tp->type != bt_ellipse)
             il = il->next;
         if (!vararg && hr->next || vararg && hr->next && hr->next->next)

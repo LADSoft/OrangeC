@@ -434,6 +434,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
             gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
             DumpIncDec(funcsp);
             sp->offset = chosenAssembler->arch->retblocksize;
+            sp->name = "retblock";
             sp->allocate = FALSE;
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 
@@ -730,7 +731,6 @@ static IMODE *GetBucket(IMODE *mem)
 
 void optimize(SYMBOL *funcsp)
 {
-
             //printf("optimization start\n");
     if (chosenAssembler->gen->pre_gcse)
         chosenAssembler->gen->pre_gcse(intermed_head);
@@ -1023,8 +1023,9 @@ void genfunc(SYMBOL *funcsp)
     gen_func(funcexp, 0);
     tFree();
     InsertParameterThunks(funcsp, blockArray[1]);
-    optimize(funcsp);
     FreeLocalContext(NULL, funcsp, nextLabel++);
+    optimize(funcsp);
+//    FreeLocalContext(NULL, funcsp, nextLabel++);
         
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
         AllocateStackSpace(funcsp);

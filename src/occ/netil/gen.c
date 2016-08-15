@@ -343,7 +343,10 @@ void load_constant(int sz, EXPRESSION *exp)
         }
         else if (en->v.sp->storage_class == sc_parameter)
         {
-            op = op_ldarga;
+            // in this version of the compiler, blocked parameters are passed
+            // as pointers.   So instead of loading the parameter's address from
+            // the stack we load the pointer to the parameter
+            op = isstructured(en->v.sp->tp) ? op_ldarg : op_ldarga;
             ap = make_index(am_param, en->v.sp->offset, en->v.sp);
         }
         else
@@ -628,7 +631,10 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
         gen_code(op_calli, NULL);
     }
     if (q->novalue && q->novalue != -1)
+    {
         gen_code(op_pop, NULL);
+        decrement_stack();
+    }
 }
 void asm_fargosub(QUAD *q)           /* far version of gosub */
 {
@@ -978,9 +984,20 @@ void asm_dc(QUAD *q)                 /* unused */
 }
 void asm_assnblock(QUAD *q)          /* copy block of memory*/
 {
+    EXPRESSION *size = q->ans->offset;
+    load_constant(-ISZ_UINT, size);
+    gen_code(op_cpblk, 0);
+    decrement_stack();
+    decrement_stack();
+    decrement_stack();
 }
 void asm_clrblock(QUAD *q)           /* clear block of memory */
 {
+    // the 'value' field is loaded by examine_icode...
+    gen_code(op_initblk, 0);
+    decrement_stack();
+    decrement_stack();
+    decrement_stack();
 }
 void asm_jc(QUAD *q)                 /* branch if a U< b */
 {
@@ -1115,7 +1132,7 @@ int examine_icode(QUAD *head)
             && head->dc.opcode != i_func && head->dc.opcode != i_gosub && head->dc.opcode != i_parmadj
             && head->dc.opcode != i_ret && head->dc.opcode != i_varstart)
         {
-            if (head->dc.left && head->dc.left->mode == i_immed)
+            if (head->dc.left && head->dc.left->mode == i_immed && head->dc.opcode != i_assn)
             {
                 IMODE *ap = InitTempOpt(head->dc.left->size, head->dc.left->size);
                 QUAD *q = Alloc(sizeof(QUAD));
@@ -1125,6 +1142,20 @@ int examine_icode(QUAD *head)
                 q->dc.left = head->dc.left;
                 head->dc.left = ap;
                 head->temps |= TEMP_LEFT;
+                InsertInstruction(head->back, q);
+            }
+            if (head->dc.opcode == i_clrblock)
+            {
+                // insert the value to clear it to, e.g. zero
+                IMODE *ap = InitTempOpt(head->dc.right->size, head->dc.right->size);
+                QUAD *q = Alloc(sizeof(QUAD));
+                q->alwayslive = TRUE;
+                q->dc.opcode = i_assn;
+                q->ans = ap;
+                q->temps = TEMP_ANS;
+                q->dc.left = beLocalAlloc(sizeof(AMODE));
+                q->dc.left->mode = i_immed;
+                q->dc.left->offset = intNode(en_c_i, 0);
                 InsertInstruction(head->back, q);
             }
             if (head->dc.right && head->dc.right->mode == i_immed)

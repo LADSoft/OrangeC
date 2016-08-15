@@ -54,6 +54,7 @@ extern ARCH_ASM *chosenAssembler;
 extern int retlab;
 extern int nextLabel;
 extern SYMBOL *declclass;
+extern TYPE stdchar;
 extern QUAD *intermed_head, *intermed_tail;
 extern int lineno;
 extern SYMBOL *inlinesp_list[];
@@ -67,7 +68,6 @@ extern int inlinesym_count;
 extern EXPRESSION *inlinesym_thisptr[MAX_INLINE_NESTING];
 extern LIST *temporarySymbols;
 extern TYPE stdpointer;
-
 int calling_inline;
 
 IMODE *inlinereturnap;
@@ -1665,9 +1665,26 @@ static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
  * Push a structure on the stack
  */
 {
-    IMODE *ap, *ap3;
+    IMODE *ap, *ap1, *ap2, *ap3;
     if (!sz)
         return 0;
+    if (chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF)
+    {
+        EXPRESSION *rv;
+        TYPE *tp = Alloc(sizeof(TYPE));
+        tp->type = bt_pointer;
+        tp->array = TRUE;
+        tp->size = sz;
+        tp->btp = &stdchar;
+        rv = anonymousVar(sc_auto, tp);
+        ap2 = Alloc(sizeof(IMODE));
+        ap2->mode = i_immed;
+        ap2->offset = rv;
+        ap2->size = ISZ_ADDR;
+        ap1 = LookupLoadTemp(NULL, ap2);
+        if (ap1 != ap2)
+            gen_icode(i_assn, ap1, ap2, NULL);
+    }
     switch (ep->type)
     {
         case en_imode:
@@ -1680,9 +1697,17 @@ static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
                 gen_icode(i_assn, ap, ap3, NULL);
             break;
     }
-    gen_nodag(i_parmblock, 0, ap, make_immed(ISZ_UINT,sz));
-    if (sz % chosenAssembler->arch->stackalign)
-        sz = sz + chosenAssembler->arch->stackalign - sz % chosenAssembler->arch->stackalign;
+    if (chosenAssembler->arch->preferopts & OPT_ARGSTRUCTREF)
+    {
+        gen_icode(i_assnblock, make_immed(ISZ_UINT,sz), ap1, ap);
+        gen_nodag(i_parm, 0, ap2, 0);        
+    }
+    else
+    {
+        gen_nodag(i_parmblock, 0, ap, make_immed(ISZ_UINT,sz));
+        if (sz % chosenAssembler->arch->stackalign)
+            sz = sz + chosenAssembler->arch->stackalign - sz % chosenAssembler->arch->stackalign;
+    }
     return sz;
 }
 
@@ -1972,6 +1997,11 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         }
         else if (chosenAssembler->arch->preferopts & OPT_REVERSEPARAM)
         {
+            if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
+            {
+                if (f->returnEXP)
+                    push_param(f->returnEXP, funcsp);
+            }
             if (f->thisptr)
             {
                 push_param(f->thisptr, funcsp);
@@ -1991,10 +2021,13 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             f->callLab = ++consIndex;
             genCallLab(f->arguments, f->callLab);
         }
-        if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
+        if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
         {
-            if (f->returnEXP)
-                push_param(f->returnEXP, funcsp);
+            if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
+            {
+                if (f->returnEXP)
+                    push_param(f->returnEXP, funcsp);
+            }
         }
     }
     /* named function */
@@ -2051,6 +2084,10 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         else
             gosub->novalue = sizeFromType(basetype(f->functp)->btp);
     }
+    else if (isstructured(basetype(f->functp)->btp))
+    {
+        gosub->novalue = -2;
+    }
     else
     {
         gosub->novalue = -1;
@@ -2065,6 +2102,8 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             n++;
             args = args->next;
         }
+        if (f->returnEXP)
+            n++;
         gen_nodag(i_parmadj, 0, make_parmadj(n), make_parmadj(!isvoid(basetype(f->functp)->btp)));
     }
     else

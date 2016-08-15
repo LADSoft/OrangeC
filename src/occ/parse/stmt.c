@@ -1721,6 +1721,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             sp->allocate = FALSE; // static var
             sp->offset = chosenAssembler->arch->retblocksize;
             sp->structuredReturn = TRUE;
+            sp->name = "retblock";
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 
                     ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
@@ -3151,12 +3152,17 @@ static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
     }
     else
     {
-        if (!(chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && (isstructured(basetype(funcsp->tp)->btp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
+        if (isstructured(basetype(funcsp->tp)->btp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr)
         {
             // handle structured return values
-            base += getSize(bt_pointer);
-            if (base % chosenAssembler->arch->parmwidth)
-                base += chosenAssembler->arch->parmwidth - base % chosenAssembler->arch->parmwidth;
+            if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+                base++;
+            else
+            {
+                base += getSize(bt_pointer);
+                if (base % chosenAssembler->arch->parmwidth)
+                    base += chosenAssembler->arch->parmwidth - base % chosenAssembler->arch->parmwidth;
+            }
         }
         if (ismember(funcsp))
         {

@@ -47,7 +47,7 @@
 
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-int Spawner::lineLength = 500;
+int Spawner::lineLength = 8100; // os limitation on XP and later is 8191
 std::list<std::string> Spawner::cmdList;
 
 int Spawner::Run(Command &commands, RuleList *ruleList, Rule *rule)

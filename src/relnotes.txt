@@ -1,5 +1,9 @@
 Release notes:
 
+Version 6.0.4:
+    occ:        fix problem with optimizing '%' operator - it could optimize away the instructions
+    omake:      increase command line length from 500 to 8190
+
 Version 6.0.3:
     omake:      fix bug where '\' in some file names was interpreted as an 
                 escape character rather than a directory delimiter.

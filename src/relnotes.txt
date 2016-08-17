@@ -1,5 +1,8 @@
 Release notes:
 
+Version 6.0.5:
+    omake:      don't concatenate multiple blank lines when a line ends with '\\'
+
 Version 6.0.4:
     occ:        fix problem with optimizing '%' operator - it could optimize away the instructions
     omake:      increase command line length from 500 to 8190

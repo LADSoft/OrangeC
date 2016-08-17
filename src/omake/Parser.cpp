@@ -113,7 +113,10 @@ std::string Parser::GetLine(bool inCommand)
             rv = rv + " ";
         }
         lineno++;
-        rv += Eval::ExtractFirst(remaining, "\n");
+        std::string next = Eval::ExtractFirst(remaining, "\n");
+        rv += next;
+        if (!next.size())
+            break;
     }
     // get rid of comments
     if (!inCommand)

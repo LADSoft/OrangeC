@@ -547,7 +547,7 @@ int main(int argc, char *argv[])
     char *p;
     BOOLEAN multipleFiles = FALSE;
     int rv;
-    char temp[260];
+    char realOutFile[260];
     srand(time(0));
 
         /*   signal(SIGSEGV,internalError) ;*/
@@ -576,10 +576,10 @@ int main(int argc, char *argv[])
         multipleFiles = TRUE;
 #ifdef PARSER_ONLY
     strcpy(buffer, clist->data);
-    strcpy(temp, outfile);
-    outputfile(temp, buffer, ".ods");
-    if (!ccDBOpen(temp))
-        fatal("Cannot open database file %s", temp);
+    strcpy(realOutFile, outfile);
+    outputfile(realOutFile, buffer, ".ods");
+    if (!ccDBOpen(realOutFile))
+        fatal("Cannot open database file %s", realOutFile);
 #else
     BitInit();
     regInit();
@@ -589,11 +589,11 @@ int main(int argc, char *argv[])
         cparams.prm_cplusplus = FALSE;
         strcpy(buffer, clist->data);
 #ifndef PARSER_ONLY
-        strcpy(temp, outfile);
+        strcpy(realOutFile, outfile);
         if (cparams.prm_asmfile)
-            outputfile(temp, buffer, chosenAssembler->asmext);
+            outputfile(realOutFile, buffer, chosenAssembler->asmext);
         else
-            outputfile(temp, buffer, chosenAssembler->objext);
+            outputfile(realOutFile, buffer, chosenAssembler->objext);
 #else
         ccNewFile(buffer, TRUE);
 #endif
@@ -641,11 +641,11 @@ int main(int argc, char *argv[])
         else
         {
 #ifndef PARSER_ONLY
-            outputFile = fopen(temp, cparams.prm_asmfile ? "w" : "wb");
+            outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
             if (!outputFile)
             {
                 fclose(inputFile);
-                fatal("Cannot open output file %s", temp);
+                fatal("Cannot open output file %s", realOutFile);
             }
             setvbuf(outputFile,0,_IOFBF,32768);
 #endif
@@ -764,7 +764,7 @@ int main(int argc, char *argv[])
         if (icdFile)
             fclose(icdFile);
         if (total_errors)
-            unlink(outfile);
+            unlink(realOutFile);
 
         /* Flag to stop if there are any errors */
         stoponerr |= total_errors;

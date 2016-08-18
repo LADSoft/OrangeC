@@ -645,7 +645,7 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            puttypewrapped(isstructured(sp->tp) ? &stdpointer : sp->tp);
+            puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
             if (!pinvoke)
             {
                 bePrintf(" '%s' ",sp->name);
@@ -1153,7 +1153,7 @@ void putfunccall(AMODE *arg)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        puttypewrapped(isstructured(sp->tp)?&stdpointer : sp->tp);
+        puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
         if (sp->tp->type != bt_ellipse)
             il = il->next;
         if (!vararg && hr->next || vararg && hr->next && hr->next->next)
@@ -1166,7 +1166,10 @@ void putfunccall(AMODE *arg)
         while (il)
         {
             bePrintf(", ");
-            puttypewrapped(il->tp);
+            if (isarray(il->tp))
+                puttypewrapped(&stdpointer); // convert arrays to void *...
+            else
+                puttypewrapped(il->tp);
             il = il->next;
         }
     }

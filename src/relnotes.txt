@@ -1,9 +1,13 @@
 Release notes:
 
-Version 6.0.5:
+Version 6.0.7: Aug 18, 2016
+    occ:        restore the operation where it deletes the output file if there are
+                errors in the compile (instead of leaving a 0byte file on the file system).
+
+Version 6.0.5: Aug 17, 2016
     omake:      don't concatenate multiple blank lines when a line ends with '\\'
 
-Version 6.0.4:
+Version 6.0.4: Aug 15, 2016
     occ:        fix problem with optimizing '%' operator - it could optimize away the instructions
     omake:      increase command line length from 500 to 8190
 

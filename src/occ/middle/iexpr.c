@@ -1322,6 +1322,7 @@ IMODE *gen_hook(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     if (ap2 != ap3)
         gen_icode(i_assn, ap2, ap3, NULL);
     gen_icode(i_assn, ap1, ap2, 0);
+    intermed_tail->hook = TRUE;
     ap1->offset->v.sp->iglobal = TRUE;
     DumpIncDec(funcsp);
     gen_igoto(i_goto, end_label);
@@ -1331,6 +1332,7 @@ IMODE *gen_hook(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     if (ap2 != ap3)
         gen_icode(i_assn, ap2, ap3, NULL);
     gen_icode(i_assn, ap1, ap2, 0);
+    intermed_tail->hook = TRUE;
     ap1->offset->v.sp->iglobal = TRUE;
     DumpIncDec(funcsp);
     gen_label(end_label);

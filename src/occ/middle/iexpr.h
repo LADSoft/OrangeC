@@ -185,6 +185,7 @@ typedef struct quad
     int spill:1;
     int ignoreMe:1;
     int genConflict:1; /* assignment node the ans conflicts with left */
+    int hook:1; /* one of the two assigns for a hook, used in diagnostic generation */
     char novalue;
     char temps;
     char precolored;

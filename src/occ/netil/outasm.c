@@ -630,7 +630,13 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     bePrintf(" '%s'", sp->name);
     if (!strcmp(sp->decoratedName, "_main"))
     {
-        bePrintf("()");
+        HASHREC *hr = basetype(sp->tp)->syms->table[0];
+        bePrintf("(int32 ");
+        bePrintf("%s, ", hr ? hr->p->name : "argc");
+        if (hr)
+            hr = hr->next;
+        bePrintf("void * ");
+        bePrintf("%s) ", hr ? hr->p->name : "argv");
     }
     else
     {
@@ -1154,7 +1160,7 @@ void putfunccall(AMODE *arg)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
-        if (sp->tp->type != bt_ellipse)
+        if (il && sp->tp->type != bt_ellipse)
             il = il->next;
         if (!vararg && hr->next || vararg && hr->next && hr->next->next)
             bePrintf(", ");
@@ -1434,16 +1440,31 @@ void oa_end_generation(void)
     }
     bePrintf(".method public hidebysig static void $Main() cil managed {\n");
     bePrintf("\t.entrypoint\n");
-    bePrintf("\t.maxstack 1\n");
+    bePrintf("\t.locals (\n");
+    bePrintf("\t\t[0] int32 'argc',\n");
+    bePrintf("\t\t[1] void * 'argv',\n");
+    bePrintf("\t\t[2] void * 'environ',\n");
+    bePrintf("\t\t[3] void * 'newmode'\n");
+    bePrintf("\t)\n");
+    bePrintf("\t.maxstack 5\n");
     if (start)
         bePrintf("\tcall void %s()\n", start->name);
-    bePrintf("\tcall int32 main()\n");
+    bePrintf("\tldloca 'argc'\n");
+    bePrintf("\tldloca 'argv'\n");
+    bePrintf("\tldloca 'environ'\n");
+    bePrintf("\tldc.i4  0\n");
+    bePrintf("\tldloca 'newmode'\n");
+    bePrintf("\tcall void __getmainargs(void *, void *, void *, int32, void *);\n");
+    bePrintf("\tldloc 'argc'\n");
+    bePrintf("\tldloc 'argv'\n");
+    bePrintf("\tcall int32 'main'(int32, void *)\n");
     if (end)
         bePrintf("\tcall void %s()\n", end->name);
     bePrintf("\tcall void exit(int32)\n");
     bePrintf("\tret\n");
     bePrintf("}\n");
     bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void exit(int32) preservesig {}\n");
+    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void __getmainargs(void *,void *,void*,int32, void *) {}\n");
 
     dumpTypes();    
 }

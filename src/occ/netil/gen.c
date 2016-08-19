@@ -60,7 +60,8 @@ static LLONG_TYPE *switchTreeCases;
 static int switchTreeLabelCount;
 static int switchTreePos;
 static AMODE *stackap;
-
+static int returnCount;
+static int hookCount;
 static int stackpos = 0;
 
 void increment_stack(void)
@@ -181,7 +182,7 @@ AMODE *getAmode(IMODE *oper)
             }
             if (sp)
             {
-                if (sp->storage_class == sc_auto)
+                if (sp->storage_class == sc_auto || sp->storage_class == sc_register)
                     rv = make_index(am_local, sp->offset, sp);
                 else if (sp->storage_class == sc_parameter)
                     rv = make_index(am_param, sp->offset, sp);
@@ -190,6 +191,8 @@ AMODE *getAmode(IMODE *oper)
                     rv = beLocalAlloc(sizeof(AMODE));
                     rv->mode = am_global;
                     rv->offset = oper->offset;
+                    if (oper->offset->right)
+                        printf("hi");
                 }
             }
             else if (oper->offset->type != en_tempref)
@@ -336,7 +339,7 @@ void load_constant(int sz, EXPRESSION *exp)
         {
             op = op_ldsflda;
         }
-        else if (en->v.sp->storage_class == sc_auto)
+        else if (en->v.sp->storage_class == sc_auto || en->v.sp->storage_class == sc_register)
         {
             op = op_ldloca;
             ap = make_index(am_local, en->v.sp->offset, en->v.sp);
@@ -821,6 +824,10 @@ void asm_assn(QUAD *q)               /* assignment */
     }
     ap = getAmode(q->ans);
     gen_store(ap);
+    if (q->ans->retval)
+        returnCount++;
+    if (q->hook)
+        hookCount++;
 }
 void asm_genword(QUAD *q)            /* put a byte or word into the code stream */
 {
@@ -1067,6 +1074,8 @@ void asm_prologue(QUAD *q)           /* function prologue */
 //        gen_code(op_entrypoint, NULL);
     gen_code(op_maxstack, stackap);
     stackpos = 0;
+    returnCount = 0;
+    hookCount = 0;
 }
 /*
  * function epilogue, left holds the mask of which registers were pushed
@@ -1075,6 +1084,9 @@ void asm_epilogue(QUAD *q)           /* function epilogue */
 {
     if (basetype(theCurrentFunc->tp)->btp->type != bt_void)
         stackpos--;
+    if (returnCount)
+        stackpos -= returnCount -1;
+    stackpos -= hookCount/2;
     if (stackpos != 0)
         diag("asm_epilogue: stack mismatch");
 }

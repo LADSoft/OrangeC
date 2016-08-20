@@ -92,6 +92,17 @@ void gen_code(enum e_op op, AMODE *ap)
     code->oper1 = ap;
     add_peep(code);
 }
+void oa_gen_label(int labno)
+/*
+ *      add a compiler generated label to the peep list.
+ */
+{
+    OCODE *new;
+    new = beLocalAlloc(sizeof(OCODE));
+    new->opcode = op_label;
+    new->oper1 = (AMODE*)labno;
+    add_peep(new);
+}
 
 AMODE *make_label(int lab)
 {
@@ -850,13 +861,13 @@ void bingen(int lower, int avg, int higher)
 {
     int nelab = beGetLabel;
     if (switchTreeBranchLabels[avg] !=  0)
-        gen_label(switchTreeBranchLabels[avg]);
+        oa_gen_label(switchTreeBranchLabels[avg]);
     gen_code(op_dup, NULL);
     load_constant(switch_ip->size, intNode(en_c_i, switchTreeCases[avg]));
     gen_branch(op_bne_un, nelab, FALSE);
     gen_code(op_pop, NULL);
     gen_branch(op_br, switchTreeLabels[avg], FALSE);
-    gen_label(nelab);
+    oa_gen_label(nelab);
     if (avg == lower)
     {
         gen_code(op_pop, NULL);
@@ -920,7 +931,7 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
 {
     static AMODE *swap;
     ULLONG_TYPE swcase = q->dc.left->offset->v.i;
-    int lab = q->dc.v.label;
+    int labin = q->dc.v.label, lab;
     if (switch_case_count == 0)
     {
 /*		diag("asm_swbranch, count mismatch"); in case only a default */
@@ -950,8 +961,8 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
             load_constant(switch_ip->size, intNode(en_c_i, swcase));
             gen_branch(op_bne_un, lab, FALSE);
             gen_code(op_pop, NULL);
-            gen_branch(op_br, swcase, FALSE);
-            gen_label(lab);
+            gen_branch(op_br, labin, FALSE);
+            oa_gen_label(lab);
             if (-- switch_case_count == 0)
             {
                 gen_code(op_pop, NULL);
@@ -967,7 +978,7 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
             }
             // fall through
         case swm_compactstart:
-            compactgen(swap, lab);
+            compactgen(swap, labin);
             switch_lastcase = swcase + 1;
             switch_mode = swm_compact;
             -- switch_case_count;
@@ -976,7 +987,7 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
             break ;
         case swm_tree:
             switchTreeCases[switchTreePos] = swcase;
-            switchTreeLabels[switchTreePos++] = lab;
+            switchTreeLabels[switchTreePos++] = labin;
             if (--switch_case_count == 0)
             {
                 bingen(0, switch_case_max / 2, switch_case_max);
@@ -1142,7 +1153,8 @@ int examine_icode(QUAD *head)
             && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
             && head->dc.opcode != i_label && head->dc.opcode != i_line && head->dc.opcode != i_passthrough
             && head->dc.opcode != i_func && head->dc.opcode != i_gosub && head->dc.opcode != i_parmadj
-            && head->dc.opcode != i_ret && head->dc.opcode != i_varstart)
+            && head->dc.opcode != i_ret && head->dc.opcode != i_varstart
+            && head->dc.opcode != i_coswitch && head->dc.opcode != i_swbranch)
         {
             if (head->dc.left && head->dc.left->mode == i_immed && head->dc.opcode != i_assn)
             {

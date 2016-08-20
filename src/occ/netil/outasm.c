@@ -49,7 +49,7 @@ extern SYMBOL *theCurrentFunc;
 extern LIST *temporarySymbols;
 extern LIST *externals;
 extern TYPE stdpointer;
-
+extern INCLUDES *includes;
 OCODE *peep_head, *peep_tail;
 static int uses_float;
 
@@ -356,6 +356,8 @@ static struct asm_details instructions[] = {
 	{ "volatile." }, 
 	{ "xor" }
 };
+static char *msilbltin = "void exit(int); "
+    "void __getmainargs(void *,void *,void*,int, void *);"; 
 /* Init module */
 void oa_ini(void)
 {
@@ -651,13 +653,16 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
         while (hr)
         {
             SYMBOL *sp = (SYMBOL *)hr->p;
-            puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
-            if (!pinvoke)
+            if (sp->tp->type != bt_void)
             {
-                bePrintf(" '%s' ",sp->name);
+                puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+                if (!pinvoke)
+                {
+                    bePrintf(" '%s' ",sp->name);
+                }
+                if (!vararg && hr->next || vararg && hr->next && hr->next->next)
+                    bePrintf(", ");
             }
-            if (!vararg && hr->next || vararg && hr->next && hr->next->next)
-                bePrintf(", ");
             hr = hr->next;
         }
         bePrintf(")");
@@ -1159,11 +1164,14 @@ void putfunccall(AMODE *arg)
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
-        puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
-        if (il && sp->tp->type != bt_ellipse)
-            il = il->next;
-        if (!vararg && hr->next || vararg && hr->next && hr->next->next)
-            bePrintf(", ");
+        if (sp->tp->type != bt_void)
+        {
+            puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+            if (il && sp->tp->type != bt_ellipse)
+                il = il->next;
+            if (!vararg && hr->next || vararg && hr->next && hr->next->next)
+                bePrintf(", ");
+        }
         hr = hr->next;
     }
     if (vararg)
@@ -1331,7 +1339,7 @@ void putarg(AMODE *arg)
             putfieldname(arg);
             break;
         case am_switch:
-            bePrintf("\t{ ");
+            bePrintf("\t( ");
             pass = arg->switches;
             i = 0;
             while (pass)
@@ -1345,7 +1353,7 @@ void putarg(AMODE *arg)
                 }
                 pass = pass->next;
             }
-            bePrintf("\n\t}");
+            bePrintf("\n\t)");
             break;
     }
 }
@@ -1421,10 +1429,34 @@ void dumpTypes()
 
     typeList = NULL;
 }
+void oa_load_funcs(void)
+{
+    LEXEME *lex;
+    SYMBOL *sp;
+    FILE *handle = includes->handle;
+    unsigned char *p = includes->lptr;
+    includes->lptr = msilbltin;
+    includes->handle = NULL;
+    lex = getsym();
+    if (lex)
+    {
+        while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL) ;
+    }
+    includes->handle = handle;
+    includes->lptr = p;
+    includes->line = 0;
+    sp = gsearch("exit");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    sp = gsearch("__getmainargs");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+}
 void oa_end_generation(void)
 {
     SYMBOL *start = NULL, *end = NULL;
     LIST *externalList = externals;
+    oa_load_funcs();
     oa_enterseg(oa_currentSeg);
     while (externalList)
     {
@@ -1463,8 +1495,8 @@ void oa_end_generation(void)
     bePrintf("\tcall void exit(int32)\n");
     bePrintf("\tret\n");
     bePrintf("}\n");
-    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void exit(int32) preservesig {}\n");
-    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void __getmainargs(void *,void *,void*,int32, void *) {}\n");
+//    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void exit(int32) preservesig {}\n");
+//    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void __getmainargs(void *,void *,void*,int32, void *) {}\n");
 
     dumpTypes();    
 }

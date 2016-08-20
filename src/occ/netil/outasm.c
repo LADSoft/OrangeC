@@ -597,7 +597,7 @@ void puttype(TYPE *tp)
     {
         static char *names[] = { "", "", "int8", "int8","uint8",
             "int16", "int16", "uint16", "uint16", "int32", "int32", "int32" ,"uint32", "int32", "uint32",
-            "int64", "uint64", "real32", "real64", "real64", "real32", "real64", "real64"
+            "int64", "uint64", "float32", "float64", "float64", "float32", "float64", "float64"
         };
         bePrintf(names[tp->type]);
     }
@@ -1325,9 +1325,16 @@ void putarg(AMODE *arg)
                     puttypewrapped(arg->offset->v.sp->tp);
                     bePrintf(" '%s'\n", arg->offset->v.sp->name);
                 }
-
+            else if (isfloatconst(arg->offset))
+            {
+                char buf[256];
+                FPFToString(buf,&arg->offset->v.f);
+                bePrintf("\t%s", buf);
+            }
             else
+            {
                 bePrintf("\t%d", arg->offset->v.i);
+            }
             break; 
         case am_local:
             bePrintf("\t'%s/%d'", ((SYMBOL *)arg->altdata)->name, arg->index);

@@ -931,6 +931,7 @@ typedef struct _string
 #define OPT_REVERSESTORE 0x20000
 #define OPT_REVERSEPARAM 0x40000
 #define OPT_ARGSTRUCTREF 0x80000
+#define OPT_EXPANDSWITCH 0x100000
 
 // must match stdatomic.h
 enum e_mo {

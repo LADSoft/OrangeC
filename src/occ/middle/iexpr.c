@@ -792,6 +792,18 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
             ap1->restricted = node->isrestrict;
         }
     }
+    else if ((chosenAssembler->arch->denyopts & DO_UNIQUEIND) && node->left->type == en_global &&
+            (isarray(node->left->v.sp->tp) || isstructured(node->left->v.sp->tp)))
+    {
+        ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+        ap2 = LookupLoadTemp(NULL, ap1);
+        if (ap2 != ap1)
+        {
+            gen_icode(i_assn, ap2, ap1, NULL);
+            ap1 = ap2;
+        }
+        ap1 = indnode(ap1, siz1);
+    } 
     else if (node->left->type == en_const)
     {
         ap1 = gen_expr(funcsp, node->left->v.sp->init->exp, 0, 0);
@@ -966,7 +978,8 @@ IMODE *gen_binary(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_
         gen_icode(i_assn, ap1, ap3, NULL);
 
     if (op == i_lsl || op == i_lsr || op == i_asr)
-        flush_dag();	
+        flush_dag();
+
     ap3 = gen_expr(funcsp, node->right, 0, natural_size(node->right));
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
@@ -1020,7 +1033,7 @@ static int ChooseMultiplier(unsigned d, int prec, ULLONG_TYPE *m, int *sh, int *
 IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op, BOOLEAN mod)
 {
     int n = natural_size(node);
-    if ((n == ISZ_UINT || n == -ISZ_UINT || n == ISZ_ULONG || n == -ISZ_ULONG) && isintconst(node->right))
+    if (!(chosenAssembler->arch->denyopts & DO_NOFASTDIV) && (n == ISZ_UINT || n == -ISZ_UINT || n == ISZ_ULONG || n == -ISZ_ULONG) && isintconst(node->right))
     {
         ULLONG_TYPE m;
         int post, l,pre=0;
@@ -1130,7 +1143,7 @@ IMODE *gen_udivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
 IMODE *gen_sdivide(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i_ops op, BOOLEAN mod)
 {
     int n = natural_size(node);
-    if ((n == ISZ_UINT || n == -ISZ_UINT) && node->right->type == en_c_i)
+    if (!(chosenAssembler->arch->denyopts & DO_NOFASTDIV) && (n == ISZ_UINT || n == -ISZ_UINT) && node->right->type == en_c_i)
     {
         int d = node->right->v.i;
         int ad = d < 0 ? -d : d, q;
@@ -1244,7 +1257,7 @@ IMODE *gen_pdiv(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
  */
 {
     int n = natural_size(node);
-    if (n == ISZ_ADDR && node->right->type == en_c_i)
+    if (!(chosenAssembler->arch->denyopts & DO_NOFASTDIV) && n == ISZ_ADDR && node->right->type == en_c_i)
     {
         int d = node->right->v.i;
         if (d)
@@ -1441,7 +1454,7 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     else
         gen_icode(i_assn, ap1, ap4, NULL);
     */
-    if ((chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == i_ind)
+    if (!(flags & F_NOVALUE) && (chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == i_ind)
     {
         ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE), natural_size(node->left));
     }

@@ -357,7 +357,7 @@ static struct asm_details instructions[] = {
 	{ "xor" }
 };
 static char *msilbltin = "void exit(int); "
-    "void __getmainargs(void *,void *,void*,int, void *);"; 
+    "void __getmainargs(void *,void *,void*,int, void *);";
 /* Init module */
 void oa_ini(void)
 {
@@ -1423,10 +1423,35 @@ void dumpTypes()
         TYPE *tp = ((TYPE *)(*pList)->data);
         while (*qList)
         {
-            if (comparetypes((*qList)->data, (*pList)->data, TRUE))
-                *qList = (*qList)->next;
+            TYPE *tpq = (TYPE *)(*qList)->data;
+            TYPE *tpp = ((TYPE *)(*pList)->data);
+            if (comparetypes((*qList)->data, tpp, TRUE))
+                if (!tpq->array || !tpp->array)
+                {
+                    *qList = (*qList)->next;
+                }
+                else
+                {
+                    while (tpq && tpp)
+                    {
+                        if (tpq->size != tpp->size)
+                            break;
+                        tpq = basetype(tpq)->btp;
+                        tpp = basetype(tpp)->btp;
+                    }
+                    if (tpq || tpp)
+                    {
+                        qList = &(*qList)->next;
+                    }
+                    else
+                    {
+                        *qList = (*qList)->next;
+                    }
+                }
             else
+            {
                 qList = &(*qList)->next;
+            }
         }
         bePrintf(".class private value explicit ansi sealed '");
         puttype(tp);

@@ -199,6 +199,8 @@ typedef struct {
 #define DO_NOOPTCONVERSION 128
 #define DO_NOINLINE 256
 #define DO_UNIQUEIND 512
+#define DO_NOFASTDIV 1024
+#define DO_NODEADPUSHTOTEMP 2048
 
     char hasFloatRegs;			/* true if has floating point registers */
 #define AFM_SIGNEDZERO 1

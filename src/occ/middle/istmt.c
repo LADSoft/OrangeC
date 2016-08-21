@@ -75,6 +75,7 @@ extern int retlab, startlab;
 extern LIST *temporarySymbols;
 extern int inlinesym_count;
 extern int tempBottom, nextTemp;
+extern TYPE stdint;
 
 IMODE *returnImode;
 int retcount;
@@ -351,6 +352,22 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
         {
             doatomicFence(funcsp, NULL, stmt->select, barrier);
         }
+    }
+    if (chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
+    {
+        EXPRESSION *en = anonymousVar(sc_auto, &stdint);
+        if (ap->size != -ISZ_UINT)
+        {
+            ap3 = tempreg(-ISZ_UINT, 0);
+            gen_icode(i_assn, ap3, ap, NULL);
+            ap = ap3;
+        }
+        ap3 = Alloc(sizeof(IMODE));
+        ap3->mode = i_direct;
+        ap3->offset = en;
+        ap3->size = - ISZ_UINT;
+        gen_icode(i_assn, ap3, ap, NULL);
+        ap = ap3;
     }
     gen_icode2(i_coswitch, make_immed(ISZ_UINT,cs.count), ap, make_immed(ISZ_UINT,cs.top - cs.bottom), stmt->label + codeLabelOffset);
     gather_cases(stmt->cases,&cs);

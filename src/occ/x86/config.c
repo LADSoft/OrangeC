@@ -272,6 +272,7 @@ static ARCH_CHARACTERISTICS architecture = {
     peeps,   /* defines peephole information */
     OPT_BYTECOMPARE, /* preferred optimizations */
     0,             /* optimizations we don't want */
+    0,                /* error options */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */
     ABM_USESIZE,  /* BOOLEAN is determined by sizing above */

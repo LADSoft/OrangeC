@@ -268,6 +268,7 @@ static ARCH_CHARACTERISTICS architecture = {
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV |
         DO_NODEADPUSHTOTEMP,
                  /* optimizations we don't want */
+    EO_RETURNASERR,                /* error options */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */
     ABM_USESIZE,  /* BOOLEAN is determined by sizing above */

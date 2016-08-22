@@ -46,6 +46,7 @@
 #define CPLUSPLUSERROR 32
 
 extern COMPILER_PARAMS cparams ;
+extern ARCH_ASM *chosenAssembler;
 extern int instantiatingTemplate;
 extern int structLevel;
 
@@ -576,6 +577,20 @@ static char kwtosym(enum e_kw kw)
             return '?';
     }
 };
+static BOOLEAN IsReturnErr(int err)
+{
+    switch (err)
+    {
+        case ERR_FUNCTION_SHOULD_RETURN_VALUE:
+        case ERR_RETURN_MUST_RETURN_VALUE:
+        case ERR_RETURN_NO_VALUE:
+        case ERR_RETMISMATCH:
+        case ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE:
+            return chosenAssembler->arch->erropts & EO_RETURNASERR;
+        default:
+            return FALSE;
+    }
+}
 static BOOLEAN alwaysErr(int err)
 {
     switch (err)
@@ -672,7 +687,7 @@ BOOLEAN printerrinternal(int err, char *file, int line, va_list args)
         vsprintf(buf, errors[err].name, args);
 //        va_end(arg);
     }
-    if ((errors[err].level & ERROR) || (cparams.prm_ansi && (errors[err].level & ANSIERROR)) 
+    if (IsReturnErr(err) || (errors[err].level & ERROR) || (cparams.prm_ansi && (errors[err].level & ANSIERROR)) 
         || (cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR)))
     {
         if (!cparams.prm_quiet)

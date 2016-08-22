@@ -364,6 +364,12 @@ void load_constant(int sz, EXPRESSION *exp)
             op = isstructured(en->v.sp->tp) ? op_ldarg : op_ldarga;
             ap = make_index(am_param, en->v.sp->offset, en->v.sp);
         }
+        else if (isfunction(en->v.sp->tp))
+        {
+            op = op_ldftn;
+            ap = make_constant(sz, exp);
+            ap->altdata = en->v.sp;
+        }
         else
         {
             op = op_ldsflda;
@@ -643,7 +649,11 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
     }
     else
     {
-        gen_code(op_calli, NULL);
+        EXPRESSION *en = varNode(en_pc, ((FUNCTIONCALL *)q->altdata)->sp);
+        AMODE *ap = make_constant(ISZ_UINT, en);
+        ap->altdata = q->altdata;
+        gen_code(op_calli, ap);
+        decrement_stack();
     }
     if (q->novalue && q->novalue != -1)
     {

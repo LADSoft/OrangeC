@@ -202,6 +202,9 @@ typedef struct {
 #define DO_NOFASTDIV 1024
 #define DO_NODEADPUSHTOTEMP 2048
 
+    int erropts;                /* error options */
+#define EO_RETURNASERR 1
+
     char hasFloatRegs;			/* true if has floating point registers */
 #define AFM_SIGNEDZERO 1
     char floatmode;             /* floating point modes, not honored currently */

@@ -53,6 +53,8 @@ extern INCLUDES *includes;
 OCODE *peep_head, *peep_tail;
 static int uses_float;
 
+void puttypewrapped(TYPE *tp);
+
 LIST *typeList;
 static enum e_gt oa_gentype = nogen; /* Current DC type */
 enum e_sg oa_currentSeg = noseg; /* Current seg */
@@ -568,7 +570,45 @@ void puttype(TYPE *tp)
     tp = basetype(tp);
     if (tp->type == bt_pointer)
     {
-        if (tp->array)
+        if (isfuncptr(tp))
+        {
+            HASHREC *hr;
+            BOOLEAN vararg = FALSE;
+            tp = tp->btp;
+            hr = basetype(tp)->syms->table[0];
+            while (hr)
+            {
+                SYMBOL *sp = (SYMBOL *)hr->p;
+                if (sp->tp->type == bt_ellipse)
+                    vararg = TRUE;
+                hr = hr->next;
+            }
+            bePrintf("\t");
+            if (vararg)
+                bePrintf("vararg ");
+            puttypewrapped(isstructured(basetype(tp)->btp) ? &stdpointer : basetype(tp)->btp);
+            bePrintf(" *(");
+            hr = basetype(tp)->syms->table[0];
+            if (isstructured(basetype(tp)->btp))
+            {
+                bePrintf("void *");
+                if (!vararg && hr || vararg && hr && hr->next)
+                    bePrintf(", ");
+            }
+            while (hr)
+            {
+                SYMBOL *sp = (SYMBOL *)hr->p;
+                if (sp->tp->type != bt_void)
+                {
+                    puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+                    if (!vararg && hr->next || vararg && hr->next && hr->next->next)
+                        bePrintf(", ");
+                }
+                hr = hr->next;
+            }
+            bePrintf(")");
+        }
+        else if (tp->array)
         {
             char buf[1024];
             cacheType(tp);
@@ -604,7 +644,9 @@ void puttype(TYPE *tp)
 }
 void puttypewrapped(TYPE *tp)
 {
-    if (isstructured(tp) || isarray(tp))
+    if (isfuncptr(tp))
+        bePrintf("method ");
+    else if (isstructured(tp) || isarray(tp))
         bePrintf("valuetype '");
     puttype(tp);
     if (isstructured(tp) || isarray(tp))
@@ -1319,11 +1361,21 @@ void putarg(AMODE *arg)
                 {
                     putfunccall(arg);
                 }
-                else
-                {
-                    bePrintf("\t");
-                    puttypewrapped(arg->offset->v.sp->tp);
-                    bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                else {
+                    TYPE *tp1 = arg->offset->v.sp->tp;
+                    while (isarray(tp1))
+                        tp1 = basetype(tp1)->btp;
+                    if (arg->offset->type == en_pc /*calli */ && isfuncptr(tp1))
+                    {
+                        bePrintf("\t");
+                        puttype(tp1);
+                    }
+                    else
+                    {
+                        bePrintf("\t");
+                        puttypewrapped(arg->offset->v.sp->tp);
+                        bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                    }
                 }
             else if (isfloatconst(arg->offset))
             {

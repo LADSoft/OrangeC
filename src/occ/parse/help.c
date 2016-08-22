@@ -38,6 +38,7 @@
 #include "compiler.h"
 
 extern COMPILER_PARAMS cparams;
+extern ARCH_ASM *chosenAssembler;
 
 extern TYPE stdchar;
 extern TYPE stdunsignedchar;
@@ -1230,7 +1231,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
                     exp = exp->left;
                 if (thisptr && exp->type == en_func)
                 {
-                    EXPRESSION *exp1 = /*init->offset ? */exprNode(en_add, expsym, intNode(en_c_i, init->offset));// : expsym;
+                    EXPRESSION *exp1 = init->offset  || (chosenAssembler->arch->denyopts & DO_UNIQUEIND) ? exprNode(en_add, expsym, intNode(en_c_i, init->offset)) : expsym;
                     if (isarray(tp))
                     {
                         exp->v.func->arguments->exp = exp1;
@@ -1394,7 +1395,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
             else
             {
                 EXPRESSION *exps = expsym;
-//                if (init->offset)
+                if (init->offset || (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
                 deref(init->basetp, &exps);
                 exp = init->exp;

@@ -4,7 +4,7 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 6.0.7.1
+AppVerName=Orange C Version 6.0.8.1
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft

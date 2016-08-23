@@ -1,5 +1,10 @@
 Release notes:
 
+version 6.0.8: Aug 22, 2016
+    occ:        change the behavior on 6.0.7 to keep the original output file if 
+                there were errors; otherwise delete it after the compile or replace it
+                if there were no errors.
+
 Version 6.0.7: Aug 18, 2016
     occ:        restore the operation where it deletes the output file if there are
                 errors in the compile (instead of leaving a 0byte file on the file system).

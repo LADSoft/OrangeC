@@ -548,6 +548,7 @@ int main(int argc, char *argv[])
     BOOLEAN multipleFiles = FALSE;
     int rv;
     char realOutFile[260];
+    char oldOutFile[260];
     srand(time(0));
 
         /*   signal(SIGSEGV,internalError) ;*/
@@ -594,6 +595,9 @@ int main(int argc, char *argv[])
             outputfile(realOutFile, buffer, chosenAssembler->asmext);
         else
             outputfile(realOutFile, buffer, chosenAssembler->objext);
+        strcpy(oldOutFile, realOutFile);
+        StripExt(oldOutFile);
+        AddExt(oldOutFile, ".tmp");
 #else
         ccNewFile(buffer, TRUE);
 #endif
@@ -641,6 +645,8 @@ int main(int argc, char *argv[])
         else
         {
 #ifndef PARSER_ONLY
+            unlink(oldOutFile);
+            rename(realOutFile, oldOutFile);
             outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
             if (!outputFile)
             {
@@ -763,8 +769,16 @@ int main(int argc, char *argv[])
             fclose(browseFile);
         if (icdFile)
             fclose(icdFile);
+        
         if (total_errors)
+        {
             unlink(realOutFile);
+            rename(oldOutFile, realOutFile);
+        }
+        else
+        {
+            unlink (oldOutFile);
+        }
 
         /* Flag to stop if there are any errors */
         stoponerr |= total_errors;

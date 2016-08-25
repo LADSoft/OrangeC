@@ -2187,7 +2187,10 @@ static LEXEME *read_strings(LEXEME *lex, INITIALIZER **next,
     }
     if (max == INT_MAX/16)
     {
-        max = (*desc)->reloffset/btp->size + 1;
+        EXPRESSION *exp = intNode(en_c_i, 0);
+        
+        initInsert(next, btp, exp, (*desc)->offset + (*desc)->reloffset, FALSE); /* NULL=no initializer */
+        max = (*desc)->reloffset/btp->size;
     }
     for (i=(*desc)->reloffset/btp->size; i < max; i++)
     {

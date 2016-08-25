@@ -2782,9 +2782,9 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
         parent->hassemi = FALSE;
     return lex;
 }
-static BOOLEAN thunkmainret(SYMBOL *funcsp, BLOCKDATA *parent)
+static BOOLEAN thunkmainret(SYMBOL *funcsp, BLOCKDATA *parent, BOOLEAN always)
 {
-    if (!strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace)
+    if (always || !strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace)
     {
         STATEMENT *s = stmtNode(NULL, parent, st_return);
         s->select = intNode(en_c_i, 0);
@@ -3015,16 +3015,24 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             error(ERR_NORETURN);
         else if (cparams.prm_c99 || cparams.prm_cplusplus)
         {
-            if (!thunkmainret(funcsp, blockstmt))
+            if (!thunkmainret(funcsp, blockstmt, FALSE))
             {
                 if (isref(basetype(funcsp->tp)->btp))
                     error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
                 else
+                {
                     error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+                    if (chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
+                        thunkmainret(funcsp, blockstmt, TRUE);
+                }
             }
         }
         else
+        {
             error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+            if (chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
+                thunkmainret(funcsp, blockstmt, TRUE);
+        }
     }
     needkw(&lex, end);
     if (first && cparams.prm_cplusplus)

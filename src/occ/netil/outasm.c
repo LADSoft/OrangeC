@@ -675,12 +675,12 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     if (!strcmp(sp->decoratedName, "_main"))
     {
         HASHREC *hr = basetype(sp->tp)->syms->table[0];
-        bePrintf("(int32 ");
-        bePrintf("%s, ", hr ? hr->p->name : "argc");
+        bePrintf("(int32 '");
+        bePrintf("%s', ", hr ? hr->p->name : "argc");
         if (hr)
             hr = hr->next;
-        bePrintf("void * ");
-        bePrintf("%s) ", hr ? hr->p->name : "argv");
+        bePrintf("void * '");
+        bePrintf("%s') ", hr ? hr->p->name : "argv");
     }
     else
     {

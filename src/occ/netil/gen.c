@@ -1186,12 +1186,12 @@ QUAD * leftInsertionPos(QUAD *head, IMODE *im)
             if (im->offset->v.sp->value.i == head->ans->offset->v.sp->value.i)
             {
                 rv = head;
+                if (!(head->temps & TEMP_LEFT))
+                    break;
+                im = head->dc.left;
+                if (im->offset->v.sp->pushedtotemp)
+                    break;
             }
-            if (!(head->temps & TEMP_LEFT))
-                break;
-            im = head->dc.left;
-            if (im->offset->v.sp->pushedtotemp)
-                break;
         }
         head = head->back;
     }

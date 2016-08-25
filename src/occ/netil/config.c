@@ -262,7 +262,8 @@ static ARCH_CHARACTERISTICS architecture = {
     &regCosts,
     allocOrder,
     peeps,   /* defines peephole information */
-    OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH, /* preferred optimizations */
+    OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH |
+        OPT_THUNKRETVAL, /* preferred optimizations */
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
         DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOENTRYIF |
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV |

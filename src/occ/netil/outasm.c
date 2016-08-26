@@ -358,8 +358,10 @@ static struct asm_details instructions[] = {
 	{ "volatile." }, 
 	{ "xor" }
 };
-static char *msilbltin = "void exit(int); "
-    "void __getmainargs(void *,void *,void*,int, void *);";
+static char *msilbltin = " void exit(int); "
+    "void __getmainargs(void *,void *,void*,int, void *); "
+    "void *__iob_func(); "
+    "void *__pctype_func(); ";
 /* Init module */
 void oa_ini(void)
 {
@@ -1123,17 +1125,9 @@ void oa_put_extern(SYMBOL *sp, int code)
     if (isfunction(sp->tp))
         put_pinvoke(sp);
     else if (cparams.prm_asmfile) {
-        oa_nl();
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (strcmp(sp->name, "_pctype") && strcmp(sp->name, "__stdin") && strcmp(sp->name, "__stdout") && strcmp(sp->name, "__stderr"))
         {
-            bePrintf( "[extern\t%s]\n", sp->decoratedName);
-        }
-        else
-        {
-            if (code)
-                bePrintf( "\textrn\t%s:proc\n", sp->decoratedName);
-            else
-                bePrintf( "\textrn\t%s:byte\n", sp->decoratedName); 
+            fatal ("Undefined external %s\n", sp->name);
         }
     }
 }
@@ -1535,6 +1529,17 @@ void oa_load_funcs(void)
     sp = gsearch("__getmainargs");
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    sp = gsearch("__pctype_func");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    sp = gsearch("__iob_func");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    oa_enterseg(oa_currentSeg);
+    bePrintf("\n\t.field public static void *'__stdin'\n");
+    bePrintf("\n\t.field public static void *'__stdout'\n");
+    bePrintf("\n\t.field public static void *'__stderr'\n");
+    bePrintf("\n\t.field public static void *'_pctype'\n");
 }
 void oa_end_generation(void)
 {
@@ -1562,7 +1567,19 @@ void oa_end_generation(void)
     bePrintf("\t\t[2] void * 'environ',\n");
     bePrintf("\t\t[3] void * 'newmode'\n");
     bePrintf("\t)\n");
-    bePrintf("\t.maxstack 5\n");
+    bePrintf("\t.maxstack 5\n\n");
+    bePrintf("\tcall void *'__pctype_func'()\n");
+    bePrintf("\tstsfld void * '_pctype'\n");
+    bePrintf("\tcall void *'__iob_func'()\n");
+    bePrintf("\tdup\n");
+    bePrintf("\tstsfld void * '__stdin'\n");
+    bePrintf("\tdup\n");
+    bePrintf("\tldc.i4 32\n");
+    bePrintf("\tadd\n");
+    bePrintf("\tstsfld void * '__stdout'\n");
+    bePrintf("\tldc.i4 64\n");
+    bePrintf("\tadd\n");
+    bePrintf("\tstsfld void * '__stderr'\n");
     if (start)
         bePrintf("\tcall void %s()\n", start->name);
     bePrintf("\tldloca 'argc'\n");

@@ -361,7 +361,9 @@ static struct asm_details instructions[] = {
 static char *msilbltin = " void exit(int); "
     "void __getmainargs(void *,void *,void*,int, void *); "
     "void *__iob_func(); "
-    "void *__pctype_func(); ";
+    "void *__pctype_func(); "
+    "int *_errno(); ";
+
 /* Init module */
 void oa_ini(void)
 {
@@ -1535,6 +1537,12 @@ void oa_load_funcs(void)
     sp = gsearch("__iob_func");
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    sp = gsearch("_errno");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
+    sp = gsearch("__GetErrno");
+    if (sp)
+        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
     oa_enterseg(oa_currentSeg);
     bePrintf("\n\t.field public static void *'__stdin'\n");
     bePrintf("\n\t.field public static void *'__stdout'\n");
@@ -1559,6 +1567,12 @@ void oa_end_generation(void)
         }
         externalList = externalList->next;
     }
+    bePrintf(".method public hidebysig static void * __GetErrno() cil managed {\n");
+    bePrintf("\t.maxstack 1\n\n");
+    bePrintf("\tcall void * '_errno'()\n");
+    bePrintf("\tret\n");
+    bePrintf("}\n");
+
     bePrintf(".method public hidebysig static void $Main() cil managed {\n");
     bePrintf("\t.entrypoint\n");
     bePrintf("\t.locals (\n");

@@ -1,5 +1,10 @@
 Release notes:
 
+version 6.0.9:
+    occ:        assigning a string to an unsized character array left the array one byte too large
+    occ:        export records weren't being placed in the object files
+    clibs:      dll startup was broken.   Dlls couldn't be used by .net assemblies.
+
 version 6.0.8: Aug 22, 2016
     occ:        change the behavior on 6.0.7 to keep the original output file if 
                 there were errors; otherwise delete it after the compile or replace it

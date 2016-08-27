@@ -3366,7 +3366,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         funcsp->inlineFunc.stmt->lower = block->head;
         funcsp->inlineFunc.stmt->blockTail = block->blockTail;
         funcsp->declaring = FALSE;
-        if (funcsp->isInline && functionHasAssembly)
+        if (funcsp->isInline && (functionHasAssembly || funcsp->linkage2 == lk_export))
             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
         // if it is variadic don't allow it to be inline
         if (funcsp->isInline)

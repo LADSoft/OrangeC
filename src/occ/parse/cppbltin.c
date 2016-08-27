@@ -40,6 +40,8 @@
 #include "rtti.h"
 extern INCLUDES *includes;
 extern TYPE stdint;
+extern ARCH_ASM *chosenAssembler;
+
 static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigned size); "
     "void * operator new[](unsigned size); " 
     "void * operator new(unsigned size, void *ptr) noexcept; " 
@@ -88,24 +90,35 @@ static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigne
 TYPE stdXC = { 
     bt_struct, sizeof(XCTAB)
 };
-
 void ParseBuiltins(void)
 {
+    LEXEME *lex;
+    FILE *handle = includes->handle;
+    unsigned char *p = includes->lptr;
+    includes->handle = NULL;
     if (cparams.prm_cplusplus)
     {
-        LEXEME *lex;
-        FILE *handle = includes->handle;
-        unsigned char *p = includes->lptr;
         includes->lptr = cppbuiltin;
-        includes->handle = NULL;
         lex = getsym();
         if (lex)
         {
             while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL) ;
         }
-        includes->handle = handle;
-        includes->lptr = p;
-        includes->line = 0;
+    }
+    if (chosenAssembler->bltins)
+    {
+        includes->lptr = chosenAssembler->bltins;
+        lex = getsym();
+        if (lex)
+        {
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL) ;
+        }
+    }
+    includes->handle = handle;
+    includes->lptr = p;
+    includes->line = 0;
+    if (cparams.prm_cplusplus)
+    {
         stdXC.syms = CreateHashTable(1);
         stdXC.sp = makeID(sc_type, &stdXC, NULL, "$$XCTYPE");
         stdXC.alignment = getAlign(sc_auto, &stdint);

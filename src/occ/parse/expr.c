@@ -133,6 +133,75 @@ void thunkForImportTable(EXPRESSION **exp)
         }
     }
 }
+void ValidateMSILFuncPtr(TYPE *dest, TYPE *src, EXPRESSION **exp)
+{
+    BOOLEAN managedDest = FALSE;
+    BOOLEAN managedSrc = FALSE;
+    if ((*exp)->type == en_func && (*exp)->v.func->ascall)
+        return;
+    if (isfunction(dest))
+    {
+        // function arg or assignment to function constant
+        managedDest = basetype(dest)->sp->linkage2 != lk_unmanaged;
+    }
+    else if (isfuncptr(dest))
+    {
+        // function var
+        managedDest = basetype(basetype(dest)->btp)->sp->linkage2 != lk_unmanaged;
+    }
+    else
+    {
+        // unknown
+        errortype(ERR_CANNOT_CONVERT_TYPE, src, dest);
+
+    }
+    if (isfunction(src))
+    {
+        // function arg or assignment to function constant
+        managedSrc = basetype(src)->sp->linkage2 != lk_unmanaged;
+    }
+    else if (isfuncptr(src))
+    {
+        // function var
+        managedSrc = basetype(basetype(src)->btp)->sp->linkage2 != lk_unmanaged;
+    }
+    else
+    {
+        // unknown
+        errortype(ERR_CANNOT_CONVERT_TYPE, src, dest);
+    }
+    if (managedDest != managedSrc)
+    {
+        SYMBOL *sp;
+        if (managedSrc)
+        {
+            sp = gsearch("__OCCMSIL_GetProcThunkToManaged");
+        }
+        else
+        {
+            sp = gsearch("__OCCMSIL_GetProcThunkToUnmanaged");
+        }
+        if(sp)
+        {
+            FUNCTIONCALL *functionCall = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+            functionCall->sp = sp;
+            functionCall->functp = sp->tp;
+            functionCall->fcall = varNode(en_pc, sp);
+            functionCall->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+            functionCall->arguments->tp = &stdpointer;
+            functionCall->arguments->exp = *exp;
+            functionCall->ascall = TRUE;
+            *exp = varNode(en_func, NULL);
+            (*exp)->v.func = functionCall;
+        }
+        else
+        {
+            diag("ValidateMSILFuncPtr: missing conversion func definition");
+        }
+
+    }
+}
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right)
 {
     EXPRESSION *rv = Alloc(sizeof(EXPRESSION));
@@ -2152,8 +2221,13 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
         }
         p = *lptr;
         if (p && p->exp && (p->exp->type == en_pc || p->exp->type == en_func))
+        {
+            if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+            {
+                ValidateMSILFuncPtr(func->tp, p->tp, &p->exp);
+            }
             thunkForImportTable(&p->exp);
-
+        }
         if (cparams.prm_cplusplus)
         {
             BOOLEAN done = FALSE;
@@ -6301,12 +6375,21 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
             {
                 tp1 = funcsp->tp;
                 if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+                {
                     thunkForImportTable(&exp1);
+                }
             }
             if (basetype(*tp)->btp && !comparetypes(basetype(*tp)->btp, tp1, TRUE))
             {
                 if (!isvoidptr(*tp))
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
+            }
+        }
+        if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+        {
+            if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+            {
+                ValidateMSILFuncPtr(*tp, tp1, &exp1);
             }
         }
         if (isconstraw(*tp, TRUE) && !localMutable)

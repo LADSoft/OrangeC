@@ -662,6 +662,7 @@ ARCH_ASM assemblerInterface[] = {
     &dbgStruct[0],                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                               /* pointer to extra builtin data */
     initnasm,  /* return 1 to proceed */
     RunExternalFiles,     /* postprocess function, or NULL */
     0,     /* compiler rundown */

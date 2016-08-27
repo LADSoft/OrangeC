@@ -368,7 +368,6 @@ void load_constant(int sz, EXPRESSION *exp)
         {
             op = op_ldftn;
             ap = make_constant(sz, exp);
-            ap->altdata = en->v.sp;
         }
         else
         {

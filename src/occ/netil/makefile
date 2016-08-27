@@ -110,10 +110,17 @@ BACKEND_FILES = config.c gen.c outasm.c
 
 BACKEND_INCLUDE_PATH=.
 
-vpath %.c $(SRCPATH)
+vpath %.c $(SRCPATH);dll
 
-redirect:
+compiler: redirect occmsil
+
+redirect: 
 	@$(MAKE) /T
+
+occmsil: occmsil.c
+	-del occmsil.l
+	occ /Wd /9 occmsil.c
+
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\occ.cfg

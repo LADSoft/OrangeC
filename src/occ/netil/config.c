@@ -45,7 +45,7 @@
 #include "x86regs.h"
   
 extern COMPILER_PARAMS cparams;
-
+extern char msil_bltins[];
 int dbgblocknum;
     #ifndef WIN32
         int prm_targettype = DOS32A;
@@ -263,8 +263,8 @@ static ARCH_CHARACTERISTICS architecture = {
     &regCosts,
     allocOrder,
     peeps,   /* defines peephole information */
-    OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH |
-        OPT_THUNKRETVAL, /* preferred optimizations */
+    CODEGEN_MSIL | OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | 
+        OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
         DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOENTRYIF |
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV |
@@ -496,6 +496,7 @@ ARCH_ASM assemblerInterface[] = {
     &dbgStruct[0],                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
+    msil_bltins,                  /* pointer to extra builtin data */
     initnasm,  /* return 1 to proceed */
     NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */

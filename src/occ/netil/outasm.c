@@ -358,11 +358,13 @@ static struct asm_details instructions[] = {
 	{ "volatile." }, 
 	{ "xor" }
 };
-static char *msilbltin = " void exit(int); "
+char msil_bltins[] = " void exit(int); "
     "void __getmainargs(void *,void *,void*,int, void *); "
     "void *__iob_func(); "
     "void *__pctype_func(); "
-    "int *_errno(); ";
+    "int *_errno(); "
+    "void *__OCCMSIL_GetProcThunkToManaged(void *proc); "
+    "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); ";
 
 /* Init module */
 void oa_ini(void)
@@ -664,7 +666,12 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     oa_enterseg(oa_currentSeg);
     bePrintf(".method public hidebysig static ");
     if (pinvoke)
-        bePrintf("pinvokeimpl(\"msvcrt.dll\" cdecl) ");
+    {
+        if (strstr(sp->name, "OCCMSIL_"))
+            bePrintf("pinvokeimpl(\"occmsil.dll\" cdecl) ");
+        else
+            bePrintf("pinvokeimpl(\"msvcrt.dll\" cdecl) ");
+    }
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -1178,7 +1185,7 @@ void putfunccall(AMODE *arg)
     SYMBOL *sp = en->v.sp;
     HASHREC *hr = basetype(sp->tp)->syms->table[0];
     BOOLEAN vararg = FALSE;
-    INITLIST *il = ((FUNCTIONCALL *)arg->altdata)->arguments;
+    INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata)->arguments : NULL;
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -1511,20 +1518,7 @@ void dumpTypes()
 }
 void oa_load_funcs(void)
 {
-    LEXEME *lex;
     SYMBOL *sp;
-    FILE *handle = includes->handle;
-    unsigned char *p = includes->lptr;
-    includes->lptr = msilbltin;
-    includes->handle = NULL;
-    lex = getsym();
-    if (lex)
-    {
-        while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, FALSE, ac_public)) != NULL) ;
-    }
-    includes->handle = handle;
-    includes->lptr = p;
-    includes->line = 0;
     sp = gsearch("exit");
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;

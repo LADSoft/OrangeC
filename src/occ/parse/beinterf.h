@@ -415,6 +415,7 @@ typedef struct _arch_asm
     ARCH_DEBUG *debug ;                         /* debug structure, or NULL */
     ARCH_CHARACTERISTICS *arch ;                /* architecture characteristics */
     ARCH_GEN *gen;                              /* pointer to backend function linkages */
+    char *bltins;                               /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS *params, struct _arch_asm *data, ARCH_DEBUG *debug); /* return 1 to proceed */
     int (*compiler_postprocess)(char *);              /* postprocess function, or NULL */
     int (*rundown)(void);                           /* compiler rundown */

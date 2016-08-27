@@ -582,6 +582,7 @@ static BOOLEAN IsReturnErr(int err)
     switch (err)
     {
 //        case ERR_FUNCTION_SHOULD_RETURN_VALUE:
+        case ERR_CALL_FUNCTION_NO_PROTO:
         case ERR_RETURN_MUST_RETURN_VALUE:
         case ERR_RETURN_NO_VALUE:
         case ERR_RETMISMATCH:

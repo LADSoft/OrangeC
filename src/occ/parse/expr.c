@@ -1474,7 +1474,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
     BOOLEAN matching = TRUE;
     BOOLEAN tooshort = FALSE;
     BOOLEAN toolong = FALSE;
-    BOOLEAN noproto = params->sp ? params->sp->oldstyle : FALSE;
+    BOOLEAN noproto = FALSE;//params->sp ? params->sp->oldstyle : FALSE;
     int argnum = 0;
  
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
@@ -1482,7 +1482,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
     if (!hr)
     {
         matching = FALSE;
-        noproto = TRUE;
+        noproto = params->sp->oldstyle;
     }
     if (noproto)
     {

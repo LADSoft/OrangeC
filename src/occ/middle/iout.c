@@ -1,6 +1,6 @@
 /*
     Software License Agreement (BSD License)
-    
+
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
     
@@ -892,7 +892,7 @@ static void iop_varstart(QUAD *q)
 {
     if (chosenAssembler->gen->asm_varstart)
         chosenAssembler->gen->asm_varstart(q);
-    oprintf(icdFile, "\tVAR START\t%s",q->dc.left->offset->v.sp);
+    oprintf(icdFile, "\tVAR START\t%s",q->dc.left->offset->v.sp->name);
 }
 static void iop_func(QUAD *q)
 {
@@ -1608,6 +1608,19 @@ void put_label(int lab)
     sprintf(dataname, "L_%d", lab);
     oprintf(icdFile, "%s:\n", dataname);
 }
+void put_string_label(int lab, int type)
+/*
+ *      icdFile a compiler generated label.
+ */
+{
+    if (chosenAssembler->gen->gen_string_label)
+        chosenAssembler->gen->gen_string_label(lab, type);
+    if (!icdFile)
+        return;
+    nl();
+    sprintf(dataname, "L_%d", lab);
+    oprintf(icdFile, "%s:\n", dataname);
+}
 
 /*-------------------------------------------------------------------------*/
 
@@ -2249,6 +2262,7 @@ EXPRESSION *stringlit(STRING *s)
                 {
                     rv = intNode(en_labcon, lp->label);
                     rv->size = s->size;
+                    rv->altdata = s->strtype;
                     return rv;
                 }
             }
@@ -2260,6 +2274,7 @@ EXPRESSION *stringlit(STRING *s)
     strtab = s;
     rv = intNode(en_labcon, s->label);
     rv->size = s->size;
+    rv->altdata = s->strtype;
     return rv;
 }
 
@@ -2275,7 +2290,7 @@ void dumpLits(void)
         {
             xstringseg();
             nl();
-            put_label(strtab->label);
+            put_string_label(strtab->label, strtab->strtype);
             genstring(strtab);
             strtab = strtab->next;
         } 
@@ -2575,6 +2590,7 @@ void putexterns(void)
     int i;
     {
         int notyet = TRUE;
+        LIST *externList = externals;
         nl();
         exitseg();
         while (globalCache)
@@ -2583,9 +2599,9 @@ void putexterns(void)
             globaldef(sp);
             globalCache = globalCache->next;
         }
-        while (externals)
+        while (externList)
         {
-            SYMBOL *sp = externals->data;
+            SYMBOL *sp = externList->data;
             if (!sp->ispure && (sp->dontinstantiate && sp->genreffed || !sp->inlineFunc.stmt && !sp->init && 
                                 (sp->parentClass || sp->genreffed && sp->storage_class == sc_external)) & !sp->noextern)
             {
@@ -2595,7 +2611,7 @@ void putexterns(void)
                 notyet = put_expfunc(sp, notyet);
 */
             }
-            externals = externals->next;
+            externList = externList->next;
         }
         exitseg();
         while (libincludes)

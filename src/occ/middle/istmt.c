@@ -75,6 +75,7 @@ extern int retlab, startlab;
 extern LIST *temporarySymbols;
 extern int inlinesym_count;
 extern int tempBottom, nextTemp;
+extern TYPE stdint;
 
 IMODE *returnImode;
 int retcount;
@@ -352,6 +353,22 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
             doatomicFence(funcsp, NULL, stmt->select, barrier);
         }
     }
+    if (chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
+    {
+        EXPRESSION *en = anonymousVar(sc_auto, &stdint);
+        if (ap->size != -ISZ_UINT)
+        {
+            ap3 = tempreg(-ISZ_UINT, 0);
+            gen_icode(i_assn, ap3, ap, NULL);
+            ap = ap3;
+        }
+        ap3 = Alloc(sizeof(IMODE));
+        ap3->mode = i_direct;
+        ap3->offset = en;
+        ap3->size = - ISZ_UINT;
+        gen_icode(i_assn, ap3, ap, NULL);
+        ap = ap3;
+    }
     gen_icode2(i_coswitch, make_immed(ISZ_UINT,cs.count), ap, make_immed(ISZ_UINT,cs.top - cs.bottom), stmt->label + codeLabelOffset);
     gather_cases(stmt->cases,&cs);
     qsort(cs.ptrs, cs.count, sizeof(cs.ptrs[0]), gcs_compare);
@@ -434,6 +451,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
             gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
             DumpIncDec(funcsp);
             sp->offset = chosenAssembler->arch->retblocksize;
+            sp->name = "retblock";
             sp->allocate = FALSE;
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 
@@ -730,7 +748,7 @@ static IMODE *GetBucket(IMODE *mem)
 
 void optimize(SYMBOL *funcsp)
 {
-        //printf("optimization start\n");
+            //printf("optimization start\n");
     if (chosenAssembler->gen->pre_gcse)
         chosenAssembler->gen->pre_gcse(intermed_head);
     #ifdef DUMP_GCSE_INFO
@@ -762,6 +780,7 @@ void optimize(SYMBOL *funcsp)
         RearrangePrecolors();
     //printf("ssa\n");
         TranslateToSSA();
+
     //printf("const\n");
         if (optflags & OPT_CONSTANT)
         {
@@ -773,12 +792,15 @@ void optimize(SYMBOL *funcsp)
 //		if (optflags & OPT_RESHAPE)
 //			Reshape();		/* loop expression reshaping */
     //printf("stren\n");
-        if ((cparams.prm_optimize_for_speed) && (optflags & OPT_LSTRENGTH))
-            ReduceLoopStrength(); /* loop index variable strength reduction */
-    //printf("invar\n");
-        if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
-            MoveLoopInvariants();	/* move loop invariants out of loops */
-        if (optflags & OPT_GLOBAL)
+        if (! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))
+        {
+            if ((cparams.prm_optimize_for_speed) && (optflags & OPT_LSTRENGTH))
+                ReduceLoopStrength(); /* loop index variable strength reduction */
+        //printf("invar\n");
+            if ((cparams.prm_optimize_for_speed) && (optflags & OPT_INVARIANT))
+                MoveLoopInvariants();	/* move loop invariants out of loops */
+        }
+        if ((optflags & OPT_GLOBAL) && ! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))
         {
         //printf("alias\n");
             AliasPass1();
@@ -787,7 +809,7 @@ void optimize(SYMBOL *funcsp)
         TranslateFromSSA(FALSE);
         removeDead(blockArray[0]);
 //		RemoveCriticalThunks();
-        if (optflags & OPT_GLOBAL)
+        if ((optflags & OPT_GLOBAL) && ! (chosenAssembler->arch->denyopts & DO_NOGLOBAL))
         {
     //printf("alias 2\n");
             SetGlobalTerms();
@@ -832,7 +854,7 @@ void optimize(SYMBOL *funcsp)
         //printf("prealloc\n");
     Prealloc(1);
         //printf("from ssa\n");
-    TranslateFromSSA(TRUE);
+    TranslateFromSSA(!(chosenAssembler->arch->denyopts & DO_NOREGALLOC));
     //printf("peep\n");
     peep_icode(FALSE);			/* peephole optimizations at the ICODE level */
     RemoveCriticalThunks();
@@ -840,11 +862,14 @@ void optimize(SYMBOL *funcsp)
 
             //printf("allocate\n");
     /* now do the actual allocation */
-    AllocateRegisters(intermed_head); 
+    if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
+    {
+        AllocateRegisters(intermed_head); 
     /* backend peephole optimization can sometimes benefit by knowing what is live */
             //printf("live\n");
 
-    CalculateBackendLives();
+        CalculateBackendLives();
+    }
     sFree();
     peep_icode(TRUE);	/* we do branche opts last to not interfere with other opts */
             //printf("optimzation done\n");
@@ -1015,10 +1040,14 @@ void genfunc(SYMBOL *funcsp)
     gen_func(funcexp, 0);
     tFree();
     InsertParameterThunks(funcsp, blockArray[1]);
+    if (chosenAssembler->arch->denyopts & DO_NOREGALLOC)
+        FreeLocalContext(NULL, funcsp, nextLabel++);
     optimize(funcsp);
-    FreeLocalContext(NULL, funcsp, nextLabel++);
+    if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
+        FreeLocalContext(NULL, funcsp, nextLabel++);
         
-    AllocateStackSpace(funcsp);
+    if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
+        AllocateStackSpace(funcsp);
     FillInPrologue(intermed_head, funcsp);
     /* Code gen from icode */
     rewrite_icode(); /* Translate to machine code & dump */

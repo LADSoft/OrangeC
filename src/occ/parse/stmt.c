@@ -1266,7 +1266,7 @@ static LEXEME *statement_for(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
                         st = stmtNode(lex, forstmt, st_expr);
                         st->select = init;
                     }
-                    if (cparams.prm_debug || cparams.prm_optimize_for_size)
+                    if (cparams.prm_debug || cparams.prm_optimize_for_size || (chosenAssembler->arch->denyopts & DO_NOENTRYIF))
                     {
     					st = stmtNode(lex, forstmt, st_goto);
     					st->label = testlabel;
@@ -1721,6 +1721,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             sp->allocate = FALSE; // static var
             sp->offset = chosenAssembler->arch->retblocksize;
             sp->structuredReturn = TRUE;
+            sp->name = "retblock";
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 
                     ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
@@ -2163,7 +2164,7 @@ static LEXEME *statement_while(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
         else
         {
             lex = getsym();
-            if (cparams.prm_debug || cparams.prm_optimize_for_size)
+            if (cparams.prm_debug || cparams.prm_optimize_for_size || (chosenAssembler->arch->denyopts & DO_NOENTRYIF))
             {
     			st = stmtNode(lex, whilestmt, st_goto);
     			st->label = whilestmt->continuelabel;
@@ -2781,9 +2782,9 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
         parent->hassemi = FALSE;
     return lex;
 }
-static BOOLEAN thunkmainret(SYMBOL *funcsp, BLOCKDATA *parent)
+static BOOLEAN thunkmainret(SYMBOL *funcsp, BLOCKDATA *parent, BOOLEAN always)
 {
-    if (!strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace)
+    if (always || !strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace)
     {
         STATEMENT *s = stmtNode(NULL, parent, st_return);
         s->select = intNode(en_c_i, 0);
@@ -3014,16 +3015,24 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             error(ERR_NORETURN);
         else if (cparams.prm_c99 || cparams.prm_cplusplus)
         {
-            if (!thunkmainret(funcsp, blockstmt))
+            if (!thunkmainret(funcsp, blockstmt, FALSE))
             {
                 if (isref(basetype(funcsp->tp)->btp))
                     error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
                 else
+                {
                     error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+                    if (chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
+                        thunkmainret(funcsp, blockstmt, TRUE);
+                }
             }
         }
         else
+        {
             error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
+            if (chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
+                thunkmainret(funcsp, blockstmt, TRUE);
+        }
     }
     needkw(&lex, end);
     if (first && cparams.prm_cplusplus)
@@ -3087,7 +3096,12 @@ void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param)
         return;
     if (isstructured(tp) && !basetype(tp)->sp->pureDest)
         hasXCInfo = TRUE;
-    if (!ispointer(tp) && tp->size <= chosenAssembler->arch->parmwidth)
+    if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+    {
+        // calculate index for CIL
+        param->offset = (*base)++;
+    }
+    else if (!ispointer(tp) && tp->size <= chosenAssembler->arch->parmwidth)
     {
         param->offset = *base + funcvaluesize(tp->size);
         *base += chosenAssembler->arch->parmwidth;
@@ -3135,7 +3149,11 @@ static void assignPascalParams(LEXEME *lex, SYMBOL *funcsp, int *base, HASHREC *
 static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
 {
     HASHREC *params = basetype(funcsp->tp)->syms->table[0];
-    int base = chosenAssembler->arch->retblocksize;
+    int base;
+    if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+        base = 0;
+    else
+        base = chosenAssembler->arch->retblocksize;
     if (funcsp->linkage == lk_pascal)
     {
         assignPascalParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
@@ -3145,9 +3163,14 @@ static void assignParameterSizes(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *block)
         if (isstructured(basetype(funcsp->tp)->btp) || basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr)
         {
             // handle structured return values
-            base += getSize(bt_pointer);
-            if (base % chosenAssembler->arch->parmwidth)
-                base += chosenAssembler->arch->parmwidth - base % chosenAssembler->arch->parmwidth;
+            if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
+                base++;
+            else
+            {
+                base += getSize(bt_pointer);
+                if (base % chosenAssembler->arch->parmwidth)
+                    base += chosenAssembler->arch->parmwidth - base % chosenAssembler->arch->parmwidth;
+            }
         }
         if (ismember(funcsp))
         {
@@ -3343,7 +3366,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
         funcsp->inlineFunc.stmt->lower = block->head;
         funcsp->inlineFunc.stmt->blockTail = block->blockTail;
         funcsp->declaring = FALSE;
-        if (funcsp->isInline && functionHasAssembly)
+        if (funcsp->isInline && (functionHasAssembly || funcsp->linkage2 == lk_export))
             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
         // if it is variadic don't allow it to be inline
         if (funcsp->isInline)

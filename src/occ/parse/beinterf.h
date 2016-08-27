@@ -189,6 +189,22 @@ typedef struct {
     ARCH_PEEP *peephole_defs;   /* defines peephole information */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
+#define DO_NOGLOBAL 1
+#define DO_NOLOCAL 2
+#define DO_NOREGALLOC 4
+#define DO_NOADDRESSINIT 8
+#define DO_NOPARMADJSIZE 16
+#define DO_NOLOADSTACK 32
+#define DO_NOENTRYIF 64
+#define DO_NOOPTCONVERSION 128
+#define DO_NOINLINE 256
+#define DO_UNIQUEIND 512
+#define DO_NOFASTDIV 1024
+#define DO_NODEADPUSHTOTEMP 2048
+
+    int erropts;                /* error options */
+#define EO_RETURNASERR 1
+
     char hasFloatRegs;			/* true if has floating point registers */
 #define AFM_SIGNEDZERO 1
     char floatmode;             /* floating point modes, not honored currently */
@@ -256,6 +272,7 @@ typedef struct _arch_gen {
     void (*preColor)(QUAD *q);			/* precolor an instruction */
     void (*gen_strlab)(SYMBOL *sp);    /* generate a named label */
     void (*gen_label)(int labnum);  /* generate a numbered label */
+    void (*gen_string_label)(int labnum, int type);  /* generate a numbered label */
     void (*gen_bit) (SYMBOL *sp, LLONG_TYPE val);   /* reserve space for a bit */
     void (*gen_int) (enum e_gt type, LLONG_TYPE val); /* initialize one of the integer types */
     void (*gen_float)(enum e_gt type, FPF *val);/* initialize a float */
@@ -398,6 +415,7 @@ typedef struct _arch_asm
     ARCH_DEBUG *debug ;                         /* debug structure, or NULL */
     ARCH_CHARACTERISTICS *arch ;                /* architecture characteristics */
     ARCH_GEN *gen;                              /* pointer to backend function linkages */
+    char *bltins;                               /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS *params, struct _arch_asm *data, ARCH_DEBUG *debug); /* return 1 to proceed */
     int (*compiler_postprocess)(char *);              /* postprocess function, or NULL */
     int (*rundown)(void);                           /* compiler rundown */

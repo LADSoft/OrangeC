@@ -92,7 +92,8 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
         {
             if (startupStruct.flags & DLL)
             {
-                rv = (*startupStruct.func)(hInst, fdwReason, lpvReserved) + 1;
+                int (*PASCAL dllMain)() = startupStruct.func;
+                rv = (*dllMain)(hInst, fdwReason, lpvReserved) + 1;
             }
             else if (startupStruct.flags & GUI)
             {

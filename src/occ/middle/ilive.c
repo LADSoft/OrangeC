@@ -44,7 +44,8 @@
 #include <malloc.h>
 #include <string.h>
 #include "compiler.h"
-  
+
+extern ARCH_ASM *chosenAssembler;  
 extern BITINT bittab[BITINTBITS];
 extern int blockCount;
 extern BLOCK **blockArray;
@@ -474,10 +475,12 @@ static void markLiveInstruction(BRIGGS_SET *live, QUAD *ins)
             }
             return;
         default:
-            if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind)
+            if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind || 
+               (chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->v.sp->pushedtotemp)
                 ins->live = TRUE;
             else if ((ins->temps & TEMP_ANS) && briggsTest(live, ins->ans->offset->v.sp->value.i))
                 ins->live = TRUE;
+
             break;
     }
     if (ins->live)

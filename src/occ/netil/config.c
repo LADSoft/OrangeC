@@ -44,23 +44,15 @@
 #include "winmode.h"
 #include "x86regs.h"
   
-extern int dbgblocknum;
-extern ASMNAME oplst[] ;
-extern ASMREG reglst[] ;
+extern COMPILER_PARAMS cparams;
+extern char msil_bltins[];
+int dbgblocknum;
     #ifndef WIN32
         int prm_targettype = DOS32A;
     #else 
         int prm_targettype = CONSOLE;
     #endif 
-    int prm_bepeep = TRUE;
-    int prm_crtdll = FALSE;
-    int prm_lscrtdll = FALSE;
-    int prm_msvcrt = FALSE;
     enum asmTypes prm_assembler;
-    int prm_flat = FALSE ;
-    int prm_nodos = FALSE ;
-    int prm_useesp = TRUE;
-    int usingEsp = FALSE;
 static    char usage_text[] = "[options] [@response file] files\n"
     "\n""/1        - C1x mode                  /9        - C99 mode\n"
         "/c        - compile only              +e        - dump errors to file\n"
@@ -170,6 +162,7 @@ static ARCH_DEFINES defines[] = {
     {"__CRTDLL_DLL","1",FALSE, TRUE },
     {"__RAW_IMAGE__","1",FALSE, TRUE },
     /* end ordered */
+    {"__MSIL__","1",TRUE,TRUE },
     {"__386__","1",TRUE,TRUE },
     {"__i386__","1",TRUE,TRUE },
     {"_i386_","1",TRUE,TRUE },
@@ -192,7 +185,7 @@ static ARCH_SIZING sizes = {
     0, /* char a_struct;  */ /* alignment only */
     4, /*char a_float;*/
     8, /*char a_double;*/
-    10, /*char a_longdouble;*/
+    8, /*char a_longdouble;*/
     0,/*char a_fcomplexpad;*/
     0,/*char a_rcomplexpad;*/
     2,/*char a_lrcomplexpad;*/
@@ -244,7 +237,7 @@ static ARCH_FLOAT adbl = {
     -1022, 1022, 1024, 53
     } ;
 static ARCH_FLOAT aldbl = {
-    -16382, 16382, 16384, 64
+    -1022, 1022, 1024, 53
 } ;
 static ARCH_PEEP peeps[] = { 0 } ;
 static ARCH_CHARACTERISTICS architecture = {
@@ -270,9 +263,14 @@ static ARCH_CHARACTERISTICS architecture = {
     &regCosts,
     allocOrder,
     peeps,   /* defines peephole information */
-    OPT_BYTECOMPARE, /* preferred optimizations */
-    0,             /* optimizations we don't want */
-    0,                /* error options */
+    CODEGEN_MSIL | OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | 
+        OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
+    DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
+        DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOENTRYIF |
+        DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV |
+        DO_NODEADPUSHTOTEMP,
+                 /* optimizations we don't want */
+    EO_RETURNASERR,                /* error options */
     FALSE,			/* true if has floating point regs */
     0,            /* floating point modes, not honored currently */
     ABM_USESIZE,  /* BOOLEAN is determined by sizing above */
@@ -292,63 +290,13 @@ extern ARCH_GEN outputfunctions ;
 ARCH_GEN outputfunctions ;
 
 static void WinmodeSetup(char select, char *string);
-static void chkdos(void)
-{
-    char *a = getenv("ORANGECDOS");
-    if (a && *a)
-    {
-        WinmodeSetup(0, "a"); // DOS32A
-        prm_useesp = FALSE;
-    }
-    else
-    {
-        WinmodeSetup(0, "c"); // Windows console
-    }
-}
 static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
 {
     (void)parms;
     (void)data;
     (void)debug;
     prm_assembler = pa_nasm;
-    chkdos();
-    return 1;
-}
-static int initfasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
-{
-    (void)parms;
-    (void)data;
-    (void)debug;
-    prm_assembler = pa_fasm;
-    chkdos();
-    return 1;
-}
-static int initgeneric(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
-{
-    (void)parms;
-    (void)data;
-    (void)debug;
-    initnasm(parms, data, debug);
-    prm_nodos = TRUE;
-    chkdos();
-    return 1;
-}
-static int inittasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
-{
-    (void)parms;
-    (void)data;
-    (void)debug;
-    prm_assembler = pa_tasm;
-    chkdos();
-    return 1;
-}
-static int initmasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
-{
-    (void)parms;
-    (void)data;
-    (void)debug;
-    prm_assembler = pa_masm;
-    chkdos();
+    cparams.prm_asmfile = TRUE;
     return 1;
 }
     static void WinmodeSetup(char select, char *string)
@@ -356,20 +304,6 @@ static int initmasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
         (void)select;
         switch (string[0])
         {
-            case 'r':
-                prm_targettype = RAW;
-                defines[3].respect = FALSE;
-                defines[2].respect = FALSE;
-                defines[0].respect = FALSE;
-                defines[6].respect = TRUE;
-                break;
-            case 'a':
-                prm_targettype = DOS32A;
-                defines[3].respect = FALSE;
-                defines[2].respect = TRUE;
-                defines[0].respect = FALSE;
-                defines[6].respect = FALSE;
-                break;
             case 'd':
                 prm_targettype = DLL;
                 defines[0].respect = TRUE;
@@ -391,49 +325,8 @@ static int initmasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
                 defines[3].respect = TRUE;
                 defines[6].respect = FALSE;
                 break;
-            case 'e':
-                prm_targettype = DOS;
-                defines[3].respect = FALSE;
-                defines[2].respect = TRUE;
-                defines[0].respect = FALSE;
-                defines[6].respect = FALSE;
-                break;
-            case 'h':
-                prm_targettype = HXDOS;
-                defines[3].respect = TRUE;
-                defines[2].respect = TRUE;
-                defines[0].respect = TRUE;
-                defines[6].respect = FALSE;
-                break;
-            case 'x':
-                prm_targettype = WHXDOS;
-                defines[3].respect = FALSE;
-                defines[2].respect = TRUE;
-                defines[0].respect = FALSE;
-                defines[6].respect = FALSE;
-                break;
             default:
                 fatal("Invalid executable type");
-        }
-        if (string[1] == 'm')
-        {
-            if (!defines[0].respect)
-                fatal("Invalid use of LSCRTDLL");
-            prm_msvcrt = TRUE;
-            defines[4].respect = TRUE;
-        }
-        if (string[1] == 'c')
-        {
-            if (!defines[0].respect)
-                fatal("Invalid use of CRTDLL");
-            prm_crtdll = TRUE;
-            defines[5].respect = TRUE;
-        } else if (string[1] == 'l') {
-            if (!defines[0].respect)
-                fatal("Invalid use of LSCRTDLL");
-            prm_lscrtdll = TRUE;
-            defines[1].respect = TRUE;
-            architecture.libsasimports = TRUE;
         }
     }
 static int parse_param(char select, char *string)
@@ -441,79 +334,20 @@ static int parse_param(char select, char *string)
     if (select == 'W') {
         WinmodeSetup(select, string);
     }
-    else if (select == 'P')
-        prm_bepeep = FALSE;
     return 0;
 }
 static int parse_codegen(char mode, char *string)
 {
-    switch (string[0])
-    {
-        case 'X':
-            prm_nodos = mode;
-            break;
-        case 'F':
-            prm_flat = mode;
-            break;
-        case 'R':
-            cparams.prm_farkeyword = mode;
-            break;
-        case 'E':
-            prm_useesp = mode;
-            break;
-        case '?':
-            cparams.prm_browse = mode;
-            break;
-        default:
-            return 0; /* illegal */
-    }
-    return 1; /* eat one char */
-}
-void SetUsesESP(BOOLEAN yes)
-{
-    int whichway = 0;
-    if (yes && !usingEsp)
-    {
-        whichway = 1 ;
-        usingEsp = TRUE;
-    }
-    else if (!yes && usingEsp)
-    {
-       whichway = -1;
-       usingEsp = FALSE;
-    }
-    if (whichway)
-    {
-        pushedDoubleRegs.regCount += 2 * whichway;
-        pushedDwordRegs.regCount += whichway;
-        pushedWordRegs.regCount += whichway;
-        allDoubleRegs.regCount += 2 * whichway;
-        allDwordRegs.regCount += whichway;
-        allWordRegs.regCount += whichway;
-           regInit();
-    }
-}
-void adjustUsesESP()
-{
-    if (cparams.prm_debug || cparams.prm_stackalign || !cparams.prm_optimize_for_speed)
-    {
-        prm_useesp = FALSE;
-    }
-    else
-    {
-        if (prm_useesp)
-            architecture.retblocksize = 4;
-    }
-    SetUsesESP(prm_useesp);
+    return 0; /* illegal */
 }
 ARCH_DEBUG dbgStruct [] = {
     {
     "LS",                       /* name of debug format */
     0,                          /* backend specific data, compiler ignores */
     &dbgblocknum,               /* pointer to variable which holds block number, or zero for no blocking */
-    dbginit,                    /* per file initialization */
+    NULL,//dbginit,                    /* per file initialization */
     0,                          /* per file rundown */
-    debug_outputtypedef,        /* output a (global) typedef */
+    NULL,//debug_outputtypedef,        /* output a (global) typedef */
     /* browser funcs */
     0,                          /* per file initialization */
     dump_browsedata,    /* put browse info somewhere */
@@ -526,17 +360,17 @@ ARCH_DEBUG dbgStruct [] = {
 ARCH_GEN outputfunctions = {
     oa_header,             /* generate assembly language header */
     oa_trailer,            /* generate assembly language trailer */
-    oa_adjust_codelab,   /* adjust an assembly language statement for the relative code labels */
+    NULL,   /* adjust an assembly language statement for the relative code labels */
     NULL, 			         /* allow access to the quad list prior to GCSE */
-    examine_icode,                   /* allow access to the quad list after GCSE */
+    examine_icode,           /* allow access to the quad list after GCSE */
     flush_peep,             /* called after function body is generated */
     oa_end_generation,		/* end of code generation */
-    cg_internal_conflict,   /* internal conflict */
-    preRegAlloc,			/* rewrites to improve register allocation */
-    precolor,				/* precolor routine */
+    NULL,   /* internal conflict */
+    NULL,			/* rewrites to improve register allocation */
+    NULL,				/* precolor routine */
     oa_gen_strlab,             /* generate a named label */
     oa_put_label,              /* generate a numbered label */
-    oa_put_string_label,    /* generate a numbered label */
+    oa_put_string_label,        /* generate a numbered label */
     NULL,                   /* reserve space for a bit */
     oa_genint,                 /* initialize an int */
     oa_genfloat,               /* initialize a float */
@@ -644,188 +478,40 @@ ARCH_GEN outputfunctions = {
 } ;       
 ARCH_ASM assemblerInterface[] = {
     {
-    "nasm",                                 /* assembler name */
+    "ilasm",                                 /* assembler name */
     0,                                      /* backend data (compiler ignores) */
      "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-   ".asm",                                  /* extension for assembly files */
+   ".il",                                  /* extension for assembly files */
     ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
+    "occil",                               /* name of an environment variable to parse, or 0 */
+    "occil",                             /* name of the program, for usage */
+    "occil",                              /* name of a config file if you want to use one, or NULL (sans extension) */
     usage_text,                           /* pointer to usage text */
     args,									/* extra args */
     sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
+    NULL,                             /* inline assembler opcode list, or null */
+    NULL,                             /* inline assembler register list, or null */
     prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
     defines,                     /* defines list to create at compile time, or null */
     &dbgStruct[0],                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
-    NULL,                               /* pointer to extra builtin data */
+    msil_bltins,                  /* pointer to extra builtin data */
     initnasm,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
+    NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    NULL,          /* insert the output (executable name) into the backend */
+    NULL,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
     parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     0,         /* parse a pragma directive, or null */
     compile_start,    /* signal start of compile on a per file basis */
     include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    },
-    {
-    "fasm",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    initfasm,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    },
-    {
-    "tasm",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    inittasm,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    },
-    {
-    "masm",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    initmasm,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
-    0,                   /* initialize intrinsic mechanism, compiler startup */
-    0,                   /* search for an intrinsic */
-    },
-    {
-    "generic",                                 /* assembler name */
-    0,                                      /* backend data (compiler ignores) */
-     "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    ".asm",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
-    "occ",                               /* name of an environment variable to parse, or 0 */
-    "occ",                             /* name of the program, for usage */
-    "occ",                              /* name of a config file if you want to use one, or NULL (sans extension) */
-    usage_text,                           /* pointer to usage text */
-    args,									/* extra args */
-    sizeof(args)/sizeof(args[0]),			/* number of args */
-    oplst,                             /* inline assembler opcode list, or null */
-    reglst,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
-    &dbgStruct[0],                         /* debug structure, or NULL */
-    &architecture,                /* architecture characteristics */
-    &outputfunctions,                              /* pointer to backend function linkages */
-    initgeneric,  /* return 1 to proceed */
-    RunExternalFiles,     /* postprocess function, or NULL */
-    0,     /* compiler rundown */
-    InsertOutputFileName,          /* insert the output (executable name) into the backend */
-    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
-    parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    0,         /* parse a pragma directive, or null */
-    compile_start,    /* signal start of compile on a per file basis */
-    include_start,		/* signal switching to a new source file */
-    output_obj_file,      /* write the object file (for native object formats) */
-    outcode_file_init,    /* initialize the object file */
-    inasmini,             /* initialize inline assembler, per file, or NULL */
-    inasm_statement,        /* parse an assembly statement, or NULL */
-    inlineAsmStmt,		/* translate an assembly instruction which was inlined */
+    NULL,      /* write the object file (for native object formats) */
+    NULL,    /* initialize the object file */
+    NULL,             /* initialize inline assembler, per file, or NULL */
+    NULL,        /* parse an assembly statement, or NULL */
+    NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     },

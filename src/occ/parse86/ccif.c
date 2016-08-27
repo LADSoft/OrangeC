@@ -126,31 +126,6 @@ int equalnode(EXPRESSION *node1, EXPRESSION *node2)
             return node1->v.sp == node2->v.sp;
     }
 }
-EXPRESSION *GetSymRef(EXPRESSION *n)
-{
-    EXPRESSION *rv = NULL;
-        
-    switch (n->type)
-    {
-        case en_labcon:
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_label:
-        case en_pc:
-        case en_threadlocal:
-            return n;
-        case en_tempref:
-            return NULL;
-        default:
-            if (n->left)
-                rv = GetSymRef(n->left);
-            if (!rv && n->right)
-                rv = GetSymRef(n->right);
-            break;
-    }
-    return rv;
-}
 char *GetSymName(SYMBOL *sp)
 {
     static char buf[4096];

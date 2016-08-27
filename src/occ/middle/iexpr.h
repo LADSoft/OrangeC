@@ -148,6 +148,7 @@ typedef struct quad
     ULLONG_TYPE liveRegs;
     struct quad *fwd, *back;
     struct _block *block;
+    void *altdata;
     BITINT *uses;
     BITINT *transparent;
     BITINT *dsafe;
@@ -184,6 +185,7 @@ typedef struct quad
     int spill:1;
     int ignoreMe:1;
     int genConflict:1; /* assignment node the ans conflicts with left */
+    int hook:1; /* one of the two assigns for a hook, used in diagnostic generation */
     char novalue;
     char temps;
     char precolored;

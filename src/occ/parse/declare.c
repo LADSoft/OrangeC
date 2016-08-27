@@ -170,6 +170,12 @@ SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
     }
     return sp;
 }
+SYMBOL *makeUniqueID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name)
+{
+    char buf[512];
+    sprintf(buf,"%s_%u", name, CRC32((unsigned char *)includes->fname, strlen(includes->fname)));
+    return makeID(storage_class, tp, spi, litlate(buf));
+}
 void addStructureDeclaration(STRUCTSYM *decl)
 {
     decl->next = structSyms;
@@ -1774,6 +1780,11 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                 if (*linkage2 != lk_none)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = lk_export;
+                break;
+            case kw__unmanaged:
+                if (*linkage2 != lk_none)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                *linkage2 = lk_unmanaged;
                 break;
             case kw__import:
                 if (*linkage2 != lk_none)

@@ -52,6 +52,12 @@
 #define _IMPORT _import
 #define _IMPORTMM
 #define _RTL_CLASS
+#elif defined(__MSIL__)
+#define _RTL_FUNC
+#define _RTL_DATA
+#define _IMPORT __unmanaged
+#define _IMPORTMM
+#define _RTL_CLASS
 #else
 #define _RTL_FUNC
 #define _RTL_DATA

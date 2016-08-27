@@ -86,7 +86,7 @@ typedef struct  __file__{
 #define stdaux  __stdaux /* these two not supported now */
 #define stdprn  __stdprn
 
-#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL)
+#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSIL__)
 extern __STD_NS_QUALIFIER FILE * __stdin ;
 extern __STD_NS_QUALIFIER FILE * __stdout ;
 extern __STD_NS_QUALIFIER FILE * __stderr ;
@@ -267,11 +267,13 @@ int       _RTL_FUNC _IMPORT rmtmp(void);
 int		  _RTL_FUNC _IMPORT _rmtmp(void);
 char    * _RTL_FUNC _IMPORT _strerror(const char *__s);
 
-#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
 #define fileno(f)       ((f)->fd)
 #define _fileno(f)		((f)->fd)
 #endif
-
+#if defined(__MSIL__)
+#define fileno(f) _fileno(f)
+#endif 
 int       _RTL_FUNC _IMPORT _fgetc(FILE *__stream);           /* used by getc() macro */
 int       _RTL_FUNC _IMPORT _fputc(int __c, FILE *__stream); /* used by putc() macro */
 
@@ -292,7 +294,7 @@ int _RTL_FUNC _IMPORT _setmaxstdio(int);
 
 /*  The following macros provide for common functions */
 
-#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL)
+#if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
 #define ferror(f)   ((f)->flags & _F_ERR)
 #define feof(f)     ((f)->flags & _F_EOF)
 #endif

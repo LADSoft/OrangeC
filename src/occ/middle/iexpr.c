@@ -663,6 +663,24 @@ IMODE *indnode(IMODE *ap1, int size)
     }
     return ap;
 }
+static IMODE *gen_bit_load(IMODE *ap)
+{
+    IMODE *result1 = tempreg(ap->size, FALSE);
+    IMODE *result2 = tempreg(ap->size, FALSE);
+    int n = (1 << ap->bits) -1;
+    gen_icode(ap->size < 0 ? i_asr : i_lsr, result1, ap, make_immed(-ISZ_UINT, ap->startbit));
+    gen_icode(i_and, result2, result1, make_immed(-ISZ_UINT, n));
+    ap->bits = ap->startbit = 0;
+    return result2;
+}
+static IMODE *gen_bit_mask(IMODE *ap)
+{
+    IMODE *result = tempreg(ap->size, FALSE);
+    int n = ~(((1 << ap->bits) -1) << ap->startbit);
+    gen_icode(i_and, result, ap, make_immed(-ISZ_UINT, n));
+    ap->bits = ap->startbit = 0;
+    return result;
+}
 /*-------------------------------------------------------------------------*/
 
 IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
@@ -890,9 +908,18 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
                 if (ap2 != ap1)
                 {
                     gen_icode(i_assn, ap2, ap1, NULL);
+                    ap2 = indnode(ap2, siz1);
+                    ap2->bits = ap1->bits;
+                    ap2->startbit = ap1->startbit;
                     ap1 = ap2;
                 }
-                ap1 = indnode(ap1, siz1);
+                else
+                {
+                    ap2 = indnode(ap1, siz1);
+                    ap2->bits = ap1->bits;
+                    ap2->startbit = ap1->startbit;
+                    ap1 = ap2;
+                }
                 break;
         }
     }
@@ -902,6 +929,13 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
         if (ap2 != ap1)
         {
             gen_icode(i_assn, ap2, ap1, NULL);
+            if (ap1->bits && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
+            {
+                ap2->bits = ap1->bits;
+                ap2->startbit = ap1->startbit;
+                ap1->bits = ap1->startbit = 0;
+                ap2 = gen_bit_load(ap2);
+            }
             ap1 = ap2;
         }
     }
@@ -1420,11 +1454,39 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     (void)size;
     if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
     {
+        int n = 0, m;
         ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-        ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
+        if (ap1->bits && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
+        {
+            n = ap1->startbit;
+            m = ap1->bits;
+            ap1->bits = ap1->startbit = 0;
+            ap3 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
+            ap4 = LookupLoadTemp(ap3, ap3);
+            if (ap4 != ap3)
+            {
+                ap4->bits = ap3->bits;
+                ap4->startbit = ap3->startbit;
+                ap3->bits = ap3->startbit = 0;
+                gen_icode(i_assn, ap4, ap3, NULL);
+            }            
+            ap3 = gen_bit_mask(ap4);
+        }
+        else 
+        {
+            ap3 = NULL;
+        }
+        ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), natural_size(node->left));
         ap4 = LookupLoadTemp(ap2, ap2);
         if (ap4 != ap2)
             gen_icode(i_assn, ap4, ap2, NULL);
+        if (ap3)
+        {
+            gen_icode(i_and, ap4, ap4, make_immed(-ISZ_UINT, (1 << m) - 1));
+            if (n)
+                gen_icode(i_lsl, ap4, ap4, make_immed(-ISZ_UINT, n));
+            gen_icode(i_or, ap4, ap3, ap4);
+        }
     }
     else
     {
@@ -1471,10 +1533,11 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
  *      either op_add (for increment) or op_sub (for decrement).
  */
 {
-    IMODE *ap1, *ap2,*ap3, *ap4, *ap5, *ap6;
+    IMODE *ap1, *ap2,*ap3, *ap4, *ap5, *ap6, *ap7 = NULL;
     int siz1;
     EXPRESSION *ncnode;
     LIST *l;
+    int n, m;
     (void)size;
     siz1 = natural_size(node->left);
     if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
@@ -1483,6 +1546,22 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
         while (castvalue(ncnode))
             ncnode = ncnode->left;
         ap6 = gen_expr( funcsp, ncnode, F_STORE, siz1);
+        if (ap1->bits && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
+        {
+            n = ap6->startbit;
+            m = ap6->bits;
+            ap6->bits = ap6->startbit = 0;
+            ap7 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
+            ap4 = LookupLoadTemp(ap7, ap7);
+            if (ap4 != ap7)
+            {
+                ap4->bits = ap7->bits;
+                ap4->startbit = ap7->startbit;
+                ap7->bits = ap7->startbit = 0;
+                gen_icode(i_assn, ap4, ap7, NULL);
+            }            
+            ap7 = gen_bit_mask(ap4);
+        }
         ap1 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
         ap5 = LookupLoadTemp(ap1, ap1);
         if (ap5 != ap1)
@@ -1513,6 +1592,13 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
         }
         ap2 = gen_expr(funcsp, node->right, 0, siz1);
         ap2 = LookupExpression(op, siz1, ap5, ap2);
+        if (ap7)
+        {
+            gen_icode(i_and, ap2, ap2, make_immed(-ISZ_UINT, (1 << m) - 1));
+            if (n)
+                gen_icode(i_lsl, ap2, ap2, make_immed(-ISZ_UINT, n));
+            gen_icode(i_or, ap2, ap7, ap2);
+        }
         ap4 = LookupStoreTemp(ap6, ap6);
         if (ap4 != ap6)
         {
@@ -1658,6 +1744,8 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             default:
                 temp = natural_size(ep);
                 ap3 = gen_expr( funcsp, ep, 0, temp);
+                if (ap3->bits)
+                    ap3 = gen_bit_load(ap3);
                 ap = LookupLoadTemp(NULL, ap3);
                 if (ap != ap3)
                     gen_icode(i_assn, ap, ap3, NULL);

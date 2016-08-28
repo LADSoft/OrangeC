@@ -60,6 +60,8 @@ extern QUAD *intermed_tail;
 TEMP_INFO **tempInfo;
 int tempSize;
 
+int MSILLocalOffset;
+
 BRIGGS_SET *killed;
 int tempBottom, nextTemp;
 
@@ -225,6 +227,7 @@ static void renameToTemps(SYMBOL *funcsp)
         }
         lst = lst->next;
     }
+    MSILLocalOffset = i;
 }
 
 static int AllocTempOpt(int size1)

@@ -668,7 +668,12 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     if (exp->type != en_memberptr)
                         genaddress(0);
                     if (!cparams.prm_cplusplus || sp->storage_class != sc_localstatic)
-                        insertDynamicInitializer(sp, init);
+                    {
+                        INITIALIZER *shim = Alloc(sizeof(INITIALIZER));
+                        *shim = *init;
+                        shim->next = NULL;
+                        insertDynamicInitializer(sp, shim);
+                    }
                     break;
                 /* fall through */
                 default:
@@ -679,7 +684,12 @@ int dumpInit(SYMBOL *sp, INITIALIZER *init)
                     else if (cparams.prm_cplusplus)
                     {
                         if (sp->storage_class != sc_localstatic)
-                            insertDynamicInitializer(sp, init);
+                        {
+                            INITIALIZER *shim = Alloc(sizeof(INITIALIZER));
+                            *shim = *init;
+                            shim->next = NULL;
+                            insertDynamicInitializer(sp, shim);
+                        }
                         return 0;
                     }
                     else

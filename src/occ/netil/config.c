@@ -268,7 +268,7 @@ static ARCH_CHARACTERISTICS architecture = {
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
         DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOENTRYIF |
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV |
-        DO_NODEADPUSHTOTEMP,
+        DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS,
                  /* optimizations we don't want */
     EO_RETURNASERR,                /* error options */
     FALSE,			/* true if has floating point regs */

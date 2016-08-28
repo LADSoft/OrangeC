@@ -50,6 +50,7 @@ extern LIST *temporarySymbols;
 extern LIST *externals;
 extern TYPE stdpointer;
 extern INCLUDES *includes;
+
 OCODE *peep_head, *peep_tail;
 static int uses_float;
 
@@ -709,7 +710,7 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
             if (sp->tp->type != bt_void)
             {
                 puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
-                if (!pinvoke)
+                if (!pinvoke && sp->tp->type != bt_ellipse)
                 {
                     bePrintf(" '%s' ",sp->name);
                 }
@@ -1635,5 +1636,4 @@ void flush_peep(SYMBOL *funcsp, QUAD *list)
     }
     bePrintf("\n}\n ");
     peep_head = 0;
-
 }

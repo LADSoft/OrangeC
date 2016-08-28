@@ -45,6 +45,8 @@ extern int startlab, retlab;
 extern OCODE *peep_head, *peep_tail;
 extern BOOLEAN inASMdata;
 extern LIST *typeList;
+extern int MSILLocalOffset;
+extern TYPE stdint;
 
 #define MAX_ALIGNS 50
 
@@ -558,15 +560,7 @@ void gen_branch(enum e_op op, int label, BOOLEAN decrement)
 void put_label(int label)
 {
 }
-void bit_store(AMODE *dest, int size, int bits, int startbit)
-{   	
-    decrement_stack();
-}
 
-void bit_load(AMODE *dest, AMODE *src, int size, int bits, int startbit)
-{
-    increment_stack();
-}
 void asm_line(QUAD *q)               /* line number information and text */
 {
     OCODE *new = beLocalAlloc(sizeof(OCODE));

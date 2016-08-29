@@ -514,6 +514,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    _using_,                       /* __using__ declaration */    
     },
     { 0 }
 } ;

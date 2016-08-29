@@ -4492,6 +4492,67 @@ static EXPRESSION *vlaSetSizes(EXPRESSION ***rptr, EXPRESSION *vlanode,
     *index += sou;
     return mul;
 }
+static EXPRESSION * llallocateVLA(SYMBOL *sp, EXPRESSION *ep1, EXPRESSION *ep2)
+{
+    EXPRESSION *vp, *loader, *unloader;
+
+    if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+    {
+        SYMBOL *al = gsearch("malloc");
+        SYMBOL *fr = gsearch("free");
+        if (al)
+        {
+            al = (SYMBOL *)al->tp->syms->table[0]->p;
+            al->genreffed = TRUE;
+        }
+        if (fr)
+        {
+            fr = (SYMBOL *)fr->tp->syms->table[0]->p;
+            fr->genreffed = TRUE;
+        }
+        if (al && fr)
+        {
+            FUNCTIONCALL *epx = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL *ld = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            epx->ascall = TRUE;
+            epx->fcall = varNode(en_pc, al);
+            epx->sp = al;
+            epx->functp = al->tp;
+            epx->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+            epx->arguments->tp = &stdint;
+            epx->arguments->exp = ep2;
+            ep2 = intNode(en_func, 0);
+            ep2->v.func = epx;
+            ep2 = exprNode(en_assign, ep1, ep2);
+            ld->ascall = TRUE;
+            ld->fcall = varNode(en_pc, fr);
+            ld->sp = fr;
+            ld->functp = fr->tp;
+            ld->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+            ld->arguments->tp = &stdpointer;
+            ld->arguments->exp = ep1;
+            unloader = intNode(en_func, 0);
+            unloader->v.func = ld;
+            ep1 = ep2;
+        }
+        else
+        {
+            diag("llallocatevla: cannot find allocator");
+            return intNode(en_c_i, 0);
+        }
+    }
+    else
+    {
+        EXPRESSION *var = anonymousVar(sc_auto, &stdpointer);
+        loader = exprNode(en_savestack, var, NULL);
+        unloader = exprNode (en_loadstack, var, NULL);
+        ep1 = exprNode(en_assign, ep1, exprNode(en_alloca, ep2, NULL));
+        ep1 = exprNode(en_void, loader, ep1);
+    }    
+
+    initInsert(&sp->dest, sp->tp, unloader, 0, FALSE);
+    return ep1;
+}
 static void allocateVLA(LEXEME *lex, SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *block, 
                         TYPE *btp, BOOLEAN bypointer)
 {
@@ -4561,7 +4622,7 @@ static void allocateVLA(LEXEME *lex, SYMBOL *sp, SYMBOL *funcsp, BLOCKDATA *bloc
             EXPRESSION *ep2 = exprNode(en_add, varNode(en_auto, sp), intNode(en_c_i, soa + sou * (count + 1)));
             deref(&stdpointer, &ep1);
             deref(&stdint, &ep2);
-            ep1 = exprNode(en_assign, ep1, exprNode(en_alloca, ep2, NULL));
+            ep1 = llallocateVLA(sp, ep1, ep2); //exprNode(en_assign, ep1, exprNode(en_alloca, ep2, NULL));
             *rptr = exprNode(en_void, ep1, NULL);
         }
         st->select = result;
@@ -4831,6 +4892,38 @@ jointemplate:
         {
             lex = getsym();
             lex = insertUsing(lex, access, storage_class_in, hasAttributes);
+        }
+        else if (!asExpression && MATCHKW(lex, kw___using__))
+        {
+            lex = getsym();
+            if (lex && lex->type == l_astr)
+            {
+                int elems = 0;
+                STRING *data;
+                                
+                lex = concatStringsInternal(lex, &data, &elems);
+                if (chosenAssembler->_using_)
+                {
+                    char buf[260];
+                    int i;
+                    for (i=0; i < data->pointers[0]->count; i++)
+                        buf[i] = data->pointers[0]->str[i];
+                    buf[i] = 0;
+                    if (!chosenAssembler->_using_(buf))
+                    {
+                        error(ERR___USING___NOT_FOUND);
+                    }
+                }
+                else
+                {
+                    error(ERR___USING___NOT_SUPPORTED);
+                }
+            }
+            else
+            {
+                error(ERR___USING___NEEDS_STRING);
+            }
+
         }
         else if (!asExpression && MATCHKW(lex, kw_static_assert))
         {

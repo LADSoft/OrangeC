@@ -340,7 +340,7 @@ static void thunkRetDestructors(EXPRESSION **exp, HASHTABLE *top, HASHTABLE *sym
     {
         if (syms != top)
             thunkRetDestructors(exp, top, syms->chain);
-        destructBlock(exp, syms->table[0]);
+        destructBlock(exp, syms->table[0], FALSE);
     }
 }
 static void thunkGotoDestructors(EXPRESSION **exp, BLOCKDATA *gotoTab, BLOCKDATA *labelTab)
@@ -2964,6 +2964,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
             {
                 funcsp->allocaUsed = TRUE;
             }
+            /*
             else
             {
                 EXPRESSION *exp = anonymousVar(sc_auto, &stdpointer);
@@ -2987,6 +2988,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp,
                     blockstmt->blockTail->select = exprNode(en_loadstack, exp, NULL);
                 }
             }
+            */
         }
     }
     if (first && cparams.prm_cplusplus)

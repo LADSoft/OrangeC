@@ -35,96 +35,11 @@
 
 #	contact information:
 #		email: TouchStone222@runbox.com <David Lindauer>
-NAME=occil
-MAIN_FILE=ccmain.c
-INCLUDES=..\parse ..\preproc ..\middle netlib\ ..\..\util 
-C_DEPENDENCIES= \
-    $(BACKEND_FILES) \
-    ccmain.c \
-    crc.c \
-    beinterf.c \
-    browse.c \
-    ccerr.c \
-    constopt.c \
-    cppbltin.c \
-    cpplookup.c \
-    debug.c \
-    declare.c \
-    declcons.c \
-    declcpp.c \
-    expr.c \
-    exprcpp.c \
-    float.c \
-    help.c \
-    ialias.c \
-    iblock.c \
-    iconfl.c \
-    iconst.c \
-    iexpr.c \
-    iflow.c \
-    iinline.c \
-    iinvar.c \
-    ilazy.c \
-    ilive.c \
-    ilocal.c \
-    iloop.c \
-    init.c \
-    inline.c \
-    ioptutil.c \
-    iout.c \
-    ipeep.c \
-    irc.c \
-    ireshape.c \
-    irewrite.c \
-    issa.c \
-    istmt.c \
-    istren.c \
-    lambda.c \
-    lex.c \
-    libcxx.c \
-    list.c \
-    mangle.c \
-    memory.c \
-    osutil.c \
-    output.c \
-    preproc.c \
-    ppexpr.c \
-    rtti.c \
-    stmt.c \
-    symtab.c \
-    template.c \
-    types.c \
-    unmangle.c\
-    winsystem.c
-CPP_DEPENDENCIES=\
-    using.cpp
-LIB_DEPENDENCIES=util netlib
-#determine if we can ignore the banner for a batch compile
-WIN32 = WIN32
-#use long long type
-LL = USE_LONGLONG
-DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
+NAME=netlib
+INCLUDES=..\..\..\util;..\..\..\exefmt
+CPP_DEPENDENCIES=$(wildcard *.cpp)
 
-SOURCE = ..\parse;..\preproc;..\middle
-
-SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c gen.c outasm.c
-
-BACKEND_INCLUDE_PATH=.
-
-vpath %.c $(SRCPATH);dll
-
-compiler: redirect occmsil netlib
-
-redirect: 
+redirect:
 	@$(MAKE) /T
 
-occmsil: occmsil.c
-	-del occmsil.l
-	occ /Wd /9 occmsil.c
-
-netlib:
-	@$(MAKE) /Cnetlib
-
-DISTRIBUTE: copyexe
-	copy target.cfg $(DISTBIN)\occ.cfg
+DISTRIBUTE:

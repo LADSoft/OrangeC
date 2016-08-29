@@ -154,6 +154,7 @@ void compile_start(char *name)
 {
     inASMdata = FALSE;
     typeList = NULL;
+    _using_init();
 }
 void include_start(char *name, int num)
 {

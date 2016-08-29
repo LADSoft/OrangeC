@@ -929,7 +929,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
         if (ap2 != ap1)
         {
             gen_icode(i_assn, ap2, ap1, NULL);
-            if (ap1->bits && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
+            if (ap1->bits > 0 && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
             {
                 ap2->bits = ap1->bits;
                 ap2->startbit = ap1->startbit;
@@ -1456,7 +1456,7 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     {
         int n = 0, m;
         ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-        if (ap1->bits && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
+        if (ap1->bits > 0 && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
         {
             n = ap1->startbit;
             m = ap1->bits;
@@ -1546,7 +1546,7 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
         while (castvalue(ncnode))
             ncnode = ncnode->left;
         ap6 = gen_expr( funcsp, ncnode, F_STORE, siz1);
-        if (ap1->bits && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
+        if (ap6->bits > 0 && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
         {
             n = ap6->startbit;
             m = ap6->bits;
@@ -1744,7 +1744,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             default:
                 temp = natural_size(ep);
                 ap3 = gen_expr( funcsp, ep, 0, temp);
-                if (ap3->bits)
+                if (ap3->bits > 0)
                     ap3 = gen_bit_load(ap3);
                 ap = LookupLoadTemp(NULL, ap3);
                 if (ap != ap3)
@@ -2154,7 +2154,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 //		if (ap != ap3)
 //			gen_icode(i_assn, ap, ap3, NULL);
         if (ap->mode == i_immed && ap->offset->type == en_pc) {
-            if (f->sp && f->sp->linkage2 == lk_import) {
+            if (f->sp && f->sp->linkage2 == lk_import && (!chosenAssembler->arch->preferopts & CODEGEN_MSIL)) {
                 IMODE *ap1 = (IMODE *)Alloc(sizeof(IMODE));
                 *ap1 = *ap;
                 ap1->retval = FALSE;

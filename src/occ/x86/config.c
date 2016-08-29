@@ -680,6 +680,7 @@ ARCH_ASM assemblerInterface[] = {
     inlineAsmStmt,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
     },
     {
     "fasm",                                 /* assembler name */
@@ -717,6 +718,7 @@ ARCH_ASM assemblerInterface[] = {
     inlineAsmStmt,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
     },
     {
     "tasm",                                 /* assembler name */
@@ -754,6 +756,7 @@ ARCH_ASM assemblerInterface[] = {
     inlineAsmStmt,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
     },
     {
     "masm",                                 /* assembler name */
@@ -791,6 +794,7 @@ ARCH_ASM assemblerInterface[] = {
     inlineAsmStmt,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
     },
     {
     "generic",                                 /* assembler name */
@@ -828,6 +832,7 @@ ARCH_ASM assemblerInterface[] = {
     inlineAsmStmt,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                       /* __using__ declaration */    
     },
     { 0 }
 } ;

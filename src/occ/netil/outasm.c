@@ -48,7 +48,7 @@ extern int prm_assembler;
 extern SYMBOL *theCurrentFunc;
 extern LIST *temporarySymbols;
 extern LIST *externals;
-extern TYPE stdpointer;
+extern TYPE stdpointer, stdint;
 extern INCLUDES *includes;
 
 OCODE *peep_head, *peep_tail;
@@ -365,7 +365,9 @@ char msil_bltins[] = " void exit(int); "
     "void *__pctype_func(); "
     "int *_errno(); "
     "void *__OCCMSIL_GetProcThunkToManaged(void *proc); "
-    "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); ";
+    "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
+    "void *malloc(unsigned); "
+    "void free(void *); ";
 
 /* Init module */
 void oa_ini(void)
@@ -622,7 +624,14 @@ void puttype(TYPE *tp)
             buf[0] = 0;
             while (tp->array)
             {
-                sprintf(buf + strlen(buf), "[%d]", tp->size/tp->btp->size);
+                if (tp->vla)
+                {
+                    sprintf(buf + strlen(buf), "[vla]");
+                }
+                else
+                {
+                    sprintf(buf + strlen(buf), "[%d]", tp->size/tp->btp->size);
+                }
                 tp = tp->btp;
             }
             puttype(tp);
@@ -668,10 +677,15 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     bePrintf(".method public hidebysig static ");
     if (pinvoke)
     {
-        if (strstr(sp->name, "OCCMSIL_"))
-            bePrintf("pinvokeimpl(\"occmsil.dll\" cdecl) ");
+        char * name = _dll_name(sp->name);
+        if (name)
+        {
+            bePrintf("pinvokeimpl(\"%s\" %s) ", name, sp->linkage == lk_stdcall ? "stdcall" : "cdecl");
+        }
         else
-            bePrintf("pinvokeimpl(\"msvcrt.dll\" cdecl) ");
+        {
+            errorsym(ERR_UNDEFINED_EXTERNAL, sp);
+        }
     }
     while (hr)
     {
@@ -682,11 +696,11 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     }
     if (vararg)
         bePrintf("vararg ");
-    puttypewrapped(isstructured(basetype(sp->tp)->btp) ? &stdpointer : basetype(sp->tp)->btp);
-    bePrintf(" '%s'", sp->name);
     if (!strcmp(sp->decoratedName, "_main"))
     {
         HASHREC *hr = basetype(sp->tp)->syms->table[0];
+        puttypewrapped(&stdint);
+        bePrintf(" '%s'", sp->name);
         bePrintf("(int32 '");
         bePrintf("%s', ", hr ? hr->p->name : "argc");
         if (hr)
@@ -696,6 +710,8 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     }
     else
     {
+        puttypewrapped(isstructured(basetype(sp->tp)->btp) ? &stdpointer : basetype(sp->tp)->btp);
+        bePrintf(" '%s'", sp->name);
         hr = basetype(sp->tp)->syms->table[0];
         bePrintf("(");
         if (isstructured(basetype(sp->tp)->btp))
@@ -1080,6 +1096,9 @@ void dump_browsefile(BROWSEFILE *brf)
 
 void oa_header(char *filename, char *compiler_version)
 {
+    _using_("msvcrt");
+    _using_("occmsil");
+
     oa_nl();
     bePrintf("//File %s\n",filename);
     bePrintf("//Compiler version %s\n",compiler_version);

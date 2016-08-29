@@ -157,7 +157,7 @@ void FreeLocalContext(BLOCKDATA *block, SYMBOL *sp, int label)
         sp->value.i--;
 
     st = stmtNode(NULL, block, st_expr);
-    destructBlock(&st->select, localNameSpace->syms->table[0]);    
+    destructBlock(&st->select, localNameSpace->syms->table[0], TRUE);    
     localNameSpace->syms = localNameSpace->syms->next;
     localNameSpace->tags = localNameSpace->tags->next;
 

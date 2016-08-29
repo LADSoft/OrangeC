@@ -146,4 +146,6 @@ void oa_put_impfunc(SYMBOL *sp, char *file);
 void oa_put_expfunc(SYMBOL *sp);
 void oa_output_includelib(char *name);
 void oa_end_generation(void);
-
+BOOLEAN _using_(char *);
+void _using_init();
+char *_dll_name(char *name);

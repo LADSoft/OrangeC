@@ -75,11 +75,10 @@ static int parse_param(char mode, char *string);
 static CMDLIST args[] = 
 {
     {
-        'W', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
-    }
-    ,
+        'L', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
+    },
     {
-        'P', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
+        'W', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
     }
     
 } ;
@@ -154,10 +153,10 @@ static KEYWORD prockeywords[] =
 };
 static ARCH_DEFINES defines[] = { 
     /* must come first in this order */
-    {"__WIN32__","1",FALSE, TRUE },
+    {"__WIN32__","1",TRUE, TRUE },
     {"__LSCRTL_DLL","1",FALSE, TRUE },
     {"__DOS__","1",FALSE, TRUE },
-    {"_WIN32","1",FALSE, TRUE },
+    {"_WIN32","1",TRUE, TRUE },
     {"__MSVCRT_DLL","1",FALSE, TRUE },
     {"__CRTDLL_DLL","1",FALSE, TRUE },
     {"__RAW_IMAGE__","1",FALSE, TRUE },
@@ -333,6 +332,9 @@ static int parse_param(char select, char *string)
 {
     if (select == 'W') {
         WinmodeSetup(select, string);
+    }
+    if (select == 'L') {
+        _add_global_using(string);
     }
     return 0;
 }

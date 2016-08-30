@@ -1096,8 +1096,7 @@ void dump_browsefile(BROWSEFILE *brf)
 
 void oa_header(char *filename, char *compiler_version)
 {
-    _using_("msvcrt");
-    _using_("occmsil");
+    _apply_global_using();
 
     oa_nl();
     bePrintf("//File %s\n",filename);

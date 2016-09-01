@@ -674,7 +674,14 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     BOOLEAN vararg = FALSE;
     HASHREC *hr = basetype(sp->tp)->syms->table[0];
     oa_enterseg(oa_currentSeg);
-    bePrintf(".method public hidebysig static ");
+    if (sp->storage_class == sc_static)
+    {
+        bePrintf(".method private hidebysig static ");
+    }
+    else
+    {
+        bePrintf(".method public hidebysig static ");
+    }
     if (pinvoke)
     {
         char * name = _dll_name(sp->name);
@@ -756,10 +763,21 @@ void oa_gen_strlab(SYMBOL *sp)
     {
         oa_enterseg(oa_currentSeg);
         inASMdata = TRUE;
-        bePrintf(".field public static ");
+        if (sp->storage_class == sc_localstatic)
+            bePrintf(".field private static ");
+        else
+            bePrintf(".field public static ");
         puttypewrapped(sp->tp);
-        bePrintf(" '%s' at $%s\n", sp->name, sp->name);
-        bePrintf(".data $%s = bytearray (", sp->name);
+        if (sp->storage_class == sc_localstatic)
+        {
+            bePrintf(" 'L_%d' at $L_%d\n", sp->label, sp->label);
+            bePrintf(".data $L_%d = bytearray (", sp->label);
+        }
+        else
+        {
+            bePrintf(" '%s' at $%s\n", sp->name, sp->name);
+            bePrintf(".data $%s = bytearray (", sp->name);
+        }
         oa_outcol = 0;
     }
 }
@@ -1263,7 +1281,7 @@ void putlocals(void)
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            if (sym->storage_class != sc_parameter)
+            if (sym->storage_class == sc_auto || sym->storage_class == sc_register)
                 break;
             hr = hr->next;
         }
@@ -1313,7 +1331,7 @@ void putlocals(void)
             while (hr)
             {
                 SYMBOL *sym = (SYMBOL *)hr->p;
-                if (sym->storage_class != sc_parameter && !sym->temp)
+                if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && !sym->temp)
                 {
                     sym->temp = TRUE;
                     if (!first)
@@ -1346,7 +1364,7 @@ void putlocals(void)
         bePrintf("\n\t)\n");
     }
 }
-void putarg(AMODE *arg)
+void putarg(enum e_op op, AMODE *arg)
 {
     switch (arg->mode)
     {
@@ -1378,8 +1396,8 @@ void putarg(AMODE *arg)
                     bePrintf("\t'L_%Ld'", arg->offset->v.i);
                 }
             }
-            else if (arg->offset->type == en_pc || arg->offset->type == en_global)
-                if (isfunction(arg->offset->v.sp->tp))
+            else if (arg->offset->type == en_pc || arg->offset->type == en_global || arg->offset->type == en_label)
+                if (op != op_calli && isfunction(arg->offset->v.sp->tp))
                 {
                     putfunccall(arg);
                 }
@@ -1387,23 +1405,58 @@ void putarg(AMODE *arg)
                     TYPE *tp1 = arg->offset->v.sp->tp;
                     while (isarray(tp1))
                         tp1 = basetype(tp1)->btp;
-                    if (arg->offset->type == en_pc /*calli */ && isfuncptr(tp1))
+                    if (op == op_calli)
                     {
+                        TYPE *tp2 = basetype(tp1);
+                        TYPE tp3;
                         bePrintf("\t");
-                        puttype(tp1);
+                        if (isfunction(tp1))
+                        {
+                            memset(&tp3, 0, sizeof(tp3));
+                            tp2 = & tp3;
+                            tp2->type = bt_pointer;
+                            tp2->btp = basetype(tp1);
+                            tp2->size = getSize(bt_pointer);
+                        }
+                        puttype(tp2);
                     }
                     else
                     {
                         bePrintf("\t");
                         puttypewrapped(arg->offset->v.sp->tp);
-                        bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                        if (arg->offset->type == en_label)
+                        {
+                            bePrintf(" 'L_%d'\n", arg->offset->v.sp->label);
+                        }
+                        else
+                        {
+                            bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                        }
                     }
                 }
             else if (isfloatconst(arg->offset))
             {
                 char buf[256];
                 FPFToString(buf,&arg->offset->v.f);
-                bePrintf("\t%s", buf);
+                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
+                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+                {
+                    UBYTE dta[8];
+                    int count = arg->offset->type == en_c_f ? 4 : 8;
+                    int i;
+                    if (count == 4)
+                        FPFToFloat(dta, &arg->offset->v.f);
+                    else
+                        FPFToDouble(dta, &arg->offset->v.f);
+                    bePrintf("\t(");
+                    for (i=0; i < count; i++)
+                    {
+                        bePrintf( "%02X ", dta[i]);
+                    }
+                    bePrintf(")");
+                }
+                else
+                    bePrintf("\t%s", buf);
             }
             else
             {
@@ -1469,7 +1522,7 @@ void oa_put_code(OCODE *ocode)
     }
     bePrintf("\t%s", instructions[op].name);
     if (ocode->oper1)
-        putarg(ocode->oper1);
+        putarg(op,ocode->oper1);
     bePrintf("\n");
 }
 void dumpTypes()
@@ -1580,13 +1633,13 @@ void oa_end_generation(void)
         }
         externalList = externalList->next;
     }
-    bePrintf(".method public hidebysig static void * __GetErrno() cil managed {\n");
+    bePrintf(".method private hidebysig static void * __GetErrno() cil managed {\n");
     bePrintf("\t.maxstack 1\n\n");
     bePrintf("\tcall void * '_errno'()\n");
     bePrintf("\tret\n");
     bePrintf("}\n");
 
-    bePrintf(".method public hidebysig static void $Main() cil managed {\n");
+    bePrintf(".method private hidebysig static void $Main() cil managed {\n");
     bePrintf("\t.entrypoint\n");
     bePrintf("\t.locals (\n");
     bePrintf("\t\t[0] int32 'argc',\n");

@@ -206,8 +206,6 @@ AMODE *getAmode(IMODE *oper)
                     rv = beLocalAlloc(sizeof(AMODE));
                     rv->mode = am_global;
                     rv->offset = oper->offset;
-                    if (oper->offset->right)
-                        printf("hi");
                 }
             }
             else if (oper->offset->type != en_tempref)

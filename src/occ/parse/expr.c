@@ -99,6 +99,8 @@ void expr_init(void)
 void thunkForImportTable(EXPRESSION **exp)
 {
     SYMBOL *sp;
+    if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+        return;
     if ((*exp)->type == en_pc)
         sp = (*exp)->v.sp;
     else

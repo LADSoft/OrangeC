@@ -201,7 +201,7 @@ static void renameToTemps(SYMBOL *funcsp)
             SYMBOL *sym = (SYMBOL *)hr->p;
             if (doRename)
                 renameOneSym(sym);
-            if (sym->storage_class != sc_parameter && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
+        if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
             {
                 // set up index for CIL
                 sym->temp = TRUE;
@@ -219,7 +219,7 @@ static void renameToTemps(SYMBOL *funcsp)
         {
             renameOneSym(sym);
         }
-        if (sym->storage_class != sc_parameter && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
+        if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
         {
             sym->temp = TRUE;
             // set up index for CIL

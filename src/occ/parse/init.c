@@ -930,98 +930,105 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
         genstorage(basetype(tp)->size);
 #endif
 }
+static void dumpStaticInitializers(void)
+{
+    int sconst = 0;
+    int bss = 0;
+    int data = 0;
+    int thread = 0;
+    int *sizep;
+    symListTail = symListHead;
+    while (symListTail)
+    {
+        SYMBOL *sp = (SYMBOL *)symListTail->data;
+         if (sp->storage_class == sc_global || sp->storage_class == sc_static
+            || sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
+        {
+            TYPE *tp = sp->tp;
+            TYPE *stp = tp;
+            int al ;
+            while (isarray(stp))
+                stp = basetype(stp)->btp;
+            if (IsConstWithArr(sp->tp) && !isvolatile(sp->tp) || sp->storage_class == sc_constant)
+            {
+                xconstseg();
+                sizep = &sconst;
+            }
+            else if (sp->linkage3 == lk_threadlocal)
+            {
+                tseg();
+                sizep = &thread;
+            }
+            else if (sp->init || !cparams.prm_bss)
+            {
+                dseg();
+                sizep = &data;
+            }
+            else
+            {
+                bssseg();
+                sizep = &bss;
+            }
+            al = getAlign(sc_global, basetype(tp));
+            if (*sizep % al)
+            {
+                int n = al - *sizep % al;
+                genstorage(n);
+                *sizep += n;
+            }
+            //  have to thunk in a size for __arrCall
+            if (cparams.prm_cplusplus)
+            {
+                if (isarray(tp))
+                {
+                    TYPE *tp1 = tp;
+                    while (isarray(tp1))
+                        tp1 = basetype(tp1)->btp;
+                    tp1 = basetype(tp1);
+                    if (isstructured(tp1) && !tp1->sp->trivialCons)
+                    {
+                        genint(basetype(tp)->size);
+                        *sizep += getSize(bt_int);
+                    }   
+                }
+            }
+            sp->offset = *sizep;
+            *sizep += basetype(tp)->size;
+            if (sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent))
+                globaldef(sp);
+            else if (sp->storage_class == sc_static)
+                localdef(sp);
+            if (sp->storage_class == sc_localstatic)
+            {
+                localstaticdef(sp); // for debug info
+                gen_strlab(sp);
+//                    put_label(sp->label);
+            }
+            else
+            {
+                gen_strlab(sp);
+                if (sp->storage_class == sc_constant)
+                    put_label(sp->label);
+            }
+            dumpInitGroup(sp, tp);
+        }
+        symListTail = symListTail->next;
+    }
+    symListHead = NULL;
+}
 void dumpInitializers(void)
 {
 #ifndef PARSER_ONLY
     if (!total_errors)
     {
-        int sconst = 0;
-        int bss = 0;
-        int data = 0;
-        int thread = 0;
-        int *sizep;
-        symListTail = symListHead;
-        while (symListTail)
-        {
-            SYMBOL *sp = (SYMBOL *)symListTail->data;
-             if (sp->storage_class == sc_global || sp->storage_class == sc_static
-                || sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
-            {
-                TYPE *tp = sp->tp;
-                TYPE *stp = tp;
-                int al ;
-                while (isarray(stp))
-                    stp = basetype(stp)->btp;
-                if (IsConstWithArr(sp->tp) && !isvolatile(sp->tp) || sp->storage_class == sc_constant)
-                {
-                    xconstseg();
-                    sizep = &sconst;
-                }
-                else if (sp->linkage3 == lk_threadlocal)
-                {
-                    tseg();
-                    sizep = &thread;
-                }
-                else if (sp->init || !cparams.prm_bss)
-                {
-                    dseg();
-                    sizep = &data;
-                }
-                else
-                {
-                    bssseg();
-                    sizep = &bss;
-                }
-                al = getAlign(sc_global, basetype(tp));
-                if (*sizep % al)
-                {
-                    int n = al - *sizep % al;
-                    genstorage(n);
-                    *sizep += n;
-                }
-                //  have to thunk in a size for __arrCall
-                if (cparams.prm_cplusplus)
-                {
-                    if (isarray(tp))
-                    {
-                        TYPE *tp1 = tp;
-                        while (isarray(tp1))
-                            tp1 = basetype(tp1)->btp;
-                        tp1 = basetype(tp1);
-                        if (isstructured(tp1) && !tp1->sp->trivialCons)
-                        {
-                            genint(basetype(tp)->size);
-                            *sizep += getSize(bt_int);
-                        }   
-                    }
-                }
-                sp->offset = *sizep;
-                *sizep += basetype(tp)->size;
-                if (sp->storage_class == sc_global || (sp->storage_class == sc_constant && !sp->parent))
-                    globaldef(sp);
-                else if (sp->storage_class == sc_static)
-                    localdef(sp);
-                if (sp->storage_class == sc_localstatic)
-                {
-                    localstaticdef(sp); // for debug info
-                    put_label(sp->label);
-                }
-                else
-                {
-                    gen_strlab(sp);
-                    if (sp->storage_class == sc_constant)
-                        put_label(sp->label);
-                }
-                dumpInitGroup(sp, tp);
-            }
-            symListTail = symListTail->next;
-        }
+        dumpStaticInitializers();
         dumpDynamicInitializers();
         dumpTLSInitializers();
         dumpDynamicDestructors();
         dumpTLSDestructors();
         dumpvc1Thunks();
         dumpImportThunks();
+        dumpStaticInitializers();
     }
 #endif
 }

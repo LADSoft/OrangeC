@@ -577,13 +577,14 @@ void cacheType(TYPE *tp)
 void puttype(TYPE *tp)
 {
     tp = basetype(tp);
-    if (tp->type == bt_pointer)
+    if (tp->type == bt_pointer || isfunction(tp))
     {
-        if (isfuncptr(tp))
+        if (isfuncptr(tp) || isfunction(tp))
         {
             HASHREC *hr;
             BOOLEAN vararg = FALSE;
-            tp = tp->btp;
+            if (isfuncptr(tp))
+                tp = tp->btp;
             hr = basetype(tp)->syms->table[0];
             while (hr)
             {
@@ -660,7 +661,7 @@ void puttype(TYPE *tp)
 }
 void puttypewrapped(TYPE *tp)
 {
-    if (isfuncptr(tp))
+    if (isfuncptr(tp) || isfunction(tp))
         bePrintf("method ");
     else if (isstructured(tp) || isarray(tp))
         bePrintf("valuetype '");
@@ -763,12 +764,12 @@ void oa_gen_strlab(SYMBOL *sp)
     {
         oa_enterseg(oa_currentSeg);
         inASMdata = TRUE;
-        if (sp->storage_class == sc_localstatic)
+        if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
             bePrintf(".field private static ");
         else
             bePrintf(".field public static ");
         puttypewrapped(sp->tp);
-        if (sp->storage_class == sc_localstatic)
+        if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
         {
             bePrintf(" 'L_%d' at $L_%d\n", sp->label, sp->label);
             bePrintf(".data $L_%d = bytearray (", sp->label);
@@ -1214,7 +1215,10 @@ void putfieldname(AMODE *arg)
     EXPRESSION *en = GetSymRef(arg->offset);
     bePrintf("\t");
     puttypewrapped(en->v.sp->tp);
-    bePrintf(" '%s'\n", en->v.sp->name);
+    if (en->v.sp->storage_class == sc_localstatic || en->v.sp->storage_class == sc_constant)
+        bePrintf(" 'L_%d'\n", en->v.sp->label);
+    else
+        bePrintf(" '%s'\n", en->v.sp->name);
 }
 void putfunccall(AMODE *arg)
 {

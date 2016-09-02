@@ -973,7 +973,10 @@ static void dumpStaticInitializers(void)
             if (*sizep % al)
             {
                 int n = al - *sizep % al;
-                genstorage(n);
+                if (!(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+                {
+                    genstorage(n);
+                }
                 *sizep += n;
             }
             //  have to thunk in a size for __arrCall

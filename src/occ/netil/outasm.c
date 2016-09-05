@@ -1580,6 +1580,12 @@ void putarg(enum e_op op, AMODE *arg)
         case am_argit_unmanaged:
             bePrintf("\tinstance void *[lsmsilcrtl]lsmsilcrtl.args::GetUnmanaged()");
             break;
+        case am_ptrbox:
+            bePrintf("\tobject [lsmsilcrtl]lsmsilcrtl.pointer::'box'(void *)");
+            break;
+        case am_ptrunbox:
+            bePrintf("\tvoid * [lsmsilcrtl]lsmsilcrtl.pointer::'unbox'(object)");
+            break;
         case am_type:
         {
             TYPE *tp = arg->offset->v.sp->tp;

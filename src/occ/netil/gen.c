@@ -265,6 +265,9 @@ void load_ind(int sz)
             op = op_ldind_i8;
             break;
         case ISZ_ADDR:
+            // check for __va_arg__ on a pointer type
+            if (peep_tail->opcode == op_call && peep_tail->oper1->mode == am_ptrunbox)
+                return;
             op = op_ldind_u4;
             break;
         /* */
@@ -629,9 +632,18 @@ void asm_parm(QUAD *q)               /* push a parameter*/
     if (q->vararg)
     {
         AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
-        ap->mode = am_sized;
-        ap->length = q->dc.left->size;
-        gen_code(op_box, ap);
+        if (q->dc.left->size == ISZ_ADDR)
+        {
+            ap->mode = am_ptrbox;
+            gen_code(op_call, ap);
+        }
+        else
+        {
+
+            ap->mode = am_sized;
+            ap->length = q->dc.left->size;
+            gen_code(op_box, ap);
+        }
         gen_code(op_stelem_ref, NULL);
         decrement_stack();
         decrement_stack();
@@ -679,7 +691,9 @@ static BOOLEAN bltin_gosub(QUAD *q, AMODE *ap)
     else if (!strcmp(ap->offset->v.sp->name, "__va_arg__"))
     {
         FUNCTIONCALL *func = q->altdata;
-        SYMBOL *sp = ap->offset->v.sp;
+        TYPE *tp = ap->offset->v.sp->tp;
+        if (func->arguments->next)
+            tp = func->arguments->next->tp;
         ap->offset->v.sp->genreffed = FALSE;
         ap->mode = am_argit_getnext;
         ap->offset = NULL;
@@ -688,7 +702,13 @@ static BOOLEAN bltin_gosub(QUAD *q, AMODE *ap)
         peep_tail = peep_tail->back;
         peep_tail->fwd = NULL;
         gen_code(op_callvirt, ap);
-        if (!isstructured(sp->tp) && !isarray(sp->tp))
+        if (ispointer(tp))
+        {
+            ap = Alloc(sizeof(AMODE));
+            ap->mode = am_ptrunbox;
+            gen_code(op_call, ap);
+        }
+        else if (!isstructured(tp) && !isarray(tp))
         {
 
             EXPRESSION *exp = func->arguments->next->exp;

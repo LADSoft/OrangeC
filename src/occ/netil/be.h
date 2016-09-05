@@ -88,7 +88,7 @@ enum e_am
 {
     am_immed, am_ind, am_local, am_param, am_global, am_switch, 
     am_argit_ctor, am_argit_args, am_argit_getnext, am_argit_unmanaged,
-    am_type, am_sized, am_objectArray, am_objectArray_ctor
+    am_type, am_sized, am_objectArray, am_objectArray_ctor, am_ptrbox, am_ptrunbox
 };
 typedef struct amode
 {

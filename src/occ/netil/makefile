@@ -113,8 +113,9 @@ BACKEND_FILES = config.c gen.c outasm.c
 BACKEND_INCLUDE_PATH=.
 
 vpath %.c $(SRCPATH);dll
+vpath %.cs $(SRCPATH);dll
 
-compiler: redirect occmsil netlib
+compiler: redirect occmsil netlib lsmsilcrtl
 
 redirect: 
 	@$(MAKE) /T
@@ -122,6 +123,9 @@ redirect:
 occmsil: occmsil.c
 	-del occmsil.l
 	occ /Wd /9 occmsil.c
+
+lsmsilcrtl: lsmsilcrtl.cs
+	csc /unsafe /t:library lsmsilcrtl.cs
 
 netlib:
 	@$(MAKE) /Cnetlib

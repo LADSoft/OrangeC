@@ -70,6 +70,7 @@ extern LIST *temporarySymbols;
 extern TYPE stdpointer;
 int calling_inline;
 
+EXPRESSION *objectArray_exp;
 IMODE *inlinereturnap;
 IMODE *structret_imode;
 LIST *immed_list[4091];
@@ -810,7 +811,7 @@ IMODE *gen_deref(EXPRESSION *node, SYMBOL *funcsp, int flags)
             ap1->restricted = node->isrestrict;
         }
     }
-    else if ((chosenAssembler->arch->denyopts & DO_UNIQUEIND) && node->left->type == en_global &&
+    else if ((chosenAssembler->arch->denyopts & DO_UNIQUEIND) && (node->left->type == en_global || node->left->type == en_label) &&
             (isarray(node->left->v.sp->tp) || isstructured(node->left->v.sp->tp)))
     {
         ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
@@ -1670,7 +1671,7 @@ static EXPRESSION *getFunc(EXPRESSION *exp)
     }
     return rv;
 }
-int push_param(EXPRESSION *ep, SYMBOL *funcsp)
+int push_param(EXPRESSION *ep, SYMBOL *funcsp, BOOLEAN vararg, EXPRESSION *valist)
 /*
  *      push the operand expression onto the stack.
  */
@@ -1705,6 +1706,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             if (rv % chosenAssembler->arch->stackalign)
                 rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
             gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
+            intermed_tail->vararg = vararg;
             exp->v.sp->imvalue = ap;
             gen_expr(funcsp, ep, 0, ISZ_UINT );
         }
@@ -1718,6 +1720,8 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             if (ap->size == ISZ_NONE)
                 ap->size = temp;
             gen_nodag(i_parm, 0, ap, 0);
+            intermed_tail->vararg = vararg;
+            intermed_tail->valist = valist;
             rv = sizeFromISZ(ap->size);
         }
     }
@@ -1731,7 +1735,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
                     gen_expr( funcsp, ep->left, 0, ISZ_UINT);
                     ep = ep->right;
                 }
-                push_param(ep, funcsp);
+                push_param(ep, funcsp, vararg, valist);
                 break;
             case en_argnopush:
                 gen_expr( funcsp, ep->left, 0, ISZ_UINT);
@@ -1739,6 +1743,8 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
             case en_imode:
                 ap = (IMODE *)ep->left;
                 gen_nodag(i_parm, 0, ap, 0);
+                intermed_tail->vararg = vararg;
+                intermed_tail->valist = valist;
                 rv = sizeFromISZ(ap->size);
                 break;
             default:
@@ -1752,6 +1758,8 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
                 if (ap->size == ISZ_NONE)
                     ap->size = temp;
                 gen_nodag(i_parm, 0, ap, 0);
+                intermed_tail->vararg = vararg;
+                intermed_tail->valist = valist;
                 rv = sizeFromISZ(ap->size);
                 break;
         }
@@ -1763,7 +1771,7 @@ int push_param(EXPRESSION *ep, SYMBOL *funcsp)
 
 /*-------------------------------------------------------------------------*/
 
-static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
+static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz, BOOLEAN vararg, EXPRESSION *valist)
 /*
  * Push a structure on the stack
  */
@@ -1804,10 +1812,14 @@ static int push_stackblock(EXPRESSION *ep, SYMBOL *funcsp, int sz)
     {
         gen_icode(i_assnblock, make_immed(ISZ_UINT,sz), ap1, ap);
         gen_nodag(i_parm, 0, ap2, 0);        
+        intermed_tail->vararg = vararg;
+        intermed_tail->valist = valist;
     }
     else
     {
         gen_nodag(i_parmblock, 0, ap, make_immed(ISZ_UINT,sz));
+        intermed_tail->vararg = vararg;
+        intermed_tail->valist = valist;
         if (sz % chosenAssembler->arch->stackalign)
             sz = sz + chosenAssembler->arch->stackalign - sz % chosenAssembler->arch->stackalign;
     }
@@ -1823,56 +1835,71 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
  */
 {
     int rv;
-        if (ispointer(a->tp) || isref(a->tp))
+    if (a->vararg && (chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+    {
+        if (!objectArray_exp )
         {
-            TYPE *btp = basetype(a->tp);
-            if (btp->vla || basetype(btp->btp)->vla)
-            {
-                rv = push_stackblock(a->exp->left, funcsp, a->tp->size);
-                DumpIncDec(funcsp);
-                push_nesting += rv;
-                return rv;
-            }
+            TYPE *tp = Alloc(sizeof(TYPE));
+            tp->type = bt_objectArray;
+            tp->size = getSize(bt_pointer);
+            tp->btp = &stdpointer;
+            objectArray_exp = anonymousVar(sc_auto, tp);
         }
-        if (!cparams.prm_cplusplus && isstructured(a->tp))
+        intermed_tail->varargPrev = TRUE;
+    }
+    if (ispointer(a->tp) || isref(a->tp))
+    {
+        TYPE *btp = basetype(a->tp);
+        if (btp->vla || basetype(btp->btp)->vla)
         {
-            rv = push_stackblock(a->exp->left, funcsp, a->exp->size);
+            rv = push_stackblock(a->exp->left, funcsp, a->tp->size, a->vararg, a->valist ? a->exp : NULL);
+            DumpIncDec(funcsp);
+            push_nesting += rv;
+            return rv;
         }
-        else if (a->exp->type == en_stackblock)
+    }
+    if (!cparams.prm_cplusplus && isstructured(a->tp))
+    {
+        rv = push_stackblock(a->exp->left, funcsp, a->exp->size, a->vararg, a->valist ? a->exp : NULL);
+    }
+    else if (a->exp->type == en_stackblock)
+    {
+        rv = push_stackblock(a->exp->left, funcsp, a->tp->size, a->vararg, a->valist ? a->exp : NULL);
+    }
+    else if (isstructured(a->tp) && a->exp->type == en_thisref) // constructor
+    {
+        EXPRESSION *ths = a->exp->v.t.thisptr;
+        if (ths && ths->type == en_auto && ths->v.sp->stackblock)
         {
-            rv = push_stackblock(a->exp->left, funcsp, a->tp->size);
-        }
-        else if (isstructured(a->tp) && a->exp->type == en_thisref) // constructor
-        {
-            EXPRESSION *ths = a->exp->v.t.thisptr;
-            if (ths && ths->type == en_auto && ths->v.sp->stackblock)
-            {
-                IMODE *ap;
-                // constructor or other function creating a structure on the stack
-                ths = a->exp->left->v.func->thisptr;
-                ths->v.sp->stackblock = TRUE;
-                
-                rv = ths->v.sp->tp->size;
-                if (rv % chosenAssembler->arch->stackalign)
-                    rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
-                gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
-                ths->v.sp->imvalue = ap;
-                gen_expr(funcsp, a->exp, 0, ISZ_UINT );
-            }
-            else
-            {
-                IMODE *ap = gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
-                gen_nodag(i_parm, 0, ap, 0);
-                rv = a->tp->size;
-            }
+            IMODE *ap;
+            // constructor or other function creating a structure on the stack
+            ths = a->exp->left->v.func->thisptr;
+            ths->v.sp->stackblock = TRUE;
+            
+            rv = ths->v.sp->tp->size;
+            if (rv % chosenAssembler->arch->stackalign)
+                rv = rv + chosenAssembler->arch->stackalign - rv % chosenAssembler->arch->stackalign;
+            gen_icode(i_parmstack, ap = tempreg(ISZ_ADDR, 0), make_immed(ISZ_UINT, rv), NULL );
+            intermed_tail->vararg = a->vararg;
+            ths->v.sp->imvalue = ap;
+            gen_expr(funcsp, a->exp, 0, ISZ_UINT );
         }
         else
         {
-            rv = push_param(a->exp, funcsp);
+            IMODE *ap = gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
+            gen_nodag(i_parm, 0, ap, 0);
+            intermed_tail->vararg = a->vararg;
+            intermed_tail->valist = a->valist ? a->exp : NULL;
+            rv = a->tp->size;
         }
-        DumpIncDec(funcsp);
-        push_nesting += rv;
-        return rv;
+    }
+    else
+    {
+        rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : NULL);
+    }
+    DumpIncDec(funcsp);
+    push_nesting += rv;
+    return rv;
 }
 static int sizeParam(INITLIST *a, SYMBOL *funcsp)
 {
@@ -2073,7 +2100,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
             if (f->returnEXP)
-                push_param(f->returnEXP, funcsp);
+                push_param(f->returnEXP, funcsp, FALSE, FALSE);
         }
         genPascalArgs(f->arguments, funcsp);
     }
@@ -2103,11 +2130,11 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
             {
                 if (f->returnEXP)
-                    push_param(f->returnEXP, funcsp);
+                    push_param(f->returnEXP, funcsp, FALSE, FALSE);
             }
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp);
+                push_param(f->thisptr, funcsp, FALSE, FALSE);
             }
             genPascalArgs(f->arguments, funcsp);
         }
@@ -2116,7 +2143,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             genCdeclArgs(f->arguments, funcsp);
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp);
+                push_param(f->thisptr, funcsp, FALSE, FALSE);
             }
         }
         if (f->callLab == -1)
@@ -2129,7 +2156,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
             if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
             {
                 if (f->returnEXP)
-                    push_param(f->returnEXP, funcsp);
+                    push_param(f->returnEXP, funcsp, FALSE, FALSE);
             }
         }
     }

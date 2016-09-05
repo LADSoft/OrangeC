@@ -219,6 +219,8 @@ KEYWORD keywords[] = {
     { "__typeid", 8,  kw___typeid, KW_CPLUSPLUS, 0},
     { "__unmanaged", 11,  kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__using__", 9, kw___using__, KW_NONANSI | KW_ALL, TT_CONTROL },
+    { "__va_list__", 11, kw___va_list__, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL },
+    { "__va_typeof__", 13, kw___va_typeof__, KW_NONANSI | KW_ALL, TT_VAR },
     { "_absolute", 9,  kw__absolute, KW_NONANSI | KW_ALL, TT_STORAGE_CLASS},
     { "_asm", 4,  kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL },
     { "_cdecl", 6,  kw__cdecl, KW_NONANSI, TT_LINKAGE },

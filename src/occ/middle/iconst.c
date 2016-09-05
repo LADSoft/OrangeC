@@ -1262,7 +1262,7 @@ static BOOLEAN eval(QUAD *q)
                         case en_threadlocal:
                             break;
                         default:
-                            val->size = tempInfo[tnum]->size;
+                            val->size = q->ans->size;
                             break;
                     }
                     break;

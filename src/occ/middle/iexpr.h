@@ -88,6 +88,10 @@ typedef struct _imode_
     struct expr *offset; /* offset */
     struct expr *offset2; /* a second temp reg */
     struct expr *offset3; /* an address */
+    struct exprlist {
+        struct exprlist *next;
+        struct expr *offset;
+    } *vararg;
     int scale;				/* scale factor on the second temp reg */
     char useindx;
     char size; /* size */
@@ -158,6 +162,7 @@ typedef struct quad
     BITINT *isolated;
     BITINT *OCP;
     BITINT *RO;
+    struct expr * valist; /* argument is a valist that needs translation */
 //	unsigned short *modifiesTnum;
     int index;
     int ansColor;
@@ -186,6 +191,8 @@ typedef struct quad
     int ignoreMe:1;
     int genConflict:1; /* assignment node the ans conflicts with left */
     int hook:1; /* one of the two assigns for a hook, used in diagnostic generation */
+    int vararg:1; /* a param passed as a vararg */
+    int varargPrev:1; /* right before the vararg is genned */
     char novalue;
     char temps;
     char precolored;

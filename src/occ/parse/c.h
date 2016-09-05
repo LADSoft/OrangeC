@@ -103,6 +103,7 @@ enum e_kw
         kw__pascal, kw__stdcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__unmanaged, kw___using__,
+        kw___va_list__,  kw___va_typeof__,
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -194,7 +195,7 @@ enum e_bt
     bt_signed, bt_static, bt_atomic, bt_const, bt_volatile, bt_restrict, bt_far, bt_near, bt_seg,
     bt_aggregate, bt_untyped, bt_typedef, bt_pointer, bt_lref, bt_rref, bt_lrqual, bt_rrqual, bt_struct,
         bt_union, bt_func, bt_class, bt_ifunc, bt_any, bt_auto,
-        bt_match_none, bt_ellipse, bt_memberptr, bt_cond,
+        bt_match_none, bt_ellipse, bt_memberptr, bt_cond, bt_va_list, bt_objectArray,
         bt_consplaceholder, bt_templateparam, bt_templateselector, bt_templatedecltype, bt_derivedfromtemplate, bt_string, 
         /* last */
         bt_none
@@ -573,6 +574,7 @@ typedef struct sym
                                      // specialization was pushed from the generalized version of the template
         unsigned destructed:1;  // the c++ class instance has had a destructor generated
         unsigned initializer_list:1; // constructor with initializer_list parameter
+        unsigned va_typeof:1; // MSIL: a va_typeof symbol
         unsigned retemp:1; // retemp has already been performed on this SP
         int __func__label; /* label number for the __func__ keyword */
         int ipointerindx; /* pointer index for pointer opts */
@@ -790,6 +792,8 @@ typedef struct initlist
     struct initlist *nested;
     int byRef : 1;
     int packed: 1;
+    int vararg: 1;
+    int valist: 1;
 } INITLIST;
 
 typedef struct functioncall

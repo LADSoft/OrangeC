@@ -42,21 +42,36 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
+#ifdef __MSIL__
+typedef void * __va_list__ va_list;
+#else
 typedef void *va_list;
-
+#endif
 #ifdef __cplusplus
 } ;
 } ;
 #endif
+
+#ifdef __MSIL__
+
+#define va_start(ap, parmN) ap = __va_start__()
+#define va_arg(ap, type)  (*((type *)__va_arg__(ap, __va_typeof__(type))))
+#define va_end(ap)  
+
+#else
+
 #define __sizeof__(x) ((sizeof(x)+sizeof(int)-1) & ~(sizeof(int)-1))
 
 #define va_start(ap, parmN) ap = (va_list)((char *)(&parmN)+sizeof(parmN))
 #define va_arg(ap, type) (*(type *)(((*(char **)&(ap))+=__sizeof__(type))-(__sizeof__(type))))
 #define va_end(ap)
 
+#endif
+
 #if  __STDC_VERSION__ >= 199901L
 #define va_copy(ap_d, ap_s)  (void)(ap_d = ap_s)
 #endif
+
 
 #define _va_ptr             (...)
 

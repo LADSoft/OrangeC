@@ -1718,6 +1718,9 @@ static LEXEME *getPointerQualifiers(LEXEME *lex, TYPE **tp, BOOLEAN allowstatic)
             case kw__near:
                 tpn->type = bt_near;
                 break;
+            case kw___va_list__:
+                tpn->type = bt_va_list;
+                break;
             
         }
         tpl = *tp;

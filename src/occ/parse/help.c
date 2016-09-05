@@ -138,6 +138,8 @@ TYPE *basetype(TYPE *tp)
             case bt_far:
             case bt_near:
             case bt_const:
+            case bt_va_list:
+            case bt_objectArray:
             case bt_volatile:
             case bt_restrict:
             case bt_static:
@@ -163,6 +165,8 @@ BOOLEAN isDerivedFromTemplate(TYPE *tp)
             case bt_far:
             case bt_near:
             case bt_const:
+            case bt_va_list:
+            case bt_objectArray:
             case bt_volatile:
             case bt_restrict:
             case bt_static:
@@ -319,6 +323,8 @@ BOOLEAN isconstraw(TYPE *tp, BOOLEAN useTemplate)
             case bt_lrqual:
             case bt_rrqual:
             case bt_derivedfromtemplate:
+            case bt_va_list:
+            case bt_objectArray:
                 tp = tp->btp;
                 break;
             case bt_const:
@@ -344,6 +350,8 @@ BOOLEAN isvolatile(TYPE *tp)
         {
             case bt_restrict:
             case bt_const:
+            case bt_va_list:
+            case bt_objectArray:
             case bt_static:
             case bt_atomic:
             case bt_typedef:
@@ -370,6 +378,8 @@ BOOLEAN islrqual(TYPE *tp)
         {
             case bt_volatile:
             case bt_const:
+            case bt_va_list:
+            case bt_objectArray:
             case bt_static:
             case bt_atomic:
             case bt_typedef:
@@ -396,6 +406,8 @@ BOOLEAN isrrqual(TYPE *tp)
         {
             case bt_volatile:
             case bt_const:
+            case bt_va_list:
+            case bt_objectArray:
             case bt_static:
             case bt_atomic:
             case bt_typedef:
@@ -422,6 +434,8 @@ BOOLEAN isrestrict(TYPE *tp)
         {
             case bt_volatile:
             case bt_const:
+            case bt_va_list:
+            case bt_objectArray:
             case bt_static:
             case bt_atomic:
             case bt_typedef:
@@ -448,6 +462,8 @@ BOOLEAN isatomic(TYPE *tp)
         {
             case bt_volatile:
             case bt_const:
+            case bt_va_list:
+            case bt_objectArray:
             case bt_static:
             case bt_restrict:
             case bt_typedef:
@@ -1434,7 +1450,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
         init = init->next;
     }
-    if (sp && sp->storage_class == sc_localstatic)
+    if (sp && sp->storage_class == sc_localstatic && !(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
     {
         if (isdest)
         {
@@ -1494,6 +1510,8 @@ BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
             {
                 case bt_const:
                     destc = TRUE;
+                case bt_va_list:
+                case bt_objectArray:
                 case bt_restrict:
                 case bt_volatile:
                 case bt_static:
@@ -1515,6 +1533,8 @@ BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source)
             {
                 case bt_const:
                     sourcc = TRUE;
+                case bt_va_list:
+                case bt_objectArray:
                 case bt_restrict:
                 case bt_volatile:
                 case bt_static:

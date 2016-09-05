@@ -66,6 +66,7 @@ extern int total_errors;
 extern TEMP_INFO **tempInfo;
 extern BOOLEAN functionHasAssembly;
 extern TYPE stddouble;
+extern EXPRESSION *objectArray_exp;
 #ifdef DUMP_GCSE_INFO
     extern FILE *icdFile;
 #endif 
@@ -960,6 +961,7 @@ void genfunc(SYMBOL *funcsp)
     exitBlock = 0;
     consIndex = 0;
     retcount = 0;
+    objectArray_exp = NULL;
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();

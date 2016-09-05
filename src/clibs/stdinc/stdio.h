@@ -203,8 +203,8 @@ int       _RTL_FUNC _IMPORT puts(const char *__s);
 int       _RTL_FUNC _IMPORT remove(const char *__path);
 int       _RTL_FUNC _IMPORT rename(const char *__oldname,const char *__newname);
 void      _RTL_FUNC _IMPORT rewind(FILE *__stream);
-int               scanf(const char *__format, ...);
-void              setbuf(FILE *restrict __stream, char *restrict __buf);
+int       _RTL_FUNC _IMPORT scanf(const char *__format, ...);
+void      _RTL_FUNC _IMPORT setbuf(FILE *restrict __stream, char *restrict __buf);
 int       _RTL_FUNC _IMPORT setvbuf(FILE *restrict __stream, char *restrict __buf,
                                    int __type, size_t __size);
 int       _RTL_FUNC _IMPORT snprintf(char *restrict __buffer, size_t n, 
@@ -224,8 +224,8 @@ int       _RTL_FUNC _IMPORT vfprintf(FILE *restrict __stream, const char *restri
                                     va_list __arglist);
 int       _RTL_FUNC _IMPORT vfscanf(FILE *restrict __stream, const char *restrict __format,
                                    va_list __arglist);
-int       _RTL_FUNC _IMPORT vprintf(const char *restrict __format, void *restrict __arglist);
-int       _RTL_FUNC _IMPORT vscanf(const char *restrict __format, void *restrict__arglist);
+int       _RTL_FUNC _IMPORT vprintf(const char *restrict __format, va_list __arglist);
+int       _RTL_FUNC _IMPORT vscanf(const char *restrict __format, va_list __arglist);
 int       _RTL_FUNC _IMPORT vsnprintf(char *restrict __buffer, size_t __n,
                                     const char *restrict __format,
                                     va_list __arglist);

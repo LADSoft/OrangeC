@@ -47,7 +47,7 @@ extern BOOLEAN inASMdata;
 extern LIST *typeList;
 extern int MSILLocalOffset;
 extern TYPE stdint;
-
+extern EXPRESSION *objectArray_exp;
 #define MAX_ALIGNS 50
 
 static int fstackid;
@@ -210,7 +210,16 @@ AMODE *getAmode(IMODE *oper)
             }
             else if (oper->offset->type != en_tempref)
             {
-                diag("Invalid load node");
+                if (oper->offset == objectArray_exp)
+                {
+                    rv = beLocalAlloc(sizeof(AMODE));
+                    rv->mode = am_objectArray;
+
+                }
+                else
+                {
+                    diag("Invalid load node");
+                }
             }
             break;
         }
@@ -614,11 +623,34 @@ void asm_goto(QUAD *q)               /* unconditional branch */
     }
 
 }
+// this implementation won't handle varag functions nested in other varargs...
 void asm_parm(QUAD *q)               /* push a parameter*/
 {
+    if (q->vararg)
+    {
+        AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+        ap->mode = am_sized;
+        ap->length = q->dc.left->size;
+        gen_code(op_box, ap);
+        gen_code(op_stelem_ref, NULL);
+        decrement_stack();
+        decrement_stack();
+    }
+    else if (q->valist && q->valist->type == en_l_p)
+    {
+        AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+        ap->mode = am_argit_unmanaged;
+        gen_code (op_callvirt, ap);
+    }
 }
 void asm_parmblock(QUAD *q)          /* push a block of memory */
 {
+    if (q->vararg)
+    {
+        gen_code(op_stelem_ref, NULL);
+        decrement_stack();
+        decrement_stack();
+    }
 
 }
 void asm_parmadj(QUAD *q)            /* adjust stack after function call */
@@ -631,13 +663,69 @@ void asm_parmadj(QUAD *q)            /* adjust stack after function call */
     else if (n < 0)
         increment_stack();
 }
+static BOOLEAN bltin_gosub(QUAD *q, AMODE *ap)
+{
+    if (!strcmp(ap->offset->v.sp->name, "__va_start__"))
+    {
+        AMODE *ap1 = Alloc(sizeof(AMODE));
+        ap1->mode = am_argit_args;
+        gen_code(op_ldarg, ap1);
+        ap->offset->v.sp->genreffed = FALSE;
+        ap->mode = am_argit_ctor;
+        ap->offset = NULL;
+        gen_code(op_newobj, ap);
+        return TRUE;
+    }
+    else if (!strcmp(ap->offset->v.sp->name, "__va_arg__"))
+    {
+        FUNCTIONCALL *func = q->altdata;
+        SYMBOL *sp = ap->offset->v.sp;
+        ap->offset->v.sp->genreffed = FALSE;
+        ap->mode = am_argit_getnext;
+        ap->offset = NULL;
+        // the function pushes both an arglist val and a type to cast to on the stack
+        // remove the type to cast to.
+        peep_tail = peep_tail->back;
+        peep_tail->fwd = NULL;
+        gen_code(op_callvirt, ap);
+        if (!isstructured(sp->tp) && !isarray(sp->tp))
+        {
+
+            EXPRESSION *exp = func->arguments->next->exp;
+            ap = Alloc(sizeof(AMODE));
+            ap->mode = am_type;
+            ap->offset = exp;
+            gen_code(op_unbox, ap);
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or through a var */
 {
     if (q->dc.left->mode == i_immed)
     {
         AMODE *ap = getAmode(q->dc.left);
-        ap->altdata = q->altdata;
-        gen_code(op_call, ap);
+        if (!bltin_gosub(q, ap))
+        {
+            FUNCTIONCALL *func = q->altdata;
+            ap->altdata = q->altdata;
+            if (func->sp->linkage2 != lk_unmanaged)
+            {
+                HASHREC *hr = basetype(func->sp->tp)->syms->table[0];
+                while (hr && hr->next)
+                    hr = hr->next;
+                if (hr)
+                    if (((SYMBOL *)hr->p)->tp->type == bt_ellipse)
+                    {
+                        if (objectArray_exp)
+                            gen_code(op_ldloc, make_index(am_local, objectArray_exp->v.sp->offset, objectArray_exp->v.sp));
+                        else
+                            gen_code(op_ldnull, 0);
+                    }
+            }
+            gen_code(op_call, ap);
+        }
     }
     else
     {
@@ -855,7 +943,28 @@ void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
 }
 void asm_assn(QUAD *q)               /* assignment */
 {
-    AMODE *ap = getAmode(q->dc.left);
+    AMODE *ap;
+    if (q->ans->mode == i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == en_auto)
+    {
+        TYPE *tp = q->ans->offset->v.sp->tp;
+        TYPE *tp1 = basetype(tp);
+        while (tp != tp1)
+        {
+            if (tp->type == bt_objectArray)
+            {
+                // assign to object array, call the ctor here
+                // count is already on the stack
+                AMODE *ap = Alloc(sizeof(AMODE));
+                ap->mode = am_objectArray_ctor;
+                gen_code(op_newarr, ap);
+                ap = getAmode(q->ans);
+                gen_store(ap);
+                return;
+            }
+            tp = tp->btp;
+        }
+    }
+    ap = getAmode(q->dc.left);
     gen_load(ap);
     if (q->dc.left->size != 0 && q->dc.left->size != q->ans->size)
     {
@@ -1191,8 +1300,17 @@ QUAD * leftInsertionPos(QUAD *head, IMODE *im)
 }
 int examine_icode(QUAD *head)
 {
+    int parmIndex = 0;
+    IMODE *fillinvararg = NULL;
     while (head)
     {
+        if (head->dc.opcode == i_gosub)
+        {
+            if (fillinvararg)
+                fillinvararg->offset->v.i = parmIndex;
+            fillinvararg = NULL;
+            parmIndex = 0;
+        }
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend 
             && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
             && head->dc.opcode != i_label && head->dc.opcode != i_line && head->dc.opcode != i_passthrough
@@ -1254,6 +1372,61 @@ int examine_icode(QUAD *head)
                 head->dc.right = ap;
                 head->temps |= TEMP_RIGHT;
                 InsertInstruction(head->back, q);
+            }
+            if (head->vararg)
+            {
+                // handle varargs... this won't work in the case of nested vararg funcs 
+                QUAD *q = Alloc(sizeof(QUAD));
+                QUAD *q1 = Alloc(sizeof(QUAD));
+                IMODE *ap = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
+                IMODE *ap1 = make_immed(ISZ_ADDR, 0);
+                IMODE *ap2 = InitTempOpt(-ISZ_UINT, -ISZ_UINT);
+                IMODE *ap3 = make_immed(-ISZ_UINT, parmIndex++);
+                QUAD *prev = head;
+                ap1->offset = objectArray_exp;
+                ap1->mode = i_direct;
+                while (prev->back && !prev->back->varargPrev)
+                    prev = prev->back;
+                if (parmIndex - 1 == 0)
+                {
+                    // this is for the initialization of the object array
+                    QUAD *q2 = Alloc(sizeof(QUAD));
+                    QUAD *q3 = Alloc(sizeof(QUAD));
+                    IMODE *ap4 = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
+                    IMODE *ap5 = Alloc(sizeof(IMODE));
+                    IMODE *ap6 = make_immed(ISZ_ADDR, 0);
+                    ap6->offset = objectArray_exp;
+                    ap6->mode = i_direct;
+                    ap5->mode = i_immed;
+                    ap5->size = -ISZ_UINT;
+                    ap5->offset = intNode(en_c_i, 0);
+                    fillinvararg = ap5;
+                    q2->dc.opcode = i_assn;
+                    q2->ans = ap4;
+                    q2->dc.left = ap5;
+                    q2->temps = TEMP_ANS;
+                    q3->dc.opcode = i_assn;
+                    q3->ans = ap6;
+                    q3->dc.left = ap4;
+                    q3->temps = TEMP_LEFT;
+                    InsertInstruction(prev->back, q2);
+                    InsertInstruction(prev->back, q3);
+                }
+                // this is to load this param into the object array
+                // it inserts the params need by the stelem.ref
+                // the stelem.ref and any boxing are done later...
+                q->dc.opcode = i_assn;
+                q->ans = ap;
+                q->dc.left = ap1;
+                q->temps = TEMP_ANS;
+                q->alwayslive = TRUE;
+                q1->dc.opcode = i_assn;
+                q1->ans = ap2;
+                q1->dc.left = ap3;
+                q1->temps = TEMP_ANS;
+                q1->alwayslive = TRUE;
+                InsertInstruction(prev->back, q);
+                InsertInstruction(prev->back, q1);
             }
         }
         head = head->fwd;

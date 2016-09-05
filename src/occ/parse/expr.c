@@ -1477,6 +1477,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
     BOOLEAN tooshort = FALSE;
     BOOLEAN toolong = FALSE;
     BOOLEAN noproto = FALSE;//params->sp ? params->sp->oldstyle : FALSE;
+    BOOLEAN vararg = FALSE;
     int argnum = 0;
  
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
@@ -1510,6 +1511,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                     noproto = TRUE;
                 else if (basetype(decl->tp)->type == bt_ellipse)
                 {
+                    vararg =  params->sp->linkage2 != lk_unmanaged;
                     matching = FALSE;
                     decl = NULL;
                     hr = NULL;
@@ -1617,14 +1619,14 @@ join:
             {
                 if (basetype(list->tp)->type <= bt_int)
                     dest = &stdint;
-                else
+                else if (!(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
                     cast(list->tp, &list->exp);
             }
             else if (isfloat(list->tp))
             {
                 if (basetype(list->tp)->type < bt_double)
                     dest = &stddouble;
-                else
+                else if (!(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
                     cast(list->tp, &list->exp);
             }
             if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, TRUE))
@@ -1638,12 +1640,29 @@ join:
                 cast(&stdint, &list->exp);
             }
         }
-        if (hr)
-            hr = hr->next;
         if (list)
         {
+            BOOLEAN ivararg = vararg;
+            if (list->exp->type == en_auto && list->exp->v.sp->va_typeof)
+                ivararg = FALSE;
+            list->vararg = ivararg;
+            if (hr)
+            {
+                TYPE *tp = ((SYMBOL *)hr->p)->tp;
+                while (tp && tp->type != bt_pointer)
+                {
+                    if (tp->type == bt_va_list)
+                    {
+                        list->valist = TRUE;
+                        break;
+                    }
+                    tp = tp->btp;
+                }
+            }
             list = list->next;
         }
+        if (hr)
+            hr = hr->next;
     }
     if (noproto)
         errorsym(ERR_CALL_FUNCTION_NO_PROTO, params->sp);
@@ -3973,6 +3992,28 @@ static LEXEME *expression_primary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE *
                     else
                         *exp = intNode(en_labcon, funcsp->__func__label);
                     lex = getsym();
+                    break;
+                case kw___va_typeof__:
+                    lex = getsym();
+                    if (MATCHKW(lex, openpa))
+                    {
+                        lex = getsym();
+                        if (startOfType(lex, FALSE))
+                        {
+                            SYMBOL *sp;
+                            lex = get_type_id(lex, tp, funcsp, sc_cast, FALSE, TRUE);
+                            (*tp)->used = TRUE;
+                            needkw(&lex, closepa);
+                            // don't enter in table, this is purely so we can cache the type info
+                            sp = makeID( sc_auto, *tp, NULL, AnonymousName());
+                            sp->va_typeof = TRUE;
+                            *exp = varNode(en_auto, sp);
+                            break;
+                        }
+                    }
+                    error(ERR_TYPE_NAME_EXPECTED);
+                    *exp = intNode(en_c_i, 0);
+                    *tp = &stdint;
                     break;
                 case kw_D0:
                 case kw_D1:

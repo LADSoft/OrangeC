@@ -83,6 +83,8 @@ namespace lsmsilcrtl
                         current = BitConverter.GetBytes((float)obj);
                     else if (obj is double)
                         current = BitConverter.GetBytes((double)obj);
+                    else if (obj is IntPtr)
+                        current = BitConverter.GetBytes(((IntPtr)obj).ToInt32());
                     else
                     {
                         current = new Byte[4];

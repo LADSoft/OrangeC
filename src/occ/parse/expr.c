@@ -1512,6 +1512,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                 else if (basetype(decl->tp)->type == bt_ellipse)
                 {
                     vararg =  params->sp->linkage2 != lk_unmanaged;
+                    params->vararg = vararg;
                     matching = FALSE;
                     decl = NULL;
                     hr = NULL;

@@ -184,7 +184,7 @@ static void GatherGlobals(void)
             QUAD *head = blockArray[i]->head;
             while (head != blockArray[i]->tail->fwd)
             {
-                if (head->dc.opcode != i_label && !head->ignoreMe)
+                if (head->dc.opcode != i_label && !head->ignoreMe && head->dc.opcode != i_expressiontag)
                 {
                     if (head->needsOCP || head->dc.opcode == i_block)
                     {
@@ -228,7 +228,7 @@ void SetunMoveableTerms(void)
             head = b->head;
             while (head != b->tail->fwd)
             {
-                if (!head->ignoreMe && head->dc.opcode != i_label)
+                if (!head->ignoreMe && head->dc.opcode != i_label && head->dc.opcode != i_expressiontag)
                 {
                     if (head->temps & TEMP_ANS)
                     {
@@ -352,7 +352,7 @@ static void CalculateTransparent(void)
         {
             if (!head->ignoreMe)
             {
-                if (head->ans && head->dc.opcode != i_label)
+                if (head->ans && head->dc.opcode != i_label && head->dc.opcode != i_expressiontag)
                 {
                     if (head->temps & TEMP_ANS)
                     {
@@ -382,7 +382,7 @@ static void CalculateTransparent(void)
         } while (tail && !tail->OCP) ;
         if (tail)
         {
-            if (tail->ans && tail->dc.opcode != i_label)
+            if (tail->ans && tail->dc.opcode != i_label && head->dc.opcode != i_expressiontag)
             {
                 setmap(tempBytes, FALSE);
                 AliasUses(tempBytes, tail->ans, TRUE);

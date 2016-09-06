@@ -938,7 +938,7 @@ int examine_icode(QUAD *head)
         // replace indirections through a non-register with a register friendly version
         else if  (head->dc.opcode !=
             i_line && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label)
+            i_label && head->dc.opcode != i_expressiontag)
         {
             IMODE *ians = 0, *tans;
             if (head->ans && head->ans->mode == i_ind && head->ans->offset->type != en_tempref)

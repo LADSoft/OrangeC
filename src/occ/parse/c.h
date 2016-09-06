@@ -813,6 +813,7 @@ typedef struct functioncall
     int astemplate:1;
     int noobject:1;
     int asaddress:1;
+    int vararg:1;
 } FUNCTIONCALL;
 
 #define MAX_STRLEN      16384

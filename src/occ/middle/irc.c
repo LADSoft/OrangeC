@@ -348,7 +348,7 @@ static void ScanForAnonymousVars(void)
     {
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend 
             && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
-            && head->dc.opcode != i_label && head->dc.opcode != i_line && head->dc.opcode != i_passthrough)
+            && head->dc.opcode != i_label && head->dc.opcode != i_expressiontag && head->dc.opcode != i_line && head->dc.opcode != i_passthrough)
         {
             if (head->ans)
             {
@@ -531,7 +531,7 @@ static void CopyLocalColors(void)
     while (head)
     {
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label)
+            i_label && head->dc.opcode != i_expressiontag)
         {
             if ((head->temps & TEMP_ANS) || (head->ans && head->ans->retval))
             {
@@ -759,6 +759,7 @@ static void CountInstructions(BOOLEAN first)
             case i_blockend:
             case i_line:
             case i_label:
+            case i_expressiontag:
             case i_dbgblock:
             case i_dbgblockend:
             case i_varstart:
@@ -826,6 +827,7 @@ static void CountInstructions(BOOLEAN first)
             case i_blockend:
             case i_line:
             case i_label:
+            case i_expressiontag:
             case i_dbgblock:
             case i_dbgblockend:
             case i_varstart:
@@ -2223,7 +2225,7 @@ void Precolor(void)
     while (head)
     {
         if (head->dc.opcode != i_block && !head->ignoreMe &&
-            head->dc.opcode != i_label)
+            head->dc.opcode != i_label && head->dc.opcode != i_expressiontag)
         {
             chosenAssembler->gen->preColor(head);
         }
@@ -2248,7 +2250,7 @@ void retemp(void)
     while (head)
     {
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label)
+            i_label && head->dc.opcode != i_expressiontag)
         {
             if (head->ans)
             {
@@ -2290,7 +2292,7 @@ void retemp(void)
     while (head)
     {
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label)
+            i_label && head->dc.opcode != i_expressiontag)
         {
             if (head->ans)
             {

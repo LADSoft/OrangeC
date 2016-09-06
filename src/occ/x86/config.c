@@ -565,6 +565,7 @@ ARCH_GEN outputfunctions = {
     oa_output_alias,       /* put an alias */
     oa_output_includelib,  /* put an included library name */
     0,                      /* backend handle intrinsic */
+    0,                      /* expression tag */
     asm_line,               /* line number information and text */
     asm_blockstart,         /* block start */
     asm_blockend,           /* block end */

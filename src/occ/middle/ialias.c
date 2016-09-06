@@ -474,7 +474,7 @@ static void Createaddresses(void)
     while (head)
     {
         if (head->dc.opcode != i_assnblock && head->dc.opcode != i_clrblock)
-            if (head->dc.opcode != i_label && head->dc.opcode != i_passthrough && !head->ignoreMe)
+            if (head->dc.opcode != i_label && head->dc.opcode != i_passthrough && !head->ignoreMe && head->dc.opcode != i_expressiontag)
             {
                 if (head->ans && !(head->temps & TEMP_ANS) && head->ans->mode != i_immed)
                 {

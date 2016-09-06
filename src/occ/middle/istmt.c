@@ -339,7 +339,7 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
 #endif
     count_cases(stmt->cases,&cs) ;
     cs.top++;
-    ap3 = gen_expr(funcsp, stmt->select, F_VOL | F_NOVALUE, ISZ_UINT);
+    ap3 = gen_expr(funcsp, stmt->select, F_VOL, ISZ_UINT);
     ap = LookupLoadTemp(NULL, ap3);
     if (ap != ap3)
     {

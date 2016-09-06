@@ -572,6 +572,30 @@ void put_label(int label)
 {
 }
 
+void asm_expressiontag(QUAD *q)
+{
+    if (!q->dc.v.label)
+    {
+        // expression tags can be nested...
+        int n = 1;
+        q = q->back;
+        while (n && (q->dc.opcode == op_line || q->dc.opcode == i_expressiontag))
+        {
+            if (q->dc.opcode == i_expressiontag)
+                if (q->dc.v.label)
+                    n--;
+                else
+                    n++;
+            q = q->back;
+        }
+        if (n)
+        {
+
+            gen_code(op_pop, NULL);
+            decrement_stack();
+        }
+    }
+}
 void asm_line(QUAD *q)               /* line number information and text */
 {
     OCODE *new = beLocalAlloc(sizeof(OCODE));
@@ -650,9 +674,19 @@ void asm_parm(QUAD *q)               /* push a parameter*/
     }
     else if (q->valist && q->valist->type == en_l_p)
     {
-        AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
-        ap->mode = am_argit_unmanaged;
-        gen_code (op_callvirt, ap);
+        QUAD *find = q;
+        while (find && find->dc.opcode != i_gosub)
+            find = find->fwd;
+        if (find)
+        {
+            FUNCTIONCALL *params = (FUNCTIONCALL *)find->altdata;
+            if (params->sp->linkage2 == lk_unmanaged)
+            {
+                AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+                ap->mode = am_argit_unmanaged;
+                gen_code (op_callvirt, ap);
+            }
+        }
     }
 }
 void asm_parmblock(QUAD *q)          /* push a block of memory */
@@ -738,10 +772,12 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
                 if (hr)
                     if (((SYMBOL *)hr->p)->tp->type == bt_ellipse)
                     {
-                        if (objectArray_exp)
+                        if (objectArray_exp && !q->nullvararg)
                             gen_code(op_ldloc, make_index(am_local, objectArray_exp->v.sp->offset, objectArray_exp->v.sp));
                         else
                             gen_code(op_ldnull, 0);
+                        increment_stack();
+                        decrement_stack();
                     }
             }
             gen_code(op_call, ap);
@@ -890,25 +926,21 @@ void asm_setne(QUAD *q)              /* evaluate a = b != c */
     increment_stack();
     decrement_stack();
     decrement_stack();
-    
 }
 void asm_sete(QUAD *q)               /* evaluate a = b == c */
 {
     gen_code(op_ceq, NULL);
     decrement_stack();
-    
 }
 void asm_setc(QUAD *q)               /* evaluate a = b U< c */
 {
     gen_code(op_clt_un, NULL);
     decrement_stack();
-    
 }
 void asm_seta(QUAD *q)               /* evaluate a = b U> c */
 {
     gen_code(op_cgt_un, NULL);
     decrement_stack();
-    
 }
 void asm_setnc(QUAD *q)              /* evaluate a = b U>= c */
 {
@@ -927,19 +959,16 @@ void asm_setbe(QUAD *q)              /* evaluate a = b U<= c */
     increment_stack();
     decrement_stack();
     decrement_stack();
-    
 }
 void asm_setl(QUAD *q)               /* evaluate a = b S< c */
 {
     gen_code(op_clt, NULL);
     decrement_stack();
-    
 }
 void asm_setg(QUAD *q)               /* evaluate a = b s> c */
 {
     gen_code(op_cgt, NULL);
     decrement_stack();
-    
 }
 void asm_setle(QUAD *q)              /* evaluate a = b S<= c */
 {
@@ -949,7 +978,6 @@ void asm_setle(QUAD *q)              /* evaluate a = b S<= c */
     increment_stack();
     decrement_stack();
     decrement_stack();
-    
 }
 void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
 {
@@ -959,7 +987,6 @@ void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
     increment_stack();
     decrement_stack();
     decrement_stack();
-    
 }
 void asm_assn(QUAD *q)               /* assignment */
 {
@@ -1102,6 +1129,7 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
             gen_code(op_sub, NULL);
         }
         gen_code(op_switch, swap);
+        decrement_stack();
         gen_branch(op_br, switch_deflab, FALSE);
     }
     switch(switch_mode)
@@ -1179,7 +1207,10 @@ void asm_ja(QUAD *q)                 /* branch if a U> b */
 }
 void asm_je(QUAD *q)                 /* branch if a == b */
 {
-    gen_branch(op_beq, q->dc.v.label, TRUE);
+    if (q->dc.right->mode == i_immed && isconstzero(&stdint, q->dc.right->offset))
+        gen_branch(op_brfalse, q->dc.v.label, TRUE);
+    else
+        gen_branch(op_beq, q->dc.v.label, TRUE);
     
 }
 void asm_jnc(QUAD *q)                /* branch if a U>= b */
@@ -1194,7 +1225,10 @@ void asm_jbe(QUAD *q)                /* branch if a U<= b */
 }
 void asm_jne(QUAD *q)                /* branch if a != b */
 {
-    gen_branch(op_bne_un, q->dc.v.label, TRUE);
+    if (q->dc.right->mode == i_immed && isconstzero(&stdint, q->dc.right->offset))
+        gen_branch(op_brtrue, q->dc.v.label, TRUE);
+    else
+        gen_branch(op_bne_un, q->dc.v.label, TRUE);
     
 }
 void asm_jl(QUAD *q)                 /* branch if a S< b */
@@ -1328,6 +1362,8 @@ int examine_icode(QUAD *head)
         {
             if (fillinvararg)
                 fillinvararg->offset->v.i = parmIndex;
+            if (!parmIndex && ((FUNCTIONCALL *)head->altdata)->vararg)
+                head->nullvararg = TRUE;
             fillinvararg = NULL;
             parmIndex = 0;
         }
@@ -1336,7 +1372,8 @@ int examine_icode(QUAD *head)
             && head->dc.opcode != i_label && head->dc.opcode != i_line && head->dc.opcode != i_passthrough
             && head->dc.opcode != i_func && head->dc.opcode != i_gosub && head->dc.opcode != i_parmadj
             && head->dc.opcode != i_ret && head->dc.opcode != i_varstart
-            && head->dc.opcode != i_coswitch && head->dc.opcode != i_swbranch)
+            && head->dc.opcode != i_coswitch && head->dc.opcode != i_swbranch
+            && head->dc.opcode != i_expressiontag)
         {
             if (head->dc.opcode == i_muluh || head->dc.opcode == i_mulsh)
             {
@@ -1383,15 +1420,18 @@ int examine_icode(QUAD *head)
             }
             if (head->dc.right && head->dc.right->mode == i_immed)
             {
-                IMODE *ap = InitTempOpt(head->dc.right->size, head->dc.right->size);
-                QUAD *q = Alloc(sizeof(QUAD));
-                q->dc.opcode = i_assn;
-                q->ans = ap;
-                q->temps = TEMP_ANS;
-                q->dc.left = head->dc.right;
-                head->dc.right = ap;
-                head->temps |= TEMP_RIGHT;
-                InsertInstruction(head->back, q);
+                if (head->dc.opcode != i_je && head->dc.opcode != i_jne || !isconstzero(&stdint, head->dc.right->offset))
+                {
+                    IMODE *ap = InitTempOpt(head->dc.right->size, head->dc.right->size);
+                    QUAD *q = Alloc(sizeof(QUAD));
+                    q->dc.opcode = i_assn;
+                    q->ans = ap;
+                    q->temps = TEMP_ANS;
+                    q->dc.left = head->dc.right;
+                    head->dc.right = ap;
+                    head->temps |= TEMP_RIGHT;
+                    InsertInstruction(head->back, q);
+                }
             }
             if (head->vararg)
             {
@@ -1399,12 +1439,13 @@ int examine_icode(QUAD *head)
                 QUAD *q = Alloc(sizeof(QUAD));
                 QUAD *q1 = Alloc(sizeof(QUAD));
                 IMODE *ap = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
-                IMODE *ap1 = make_immed(ISZ_ADDR, 0);
+                IMODE *ap1 = Alloc(sizeof(IMODE));
                 IMODE *ap2 = InitTempOpt(-ISZ_UINT, -ISZ_UINT);
                 IMODE *ap3 = make_immed(-ISZ_UINT, parmIndex++);
                 QUAD *prev = head;
                 ap1->offset = objectArray_exp;
                 ap1->mode = i_direct;
+                ap1->size = ISZ_ADDR;
                 while (prev->back && !prev->back->varargPrev)
                     prev = prev->back;
                 if (parmIndex - 1 == 0)
@@ -1414,9 +1455,10 @@ int examine_icode(QUAD *head)
                     QUAD *q3 = Alloc(sizeof(QUAD));
                     IMODE *ap4 = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
                     IMODE *ap5 = Alloc(sizeof(IMODE));
-                    IMODE *ap6 = make_immed(ISZ_ADDR, 0);
+                    IMODE *ap6 = Alloc(sizeof(IMODE));
                     ap6->offset = objectArray_exp;
                     ap6->mode = i_direct;
+                    ap6->size = ISZ_ADDR;
                     ap5->mode = i_immed;
                     ap5->size = -ISZ_UINT;
                     ap5->offset = intNode(en_c_i, 0);

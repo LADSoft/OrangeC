@@ -10,6 +10,7 @@ void precolor(QUAD *head);			/* precolor an instruction */
 int preRegAlloc(QUAD *ins, BRIGGS_SET *globals, BRIGGS_SET *eobGlobals, int pass);
 int examine_icode(QUAD *head);
 void cg_internal_conflict(QUAD *head);
+void asm_expressiontag(QUAD *q)               ;
 void asm_line(QUAD *q)               ;
 void asm_blockstart(QUAD *q)         ;
 void asm_blockend(QUAD *q)           ;

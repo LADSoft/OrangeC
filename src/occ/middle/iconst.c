@@ -758,7 +758,7 @@ void ConstantFold(QUAD *d, BOOLEAN reflow)
                     ReassignInt(d,(unsigned LLONG_TYPE)left->v.i % (unsigned LLONG_TYPE)right->v.i);
                 break;
             case icnl:
-                if ((shift = calmask((unsigned LLONG_TYPE)right->v.i)) != 0)
+                if ((shift = calmask((unsigned LLONG_TYPE)right->v.i)) != -1)
                 {
                     ReassignMulDiv(d,i_and,shift,FALSE);
                 }
@@ -846,7 +846,7 @@ void ConstantFold(QUAD *d, BOOLEAN reflow)
                 }
                 break;
             case icnl:
-                if ((shift = calmask(right->v.i)) != 0)
+                if ((shift = calmask(right->v.i)) != -1)
                 {
                     ReassignMulDiv(d,i_and,shift,FALSE);
                 }
@@ -1483,7 +1483,7 @@ static BOOLEAN evalBranch(QUAD *I, BLOCK *b)
                 }
                 else if (qn.dc.right->mode != i_immed || !isintconst(qn.dc.right->offset))
                     break;
-                 ConstantFold(&qn, FALSE);
+                ConstantFold(&qn, FALSE);
                 if (qn.dc.opcode == i_nop)
                 {
                     bl = b->succ;

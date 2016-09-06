@@ -616,7 +616,7 @@ void ReduceLoopStrength(void)
         if (b)
         {
             QUAD *head = b->head;
-            while ((head->dc.opcode == i_block || head->ignoreMe || head->dc.opcode == i_label) && head->back != b->tail)
+            while ((head->dc.opcode == i_block || head->ignoreMe || head->dc.opcode == i_label || head->dc.opcode == i_expressiontag) && head->back != b->tail)
                 head = head->fwd;
             while (head->dc.opcode == i_phi && head->back != b->tail)
             {

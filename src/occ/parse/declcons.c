@@ -1460,16 +1460,16 @@ void createDefaultConstructors(SYMBOL *sp)
         conditionallyDeleteCopyAssignment(asgn,TRUE);
     }
 }
-void destructBlock(EXPRESSION **exp, HASHREC *hr)
+void destructBlock(EXPRESSION **exp, HASHREC *hr, BOOLEAN mainDestruct)
 {
-    if (!cparams.prm_cplusplus)
-        return;
+//    if (!cparams.prm_cplusplus)
+//        return;
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->allocate && !sp->destructed && !isref(sp->tp))
         {
-            sp->destructed = TRUE;
+            sp->destructed = mainDestruct;
             if (sp->storage_class == sc_parameter)
             {
                 if (isstructured(sp->tp))

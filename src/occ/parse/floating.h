@@ -97,6 +97,9 @@ typedef struct
 /*
 ** PROTOTYPES
 */
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef XXXXX
 void SetupCPUEmFloatArrays(FPF *abase,
         FPF *bbase, FPF *cbase, ulong arraysize);
@@ -138,3 +141,6 @@ void UnsignedLongLongToFPF(FPF *value, LLONG_TYPE i);
 int FPFToLongDouble(unsigned char *dest, FPF *src);
 void FPFTruncate(FPF *value, int bits, int maxexp, int minexp);
 int LongDoubleToFPF(FPF *dest, unsigned char *src);
+#ifdef __cplusplus
+}
+#endif

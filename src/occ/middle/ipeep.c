@@ -83,7 +83,7 @@ static void scan_gotos(QUAD *head)
             case i_jg:
             case i_jle:
             case i_jl:
-                if (head->dc.left->mode == i_immed && head->dc.right->mode == i_immed)
+                if (head->dc.left->mode == i_immed && head->dc.right->mode == i_immed && !(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
                 {
                     if (isintconst(head->dc.left->offset) && isintconst(head->dc.right->offset))
                     {
@@ -160,7 +160,6 @@ static void kill_brtonext(BLOCK *b, QUAD *head)
     {
         switch (head->dc.opcode)
         {
-            case i_goto:
             case i_jc:
             case i_jnc:
             case i_jbe:
@@ -171,6 +170,9 @@ static void kill_brtonext(BLOCK *b, QUAD *head)
             case i_jg:
             case i_jle:
             case i_jl:
+                if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+                    return;
+            case i_goto:
                 temp = head->fwd;
                 while (temp && (temp->dc.opcode == i_label || temp->ignoreMe 
                     || temp->dc.opcode == i_block || temp->dc.opcode == i_blockend))

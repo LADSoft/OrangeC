@@ -869,7 +869,7 @@ void RemoveInstruction(QUAD *ins)
     switch (ins->dc.opcode)
     {
         case i_dbgblock: case i_dbgblockend: case i_varstart: case i_func:
-        case i_label:
+        case i_label: case i_expressiontag:
             return;
         default:
             break;

@@ -1262,7 +1262,7 @@ static BOOLEAN eval(QUAD *q)
                         case en_threadlocal:
                             break;
                         default:
-                            val->size = tempInfo[tnum]->size;
+                            val->size = q->ans->size;
                             break;
                     }
                     break;
@@ -1483,7 +1483,7 @@ static BOOLEAN evalBranch(QUAD *I, BLOCK *b)
                 }
                 else if (qn.dc.right->mode != i_immed || !isintconst(qn.dc.right->offset))
                     break;
-                 ConstantFold(&qn, FALSE);
+                ConstantFold(&qn, FALSE);
                 if (qn.dc.opcode == i_nop)
                 {
                     bl = b->succ;

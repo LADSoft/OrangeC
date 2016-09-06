@@ -1,3 +1,6 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* Protogen Version 1.00 Saturday November 18, 2006  21:08:23 */
 
                              /* Beinterf.c */
@@ -141,7 +144,7 @@ BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move);
 void createConstructorsForLambda(SYMBOL *sp);
 void createConstructor(SYMBOL *sp, SYMBOL *consfunc);
 void createDefaultConstructors(SYMBOL *sp);
-void destructBlock(EXPRESSION **exp, HASHREC *hr);
+void destructBlock(EXPRESSION **exp, HASHREC *hr, BOOLEAN mainDestruct);
 EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOLEAN parseInitializers, BOOLEAN doCopy);
 void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms);
 void createAssignment(SYMBOL *sym, SYMBOL *asnfunc);
@@ -999,3 +1002,7 @@ BOOLEAN matchingCharTypes(TYPE *typ1, TYPE *typ2);
 void typenumptr(char *buf, TYPE *tp);
 TYPE *typenum(char *buf, TYPE *tp);
 void typeToString(char *buf, TYPE *typ);
+
+#ifdef __cplusplus
+}
+#endif

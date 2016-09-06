@@ -48,8 +48,9 @@ extern int prm_assembler;
 extern SYMBOL *theCurrentFunc;
 extern LIST *temporarySymbols;
 extern LIST *externals;
-extern TYPE stdpointer;
+extern TYPE stdpointer, stdint;
 extern INCLUDES *includes;
+
 OCODE *peep_head, *peep_tail;
 static int uses_float;
 
@@ -364,7 +365,11 @@ char msil_bltins[] = " void exit(int); "
     "void *__pctype_func(); "
     "int *_errno(); "
     "void *__OCCMSIL_GetProcThunkToManaged(void *proc); "
-    "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); ";
+    "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
+    "void *malloc(unsigned); "
+    "void free(void *); "
+    "void *__va_start__(); "
+    "void *__va_arg__(void *, ...); ";
 
 /* Init module */
 void oa_ini(void)
@@ -571,16 +576,17 @@ void cacheType(TYPE *tp)
     p->next = typeList;
     typeList = p;
 }
-void puttype(TYPE *tp)
+void puttype(TYPE *tp_in)
 {
-    tp = basetype(tp);
-    if (tp->type == bt_pointer)
+    TYPE *tp = basetype(tp_in);
+    if (tp->type == bt_pointer || isfunction(tp))
     {
-        if (isfuncptr(tp))
+        if (isfuncptr(tp) || isfunction(tp))
         {
             HASHREC *hr;
             BOOLEAN vararg = FALSE;
-            tp = tp->btp;
+            if (isfuncptr(tp))
+                tp = tp->btp;
             hr = basetype(tp)->syms->table[0];
             while (hr)
             {
@@ -621,14 +627,37 @@ void puttype(TYPE *tp)
             buf[0] = 0;
             while (tp->array)
             {
-                sprintf(buf + strlen(buf), "[%d]", tp->size/tp->btp->size);
+                if (tp->vla)
+                {
+                    sprintf(buf + strlen(buf), "[vla]");
+                }
+                else
+                {
+                    sprintf(buf + strlen(buf), "[%d]", tp->size/tp->btp->size);
+                }
                 tp = tp->btp;
             }
             puttype(tp);
             bePrintf("%s", buf);
         }
         else
+        {
+            while (tp_in->type != bt_pointer)
+            {
+                if (tp_in->type == bt_va_list)
+                {
+                    bePrintf("class [lsmsilcrtl]lsmsilcrtl.args ");
+                    return;
+                }
+                else if (tp_in->type == bt_objectArray)
+                {
+                    bePrintf("object[] ");
+                    return;
+                }
+                tp_in = tp_in->btp;
+            }
             bePrintf("void*");
+        }
     }
     else if (isstructured(tp))
     {
@@ -650,7 +679,7 @@ void puttype(TYPE *tp)
 }
 void puttypewrapped(TYPE *tp)
 {
-    if (isfuncptr(tp))
+    if (isfuncptr(tp) || isfunction(tp))
         bePrintf("method ");
     else if (isstructured(tp) || isarray(tp))
         bePrintf("valuetype '");
@@ -658,19 +687,46 @@ void puttypewrapped(TYPE *tp)
     if (isstructured(tp) || isarray(tp))
         bePrintf("'");
 }
+void putunmanagedtype(TYPE *tp)
+{
+    TYPE *tp1 = tp;
+    while (tp1 && tp1->type != bt_pointer)
+    {
+        if (tp1->type == bt_va_list)
+        {
+            bePrintf("void*");
+            return;
+        }
+        tp1 = tp1->btp;
+    }
+    puttypewrapped(tp);
+}
 /*-------------------------------------------------------------------------*/
 void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
 {
     BOOLEAN vararg = FALSE;
     HASHREC *hr = basetype(sp->tp)->syms->table[0];
+    int count = 0;
     oa_enterseg(oa_currentSeg);
-    bePrintf(".method public hidebysig static ");
+    if (sp->storage_class == sc_static)
+    {
+        bePrintf(".method private hidebysig static ");
+    }
+    else
+    {
+        bePrintf(".method public hidebysig static ");
+    }
     if (pinvoke)
     {
-        if (strstr(sp->name, "OCCMSIL_"))
-            bePrintf("pinvokeimpl(\"occmsil.dll\" cdecl) ");
+        char * name = _dll_name(sp->name);
+        if (name)
+        {
+            bePrintf("pinvokeimpl(\"%s\" %s) ", name, sp->linkage == lk_stdcall ? "stdcall" : "cdecl");
+        }
         else
-            bePrintf("pinvokeimpl(\"msvcrt.dll\" cdecl) ");
+        {
+            errorsym(ERR_UNDEFINED_EXTERNAL, sp);
+        }
     }
     while (hr)
     {
@@ -679,13 +735,16 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
             vararg = TRUE;
         hr = hr->next;
     }
-    if (vararg)
+    if (vararg && pinvoke)
         bePrintf("vararg ");
-    puttypewrapped(isstructured(basetype(sp->tp)->btp) ? &stdpointer : basetype(sp->tp)->btp);
-    bePrintf(" '%s'", sp->name);
     if (!strcmp(sp->decoratedName, "_main"))
     {
         HASHREC *hr = basetype(sp->tp)->syms->table[0];
+        if (isvoid(basetype(sp->tp)->btp))
+            bePrintf("void ");
+        else
+            puttypewrapped(&stdint);
+        bePrintf(" '%s'", sp->name);
         bePrintf("(int32 '");
         bePrintf("%s', ", hr ? hr->p->name : "argc");
         if (hr)
@@ -695,6 +754,8 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
     }
     else
     {
+        puttypewrapped(isstructured(basetype(sp->tp)->btp) ? &stdpointer : basetype(sp->tp)->btp);
+        bePrintf(" '%s'", sp->name);
         hr = basetype(sp->tp)->syms->table[0];
         bePrintf("(");
         if (isstructured(basetype(sp->tp)->btp))
@@ -708,15 +769,24 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
             SYMBOL *sp = (SYMBOL *)hr->p;
             if (sp->tp->type != bt_void)
             {
-                puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
-                if (!pinvoke)
+                if (pinvoke)
+                    putunmanagedtype(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+                else
+                    puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+                if (!pinvoke && sp->tp->type != bt_ellipse)
                 {
                     bePrintf(" '%s' ",sp->name);
+                    count++;
                 }
                 if (!vararg && hr->next || vararg && hr->next && hr->next->next)
                     bePrintf(", ");
             }
             hr = hr->next;
+        }
+        if (vararg && !pinvoke)
+        {
+            count ++;
+            bePrintf(", object [] '__varargs__'");
         }
         bePrintf(")");
     } 
@@ -724,6 +794,11 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
         bePrintf(" preservesig {}\n");
     else
         bePrintf(" cil managed\n{\n");
+    if (vararg && !pinvoke)
+    {
+        bePrintf("\t.param\t[%d]\n", count);
+        bePrintf("\t.custom instance void [mscorlib]System.ParamArrayAttribute::.ctor() = ( 01 00 00 00 )\n"); 
+    }
 }
 void oa_gen_strlab(SYMBOL *sp)
 /*
@@ -739,10 +814,21 @@ void oa_gen_strlab(SYMBOL *sp)
     {
         oa_enterseg(oa_currentSeg);
         inASMdata = TRUE;
-        bePrintf(".field public static ");
+        if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
+            bePrintf(".field private static ");
+        else
+            bePrintf(".field public static ");
         puttypewrapped(sp->tp);
-        bePrintf(" '%s' at $%s\n", sp->name, sp->name);
-        bePrintf(".data $%s = bytearray (", sp->name);
+        if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
+        {
+            bePrintf(" 'L_%d' at $L_%d\n", sp->label, sp->label);
+            bePrintf(".data $L_%d = bytearray (", sp->label);
+        }
+        else
+        {
+            bePrintf(" '%s' at $%s\n", sp->name, sp->name);
+            bePrintf(".data $%s = bytearray (", sp->name);
+        }
         oa_outcol = 0;
     }
 }
@@ -1079,12 +1165,15 @@ void dump_browsefile(BROWSEFILE *brf)
 
 void oa_header(char *filename, char *compiler_version)
 {
+    _apply_global_using();
+
     oa_nl();
     bePrintf("//File %s\n",filename);
     bePrintf("//Compiler version %s\n",compiler_version);
     bePrintf("\n.corflags 2 // 32-bit");
     bePrintf("\n.assembly test { }\n");
-    bePrintf("\n.assembly extern mscorlib { }\n\n\n");
+    bePrintf("\n.assembly extern mscorlib { }\n");
+    bePrintf("\n.assembly extern lsmsilcrtl { }\n\n\n");
 }
 void oa_trailer(void)
 {
@@ -1177,14 +1266,18 @@ void putfieldname(AMODE *arg)
     EXPRESSION *en = GetSymRef(arg->offset);
     bePrintf("\t");
     puttypewrapped(en->v.sp->tp);
-    bePrintf(" '%s'\n", en->v.sp->name);
+    if (en->v.sp->storage_class == sc_localstatic || en->v.sp->storage_class == sc_constant)
+        bePrintf(" 'L_%d'\n", en->v.sp->label);
+    else
+        bePrintf(" '%s'\n", en->v.sp->name);
 }
 void putfunccall(AMODE *arg)
 {
     EXPRESSION *en = GetSymRef(arg->offset);
-    SYMBOL *sp = en->v.sp;
-    HASHREC *hr = basetype(sp->tp)->syms->table[0];
+    SYMBOL *spi = en->v.sp;
+    HASHREC *hr = basetype(spi->tp)->syms->table[0];
     BOOLEAN vararg = FALSE;
+    BOOLEAN managed = en->v.sp->linkage2 != lk_unmanaged;
     INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata)->arguments : NULL;
     while (hr)
     {
@@ -1194,13 +1287,13 @@ void putfunccall(AMODE *arg)
         hr = hr->next;
     }
     bePrintf("\t");
-    if (vararg)
+    if (vararg && !managed)
         bePrintf("vararg ");
-    puttypewrapped(isstructured(basetype(sp->tp)->btp) ? &stdpointer : basetype(sp->tp)->btp);
-    bePrintf(" '%s'", sp->name);
+    puttypewrapped(isstructured(basetype(spi->tp)->btp) ? &stdpointer : basetype(spi->tp)->btp);
+    bePrintf(" '%s'", spi->name);
     bePrintf("(");
-    hr = basetype(sp->tp)->syms->table[0];
-    if (isstructured(basetype(sp->tp)->btp))
+    hr = basetype(spi->tp)->syms->table[0];
+    if (isstructured(basetype(spi->tp)->btp))
     {
         bePrintf("void *");
         if (!vararg && hr || vararg && hr && hr->next)
@@ -1211,7 +1304,10 @@ void putfunccall(AMODE *arg)
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->tp->type != bt_void)
         {
-            puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+            if (spi->linkage2 == lk_unmanaged)
+                putunmanagedtype(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+            else
+                puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
             if (il && sp->tp->type != bt_ellipse)
                 il = il->next;
             if (!vararg && hr->next || vararg && hr->next && hr->next->next)
@@ -1221,15 +1317,22 @@ void putfunccall(AMODE *arg)
     }
     if (vararg)
     {
-        bePrintf(", ...");
-        while (il)
+        if (managed)
         {
-            bePrintf(", ");
-            if (isarray(il->tp))
-                puttypewrapped(&stdpointer); // convert arrays to void *...
-            else
-                puttypewrapped(il->tp);
-            il = il->next;
+            bePrintf(", object[]");
+        }
+        else
+        {
+            bePrintf(", ...");
+            while (il)
+            {
+                bePrintf(", ");
+                if (isarray(il->tp))
+                    puttypewrapped(&stdpointer); // convert arrays to void *...
+                else
+                    puttypewrapped(il->tp);
+                il = il->next;
+            }
         }
     }
     bePrintf(")");
@@ -1244,7 +1347,7 @@ void putlocals(void)
         while (hr)
         {
             SYMBOL *sym = (SYMBOL *)hr->p;
-            if (sym->storage_class != sc_parameter)
+            if (sym->storage_class == sc_auto || sym->storage_class == sc_register)
                 break;
             hr = hr->next;
         }
@@ -1294,7 +1397,7 @@ void putlocals(void)
             while (hr)
             {
                 SYMBOL *sym = (SYMBOL *)hr->p;
-                if (sym->storage_class != sc_parameter && !sym->temp)
+                if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && !sym->temp)
                 {
                     sym->temp = TRUE;
                     if (!first)
@@ -1327,7 +1430,7 @@ void putlocals(void)
         bePrintf("\n\t)\n");
     }
 }
-void putarg(AMODE *arg)
+void putarg(enum e_op op, AMODE *arg)
 {
     switch (arg->mode)
     {
@@ -1359,32 +1462,80 @@ void putarg(AMODE *arg)
                     bePrintf("\t'L_%Ld'", arg->offset->v.i);
                 }
             }
-            else if (arg->offset->type == en_pc || arg->offset->type == en_global)
-                if (isfunction(arg->offset->v.sp->tp))
+            else if (arg->offset->type == en_pc || arg->offset->type == en_global || arg->offset->type == en_label)
+                if (op != op_calli && isfunction(arg->offset->v.sp->tp))
                 {
                     putfunccall(arg);
                 }
                 else {
                     TYPE *tp1 = arg->offset->v.sp->tp;
+                    HASHREC *hr;
                     while (isarray(tp1))
                         tp1 = basetype(tp1)->btp;
-                    if (arg->offset->type == en_pc /*calli */ && isfuncptr(tp1))
+                    if (op == op_calli)
                     {
                         bePrintf("\t");
-                        puttype(tp1);
+                        if (isfuncptr(tp1))
+                            tp1 = basetype(tp1)->btp;
+                        puttypewrapped(isstructured(basetype(tp1)->btp) ? &stdpointer : basetype(tp1)->btp);
+                        bePrintf(" (");
+                        hr = basetype(tp1)->syms->table[0];
+                        if (isstructured(basetype(tp1)->btp))
+                        {
+                            bePrintf("void *");
+                            if (hr)
+                                bePrintf(", ");
+                        }
+                        while (hr)
+                        {
+                            SYMBOL *sp = (SYMBOL *)hr->p;
+                            if (sp->tp->type != bt_void)
+                            {
+                                puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
+                                if (hr->next)
+                                    bePrintf(", ");
+                            }
+                            hr = hr->next;
+                        }
+                        bePrintf(")");
                     }
                     else
                     {
                         bePrintf("\t");
                         puttypewrapped(arg->offset->v.sp->tp);
-                        bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                        if (arg->offset->type == en_label)
+                        {
+                            bePrintf(" 'L_%d'\n", arg->offset->v.sp->label);
+                        }
+                        else
+                        {
+                            bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                        }
                     }
                 }
             else if (isfloatconst(arg->offset))
             {
                 char buf[256];
                 FPFToString(buf,&arg->offset->v.f);
-                bePrintf("\t%s", buf);
+                if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
+                    || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
+                {
+                    UBYTE dta[8];
+                    int count = arg->offset->type == en_c_f ? 4 : 8;
+                    int i;
+                    if (count == 4)
+                        FPFToFloat(dta, &arg->offset->v.f);
+                    else
+                        FPFToDouble(dta, &arg->offset->v.f);
+                    bePrintf("\t(");
+                    for (i=0; i < count; i++)
+                    {
+                        bePrintf( "%02X ", dta[i]);
+                    }
+                    bePrintf(")");
+                }
+                else
+                    bePrintf("\t%s", buf);
             }
             else
             {
@@ -1416,6 +1567,57 @@ void putarg(AMODE *arg)
                 pass = pass->next;
             }
             bePrintf("\n\t)");
+            break;
+        case am_argit_args:
+            bePrintf("\t'__varargs__'");
+            break;
+        case am_argit_ctor:
+            bePrintf("\tinstance void [lsmsilcrtl]lsmsilcrtl.args::.ctor(object[])");
+            break;
+        case am_argit_getnext:
+            bePrintf("\tinstance object [lsmsilcrtl]lsmsilcrtl.args::GetNextArg()");
+            break;
+        case am_argit_unmanaged:
+            bePrintf("\tinstance void *[lsmsilcrtl]lsmsilcrtl.args::GetUnmanaged()");
+            break;
+        case am_ptrbox:
+            bePrintf("\tobject [lsmsilcrtl]lsmsilcrtl.pointer::'box'(void *)");
+            break;
+        case am_ptrunbox:
+            bePrintf("\tvoid * [lsmsilcrtl]lsmsilcrtl.pointer::'unbox'(object)");
+            break;
+        case am_type:
+        {
+            TYPE *tp = arg->offset->v.sp->tp;
+            bePrintf("\t");
+            puttypewrapped(tp);
+        }
+            break;
+        case am_sized:
+        {
+            static char *names[] = { "", "", "UInt8", "UInt8",
+                "UInt16", "UInt16", "UInt16", "UInt32", "UInt32", "UInt32",
+                "UInt64", "VoidPtr", "VoidPtr", "UInt16", "UInt16", "Float", "Double", 
+                "Double", "Float", "Double", "Double"
+            };
+            static char *mnames[] = { "", "", "Int8", "Int8",
+                "Int16", "Int16", "Int16", "Int32", "Int32", "Int32",
+                "Int64", "VoidPtr", "VoidPtr", "Int16", "Int16", "Float", "Double", 
+                "Double", "Float", "Double", "Double"
+            };
+            bePrintf("\t");
+            bePrintf("[mscorlib]System.");
+            if (arg->length< 0)
+                bePrintf(mnames[-arg->length]);
+            else
+                bePrintf(names[arg->length]);
+        }
+            break;
+        case am_objectArray:
+            bePrintf("\tobject[] ");
+            break;
+        case am_objectArray_ctor:
+            bePrintf("\[mscorlib]System.Object ");
             break;
     }
 }
@@ -1450,7 +1652,7 @@ void oa_put_code(OCODE *ocode)
     }
     bePrintf("\t%s", instructions[op].name);
     if (ocode->oper1)
-        putarg(ocode->oper1);
+        putarg(op,ocode->oper1);
     bePrintf("\n");
 }
 void dumpTypes()
@@ -1545,7 +1747,7 @@ void oa_load_funcs(void)
 }
 void oa_end_generation(void)
 {
-    SYMBOL *start = NULL, *end = NULL;
+    SYMBOL *start = NULL, *end = NULL, *mainsp;
     LIST *externalList = externals;
     oa_load_funcs();
     oa_enterseg(oa_currentSeg);
@@ -1561,13 +1763,13 @@ void oa_end_generation(void)
         }
         externalList = externalList->next;
     }
-    bePrintf(".method public hidebysig static void * __GetErrno() cil managed {\n");
+    bePrintf(".method private hidebysig static void * __GetErrno() cil managed {\n");
     bePrintf("\t.maxstack 1\n\n");
     bePrintf("\tcall void * '_errno'()\n");
     bePrintf("\tret\n");
     bePrintf("}\n");
 
-    bePrintf(".method public hidebysig static void $Main() cil managed {\n");
+    bePrintf(".method private hidebysig static void $Main() cil managed {\n");
     bePrintf("\t.entrypoint\n");
     bePrintf("\t.locals (\n");
     bePrintf("\t\t[0] int32 'argc',\n");
@@ -1598,9 +1800,22 @@ void oa_end_generation(void)
     bePrintf("\tcall void __getmainargs(void *, void *, void *, int32, void *);\n");
     bePrintf("\tldloc 'argc'\n");
     bePrintf("\tldloc 'argv'\n");
-    bePrintf("\tcall int32 'main'(int32, void *)\n");
+    mainsp = gsearch("main");
+    if (mainsp)
+    {
+        mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
+        if ( isvoid(basetype(mainsp->tp)->btp))
+            bePrintf("\tcall void 'main'(int32, void *)\n");
+        else
+            bePrintf("\tcall int32 'main'(int32, void *)\n");
+    }
+    else
+        bePrintf("\tcall int32 'main'(int32, void *)\n");
     if (end)
         bePrintf("\tcall void %s()\n", end->name);
+    if (mainsp)
+        if ( isvoid(basetype(mainsp->tp)->btp))
+           bePrintf("\tldc.i4 0\n");
     bePrintf("\tcall void exit(int32)\n");
     bePrintf("\tret\n");
     bePrintf("}\n");
@@ -1635,5 +1850,4 @@ void flush_peep(SYMBOL *funcsp, QUAD *list)
     }
     bePrintf("\n}\n ");
     peep_head = 0;
-
 }

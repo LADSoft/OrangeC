@@ -10,6 +10,7 @@ void precolor(QUAD *head);			/* precolor an instruction */
 int preRegAlloc(QUAD *ins, BRIGGS_SET *globals, BRIGGS_SET *eobGlobals, int pass);
 int examine_icode(QUAD *head);
 void cg_internal_conflict(QUAD *head);
+void asm_expressiontag(QUAD *q)               ;
 void asm_line(QUAD *q)               ;
 void asm_blockstart(QUAD *q)         ;
 void asm_blockend(QUAD *q)           ;
@@ -146,4 +147,8 @@ void oa_put_impfunc(SYMBOL *sp, char *file);
 void oa_put_expfunc(SYMBOL *sp);
 void oa_output_includelib(char *name);
 void oa_end_generation(void);
-
+BOOLEAN _using_(char *);
+void _using_init();
+char *_dll_name(char *name);
+void _add_global_using(char *str);
+void _apply_global_using(void);

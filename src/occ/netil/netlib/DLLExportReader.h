@@ -33,77 +33,42 @@
     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+    contact information:
+        email: TouchStone222@runbox.com <David Lindauer>
 */
-#ifndef OSUTIL_H
-#define OSUTIL_H
+#ifndef DLLExportReader_H
+#define DLLExportReader_H
 
-    /* Mode values for ARGLIST */
-    #define ARG_CONCATSTRING 1
-    #define ARG_NOCONCATSTRING 2
-    #define ARG_BOOL 3
-    #define ARG_SWITCH 4
-    #define ARG_SWITCHSTRING 5
+#include <string>
+#include <fstream>
+#include <deque>
 
-    /* Valid arg separators */
-    #define ARG_SEPSWITCH '/'
-    #define ARG_SEPFALSE '-'
-    #define ARG_SEPTRUE '+'
-
-    /* Return values for dispatch routine */
-    #define ARG_NEXTCHAR 1
-    #define ARG_NEXTARG 2
-    #define ARG_NEXTNOCAT 3
-    #define ARG_NOMATCH 4
-    #define ARG_NOARG 5
-
-    typedef struct
-    {
-        char id;
-        UBYTE mode;
-        void(*routine)(char, char*);
-    } CMDLIST;
-
-typedef struct _list_
+struct DLLExport
 {
-    struct _list_ *next;
-    void *data;
-} LIST;
+    DLLExport(const std::string &Name, int ord, bool ByOrd) : name(Name), ordinal(ord), byOrd(ByOrd) { }
+    std::string name;
+    int ordinal;
+    bool byOrd;
+};
 
-typedef struct _memblk_
+class DLLExportReader
 {
-    struct _memblk_ *next;
-    long size;
-    long left;
-    char m[1]; /* memory area */
-} MEMBLK;
+public:
+    DLLExportReader(const std::string &fname) : name(fname) { }
+    ~DLLExportReader() ;
+    bool Read() { bool rv = FindDLL(); if (rv) rv = LoadExports(); return rv; }
 
-/* Global HASHRECbol table is a hash table */
-#define GLOBALHASHSIZE 8192 /*9973 */
-#define LOCALHASHSIZE 29
-
-typedef struct _hashrec_
-{
-    struct _hashrec_ *next; /* next to next element in list */
-    struct _hrintern_{
-        char *name;
-    } *p;
-} HASHREC;
-
-typedef struct _hashtable_
-{
-    struct _hashtable_ *next, *chain;
-    int size;
-    int blockLevel;
-    int blocknum; /* debugger block number */
-    HASHREC **table;
-    
-} HASHTABLE;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern char *getUsageText(void);
-#ifdef __cplusplus
-}
-#endif
+    std::string GetName() { return name; }	
+    typedef std::deque<DLLExport *>::iterator iterator;
+    iterator begin() { return exports.begin(); }
+    iterator end() { return exports.end(); }
+protected:
+    bool doExports(std::fstream &in, int phys, int rva);
+    bool FindDLL();
+    bool LoadExports();
+private:
+    std::string name;
+    std::deque<DLLExport *> exports;
+};
 #endif

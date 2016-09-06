@@ -47,7 +47,7 @@
 #define F_ADDR 4
 #define F_COMPARE 8
 #define F_STORE 16
-
+#define F_SWITCHVALUE 32
 /* icode innstruction opcodes */
 enum i_ops
 {
@@ -66,7 +66,7 @@ enum i_ops
         i_atomic_fence, i_atomic_flag_fence, i_cmpswp,
         i_prologue, i_epilogue, i_pushcontext, i_popcontext, i_loadcontext, i_unloadcontext,
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
-        i_gcsestub,
+        i_gcsestub, i_expressiontag, 
      /* Dag- specific stuff */
         i_var, i_const, i_ptr, i_labcon,
         /* end marker */
@@ -88,6 +88,10 @@ typedef struct _imode_
     struct expr *offset; /* offset */
     struct expr *offset2; /* a second temp reg */
     struct expr *offset3; /* an address */
+    struct exprlist {
+        struct exprlist *next;
+        struct expr *offset;
+    } *vararg;
     int scale;				/* scale factor on the second temp reg */
     char useindx;
     char size; /* size */
@@ -158,6 +162,7 @@ typedef struct quad
     BITINT *isolated;
     BITINT *OCP;
     BITINT *RO;
+    struct expr * valist; /* argument is a valist that needs translation */
 //	unsigned short *modifiesTnum;
     int index;
     int ansColor;
@@ -186,6 +191,9 @@ typedef struct quad
     int ignoreMe:1;
     int genConflict:1; /* assignment node the ans conflicts with left */
     int hook:1; /* one of the two assigns for a hook, used in diagnostic generation */
+    int vararg:1; /* a param passed as a vararg */
+    int varargPrev:1; /* right before the vararg is genned */
+    int nullvararg:1; /* a gosub has a null vararg list */
     char novalue;
     char temps;
     char precolored;

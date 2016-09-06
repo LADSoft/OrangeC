@@ -759,6 +759,7 @@ static void CountInstructions(BOOLEAN first)
             case i_blockend:
             case i_line:
             case i_label:
+            case i_expressiontag:
             case i_dbgblock:
             case i_dbgblockend:
             case i_varstart:
@@ -826,6 +827,7 @@ static void CountInstructions(BOOLEAN first)
             case i_blockend:
             case i_line:
             case i_label:
+            case i_expressiontag:
             case i_dbgblock:
             case i_dbgblockend:
             case i_varstart:
@@ -2223,7 +2225,7 @@ void Precolor(void)
     while (head)
     {
         if (head->dc.opcode != i_block && !head->ignoreMe &&
-            head->dc.opcode != i_label)
+            head->dc.opcode != i_label && head->dc.opcode != i_expressiontag)
         {
             chosenAssembler->gen->preColor(head);
         }

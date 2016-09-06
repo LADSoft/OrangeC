@@ -201,6 +201,7 @@ typedef struct {
 #define DO_UNIQUEIND 512
 #define DO_NOFASTDIV 1024
 #define DO_NODEADPUSHTOTEMP 2048
+#define DO_MIDDLEBITS 4096
 
     int erropts;                /* error options */
 #define EO_RETURNASERR 1
@@ -301,6 +302,7 @@ typedef struct _arch_gen {
     void (*output_alias)(char *sp, char *alias); /* put an alias */
     void (*output_includelib)(char *name);      /* put an included library name */
     IMODE *(*handleIntrins)(EXPRESSION *node, int novalue);  /* backend handle intrinsic */
+    CGFUNC asm_exprtag;     /* expression tag */
     CGFUNC asm_line;        /* line number information and text */
     CGFUNC asm_blockstart;  /* block start */
     CGFUNC asm_blockend;    /* block end */
@@ -433,7 +435,7 @@ typedef struct _arch_asm
     void *(*inlineAsmStmt)(void *stmt);				/* inlined asm stmt */
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
     void (*SearchIntrins)(SYMBOL *sp);                 /* search for an intrinsic */
-    
+    BOOLEAN (*_using_)(char *text);                       /* __using__ declaration */    
 } ARCH_ASM ;
 
 enum e_bet { bee_unknown, 
@@ -491,10 +493,15 @@ extern char *prm_searchpath;
 extern ASMNAME *identdata;
 extern QUAD *currentQuad;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void bePrintf(char *format, ...);
 void beWrite(char *buf, size_t size);
 void *globalAlloc(int siz);
 BE_IMODEDATA *beArgType(IMODE *in);
 void beDecorateSymName(char *buf, SYMBOL *sp);
 int beVariableLive(IMODE *m);
-
+#ifdef __cplusplus
+}
+#endif

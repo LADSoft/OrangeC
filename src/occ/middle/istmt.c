@@ -66,6 +66,7 @@ extern int total_errors;
 extern TEMP_INFO **tempInfo;
 extern BOOLEAN functionHasAssembly;
 extern TYPE stddouble;
+extern EXPRESSION *objectArray_exp;
 #ifdef DUMP_GCSE_INFO
     extern FILE *icdFile;
 #endif 
@@ -338,7 +339,7 @@ void genxswitch(STATEMENT *stmt, SYMBOL *funcsp)
 #endif
     count_cases(stmt->cases,&cs) ;
     cs.top++;
-    ap3 = gen_expr(funcsp, stmt->select, F_VOL | F_NOVALUE, ISZ_UINT);
+    ap3 = gen_expr(funcsp, stmt->select, F_VOL | F_SWITCHVALUE, ISZ_UINT);
     ap = LookupLoadTemp(NULL, ap3);
     if (ap != ap3)
     {
@@ -960,6 +961,7 @@ void genfunc(SYMBOL *funcsp)
     exitBlock = 0;
     consIndex = 0;
     retcount = 0;
+    objectArray_exp = NULL;
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();

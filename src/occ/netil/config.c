@@ -61,9 +61,9 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "+v        - enable debug symbols\n"
         "+A        - disable extensions        /Dxxx     - define something\n"
         "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
-        "/M        - generate make stubs       /O-       - disable optimizations\n"
-        "+Q        - quiet mode                /Sasm;dbg - make ASM source file\n"
-        "/T        - translate trigraphs       /Wxx      - set executable type\n"
+        "/Lxxx     - set dlls to import from   /M        - generate make stubs\n"
+        "/O-       - disable optimizations     +Q        - quiet mode\n"
+        "/T        - translate trigraphs\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
         "  +F   - flat model                   -l        - no C source in ASM file\n"
@@ -75,11 +75,10 @@ static int parse_param(char mode, char *string);
 static CMDLIST args[] = 
 {
     {
-        'W', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
-    }
-    ,
+        'L', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
+    },
     {
-        'P', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
+        'W', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
     }
     
 } ;
@@ -154,10 +153,10 @@ static KEYWORD prockeywords[] =
 };
 static ARCH_DEFINES defines[] = { 
     /* must come first in this order */
-    {"__WIN32__","1",FALSE, TRUE },
+    {"__WIN32__","1",TRUE, TRUE },
     {"__LSCRTL_DLL","1",FALSE, TRUE },
     {"__DOS__","1",FALSE, TRUE },
-    {"_WIN32","1",FALSE, TRUE },
+    {"_WIN32","1",TRUE, TRUE },
     {"__MSVCRT_DLL","1",FALSE, TRUE },
     {"__CRTDLL_DLL","1",FALSE, TRUE },
     {"__RAW_IMAGE__","1",FALSE, TRUE },
@@ -268,7 +267,7 @@ static ARCH_CHARACTERISTICS architecture = {
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
         DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOENTRYIF |
         DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV |
-        DO_NODEADPUSHTOTEMP,
+        DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS,
                  /* optimizations we don't want */
     EO_RETURNASERR,                /* error options */
     FALSE,			/* true if has floating point regs */
@@ -333,6 +332,9 @@ static int parse_param(char select, char *string)
 {
     if (select == 'W') {
         WinmodeSetup(select, string);
+    }
+    if (select == 'L') {
+        _add_global_using(string);
     }
     return 0;
 }
@@ -399,6 +401,7 @@ ARCH_GEN outputfunctions = {
     oa_output_alias,       /* put an alias */
     oa_output_includelib,  /* put an included library name */
     0,                      /* backend handle intrinsic */
+    asm_expressiontag,      /* expression tag */
     asm_line,               /* line number information and text */
     asm_blockstart,         /* block start */
     asm_blockend,           /* block end */
@@ -514,6 +517,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    _using_,                       /* __using__ declaration */    
     },
     { 0 }
 } ;

@@ -1071,6 +1071,12 @@ static void iop_gcsestub(QUAD *q)
 {
     oprintf(icdFile,"\tGCSE");
 }
+static void iop_expressiontag(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_exprtag)
+        chosenAssembler->gen->asm_exprtag(q);
+    oprintf(icdFile, "\tEXPR TAG\t%d",q->dc.v.label);
+}
 static void iop_atomic_fence(QUAD *q)
 {
     if (chosenAssembler->gen->asm_atomic)
@@ -1147,7 +1153,7 @@ static void(*oplst[])(QUAD *q) =
         iop_atomic_flag_test_and_set, iop_atomic_flag_clear, iop_atomic_fence, iop_atomic_flag_fence, iop_cmpswp,
         iop_prologue, iop_epilogue, iop_pushcontext, iop_popcontext, iop_loadcontext, iop_unloadcontext,
         iop_tryblock, iop_substack, iop_substack, iop_loadstack, iop_savestack, iop_functailstart, iop_functailend, 
-        iop_gcsestub
+        iop_gcsestub, iop_expressiontag,
 };
 /*-------------------------------------------------------------------------*/
 void beDecorateSymName(char *buf, SYMBOL *sp)

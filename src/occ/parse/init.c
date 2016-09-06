@@ -932,6 +932,7 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
 }
 static void dumpStaticInitializers(void)
 {
+#ifndef PARSER_ONLY
     int sconst = 0;
     int bss = 0;
     int data = 0;
@@ -1018,6 +1019,7 @@ static void dumpStaticInitializers(void)
         symListTail = symListTail->next;
     }
     symListHead = NULL;
+#endif
 }
 void dumpInitializers(void)
 {

@@ -348,7 +348,7 @@ static void ScanForAnonymousVars(void)
     {
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend 
             && head->dc.opcode != i_dbgblock && head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var
-            && head->dc.opcode != i_label && head->dc.opcode != i_expressiontag && head->dc.opcode != i_line && head->dc.opcode != i_passthrough)
+            && head->dc.opcode != i_label && head->dc.opcode != i_line && head->dc.opcode != i_passthrough)
         {
             if (head->ans)
             {
@@ -531,7 +531,7 @@ static void CopyLocalColors(void)
     while (head)
     {
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label && head->dc.opcode != i_expressiontag)
+            i_label)
         {
             if ((head->temps & TEMP_ANS) || (head->ans && head->ans->retval))
             {
@@ -2250,7 +2250,7 @@ void retemp(void)
     while (head)
     {
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label && head->dc.opcode != i_expressiontag)
+            i_label)
         {
             if (head->ans)
             {
@@ -2292,7 +2292,7 @@ void retemp(void)
     while (head)
     {
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label && head->dc.opcode != i_expressiontag)
+            i_label)
         {
             if (head->ans)
             {

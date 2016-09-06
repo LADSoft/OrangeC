@@ -2625,6 +2625,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 default:
                     gen_nodag(i_expressiontag, 0, 0, 0);
                     intermed_tail->dc.v.label = 1;
+                    intermed_tail->ignoreMe = TRUE;
                     break;
             }
         } 
@@ -3166,6 +3167,10 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             diag("uncoded node in gen_expr.");
             rv = 0;
     }
+    if (flags & F_SWITCHVALUE)
+    {
+        DumpIncDec(funcsp);
+    }
     if (flags & F_NOVALUE)
     {
         if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
@@ -3184,6 +3189,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
                 default:
                     gen_nodag(i_expressiontag, 0, 0, 0);
                     intermed_tail->dc.v.label = 0;
+                    intermed_tail->ignoreMe = TRUE;
                     break;
             }
         } 

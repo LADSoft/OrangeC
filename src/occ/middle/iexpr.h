@@ -47,7 +47,7 @@
 #define F_ADDR 4
 #define F_COMPARE 8
 #define F_STORE 16
-
+#define F_SWITCHVALUE 32
 /* icode innstruction opcodes */
 enum i_ops
 {

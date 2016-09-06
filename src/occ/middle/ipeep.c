@@ -174,7 +174,7 @@ static void kill_brtonext(BLOCK *b, QUAD *head)
                     return;
             case i_goto:
                 temp = head->fwd;
-                while (temp && (temp->dc.opcode == i_label || head->dc.opcode == i_expressiontag || temp->ignoreMe 
+                while (temp && (temp->dc.opcode == i_label || temp->ignoreMe 
                     || temp->dc.opcode == i_block || temp->dc.opcode == i_blockend))
                 {
                     if (temp->dc.opcode == i_label && temp->dc.v.label == head
@@ -298,7 +298,7 @@ void kill_jumpover(BLOCK *b, QUAD *head)
         QUAD *fwd = newhead->fwd;
         while (fwd->dc.opcode == i_block || fwd->dc.opcode == i_blockend ||
                newhead->dc.opcode == i_dbgblock || newhead->dc.opcode == i_dbgblockend ||
-               fwd->dc.opcode == i_label || fwd->ignoreMe || head->dc.opcode == i_expressiontag)
+               fwd->dc.opcode == i_label || fwd->ignoreMe)
         {
             if (fwd->dc.opcode == i_label && head->dc.v.label == fwd->dc.v.label)
                 break;
@@ -473,7 +473,7 @@ static void scan_abnormal(void)
             BLOCK * b = blockArray[i]->succ->block;
             QUAD *head = b->head->fwd;
             while (head != b->tail->fwd &&
-                   (head->ignoreMe || head->dc.opcode == i_label || head->dc.opcode == i_expressiontag))
+                   (head->ignoreMe || head->dc.opcode == i_label))
                 head = head->fwd;
             while (head != b->tail->fwd && head->dc.opcode == i_phi)
             {

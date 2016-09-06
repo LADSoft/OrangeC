@@ -225,7 +225,7 @@ void ScanForInvariants(BLOCK *b)
     while (head != b->tail->fwd)
     {
         QUAD *next = head->fwd;
-        if (!head->ignoreMe && head->dc.opcode != i_label && head->dc.opcode != i_assnblock && head->dc.opcode != i_expressiontag)
+        if (!head->ignoreMe && head->dc.opcode != i_label && head->dc.opcode != i_assnblock)
         {
             if (head->dc.opcode == i_phi)
             {

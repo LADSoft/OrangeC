@@ -121,7 +121,7 @@ static void insertPhiOp(BLOCK *b, int tnum)
     q->dc.v.phi = phi;
     
     I = b->head->fwd;
-    while (I->dc.opcode == i_label || I->ignoreMe || I->dc.opcode == i_expressiontag)
+    while (I->dc.opcode == i_label || I->ignoreMe)
     {
         if (I == b->tail)
         {
@@ -412,7 +412,7 @@ static void renameToPhi(BLOCK *b)
     while (bl) 
     {
         QUAD *q = bl->block->head;
-        while ((q->dc.opcode == i_block || q->ignoreMe || q->dc.opcode == i_label || head->dc.opcode == i_expressiontag) && q->back != bl->block->tail)
+        while ((q->dc.opcode == i_block || q->ignoreMe || q->dc.opcode == i_label) && q->back != bl->block->tail)
             q = q->fwd;
         while (q->dc.opcode == i_phi && q->back != bl->block->tail)
         {
@@ -504,7 +504,7 @@ static void renameToPhi(BLOCK *b)
     /* release the names for the PHI T0 nodes */
         QUAD *q = b->head;
         while (q->back != b->tail &&
-               (q->dc.opcode == i_label || q->ignoreMe || q->dc.opcode == i_block || head->dc.opcode == i_expressiontag))
+               (q->dc.opcode == i_label || q->ignoreMe || q->dc.opcode == i_block))
             q = q->fwd;
         while (q->dc.opcode == i_phi && q->back != b->tail)
         {
@@ -632,7 +632,7 @@ static void convergeCriticals(void)
             while (bl->block != blockArray[i])
                 bl = bl->next, c++;
             while (head != b->tail->fwd && (head->ignoreMe
-                                            || head->dc.opcode == i_label || head->dc.opcode == i_expressiontag))
+                                            || head->dc.opcode == i_label))
                 head = head->fwd;
             while (head != b->tail->fwd && head->dc.opcode == i_phi)
             {

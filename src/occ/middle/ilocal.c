@@ -314,7 +314,7 @@ static void InitTempInfo(void)
     {
         head->temps = 0;
         if  (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode !=
-            i_label && head->dc.opcode != i_expressiontag)
+            i_label)
         {
             if (head->ans && (head->ans->mode == i_ind || head->ans->mode == i_direct))
             {

@@ -46,6 +46,8 @@
   
 extern COMPILER_PARAMS cparams;
 extern char msil_bltins[];
+char namespaceAndClass[512];
+
 int dbgblocknum;
     #ifndef WIN32
         int prm_targettype = DOS32A;
@@ -62,8 +64,8 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "+A        - disable extensions        /Dxxx     - define something\n"
         "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
         "/Lxxx     - set dlls to import from   /M        - generate make stubs\n"
-        "/O-       - disable optimizations     +Q        - quiet mode\n"
-        "/T        - translate trigraphs\n"
+        "/Nns.cls  - set namespace and class   /O-       - disable optimizations\n"
+        "+Q        - quiet mode                /T        - translate trigraphs\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
         "  +F   - flat model                   -l        - no C source in ASM file\n"
@@ -76,6 +78,9 @@ static CMDLIST args[] =
 {
     {
         'L', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
+    },
+    {
+        'N', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
     },
     {
         'W', ARG_CONCATSTRING, (void (*)(char, char *))parse_param
@@ -328,6 +333,28 @@ static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
                 fatal("Invalid executable type");
         }
     }
+static BOOLEAN validatenamespaceAndClass(char *str)
+{
+    if (!isalpha(str[0]))
+        return FALSE;
+    while (*str && *str != '.')
+    {
+        if (!isalnum(*str) && *str != '_')
+            return FALSE;
+        str++;
+    }
+    if (!*str++)
+        return FALSE;
+    if (!isalpha(str[0]))
+        return FALSE;
+    while (*str)
+    {
+        if (!isalnum(*str) && *str != '_')
+            return FALSE;
+        str++;
+    }
+    return TRUE;
+}
 static int parse_param(char select, char *string)
 {
     if (select == 'W') {
@@ -335,6 +362,12 @@ static int parse_param(char select, char *string)
     }
     if (select == 'L') {
         _add_global_using(string);
+    }
+    if (select == 'N') {
+        if (!validatenamespaceAndClass(string))
+            fatal("namesplace/class info in wrong format");
+        strcpy(namespaceAndClass, string);
+        strcat(namespaceAndClass, "::");
     }
     return 0;
 }

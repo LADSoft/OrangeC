@@ -50,6 +50,7 @@ extern LIST *temporarySymbols;
 extern LIST *externals;
 extern TYPE stdpointer, stdint;
 extern INCLUDES *includes;
+extern char namespaceAndClass[512];
 
 OCODE *peep_head, *peep_tail;
 static int uses_float;
@@ -62,6 +63,7 @@ enum e_sg oa_currentSeg = noseg; /* Current seg */
 static int oa_outcol = 0; /* Curront col (roughly) */
 int newlabel;
 static int virtual_mode;
+static int corflags = 2; // x86
 
 BOOLEAN inASMdata = FALSE;
 static BOOLEAN int8_used, int16_used, int32_used;
@@ -410,120 +412,6 @@ void outop(char *name)
 /*-------------------------------------------------------------------------*/
 
 
-/*-------------------------------------------------------------------------*/
-
-void oa_putconst(int sz, EXPRESSION *offset, BOOLEAN doSign)
-/*
- *      put a constant to the outputFile file.
- */
-{
-    char buf[4096];
-    SYMBOL *sp;
-    char buf1[100];
-    int toffs;
-    switch (offset->type)
-    {
-        case en_auto:
-            if (doSign)
-            {
-                if ((int)offset->v.sp->offset < 0)
-                    bePrintf( "-0%lxh", -offset->v.sp->offset);
-                else
-                    bePrintf( "+0%lxh", offset->v.sp->offset);
-            }
-            else
-                bePrintf( "0%lxh", offset->v.sp->offset);
-                
-            break;
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_absolute:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_bool:
-        case en_c_s:
-        case en_c_us:
-        case en_c_wc:
-            if (doSign)
-            {
-                if (offset->v.i == 0)
-                    break;
-                beputc('+');
-            }
-            {
-                int n = offset->v.i;
-//				if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
-//					n &= 0xff;
-//				if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
-//					n &= 0xffff;
-                bePrintf( "%d", n);
-            }
-            break;
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-            if (doSign)
-                beputc('+');
-            FPFToString(buf,&offset->v.c.r);
-            FPFToString(buf1, &offset->v.c.i);
-            bePrintf( "%s,%s", buf, buf1);
-            break;
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-            if (doSign)
-                beputc('+');
-            FPFToString(buf,&offset->v.f);
-            bePrintf( "%s", buf);
-            break;
-        case en_label:
-            if (doSign)
-                beputc('+');
-            bePrintf( "L_%d", offset->v.sp->label);
-            break;
-        case en_labcon:
-            if (doSign)
-                beputc('+');
-            bePrintf( "L_%d", offset->v.i);
-            break;
-        case en_pc:
-        case en_global:
-        case en_threadlocal:
-            if (doSign)
-                beputc('+');
-            sp = offset->v.sp;
-            beDecorateSymName(buf, sp);
-            bePrintf( "%s", buf);
-            break;
-        case en_add:
-        case en_structadd:
-        case en_arrayadd:
-            oa_putconst(ISZ_ADDR, offset->left, doSign);
-            oa_putconst(ISZ_ADDR, offset->right, TRUE);
-            break;
-        case en_sub:
-            oa_putconst(ISZ_ADDR, offset->left, doSign);
-            bePrintf( "-");
-            oa_putconst(ISZ_ADDR, offset->right, FALSE);
-            break;
-        case en_uminus:
-            bePrintf( "-");
-            oa_putconst(ISZ_ADDR, offset->left, FALSE);
-            break;
-        default:
-            diag("illegal constant node.");
-            break;
-    }
-}
 
 /*-------------------------------------------------------------------------*/
 
@@ -662,7 +550,7 @@ void puttype(TYPE *tp_in)
     else if (isstructured(tp))
     {
         cacheType(tp);
-        bePrintf("%s", basetype(tp)->sp->name);
+        bePrintf("%s%s", namespaceAndClass, basetype(tp)->sp->name);
     }
     else if (tp->type == bt_void)
         bePrintf("void");
@@ -860,15 +748,15 @@ void oa_put_string_label(int lab, int type)
     {
         case l_ustr:
         case l_astr:
-            bePrintf("int8[]");
+            bePrintf("%sint8[]", namespaceAndClass);
             int8_used = TRUE;
             break;
         case l_Ustr:
-            bePrintf("int32[]");
+            bePrintf("%sint32[]", namespaceAndClass);
             int32_used = TRUE;
             break;
         case l_wstr:
-            bePrintf("int16[]");
+            bePrintf("%sint16[]", namespaceAndClass);
             int16_used = TRUE;
             break;
     }
@@ -1134,17 +1022,7 @@ void oa_enterseg(enum e_sg seg)
  */
 void oa_align(int size)
 {
-    if (cparams.prm_asmfile)
-    {
-        oa_nl();
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-        /* NASM 0.91 wouldn't let me use parenthesis but this should work
-         * according to the documented precedence levels
-         */
-            bePrintf( "\ttimes $$-$ & %d nop\n", size-1);
-        else
-            bePrintf( "\talign\t%d\n", size);
-    }
+    diag("oa_align");
 }
 
 
@@ -1166,14 +1044,34 @@ void dump_browsefile(BROWSEFILE *brf)
 void oa_header(char *filename, char *compiler_version)
 {
     _apply_global_using();
+//    if (namespaceAndClass[0])
+//        corflags |= 1; // accessible assembly
 
     oa_nl();
     bePrintf("//File %s\n",filename);
     bePrintf("//Compiler version %s\n",compiler_version);
-    bePrintf("\n.corflags 2 // 32-bit");
+    bePrintf("\n.corflags %d // 32-bit", corflags);
     bePrintf("\n.assembly test { }\n");
     bePrintf("\n.assembly extern mscorlib { }\n");
     bePrintf("\n.assembly extern lsmsilcrtl { }\n\n\n");
+    if (namespaceAndClass[0])
+    {
+        char *p = strchr(namespaceAndClass, '.'), *q;
+        if (p)
+        {
+            *p = 0;
+            bePrintf("\n.namespace '%s' { \n", namespaceAndClass);
+            *p++ = '.';
+
+            q = strchr(p, ':');
+            if (q)
+            {
+                *q = 0;
+                bePrintf("\n.class public explicit ansi sealed '%s' { \n", p);
+                *q = ':';
+            }
+        }
+    }
 }
 void oa_trailer(void)
 {
@@ -1266,10 +1164,16 @@ void putfieldname(AMODE *arg)
     EXPRESSION *en = GetSymRef(arg->offset);
     bePrintf("\t");
     puttypewrapped(en->v.sp->tp);
-    if (en->v.sp->storage_class == sc_localstatic || en->v.sp->storage_class == sc_constant)
-        bePrintf(" 'L_%d'\n", en->v.sp->label);
+    if (!namespaceAndClass[0])
+        bePrintf("'");
     else
-        bePrintf(" '%s'\n", en->v.sp->name);
+        bePrintf(" ");
+    if (en->v.sp->storage_class == sc_localstatic || en->v.sp->storage_class == sc_constant)
+        bePrintf("%sL_%d", namespaceAndClass, en->v.sp->label);
+    else
+        bePrintf("%s%s", namespaceAndClass, en->v.sp->name);
+    if (!namespaceAndClass[0])
+        bePrintf("'");
 }
 void putfunccall(AMODE *arg)
 {
@@ -1277,8 +1181,9 @@ void putfunccall(AMODE *arg)
     SYMBOL *spi = en->v.sp;
     HASHREC *hr = basetype(spi->tp)->syms->table[0];
     BOOLEAN vararg = FALSE;
-    BOOLEAN managed = en->v.sp->linkage2 != lk_unmanaged;
+    BOOLEAN managed = !_dll_name(spi->name);//en->v.sp->linkage2 != lk_unmanaged;
     INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata)->arguments : NULL;
+    printf("%s:%d\n", spi->name, managed);
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -1290,7 +1195,10 @@ void putfunccall(AMODE *arg)
     if (vararg && !managed)
         bePrintf("vararg ");
     puttypewrapped(isstructured(basetype(spi->tp)->btp) ? &stdpointer : basetype(spi->tp)->btp);
-    bePrintf(" '%s'", spi->name);
+    if (managed && namespaceAndClass[0])
+        bePrintf(" %s%s", namespaceAndClass, spi->name);
+    else
+        bePrintf(" '%s'", spi->name);
     bePrintf("(");
     hr = basetype(spi->tp)->syms->table[0];
     if (isstructured(basetype(spi->tp)->btp))
@@ -1446,20 +1354,26 @@ void putarg(enum e_op op, AMODE *arg)
                     {
                         case l_ustr:
                         case l_astr:
-                            bePrintf("int8[]");
+                            bePrintf("%sint8[]", namespaceAndClass);
                             break;
                         case l_Ustr:
-                            bePrintf("int32[]");
+                            bePrintf("%sint32[]", namespaceAndClass);
                             break;
                         case l_wstr:
-                            bePrintf("int16[]");
+                            bePrintf("%sint16[]", namespaceAndClass);
                             break;
                     }
-                    bePrintf("' 'L_%Ld'\n", arg->offset->v.i);
+                    if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
+                        bePrintf("' %sL_%Ld\n", namespaceAndClass, arg->offset->v.i);
+                    else
+                        bePrintf("' 'L_%Ld'\n", arg->offset->v.i);
                 }
                 else
                 {
-                    bePrintf("\t'L_%Ld'", arg->offset->v.i);
+                    if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
+                        bePrintf(" %sL_%Ld\n", namespaceAndClass, arg->offset->v.i);
+                    else
+                        bePrintf(" 'L_%Ld'\n", arg->offset->v.i);
                 }
             }
             else if (arg->offset->type == en_pc || arg->offset->type == en_global || arg->offset->type == en_label)
@@ -1505,11 +1419,14 @@ void putarg(enum e_op op, AMODE *arg)
                         puttypewrapped(arg->offset->v.sp->tp);
                         if (arg->offset->type == en_label)
                         {
-                            bePrintf(" 'L_%d'\n", arg->offset->v.sp->label);
+                            bePrintf(" %sL_%d\n", namespaceAndClass, arg->offset->v.sp->label);
                         }
                         else
                         {
-                            bePrintf(" '%s'\n", arg->offset->v.sp->name);
+                            if (namespaceAndClass[0])
+                                bePrintf(" %s%s\n", namespaceAndClass, arg->offset->v.sp->name);
+                            else
+                                bePrintf(" '%s'\n", arg->offset->v.sp->name);
                         }
                     }
                 }
@@ -1663,15 +1580,15 @@ void dumpTypes()
 
     if (int8_used)
     {
-        bePrintf(".class private value explicit ansi sealed 'int8[]' {.pack 1 .size 1}\n");
+        bePrintf(".class private value explicit ansi sealed '%sint8[]' {.pack 1 .size 1}\n", namespaceAndClass);
     }
     if (int16_used)
     {
-        bePrintf(".class private value explicit ansi sealed 'int16[]' {.pack 2 .size 1}\n");
+        bePrintf(".class private value explicit ansi sealed '%sint16[]' {.pack 2 .size 1}\n", namespaceAndClass);
     }
     if (int32_used)
     {
-        bePrintf(".class private value explicit ansi sealed 'int32[]' {.pack 4 .size 1}\n");
+        bePrintf(".class private value explicit ansi sealed '%sint32[]' {.pack 4 .size 1}\n", namespaceAndClass);
     }
     while (*pList)
     {
@@ -1763,13 +1680,8 @@ void oa_end_generation(void)
         }
         externalList = externalList->next;
     }
-    bePrintf(".method private hidebysig static void * __GetErrno() cil managed {\n");
-    bePrintf("\t.maxstack 1\n\n");
-    bePrintf("\tcall void * '_errno'()\n");
-    bePrintf("\tret\n");
-    bePrintf("}\n");
 
-    bePrintf(".method private hidebysig static void $Main() cil managed {\n");
+    bePrintf(".method private hidebysig static void '$Main'() cil managed {\n");
     bePrintf("\t.entrypoint\n");
     bePrintf("\t.locals (\n");
     bePrintf("\t\t[0] int32 'argc',\n");
@@ -1779,19 +1691,19 @@ void oa_end_generation(void)
     bePrintf("\t)\n");
     bePrintf("\t.maxstack 5\n\n");
     bePrintf("\tcall void *'__pctype_func'()\n");
-    bePrintf("\tstsfld void * '_pctype'\n");
+    bePrintf("\tstsfld void * %s_pctype\n", namespaceAndClass);
     bePrintf("\tcall void *'__iob_func'()\n");
     bePrintf("\tdup\n");
-    bePrintf("\tstsfld void * '__stdin'\n");
+    bePrintf("\tstsfld void * %s__stdin\n", namespaceAndClass);
     bePrintf("\tdup\n");
     bePrintf("\tldc.i4 32\n");
     bePrintf("\tadd\n");
-    bePrintf("\tstsfld void * '__stdout'\n");
+    bePrintf("\tstsfld void * %s__stdout\n", namespaceAndClass);
     bePrintf("\tldc.i4 64\n");
     bePrintf("\tadd\n");
-    bePrintf("\tstsfld void * '__stderr'\n");
+    bePrintf("\tstsfld void * %s__stderr\n", namespaceAndClass);
     if (start)
-        bePrintf("\tcall void %s()\n", start->name);
+        bePrintf("\tcall void %s%s()\n", namespaceAndClass, start->name);
     bePrintf("\tldloca 'argc'\n");
     bePrintf("\tldloca 'argv'\n");
     bePrintf("\tldloca 'environ'\n");
@@ -1805,22 +1717,39 @@ void oa_end_generation(void)
     {
         mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
         if ( isvoid(basetype(mainsp->tp)->btp))
-            bePrintf("\tcall void 'main'(int32, void *)\n");
+            if (namespaceAndClass[0])
+                bePrintf("\tcall void %smain(int32, void *)\n", namespaceAndClass);
+            else
+                bePrintf("\tcall void 'main'(int32, void *)\n");
         else
-            bePrintf("\tcall int32 'main'(int32, void *)\n");
+            if (namespaceAndClass[0])
+                bePrintf("\tcall int32 %smain(int32, void *)\n", namespaceAndClass);
+            else
+                bePrintf("\tcall int32 'main'(int32, void *)\n");
     }
     else
-        bePrintf("\tcall int32 'main'(int32, void *)\n");
+        if (namespaceAndClass[0])
+            bePrintf("\tcall int32 %smain(int32, void *)\n", namespaceAndClass);
+        else
+            bePrintf("\tcall int32 'main'(int32, void *)\n");
     if (end)
-        bePrintf("\tcall void %s()\n", end->name);
+        bePrintf("\tcall void %s%s()\n", namespaceAndClass, end->name);
     if (mainsp)
         if ( isvoid(basetype(mainsp->tp)->btp))
            bePrintf("\tldc.i4 0\n");
     bePrintf("\tcall void exit(int32)\n");
     bePrintf("\tret\n");
     bePrintf("}\n");
-//    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void exit(int32) preservesig {}\n");
-//    bePrintf(".method public hidebysig static pinvokeimpl(\"msvcrt.dll\" cdecl) void __getmainargs(void *,void *,void*,int32, void *) {}\n");
+    if (namespaceAndClass[0])
+    {
+        bePrintf("}\n");
+        bePrintf("}\n");
+    }
+    bePrintf(".method private hidebysig static void * __GetErrno() cil managed {\n");
+    bePrintf("\t.maxstack 1\n\n");
+    bePrintf("\tcall void * '_errno'()\n");
+    bePrintf("\tret\n");
+    bePrintf("}\n");
 
     dumpTypes();    
 }

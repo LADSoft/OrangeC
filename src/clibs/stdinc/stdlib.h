@@ -89,8 +89,8 @@ void         _RTL_FUNC _IMPORT _abort(void) ;
 #if !defined(__ABS_DEFINED)
 #define __ABS_DEFINED
 
-int         _RTL_INTRINS abs(int __x);
-long        _RTL_INTRINS labs(long __x);
+int         _RTL_INTRINS _IMPORT abs(int __x);
+long        _RTL_INTRINS _IMPORT labs(long __x);
 #if  __STDC_VERSION__ >= 199901L
 long long   _RTL_FUNC _IMPORT llabs(long long __x);
 #endif
@@ -112,8 +112,8 @@ void *      _RTL_FUNC _IMPORT bsearch(const void *__key, const void *__base,
                            int (*fcmp)(const void *,
                            const void *));
 void *      _RTL_FUNC _IMPORT calloc(size_t __nitems, size_t __size);
-div_t       _RTL_INTRINS div(int __numer, int __denom);
-ldiv_t      _RTL_INTRINS ldiv(long __numer, long __denom);
+div_t       _RTL_INTRINS _IMPORT div(int __numer, int __denom);
+ldiv_t      _RTL_INTRINS _IMPORT ldiv(long __numer, long __denom);
 #if  __STDC_VERSION__ >= 199901L
 lldiv_t     _RTL_FUNC _IMPORT lldiv(long long __numer, long long __denom);
 #endif

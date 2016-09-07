@@ -48,55 +48,55 @@
 extern "C" {
 #endif
 
-int          _RTL_INTRINS bcmp(const void *, const void *, size_t);
+int          _RTL_INTRINS _IMPORT bcmp(const void *, const void *, size_t);
 
-void         _RTL_INTRINS bcopy(const void *, void *, size_t);
+void         _RTL_INTRINS _IMPORT bcopy(const void *, void *, size_t);
 
-void         _RTL_INTRINS bzero(void *, size_t);
+void         _RTL_INTRINS _IMPORT bzero(void *, size_t);
 
-int          _RTL_INTRINS ffs(int);
+int          _RTL_INTRINS _IMPORT ffs(int);
 
-//char         _RTL_INTRINS *index(const char *, int);
+//char         _RTL_INTRINS _IMPORT *index(const char *, int);
 
-//char         _RTL_INTRINS *rindex(const char *, int);
+//char         _RTL_INTRINS _IMPORT *rindex(const char *, int);
 
-int          _RTL_INTRINS strcasecmp(const char *, const char *);
+int          _RTL_INTRINS _IMPORT strcasecmp(const char *, const char *);
 
-int          _RTL_INTRINS strncasecmp(const char *, const char *, size_t);
+int          _RTL_INTRINS _IMPORT strncasecmp(const char *, const char *, size_t);
 
-int          _RTL_INTRINS memcmp(const void *__s1,
+int          _RTL_INTRINS _IMPORT memcmp(const void *__s1,
                                        const void *__s2, size_t __n);
-void *       _RTL_INTRINS memcpy(void *restrict __dest, const void *restrict __src,
+void *       _RTL_INTRINS _IMPORT memcpy(void *restrict __dest, const void *restrict __src,
                                        size_t __n);
-void *       _RTL_INTRINS memmove(void *__dest, const void *__src,
+void *       _RTL_INTRINS _IMPORT memmove(void *__dest, const void *__src,
                                         size_t __n);
-void *       _RTL_INTRINS memset(void *__s, int __c, size_t __n);
-char *       _RTL_INTRINS strcat(char *restrict __dest, const char *restrict __src);
+void *       _RTL_INTRINS _IMPORT memset(void *__s, int __c, size_t __n);
+char *       _RTL_INTRINS _IMPORT strcat(char *restrict __dest, const char *restrict __src);
 size_t 		 _RTL_FUNC _IMPORT strlcat (char * dst, const char * src, size_t n);
-int          _RTL_INTRINS strcmp(const char *__s1, const char *__s2);
-char *       _RTL_INTRINS strcpy(char *restrict __dest, const char *restrict __src);
-size_t       _RTL_INTRINS strlcpy (char * dst, const char * src, size_t n);
-char *       _RTL_INTRINS stpcpy(char *restrict __dest, const char *restrict __src);
+int          _RTL_INTRINS _IMPORT strcmp(const char *__s1, const char *__s2);
+char *       _RTL_INTRINS _IMPORT strcpy(char *restrict __dest, const char *restrict __src);
+size_t       _RTL_INTRINS _IMPORT strlcpy (char * dst, const char * src, size_t n);
+char *       _RTL_INTRINS _IMPORT stpcpy(char *restrict __dest, const char *restrict __src);
 size_t       _RTL_FUNC _IMPORT strcspn(const char *__s1, const char *__s2);
 char *       _RTL_FUNC _IMPORT strdup(const char *__string);
 char *       _RTL_FUNC _IMPORT strerror(int __errnum);
-size_t       _RTL_INTRINS strlen(const char *__s);
-char *       _RTL_INTRINS strncat(char *restrict __dest, const char *restrict __src,
+size_t       _RTL_INTRINS _IMPORT strlen(const char *__s);
+char *       _RTL_INTRINS _IMPORT strncat(char *restrict __dest, const char *restrict __src,
                                         size_t __maxlen);
-int          _RTL_INTRINS strncmp(const char *__s1, const char *__s2,
+int          _RTL_INTRINS _IMPORT strncmp(const char *__s1, const char *__s2,
                                         size_t __maxlen);
-char *       _RTL_INTRINS strncpy(char *restrict __dest, const char *restrict __src,
+char *       _RTL_INTRINS _IMPORT strncpy(char *restrict __dest, const char *restrict __src,
                                         size_t __maxlen);
-char *       _RTL_INTRINS stpncpy(char *restrict __dest, const char *restrict __src,
+char *       _RTL_INTRINS _IMPORT stpncpy(char *restrict __dest, const char *restrict __src,
                                         size_t __maxlen);
 size_t       _RTL_FUNC _IMPORT strspn(const char *__s1, const char *__s2);
 char *       _RTL_FUNC _IMPORT strtok(char *restrict __s1, const char *restrict __s2);
 char *       _RTL_FUNC _IMPORT _strerror(const char *__s);
 
 
-void *       _RTL_INTRINS memchr(const void *__s, int __c, size_t __n);
-char *       _RTL_INTRINS strchr(const char * __s, int __c);
-char *       _RTL_INTRINS strrchr(const char *__s, int __c);
+void *       _RTL_INTRINS _IMPORT memchr(const void *__s, int __c, size_t __n);
+char *       _RTL_INTRINS _IMPORT strchr(const char * __s, int __c);
+char *       _RTL_INTRINS _IMPORT strrchr(const char *__s, int __c);
 char *       _RTL_FUNC _IMPORT strpbrk(const char *__s1, const char *__s2);
 char *       _RTL_FUNC _IMPORT strstr(const char *__s1, const char *__s2);
 

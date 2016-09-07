@@ -115,7 +115,7 @@ BACKEND_INCLUDE_PATH=.
 vpath %.c $(SRCPATH);dll
 vpath %.cs $(SRCPATH);dll
 
-compiler: redirect occmsil netlib lsmsilcrtl
+compiler: redirect netlib.lib lsmsilcrtl.dll occmsil 
 
 redirect: 
 	@$(MAKE) /T
@@ -124,10 +124,10 @@ occmsil: occmsil.c
 	-del occmsil.l
 	occ /Wd /9 occmsil.c
 
-lsmsilcrtl: lsmsilcrtl.cs
+lsmsilcrtl.dll: lsmsilcrtl.cs
 	csc /unsafe /t:library lsmsilcrtl.cs
 
-netlib:
+netlib.lib:
 	@$(MAKE) /Cnetlib
 
 DISTRIBUTE: copyexe

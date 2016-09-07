@@ -48,21 +48,21 @@ namespace __STD_NS__ {
 extern "C" {
 #endif
 
-int          _RTL_INTRINS bcmp(const void *, const void *, size_t);
+int          _RTL_INTRINS _IMPORT bcmp(const void *, const void *, size_t);
 
-void         _RTL_INTRINS bcopy(const void *, void *, size_t);
+void         _RTL_INTRINS _IMPORT bcopy(const void *, void *, size_t);
 
-void         _RTL_INTRINS bzero(void *, size_t);
+void         _RTL_INTRINS _IMPORT bzero(void *, size_t);
 
-int          _RTL_INTRINS ffs(int);
+int          _RTL_INTRINS _IMPORT ffs(int);
 
-char         _RTL_INTRINS *index(const char *, int);
+char         _RTL_INTRINS _IMPORT *index(const char *, int);
 
-char         _RTL_INTRINS *rindex(const char *, int);
+char         _RTL_INTRINS _IMPORT *rindex(const char *, int);
 
-int          _RTL_INTRINS strcasecmp(const char *, const char *);
+int          _RTL_INTRINS _IMPORT strcasecmp(const char *, const char *);
 
-int          _RTL_INTRINS strncasecmp(const char *, const char *, size_t);
+int          _RTL_INTRINS _IMPORT strncasecmp(const char *, const char *, size_t);
 
 #define 	bzero(s,n) memset(s,0,n)
 #define 	bcopy(src,dest,n) memmove(dest,src,n)

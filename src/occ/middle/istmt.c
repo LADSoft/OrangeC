@@ -928,7 +928,7 @@ static void InsertParameterThunks(SYMBOL *funcsp, BLOCK *b)
     intermed_tail->fwd = old;
     intermed_tail = oldit;
 }
-void genfunc(SYMBOL *funcsp)
+void genfunc(SYMBOL *funcsp, BOOLEAN doOptimize)
 /*
  *      generate a function body and dump the icode
  */
@@ -1044,7 +1044,8 @@ void genfunc(SYMBOL *funcsp)
     InsertParameterThunks(funcsp, blockArray[1]);
     if (chosenAssembler->arch->denyopts & DO_NOREGALLOC)
         FreeLocalContext(NULL, funcsp, nextLabel++);
-    optimize(funcsp);
+    if (doOptimize)
+        optimize(funcsp);
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
         FreeLocalContext(NULL, funcsp, nextLabel++);
         

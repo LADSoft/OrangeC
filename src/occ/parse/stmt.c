@@ -3409,7 +3409,7 @@ LEXEME *body(LEXEME *lex, SYMBOL *funcsp)
                     int oldretlab = retlab;
                     startlab = nextLabel++;
                     retlab = nextLabel++;
-                    genfunc(funcsp);
+                    genfunc(funcsp, TRUE);
                     retlab = oldretlab;
                     startlab = oldstartlab;
                 }

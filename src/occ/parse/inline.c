@@ -152,7 +152,7 @@ void dumpInlines(void)
                                 UndoPreviousCodegen(sym);
                                 startlab = nextLabel++;
                                 retlab = nextLabel++;
-                                genfunc(sym);
+                                genfunc(sym, TRUE);
                                 done = FALSE;
                                 sym->didinline = TRUE;
                             }

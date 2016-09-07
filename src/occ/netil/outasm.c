@@ -40,10 +40,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "be.h"
+#include "winmode.h"
 
 #define IEEE
 
 
+extern int prm_targettype;
 extern int prm_assembler;
 extern SYMBOL *theCurrentFunc;
 extern LIST *temporarySymbols;
@@ -701,7 +703,7 @@ void oa_gen_strlab(SYMBOL *sp)
     else
     {
         oa_enterseg(oa_currentSeg);
-        inASMdata = TRUE;
+//        inASMdata = TRUE;
         if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
             bePrintf(".field private static ");
         else
@@ -709,13 +711,15 @@ void oa_gen_strlab(SYMBOL *sp)
         puttypewrapped(sp->tp);
         if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
         {
-            bePrintf(" 'L_%d' at $L_%d\n", sp->label, sp->label);
-            bePrintf(".data $L_%d = bytearray (", sp->label);
+            bePrintf(" 'L_%d'\n", sp->label);
+//            bePrintf(" 'L_%d' at $L_%d\n", sp->label, sp->label);
+//            bePrintf(".data $L_%d = bytearray (", sp->label);
         }
         else
         {
-            bePrintf(" '%s' at $%s\n", sp->name, sp->name);
-            bePrintf(".data $%s = bytearray (", sp->name);
+            bePrintf(" '%s'\n", sp->name);
+//            bePrintf(" '%s' at $%s\n", sp->name, sp->name);
+//            bePrintf(".data $%s = bytearray (", sp->name);
         }
         oa_outcol = 0;
     }
@@ -760,6 +764,7 @@ void oa_put_string_label(int lab, int type)
             int16_used = TRUE;
             break;
     }
+//    bePrintf("' 'L_%d'\n", lab);
     bePrintf("' 'L_%d' at $L_%d\n", lab, lab);
     bePrintf(".data $L_%d = bytearray (", lab);
     oa_outcol = 0;
@@ -917,6 +922,7 @@ void oa_genstorage(int nbytes)
  * Output bytes of storage
  */
 {
+    /*
     if (cparams.prm_asmfile)
     {
         int i;
@@ -928,6 +934,7 @@ void oa_genstorage(int nbytes)
             oa_genbyte(0);
         oa_gentype = nogen;
     }
+    */
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1044,14 +1051,31 @@ void dump_browsefile(BROWSEFILE *brf)
 void oa_header(char *filename, char *compiler_version)
 {
     _apply_global_using();
-//    if (namespaceAndClass[0])
-//        corflags |= 1; // accessible assembly
+    if (namespaceAndClass[0])
+        corflags |= 1; // accessible assembly
 
     oa_nl();
     bePrintf("//File %s\n",filename);
     bePrintf("//Compiler version %s\n",compiler_version);
     bePrintf("\n.corflags %d // 32-bit", corflags);
-    bePrintf("\n.assembly test { }\n");
+    {
+        char *p = strrchr(filename, '.');
+        if (p)
+        {
+            char *q = strrchr(filename, '\\');
+            if (!q)
+                q = filename;
+            else
+                q++;
+            *p = 0;
+            bePrintf("\n.assembly %s { }\n",q);
+            *p++ = '.';
+        }
+        else
+        {
+            bePrintf("\n.assembly %s { }\n",filename);
+        }
+    }
     bePrintf("\n.assembly extern mscorlib { }\n");
     bePrintf("\n.assembly extern lsmsilcrtl { }\n\n\n");
     if (namespaceAndClass[0])
@@ -1183,7 +1207,6 @@ void putfunccall(AMODE *arg)
     BOOLEAN vararg = FALSE;
     BOOLEAN managed = !_dll_name(spi->name);//en->v.sp->linkage2 != lk_unmanaged;
     INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata)->arguments : NULL;
-    printf("%s:%d\n", spi->name, managed);
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -1662,6 +1685,30 @@ void oa_load_funcs(void)
     bePrintf("\n\t.field public static void *'__stderr'\n");
     bePrintf("\n\t.field public static void *'_pctype'\n");
 }
+static void mainLocals(void)
+{
+    bePrintf("\t.locals (\n");
+    bePrintf("\t\t[0] int32 'argc',\n");
+    bePrintf("\t\t[1] void * 'argv',\n");
+    bePrintf("\t\t[2] void * 'environ',\n");
+    bePrintf("\t\t[3] void * 'newmode'\n");
+    bePrintf("\t)\n");
+}
+static void mainInit(void)
+{
+    bePrintf("\tcall void *'__pctype_func'()\n");
+    bePrintf("\tstsfld void * %s_pctype\n", namespaceAndClass);
+    bePrintf("\tcall void *'__iob_func'()\n");
+    bePrintf("\tdup\n");
+    bePrintf("\tstsfld void * %s__stdin\n", namespaceAndClass);
+    bePrintf("\tdup\n");
+    bePrintf("\tldc.i4 32\n");
+    bePrintf("\tadd\n");
+    bePrintf("\tstsfld void * %s__stdout\n", namespaceAndClass);
+    bePrintf("\tldc.i4 64\n");
+    bePrintf("\tadd\n");
+    bePrintf("\tstsfld void * %s__stderr\n", namespaceAndClass);
+}
 void oa_end_generation(void)
 {
     SYMBOL *start = NULL, *end = NULL, *mainsp;
@@ -1681,65 +1728,71 @@ void oa_end_generation(void)
         externalList = externalList->next;
     }
 
-    bePrintf(".method private hidebysig static void '$Main'() cil managed {\n");
-    bePrintf("\t.entrypoint\n");
-    bePrintf("\t.locals (\n");
-    bePrintf("\t\t[0] int32 'argc',\n");
-    bePrintf("\t\t[1] void * 'argv',\n");
-    bePrintf("\t\t[2] void * 'environ',\n");
-    bePrintf("\t\t[3] void * 'newmode'\n");
-    bePrintf("\t)\n");
-    bePrintf("\t.maxstack 5\n\n");
-    bePrintf("\tcall void *'__pctype_func'()\n");
-    bePrintf("\tstsfld void * %s_pctype\n", namespaceAndClass);
-    bePrintf("\tcall void *'__iob_func'()\n");
-    bePrintf("\tdup\n");
-    bePrintf("\tstsfld void * %s__stdin\n", namespaceAndClass);
-    bePrintf("\tdup\n");
-    bePrintf("\tldc.i4 32\n");
-    bePrintf("\tadd\n");
-    bePrintf("\tstsfld void * %s__stdout\n", namespaceAndClass);
-    bePrintf("\tldc.i4 64\n");
-    bePrintf("\tadd\n");
-    bePrintf("\tstsfld void * %s__stderr\n", namespaceAndClass);
-    if (start)
-        bePrintf("\tcall void %s%s()\n", namespaceAndClass, start->name);
-    bePrintf("\tldloca 'argc'\n");
-    bePrintf("\tldloca 'argv'\n");
-    bePrintf("\tldloca 'environ'\n");
-    bePrintf("\tldc.i4  0\n");
-    bePrintf("\tldloca 'newmode'\n");
-    bePrintf("\tcall void __getmainargs(void *, void *, void *, int32, void *);\n");
-    bePrintf("\tldloc 'argc'\n");
-    bePrintf("\tldloc 'argv'\n");
-    mainsp = gsearch("main");
-    if (mainsp)
+    if ((start || prm_targettype == DLL) && namespaceAndClass[0])
     {
-        mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
-        if ( isvoid(basetype(mainsp->tp)->btp))
-            if (namespaceAndClass[0])
-                bePrintf("\tcall void %smain(int32, void *)\n", namespaceAndClass);
+        bePrintf(".method private hidebysig specialname rtspecialname static void  .cctor() cil managed {\n");
+        if (prm_targettype == DLL)
+        {
+            mainLocals();
+            bePrintf("\t.maxstack 5\n\n");
+            mainInit();
+        }
+        else
+        {
+            bePrintf("\t.maxstack 1\n\n");
+        }
+        if (start)
+            bePrintf("\tcall void %s%s()\n", namespaceAndClass, start->name);
+        bePrintf("\tret\n");
+        bePrintf("}\n");
+
+    }
+    if (prm_targettype != DLL)
+    {
+        bePrintf(".method private hidebysig static void '$Main'() cil managed {\n");
+        bePrintf("\t.entrypoint\n");
+        mainLocals();
+        bePrintf("\t.maxstack 5\n\n");
+        mainInit();
+        if (start && !namespaceAndClass[0])
+            bePrintf("\tcall void %s%s()\n", namespaceAndClass, start->name);
+        bePrintf("\tldloca 'argc'\n");
+        bePrintf("\tldloca 'argv'\n");
+        bePrintf("\tldloca 'environ'\n");
+        bePrintf("\tldc.i4  0\n");
+        bePrintf("\tldloca 'newmode'\n");
+        bePrintf("\tcall void __getmainargs(void *, void *, void *, int32, void *);\n");
+        bePrintf("\tldloc 'argc'\n");
+        bePrintf("\tldloc 'argv'\n");
+        mainsp = gsearch("main");
+        if (mainsp)
+        {
+            mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
+            if ( isvoid(basetype(mainsp->tp)->btp))
+                if (namespaceAndClass[0])
+                    bePrintf("\tcall void %smain(int32, void *)\n", namespaceAndClass);
+                else
+                    bePrintf("\tcall void 'main'(int32, void *)\n");
             else
-                bePrintf("\tcall void 'main'(int32, void *)\n");
+                if (namespaceAndClass[0])
+                    bePrintf("\tcall int32 %smain(int32, void *)\n", namespaceAndClass);
+                else
+                    bePrintf("\tcall int32 'main'(int32, void *)\n");
+        }
         else
             if (namespaceAndClass[0])
                 bePrintf("\tcall int32 %smain(int32, void *)\n", namespaceAndClass);
             else
                 bePrintf("\tcall int32 'main'(int32, void *)\n");
+        if (end)
+            bePrintf("\tcall void %s%s()\n", namespaceAndClass, end->name);
+        if (mainsp)
+            if ( isvoid(basetype(mainsp->tp)->btp))
+               bePrintf("\tldc.i4 0\n");
+        bePrintf("\tcall void exit(int32)\n");
+        bePrintf("\tret\n");
+        bePrintf("}\n");
     }
-    else
-        if (namespaceAndClass[0])
-            bePrintf("\tcall int32 %smain(int32, void *)\n", namespaceAndClass);
-        else
-            bePrintf("\tcall int32 'main'(int32, void *)\n");
-    if (end)
-        bePrintf("\tcall void %s%s()\n", namespaceAndClass, end->name);
-    if (mainsp)
-        if ( isvoid(basetype(mainsp->tp)->btp))
-           bePrintf("\tldc.i4 0\n");
-    bePrintf("\tcall void exit(int32)\n");
-    bePrintf("\tret\n");
-    bePrintf("}\n");
     if (namespaceAndClass[0])
     {
         bePrintf("}\n");

@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Runtime.InteropServices;
 namespace lsmsilcrtl
 {
@@ -131,6 +132,75 @@ namespace lsmsilcrtl
         {
 //            if (_u_ptr != null)
 //                Marshal.FreeHGlobal(_u_ptr);
+        }
+    }
+    public unsafe class CString {
+        private string myString;
+        private void *nativeString;
+        private IntPtr freeableString;
+
+        public static void *ToPointer(string str)
+        {
+            return new CString(str).ToPointer();
+        }
+        public CString(string str)  { myString = str; }
+        public CString(void *str) {nativeString = str; }
+        public CString (int len)
+        {
+            freeableString = Marshal.AllocHGlobal(len);
+            nativeString = freeableString.ToPointer();
+        }
+        public override string ToString()
+        {
+            if (nativeString != null)
+            {
+                int len = 0;
+                byte *src = (byte *)nativeString;
+                for (len=0; src[len] != 0; len++) ;
+                if (len != 0)
+                {
+                    StringBuilder rv = new StringBuilder();
+                    for (int i=0; i < len; i++)
+                        rv.Append((char)src[i]);
+                    return rv.ToString();
+                }
+                else
+                {
+                    return "";
+                }
+            }
+            return null;
+        }
+        public void *ToPointer()
+        {
+            if (freeableString.ToPointer() != null)
+            {
+                return freeableString.ToPointer();
+            }
+            if (myString != null)
+            {
+                System.Text.ASCIIEncoding  encoding=new System.Text.ASCIIEncoding();
+                byte[] ba = encoding.GetBytes(myString);
+                int slen = myString.Length;
+                freeableString = Marshal.AllocHGlobal(myString.Length+1);
+                byte *dest = (byte *)freeableString.ToPointer();
+                for (int i = 0; i < slen; i++)
+                {
+
+                    dest[i] = ba[i];
+                }
+                dest[slen] = 0;
+                return freeableString.ToPointer();
+            }
+            else
+            {
+                return nativeString;
+            }
+        }
+        protected virtual void finalize()
+        {
+            if (freeableString.ToPointer() != null)
+                Marshal.FreeHGlobal(freeableString);
         }
     }
 }

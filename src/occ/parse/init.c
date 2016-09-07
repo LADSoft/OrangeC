@@ -344,7 +344,7 @@ static void dumpDynamicInitializers(void)
         SetLinkerNames(funcsp, lk_none);
         startlab = nextLabel++;
         retlab = nextLabel++;
-        genfunc(funcsp);
+        genfunc(funcsp, !(chosenAssembler->arch->preferopts & CODEGEN_MSIL));
         startlab = retlab = 0;
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
@@ -391,7 +391,7 @@ static void dumpTLSInitializers(void)
         funcsp->inlineFunc.stmt->lower = st;
         startlab = nextLabel++;
         retlab = nextLabel++;
-        genfunc(funcsp);
+        genfunc(funcsp, TRUE);
         startlab = retlab = 0;
         tlsstartupseg();
         gensrref(funcsp, 32);
@@ -426,7 +426,7 @@ static void dumpDynamicDestructors(void)
         SetLinkerNames(funcsp, lk_none);
         startlab = nextLabel++;
         retlab = nextLabel++;
-        genfunc(funcsp);
+        genfunc(funcsp, TRUE);
         startlab = retlab = 0;
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
@@ -471,7 +471,7 @@ static void dumpTLSDestructors(void)
         funcsp->inlineFunc.stmt->lower = st;
         startlab = nextLabel++;
         retlab = nextLabel++;
-        genfunc(funcsp);
+        genfunc(funcsp, TRUE);
         startlab = retlab = 0;
         tlsrundownseg();
         gensrref(funcsp, 32);
@@ -879,50 +879,57 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
 #ifndef PARSER_ONLY
     if (sp->init)
     {
-        if (sp->tp->array || isstructured(tp))
+        if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
         {
-            INITIALIZER *init = sp->init;
-            int pos = 0;
-            while (init)
-            {
-                if (pos != init->offset)
-                {
-                    if (pos > init->offset)
-                        diag("position error in dumpInitializers");
-                    else
-                        genstorage(init->offset - pos);
-                    pos = init->offset;
-                }
-                if (init->basetp && basetype(init->basetp)->hasbits)
-                {
-                    pos += dumpBits(&init);
-                }
-                else {
-                    INITIALIZER *next = init->next;
-                    if (init->basetp && init->exp)
-                    {
-                        int s;
-                        init->next = NULL;
-                        s = dumpInit(sp, init);
-                        if (s < init->basetp->size)
-                        {
-                            
-                            genstorage(init->basetp->size - s);
-                            s = init->basetp->size;
-                        }
-                        pos += s;
-                    }
-                    init = init->next = next;
-                }
-            }
+            insertDynamicInitializer(sp, sp->init);
         }
         else
         {
-            int s = dumpInit(sp, sp->init);
-            if (s < sp->init->basetp->size)
+            if (sp->tp->array || isstructured(tp))
             {
-                
-                genstorage(sp->init->basetp->size - s);
+                INITIALIZER *init = sp->init;
+                int pos = 0;
+                while (init)
+                {
+                    if (pos != init->offset)
+                    {
+                        if (pos > init->offset)
+                            diag("position error in dumpInitializers");
+                        else
+                            genstorage(init->offset - pos);
+                        pos = init->offset;
+                    }
+                    if (init->basetp && basetype(init->basetp)->hasbits)
+                    {
+                        pos += dumpBits(&init);
+                    }
+                    else {
+                        INITIALIZER *next = init->next;
+                        if (init->basetp && init->exp)
+                        {
+                            int s;
+                            init->next = NULL;
+                            s = dumpInit(sp, init);
+                            if (s < init->basetp->size)
+                            {
+                                
+                                genstorage(init->basetp->size - s);
+                                s = init->basetp->size;
+                            }
+                            pos += s;
+                        }
+                        init = init->next = next;
+                    }
+                }
+            }
+            else
+            {
+                int s = dumpInit(sp, sp->init);
+                if (s < sp->init->basetp->size)
+                {
+                    
+                    genstorage(sp->init->basetp->size - s);
+                }
             }
         }
     }

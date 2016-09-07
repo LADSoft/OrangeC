@@ -1230,6 +1230,8 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
 /*			expsym = varNode(en_global, sp);
             break;
 */
+        case sc_constant:
+            return NULL;
         default:
             diag("convertInitToExpression: unknown sym type");
             expsym = intNode(en_c_i, 0);

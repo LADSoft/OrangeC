@@ -115,7 +115,7 @@ BACKEND_INCLUDE_PATH=.
 vpath %.c $(SRCPATH);dll
 vpath %.cs $(SRCPATH);dll
 
-compiler: redirect netlib.lib lsmsilcrtl.dll occmsil 
+compiler: redirect netlib.lib lsmsilcrtl.dll occmsil testsqlite.exe
 
 redirect: 
 	@$(MAKE) /T
@@ -129,6 +129,17 @@ lsmsilcrtl.dll: lsmsilcrtl.cs
 
 netlib.lib:
 	@$(MAKE) /Cnetlib
+
+testsqlite.exe: zzz.dll sqlite3.dll sqlite3\testsqlite.cs
+	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 sqlite3\testsqlite.cs 
+
+zzz.dll: sqlite3\zzz.c
+	occil /Wd sqlite3\zzz.c /Nzzz.ar
+	ilasm /DLL zzz
+
+sqlite3.dll: sqlite3\sqlite3.c
+	occil /9 /Wd /Lkernel32 sqlite3\sqlite3.c /Nsqlite3.sqlite
+	ilasm /DLL sqlite3
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)\occ.cfg

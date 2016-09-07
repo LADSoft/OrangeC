@@ -756,7 +756,7 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp);
 SYMBOL *gen_mp_virtual_thunk(SYMBOL *vsp);
 SYMBOL *gen_vsn_virtual_thunk(SYMBOL *func, int ofs);
 void optimize(SYMBOL *funcsp);
-void genfunc(SYMBOL *funcsp);
+void genfunc(SYMBOL *funcsp, BOOLEAN  optimize);
 void genASM(STATEMENT *st);
 
 							  /* istren.c */

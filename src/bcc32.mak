@@ -59,7 +59,7 @@ CC=$(COMPILER_PATH)\bin\bcc32
 CCFLAGS = /c /w- /RT- /O2 /v  
 
 LINK=$(COMPILER_PATH)\bin\ilink32
-LFLAGS=-v -c -m -Gn -Gi /V5.1 /L$(COMPILER_PATH)\lib;$(COMPILER_PATH)\lib\psdk;$(_LIBDIR)
+LFLAGS=-S:5242880 -v -c -m -Gn -Gi /V5.1 /L$(COMPILER_PATH)\lib;$(COMPILER_PATH)\lib\psdk;$(_LIBDIR)
 
 LIB=$(COMPILER_PATH)\bin\tlib
 LIBFLAGS=/P1024

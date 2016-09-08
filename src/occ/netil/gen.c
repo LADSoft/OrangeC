@@ -155,6 +155,7 @@ void compile_start(char *name)
     inASMdata = FALSE;
     typeList = NULL;
     _using_init();
+    cparams.prm_asmfile = TRUE; // temporary
 }
 void include_start(char *name, int num)
 {

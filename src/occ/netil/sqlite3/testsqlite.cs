@@ -1,7 +1,5 @@
 // A Hello World! program in C#.
 using System;
-using System.Text;
-using System.Runtime.InteropServices;
 using zzz;
 using lsmsilcrtl;
 using sqlite3;
@@ -48,10 +46,16 @@ namespace HelloWorld
                 }
                 sqlite.sqlite3_close(db);
             }
+            Console.WriteLine();
         }
         static void Main() 
         {
             Console.WriteLine("Hello World!");
+
+            // get a structure instance from the dll and write its contents
+            ar.aa * nn = (ar.aa *)ar.getqq();
+
+            Console.WriteLine("structure from dll: {0}, {1}, {2}", nn->i, nn->b, nn->j);
             // use CString to make a C-style string for the C code
             ar.myprintf(CString.ToPointer("hello %d %d\n"), 5, 10);
 

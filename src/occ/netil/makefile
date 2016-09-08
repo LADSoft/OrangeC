@@ -70,6 +70,7 @@ C_DEPENDENCIES= \
     iloop.c \
     init.c \
     inline.c \
+    invoke.c \
     ioptutil.c \
     iout.c \
     ipeep.c \
@@ -134,11 +135,11 @@ testsqlite.exe: zzz.dll sqlite3.dll sqlite3\testsqlite.cs
 	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 sqlite3\testsqlite.cs 
 
 zzz.dll: sqlite3\zzz.c
-	occil /Wd sqlite3\zzz.c /Nzzz.ar
+	occil /c /Wd sqlite3\zzz.c /Nzzz.ar
 	ilasm /DLL zzz
 
 sqlite3.dll: sqlite3\sqlite3.c
-	occil /9 /Wd /Lkernel32 sqlite3\sqlite3.c /Nsqlite3.sqlite
+	occil /c /9 /Wd /Lkernel32 sqlite3\sqlite3.c /Nsqlite3.sqlite
 	ilasm /DLL sqlite3
 
 DISTRIBUTE: copyexe

@@ -53,7 +53,7 @@ extern LIST *externals;
 extern TYPE stdpointer, stdint;
 extern INCLUDES *includes;
 extern char namespaceAndClass[512];
-
+extern char namespaceAndClassForNestedType[512];
 OCODE *peep_head, *peep_tail;
 static int uses_float;
 
@@ -527,6 +527,10 @@ void puttype(TYPE *tp_in)
                 }
                 tp = tp->btp;
             }
+            if (namespaceAndClass[0] && !isstructured(tp))
+            {
+                bePrintf("%s", namespaceAndClassForNestedType);
+            }
             puttype(tp);
             bePrintf("%s", buf);
         }
@@ -552,7 +556,14 @@ void puttype(TYPE *tp_in)
     else if (isstructured(tp))
     {
         cacheType(tp);
-        bePrintf("%s%s", namespaceAndClass, basetype(tp)->sp->name);
+        if (namespaceAndClass[0])
+        {
+            bePrintf("%s%s", namespaceAndClassForNestedType, basetype(tp)->sp->name);
+        }
+        else
+        {
+            bePrintf("%s", basetype(tp)->sp->name);
+        }
     }
     else if (tp->type == bt_void)
         bePrintf("void");
@@ -748,19 +759,23 @@ void oa_put_string_label(int lab, int type)
     oa_enterseg(oa_currentSeg);
     inASMdata = TRUE;
     bePrintf(".field public static valuetype '");
+    if (namespaceAndClass[0])
+    {
+        bePrintf("%s", namespaceAndClassForNestedType);
+    }
     switch (type)
     {
         case l_ustr:
         case l_astr:
-            bePrintf("%sint8[]", namespaceAndClass);
+            bePrintf("int8[]");
             int8_used = TRUE;
             break;
         case l_Ustr:
-            bePrintf("%sint32[]", namespaceAndClass);
+            bePrintf("int32[]");
             int32_used = TRUE;
             break;
         case l_wstr:
-            bePrintf("%sint16[]", namespaceAndClass);
+            bePrintf("int16[]");
             int16_used = TRUE;
             break;
     }
@@ -1373,17 +1388,21 @@ void putarg(enum e_op op, AMODE *arg)
                 if (arg->offset->altdata)
                 {
                     bePrintf("\tvaluetype '");
+                    if (namespaceAndClass[0])
+                    {
+                        bePrintf("%s", namespaceAndClassForNestedType);
+                    }
                     switch (arg->offset->altdata)
                     {
                         case l_ustr:
                         case l_astr:
-                            bePrintf("%sint8[]", namespaceAndClass);
+                            bePrintf("int8[]");
                             break;
                         case l_Ustr:
-                            bePrintf("%sint32[]", namespaceAndClass);
+                            bePrintf("int32[]");
                             break;
                         case l_wstr:
-                            bePrintf("%sint16[]", namespaceAndClass);
+                            bePrintf("int16[]");
                             break;
                     }
                     if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
@@ -1595,6 +1614,42 @@ void oa_put_code(OCODE *ocode)
         putarg(op,ocode->oper1);
     bePrintf("\n");
 }
+// weed out unions, structures with nested structures or bit fields
+static BOOLEAN qualifiedStruct(SYMBOL *sp)
+{
+    HASHREC *hr = basetype(sp->tp)->syms->table[0];
+    if (basetype(sp->tp)->type == bt_union)
+        return FALSE;
+    while (hr)
+    {
+        SYMBOL *check = (SYMBOL *)hr->p;
+        if (basetype(check->tp)->bits)
+            return FALSE;
+        if (isstructured(check->tp))
+            return FALSE;
+        if (basetype(check->tp)->array)
+            return FALSE;
+        hr = hr->next;
+    }
+    return TRUE;
+
+}
+void DumpClassFields(SYMBOL *sp)
+{
+    HASHREC *hr = basetype(sp->tp)->syms->table[0];
+    while (hr)
+    {
+        SYMBOL *check = (SYMBOL *)hr->p;
+        bePrintf("\n\t.field public ");
+        if (isfunction(check->tp) || isfuncptr(check->tp))
+            bePrintf("void *");
+        else
+            puttype(check->tp);
+        bePrintf(" '%s'", check->name);
+        hr = hr->next;
+    }
+    bePrintf("\n");
+}
 void dumpTypes()
 {
     LIST *lst = typeList;
@@ -1603,21 +1658,22 @@ void dumpTypes()
 
     if (int8_used)
     {
-        bePrintf(".class private value explicit ansi sealed '%sint8[]' {.pack 1 .size 1}\n", namespaceAndClass);
+        bePrintf(".class %s private value explicit ansi sealed 'int8[]' {.pack 1 .size 1}\n", namespaceAndClass[0] ? "nested" : "");
     }
     if (int16_used)
     {
-        bePrintf(".class private value explicit ansi sealed '%sint16[]' {.pack 2 .size 1}\n", namespaceAndClass);
+        bePrintf(".class %s private value explicit ansi sealed 'int16[]' {.pack 2 .size 1}\n", namespaceAndClass[0] ? "nested" : "");
     }
     if (int32_used)
     {
-        bePrintf(".class private value explicit ansi sealed '%sint32[]' {.pack 4 .size 1}\n", namespaceAndClass);
+        bePrintf(".class %s private value explicit ansi sealed 'int32[]' {.pack 4 .size 1}\n", namespaceAndClass[0] ? "nested" : "");
     }
     while (*pList)
     {
         // weed
         LIST **qList = &(*pList)->next;
         TYPE *tp = ((TYPE *)(*pList)->data);
+        char z;
         while (*qList)
         {
             TYPE *tpq = (TYPE *)(*qList)->data;
@@ -1650,9 +1706,25 @@ void dumpTypes()
                 qList = &(*qList)->next;
             }
         }
-        bePrintf(".class private value explicit ansi sealed '");
+        if (namespaceAndClass[0])
+            bePrintf(".class nested public value explicit auto sequential ansi sealed '");
+        else
+            bePrintf(".class private value explicit ansi sealed '");
+        z = namespaceAndClass[0];
+        namespaceAndClass[0] = 0;
         puttype(tp);
-        bePrintf("' {.pack 1 .size %d}\n", tp->size ? tp->size : 1);
+        namespaceAndClass[0] = z;
+        if (isstructured(tp) && namespaceAndClass[0])
+        {
+            bePrintf("' {.pack %d .size %d", tp->sp->structAlign, tp->size);
+            if (qualifiedStruct(basetype(tp)->sp))
+                DumpClassFields(basetype(tp)->sp);
+            bePrintf("}\n");
+        }
+        else
+        {
+            bePrintf("' {.pack 1 .size %d }\n", tp->size);
+        }
         pList = &(*pList)->next;
     }
 
@@ -1793,6 +1865,7 @@ void oa_end_generation(void)
         bePrintf("\tret\n");
         bePrintf("}\n");
     }
+    dumpTypes();    
     if (namespaceAndClass[0])
     {
         bePrintf("}\n");
@@ -1804,7 +1877,6 @@ void oa_end_generation(void)
     bePrintf("\tret\n");
     bePrintf("}\n");
 
-    dumpTypes();    
 }
 void flush_peep(SYMBOL *funcsp, QUAD *list)
 {

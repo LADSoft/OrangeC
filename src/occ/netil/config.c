@@ -46,7 +46,7 @@
   
 extern COMPILER_PARAMS cparams;
 extern char msil_bltins[];
-char namespaceAndClass[512];
+char namespaceAndClass[512], namespaceAndClassForNestedType[512];
 
 int dbgblocknum;
     #ifndef WIN32
@@ -368,6 +368,8 @@ static int parse_param(char select, char *string)
             fatal("namesplace/class info in wrong format");
         strcpy(namespaceAndClass, string);
         strcat(namespaceAndClass, "::");
+        strcpy(namespaceAndClassForNestedType, string);
+        strcat(namespaceAndClassForNestedType, "\xf8"); // magic nested type reference delimiter
     }
     return 0;
 }
@@ -518,7 +520,7 @@ ARCH_ASM assemblerInterface[] = {
     0,                                      /* backend data (compiler ignores) */
      "1",								/* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
    ".il",                                  /* extension for assembly files */
-    ".o",                               /* extension for object files, NULL = has no object mode */
+    ".il",                               /* extension for object files, NULL = has no object mode */
     "occil",                               /* name of an environment variable to parse, or 0 */
     "occil",                             /* name of the program, for usage */
     "occil",                              /* name of a config file if you want to use one, or NULL (sans extension) */
@@ -534,10 +536,10 @@ ARCH_ASM assemblerInterface[] = {
     &outputfunctions,                              /* pointer to backend function linkages */
     msil_bltins,                  /* pointer to extra builtin data */
     initnasm,  /* return 1 to proceed */
-    NULL,     /* postprocess function, or NULL */
+    RunExternalFiles,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
-    NULL,          /* insert the output (executable name) into the backend */
-    NULL,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+    InsertOutputFileName,          /* insert the output (executable name) into the backend */
+    InsertExternalFile,      /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
     parse_param,     /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     parse_codegen,   /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     0,         /* parse a pragma directive, or null */

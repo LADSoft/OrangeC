@@ -58,7 +58,7 @@
 #elif defined(__MSIL__)
 #define _RTL_FUNC
 #define _RTL_DATA
-#define _IMPORT __unmanaged
+#define _IMPORT
 #define _IMPORTMM
 #define _RTL_CLASS
 #define _MSIL_RTL __msil_rtl

@@ -3,16 +3,67 @@ using System.Text;
 using System.Runtime.InteropServices;
 namespace lsmsilcrtl
 {
-    public static unsafe class alloc
+    public static unsafe class rtl
     {
-        public static void* malloc(int size)
+        private const int magic = 0x414D534C;
+        private static bool mem_is_valid (void *item)
         {
-            return Marshal.AllocHGlobal(size).ToPointer();
+            item = (void *)((byte *)item -8);
+            return *(int *)item == magic;
+        }
+        public static void* malloc(uint size)
+        {
+            void *rv = Marshal.AllocHGlobal((int)size+8).ToPointer();
+            if (rv != null)
+            {
+                *(int *)rv = magic;
+                *(uint *)((byte *)rv + 4) = size;
+                rv = (void *)((byte *)rv + 8);
+            }
+            return rv;
         }
 
         public static void free(void* item)
         {
-            Marshal.FreeHGlobal(new System.IntPtr(item));
+            if (item != null && mem_is_valid(item))
+            {
+                item = (void *)((byte *)item -8);
+                Marshal.FreeHGlobal(new System.IntPtr(item));
+            }
+        }
+        public static void* realloc(void *item, uint size)
+        {
+            if (item == null)
+                return malloc(size);
+            if (mem_is_valid(item))
+            {
+                uint cp_size = *(uint *)((byte *)item - 4);
+                if (size < cp_size)
+                    cp_size = size;
+                void *newmem = malloc(size);
+                if (newmem != null)
+                {
+                    for (int i=0; i < cp_size; i++)
+                        ((byte *)newmem)[i] = ((byte *)item)[i];
+                }
+                free(item);
+                return newmem;
+            }
+            return null;
+        }
+        public static void *calloc(uint nitems, uint count)
+        {
+            uint sz = nitems * count;
+            void *rv = malloc(sz);
+            if (rv != null)
+            {
+                byte *zero = (byte *)rv;
+                for (int i=0; i < sz; i++)
+                {
+                    zero[i] = 0;
+                }
+            }
+            return rv;
         }
     }
     public static unsafe class pointer

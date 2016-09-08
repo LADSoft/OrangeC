@@ -62,10 +62,10 @@ extern "C" {
 #define _ffree(size)  farfree(size)
 #endif
 
-void        _RTL_FUNC _IMPORT *calloc(size_t __nitems, size_t __size);
-void        _RTL_FUNC _IMPORT free(void *__block);
-void        _RTL_FUNC _IMPORT *malloc(size_t __size);
-void        _RTL_FUNC _IMPORT *realloc(void *__block, size_t __size);
+void        _RTL_FUNC _IMPORT _MSIL_RTL *calloc(size_t __nitems, size_t __size);
+void        _RTL_FUNC _IMPORT _MSIL_RTL free(void *__block);
+void        _RTL_FUNC _IMPORT _MSIL_RTL *malloc(size_t __size);
+void        _RTL_FUNC _IMPORT _MSIL_RTL *realloc(void *__block, size_t __size);
 #ifdef __CC386__
 void        _RTL_FUNC _IMPORT _FAR *farmalloc(size_t __size) ;
 void        _RTL_FUNC _IMPORT farfree(void _FAR *__block) ;

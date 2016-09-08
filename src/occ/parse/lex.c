@@ -214,6 +214,7 @@ KEYWORD keywords[] = {
     { "__int64", 7,  kw___int64, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT },
     { "__int8", 6,  kw_char, KW_NONANSI | KW_386, TT_BASETYPE | TT_INT },
     { "__kill_dependency", 17, kw_atomic_kill_dependency, 0, TT_VAR },
+    { "__msil_rtl", 10,  kw__msil_rtl, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__pascal", 8,  kw__pascal, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__stdcall", 9,  kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__typeid", 8,  kw___typeid, KW_CPLUSPLUS, 0},

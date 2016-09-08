@@ -1158,11 +1158,16 @@ void put_pinvoke(SYMBOL *sp)
 void oa_put_extern(SYMBOL *sp, int code)
 {
     if (isfunction(sp->tp))
-        put_pinvoke(sp);
-    else if (cparams.prm_asmfile) {
-        if (strcmp(sp->name, "_pctype") && strcmp(sp->name, "__stdin") && strcmp(sp->name, "__stdout") && strcmp(sp->name, "__stderr"))
-        {
-            fatal ("Undefined external %s\n", sp->name);
+    {
+        if (sp->linkage2 != lk_msil_rtl)
+            put_pinvoke(sp);
+    }
+    else {
+        if (cparams.prm_asmfile) {
+            if (strcmp(sp->name, "_pctype") && strcmp(sp->name, "__stdin") && strcmp(sp->name, "__stdout") && strcmp(sp->name, "__stderr"))
+            {
+                fatal ("Undefined external %s\n", sp->name);
+            }
         }
     }
 }
@@ -1220,7 +1225,7 @@ void putfunccall(AMODE *arg)
     SYMBOL *spi = en->v.sp;
     HASHREC *hr = basetype(spi->tp)->syms->table[0];
     BOOLEAN vararg = FALSE;
-    BOOLEAN managed = !_dll_name(spi->name);//en->v.sp->linkage2 != lk_unmanaged;
+    BOOLEAN managed = en->v.sp->linkage2 == lk_msil_rtl || !_dll_name(spi->name);//en->v.sp->linkage2 != lk_unmanaged;
     INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata)->arguments : NULL;
     while (hr)
     {
@@ -1233,8 +1238,16 @@ void putfunccall(AMODE *arg)
     if (vararg && !managed)
         bePrintf("vararg ");
     puttypewrapped(isstructured(basetype(spi->tp)->btp) ? &stdpointer : basetype(spi->tp)->btp);
-    if (managed && namespaceAndClass[0])
-        bePrintf(" %s%s", namespaceAndClass, spi->name);
+    if (managed)
+        if (spi->linkage2 == lk_msil_rtl)
+        {
+                bePrintf(" [lsmsilcrtl]lsmsilcrtl.rtl::%s", spi->name);
+        }
+        else
+        {
+            if (namespaceAndClass[0])
+                bePrintf(" %s%s", namespaceAndClass, spi->name);
+        }
     else
         bePrintf(" '%s'", spi->name);
     bePrintf("(");

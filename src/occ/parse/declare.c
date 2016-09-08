@@ -1784,7 +1784,14 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = lk_export;
                 break;
+            case kw__msil_rtl:
+                if (*linkage2 != lk_none && *linkage2 != lk_unmanaged)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                *linkage2 = lk_msil_rtl;
+                break;
             case kw__unmanaged:
+                if (*linkage2 == kw__msil_rtl)
+                    break;
                 if (*linkage2 != lk_none)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = lk_unmanaged;

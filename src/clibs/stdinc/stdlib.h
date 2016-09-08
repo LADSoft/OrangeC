@@ -111,7 +111,7 @@ void *      _RTL_FUNC _IMPORT bsearch(const void *__key, const void *__base,
                            size_t __nelem, size_t __width,
                            int (*fcmp)(const void *,
                            const void *));
-void *      _RTL_FUNC _IMPORT calloc(size_t __nitems, size_t __size);
+void *      _RTL_FUNC _IMPORT _MSIL_RTL calloc(size_t __nitems, size_t __size);
 div_t       _RTL_INTRINS _IMPORT div(int __numer, int __denom);
 ldiv_t      _RTL_INTRINS _IMPORT ldiv(long __numer, long __denom);
 #if  __STDC_VERSION__ >= 199901L
@@ -120,7 +120,7 @@ lldiv_t     _RTL_FUNC _IMPORT lldiv(long long __numer, long long __denom);
 void        _RTL_FUNC _IMPORT quick_exit(int __status);
 void        _RTL_FUNC _IMPORT exit(int __status);
 void        _RTL_FUNC _IMPORT _Exit(int __status);
-void        _RTL_FUNC _IMPORT free(void *__block);
+void        _RTL_FUNC _IMPORT _MSIL_RTL free(void *__block);
 char *      _RTL_FUNC _IMPORT getenv(const char *__name);
 void *      _RTL_FUNC _IMPORT lfind(const void * __key, const void * __base,
                                 size_t * __num, size_t __width,
@@ -135,7 +135,7 @@ void *      _RTL_FUNC _IMPORT _lsearch(const void * __key, void * __base,
                                 size_t * __num, size_t __width,
                                 int (*fcmp)(const void *, const void *));
 void *      _RTL_FUNC _IMPORT aligned_alloc(size_t __align, size_t __size);
-void *      _RTL_FUNC _IMPORT malloc(size_t __size);
+void *      _RTL_FUNC _IMPORT _MSIL_RTL malloc(size_t __size);
 int         _RTL_FUNC _IMPORT mblen(const char *__s, size_t __n);
 size_t      _RTL_FUNC _IMPORT mbstowcs(wchar_t * restrict __pwcs,   
                                     const char * restrict __s, size_t __n);
@@ -145,7 +145,7 @@ void        _RTL_FUNC _IMPORT qsort(void *__base, size_t __nelem, size_t __width
                        int (* __fcmp)(const void *, const void *));
 int         _RTL_FUNC _IMPORT rand(void);
 int         _RTL_FUNC _IMPORT rand_s(unsigned int *__rand_value);
-void  *     _RTL_FUNC _IMPORT realloc(void *__block, size_t __size);
+void  *     _RTL_FUNC _IMPORT _MSIL_RTL realloc(void *__block, size_t __size);
 void        _RTL_FUNC _IMPORT srand(unsigned __seed);
 char *      _RTL_FUNC _IMPORT strdup(const char *string);
 char *      _RTL_FUNC _IMPORT _strdup(const char *string);

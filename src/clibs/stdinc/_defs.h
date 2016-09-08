@@ -40,30 +40,35 @@
 #define _IMPORT
 #define _IMPORTMM
 #define _RTL_CLASS
+#define _MSIL_RTL
 #elif defined( __LSCRTL_DLL) || defined(__CRTDLL_DLL)
 #define _RTL_FUNC
 #define _RTL_DATA
 #define _IMPORT _import
 #define _IMPORTMM _import
 #define _RTL_CLASS
+#define _MSIL_RTL
 #elif defined(__MSVCRT_DLL)
 #define _RTL_FUNC
 #define _RTL_DATA
 #define _IMPORT _import
 #define _IMPORTMM
 #define _RTL_CLASS
+#define _MSIL_RTL
 #elif defined(__MSIL__)
 #define _RTL_FUNC
 #define _RTL_DATA
 #define _IMPORT __unmanaged
 #define _IMPORTMM
 #define _RTL_CLASS
+#define _MSIL_RTL __msil_rtl
 #else
 #define _RTL_FUNC
 #define _RTL_DATA
 #define _RTL_CLASS
 #define _IMPORT
 #define _IMPORTMM
+#define _MSIL_RTL
 #endif
 
 #if !defined(__STDC__) || defined(__STDC_VERSION__)

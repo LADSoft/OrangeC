@@ -1360,7 +1360,7 @@ IMODE *gen_hook(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     false_label = nextLabel++;
     end_label = nextLabel++;
     flags = flags | F_VOL;
-    if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+    if (chosenAssembler->msil)
         flags &= ~ F_NOVALUE;
     DumpIncDec(funcsp);
     falsejp(node->left, funcsp, false_label);
@@ -1594,7 +1594,7 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
         ap5 = LookupLoadTemp(ap1, ap1);
         if (ap1 != ap5)
             gen_icode(i_assn, ap5, ap1, NULL);
-        if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+        if (chosenAssembler->msil)
         {
             ap3 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
             ap5 = LookupLoadTemp(ap3, ap3);
@@ -1622,7 +1622,7 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             }            
             ap7 = gen_bit_mask(ap4);
         }
-        if (!(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+        if (!(chosenAssembler->msil))
         {
             ap3 = tempreg(siz1, 0);
             gen_icode(i_assn, ap3, ap5, NULL);
@@ -1689,7 +1689,7 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
     {
         if (flags & F_COMPARE)
         {
-            if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+            if (chosenAssembler->msil)
             {
                 ap3 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
                 ap5 = LookupLoadTemp(ap3, ap3);
@@ -1956,7 +1956,7 @@ static int gen_parm(INITLIST *a, SYMBOL *funcsp)
  */
 {
     int rv;
-    if (a->vararg && (chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+    if (a->vararg && (chosenAssembler->msil))
     {
         if (!objectArray_exp )
         {
@@ -2283,7 +2283,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
 //		if (ap != ap3)
 //			gen_icode(i_assn, ap, ap3, NULL);
         if (ap->mode == i_immed && ap->offset->type == en_pc) {
-            if (f->sp && f->sp->linkage2 == lk_import && (!chosenAssembler->arch->preferopts & CODEGEN_MSIL)) {
+            if (f->sp && f->sp->linkage2 == lk_import && (!chosenAssembler->msil)) {
                 IMODE *ap1 = (IMODE *)Alloc(sizeof(IMODE));
                 *ap1 = *ap;
                 ap1->retval = FALSE;
@@ -2609,7 +2609,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     rbarrier = doatomicFence(funcsp, NULL, node->right, 0);
     if (flags & F_NOVALUE)
     {
-        if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+        if (chosenAssembler->msil)
         {
             switch( node->type)
             {
@@ -3173,7 +3173,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     }
     if (flags & F_NOVALUE)
     {
-        if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+        if (chosenAssembler->msil)
         {
             switch( node->type)
             {

@@ -537,9 +537,6 @@ static struct {
 {"Mismatched types '%s' and '%s' while infering lambda return type", ERROR },
 {"Exception specifier blocks exceptions thrown from '%s'", WARNING },
 {"Exception specifier blocks locally thrown exception of type '%s'", WARNING },
-{"__using__ file not found", ERROR },
-{"__using__ not supported", ERROR },
-{"__using__ needs string", ERROR },
 {"undefined external '%s'", ERROR },
 #endif
 } ;

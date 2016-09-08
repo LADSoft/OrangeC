@@ -344,7 +344,7 @@ static void dumpDynamicInitializers(void)
         SetLinkerNames(funcsp, lk_none);
         startlab = nextLabel++;
         retlab = nextLabel++;
-        genfunc(funcsp, !(chosenAssembler->arch->preferopts & CODEGEN_MSIL));
+        genfunc(funcsp, !(chosenAssembler->msil));
         startlab = retlab = 0;
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
@@ -879,7 +879,7 @@ static void dumpInitGroup(SYMBOL *sp, TYPE *tp)
 #ifndef PARSER_ONLY
     if (sp->init)
     {
-        if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+        if (chosenAssembler->msil)
         {
             insertDynamicInitializer(sp, sp->init);
         }
@@ -981,7 +981,7 @@ static void dumpStaticInitializers(void)
             if (*sizep % al)
             {
                 int n = al - *sizep % al;
-                if (!(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+                if (!(chosenAssembler->msil))
                 {
                     genstorage(n);
                 }

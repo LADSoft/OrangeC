@@ -1452,7 +1452,7 @@ EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIA
         }
         init = init->next;
     }
-    if (sp && sp->storage_class == sc_localstatic && !(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+    if (sp && sp->storage_class == sc_localstatic && !(chosenAssembler->msil))
     {
         if (isdest)
         {

@@ -218,8 +218,6 @@ KEYWORD keywords[] = {
     { "__pascal", 8,  kw__pascal, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__stdcall", 9,  kw__stdcall, KW_NONANSI | KW_ALL, TT_LINKAGE},
     { "__typeid", 8,  kw___typeid, KW_CPLUSPLUS, 0},
-    { "__unmanaged", 11,  kw__unmanaged, KW_NONANSI | KW_ALL, TT_LINKAGE},
-    { "__using__", 9, kw___using__, KW_NONANSI | KW_ALL, TT_CONTROL },
     { "__va_list__", 11, kw___va_list__, KW_NONANSI | KW_ALL, TT_TYPEQUAL | TT_POINTERQUAL },
     { "__va_typeof__", 13, kw___va_typeof__, KW_NONANSI | KW_ALL, TT_VAR },
     { "_absolute", 9,  kw__absolute, KW_NONANSI | KW_ALL, TT_STORAGE_CLASS},

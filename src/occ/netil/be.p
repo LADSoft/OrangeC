@@ -1,4 +1,3 @@
-
 /* Protogen Version 2.1.1.17Friday October 28, 2005  17:44:50 */
 
                                 /* Gen.c */
@@ -152,3 +151,4 @@ void _using_init();
 char *_dll_name(char *name);
 void _add_global_using(char *str);
 void _apply_global_using(void);
+BOOLEAN msil_managed(SYMBOL *sp);

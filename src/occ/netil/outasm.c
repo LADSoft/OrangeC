@@ -1226,7 +1226,7 @@ void putfunccall(AMODE *arg)
     SYMBOL *spi = en->v.sp;
     HASHREC *hr = basetype(spi->tp)->syms->table[0];
     BOOLEAN vararg = FALSE;
-    BOOLEAN managed = en->v.sp->linkage2 == lk_msil_rtl || !_dll_name(spi->name);//en->v.sp->linkage2 != lk_unmanaged;
+    BOOLEAN managed = msil_managed(spi);
     INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata)->arguments : NULL;
     while (hr)
     {
@@ -1266,7 +1266,7 @@ void putfunccall(AMODE *arg)
         SYMBOL *sp = (SYMBOL *)hr->p;
         if (sp->tp->type != bt_void)
         {
-            if (spi->linkage2 == lk_unmanaged)
+            if (!msil_managed(spi) )
                 putunmanagedtype(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
             else
                 puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);

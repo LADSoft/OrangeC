@@ -683,7 +683,7 @@ void asm_parm(QUAD *q)               /* push a parameter*/
         if (find)
         {
             FUNCTIONCALL *params = (FUNCTIONCALL *)find->altdata;
-            if (params->sp->linkage2 == lk_unmanaged)
+            if (!msil_managed(params->sp))
             {
                 AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
                 ap->mode = am_argit_unmanaged;
@@ -767,7 +767,7 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
         {
             FUNCTIONCALL *func = q->altdata;
             ap->altdata = q->altdata;
-            if (func->sp->linkage2 != lk_unmanaged)
+            if (msil_managed(func->sp))
             {
                 HASHREC *hr = basetype(func->sp->tp)->syms->table[0];
                 while (hr && hr->next)

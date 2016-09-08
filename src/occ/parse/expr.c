@@ -99,7 +99,7 @@ void expr_init(void)
 void thunkForImportTable(EXPRESSION **exp)
 {
     SYMBOL *sp;
-    if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+    if (chosenAssembler->msil)
         return;
     if ((*exp)->type == en_pc)
         sp = (*exp)->v.sp;
@@ -144,12 +144,12 @@ void ValidateMSILFuncPtr(TYPE *dest, TYPE *src, EXPRESSION **exp)
     if (isfunction(dest))
     {
         // function arg or assignment to function constant
-        managedDest = basetype(dest)->sp->linkage2 != lk_unmanaged;
+        managedDest = chosenAssembler->msil->managed(basetype(dest)->sp);
     }
     else if (isfuncptr(dest))
     {
         // function var
-        managedDest = basetype(basetype(dest)->btp)->sp->linkage2 != lk_unmanaged;
+        managedDest = chosenAssembler->msil->managed(basetype(basetype(dest)->btp)->sp);
     }
     else
     {
@@ -160,12 +160,12 @@ void ValidateMSILFuncPtr(TYPE *dest, TYPE *src, EXPRESSION **exp)
     if (isfunction(src))
     {
         // function arg or assignment to function constant
-        managedSrc = basetype(src)->sp->linkage2 != lk_unmanaged;
+        managedSrc = chosenAssembler->msil->managed(basetype(src)->sp);
     }
     else if (isfuncptr(src))
     {
         // function var
-        managedSrc = basetype(basetype(src)->btp)->sp->linkage2 != lk_unmanaged;
+        managedSrc = chosenAssembler->msil->managed(basetype(basetype(src)->btp)->sp);
     }
     else
     {
@@ -1511,7 +1511,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                     noproto = TRUE;
                 else if (basetype(decl->tp)->type == bt_ellipse)
                 {
-                    vararg =  params->sp->linkage2 != lk_unmanaged;
+                    vararg =  chosenAssembler->msil && chosenAssembler->msil->managed(params->sp);
                     params->vararg = vararg;
                     matching = FALSE;
                     decl = NULL;
@@ -1620,14 +1620,14 @@ join:
             {
                 if (basetype(list->tp)->type <= bt_int)
                     dest = &stdint;
-                else if (!(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+                else if (!(chosenAssembler->msil))
                     cast(list->tp, &list->exp);
             }
             else if (isfloat(list->tp))
             {
                 if (basetype(list->tp)->type < bt_double)
                     dest = &stddouble;
-                else if (!(chosenAssembler->arch->preferopts & CODEGEN_MSIL))
+                else if (!(chosenAssembler->msil))
                     cast(list->tp, &list->exp);
             }
             if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, TRUE))
@@ -2244,7 +2244,7 @@ void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, 
         p = *lptr;
         if (p && p->exp && (p->exp->type == en_pc || p->exp->type == en_func))
         {
-            if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+            if (chosenAssembler->msil)
             {
                 ValidateMSILFuncPtr(func->tp, p->tp, &p->exp);
             }
@@ -6431,7 +6431,7 @@ LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXP
         }
         if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
         {
-            if (chosenAssembler->arch->preferopts & CODEGEN_MSIL)
+            if (chosenAssembler->msil)
             {
                 ValidateMSILFuncPtr(*tp, tp1, &exp1);
             }

@@ -267,7 +267,7 @@ static ARCH_CHARACTERISTICS architecture = {
     &regCosts,
     allocOrder,
     peeps,   /* defines peephole information */
-    CODEGEN_MSIL | OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | 
+    OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | 
         OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
         DO_NOPARMADJSIZE |DO_NOLOADSTACK | DO_NOENTRYIF |
@@ -513,7 +513,10 @@ ARCH_GEN outputfunctions = {
     asm_loadstack,			/* load the stack pointer from a var */
     asm_savestack,			/* save the stack pointer to a var */
     asm_functail,			/* function tail (e.g. destructor) start/end */
-} ;       
+} ;  
+ARCH_MSIL msilData = {
+    msil_managed           /* return TRUE if the function is a managed function, FALSE otherwise */
+};     
 ARCH_ASM assemblerInterface[] = {
     {
     "ilasm",                                 /* assembler name */
@@ -534,6 +537,7 @@ ARCH_ASM assemblerInterface[] = {
     &dbgStruct[0],                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
+    &msilData,                    /* pointer to MSIL-specific data and functions */
     msil_bltins,                  /* pointer to extra builtin data */
     initnasm,  /* return 1 to proceed */
     RunExternalFiles,     /* postprocess function, or NULL */

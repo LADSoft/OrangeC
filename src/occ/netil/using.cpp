@@ -79,3 +79,9 @@ extern "C" void _apply_global_using(void)
         lst = lst->next;
     }
 }
+extern "C" BOOLEAN msil_managed(SYMBOL *sp)
+{
+    if (sp->linkage2 == lk_msil_rtl)
+        return TRUE;
+    return !_dll_name(sp->name);
+}

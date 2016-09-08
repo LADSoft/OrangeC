@@ -1128,6 +1128,8 @@ static LEXEME *declstruct(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, BOOLEAN inTemp
         browse_variable(sp);
         
         insert(sp, cparams.prm_cplusplus && !sp->parentClass ? globalNameSpace->tags : table);
+        if (chosenAssembler->enter_type)
+            chosenAssembler->enter_type(sp);
     }
     else if (type != sp->tp->type && (type == bt_union || sp->tp->type == bt_union))
     {
@@ -1479,6 +1481,8 @@ static LEXEME *declenum(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storag
         SetLinkerNames(sp, lk_cdecl);
         browse_variable(sp);
         insert(sp, table);
+        if (chosenAssembler->enter_type)
+            chosenAssembler->enter_type(sp);
     }
     else if (sp->tp->type != bt_enum)
     {

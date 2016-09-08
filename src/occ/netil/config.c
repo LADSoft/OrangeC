@@ -552,6 +552,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    oa_enter_type,                     /* enter a type in the BE */
     _using_,                       /* __using__ declaration */    
     },
     { 0 }

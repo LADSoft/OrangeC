@@ -60,6 +60,7 @@ static int uses_float;
 void puttypewrapped(TYPE *tp);
 
 LIST *typeList;
+LIST *enumList;
 static enum e_gt oa_gentype = nogen; /* Current DC type */
 enum e_sg oa_currentSeg = noseg; /* Current seg */
 static int oa_outcol = 0; /* Curront col (roughly) */
@@ -1246,7 +1247,9 @@ void putfunccall(AMODE *arg)
         else
         {
             if (namespaceAndClass[0])
-                bePrintf(" %s%s", namespaceAndClass, spi->name);
+                bePrintf(" %s%s", namespaceAndClass, spi->name);  
+            else
+                bePrintf(" '%s'", spi->name);
         }
     else
         bePrintf(" '%s'", spi->name);
@@ -1663,6 +1666,43 @@ void DumpClassFields(SYMBOL *sp)
     }
     bePrintf("\n");
 }
+void oa_enter_type(SYMBOL *sp)
+{
+    if (namespaceAndClass[0] && sp->tp->type == bt_enum && !strstr(sp->name, "__anontype"))
+    {
+        LIST *enumV = beLocalAlloc(sizeof(LIST));
+        enumV->data = sp;
+        enumV->next = enumList;
+        enumList = enumV;
+    }
+}
+static void dumpEnums(void)
+{
+    int l = strlen(namespaceAndClass);
+    if (l)
+        namespaceAndClass[l-2] = 0;
+    while (enumList)
+    {
+        SYMBOL *sp = (SYMBOL *)enumList->data;
+        if (sp->tp->syms->table[0])
+        {
+            HASHREC *hr = sp->tp->syms->table[0];
+            bePrintf(".class enum nested public auto ansi sealed '%s' {\n", sp->name);
+            while (hr)
+            {
+                SYMBOL *spe = (SYMBOL *)hr->p;
+                bePrintf("\t.field public static literal valuetype %s/%s %s = int32(%d)\n",
+                        namespaceAndClass, sp->name, spe->name, spe->value.i);
+                hr = hr->next;
+            }
+            bePrintf("\t.field public specialname rtspecialname int32 value__\n");
+            bePrintf("}\n");
+        }
+        enumList = enumList->next;
+    }
+    if (l)
+        namespaceAndClass[l-2] = ':';
+}
 void dumpTypes()
 {
     LIST *lst = typeList;
@@ -1742,6 +1782,7 @@ void dumpTypes()
     }
 
     typeList = NULL;
+    dumpEnums();
 }
 void oa_load_funcs(void)
 {

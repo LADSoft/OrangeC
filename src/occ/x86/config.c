@@ -681,6 +681,7 @@ ARCH_ASM assemblerInterface[] = {
     inlineAsmStmt,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                     /* enter a type in the BE */
     0,                       /* __using__ declaration */    
     },
     {

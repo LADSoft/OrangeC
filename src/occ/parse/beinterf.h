@@ -435,6 +435,7 @@ typedef struct _arch_asm
     void *(*inlineAsmStmt)(void *stmt);				/* inlined asm stmt */
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
     void (*SearchIntrins)(SYMBOL *sp);                 /* search for an intrinsic */
+    void (*enter_type)(SYMBOL *sp);                     /* enter a type in the BE */
     BOOLEAN (*_using_)(char *text);                       /* __using__ declaration */    
 } ARCH_ASM ;
 

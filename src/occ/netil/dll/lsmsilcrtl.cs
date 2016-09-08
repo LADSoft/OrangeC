@@ -35,6 +35,11 @@ namespace lsmsilcrtl
         {
             if (item == null)
                 return malloc(size);
+            if (size == 0)
+            {
+                free(item);
+                return null;
+            }
             if (mem_is_valid(item))
             {
                 uint cp_size = *(uint *)((byte *)item - 4);

@@ -89,6 +89,7 @@ C_DEPENDENCIES= \
     osutil.c \
     output.c \
     preproc.c \
+    process.c \
     ppexpr.c \
     rtti.c \
     stmt.c \

@@ -546,6 +546,7 @@ int main(int argc, char *argv[])
     char buffer[256];
     char *p;
     BOOLEAN multipleFiles = FALSE;
+    BOOLEAN openOutput = TRUE;
     int rv;
     char realOutFile[260];
     char oldOutFile[260];
@@ -585,6 +586,8 @@ int main(int argc, char *argv[])
     BitInit();
     regInit();
 #endif
+    if (chosenAssembler->main_preprocess)
+        openOutput = chosenAssembler->main_preprocess();
     while (clist)
     {
         cparams.prm_cplusplus = FALSE;
@@ -645,15 +648,18 @@ int main(int argc, char *argv[])
         else
         {
 #ifndef PARSER_ONLY
-            unlink(oldOutFile);
-            rename(realOutFile, oldOutFile);
-            outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
-            if (!outputFile)
+            if (openOutput)
             {
-                fclose(inputFile);
-                fatal("Cannot open output file %s", realOutFile);
+                unlink(oldOutFile);
+                rename(realOutFile, oldOutFile);
+                outputFile = fopen(realOutFile, cparams.prm_asmfile ? "w" : "wb");
+                if (!outputFile)
+                {
+                    fclose(inputFile);
+                    fatal("Cannot open output file %s", realOutFile);
+                }
+                setvbuf(outputFile,0,_IOFBF,32768);
             }
-            setvbuf(outputFile,0,_IOFBF,32768);
 #endif
              if (cparams.prm_cppfile)
             {
@@ -757,7 +763,7 @@ int main(int argc, char *argv[])
 #else
         fclose(inputFile);
 #endif
-        if (outputFile)
+        if (outputFile && openOutput)
             fclose(outputFile);
         if (cppFile)
             fclose(cppFile);
@@ -769,22 +775,26 @@ int main(int argc, char *argv[])
             fclose(browseFile);
         if (icdFile)
             fclose(icdFile);
-        
-        if (total_errors)
-        {
-            unlink(realOutFile);
-            rename(oldOutFile, realOutFile);
-        }
-        else
-        {
-            unlink (oldOutFile);
-        }
 
+        if (openOutput)
+        {
+            if (total_errors)
+            {
+                unlink(realOutFile);
+                rename(oldOutFile, realOutFile);
+            }
+            else
+            {
+                unlink (oldOutFile);
+            }
+        }
         /* Flag to stop if there are any errors */
         stoponerr |= total_errors;
 
         clist = clist->next;
     }
+    if (chosenAssembler->main_postprocess)
+        chosenAssembler->main_postprocess(stoponerr);
     rv = !!stoponerr ;
     if (!cparams.prm_makestubs)
     {

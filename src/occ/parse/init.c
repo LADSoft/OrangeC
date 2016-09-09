@@ -3555,5 +3555,7 @@ LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_cl
 
     DecGlobalFlag();    
     initializingGlobalVar = FALSE;
+    if (chosenAssembler->enter_type)
+        chosenAssembler->enter_type(sp);
     return lex;
 }

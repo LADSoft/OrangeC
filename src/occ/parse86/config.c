@@ -427,7 +427,11 @@ ARCH_ASM assemblerInterface[] = {
     NULL,                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                    /* pointer to MSIL-specific data and functions */
+    NULL,                  /* pointer to extra builtin data */
     init,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
     NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     NULL,          /* insert the output (executable name) into the backend */
@@ -444,6 +448,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                     /* enter a type in the BE */
     },
     {
     "fasm",                                 /* assembler name */
@@ -464,7 +469,11 @@ ARCH_ASM assemblerInterface[] = {
     NULL,                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                    /* pointer to MSIL-specific data and functions */
+    NULL,                  /* pointer to extra builtin data */
     init,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
     NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     NULL,          /* insert the output (executable name) into the backend */
@@ -481,6 +490,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                     /* enter a type in the BE */
     },
     {
     "masm",                                 /* assembler name */
@@ -501,7 +511,11 @@ ARCH_ASM assemblerInterface[] = {
     NULL,                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */
+    NULL,                    /* pointer to MSIL-specific data and functions */
+    NULL,                  /* pointer to extra builtin data */
     init,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
     NULL,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     NULL,          /* insert the output (executable name) into the backend */
@@ -518,6 +532,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
+    0,                     /* enter a type in the BE */
     },
     { 0 }
 } ;

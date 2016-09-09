@@ -666,6 +666,8 @@ ARCH_ASM assemblerInterface[] = {
     NULL,                               /* pointer to MSIL-specific data and functions */
     NULL,                               /* pointer to extra builtin data */
     initnasm,  /* return 1 to proceed */
+    0,              /* precompile function, or NULL */
+    0,              /* postcompile function, or NULL */
     RunExternalFiles,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     InsertOutputFileName,          /* insert the output (executable name) into the backend */
@@ -683,7 +685,6 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     0,                     /* enter a type in the BE */
-    0,                       /* __using__ declaration */    
     },
     {
     "fasm",                                 /* assembler name */

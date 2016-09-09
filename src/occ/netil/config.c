@@ -395,8 +395,8 @@ ARCH_DEBUG dbgStruct [] = {
 
 } ;
 ARCH_GEN outputfunctions = {
-    oa_header,             /* generate assembly language header */
-    oa_trailer,            /* generate assembly language trailer */
+    NULL,             /* generate assembly language header */
+    NULL,            /* generate assembly language trailer */
     NULL,   /* adjust an assembly language statement for the relative code labels */
     NULL, 			         /* allow access to the quad list prior to GCSE */
     examine_icode,           /* allow access to the quad list after GCSE */
@@ -540,6 +540,8 @@ ARCH_ASM assemblerInterface[] = {
     &msilData,                    /* pointer to MSIL-specific data and functions */
     msil_bltins,                  /* pointer to extra builtin data */
     initnasm,  /* return 1 to proceed */
+    oa_main_preprocess,              /* precompile function, or NULL */
+    oa_main_postprocess,              /* postcompile function, or NULL */
     RunExternalFiles,     /* postprocess function, or NULL */
     0,     /* compiler rundown */
     InsertOutputFileName,          /* insert the output (executable name) into the backend */
@@ -557,7 +559,6 @@ ARCH_ASM assemblerInterface[] = {
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
     oa_enter_type,                     /* enter a type in the BE */
-    _using_,                       /* __using__ declaration */    
     },
     { 0 }
 } ;

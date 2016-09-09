@@ -64,7 +64,7 @@ int funcNesting;
 BOOLEAN hasXCInfo;
 int startlab, retlab;
 int codeLabel;
-int nextLabel;
+int nextLabel=1;
 BOOLEAN setjmp_used;
 BOOLEAN functionHasAssembly;
 BOOLEAN declareAndInitialize;
@@ -82,7 +82,7 @@ static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                         BOOLEAN first);
 void statement_ini()
 {
-    nextLabel = 1;
+//    nextLabel = 1;
     linesHead = linesTail = NULL;
     functionCanThrow = FALSE;
     funcNesting = 0;

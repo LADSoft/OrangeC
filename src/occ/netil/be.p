@@ -152,3 +152,6 @@ char *_dll_name(char *name);
 void _add_global_using(char *str);
 void _apply_global_using(void);
 BOOLEAN msil_managed(SYMBOL *sp);
+BOOLEAN oa_main_preprocess(void);
+void oa_main_postprocess(BOOLEAN errors);
+void GetOutputFileName(char *name, char *temp);

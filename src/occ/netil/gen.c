@@ -44,8 +44,6 @@
 extern int startlab, retlab;
 extern OCODE *peep_head, *peep_tail;
 extern BOOLEAN inASMdata;
-extern LIST *typeList;
-extern LIST *enumList;
 extern int MSILLocalOffset;
 extern TYPE stdint;
 extern EXPRESSION *objectArray_exp;
@@ -154,8 +152,6 @@ BOOLEAN isauto(EXPRESSION *ep)
 void compile_start(char *name)
 {
     inASMdata = FALSE;
-    typeList = NULL;
-    enumList = NULL;
     _using_init();
     cparams.prm_asmfile = TRUE; // temporary
 }

@@ -53,7 +53,7 @@ extern int showBanner;
 
 
 LIST *objlist,  *reslist,  *rclist;
-static char outputFileName[256];
+static char outputFileName[260];
 
 #ifdef MICROSOFT
 #define system(x) winsystem(x)
@@ -139,7 +139,18 @@ void InsertOutputFileName(char *name)
 }
 
 /*-------------------------------------------------------------------------*/
-
+void GetOutputFileName(char *name, char *path)
+{
+    path[0] = 0;
+    strcpy(name, outputFileName);
+    if (objlist && name[0] && name[strlen(name)-1] == '\\')
+    {
+        strcat(name, objlist->data);
+        StripExt(name);
+        strcat(name, ".exe");
+        strcpy(path, outputFileName);
+    }
+}
 int RunExternalFiles(char *rootPath)
 {
     char root[260];
@@ -155,18 +166,7 @@ int RunExternalFiles(char *rootPath)
     else
         p++;
     *p = 0;
-    temp[0] = 0;
-    strcpy(outName, outputFileName);
-    if (objlist && outName[0] && outName[strlen(outName)-1] == '\\')
-    {
-        strcat(outName, objlist->data);
-        StripExt(outName);
-        strcat(outName, ".exe");
-        strcpy(temp, outputFileName);
-    }
-//    p = strrchr(outName, '.');
-//    if (p && p[1] != '\\')
-//        *p = 0;
+    GetOutputFileName(outName, temp);
     if (beGetIncludePath)
         sprintf(args, "\"-i%s\"", beGetIncludePath);
     else
@@ -200,7 +200,7 @@ int RunExternalFiles(char *rootPath)
             sprintf(resources + strlen(resources), " /Resource:\"%s\"", reslist->data);
             reslist = reslist->next;
         }
-        while (objlist)
+        //while (objlist)
         {
             char filname[260];
             sprintf(filname, "\"%s%s\"", temp, objlist->data);

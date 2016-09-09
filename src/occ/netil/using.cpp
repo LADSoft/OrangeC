@@ -7,11 +7,37 @@ struct data
     char *name;
     char *dllName;
 };
-static HASHTABLE *_using_hash;
+#define HASHLEN 2048
+static HASHREC *_using_hash[HASHLEN];
 static LIST *_global_using_list;
 extern "C" void _using_init()
 {
-    _using_hash = CreateHashTable(2048);
+}
+static int hashVal(char *name)
+{
+    unsigned hash = 0;
+    while (*name)
+    {
+        hash * 131;
+        hash = (hash << 7 ) + (hash << 1) + hash + (*name++);
+    }
+    return hash % HASHLEN;
+}
+static void hashInsert(struct data *names)
+{
+    int hash = hashVal(names->name);
+    HASHREC *hr  = _using_hash[hash];
+    while (hr)
+    {
+        if (!strcmp(hr->p->name, names->name))
+            return;
+        hr = hr->next;
+    }
+    
+    hr = (HASHREC *)calloc(1, sizeof(HASHREC));
+    hr->p = (HASHREC::_hrintern_ *)names;
+    hr->next = _using_hash[hash];
+    _using_hash[hash] = hr;
 }
 extern "C" BOOLEAN _using_(char *file)
 {
@@ -24,27 +50,29 @@ extern "C" BOOLEAN _using_(char *file)
         {
             rootName = rootName.substr(npos+1);
         }
-        char *dllName = (char *)beLocalAlloc(rootName.size() + 1);
+        char *dllName = (char *)calloc(1, rootName.size() + 1);
         strcpy(dllName, rootName.c_str());
         for (DLLExportReader::iterator it = reader.begin(); it != reader.end(); ++it)
         {
-            char *name = (char *)beLocalAlloc((*it)->name.size() + 1);
+            char *name = (char *)calloc(1, (*it)->name.size() + 1);
             strcpy(name, (*it)->name.c_str());
-            data *p = (data *)beLocalAlloc(sizeof(data));
+            data *p = (data *)calloc(1, sizeof(data));
             p->name = name;
             p->dllName = dllName;
-            baseinsert((SYMBOL *)p, _using_hash);
+            hashInsert(p);
         }
     }
     return TRUE;
 }
 extern "C" char *_dll_name(char *name)
 {
-    HASHREC **p = LookupName(name, _using_hash);
-    if (p )
+    int hash = hashVal(name);
+    HASHREC *hr  = _using_hash[hash];
+    while (hr)
     {
-        data *rec = (data *)(*p)->p;
-        return rec->dllName;
+        if (!strcmp(hr->p->name, name))
+            return ((struct data *)hr->p)->dllName;
+        hr = hr->next;
     }
     return NULL;
 }

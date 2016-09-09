@@ -673,6 +673,7 @@ void InsertOneFile(char *filename, char *path, int drive)
 
 {
     char *newbuffer, buffer[260],  *p = buffer;
+    BOOLEAN inserted;
     LIST **r = &clist, *s;
 
     if (drive !=  - 1)
@@ -690,8 +691,9 @@ void InsertOneFile(char *filename, char *path, int drive)
     /* Allocate buffer and make .C if no extension */
     strcat(buffer, filename);
 #ifndef CPREPROCESSOR
-    if (cparams.prm_compileonly || !chosenAssembler->insert_noncompile_file 
-        || !chosenAssembler->insert_noncompile_file(buffer))
+    inserted = chosenAssembler->insert_noncompile_file 
+        && chosenAssembler->insert_noncompile_file(buffer);
+    if (cparams.prm_compileonly || !inserted)
 #endif
     {
         AddExt(buffer, ".C");
@@ -1044,12 +1046,13 @@ void ccinit(int argc, char *argv[])
 #ifndef PARSER_ONLY
 
     if (has_output_file)
-        if (!cparams.prm_compileonly)
-        {
+    {
     #ifndef CPREPROCESSOR
             if (chosenAssembler->insert_output_file)
                 chosenAssembler->insert_output_file(outfile);
     #endif
+        if (!cparams.prm_compileonly)
+        {
             has_output_file = FALSE;
         }
         else
@@ -1057,15 +1060,16 @@ void ccinit(int argc, char *argv[])
             if (clist && clist->next && outfile[strlen(outfile)-1] != '\\')
                 fatal("Cannot specify output file for multiple input files\n");
         }
+    }
     #else
+    {
+        LIST *t = clist;
+        while (t)
         {
-            LIST *t = clist;
-            while (t)
-            {
-                t->data = litlate(fullqualify(t->data));
-                t = t->next;
-            }
+            t->data = litlate(fullqualify(t->data));
+            t = t->next;
         }
+    }
     #endif
             
     /* Set up a ctrl-C handler so we can exit the prog */

@@ -59,17 +59,14 @@ static int uses_float;
 
 void puttypewrapped(TYPE *tp);
 
-LIST *typeList;
-LIST *enumList;
+BOOLEAN int8_used, int16_used, int32_used;
 static enum e_gt oa_gentype = nogen; /* Current DC type */
 enum e_sg oa_currentSeg = noseg; /* Current seg */
 static int oa_outcol = 0; /* Curront col (roughly) */
 int newlabel;
 static int virtual_mode;
-static int corflags = 2; // x86
 
 BOOLEAN inASMdata = FALSE;
-static BOOLEAN int8_used, int16_used, int32_used;
 static struct asm_details instructions[] = {
     {
         "reserved"
@@ -460,13 +457,6 @@ int islabeled(EXPRESSION *n)
     }
     return rv;
 }
-void cacheType(TYPE *tp)
-{
-    LIST *p = beLocalAlloc(sizeof(LIST));
-    p->data = tp;
-    p->next = typeList;
-    typeList = p;
-}
 void puttype(TYPE *tp_in)
 {
     TYPE *tp = basetype(tp_in);
@@ -514,7 +504,6 @@ void puttype(TYPE *tp_in)
         else if (tp->array)
         {
             char buf[1024];
-            cacheType(tp);
             buf[0] = 0;
             while (tp->array)
             {
@@ -556,7 +545,6 @@ void puttype(TYPE *tp_in)
     }
     else if (isstructured(tp))
     {
-        cacheType(tp);
         if (namespaceAndClass[0])
         {
             bePrintf("%s%s", namespaceAndClassForNestedType, basetype(tp)->sp->name);
@@ -707,6 +695,7 @@ void oa_gen_strlab(SYMBOL *sp)
  *      generate a named label.
  */
 {
+    cache_global(sp);
     if (isfunction(sp->tp))
     {
         gen_method_header(sp, FALSE);
@@ -724,14 +713,10 @@ void oa_gen_strlab(SYMBOL *sp)
         if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
         {
             bePrintf(" 'L_%d'\n", sp->label);
-//            bePrintf(" 'L_%d' at $L_%d\n", sp->label, sp->label);
-//            bePrintf(".data $L_%d = bytearray (", sp->label);
         }
         else
         {
             bePrintf(" '%s'\n", sp->name);
-//            bePrintf(" '%s' at $%s\n", sp->name, sp->name);
-//            bePrintf(".data $%s = bytearray (", sp->name);
         }
         oa_outcol = 0;
     }
@@ -764,7 +749,7 @@ void oa_put_string_label(int lab, int type)
     {
         bePrintf("%s", namespaceAndClassForNestedType);
     }
-    switch (type)
+    switch (type & 0xffff)
     {
         case l_ustr:
         case l_astr:
@@ -780,7 +765,6 @@ void oa_put_string_label(int lab, int type)
             int16_used = TRUE;
             break;
     }
-//    bePrintf("' 'L_%d'\n", lab);
     bePrintf("' 'L_%d' at $L_%d\n", lab, lab);
     bePrintf(".data $L_%d = bytearray (", lab);
     oa_outcol = 0;
@@ -1063,60 +1047,6 @@ void dump_browsefile(BROWSEFILE *brf)
 }
 
 /*-------------------------------------------------------------------------*/
-
-void oa_header(char *filename, char *compiler_version)
-{
-    _apply_global_using();
-    if (namespaceAndClass[0])
-        corflags |= 1; // accessible assembly (ILONLY)
-
-    oa_nl();
-    bePrintf("//File %s\n",filename);
-    bePrintf("//Compiler version %s\n",compiler_version);
-    bePrintf("\n.corflags %d // 32-bit", corflags);
-    {
-        char *p = strrchr(filename, '.');
-        if (p)
-        {
-            char *q = strrchr(filename, '\\');
-            if (!q)
-                q = filename;
-            else
-                q++;
-            *p = 0;
-            bePrintf("\n.assembly %s { }\n",q);
-            *p++ = '.';
-        }
-        else
-        {
-            bePrintf("\n.assembly %s { }\n",filename);
-        }
-    }
-    bePrintf("\n.assembly extern mscorlib { }\n");
-    bePrintf("\n.assembly extern lsmsilcrtl { }\n\n\n");
-    if (namespaceAndClass[0])
-    {
-        char *p = strchr(namespaceAndClass, '.'), *q;
-        if (p)
-        {
-            *p = 0;
-            bePrintf("\n.namespace '%s' { \n", namespaceAndClass);
-            *p++ = '.';
-
-            q = strchr(p, ':');
-            if (q)
-            {
-                *q = 0;
-                bePrintf("\n.class public explicit ansi sealed '%s' { \n", p);
-                *q = ':';
-            }
-        }
-    }
-}
-void oa_trailer(void)
-{
-}
-/*-------------------------------------------------------------------------*/
 void oa_localdef(SYMBOL *sp)
 {
     if (!cparams.prm_asmfile)
@@ -1160,16 +1090,13 @@ void oa_put_extern(SYMBOL *sp, int code)
 {
     if (isfunction(sp->tp))
     {
-        if (sp->linkage2 != lk_msil_rtl)
-            put_pinvoke(sp);
+        if (!msil_managed(sp))
+            cache_pinvoke(sp);
+        else if (sp->linkage2 != lk_msil_rtl)
+            cache_extern(sp);
     }
     else {
-        if (cparams.prm_asmfile) {
-            if (strcmp(sp->name, "_pctype") && strcmp(sp->name, "__stdin") && strcmp(sp->name, "__stdout") && strcmp(sp->name, "__stderr"))
-            {
-                fatal ("Undefined external %s\n", sp->name);
-            }
-        }
+        cache_extern(sp);
     }
 }
 /*-------------------------------------------------------------------------*/
@@ -1408,7 +1335,7 @@ void putarg(enum e_op op, AMODE *arg)
                     {
                         bePrintf("%s", namespaceAndClassForNestedType);
                     }
-                    switch (arg->offset->altdata)
+                    switch (arg->offset->altdata & 0xffff)
                     {
                         case l_ustr:
                         case l_astr:
@@ -1422,16 +1349,16 @@ void putarg(enum e_op op, AMODE *arg)
                             break;
                     }
                     if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
-                        bePrintf("' %sL_%Ld\n", namespaceAndClass, arg->offset->v.i);
+                        bePrintf("' %sL_%d\n", namespaceAndClass, (int)arg->offset->v.i);
                     else
-                        bePrintf("' 'L_%Ld'\n", arg->offset->v.i);
+                        bePrintf("' 'L_%d'\n",(int) arg->offset->v.i);
                 }
                 else
                 {
                     if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
-                        bePrintf(" %sL_%Ld\n", namespaceAndClass, arg->offset->v.i);
+                        bePrintf(" %sL_%d\n", namespaceAndClass, (int)arg->offset->v.i);
                     else
-                        bePrintf(" 'L_%Ld'\n", arg->offset->v.i);
+                        bePrintf(" 'L_%d'\n", (int)arg->offset->v.i);
                 }
             }
             else if (arg->offset->type == en_pc || arg->offset->type == en_global || arg->offset->type == en_label)
@@ -1629,308 +1556,6 @@ void oa_put_code(OCODE *ocode)
     if (ocode->oper1)
         putarg(op,ocode->oper1);
     bePrintf("\n");
-}
-// weed out unions, structures with nested structures or bit fields
-static BOOLEAN qualifiedStruct(SYMBOL *sp)
-{
-    HASHREC *hr = basetype(sp->tp)->syms->table[0];
-    if (basetype(sp->tp)->type == bt_union)
-        return FALSE;
-    while (hr)
-    {
-        SYMBOL *check = (SYMBOL *)hr->p;
-        if (basetype(check->tp)->bits)
-            return FALSE;
-        if (isstructured(check->tp))
-            return FALSE;
-        if (basetype(check->tp)->array)
-            return FALSE;
-        hr = hr->next;
-    }
-    return TRUE;
-
-}
-void DumpClassFields(SYMBOL *sp)
-{
-    HASHREC *hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
-    {
-        SYMBOL *check = (SYMBOL *)hr->p;
-        bePrintf("\n\t.field public ");
-        if (isfunction(check->tp) || isfuncptr(check->tp))
-            bePrintf("void *");
-        else
-            puttype(check->tp);
-        bePrintf(" '%s'", check->name);
-        hr = hr->next;
-    }
-    bePrintf("\n");
-}
-void oa_enter_type(SYMBOL *sp)
-{
-    if (namespaceAndClass[0] && sp->tp->type == bt_enum && !strstr(sp->name, "__anontype"))
-    {
-        LIST *enumV = beLocalAlloc(sizeof(LIST));
-        enumV->data = sp;
-        enumV->next = enumList;
-        enumList = enumV;
-    }
-}
-static void dumpEnums(void)
-{
-    int l = strlen(namespaceAndClass);
-    if (l)
-        namespaceAndClass[l-2] = 0;
-    while (enumList)
-    {
-        SYMBOL *sp = (SYMBOL *)enumList->data;
-        if (sp->tp->syms->table[0])
-        {
-            HASHREC *hr = sp->tp->syms->table[0];
-            bePrintf(".class enum nested public auto ansi sealed '%s' {\n", sp->name);
-            while (hr)
-            {
-                SYMBOL *spe = (SYMBOL *)hr->p;
-                bePrintf("\t.field public static literal valuetype %s/%s %s = int32(%d)\n",
-                        namespaceAndClass, sp->name, spe->name, spe->value.i);
-                hr = hr->next;
-            }
-            bePrintf("\t.field public specialname rtspecialname int32 value__\n");
-            bePrintf("}\n");
-        }
-        enumList = enumList->next;
-    }
-    if (l)
-        namespaceAndClass[l-2] = ':';
-}
-void dumpTypes()
-{
-    LIST *lst = typeList;
-    LIST **pList = &lst;
-    typeList = NULL;
-
-    if (int8_used)
-    {
-        bePrintf(".class %s private value explicit ansi sealed 'int8[]' {.pack 1 .size 1}\n", namespaceAndClass[0] ? "nested" : "");
-    }
-    if (int16_used)
-    {
-        bePrintf(".class %s private value explicit ansi sealed 'int16[]' {.pack 2 .size 1}\n", namespaceAndClass[0] ? "nested" : "");
-    }
-    if (int32_used)
-    {
-        bePrintf(".class %s private value explicit ansi sealed 'int32[]' {.pack 4 .size 1}\n", namespaceAndClass[0] ? "nested" : "");
-    }
-    while (*pList)
-    {
-        // weed
-        LIST **qList = &(*pList)->next;
-        TYPE *tp = ((TYPE *)(*pList)->data);
-        char z;
-        while (*qList)
-        {
-            TYPE *tpq = (TYPE *)(*qList)->data;
-            TYPE *tpp = ((TYPE *)(*pList)->data);
-            if (comparetypes((*qList)->data, tpp, TRUE))
-                if (!tpq->array || !tpp->array)
-                {
-                    *qList = (*qList)->next;
-                }
-                else
-                {
-                    while (tpq && tpp)
-                    {
-                        if (tpq->size != tpp->size)
-                            break;
-                        tpq = basetype(tpq)->btp;
-                        tpp = basetype(tpp)->btp;
-                    }
-                    if (tpq || tpp)
-                    {
-                        qList = &(*qList)->next;
-                    }
-                    else
-                    {
-                        *qList = (*qList)->next;
-                    }
-                }
-            else
-            {
-                qList = &(*qList)->next;
-            }
-        }
-        if (namespaceAndClass[0])
-            bePrintf(".class nested public value explicit auto sequential ansi sealed '");
-        else
-            bePrintf(".class private value explicit ansi sealed '");
-        z = namespaceAndClass[0];
-        namespaceAndClass[0] = 0;
-        puttype(tp);
-        namespaceAndClass[0] = z;
-        if (isstructured(tp) && namespaceAndClass[0])
-        {
-            bePrintf("' {.pack %d .size %d", tp->sp->structAlign, tp->size);
-            if (qualifiedStruct(basetype(tp)->sp))
-                DumpClassFields(basetype(tp)->sp);
-            bePrintf("}\n");
-        }
-        else
-        {
-            bePrintf("' {.pack 1 .size %d }\n", tp->size);
-        }
-        pList = &(*pList)->next;
-    }
-
-    typeList = NULL;
-    dumpEnums();
-}
-void oa_load_funcs(void)
-{
-    SYMBOL *sp;
-    sp = gsearch("exit");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__getmainargs");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__pctype_func");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__iob_func");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("_errno");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
-    sp = gsearch("__GetErrno");
-    if (sp)
-        ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
-    oa_enterseg(oa_currentSeg);
-    bePrintf("\n\t.field public static void *'__stdin'\n");
-    bePrintf("\n\t.field public static void *'__stdout'\n");
-    bePrintf("\n\t.field public static void *'__stderr'\n");
-    bePrintf("\n\t.field public static void *'_pctype'\n");
-}
-static void mainLocals(void)
-{
-    bePrintf("\t.locals (\n");
-    bePrintf("\t\t[0] int32 'argc',\n");
-    bePrintf("\t\t[1] void * 'argv',\n");
-    bePrintf("\t\t[2] void * 'environ',\n");
-    bePrintf("\t\t[3] void * 'newmode'\n");
-    bePrintf("\t)\n");
-}
-static void mainInit(void)
-{
-    bePrintf("\tcall void *'__pctype_func'()\n");
-    bePrintf("\tstsfld void * %s_pctype\n", namespaceAndClass);
-    bePrintf("\tcall void *'__iob_func'()\n");
-    bePrintf("\tdup\n");
-    bePrintf("\tstsfld void * %s__stdin\n", namespaceAndClass);
-    bePrintf("\tdup\n");
-    bePrintf("\tldc.i4 32\n");
-    bePrintf("\tadd\n");
-    bePrintf("\tstsfld void * %s__stdout\n", namespaceAndClass);
-    bePrintf("\tldc.i4 64\n");
-    bePrintf("\tadd\n");
-    bePrintf("\tstsfld void * %s__stderr\n", namespaceAndClass);
-}
-void oa_end_generation(void)
-{
-    SYMBOL *start = NULL, *end = NULL, *mainsp;
-    LIST *externalList = externals;
-    oa_load_funcs();
-    oa_enterseg(oa_currentSeg);
-    while (externalList)
-    {
-        SYMBOL *sym = (SYMBOL *)externalList->data;
-        if (!strncmp(sym->name, "__DYNAMIC", 9))
-        {
-            if (strstr(sym->name, "STARTUP"))
-                start = sym;
-            else
-                end = sym;
-        }
-        externalList = externalList->next;
-    }
-
-    if ((start || prm_targettype == DLL) && namespaceAndClass[0])
-    {
-        bePrintf(".method private hidebysig specialname rtspecialname static void  .cctor() cil managed {\n");
-        if (prm_targettype == DLL)
-        {
-            mainLocals();
-            bePrintf("\t.maxstack 5\n\n");
-            mainInit();
-        }
-        else
-        {
-            bePrintf("\t.maxstack 1\n\n");
-        }
-        if (start)
-            bePrintf("\tcall void %s%s()\n", namespaceAndClass, start->name);
-        bePrintf("\tret\n");
-        bePrintf("}\n");
-
-    }
-    if (prm_targettype != DLL)
-    {
-        bePrintf(".method private hidebysig static void '$Main'() cil managed {\n");
-        bePrintf("\t.entrypoint\n");
-        mainLocals();
-        bePrintf("\t.maxstack 5\n\n");
-        mainInit();
-        if (start && !namespaceAndClass[0])
-            bePrintf("\tcall void %s%s()\n", namespaceAndClass, start->name);
-        bePrintf("\tldloca 'argc'\n");
-        bePrintf("\tldloca 'argv'\n");
-        bePrintf("\tldloca 'environ'\n");
-        bePrintf("\tldc.i4  0\n");
-        bePrintf("\tldloca 'newmode'\n");
-        bePrintf("\tcall void __getmainargs(void *, void *, void *, int32, void *);\n");
-        bePrintf("\tldloc 'argc'\n");
-        bePrintf("\tldloc 'argv'\n");
-        mainsp = gsearch("main");
-        if (mainsp)
-        {
-            mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
-            if ( isvoid(basetype(mainsp->tp)->btp))
-                if (namespaceAndClass[0])
-                    bePrintf("\tcall void %smain(int32, void *)\n", namespaceAndClass);
-                else
-                    bePrintf("\tcall void 'main'(int32, void *)\n");
-            else
-                if (namespaceAndClass[0])
-                    bePrintf("\tcall int32 %smain(int32, void *)\n", namespaceAndClass);
-                else
-                    bePrintf("\tcall int32 'main'(int32, void *)\n");
-        }
-        else
-            if (namespaceAndClass[0])
-                bePrintf("\tcall int32 %smain(int32, void *)\n", namespaceAndClass);
-            else
-                bePrintf("\tcall int32 'main'(int32, void *)\n");
-        if (end)
-            bePrintf("\tcall void %s%s()\n", namespaceAndClass, end->name);
-        if (mainsp)
-            if ( isvoid(basetype(mainsp->tp)->btp))
-               bePrintf("\tldc.i4 0\n");
-        bePrintf("\tcall void exit(int32)\n");
-        bePrintf("\tret\n");
-        bePrintf("}\n");
-    }
-    dumpTypes();    
-    if (namespaceAndClass[0])
-    {
-        bePrintf("}\n");
-        bePrintf("}\n");
-    }
-    bePrintf(".method private hidebysig static void * __GetErrno() cil managed {\n");
-    bePrintf("\t.maxstack 1\n\n");
-    bePrintf("\tcall void * '_errno'()\n");
-    bePrintf("\tret\n");
-    bePrintf("}\n");
-
 }
 void flush_peep(SYMBOL *funcsp, QUAD *list)
 {

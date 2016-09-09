@@ -423,6 +423,8 @@ typedef struct _arch_asm
     ARCH_MSIL *msil;                            /* pointer to MSIL-specific data and functions */
     char *bltins;                               /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS *params, struct _arch_asm *data, ARCH_DEBUG *debug); /* return 1 to proceed */
+    int (*main_preprocess)();              /* preprocess function, or NULL */
+    void (*main_postprocess)(BOOLEAN hasErrors);              /* postprocess function, or NULL */
     int (*compiler_postprocess)(char *);              /* postprocess function, or NULL */
     int (*rundown)(void);                           /* compiler rundown */
     void (*insert_output_file)(char *name);          /* insert the output (executable name) into the backend */
@@ -440,7 +442,6 @@ typedef struct _arch_asm
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
     void (*SearchIntrins)(SYMBOL *sp);                 /* search for an intrinsic */
     void (*enter_type)(SYMBOL *sp);                     /* enter a type in the BE */
-    BOOLEAN (*_using_)(char *text);                       /* __using__ declaration */    
 } ARCH_ASM ;
 
 enum e_bet { bee_unknown, 

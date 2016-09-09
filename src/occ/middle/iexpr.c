@@ -1373,7 +1373,6 @@ IMODE *gen_hook(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         gen_icode(i_assn, ap2, ap3, NULL);
     gen_icode(i_assn, ap1, ap2, 0);
     intermed_tail->hook = TRUE;
-    ap1->offset->v.sp->iglobal = TRUE;
     DumpIncDec(funcsp);
     gen_igoto(i_goto, end_label);
     gen_label(false_label);
@@ -1383,7 +1382,6 @@ IMODE *gen_hook(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
         gen_icode(i_assn, ap2, ap3, NULL);
     gen_icode(i_assn, ap1, ap2, 0);
     intermed_tail->hook = TRUE;
-    ap1->offset->v.sp->iglobal = TRUE;
     DumpIncDec(funcsp);
     gen_label(end_label);
     return ap1;
@@ -2747,7 +2745,7 @@ IMODE *gen_expr(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
             siz1 = ISZ_ADDR;
             ctype = en_c_ui;
  castjoin: 
-             ap3 = gen_expr(funcsp, node->left, flags, natural_size(node->left));
+             ap3 = gen_expr(funcsp, node->left, flags & ~F_NOVALUE, natural_size(node->left));
             ap1 = LookupLoadTemp(NULL, ap3);
             if (ap1 != ap3)
                 gen_icode(i_assn, ap1, ap3, NULL);
@@ -3620,10 +3618,12 @@ static IMODE *truerelat(EXPRESSION *node, SYMBOL *funcsp)
             truejp(node, funcsp, lab0);
             ap3 = make_immed(ISZ_UINT, 0);
             gen_icode(i_assn, ap1, ap3, NULL);
+            intermed_tail->hook = TRUE;
             gen_igoto(i_goto, lab1);
             gen_label(lab0);
             ap3 = make_immed(ISZ_UINT, 1);
             gen_icode(i_assn, ap1, ap3, NULL);
+            intermed_tail->hook = TRUE;
             gen_label(lab1);
             break;
         default:
@@ -3651,9 +3651,11 @@ IMODE *gen_relat(EXPRESSION *node, SYMBOL *funcsp)
         lab1 = nextLabel++, lab2 = nextLabel++;
         truejp(node, funcsp, lab1);
         gen_iiconst(ap1,0);
+        intermed_tail->hook = TRUE;
         gen_igoto(i_goto, lab2);
         gen_label(lab1);
         gen_iiconst(ap1,1);
+        intermed_tail->hook = TRUE;
         gen_label(lab2);
     }
     return ap1;

@@ -1051,7 +1051,7 @@ void bingen(int lower, int avg, int higher)
         oa_gen_label(switchTreeBranchLabels[avg]);
     gen_load(switch_ip_a);
     load_constant(switch_ip->size, intNode(en_c_i, switchTreeCases[avg]));
-    gen_branch(op_beq,  switchTreeLabels[avg], FALSE);
+    gen_branch(op_beq,  switchTreeLabels[avg], TRUE);
     if (avg == lower)
     {
         gen_branch(op_br, switch_deflab, FALSE);
@@ -1068,9 +1068,9 @@ void bingen(int lower, int avg, int higher)
         gen_load(switch_ip_a);
         load_constant(switch_ip->size, intNode(en_c_i, switchTreeCases[avg]));
         if (switch_ip->size < 0)
-            gen_branch(op_bgt, lab, FALSE);
+            gen_branch(op_bgt, lab, TRUE);
         else
-            gen_branch(op_bgt_un, lab, FALSE);
+            gen_branch(op_bgt_un, lab, TRUE);
         bingen(lower, avg1, avg);
         if (avg + 1 < higher)
             bingen(avg + 1, avg2, higher);
@@ -1130,9 +1130,9 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
         {
             load_constant(switch_ip->size, intNode(en_c_i, swcase));
             gen_code(op_sub, NULL);
+            decrement_stack();
         }
         gen_code(op_switch, swap);
-        decrement_stack();
         gen_branch(op_br, switch_deflab, FALSE);
     }
     switch(switch_mode)

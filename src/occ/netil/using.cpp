@@ -24,7 +24,6 @@ extern "C" BOOLEAN _using_(char *file)
         {
             rootName = rootName.substr(npos+1);
         }
-        printf("%s\n", rootName.c_str());
         char *dllName = (char *)beLocalAlloc(rootName.size() + 1);
         strcpy(dllName, rootName.c_str());
         for (DLLExportReader::iterator it = reader.begin(); it != reader.end(); ++it)

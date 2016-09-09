@@ -1068,7 +1068,7 @@ void oa_header(char *filename, char *compiler_version)
 {
     _apply_global_using();
     if (namespaceAndClass[0])
-        corflags |= 1; // accessible assembly
+        corflags |= 1; // accessible assembly (ILONLY)
 
     oa_nl();
     bePrintf("//File %s\n",filename);

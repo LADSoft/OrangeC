@@ -504,7 +504,6 @@ typedef struct sym
     unsigned recalculateParameters: 1; /* inline func needs its parameters
         recalculated */
     unsigned nullsym: 1; /* if was a callblock return which isn't used */
-        unsigned iglobal: 1; /* if a temp variable has gone global */
         unsigned pushedtotemp: 1; /* if a local variable has been transformed to a temp */
         unsigned anonymous: 1; /* if it is a generated variable */
         unsigned usedasbit: 1; /* used in a bit field op */

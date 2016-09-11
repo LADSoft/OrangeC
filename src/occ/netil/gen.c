@@ -41,6 +41,7 @@
 #include <limits.h>
 #include "be.h"
 
+extern LIST *temporarySymbols;
 extern int startlab, retlab;
 extern OCODE *peep_head, *peep_tail;
 extern BOOLEAN inASMdata;
@@ -68,8 +69,8 @@ static int stackpos = 0;
 
 void increment_stack(void)
 {
-    if (++stackpos > stackap->offset->v.i)
-        stackap->offset->v.i = stackpos;
+    if (++stackpos > stackap->u.i)
+        stackap->u.i = stackpos;
 }
 void decrement_stack(void)
 {
@@ -89,9 +90,9 @@ void add_peep(OCODE *code)
 }
 void gen_code(enum e_op op, AMODE *ap)
 {
-    OCODE *code = beLocalAlloc(sizeof(OCODE));
+    OCODE *code = msil_alloc(sizeof(OCODE));
     code->opcode = op;
-    code->oper1 = ap;
+    code->oper = ap;
     add_peep(code);
 }
 void oa_gen_label(int labno)
@@ -100,43 +101,178 @@ void oa_gen_label(int labno)
  */
 {
     OCODE *new;
-    new = beLocalAlloc(sizeof(OCODE));
+    new = msil_alloc(sizeof(OCODE));
     new->opcode = op_label;
-    new->oper1 = (AMODE*)labno;
+    new->oper = (AMODE*)labno;
     add_peep(new);
 }
 
 AMODE *make_label(int lab)
 {
-    EXPRESSION *lnode;
     AMODE *ap;
-    lnode = beLocalAlloc(sizeof(EXPRESSION));
-    lnode->type = en_labcon;
-    lnode->v.i = lab;
-    ap = beLocalAlloc(sizeof(AMODE));
-    ap->mode = am_immed;
-    ap->offset = lnode;
-    ap->length = ISZ_UINT;
+    ap = msil_alloc(sizeof(AMODE));
+    ap->mode = am_branchtarget;
+    ap->u.label = lab;
+    return ap;
+}
+AMODE *make_field(EXPRESSION *exp)
+{
+    AMODE *rv = msil_alloc(sizeof(AMODE));
+    rv->mode = am_field;
+    rv->u.field.tp = clonetp(exp->v.sp->tp, TRUE);
+    if (exp->type == en_label || exp->v.sp->storage_class == sc_static || exp->v.sp->storage_class == sc_localstatic)
+    {
+        rv->u.field.label = exp->v.sp->label;
+    }
+    rv->u.field.name = msil_strdup(exp->v.sp->name);
+    return rv;
+}
+AMODE *make_index(enum e_am am, int index, SYMBOL *sym)
+{
+    AMODE *ap;
+    ap = msil_alloc(sizeof(AMODE));
+    ap->mode = am;
+    ap->u.local.index = index;
+    ap->u.local.name = msil_strdup(sym->name);
+    ap->length = -ISZ_UINT;
     return ap;
 }
 AMODE *make_constant(int sz, EXPRESSION *exp)
 {
     AMODE *ap;
-    ap = beLocalAlloc(sizeof(AMODE));
-    ap->mode = am_immed;
-    ap->offset = exp;
-    ap->length = sz;
+    ap = msil_alloc(sizeof(AMODE));
+    if (isintconst(exp))
+    {
+        ap->mode = am_intconst;
+        ap->u.i = exp->v.i;
+    }
+    else if (isfloatconst(exp))
+    {
+        ap->mode = am_floatconst;
+        ap->u.f.val = exp->v.f;
+        ap->u.f.r4 = exp->type == en_c_f;
+    }
+    else if (exp->type == en_labcon)
+    {
+        ap = msil_alloc(sizeof(AMODE));
+        ap->mode = am_stringlabel;
+        ap->u.label = exp->v.i;
+        ap->altdata = (int)exp->altdata;
+    }
+    else if (exp->type == en_auto)
+    {
+        ap = make_index(exp->v.sp->storage_class == sc_parameter ? am_param : am_local,
+                  exp->v.sp->offset, exp->v.sp);
+        if (exp->v.sp->storage_class == sc_auto || !isstructured(exp->v.sp->tp))
+            ap->address = TRUE;
+    }
+    else if (isfunction(exp->v.sp->tp))
+    {
+        ap = msil_alloc(sizeof(AMODE));
+        ap->mode = am_funcname;
+        ap->u.funcsp = clonesp(exp->v.sp, FALSE);
+        ap->directCall = TRUE;
+    }
+    else
+    {
+        ap = make_field(exp);
+        ap->address = TRUE;
+    }
     return ap;
 } 
-AMODE *make_index(enum e_am am, int index, SYMBOL *sym)
+static void loadLocals(SYMBOL *sp)
 {
-    AMODE *ap;
-    ap = beLocalAlloc(sizeof(AMODE));
-    ap->mode = am;
-    ap->index = index;
-    ap->altdata = sym;
-    ap->length = -ISZ_UINT;
-    return ap;
+    HASHTABLE *temp = sp->inlineFunc.syms;
+    LIST *lst;
+    while (temp)
+    {
+        HASHREC *hr = temp->table[0];
+        while (hr)
+        {
+            SYMBOL *sym = (SYMBOL *)hr->p;
+            if (sym->storage_class == sc_auto || sym->storage_class == sc_register)
+                break;
+            hr = hr->next;
+        }
+        if (hr)
+            break;
+        temp = temp->next;
+    }
+    if (!temp)
+    {
+        lst = temporarySymbols;
+        while (lst)
+        {
+            SYMBOL *sym = (SYMBOL *)lst->data;
+            if (!sym->anonymous)
+            {
+                break;
+            }
+            lst = lst->next;
+        }
+    }
+    if (lst || temp)
+    {
+        AMODE *ap;
+        struct _locallist_ *vars = NULL, **tail = &vars;
+        while (temp)
+        {
+            HASHREC *hr = temp->table[0];
+            while (hr)
+            {
+                SYMBOL *sym = (SYMBOL *)hr->p;
+                sym->temp = FALSE;
+                hr = hr->next;
+            }
+            temp = temp->next;
+        }
+        lst = temporarySymbols;
+        while (lst)
+        {
+            SYMBOL *sym = (SYMBOL *)lst->data;
+            sym->temp = FALSE;
+            lst = lst->next;
+        }
+        temp = theCurrentFunc->inlineFunc.syms;
+        while (temp)
+        {
+            HASHREC *hr = temp->table[0];
+            while (hr)
+            {
+                SYMBOL *sym = (SYMBOL *)hr->p;
+                if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && !sym->temp)
+                {
+                    sym->temp = TRUE;
+                    *tail = msil_alloc(sizeof(struct _locallist_));
+                    (*tail)->name = msil_strdup(sym->name);
+                    (*tail)->index = sym->offset;
+                    (*tail)->tp = clonetp(sym->tp, TRUE);
+                    tail = &(*tail)->next;
+                }
+                hr = hr->next;
+            }
+            temp = temp->next;
+        }
+        lst = temporarySymbols;
+        while (lst)
+        {
+            SYMBOL *sym = (SYMBOL *)lst->data;
+            if (!sym->anonymous && !sym->temp)
+            {
+                sym->temp= TRUE;
+                *tail = msil_alloc(sizeof(struct _locallist_));
+                (*tail)->name = msil_strdup(sym->name);
+                (*tail)->index = sym->offset;
+                (*tail)->tp = clonetp(sym->tp, TRUE);
+                tail = &(*tail)->next;
+            }
+            lst = lst->next;
+        }
+        ap = msil_alloc(sizeof(AMODE));
+        ap->u.vars = vars;
+        ap->mode = am_vars;
+        gen_code(op_locals, ap);
+    }
 }
 /*-------------------------------------------------------------------------*/
 BOOLEAN isauto(EXPRESSION *ep)
@@ -170,13 +306,31 @@ void oa_gen_vc1(SYMBOL *func)
 void oa_gen_importThunk(SYMBOL *func)
 {
 }
+AMODE *getCallAmode(QUAD *q)
+{
+    EXPRESSION *en = GetSymRef(q->dc.left->offset);
+
+    AMODE *ap = msil_alloc(sizeof(AMODE));
+    ap->mode = am_funcname;
+    if (q->dc.left->mode == i_immed)
+    {
+        ap->directCall = TRUE;
+        ap->u.funcsp = clonesp(en->v.sp, FALSE);
+        ap->altdata = (void *)cloneInitListTypes(((FUNCTIONCALL *)q->altdata)->arguments);
+    }
+    else
+    {
+        ap->u.funcsp = clonesp(((FUNCTIONCALL *)q->altdata)->sp, FALSE);
+    }
+    return ap;
+}
 AMODE *getAmode(IMODE *oper)
 {
     AMODE *rv = NULL;
     switch(oper->mode)
     {
         case i_ind:
-            rv = beLocalAlloc(sizeof(AMODE));
+            rv = msil_alloc(sizeof(AMODE));
             rv->mode = am_ind;
             break;
         case i_immed:
@@ -202,16 +356,14 @@ AMODE *getAmode(IMODE *oper)
                     rv = make_index(am_param, sp->offset, sp);
                 else
                 {
-                    rv = beLocalAlloc(sizeof(AMODE));
-                    rv->mode = am_global;
-                    rv->offset = oper->offset;
+                    rv = make_field(oper->offset);
                 }
             }
             else if (oper->offset->type != en_tempref)
             {
                 if (oper->offset == objectArray_exp)
                 {
-                    rv = beLocalAlloc(sizeof(AMODE));
+                    rv = msil_alloc(sizeof(AMODE));
                     rv->mode = am_objectArray;
 
                 }
@@ -265,7 +417,7 @@ void load_ind(int sz)
             break;
         case ISZ_ADDR:
             // check for __va_arg__ on a pointer type
-            if (peep_tail->opcode == op_call && peep_tail->oper1->mode == am_ptrunbox)
+            if (peep_tail->opcode == op_call && peep_tail->oper->mode == am_ptrunbox)
                 return;
             op = op_ldind_u4;
             break;
@@ -348,45 +500,11 @@ void store_ind(int sz)
     decrement_stack();
 
 }
-void load_constant(int sz, EXPRESSION *exp)
+void load_arithmetic_constant(int sz, AMODE *ap)
 {
-    int sz1;
     enum e_op op;
-    AMODE *ap = NULL;
-    EXPRESSION *en = GetSymRef(exp);
-    sz1 = sz;
-    if (sz < 0)
-        sz1 = - sz;
-    if (en)
-    {
-        if (en->type == en_labcon)
-        {
-            op = op_ldsflda;
-        }
-        else if (en->v.sp->storage_class == sc_auto || en->v.sp->storage_class == sc_register)
-        {
-            op = op_ldloca;
-            ap = make_index(am_local, en->v.sp->offset, en->v.sp);
-        }
-        else if (en->v.sp->storage_class == sc_parameter)
-        {
-            // in this version of the compiler, blocked parameters are passed
-            // as pointers.   So instead of loading the parameter's address from
-            // the stack we load the pointer to the parameter
-            op = isstructured(en->v.sp->tp) ? op_ldarg : op_ldarga;
-            ap = make_index(am_param, en->v.sp->offset, en->v.sp);
-        }
-        else if (isfunction(en->v.sp->tp))
-        {
-            op = op_ldftn;
-            ap = make_constant(sz, exp);
-        }
-        else
-        {
-            op = op_ldsflda;
-        }
-    }
-    else switch(sz1)
+    int sz1 = sz < 0 ? - sz : sz;
+    switch(sz1)
     {
         case 0:
         case ISZ_BOOLEAN:
@@ -427,8 +545,59 @@ void load_constant(int sz, EXPRESSION *exp)
         case ISZ_CLDOUBLE:
             break;
     }
-    if (!ap)
-        ap = make_constant(sz, exp);
+    gen_code(op, ap);
+    increment_stack();
+}
+void load_constant(int sz, EXPRESSION *exp)
+{
+    int sz1;
+    enum e_op op;
+    AMODE *ap;
+    sz1 = sz;
+    if (sz < 0)
+        sz1 = - sz;
+    ap = make_constant(sz1, exp);
+    switch(sz1)
+    {
+        case 0:
+        case ISZ_BOOLEAN:
+        case ISZ_UCHAR:
+        case ISZ_USHORT:
+        case ISZ_WCHAR:
+        case ISZ_U16:
+        case ISZ_UINT:
+        case ISZ_ULONG:
+        case ISZ_U32:
+            op = op_ldc_i4;
+            break;
+        case ISZ_ULONGLONG:
+            op = op_ldc_i8;
+            break;
+        case ISZ_ADDR:
+            op = op_ldc_i4;
+            break;
+        /* */
+        case ISZ_FLOAT:
+            op = op_ldc_r4;
+            break;
+        case ISZ_DOUBLE:
+        case ISZ_LDOUBLE:
+            op = op_ldc_r8;
+            break;
+        
+        case ISZ_IFLOAT:
+            op = op_ldc_r4;
+            break;
+        case ISZ_IDOUBLE:
+        case ISZ_ILDOUBLE:
+            op = op_ldc_r8;
+            break;
+        
+        case ISZ_CFLOAT:
+        case ISZ_CDOUBLE:
+        case ISZ_CLDOUBLE:
+            break;
+    }
     gen_code(op, ap);
     increment_stack();
 }
@@ -438,22 +607,42 @@ void gen_load(AMODE *dest)
         return;
     switch(dest->mode)
     {
-        case am_immed:
-            load_constant(dest->length, dest->offset);
+        case am_intconst:
+        case am_floatconst:
+        {
+            load_arithmetic_constant(dest->length, dest);
+        }
             break;
         case am_ind:
             load_ind(dest->length);
             break;
         case am_local:
-            gen_code(op_ldloc, dest);
+            if (dest->address)
+                gen_code(op_ldloca, dest);
+            else
+                gen_code(op_ldloc, dest);
             increment_stack();
             break;
         case am_param:
-            gen_code(op_ldarg, dest);
+            if (dest->address)
+                gen_code(op_ldarga, dest);
+            else
+                gen_code(op_ldarg, dest);
             increment_stack();
             break;
-        case am_global:
-            gen_code(op_ldsfld, dest);
+        case am_field:
+            if (dest->address)
+                gen_code(op_ldsflda, dest);
+            else
+                gen_code(op_ldsfld, dest);
+            increment_stack();
+            break;
+        case am_stringlabel:
+            gen_code(op_ldsflda, dest);
+            increment_stack();
+            break;
+        case am_funcname:
+            gen_code(op_ldftn, dest);
             increment_stack();
             break;
     }
@@ -475,7 +664,7 @@ void gen_store(AMODE *dest)
             gen_code(op_starg, dest);
             decrement_stack();
             break;
-        case am_global:
+        case am_field:
             gen_code(op_stsfld, dest);
             decrement_stack();
             break;
@@ -597,20 +786,24 @@ void asm_expressiontag(QUAD *q)
 }
 void asm_line(QUAD *q)               /* line number information and text */
 {
-    OCODE *new = beLocalAlloc(sizeof(OCODE));
+    LINEDATA *ld = (LINEDATA *)q->dc.left;
+    LINEDATA *trans = msil_alloc(sizeof(LINEDATA));
+    OCODE *new = msil_alloc(sizeof(OCODE));
     new->opcode = op_line;
-    new->oper1 = (AMODE*)(q->dc.left); /* line data */
+    new->oper = (AMODE*)(trans); /* line data */
+    trans->lineno = ld->lineno;
+    trans->line = msil_strdup(ld->line);
     add_peep(new);
 }
 void asm_blockstart(QUAD *q)               /* line number information and text */
 {
-    OCODE *new = beLocalAlloc(sizeof(OCODE));
+    OCODE *new = msil_alloc(sizeof(OCODE));
     new->opcode = op_blockstart;
     add_peep(new);
 }
 void asm_blockend(QUAD *q)               /* line number information and text */
 {
-    OCODE *new = beLocalAlloc(sizeof(OCODE));
+    OCODE *new = msil_alloc(sizeof(OCODE));
     new->opcode = op_blockend;
     add_peep(new);
 }
@@ -619,9 +812,9 @@ void asm_varstart(QUAD *q)               /* line number information and text */
 }
 void asm_func(QUAD *q)               /* line number information and text */
 {
-    OCODE *new = beLocalAlloc(sizeof(OCODE));
+    OCODE *new = msil_alloc(sizeof(OCODE));
     new->opcode = q->dc.v.label ? op_funcstart : op_funcend;
-    new->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
+    new->oper = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
     add_peep(new);
 }
 void asm_passthrough(QUAD *q)        /* reserved */
@@ -632,9 +825,9 @@ void asm_datapassthrough(QUAD *q)        /* reserved */
 }
 void asm_label(QUAD *q)              /* put a label in the code stream */
 {
-    OCODE *out = beLocalAlloc(sizeof(OCODE));
+    OCODE *out = msil_alloc(sizeof(OCODE));
     out->opcode = op_label;
-    out->oper1 = (AMODE *)q->dc.v.label;
+    out->oper = (AMODE *)q->dc.v.label;
     add_peep(out);
 }
 void asm_goto(QUAD *q)               /* unconditional branch */
@@ -654,7 +847,7 @@ void asm_parm(QUAD *q)               /* push a parameter*/
 {
     if (q->vararg)
     {
-        AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+        AMODE *ap = (AMODE *)msil_alloc(sizeof(AMODE));
         if (q->dc.left->size == ISZ_ADDR)
         {
             ap->mode = am_ptrbox;
@@ -681,7 +874,7 @@ void asm_parm(QUAD *q)               /* push a parameter*/
             FUNCTIONCALL *params = (FUNCTIONCALL *)find->altdata;
             if (!msil_managed(params->sp))
             {
-                AMODE *ap = (AMODE *)beLocalAlloc(sizeof(AMODE));
+                AMODE *ap = (AMODE *)msil_alloc(sizeof(AMODE));
                 ap->mode = am_argit_unmanaged;
                 gen_code (op_callvirt, ap);
             }
@@ -710,26 +903,24 @@ void asm_parmadj(QUAD *q)            /* adjust stack after function call */
 }
 static BOOLEAN bltin_gosub(QUAD *q, AMODE *ap)
 {
-    if (!strcmp(ap->offset->v.sp->name, "__va_start__"))
+    if (!strcmp(ap->u.funcsp->name, "__va_start__"))
     {
-        AMODE *ap1 = Alloc(sizeof(AMODE));
+        AMODE *ap1 = msil_alloc(sizeof(AMODE));
         ap1->mode = am_argit_args;
         gen_code(op_ldarg, ap1);
-        ap->offset->v.sp->genreffed = FALSE;
+        ap->u.funcsp->genreffed = FALSE;
         ap->mode = am_argit_ctor;
-        ap->offset = NULL;
         gen_code(op_newobj, ap);
         return TRUE;
     }
-    else if (!strcmp(ap->offset->v.sp->name, "__va_arg__"))
+    else if (!strcmp(ap->u.funcsp->name, "__va_arg__"))
     {
         FUNCTIONCALL *func = q->altdata;
-        TYPE *tp = ap->offset->v.sp->tp;
+        TYPE *tp = ap->u.funcsp->tp;
         if (func->arguments->next)
             tp = func->arguments->next->tp;
-        ap->offset->v.sp->genreffed = FALSE;
+        ap->u.funcsp->genreffed = FALSE;
         ap->mode = am_argit_getnext;
-        ap->offset = NULL;
         // the function pushes both an arglist val and a type to cast to on the stack
         // remove the type to cast to.
         peep_tail = peep_tail->back;
@@ -737,7 +928,7 @@ static BOOLEAN bltin_gosub(QUAD *q, AMODE *ap)
         gen_code(op_callvirt, ap);
         if (ispointer(tp))
         {
-            ap = Alloc(sizeof(AMODE));
+            ap = msil_alloc(sizeof(AMODE));
             ap->mode = am_ptrunbox;
             gen_code(op_call, ap);
         }
@@ -745,9 +936,9 @@ static BOOLEAN bltin_gosub(QUAD *q, AMODE *ap)
         {
 
             EXPRESSION *exp = func->arguments->next->exp;
-            ap = Alloc(sizeof(AMODE));
+            ap = msil_alloc(sizeof(AMODE));
             ap->mode = am_type;
-            ap->offset = exp;
+            ap->u.tp = clonetp(exp->v.sp->tp, TRUE);
             gen_code(op_unbox, ap);
         }
         return TRUE;
@@ -756,13 +947,12 @@ static BOOLEAN bltin_gosub(QUAD *q, AMODE *ap)
 }
 void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or through a var */
 {
+    AMODE *ap = getCallAmode(q);
     if (q->dc.left->mode == i_immed)
     {
-        AMODE *ap = getAmode(q->dc.left);
         if (!bltin_gosub(q, ap))
         {
-            FUNCTIONCALL *func = q->altdata;
-            ap->altdata = q->altdata;
+            FUNCTIONCALL *func = (FUNCTIONCALL *)q->altdata;
             if (msil_managed(func->sp))
             {
                 HASHREC *hr = basetype(func->sp->tp)->syms->table[0];
@@ -784,9 +974,10 @@ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or th
     }
     else
     {
-        EXPRESSION *en = varNode(en_pc, ((FUNCTIONCALL *)q->altdata)->sp);
-        AMODE *ap = make_constant(ISZ_UINT, en);
-        ap->altdata = q->altdata;
+        TYPE *tp = ap->u.funcsp->tp;
+        while (ispointer(basetype(tp)->btp))
+            tp = basetype(tp)->btp;
+        ap->u.funcsp->tp = tp;
         gen_code(op_calli, ap);
         decrement_stack();
     }
@@ -821,7 +1012,7 @@ void asm_fret(QUAD *q)                /* far return from subroutine */
 /*
  * this can be either a fault or iret return
  * for processors that char, the 'left' member will have an integer
- * value that is true for an iret or false or a fault ret
+ * value that is TRUE for an iret or false or a fault ret
  */
 void asm_rett(QUAD *q)               /* return from trap or int */
 {
@@ -1000,7 +1191,7 @@ void asm_assn(QUAD *q)               /* assignment */
             {
                 // assign to object array, call the ctor here
                 // count is already on the stack
-                AMODE *ap = Alloc(sizeof(AMODE));
+                AMODE *ap = msil_alloc(sizeof(AMODE));
                 ap->mode = am_objectArray_ctor;
                 gen_code(op_newarr, ap);
                 ap = getAmode(q->ans);
@@ -1029,15 +1220,15 @@ void asm_genword(QUAD *q)            /* put a byte or word into the code stream 
 void compactgen(AMODE *ap, int lab)
 {
 
-    struct swlist *lstentry = beLocalAlloc(sizeof(struct swlist));
+    struct swlist *lstentry = msil_alloc(sizeof(struct swlist));
     lstentry->lab = lab;
-    if (ap->switches)
+    if (ap->u.sw.switches)
     {
-        ap->switchlast = ap->switchlast->next = lstentry;
+        ap->u.sw.switchlast = ap->u.sw.switchlast->next = lstentry;
     }
     else
     {
-        ap->switches = ap->switchlast = lstentry;
+        ap->u.sw.switches = ap->u.sw.switchlast = lstentry;
     }
 }
 void bingen(int lower, int avg, int higher)
@@ -1119,7 +1310,7 @@ void asm_swbranch(QUAD *q)           /* case characteristics */
 
     if (switch_mode == swm_compactstart)
     {
-        swap = beLocalAlloc(sizeof(AMODE));
+        swap = msil_alloc(sizeof(AMODE));
         swap->mode = am_switch;
         gen_load(switch_ip_a);
         if (swcase != 0)
@@ -1268,6 +1459,7 @@ void asm_prologue(QUAD *q)           /* function prologue */
 //    if (!strcmp(theCurrentFunc->decoratedName, "_main"))
 //        gen_code(op_entrypoint, NULL);
     gen_code(op_maxstack, stackap);
+    loadLocals(theCurrentFunc);
     stackpos = 0;
     returnCount = 0;
     hookCount = 0;
@@ -1412,7 +1604,7 @@ int examine_icode(QUAD *head)
                 q->dc.opcode = i_assn;
                 q->ans = ap;
                 q->temps = TEMP_ANS;
-                q->dc.left = beLocalAlloc(sizeof(AMODE));
+                q->dc.left = msil_alloc(sizeof(AMODE));
                 q->dc.left->mode = i_immed;
                 q->dc.left->offset = intNode(en_c_i, 0);
                 InsertInstruction(head->back, q);
@@ -1492,4 +1684,37 @@ int examine_icode(QUAD *head)
         }
         head = head->fwd;
     }
+}
+void oa_gen_strlab(SYMBOL *sp)
+/*
+ *      generate a named label.
+ */
+{
+    if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
+        cache_global(sp);
+    if (isfunction(sp->tp))
+    {
+        AMODE *ap = msil_alloc(sizeof(AMODE));
+        ap->u.funcsp = clonesp(sp, FALSE);
+        gen_code(op_methodheader, ap);
+    }
+    else
+    {
+        AMODE *ap = msil_alloc(sizeof(AMODE));
+        ap->mode = am_field;
+        if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant || sp->storage_class == sc_static)
+        {
+            ap->u.field.label = sp->label;
+        }
+        ap->u.field.name = msil_strdup(sp->name);
+        ap->u.field.tp = clonetp(sp->tp, TRUE);
+        gen_code(op_declfield, ap);
+    }
+}
+void flush_peep(SYMBOL *funcsp, QUAD *list)
+{
+    (void)funcsp;
+    (void) list;
+    gen_code(op_methodtrailer, NULL);
+    oa_load_funcs();
 }

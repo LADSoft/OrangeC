@@ -3,7 +3,7 @@
     
     Copyright (c) 1997-2011, David Lindauer, (LADSoft).
     All rights reserved.
-    
+    ope
     Redistribution and use of this software in source and binary forms, 
     with or without modification, are permitted provided that the following 
     conditions are met:
@@ -48,7 +48,6 @@
 extern int prm_targettype;
 extern int prm_assembler;
 extern SYMBOL *theCurrentFunc;
-extern LIST *temporarySymbols;
 extern LIST *externals;
 extern TYPE stdpointer, stdint;
 extern INCLUDES *includes;
@@ -116,6 +115,14 @@ static struct asm_details instructions[] = {
     }
     , 
     {
+        "methodHeader@"
+    }
+    , 
+    {
+        "methodTrailer@"
+    }
+    , 
+    {
         "db"
     }
     , 
@@ -129,6 +136,14 @@ static struct asm_details instructions[] = {
     , 
     {
         ".entrypoint"
+    }
+    , 
+    {
+        ".locals"
+    }
+    , 
+    {
+        ".field"
     }
     , 
 	{ "add" }, 
@@ -400,14 +415,6 @@ void oa_nl(void)
     }
 }
 
-/* Put an opcode
- */
-void outop(char *name)
-{
-    beputc('\t');
-    while (*name)
-        beputc(*name++);
-}
 
 /*-------------------------------------------------------------------------*/
 
@@ -651,7 +658,7 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
         if (isstructured(basetype(sp->tp)->btp))
         {
             bePrintf("void *'retblock'");
-            if (!vararg && hr || vararg && hr && hr->next)
+            if (!vararg && hr && ((SYMBOL *)hr->p)->tp->type != bt_void || vararg && hr && hr->next)
                 bePrintf(", ");
         }
         while (hr)
@@ -690,36 +697,24 @@ void gen_method_header(SYMBOL *sp, BOOLEAN pinvoke)
         bePrintf("\t.custom instance void [mscorlib]System.ParamArrayAttribute::.ctor() = ( 01 00 00 00 )\n"); 
     }
 }
-void oa_gen_strlab(SYMBOL *sp)
-/*
- *      generate a named label.
- */
+static void declare_field(AMODE *arg)
 {
-    cache_global(sp);
-    if (isfunction(sp->tp))
+    oa_enterseg(oa_currentSeg);
+//        inASMdata = TRUE;
+    if (arg->u.field.label)
+        bePrintf(".field private static ");
+    else
+        bePrintf(".field public static ");
+    puttypewrapped(arg->u.field.tp);
+    if (arg->u.field.label)
     {
-        gen_method_header(sp, FALSE);
-
+        bePrintf(" 'L_%d'\n", arg->u.field.label);
     }
     else
     {
-        oa_enterseg(oa_currentSeg);
-//        inASMdata = TRUE;
-        if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
-            bePrintf(".field private static ");
-        else
-            bePrintf(".field public static ");
-        puttypewrapped(sp->tp);
-        if (sp->storage_class == sc_localstatic || sp->storage_class == sc_constant)
-        {
-            bePrintf(" 'L_%d'\n", sp->label);
-        }
-        else
-        {
-            bePrintf(" '%s'\n", sp->name);
-        }
-        oa_outcol = 0;
+        bePrintf(" '%s'\n", arg->u.field.name);
     }
+    oa_outcol = 0;
 }
 /*-------------------------------------------------------------------------*/
 
@@ -730,14 +725,7 @@ void oa_put_label(int lab)
 {
     if (cparams.prm_asmfile) {
         oa_nl();
-        if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
-        {
-            newlabel = TRUE;
-            bePrintf( "\nL_%ld", lab);
-            oa_outcol = 8;
-        }
-        else
-            bePrintf( "L_%ld:\n", lab);
+        bePrintf( "L_%ld:\n", lab);
     }
 }
 void oa_put_string_label(int lab, int type)
@@ -749,7 +737,7 @@ void oa_put_string_label(int lab, int type)
     {
         bePrintf("%s", namespaceAndClassForNestedType);
     }
-    switch (type & 0xffff)
+    switch (type)
     {
         case l_ustr:
         case l_astr:
@@ -1133,28 +1121,40 @@ void oa_output_includelib(char *name)
 }
 void putfieldname(AMODE *arg)
 {
-    EXPRESSION *en = GetSymRef(arg->offset);
+    TYPE *tp = arg->u.field.tp;
     bePrintf("\t");
-    puttypewrapped(en->v.sp->tp);
+    // have to check if the type was undefined at the type of use, e.g. an unsized array declared as external
+    if (isarray(tp) && !basetype(tp)->size && !basetype(tp)->vla)
+    {
+        TYPE *tp1 = LookupGlobalArrayType(arg->u.field.name);
+        if (tp1)
+            tp = tp1;
+    }
+
+    puttypewrapped(tp);
     if (!namespaceAndClass[0])
         bePrintf("'");
     else
         bePrintf(" ");
-    if (en->v.sp->storage_class == sc_localstatic || en->v.sp->storage_class == sc_constant)
-        bePrintf("%sL_%d", namespaceAndClass, en->v.sp->label);
+    if (arg->u.field.label)
+        bePrintf("%sL_%d", namespaceAndClass, arg->u.field.label);
     else
-        bePrintf("%s%s", namespaceAndClass, en->v.sp->name);
+        bePrintf("%s%s", namespaceAndClass, arg->u.field.name);
     if (!namespaceAndClass[0])
         bePrintf("'");
 }
 void putfunccall(AMODE *arg)
 {
-    EXPRESSION *en = GetSymRef(arg->offset);
-    SYMBOL *spi = en->v.sp;
-    HASHREC *hr = basetype(spi->tp)->syms->table[0];
+//    EXPRESSION *en = GetSymRef(arg->offset);
+    SYMBOL *spi = arg->u.funcsp;
     BOOLEAN vararg = FALSE;
     BOOLEAN managed = msil_managed(spi);
-    INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata)->arguments : NULL;
+    INITLIST *il = arg->altdata ? ((FUNCTIONCALL *)arg->altdata) : NULL;
+    TYPE *tpi = spi->tp;
+    HASHREC *hr;
+    if (isfuncptr(tpi))
+        tpi = basetype(tpi)->btp;
+    hr = tpi->syms->table[0];
     while (hr)
     {
         SYMBOL *sp = (SYMBOL *)hr->p;
@@ -1165,27 +1165,30 @@ void putfunccall(AMODE *arg)
     bePrintf("\t");
     if (vararg && !managed)
         bePrintf("vararg ");
-    puttypewrapped(isstructured(basetype(spi->tp)->btp) ? &stdpointer : basetype(spi->tp)->btp);
-    if (managed)
-        if (spi->linkage2 == lk_msil_rtl)
-        {
-                bePrintf(" [lsmsilcrtl]lsmsilcrtl.rtl::%s", spi->name);
-        }
-        else
-        {
-            if (namespaceAndClass[0])
-                bePrintf(" %s%s", namespaceAndClass, spi->name);  
+    puttypewrapped(isstructured(basetype(tpi)->btp) ? &stdpointer : basetype(tpi)->btp);
+    if (arg->directCall)
+    {
+        if (managed)
+            if (spi->linkage2 == lk_msil_rtl)
+            {
+                    bePrintf(" [lsmsilcrtl]lsmsilcrtl.rtl::%s", spi->name);
+            }
             else
-                bePrintf(" '%s'", spi->name);
-        }
-    else
-        bePrintf(" '%s'", spi->name);
+            {
+                if (namespaceAndClass[0])
+                    bePrintf(" %s%s", namespaceAndClass, spi->name);  
+                else
+                    bePrintf(" '%s'", spi->name);
+            }
+        else
+            bePrintf(" '%s'", spi->name);
+    }
     bePrintf("(");
-    hr = basetype(spi->tp)->syms->table[0];
-    if (isstructured(basetype(spi->tp)->btp))
+    hr = basetype(tpi)->syms->table[0];
+    if (isstructured(basetype(tpi)->btp))
     {
         bePrintf("void *");
-        if (!vararg && hr || vararg && hr && hr->next)
+        if (!vararg && hr && ((SYMBOL *)hr->p)->tp->type != bt_void || vararg && hr && hr->next)
             bePrintf(", ");
     }
     while (hr)
@@ -1226,209 +1229,56 @@ void putfunccall(AMODE *arg)
     }
     bePrintf(")");
 }
-void putlocals(void)
-{
-    HASHTABLE *temp = theCurrentFunc->inlineFunc.syms;
-    LIST *lst = NULL;
-    while (temp)
-    {
-        HASHREC *hr = temp->table[0];
-        while (hr)
-        {
-            SYMBOL *sym = (SYMBOL *)hr->p;
-            if (sym->storage_class == sc_auto || sym->storage_class == sc_register)
-                break;
-            hr = hr->next;
-        }
-        if (hr)
-            break;
-        temp = temp->next;
-    }
-    if (!temp)
-    {
-        lst = temporarySymbols;
-        while (lst)
-        {
-            SYMBOL *sym = (SYMBOL *)lst->data;
-            if (!sym->anonymous)
-            {
-                break;
-            }
-            lst = lst->next;
-        }
-    }
-    if (lst || temp)
-    {
-        BOOLEAN first = TRUE;
-        while (temp)
-        {
-            HASHREC *hr = temp->table[0];
-            while (hr)
-            {
-                SYMBOL *sym = (SYMBOL *)hr->p;
-                sym->temp = FALSE;
-                hr = hr->next;
-            }
-            temp = temp->next;
-        }
-        lst = temporarySymbols;
-        while (lst)
-        {
-            SYMBOL *sym = (SYMBOL *)lst->data;
-            sym->temp = FALSE;
-            lst = lst->next;
-        }
-        bePrintf("\t.locals\n\t(\n");
-        temp = theCurrentFunc->inlineFunc.syms;
-        while (temp)
-        {
-            HASHREC *hr = temp->table[0];
-            while (hr)
-            {
-                SYMBOL *sym = (SYMBOL *)hr->p;
-                if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && !sym->temp)
-                {
-                    sym->temp = TRUE;
-                    if (!first)
-                        bePrintf(",\n");
-                    first = FALSE;
-                    bePrintf("\t\t[%d] ",sym->offset);
-                    puttypewrapped(sym->tp);
-                    bePrintf(" '%s/%d'", sym->name, sym->offset);
-                }
-                hr = hr->next;
-            }
-            temp = temp->next;
-        }
-        lst = temporarySymbols;
-        while (lst)
-        {
-            SYMBOL *sym = (SYMBOL *)lst->data;
-            if (!sym->anonymous && !sym->temp)
-            {
-                sym->temp= TRUE;
-                if (!first)
-                    bePrintf(",\n");
-                first = FALSE;
-                bePrintf("\t\t[%d] ",sym->offset);
-               puttypewrapped(sym->tp);
-                    bePrintf(" '%s/%d'", sym->name, sym->offset);
-            }
-            lst = lst->next;
-        }
-        bePrintf("\n\t)\n");
-    }
-}
 void putarg(enum e_op op, AMODE *arg)
 {
     switch (arg->mode)
     {
         int i;
         struct swlist *pass;
-        case am_immed:
-            if (arg->offset->type == en_labcon)
+        case am_branchtarget:
+            bePrintf(" 'L_%d'\n", (int)arg->u.label);
+            break;
+        case am_stringlabel:
+            bePrintf("\tvaluetype '");
+            if (namespaceAndClass[0])
             {
-                if (arg->offset->altdata)
-                {
-                    bePrintf("\tvaluetype '");
-                    if (namespaceAndClass[0])
-                    {
-                        bePrintf("%s", namespaceAndClassForNestedType);
-                    }
-                    switch (arg->offset->altdata & 0xffff)
-                    {
-                        case l_ustr:
-                        case l_astr:
-                            bePrintf("int8[]");
-                            break;
-                        case l_Ustr:
-                            bePrintf("int32[]");
-                            break;
-                        case l_wstr:
-                            bePrintf("int16[]");
-                            break;
-                    }
-                    if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
-                        bePrintf("' %sL_%d\n", namespaceAndClass, (int)arg->offset->v.i);
-                    else
-                        bePrintf("' 'L_%d'\n",(int) arg->offset->v.i);
-                }
-                else
-                {
-                    if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
-                        bePrintf(" %sL_%d\n", namespaceAndClass, (int)arg->offset->v.i);
-                    else
-                        bePrintf(" 'L_%d'\n", (int)arg->offset->v.i);
-                }
+                bePrintf("%s", namespaceAndClassForNestedType);
             }
-            else if (arg->offset->type == en_pc || arg->offset->type == en_global || arg->offset->type == en_label)
-                if (op != op_calli && isfunction(arg->offset->v.sp->tp))
-                {
-                    putfunccall(arg);
-                }
-                else {
-                    TYPE *tp1 = arg->offset->v.sp->tp;
-                    HASHREC *hr;
-                    while (isarray(tp1))
-                        tp1 = basetype(tp1)->btp;
-                    if (op == op_calli)
-                    {
-                        bePrintf("\t");
-                        if (isfuncptr(tp1))
-                            tp1 = basetype(tp1)->btp;
-                        puttypewrapped(isstructured(basetype(tp1)->btp) ? &stdpointer : basetype(tp1)->btp);
-                        bePrintf(" (");
-                        hr = basetype(tp1)->syms->table[0];
-                        if (isstructured(basetype(tp1)->btp))
-                        {
-                            bePrintf("void *");
-                            if (hr)
-                                bePrintf(", ");
-                        }
-                        while (hr)
-                        {
-                            SYMBOL *sp = (SYMBOL *)hr->p;
-                            if (sp->tp->type != bt_void)
-                            {
-                                puttypewrapped(isstructured(sp->tp) || isarray(sp->tp) ? &stdpointer : sp->tp);
-                                if (hr->next)
-                                    bePrintf(", ");
-                            }
-                            hr = hr->next;
-                        }
-                        bePrintf(")");
-                    }
-                    else
-                    {
-                        bePrintf("\t");
-                        puttypewrapped(arg->offset->v.sp->tp);
-                        if (arg->offset->type == en_label)
-                        {
-                            bePrintf(" %sL_%d\n", namespaceAndClass, arg->offset->v.sp->label);
-                        }
-                        else
-                        {
-                            if (namespaceAndClass[0])
-                                bePrintf(" %s%s\n", namespaceAndClass, arg->offset->v.sp->name);
-                            else
-                                bePrintf(" '%s'\n", arg->offset->v.sp->name);
-                        }
-                    }
-                }
-            else if (isfloatconst(arg->offset))
+            switch ((int)arg->altdata)
+            {
+                case l_ustr:
+                case l_astr:
+                    bePrintf("int8[]");
+                    break;
+                case l_Ustr:
+                    bePrintf("int32[]");
+                    break;
+                case l_wstr:
+                    bePrintf("int16[]");
+                    break;
+            }
+            if (op == op_ldsflda || op == op_ldsfld || op == op_stsfld)
+                bePrintf("' %sL_%d\n", namespaceAndClass, (int)arg->u.i);
+            else
+                bePrintf("' 'L_%d'\n",(int) arg->u.i);
+            break;
+        case am_funcname:
+            putfunccall(arg);
+            break;
+        case am_floatconst:
             {
                 char buf[256];
-                FPFToString(buf,&arg->offset->v.f);
+                FPFToString(buf,&arg->u.f.val);
                 if (!strcmp(buf,"inf") || !strcmp(buf, "nan")
                     || !strcmp(buf,"-inf") || !strcmp(buf, "-nan"))
                 {
                     UBYTE dta[8];
-                    int count = arg->offset->type == en_c_f ? 4 : 8;
+                    int count = arg->u.f.r4 ? 4 : 8;
                     int i;
                     if (count == 4)
-                        FPFToFloat(dta, &arg->offset->v.f);
+                        FPFToFloat(dta, &arg->u.f.val);
                     else
-                        FPFToDouble(dta, &arg->offset->v.f);
+                        FPFToDouble(dta, &arg->u.f.val);
                     bePrintf("\t(");
                     for (i=0; i < count; i++)
                     {
@@ -1439,23 +1289,22 @@ void putarg(enum e_op op, AMODE *arg)
                 else
                     bePrintf("\t%s", buf);
             }
-            else
-            {
-                bePrintf("\t%d", arg->offset->v.i);
-            }
-            break; 
+            break;
+        case am_intconst:
+            bePrintf("\t%d", arg->u.i);
+            break;
         case am_local:
-            bePrintf("\t'%s/%d'", ((SYMBOL *)arg->altdata)->name, arg->index);
+            bePrintf("\t'%s/%d'", arg->u.local.name, arg->u.local.index);
             break;
         case am_param:
-            bePrintf("\t'%s'", ((SYMBOL *)arg->altdata)->name);
+            bePrintf("\t'%s'", arg->u.local.name);
             break;
-        case am_global:
+        case am_field:
             putfieldname(arg);
             break;
         case am_switch:
             bePrintf("\t( ");
-            pass = arg->switches;
+            pass = arg->u.sw.switches;
             i = 0;
             while (pass)
             {
@@ -1490,7 +1339,7 @@ void putarg(enum e_op op, AMODE *arg)
             break;
         case am_type:
         {
-            TYPE *tp = arg->offset->v.sp->tp;
+            TYPE *tp = arg->u.tp;
             bePrintf("\t");
             puttypewrapped(tp);
         }
@@ -1521,6 +1370,25 @@ void putarg(enum e_op op, AMODE *arg)
         case am_objectArray_ctor:
             bePrintf("\[mscorlib]System.Object ");
             break;
+        case am_vars:
+        {
+            struct _locallist_ *lst = arg->u.vars;
+            BOOLEAN first = TRUE;
+            bePrintf("\(");
+            while (lst)
+            {
+                if (!first)
+                    bePrintf(",");
+                first = FALSE;
+                bePrintf("\n\t\t");
+                bePrintf("[%d]\t\t", lst->index);
+                puttypewrapped(lst->tp);
+                bePrintf(" '%s/%d'", lst->name, lst->index);
+                lst = lst->next;
+            }
+            bePrintf("\n\t)\n");
+            break;
+        }
     }
 }
 void oa_put_code(OCODE *ocode)
@@ -1530,7 +1398,7 @@ void oa_put_code(OCODE *ocode)
         return;
     if (op == op_line)
     {
-        LINEDATA *ld = (LINEDATA *)ocode->oper1;
+        LINEDATA *ld = (LINEDATA *)ocode->oper;
         oa_nl();
         while (ld)
         {
@@ -1543,44 +1411,29 @@ void oa_put_code(OCODE *ocode)
     {
         if (!cparams.prm_lines)
             return ;
-        bePrintf( "%s", ocode->oper1);
+        bePrintf( "%s", ocode->oper);
         return ;
+    }
+    else if (op == op_methodheader)
+    {
+        gen_method_header(ocode->oper->u.funcsp, FALSE);
+        return;
+    }
+    else if (op == op_methodtrailer)
+    {
+        bePrintf("\n}\n ");
+        return;
+    }
+    else if (op == op_declfield)
+    {
+        declare_field(ocode->oper);
+        return;
     }
     else if (op == op_void)
         return ;
-    if (op == op_maxstack)
-    {
-        putlocals();
-    }
     bePrintf("\t%s", instructions[op].name);
-    if (ocode->oper1)
-        putarg(op,ocode->oper1);
+    if (ocode->oper)
+        putarg(op,ocode->oper);
+       
     bePrintf("\n");
-}
-void flush_peep(SYMBOL *funcsp, QUAD *list)
-{
-    (void)funcsp;
-    (void) list;
-    if (cparams.prm_asmfile)
-    {
-        while (peep_head != 0)
-        {
-            switch (peep_head->opcode)
-            {
-                case op_label:
-                    oa_put_label((int)peep_head->oper1);
-                    break;
-                case op_funclabel:
-                    oa_gen_strlab((SYMBOL *)peep_head->oper1);
-                    break;
-                default:
-                    oa_put_code(peep_head);
-                    break;
-
-            }
-            peep_head = peep_head->fwd;
-        }
-    }
-    bePrintf("\n}\n ");
-    peep_head = 0;
 }

@@ -320,14 +320,46 @@ static void dumpDynamicInitializers(void)
     codeLabel = INT_MIN;
     while (dynamicInitializers)
     {
-        EXPRESSION *exp = NULL;
-        STATEMENT *stmt;
-        stmt = stmtNode(NULL, NULL, st_expr);
+        EXPRESSION *exp = NULL, **next = &exp, *exp1;
+        STATEMENT *stmt= NULL, **stmtp = &stmt;
+        int i=0;
         exp = convertInitToExpression(dynamicInitializers->init->basetp, dynamicInitializers->sp, NULL, dynamicInitializers->init, NULL, FALSE);
-        optimize_for_constants(&exp);
-        stmt->select = exp;
-        stmt->next = st;
-        st = stmt;
+
+        while (*next && (*next)->type == en_void)
+        {
+            if (++i == 10)
+            {
+                exp1 = *next;
+                *next = 0; 
+                next = &exp1;
+                (*stmtp) = stmtNode(NULL, NULL, st_expr);
+                (*stmtp)->select = exp;
+                stmtp = &(*stmtp)->next;
+                exp = exp1;
+                i = 0;
+            }
+            else
+            {
+                next = &(*next)->right;
+            }
+        }
+        if (exp)
+        {
+            (*stmtp) = stmtNode(NULL, NULL, st_expr);
+            (*stmtp)->select = exp;
+            stmtp = &(*stmtp)->next;
+        }
+        if (stmt)
+        {
+            STATEMENT *opt = stmt;
+            while (opt)
+            {
+                optimize_for_constants(opt->select);
+                opt = opt->next;
+            }
+            *stmtp = st;
+            st = stmt;
+        }
         dynamicInitializers = dynamicInitializers->next;	
     }
     if (st)
@@ -341,6 +373,7 @@ static void dumpDynamicInitializers(void)
         funcsp = makeUniqueID(sc_static, tp, NULL,"__DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
+        tp->sp = funcsp;
         SetLinkerNames(funcsp, lk_none);
         startlab = nextLabel++;
         retlab = nextLabel++;
@@ -373,6 +406,7 @@ static void dumpTLSInitializers(void)
         funcsp = makeUniqueID(sc_static, tp, NULL,"__TLS_DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
+        tp->sp = funcsp;
         SetLinkerNames(funcsp, lk_none);
         codeLabel = INT_MIN;
         while (TLSInitializers)
@@ -423,6 +457,7 @@ static void dumpDynamicDestructors(void)
         funcsp = makeUniqueID(sc_static, tp, NULL,"__DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
+        tp->sp = funcsp;
         SetLinkerNames(funcsp, lk_none);
         startlab = nextLabel++;
         retlab = nextLabel++;
@@ -455,6 +490,7 @@ static void dumpTLSDestructors(void)
         funcsp = makeUniqueID(sc_static, tp, NULL,"__TLS_DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
+        tp->sp = funcsp;
         SetLinkerNames(funcsp, lk_none);
         codeLabel = INT_MIN;
         while (TLSDestructors)

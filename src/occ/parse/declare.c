@@ -6051,6 +6051,8 @@ jointemplate:
                                 else if (!sp->label)
                                     sp->label = nextLabel++;
                             }
+                            if (sp->storage_class == sc_static && chosenAssembler->msil)
+                                sp->label = nextLabel++;
                             if (cparams.prm_cplusplus)
                             {
                                 TYPE *tp2= sp->tp;

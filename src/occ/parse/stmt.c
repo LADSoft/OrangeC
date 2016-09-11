@@ -80,9 +80,10 @@ static LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,
                            BOOLEAN viacontrol);
 static LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,   
                         BOOLEAN first);
-void statement_ini()
+void statement_ini(BOOLEAN global)
 {
-//    nextLabel = 1;
+    if (!global)
+        nextLabel = 1;
     linesHead = linesTail = NULL;
     functionCanThrow = FALSE;
     funcNesting = 0;

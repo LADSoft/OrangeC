@@ -167,6 +167,8 @@ int RunExternalFiles(char *rootPath)
         p++;
     *p = 0;
     GetOutputFileName(outName, temp);
+    StripExt(outName);
+    AddExt(outName, ".il");
     if (beGetIncludePath)
         sprintf(args, "\"-i%s\"", beGetIncludePath);
     else
@@ -203,7 +205,7 @@ int RunExternalFiles(char *rootPath)
         //while (objlist)
         {
             char filname[260];
-            sprintf(filname, "\"%s%s\"", temp, objlist->data);
+            sprintf(filname, "\"%s%s\"", temp, outName);
             sprintf(spname, "ilasm.exe /QUIET %s %s %s", args, filname, resources);
             rv = system(spname);
             unlink(TEMPFILE);

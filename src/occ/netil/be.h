@@ -50,8 +50,8 @@ enum e_op
 {
 
     op_reserved, op_line, op_blockstart, op_blockend, op_varstart, op_funcstart, op_funcend, op_void, 
-    op_comment, op_label, op_funclabel, op_seq,
-        op_genword, op_dd, op_maxstack, op_entrypoint,
+    op_comment, op_label, op_funclabel, op_seq, op_methodheader, op_methodtrailer,
+    op_genword, op_dd, op_maxstack, op_entrypoint, op_locals, op_declfield,
     op_add,op_add_ovf,op_add_ovf_un,op_and,op_arglist,op_beq,op_beq_s,op_bge,
 	op_bge_s,op_bge_un,op_bge_un_s,op_bgt,op_bgt_s,op_bgt_un,op_bgt_un_s,op_ble,
 	op_ble_s,op_ble_un,op_ble_un_s,op_blt,op_blt_s,op_blt_un,op_blt_un_s,op_bne_un,
@@ -86,23 +86,52 @@ enum e_op
 /*      addressing mode structure       */
 enum e_am
 {
-    am_immed, am_ind, am_local, am_param, am_global, am_switch, 
+    am_vars, am_methodheader, am_floatconst, am_intconst, am_funcname, am_stringlabel, am_branchtarget,
+    am_field, am_ind, am_local, am_param, am_switch, 
     am_argit_ctor, am_argit_args, am_argit_getnext, am_argit_unmanaged,
-    am_type, am_sized, am_objectArray, am_objectArray_ctor, am_ptrbox, am_ptrunbox
+    am_type, am_sized, am_objectArray, am_objectArray_ctor, am_ptrbox, am_ptrunbox,
 };
 typedef struct amode
 {
     enum e_am mode;
-    int index;
+    union { 
+        struct
+        {
+            struct swlist
+            {
+                struct swlist *next;
+                int lab;
+            } *switches, *switchlast;
+        } sw;
+        struct
+        {
+            FPF val;
+            BOOLEAN r4;
+        } f;
+        struct {
+            int index;
+            char *name; 
+        } local;
+        struct {
+            int label;
+            char *name;
+            TYPE *tp; // temporary
+        } field;
+        struct _locallist_ {
+            struct _locallist_ *next;
+            char *name;
+            int index;
+            TYPE *tp;
+        } *vars;
+        LLONG_TYPE i;
+        int label;
+        SYMBOL *funcsp;
+        TYPE *tp;
+    } u;
     int length;
     void *altdata;
-    EXPRESSION *offset;
-    int swcount;
-    struct swlist
-    {
-        struct swlist *next;
-        int lab;
-    } *switches, *switchlast;
+    int directCall : 1;
+    int address : 1;
 } AMODE;
 
 /*      output code structure   */
@@ -111,7 +140,7 @@ typedef struct ocode
 {
     struct ocode *fwd,  *back;
     enum e_op opcode;
-    struct amode *oper1;
+    struct amode *oper;
 } OCODE;
 
 struct asm_details

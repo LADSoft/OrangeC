@@ -74,7 +74,7 @@ void checkDefaultArguments(SYMBOL *spi);
 void BOOLEAN_setup(char select, char *string);
 void codegen_setup(char select, char *string);
 void optimize_setup(char select, char *string);
-void compile(void);
+void compile(BOOLEAN global);
 int main(int argc, char *argv[]);
 
                              /* Constopt.c */
@@ -934,7 +934,7 @@ void XTDumpTab(SYMBOL *funcsp);
 
                                /* Stmt.c */
 
-void statement_ini(void);
+void statement_ini(BOOLEAN global);
 void InsertLineData(int lineno, int fileindex, char *fname, char *line);
 void FlushLineData(char *file, int lineno);
 STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex, int offset);

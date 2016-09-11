@@ -35,6 +35,7 @@
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
+#include <windows.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -58,12 +59,15 @@ extern char namespaceAndClassForNestedType[512];
 extern BOOLEAN int8_used, int16_used, int32_used;
 extern enum e_sg oa_currentSeg = noseg; /* Current seg */
 extern FILE *outputFile;
+extern OCODE *peep_head, *peep_tail;
 
 #define BE_HASH 512
+static int dupCount;
 static HASHREC *pinvokes[BE_HASH];
 static HASHREC *enums[BE_HASH];
 static HASHREC *externs[BE_HASH];
 static HASHREC *globals[BE_HASH];
+static SYMBOL *mainSym;
 static int corflags = 2; // x86
 static LIST *typeList;
 static char ilName[260], tmpName[260];
@@ -79,73 +83,116 @@ struct clist
 static struct clist *cloneList;
 static int cloneCount;
 
-static SYMBOL * clonesp(SYMBOL *sp);
+
+void *msil_alloc(size_t size)
+{
+    void *rv = calloc(size, 1);
+    if (!rv)
+        fatal("out of memory");
+    return rv;
+}
+char *msil_strdup(char *s)
+{
+    int len = strlen(s) + 1;
+    char *rv = msil_alloc(len);
+    if (rv)
+    {
+        memcpy(rv, s, len);
+    }
+    return rv;
+}
 static void clonetable(TYPE *tp)
 {
     struct clist *test = cloneList;
-    while (test)
+    if (!isfunction(tp))
     {
-        if (test->sp == tp->sp)
+        while (test)
         {
-            tp->sp = test->resultsp;
-            tp->syms = test->result;
-            return;
+            if (test->sp == tp->sp)
+            {
+                tp->sp = test->resultsp;
+                tp->syms = test->result;
+                return;
+            }
+            test = test->next;
         }
-        test = test->next;
     }
     {
         HASHREC *src, **dest;
-        HASHTABLE *rv = calloc(1, sizeof(HASHTABLE));
-        struct clist *clonedata = calloc(1, sizeof(struct clist));
+        HASHTABLE *rv = msil_alloc(sizeof(HASHTABLE));
+        struct clist *clonedata = msil_alloc(sizeof(struct clist));
         clonedata->sp = tp->sp;
         clonedata->result = rv;
-        clonedata->resultsp = calloc(1, sizeof(SYMBOL));
+        clonedata->resultsp = msil_alloc(sizeof(SYMBOL));
         *clonedata->resultsp = *tp->sp;
 
         clonedata->resultsp->tp = tp;
-        clonedata->resultsp->name = strdup(tp->sp->name);
+        clonedata->resultsp->name = msil_strdup(tp->sp->name);
         clonedata->next = cloneList;
         cloneList = clonedata;
         *rv = *tp->syms;
         src = tp->syms->table[0];
         tp->sp = clonedata->resultsp;
         tp->syms = rv;
-        rv->table = calloc(1, sizeof(HASHREC *));
+        rv->table = msil_alloc(sizeof(HASHREC *));
         dest = &rv->table[0];
         while (src)
         {
-            *dest = calloc(1, sizeof(HASHREC));
-            (*dest)->p = clonesp((SYMBOL *)src->p);
+            *dest = msil_alloc(sizeof(HASHREC));
+            (*dest)->p = clonesp((SYMBOL *)src->p, FALSE);
             dest = &(*dest)->next;
             src = src->next;
         }
     }
 }
-static TYPE * clonetp(TYPE *tp)
+TYPE * clonetp(TYPE *tp, BOOLEAN shallow)
 {
     TYPE *rv = NULL, **put = & rv;
     while (tp)
     {
-        *put = calloc(1, sizeof(TYPE));
+        *put = msil_alloc(sizeof(TYPE));
         **put = *tp;
         if (tp->syms)
         {
-            clonetable(*put);
+            if (shallow && isstructured(tp))
+            {
+                SYMBOL *spnew = msil_alloc(sizeof(SYMBOL));
+                *spnew = *(*put)->sp;
+                spnew->tp = NULL;
+                spnew->name = msil_strdup(spnew->name);
+                (*put)->sp = spnew;
+            }
+            else
+            {
+                clonetable(*put);
+            }
         }
         put = &(*put)->btp;
         tp = tp->btp;
     }
     return rv;
 }
-static SYMBOL * clonesp(SYMBOL *sp)
+SYMBOL * clonesp(SYMBOL *sp, BOOLEAN shallow)
 {
     int i;
     SYMBOL *spnew;
-    spnew = calloc(1, sizeof(SYMBOL));
+    spnew = msil_alloc(sizeof(SYMBOL));
     *spnew = *sp;
-    spnew->tp = clonetp(sp->tp);
-    spnew->name = strdup(spnew->name);
+    spnew->tp = clonetp(sp->tp, shallow);
+    spnew->name = msil_strdup(spnew->name);
     return spnew;
+}
+INITLIST *cloneInitListTypes(INITLIST *in)
+{
+    INITLIST *rv = NULL , **last = &rv;
+    while (in)
+    {
+        *last = (INITLIST *)msil_alloc(sizeof(INITLIST));
+        (*last)->tp = clonetp(in->tp, TRUE);
+        last = &(*last)->next;
+        in = in->next;
+    }
+    return rv;
 }
 
 static int hashVal(char *name)
@@ -158,28 +205,25 @@ static int hashVal(char *name)
     }
     return hash % BE_HASH;
 }
-static void hashInsert(HASHREC **table, SYMBOL *sp, BOOLEAN clone)
+static void hashInsert(HASHREC **table, SYMBOL *sp, BOOLEAN shallow)
 {
     int hash = hashVal(sp->name);
     HASHREC *hr  = table[hash];
     while (hr)
     {
         if (!strcmp(hr->p->name, sp->name))
+        {
+            if (table == globals)
+            {
+                dupCount++;
+                printf("Error: Duplicate Public Symbol %s\n", sp->name);
+            }
             return;
+        }
         hr = hr->next;
     }
-    if (!clone)
-    {
-        SYMBOL *spnew = calloc(1, sizeof(SYMBOL));
-        *spnew = *sp;
-        sp = spnew;
-        sp->name = strdup(sp->name);
-    }
-    else
-    {
-        sp = clonesp(sp);
-    }
-    hr = calloc(1, sizeof(HASHREC));
+    sp = clonesp(sp, shallow);
+    hr = msil_alloc(sizeof(HASHREC));
     hr->p = sp;
     hr->next = table[hash];
     table[hash] = hr;
@@ -213,27 +257,27 @@ void cacheType(TYPE *tp)
         }
         p = p->next;
     }
-    p = calloc(1, sizeof(LIST));
-    p->data = clonetp(tp);
+    p = msil_alloc(sizeof(LIST));
+    p->data = clonetp(tp, FALSE);
     p->next = typeList;
     typeList = p;
 }
 static void cache_enum(SYMBOL *sp)
 {
-    hashInsert(enums, sp, TRUE);
+    hashInsert(enums, sp, FALSE);
 }
 void cache_pinvoke(SYMBOL *sp)
 {
-    hashInsert(pinvokes, sp, TRUE);
+    hashInsert(pinvokes, sp, FALSE);
 }
 void cache_extern(SYMBOL *sp)
 {
-
-    hashInsert(externs, sp, FALSE);
+    if (strncmp(sp->name, "__va_",4))
+        hashInsert(externs, sp, TRUE);
 }
 void cache_global(SYMBOL *sp)
 {
-    hashInsert(globals, sp, FALSE);
+    hashInsert(globals, sp, TRUE);
 }
 // weed out unions, structures with nested structures or bit fields
 static BOOLEAN qualifiedStruct(SYMBOL *sp)
@@ -276,6 +320,8 @@ void DumpClassFields(SYMBOL *sp)
 }
 void oa_enter_type(SYMBOL *sp)
 {
+    if (sp->storage_class == sc_typedef)
+        return;
     if (namespaceAndClass[0] && sp->tp->type == bt_enum && !strstr(sp->name, "__anontype"))
     {
         cache_enum(sp);
@@ -399,11 +445,39 @@ void oa_load_funcs(void)
     sp = gsearch("__GetErrno");
     if (sp)
         ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = FALSE;
+    if (!strcmp(theCurrentFunc->name, "main"))
+        if (!theCurrentFunc->parentClass && !theCurrentFunc->parentNameSpace)
+            mainSym = clonesp( theCurrentFunc, FALSE);
+}
+static void msil_flush_peep(void)
+{
+    if (cparams.prm_asmfile)
+    {
+        while (peep_head != 0)
+        {
+            switch (peep_head->opcode)
+            {
+                case op_label:
+                    oa_put_label((int)peep_head->oper);
+                    break;
+                case op_funclabel:
+                    oa_gen_strlab((SYMBOL *)peep_head->oper);
+                    break;
+                default:
+                    oa_put_code(peep_head);
+                    break;
+
+            }
+            peep_head = peep_head->fwd;
+        }
+    }
+    peep_head = 0;
 }
 void oa_end_generation(void)
 {
     SYMBOL *start = NULL, *end = NULL;
-    LIST *externalList = externals;
+    LIST *externalList;
+    externalList = externals;
     while (externalList)
     {
         SYMBOL *sym = (SYMBOL *)externalList->data;
@@ -418,8 +492,8 @@ void oa_end_generation(void)
     }
     if (start)
     {
-        LIST *lst = calloc(1, sizeof(LIST));
-        lst->data = strdup(start->name);
+        LIST *lst = msil_alloc(sizeof(LIST));
+        lst->data = msil_strdup(start->name);
         if (initializersHead)
             initializersTail = initializersTail->next = lst;
         else
@@ -427,14 +501,13 @@ void oa_end_generation(void)
     }
     if (end)
     {
-        LIST *lst = calloc(1, sizeof(LIST));
-        lst->data = strdup(end->name);
+        LIST *lst = msil_alloc(sizeof(LIST));
+        lst->data = msil_strdup(end->name);
         if (deinitializersHead)
             deinitializersTail = deinitializersTail->next = lst;
         else
             deinitializersHead = initializersTail = lst;
     }
-    oa_load_funcs();
 }
 static void mainLocals(void)
 {
@@ -520,6 +593,10 @@ static void dumpInitializerCalls(LIST *lst)
 void oa_trailer(void)
 {
     SYMBOL *mainsp;
+    if (prm_targettype != DLL && !mainSym)
+    {
+        printf("Error: main not defined\n");
+    }
     oa_enterseg(oa_currentSeg);
     bePrintf("\n\t.field public static void *'__stdin'\n");
     bePrintf("\n\t.field public static void *'__stdout'\n");
@@ -563,7 +640,7 @@ void oa_trailer(void)
         bePrintf("\tcall void __getmainargs(void *, void *, void *, int32, void *);\n");
         bePrintf("\tldloc 'argc'\n");
         bePrintf("\tldloc 'argv'\n");
-        mainsp = gsearch("main");
+        mainsp = mainSym;
         if (mainsp)
         {
             mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
@@ -605,17 +682,26 @@ void oa_trailer(void)
     bePrintf("}\n");
     dumpPInvokes();
 }
-static BOOLEAN hasGlobal(char *name)
+static SYMBOL * hasGlobal(char *name)
 {
     int hash = hashVal(name);
     HASHREC *hr  = globals[hash];
     while (hr)
     {
         if (!strcmp(hr->p->name, name))
-            return TRUE;
+            return (SYMBOL *)hr->p;
         hr = hr->next;
     }
-    return FALSE;
+    return NULL;
+}
+TYPE * LookupGlobalArrayType(char *name)
+{
+    SYMBOL *sp = hasGlobal(name);
+    if (sp)
+    {
+        return sp->tp;
+    }
+    return NULL;
 }
 static BOOLEAN checkExterns(void)
 {
@@ -632,7 +718,7 @@ static BOOLEAN checkExterns(void)
             {
                 if (!hasGlobal(name))
                 {
-                    printf ("Undefined external %s\n", name);
+                    printf ("Error: Undefined external symbol %s\n", name);
                     rv = TRUE;
                 }
             }
@@ -661,9 +747,10 @@ BOOLEAN oa_main_preprocess(void)
 }
 void oa_main_postprocess(BOOLEAN errors)
 {
+    msil_flush_peep(); 
     oa_trailer();
     fclose(outputFile);
-    errors |= checkExterns();
+    errors |= checkExterns() || dupCount || prm_targettype != DLL && !mainSym;
     if (errors)
     {
         unlink(ilName);

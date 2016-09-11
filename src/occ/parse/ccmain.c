@@ -434,7 +434,7 @@ void MakeStubs(void)
     }
     printf("\n");
 }
-void compile(void)
+void compile(BOOLEAN global)
 {
     LEXEME *lex = NULL ;
     SetGlobalFlag(TRUE);
@@ -448,7 +448,7 @@ void compile(void)
     rtti_init();
     expr_init();
     libcxx_init();
-    statement_ini();
+    statement_ini(global);
     syminit();
     preprocini(infile, inputFile);
     lexini();
@@ -741,7 +741,7 @@ int main(int argc, char *argv[])
                 printf("%s\n", clist->data);
     
     
-            compile();
+            compile(!openOutput);
         }
 #ifdef PARSER_ONLY
         localFree();

@@ -1519,7 +1519,7 @@ IMODE *gen_assign(SYMBOL *funcsp, EXPRESSION *node, int flags, int size)
     */
     if (!(flags & F_NOVALUE) && (chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == i_ind)
     {
-        ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE), natural_size(node->left));
+        ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), (flags & ~F_NOVALUE), natural_size(node->left));
     }
     ap1->vol = node->left->isvolatile;
     ap1->restricted = node->left->isrestrict;
@@ -1663,97 +1663,6 @@ IMODE *gen_aincdec(SYMBOL *funcsp, EXPRESSION *node, int flags, int size, enum i
             incdecListLast = incdecListLast->next = l;
         return ap5;
     }
-    ncnode = node->left;
-    while (castvalue(ncnode))
-        ncnode = ncnode->left;
-    ap6 = gen_expr( funcsp, ncnode, F_STORE, siz1);
-    if (ap6->bits > 0 && (chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
-    {
-        n = ap6->startbit;
-        m = ap6->bits;
-        ap6->bits = ap6->startbit = 0;
-        ap7 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-        ap4 = LookupLoadTemp(ap7, ap7);
-        if (ap4 != ap7)
-        {
-            ap4->bits = ap7->bits;
-            ap4->startbit = ap7->startbit;
-            ap7->bits = ap7->startbit = 0;
-            gen_icode(i_assn, ap4, ap7, NULL);
-        }            
-        ap7 = gen_bit_mask(ap4);
-    }
-    if (flags & (F_NOVALUE | F_COMPARE))
-    {
-        if (flags & F_COMPARE)
-        {
-            if (chosenAssembler->msil)
-            {
-                ap3 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-                ap5 = LookupLoadTemp(ap3, ap3);
-                if (ap5 != ap3)
-                    gen_icode(i_assn, ap5, ap3, NULL);
-                ap3 = ap1;
-            }
-            else
-            {
-                ap3 = tempreg(siz1, 0);
-                gen_icode(i_assn, ap3, ap5, NULL);
-                intermed_tail->needsOCP = TRUE;
-            }
-        }
-        else
-        {
-            ap3 = gen_expr( funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-            ap5 = LookupLoadTemp(ap3, ap3);
-            if (ap5 != ap3)
-                gen_icode(i_assn, ap5, ap3, NULL);
-            ap3 = ap1;
-        }
-        ap2 = gen_expr(funcsp, node->right, 0, siz1);
-        ap2 = LookupExpression(op, siz1, ap5, ap2);
-        if (ap7)
-        {
-            gen_icode(i_and, ap2, ap2, make_immed(-ISZ_UINT, (1 << m) - 1));
-            if (n)
-                gen_icode(i_lsl, ap2, ap2, make_immed(-ISZ_UINT, n));
-            gen_icode(i_or, ap2, ap7, ap2);
-        }
-        ap4 = LookupStoreTemp(ap6, ap6);
-        if (ap4 != ap6)
-        {
-            gen_icode(i_assn, ap4, ap2, NULL);
-            gen_icode(i_assn, ap6, ap4, NULL);
-        }
-        else
-            gen_icode(i_assn, ap6, ap2, NULL);
-        return ap3;
-    }
-    else
-    {
-        l = Alloc(sizeof(LIST));
-        l->data = (void *)node;
-        if (!incdecList)
-            incdecList = incdecListLast = l;
-        else
-            incdecListLast = incdecListLast->next = l;
-        return ap5;
-    }
-    /*
-    ap3 = tempreg(siz1,0);
-    gen_icode(i_assn, ap3, ap5, 0);
-    ap2 = LookupExpression(op, siz1, ap3, ap2);
-    ap4 = LookupStoreTemp(ap6, ap6);
-    if (ap4 != ap6)
-    {
-        gen_icode(i_assn, ap4, ap2, NULL);
-        gen_icode(i_assn, ap6, ap4, NULL);
-    }
-    else
-        gen_icode(i_assn, ap6, ap2, NULL);
-        
-    return ap3;
-    */
 }
 
 /*-------------------------------------------------------------------------*/

@@ -88,6 +88,7 @@ typedef struct __jmp_buf {
 
 void    _RTL_FUNC _IMPORT longjmp(jmp_buf __jmpb, int __retval);
 int     _RTL_FUNC _IMPORT setjmp(jmp_buf __jmpb);
+int     _RTL_FUNC _IMPORT _setjmp(jmp_buf __jmpb);
 
 #define setjmp(__jmpb)  setjmp(__jmpb)
 #define _setjmp(__jmpb) setjmp(__jmpb);

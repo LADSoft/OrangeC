@@ -31,12 +31,15 @@
 
 %ifdef __BUILDING_LSCRTL_DLL
 [export _setjmp]
+[export __setjmp]
 [export _longjmp]
 %endif
 [global _setjmp]
+[global __setjmp]
 [global _longjmp]
 
 SECTION code CLASS=CODE USE32
+__setjmp:
 _setjmp:
     mov	eax,[esp+4]
     mov	[eax],ecx

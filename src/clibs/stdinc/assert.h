@@ -53,7 +53,7 @@ void _RTL_FUNC _IMPORT __assertfail( const char *__who, const char *__file,
 
 
 #undef assert
-#if !defined( NDEBUG )
+#if !defined( NDEBUG ) && !defined(__MSIL__)
 #if  __STDC_VERSION__ >= 199901L
 #  define assert(p) ( (p) ? (void)0 : (void)__assertfail( \
                     "Assertion failed", __FILE__, __LINE__, __func__, #p ) )

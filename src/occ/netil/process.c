@@ -62,7 +62,7 @@ extern FILE *outputFile;
 extern OCODE *peep_head, *peep_tail;
 
 #define BE_HASH 512
-static int dupCount;
+static int errCount;
 static HASHREC *pinvokes[BE_HASH];
 static HASHREC *enums[BE_HASH];
 static HASHREC *externs[BE_HASH];
@@ -83,7 +83,7 @@ struct clist
 static struct clist *cloneList;
 static int cloneCount;
 
-
+static BOOLEAN validateGlobalRef(SYMBOL *sp);
 void *msil_alloc(size_t size)
 {
     void *rv = calloc(size, 1);
@@ -215,7 +215,7 @@ static void hashInsert(HASHREC **table, SYMBOL *sp, BOOLEAN shallow)
         {
             if (table == globals)
             {
-                dupCount++;
+                errCount++;
                 printf("Error: Duplicate Public Symbol %s\n", sp->name);
             }
             return;
@@ -273,11 +273,15 @@ void cache_pinvoke(SYMBOL *sp)
 void cache_extern(SYMBOL *sp)
 {
     if (strncmp(sp->name, "__va_",4))
+    {
         hashInsert(externs, sp, TRUE);
+        validateGlobalRef(sp);
+    }
 }
 void cache_global(SYMBOL *sp)
 {
     hashInsert(globals, sp, TRUE);
+    validateGlobalRef(sp);
 }
 // weed out unions, structures with nested structures or bit fields
 static BOOLEAN qualifiedStruct(SYMBOL *sp)
@@ -586,7 +590,7 @@ static void dumpInitializerCalls(LIST *lst)
 {
     while (lst)
     {
-        bePrintf("\tcall void %s%s()\n", namespaceAndClass, (char *)lst->data);
+        bePrintf("\tcall void %s'%s'()\n", namespaceAndClass, (char *)lst->data);
         lst = lst->next;
     }
 }
@@ -643,7 +647,7 @@ void oa_trailer(void)
         mainsp = mainSym;
         if (mainsp)
         {
-            mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
+//            mainsp = (SYMBOL *)mainsp->tp->syms->table[0]->p;
             if ( isvoid(basetype(mainsp->tp)->btp))
                 if (namespaceAndClass[0])
                     bePrintf("\tcall void %smain(int32, void *)\n", namespaceAndClass);
@@ -693,6 +697,57 @@ static SYMBOL * hasGlobal(char *name)
         hr = hr->next;
     }
     return NULL;
+}
+static SYMBOL * hasExtern(char *name)
+{
+    int hash = hashVal(name);
+    HASHREC *hr  = externs[hash];
+    while (hr)
+    {
+        if (!strcmp(hr->p->name, name))
+            return (SYMBOL *)hr->p;
+        hr = hr->next;
+    }
+    return NULL;
+}
+static BOOLEAN validateGlobalRef(SYMBOL *sp)
+{
+    if (!isfunction(sp->tp))
+    {
+        SYMBOL *g = hasGlobal(sp->name);
+        SYMBOL *e = hasExtern(sp->name);
+        if (g && e)
+        {
+            TYPE *tp = g->tp;
+            TYPE *tpx = e->tp;
+            tp = basetype(tp);
+            tpx = basetype(tpx);
+            while (ispointer(tp) && ispointer(tpx))
+            {
+                if (tpx->size != 0 && tp->size != tpx->size)
+                    break;
+                tp = basetype(tp->btp);
+                tpx = basetype(tpx->btp);
+            }
+            if (!ispointer(tp) && !ispointer(tpx))
+            {
+                if (tp->type == tpx->type)
+                {
+                    if (isstructured(tp) || isfunction(tp) || tp->type == bt_enum)
+                    {
+                        if (!strcmp(tp->sp->name, tpx->sp->name))
+                            return;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+            }
+            errCount++;
+            printf("Error: Mismatch global type declarations on %s\n", sp->name);
+        }
+    }
 }
 TYPE * LookupGlobalArrayType(char *name)
 {
@@ -750,7 +805,7 @@ void oa_main_postprocess(BOOLEAN errors)
     msil_flush_peep(); 
     oa_trailer();
     fclose(outputFile);
-    errors |= checkExterns() || dupCount || prm_targettype != DLL && !mainSym;
+    errors |= checkExterns() || errCount || prm_targettype != DLL && !mainSym;
     if (errors)
     {
         unlink(ilName);

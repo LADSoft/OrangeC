@@ -381,7 +381,7 @@ char msil_bltins[] = " void exit(int); "
     "void *__iob_func(); "
     "void *__pctype_func(); "
     "int *_errno(); "
-    "void *__OCCMSIL_GetProcThunkToManaged(void *proc); "
+    "void *__OCCMSIL_GetProcThunkToManaged(void *proc, void *pdata); "
     "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
     "void *malloc(unsigned); "
     "void free(void *); "
@@ -1176,7 +1176,7 @@ void putfunccall(AMODE *arg)
             else
             {
                 if (namespaceAndClass[0])
-                    bePrintf(" %s%s", namespaceAndClass, spi->name);  
+                    bePrintf(" %s'%s'", namespaceAndClass, spi->name);  
                 else
                     bePrintf(" '%s'", spi->name);
             }

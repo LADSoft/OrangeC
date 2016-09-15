@@ -12,31 +12,36 @@ int PASCAL DllMain(
 struct hash {
 	struct hash *next;
 	void *funcptr;
-	unsigned char thunk[16];
+	unsigned char thunk[1];
 } *table[MAX_HASH];
 
 #pragma pack(1)
 
-static struct hash *dataPointer;
+static char *dataPointer;
 static int left;
-static void *NextRecord()
+static void *NextRecord(int n)
 {
-    if (!left)
+    if (left < n)
     {
         dataPointer = VirtualAlloc(NULL, 4096, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
         if (dataPointer)
         {
-            left = 4096/sizeof(struct hash);
+            left = 4096;
+        }
+        else
+        {
+            left = 0;
         }
     }
     if (left)
     {
-        left--;
-        return dataPointer++;
+        left-= n;
+        dataPointer += n;
+        return dataPointer - n;
     }
     return NULL;
 }
-static struct hash *GetThunkRecord(void *proc)
+static struct hash *GetThunkRecord(void *proc, int n)
 {
     int hashval = (((int)proc)>>2) % MAX_HASH;
     struct hash *link = table[hashval];
@@ -46,7 +51,7 @@ static struct hash *GetThunkRecord(void *proc)
             return link;
         link = link->next;
     }
-    link = NextRecord();
+    link = NextRecord(n);
     if (link)
     {
         link->next = table[hashval];
@@ -55,25 +60,82 @@ static struct hash *GetThunkRecord(void *proc)
     }
     return NULL;
 }
- void * _export _OCCMSIL_GetProcThunkToManaged(void *proc)
+ void * _export _OCCMSIL_GetProcThunkToManaged(void *proc , unsigned char *pdata)
  {
-	static struct thunk {       /* must be <= 16 bytes, not sure if this is an MSIL limitation or not */
-		unsigned char code[9];
-		int offset;
-	} thunk = {
+	static struct thunk1 {       /* must be <= 16 bytes, not sure if this is an MSIL limitation or not */
+		unsigned char code[10];
+		int saveAddr;
+	} thunk1 = {
 		0x8B, 0x4C, 0x24, 0x04,     /* mov ecx,DWORD PTR [esp+4] */
 		0x8B, 0x54, 0x24, 0x08,     /* mov edx,DWORD PTR [esp+8] */
-		0xE9,                       /* jmp rel32 */
-		0
-	};
-    struct hash * record = GetThunkRecord(proc);
+        0x8f, 0x05,                 /* pop dword ptr [xxxxx] */
+        0
+    };
+    static struct thunk2 {
+        unsigned char code[3];
+        int offset;
+    } thunk2 = 
+    {
+        0xff, 0xb4, 0x24,             /* push dword ptr [esp + xxxxxx] */
+        0
+    };
+    static struct thunk3 {
+        unsigned char code0[1];
+        int offset;
+        unsigned char code1[1];
+        int saveAddr;
+        unsigned char code2[1];
+        short retsize;
+    } thunk3 = 
+    {
+        0xe8,
+        0,
+        0x68,                       /* push dword const */
+        0,
+        0xc2, 
+        0
+    };
+    struct hash * record;
+    int n = ((pdata[0] & 0x7f) << 8) + pdata[1], n1 = n;
+    int ts;
+    if (n < 2)
+        n = 0;
+    else
+        n -= 2;
+    ts = sizeof(thunk1) + n * sizeof(thunk2) + sizeof(thunk3);
+    record = GetThunkRecord(proc, ts);
     if (record)
     {
         if (!record->funcptr)
         {
+            struct thunk1 *t1;
+            struct thunk2 *t2;
+            struct thunk3 *t3;
+            int i;
             record->funcptr = proc;
-            memcpy(&record->thunk, &thunk, sizeof(thunk));
-            *(int *)(record->thunk + 9) = (char *)proc - ((char *)record->thunk + 9 + 4);
+            t1 = (struct thunk1 *)record->thunk;
+            t2 = (struct thunk1 *)((char *)t1 + sizeof(thunk1));
+            t3 = (struct thunk3 *)((char *)t2 + n * sizeof(thunk2));
+            memcpy(t1, &thunk1, sizeof(thunk1));
+            for (i=0; i < n; i++)
+                memcpy((char *)t2 + i * sizeof(thunk2), &thunk2, sizeof(thunk2));
+            memcpy(t3, &thunk3, sizeof(thunk3));
+            t1->saveAddr = (int)& t3->saveAddr;
+            pdata += 3;
+            for (i=0; i < n;)
+            {
+                int val = *pdata++;
+                int j;
+                if (val & 0x80)
+                {
+                    val = ((val &0x80) << 8) + *pdata++;;
+                }
+                for (j = 0; j < val; j++)
+                    t2[i + j].offset = 8 + (i) * 8 + (val - 1) *4;
+                i += val;
+            }
+            t3->offset = (int)((char *)proc - (((char *)&t3->offset) + 4));
+            t3->retsize =  pdata[2] ? n1 * 4 : 0;
         }
         return record->thunk;
     }
@@ -93,7 +155,7 @@ static struct hash *GetThunkRecord(void *proc)
 		0x83, 0xC4, 0x08,           /* add esp,8 */
 		0xC3                        /* ret */
 	};
-    struct hash * record = GetThunkRecord(proc);
+    struct hash * record = GetThunkRecord(proc, sizeof(thunk));
     if (record)
     {
         if (!record->funcptr)
@@ -105,4 +167,10 @@ static struct hash *GetThunkRecord(void *proc)
         return record->thunk;
     }
     return NULL;
+ }
+ void _export _stdcall testfunc(void *a)
+ {
+    void (*_stdcall b)(int a, int b, int c, int d, long long e, int f, int g,int h, int i) = a;
+    (*b)(1,2,3,4,5,6,7,8,9);
+    printf("try");
  }

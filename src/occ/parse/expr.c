@@ -135,21 +135,88 @@ void thunkForImportTable(EXPRESSION **exp)
         }
     }
 }
+static EXPRESSION *GetManagedFuncData(TYPE *tp)
+{
+    // while managed functions seem to be always stdcall, the caller may be
+    // either expecting a stdcall function, or a cdecl function
+    // we take care of this by using the 'stdcall' attribute on the function
+    // to determine what a caller might expect.
+    // this function makes a little thunk table to tell the thunk generator
+    // how to set up arguments for the call.  The arguments have to be reversed
+    // but we cannot do a naive reversal because arguments of 8 bytes or more have to
+    // be copied in order rather than reversed.
+    char buf[512], *save = buf;
+    int i;
+    int sz = 0;
+    STRING *data = Alloc(sizeof(STRING));
+    SYMBOL *sp;
+    HASHREC *hr;
+    if (ispointer(tp))
+        tp = basetype(tp)->btp;
+    sp = basetype(tp)->sp;
+    *save ++ = 0; // space for the number of dwords
+    *save ++ = 0;
+    *save++ =  sp->linkage == lk_stdcall;
+    hr = basetype(tp)->syms->table[0];
+    if (hr)
+    {
+        sz ++;
+        hr = hr->next;
+        if (hr)
+        {
+            sz++;
+            hr = hr->next;
+            while (hr)
+            {
+                int n = ((SYMBOL *)hr->p)->tp->size;
+                n += 3;
+                n /= 4;
+                if (n > 32767)
+                    diag("GetManagedFuncData: passing too large structure");
+                if (n > 0x7f)
+                {
+                     *save++ = (n >> 8) | 0x80;
+                     *save++ = n & 0xff;
+                }
+                else
+                {
+                    *save++ = n;
+                }
+                sz += n;
+                hr = hr->next;
+            }
+        }
+    }
+    buf[0] = (sz >> 8) | 0x80;
+    buf[1] = sz & 0xff;
+    data->pointers = Alloc(sizeof(void *));
+    data->size = 1;
+    data->strtype = l_astr;
+    data->pointers[0] = Alloc(sizeof(SLCHAR));
+    data->pointers[0]->count = save - buf;
+    data->pointers[0]->str = Alloc((save - buf) * sizeof(SLCHAR));
+    for (i=0; i < save - buf; i++)
+        data->pointers[0]->str[i] = buf[i];
+    return stringlit(data);
+}
 void ValidateMSILFuncPtr(TYPE *dest, TYPE *src, EXPRESSION **exp)
 {
     BOOLEAN managedDest = FALSE;
     BOOLEAN managedSrc = FALSE;
     if ((*exp)->type == en_func && (*exp)->v.func->ascall)
         return;
+    // this implementation marshals functions that are put into a pointer variable
+    // declared with STDCALL.   If it is not declared with stdcall, then putting it
+    // into a structure and passing it to unmanaged code will not work.
     if (isfunction(dest))
     {
         // function arg or assignment to function constant
-        managedDest = chosenAssembler->msil->managed(basetype(dest)->sp);
+        managedDest = basetype(dest)->sp->linkage2 != lk_unmanaged && chosenAssembler->msil->managed(basetype(dest)->sp);
     }
     else if (isfuncptr(dest))
     {
         // function var
-        managedDest = chosenAssembler->msil->managed(basetype(basetype(dest)->btp)->sp);
+        managedDest = basetype(basetype(dest)->btp)->sp->linkage2 != lk_unmanaged && chosenAssembler->msil->managed(basetype(basetype(dest)->btp)->sp);
     }
     else
     {
@@ -178,28 +245,65 @@ void ValidateMSILFuncPtr(TYPE *dest, TYPE *src, EXPRESSION **exp)
         if (managedSrc)
         {
             sp = gsearch("__OCCMSIL_GetProcThunkToManaged");
+            if(sp)
+            {
+                int n = 0;
+                HASHREC *hr;
+                char buf[512], *save = buf;
+                FUNCTIONCALL *functionCall = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                TYPE *tp1 = src;
+                if (ispointer(tp1))
+                    tp1 = basetype(tp1)->btp;
+
+                hr = basetype(tp1)->syms->table[0];
+                while (hr)
+                {
+                    int m = ((SYMBOL *)hr->p)->tp->size;
+                    m += 3;
+                    m /= 4;
+                    n += m;
+                     hr = hr->next;
+                }
+                sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+                functionCall->sp = sp;
+                functionCall->functp = sp->tp;
+                functionCall->fcall = varNode(en_pc, sp);
+                functionCall->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                functionCall->arguments->tp = &stdpointer;
+                functionCall->arguments->exp = *exp;
+                functionCall->arguments->next = (INITLIST *)Alloc(sizeof(INITLIST));
+                functionCall->arguments->next->tp = & stdpointer;
+                functionCall->arguments->next->exp = GetManagedFuncData(tp1);
+                functionCall->ascall = TRUE;
+                *exp = varNode(en_func, NULL);
+                (*exp)->v.func = functionCall;
+            }
+            else
+            {
+                diag("ValidateMSILFuncPtr: missing conversion func definition");
+            }
         }
         else
         {
             sp = gsearch("__OCCMSIL_GetProcThunkToUnmanaged");
-        }
-        if(sp)
-        {
-            FUNCTIONCALL *functionCall = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-            sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
-            functionCall->sp = sp;
-            functionCall->functp = sp->tp;
-            functionCall->fcall = varNode(en_pc, sp);
-            functionCall->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
-            functionCall->arguments->tp = &stdpointer;
-            functionCall->arguments->exp = *exp;
-            functionCall->ascall = TRUE;
-            *exp = varNode(en_func, NULL);
-            (*exp)->v.func = functionCall;
-        }
-        else
-        {
-            diag("ValidateMSILFuncPtr: missing conversion func definition");
+            if(sp)
+            {
+                FUNCTIONCALL *functionCall = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                sp = (SYMBOL *)basetype(sp->tp)->syms->table[0]->p;
+                functionCall->sp = sp;
+                functionCall->functp = sp->tp;
+                functionCall->fcall = varNode(en_pc, sp);
+                functionCall->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                functionCall->arguments->tp = &stdpointer;
+                functionCall->arguments->exp = *exp;
+                functionCall->ascall = TRUE;
+                *exp = varNode(en_func, NULL);
+                (*exp)->v.func = functionCall;
+            }
+            else
+            {
+                diag("ValidateMSILFuncPtr: missing conversion func definition");
+            }
         }
 
     }
@@ -1478,6 +1582,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
     BOOLEAN toolong = FALSE;
     BOOLEAN noproto = FALSE;//params->sp ? params->sp->oldstyle : FALSE;
     BOOLEAN vararg = FALSE;
+    BOOLEAN hasEllipse = FALSE;
     int argnum = 0;
  
     if (hr && ((SYMBOL *)hr->p)->thisPtr)
@@ -1511,6 +1616,7 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                     noproto = TRUE;
                 else if (basetype(decl->tp)->type == bt_ellipse)
                 {
+                    hasEllipse = TRUE;
                     vararg =  chosenAssembler->msil && chosenAssembler->msil->managed(params->sp);
                     params->vararg = vararg;
                     matching = FALSE;
@@ -1520,6 +1626,8 @@ static void checkArgs(FUNCTIONCALL *params, SYMBOL *funcsp)
                         break;
                 }
             }
+            if (!decl && !hasEllipse && chosenAssembler->msil)
+                toolong = TRUE;
             if (matching)
             {
                 if (!decl)

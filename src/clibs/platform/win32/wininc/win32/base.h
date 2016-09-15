@@ -86,6 +86,11 @@ typedef int WINBOOL;
 typedef WINBOOL BOOL;
 #endif /* !__OBJC__ */
 
+#ifdef __MSIL__
+#define UNMANAGED __unmanaged
+#else
+#define UNMANAGED
+#endif
 /* typedef ACMDRIVERENUMCB;
 typedef ACMDRIVERPROC;
 typedef ACMFILERCHOOSEHOOKPROC;
@@ -336,7 +341,7 @@ typedef CONST TCHAR *PCTSTR, *LPCTSTR;
 #endif
 #define WINAPI      STDCALL
 #define APIENTRY    STDCALL
-#define CALLBACK    WINAPI
+#define CALLBACK    WINAPI UNMANAGED
 #define WINGDIAPI
 
 #define EXPORT _export

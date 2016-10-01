@@ -373,8 +373,13 @@ static BOOLEAN kill_noprev(BLOCK *b, QUAD *head)
         {
             if (tail->dc.v.label != head->dc.v.label)
             {
-                unlinkBlock(b, b->pred->block);
-                return TRUE;
+                QUAD *tail2 = b->tail;
+                tail2 = beforeJmp(tail2, FALSE);
+                if (tail2->dc.opcode == i_goto)
+                {
+                    kill_dupgoto(b, head);
+                    return TRUE;
+                }
             }
         }
     }

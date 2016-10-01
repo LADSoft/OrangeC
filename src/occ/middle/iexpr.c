@@ -2152,6 +2152,7 @@ IMODE *gen_funccall(SYMBOL *funcsp, EXPRESSION *node, int flags)
     }
     gen_icode(i_tag, NULL, NULL, NULL);
     intermed_tail->beforeGosub = TRUE;
+    intermed_tail->ignoreMe = TRUE;
     /* named function */
     if (f->fcall->type == en_imode)
     {

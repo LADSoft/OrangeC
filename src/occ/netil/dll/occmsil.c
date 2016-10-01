@@ -97,11 +97,13 @@ static struct hash *GetThunkRecord(void *proc, int n)
     };
     struct hash * record;
     int n = ((pdata[0] & 0x7f) << 8) + pdata[1], n1 = n;
+    BOOL isstdcall = pdata[2];
     int ts;
     if (n < 2)
         n = 0;
     else
         n -= 2;
+    
     ts = sizeof(thunk1) + n * sizeof(thunk2) + sizeof(thunk3);
     record = GetThunkRecord(proc, ts);
     if (record)
@@ -135,7 +137,7 @@ static struct hash *GetThunkRecord(void *proc, int n)
                 i += val;
             }
             t3->offset = (int)((char *)proc - (((char *)&t3->offset) + 4));
-            t3->retsize =  pdata[2] ? n1 * 4 : 0;
+            t3->retsize =  isstdcall ? n1 * 4 : 0;
         }
         return record->thunk;
     }

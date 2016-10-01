@@ -34,24 +34,47 @@
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+    contact information:
+        email: TouchStone222@runbox.com <David Lindauer>
 */
-#include "compiler.h"
+#include "DotNetPELib.h"
 
-
-/*
- *      code generation structures and constants
- */
-
-/* address mode specifications */
-
-#define MAX_SEGS browseseg + 1 
-
-
-
-
-struct asm_details
+namespace DotNetPELib
 {
-    char *name;
-};
-enum asmTypes { pa_nasm, pa_fasm, pa_masm, pa_tasm} ; 
-#include "be.p"
+
+    char *Type::typeNames[] = {
+        "", "", "void", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "int",
+        "float32", "float64", "object", "object []", "string" 
+    };    
+    char *BoxedType::typeNames[] = { "", "", "", "Int8", "UInt8",
+        "Int16", "UInt16", "Int32", "UInt32",
+        "Int64", "UInt64", "Int", "Float", "Double"
+    };
+    bool Type::ILSrcDump(PELib &peLib)
+    {
+        if (fullName.size())
+        {
+            peLib.Out() << fullName;
+        }
+        else if (tp == cls)
+        {
+            peLib.Out() << "'" << Qualifiers::GetName("", typeRef, "\xf8") << "'";
+        }
+        else if (tp == method)
+        {
+            peLib.Out() << "method ";
+            methodRef->ILSrcDump(peLib, false, true, true);
+        }
+        else
+        {
+            peLib.Out() << typeNames[tp];
+        }
+        for (int i=0; i < pointerLevel; i++)
+            peLib.Out() << " *";
+        return true;
+    }
+    bool BoxedType::ILSrcDump(PELib &peLib)
+    {
+        peLib.Out() << "[mscorlib]System." << typeNames[tp];
+    }
+}

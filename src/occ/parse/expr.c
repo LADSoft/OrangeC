@@ -158,7 +158,7 @@ static EXPRESSION *GetManagedFuncData(TYPE *tp)
     *save ++ = 0;
     *save++ =  sp->linkage == lk_stdcall;
     hr = basetype(tp)->syms->table[0];
-    if (hr)
+    if (hr &&  ((SYMBOL *)hr->p)->tp->type != bt_void)
     {
         sz ++;
         hr = hr->next;

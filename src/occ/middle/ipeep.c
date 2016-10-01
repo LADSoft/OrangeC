@@ -363,6 +363,24 @@ void kill_jumpover(BLOCK *b, QUAD *head)
         }
     }
 }
+static BOOLEAN kill_noprev(BLOCK *b, QUAD *head)
+{
+    if (b->pred && !b->pred->next)
+    {
+        QUAD *tail = b->pred->block->tail;
+        tail = beforeJmp(tail, FALSE);
+        if (tail->dc.opcode == i_goto)
+        {
+            if (tail->dc.v.label != head->dc.v.label)
+            {
+                unlinkBlock(b, b->pred->block);
+                return TRUE;
+            }
+        }
+    }
+
+    return FALSE;
+}
 static int peep_assn(BLOCK *b, QUAD *head)
 {
     (void)b;
@@ -445,7 +463,11 @@ static BOOLEAN peep(BLOCK *b, BOOLEAN branches)
                 break;
             case i_label:
                 if (branches)
+                {
                     kill_labeledgoto(b, head);
+                    if (kill_noprev(b, head))
+                        return TRUE;
+                }
                 break;
             case i_nop: /* just kill it */
                 RemoveInstruction(head);

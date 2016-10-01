@@ -5920,6 +5920,12 @@ jointemplate:
                                     injectThisPtr(sp, basetype(sp->tp)->syms);
                                 }
                             }
+                            if (sp->storage_class == sc_static && chosenAssembler->msil)
+                            {
+                                if (!sp->label)
+                                    sp->label = nextLabel++;
+                            }
+
                             if (/*templateNestingCount &&*/ nameSpaceList)
                                 SetTemplateNamespace(sp);
                             if (MATCHKW(lex, begin))
@@ -6059,7 +6065,7 @@ jointemplate:
                                 else if (!sp->label)
                                     sp->label = nextLabel++;
                             }
-                            if (sp->storage_class == sc_static && chosenAssembler->msil)
+                            if (!sp->label && sp->storage_class == sc_static && chosenAssembler->msil)
                                 sp->label = nextLabel++;
                             if (cparams.prm_cplusplus)
                             {

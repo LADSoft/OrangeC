@@ -109,6 +109,7 @@ void displayLexeme(LEXEME *lex);
                               /* Declare.c */
 
 BOOLEAN intcmp(TYPE *t1, TYPE *t2);
+EXPRESSION *GetSymRef(EXPRESSION *n);
 BOOLEAN equalTemplateIntNode(EXPRESSION *exp1, EXPRESSION *exp2);
 BOOLEAN templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
 BOOLEAN templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2);
@@ -302,20 +303,20 @@ int ValueIsOne(FPF *value);
 int FPFEQ(FPF *left, FPF *right);
 int FPFGT(FPF *left, FPF *right);
 int FPFGTE(FPF *left, FPF *right);
-int IsMantissaZero(u16 *mant);
-int IsMantissaOne(u16 *mant);
-void Add16Bits(u16 *carry,
-                u16 *a,
-                u16 b,
-                u16 c);
-void Sub16Bits(u16 *borrow,
-                u16 *a,
-                u16 b,
-                u16 c);
-void ShiftMantLeft1(u16 *carry,
-                        u16 *mantissa);
-void ShiftMantRight1(u16 *carry,
-                        u16 *mantissa);
+int IsMantissaZero(uf16 *mant);
+int IsMantissaOne(uf16 *mant);
+void Add16Bits(uf16 *carry,
+                uf16 *a,
+                uf16 b,
+                uf16 c);
+void Sub16Bits(uf16 *borrow,
+                uf16 *a,
+                uf16 b,
+                uf16 c);
+void ShiftMantLeft1(uf16 *carry,
+                        uf16 *mantissa);
+void ShiftMantRight1(uf16 *carry,
+                        uf16 *mantissa);
 void StickyShiftRightMant(FPF *ptr,
                         int amount);
 void normalize(FPF *ptr);

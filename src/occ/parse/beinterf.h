@@ -303,6 +303,7 @@ typedef struct _arch_gen {
     void (*output_includelib)(char *name);      /* put an included library name */
     IMODE *(*handleIntrins)(EXPRESSION *node, int novalue);  /* backend handle intrinsic */
     CGFUNC asm_exprtag;     /* expression tag */
+    CGFUNC asm_tag;         /* tag */
     CGFUNC asm_line;        /* line number information and text */
     CGFUNC asm_blockstart;  /* block start */
     CGFUNC asm_blockend;    /* block end */

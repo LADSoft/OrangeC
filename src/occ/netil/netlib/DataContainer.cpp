@@ -34,24 +34,25 @@
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+    contact information:
+        email: TouchStone222@runbox.com <David Lindauer>
 */
-#include "compiler.h"
-
-
-/*
- *      code generation structures and constants
- */
-
-/* address mode specifications */
-
-#define MAX_SEGS browseseg + 1 
-
-
-
-
-struct asm_details
+#include "DotNetPELib.h"
+namespace DotNetPELib
 {
-    char *name;
-};
-enum asmTypes { pa_nasm, pa_fasm, pa_masm, pa_tasm} ; 
-#include "be.p"
+    void DataContainer::Add(Field *field)
+    {
+        field->SetContainer(this);
+        fields.push_back(field);
+    }
+    bool DataContainer::ILSrcDump(PELib &peLib)
+    {
+        for (std::list<Field *>::iterator it = fields.begin(); it != fields.end(); ++it)
+            (*it)->ILSrcDump(peLib);
+        for (std::list<DataContainer *>::iterator it = children.begin(); it != children.end(); ++it)
+            (*it)->ILSrcDump(peLib);
+        for (std::list<CodeContainer *>::iterator it = methods.begin(); it != methods.end(); ++it)
+            (*it)->ILSrcDump(peLib);
+        return true;
+    }
+    }

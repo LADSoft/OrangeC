@@ -46,7 +46,7 @@
   
 extern COMPILER_PARAMS cparams;
 extern char msil_bltins[];
-char namespaceAndClass[512], namespaceAndClassForNestedType[512];
+char namespaceAndClass[512];
 
 int dbgblocknum;
     #ifndef WIN32
@@ -367,9 +367,6 @@ static int parse_param(char select, char *string)
         if (!validatenamespaceAndClass(string))
             fatal("namesplace/class info in wrong format");
         strcpy(namespaceAndClass, string);
-        strcat(namespaceAndClass, "::");
-        strcpy(namespaceAndClassForNestedType, string);
-        strcat(namespaceAndClassForNestedType, "\xf8"); // magic nested type reference delimiter
     }
     return 0;
 }
@@ -387,8 +384,8 @@ ARCH_DEBUG dbgStruct [] = {
     NULL,//debug_outputtypedef,        /* output a (global) typedef */
     /* browser funcs */
     0,                          /* per file initialization */
-    dump_browsedata,    /* put browse info somewhere */
-    dump_browsefile,    /* put browse file list somewhere */
+    0,    /* put browse info somewhere */
+    0,    /* put browse file list somewhere */
     0,                          /* per file rundown */
     },
     { 0 }
@@ -406,37 +403,38 @@ ARCH_GEN outputfunctions = {
     NULL,			/* rewrites to improve register allocation */
     NULL,				/* precolor routine */
     oa_gen_strlab,             /* generate a named label */
-    oa_put_label,              /* generate a numbered label */
+    NULL,              /* generate a numbered label */
     oa_put_string_label,        /* generate a numbered label */
     NULL,                   /* reserve space for a bit */
-    oa_genint,                 /* initialize an int */
-    oa_genfloat,               /* initialize a float */
-    oa_genaddress,             /* initializae a pointer */
+    NULL,                 /* initialize an int */
+    NULL,               /* initialize a float */
+    NULL,             /* initializae a pointer */
     oa_genstring,              /* initialize a string */
-    oa_genref,                 /* put a reference to a variable */
-    oa_genpcref,               /* put a reference to something in the code segment */
-    oa_gensrref,               /* put a reference to the startup.rundown */
-    oa_gen_labref,             /* put a reference to a label */
-    oa_gen_labdifref,          /* put the difference of two labels */
-    oa_gen_virtual,        /* start a virtual segment */
-    oa_gen_endvirtual,     /* end a virtual segment */
+    NULL,                 /* put a reference to a variable */
+    NULL,               /* put a reference to something in the code segment */
+    NULL,               /* put a reference to the startup.rundown */
+    NULL,             /* put a reference to a label */
+    NULL,          /* put the difference of two labels */
+    NULL,        /* start a virtual segment */
+    NULL,     /* end a virtual segment */
     oa_gen_vtt,                  /* do a VT thunk entry */
     oa_gen_vc1,                 /* do a vc1 thunk entry */
     oa_gen_importThunk,                 /* do an import thunk entry */
-    oa_genstorage,             /* generate uninitialized storage */
-    oa_align,                  /* put an alignment command */
+    NULL,             /* generate uninitialized storage */
+    NULL,                  /* put an alignment command */
     oa_enterseg,               /* switch to new seg */
-    oa_exitseg,                /* exit current segment */
-    oa_globaldef,          /* put a global definition */
-    oa_localdef,          /* put a local definition */
-    oa_localstaticdef,          /* put a local static definition */
+    NULL,                /* exit current segment */
+    NULL,          /* put a global definition */
+    NULL,          /* put a local definition */
+    NULL,          /* put a local static definition */
     oa_put_extern,         /* put an external definition */
-    oa_put_impfunc,        /* put an import definition */
-    oa_put_expfunc,        /* put an export definition */
-    oa_output_alias,       /* put an alias */
-    oa_output_includelib,  /* put an included library name */
+    NULL,        /* put an import definition */
+    NULL,        /* put an export definition */
+    NULL,       /* put an alias */
+    NULL,  /* put an included library name */
     0,                      /* backend handle intrinsic */
     asm_expressiontag,      /* expression tag */
+    asm_tag,                /* tag */
     asm_line,               /* line number information and text */
     asm_blockstart,         /* block start */
     asm_blockend,           /* block end */
@@ -558,7 +556,7 @@ ARCH_ASM assemblerInterface[] = {
     NULL,		/* translate an assembly instruction which was inlined */
     0,                   /* initialize intrinsic mechanism, compiler startup */
     0,                   /* search for an intrinsic */
-    oa_enter_type,                     /* enter a type in the BE */
+    0,                     /* enter a type in the BE */
     },
     { 0 }
 } ;

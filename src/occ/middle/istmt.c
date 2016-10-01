@@ -452,7 +452,7 @@ void genreturn(STATEMENT *stmt, SYMBOL *funcsp, int flag, int noepilogue, IMODE 
             gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
             DumpIncDec(funcsp);
             sp->offset = chosenAssembler->arch->retblocksize;
-            sp->name = "retblock";
+            sp->name = "__retblock";
             sp->allocate = FALSE;
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 

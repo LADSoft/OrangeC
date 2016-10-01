@@ -1722,7 +1722,7 @@ static LEXEME *statement_return(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent)
             sp->allocate = FALSE; // static var
             sp->offset = chosenAssembler->arch->retblocksize;
             sp->structuredReturn = TRUE;
-            sp->name = "retblock";
+            sp->name = "__retblock";
             if ((funcsp->linkage == lk_pascal) &&
                     basetype(funcsp->tp)->syms->table[0] && 
                     ((SYMBOL *)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)

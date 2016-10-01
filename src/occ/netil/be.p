@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Protogen Version 2.1.1.17Friday October 28, 2005  17:44:50 */
 
                                 /* Gen.c */
@@ -10,6 +14,7 @@ int preRegAlloc(QUAD *ins, BRIGGS_SET *globals, BRIGGS_SET *eobGlobals, int pass
 int examine_icode(QUAD *head);
 void cg_internal_conflict(QUAD *head);
 void asm_expressiontag(QUAD *q)               ;
+void asm_tag(QUAD *q)               ;
 void asm_line(QUAD *q)               ;
 void asm_blockstart(QUAD *q)         ;
 void asm_blockend(QUAD *q)           ;
@@ -162,3 +167,8 @@ SYMBOL * clonesp(SYMBOL *sp, BOOLEAN shallow);
 void oa_load_funcs(void);
 TYPE * LookupGlobalArrayType(char *name);
 INITLIST *cloneInitListTypes(INITLIST *in);
+void GetOutputFileName(char *name, char *path);
+
+#ifdef __cplusplus
+}
+#endif

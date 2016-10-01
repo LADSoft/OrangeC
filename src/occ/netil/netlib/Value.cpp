@@ -34,24 +34,54 @@
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+    contact information:
+        email: TouchStone222@runbox.com <David Lindauer>
 */
-#include "compiler.h"
-
-
-/*
- *      code generation structures and constants
- */
-
-/* address mode specifications */
-
-#define MAX_SEGS browseseg + 1 
-
-
-
-
-struct asm_details
+#include "DotNetPELib.h"
+namespace DotNetPELib
 {
-    char *name;
-};
-enum asmTypes { pa_nasm, pa_fasm, pa_masm, pa_tasm} ; 
-#include "be.p"
+    bool Value::ILSrcDump(PELib &peLib)
+    {
+        // used for types
+        type->ILSrcDump(peLib);
+        return true;
+    }
+    bool Local::ILSrcDump(PELib &peLib)
+    {
+        peLib.Out() << "'" << name << "/" << index << "'";
+        return true;
+    }
+    bool Param::ILSrcDump(PELib &peLib)
+    {
+        peLib.Out() << "'" << name << "'";
+        return true;
+    }
+    bool FieldName::ILSrcDump(PELib &peLib)
+    {
+        if (field->GetType()->GetBasicType() == Type::cls)
+            if (field->GetFlags().flags & (Qualifiers::ValueType | Qualifiers::Value))
+                peLib.Out() << "valuetype ";
+            else
+                peLib.Out() << "class ";
+        field->GetType()->ILSrcDump(peLib);
+        peLib.Out() << " ";
+        if (field->GetFullName().size())
+            peLib.Out() << field->GetFullName();
+        else
+            peLib.Out() << Qualifiers::GetName(field->GetName(), field->GetContainer());
+        return true;
+    }
+    MethodName::MethodName(MethodSignature *M, std::string Name, std::string Path) : signature(M), Value("", NULL) 
+    {
+        if (Name.size())
+            if (Path.size())
+                signature->SetFullName(Path + "::'" + Name + "'");
+            else
+                signature->SetFullName(std::string("'") + Name + "'");
+    }
+    bool MethodName::ILSrcDump(PELib &peLib)
+    {
+        signature->ILSrcDump(peLib, false, false, false);
+        return true;
+    }
+}

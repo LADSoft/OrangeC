@@ -370,7 +370,7 @@ static void dumpDynamicInitializers(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(sc_static, tp, NULL,"__DYNAMIC_STARTUP__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;
@@ -403,7 +403,7 @@ static void dumpTLSInitializers(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(sc_static, tp, NULL,"__TLS_DYNAMIC_STARTUP__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__TLS_DYNAMIC_STARTUP__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;
@@ -454,7 +454,7 @@ static void dumpDynamicDestructors(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(sc_static, tp, NULL,"__DYNAMIC_RUNDOWN__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;
@@ -487,7 +487,7 @@ static void dumpTLSDestructors(void)
         tp->btp = Alloc(sizeof(TYPE));
         tp->btp->type = bt_void;
         tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID(sc_static, tp, NULL,"__TLS_DYNAMIC_RUNDOWN__");
+        funcsp = makeUniqueID(chosenAssembler->msil ? sc_global : sc_static, tp, NULL,"__TLS_DYNAMIC_RUNDOWN__");
         funcsp->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = st;
         tp->sp = funcsp;

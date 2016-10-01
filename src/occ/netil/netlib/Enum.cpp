@@ -34,24 +34,28 @@
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+    contact information:
+        email: TouchStone222@runbox.com <David Lindauer>
 */
-#include "compiler.h"
-
-
-/*
- *      code generation structures and constants
- */
-
-/* address mode specifications */
-
-#define MAX_SEGS browseseg + 1 
-
-
-
-
-struct asm_details
+#include "DotNetPELib.h"
+namespace DotNetPELib
 {
-    char *name;
-};
-enum asmTypes { pa_nasm, pa_fasm, pa_masm, pa_tasm} ; 
-#include "be.p"
+    void Enum::AddValue(Allocator &allocator, std::string Name, longlong Value)
+    {
+        Type *type = allocator.AllocateType(this);
+        Field *field = allocator.AllocateField(Name, type, Qualifiers(Qualifiers::EnumField));
+        field->AddEnumValue(Value, size);
+        Add(field);
+    }
+    bool Enum::ILSrcDump(PELib &peLib)
+    {
+        ILSrcDumpClassHeader(peLib);
+        peLib.Out() << " {" << std::endl;
+        DataContainer::ILSrcDump(peLib);
+        peLib.Out() << " .field public specialname rtspecialname "; 
+        Field::ILSrcDumpTypeName(peLib, size);
+        peLib.Out() << " value__" << std::endl;
+        peLib.Out() << "}" << std::endl;
+        return true;
+    }
+}

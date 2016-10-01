@@ -158,7 +158,7 @@ int FPFGTE(FPF *left, FPF *right)
 ** number's mantissa.  It checks for an all-zero mantissa.
 ** Returns 0 if it is NOT all zeros, !=0 otherwise.
 */
-int IsMantissaZero(u16 *mant)
+int IsMantissaZero(uf16 *mant)
 {
 int i;          /* Index */
 int n;          /* Return value */
@@ -169,7 +169,7 @@ for(i=0;i<INTERNAL_FPF_PRECISION;i++)
 
 return(!n);
 }
-int IsMantissaOne(u16 *mant)
+int IsMantissaOne(uf16 *mant)
 {
     int i;
     if (mant[0] != 0x8000)
@@ -185,22 +185,22 @@ int IsMantissaOne(u16 *mant)
 ***************
 ** Add b, c, and carry.  Retult in a.  New carry in carry.
 */
-void Add16Bits(u16 *carry,
-                u16 *a,
-                u16 b,
-                u16 c)
+void Add16Bits(uf16 *carry,
+                uf16 *a,
+                uf16 b,
+                uf16 c)
 {
-u32 accum;              /* Accumulator */
+uf32 accum;              /* Accumulator */
 
 /*
 ** Do the work in the 32-bit accumulator so we can return
 ** the carry.
 */
-accum=(u32)b;
-accum+=(u32)c;
-accum+=(u32)*carry;
-*carry=(u16)((accum & 0x00010000) ? 1 : 0);     /* New carry */
-*a=(u16)(accum & 0xFFFF);       /* Result is lo 16 bits */
+accum=(uf32)b;
+accum+=(uf32)c;
+accum+=(uf32)*carry;
+*carry=(uf16)((accum & 0x00010000) ? 1 : 0);     /* New carry */
+*a=(uf16)(accum & 0xFFFF);       /* Result is lo 16 bits */
 return;
 }
 
@@ -209,18 +209,18 @@ return;
 ***************
 ** Additive inverse of above.
 */
-void Sub16Bits(u16 *borrow,
-                u16 *a,
-                u16 b,
-                u16 c)
+void Sub16Bits(uf16 *borrow,
+                uf16 *a,
+                uf16 b,
+                uf16 c)
 {
-u32 accum;              /* Accumulator */
+uf32 accum;              /* Accumulator */
 
-accum=(u32)b;
-accum-=(u32)c;
-accum-=(u32)*borrow;
-*borrow=(u32)((accum & 0x00010000) ? 1 : 0);    /* New borrow */
-*a=(u16)(accum & 0xFFFF);
+accum=(uf32)b;
+accum-=(uf32)c;
+accum-=(uf32)*borrow;
+*borrow=(uf32)((accum & 0x00010000) ? 1 : 0);    /* New borrow */
+*a=(uf16)(accum & 0xFFFF);
 return;
 }
 
@@ -231,12 +231,12 @@ return;
 ** a carry bit, which is shifted in at the beginning, and
 ** shifted out at the end.
 */
-void ShiftMantLeft1(u16 *carry,
-                        u16 *mantissa)
+void ShiftMantLeft1(uf16 *carry,
+                        uf16 *mantissa)
 {
 int i;          /* Index */
 int new_carry;
-u16 accum;      /* Temporary holding placed */
+uf16 accum;      /* Temporary holding placed */
 
 for(i=INTERNAL_FPF_PRECISION-1;i>=0;i--)
 {       accum=mantissa[i];
@@ -256,12 +256,12 @@ return;
 ** Shift a mantissa right by 1 bit.  Provides carry, as
 ** above
 */
-void ShiftMantRight1(u16 *carry,
-                        u16 *mantissa)
+void ShiftMantRight1(uf16 *carry,
+                        uf16 *mantissa)
 {
 int i;          /* Index */
 int new_carry;
-u16 accum;
+uf16 accum;
 
 for(i=0;i<INTERNAL_FPF_PRECISION;i++)
 {       accum=mantissa[i];
@@ -287,8 +287,8 @@ void StickyShiftRightMant(FPF *ptr,
                         int amount)
 {
 int i;          /* Index */
-u16 carry;      /* Self-explanatory */
-u16 *mantissa;
+uf16 carry;      /* Self-explanatory */
+uf16 *mantissa;
 
 mantissa=ptr->mantissa;
 
@@ -331,7 +331,7 @@ return;
 */
 void normalize(FPF *ptr)
 {
-u16     carry;
+uf16     carry;
 
 if (ptr->type == IFPF_IS_ZERO || ptr->type == IFPF_IS_INFINITY || ptr->type == IFPF_IS_NAN)
 	return;
@@ -491,8 +491,8 @@ void AddSubFPF(uchar operation,
                 FPF *z)
 {
 int exponent_difference;
-u16 borrow;
-u16 carry;
+uf16 borrow;
+uf16 carry;
 int i;
 FPF locx,locy;  /* Needed since we alter them */
 
@@ -700,8 +700,8 @@ void MultiplyFPF(FPF *x,
 {
 int i;
 int j;
-u16 carry;
-u16 extra_bits[INTERNAL_FPF_PRECISION];
+uf16 carry;
+uf16 extra_bits[INTERNAL_FPF_PRECISION];
 FPF locy;       /* Needed since this will be altered */
 /*
 ** As in the preceding function, this large switch
@@ -862,8 +862,8 @@ void DivideFPF(FPF *x,
 {
 int i;
 int j;
-u16 carry;
-u16 extra_bits[INTERNAL_FPF_PRECISION];
+uf16 carry;
+uf16 extra_bits[INTERNAL_FPF_PRECISION];
 FPF locx;       /* Local for x number */
 
 /*
@@ -1010,7 +1010,7 @@ RoundFPF(z);
 void LongLongToFPF(FPF *dest, LLONG_TYPE myllong)
 {
 int i;          /* Index */
-u16 myword;     /* Used to hold converted stuff */
+uf16 myword;     /* Used to hold converted stuff */
 /*
 ** Save the sign and get the absolute value.  This will help us
 ** with 64-bit machines, since we use only the lower 32
@@ -1048,14 +1048,14 @@ if(myllong==0)
 */
 dest->exp=64;
 #ifdef USE_LONGLONG
-myword=(u16)((myllong >> 48) & 0xFFFFL);
+myword=(uf16)((myllong >> 48) & 0xFFFFL);
 dest->mantissa[0]=myword;
-myword=(u16)((myllong >> 32) & 0xFFFFL);
+myword=(uf16)((myllong >> 32) & 0xFFFFL);
 dest->mantissa[1]=myword;
 #endif
-myword=(u16)((myllong >> 16) & 0xFFFFL);
+myword=(uf16)((myllong >> 16) & 0xFFFFL);
 dest->mantissa[2]=myword;
-myword=(u16)(myllong & 0xFFFFL);
+myword=(uf16)(myllong & 0xFFFFL);
 dest->mantissa[3]=myword;
 normalize(dest);
 return;
@@ -1063,7 +1063,7 @@ return;
 void UnsignedLongLongToFPF(FPF *dest, LLONG_TYPE myllong)
 {
 int i;          /* Index */
-u16 myword;     /* Used to hold converted stuff */
+uf16 myword;     /* Used to hold converted stuff */
         dest->sign=0;
 /*
 ** Prepare the destination floating point number
@@ -1091,14 +1091,14 @@ if(myllong==0)
 */
 dest->exp=64;
 #ifdef USE_LONGLONG
-myword=(u16)((myllong >> 48) & 0xFFFFL);
+myword=(uf16)((myllong >> 48) & 0xFFFFL);
 dest->mantissa[0]=myword;
-myword=(u16)((myllong >> 32) & 0xFFFFL);
+myword=(uf16)((myllong >> 32) & 0xFFFFL);
 dest->mantissa[1]=myword;
 #endif
-myword=(u16)((myllong >> 16) & 0xFFFFL);
+myword=(uf16)((myllong >> 16) & 0xFFFFL);
 dest->mantissa[2]=myword;
-myword=(u16)(myllong & 0xFFFFL);
+myword=(uf16)(myllong & 0xFFFFL);
 dest->mantissa[3]=myword;
 normalize(dest);
 return;
@@ -1208,10 +1208,10 @@ char * FPFToString(char *dest,
 	}
 	else
 	{
-	    u16 mantissa[INTERNAL_FPF_PRECISION];
+	    uf16 mantissa[INTERNAL_FPF_PRECISION];
 	    FPF temp = *src;
 	    int power = FPFTensExponent(&temp);
-	    u16 carry;
+	    uf16 carry;
 	    int val,val1,i,j,c;
 	    FPFMultiplyPowTen(&temp,-power);
 	    val = 0;
@@ -1243,7 +1243,7 @@ char * FPFToString(char *dest,
 	        val <<= 1;
 	        val |= !!carry;
 	        val1 = val ;
-	        memcpy(mantissa,temp.mantissa, INTERNAL_FPF_PRECISION * sizeof(u16));
+	        memcpy(mantissa,temp.mantissa, INTERNAL_FPF_PRECISION * sizeof(uf16));
 	        carry = 0;
 	        ShiftMantLeft1(&carry,temp.mantissa);
 	        val <<= 1;
@@ -1293,7 +1293,7 @@ LLONG_TYPE FPFToLongLong(FPF *src)
 	FPF stemp = *src;
 	int exp = stemp.exp;
     LLONG_TYPE temp;
-    u16 tmant[INTERNAL_FPF_PRECISION];
+    uf16 tmant[INTERNAL_FPF_PRECISION];
     int i;
     if (stemp.type == IFPF_IS_ZERO)
         return 0;
@@ -1327,7 +1327,7 @@ LLONG_TYPE FPFToLongLong(FPF *src)
         if (stemp.exp < 0)
             return 0;
         while (stemp.exp++ != 64) {
-            u16 carry= 0;
+            uf16 carry= 0;
             ShiftMantRight1(&carry, tmant);
         }
         temp = 0;
@@ -1344,7 +1344,7 @@ LLONG_TYPE FPFToLongLong(FPF *src)
         if (stemp.exp < 0)
             return 0;
         while (exp++ != 32) {
-            u16 carry= 0;
+            uf16 carry= 0;
             ShiftMantRight1(&carry, tmant);
         }
         temp = 0;
@@ -1362,7 +1362,7 @@ LLONG_TYPE FPFToLongLong(FPF *src)
 }
 int FPFToFloat(unsigned char *dest, FPF *src)
 {
-    u32 val ;
+    uf32 val ;
       FPFTruncate(src, 24, 128, -126);
 	if (src->type == IFPF_IS_ZERO)
 		val = 0 ;
@@ -1386,7 +1386,7 @@ int FPFToFloat(unsigned char *dest, FPF *src)
 				if (src->exp < -126 && src->exp >= -149)
 				{
 					int n = -(src->exp + 126);
-					u32 r = !!(val & (1 << (n - 1)));
+					uf32 r = !!(val & (1 << (n - 1)));
 					val >>= n;
 					val += r;
 				}
@@ -1413,7 +1413,7 @@ int FPFToFloat(unsigned char *dest, FPF *src)
 }
 int FPFToDouble(unsigned char *dest, FPF *src)
 {
-    u32 val[2] ;
+    uf32 val[2] ;
       FPFTruncate(src, 53, 1024, -1022);
 	if (src->type == IFPF_IS_ZERO)
 		val[0] = val[1] = 0 ;
@@ -1439,7 +1439,7 @@ int FPFToDouble(unsigned char *dest, FPF *src)
 				if (src->exp < -1022 && src->exp >= -1074)
 				{
 					int n = -(src->exp + 1022);
-					u32 c = val[0], r, t;
+					uf32 c = val[0], r, t;
 					if (n < 32)
 					{
 						r = !!(val[1] & (1 << (n - 1)));
@@ -1490,7 +1490,7 @@ int FPFToDouble(unsigned char *dest, FPF *src)
 }
 int FPFToLongDouble(unsigned char *dest, FPF *src)
 {
-    u32 val[3] ;
+    uf32 val[3] ;
     FPFTruncate(src, 64, 16384, -16382);
     /* have to or in the high bit in case infinity or nan*/
 	if (src->type == IFPF_IS_ZERO)
@@ -1513,7 +1513,7 @@ int FPFToLongDouble(unsigned char *dest, FPF *src)
 				if (src->exp < -16382 && src->exp >= -16446)
 				{
 					int n = -(src->exp + 16381);
-					u32 c = val[1], r, t;
+					uf32 c = val[1], r, t;
 					if (n < 32)
 					{
 						r = !!(val[2] & (1 << (n - 1)));
@@ -1578,14 +1578,14 @@ int LongDoubleToFPF(FPF *dest, unsigned char *src)
     int i, exp;
     if (BigEndian) {
         for (i = 0; i < INTERNAL_FPF_PRECISION - 1; i++)
-            dest->mantissa[i] = *((u16 *)src + i + 1);
+            dest->mantissa[i] = *((uf16 *)src + i + 1);
         dest->mantissa[i] = 0;
-        exp = *(u16 *)src;
+        exp = *(uf16 *)src;
     } else {
         for (i = 0; i < INTERNAL_FPF_PRECISION - 1; i++)
-            dest->mantissa[i] = *((u16 *)src + INTERNAL_FPF_PRECISION - 2 - i);
+            dest->mantissa[i] = *((uf16 *)src + INTERNAL_FPF_PRECISION - 2 - i);
         dest->mantissa[i] = 0;
-        exp = *((u16 *)src + INTERNAL_FPF_PRECISION - 1);
+        exp = *((uf16 *)src + INTERNAL_FPF_PRECISION - 1);
     }
     dest->sign = !!(exp & 0x8000);
     exp &= 0x7fff;
@@ -1634,7 +1634,7 @@ void FPFTruncate(FPF *value, int bits, int maxexp, int minexp)
                 else {
 /*
                     while (value->exp < minexp) {
-                        u16 carry = 0;
+                        uf16 carry = 0;
                         ShiftMantRight1(&carry, value->mantissa);
                         value->exp++ ;
                     }
@@ -1697,7 +1697,7 @@ void FPFTruncate(FPF *value, int bits, int maxexp, int minexp)
 						else
 						{
 							/* else shift mantissa right and increment exponent... */
-							u16 carry = 1 ; /* high bit should be one */
+							uf16 carry = 1 ; /* high bit should be one */
 							ShiftMantRight1(&carry, &value->mantissa[0]);
 						}
 					}

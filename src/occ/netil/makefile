@@ -99,7 +99,7 @@ C_DEPENDENCIES= \
     unmangle.c\
     winsystem.c
 CPP_DEPENDENCIES=\
-    using.cpp
+    using.cpp gen.cpp process.cpp
 LIB_DEPENDENCIES=util netlib
 #determine if we can ignore the banner for a batch compile
 WIN32 = WIN32
@@ -110,7 +110,7 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 SOURCE = ..\parse;..\preproc;..\middle
 
 SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c gen.c outasm.c
+BACKEND_FILES = config.c
 
 BACKEND_INCLUDE_PATH=.
 

@@ -60,8 +60,6 @@ extern QUAD *intermed_tail;
 TEMP_INFO **tempInfo;
 int tempSize;
 
-int MSILLocalOffset;
-
 BRIGGS_SET *killed;
 int tempBottom, nextTemp;
 
@@ -168,30 +166,11 @@ static void renameOneSym(SYMBOL *sp)
 static void renameToTemps(SYMBOL *funcsp)
 {
     LIST *lst;
-    int i = 0;
     BOOLEAN doRename = TRUE;
     HASHTABLE *temp = funcsp->inlineFunc.syms;
     doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= ! (setjmp_used);
-    while (temp)
-    {
-        HASHREC *hr = temp->table[0];
-        while (hr)
-        {
-            SYMBOL *sym = (SYMBOL *)hr->p;
-            sym->temp = FALSE;
-            hr = hr->next;
-        }
-        temp = temp->next;
-    }
-    lst = temporarySymbols;
-    while (lst)
-    {
-        SYMBOL *sym = (SYMBOL *)lst->data;
-        sym->temp = FALSE;
-        lst = lst->next;
-    }
     temp = funcsp->inlineFunc.syms;
     while (temp)
     {
@@ -201,12 +180,6 @@ static void renameToTemps(SYMBOL *funcsp)
             SYMBOL *sym = (SYMBOL *)hr->p;
             if (doRename)
                 renameOneSym(sym);
-        if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
-            {
-                // set up index for CIL
-                sym->temp = TRUE;
-                sym->offset = i++;
-            }
             hr = hr->next;
         }
         temp = temp->next;
@@ -219,15 +192,8 @@ static void renameToTemps(SYMBOL *funcsp)
         {
             renameOneSym(sym);
         }
-        if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE) && !sym->temp)
-        {
-            sym->temp = TRUE;
-            // set up index for CIL
-            sym->offset = i++;
-        }
         lst = lst->next;
     }
-    MSILLocalOffset = i;
 }
 
 static int AllocTempOpt(int size1)

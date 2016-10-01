@@ -103,7 +103,7 @@ enum e_kw
         kw__pascal, kw__stdcall, kw__cdecl, kw__intrinsic, kw_asm, kw__loadds,
         kw__far, kw_asmreg, kw_asminst, kw__indirect, kw__export, kw__import, kw___func__,
         kw__near, kw__seg, kw___typeid, kw___int64, kw_alloca, kw__msil_rtl,
-        kw___va_list__,  kw___va_typeof__,
+        kw___va_list__,  kw___va_typeof__, kw__unmanaged, 
     /* These next are generic register names */
     kw_D0, kw_D1, kw_D2, kw_D3, kw_D4, kw_D5, kw_D6, kw_D7, kw_D8, kw_D9, kw_DA,
         kw_DB, kw_DC, kw_DD, kw_DE, kw_DF, kw_A0, kw_A1, kw_A2, kw_A3, kw_A4,
@@ -202,7 +202,7 @@ enum e_bt
 };
 enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_c, lk_cpp,
     lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal, 
-    lk_import, lk_export, lk_auto, lk_msil_rtl };
+    lk_import, lk_export, lk_auto, lk_msil_rtl, lk_unmanaged };
     
 enum e_ac { ac_private, ac_protected, ac_public, ac_none };
 

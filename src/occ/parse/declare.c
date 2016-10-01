@@ -1789,6 +1789,11 @@ static LEXEME *getLinkageQualifiers(LEXEME *lex, enum e_lk *linkage, enum e_lk *
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                 *linkage2 = lk_msil_rtl;
                 break;
+            case kw__unmanaged:
+                if (*linkage2 != lk_none)
+                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                *linkage2 = lk_unmanaged;
+                break;
             case kw__import:
                 if (*linkage2 != lk_none)
                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
@@ -5182,10 +5187,15 @@ jointemplate:
                                 storage_class = sc_static;
                         if (consdest != CT_NONE)
                         {
-                            if (consdest == CT_CONS)
-                                sp-> isConstructor = TRUE;
+                            if (cparams.prm_cplusplus)
+                                ConsDestDeclarationErrors(sp, notype);
+                            if (isfunction(sp->tp))
+                                if (consdest == CT_CONS)
+                                    sp-> isConstructor = TRUE;
+                                else
+                                    sp-> isDestructor = TRUE;
                             else
-                                sp-> isDestructor = TRUE;
+                                sp->name = litlate(AnonymousName());
                         }
                         sp->parent = funcsp; /* function vars have a parent */
                         if (instantiatingTemplate)
@@ -5307,8 +5317,6 @@ jointemplate:
                                 errorsym(ERR_IDENTIFIER_CANNOT_HAVE_TYPE_QUALIFIER, sp);
                             }
                         }
-                        if (cparams.prm_cplusplus)
-                            ConsDestDeclarationErrors(sp, notype);
                         spi = NULL;
                         if (nsv)
                         {
@@ -5912,6 +5920,12 @@ jointemplate:
                                     injectThisPtr(sp, basetype(sp->tp)->syms);
                                 }
                             }
+                            if (sp->storage_class == sc_static && chosenAssembler->msil)
+                            {
+                                if (!sp->label)
+                                    sp->label = nextLabel++;
+                            }
+
                             if (/*templateNestingCount &&*/ nameSpaceList)
                                 SetTemplateNamespace(sp);
                             if (MATCHKW(lex, begin))
@@ -6051,7 +6065,7 @@ jointemplate:
                                 else if (!sp->label)
                                     sp->label = nextLabel++;
                             }
-                            if (sp->storage_class == sc_static && chosenAssembler->msil)
+                            if (!sp->label && sp->storage_class == sc_static && chosenAssembler->msil)
                                 sp->label = nextLabel++;
                             if (cparams.prm_cplusplus)
                             {

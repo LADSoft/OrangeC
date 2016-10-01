@@ -637,6 +637,8 @@ int main(int argc, char *argv[])
                 }
             }
         }
+        if (cparams.prm_cplusplus && chosenAssembler->msil)
+            fatal("MSIL compiler does not compile C++ files at this time");
         inputFile = SrchPth2(buffer, "", "r");
         if (!inputFile)
             fatal("Cannot open input file %s", buffer);

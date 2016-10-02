@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+enum myenum
+{
+    one = 45, two = 55, three = 65
+} qqq;
 void myprintf(char *f, ...)
 {
     int accum = 0;

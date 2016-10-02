@@ -10,11 +10,11 @@ namespace HelloWorld
     {
         static void DumpNames(string file)
         {
-            void *db;
+            sqlite.sqlite3 *db;
             if (sqlite.sqlite3_open_v2(CString.ToPointer(file), &db, 2/* SQLITE_OPEN_READWRITE*/, null) == 0 /*SQLITE_OK*/)
             {
                 string query = "SELECT name FROM names;";
-                void *handle;
+                sqlite.sqlite3_stmt *handle;
                 int rc = sqlite.sqlite3_prepare_v2(db, CString.ToPointer(query), query.Length+1, &handle, null);
                 if (rc == 0)
                 {
@@ -52,8 +52,10 @@ namespace HelloWorld
         {
             Console.WriteLine("Hello World!");
 
+            ar.myenum qq1 = ar.myenum.two;
+            Console.WriteLine("An enumeration value {0} = {1}", qq1, (int)qq1);
             // get a structure instance from the dll and write its contents
-            ar.aa * nn = (ar.aa *)ar.getqq();
+            ar.aa * nn = ar.getqq();
 
             Console.WriteLine("structure from dll: {0}, {1}, {2}", nn->i, nn->b, nn->j);
             // use CString to make a C-style string for the C code

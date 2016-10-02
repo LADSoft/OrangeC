@@ -276,7 +276,7 @@ namespace DotNetPELib
     	{ "volatile.",0xfe, 13,2, o_single, 0 }, 
     	{ "xor",0x61, -1,1, o_single, -1 }
     };
-    Instruction::Instruction(iop Op, Operand *Oper) : op(Op), switches(NULL)
+    Instruction::Instruction(iop Op, Operand *Oper) : op(Op), switches(NULL), live(false)
     {
         switches = new std::list<std::string>();
         operand = Oper;

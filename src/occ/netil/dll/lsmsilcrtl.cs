@@ -192,19 +192,20 @@ namespace lsmsilcrtl
     }
     public unsafe class CString {
         private string myString;
-        private void *nativeString;
+        private sbyte *nativeString;
         private IntPtr freeableString;
 
-        public static void *ToPointer(string str)
+        public static sbyte *ToPointer(string str)
         {
             return new CString(str).ToPointer();
         }
         public CString(string str)  { myString = str; }
-        public CString(void *str) {nativeString = str; }
+        public CString(sbyte *str) {nativeString = str; }
+        public CString(byte *str) {nativeString = (sbyte *)str; }
         public CString (int len)
         {
             freeableString = Marshal.AllocHGlobal(len);
-            nativeString = freeableString.ToPointer();
+            nativeString = (sbyte *)freeableString.ToPointer();
         }
         public override string ToString()
         {
@@ -227,11 +228,11 @@ namespace lsmsilcrtl
             }
             return null;
         }
-        public void *ToPointer()
+        public sbyte *ToPointer()
         {
             if (freeableString.ToPointer() != null)
             {
-                return freeableString.ToPointer();
+                return (sbyte *)freeableString.ToPointer();
             }
             if (myString != null)
             {
@@ -246,7 +247,7 @@ namespace lsmsilcrtl
                     dest[i] = ba[i];
                 }
                 dest[slen] = 0;
-                return freeableString.ToPointer();
+                return (sbyte *)freeableString.ToPointer();
             }
             else
             {

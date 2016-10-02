@@ -86,7 +86,14 @@ typedef struct  __file__{
 #define stdaux  __stdaux /* these two not supported now */
 #define stdprn  __stdprn
 
-#if defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSIL__)
+#if defined(__MSIL__)
+extern __STD_NS_QUALIFIER void * __stdin ;
+extern __STD_NS_QUALIFIER void * __stdout ;
+extern __STD_NS_QUALIFIER void * __stderr ;
+extern __STD_NS_QUALIFIER void * __stdaux ;
+extern __STD_NS_QUALIFIER void * __stdprn ;
+
+#elif defined(__MSVCRT_DLL) || defined(__CRTDLL_DLL) || defined(__MSIL__)
 extern __STD_NS_QUALIFIER FILE * __stdin ;
 extern __STD_NS_QUALIFIER FILE * __stdout ;
 extern __STD_NS_QUALIFIER FILE * __stderr ;

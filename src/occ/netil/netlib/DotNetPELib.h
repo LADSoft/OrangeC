@@ -271,6 +271,7 @@ public:
 protected:
     void OptimizeLocals(PELib &);
     void CalculateMaxStack();
+    void CalculateLive();
     MethodSignature *prototype;
     std::list<Local *> varList;
     std::list<std::string> modifierNames;
@@ -415,7 +416,7 @@ public:
     };
     Instruction(iop Op, Operand *Operand);
     // for now only do comments and labels and branches...
-    Instruction (iop Op, std::string Text) : op(Op), text(Text), switches(NULL), operand(NULL) { }
+    Instruction (iop Op, std::string Text) : op(Op), text(Text), switches(NULL), operand(NULL), live(false) { }
 
     virtual ~Instruction() { if (switches) delete switches; }
     virtual bool ILSrcDump(PELib &);
@@ -442,12 +443,15 @@ public:
     int IsRel1() { return instructions[op].operandType == o_rel1; }
     int IsBranch() { IsRel1() || IsRel4(); }
     void Rel4To1() { op++; }
+    void SetLive(bool val) { live = val; }
+    bool IsLive() { return live; }
 protected:
     std::list<std::string> *switches;
     iop op;
     int offset;
     Operand *operand; // for non-labels
     std::string text; // for labels or comments
+    bool live;
     static InstructionName instructions[]; 
 };
 
@@ -574,6 +578,7 @@ public:
     void SetFullName(std::string name) { fullName = name; }
     void SetPointer(int n) { pointerLevel = n; }
     enum BasicType GetBasicType() { return tp; }
+    void SetBasicType(BasicType type) { tp = type; }
     DataContainer *GetClass() { return typeRef; }
     virtual bool ILSrcDump(PELib &);
     bool IsVoid() { return tp == Void && pointerLevel == 0; }

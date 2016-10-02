@@ -59,6 +59,13 @@ namespace DotNetPELib
         {
             peLib.Out() << "instance ";
         }
+        if (returnType->GetBasicType() == Type::cls)
+        {
+            if (returnType->GetClass()->GetFlags().flags & Qualifiers::Value)
+                peLib.Out() << "valuetype ";
+            else
+                peLib.Out() << "class ";
+        }
         returnType->ILSrcDump(peLib);
         peLib.Out() << " ";
         if (asType)

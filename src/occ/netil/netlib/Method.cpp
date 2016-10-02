@@ -40,6 +40,8 @@
 #include "DotNetPELib.h"
 #include <search.h>
 
+#include <set>
+
 namespace DotNetPELib
 {    
     Method::Method(MethodSignature *Prototype, Qualifiers flags, bool entry) 
@@ -119,9 +121,59 @@ namespace DotNetPELib
     }
     void Method::Optimize(PELib &peLib)
     {
+        CalculateLive();
         CalculateMaxStack();
         OptimizeLocals(peLib );
         CodeContainer::Optimize(peLib);
+    }
+    void Method::CalculateLive()
+    {
+        std::set<std::string> labelsReached;
+        bool done = false;
+        bool skipping = false;
+        while (!done)
+        {
+            done = true;
+            for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
+            {
+                if (!skipping)
+                {
+                    (*it)->SetLive(true);
+                    if ((*it)->IsBranch())
+                    {
+                        if (labelsReached.find((*it)->GetOperand()->GetStringValue()) == labelsReached.end())
+                        {
+                            done = false;
+                            labelsReached.insert((*it)->GetOperand()->GetStringValue());
+                        }
+                        if ((*it)->GetOp() == Instruction::i_br)
+                            skipping = true;
+                    }
+                    else if ((*it)->GetOp() == Instruction::i_switch)
+                    {
+                        if ((*it)->GetSwitches())
+                        {
+                            for (std::list<std::string>::iterator its = (*it)->GetSwitches()->begin(); its != (*it)->GetSwitches()->end(); ++its)
+                            {
+                                if (labelsReached.find(*its) == labelsReached.end())
+                                {
+                                    done = false;
+                                    labelsReached.insert(*its);
+                                }
+                            }
+                        }
+                    }
+                }
+                else if ((*it)->GetOp() == Instruction::i_label)
+                {
+                    if (labelsReached.find((*it)->GetText()) != labelsReached.end())
+                    {
+                        (*it)->SetLive(true);
+                        skipping = false;
+                    }
+                }
+            }
+        }
     }
     void Method::CalculateMaxStack()
     {
@@ -129,95 +181,99 @@ namespace DotNetPELib
         maxStack = 0;
         int n = 0;
         bool lastBranch = false;
+        bool skipping = false;
         for (std::list<Instruction *>::iterator it = instructions.begin(); it != instructions.end(); ++it)
         {
-            int m = (*it)->GetStackUsage();
-            if (m == -127)
-                n = 0;
-            else
-                n += m;
-            if (n > maxStack)
-                maxStack = n;
-            if (n <0 )
+            if ((*it)->IsLive())
             {
-                throw PELibError(PELibError::StackUnderflow);
-            }
-            if ((*it)->IsBranch())
-            {
-                lastBranch = true;
-                std::map<std::string, int>::iterator it1 = labels.find((*it)->GetOperand()->GetStringValue());
-                if (it1 != labels.end())
-                {
-                    if (it1->second != n)
-                    {
-                        throw PELibError(PELibError::MismatchedStack, (*it)->GetOperand()->GetStringValue());
-                    }
-                }
+                int m = (*it)->GetStackUsage();
+                if (m == -127)
+                    n = 0;
                 else
+                    n += m;
+                if (n > maxStack)
+                    maxStack = n;
+                if (n <0 )
                 {
-                    labels[(*it)->GetOperand()->GetStringValue()] = n;
+                    throw PELibError(PELibError::StackUnderflow);
                 }
-
-            }
-            else if ((*it)->GetOp() == Instruction::i_switch)
-            {
-                if ((*it)->GetSwitches())
+                if ((*it)->IsBranch())
                 {
-                    for (std::list<std::string>::iterator its = (*it)->GetSwitches()->begin(); its != (*it)->GetSwitches()->end(); ++its)
-                    {
-                        std::map<std::string, int>::iterator it1 = labels.find(*its);
-                        if (it1 != labels.end())
-                        {
-                            if (it1->second != n)
-                            {
-                                throw PELibError(PELibError::MismatchedStack, *its);
-                            }
-                        }
-                        else
-                        {
-                            labels[*its] = n;
-                        }
-                    }
-                }
-            }
-            else if ((*it)->GetOp() == Instruction::i_label)
-            {
-                if (lastBranch)
-                {
-                    std::map<std::string, int>::iterator it1 = labels.find((*it)->GetText());
-                    if (it1 != labels.end())
-                    {
-                        n = it1->second;
-                    }
-                    else
-                    {
-                        n = 0;
-                    }
-                }
-                else
-                {
-                    std::map<std::string, int>::iterator it1 = labels.find((*it)->GetText());
+                    lastBranch = true;
+                    std::map<std::string, int>::iterator it1 = labels.find((*it)->GetOperand()->GetStringValue());
                     if (it1 != labels.end())
                     {
                         if (it1->second != n)
                         {
-                            throw PELibError(PELibError::MismatchedStack, (*it)->GetText());
+                            throw PELibError(PELibError::MismatchedStack, (*it)->GetOperand()->GetStringValue());
                         }
                     }
                     else
                     {
-                        labels[(*it)->GetText()] = n;
+                        labels[(*it)->GetOperand()->GetStringValue()] = n;
+                    }
+    
+                }
+                else if ((*it)->GetOp() == Instruction::i_switch)
+                {
+                    if ((*it)->GetSwitches())
+                    {
+                        for (std::list<std::string>::iterator its = (*it)->GetSwitches()->begin(); its != (*it)->GetSwitches()->end(); ++its)
+                        {
+                            std::map<std::string, int>::iterator it1 = labels.find(*its);
+                            if (it1 != labels.end())
+                            {
+                                if (it1->second != n)
+                                {
+                                    throw PELibError(PELibError::MismatchedStack, *its);
+                                }
+                            }
+                            else
+                            {
+                                labels[*its] = n;
+                            }
+                        }
                     }
                 }
-
-            }
-            else if ((*it)->GetOp() == Instruction::i_comment)
-            {
-                // placeholder
-            }
-            else
-            {
-                lastBranch = false;
+                else if ((*it)->GetOp() == Instruction::i_label)
+                {
+                    if (lastBranch)
+                    {
+                        std::map<std::string, int>::iterator it1 = labels.find((*it)->GetText());
+                        if (it1 != labels.end())
+                        {
+                            n = it1->second;
+                        }
+                        else
+                        {
+                            n = 0;
+                        }
+                    }
+                    else
+                    {
+                        std::map<std::string, int>::iterator it1 = labels.find((*it)->GetText());
+                        if (it1 != labels.end())
+                        {
+                            if (it1->second != n)
+                            {
+                                throw PELibError(PELibError::MismatchedStack, (*it)->GetText());
+                            }
+                        }
+                        else
+                        {
+                            labels[(*it)->GetText()] = n;
+                        }
+                    }
+    
+                }
+                else if ((*it)->GetOp() == Instruction::i_comment)
+                {
+                    // placeholder
+                }
+                else
+                {
+                    lastBranch = false;
+                }
             }
         }
         if (n != 0)
